@@ -129,6 +129,9 @@ export type Lancamento = {
   fornecedor_id: string | null;
   pedido_id: string | null;
   origem: "manual" | "pedido";
+  vencimento: string | null;
+  pago: boolean;
+  pago_em: string | null;
   criado_em: string;
 };
 

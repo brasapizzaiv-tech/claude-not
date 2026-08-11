@@ -111,6 +111,9 @@ async function lancarPedidoNoFinanceiro(
       fornecedor_id: p.fornecedor_id,
       pedido_id: pedidoId,
       origem: "pedido" as const,
+      // Vira conta a pagar (ainda não paga), com vencimento na data do pedido.
+      pago: false,
+      vencimento: p.data,
     }));
 
   if (novos.length > 0) {

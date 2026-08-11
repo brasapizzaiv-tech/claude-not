@@ -105,8 +105,14 @@ export default async function FinanceiroPage({
             ›
           </Link>
           <Link
+            href="/financeiro/contas"
+            className="ml-2 rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+          >
+            Contas a pagar
+          </Link>
+          <Link
             href={`/financeiro/dre?mes=${mes}`}
-            className="ml-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
           >
             Ver DRE →
           </Link>
@@ -165,10 +171,18 @@ export default async function FinanceiroPage({
           <label className="mb-1 block text-xs text-zinc-500">Valor (R$)</label>
           <input name="valor" inputMode="decimal" placeholder="0,00" className={`${inputCls} w-28`} />
         </div>
-        <div className="min-w-40 flex-1">
+        <div className="min-w-32 flex-1">
           <label className="mb-1 block text-xs text-zinc-500">Descrição</label>
           <input name="descricao" placeholder="opcional" className={`${inputCls} w-full`} />
         </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Vencimento</label>
+          <input type="date" name="vencimento" className={inputCls} />
+        </div>
+        <label className="flex items-center gap-1.5 pb-2 text-xs text-zinc-600 dark:text-zinc-300">
+          <input type="checkbox" name="pago" defaultChecked />
+          Já pago
+        </label>
         <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
           Lançar
         </button>
