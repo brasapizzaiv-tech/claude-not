@@ -7,6 +7,7 @@ const links = [
   { href: "/dashboard", label: "Início", icon: "🏠" },
   { href: "/fornecedores", label: "Fornecedores", icon: "🚚" },
   { href: "/produtos", label: "Produtos", icon: "📦" },
+  { href: "/categorias", label: "Categorias", icon: "🏷️" },
   { href: "/contagens", label: "Contagem de estoque", icon: "📋", futuro: true },
   { href: "/cotacoes", label: "Cotações", icon: "💰", futuro: true },
 ];
