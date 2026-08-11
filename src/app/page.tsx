@@ -44,6 +44,12 @@ export default function Home() {
           <p className="mx-auto mt-4 max-w-xl text-lg text-zinc-600 dark:text-zinc-400">
             Do estoque à compra: conte, cote, compare e peça — tudo em um lugar.
           </p>
+          <a
+            href="/login"
+            className="mt-6 inline-block rounded-lg bg-orange-500 px-6 py-2.5 font-medium text-white transition hover:bg-orange-600"
+          >
+            Entrar
+          </a>
         </header>
 
         <div className="grid gap-4 sm:grid-cols-2">
