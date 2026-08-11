@@ -5,7 +5,7 @@ import forge from "node-forge";
 // Lê o .pfx com node-forge (aceita a criptografia antiga dos certificados
 // ICP-Brasil que o OpenSSL 3 recusa) e devolve chave + certificado em PEM.
 function pfxParaPem(pfxBase64: string, senha: string): { key: string; cert: string } {
-  const der = forge.util.decode64(pfxBase64);
+  const der = forge.util.decode64(pfxBase64.trim());
   const asn1 = forge.asn1.fromDer(der);
   // strict=false: mais tolerante com variações do arquivo.
   const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, false, senha);
@@ -68,16 +68,13 @@ export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
     pem = pfxParaPem(o.pfxBase64, o.senha);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const senhaErrada = /mac|password|verified/i.test(msg);
     return {
       cStat: "",
       xMotivo: "",
       ultNSU: o.ultNSU,
       maxNSU: o.ultNSU,
       docs: [],
-      erro: senhaErrada
-        ? "Senha do certificado incorreta (a verificação falhou)."
-        : `Não consegui ler o certificado: ${msg}`,
+      erro: `Certificado (técnico): ${msg}`,
     };
   }
 
