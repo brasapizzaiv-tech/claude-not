@@ -71,3 +71,40 @@ export type Produto = {
   // Vem do join com categorias.
   categorias?: { nome: string } | null;
 };
+
+export type StatusCotacao = "aberta" | "fechada";
+
+export type Cotacao = {
+  id: string;
+  descricao: string | null;
+  contagem_id: string | null;
+  data: string;
+  prazo: string | null;
+  status: StatusCotacao;
+  criado_em: string;
+};
+
+export type CotacaoItem = {
+  id: string;
+  cotacao_id: string;
+  produto_id: string;
+  qtd: number;
+};
+
+export type CotacaoFornecedor = {
+  id: string;
+  cotacao_id: string;
+  fornecedor_id: string;
+  status: "enviado" | "respondido";
+  token: string | null;
+};
+
+export type CotacaoPreco = {
+  id: string;
+  cotacao_id: string;
+  fornecedor_id: string;
+  produto_id: string;
+  preco_unit: number | null;
+  disponivel: boolean;
+  observacao: string | null;
+};

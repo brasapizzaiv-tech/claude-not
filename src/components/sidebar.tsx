@@ -3,14 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const links = [
+const links: {
+  href: string;
+  label: string;
+  icon: string;
+  futuro?: boolean;
+}[] = [
   { href: "/dashboard", label: "Início", icon: "🏠" },
   { href: "/fornecedores", label: "Fornecedores", icon: "🚚" },
   { href: "/produtos", label: "Produtos", icon: "📦" },
   { href: "/categorias", label: "Categorias", icon: "🏷️" },
   { href: "/colaboradores", label: "Colaboradores", icon: "👤" },
   { href: "/contagens", label: "Contagem de estoque", icon: "📋" },
-  { href: "/cotacoes", label: "Cotações", icon: "💰", futuro: true },
+  { href: "/cotacoes", label: "Cotações", icon: "💰" },
 ];
 
 export function Sidebar({ nome, papel }: { nome: string; papel: string }) {
