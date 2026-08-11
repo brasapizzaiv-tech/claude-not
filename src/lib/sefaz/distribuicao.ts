@@ -1,5 +1,31 @@
 import https from "node:https";
 import zlib from "node:zlib";
+import forge from "node-forge";
+
+// Lê o .pfx com node-forge (aceita a criptografia antiga dos certificados
+// ICP-Brasil que o OpenSSL 3 recusa) e devolve chave + certificado em PEM.
+function pfxParaPem(pfxBase64: string, senha: string): { key: string; cert: string } {
+  const der = forge.util.decode64(pfxBase64);
+  const asn1 = forge.asn1.fromDer(der);
+  const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, senha);
+
+  const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+  const kb = (keyBags[forge.pki.oids.pkcs8ShroudedKeyBag] ?? [])[0];
+  if (!kb?.key) throw new Error("Chave privada não encontrada no certificado.");
+  const key = forge.pki.privateKeyToPem(kb.key);
+
+  const localKeyId = kb.attributes?.localKeyId?.[0];
+  const certBags =
+    p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag] ??
+    [];
+  const leaf =
+    certBags.find((cb) => cb.attributes?.localKeyId?.[0] === localKeyId) ??
+    certBags[0];
+  if (!leaf?.cert) throw new Error("Certificado não encontrado no arquivo.");
+  const cert = forge.pki.certificateToPem(leaf.cert);
+
+  return { key, cert };
+}
 
 // NFeDistribuicaoDFe — serviço nacional. Puxa as NF-e emitidas contra o CNPJ.
 const ENDPOINTS: Record<number, string> = {
@@ -35,6 +61,21 @@ export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
   const url = new URL(ENDPOINTS[o.ambiente] ?? ENDPOINTS[1]);
   const body = envelope(o);
 
+  // Extrai chave + certificado do .pfx (trata senha errada / arquivo inválido).
+  let pem: { key: string; cert: string };
+  try {
+    pem = pfxParaPem(o.pfxBase64, o.senha);
+  } catch {
+    return {
+      cStat: "",
+      xMotivo: "",
+      ultNSU: o.ultNSU,
+      maxNSU: o.ultNSU,
+      docs: [],
+      erro: "Senha do certificado incorreta ou arquivo .pfx inválido.",
+    };
+  }
+
   let respostaXml = "";
   try {
     respostaXml = await new Promise<string>((resolve, reject) => {
@@ -44,8 +85,8 @@ export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
           path: url.pathname,
           method: "POST",
           port: 443,
-          pfx: Buffer.from(o.pfxBase64, "base64"),
-          passphrase: o.senha,
+          key: pem.key,
+          cert: pem.cert,
           minVersion: "TLSv1.2",
           headers: {
             "Content-Type": "application/soap+xml; charset=utf-8",
