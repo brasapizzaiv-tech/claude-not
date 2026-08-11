@@ -7,7 +7,8 @@ import forge from "node-forge";
 function pfxParaPem(pfxBase64: string, senha: string): { key: string; cert: string } {
   const der = forge.util.decode64(pfxBase64);
   const asn1 = forge.asn1.fromDer(der);
-  const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, senha);
+  // strict=false: mais tolerante com variações do arquivo.
+  const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, false, senha);
 
   const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
   const kb = (keyBags[forge.pki.oids.pkcs8ShroudedKeyBag] ?? [])[0];
@@ -65,14 +66,18 @@ export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
   let pem: { key: string; cert: string };
   try {
     pem = pfxParaPem(o.pfxBase64, o.senha);
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const senhaErrada = /mac|password|verified/i.test(msg);
     return {
       cStat: "",
       xMotivo: "",
       ultNSU: o.ultNSU,
       maxNSU: o.ultNSU,
       docs: [],
-      erro: "Senha do certificado incorreta ou arquivo .pfx inválido.",
+      erro: senhaErrada
+        ? "Senha do certificado incorreta (a verificação falhou)."
+        : `Não consegui ler o certificado: ${msg}`,
     };
   }
 
