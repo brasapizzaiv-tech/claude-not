@@ -17,6 +17,7 @@ const links: {
   { href: "/contagens", label: "Contagem de estoque", icon: "📋" },
   { href: "/cotacoes", label: "Cotações", icon: "💰" },
   { href: "/conferencia", label: "Conferência", icon: "📥" },
+  { href: "/financeiro", label: "Financeiro", icon: "📊" },
 ];
 
 export function Sidebar({ nome, papel }: { nome: string; papel: string }) {

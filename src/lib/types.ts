@@ -99,6 +99,39 @@ export type CotacaoFornecedor = {
   token: string | null;
 };
 
+export type DreTipo =
+  | "receita"
+  | "deducao"
+  | "cmv"
+  | "cmo"
+  | "tarifa"
+  | "imposto"
+  | "despesa_fixa"
+  | "financeira"
+  | "nao_operacional";
+
+export type DreCategoria = {
+  id: string;
+  tipo: DreTipo;
+  grupo: string;
+  nome: string;
+  ordem: number;
+  ativo: boolean;
+};
+
+export type Lancamento = {
+  id: string;
+  data: string;
+  descricao: string | null;
+  categoria_id: string | null;
+  valor: number;
+  forma_pagamento: string | null;
+  fornecedor_id: string | null;
+  pedido_id: string | null;
+  origem: "manual" | "pedido";
+  criado_em: string;
+};
+
 export type StatusPedido = "rascunho" | "enviado" | "recebido" | "conferido";
 
 export type Pedido = {
