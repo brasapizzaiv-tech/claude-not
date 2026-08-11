@@ -99,6 +99,37 @@ export type CotacaoFornecedor = {
   token: string | null;
 };
 
+export type NotaFiscal = {
+  id: string;
+  chave: string;
+  numero: string | null;
+  serie: string | null;
+  modelo: string | null;
+  emit_cnpj: string | null;
+  emit_nome: string | null;
+  dest_cnpj: string | null;
+  valor: number;
+  data_emissao: string | null;
+  vencimento: string | null;
+  fornecedor_id: string | null;
+  pedido_id: string | null;
+  status: "importada" | "conciliada";
+  criado_em: string;
+};
+
+export type NotaItem = {
+  id: string;
+  nota_id: string;
+  cprod: string | null;
+  descricao: string | null;
+  ncm: string | null;
+  ean: string | null;
+  unidade: string | null;
+  qtd: number;
+  valor_unit: number | null;
+  valor_total: number | null;
+};
+
 export type DreTipo =
   | "receita"
   | "deducao"
