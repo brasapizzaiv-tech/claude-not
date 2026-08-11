@@ -99,6 +99,49 @@ export async function removerFornecedor(
   revalidatePath(`/cotacoes/${cotacaoId}/fornecedores`);
 }
 
+type Escolha = {
+  fornecedor_id: string;
+  produto_id: string;
+  qtd: number;
+  preco_unit: number | null;
+};
+
+// Gera os pedidos de compra a partir das escolhas (agrupadas por fornecedor).
+export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
+  const supabase = await createClient();
+
+  // Regenera: remove pedidos anteriores desta cotação.
+  await supabase.from("pedidos").delete().eq("cotacao_id", cotacaoId);
+
+  const porForn = new Map<string, Escolha[]>();
+  for (const e of escolhas) {
+    if (!e.fornecedor_id) continue;
+    const arr = porForn.get(e.fornecedor_id) ?? [];
+    arr.push(e);
+    porForn.set(e.fornecedor_id, arr);
+  }
+
+  for (const [fornId, itens] of porForn) {
+    const { data: ped } = await supabase
+      .from("pedidos")
+      .insert({ cotacao_id: cotacaoId, fornecedor_id: fornId })
+      .select("id")
+      .single();
+    if (ped) {
+      await supabase.from("pedido_itens").insert(
+        itens.map((i) => ({
+          pedido_id: ped.id,
+          produto_id: i.produto_id,
+          qtd: i.qtd,
+          preco_unit: i.preco_unit,
+        })),
+      );
+    }
+  }
+
+  revalidatePath(`/cotacoes/${cotacaoId}/pedidos`);
+}
+
 export async function fecharCotacao(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;

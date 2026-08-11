@@ -89,9 +89,17 @@ export default async function CotacaoFornecedoresPage({
         ← Voltar para a cotação
       </Link>
 
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-        Escolher fornecedores
-      </h1>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          Escolher fornecedores
+        </h1>
+        <Link
+          href={`/cotacoes/${cotacao.id}/comparar`}
+          className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+        >
+          Comparar preços →
+        </Link>
+      </div>
       <p className="mt-1 text-zinc-500">
         Convide os fornecedores e envie o link para cada um preencher os preços.
       </p>
