@@ -48,13 +48,12 @@ export function SefazPainel({
       let cert_pfx: string | undefined;
       let cert_nome: string | undefined;
       if (arquivo) {
-        const b64 = await new Promise<string>((res) => {
-          const fr = new FileReader();
-          fr.onload = () =>
-            res(String(fr.result).split(",")[1] ?? "");
-          fr.readAsDataURL(arquivo);
-        });
-        cert_pfx = b64;
+        // Lê os bytes e converte para base64 de forma robusta (sem data URL).
+        const bytes = new Uint8Array(await arquivo.arrayBuffer());
+        let bin = "";
+        for (let i = 0; i < bytes.length; i++)
+          bin += String.fromCharCode(bytes[i]);
+        cert_pfx = btoa(bin);
         cert_nome = arquivo.name;
       }
       await salvarConfigSefaz({
