@@ -59,7 +59,9 @@ async function lancarPedidoNoFinanceiro(
 ) {
   const { data: ped } = await supabase
     .from("pedidos")
-    .select("data, fornecedor_id, fornecedores(nome), pedido_itens(qtd, preco_unit, qtd_recebida, preco_recebido)")
+    .select(
+      "data, fornecedor_id, fornecedores(nome), pedido_itens(qtd, preco_unit, qtd_recebida, preco_recebido, produtos(categorias(dre_categoria_id)))",
+    )
     .eq("id", pedidoId)
     .maybeSingle();
   if (!ped) return;
@@ -69,6 +71,7 @@ async function lancarPedidoNoFinanceiro(
     preco_unit: number | null;
     qtd_recebida: number | null;
     preco_recebido: number | null;
+    produtos: { categorias: { dre_categoria_id: string | null } | null } | null;
   };
   const p = ped as unknown as {
     data: string;
@@ -77,32 +80,40 @@ async function lancarPedidoNoFinanceiro(
     pedido_itens: PI[];
   };
 
-  const total = (p.pedido_itens ?? []).reduce((s, i) => {
-    const qtd = i.qtd_recebida ?? i.qtd;
-    const preco = i.preco_recebido ?? i.preco_unit ?? 0;
-    return s + qtd * preco;
-  }, 0);
-
-  // Categoria padrão para compras de fornecedores.
-  const { data: cat } = await supabase
+  // Conta padrão (fallback) para itens sem mapeamento.
+  const { data: fallback } = await supabase
     .from("dre_categorias")
     .select("id")
     .eq("tipo", "cmv")
     .eq("nome", "Compras (Pedidos)")
     .maybeSingle();
+  const fallbackId = fallback?.id ?? null;
+
+  // Agrupa o valor por conta do DRE (via categoria do produto).
+  const porConta = new Map<string | null, number>();
+  for (const i of p.pedido_itens ?? []) {
+    const qtd = i.qtd_recebida ?? i.qtd;
+    const preco = i.preco_recebido ?? i.preco_unit ?? 0;
+    const contaId = i.produtos?.categorias?.dre_categoria_id ?? fallbackId;
+    porConta.set(contaId, (porConta.get(contaId) ?? 0) + qtd * preco);
+  }
 
   // Refaz (evita duplicar ao reconfirmar).
   await supabase.from("lancamentos").delete().eq("pedido_id", pedidoId);
 
-  if (total > 0) {
-    await supabase.from("lancamentos").insert({
+  const novos = [...porConta.entries()]
+    .filter(([, valor]) => valor > 0)
+    .map(([contaId, valor]) => ({
       data: p.data,
       descricao: `Compra conferida — ${p.fornecedores?.nome ?? "fornecedor"}`,
-      categoria_id: cat?.id ?? null,
-      valor: total,
+      categoria_id: contaId,
+      valor,
       fornecedor_id: p.fornecedor_id,
       pedido_id: pedidoId,
-      origem: "pedido",
-    });
+      origem: "pedido" as const,
+    }));
+
+  if (novos.length > 0) {
+    await supabase.from("lancamentos").insert(novos);
   }
 }

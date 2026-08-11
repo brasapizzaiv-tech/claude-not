@@ -19,6 +19,19 @@ export async function salvarCategoria(formData: FormData) {
   revalidatePath("/produtos");
 }
 
+// Vincula a categoria de produto a uma conta do DRE (CMV detalhado).
+export async function mapearCategoriaDre(
+  categoriaId: string,
+  dreCategoriaId: string | null,
+) {
+  const supabase = await createClient();
+  await supabase
+    .from("categorias")
+    .update({ dre_categoria_id: dreCategoriaId })
+    .eq("id", categoriaId);
+  revalidatePath("/categorias");
+}
+
 export async function excluirCategoria(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;

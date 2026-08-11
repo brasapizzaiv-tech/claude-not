@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { salvarCategoria, excluirCategoria } from "./actions";
+import { useRouter } from "next/navigation";
+import type { DreCategoria } from "@/lib/types";
+import {
+  salvarCategoria,
+  excluirCategoria,
+  mapearCategoriaDre,
+} from "./actions";
 
 export type CategoriaComContagem = {
   id: string;
   nome: string;
   qtdProdutos: number;
+  dreCategoriaId: string | null;
 };
 
 const inputCls =
@@ -15,11 +22,29 @@ const inputCls =
 
 export function CategoriasClient({
   categorias,
+  dreCategorias,
 }: {
   categorias: CategoriaComContagem[];
+  dreCategorias: DreCategoria[];
 }) {
+  const router = useRouter();
   const [editando, setEditando] = useState<CategoriaComContagem | null>(null);
   const [aberto, setAberto] = useState(false);
+
+  const porGrupo = useMemo(() => {
+    const m = new Map<string, DreCategoria[]>();
+    for (const d of dreCategorias) {
+      const arr = m.get(d.grupo) ?? [];
+      arr.push(d);
+      m.set(d.grupo, arr);
+    }
+    return m;
+  }, [dreCategorias]);
+
+  async function mapear(categoriaId: string, dreId: string) {
+    await mapearCategoriaDre(categoriaId, dreId || null);
+    router.refresh();
+  }
 
   return (
     <div className="mx-auto max-w-3xl p-8">
@@ -49,6 +74,7 @@ export function CategoriasClient({
             <tr>
               <th className="px-4 py-3">Categoria</th>
               <th className="px-4 py-3">Produtos</th>
+              <th className="px-4 py-3">Conta no DRE (compras)</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -68,6 +94,24 @@ export function CategoriasClient({
                   >
                     {c.qtdProdutos} produto{c.qtdProdutos === 1 ? "" : "s"}
                   </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={c.dreCategoriaId ?? ""}
+                    onChange={(e) => mapear(c.id, e.target.value)}
+                    className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                  >
+                    <option value="">— não lançar —</option>
+                    {[...porGrupo.entries()].map(([grupo, ds]) => (
+                      <optgroup key={grupo} label={grupo}>
+                        {ds.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.nome}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
                   <button
