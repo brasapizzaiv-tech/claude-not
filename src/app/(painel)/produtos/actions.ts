@@ -15,8 +15,10 @@ export async function salvarProduto(formData: FormData) {
   const estoque_minimo = Number(estoqueMinimoRaw.replace(",", ".")) || 0;
   const observacoes =
     (formData.get("observacoes") as string)?.trim() || null;
+  const categoria_id =
+    (formData.get("categoria_id") as string)?.trim() || null;
 
-  const payload = { nome, unidade, estoque_minimo, observacoes };
+  const payload = { nome, unidade, estoque_minimo, observacoes, categoria_id };
 
   if (id) {
     await supabase.from("produtos").update(payload).eq("id", id);

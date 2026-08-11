@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { salvarCategoria, excluirCategoria } from "./actions";
 
 export type CategoriaComContagem = {
@@ -60,8 +61,13 @@ export function CategoriasClient({
                 <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
                   {c.nome}
                 </td>
-                <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                  {c.qtdProdutos}
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/produtos?categoria=${encodeURIComponent(c.nome)}`}
+                    className="text-orange-600 hover:underline"
+                  >
+                    {c.qtdProdutos} produto{c.qtdProdutos === 1 ? "" : "s"}
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
                   <button

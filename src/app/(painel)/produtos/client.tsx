@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Produto } from "@/lib/types";
+import type { Produto, Categoria } from "@/lib/types";
 import { salvarProduto, excluirProduto } from "./actions";
 
 const inputCls =
@@ -16,18 +16,19 @@ const moeda = (v: number | null) =>
     ? "—"
     : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export function ProdutosClient({ produtos }: { produtos: Produto[] }) {
+export function ProdutosClient({
+  produtos,
+  categorias,
+  categoriaInicial = "",
+}: {
+  produtos: Produto[];
+  categorias: Categoria[];
+  categoriaInicial?: string;
+}) {
   const [editando, setEditando] = useState<Produto | null>(null);
   const [aberto, setAberto] = useState(false);
   const [busca, setBusca] = useState("");
-  const [categoria, setCategoria] = useState("");
-
-  const categorias = useMemo(
-    () =>
-      [...new Set(produtos.map((p) => p.categorias?.nome).filter(Boolean))]
-        .sort() as string[],
-    [produtos],
-  );
+  const [categoria, setCategoria] = useState(categoriaInicial);
 
   const filtrados = useMemo(() => {
     const b = busca.trim().toLowerCase();
@@ -74,8 +75,8 @@ export function ProdutosClient({ produtos }: { produtos: Produto[] }) {
         >
           <option value="">Todas as categorias</option>
           {categorias.map((c) => (
-            <option key={c} value={c}>
-              {c}
+            <option key={c.id} value={c.nome}>
+              {c.nome}
             </option>
           ))}
         </select>
@@ -173,6 +174,23 @@ export function ProdutosClient({ produtos }: { produtos: Produto[] }) {
                   defaultValue={editando?.nome ?? ""}
                   className={inputCls}
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Categoria
+                </label>
+                <select
+                  name="categoria_id"
+                  defaultValue={editando?.categoria_id ?? ""}
+                  className={inputCls}
+                >
+                  <option value="">Sem categoria</option>
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
