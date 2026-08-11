@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
 
+// Primeiro dia do mês atual (AAAA-MM-01) — nota anterior a isso entra como paga.
+function inicioDoMes() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
 export async function importarNota(xmlText: string) {
   const supabase = await createClient();
   const nf = lerNfe(xmlText);
@@ -59,8 +65,10 @@ export async function importarNota(xmlText: string) {
     .eq("nome", "Compras (Pedidos)")
     .maybeSingle();
 
+  const dataLanc = nf.data_emissao ?? new Date().toISOString().slice(0, 10);
+  const pago = dataLanc < inicioDoMes();
   await supabase.from("lancamentos").insert({
-    data: nf.data_emissao ?? new Date().toISOString().slice(0, 10),
+    data: dataLanc,
     categoria_id: cat?.id ?? null,
     valor: nf.valor,
     descricao: `NF ${nf.numero} — ${nf.emit_nome}`,
@@ -68,7 +76,8 @@ export async function importarNota(xmlText: string) {
     origem: "nota",
     nota_id: nota.id,
     vencimento: nf.vencimento,
-    pago: false,
+    pago,
+    pago_em: pago ? dataLanc : null,
   });
 
   revalidatePath("/notas");
@@ -116,15 +125,19 @@ export async function importarResumo(resumoXml: string) {
       .eq("tipo", "cmv")
       .eq("nome", "Compras (Pedidos)")
       .maybeSingle();
+    const dataLanc = r.data_emissao ?? new Date().toISOString().slice(0, 10);
+    // Notas de meses anteriores entram já como pagas (histórico).
+    const pago = dataLanc < inicioDoMes();
     await supabase.from("lancamentos").insert({
-      data: r.data_emissao ?? new Date().toISOString().slice(0, 10),
+      data: dataLanc,
       categoria_id: cat?.id ?? null,
       valor: r.valor,
       descricao: `NF (resumo) — ${r.emit_nome}`,
       fornecedor_id: fornecedor?.id ?? null,
       origem: "nota",
       nota_id: nota.id,
-      pago: false,
+      pago,
+      pago_em: pago ? dataLanc : null,
     });
   }
   return { ok: true };
