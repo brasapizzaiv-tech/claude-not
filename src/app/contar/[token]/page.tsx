@@ -1,6 +1,13 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import type { Produto } from "@/lib/types";
 import { PreencherClient } from "./preencher";
+
+type RpcProduto = {
+  id: string;
+  nome: string;
+  unidade: string;
+  categoria: string | null;
+};
 
 export default async function ContarPublicoPage({
   params,
@@ -8,15 +15,11 @@ export default async function ContarPublicoPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const admin = createAdminClient();
+  const supabase = await createClient();
 
-  const { data: link } = await admin
-    .from("contagem_links")
-    .select("contagem_id, colaborador_id")
-    .eq("token", token)
-    .maybeSingle();
+  const { data } = await supabase.rpc("contar_dados", { p_token: token });
 
-  if (!link) {
+  if (!data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 dark:bg-zinc-950">
         <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
@@ -31,51 +34,24 @@ export default async function ContarPublicoPage({
     );
   }
 
-  const [{ data: contagem }, { data: colaborador }, { data: atrib }] =
-    await Promise.all([
-      admin
-        .from("contagens")
-        .select("descricao, status")
-        .eq("id", link.contagem_id)
-        .single(),
-      admin
-        .from("colaboradores")
-        .select("nome")
-        .eq("id", link.colaborador_id)
-        .single(),
-      admin
-        .from("contagem_atribuicoes")
-        .select("categoria_id")
-        .eq("contagem_id", link.contagem_id)
-        .eq("colaborador_id", link.colaborador_id),
-    ]);
-
-  const categoriaIds = (atrib ?? []).map((a) => a.categoria_id);
-
-  const [{ data: produtos }, { data: itens }] = await Promise.all([
-    admin
-      .from("produtos")
-      .select("id, nome, unidade, estoque_minimo, categoria_id, categorias(nome)")
-      .eq("ativo", true)
-      .in("categoria_id", categoriaIds.length ? categoriaIds : ["-"])
-      .order("nome"),
-    admin
-      .from("contagem_itens")
-      .select("produto_id, qtd_estoque, qtd_pedir")
-      .eq("contagem_id", link.contagem_id),
-  ]);
+  const produtos: Produto[] = ((data.produtos as RpcProduto[]) ?? []).map(
+    (p) =>
+      ({
+        id: p.id,
+        nome: p.nome,
+        unidade: p.unidade,
+        categorias: p.categoria ? { nome: p.categoria } : null,
+      }) as Produto,
+  );
 
   return (
     <PreencherClient
       token={token}
-      descricao={contagem?.descricao ?? "Contagem"}
-      colaborador={colaborador?.nome ?? ""}
-      finalizada={contagem?.status === "finalizada"}
-      produtos={(produtos as unknown as Produto[]) ?? []}
-      itens={
-        (itens as { produto_id: string; qtd_estoque: number; qtd_pedir: number }[]) ??
-        []
-      }
+      descricao={data.contagem?.descricao ?? "Contagem"}
+      colaborador={data.colaborador ?? ""}
+      finalizada={data.contagem?.status === "finalizada"}
+      produtos={produtos}
+      itens={data.itens ?? []}
     />
   );
 }
