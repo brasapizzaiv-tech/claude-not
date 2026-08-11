@@ -27,6 +27,25 @@ export type Categoria = {
   nome: string;
 };
 
+export type StatusContagem = "rascunho" | "finalizada";
+
+export type Contagem = {
+  id: string;
+  descricao: string | null;
+  data: string;
+  responsavel_id: string | null;
+  status: StatusContagem;
+  criado_em: string;
+};
+
+export type ContagemItem = {
+  id: string;
+  contagem_id: string;
+  produto_id: string;
+  qtd_estoque: number;
+  qtd_pedir: number;
+};
+
 export type Produto = {
   id: string;
   nome: string;
