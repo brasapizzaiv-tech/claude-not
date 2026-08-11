@@ -99,6 +99,30 @@ export type CotacaoFornecedor = {
   token: string | null;
 };
 
+export type StatusPedido = "rascunho" | "enviado" | "recebido" | "conferido";
+
+export type Pedido = {
+  id: string;
+  cotacao_id: string | null;
+  fornecedor_id: string | null;
+  data: string;
+  status: StatusPedido;
+  observacoes: string | null;
+  conferido_em: string | null;
+  criado_em: string;
+};
+
+export type PedidoItem = {
+  id: string;
+  pedido_id: string;
+  produto_id: string;
+  qtd: number;
+  preco_unit: number | null;
+  qtd_recebida: number | null;
+  preco_recebido: number | null;
+  obs: string | null;
+};
+
 export type CotacaoPreco = {
   id: string;
   cotacao_id: string;
