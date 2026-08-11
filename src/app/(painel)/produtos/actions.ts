@@ -13,12 +13,21 @@ export async function salvarProduto(formData: FormData) {
   const unidade = ((formData.get("unidade") as string) || "un").trim();
   const estoqueMinimoRaw = (formData.get("estoque_minimo") as string) || "0";
   const estoque_minimo = Number(estoqueMinimoRaw.replace(",", ".")) || 0;
+  const estoqueIdealRaw = (formData.get("estoque_ideal") as string) || "0";
+  const estoque_ideal = Number(estoqueIdealRaw.replace(",", ".")) || 0;
   const observacoes =
     (formData.get("observacoes") as string)?.trim() || null;
   const categoria_id =
     (formData.get("categoria_id") as string)?.trim() || null;
 
-  const payload = { nome, unidade, estoque_minimo, observacoes, categoria_id };
+  const payload = {
+    nome,
+    unidade,
+    estoque_minimo,
+    estoque_ideal,
+    observacoes,
+    categoria_id,
+  };
 
   if (id) {
     await supabase.from("produtos").update(payload).eq("id", id);

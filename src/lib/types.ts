@@ -60,6 +60,7 @@ export type Produto = {
   unidade: string;
   categoria_id: string | null;
   estoque_minimo: number;
+  estoque_ideal: number;
   observacoes: string | null;
   marca: string | null;
   aceita_similar: boolean;

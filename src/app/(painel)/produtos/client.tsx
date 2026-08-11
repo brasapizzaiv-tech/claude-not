@@ -94,6 +94,7 @@ export function ProdutosClient({
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Un.</th>
+                <th className="px-4 py-3 text-right">Ideal</th>
                 <th className="px-4 py-3">Preço ref.</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -117,6 +118,13 @@ export function ProdutosClient({
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {p.unidade}
+                  </td>
+                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
+                    {p.estoque_ideal > 0 ? (
+                      p.estoque_ideal
+                    ) : (
+                      <span className="text-zinc-300 dark:text-zinc-600">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {moeda(p.preco_referencia)}
@@ -211,16 +219,25 @@ export function ProdutosClient({
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Estoque mínimo
+                    Estoque ideal
                   </label>
                   <input
-                    name="estoque_minimo"
+                    name="estoque_ideal"
                     inputMode="decimal"
-                    defaultValue={editando?.estoque_minimo ?? 0}
+                    defaultValue={editando?.estoque_ideal ?? 0}
                     className={inputCls}
                   />
                 </div>
               </div>
+              <p className="-mt-1 text-xs text-zinc-400">
+                Estoque ideal = quanto você quer ter sempre. Na cotação, a
+                sugestão de compra será: ideal − o que foi contado.
+              </p>
+              <input
+                type="hidden"
+                name="estoque_minimo"
+                defaultValue={editando?.estoque_minimo ?? 0}
+              />
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Observações
