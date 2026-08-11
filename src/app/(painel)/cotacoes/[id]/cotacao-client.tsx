@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Cotacao } from "@/lib/types";
+import { dataBR } from "@/lib/format";
 import {
   salvarCotacaoItens,
   fecharCotacao,
@@ -117,7 +118,7 @@ export function CotacaoClient({
             {cotacao.descricao}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {new Date(cotacao.data).toLocaleDateString("pt-BR")} ·{" "}
+            {dataBR(cotacao.data)} ·{" "}
             {fechada ? "Fechada" : "Aberta"} ·{" "}
             {temContagem
               ? "com contagem de base"

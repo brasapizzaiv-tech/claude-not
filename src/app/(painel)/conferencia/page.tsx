@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { dataBR } from "@/lib/format";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -83,7 +84,7 @@ export default async function ConferenciaPage() {
                       {p.cotacoes?.descricao ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-zinc-500">
-                      {new Date(p.data).toLocaleDateString("pt-BR")}
+                      {dataBR(p.data)}
                     </td>
                     <td className="px-4 py-3 text-right text-zinc-700 dark:text-zinc-300">
                       {moeda(total)}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Contagem } from "@/lib/types";
+import { dataBR } from "@/lib/format";
 import { criarContagem, excluirContagem } from "./actions";
 
 export default async function ContagensPage() {
@@ -60,7 +61,7 @@ export default async function ContagensPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                    {new Date(c.data).toLocaleDateString("pt-BR")}
+                    {dataBR(c.data)}
                   </td>
                   <td className="px-4 py-3">
                     {c.status === "finalizada" ? (

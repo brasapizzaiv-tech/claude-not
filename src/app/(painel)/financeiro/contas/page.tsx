@@ -1,29 +1,26 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { dataBR } from "@/lib/format";
 import { alternarPago } from "../actions";
+import { FiltroCategoria } from "./filtro";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Formata "AAAA-MM-DD" como "DD/MM/AAAA" sem depender de fuso horário.
-const dataBR = (s: string) => {
-  const [a, m, d] = s.split("-");
-  return `${d}/${m}/${a}`;
-};
-
 export default async function ContasPagarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ver?: string }>;
+  searchParams: Promise<{ ver?: string; cat?: string }>;
 }) {
   const sp = await searchParams;
   const verPagas = sp.ver === "pagas";
+  const cat = sp.cat ?? "";
 
   const supabase = await createClient();
   const { data } = await supabase
     .from("lancamentos")
     .select(
-      "id, data, descricao, valor, vencimento, pago, pago_em, origem, dre_categorias(nome, tipo), fornecedores(nome)",
+      "id, data, descricao, valor, vencimento, pago, pago_em, origem, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
     )
     .eq("pago", verPagas)
     .order("vencimento", { ascending: true, nullsFirst: false })
@@ -36,13 +33,27 @@ export default async function ContasPagarPage({
     vencimento: string | null;
     pago_em: string | null;
     origem: string;
+    categoria_id: string | null;
     dre_categorias: { nome?: string; tipo?: string } | null;
     fornecedores: { nome?: string } | null;
   };
   // Só despesas (não receitas) entram em contas a pagar.
-  const todos = ((data as unknown as Lanc[]) ?? []).filter(
+  const despesas = ((data as unknown as Lanc[]) ?? []).filter(
     (l) => l.dre_categorias?.tipo !== "receita",
   );
+
+  // Categorias presentes (para o filtro).
+  const opcoesMap = new Map<string, string>();
+  for (const l of despesas)
+    if (l.categoria_id)
+      opcoesMap.set(l.categoria_id, l.dre_categorias?.nome ?? "—");
+  const opcoes = [...opcoesMap.entries()]
+    .map(([id, nome]) => ({ id, nome }))
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+
+  const todos = cat
+    ? despesas.filter((l) => l.categoria_id === cat)
+    : despesas;
 
   const hoje = new Date().toISOString().slice(0, 10);
   const em7 = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
@@ -75,7 +86,8 @@ export default async function ContasPagarPage({
               : "O que está em aberto, por vencimento. Pedidos conferidos entram sozinhos."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <FiltroCategoria opcoes={opcoes} atual={cat} verPagas={verPagas} />
           <Link
             href={`/financeiro/contas${verPagas ? "" : "?ver=pagas"}`}
             className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
+import { dataBR } from "@/lib/format";
 import { criarLancamento, excluirLancamento } from "./actions";
 
 const moeda = (n: number) =>
@@ -211,7 +212,7 @@ export default async function FinanceiroPage({
                 return (
                   <tr key={l.id} className="bg-white dark:bg-zinc-950">
                     <td className="px-4 py-2 text-zinc-500">
-                      {new Date(l.data).toLocaleDateString("pt-BR")}
+                      {dataBR(l.data)}
                     </td>
                     <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
                       {l.dre_categorias?.nome ?? "—"}

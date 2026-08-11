@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Contagem, Produto } from "@/lib/types";
+import { dataBR } from "@/lib/format";
 import {
   salvarContagemItens,
   finalizarContagem,
@@ -124,7 +125,7 @@ export function ContarClient({
             {contagem.descricao}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {new Date(contagem.data).toLocaleDateString("pt-BR")} ·{" "}
+            {dataBR(contagem.data)} ·{" "}
             {finalizada ? "Finalizada" : "Rascunho"}
           </p>
         </div>

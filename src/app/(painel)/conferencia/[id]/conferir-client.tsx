@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { dataBR } from "@/lib/format";
 import { salvarConferencia } from "../actions";
 
 export type ItemLinha = {
@@ -111,7 +112,7 @@ export function ConferirClient({
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
             {cotacao ? `${cotacao} · ` : ""}
-            {new Date(data).toLocaleDateString("pt-BR")} · {status}
+            {dataBR(data)} · {status}
           </p>
         </div>
         <div className="flex items-center gap-2">

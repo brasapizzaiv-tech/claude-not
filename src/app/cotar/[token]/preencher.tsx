@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { dataBR } from "@/lib/format";
 import { salvarPrecosPublico, removerItemPublico } from "./actions";
 
 export type LinhaPreco = {
@@ -127,7 +128,7 @@ export function CotarPreencher({
         </h1>
         <p className="text-sm text-zinc-500">
           Cotação para <b>{fornecedor}</b>
-          {prazo ? ` · prazo ${new Date(prazo).toLocaleDateString("pt-BR")}` : ""}
+          {prazo ? ` · prazo ${dataBR(prazo)}` : ""}
         </p>
       </div>
 
