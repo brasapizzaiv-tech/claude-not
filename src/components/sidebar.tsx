@@ -25,7 +25,13 @@ export function Sidebar({ nome, papel }: { nome: string; papel: string }) {
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+      <div className="flex items-center gap-3 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-brasa.png"
+          alt="Brasa"
+          className="h-10 w-10 shrink-0 object-contain"
+        />
         <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
           Sistema de Cotação
         </p>

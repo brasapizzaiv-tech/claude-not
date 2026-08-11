@@ -33,7 +33,13 @@ export default function LoginPage() {
     <div className="flex flex-1 items-center justify-center bg-zinc-50 px-6 dark:bg-zinc-950">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-brasa.png"
+            alt="Brasa Restaurante & Pizzaria"
+            className="mx-auto mb-4 h-28 w-28 object-contain"
+          />
+          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
             Sistema de Cotação
           </h1>
           <p className="mt-1 text-sm text-zinc-500">Entre para continuar</p>

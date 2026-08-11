@@ -35,6 +35,12 @@ export default function Home() {
     <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 font-sans dark:bg-zinc-950">
       <main className="w-full max-w-4xl">
         <header className="mb-12 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-brasa.png"
+            alt="Brasa Restaurante & Pizzaria"
+            className="mx-auto mb-6 h-40 w-40 object-contain"
+          />
           <span className="inline-block rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
             Em construção
           </span>
