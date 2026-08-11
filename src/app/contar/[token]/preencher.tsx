@@ -61,7 +61,7 @@ export function PreencherClient({
       const payload = produtos.map((p) => ({
         produto_id: p.id,
         qtd_estoque: ler(`estoque_${p.id}`),
-        qtd_pedir: ler(`pedir_${p.id}`),
+        qtd_pedir: 0,
       }));
       const r = await salvarContagemPublica(token, payload);
       if (r.ok) {
@@ -100,8 +100,7 @@ export function PreencherClient({
         ) : (
           <>
             <p className="mt-4 text-sm text-zinc-500">
-              Preencha <b>quanto tem em estoque</b> de cada item. Se quiser, já
-              anote quanto precisa pedir.
+              Preencha <b>quanto tem em estoque</b> de cada item.
             </p>
             <form ref={formRef} className="mt-4 space-y-6">
               {grupos.map(([cat, itensCat]) => (
@@ -124,30 +123,17 @@ export function PreencherClient({
                                 ({p.unidade})
                               </span>
                             </div>
-                            <div className="flex gap-4">
-                              <label className="flex-1 text-sm text-zinc-500">
-                                Em estoque
-                                <input
-                                  name={`estoque_${p.id}`}
-                                  inputMode="decimal"
-                                  defaultValue={
-                                    ini?.qtd_estoque ? ini.qtd_estoque : ""
-                                  }
-                                  className={`${numInput} mt-1 w-full`}
-                                />
-                              </label>
-                              <label className="flex-1 text-sm text-zinc-500">
-                                Pedir
-                                <input
-                                  name={`pedir_${p.id}`}
-                                  inputMode="decimal"
-                                  defaultValue={
-                                    ini?.qtd_pedir ? ini.qtd_pedir : ""
-                                  }
-                                  className={`${numInput} mt-1 w-full font-semibold text-orange-600`}
-                                />
-                              </label>
-                            </div>
+                            <label className="block text-sm text-zinc-500">
+                              Em estoque
+                              <input
+                                name={`estoque_${p.id}`}
+                                inputMode="decimal"
+                                defaultValue={
+                                  ini?.qtd_estoque ? ini.qtd_estoque : ""
+                                }
+                                className={`${numInput} mt-1 w-full`}
+                              />
+                            </label>
                           </div>
                         );
                       })}

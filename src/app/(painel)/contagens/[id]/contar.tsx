@@ -76,28 +76,11 @@ export function ContarClient({
     return Number((el?.value ?? "").replace(",", ".")) || 0;
   }
 
-  function sugerirPedidos() {
-    const form = formRef.current;
-    if (!form) return;
-    for (const p of produtos) {
-      if (p.estoque_minimo > 0) {
-        const est = ler(`estoque_${p.id}`);
-        const pedir = Math.max(0, p.estoque_minimo - est);
-        const el = form.elements.namedItem(
-          `pedir_${p.id}`,
-        ) as HTMLInputElement | null;
-        if (el) el.value = pedir ? String(pedir) : "";
-      }
-    }
-    setMsg("Sugestões preenchidas (onde há estoque mínimo). Revise e salve.");
-    setTimeout(() => setMsg(null), 4000);
-  }
-
   function montarItens() {
     return produtos.map((p) => ({
       produto_id: p.id,
       qtd_estoque: ler(`estoque_${p.id}`),
-      qtd_pedir: ler(`pedir_${p.id}`),
+      qtd_pedir: 0,
     }));
   }
 
@@ -163,13 +146,6 @@ export function ContarClient({
                 Dividir por categoria
               </Link>
               <button
-                onClick={sugerirPedidos}
-                disabled={salvando}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                Sugerir pedidos
-              </button>
-              <button
                 onClick={salvar}
                 disabled={salvando}
                 className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
@@ -222,9 +198,7 @@ export function ContarClient({
               <tr>
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Un.</th>
-                <th className="px-4 py-3 text-right">Estoque mín.</th>
                 <th className="px-4 py-3 text-right">Em estoque</th>
-                <th className="px-4 py-3 text-right">Pedir</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -234,7 +208,7 @@ export function ContarClient({
                   <Fragment key={cat}>
                     <tr className={algumVisivel ? "" : "hidden"}>
                       <td
-                        colSpan={5}
+                        colSpan={3}
                         className="bg-zinc-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900"
                       >
                         {cat}
@@ -258,9 +232,6 @@ export function ContarClient({
                           <td className="px-4 py-2 text-zinc-500">
                             {p.unidade}
                           </td>
-                          <td className="px-4 py-2 text-right text-zinc-400">
-                            {p.estoque_minimo > 0 ? p.estoque_minimo : "—"}
-                          </td>
                           <td className="px-4 py-2 text-right">
                             <input
                               name={`estoque_${p.id}`}
@@ -270,15 +241,6 @@ export function ContarClient({
                                 ini?.qtd_estoque ? ini.qtd_estoque : ""
                               }
                               className={numInput}
-                            />
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            <input
-                              name={`pedir_${p.id}`}
-                              inputMode="decimal"
-                              disabled={finalizada}
-                              defaultValue={ini?.qtd_pedir ? ini.qtd_pedir : ""}
-                              className={`${numInput} font-semibold text-orange-600`}
                             />
                           </td>
                         </tr>
