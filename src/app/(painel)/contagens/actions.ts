@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -88,4 +89,66 @@ export async function excluirContagem(formData: FormData) {
   const id = formData.get("id") as string;
   await supabase.from("contagens").delete().eq("id", id);
   revalidatePath("/contagens");
+}
+
+// Atribui (ou desatribui) uma categoria a um colaborador nesta contagem.
+export async function salvarAtribuicao(
+  contagemId: string,
+  categoriaId: string,
+  colaboradorId: string | null,
+) {
+  const supabase = await createClient();
+
+  if (!colaboradorId) {
+    await supabase
+      .from("contagem_atribuicoes")
+      .delete()
+      .eq("contagem_id", contagemId)
+      .eq("categoria_id", categoriaId);
+  } else {
+    await supabase.from("contagem_atribuicoes").upsert(
+      {
+        contagem_id: contagemId,
+        categoria_id: categoriaId,
+        colaborador_id: colaboradorId,
+      },
+      { onConflict: "contagem_id,categoria_id" },
+    );
+
+    // Garante um link (token) para este colaborador nesta contagem.
+    const { data: existente } = await supabase
+      .from("contagem_links")
+      .select("id")
+      .eq("contagem_id", contagemId)
+      .eq("colaborador_id", colaboradorId)
+      .maybeSingle();
+    if (!existente) {
+      await supabase.from("contagem_links").insert({
+        contagem_id: contagemId,
+        colaborador_id: colaboradorId,
+        token: randomUUID().replace(/-/g, ""),
+      });
+    }
+  }
+
+  // Remove links de colaboradores que não têm mais nenhuma categoria aqui.
+  const { data: comAtrib } = await supabase
+    .from("contagem_atribuicoes")
+    .select("colaborador_id")
+    .eq("contagem_id", contagemId);
+  const ativos = new Set(
+    (comAtrib ?? []).map((a) => a.colaborador_id).filter(Boolean),
+  );
+  const { data: links } = await supabase
+    .from("contagem_links")
+    .select("id, colaborador_id")
+    .eq("contagem_id", contagemId);
+  const remover = (links ?? [])
+    .filter((l) => !ativos.has(l.colaborador_id))
+    .map((l) => l.id);
+  if (remover.length > 0) {
+    await supabase.from("contagem_links").delete().in("id", remover);
+  }
+
+  revalidatePath(`/contagens/${contagemId}/atribuir`);
 }

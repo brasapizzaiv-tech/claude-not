@@ -27,6 +27,14 @@ export type Categoria = {
   nome: string;
 };
 
+export type Colaborador = {
+  id: string;
+  nome: string;
+  whatsapp: string | null;
+  ativo: boolean;
+  criado_em: string;
+};
+
 export type StatusContagem = "rascunho" | "finalizada";
 
 export type Contagem = {

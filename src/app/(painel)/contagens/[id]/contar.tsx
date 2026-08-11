@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Contagem, Produto } from "@/lib/types";
 import {
@@ -49,6 +49,18 @@ export function ContarClient({
       ].sort() as string[],
     [produtos],
   );
+
+  // Produtos agrupados por categoria (para exibir em seções).
+  const grupos = useMemo(() => {
+    const m = new Map<string, Produto[]>();
+    for (const p of produtos) {
+      const cat = p.categorias?.nome ?? "Sem categoria";
+      const arr = m.get(cat) ?? [];
+      arr.push(p);
+      m.set(cat, arr);
+    }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [produtos]);
 
   function visivel(p: Produto) {
     const b = busca.trim().toLowerCase();
@@ -144,6 +156,12 @@ export function ContarClient({
             </button>
           ) : (
             <>
+              <Link
+                href={`/contagens/${contagem.id}/atribuir`}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Dividir por categoria
+              </Link>
               <button
                 onClick={sugerirPedidos}
                 disabled={salvando}
@@ -210,46 +228,63 @@ export function ContarClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {produtos.map((p) => {
-                const ini = iniciais.get(p.id);
+              {grupos.map(([cat, itensCat]) => {
+                const algumVisivel = itensCat.some(visivel);
                 return (
-                  <tr
-                    key={p.id}
-                    className={`bg-white dark:bg-zinc-950 ${
-                      visivel(p) ? "" : "hidden"
-                    }`}
-                  >
-                    <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
-                      {p.nome}
-                      {p.categorias?.nome && (
-                        <span className="block text-xs font-normal text-zinc-400">
-                          {p.categorias.nome}
+                  <Fragment key={cat}>
+                    <tr className={algumVisivel ? "" : "hidden"}>
+                      <td
+                        colSpan={5}
+                        className="bg-zinc-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900"
+                      >
+                        {cat}
+                        <span className="ml-2 font-normal text-zinc-400">
+                          ({itensCat.length})
                         </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-zinc-500">{p.unidade}</td>
-                    <td className="px-4 py-2 text-right text-zinc-400">
-                      {p.estoque_minimo > 0 ? p.estoque_minimo : "—"}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <input
-                        name={`estoque_${p.id}`}
-                        inputMode="decimal"
-                        disabled={finalizada}
-                        defaultValue={ini?.qtd_estoque ? ini.qtd_estoque : ""}
-                        className={numInput}
-                      />
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <input
-                        name={`pedir_${p.id}`}
-                        inputMode="decimal"
-                        disabled={finalizada}
-                        defaultValue={ini?.qtd_pedir ? ini.qtd_pedir : ""}
-                        className={`${numInput} font-semibold text-orange-600`}
-                      />
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {itensCat.map((p) => {
+                      const ini = iniciais.get(p.id);
+                      return (
+                        <tr
+                          key={p.id}
+                          className={`bg-white dark:bg-zinc-950 ${
+                            visivel(p) ? "" : "hidden"
+                          }`}
+                        >
+                          <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                            {p.nome}
+                          </td>
+                          <td className="px-4 py-2 text-zinc-500">
+                            {p.unidade}
+                          </td>
+                          <td className="px-4 py-2 text-right text-zinc-400">
+                            {p.estoque_minimo > 0 ? p.estoque_minimo : "—"}
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            <input
+                              name={`estoque_${p.id}`}
+                              inputMode="decimal"
+                              disabled={finalizada}
+                              defaultValue={
+                                ini?.qtd_estoque ? ini.qtd_estoque : ""
+                              }
+                              className={numInput}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            <input
+                              name={`pedir_${p.id}`}
+                              inputMode="decimal"
+                              disabled={finalizada}
+                              defaultValue={ini?.qtd_pedir ? ini.qtd_pedir : ""}
+                              className={`${numInput} font-semibold text-orange-600`}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
                 );
               })}
             </tbody>
