@@ -39,7 +39,15 @@ export default async function NotasPage() {
             o pedido.
           </p>
         </div>
-        <UploadNota />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/notas/sefaz"
+            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+          >
+            SEFAZ automático
+          </Link>
+          <UploadNota />
+        </div>
       </div>
 
       {notas.length === 0 ? (

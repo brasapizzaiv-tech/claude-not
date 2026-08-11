@@ -2,54 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-
-// --- Leitor de NF-e (XML 4.00) ---
-const pick = (xml: string, tag: string) => {
-  const m = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
-  return m ? m[1].trim() : "";
-};
-const bloco = (xml: string, tag: string) => {
-  const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
-  return m ? m[1] : "";
-};
-const soDigitos = (s: string) => (s || "").replace(/\D/g, "");
-
-function lerNfe(xml: string) {
-  const chave = (xml.match(/Id="NFe(\d{44})"/) || [])[1] ?? "";
-  const emit = bloco(xml, "emit");
-  const dest = bloco(xml, "dest");
-  const ide = bloco(xml, "ide");
-  const icmsTot = bloco(xml, "ICMSTot");
-  const cobr = bloco(xml, "cobr");
-
-  const itens = (xml.match(/<det[^>]*>[\s\S]*?<\/det>/g) || []).map((det) => {
-    const prod = bloco(det, "prod");
-    return {
-      cprod: pick(prod, "cProd"),
-      descricao: pick(prod, "xProd"),
-      ncm: pick(prod, "NCM"),
-      ean: pick(prod, "cEAN"),
-      unidade: pick(prod, "uCom"),
-      qtd: Number(pick(prod, "qCom")) || 0,
-      valor_unit: Number(pick(prod, "vUnCom")) || 0,
-      valor_total: Number(pick(prod, "vProd")) || 0,
-    };
-  });
-
-  return {
-    chave,
-    numero: pick(ide, "nNF"),
-    serie: pick(ide, "serie"),
-    modelo: pick(ide, "mod"),
-    data_emissao: pick(ide, "dhEmi").slice(0, 10) || null,
-    emit_cnpj: soDigitos(pick(emit, "CNPJ")),
-    emit_nome: pick(emit, "xNome"),
-    dest_cnpj: soDigitos(pick(dest, "CNPJ")),
-    valor: Number(pick(icmsTot, "vNF")) || 0,
-    vencimento: (cobr.match(/<dVenc>([\s\S]*?)<\/dVenc>/) || [])[1] ?? null,
-    itens,
-  };
-}
+import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
 
 export async function importarNota(xmlText: string) {
   const supabase = await createClient();
@@ -121,6 +74,60 @@ export async function importarNota(xmlText: string) {
   revalidatePath("/notas");
   revalidatePath("/financeiro/contas");
   return { ok: true, notaId: nota.id, fornecedorCasado: !!fornecedor };
+}
+
+// Importa um RESUMO de NF-e (resNFe do SEFAZ) — só cabeçalho, sem itens.
+export async function importarResumo(resumoXml: string) {
+  const supabase = await createClient();
+  const r = lerResumo(resumoXml);
+  if (!r.chave) return { ok: false };
+
+  const { data: existe } = await supabase
+    .from("notas_fiscais")
+    .select("id")
+    .eq("chave", r.chave)
+    .maybeSingle();
+  if (existe) return { ok: false, jaExiste: true };
+
+  const { data: forns } = await supabase.from("fornecedores").select("id, cnpj");
+  const fornecedor = (forns ?? []).find(
+    (f) => soDigitos(f.cnpj ?? "") === r.emit_cnpj,
+  );
+
+  const { data: nota } = await supabase
+    .from("notas_fiscais")
+    .insert({
+      chave: r.chave,
+      numero: r.chave.slice(25, 34).replace(/^0+/, ""),
+      emit_cnpj: r.emit_cnpj,
+      emit_nome: r.emit_nome,
+      valor: r.valor,
+      data_emissao: r.data_emissao,
+      fornecedor_id: fornecedor?.id ?? null,
+    })
+    .select("id")
+    .single();
+  if (!nota) return { ok: false };
+
+  if (r.valor > 0) {
+    const { data: cat } = await supabase
+      .from("dre_categorias")
+      .select("id")
+      .eq("tipo", "cmv")
+      .eq("nome", "Compras (Pedidos)")
+      .maybeSingle();
+    await supabase.from("lancamentos").insert({
+      data: r.data_emissao ?? new Date().toISOString().slice(0, 10),
+      categoria_id: cat?.id ?? null,
+      valor: r.valor,
+      descricao: `NF (resumo) — ${r.emit_nome}`,
+      fornecedor_id: fornecedor?.id ?? null,
+      origem: "nota",
+      nota_id: nota.id,
+      pago: false,
+    });
+  }
+  return { ok: true };
 }
 
 // Vincula (concilia) a nota a um pedido; remove o lançamento provisório do pedido.
