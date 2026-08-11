@@ -1,28 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Produto } from "@/lib/types";
 import { salvarProduto, excluirProduto } from "./actions";
 
 const inputCls =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
-const UNIDADES = ["un", "kg", "g", "L", "ml", "cx", "pct", "fardo", "dz", "saco"];
+const UNIDADES = [
+  "un", "kg", "g", "L", "ml", "cx", "pct", "fardo", "dz", "saco", "bandeja",
+];
+
+const moeda = (v: number | null) =>
+  v == null
+    ? "—"
+    : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function ProdutosClient({ produtos }: { produtos: Produto[] }) {
   const [editando, setEditando] = useState<Produto | null>(null);
   const [aberto, setAberto] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [categoria, setCategoria] = useState("");
+
+  const categorias = useMemo(
+    () =>
+      [...new Set(produtos.map((p) => p.categorias?.nome).filter(Boolean))]
+        .sort() as string[],
+    [produtos],
+  );
+
+  const filtrados = useMemo(() => {
+    const b = busca.trim().toLowerCase();
+    return produtos.filter((p) => {
+      const okBusca = !b || p.nome.toLowerCase().includes(b);
+      const okCat = !categoria || p.categorias?.nome === categoria;
+      return okBusca && okCat;
+    });
+  }, [produtos, busca, categoria]);
 
   return (
-    <div className="mx-auto max-w-5xl p-8">
+    <div className="mx-auto max-w-6xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
             Produtos
           </h1>
           <p className="mt-1 text-zinc-500">
-            {produtos.length}{" "}
-            {produtos.length === 1 ? "cadastrado" : "cadastrados"}
+            {filtrados.length} de {produtos.length}
           </p>
         </div>
         <button
@@ -36,10 +60,30 @@ export function ProdutosClient({ produtos }: { produtos: Produto[] }) {
         </button>
       </div>
 
-      {produtos.length === 0 ? (
+      <div className="mb-4 flex flex-wrap gap-3">
+        <input
+          placeholder="Buscar produto..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className={`${inputCls} max-w-xs`}
+        />
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className={`${inputCls} max-w-xs`}
+        >
+          <option value="">Todas as categorias</option>
+          {categorias.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {filtrados.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
-          Nenhum produto ainda. Clique em <b>+ Adicionar</b> para cadastrar o
-          primeiro.
+          Nenhum produto encontrado.
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
@@ -47,25 +91,34 @@ export function ProdutosClient({ produtos }: { produtos: Produto[] }) {
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
               <tr>
                 <th className="px-4 py-3">Produto</th>
-                <th className="px-4 py-3">Unidade</th>
-                <th className="px-4 py-3">Estoque mín.</th>
+                <th className="px-4 py-3">Categoria</th>
+                <th className="px-4 py-3">Un.</th>
+                <th className="px-4 py-3">Preço ref.</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {produtos.map((p) => (
+              {filtrados.map((p) => (
                 <tr
                   key={p.id}
                   className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
                 >
                   <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
                     {p.nome}
+                    {p.marca && (
+                      <span className="block text-xs font-normal text-zinc-400">
+                        {p.marca}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                    {p.categorias?.nome ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {p.unidade}
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                    {p.estoque_minimo}
+                    {moeda(p.preco_referencia)}
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button

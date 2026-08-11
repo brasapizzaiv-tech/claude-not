@@ -34,6 +34,12 @@ export type Produto = {
   categoria_id: string | null;
   estoque_minimo: number;
   observacoes: string | null;
+  marca: string | null;
+  aceita_similar: boolean;
+  preco_referencia: number | null;
+  codigo: string | null;
   ativo: boolean;
   criado_em: string;
+  // Vem do join com categorias.
+  categorias?: { nome: string } | null;
 };
