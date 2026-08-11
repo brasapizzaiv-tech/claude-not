@@ -6,6 +6,7 @@ type Preco = {
   produto_id: string;
   preco_unit: string;
   disponivel: boolean;
+  foto_url: string;
 };
 
 export type DadosCotacao = {

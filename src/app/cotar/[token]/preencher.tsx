@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { salvarPrecosPublico, removerItemPublico } from "./actions";
 
 export type LinhaPreco = {
@@ -49,6 +50,29 @@ export function CotarPreencher({
   );
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
   const [dados, setDados] = useState<Meta>(meta);
+  const [fotos, setFotos] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      produtos.filter((p) => p.foto_url).map((p) => [p.produto_id, p.foto_url!]),
+    ),
+  );
+  const [subindo, setSubindo] = useState<Record<string, boolean>>({});
+  const supabase = useMemo(() => createClient(), []);
+
+  async function enviarFoto(produtoId: string, file: File) {
+    setSubindo((s) => ({ ...s, [produtoId]: true }));
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${token}/${produtoId}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("cotacao-fotos")
+      .upload(path, file, { upsert: true });
+    if (!error) {
+      const { data } = supabase.storage
+        .from("cotacao-fotos")
+        .getPublicUrl(path);
+      setFotos((s) => ({ ...s, [produtoId]: data.publicUrl }));
+    }
+    setSubindo((s) => ({ ...s, [produtoId]: false }));
+  }
 
   const ler = (name: string) => {
     const el = formRef.current?.elements.namedItem(name) as
@@ -65,6 +89,7 @@ export function CotarPreencher({
           produto_id: p.produto_id,
           preco_unit: indisp[p.produto_id] ? "" : ler(`preco_${p.produto_id}`),
           disponivel: !indisp[p.produto_id],
+          foto_url: fotos[p.produto_id] ?? "",
         }));
       const r = await salvarPrecosPublico(token, {
         precos,
@@ -183,6 +208,38 @@ export function CotarPreencher({
                     {emFalta ? "✓ Em falta" : "Em falta"}
                   </button>
                 </div>
+
+                {/* Foto do produto */}
+                {!fechada && (
+                  <div className="mt-3 flex items-center gap-3">
+                    {fotos[p.produto_id] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={fotos[p.produto_id]}
+                        alt={p.nome}
+                        className="h-14 w-14 rounded-lg object-cover"
+                      />
+                    )}
+                    <label className="cursor-pointer text-xs font-medium text-orange-600 hover:underline">
+                      {subindo[p.produto_id]
+                        ? "Enviando foto..."
+                        : fotos[p.produto_id]
+                          ? "Trocar foto"
+                          : "📷 Adicionar foto"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        disabled={subindo[p.produto_id]}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) enviarFoto(p.produto_id, f);
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             );
           })}
