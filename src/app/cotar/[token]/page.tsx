@@ -38,6 +38,12 @@ export default async function CotarPublicoPage({
       prazo={data.cotacao?.prazo ?? null}
       fechada={data.cotacao?.status === "fechada"}
       produtos={produtos}
+      meta={{
+        prazo_entrega: data.prazo_entrega ?? "",
+        pedido_minimo: data.pedido_minimo != null ? String(data.pedido_minimo) : "",
+        condicao_pagamento: data.condicao_pagamento ?? "",
+        observacao: data.observacao ?? "",
+      }}
     />
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { salvarPrecosPublico } from "./actions";
+import { salvarPrecosPublico, removerItemPublico } from "./actions";
 
 export type LinhaPreco = {
   produto_id: string;
@@ -11,9 +11,17 @@ export type LinhaPreco = {
   qtd: number;
   preco_unit: number | null;
   disponivel: boolean;
+  foto_url: string | null;
 };
 
-const numInput =
+type Meta = {
+  prazo_entrega: string;
+  pedido_minimo: string;
+  condicao_pagamento: string;
+  observacao: string;
+};
+
+const campo =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
 export function CotarPreencher({
@@ -23,6 +31,7 @@ export function CotarPreencher({
   prazo,
   fechada,
   produtos,
+  meta,
 }: {
   token: string;
   descricao: string;
@@ -30,6 +39,7 @@ export function CotarPreencher({
   prazo: string | null;
   fechada: boolean;
   produtos: LinhaPreco[];
+  meta: Meta;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [enviando, startSend] = useTransition();
@@ -37,6 +47,8 @@ export function CotarPreencher({
   const [indisp, setIndisp] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(produtos.map((p) => [p.produto_id, !p.disponivel])),
   );
+  const [removidos, setRemovidos] = useState<Set<string>>(new Set());
+  const [dados, setDados] = useState<Meta>(meta);
 
   const ler = (name: string) => {
     const el = formRef.current?.elements.namedItem(name) as
@@ -47,21 +59,40 @@ export function CotarPreencher({
 
   function enviar() {
     startSend(async () => {
-      const precos = produtos.map((p) => ({
-        produto_id: p.produto_id,
-        preco_unit: indisp[p.produto_id] ? "" : ler(`preco_${p.produto_id}`),
-        disponivel: !indisp[p.produto_id],
-      }));
-      const r = await salvarPrecosPublico(token, precos);
-      if (r?.ok) {
-        setMsg(`Preços enviados! Obrigado. Você pode revisar e reenviar se quiser.`);
-      } else {
-        setMsg(r?.erro ?? "Não foi possível enviar. Tente de novo.");
-      }
+      const precos = produtos
+        .filter((p) => !removidos.has(p.produto_id))
+        .map((p) => ({
+          produto_id: p.produto_id,
+          preco_unit: indisp[p.produto_id] ? "" : ler(`preco_${p.produto_id}`),
+          disponivel: !indisp[p.produto_id],
+        }));
+      const r = await salvarPrecosPublico(token, {
+        precos,
+        ...dados,
+        pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
+      });
+      setMsg(
+        r?.ok
+          ? "Preços enviados! Obrigado. Você pode revisar e reenviar se quiser."
+          : (r?.erro ?? "Não foi possível enviar. Tente de novo."),
+      );
       window.scrollTo({ top: 0, behavior: "smooth" });
       setTimeout(() => setMsg(null), 6000);
     });
   }
+
+  async function naoTrabalho(produtoId: string, nome: string) {
+    if (
+      !window.confirm(
+        `Confirmar que você NÃO trabalha com "${nome}"? Ele não aparecerá nas próximas cotações.`,
+      )
+    )
+      return;
+    setRemovidos((s) => new Set(s).add(produtoId));
+    await removerItemPublico(token, produtoId);
+  }
+
+  const visiveis = produtos.filter((p) => !removidos.has(p.produto_id));
 
   return (
     <div className="min-h-screen bg-zinc-50 pb-24 dark:bg-zinc-950">
@@ -89,13 +120,14 @@ export function CotarPreencher({
         )}
 
         <p className="mt-4 text-sm text-zinc-500">
-          Informe o <b>preço por unidade</b> de cada item. Se não trabalhar com
-          algum, marque <b>“Não tenho”</b>.
+          Informe o <b>preço por unidade</b> de cada item. Se estiver{" "}
+          <b>em falta</b>, marque o botão. Se você <b>não trabalha</b> com o
+          produto, use “Não trabalho” e ele some das próximas cotações.
         </p>
 
         <form ref={formRef} className="mt-4 space-y-3">
-          {produtos.map((p) => {
-            const semEste = indisp[p.produto_id];
+          {visiveis.map((p) => {
+            const emFalta = indisp[p.produto_id];
             return (
               <div
                 key={p.produto_id}
@@ -110,39 +142,108 @@ export function CotarPreencher({
                       {p.marca ? `${p.marca} · ` : ""}Qtd: {p.qtd} {p.unidade}
                     </p>
                   </div>
-                  <label className="flex shrink-0 items-center gap-1.5 text-xs text-zinc-500">
-                    <input
-                      type="checkbox"
-                      checked={semEste}
-                      disabled={fechada}
-                      onChange={(e) =>
-                        setIndisp((s) => ({
-                          ...s,
-                          [p.produto_id]: e.target.checked,
-                        }))
-                      }
-                    />
-                    Não tenho
-                  </label>
+                  {!fechada && (
+                    <button
+                      type="button"
+                      onClick={() => naoTrabalho(p.produto_id, p.nome)}
+                      className="shrink-0 text-xs text-zinc-400 hover:text-red-600"
+                    >
+                      Não trabalho
+                    </button>
+                  )}
                 </div>
-                <div className="mt-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-zinc-400">R$</span>
-                    <input
-                      name={`preco_${p.produto_id}`}
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      disabled={fechada || semEste}
-                      defaultValue={p.preco_unit != null ? p.preco_unit : ""}
-                      className={`${numInput} w-full ${
-                        semEste ? "opacity-40" : ""
-                      }`}
-                    />
-                  </div>
+
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-sm text-zinc-400">R$</span>
+                  <input
+                    name={`preco_${p.produto_id}`}
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    disabled={fechada || emFalta}
+                    defaultValue={p.preco_unit != null ? p.preco_unit : ""}
+                    className={`${campo} flex-1 text-right ${
+                      emFalta ? "opacity-40" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    disabled={fechada}
+                    onClick={() =>
+                      setIndisp((s) => ({
+                        ...s,
+                        [p.produto_id]: !s[p.produto_id],
+                      }))
+                    }
+                    className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-medium ${
+                      emFalta
+                        ? "border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                        : "border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    {emFalta ? "✓ Em falta" : "Em falta"}
+                  </button>
                 </div>
               </div>
             );
           })}
+
+          {/* Rodapé: condições do fornecedor */}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Condições do pedido
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-xs text-zinc-500">
+                Entrega prevista
+                <input
+                  type="date"
+                  value={dados.prazo_entrega}
+                  disabled={fechada}
+                  onChange={(e) =>
+                    setDados((d) => ({ ...d, prazo_entrega: e.target.value }))
+                  }
+                  className={`${campo} mt-1 w-full`}
+                />
+              </label>
+              <label className="text-xs text-zinc-500">
+                Pedido mínimo (R$)
+                <input
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={dados.pedido_minimo}
+                  disabled={fechada}
+                  onChange={(e) =>
+                    setDados((d) => ({ ...d, pedido_minimo: e.target.value }))
+                  }
+                  className={`${campo} mt-1 w-full`}
+                />
+              </label>
+            </div>
+            <label className="mt-3 block text-xs text-zinc-500">
+              Condição de pagamento
+              <input
+                placeholder="Ex.: 28 dias, boleto"
+                value={dados.condicao_pagamento}
+                disabled={fechada}
+                onChange={(e) =>
+                  setDados((d) => ({ ...d, condicao_pagamento: e.target.value }))
+                }
+                className={`${campo} mt-1 w-full`}
+              />
+            </label>
+            <label className="mt-3 block text-xs text-zinc-500">
+              Observações
+              <textarea
+                rows={2}
+                value={dados.observacao}
+                disabled={fechada}
+                onChange={(e) =>
+                  setDados((d) => ({ ...d, observacao: e.target.value }))
+                }
+                className={`${campo} mt-1 w-full`}
+              />
+            </label>
+          </div>
         </form>
       </div>
 
