@@ -4,7 +4,7 @@ import forge from "node-forge";
 
 // Lê o .pfx com node-forge (aceita a criptografia antiga dos certificados
 // ICP-Brasil que o OpenSSL 3 recusa) e devolve chave + certificado em PEM.
-function pfxParaPem(pfxBase64: string, senha: string): { key: string; cert: string } {
+export function pfxParaPem(pfxBase64: string, senha: string): { key: string; cert: string } {
   const der = forge.util.decode64(pfxBase64.trim());
   const asn1 = forge.asn1.fromDer(der);
   // strict=false: mais tolerante com variações do arquivo.

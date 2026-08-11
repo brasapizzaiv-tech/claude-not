@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { soDigitos } from "@/lib/nfe";
 import { distribuicaoDFe } from "@/lib/sefaz/distribuicao";
+import { manifestarCiencia } from "@/lib/sefaz/manifestacao";
 import { importarNota, importarResumo } from "./actions";
 
 async function getConfig() {
@@ -54,6 +55,36 @@ export async function salvarConfigSefaz(dados: {
 
   revalidatePath("/notas/sefaz");
   return { ok: true };
+}
+
+// Manifesta "Ciência da Operação" de uma nota (libera o XML completo na SEFAZ).
+export async function manifestarNota(notaId: string) {
+  const { supabase, cfg } = await getConfig();
+  if (!cfg?.cert_pfx || !cfg.cert_senha)
+    return { erro: "Configure o certificado no SEFAZ automático primeiro." };
+  if (!cfg.cnpj) return { erro: "Informe o CNPJ no SEFAZ automático." };
+
+  const { data: nota } = await supabase
+    .from("notas_fiscais")
+    .select("chave")
+    .eq("id", notaId)
+    .maybeSingle();
+  if (!nota?.chave) return { erro: "Nota não encontrada." };
+
+  const r = await manifestarCiencia({
+    pfxBase64: cfg.cert_pfx,
+    senha: cfg.cert_senha,
+    cnpj: soDigitos(cfg.cnpj),
+    ambiente: cfg.ambiente,
+    chNFe: nota.chave as string,
+  });
+
+  return {
+    ok: r.ok,
+    cStat: r.cStat,
+    xMotivo: r.xMotivo,
+    erro: r.erro,
+  };
 }
 
 // Busca as notas na SEFAZ (NFeDistribuicaoDFe) e importa o que vier.

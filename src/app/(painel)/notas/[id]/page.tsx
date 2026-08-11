@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import type { NotaFiscal, NotaItem } from "@/lib/types";
 import { BotaoConciliar } from "./conciliar";
+import { ManifestarNota } from "./manifestar";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -75,6 +76,9 @@ export default async function NotaDetalhePage({
           com esse CNPJ para o sistema reconhecer as próximas notas.
         </p>
       )}
+
+      {/* Nota em resumo (sem itens) → oferecer manifestação */}
+      {itens.length === 0 && <ManifestarNota notaId={nota.id} />}
 
       {/* Itens */}
       <h2 className="mt-6 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
