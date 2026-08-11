@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { UploadNota } from "./upload";
-import { excluirNota } from "./actions";
+import { NotaAcoes } from "./nota-acoes";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -11,7 +11,7 @@ export default async function NotasPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("notas_fiscais")
-    .select("id, numero, emit_nome, valor, data_emissao, vencimento, status, pedido_id")
+    .select("id, numero, emit_nome, valor, data_emissao, vencimento, situacao")
     .order("data_emissao", { ascending: false })
     .limit(300);
 
@@ -22,10 +22,20 @@ export default async function NotasPage() {
     valor: number;
     data_emissao: string | null;
     vencimento: string | null;
-    status: string;
-    pedido_id: string | null;
+    situacao: string;
   };
   const notas = (data as Nota[]) ?? [];
+
+  const badge: Record<string, string> = {
+    pendente: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+    lancada: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
+    cancelada: "bg-zinc-200 text-zinc-500 line-through dark:bg-zinc-800",
+  };
+  const rotulo: Record<string, string> = {
+    pendente: "pendente",
+    lancada: "lançada",
+    cancelada: "cancelada",
+  };
 
   return (
     <div className="mx-auto max-w-4xl p-8">
@@ -88,23 +98,16 @@ export default async function NotasPage() {
                     {moeda(Number(n.valor))}
                   </td>
                   <td className="px-4 py-3">
-                    {n.pedido_id ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-                        conciliada
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                        a conciliar
-                      </span>
-                    )}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        badge[n.situacao] ?? badge.pendente
+                      }`}
+                    >
+                      {rotulo[n.situacao] ?? n.situacao}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <form action={excluirNota} className="inline">
-                      <input type="hidden" name="id" value={n.id} />
-                      <button className="text-zinc-400 hover:text-red-600">
-                        Remover
-                      </button>
-                    </form>
+                    <NotaAcoes notaId={n.id} situacao={n.situacao} />
                   </td>
                 </tr>
               ))}

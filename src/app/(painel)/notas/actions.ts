@@ -57,31 +57,8 @@ export async function importarNota(xmlText: string) {
       .insert(nf.itens.map((i) => ({ ...i, nota_id: nota.id })));
   }
 
-  // Cria a conta a pagar a partir da nota (CMV padrão).
-  const { data: cat } = await supabase
-    .from("dre_categorias")
-    .select("id")
-    .eq("tipo", "cmv")
-    .eq("nome", "Compras (Pedidos)")
-    .maybeSingle();
-
-  const dataLanc = nf.data_emissao ?? new Date().toISOString().slice(0, 10);
-  const pago = dataLanc < inicioDoMes();
-  await supabase.from("lancamentos").insert({
-    data: dataLanc,
-    categoria_id: cat?.id ?? null,
-    valor: nf.valor,
-    descricao: `NF ${nf.numero} — ${nf.emit_nome}`,
-    fornecedor_id: fornecedor?.id ?? null,
-    origem: "nota",
-    nota_id: nota.id,
-    vencimento: nf.vencimento,
-    pago,
-    pago_em: pago ? dataLanc : null,
-  });
-
+  // A nota entra como PENDENTE. Só vira conta a pagar quando o usuário lançar.
   revalidatePath("/notas");
-  revalidatePath("/financeiro/contas");
   return { ok: true, notaId: nota.id, fornecedorCasado: !!fornecedor };
 }
 
@@ -118,28 +95,79 @@ export async function importarResumo(resumoXml: string) {
     .single();
   if (!nota) return { ok: false };
 
-  if (r.valor > 0) {
-    const { data: cat } = await supabase
-      .from("dre_categorias")
-      .select("id")
-      .eq("tipo", "cmv")
-      .eq("nome", "Compras (Pedidos)")
-      .maybeSingle();
-    const dataLanc = r.data_emissao ?? new Date().toISOString().slice(0, 10);
-    // Notas de meses anteriores entram já como pagas (histórico).
-    const pago = dataLanc < inicioDoMes();
-    await supabase.from("lancamentos").insert({
-      data: dataLanc,
-      categoria_id: cat?.id ?? null,
-      valor: r.valor,
-      descricao: `NF (resumo) — ${r.emit_nome}`,
-      fornecedor_id: fornecedor?.id ?? null,
-      origem: "nota",
-      nota_id: nota.id,
-      pago,
-      pago_em: pago ? dataLanc : null,
-    });
-  }
+  // A nota entra como PENDENTE (não vira conta automaticamente).
+  return { ok: true };
+}
+
+// Lança a nota no financeiro (vira conta a pagar) — comando do usuário.
+export async function lancarNota(notaId: string) {
+  const supabase = await createClient();
+  const { data: nota } = await supabase
+    .from("notas_fiscais")
+    .select("id, numero, emit_nome, valor, data_emissao, vencimento, fornecedor_id, situacao")
+    .eq("id", notaId)
+    .maybeSingle();
+  if (!nota || nota.situacao === "lancada") return { ok: false };
+
+  const { data: cat } = await supabase
+    .from("dre_categorias")
+    .select("id")
+    .eq("tipo", "cmv")
+    .eq("nome", "Compras (Pedidos)")
+    .maybeSingle();
+
+  const dataLanc =
+    (nota.data_emissao as string) ?? new Date().toISOString().slice(0, 10);
+  const pago = dataLanc < inicioDoMes(); // histórico entra pago
+  const vencimento = (nota.vencimento as string) ?? null;
+
+  // Evita duplicar caso já exista lançamento dessa nota.
+  await supabase.from("lancamentos").delete().eq("nota_id", notaId);
+  await supabase.from("lancamentos").insert({
+    data: dataLanc,
+    categoria_id: cat?.id ?? null,
+    valor: Number(nota.valor),
+    descricao: `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`,
+    fornecedor_id: nota.fornecedor_id,
+    origem: "nota",
+    nota_id: notaId,
+    vencimento,
+    pago,
+    pago_em: pago ? dataLanc : null,
+  });
+  await supabase
+    .from("notas_fiscais")
+    .update({ situacao: "lancada" })
+    .eq("id", notaId);
+
+  revalidatePath("/notas");
+  revalidatePath("/financeiro/contas");
+  return { ok: true };
+}
+
+// Estorna a nota lançada: remove a conta e volta para pendente (pode relançar).
+export async function estornarNota(notaId: string) {
+  const supabase = await createClient();
+  await supabase.from("lancamentos").delete().eq("nota_id", notaId);
+  await supabase
+    .from("notas_fiscais")
+    .update({ situacao: "pendente" })
+    .eq("id", notaId);
+  revalidatePath("/notas");
+  revalidatePath("/financeiro/contas");
+  return { ok: true };
+}
+
+// Marca a nota como cancelada e remove qualquer conta gerada por ela.
+export async function cancelarNota(notaId: string) {
+  const supabase = await createClient();
+  await supabase.from("lancamentos").delete().eq("nota_id", notaId);
+  await supabase
+    .from("notas_fiscais")
+    .update({ situacao: "cancelada" })
+    .eq("id", notaId);
+  revalidatePath("/notas");
+  revalidatePath("/financeiro/contas");
   return { ok: true };
 }
 

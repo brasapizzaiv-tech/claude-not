@@ -94,6 +94,24 @@ export async function buscarNotasSefaz() {
         } else if (doc.schema.startsWith("resNFe")) {
           const r = await importarResumo(doc.xml);
           if (r?.ok) resumos++;
+        } else if (doc.schema.includes("Evento")) {
+          // Evento de cancelamento (110111) → marca a nota como cancelada.
+          const tpEvento = (doc.xml.match(/<tpEvento>(\d+)<\/tpEvento>/) || [])[1];
+          const chNFe = (doc.xml.match(/<chNFe>(\d{44})<\/chNFe>/) || [])[1];
+          if (tpEvento === "110111" && chNFe) {
+            const { data: nota } = await supabase
+              .from("notas_fiscais")
+              .select("id")
+              .eq("chave", chNFe)
+              .maybeSingle();
+            if (nota) {
+              await supabase.from("lancamentos").delete().eq("nota_id", nota.id);
+              await supabase
+                .from("notas_fiscais")
+                .update({ situacao: "cancelada" })
+                .eq("id", nota.id);
+            }
+          }
         }
       } catch {
         // ignora doc problemático, segue os demais
