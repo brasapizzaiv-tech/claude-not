@@ -16,14 +16,6 @@ export async function importarNota(xmlText: string) {
 
   if (!nf.chave) return { ok: false, erro: "Arquivo não parece uma NF-e válida." };
 
-  // Já importada?
-  const { data: existe } = await supabase
-    .from("notas_fiscais")
-    .select("id")
-    .eq("chave", nf.chave)
-    .maybeSingle();
-  if (existe) return { ok: false, erro: "Esta nota já foi importada." };
-
   // Casa o fornecedor pelo CNPJ (só dígitos).
   const { data: forns } = await supabase
     .from("fornecedores")
@@ -31,6 +23,42 @@ export async function importarNota(xmlText: string) {
   const fornecedor = (forns ?? []).find(
     (f) => soDigitos(f.cnpj ?? "") === nf.emit_cnpj,
   );
+
+  // Já existe? Se for um resumo (sem itens), ENRIQUECE com a nota completa.
+  const { data: existe } = await supabase
+    .from("notas_fiscais")
+    .select("id")
+    .eq("chave", nf.chave)
+    .maybeSingle();
+  if (existe) {
+    const { count } = await supabase
+      .from("nota_itens")
+      .select("id", { count: "exact", head: true })
+      .eq("nota_id", existe.id);
+    if ((count ?? 0) > 0)
+      return { ok: false, erro: "Esta nota já foi importada." };
+
+    await supabase
+      .from("notas_fiscais")
+      .update({
+        numero: nf.numero,
+        serie: nf.serie,
+        modelo: nf.modelo,
+        valor: nf.valor,
+        data_emissao: nf.data_emissao,
+        vencimento: nf.vencimento,
+        dest_cnpj: nf.dest_cnpj,
+        fornecedor_id: fornecedor?.id ?? null,
+      })
+      .eq("id", existe.id);
+    if (nf.itens.length > 0)
+      await supabase
+        .from("nota_itens")
+        .insert(nf.itens.map((i) => ({ ...i, nota_id: existe.id })));
+
+    revalidatePath("/notas");
+    return { ok: true, notaId: existe.id, enriquecida: true };
+  }
 
   const { data: nota, error } = await supabase
     .from("notas_fiscais")
