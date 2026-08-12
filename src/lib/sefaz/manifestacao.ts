@@ -96,8 +96,8 @@ export async function manifestarCiencia(o: {
   const body =
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">` +
-    `<soap12:Body><nfeRecepcaoEventoNF xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4">` +
-    `<nfeDadosMsg>${envEvento}</nfeDadosMsg></nfeRecepcaoEventoNF></soap12:Body></soap12:Envelope>`;
+    `<soap12:Body><nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4">` +
+    `${envEvento}</nfeDadosMsg></soap12:Body></soap12:Envelope>`;
 
   const url = new URL(ENDPOINTS[o.ambiente] ?? ENDPOINTS[1]);
   let resp = "";
