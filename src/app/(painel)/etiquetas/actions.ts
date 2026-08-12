@@ -7,6 +7,9 @@ export async function criarEtiqueta(dados: {
   produto_id: string;
   colaborador_nome: string;
   validade: string;
+  conservacao: string;
+  quantidade: string;
+  unidade: string;
 }) {
   const supabase = await createClient();
 
@@ -23,6 +26,11 @@ export async function criarEtiqueta(dados: {
       produto_nome: prod?.nome ?? "Produto",
       colaborador_nome: dados.colaborador_nome || null,
       validade: dados.validade || null,
+      conservacao: dados.conservacao || null,
+      quantidade: dados.quantidade
+        ? Number(dados.quantidade.replace(",", ".")) || null
+        : null,
+      unidade: dados.unidade || null,
     })
     .select("id")
     .single();

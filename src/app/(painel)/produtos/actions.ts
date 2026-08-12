@@ -19,15 +19,19 @@ export async function salvarProduto(formData: FormData) {
     (formData.get("observacoes") as string)?.trim() || null;
   const categoria_id =
     (formData.get("categoria_id") as string)?.trim() || null;
-  const validadeRaw = (formData.get("validade_dias") as string)?.trim();
-  const validade_dias = validadeRaw ? Number(validadeRaw) || null : null;
+  const dias = (campo: string) => {
+    const v = (formData.get(campo) as string)?.trim();
+    return v ? Number(v) || null : null;
+  };
 
   const payload = {
     nome,
     unidade,
     estoque_minimo,
     estoque_ideal,
-    validade_dias,
+    validade_congelado: dias("validade_congelado"),
+    validade_resfriado: dias("validade_resfriado"),
+    validade_ambiente: dias("validade_ambiente"),
     observacoes,
     categoria_id,
   };

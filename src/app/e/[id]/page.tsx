@@ -43,6 +43,15 @@ export default async function EtiquetaPublicaPage({
         <h1 className="mt-1 text-center text-2xl font-extrabold text-zinc-900 dark:text-zinc-50">
           {data.produto}
         </h1>
+        {(data.conservacao || data.quantidade != null) && (
+          <p className="mt-1 text-center text-sm text-zinc-500">
+            {data.conservacao ? String(data.conservacao).toUpperCase() : ""}
+            {data.conservacao && data.quantidade != null ? " · " : ""}
+            {data.quantidade != null
+              ? `${data.quantidade} ${data.unidade ?? ""}`
+              : ""}
+          </p>
+        )}
 
         <div
           className={`mt-4 rounded-xl p-4 text-center ${

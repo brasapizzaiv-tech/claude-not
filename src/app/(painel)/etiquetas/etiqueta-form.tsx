@@ -13,23 +13,45 @@ function emDias(dias: number) {
   return d.toISOString().slice(0, 10);
 }
 
+type Prod = {
+  id: string;
+  nome: string;
+  validade_congelado: number | null;
+  validade_resfriado: number | null;
+  validade_ambiente: number | null;
+};
+
 export function EtiquetaForm({
   produtos,
   colaboradores,
 }: {
-  produtos: { id: string; nome: string; validade_dias: number | null }[];
+  produtos: Prod[];
   colaboradores: { nome: string }[];
 }) {
   const router = useRouter();
   const [gerando, start] = useTransition();
   const [produtoId, setProdutoId] = useState("");
+  const [conservacao, setConservacao] = useState("resfriado");
+  const [quantidade, setQuantidade] = useState("");
+  const [unidade, setUnidade] = useState("un");
   const [colaborador, setColaborador] = useState("");
   const [validade, setValidade] = useState("");
 
-  function aoEscolherProduto(id: string) {
-    setProdutoId(id);
-    const p = produtos.find((x) => x.id === id);
-    if (p?.validade_dias) setValidade(emDias(p.validade_dias));
+  function diasDe(p: Prod | undefined, cons: string) {
+    if (!p) return null;
+    return cons === "congelado"
+      ? p.validade_congelado
+      : cons === "ambiente"
+        ? p.validade_ambiente
+        : p.validade_resfriado;
+  }
+
+  function recalc(pid: string, cons: string) {
+    const dias = diasDe(
+      produtos.find((x) => x.id === pid),
+      cons,
+    );
+    if (dias) setValidade(emDias(dias));
   }
 
   function gerar() {
@@ -39,6 +61,9 @@ export function EtiquetaForm({
         produto_id: produtoId,
         colaborador_nome: colaborador,
         validade,
+        conservacao,
+        quantidade,
+        unidade,
       });
       if (r?.ok && r.id) router.push(`/etiquetas/${r.id}`);
     });
@@ -54,18 +79,63 @@ export function EtiquetaForm({
           <label className="mb-1 block text-xs text-zinc-500">Produto</label>
           <select
             value={produtoId}
-            onChange={(e) => aoEscolherProduto(e.target.value)}
+            onChange={(e) => {
+              setProdutoId(e.target.value);
+              recalc(e.target.value, conservacao);
+            }}
             className={input}
           >
             <option value="">Escolha o produto...</option>
             {produtos.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nome}
-                {p.validade_dias ? ` (validade ${p.validade_dias}d)` : ""}
               </option>
             ))}
           </select>
         </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Conservação</label>
+          <select
+            value={conservacao}
+            onChange={(e) => {
+              setConservacao(e.target.value);
+              recalc(produtoId, e.target.value);
+            }}
+            className={input}
+          >
+            <option value="congelado">Congelado</option>
+            <option value="resfriado">Resfriado</option>
+            <option value="ambiente">Ambiente</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Quantidade</label>
+            <input
+              inputMode="decimal"
+              value={quantidade}
+              onChange={(e) => setQuantidade(e.target.value)}
+              placeholder="opcional"
+              className={input}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Unidade</label>
+            <select
+              value={unidade}
+              onChange={(e) => setUnidade(e.target.value)}
+              className={input}
+            >
+              <option value="un">und</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="ml">ml</option>
+            </select>
+          </div>
+        </div>
+
         <div>
           <label className="mb-1 block text-xs text-zinc-500">
             Quem manipulou

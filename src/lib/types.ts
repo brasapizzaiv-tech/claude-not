@@ -62,6 +62,9 @@ export type Produto = {
   estoque_minimo: number;
   estoque_ideal: number;
   validade_dias: number | null;
+  validade_congelado: number | null;
+  validade_resfriado: number | null;
+  validade_ambiente: number | null;
   observacoes: string | null;
   marca: string | null;
   aceita_similar: boolean;

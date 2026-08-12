@@ -10,7 +10,7 @@ export default async function EtiquetasPage() {
     await Promise.all([
       supabase
         .from("produtos")
-        .select("id, nome, validade_dias")
+        .select("id, nome, validade_congelado, validade_resfriado, validade_ambiente")
         .eq("ativo", true)
         .order("nome"),
       supabase.from("colaboradores").select("nome").eq("ativo", true).order("nome"),
@@ -21,7 +21,14 @@ export default async function EtiquetasPage() {
         .limit(30),
     ]);
 
-  const produtos = (prods as { id: string; nome: string; validade_dias: number | null }[]) ?? [];
+  const produtos =
+    (prods as {
+      id: string;
+      nome: string;
+      validade_congelado: number | null;
+      validade_resfriado: number | null;
+      validade_ambiente: number | null;
+    }[]) ?? [];
   const colaboradores = (colabs as { nome: string }[]) ?? [];
   type Et = {
     id: string;

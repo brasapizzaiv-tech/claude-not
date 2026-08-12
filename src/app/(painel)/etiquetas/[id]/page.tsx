@@ -12,7 +12,7 @@ export default async function EtiquetaPage({
   const supabase = await createClient();
   const { data } = await supabase
     .from("etiquetas")
-    .select("id, numero, produto_nome, colaborador_nome, manipulado_em, validade")
+    .select("id, numero, produto_nome, colaborador_nome, manipulado_em, validade, conservacao, quantidade, unidade")
     .eq("id", id)
     .maybeSingle();
   if (!data) notFound();
@@ -35,6 +35,9 @@ export default async function EtiquetaPage({
         colaborador={(data.colaborador_nome as string) ?? null}
         manipuladoEm={data.manipulado_em as string}
         validade={(data.validade as string) ?? null}
+        conservacao={(data.conservacao as string) ?? null}
+        quantidade={(data.quantidade as number) ?? null}
+        unidade={(data.unidade as string) ?? null}
       />
     </div>
   );

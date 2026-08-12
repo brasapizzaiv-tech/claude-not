@@ -242,15 +242,40 @@ export function ProdutosClient({
                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Validade após manipulação (dias)
                 </label>
-                <input
-                  name="validade_dias"
-                  inputMode="numeric"
-                  placeholder="ex.: 3"
-                  defaultValue={editando?.validade_dias ?? ""}
-                  className={inputCls}
-                />
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <input
+                      name="validade_congelado"
+                      inputMode="numeric"
+                      placeholder="—"
+                      defaultValue={editando?.validade_congelado ?? ""}
+                      className={inputCls}
+                    />
+                    <p className="mt-1 text-center text-xs text-zinc-400">Congelado</p>
+                  </div>
+                  <div>
+                    <input
+                      name="validade_resfriado"
+                      inputMode="numeric"
+                      placeholder="—"
+                      defaultValue={editando?.validade_resfriado ?? ""}
+                      className={inputCls}
+                    />
+                    <p className="mt-1 text-center text-xs text-zinc-400">Resfriado</p>
+                  </div>
+                  <div>
+                    <input
+                      name="validade_ambiente"
+                      inputMode="numeric"
+                      placeholder="—"
+                      defaultValue={editando?.validade_ambiente ?? ""}
+                      className={inputCls}
+                    />
+                    <p className="mt-1 text-center text-xs text-zinc-400">Ambiente</p>
+                  </div>
+                </div>
                 <p className="mt-1 text-xs text-zinc-400">
-                  Usado nas etiquetas: valida = manipulação + dias.
+                  Dias de validade por conservação (usado nas etiquetas).
                 </p>
               </div>
               <div>
