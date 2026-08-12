@@ -40,6 +40,27 @@ export async function criarEtiqueta(dados: {
   return { ok: true, id: data.id };
 }
 
+// Dá baixa na etiqueta (usada ou descartada) — controle de validade.
+export async function darBaixaEtiqueta(id: string, status: "usada" | "descartada") {
+  const supabase = await createClient();
+  await supabase
+    .from("etiquetas")
+    .update({ status, baixa_em: new Date().toISOString() })
+    .eq("id", id);
+  revalidatePath("/etiquetas");
+  return { ok: true };
+}
+
+export async function reativarEtiqueta(id: string) {
+  const supabase = await createClient();
+  await supabase
+    .from("etiquetas")
+    .update({ status: "ativa", baixa_em: null })
+    .eq("id", id);
+  revalidatePath("/etiquetas");
+  return { ok: true };
+}
+
 export async function excluirEtiqueta(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;

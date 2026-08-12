@@ -53,6 +53,11 @@ export default async function EtiquetaPublicaPage({
           </p>
         )}
 
+        {data.status && data.status !== "ativa" && (
+          <div className="mt-4 rounded-xl bg-zinc-200 p-3 text-center text-sm font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            {data.status === "usada" ? "Etiqueta com baixa (usada)" : "Descartada"}
+          </div>
+        )}
         <div
           className={`mt-4 rounded-xl p-4 text-center ${
             vencida
