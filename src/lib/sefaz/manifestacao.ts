@@ -113,7 +113,8 @@ export async function manifestarCiencia(o: {
           cert: pem.cert,
           minVersion: "TLSv1.2",
           headers: {
-            "Content-Type": "application/soap+xml; charset=utf-8",
+            "Content-Type":
+              'application/soap+xml; charset=utf-8; action="http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento"',
             "Content-Length": Buffer.byteLength(body),
           },
         },
