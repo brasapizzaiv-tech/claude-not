@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
+import { moduloDaRota, podeAcessar } from "@/lib/permissoes";
 
 // Atualiza a sessão do usuário a cada requisição e protege as rotas privadas.
 export async function updateSession(request: NextRequest) {
@@ -42,6 +43,23 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // Bloqueio por módulo: se a rota pertence a um módulo, confere se o
+  // funcionário tem acesso. O dono passa direto.
+  if (user && !isPublic && moduloDaRota(path) !== null) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("papel, permissoes")
+      .eq("id", user.id)
+      .single();
+    const admin = prof?.papel === "dono";
+    const permissoes = (prof?.permissoes as string[] | null) ?? [];
+    if (!podeAcessar(path, admin, permissoes)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

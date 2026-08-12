@@ -2,28 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MODULOS } from "@/lib/permissoes";
 
-const links: {
-  href: string;
-  label: string;
-  icon: string;
-  futuro?: boolean;
-}[] = [
-  { href: "/dashboard", label: "Início", icon: "🏠" },
-  { href: "/fornecedores", label: "Fornecedores", icon: "🚚" },
-  { href: "/produtos", label: "Produtos", icon: "📦" },
-  { href: "/categorias", label: "Categorias", icon: "🏷️" },
-  { href: "/colaboradores", label: "Colaboradores", icon: "👤" },
-  { href: "/contagens", label: "Contagem de estoque", icon: "📋" },
-  { href: "/cotacoes", label: "Cotações", icon: "💰" },
-  { href: "/conferencia", label: "Conferência", icon: "📥" },
-  { href: "/notas", label: "Notas Fiscais", icon: "🧾" },
-  { href: "/financeiro", label: "Financeiro", icon: "📊" },
-  { href: "/etiquetas", label: "Etiquetas", icon: "🏷️" },
-];
-
-export function Sidebar({ nome, papel }: { nome: string; papel: string }) {
+export function Sidebar({
+  nome,
+  papel,
+  admin,
+  permissoes,
+}: {
+  nome: string;
+  papel: string;
+  admin: boolean;
+  permissoes: string[];
+}) {
   const pathname = usePathname();
+
+  const links: { href: string; label: string; icon: string }[] = [
+    { href: "/dashboard", label: "Início", icon: "🏠" },
+    ...MODULOS.filter((m) => admin || permissoes.includes(m.key)).map((m) => ({
+      href: m.rotas[0],
+      label: m.label,
+      icon: m.icon,
+    })),
+  ];
+  if (admin) {
+    links.push({ href: "/usuarios", label: "Usuários", icon: "🔑" });
+  }
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -54,11 +58,6 @@ export function Sidebar({ nome, papel }: { nome: string; papel: string }) {
             >
               <span>{l.icon}</span>
               <span className="flex-1">{l.label}</span>
-              {l.futuro && (
-                <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-400 dark:bg-zinc-800">
-                  em breve
-                </span>
-              )}
             </Link>
           );
         })}
