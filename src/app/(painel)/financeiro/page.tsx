@@ -192,6 +192,44 @@ export default async function FinanceiroPage({
           <label className="mb-1 block text-xs text-zinc-500">Vencimento</label>
           <input type="date" name="vencimento" className={inputCls} />
         </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Repetir</label>
+          <select name="repeticao" defaultValue="nenhuma" className={inputCls}>
+            <option value="nenhuma">Não</option>
+            <option value="parcelado">Parcelado</option>
+            <option value="fixo">Mensal fixo</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Vezes</label>
+          <input
+            name="vezes"
+            type="number"
+            min="1"
+            max="60"
+            defaultValue="1"
+            className={`${inputCls} w-16`}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Frequência</label>
+          <select name="frequencia" defaultValue="mensal" className={inputCls}>
+            <option value="semanal">Semanal</option>
+            <option value="quinzenal">Quinzenal</option>
+            <option value="mensal">Mensal</option>
+            <option value="dias">A cada X dias</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Dias</label>
+          <input
+            name="dias"
+            type="number"
+            min="1"
+            defaultValue="30"
+            className={`${inputCls} w-16`}
+          />
+        </div>
         <label className="flex items-center gap-1.5 pb-2 text-xs text-zinc-600 dark:text-zinc-300">
           <input type="checkbox" name="pago" defaultChecked />
           Já pago

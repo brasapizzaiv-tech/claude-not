@@ -19,21 +19,68 @@ export async function criarLancamento(formData: FormData) {
   if (!categoria_id || valor <= 0) return;
 
   const dataLanc = data || new Date().toISOString().slice(0, 10);
+  const repeticao = (formData.get("repeticao") as string) || "nenhuma";
+  const vezes = Math.max(1, Math.min(60, Number(formData.get("vezes")) || 1));
+  const frequencia = (formData.get("frequencia") as string) || "mensal";
+  const dias = Math.max(1, Number(formData.get("dias")) || 30);
 
-  await supabase.from("lancamentos").insert({
-    data: dataLanc,
-    categoria_id,
-    descricao,
-    forma_pagamento,
-    valor,
-    origem: "manual",
-    vencimento: vencimento || null,
-    pago,
-    pago_em: pago ? dataLanc : null,
-  });
+  if (repeticao === "nenhuma" || vezes <= 1) {
+    await supabase.from("lancamentos").insert({
+      data: dataLanc,
+      categoria_id,
+      descricao,
+      forma_pagamento,
+      valor,
+      origem: "manual",
+      vencimento: vencimento || null,
+      pago,
+      pago_em: pago ? dataLanc : null,
+    });
+  } else {
+    // Parcelado = divide o total; Mensal/fixo = repete o mesmo valor.
+    const base = vencimento || dataLanc;
+    const parcela =
+      repeticao === "parcelado"
+        ? Math.round((valor / vezes) * 100) / 100
+        : valor;
+    const linhas = [];
+    for (let i = 0; i < vezes; i++) {
+      const v =
+        repeticao === "parcelado" && i === vezes - 1
+          ? Math.round((valor - parcela * (vezes - 1)) * 100) / 100
+          : parcela;
+      const rot = repeticao === "parcelado" ? `${i + 1}/${vezes}` : `mês ${i + 1}`;
+      linhas.push({
+        data: dataLanc,
+        categoria_id,
+        descricao: `${descricao ?? ""} (${rot})`.trim(),
+        forma_pagamento,
+        valor: v,
+        origem: "manual",
+        vencimento: avancar(base, i, frequencia, dias),
+        pago: false,
+        pago_em: null,
+      });
+    }
+    await supabase.from("lancamentos").insert(linhas);
+  }
 
   revalidatePath("/financeiro");
   revalidatePath("/financeiro/contas");
+}
+
+// Avança a i-ésima repetição a partir de uma data, conforme a frequência.
+function avancar(dataStr: string, i: number, frequencia: string, dias: number) {
+  const [a, m, d] = dataStr.split("-").map(Number);
+  let dt: Date;
+  if (frequencia === "mensal") {
+    dt = new Date(a, m - 1 + i, d);
+  } else {
+    const passo =
+      frequencia === "semanal" ? 7 : frequencia === "quinzenal" ? 15 : dias;
+    dt = new Date(a, m - 1, d + i * passo);
+  }
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 }
 
 export async function excluirLancamento(formData: FormData) {
