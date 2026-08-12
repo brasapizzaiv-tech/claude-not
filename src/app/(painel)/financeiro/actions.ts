@@ -44,6 +44,32 @@ export async function excluirLancamento(formData: FormData) {
   revalidatePath("/financeiro/contas");
 }
 
+// Salva o orçamento (metas) de um mês.
+export async function salvarOrcamento(
+  anoMes: string,
+  itens: { categoria_id: string; valor: number }[],
+) {
+  const supabase = await createClient();
+  const comValor = itens.filter((i) => i.valor > 0);
+  if (comValor.length > 0) {
+    await supabase.from("orcamentos").upsert(
+      comValor.map((i) => ({ ...i, ano_mes: anoMes })),
+      { onConflict: "categoria_id,ano_mes" },
+    );
+  }
+  // Remove metas zeradas.
+  const zeradas = itens.filter((i) => i.valor <= 0).map((i) => i.categoria_id);
+  if (zeradas.length > 0) {
+    await supabase
+      .from("orcamentos")
+      .delete()
+      .eq("ano_mes", anoMes)
+      .in("categoria_id", zeradas);
+  }
+  revalidatePath("/financeiro/orcamento");
+  return { ok: true };
+}
+
 // Marca uma conta como paga (ou volta para não paga).
 export async function alternarPago(formData: FormData) {
   const supabase = await createClient();
