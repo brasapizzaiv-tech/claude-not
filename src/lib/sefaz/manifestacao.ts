@@ -141,5 +141,12 @@ export async function manifestarCiencia(o: {
   const xMotivo = pick("xMotivo");
   // 135/136 = registrado; 573 = já manifestado (também serve)
   const ok = ["135", "136", "573"].includes(cStat);
-  return { cStat, xMotivo, ok, erro: cStat ? undefined : "Resposta inesperada da SEFAZ." };
+  // Sem cStat: mostra um trecho da resposta crua para diagnóstico.
+  const trecho = resp.replace(/\s+/g, " ").slice(0, 500);
+  return {
+    cStat,
+    xMotivo,
+    ok,
+    erro: cStat ? undefined : `SEFAZ respondeu: ${trecho || "(vazio)"}`,
+  };
 }
