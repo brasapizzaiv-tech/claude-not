@@ -69,13 +69,21 @@ export default async function EtiquetasPage({
 
   return (
     <div className="mx-auto max-w-4xl p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-          Etiquetas
-        </h1>
-        <p className="mt-1 text-zinc-500">
-          Gere etiquetas de manipulação e controle a validade dos insumos.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+            Etiquetas
+          </h1>
+          <p className="mt-1 text-zinc-500">
+            Gere etiquetas de manipulação e controle a validade dos insumos.
+          </p>
+        </div>
+        <Link
+          href="/etiquetas/scanner"
+          className="shrink-0 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
+        >
+          📷 Modo Leitor
+        </Link>
       </div>
 
       <EtiquetaForm produtos={produtos} colaboradores={colaboradores} />

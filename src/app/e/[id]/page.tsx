@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { BaixaPublica } from "./baixa-publica";
 
 export default async function EtiquetaPublicaPage({
   params,
@@ -53,11 +54,7 @@ export default async function EtiquetaPublicaPage({
           </p>
         )}
 
-        {data.status && data.status !== "ativa" && (
-          <div className="mt-4 rounded-xl bg-zinc-200 p-3 text-center text-sm font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-            {data.status === "usada" ? "Etiqueta com baixa (usada)" : "Descartada"}
-          </div>
-        )}
+        <BaixaPublica id={id} statusInicial={(data.status as string) ?? "ativa"} />
         <div
           className={`mt-4 rounded-xl p-4 text-center ${
             vencida
