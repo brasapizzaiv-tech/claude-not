@@ -10,6 +10,42 @@ function inicioDoMes() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
+const norm = (s: string) =>
+  (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+type ItemNota = {
+  cprod: string;
+  descricao: string;
+  ncm: string;
+  ean: string;
+  unidade: string;
+  qtd: number;
+  valor_unit: number;
+  valor_total: number;
+};
+
+// Tenta casar cada item da nota com um produto cadastrado (pelo nome).
+async function comProdutoVinculado(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  itens: ItemNota[],
+) {
+  const { data: prods } = await supabase
+    .from("produtos")
+    .select("id, nome")
+    .eq("ativo", true);
+  const lista = (prods ?? []).map((p) => ({ id: p.id, n: norm(p.nome) }));
+  return itens.map((i) => {
+    const d = norm(i.descricao);
+    const m = lista.find((p) => p.n.length > 2 && (d.includes(p.n) || p.n.includes(d)));
+    return { ...i, produto_id: m?.id ?? null };
+  });
+}
+
 export async function importarNota(xmlText: string) {
   const supabase = await createClient();
   const nf = lerNfe(xmlText);
@@ -51,10 +87,12 @@ export async function importarNota(xmlText: string) {
         fornecedor_id: fornecedor?.id ?? null,
       })
       .eq("id", existe.id);
-    if (nf.itens.length > 0)
+    if (nf.itens.length > 0) {
+      const itens = await comProdutoVinculado(supabase, nf.itens);
       await supabase
         .from("nota_itens")
-        .insert(nf.itens.map((i) => ({ ...i, nota_id: existe.id })));
+        .insert(itens.map((i) => ({ ...i, nota_id: existe.id })));
+    }
 
     revalidatePath("/notas");
     return { ok: true, notaId: existe.id, enriquecida: true };
@@ -80,9 +118,10 @@ export async function importarNota(xmlText: string) {
   if (error || !nota) return { ok: false, erro: "Não foi possível salvar a nota." };
 
   if (nf.itens.length > 0) {
+    const itens = await comProdutoVinculado(supabase, nf.itens);
     await supabase
       .from("nota_itens")
-      .insert(nf.itens.map((i) => ({ ...i, nota_id: nota.id })));
+      .insert(itens.map((i) => ({ ...i, nota_id: nota.id })));
   }
 
   // A nota entra como PENDENTE. Só vira conta a pagar quando o usuário lançar.
@@ -137,32 +176,61 @@ export async function lancarNota(notaId: string) {
     .maybeSingle();
   if (!nota || nota.situacao === "lancada") return { ok: false };
 
-  const { data: cat } = await supabase
+  const { data: fallbackCat } = await supabase
     .from("dre_categorias")
     .select("id")
     .eq("tipo", "cmv")
     .eq("nome", "Compras (Pedidos)")
     .maybeSingle();
+  const fallbackId = fallbackCat?.id ?? null;
 
   const dataLanc =
     (nota.data_emissao as string) ?? new Date().toISOString().slice(0, 10);
   const pago = dataLanc < inicioDoMes(); // histórico entra pago
   const vencimento = (nota.vencimento as string) ?? null;
+  const descricao = `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`;
 
-  // Evita duplicar caso já exista lançamento dessa nota.
+  // Itens da nota (com o produto vinculado → conta do DRE).
+  const { data: itensData } = await supabase
+    .from("nota_itens")
+    .select("valor_total, produtos(categorias(dre_categoria_id))")
+    .eq("nota_id", notaId);
+  type IN = {
+    valor_total: number | null;
+    produtos: { categorias: { dre_categoria_id: string | null } | null } | null;
+  };
+  const itens = (itensData as unknown as IN[]) ?? [];
+
+  // Agrupa o valor por conta do DRE.
+  const porConta = new Map<string | null, number>();
+  if (itens.length > 0) {
+    for (const i of itens) {
+      const contaId =
+        i.produtos?.categorias?.dre_categoria_id ?? fallbackId;
+      porConta.set(contaId, (porConta.get(contaId) ?? 0) + (Number(i.valor_total) || 0));
+    }
+  } else {
+    // Resumo sem itens → um lançamento pelo total da nota.
+    porConta.set(fallbackId, Number(nota.valor));
+  }
+
   await supabase.from("lancamentos").delete().eq("nota_id", notaId);
-  await supabase.from("lancamentos").insert({
-    data: dataLanc,
-    categoria_id: cat?.id ?? null,
-    valor: Number(nota.valor),
-    descricao: `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`,
-    fornecedor_id: nota.fornecedor_id,
-    origem: "nota",
-    nota_id: notaId,
-    vencimento,
-    pago,
-    pago_em: pago ? dataLanc : null,
-  });
+  const novos = [...porConta.entries()]
+    .filter(([, v]) => v > 0)
+    .map(([contaId, valor]) => ({
+      data: dataLanc,
+      categoria_id: contaId,
+      valor,
+      descricao,
+      fornecedor_id: nota.fornecedor_id,
+      origem: "nota" as const,
+      nota_id: notaId,
+      vencimento,
+      pago,
+      pago_em: pago ? dataLanc : null,
+    }));
+  if (novos.length > 0) await supabase.from("lancamentos").insert(novos);
+
   await supabase
     .from("notas_fiscais")
     .update({ situacao: "lancada" })
@@ -170,6 +238,19 @@ export async function lancarNota(notaId: string) {
 
   revalidatePath("/notas");
   revalidatePath("/financeiro/contas");
+  return { ok: true };
+}
+
+// Vincula um item da nota a um produto do sistema (para o CMV detalhado).
+export async function vincularItemProduto(
+  itemId: string,
+  produtoId: string | null,
+) {
+  const supabase = await createClient();
+  await supabase
+    .from("nota_itens")
+    .update({ produto_id: produtoId })
+    .eq("id", itemId);
   return { ok: true };
 }
 

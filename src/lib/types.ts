@@ -128,6 +128,7 @@ export type NotaItem = {
   qtd: number;
   valor_unit: number | null;
   valor_total: number | null;
+  produto_id: string | null;
 };
 
 export type DreTipo =

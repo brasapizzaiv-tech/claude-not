@@ -5,6 +5,7 @@ import { dataBR } from "@/lib/format";
 import type { NotaFiscal, NotaItem } from "@/lib/types";
 import { BotaoConciliar } from "./conciliar";
 import { ManifestarNota } from "./manifestar";
+import { ItemProduto } from "./item-produto";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -30,6 +31,17 @@ export default async function NotaDetalhePage({
     .select("*")
     .eq("nota_id", id);
   const itens = (itensData as NotaItem[]) ?? [];
+
+  // Produtos para vincular os itens (CMV detalhado).
+  const { data: prodData } =
+    itens.length > 0
+      ? await supabase
+          .from("produtos")
+          .select("id, nome")
+          .eq("ativo", true)
+          .order("nome")
+      : { data: [] };
+  const produtos = (prodData as { id: string; nome: string }[]) ?? [];
 
   // Pedidos candidatos (mesmo fornecedor).
   type Ped = {
@@ -81,39 +93,51 @@ export default async function NotaDetalhePage({
       {itens.length === 0 && <ManifestarNota notaId={nota.id} />}
 
       {/* Itens */}
-      <h2 className="mt-6 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-        Itens da nota
-      </h2>
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
-            <tr>
-              <th className="px-4 py-2">Produto</th>
-              <th className="px-4 py-2 text-right">Qtd</th>
-              <th className="px-4 py-2 text-right">Unit.</th>
-              <th className="px-4 py-2 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {itens.map((i) => (
-              <tr key={i.id} className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
-                  {i.descricao}
-                </td>
-                <td className="px-4 py-2 text-right text-zinc-500">
-                  {i.qtd} {i.unidade}
-                </td>
-                <td className="px-4 py-2 text-right text-zinc-500">
-                  {i.valor_unit != null ? moeda(Number(i.valor_unit)) : "—"}
-                </td>
-                <td className="px-4 py-2 text-right text-zinc-800 dark:text-zinc-200">
-                  {i.valor_total != null ? moeda(Number(i.valor_total)) : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {itens.length > 0 && (
+        <>
+          <h2 className="mt-6 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            Itens da nota
+          </h2>
+          <p className="mb-2 text-xs text-zinc-500">
+            Vincule cada item ao seu produto para o CMV cair na categoria certa
+            no DRE. Em âmbar = ainda sem vínculo.
+          </p>
+          <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+                <tr>
+                  <th className="px-4 py-2">Item da nota</th>
+                  <th className="px-4 py-2">Produto no sistema</th>
+                  <th className="px-4 py-2 text-right">Qtd</th>
+                  <th className="px-4 py-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {itens.map((i) => (
+                  <tr key={i.id} className="bg-white dark:bg-zinc-950">
+                    <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
+                      {i.descricao}
+                    </td>
+                    <td className="px-4 py-2" style={{ minWidth: 220 }}>
+                      <ItemProduto
+                        itemId={i.id}
+                        produtoId={i.produto_id}
+                        produtos={produtos}
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-right text-zinc-500">
+                      {i.qtd} {i.unidade}
+                    </td>
+                    <td className="px-4 py-2 text-right text-zinc-800 dark:text-zinc-200">
+                      {i.valor_total != null ? moeda(Number(i.valor_total)) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       {/* Cruzamento com pedido */}
       <h2 className="mt-8 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
