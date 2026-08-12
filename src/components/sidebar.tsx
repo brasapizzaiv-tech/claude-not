@@ -19,6 +19,7 @@ const links: {
   { href: "/conferencia", label: "Conferência", icon: "📥" },
   { href: "/notas", label: "Notas Fiscais", icon: "🧾" },
   { href: "/financeiro", label: "Financeiro", icon: "📊" },
+  { href: "/etiquetas", label: "Etiquetas", icon: "🏷️" },
 ];
 
 export function Sidebar({ nome, papel }: { nome: string; papel: string }) {

@@ -240,6 +240,21 @@ export function ProdutosClient({
               />
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Validade após manipulação (dias)
+                </label>
+                <input
+                  name="validade_dias"
+                  inputMode="numeric"
+                  placeholder="ex.: 3"
+                  defaultValue={editando?.validade_dias ?? ""}
+                  className={inputCls}
+                />
+                <p className="mt-1 text-xs text-zinc-400">
+                  Usado nas etiquetas: valida = manipulação + dias.
+                </p>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Observações
                 </label>
                 <textarea

@@ -61,6 +61,7 @@ export type Produto = {
   categoria_id: string | null;
   estoque_minimo: number;
   estoque_ideal: number;
+  validade_dias: number | null;
   observacoes: string | null;
   marca: string | null;
   aceita_similar: boolean;

@@ -19,12 +19,15 @@ export async function salvarProduto(formData: FormData) {
     (formData.get("observacoes") as string)?.trim() || null;
   const categoria_id =
     (formData.get("categoria_id") as string)?.trim() || null;
+  const validadeRaw = (formData.get("validade_dias") as string)?.trim();
+  const validade_dias = validadeRaw ? Number(validadeRaw) || null : null;
 
   const payload = {
     nome,
     unidade,
     estoque_minimo,
     estoque_ideal,
+    validade_dias,
     observacoes,
     categoria_id,
   };
