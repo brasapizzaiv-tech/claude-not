@@ -26,6 +26,7 @@ type ConfigSefaz = {
   cert_pfx: string | null;
   cert_senha: string | null;
   ult_nsu: string;
+  bloqueado_ate: string | null;
 };
 
 // Salva/atualiza o certificado e os dados do SEFAZ. Senha nunca vai ao cliente.
@@ -88,13 +89,29 @@ export async function manifestarNota(notaId: string) {
 }
 
 // Busca as notas na SEFAZ (NFeDistribuicaoDFe) e importa o que vier.
+function horaBR(iso: string) {
+  return new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export async function buscarNotasSefaz() {
   const { supabase, cfg } = await getConfig();
   if (!cfg?.cert_pfx || !cfg.cert_senha)
     return { erro: "Suba o certificado e a senha primeiro." };
   if (!cfg.cnpj) return { erro: "Informe o CNPJ." };
 
+  // Trava anti consumo indevido: não chama a SEFAZ antes da hora liberar.
+  if (cfg.bloqueado_ate && new Date(cfg.bloqueado_ate) > new Date()) {
+    return {
+      erro: `Aguarde: a SEFAZ libera a próxima busca às ${horaBR(cfg.bloqueado_ate)}. Consultar antes disso reinicia a contagem de 1 hora.`,
+      bloqueado_ate: cfg.bloqueado_ate,
+    };
+  }
+
   let ult = cfg.ult_nsu || "0";
+  let maxNSU = "0";
   let importadas = 0;
   let resumos = 0;
   let cStat = "";
@@ -150,6 +167,7 @@ export async function buscarNotasSefaz() {
     }
 
     ult = resp.ultNSU;
+    maxNSU = resp.maxNSU;
     await supabase
       .from("config_sefaz")
       .update({ ult_nsu: ult, atualizado_em: new Date().toISOString() })
@@ -159,7 +177,20 @@ export async function buscarNotasSefaz() {
     if (resp.ultNSU >= resp.maxNSU) break;
   }
 
+  // Ainda há notas a puxar? (paramos pelo limite de páginas, não por acabar.)
+  const maisDocs = !erro && cStat === "138" && ult < maxNSU;
+
+  // Define a trava: se ainda há documentos, libera logo para continuar; caso
+  // contrário (acabou, erro/656 ou nada novo), espera 1 hora — regra da SEFAZ.
+  const bloqueadoAte = new Date(
+    Date.now() + (maisDocs ? 30 * 1000 : 60 * 60 * 1000),
+  ).toISOString();
+  await supabase
+    .from("config_sefaz")
+    .update({ bloqueado_ate: bloqueadoAte })
+    .eq("id", cfg.id);
+
   revalidatePath("/notas");
   revalidatePath("/notas/sefaz");
-  return { importadas, resumos, cStat, xMotivo, erro };
+  return { importadas, resumos, cStat, xMotivo, erro, bloqueado_ate: bloqueadoAte };
 }

@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { salvarConfigSefaz, buscarNotasSefaz } from "../sefaz-actions";
+
+function horaBR(iso: string) {
+  return new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 const UFS: { sigla: string; cuf: number }[] = [
   { sigla: "RS", cuf: 43 },
@@ -31,6 +38,7 @@ export function SefazPainel({
     cert_nome: string | null;
     ult_nsu: string;
     atualizado_em: string | null;
+    bloqueado_ate: string | null;
   };
 }) {
   const router = useRouter();
@@ -42,6 +50,18 @@ export function SefazPainel({
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [resultado, setResultado] = useState<string | null>(null);
+  const [bloqueadoAte, setBloqueadoAte] = useState<string | null>(
+    status.bloqueado_ate,
+  );
+  const [agora, setAgora] = useState(() => Date.now());
+
+  // Atualiza o relógio a cada 15s para liberar o botão na hora certa.
+  useEffect(() => {
+    const t = setInterval(() => setAgora(Date.now()), 15000);
+    return () => clearInterval(t);
+  }, []);
+
+  const travado = !!bloqueadoAte && new Date(bloqueadoAte).getTime() > agora;
 
   async function salvar() {
     startSalvar(async () => {
@@ -76,6 +96,7 @@ export function SefazPainel({
     startBuscar(async () => {
       setResultado(null);
       const r = await buscarNotasSefaz();
+      if (r?.bloqueado_ate) setBloqueadoAte(r.bloqueado_ate);
       if (r?.erro) {
         setResultado(`❌ ${r.erro}`);
       } else {
@@ -180,19 +201,30 @@ export function SefazPainel({
         </p>
         <button
           onClick={buscar}
-          disabled={buscando || !status.temCert}
+          disabled={buscando || !status.temCert || travado}
           className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
         >
-          {buscando ? "Buscando na SEFAZ..." : "Buscar notas agora"}
+          {buscando
+            ? "Buscando na SEFAZ..."
+            : travado
+              ? `🔒 Liberado às ${horaBR(bloqueadoAte!)}`
+              : "Buscar notas agora"}
         </button>
+        {travado && (
+          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+            A SEFAZ permite ~1 busca por hora. A próxima fica liberada às{" "}
+            <b>{horaBR(bloqueadoAte!)}</b>. Guardamos onde parou — ao liberar, a
+            busca continua de onde estava.
+          </p>
+        )}
         {resultado && (
           <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
             {resultado}
           </p>
         )}
         <p className="mt-3 text-xs text-zinc-400">
-          Dica: a SEFAZ limita consultas (cerca de 1 por hora). Se aparecer
-          “consumo indevido”, espere um pouco e tente de novo.
+          Dica: a SEFAZ limita consultas (cerca de 1 por hora). O botão trava
+          sozinho após cada busca para evitar o “consumo indevido”.
         </p>
       </div>
     </div>

@@ -8,7 +8,9 @@ export default async function SefazPage() {
   // Nunca traz cert_pfx/cert_senha para o cliente.
   const { data } = await supabase
     .from("config_sefaz")
-    .select("cnpj, cuf, ambiente, cert_nome, cert_pfx, ult_nsu, atualizado_em")
+    .select(
+      "cnpj, cuf, ambiente, cert_nome, cert_pfx, ult_nsu, atualizado_em, bloqueado_ate",
+    )
     .limit(1)
     .maybeSingle();
 
@@ -20,6 +22,7 @@ export default async function SefazPage() {
     cert_nome: (data?.cert_nome as string) ?? null,
     ult_nsu: (data?.ult_nsu as string) ?? "000000000000000",
     atualizado_em: (data?.atualizado_em as string) ?? null,
+    bloqueado_ate: (data?.bloqueado_ate as string) ?? null,
   };
 
   return (
