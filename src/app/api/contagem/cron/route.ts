@@ -6,7 +6,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
-  if (secret && auth !== `Bearer ${secret}`) {
+  const key = req.nextUrl.searchParams.get("key");
+  // Aceita o segredo pelo cabeçalho (Vercel Cron) ou por ?key= (pinger externo).
+  if (secret && auth !== `Bearer ${secret}` && key !== secret) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 

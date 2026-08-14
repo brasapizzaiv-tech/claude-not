@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/contagem/cron",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 11 * * *"
     }
   ]
 }
