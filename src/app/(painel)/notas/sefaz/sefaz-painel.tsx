@@ -2,7 +2,11 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { salvarConfigSefaz, buscarNotasSefaz } from "../sefaz-actions";
+import {
+  salvarConfigSefaz,
+  buscarNotasSefaz,
+  reprocessarSefaz,
+} from "../sefaz-actions";
 
 function horaBR(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", {
@@ -104,10 +108,31 @@ export function SefazPainel({
           `${r?.importadas ?? 0} nota(s) completa(s)`,
           `${r?.resumos ?? 0} resumo(s)`,
         ];
+        if (r?.falhas) partes.push(`${r.falhas} falha(s)`);
         setResultado(
           `✓ ${partes.join(" · ")}. SEFAZ: ${r?.cStat} ${r?.xMotivo ?? ""}`,
         );
       }
+      router.refresh();
+    });
+  }
+
+  function reprocessar() {
+    if (
+      !confirm(
+        "Reprocessar volta ao início e puxa novamente as notas dos últimos ~90 dias, recuperando as que faltaram. Pode levar vários minutos e consome a cota da SEFAZ. Continuar?",
+      )
+    )
+      return;
+    startBuscar(async () => {
+      setResultado("Reprocessando...");
+      const r = await reprocessarSefaz();
+      if (r?.bloqueado_ate) setBloqueadoAte(r.bloqueado_ate);
+      if (r?.erro) setResultado(`❌ ${r.erro}`);
+      else
+        setResultado(
+          `✓ Reprocessado: ${r?.importadas ?? 0} nota(s) · ${r?.resumos ?? 0} resumo(s)${r?.falhas ? ` · ${r.falhas} falha(s)` : ""}.`,
+        );
       router.refresh();
     });
   }
@@ -224,8 +249,23 @@ export function SefazPainel({
         )}
         <p className="mt-3 text-xs text-zinc-400">
           Dica: a SEFAZ limita consultas (cerca de 1 por hora). O botão trava
-          sozinho após cada busca para evitar o “consumo indevido”.
+          sozinho após cada busca para evitar o “consumo indevido”. A busca
+          também roda sozinha 1x por dia, de madrugada.
         </p>
+
+        <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <button
+            onClick={reprocessar}
+            disabled={buscando || !status.temCert || travado}
+            className="text-xs font-medium text-zinc-500 underline hover:text-orange-600 disabled:opacity-60"
+          >
+            Faltam notas? Reprocessar desde o início
+          </button>
+          <p className="mt-1 text-xs text-zinc-400">
+            Volta ao início e puxa de novo os últimos ~90 dias, recuperando
+            notas que possam ter faltado.
+          </p>
+        </div>
       </div>
     </div>
   );

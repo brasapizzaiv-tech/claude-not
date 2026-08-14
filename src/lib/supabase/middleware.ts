@@ -37,7 +37,8 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/auth") ||
     path.startsWith("/contar") ||
     path.startsWith("/cotar") ||
-    path.startsWith("/e/");
+    path.startsWith("/e/") ||
+    path.startsWith("/api/sefaz/cron");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

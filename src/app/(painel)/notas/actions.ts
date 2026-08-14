@@ -1,5 +1,6 @@
 "use server";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
@@ -31,7 +32,7 @@ type ItemNota = {
 
 // Tenta casar cada item da nota com um produto cadastrado (pelo nome).
 async function comProdutoVinculado(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   itens: ItemNota[],
 ) {
   const { data: prods } = await supabase
@@ -46,8 +47,11 @@ async function comProdutoVinculado(
   });
 }
 
-export async function importarNota(xmlText: string) {
-  const supabase = await createClient();
+export async function importarNota(
+  xmlText: string,
+  clienteExterno?: SupabaseClient,
+) {
+  const supabase = clienteExterno ?? (await createClient());
   const nf = lerNfe(xmlText);
 
   if (!nf.chave) return { ok: false, erro: "Arquivo não parece uma NF-e válida." };
@@ -130,8 +134,11 @@ export async function importarNota(xmlText: string) {
 }
 
 // Importa um RESUMO de NF-e (resNFe do SEFAZ) — só cabeçalho, sem itens.
-export async function importarResumo(resumoXml: string) {
-  const supabase = await createClient();
+export async function importarResumo(
+  resumoXml: string,
+  clienteExterno?: SupabaseClient,
+) {
+  const supabase = clienteExterno ?? (await createClient());
   const r = lerResumo(resumoXml);
   if (!r.chave) return { ok: false };
 
