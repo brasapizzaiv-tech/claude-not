@@ -3,6 +3,10 @@
     {
       "path": "/api/sefaz/cron",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/contagem/cron",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

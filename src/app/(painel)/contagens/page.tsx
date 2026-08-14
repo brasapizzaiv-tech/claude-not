@@ -24,11 +24,19 @@ export default async function ContagensPage() {
             Conte o estoque e gere a sugestão do que pedir.
           </p>
         </div>
-        <form action={criarContagem}>
-          <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600">
-            + Nova contagem
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/contagens/agendamentos"
+            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+          >
+            ⏰ Agendamentos
+          </Link>
+          <form action={criarContagem}>
+            <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600">
+              + Nova contagem
+            </button>
+          </form>
+        </div>
       </div>
 
       {contagens.length === 0 ? (

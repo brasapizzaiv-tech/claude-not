@@ -39,7 +39,8 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/cotar") ||
     path.startsWith("/e/") ||
     path.startsWith("/eu/") ||
-    path.startsWith("/api/sefaz/cron");
+    path.startsWith("/api/sefaz/cron") ||
+    path.startsWith("/api/contagem/cron");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
