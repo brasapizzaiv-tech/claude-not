@@ -2,7 +2,56 @@
 
 import { useState } from "react";
 import type { Colaborador } from "@/lib/types";
-import { salvarColaborador, excluirColaborador } from "./actions";
+import {
+  salvarColaborador,
+  excluirColaborador,
+  zerarPinColaborador,
+} from "./actions";
+
+function LinkApp({ c }: { c: Colaborador }) {
+  const [copiado, setCopiado] = useState(false);
+  if (!c.token) return <span className="text-xs text-zinc-400">—</span>;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const link = `${origin}/eu/${c.token}`;
+  const zap = (c.whatsapp ?? "").replace(/\D/g, "");
+  const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
+  const msg = encodeURIComponent(
+    `Oi ${c.nome}! Esse é o seu app da contagem da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}`,
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <button
+        onClick={() => {
+          navigator.clipboard?.writeText(link);
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 1500);
+        }}
+        className="rounded border border-zinc-300 px-2 py-1 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+      >
+        {copiado ? "Copiado!" : "Copiar link"}
+      </button>
+      {zapNum && (
+        <a
+          href={`https://wa.me/${zapNum}?text=${msg}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded border border-green-500 px-2 py-1 font-medium text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+        >
+          Enviar no WhatsApp
+        </a>
+      )}
+      <span className={c.pin ? "text-zinc-400" : "text-amber-600"}>
+        {c.pin ? "PIN definido" : "sem PIN"}
+      </span>
+      {c.pin && (
+        <form action={zerarPinColaborador} className="inline">
+          <input type="hidden" name="id" value={c.id} />
+          <button className="text-zinc-400 hover:text-red-600">zerar PIN</button>
+        </form>
+      )}
+    </div>
+  );
+}
 
 const inputCls =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -49,6 +98,7 @@ export function ColaboradoresClient({
               <tr>
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">WhatsApp</th>
+                <th className="px-4 py-3">App do colaborador</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -63,6 +113,9 @@ export function ColaboradoresClient({
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {c.whatsapp ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <LinkApp c={c} />
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button

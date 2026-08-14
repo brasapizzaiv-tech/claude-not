@@ -38,6 +38,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/contar") ||
     path.startsWith("/cotar") ||
     path.startsWith("/e/") ||
+    path.startsWith("/eu/") ||
     path.startsWith("/api/sefaz/cron");
 
   if (!user && !isPublic) {

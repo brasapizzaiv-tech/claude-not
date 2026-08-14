@@ -31,6 +31,8 @@ export type Colaborador = {
   id: string;
   nome: string;
   whatsapp: string | null;
+  token: string | null;
+  pin: string | null;
   ativo: boolean;
   criado_em: string;
 };
