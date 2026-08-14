@@ -11,6 +11,7 @@ export async function criarLancamento(formData: FormData) {
   const descricao = (formData.get("descricao") as string)?.trim() || null;
   const forma_pagamento =
     (formData.get("forma_pagamento") as string)?.trim() || null;
+  const banco = (formData.get("banco") as string)?.trim() || null;
   const vencimento = (formData.get("vencimento") as string) || null;
   const pago = formData.get("pago") === "on";
   const valorRaw = (formData.get("valor") as string) || "0";
@@ -19,6 +20,7 @@ export async function criarLancamento(formData: FormData) {
   if (!categoria_id || valor <= 0) return;
 
   const dataLanc = data || new Date().toISOString().slice(0, 10);
+  const hoje = new Date().toISOString().slice(0, 10);
   const repeticao = (formData.get("repeticao") as string) || "nenhuma";
   const vezes = Math.max(1, Math.min(60, Number(formData.get("vezes")) || 1));
   const frequencia = (formData.get("frequencia") as string) || "mensal";
@@ -30,6 +32,8 @@ export async function criarLancamento(formData: FormData) {
       categoria_id,
       descricao,
       forma_pagamento,
+      banco,
+      lancamento_em: hoje,
       valor,
       origem: "manual",
       vencimento: vencimento || null,
@@ -55,6 +59,8 @@ export async function criarLancamento(formData: FormData) {
         categoria_id,
         descricao: `${descricao ?? ""} (${rot})`.trim(),
         forma_pagamento,
+        banco,
+        lancamento_em: hoje,
         valor: v,
         origem: "manual",
         vencimento: avancar(base, i, frequencia, dias),

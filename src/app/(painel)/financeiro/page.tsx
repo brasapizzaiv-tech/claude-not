@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
 import { dataBR } from "@/lib/format";
+import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
 import { criarLancamento, excluirLancamento } from "./actions";
 
 const moeda = (n: number) =>
@@ -197,6 +198,28 @@ export default async function FinanceiroPage({
         <div>
           <label className="mb-1 block text-xs text-zinc-500">Vencimento</label>
           <input type="date" name="vencimento" className={inputCls} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Origem (banco)</label>
+          <select name="banco" defaultValue="" className={inputCls}>
+            <option value="">—</option>
+            {BANCOS.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Tipo pagto.</label>
+          <select name="forma_pagamento" defaultValue="" className={inputCls}>
+            <option value="">—</option>
+            {TIPOS_PAGAMENTO.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">Repetir</label>
