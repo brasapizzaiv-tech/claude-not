@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pedidos de Marmita — Kern</title>
+<style>
+  :root{--bg:#0f1720;--card:#17212b;--card2:#1e2b38;--line:#2a3947;--txt:#e8eef4;--muted:#93a4b3;--accent:#ff7a2f;--danger:#e5534b;--ok:#2f9e6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%}
+  header{position:sticky;top:0;z-index:5;background:#0f1720ee;backdrop-filter:blur(6px);padding:14px 16px calc(14px + env(safe-area-inset-top));border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  header .logo{font-size:24px}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  main{max-width:660px;margin:0 auto;padding:16px 16px 96px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 12px;font-weight:700}
+  .card h3{font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:700}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  input,select,button,textarea{font-family:inherit;font-size:16px}
+  input[type=text],input[type=password],input[type=time],input[type=date],input[type=month],input[type=search],select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt)}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);border-color:transparent}
+  textarea{min-height:80px;resize:vertical}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  button{cursor:pointer;border:none;border-radius:10px;padding:13px 16px;font-weight:700;background:var(--accent);color:#111;transition:filter .15s}
+  button:active{filter:brightness(.9)}
+  button:disabled{opacity:.4;cursor:default}
+  button.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:8px 12px;font-weight:600;font-size:14px}
+  button.danger{background:transparent;color:var(--danger);border:1px solid var(--danger);padding:8px 12px;font-size:14px}
+  button.block{width:100%;margin-top:14px}
+  button.mini{padding:6px 10px;font-size:13px}
+  .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12px;color:var(--muted)}
+  .pill.fil{border-color:var(--accent);color:var(--accent)}
+  .pill.ok{border-color:var(--ok);color:var(--ok)}
+  .item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+  .item:first-child{border-top:none}
+  .item .grow{flex:1;min-width:0}.item .nome{font-weight:600}.item .meta{font-size:13px;color:var(--muted);margin-top:3px}
+  .empty{color:var(--muted);text-align:center;padding:18px 0;font-size:14px}
+  .totbar{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:2px solid var(--line);font-weight:700}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;overflow:auto;-webkit-overflow-scrolling:touch}
+  .tabs button{background:var(--card);border:1px solid var(--line);color:var(--muted);padding:9px 14px;font-size:14px;white-space:nowrap}
+  .tabs button.active{background:var(--accent);color:#111;border-color:transparent}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#111;border:1px solid var(--line);color:var(--txt);padding:12px 18px;border-radius:10px;box-shadow:0 8px 30px #0008;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}.toast.err{border-color:var(--danger)}
+  .hidden{display:none!important}
+  .miudo{font-size:13px;color:var(--muted)}
+  .escolhas{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{position:relative;display:inline-flex}
+  .chip input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .chip span{display:inline-block;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;user-select:none}
+  .chip input:checked + span{background:var(--accent);color:#111;border-color:transparent;font-weight:700}
+  .chip input:disabled + span{opacity:.35}
+  .prod{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .prod .fh{display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px}
+  .prod .ln{font-size:14px;color:var(--muted);margin-top:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stat .n{font-size:24px;font-weight:800}.stat .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .cardapioLinha{margin-bottom:8px}
+  .segbtns{display:flex;flex-wrap:wrap;gap:6px}
+  .segbtns button{padding:8px 12px;font-size:14px;background:var(--card2);color:var(--txt);border:1px solid var(--line);font-weight:600}
+  .segbtns button.on{background:var(--accent);color:#111;border-color:transparent}
+  .resultLista button{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--txt);margin-bottom:6px;font-weight:600}
+  .modal{position:fixed;inset:0;z-index:70;background:#0009;display:flex;align-items:flex-end;justify-content:center;padding:0}
+  .modal .box{background:var(--card);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:18px;width:100%;max-width:660px;max-height:90vh;overflow:auto}
+  .big{font-size:20px}
+  .center{text-align:center}
+  a.link{color:var(--accent);cursor:pointer;text-decoration:none;font-size:14px}
+  .permgrid{display:grid;grid-template-columns:1fr;gap:6px}
+  .permgrid label{display:flex;align-items:center;gap:8px;margin:0;color:var(--txt);font-size:15px}
+  .permgrid input{width:auto}
+  .aviso{background:#3a2a12;border:1px solid var(--accent);color:#ffcfa3;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-weight:700;text-align:center;font-size:15px}
+  /* ===== Etiqueta da impressora termica (80mm) ===== */
+  #printArea{display:none}
+  @media print{
+    html,body{margin:0;padding:0;background:#fff;color:#000}
+    body>*{display:none !important}
+    #printArea{display:block !important}
+    @page{size:80mm auto;margin:4mm}
+    .etiqueta{width:72mm;font-family:'Segoe UI',Arial,sans-serif;color:#000;padding:0 0 7mm;page-break-after:always}
+    .etiqueta:last-child{page-break-after:auto}
+    .et-conv{font-size:12px;text-align:center;border-bottom:1px dashed #000;padding-bottom:2mm;margin-bottom:2mm}
+    .et-filial{font-size:16px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:.5px}
+    .et-nome{font-size:23px;font-weight:800;text-align:center;margin:1mm 0 2mm;line-height:1.1}
+    .et-nome span{font-size:13px;font-weight:600}
+    .et-sep{border-top:1px solid #000;margin:2mm 0}
+    .et-l{font-size:16px;margin:1.2mm 0;line-height:1.3}
+    .et-l b{font-weight:800}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ COLABORADOR (sem senha) ============ -->
+<div id="colaboradorView" class="hidden">
+  <header>
+    <div class="logo">🍱</div>
+    <div style="flex:1"><h1 id="colTitulo">Faça seu pedido</h1><div class="sub" id="colSub">Convênio Kern</div></div>
+  </header>
+  <main>
+    <div id="colAviso" class="aviso hidden"></div>
+    <div id="colFechado" class="card hidden center"><div class="big">🔒</div><p id="colFechadoMsg">Os pedidos de hoje já encerraram.</p></div>
+
+    <div id="colStep1" class="card">
+      <h2>1. Encontre seu nome</h2>
+      <input type="search" id="colBusca" placeholder="Digite seu nome..." oninput="colBuscar()" autocomplete="off">
+      <div class="resultLista" id="colResultados" style="margin-top:10px"></div>
+    </div>
+
+    <div id="colStep2" class="hidden">
+      <div class="card">
+        <h2>2. Confira e escolha a filial</h2>
+        <p class="miudo">Pedido de <b id="colNome"></b>. <a class="link" onclick="colReset()">trocar</a></p>
+        <label>Filial</label>
+        <div class="segbtns" id="colFiliais"></div>
+      </div>
+      <div class="card">
+        <h2>3. Monte sua marmita</h2>
+        <div id="colCardVazio" class="empty hidden">O cardápio de hoje ainda não está disponível. Fale com o buffet.</div>
+        <div id="colMontar">
+          <h3>Pratos <span class="miudo" id="colContador">(1 a 4)</span></h3>
+          <div class="escolhas" id="colPratos"></div>
+          <h3>Proteína <span class="miudo">(opcional)</span></h3>
+          <div class="escolhas" id="colProt"></div>
+          <h3>Salada</h3>
+          <div class="escolhas" id="colSalada"></div>
+        </div>
+        <button class="block" id="colConfirmarBtn" onclick="colConfirmar()">Confirmar pedido</button>
+      </div>
+    </div>
+
+    <div id="colSucesso" class="hidden">
+      <div class="card center"><div class="big">✅</div><h2 style="color:var(--ok)">Pedido confirmado!</h2>
+        <p id="colResumo" class="miudo"></p>
+        <button class="block" onclick="colReset(true)">Fazer outro pedido</button>
+      </div>
+    </div>
+
+    <p class="center" style="margin-top:8px"><a class="link" href="#admin">Área administrativa</a></p>
+  </main>
+</div>
+
+<!-- ============ LOGIN ADMIN ============ -->
+<div id="loginView" class="hidden">
+  <main style="max-width:360px">
+    <div class="center" style="margin-top:10vh"><div class="logo" style="font-size:48px">🔐</div><h1>Área administrativa</h1></div>
+    <div class="card">
+      <label>Senha</label>
+      <input type="password" id="loginSenha" placeholder="Sua senha">
+      <button class="block" onclick="fazerLogin()">Entrar</button>
+      <p id="loginErro" class="miudo hidden" style="color:var(--danger);margin-top:10px">Senha incorreta.</p>
+    </div>
+    <p class="center"><a class="link" href="#">← Voltar ao app do colaborador</a></p>
+  </main>
+</div>
+
+<!-- ============ ADMIN ============ -->
+<div id="adminView" class="hidden">
+  <header>
+    <div class="logo">🍱</div>
+    <div style="flex:1"><h1>Administração</h1><div class="sub" id="admSub">Convênio Kern</div></div>
+    <button class="ghost mini" onclick="sair()">Sair</button>
+  </header>
+  <main>
+    <div class="tabs" id="admTabs">
+      <button data-tab="dia" onclick="admAba('dia')">📋 Pedidos</button>
+      <button data-tab="cardapios" onclick="admAba('cardapios')">🍽️ Cardápios</button>
+      <button data-tab="colab" onclick="admAba('colab')">👥 Colaboradores</button>
+      <button data-tab="relatorio" onclick="admAba('relatorio')">📊 Relatório</button>
+      <button data-tab="usuarios" onclick="admAba('usuarios')">🔑 Usuários</button>
+      <button data-tab="config" onclick="admAba('config')">⚙️ Ajustes</button>
+    </div>
+
+    <!-- PEDIDOS -->
+    <section id="tab-dia" class="hidden">
+      <div class="card"><h2>Dia</h2><input type="date" id="dataDia" onchange="carregarDia()"></div>
+      <div class="card" id="cardLancar">
+        <h2>Lançar pedido (buffet)</h2>
+        <label>Colaborador (opcional — busque ou digite um nome)</label>
+        <input type="search" id="addBusca" placeholder="Buscar colaborador..." oninput="addBuscar()" autocomplete="off">
+        <div class="resultLista" id="addResultados"></div>
+        <div class="row">
+          <div><label>Nome</label><input type="text" id="addNome" placeholder="Nome"></div>
+          <div><label>Matrícula</label><input type="text" id="addMatricula" placeholder="Opcional"></div>
+        </div>
+        <label>Filial</label><div class="segbtns" id="addFiliais"></div>
+        <h3>Pratos <span class="miudo" id="addContador">(1 a 4)</span></h3><div class="escolhas" id="addPratos"></div>
+        <h3>Proteína <span class="miudo">(opcional)</span></h3><div class="escolhas" id="addProt"></div>
+        <h3>Salada</h3><div class="escolhas" id="addSalada"></div>
+        <button class="block" onclick="lancarPedido()">Adicionar pedido</button>
+      </div>
+      <div class="card">
+        <h2>Pedidos do dia</h2>
+        <label>Filtrar por filial</label><select id="filtroFilial" onchange="renderPedidos()"></select>
+        <button class="ghost" style="margin-top:8px" onclick="imprimirTodos()">🖨️ Imprimir etiquetas (todos os mostrados)</button>
+        <div id="listaPedidos" style="margin-top:8px"></div>
+        <div class="totbar"><span id="totQtd">0 marmitas</span></div>
+      </div>
+      <div class="card"><h2>Resumo de produção (por filial)</h2><div id="producao"></div></div>
+    </section>
+
+    <!-- CARDAPIOS -->
+    <section id="tab-cardapios" class="hidden">
+      <div class="card">
+        <h2>Semana ativa</h2>
+        <p class="miudo">O cardápio da semana ativa é o que aparece para os colaboradores. Seg a sáb.</p>
+        <div class="segbtns" id="ativarBtns"></div>
+      </div>
+      <div class="card">
+        <h2>Editar cardápio</h2>
+        <label>Semana</label><div class="segbtns" id="semSel"></div>
+        <label style="margin-top:10px">Dia</label><div class="segbtns" id="diaSel"></div>
+        <h3>Pratos (até 5)</h3><div id="cardPratos"></div>
+        <h3>Proteínas (até 2)</h3><div id="cardProteinas"></div>
+        <h3>Salada (1)</h3><div id="cardSalada"></div>
+        <button class="sec block" onclick="salvarCardapios()">Salvar cardápios</button>
+      </div>
+    </section>
+
+    <!-- COLABORADORES -->
+    <section id="tab-colab" class="hidden">
+      <div class="card">
+        <h2>Adicionar colaborador</h2>
+        <div class="row"><div><label>Nome</label><input type="text" id="colabNome"></div><div><label>Matrícula</label><input type="text" id="colabMatricula" placeholder="Opcional"></div></div>
+        <button class="sec block" onclick="addColaborador()">Adicionar</button>
+        <h3>Vários de uma vez (um nome por linha)</h3>
+        <textarea id="colabLote" placeholder="João Silva&#10;Maria Souza&#10;Pedro Alves"></textarea>
+        <button class="ghost" style="margin-top:8px" onclick="addColaboradoresLote()">Adicionar lista</button>
+      </div>
+      <div class="card"><h2>Colaboradores (<span id="colabCount">0</span>)</h2><div id="listaColab"></div></div>
+    </section>
+
+    <!-- RELATORIO -->
+    <section id="tab-relatorio" class="hidden">
+      <div class="card">
+        <h2>Período</h2>
+        <div class="segbtns" style="margin-bottom:10px">
+          <button onclick="relPeriodo(7)">Últimos 7 dias</button>
+          <button onclick="relPeriodo(15)">15 dias</button>
+          <button onclick="relPeriodo(30)">30 dias</button>
+          <button onclick="relPeriodo('mes')">Este mês</button>
+        </div>
+        <div class="row"><div><label>De</label><input type="date" id="relDe"></div><div><label>Até</label><input type="date" id="relAte"></div></div>
+        <button class="sec block" onclick="carregarRelatorio()">Pesquisar</button>
+      </div>
+      <div class="grid2" style="margin-bottom:16px">
+        <div class="stat"><div class="n" id="relQtd">0</div><div class="l">Marmitas</div></div>
+        <div class="stat"><div class="n" id="relPessoasN">0</div><div class="l">Pessoas</div></div>
+      </div>
+      <div class="card"><h2>Por filial e funcionário</h2><div id="relFiliais"></div></div>
+      <div class="card"><h2>Consumo</h2><div id="relConsumo"></div></div>
+      <button class="sec block" onclick="baixarCSV()">⬇️ Baixar planilha (CSV)</button>
+    </section>
+
+    <!-- USUARIOS -->
+    <section id="tab-usuarios" class="hidden">
+      <div class="card">
+        <h2 id="usuFormTitulo">Novo usuário</h2>
+        <input type="hidden" id="usuId">
+        <div class="row"><div><label>Nome</label><input type="text" id="usuNome"></div><div><label>Senha</label><input type="text" id="usuSenha" placeholder="PIN/senha"></div></div>
+        <h3>Permissões</h3>
+        <div class="permgrid" id="usuPerms"></div>
+        <button class="sec block" onclick="salvarUsuario()">Salvar usuário</button>
+        <button class="ghost" style="margin-top:8px" onclick="limparUsuForm()">Limpar / novo</button>
+      </div>
+      <div class="card"><h2>Usuários</h2><div id="listaUsuarios"></div></div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section id="tab-config" class="hidden">
+      <div class="card">
+        <h2>Dados do convênio</h2>
+        <label>Nome do convênio</label><input type="text" id="cNome">
+        <div class="row"><div><label>Hora limite do pedido</label><input type="time" id="cLimite"></div><div><label>Hora de entrega</label><input type="time" id="cEntrega"></div></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="cBloquear" style="width:auto"> Bloquear novos pedidos após a hora limite</label>
+        <button class="sec block" onclick="salvarConfig()">Salvar</button>
+      </div>
+      <div class="card">
+        <h2>Filiais</h2>
+        <div id="edFiliais"></div>
+        <button class="ghost" onclick="addFilialInput()">+ Adicionar filial</button>
+        <button class="sec block" onclick="salvarFiliais()">Salvar filiais</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL EDITAR PEDIDO -->
+<div id="modalEditar" class="modal hidden">
+  <div class="box">
+    <h2>Editar pedido</h2>
+    <input type="hidden" id="edId">
+    <div class="row"><div><label>Nome</label><input type="text" id="edNome"></div><div><label>Matrícula</label><input type="text" id="edMatricula"></div></div>
+    <label>Filial</label><div class="segbtns" id="edFiliaisSel"></div>
+    <h3>Pratos <span class="miudo" id="edContador">(1 a 4)</span></h3><div class="escolhas" id="edPratos"></div>
+    <h3>Proteína</h3><div class="escolhas" id="edProt"></div>
+    <h3>Salada</h3><div class="escolhas" id="edSalada"></div>
+    <button class="block" onclick="salvarEdicao()">Salvar alterações</button>
+    <button class="ghost" style="width:100%;margin-top:8px" onclick="fecharModal()">Cancelar</button>
+  </div>
+</div>
+
+<div id="printArea"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const PERM_LABELS={pedidos_add:'Lançar pedidos',pedidos_edit:'Editar/remover pedidos',cardapio:'Gerenciar cardápios',relatorio:'Ver relatório',colaboradores:'Gerenciar colaboradores',ajustes:'Ajustes gerais',usuarios:'Gerenciar usuários'};
+const PERMS=Object.keys(PERM_LABELS);
+const DIA_LABEL={seg:'Seg',ter:'Ter',qua:'Qua',qui:'Qui',sex:'Sex',sab:'Sáb'};
+let SENHA=localStorage.getItem('marmitas_admin_senha')||'';
+let USER=null, CONFIG={}, CARDAPIOS={semanas:[],ativo:null}, COLABORADORES=[], USUARIOS=[], PEDIDOS_DIA=[], PUBLICO=null;
+let COL_SEL=null, ADD_SEL=null, SEM_ATUAL=0, DIA_ATUAL='seg', ULTIMO_REL=null;
+let FILIAL_COL='', FILIAL_ADD='', FILIAL_ED='';
+
+function hoje(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function arr(v){return Array.isArray(v)?v:(v==null||v===''?[]:[v]);}
+function formatarData(d){if(!d)return'';const[a,m,dia]=d.split('-');return `${dia}/${m}/${a}`;}
+function toast(m,e){const t=$('#toast');t.textContent=m;t.className='toast show'+(e?' err':'');setTimeout(()=>t.className='toast',2600);}
+function perm(p){return USER&&(USER.permissoes||[]).includes(p);}
+
+async function api(path,opts={}){
+  opts.headers=Object.assign({'Content-Type':'application/json','X-Senha':SENHA},opts.headers||{});
+  const r=await fetch(path,opts);
+  const txt=await r.text();const data=txt?JSON.parse(txt):null;
+  if(r.status===401){sair();throw new Error('Sessão expirada');}
+  if(!r.ok)throw new Error((data&&data.erro)||('Erro '+r.status));
+  return data;
+}
+
+/* ===== montagem reutilizável ===== */
+function renderMontagem(pre,card,sel){
+  sel=sel||{pratos:[],proteina:'',salada:false};
+  const P=arr(card.pratos),PR=arr(card.proteinas);
+  $('#'+pre+'Pratos').innerHTML = P.length? P.map(n=>`<label class="chip"><input type="checkbox" data-g="${pre}p" value="${escapeHtml(n)}" ${sel.pratos.includes(n)?'checked':''} onchange="limitar('${pre}')"><span>${escapeHtml(n)}</span></label>`).join('') : '<span class="miudo">Sem pratos.</span>';
+  $('#'+pre+'Prot').innerHTML = PR.length? (`<label class="chip"><input type="radio" name="${pre}prot" value="" ${!sel.proteina?'checked':''}><span>Nenhuma</span></label>`+PR.map(n=>`<label class="chip"><input type="radio" name="${pre}prot" value="${escapeHtml(n)}" ${sel.proteina===n?'checked':''}><span>${escapeHtml(n)}</span></label>`).join('')) : '<span class="miudo">—</span>';
+  $('#'+pre+'Salada').innerHTML = card.salada? `<label class="chip"><input type="checkbox" id="${pre}ckSalada" data-nome="${escapeHtml(card.salada)}" ${sel.salada?'checked':''}><span>Incluir ${escapeHtml(card.salada)}</span></label>` : '<span class="miudo">Sem salada.</span>';
+  limitar(pre);
+}
+function limitar(pre){
+  const cks=[...document.querySelectorAll(`[data-g="${pre}p"]`)];
+  const n=cks.filter(c=>c.checked).length;
+  cks.forEach(c=>{if(!c.checked)c.disabled=n>=4;});
+  const c=$('#'+pre+'Contador');if(c)c.textContent=`(${n}/4)`;
+}
+function lerMontagem(pre){
+  const pratos=[...document.querySelectorAll(`[data-g="${pre}p"]:checked`)].map(c=>c.value);
+  const pr=document.querySelector(`input[name="${pre}prot"]:checked`);
+  const cs=$('#'+pre+'ckSalada');
+  return {pratos,proteina:pr?pr.value:'',salada:(cs&&cs.checked)?(cs.dataset.nome||'Salada'):''};
+}
+function segFiliais(containerId,onPick,current){
+  const fs=arr(CONFIG.filiais||(PUBLICO&&PUBLICO.filiais));
+  $('#'+containerId).innerHTML=fs.map(f=>`<button class="${f===current?'on':''}" onclick="${onPick}('${escapeHtml(f).replace(/'/g,"\\'")}')">${escapeHtml(f)}</button>`).join('');
+}
+
+/* ===================== ROTEAMENTO ===================== */
+function rotear(){
+  if(location.hash==='#admin'){ mostrar('adminGate'); iniciarAdmin(); }
+  else { mostrar('colaborador'); iniciarColaborador(); }
+}
+function mostrar(qual){
+  $('#colaboradorView').classList.toggle('hidden',qual!=='colaborador');
+  $('#loginView').classList.toggle('hidden',qual!=='login');
+  $('#adminView').classList.toggle('hidden',qual!=='admin');
+}
+window.addEventListener('hashchange',rotear);
+
+/* ===================== COLABORADOR ===================== */
+async function iniciarColaborador(){
+  try{ PUBLICO=await (await fetch('/api/marmitas/publico')).json(); }
+  catch(e){ toast('Falha ao carregar',true); return; }
+  $('#colSub').textContent='Convênio '+(PUBLICO.nomeConvenio||'Kern');
+  $('#colAviso').textContent=`⏰ Lembrete: os pedidos só podem ser feitos até ${PUBLICO.horaLimite} da manhã.`;
+  $('#colAviso').classList.remove('hidden');
+  $('#colSucesso').classList.add('hidden'); $('#colStep2').classList.add('hidden'); $('#colStep1').classList.remove('hidden');
+  COL_SEL=null; FILIAL_COL=''; $('#colBusca').value=''; $('#colResultados').innerHTML='';
+  if(!PUBLICO.aberto){ $('#colFechado').classList.remove('hidden'); $('#colStep1').classList.add('hidden'); $('#colFechadoMsg').textContent=`Os pedidos de hoje já encerraram (após ${PUBLICO.horaLimite}).`; }
+  else $('#colFechado').classList.add('hidden');
+}
+function colBuscar(){
+  const q=($('#colBusca').value||'').toLowerCase().trim();
+  const lista=arr(PUBLICO.colaboradores).filter(c=>c.nome.toLowerCase().includes(q)).slice(0,12);
+  $('#colResultados').innerHTML = (q&&lista.length===0)?'<div class="empty">Nenhum nome disponível (talvez já pediu hoje).</div>'
+    : lista.map(c=>`<button onclick="colSelecionar('${c.id}')">${escapeHtml(c.nome)}${c.matricula?' · '+escapeHtml(c.matricula):''}</button>`).join('');
+}
+function colSelecionar(id){
+  COL_SEL=arr(PUBLICO.colaboradores).find(c=>c.id===id); if(!COL_SEL)return;
+  $('#colNome').textContent=COL_SEL.nome;
+  $('#colStep1').classList.add('hidden'); $('#colStep2').classList.remove('hidden');
+  FILIAL_COL=''; segFiliais('colFiliais','colPickFilial','');
+  const card=PUBLICO.cardapioHoje||{pratos:[],proteinas:[],salada:''};
+  const vazio=!(arr(card.pratos).length);
+  $('#colCardVazio').classList.toggle('hidden',!vazio);
+  $('#colMontar').classList.toggle('hidden',vazio);
+  $('#colConfirmarBtn').disabled=vazio;
+  if(!vazio) renderMontagem('col',card,null);
+}
+function colPickFilial(f){ FILIAL_COL=f; segFiliais('colFiliais','colPickFilial',f); }
+function colReset(recarrega){ if(recarrega) iniciarColaborador(); else { COL_SEL=null; $('#colStep2').classList.add('hidden'); $('#colStep1').classList.remove('hidden'); } }
+async function colConfirmar(){
+  if(!COL_SEL) return;
+  if(!FILIAL_COL) return toast('Escolha a filial',true);
+  const m=lerMontagem('col');
+  if(m.pratos.length<1) return toast('Escolha pelo menos 1 prato',true);
+  try{
+    await fetch('/api/marmitas/publico/pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({colaboradorId:COL_SEL.id,filial:FILIAL_COL,pratos:m.pratos,proteina:m.proteina,salada:m.salada})}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');return d;});
+    $('#colStep2').classList.add('hidden');
+    $('#colResumo').textContent=`${COL_SEL.nome} · ${FILIAL_COL} · ${m.pratos.join(', ')}${m.proteina?' · '+m.proteina:''}${m.salada?' · salada: '+m.salada:''}`;
+    $('#colSucesso').classList.remove('hidden');
+  }catch(e){ toast(e.message,true); }
+}
+
+/* ===================== ADMIN ===================== */
+async function iniciarAdmin(){
+  let cfg; try{ cfg=await (await fetch('/api/marmitas/config')).json(); }catch(e){ cfg={precisaLogin:false}; }
+  if(cfg.precisaLogin && !SENHA){ return mostrarLogin(); }
+  // valida senha (ou modo aberto)
+  try{
+    const r=await (await fetch('/api/marmitas/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha:SENHA})})).json();
+    if(!r.ok){ SENHA=''; localStorage.removeItem('marmitas_admin_senha'); return mostrarLogin(); }
+    USER={nome:r.nome,permissoes:r.permissoes||[]};
+  }catch(e){ return mostrarLogin(); }
+  abrirAdmin();
+}
+function mostrarLogin(){ mostrar('login'); $('#loginSenha').focus(); }
+async function fazerLogin(){
+  const s=$('#loginSenha').value;
+  const r=await (await fetch('/api/marmitas/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha:s})})).json();
+  if(r.ok){ SENHA=s; localStorage.setItem('marmitas_admin_senha',s); USER={nome:r.nome,permissoes:r.permissoes||[]}; $('#loginErro').classList.add('hidden'); abrirAdmin(); }
+  else $('#loginErro').classList.remove('hidden');
+}
+$('#loginSenha')?.addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
+function sair(){ SENHA='';USER=null;localStorage.removeItem('marmitas_admin_senha'); location.hash=''; }
+
+async function abrirAdmin(){
+  mostrar('admin');
+  CONFIG=await (await fetch('/api/marmitas/config')).json();
+  $('#admSub').textContent='Convênio '+(CONFIG.nomeConvenio||'Kern')+' · '+(USER.nome||'');
+  // mostra abas conforme permissao
+  const tabsPerm={dia:true,cardapios:perm('cardapio'),colab:perm('colaboradores'),relatorio:perm('relatorio'),usuarios:perm('usuarios'),config:perm('ajustes')};
+  document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('hidden',!tabsPerm[b.dataset.tab]));
+  $('#cardLancar').classList.toggle('hidden',!perm('pedidos_add'));
+  // primeira aba visivel
+  const primeira=[...document.querySelectorAll('#admTabs button')].find(b=>!b.classList.contains('hidden'));
+  admAba(primeira?primeira.dataset.tab:'dia');
+}
+function admAba(nome){
+  document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===nome));
+  ['dia','cardapios','colab','relatorio','usuarios','config'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',t!==nome));
+  if(nome==='dia'){ $('#dataDia').value=$('#dataDia').value||hoje(); if(perm('pedidos_add'))garantirColaboradores(); carregarDia(); }
+  if(nome==='cardapios') carregarCardapios();
+  if(nome==='colab') carregarColaboradores();
+  if(nome==='relatorio'){ if(!$('#relDe').value) relPeriodo(7); else carregarRelatorio(); }
+  if(nome==='usuarios') carregarUsuarios();
+  if(nome==='config') carregarConfigForm();
+}
+
+/* ---- PEDIDOS (admin) ---- */
+async function carregarDia(){
+  const data=$('#dataDia').value||hoje();
+  try{
+    const card=await api('/api/marmitas/cardapio?data='+data);
+    window.CARD_DIA={pratos:arr(card.pratos),proteinas:arr(card.proteinas),salada:card.salada||''};
+    if(perm('pedidos_add')){ segFiliais('addFiliais','addPickFilial',FILIAL_ADD); renderMontagem('add',window.CARD_DIA,null); }
+    // filtro filial
+    const fs=arr(CONFIG.filiais); const ff=$('#filtroFilial');const at=ff.value;
+    ff.innerHTML='<option value="">Todas as filiais</option>'+fs.map(f=>`<option>${escapeHtml(f)}</option>`).join(''); if(at)ff.value=at;
+    PEDIDOS_DIA=arr(await api('/api/marmitas/pedidos?data='+data)); PEDIDOS_DIA.forEach(p=>{ p.pratos=arr(p.pratos); p.salada=(p.salada===true||p.salada===1)?'Salada':(p.salada||''); });
+    renderPedidos(); renderProducao();
+  }catch(e){ toast(e.message,true); }
+}
+function addBuscar(){
+  const q=($('#addBusca').value||'').toLowerCase().trim();
+  if(!q){ $('#addResultados').innerHTML=''; return; }
+  const lista=arr(COLABORADORES).filter(c=>c.nome.toLowerCase().includes(q)).slice(0,8);
+  $('#addResultados').innerHTML=lista.map(c=>`<button onclick="addPickColab('${c.id}')">${escapeHtml(c.nome)}${c.matricula?' · '+escapeHtml(c.matricula):''}</button>`).join('');
+}
+async function garantirColaboradores(){ if(!COLABORADORES.length){ try{ COLABORADORES=arr(await api('/api/marmitas/colaboradores')); }catch(e){} } }
+function addPickColab(id){ const c=arr(COLABORADORES).find(x=>x.id===id); if(!c)return; ADD_SEL=c; $('#addNome').value=c.nome; $('#addMatricula').value=c.matricula||''; $('#addBusca').value=c.nome; $('#addResultados').innerHTML=''; }
+function addPickFilial(f){ FILIAL_ADD=f; segFiliais('addFiliais','addPickFilial',f); }
+async function lancarPedido(){
+  const nome=$('#addNome').value.trim();
+  if(!nome) return toast('Informe o nome',true);
+  if(!FILIAL_ADD) return toast('Escolha a filial',true);
+  const m=lerMontagem('add'); if(m.pratos.length<1) return toast('Escolha pelo menos 1 prato',true);
+  const body={data:$('#dataDia').value,filial:FILIAL_ADD,cliente:nome,matricula:$('#addMatricula').value.trim(),pratos:m.pratos,proteina:m.proteina,salada:m.salada};
+  if(ADD_SEL&&ADD_SEL.nome===nome) body.colaboradorId=ADD_SEL.id;
+  try{ await api('/api/marmitas/pedidos',{method:'POST',body:JSON.stringify(body)});
+    $('#addNome').value='';$('#addMatricula').value='';$('#addBusca').value='';ADD_SEL=null;
+    renderMontagem('add',window.CARD_DIA,null); toast('Pedido adicionado ✓'); carregarDia();
+  }catch(e){ toast(e.message,true); }
+}
+function descPedido(p){const partes=[];const pr=arr(p.pratos).join(', ');if(pr)partes.push('Pratos: '+escapeHtml(pr));if(p.proteina)partes.push('Proteína: '+escapeHtml(p.proteina));partes.push(p.salada?('Salada: '+escapeHtml(p.salada)):'Sem salada');return partes.join(' · ');}
+function renderPedidos(){
+  const filtro=$('#filtroFilial').value;
+  const lista=filtro?PEDIDOS_DIA.filter(p=>p.filial===filtro):PEDIDOS_DIA;
+  const el=$('#listaPedidos');
+  const podeEdit=perm('pedidos_edit');
+  el.innerHTML = lista.length===0?'<div class="empty">Nenhum pedido'+(filtro?' nesta filial':'')+'.</div>':lista.map(p=>`<div class="item">
+    <div class="grow"><div class="nome">${escapeHtml(p.cliente)} ${p.matricula?`<span class="pill">${escapeHtml(p.matricula)}</span>`:''} <span class="pill fil">${escapeHtml(p.filial)}</span> ${p.origem==='colaborador'?'<span class="pill ok">app</span>':''}</div>
+    <div class="meta">${descPedido(p)}</div></div>
+    <button class="ghost mini" onclick="imprimirPedido('${p.id}')" title="Imprimir etiqueta">🖨️</button>
+    ${podeEdit?`<button class="ghost mini" onclick="abrirEdicao('${p.id}')">✎</button><button class="danger mini" onclick="removerPedido('${p.id}')">✕</button>`:''}
+  </div>`).join('');
+  const q=lista.length;$('#totQtd').textContent=q+(q===1?' marmita':' marmitas')+(filtro?'':' (todas)');
+}
+function contar(lista,fn){const m={};lista.forEach(p=>{arr(fn(p)).forEach(k=>{if(k)m[k]=(m[k]||0)+1;});});return m;}
+function renderProducao(){
+  const el=$('#producao');
+  if(PEDIDOS_DIA.length===0){el.innerHTML='<div class="empty">Sem pedidos.</div>';return;}
+  const filiais=[];PEDIDOS_DIA.forEach(p=>{if(!filiais.includes(p.filial))filiais.push(p.filial);});
+  el.innerHTML=filiais.map(f=>{const ped=PEDIDOS_DIA.filter(p=>p.filial===f);const pratos=contar(ped,p=>p.pratos);const prot=contar(ped,p=>p.proteina);const sal=contar(ped,p=>p.salada);const totSal=ped.filter(p=>p.salada).length;
+    const ln=m=>Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${v}× ${escapeHtml(k)}`).join(' · ')||'—';
+    return `<div class="prod"><div class="fh"><span>${escapeHtml(f)}</span><span>${ped.length} marmita(s)</span></div><div class="ln"><b>Pratos:</b> ${ln(pratos)}</div><div class="ln"><b>Proteínas:</b> ${ln(prot)}</div><div class="ln"><b>Saladas (${totSal}):</b> ${ln(sal)}</div></div>`;
+  }).join('');
+}
+async function removerPedido(id){ if(!confirm('Remover este pedido?'))return; try{ await api('/api/marmitas/pedidos?id='+id,{method:'DELETE'}); toast('Removido'); carregarDia(); }catch(e){ toast(e.message,true); } }
+
+/* ---- impressão de etiquetas (impressora térmica 80mm) ---- */
+function etiquetaHTML(p){
+  const data=formatarData($('#dataDia').value||hoje());
+  const pr=arr(p.pratos).join(', ');
+  return `<div class="etiqueta">
+    <div class="et-conv">${escapeHtml(CONFIG.nomeConvenio||'Kern')} · ${data}${CONFIG.horaEntrega?(' · entrega '+escapeHtml(CONFIG.horaEntrega)):''}</div>
+    <div class="et-filial">${escapeHtml(p.filial)}</div>
+    <div class="et-nome">${escapeHtml(p.cliente)} ${p.matricula?`<span>${escapeHtml(p.matricula)}</span>`:''}</div>
+    <div class="et-sep"></div>
+    <div class="et-l"><b>Pratos:</b> ${escapeHtml(pr)}</div>
+    ${p.proteina?`<div class="et-l"><b>Proteína:</b> ${escapeHtml(p.proteina)}</div>`:''}
+    <div class="et-l"><b>Salada:</b> ${p.salada?escapeHtml(p.salada):'Não'}</div>
+  </div>`;
+}
+function imprimirEtiquetas(lista){
+  if(!lista||!lista.length){ toast('Nada para imprimir',true); return; }
+  $('#printArea').innerHTML = lista.map(etiquetaHTML).join('');
+  window.print();
+}
+function imprimirPedido(id){ const p=PEDIDOS_DIA.find(x=>x.id===id); if(p) imprimirEtiquetas([p]); }
+function imprimirTodos(){ const f=$('#filtroFilial').value; imprimirEtiquetas(f?PEDIDOS_DIA.filter(p=>p.filial===f):PEDIDOS_DIA); }
+
+/* editar pedido (modal) */
+function abrirEdicao(id){
+  const p=PEDIDOS_DIA.find(x=>x.id===id); if(!p)return;
+  $('#edId').value=id; $('#edNome').value=p.cliente; $('#edMatricula').value=p.matricula||'';
+  FILIAL_ED=p.filial; segFiliais('edFiliaisSel','edPickFilial',p.filial);
+  renderMontagem('ed',window.CARD_DIA&&arr(window.CARD_DIA.pratos).length?window.CARD_DIA:{pratos:arr(p.pratos),proteinas:p.proteina?[p.proteina]:[],salada:p.salada?'Salada':''},{pratos:arr(p.pratos),proteina:p.proteina||'',salada:!!p.salada});
+  $('#modalEditar').classList.remove('hidden');
+}
+function edPickFilial(f){ FILIAL_ED=f; segFiliais('edFiliaisSel','edPickFilial',f); }
+function fecharModal(){ $('#modalEditar').classList.add('hidden'); }
+async function salvarEdicao(){
+  const id=$('#edId').value;const m=lerMontagem('ed');
+  if(!FILIAL_ED)return toast('Escolha a filial',true);
+  if(m.pratos.length<1)return toast('Pelo menos 1 prato',true);
+  try{ await api('/api/marmitas/pedidos?id='+id,{method:'PUT',body:JSON.stringify({filial:FILIAL_ED,cliente:$('#edNome').value.trim(),matricula:$('#edMatricula').value.trim(),pratos:m.pratos,proteina:m.proteina,salada:m.salada})});
+    fecharModal(); toast('Pedido atualizado ✓'); carregarDia();
+  }catch(e){ toast(e.message,true); }
+}
+
+/* ---- CARDAPIOS ---- */
+async function carregarCardapios(){
+  try{ CARDAPIOS=await api('/api/marmitas/cardapios'); }catch(e){ toast(e.message,true); return; }
+  CARDAPIOS.semanas=arr(CARDAPIOS.semanas);
+  $('#ativarBtns').innerHTML=CARDAPIOS.semanas.map(s=>`<button class="${s.id===CARDAPIOS.ativo?'on':''}" onclick="ativarSemana('${s.id}')">${escapeHtml(s.nome)}${s.id===CARDAPIOS.ativo?' ✓':''}</button>`).join('');
+  $('#semSel').innerHTML=CARDAPIOS.semanas.map((s,i)=>`<button class="${i===SEM_ATUAL?'on':''}" onclick="selSemana(${i})">${escapeHtml(s.nome)}</button>`).join('');
+  $('#diaSel').innerHTML=Object.keys(DIA_LABEL).map(d=>`<button class="${d===DIA_ATUAL?'on':''}" onclick="selDia('${d}')">${DIA_LABEL[d]}</button>`).join('');
+  montarEditorDia();
+}
+function selSemana(i){ SEM_ATUAL=i; carregarCardapios(); }
+function selDia(d){ DIA_ATUAL=d; carregarCardapios(); }
+function montarEditorDia(){
+  const dia=(CARDAPIOS.semanas[SEM_ATUAL]&&CARDAPIOS.semanas[SEM_ATUAL].dias[DIA_ATUAL])||{pratos:[],proteinas:[],salada:''};
+  const linhas=(cont,vals,n,ph)=>{ $('#'+cont).innerHTML=''; for(let i=0;i<n;i++){const d=document.createElement('div');d.className='cardapioLinha';d.innerHTML=`<input type="text" placeholder="${ph} ${i+1}" value="${escapeHtml(arr(vals)[i]||'')}">`;$('#'+cont).appendChild(d);} };
+  linhas('cardPratos',dia.pratos,5,'Prato'); linhas('cardProteinas',dia.proteinas,2,'Proteína');
+  $('#cardSalada').innerHTML=`<div class="cardapioLinha"><input type="text" placeholder="Ex: Salada de folhas" value="${escapeHtml(dia.salada||'')}"></div>`;
+}
+function lerEditorDia(){
+  const vals=sel=>[...document.querySelectorAll(sel+' input')].map(i=>i.value.trim()).filter(Boolean);
+  return {pratos:vals('#cardPratos').slice(0,5),proteinas:vals('#cardProteinas').slice(0,2),salada:(vals('#cardSalada')[0]||'')};
+}
+function aplicarEditorNaMemoria(){ if(CARDAPIOS.semanas[SEM_ATUAL]){ CARDAPIOS.semanas[SEM_ATUAL].dias[DIA_ATUAL]=lerEditorDia(); } }
+async function salvarCardapios(){
+  aplicarEditorNaMemoria();
+  try{ await api('/api/marmitas/cardapios',{method:'POST',body:JSON.stringify({semanas:CARDAPIOS.semanas,ativo:CARDAPIOS.ativo})}); toast('Cardápios salvos ✓'); }
+  catch(e){ toast(e.message,true); }
+}
+async function ativarSemana(id){
+  aplicarEditorNaMemoria(); CARDAPIOS.ativo=id;
+  try{ await api('/api/marmitas/cardapios',{method:'POST',body:JSON.stringify({semanas:CARDAPIOS.semanas,ativo:id})}); toast('Semana ativada ✓'); carregarCardapios(); }
+  catch(e){ toast(e.message,true); }
+}
+
+/* ---- COLABORADORES ---- */
+async function carregarColaboradores(){
+  COLABORADORES=arr(await api('/api/marmitas/colaboradores'));
+  $('#colabCount').textContent=COLABORADORES.length;
+  $('#listaColab').innerHTML=COLABORADORES.length?COLABORADORES.map(c=>`<div class="item"><div class="grow"><div class="nome">${escapeHtml(c.nome)} ${c.matricula?`<span class="pill">${escapeHtml(c.matricula)}</span>`:''}</div></div><button class="danger mini" onclick="removerColab('${c.id}')">✕</button></div>`).join(''):'<div class="empty">Nenhum colaborador ainda.</div>';
+}
+async function addColaborador(){
+  const nome=$('#colabNome').value.trim(); if(!nome)return toast('Informe o nome',true);
+  try{ await api('/api/marmitas/colaboradores',{method:'POST',body:JSON.stringify({nome,matricula:$('#colabMatricula').value.trim()})}); $('#colabNome').value='';$('#colabMatricula').value=''; toast('Adicionado ✓'); carregarColaboradores(); }catch(e){ toast(e.message,true); }
+}
+async function addColaboradoresLote(){
+  const linhas=$('#colabLote').value.split('\n').map(s=>s.trim()).filter(Boolean); if(!linhas.length)return;
+  try{ await api('/api/marmitas/colaboradores',{method:'POST',body:JSON.stringify({lote:linhas})}); $('#colabLote').value=''; toast(linhas.length+' adicionados ✓'); carregarColaboradores(); }catch(e){ toast(e.message,true); }
+}
+async function removerColab(id){ if(!confirm('Remover colaborador?'))return; try{ await api('/api/marmitas/colaboradores?id='+id,{method:'DELETE'}); carregarColaboradores(); }catch(e){ toast(e.message,true); } }
+
+/* ---- RELATORIO ---- */
+function relPeriodo(p){
+  const ate=new Date();let de=new Date();
+  if(p==='mes'){ de=new Date(ate.getFullYear(),ate.getMonth(),1); }
+  else de.setDate(ate.getDate()-(p-1));
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  $('#relDe').value=fmt(de);$('#relAte').value=fmt(ate); carregarRelatorio();
+}
+async function carregarRelatorio(){
+  const de=$('#relDe').value,ate=$('#relAte').value; if(!de||!ate)return;
+  try{
+    const r=await api(`/api/marmitas/relatorio?de=${de}&ate=${ate}`);
+    r.porFilial=arr(r.porFilial).map(f=>Object.assign({},f,{porPessoa:arr(f.porPessoa)}));
+    r.consumo=r.consumo||{};r.consumo.pratos=arr(r.consumo.pratos);r.consumo.proteinas=arr(r.consumo.proteinas);r.consumo.saladas=arr(r.consumo.saladas);
+    ULTIMO_REL=r;
+    let tp=0;r.porFilial.forEach(f=>tp+=f.porPessoa.length);
+    $('#relQtd').textContent=r.quantidadeTotal||0;$('#relPessoasN').textContent=tp;
+    $('#relFiliais').innerHTML=r.porFilial.length?r.porFilial.map(f=>`<div class="prod"><div class="fh"><span>${escapeHtml(f.filial)}</span><span>${f.quantidade} marmita(s)</span></div>${f.porPessoa.map(p=>`<div class="item"><div class="grow"><div class="nome">${escapeHtml(p.cliente)} ${p.matricula?`<span class="pill">${escapeHtml(p.matricula)}</span>`:''}</div></div><div class="nome">${p.quantidade}</div></div>`).join('')}</div>`).join(''):'<div class="empty">Sem pedidos no período.</div>';
+    const c=r.consumo,bl=(t,a)=>`<div class="ln"><b>${t}:</b> ${a.length?a.map(x=>`${x.quantidade}× ${escapeHtml(x.nome)}`).join(' · '):'—'}</div>`;
+    $('#relConsumo').innerHTML=`<div class="prod">${bl('Pratos',c.pratos)}${bl('Proteínas',c.proteinas)}${bl('Saladas',c.saladas)}</div>`;
+  }catch(e){ toast(e.message,true); }
+}
+function baixarCSV(){
+  if(!ULTIMO_REL)return;
+  let l=[['Filial','Funcionario','Matricula','Marmitas']];
+  arr(ULTIMO_REL.porFilial).forEach(f=>arr(f.porPessoa).forEach(p=>l.push([f.filial,p.cliente,p.matricula,p.quantidade])));
+  l.push([]);l.push(['TOTAL','','',ULTIMO_REL.quantidadeTotal||0]);
+  const csv='\ufeff'+l.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`marmitas-${ULTIMO_REL.de}_a_${ULTIMO_REL.ate}.csv`;a.click();
+}
+
+/* ---- USUARIOS ---- */
+async function carregarUsuarios(){
+  USUARIOS=arr(await api('/api/marmitas/usuarios'));
+  $('#usuPerms').innerHTML=PERMS.map(p=>`<label><input type="checkbox" value="${p}"> ${PERM_LABELS[p]}</label>`).join('');
+  $('#listaUsuarios').innerHTML=USUARIOS.length?USUARIOS.map(u=>`<div class="item"><div class="grow"><div class="nome">${escapeHtml(u.nome)}</div><div class="meta">${arr(u.permissoes).map(p=>PERM_LABELS[p]||p).join(', ')||'sem permissões'}</div></div><button class="ghost mini" onclick="editarUsuario('${u.id}')">✎</button><button class="danger mini" onclick="removerUsuario('${u.id}')">✕</button></div>`).join(''):'<div class="empty">Nenhum usuário. No modo aberto, quem acessa é administrador — crie ao menos um usuário para proteger.</div>';
+}
+function editarUsuario(id){
+  const u=USUARIOS.find(x=>x.id===id);if(!u)return;
+  $('#usuFormTitulo').textContent='Editar usuário';$('#usuId').value=u.id;$('#usuNome').value=u.nome;$('#usuSenha').value='';$('#usuSenha').placeholder='(deixe em branco p/ manter)';
+  document.querySelectorAll('#usuPerms input').forEach(c=>c.checked=arr(u.permissoes).includes(c.value));
+}
+function limparUsuForm(){ $('#usuFormTitulo').textContent='Novo usuário';$('#usuId').value='';$('#usuNome').value='';$('#usuSenha').value='';$('#usuSenha').placeholder='PIN/senha';document.querySelectorAll('#usuPerms input').forEach(c=>c.checked=false); }
+async function salvarUsuario(){
+  const nome=$('#usuNome').value.trim();if(!nome)return toast('Informe o nome',true);
+  const permissoes=[...document.querySelectorAll('#usuPerms input:checked')].map(c=>c.value);
+  const body={nome,senha:$('#usuSenha').value.trim(),permissoes};if($('#usuId').value)body.id=$('#usuId').value;
+  try{ await api('/api/marmitas/usuarios',{method:'POST',body:JSON.stringify(body)}); toast('Usuário salvo ✓'); limparUsuForm(); carregarUsuarios(); }catch(e){ toast(e.message,true); }
+}
+async function removerUsuario(id){ if(!confirm('Remover usuário?'))return; try{ await api('/api/marmitas/usuarios?id='+id,{method:'DELETE'}); carregarUsuarios(); }catch(e){ toast(e.message,true); } }
+
+/* ---- AJUSTES ---- */
+async function carregarConfigForm(){
+  CONFIG=await (await fetch('/api/marmitas/config')).json();
+  $('#cNome').value=CONFIG.nomeConvenio||'';$('#cLimite').value=CONFIG.horaLimite||'';$('#cEntrega').value=CONFIG.horaEntrega||'';
+  $('#cBloquear').checked = CONFIG.bloquearAposLimite!==false;
+  const el=$('#edFiliais');el.innerHTML='';arr(CONFIG.filiais).forEach(f=>addFilialInput(f));
+}
+function addFilialInput(nome){ const el=$('#edFiliais');const d=document.createElement('div');d.className='cardapioLinha';d.style.display='flex';d.style.gap='8px';d.innerHTML=`<input type="text" placeholder="Nome da filial" value="${escapeHtml(typeof nome==='string'?nome:'')}"><button class="danger mini" onclick="this.parentElement.remove()">✕</button>`;el.appendChild(d); }
+async function salvarConfig(){
+  try{ await api('/api/marmitas/config',{method:'POST',body:JSON.stringify({nomeConvenio:$('#cNome').value.trim(),horaLimite:$('#cLimite').value,horaEntrega:$('#cEntrega').value,bloquearAposLimite:$('#cBloquear').checked})}); CONFIG.nomeConvenio=$('#cNome').value.trim(); $('#admSub').textContent='Convênio '+(CONFIG.nomeConvenio||'Kern')+' · '+(USER.nome||''); toast('Salvo ✓'); }catch(e){ toast(e.message,true); }
+}
+async function salvarFiliais(){
+  const filiais=[...document.querySelectorAll('#edFiliais input')].map(i=>i.value.trim()).filter(Boolean); if(!filiais.length)return toast('Pelo menos 1 filial',true);
+  try{ await api('/api/marmitas/config',{method:'POST',body:JSON.stringify({filiais})}); CONFIG.filiais=filiais; toast('Filiais salvas ✓'); }catch(e){ toast(e.message,true); }
+}
+
+/* CONFIG precisa carregar colaboradores para o lançar-admin */
+async function bootAdminExtra(){ await garantirColaboradores(); }
+
+rotear();
+</script>
+</body>
+</html>

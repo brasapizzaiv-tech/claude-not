@@ -61,6 +61,13 @@ export function Sidebar({
             </Link>
           );
         })}
+        <a
+          href="/marmitas.html"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        >
+          <span>🍱</span>
+          <span className="flex-1">Marmitas</span>
+        </a>
       </nav>
 
       <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
