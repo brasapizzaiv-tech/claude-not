@@ -1,4 +1,5 @@
 {
+  "regions": ["gru1"],
   "crons": [
     {
       "path": "/api/sefaz/cron",
@@ -6,7 +7,7 @@
     },
     {
       "path": "/api/contagem/cron",
-      "schedule": "0 11 * * *"
+      "schedule": "*/15 * * * *"
     }
   ]
 }

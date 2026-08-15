@@ -416,7 +416,12 @@ async function colConfirmar(){
 /* ===================== ADMIN ===================== */
 async function iniciarAdmin(){
   let cfg; try{ cfg=await (await fetch('/api/marmitas/config')).json(); }catch(e){ cfg={precisaLogin:false}; }
-  if(cfg.precisaLogin && !SENHA){ return mostrarLogin(); }
+  if(cfg.precisaLogin && !SENHA){
+    // Login unificado: se já está logado no sistema (dono), entra sem senha.
+    try{ const r=await (await fetch('/api/marmitas/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha:''})})).json();
+      if(r.ok){ USER={nome:r.nome,permissoes:r.permissoes||[]}; return abrirAdmin(); } }catch(e){}
+    return mostrarLogin();
+  }
   // valida senha (ou modo aberto)
   try{
     const r=await (await fetch('/api/marmitas/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha:SENHA})})).json();

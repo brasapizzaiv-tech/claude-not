@@ -1,5 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+
+// Login unificado: quem está logado no ERP como "dono" é admin das marmitas.
+async function erpDono(): Promise<boolean> {
+  try {
+    const supa = await createClient();
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) return false;
+    const { data } = await supa.from("profiles").select("papel").eq("id", user.id).single();
+    return data?.papel === "dono";
+  } catch {
+    return false;
+  }
+}
 
 // Sistema de Marmitas portado do Worker Cloudflare para Next.js + Supabase.
 // Mantém o mesmo contrato de API e a mesma autenticação (cabeçalho X-Senha).
@@ -66,11 +80,13 @@ function resolveCardapioHoje(cfg: Cfg, data: string) {
   const dia = sem && sem.dias ? sem.dias[diaSemana(data)] : null;
   return dia ? { pratos: dia.pratos || [], proteinas: dia.proteinas || [], salada: dia.salada || "" } : { pratos: [], proteinas: [], salada: "" };
 }
-function resolveUsuario(cfg: Cfg, req: NextRequest) {
+async function resolveUsuario(cfg: Cfg, req: NextRequest) {
   if (cfg.usuarios.length === 0) return { nome: "Administrador", permissoes: PERMISSOES.slice() };
   const senha = req.headers.get("x-senha") || "";
   const u = cfg.usuarios.find((x) => x.senha === senha && senha !== "");
-  return u ? { nome: u.nome, permissoes: u.permissoes || [] } : null;
+  if (u) return { nome: u.nome, permissoes: u.permissoes || [] };
+  if (await erpDono()) return { nome: "Administrador", permissoes: PERMISSOES.slice() };
+  return null;
 }
 const pode = (u: { permissoes: string[] } | null, p: string) => !!(u && (u.permissoes || []).includes(p));
 
@@ -148,12 +164,14 @@ async function handle(req: NextRequest, rota: string[]) {
   if (path === "/api/login" && method === "POST") {
     if (cfg.usuarios.length === 0) return json({ ok: true, nome: "Administrador", permissoes: PERMISSOES.slice() });
     const u = cfg.usuarios.find((x) => x.senha === String(body?.senha || "") && x.senha !== "");
-    return u ? json({ ok: true, nome: u.nome, permissoes: u.permissoes || [] }) : json({ ok: false });
+    if (u) return json({ ok: true, nome: u.nome, permissoes: u.permissoes || [] });
+    if (await erpDono()) return json({ ok: true, nome: "Administrador", permissoes: PERMISSOES.slice() });
+    return json({ ok: false });
   }
   if (path === "/api/config" && method === "GET") return json(configPublica(cfg));
 
   // A partir daqui exige usuário
-  const user = resolveUsuario(cfg, req);
+  const user = await resolveUsuario(cfg, req);
   if (!user) return erro("Acesso negado.", 401);
 
   if (path === "/api/config" && method === "POST") {
