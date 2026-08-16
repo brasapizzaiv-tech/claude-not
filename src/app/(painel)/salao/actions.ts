@@ -19,6 +19,9 @@ export async function salvarConfigPdv(formData: FormData) {
     { chave: "servico_percent", valor: String(valorNum(formData.get("servico_percent"))) },
     { chave: "servico_so_noite", valor: formData.get("servico_so_noite") === "on" ? "1" : "0" },
     { chave: "servico_inicio", valor: (formData.get("servico_inicio") as string) || "18:00" },
+    { chave: "cupom_endereco", valor: ((formData.get("cupom_endereco") as string) || "").trim() },
+    { chave: "cupom_telefone", valor: ((formData.get("cupom_telefone") as string) || "").trim() },
+    { chave: "cupom_msg", valor: ((formData.get("cupom_msg") as string) || "").trim() },
   ];
   await supabase.from("pdv_config").upsert(linhas);
   revalidatePath("/salao/cardapio");

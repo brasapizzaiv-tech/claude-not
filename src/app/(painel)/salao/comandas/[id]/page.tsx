@@ -19,7 +19,7 @@ export default async function ComandaPage({
 
   const { data: comanda } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, status, peso, tara, valor_buffet, livre, servico, forma_pagamento")
+    .select("id, numero, status, peso, tara, valor_buffet, livre, servico, forma_pagamento, aberta_em")
     .eq("id", id)
     .single();
   if (!comanda) notFound();
@@ -53,6 +53,15 @@ export default async function ComandaPage({
   const servico = fechada ? Number(comanda.servico) : Math.round(subtotal * perc) / 100;
   const total = subtotal + servico;
 
+  const dataHora = new Date(comanda.aberta_em).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
     <div className="mx-auto max-w-xl p-6">
       <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
@@ -70,6 +79,13 @@ export default async function ComandaPage({
         <p className="text-lg font-extrabold uppercase tracking-wide text-zinc-900 dark:text-zinc-50">
           {cfg.nome_restaurante || "Restaurante"}
         </p>
+        {(cfg.cupom_endereco || cfg.cupom_telefone) && (
+          <p className="text-[11px] text-zinc-500">
+            {cfg.cupom_endereco}
+            {cfg.cupom_endereco && cfg.cupom_telefone ? " · " : ""}
+            {cfg.cupom_telefone}
+          </p>
+        )}
         <p className="mt-1 text-xs uppercase tracking-wide text-zinc-400">
           Comanda {fechada ? "· fechada" : ""}
         </p>
@@ -105,6 +121,12 @@ export default async function ComandaPage({
         <div className="mt-4 flex justify-center">
           <QRComanda id={comanda.id} />
         </div>
+        <p className="mt-2 text-[11px] text-zinc-400">{dataHora}</p>
+        {cfg.cupom_msg && (
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
+            {cfg.cupom_msg}
+          </p>
+        )}
       </div>
 
       <div className="mt-3 flex justify-center">

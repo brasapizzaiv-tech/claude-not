@@ -128,6 +128,31 @@ export function CardapioClient({
             />
           </div>
         </div>
+        <div className="space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <p className="text-xs font-medium text-zinc-500">
+            Dados no cupom (opcionais)
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <input
+              name="cupom_endereco"
+              defaultValue={config.cupom_endereco ?? ""}
+              placeholder="Endereço"
+              className={`${inputCls} min-w-56 flex-1`}
+            />
+            <input
+              name="cupom_telefone"
+              defaultValue={config.cupom_telefone ?? ""}
+              placeholder="Telefone / WhatsApp"
+              className={inputCls}
+            />
+          </div>
+          <input
+            name="cupom_msg"
+            defaultValue={config.cupom_msg ?? ""}
+            placeholder="Mensagem (ex.: Obrigado pela preferência!)"
+            className={`${inputCls} w-full`}
+          />
+        </div>
         <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
           Salvar configurações
         </button>
