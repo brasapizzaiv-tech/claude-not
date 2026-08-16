@@ -17,6 +17,19 @@ export async function salvarAgendamento(formData: FormData) {
   const dia_semana =
     frequencia === "diario" ? null : diaRaw ? Number(diaRaw) : 1;
 
+  // Divisão personalizada: [{ categoria_id, colaborador_id }, ...]
+  let divisao: { categoria_id: string; colaborador_id: string }[] | null = null;
+  if (modo === "personalizado") {
+    try {
+      const arr = JSON.parse((formData.get("divisao") as string) || "[]");
+      divisao = Array.isArray(arr)
+        ? arr.filter((x) => x?.categoria_id && x?.colaborador_id)
+        : [];
+    } catch {
+      divisao = [];
+    }
+  }
+
   const dados = {
     nome,
     frequencia,
@@ -24,6 +37,7 @@ export async function salvarAgendamento(formData: FormData) {
     hora: Number.isFinite(h) ? h : 8,
     minuto: Number.isFinite(m) ? m : 0,
     modo,
+    divisao,
   };
 
   if (id) {

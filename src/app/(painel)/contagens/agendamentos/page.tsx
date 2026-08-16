@@ -24,6 +24,7 @@ type Ag = {
   modo: string;
   ativo: boolean;
   ultima_exec: string | null;
+  divisao: { categoria_id: string; colaborador_id: string }[] | null;
 };
 
 function quando(a: Ag) {
@@ -36,11 +37,14 @@ function quando(a: Ag) {
 
 export default async function AgendamentosPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("contagem_agendamentos")
-    .select("*")
-    .order("criado_em");
+  const [{ data }, { data: cats }, { data: colabs }] = await Promise.all([
+    supabase.from("contagem_agendamentos").select("*").order("criado_em"),
+    supabase.from("categorias").select("id, nome").order("nome"),
+    supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome"),
+  ]);
   const ags = (data as Ag[]) ?? [];
+  const categorias = (cats as { id: string; nome: string }[]) ?? [];
+  const colaboradores = (colabs as { id: string; nome: string }[]) ?? [];
 
   return (
     <div className="mx-auto max-w-3xl p-8">
@@ -62,7 +66,7 @@ export default async function AgendamentosPage() {
         </Link>
       </div>
 
-      <NovoAgendamento />
+      <NovoAgendamento categorias={categorias} colaboradores={colaboradores} />
 
       {ags.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
@@ -86,9 +90,11 @@ export default async function AgendamentosPage() {
                 </p>
                 <p className="text-sm text-zinc-500">{quando(a)}</p>
                 <p className="text-xs text-zinc-400">
-                  {a.modo === "todos"
-                    ? "Divide entre todos (rodízio)"
-                    : "Repete a última divisão"}
+                  {a.modo === "personalizado"
+                    ? `Personalizado · ${(a.divisao ?? []).length} seção(ões) · ${new Set((a.divisao ?? []).map((d) => d.colaborador_id)).size} pessoa(s)`
+                    : a.modo === "todos"
+                      ? "Divide entre todos (rodízio)"
+                      : "Repete a última divisão"}
                   {a.ultima_exec ? ` · última: ${dataBR(a.ultima_exec)}` : ""}
                 </p>
               </div>
