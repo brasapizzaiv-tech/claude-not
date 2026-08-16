@@ -129,6 +129,13 @@ export default async function AgendamentosPage() {
         anterior (quem conta o quê). Faça uma contagem manual dividida uma vez, e
         os agendamentos repetem sozinhos.
       </p>
+      <p className="mt-2 text-xs text-zinc-400">
+        Precisa mandar o app pros colaboradores?{" "}
+        <Link href="/colaboradores" className="text-orange-600 hover:underline">
+          Colaboradores → Enviar app
+        </Link>
+        .
+      </p>
     </div>
   );
 }
