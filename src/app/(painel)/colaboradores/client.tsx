@@ -6,11 +6,29 @@ import {
   salvarColaborador,
   excluirColaborador,
   zerarPinColaborador,
+  gerarTokenColaborador,
 } from "./actions";
+
+function GerarLink({ id, small }: { id: string; small?: boolean }) {
+  return (
+    <form action={gerarTokenColaborador} className="inline">
+      <input type="hidden" name="id" value={id} />
+      <button
+        className={
+          small
+            ? "rounded border border-orange-500 px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            : "w-full rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600"
+        }
+      >
+        Gerar link
+      </button>
+    </form>
+  );
+}
 
 function LinkApp({ c }: { c: Colaborador }) {
   const [copiado, setCopiado] = useState(false);
-  if (!c.token) return <span className="text-xs text-zinc-400">—</span>;
+  if (!c.token) return <GerarLink id={c.id} small />;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const link = `${origin}/eu/${c.token}`;
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
@@ -57,8 +75,11 @@ function CardApp({ c }: { c: Colaborador }) {
   const [copiado, setCopiado] = useState(false);
   if (!c.token)
     return (
-      <div className="rounded-xl border border-zinc-200 p-3 text-sm text-zinc-400 dark:border-zinc-800">
-        {c.nome} — sem link
+      <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+        <div className="mb-2 truncate font-medium text-zinc-900 dark:text-zinc-100">
+          {c.nome}
+        </div>
+        <GerarLink id={c.id} />
       </div>
     );
   const origin = typeof window !== "undefined" ? window.location.origin : "";

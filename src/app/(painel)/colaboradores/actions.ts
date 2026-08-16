@@ -13,8 +13,23 @@ export async function salvarColaborador(formData: FormData) {
   if (id) {
     await supabase.from("colaboradores").update({ nome, whatsapp }).eq("id", id);
   } else {
-    await supabase.from("colaboradores").insert({ nome, whatsapp });
+    // Novo colaborador já nasce com o link pessoal (token).
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    await supabase.from("colaboradores").insert({ nome, whatsapp, token });
   }
+  revalidatePath("/colaboradores");
+}
+
+// Gera o link (token) para um colaborador que ainda não tem.
+export async function gerarTokenColaborador(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  await supabase
+    .from("colaboradores")
+    .update({ token })
+    .eq("id", id)
+    .is("token", null);
   revalidatePath("/colaboradores");
 }
 
