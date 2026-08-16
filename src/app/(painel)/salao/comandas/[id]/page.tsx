@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
-import { QRComanda, AddItem } from "./cliente";
+import { QRComanda, AddItem, MontarPizza } from "./cliente";
+import type { PizzaOpcao } from "./cliente";
 import { ImprimirComanda } from "./print";
 import { AcoesComanda } from "./acoes";
 import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
@@ -45,6 +46,43 @@ export default async function ComandaPage({
 
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
+
+  // Dados das pizzas (montador)
+  const [{ data: tamRows }, { data: sabRows }, { data: sabPr }, { data: brdRows }, { data: brdPr }] =
+    await Promise.all([
+      supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores").order("ordem"),
+      supabase.from("pdv_pizza_sabores").select("id, nome, ordem").eq("ativo", true).order("nome"),
+      supabase.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco"),
+      supabase.from("pdv_pizza_bordas").select("id, nome, ordem").eq("ativo", true).order("nome"),
+      supabase.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco"),
+    ]);
+  const pizzaTamanhos = (tamRows ?? []).map((t) => ({
+    id: t.id as string,
+    nome: t.nome as string,
+    max: Number(t.max_sabores),
+  }));
+  const montarOpcoes = (
+    rows: { id: string; nome: string }[],
+    fk: "sabor_id" | "borda_id",
+    precosRows: Record<string, unknown>[],
+  ): PizzaOpcao[] =>
+    rows.map((r) => {
+      const precosMap: Record<string, number> = {};
+      for (const pr of precosRows) {
+        if (pr[fk] === r.id) precosMap[pr.tamanho_id as string] = Number(pr.preco);
+      }
+      return { id: r.id, nome: r.nome, precos: precosMap };
+    });
+  const pizzaSabores = montarOpcoes(
+    (sabRows as { id: string; nome: string }[]) ?? [],
+    "sabor_id",
+    (sabPr as Record<string, unknown>[]) ?? [],
+  );
+  const pizzaBordas = montarOpcoes(
+    (brdRows as { id: string; nome: string }[]) ?? [],
+    "borda_id",
+    (brdPr as Record<string, unknown>[]) ?? [],
+  );
 
   const lista =
     (itens as { id: string; descricao: string; qtd: number; preco_unit: number }[]) ?? [];
@@ -179,6 +217,17 @@ export default async function ComandaPage({
           </tbody>
         </table>
       </div>
+
+      {!fechada && pizzaTamanhos.length > 0 && (
+        <div className="mt-3">
+          <MontarPizza
+            comandaId={comanda.id}
+            tamanhos={pizzaTamanhos}
+            sabores={pizzaSabores}
+            bordas={pizzaBordas}
+          />
+        </div>
+      )}
 
       {!fechada && (
         <div className="mt-3">

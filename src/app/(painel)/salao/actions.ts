@@ -154,6 +154,68 @@ export async function adicionarItemComanda(comandaId: string, itemId: string) {
   revalidatePath(`/salao/comandas/${comandaId}`);
 }
 
+// Monta uma pizza (tamanho + sabores + borda) e adiciona à comanda.
+// Preço = média dos sabores escolhidos (para o tamanho) + borda (para o tamanho).
+// O cálculo é feito no servidor a partir das tabelas — o cliente só manda os ids.
+export async function adicionarPizzaComanda(
+  comandaId: string,
+  tamanhoId: string,
+  saborIds: string[],
+  bordaId: string | null,
+) {
+  const supabase = await createClient();
+  if (!tamanhoId || saborIds.length === 0) return;
+
+  const [{ data: tam }, { data: sabPrecos }, { data: sabores }] = await Promise.all([
+    supabase.from("pdv_pizza_tamanhos").select("nome, max_sabores").eq("id", tamanhoId).single(),
+    supabase
+      .from("pdv_pizza_sabor_precos")
+      .select("sabor_id, preco")
+      .eq("tamanho_id", tamanhoId)
+      .in("sabor_id", saborIds),
+    supabase.from("pdv_pizza_sabores").select("id, nome").in("id", saborIds),
+  ]);
+  if (!tam) return;
+
+  const ids = saborIds.slice(0, tam.max_sabores);
+  const precoDe = new Map((sabPrecos ?? []).map((p) => [p.sabor_id, Number(p.preco)]));
+  const nomeDe = new Map((sabores ?? []).map((s) => [s.id, s.nome]));
+  const usados = ids.filter((id) => precoDe.has(id));
+  if (usados.length === 0) return;
+
+  const media =
+    usados.reduce((s, id) => s + (precoDe.get(id) || 0), 0) / usados.length;
+
+  let bordaNome = "";
+  let bordaPreco = 0;
+  if (bordaId) {
+    const [{ data: b }, { data: bp }] = await Promise.all([
+      supabase.from("pdv_pizza_bordas").select("nome").eq("id", bordaId).single(),
+      supabase
+        .from("pdv_pizza_borda_precos")
+        .select("preco")
+        .eq("borda_id", bordaId)
+        .eq("tamanho_id", tamanhoId)
+        .single(),
+    ]);
+    if (b) bordaNome = b.nome;
+    bordaPreco = Number(bp?.preco ?? 0);
+  }
+
+  const preco = Math.round((media + bordaPreco) * 100) / 100;
+  const nomes = usados.map((id) => nomeDe.get(id) || "?").join(" / ");
+  const descricao =
+    `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : "");
+
+  await supabase.from("pdv_comanda_itens").insert({
+    comanda_id: comandaId,
+    descricao,
+    qtd: 1,
+    preco_unit: preco,
+  });
+  revalidatePath(`/salao/comandas/${comandaId}`);
+}
+
 export async function removerItemComanda(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;
