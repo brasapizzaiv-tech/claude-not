@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
 import { QRComanda, AddItem } from "./cliente";
+import { ImprimirComanda } from "./print";
 import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
 
 const moeda = (n: number) =>
@@ -59,7 +60,13 @@ export default async function ComandaPage({
       </Link>
 
       {/* Cupom da comanda */}
-      <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-5 text-center dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="comanda-cupom mt-3 rounded-2xl border border-zinc-200 bg-white p-5 text-center dark:border-zinc-800 dark:bg-zinc-950">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-brasa.png"
+          alt=""
+          className="mx-auto mb-2 h-14 w-14 object-contain"
+        />
         <p className="text-lg font-extrabold uppercase tracking-wide text-zinc-900 dark:text-zinc-50">
           {cfg.nome_restaurante || "Restaurante"}
         </p>
@@ -98,6 +105,10 @@ export default async function ComandaPage({
         <div className="mt-4 flex justify-center">
           <QRComanda id={comanda.id} />
         </div>
+      </div>
+
+      <div className="mt-3 flex justify-center">
+        <ImprimirComanda />
       </div>
 
       {/* Itens */}
