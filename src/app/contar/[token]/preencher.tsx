@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import type { Produto } from "@/lib/types";
-import { EstoqueInput, somarEstoque } from "@/components/estoque-input";
+import { EstoqueInput, calcular } from "@/components/estoque-input";
 import { salvarContagemPublica } from "./actions";
 
 type ItemInicial = {
@@ -51,7 +51,7 @@ export function PreencherClient({
     const el = formRef.current?.elements.namedItem(nome) as
       | HTMLInputElement
       | undefined;
-    return somarEstoque(el?.value ?? "");
+    return calcular(el?.value ?? "");
   }
 
   function salvar() {
@@ -124,7 +124,7 @@ export function PreencherClient({
                             <label className="block text-sm text-zinc-500">
                               Em estoque
                               <span className="ml-1 text-xs text-zinc-400">
-                                (vários locais? use +, ex.: 12+8)
+                                (vários locais ou conta? use +, ou o 🧮)
                               </span>
                               <div className="mt-1">
                                 <EstoqueInput

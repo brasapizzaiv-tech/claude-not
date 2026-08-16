@@ -4,7 +4,7 @@ import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Contagem, Produto } from "@/lib/types";
 import { dataBR } from "@/lib/format";
-import { somarEstoque } from "@/components/estoque-input";
+import { calcular } from "@/components/estoque-input";
 import {
   salvarContagemItens,
   finalizarContagem,
@@ -75,7 +75,7 @@ export function ContarClient({
     const el = formRef.current?.elements.namedItem(nome) as
       | HTMLInputElement
       | undefined;
-    return somarEstoque(el?.value ?? "");
+    return calcular(el?.value ?? "");
   }
 
   function montarItens() {
@@ -203,7 +203,7 @@ export function ContarClient({
                 <th className="px-4 py-3 text-right">
                   Em estoque
                   <span className="ml-1 font-normal normal-case text-zinc-400">
-                    (vários locais: 12+8)
+                    (dá pra somar/calcular: 12+8, 3*12)
                   </span>
                 </th>
               </tr>
