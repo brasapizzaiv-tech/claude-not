@@ -4,6 +4,7 @@ import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Contagem, Produto } from "@/lib/types";
 import { dataBR } from "@/lib/format";
+import { somarEstoque } from "@/components/estoque-input";
 import {
   salvarContagemItens,
   finalizarContagem,
@@ -17,7 +18,7 @@ type ItemInicial = {
 };
 
 const numInput =
-  "w-20 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-right text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-28 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-right text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 const campo =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
@@ -74,7 +75,7 @@ export function ContarClient({
     const el = formRef.current?.elements.namedItem(nome) as
       | HTMLInputElement
       | undefined;
-    return Number((el?.value ?? "").replace(",", ".")) || 0;
+    return somarEstoque(el?.value ?? "");
   }
 
   function montarItens() {
@@ -199,7 +200,12 @@ export function ContarClient({
               <tr>
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Un.</th>
-                <th className="px-4 py-3 text-right">Em estoque</th>
+                <th className="px-4 py-3 text-right">
+                  Em estoque
+                  <span className="ml-1 font-normal normal-case text-zinc-400">
+                    (vários locais: 12+8)
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

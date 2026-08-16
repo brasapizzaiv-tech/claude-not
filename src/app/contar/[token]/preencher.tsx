@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import type { Produto } from "@/lib/types";
+import { EstoqueInput, somarEstoque } from "@/components/estoque-input";
 import { salvarContagemPublica } from "./actions";
 
 type ItemInicial = {
@@ -9,9 +10,6 @@ type ItemInicial = {
   qtd_estoque: number;
   qtd_pedir: number;
 };
-
-const numInput =
-  "w-24 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-right text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
 export function PreencherClient({
   token,
@@ -53,7 +51,7 @@ export function PreencherClient({
     const el = formRef.current?.elements.namedItem(nome) as
       | HTMLInputElement
       | undefined;
-    return Number((el?.value ?? "").replace(",", ".")) || 0;
+    return somarEstoque(el?.value ?? "");
   }
 
   function salvar() {
@@ -125,14 +123,17 @@ export function PreencherClient({
                             </div>
                             <label className="block text-sm text-zinc-500">
                               Em estoque
-                              <input
-                                name={`estoque_${p.id}`}
-                                inputMode="decimal"
-                                defaultValue={
-                                  ini?.qtd_estoque ? ini.qtd_estoque : ""
-                                }
-                                className={`${numInput} mt-1 w-full`}
-                              />
+                              <span className="ml-1 text-xs text-zinc-400">
+                                (vários locais? use +, ex.: 12+8)
+                              </span>
+                              <div className="mt-1">
+                                <EstoqueInput
+                                  name={`estoque_${p.id}`}
+                                  defaultValue={
+                                    ini?.qtd_estoque ? String(ini.qtd_estoque) : ""
+                                  }
+                                />
+                              </div>
                             </label>
                           </div>
                         );
