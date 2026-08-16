@@ -3,15 +3,24 @@ import { createClient } from "@/lib/supabase/server";
 import type { Contagem } from "@/lib/types";
 import { dataBR } from "@/lib/format";
 import { criarContagem, excluirContagem } from "./actions";
+import { AvulsaForm } from "./avulsa";
 
 export default async function ContagensPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("contagens")
-    .select("*")
-    .order("criado_em", { ascending: false });
+  const [{ data }, { data: cats }, { data: colabs }] = await Promise.all([
+    supabase.from("contagens").select("*").order("criado_em", { ascending: false }),
+    supabase.from("categorias").select("id, nome").order("nome"),
+    supabase
+      .from("colaboradores")
+      .select("id, nome, whatsapp")
+      .eq("ativo", true)
+      .order("nome"),
+  ]);
 
   const contagens = (data as Contagem[]) ?? [];
+  const categorias = (cats as { id: string; nome: string }[]) ?? [];
+  const colaboradores =
+    (colabs as { id: string; nome: string; whatsapp: string | null }[]) ?? [];
 
   return (
     <div className="mx-auto max-w-4xl p-8">
@@ -24,7 +33,8 @@ export default async function ContagensPage() {
             Conte o estoque e gere a sugestão do que pedir.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <AvulsaForm categorias={categorias} colaboradores={colaboradores} />
           <Link
             href="/contagens/agendamentos"
             className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"

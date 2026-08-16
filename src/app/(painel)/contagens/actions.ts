@@ -92,6 +92,57 @@ export async function excluirContagem(formData: FormData) {
 }
 
 // Atribui (ou desatribui) uma categoria a um colaborador nesta contagem.
+// Cria uma contagem AVULSA: categorias escolhidas atribuídas a um colaborador,
+// já com o link pronto para enviar.
+export async function criarContagemAvulsa(
+  categoriaIds: string[],
+  colaboradorId: string,
+) {
+  const supabase = await createClient();
+  if (!colaboradorId || categoriaIds.length === 0)
+    return { ok: false as const };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: cats } = await supabase
+    .from("categorias")
+    .select("nome")
+    .in("id", categoriaIds);
+  const nomes = (cats ?? []).map((c) => c.nome).join(", ");
+  const hoje = new Date().toLocaleDateString("pt-BR");
+
+  const { data: cont } = await supabase
+    .from("contagens")
+    .insert({
+      descricao: `Avulsa: ${nomes} (${hoje})`,
+      responsavel_id: user?.id ?? null,
+    })
+    .select("id")
+    .single();
+  if (!cont) return { ok: false as const };
+
+  await supabase.from("contagem_atribuicoes").upsert(
+    categoriaIds.map((cid) => ({
+      contagem_id: cont.id,
+      categoria_id: cid,
+      colaborador_id: colaboradorId,
+    })),
+    { onConflict: "contagem_id,categoria_id" },
+  );
+
+  const token = randomUUID().replace(/-/g, "");
+  await supabase.from("contagem_links").insert({
+    contagem_id: cont.id,
+    colaborador_id: colaboradorId,
+    token,
+  });
+
+  revalidatePath("/contagens");
+  return { ok: true as const, contagemId: cont.id, token };
+}
+
 // Atribui TODAS as categorias a um colaborador (contagem inteira p/ 1 pessoa).
 export async function atribuirTudo(contagemId: string, colaboradorId: string) {
   const supabase = await createClient();

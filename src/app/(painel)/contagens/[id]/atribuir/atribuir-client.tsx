@@ -98,7 +98,7 @@ export function AtribuirClient({
       {colaboradores.length > 0 && (
         <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Contagem avulsa — dar tudo a um colaborador:
+            Dar a contagem inteira a um colaborador:
           </span>
           <select
             value={todosPara}
