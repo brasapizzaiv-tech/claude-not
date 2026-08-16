@@ -92,6 +92,52 @@ export async function excluirContagem(formData: FormData) {
 }
 
 // Atribui (ou desatribui) uma categoria a um colaborador nesta contagem.
+// Atribui TODAS as categorias a um colaborador (contagem inteira p/ 1 pessoa).
+export async function atribuirTudo(contagemId: string, colaboradorId: string) {
+  const supabase = await createClient();
+  if (!colaboradorId) return;
+
+  const { data: cats } = await supabase.from("categorias").select("id");
+  if (cats?.length) {
+    await supabase.from("contagem_atribuicoes").upsert(
+      cats.map((c) => ({
+        contagem_id: contagemId,
+        categoria_id: c.id,
+        colaborador_id: colaboradorId,
+      })),
+      { onConflict: "contagem_id,categoria_id" },
+    );
+  }
+
+  const { data: existente } = await supabase
+    .from("contagem_links")
+    .select("id")
+    .eq("contagem_id", contagemId)
+    .eq("colaborador_id", colaboradorId)
+    .maybeSingle();
+  if (!existente) {
+    await supabase.from("contagem_links").insert({
+      contagem_id: contagemId,
+      colaborador_id: colaboradorId,
+      token: randomUUID().replace(/-/g, ""),
+    });
+  }
+
+  // Remove links de quem ficou sem categoria.
+  const { data: links } = await supabase
+    .from("contagem_links")
+    .select("id, colaborador_id")
+    .eq("contagem_id", contagemId);
+  const remover = (links ?? [])
+    .filter((l) => l.colaborador_id !== colaboradorId)
+    .map((l) => l.id);
+  if (remover.length > 0) {
+    await supabase.from("contagem_links").delete().in("id", remover);
+  }
+
+  revalidatePath(`/contagens/${contagemId}/atribuir`);
+}
+
 export async function salvarAtribuicao(
   contagemId: string,
   categoriaId: string,

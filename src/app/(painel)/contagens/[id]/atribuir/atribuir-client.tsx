@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Contagem, Colaborador } from "@/lib/types";
-import { salvarAtribuicao } from "../../actions";
+import { salvarAtribuicao, atribuirTudo } from "../../actions";
 
 export type CategoriaLinha = {
   id: string;
@@ -33,8 +33,23 @@ export function AtribuirClient({
   const nomeColab = (id: string | null) =>
     colaboradores.find((c) => c.id === id)?.nome ?? null;
 
+  const [todosPara, setTodosPara] = useState("");
+
   async function atribuir(categoriaId: string, colaboradorId: string) {
     await salvarAtribuicao(contagem.id, categoriaId, colaboradorId || null);
+    router.refresh();
+  }
+
+  async function darTudo() {
+    if (!todosPara) return;
+    if (
+      !confirm(
+        "Isso vai atribuir a contagem INTEIRA a esse colaborador (ele conta tudo). Continuar?",
+      )
+    )
+      return;
+    await atribuirTudo(contagem.id, todosPara);
+    setTodosPara("");
     router.refresh();
   }
 
@@ -76,6 +91,34 @@ export function AtribuirClient({
             Cadastre um colaborador
           </Link>{" "}
           primeiro.
+        </div>
+      )}
+
+      {/* Atalho: contagem inteira para um colaborador */}
+      {colaboradores.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Contagem avulsa — dar tudo a um colaborador:
+          </span>
+          <select
+            value={todosPara}
+            onChange={(e) => setTodosPara(e.target.value)}
+            className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          >
+            <option value="">escolha...</option>
+            {colaboradores.map((col) => (
+              <option key={col.id} value={col.id}>
+                {col.nome}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={darTudo}
+            disabled={!todosPara}
+            className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+          >
+            Atribuir tudo
+          </button>
         </div>
       )}
 

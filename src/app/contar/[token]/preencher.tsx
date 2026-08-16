@@ -29,6 +29,7 @@ export function PreencherClient({
   const formRef = useRef<HTMLFormElement>(null);
   const [salvando, startSave] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
 
   const iniciais = useMemo(() => {
     const m = new Map<string, ItemInicial>();
@@ -46,6 +47,17 @@ export function PreencherClient({
     }
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [produtos]);
+
+  const gruposFiltrados = useMemo(() => {
+    const b = busca.trim().toLowerCase();
+    if (!b) return grupos;
+    return grupos
+      .map(([cat, itens]) => [
+        cat,
+        itens.filter((p) => p.nome.toLowerCase().includes(b)),
+      ] as [string, Produto[]])
+      .filter(([, itens]) => itens.length > 0);
+  }, [grupos, busca]);
 
   function ler(nome: string) {
     const el = formRef.current?.elements.namedItem(nome) as
@@ -100,8 +112,19 @@ export function PreencherClient({
             <p className="mt-4 text-sm text-zinc-500">
               Preencha <b>quanto tem em estoque</b> de cada item.
             </p>
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="🔎 Buscar item..."
+              className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+            {gruposFiltrados.length === 0 && (
+              <p className="mt-4 text-center text-sm text-zinc-400">
+                Nenhum item com “{busca}”.
+              </p>
+            )}
             <form ref={formRef} className="mt-4 space-y-6">
-              {grupos.map(([cat, itensCat]) => (
+              {gruposFiltrados.map(([cat, itensCat]) => (
                 <Fragment key={cat}>
                   <div>
                     <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
