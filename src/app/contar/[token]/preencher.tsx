@@ -124,7 +124,7 @@ export function PreencherClient({
                             <label className="block text-sm text-zinc-500">
                               Em estoque
                               <span className="ml-1 text-xs text-zinc-400">
-                                (vários locais ou conta? use +, ou o 🧮)
+                                (em mais de um lugar? toque em “+ caixa”)
                               </span>
                               <div className="mt-1">
                                 <EstoqueInput
