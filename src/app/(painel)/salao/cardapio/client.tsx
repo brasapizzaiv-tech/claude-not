@@ -41,6 +41,33 @@ export function CardapioClient({
           Configurações do buffet
         </p>
         <div className="flex flex-wrap items-end gap-4">
+          <div className="min-w-56 flex-1">
+            <label className="mb-1 block text-xs text-zinc-500">
+              Nome do restaurante (no cupom)
+            </label>
+            <input
+              name="nome_restaurante"
+              defaultValue={config.nome_restaurante ?? ""}
+              placeholder="Ex.: Brasa Restaurante"
+              className={`${inputCls} w-full`}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Tara padrão (kg)</label>
+            <input
+              name="tara_padrao"
+              inputMode="decimal"
+              defaultValue={
+                Number(config.tara_padrao || 0)
+                  ? String(config.tara_padrao).replace(".", ",")
+                  : ""
+              }
+              placeholder="0,000"
+              className={`${inputCls} w-24`}
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="mb-1 block text-xs text-zinc-500">
               Preço por kg

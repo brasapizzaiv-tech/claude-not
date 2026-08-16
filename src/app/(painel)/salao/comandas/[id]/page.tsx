@@ -18,7 +18,7 @@ export default async function ComandaPage({
 
   const { data: comanda } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, status, peso, valor_buffet, livre, servico, forma_pagamento")
+    .select("id, numero, status, peso, tara, valor_buffet, livre, servico, forma_pagamento")
     .eq("id", id)
     .single();
   if (!comanda) notFound();
@@ -58,18 +58,46 @@ export default async function ComandaPage({
         ← Salão
       </Link>
 
-      <div className="mt-2 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            Comanda #{comanda.numero}
-          </h1>
-          <p className="text-sm text-zinc-500">
-            {fechada ? "Fechada" : "Aberta"}
-            {comanda.peso ? ` · ${comanda.peso} kg` : ""}
-            {comanda.livre ? " · buffet livre" : ""}
-          </p>
+      {/* Cupom da comanda */}
+      <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-5 text-center dark:border-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg font-extrabold uppercase tracking-wide text-zinc-900 dark:text-zinc-50">
+          {cfg.nome_restaurante || "Restaurante"}
+        </p>
+        <p className="mt-1 text-xs uppercase tracking-wide text-zinc-400">
+          Comanda {fechada ? "· fechada" : ""}
+        </p>
+        <p className="text-4xl font-black text-zinc-900 dark:text-zinc-50">
+          #{comanda.numero}
+        </p>
+
+        <div className="mx-auto mt-4 grid max-w-sm grid-cols-3 gap-2 text-sm">
+          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+            <p className="text-[11px] uppercase text-zinc-400">Peso</p>
+            <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+              {Number(comanda.peso ?? 0)} kg
+            </p>
+          </div>
+          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+            <p className="text-[11px] uppercase text-zinc-400">Tara</p>
+            <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+              {Number(comanda.tara ?? 0)} kg
+            </p>
+          </div>
+          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+            <p className="text-[11px] uppercase text-zinc-400">Valor</p>
+            <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+              {moeda(Number(comanda.valor_buffet))}
+            </p>
+          </div>
         </div>
-        <QRComanda id={comanda.id} />
+
+        {comanda.livre && (
+          <p className="mt-2 text-xs font-semibold text-orange-600">BUFFET LIVRE</p>
+        )}
+
+        <div className="mt-4 flex justify-center">
+          <QRComanda id={comanda.id} />
+        </div>
       </div>
 
       {/* Itens */}

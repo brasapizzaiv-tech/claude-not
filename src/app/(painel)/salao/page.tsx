@@ -13,7 +13,7 @@ export default async function SalaoPage() {
       .select("id, numero, peso, valor_buffet, livre, aberta_em")
       .eq("status", "aberta")
       .order("numero", { ascending: false }),
-    supabase.from("pdv_config").select("valor").eq("chave", "preco_kg"),
+    supabase.from("pdv_config").select("chave, valor"),
   ]);
   const comandas =
     (abertas as {
@@ -23,7 +23,10 @@ export default async function SalaoPage() {
       valor_buffet: number;
       livre: boolean;
     }[]) ?? [];
-  const precoKg = Number((cfg ?? [])[0]?.valor ?? 0);
+  const config: Record<string, string> = {};
+  for (const r of cfg ?? []) config[r.chave] = r.valor;
+  const precoKg = Number(config.preco_kg ?? 0);
+  const taraPadrao = Number(config.tara_padrao ?? 0);
 
   return (
     <div className="mx-auto max-w-3xl p-8">
@@ -58,6 +61,16 @@ export default async function SalaoPage() {
             inputMode="decimal"
             placeholder="0,000"
             className="w-32 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Tara (kg)</label>
+          <input
+            name="tara"
+            inputMode="decimal"
+            defaultValue={taraPadrao ? String(taraPadrao).replace(".", ",") : ""}
+            placeholder="0,000"
+            className="w-24 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
           />
         </div>
         <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">

@@ -12,6 +12,8 @@ const valorNum = (s: unknown) =>
 export async function salvarConfigPdv(formData: FormData) {
   const supabase = await createClient();
   const linhas = [
+    { chave: "nome_restaurante", valor: ((formData.get("nome_restaurante") as string) || "").trim() },
+    { chave: "tara_padrao", valor: String(valorNum(formData.get("tara_padrao"))) },
     { chave: "preco_kg", valor: String(valorNum(formData.get("preco_kg"))) },
     { chave: "buffet_livre", valor: String(valorNum(formData.get("buffet_livre"))) },
     { chave: "servico_percent", valor: String(valorNum(formData.get("servico_percent"))) },
@@ -56,9 +58,11 @@ export async function criarComandaBuffet(formData: FormData) {
   const peso = valorNum(formData.get("peso"));
   if (peso <= 0) return;
   const cfg = await pdvCfg(supabase);
+  const tara = valorNum(formData.get("tara")) || Number(cfg.tara_padrao || 0);
+  const liquido = Math.max(0, peso - tara);
   const precoKg = Number(cfg.preco_kg || 0);
   const livre = Number(cfg.buffet_livre || 0);
-  let valor = peso * precoKg;
+  let valor = liquido * precoKg;
   let ehLivre = false;
   if (livre > 0 && valor >= livre) {
     valor = livre;
@@ -67,7 +71,7 @@ export async function criarComandaBuffet(formData: FormData) {
   valor = Math.round(valor * 100) / 100;
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .insert({ peso, valor_buffet: valor, livre: ehLivre })
+    .insert({ peso, tara, valor_buffet: valor, livre: ehLivre })
     .select("id")
     .single();
   revalidatePath("/salao");
