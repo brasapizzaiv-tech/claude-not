@@ -19,12 +19,25 @@ export default async function ContagemPage({
 
   if (!contagem) notFound();
 
+  // Se a contagem tem categorias atribuídas (divisão/avulsa/agendada), mostra
+  // SÓ essas seções. Sem atribuição = contagem geral (todos os produtos).
+  const { data: atrib } = await supabase
+    .from("contagem_atribuicoes")
+    .select("categoria_id")
+    .eq("contagem_id", id);
+  const catIds = [
+    ...new Set((atrib ?? []).map((a) => a.categoria_id).filter(Boolean)),
+  ];
+
+  let prodQuery = supabase
+    .from("produtos")
+    .select("id, nome, unidade, estoque_minimo, categorias(nome)")
+    .eq("ativo", true)
+    .order("nome");
+  if (catIds.length) prodQuery = prodQuery.in("categoria_id", catIds);
+
   const [{ data: produtos }, { data: itens }] = await Promise.all([
-    supabase
-      .from("produtos")
-      .select("id, nome, unidade, estoque_minimo, categorias(nome)")
-      .eq("ativo", true)
-      .order("nome"),
+    prodQuery,
     supabase
       .from("contagem_itens")
       .select("produto_id, qtd_estoque, qtd_pedir")
