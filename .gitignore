@@ -47,3 +47,5 @@ next-env.d.ts
 Thumbs.db
 Desktop.ini
 scripts/_lote-*.json
+scripts/_*.mjs
+scripts/_cat.json
