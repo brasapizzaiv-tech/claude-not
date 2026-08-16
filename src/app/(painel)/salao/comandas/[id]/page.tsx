@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
 import { QRComanda, AddItem } from "./cliente";
 import { ImprimirComanda } from "./print";
+import { AcoesComanda } from "./acoes";
 import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
 
 const moeda = (n: number) =>
@@ -24,7 +25,7 @@ export default async function ComandaPage({
     .single();
   if (!comanda) notFound();
 
-  const [{ data: itens }, { data: cardapio }, { data: cfgRows }] =
+  const [{ data: itens }, { data: cardapio }, { data: cfgRows }, { data: outrasRows }] =
     await Promise.all([
       supabase
         .from("pdv_comanda_itens")
@@ -33,7 +34,14 @@ export default async function ComandaPage({
         .order("criado_em"),
       supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
       supabase.from("pdv_config").select("chave, valor"),
+      supabase
+        .from("pdv_comandas")
+        .select("id, numero")
+        .eq("status", "aberta")
+        .neq("id", id)
+        .order("numero"),
     ]);
+  const outras = (outrasRows as { id: string; numero: number }[]) ?? [];
 
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
@@ -234,6 +242,15 @@ export default async function ComandaPage({
             Fechar e receber ({moeda(total)})
           </button>
         </form>
+      )}
+
+      {!fechada && (
+        <AcoesComanda
+          comandaId={comanda.id}
+          peso={Number(comanda.peso ?? 0)}
+          tara={Number(comanda.tara ?? 0)}
+          outras={outras}
+        />
       )}
     </div>
   );

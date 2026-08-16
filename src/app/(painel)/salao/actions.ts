@@ -55,13 +55,8 @@ async function pdvCfg(supabase: Awaited<ReturnType<typeof createClient>>) {
   return m;
 }
 
-// Nova comanda de buffet a partir do peso (kg). Aplica "livre" (teto) se passar.
-export async function criarComandaBuffet(formData: FormData) {
-  const supabase = await createClient();
-  const peso = valorNum(formData.get("peso"));
-  if (peso <= 0) return;
-  const cfg = await pdvCfg(supabase);
-  const tara = valorNum(formData.get("tara")) || Number(cfg.tara_padrao || 0);
+// Calcula o valor do buffet a partir do peso/tara e da config (aplica "livre").
+function calcBuffet(cfg: Record<string, string>, peso: number, tara: number) {
   const liquido = Math.max(0, peso - tara);
   const precoKg = Number(cfg.preco_kg || 0);
   const livre = Number(cfg.buffet_livre || 0);
@@ -71,14 +66,74 @@ export async function criarComandaBuffet(formData: FormData) {
     valor = livre;
     ehLivre = true;
   }
-  valor = Math.round(valor * 100) / 100;
+  return { valor: Math.round(valor * 100) / 100, livre: ehLivre };
+}
+
+// Nova comanda de buffet a partir do peso (kg). Aplica "livre" (teto) se passar.
+export async function criarComandaBuffet(formData: FormData) {
+  const supabase = await createClient();
+  const peso = valorNum(formData.get("peso"));
+  if (peso <= 0) return;
+  const cfg = await pdvCfg(supabase);
+  const tara = valorNum(formData.get("tara")) || Number(cfg.tara_padrao || 0);
+  const { valor, livre } = calcBuffet(cfg, peso, tara);
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .insert({ peso, tara, valor_buffet: valor, livre: ehLivre })
+    .insert({ peso, tara, valor_buffet: valor, livre })
     .select("id")
     .single();
   revalidatePath("/salao");
   if (com) redirect(`/salao/comandas/${com.id}`);
+}
+
+// Edita o buffet da comanda (peso/tara) e recalcula o valor.
+export async function editarBuffet(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const peso = valorNum(formData.get("peso"));
+  const tara = valorNum(formData.get("tara"));
+  const cfg = await pdvCfg(supabase);
+  const { valor, livre } = calcBuffet(cfg, peso, tara);
+  await supabase
+    .from("pdv_comandas")
+    .update({ peso, tara, valor_buffet: valor, livre })
+    .eq("id", id);
+  revalidatePath(`/salao/comandas/${id}`);
+}
+
+export async function excluirComanda(formData: FormData) {
+  const supabase = await createClient();
+  await supabase.from("pdv_comandas").delete().eq("id", formData.get("id") as string);
+  revalidatePath("/salao");
+  redirect("/salao");
+}
+
+// Junta OUTRA comanda nesta: move os itens, soma buffet/peso/tara e apaga a outra.
+export async function juntarComandas(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const outra = formData.get("outra") as string;
+  if (!outra || outra === id) return;
+
+  const [{ data: a }, { data: o }] = await Promise.all([
+    supabase.from("pdv_comandas").select("peso, tara, valor_buffet, livre").eq("id", id).single(),
+    supabase.from("pdv_comandas").select("peso, tara, valor_buffet, livre").eq("id", outra).single(),
+  ]);
+  if (!a || !o) return;
+
+  await supabase.from("pdv_comanda_itens").update({ comanda_id: id }).eq("comanda_id", outra);
+  await supabase
+    .from("pdv_comandas")
+    .update({
+      peso: Number(a.peso || 0) + Number(o.peso || 0),
+      tara: Number(a.tara || 0) + Number(o.tara || 0),
+      valor_buffet: Number(a.valor_buffet) + Number(o.valor_buffet),
+      livre: a.livre || o.livre,
+    })
+    .eq("id", id);
+  await supabase.from("pdv_comandas").delete().eq("id", outra);
+  revalidatePath(`/salao/comandas/${id}`);
+  revalidatePath("/salao");
 }
 
 export async function adicionarItemComanda(comandaId: string, itemId: string) {
