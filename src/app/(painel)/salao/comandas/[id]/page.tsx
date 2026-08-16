@@ -1,0 +1,179 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { servicoAgora } from "../../util";
+import { QRComanda, AddItem } from "./cliente";
+import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
+
+const moeda = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+export default async function ComandaPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: comanda } = await supabase
+    .from("pdv_comandas")
+    .select("id, numero, status, peso, valor_buffet, livre, servico, forma_pagamento")
+    .eq("id", id)
+    .single();
+  if (!comanda) notFound();
+
+  const [{ data: itens }, { data: cardapio }, { data: cfgRows }] =
+    await Promise.all([
+      supabase
+        .from("pdv_comanda_itens")
+        .select("id, descricao, qtd, preco_unit")
+        .eq("comanda_id", id)
+        .order("criado_em"),
+      supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
+      supabase.from("pdv_config").select("chave, valor"),
+    ]);
+
+  const cfg: Record<string, string> = {};
+  for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
+
+  const lista =
+    (itens as { id: string; descricao: string; qtd: number; preco_unit: number }[]) ?? [];
+  const fechada = comanda.status === "fechada";
+
+  const subtotal =
+    Number(comanda.valor_buffet) +
+    lista.reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  const perc = fechada
+    ? subtotal > 0
+      ? (Number(comanda.servico) / subtotal) * 100
+      : 0
+    : servicoAgora(cfg);
+  const servico = fechada ? Number(comanda.servico) : Math.round(subtotal * perc) / 100;
+  const total = subtotal + servico;
+
+  return (
+    <div className="mx-auto max-w-xl p-6">
+      <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
+        ← Salão
+      </Link>
+
+      <div className="mt-2 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+            Comanda #{comanda.numero}
+          </h1>
+          <p className="text-sm text-zinc-500">
+            {fechada ? "Fechada" : "Aberta"}
+            {comanda.peso ? ` · ${comanda.peso} kg` : ""}
+            {comanda.livre ? " · buffet livre" : ""}
+          </p>
+        </div>
+        <QRComanda id={comanda.id} />
+      </div>
+
+      {/* Itens */}
+      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <table className="w-full text-sm">
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tr className="bg-white dark:bg-zinc-950">
+              <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}
+              </td>
+              <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                {moeda(Number(comanda.valor_buffet))}
+              </td>
+              <td className="px-4 py-2" />
+            </tr>
+            {lista.map((i) => (
+              <tr key={i.id} className="bg-white dark:bg-zinc-950">
+                <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
+                  {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
+                  {i.descricao}
+                </td>
+                <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                  {moeda(Number(i.qtd) * Number(i.preco_unit))}
+                </td>
+                <td className="px-4 py-2 text-right">
+                  {!fechada && (
+                    <form action={removerItemComanda} className="inline">
+                      <input type="hidden" name="id" value={i.id} />
+                      <input type="hidden" name="comanda_id" value={comanda.id} />
+                      <button className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">
+                        ×
+                      </button>
+                    </form>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {!fechada && (
+        <div className="mt-3">
+          <AddItem
+            comandaId={comanda.id}
+            itens={
+              (cardapio as { id: string; nome: string; categoria: string | null; preco: number }[]) ??
+              []
+            }
+          />
+        </div>
+      )}
+
+      {/* Totais */}
+      <div className="mt-6 space-y-1 rounded-2xl border border-zinc-200 p-4 text-sm dark:border-zinc-800">
+        <div className="flex justify-between text-zinc-500">
+          <span>Subtotal</span>
+          <span>{moeda(subtotal)}</span>
+        </div>
+        {servico > 0 && (
+          <div className="flex justify-between text-zinc-500">
+            <span>Serviço ({Math.round(perc)}%)</span>
+            <span>{moeda(servico)}</span>
+          </div>
+        )}
+        <div className="flex justify-between border-t border-zinc-100 pt-1 text-lg font-bold text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
+          <span>Total</span>
+          <span>{moeda(total)}</span>
+        </div>
+      </div>
+
+      {/* Fechar / reabrir */}
+      {fechada ? (
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-sm text-green-600">
+            ✓ Paga{comanda.forma_pagamento ? ` · ${comanda.forma_pagamento}` : ""}
+          </span>
+          <form action={reabrirComanda}>
+            <input type="hidden" name="id" value={comanda.id} />
+            <button className="text-sm text-zinc-400 hover:text-orange-600">
+              Reabrir
+            </button>
+          </form>
+        </div>
+      ) : (
+        <form action={fecharComanda} className="mt-4 flex flex-wrap items-end gap-2">
+          <input type="hidden" name="id" value={comanda.id} />
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Pagamento</label>
+            <select
+              name="forma"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            >
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Pix">Pix</option>
+              <option value="Cartão de débito">Cartão de débito</option>
+              <option value="Cartão de crédito">Cartão de crédito</option>
+            </select>
+          </div>
+          <button className="rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
+            Fechar e receber ({moeda(total)})
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}

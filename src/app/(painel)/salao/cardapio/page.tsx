@@ -4,10 +4,11 @@ import { CardapioClient } from "./client";
 export default async function CardapioPage() {
   const supabase = await createClient();
   const [{ data: cfg }, { data: itens }] = await Promise.all([
-    supabase.from("pdv_config").select("chave, valor").eq("chave", "preco_kg"),
+    supabase.from("pdv_config").select("chave, valor"),
     supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
   ]);
-  const precoKg = Number((cfg ?? [])[0]?.valor ?? 0);
+  const config: Record<string, string> = {};
+  for (const r of cfg ?? []) config[r.chave] = r.valor;
 
   return (
     <div className="mx-auto max-w-3xl p-8">
@@ -19,7 +20,7 @@ export default async function CardapioPage() {
         comandas e o caixa (próximas fases).
       </p>
       <CardapioClient
-        precoKg={precoKg}
+        config={config}
         itens={
           (itens as { id: string; nome: string; categoria: string | null; preco: number }[]) ??
           []

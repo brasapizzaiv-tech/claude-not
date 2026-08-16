@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { salvarPrecoKg, salvarItem, excluirItem } from "../actions";
+import { salvarConfigPdv, salvarItem, excluirItem } from "../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -11,13 +11,14 @@ const inputCls =
 type Item = { id: string; nome: string; categoria: string | null; preco: number };
 
 export function CardapioClient({
-  precoKg,
+  config,
   itens,
 }: {
-  precoKg: number;
+  config: Record<string, string>;
   itens: Item[];
 }) {
   const [editando, setEditando] = useState<Item | null>(null);
+  const precoKg = Number(config.preco_kg || 0);
 
   const categorias = [
     ...new Set(itens.map((i) => i.categoria).filter(Boolean)),
@@ -31,17 +32,19 @@ export function CardapioClient({
 
   return (
     <div className="space-y-6">
-      {/* Preço do buffet */}
+      {/* Configurações do buffet/serviço */}
       <form
-        action={salvarPrecoKg}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+        action={salvarConfigPdv}
+        className="space-y-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
       >
-        <div>
-          <label className="mb-1 block text-xs text-zinc-500">
-            Preço do buffet (por kg)
-          </label>
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-zinc-500">R$</span>
+        <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Configurações do buffet
+        </p>
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">
+              Preço por kg
+            </label>
             <input
               name="preco_kg"
               inputMode="decimal"
@@ -49,17 +52,58 @@ export function CardapioClient({
               placeholder="0,00"
               className={`${inputCls} w-28`}
             />
-            <span className="text-sm text-zinc-500">/ kg</span>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">
+              Buffet livre (teto R$)
+            </label>
+            <input
+              name="buffet_livre"
+              inputMode="decimal"
+              defaultValue={
+                Number(config.buffet_livre || 0)
+                  ? String(config.buffet_livre).replace(".", ",")
+                  : ""
+              }
+              placeholder="0,00"
+              className={`${inputCls} w-28`}
+            />
+            <p className="mt-1 text-[11px] text-zinc-400">
+              acima disso, cobra fixo (0 = desligado)
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-end gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Serviço (%)</label>
+            <input
+              name="servico_percent"
+              inputMode="decimal"
+              defaultValue={config.servico_percent ?? "10"}
+              className={`${inputCls} w-20`}
+            />
+          </div>
+          <label className="flex items-center gap-2 pb-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <input
+              type="checkbox"
+              name="servico_so_noite"
+              defaultChecked={config.servico_so_noite === "1"}
+              className="h-4 w-4"
+            />
+            só à noite, a partir de
+          </label>
+          <div>
+            <input
+              type="time"
+              name="servico_inicio"
+              defaultValue={config.servico_inicio || "18:00"}
+              className={inputCls}
+            />
           </div>
         </div>
         <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
-          Salvar preço
+          Salvar configurações
         </button>
-        {precoKg > 0 && (
-          <span className="text-sm text-zinc-400">
-            Atual: {moeda(precoKg)}/kg
-          </span>
-        )}
       </form>
 
       {/* Novo/editar item */}
