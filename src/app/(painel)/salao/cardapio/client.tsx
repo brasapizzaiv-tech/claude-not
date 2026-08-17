@@ -1,50 +1,304 @@
 "use client";
 
 import { useState } from "react";
-import { salvarConfigPdv, salvarItem, excluirItem } from "../actions";
+import {
+  salvarConfigPdv,
+  salvarItem,
+  excluirItem,
+  toggleItem,
+  adicionarCategoria,
+  toggleCategoria,
+  moverCategoria,
+  excluirCategoria,
+} from "../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const inputCls =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
-type Item = { id: string; nome: string; categoria: string | null; preco: number };
+type Item = { id: string; nome: string; categoria: string | null; preco: number; ativo: boolean };
+type Categoria = { id: string; nome: string; ordem: number; disponivel: boolean };
 
 export function CardapioClient({
   config,
   itens,
+  categorias,
 }: {
   config: Record<string, string>;
   itens: Item[];
+  categorias: Categoria[];
 }) {
   const [editando, setEditando] = useState<Item | null>(null);
-  const precoKg = Number(config.preco_kg || 0);
-
-  const categorias = [
-    ...new Set(itens.map((i) => i.categoria).filter(Boolean)),
-  ] as string[];
 
   const grupos = new Map<string, Item[]>();
   for (const i of itens) {
     const k = i.categoria || "Sem categoria";
     grupos.set(k, [...(grupos.get(k) ?? []), i]);
   }
+  // categorias sem linha própria (ex.: itens sem categoria)
+  const extras = [...grupos.keys()].filter(
+    (k) => !categorias.some((c) => c.nome === k),
+  );
 
   return (
     <div className="space-y-6">
-      {/* Configurações do buffet/serviço */}
-      <form
-        action={salvarConfigPdv}
-        className="space-y-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
-      >
-        <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Configurações do buffet
-        </p>
+      <ConfigForm config={config} />
+
+      {/* Adicionar categoria */}
+      <form action={adicionarCategoria} className="flex flex-wrap items-end gap-2">
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Nova categoria</label>
+          <input name="nome" required placeholder="Ex.: Bebidas" className={inputCls} />
+        </div>
+        <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+          + Adicionar categoria
+        </button>
+      </form>
+
+      {/* Editor de item (aparece ao clicar em Editar) */}
+      {editando && (
+        <form
+          key={editando.id}
+          action={async (fd) => {
+            await salvarItem(fd);
+            setEditando(null);
+          }}
+          className="flex flex-wrap items-end gap-3 rounded-2xl border border-orange-300 bg-orange-50 p-4 dark:border-orange-500/40 dark:bg-orange-950/20"
+        >
+          <input type="hidden" name="id" value={editando.id} />
+          <div className="min-w-40 flex-1">
+            <label className="mb-1 block text-xs text-zinc-500">Item</label>
+            <input name="nome" required defaultValue={editando.nome} className={`${inputCls} w-full`} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Categoria</label>
+            <input
+              name="categoria"
+              list="cats"
+              defaultValue={editando.categoria ?? ""}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Preço</label>
+            <input
+              name="preco"
+              inputMode="decimal"
+              defaultValue={String(editando.preco).replace(".", ",")}
+              className={`${inputCls} w-28`}
+            />
+          </div>
+          <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+            Salvar
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditando(null)}
+            className="rounded-lg px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            Cancelar
+          </button>
+        </form>
+      )}
+
+      <datalist id="cats">
+        {categorias.map((c) => (
+          <option key={c.id} value={c.nome} />
+        ))}
+      </datalist>
+
+      {/* Categorias em ordem */}
+      <div className="space-y-4">
+        {categorias.map((cat, idx) => (
+          <CategoriaCard
+            key={cat.id}
+            cat={cat}
+            itens={grupos.get(cat.nome) ?? []}
+            primeira={idx === 0}
+            ultima={idx === categorias.length - 1}
+            onEditar={setEditando}
+          />
+        ))}
+
+        {extras.map((nome) => (
+          <div
+            key={nome}
+            className="rounded-2xl border border-dashed border-zinc-300 p-4 dark:border-zinc-700"
+          >
+            <p className="mb-2 text-xs font-semibold uppercase text-zinc-400">
+              {nome} (sem categoria cadastrada)
+            </p>
+            <ItensTabela itens={grupos.get(nome) ?? []} onEditar={setEditando} />
+          </div>
+        ))}
+
+        {categorias.length === 0 && extras.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+            Nenhuma categoria ainda. Crie uma acima.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CategoriaCard({
+  cat,
+  itens,
+  primeira,
+  ultima,
+  onEditar,
+}: {
+  cat: Categoria;
+  itens: Item[];
+  primeira: boolean;
+  ultima: boolean;
+  onEditar: (i: Item) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        {/* ordenar */}
+        <div className="flex flex-col">
+          <form action={moverCategoria}>
+            <input type="hidden" name="id" value={cat.id} />
+            <input type="hidden" name="dir" value="cima" />
+            <button
+              disabled={primeira}
+              className="text-zinc-400 hover:text-orange-600 disabled:opacity-30"
+              aria-label="Subir"
+            >
+              ▲
+            </button>
+          </form>
+          <form action={moverCategoria}>
+            <input type="hidden" name="id" value={cat.id} />
+            <input type="hidden" name="dir" value="baixo" />
+            <button
+              disabled={ultima}
+              className="text-zinc-400 hover:text-orange-600 disabled:opacity-30"
+              aria-label="Descer"
+            >
+              ▼
+            </button>
+          </form>
+        </div>
+
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{cat.nome}</h2>
+        <span className="text-xs text-zinc-400">({itens.length})</span>
+
+        <div className="ml-auto flex items-center gap-2">
+          {/* disponível / indisponível */}
+          <form action={toggleCategoria}>
+            <input type="hidden" name="id" value={cat.id} />
+            <input type="hidden" name="disponivel" value={cat.disponivel ? "0" : "1"} />
+            <button
+              className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+                cat.disponivel
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                  : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
+              }`}
+            >
+              {cat.disponivel ? "✓ Disponível" : "✕ Indisponível"}
+            </button>
+          </form>
+          {/* excluir categoria */}
+          <form
+            action={excluirCategoria}
+            onSubmit={(e) => {
+              if (!confirm(`Excluir a categoria "${cat.nome}"? Os produtos não são apagados.`))
+                e.preventDefault();
+            }}
+          >
+            <input type="hidden" name="id" value={cat.id} />
+            <button className="text-zinc-300 hover:text-red-600 dark:text-zinc-600" aria-label="Excluir categoria">
+              🗑
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <ItensTabela itens={itens} onEditar={onEditar} />
+
+      {/* adicionar produto nesta categoria */}
+      <form action={salvarItem} className="mt-3 flex flex-wrap items-end gap-2">
+        <input type="hidden" name="categoria" value={cat.nome} />
+        <div className="min-w-40 flex-1">
+          <input name="nome" required placeholder="Novo produto..." className={`${inputCls} w-full`} />
+        </div>
+        <input name="preco" inputMode="decimal" placeholder="0,00" className={`${inputCls} w-24`} />
+        <button className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+          + Produto
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function ItensTabela({ itens, onEditar }: { itens: Item[]; onEditar: (i: Item) => void }) {
+  if (itens.length === 0)
+    return <p className="text-sm text-zinc-400">Nenhum produto nesta categoria.</p>;
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <table className="w-full text-sm">
+        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          {itens.map((i) => (
+            <tr
+              key={i.id}
+              className={`bg-white dark:bg-zinc-950 ${i.ativo ? "" : "opacity-50"}`}
+            >
+              <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                {i.nome}
+                {!i.ativo && <span className="ml-2 text-[10px] uppercase text-red-500">oculto</span>}
+              </td>
+              <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                {moeda(Number(i.preco))}
+              </td>
+              <td className="px-4 py-2 text-right whitespace-nowrap">
+                <form action={toggleItem} className="inline">
+                  <input type="hidden" name="id" value={i.id} />
+                  <input type="hidden" name="ativo" value={i.ativo ? "0" : "1"} />
+                  <button className="mr-3 text-zinc-400 hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
+                    {i.ativo ? "Ocultar" : "Mostrar"}
+                  </button>
+                </form>
+                <button
+                  onClick={() => onEditar(i)}
+                  className="mr-3 text-orange-600 hover:underline"
+                >
+                  Editar
+                </button>
+                <form
+                  action={excluirItem}
+                  className="inline"
+                  onSubmit={(e) => {
+                    if (!confirm(`Remover "${i.nome}"?`)) e.preventDefault();
+                  }}
+                >
+                  <input type="hidden" name="id" value={i.id} />
+                  <button className="text-zinc-400 hover:text-red-600">Remover</button>
+                </form>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ConfigForm({ config }: { config: Record<string, string> }) {
+  const precoKg = Number(config.preco_kg || 0);
+  return (
+    <details className="rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+        ⚙️ Configurações do buffet / serviço / cupom
+      </summary>
+      <form action={salvarConfigPdv} className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-800">
         <div className="flex flex-wrap items-end gap-4">
           <div className="min-w-56 flex-1">
-            <label className="mb-1 block text-xs text-zinc-500">
-              Nome do restaurante (no cupom)
-            </label>
+            <label className="mb-1 block text-xs text-zinc-500">Nome do restaurante (no cupom)</label>
             <input
               name="nome_restaurante"
               defaultValue={config.nome_restaurante ?? ""}
@@ -68,9 +322,7 @@ export function CardapioClient({
               name="tara_padrao"
               inputMode="decimal"
               defaultValue={
-                Number(config.tara_padrao || 0)
-                  ? String(config.tara_padrao).replace(".", ",")
-                  : ""
+                Number(config.tara_padrao || 0) ? String(config.tara_padrao).replace(".", ",") : ""
               }
               placeholder="0,000"
               className={`${inputCls} w-24`}
@@ -79,9 +331,7 @@ export function CardapioClient({
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">
-              Preço por kg
-            </label>
+            <label className="mb-1 block text-xs text-zinc-500">Preço por kg</label>
             <input
               name="preco_kg"
               inputMode="decimal"
@@ -91,23 +341,17 @@ export function CardapioClient({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">
-              Buffet livre (teto R$)
-            </label>
+            <label className="mb-1 block text-xs text-zinc-500">Buffet livre (teto R$)</label>
             <input
               name="buffet_livre"
               inputMode="decimal"
               defaultValue={
-                Number(config.buffet_livre || 0)
-                  ? String(config.buffet_livre).replace(".", ",")
-                  : ""
+                Number(config.buffet_livre || 0) ? String(config.buffet_livre).replace(".", ",") : ""
               }
               placeholder="0,00"
               className={`${inputCls} w-28`}
             />
-            <p className="mt-1 text-[11px] text-zinc-400">
-              acima disso, cobra fixo (0 = desligado)
-            </p>
+            <p className="mt-1 text-[11px] text-zinc-400">acima disso, cobra fixo (0 = desligado)</p>
           </div>
         </div>
         <div className="flex flex-wrap items-end gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
@@ -139,9 +383,7 @@ export function CardapioClient({
           </div>
         </div>
         <div className="space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          <p className="text-xs font-medium text-zinc-500">
-            Dados no cupom (opcionais)
-          </p>
+          <p className="text-xs font-medium text-zinc-500">Dados no cupom (opcionais)</p>
           <div className="flex flex-wrap gap-3">
             <input
               name="cupom_endereco"
@@ -167,114 +409,6 @@ export function CardapioClient({
           Salvar configurações
         </button>
       </form>
-
-      {/* Novo/editar item */}
-      <form
-        key={editando?.id ?? "novo"}
-        action={async (fd) => {
-          await salvarItem(fd);
-          setEditando(null);
-        }}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
-      >
-        {editando && <input type="hidden" name="id" value={editando.id} />}
-        <div className="min-w-40 flex-1">
-          <label className="mb-1 block text-xs text-zinc-500">Item</label>
-          <input
-            name="nome"
-            required
-            defaultValue={editando?.nome ?? ""}
-            placeholder="Ex.: Pizza Calabresa"
-            className={`${inputCls} w-full`}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-zinc-500">Categoria</label>
-          <input
-            name="categoria"
-            list="cats"
-            defaultValue={editando?.categoria ?? ""}
-            placeholder="Pizzas, Bebidas..."
-            className={inputCls}
-          />
-          <datalist id="cats">
-            {categorias.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-zinc-500">Preço</label>
-          <input
-            name="preco"
-            inputMode="decimal"
-            defaultValue={editando ? String(editando.preco).replace(".", ",") : ""}
-            placeholder="0,00"
-            className={`${inputCls} w-28`}
-          />
-        </div>
-        <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
-          {editando ? "Salvar" : "+ Adicionar"}
-        </button>
-        {editando && (
-          <button
-            type="button"
-            onClick={() => setEditando(null)}
-            className="rounded-lg px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          >
-            Cancelar
-          </button>
-        )}
-      </form>
-
-      {/* Lista */}
-      {itens.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
-          Nenhum item no cardápio ainda. Adicione acima.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {[...grupos.entries()]
-            .sort((a, b) => a[0].localeCompare(b[0]))
-            .map(([cat, its]) => (
-              <div key={cat}>
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  {cat} ({its.length})
-                </h2>
-                <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                  <table className="w-full text-sm">
-                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                      {its.map((i) => (
-                        <tr key={i.id} className="bg-white dark:bg-zinc-950">
-                          <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
-                            {i.nome}
-                          </td>
-                          <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
-                            {moeda(Number(i.preco))}
-                          </td>
-                          <td className="px-4 py-2 text-right whitespace-nowrap">
-                            <button
-                              onClick={() => setEditando(i)}
-                              className="mr-3 text-orange-600 hover:underline"
-                            >
-                              Editar
-                            </button>
-                            <form action={excluirItem} className="inline">
-                              <input type="hidden" name="id" value={i.id} />
-                              <button className="text-zinc-400 hover:text-red-600">
-                                Remover
-                              </button>
-                            </form>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-        </div>
-      )}
-    </div>
+    </details>
   );
 }

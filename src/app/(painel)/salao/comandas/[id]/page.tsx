@@ -26,23 +26,39 @@ export default async function ComandaPage({
     .single();
   if (!comanda) notFound();
 
-  const [{ data: itens }, { data: cardapio }, { data: cfgRows }, { data: outrasRows }] =
-    await Promise.all([
-      supabase
-        .from("pdv_comanda_itens")
-        .select("id, descricao, qtd, preco_unit")
-        .eq("comanda_id", id)
-        .order("criado_em"),
-      supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
-      supabase.from("pdv_config").select("chave, valor"),
-      supabase
-        .from("pdv_comandas")
-        .select("id, numero")
-        .eq("status", "aberta")
-        .neq("id", id)
-        .order("numero"),
-    ]);
+  const [
+    { data: itens },
+    { data: cardapio },
+    { data: cfgRows },
+    { data: outrasRows },
+    { data: catRows },
+  ] = await Promise.all([
+    supabase
+      .from("pdv_comanda_itens")
+      .select("id, descricao, qtd, preco_unit")
+      .eq("comanda_id", id)
+      .order("criado_em"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
+    supabase.from("pdv_config").select("chave, valor"),
+    supabase
+      .from("pdv_comandas")
+      .select("id, numero")
+      .eq("status", "aberta")
+      .neq("id", id)
+      .order("numero"),
+    supabase
+      .from("pdv_categorias")
+      .select("nome, disponivel, ordem")
+      .eq("disponivel", true)
+      .order("ordem"),
+  ]);
   const outras = (outrasRows as { id: string; numero: number }[]) ?? [];
+  const categoriasOrdenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome);
+  const catDisp = new Set(categoriasOrdenadas);
+  // só itens de categorias disponíveis (ou sem categoria)
+  const cardapioDisp = (
+    (cardapio as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? []
+  ).filter((i) => !i.categoria || catDisp.has(i.categoria));
 
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
@@ -227,10 +243,8 @@ export default async function ComandaPage({
         <div className="mt-3">
           <LancarItens
             comandaId={comanda.id}
-            itens={
-              (cardapio as { id: string; nome: string; categoria: string | null; preco: number }[]) ??
-              []
-            }
+            itens={cardapioDisp}
+            categoriasOrdenadas={categoriasOrdenadas}
             pizzaTamanhos={pizzaTamanhos}
             pizzaSabores={pizzaSabores}
             pizzaBordas={pizzaBordas}

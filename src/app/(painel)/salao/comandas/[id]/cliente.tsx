@@ -27,25 +27,26 @@ const PIZZAS = "🍕 Pizzas";
 export function LancarItens({
   comandaId,
   itens,
+  categoriasOrdenadas,
   pizzaTamanhos,
   pizzaSabores,
   pizzaBordas,
 }: {
   comandaId: string;
   itens: Item[];
+  categoriasOrdenadas: string[];
   pizzaTamanhos: PizzaTamanho[];
   pizzaSabores: PizzaOpcao[];
   pizzaBordas: PizzaOpcao[];
 }) {
   const temPizza = pizzaTamanhos.length > 0;
   const categorias = useMemo(() => {
-    const set: string[] = [];
-    for (const i of itens) {
-      const c = i.categoria || "Outros";
-      if (!set.includes(c)) set.push(c);
-    }
-    return set;
-  }, [itens]);
+    const comItens = new Set(itens.map((i) => i.categoria || "Outros"));
+    // ordem definida no cardápio, só categorias que têm itens
+    const base = categoriasOrdenadas.filter((c) => comItens.has(c));
+    if (comItens.has("Outros") && !base.includes("Outros")) base.push("Outros");
+    return base;
+  }, [itens, categoriasOrdenadas]);
 
   const [aba, setAba] = useState<string>(categorias[0] ?? (temPizza ? PIZZAS : ""));
   const [busca, setBusca] = useState("");

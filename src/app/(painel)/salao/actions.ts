@@ -28,6 +28,65 @@ export async function salvarConfigPdv(formData: FormData) {
   revalidatePath("/salao/cardapio");
 }
 
+// ---------- Categorias do cardápio ----------
+async function garantirCategoria(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  nome: string,
+) {
+  const n = nome.trim();
+  if (!n) return;
+  const { data } = await supabase.from("pdv_categorias").select("id").eq("nome", n).maybeSingle();
+  if (data) return;
+  const { data: max } = await supabase
+    .from("pdv_categorias")
+    .select("ordem")
+    .order("ordem", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  await supabase.from("pdv_categorias").insert({ nome: n, ordem: (Number(max?.ordem) || 0) + 1 });
+}
+
+export async function adicionarCategoria(formData: FormData) {
+  const supabase = await createClient();
+  await garantirCategoria(supabase, (formData.get("nome") as string) || "");
+  revalidatePath("/salao/cardapio");
+}
+
+export async function toggleCategoria(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const disponivel = formData.get("disponivel") === "1";
+  await supabase.from("pdv_categorias").update({ disponivel }).eq("id", id);
+  revalidatePath("/salao/cardapio");
+}
+
+export async function moverCategoria(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const dir = (formData.get("dir") as string) === "cima" ? -1 : 1;
+  const { data: cats } = await supabase
+    .from("pdv_categorias")
+    .select("id, ordem")
+    .order("ordem", { ascending: true });
+  const lista = (cats as { id: string; ordem: number }[]) ?? [];
+  const idx = lista.findIndex((c) => c.id === id);
+  const alvo = idx + dir;
+  if (idx < 0 || alvo < 0 || alvo >= lista.length) return;
+  const a = lista[idx];
+  const b = lista[alvo];
+  await Promise.all([
+    supabase.from("pdv_categorias").update({ ordem: b.ordem }).eq("id", a.id),
+    supabase.from("pdv_categorias").update({ ordem: a.ordem }).eq("id", b.id),
+  ]);
+  revalidatePath("/salao/cardapio");
+}
+
+export async function excluirCategoria(formData: FormData) {
+  const supabase = await createClient();
+  await supabase.from("pdv_categorias").delete().eq("id", formData.get("id") as string);
+  revalidatePath("/salao/cardapio");
+}
+
 // ---------- Itens do cardápio ----------
 export async function salvarItem(formData: FormData) {
   const supabase = await createClient();
@@ -36,9 +95,18 @@ export async function salvarItem(formData: FormData) {
   if (!nome) return;
   const categoria = (formData.get("categoria") as string)?.trim() || null;
   const preco = valorNum(formData.get("preco"));
+  if (categoria) await garantirCategoria(supabase, categoria);
   if (id)
     await supabase.from("pdv_itens").update({ nome, categoria, preco }).eq("id", id);
   else await supabase.from("pdv_itens").insert({ nome, categoria, preco });
+  revalidatePath("/salao/cardapio");
+}
+
+export async function toggleItem(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const ativo = formData.get("ativo") === "1";
+  await supabase.from("pdv_itens").update({ ativo }).eq("id", id);
   revalidatePath("/salao/cardapio");
 }
 
