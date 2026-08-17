@@ -7,6 +7,18 @@ const nextConfig: NextConfig = {
       { source: "/marmitas", destination: "/marmitas.html" },
     ];
   },
+  async headers() {
+    return [
+      // O app de marmitas é atualizado com frequência: nunca cachear o HTML,
+      // pra toda mudança aparecer na hora (sem precisar limpar o navegador).
+      {
+        source: "/marmitas.html",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
