@@ -35,7 +35,7 @@ export default async function CompararPage({
         .eq("cotacao_id", id),
       supabase
         .from("cotacao_precos")
-        .select("fornecedor_id, produto_id, preco_unit, disponivel, foto_url")
+        .select("fornecedor_id, produto_id, preco_unit, disponivel, foto_url, embalagem, observacao")
         .eq("cotacao_id", id),
     ]);
 
@@ -56,12 +56,17 @@ export default async function CompararPage({
   );
 
   // Mapa de preços: fornecedorId -> produtoId -> {preco, disponivel, foto}
-  const precoMap = new Map<string, { preco: number | null; disp: boolean; foto: string | null }>();
+  const precoMap = new Map<
+    string,
+    { preco: number | null; disp: boolean; foto: string | null; emb: string | null; obs: string | null }
+  >();
   for (const p of precos ?? []) {
     precoMap.set(`${p.fornecedor_id}_${p.produto_id}`, {
       preco: p.preco_unit != null ? Number(p.preco_unit) : null,
       disp: p.disponivel,
       foto: p.foto_url ?? null,
+      emb: (p.embalagem as string) ?? null,
+      obs: (p.observacao as string) ?? null,
     });
   }
 
@@ -75,7 +80,7 @@ export default async function CompararPage({
       const produtoId = i.produto_id as string;
       const precosDoProduto: Record<
         string,
-        { preco: number | null; disp: boolean; foto: string | null }
+        { preco: number | null; disp: boolean; foto: string | null; emb: string | null; obs: string | null }
       > = {};
       let melhorForn: string | null = null;
       let melhorPreco = Infinity;

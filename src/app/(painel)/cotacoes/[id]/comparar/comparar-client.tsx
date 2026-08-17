@@ -21,7 +21,10 @@ export type ProdutoLinha = {
   unidade: string;
   categoria: string;
   qtd: number;
-  precos: Record<string, { preco: number | null; disp: boolean; foto: string | null }>;
+  precos: Record<
+    string,
+    { preco: number | null; disp: boolean; foto: string | null; emb: string | null; obs: string | null }
+  >;
   melhorForn: string | null;
 };
 
@@ -169,7 +172,7 @@ export function CompararClient({
                         );
                       }
                       return (
-                        <td key={f.id} className="px-2 py-1 text-right">
+                        <td key={f.id} className="px-2 py-1 text-right align-top">
                           <button
                             onClick={() =>
                               setEscolha((s) => ({
@@ -184,13 +187,19 @@ export function CompararClient({
                                   ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
                                   : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                             }`}
-                            title={
-                              p.precos[f.id]?.foto ? "Tem foto do produto" : ""
-                            }
+                            title={cel.obs ? cel.obs : cel.foto ? "Tem foto do produto" : ""}
                           >
                             {moeda(cel.preco)}
-                            {p.precos[f.id]?.foto ? " 📷" : ""}
+                            {cel.foto ? " 📷" : ""}
+                            {cel.obs ? " 📝" : ""}
                           </button>
+                          {(cel.emb || cel.obs) && (
+                            <div className="mt-0.5 text-right text-[10px] leading-tight text-zinc-400">
+                              {cel.emb}
+                              {cel.emb && cel.obs ? " · " : ""}
+                              {cel.obs}
+                            </div>
+                          )}
                         </td>
                       );
                     })}
