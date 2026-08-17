@@ -16,6 +16,16 @@ export type FornecedorCol = {
   observacao: string | null;
 };
 
+export type ExclusivoLinha = {
+  produto_id: string;
+  nome: string;
+  unidade: string;
+  categoria: string;
+  qtd: number;
+  fornecedorId: string;
+  fornecedorNome: string;
+};
+
 export type ProdutoLinha = {
   produto_id: string;
   nome: string;
@@ -48,10 +58,12 @@ export function CompararClient({
   cotacaoId,
   produtos,
   fornecedores,
+  exclusivos,
 }: {
   cotacaoId: string;
   produtos: ProdutoLinha[];
   fornecedores: FornecedorCol[];
+  exclusivos: ExclusivoLinha[];
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
@@ -111,10 +123,28 @@ export function CompararClient({
           qtd: p.qtd,
           preco_unit: p.precos[escolha[p.produto_id]]?.preco ?? null,
         }));
-      await gerarPedidos(cotacaoId, escolhas);
+      // Exclusivos entram direto no pedido do seu único fornecedor (sem preço).
+      const diretos = exclusivos.map((e) => ({
+        fornecedor_id: e.fornecedorId,
+        produto_id: e.produto_id,
+        qtd: e.qtd,
+        preco_unit: null,
+      }));
+      await gerarPedidos(cotacaoId, [...escolhas, ...diretos]);
       router.push(`/cotacoes/${cotacaoId}/pedidos`);
     });
   }
+
+  // Exclusivos agrupados por fornecedor (para o bloco de pedido direto).
+  const exclusivosPorForn = useMemo(() => {
+    const m = new Map<string, ExclusivoLinha[]>();
+    for (const e of exclusivos) {
+      const arr = m.get(e.fornecedorNome) ?? [];
+      arr.push(e);
+      m.set(e.fornecedorNome, arr);
+    }
+    return m;
+  }, [exclusivos]);
 
   const porCategoria = useMemo(() => {
     const m = new Map<string, ProdutoLinha[]>();
@@ -131,18 +161,20 @@ export function CompararClient({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-500">
           {itensEscolhidos} de {produtos.length} itens escolhidos ·{" "}
-          <b className="text-green-600">{conf.size} conferidos</b> · total{" "}
+          <b className="text-green-600">{conf.size} conferidos</b>
+          {exclusivos.length > 0 ? ` · ${exclusivos.length} exclusivos (direto)` : ""} · total{" "}
           <b className="text-zinc-900 dark:text-zinc-100">{moeda(totalGeral)}</b>
         </p>
         <button
           onClick={gerar}
-          disabled={salvando || itensEscolhidos === 0}
+          disabled={salvando || (itensEscolhidos === 0 && exclusivos.length === 0)}
           className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
         >
           {salvando ? "Gerando..." : "Gerar pedidos →"}
         </button>
       </div>
 
+      {produtos.length > 0 && (
       <div className="max-h-[75vh] overflow-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-sm">
           <thead className="text-left text-xs text-zinc-500">
@@ -336,6 +368,49 @@ export function CompararClient({
           </tfoot>
         </table>
       </div>
+      )}
+
+      {/* Pedido direto: itens com fornecedor exclusivo (sem cotação) */}
+      {exclusivos.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-lg">🧾</span>
+            <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
+              Pedido direto — fornecedor exclusivo
+            </h2>
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+              {exclusivos.length} {exclusivos.length === 1 ? "item" : "itens"}
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-zinc-500">
+            Esses produtos têm só um fornecedor — não vão pra cotação. Entram
+            direto no pedido dele (sem preço; você confirma na entrega/nota).
+          </p>
+          <div className="space-y-3">
+            {[...exclusivosPorForn.entries()].map(([forn, itens]) => (
+              <div key={forn} className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                <p className="mb-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                  {forn}
+                  <span className="ml-2 text-xs font-normal text-zinc-400">
+                    {itens.length} {itens.length === 1 ? "item" : "itens"}
+                  </span>
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+                  {itens.map((e) => (
+                    <span key={e.produto_id}>
+                      {e.nome}{" "}
+                      <span className="text-xs text-zinc-400">
+                        ({e.qtd} {e.unidade})
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="mt-2 text-xs text-zinc-400">
         Clique num preço para escolher o fornecedor daquele item (verde = mais
         barato). Clique no <b>✓</b> ao lado do nome para marcar o que já{" "}

@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Cotacao } from "@/lib/types";
-import { CompararClient, type ProdutoLinha, type FornecedorCol } from "./comparar-client";
+import {
+  CompararClient,
+  type ProdutoLinha,
+  type FornecedorCol,
+  type ExclusivoLinha,
+} from "./comparar-client";
 
 export default async function CompararPage({
   params,
@@ -122,6 +127,52 @@ export default async function CompararPage({
       a.categoria.localeCompare(b.categoria) || a.nome.localeCompare(b.nome),
   );
 
+  // Descobre quantos fornecedores cada produto tem (exclusividade).
+  const produtoIds = produtos.map((p) => p.produto_id);
+  const supsPorProduto = new Map<string, string[]>();
+  const nomeForn = new Map<string, string>(fornecedores.map((f) => [f.id, f.nome]));
+  if (produtoIds.length) {
+    const { data: vinc } = await supabase
+      .from("fornecedor_produto")
+      .select("fornecedor_id, produto_id")
+      .in("produto_id", produtoIds);
+    const idsForaLista = new Set<string>();
+    for (const v of vinc ?? []) {
+      const arr = supsPorProduto.get(v.produto_id) ?? [];
+      arr.push(v.fornecedor_id);
+      supsPorProduto.set(v.produto_id, arr);
+      if (!nomeForn.has(v.fornecedor_id)) idsForaLista.add(v.fornecedor_id);
+    }
+    if (idsForaLista.size) {
+      const { data: nomes } = await supabase
+        .from("fornecedores")
+        .select("id, nome")
+        .in("id", [...idsForaLista]);
+      for (const n of nomes ?? []) nomeForn.set(n.id, n.nome);
+    }
+  }
+
+  // Separa: exclusivos (1 fornecedor) vão para pedido direto (sem cotação);
+  // o resto fica na comparação de preços.
+  const exclusivos: ExclusivoLinha[] = [];
+  const comparados: ProdutoLinha[] = [];
+  for (const p of produtos) {
+    const sups = supsPorProduto.get(p.produto_id) ?? [];
+    if (sups.length === 1) {
+      exclusivos.push({
+        produto_id: p.produto_id,
+        nome: p.nome,
+        unidade: p.unidade,
+        categoria: p.categoria,
+        qtd: p.qtd,
+        fornecedorId: sups[0],
+        fornecedorNome: nomeForn.get(sups[0]) ?? "—",
+      });
+    } else {
+      comparados.push(p);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-[1800px] p-4 sm:p-6">
       <Link
@@ -138,9 +189,9 @@ export default async function CompararPage({
         pedidos. O <b>mais barato</b> de cada item vem marcado em verde.
       </p>
 
-      {fornecedores.length === 0 || produtos.length === 0 ? (
+      {comparados.length === 0 && exclusivos.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
-          Ainda não há fornecedores convidados ou itens com preço.{" "}
+          Ainda não há itens para comparar.{" "}
           <Link
             href={`/cotacoes/${cotacao.id}/fornecedores`}
             className="font-medium text-orange-600 underline"
@@ -152,8 +203,9 @@ export default async function CompararPage({
       ) : (
         <CompararClient
           cotacaoId={cotacao.id}
-          produtos={produtos}
+          produtos={comparados}
           fornecedores={fornecedores}
+          exclusivos={exclusivos}
         />
       )}
     </div>
