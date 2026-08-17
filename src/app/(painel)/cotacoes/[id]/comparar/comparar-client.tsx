@@ -91,12 +91,30 @@ export function CompararClient({
       return n;
     });
   }
-  // Escolha por produto: fornecedor_id ou "" (não comprar). Padrão: mais barato.
-  const [escolha, setEscolha] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
+  // Escolha por produto: fornecedor_id ou "" (não comprar). Padrão: mais barato,
+  // mas o que você escolher fica guardado no navegador (não perde ao voltar).
+  const selKey = `cmp_sel_${cotacaoId}`;
+  const [escolha, setEscolha] = useState<Record<string, string>>(() => {
+    const base = Object.fromEntries(
       produtos.map((p) => [p.produto_id, p.melhorForn ?? ""]),
-    ),
-  );
+    );
+    if (typeof window === "undefined") return base;
+    try {
+      const salvo = JSON.parse(localStorage.getItem(selKey) || "{}");
+      return { ...base, ...salvo };
+    } catch {
+      return base;
+    }
+  });
+  function mudarEscolha(produtoId: string, fornId: string) {
+    setEscolha((s) => {
+      const novo = { ...s, [produtoId]: s[produtoId] === fornId ? "" : fornId };
+      try {
+        localStorage.setItem(selKey, JSON.stringify(novo));
+      } catch {}
+      return novo;
+    });
+  }
 
   const totalPorForn = useMemo(() => {
     const t: Record<string, number> = {};
@@ -293,12 +311,7 @@ export function CompararClient({
                       return (
                         <td key={f.id} className="px-2 py-1 text-right align-top">
                           <button
-                            onClick={() =>
-                              setEscolha((s) => ({
-                                ...s,
-                                [p.produto_id]: escolhido ? "" : f.id,
-                              }))
-                            }
+                            onClick={() => mudarEscolha(p.produto_id, f.id)}
                             className={`w-full rounded-md px-2 py-1 text-right text-sm transition ${
                               escolhido
                                 ? "bg-orange-500 font-semibold text-white"
