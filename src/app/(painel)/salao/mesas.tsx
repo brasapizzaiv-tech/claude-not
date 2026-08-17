@@ -10,7 +10,17 @@ const brl = (n: number) =>
 export type ComandaMini = { id: string; numero: number; total: number };
 export type Mesa = { nome: string; tipo: "balcao" | "mesa" | "balanca"; comandas: ComandaMini[] };
 
-export function MesasGrid({ mesas }: { mesas: Mesa[] }) {
+export function MesasGrid({
+  mesas,
+  base = "/salao/comandas",
+  destino = "salao",
+  admin = true,
+}: {
+  mesas: Mesa[];
+  base?: string;
+  destino?: string;
+  admin?: boolean;
+}) {
   const [busca, setBusca] = useState("");
   const [situacao, setSituacao] = useState<"todas" | "livres" | "ocupadas">("todas");
 
@@ -44,23 +54,33 @@ export function MesasGrid({ mesas }: { mesas: Mesa[] }) {
           placeholder="Buscar por mesa..."
           className="min-w-56 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         />
-        <Link
-          href="/salao/caixa"
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-        >
-          💵 Caixa
-        </Link>
-        <Link
-          href="/salao/cardapio"
-          className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-        >
-          Cardápio / Config
-        </Link>
+        {admin && (
+          <>
+            <Link
+              href="/salao/caixa"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              💵 Caixa
+            </Link>
+            <Link
+              href="/salao/cardapio"
+              className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            >
+              Cardápio / Config
+            </Link>
+            <Link
+              href="/garcom"
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            >
+              🧑‍🍳 Garçom
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {filtradas.map((m) => (
-          <MesaCard key={m.nome} mesa={m} />
+          <MesaCard key={m.nome} mesa={m} base={base} destino={destino} />
         ))}
       </div>
       {filtradas.length === 0 && (
@@ -70,7 +90,7 @@ export function MesasGrid({ mesas }: { mesas: Mesa[] }) {
   );
 }
 
-function MesaCard({ mesa }: { mesa: Mesa }) {
+function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: string }) {
   const ocupada = mesa.comandas.length > 0;
   const total = mesa.comandas.reduce((s, c) => s + c.total, 0);
 
@@ -100,7 +120,7 @@ function MesaCard({ mesa }: { mesa: Mesa }) {
           mesa.comandas.map((c) => (
             <Link
               key={c.id}
-              href={`/salao/comandas/${c.id}`}
+              href={`${base}/${c.id}`}
               className="flex items-center justify-between rounded-md bg-white/70 px-2 py-1 text-xs hover:bg-white dark:bg-zinc-900/60 dark:hover:bg-zinc-900"
             >
               <span className="font-medium text-zinc-800 dark:text-zinc-200">#{c.numero}</span>
@@ -120,6 +140,7 @@ function MesaCard({ mesa }: { mesa: Mesa }) {
       ) : (
         <form action={criarComandaMesa} className="mt-auto">
           <input type="hidden" name="mesa" value={mesa.nome} />
+          <input type="hidden" name="destino" value={destino} />
           <button className="w-full rounded-lg bg-orange-500 px-2 py-1.5 text-xs font-semibold text-white hover:bg-orange-600">
             + Comanda
           </button>

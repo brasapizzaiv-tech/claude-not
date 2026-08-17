@@ -29,7 +29,7 @@ export const MODULOS: {
   { key: "notas", label: "Notas Fiscais", icon: "🧾", rotas: ["/notas"] },
   { key: "financeiro", label: "Financeiro", icon: "📊", rotas: ["/financeiro"] },
   { key: "etiquetas", label: "Etiquetas", icon: "🏷️", rotas: ["/etiquetas"] },
-  { key: "salao", label: "Salão / PDV", icon: "🍕", rotas: ["/salao"] },
+  { key: "salao", label: "Salão / PDV", icon: "🍕", rotas: ["/salao", "/garcom"] },
 ];
 
 // Qual módulo "controla" a rota. "usuarios" é só do dono. null = rota livre

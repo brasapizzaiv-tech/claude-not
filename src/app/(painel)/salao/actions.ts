@@ -181,13 +181,15 @@ export async function criarComandaMesa(formData: FormData) {
   const supabase = await createClient();
   const mesa = ((formData.get("mesa") as string) || "").trim();
   if (!mesa) return;
+  const garcom = (formData.get("destino") as string) === "garcom";
   const { data: com } = await supabase
     .from("pdv_comandas")
     .insert({ mesa, peso: 0, tara: 0, valor_buffet: 0, livre: false })
     .select("id")
     .single();
   revalidatePath("/salao");
-  if (com) redirect(`/salao/comandas/${com.id}`);
+  revalidatePath("/garcom");
+  if (com) redirect(`${garcom ? "/garcom/comanda" : "/salao/comandas"}/${com.id}`);
 }
 
 // Edita o buffet da comanda (peso/tara) e recalcula o valor.
@@ -383,6 +385,7 @@ export async function removerItemComanda(formData: FormData) {
   const comandaId = formData.get("comanda_id") as string;
   await supabase.from("pdv_comanda_itens").delete().eq("id", id);
   revalidatePath(`/salao/comandas/${comandaId}`);
+  revalidatePath(`/garcom/comanda/${comandaId}`);
 }
 
 export async function fecharComanda(formData: FormData) {
