@@ -30,7 +30,7 @@ export default async function CompararPage({
       supabase
         .from("cotacao_fornecedores")
         .select(
-          "fornecedor_id, status, prazo_entrega, pedido_minimo, condicao_pagamento, observacao, fornecedores(nome, whatsapp)",
+          "fornecedor_id, status, respondido_em, prazo_entrega, pedido_minimo, condicao_pagamento, observacao, fornecedores(nome, whatsapp)",
         )
         .eq("cotacao_id", id),
       supabase
@@ -48,12 +48,23 @@ export default async function CompararPage({
         (f.fornecedores as { whatsapp?: string | null } | null)?.whatsapp ??
         null,
       status: f.status as string,
+      respondido_em: (f.respondido_em as string) ?? null,
       prazo_entrega: (f.prazo_entrega as string) ?? null,
       pedido_minimo: f.pedido_minimo != null ? Number(f.pedido_minimo) : null,
       condicao_pagamento: (f.condicao_pagamento as string) ?? null,
       observacao: (f.observacao as string) ?? null,
     }),
   );
+
+  // Ordena por resposta: quem respondeu primeiro vem antes; quem não
+  // respondeu fica por último (e entre eles, por nome).
+  fornecedores.sort((a, b) => {
+    if (a.respondido_em && b.respondido_em)
+      return a.respondido_em.localeCompare(b.respondido_em);
+    if (a.respondido_em) return -1;
+    if (b.respondido_em) return 1;
+    return a.nome.localeCompare(b.nome);
+  });
 
   // Mapa de preços: fornecedorId -> produtoId -> {preco, disponivel, foto}
   const precoMap = new Map<

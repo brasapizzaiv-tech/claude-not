@@ -9,6 +9,7 @@ export type FornecedorCol = {
   nome: string;
   whatsapp: string | null;
   status: string;
+  respondido_em: string | null;
   prazo_entrega: string | null;
   pedido_minimo: number | null;
   condicao_pagamento: string | null;
@@ -111,18 +112,38 @@ export function CompararClient({
             <tr>
               <th className="px-3 py-3 text-left">Produto</th>
               <th className="px-3 py-3 text-right">Qtd</th>
-              {fornecedores.map((f) => (
-                <th key={f.id} className="px-3 py-3 text-right">
-                  <div className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {f.nome}
-                  </div>
-                  <div className="text-[10px] font-normal text-zinc-400">
-                    {f.status === "respondido" ? "respondeu" : "aguardando"}
-                    {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
-                    {f.condicao_pagamento ? ` · ${f.condicao_pagamento}` : ""}
-                  </div>
-                </th>
-              ))}
+              {fornecedores.map((f, i) => {
+                const respondeu = !!f.respondido_em;
+                const hora = f.respondido_em
+                  ? new Date(f.respondido_em).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo",
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : null;
+                return (
+                  <th
+                    key={f.id}
+                    className={`px-3 py-3 text-right ${respondeu ? "" : "opacity-60"}`}
+                  >
+                    <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                      {respondeu && (
+                        <span className="mr-1 rounded bg-green-100 px-1 text-[10px] font-bold text-green-700 dark:bg-green-950 dark:text-green-300">
+                          {i + 1}º
+                        </span>
+                      )}
+                      {f.nome}
+                    </div>
+                    <div className="text-[10px] font-normal text-zinc-400">
+                      {respondeu ? `respondeu ${hora}` : "não respondeu"}
+                      {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
+                      {f.condicao_pagamento ? ` · ${f.condicao_pagamento}` : ""}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
