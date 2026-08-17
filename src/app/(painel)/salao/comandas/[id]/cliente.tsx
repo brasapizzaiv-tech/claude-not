@@ -20,57 +20,127 @@ export function QRComanda({ id }: { id: string }) {
 
 type Item = { id: string; nome: string; categoria: string | null; preco: number };
 
-export function AddItem({
+const PIZZAS = "🍕 Pizzas";
+
+// Lançador de itens estilo PDV: abas por categoria + busca + grade de cards.
+// Tocar num card adiciona o item na comanda na hora.
+export function LancarItens({
   comandaId,
   itens,
+  pizzaTamanhos,
+  pizzaSabores,
+  pizzaBordas,
 }: {
   comandaId: string;
   itens: Item[];
+  pizzaTamanhos: PizzaTamanho[];
+  pizzaSabores: PizzaOpcao[];
+  pizzaBordas: PizzaOpcao[];
 }) {
-  const [sel, setSel] = useState("");
+  const temPizza = pizzaTamanhos.length > 0;
+  const categorias = useMemo(() => {
+    const set: string[] = [];
+    for (const i of itens) {
+      const c = i.categoria || "Outros";
+      if (!set.includes(c)) set.push(c);
+    }
+    return set;
+  }, [itens]);
+
+  const [aba, setAba] = useState<string>(categorias[0] ?? (temPizza ? PIZZAS : ""));
+  const [busca, setBusca] = useState("");
+  const [addId, setAddId] = useState("");
   const [p, start] = useTransition();
   const router = useRouter();
 
-  const grupos = new Map<string, Item[]>();
-  for (const i of itens) {
-    const k = i.categoria || "Outros";
-    grupos.set(k, [...(grupos.get(k) ?? []), i]);
-  }
+  const q = busca.trim().toLowerCase();
+  const visiveis = useMemo(() => {
+    if (q) return itens.filter((i) => i.nome.toLowerCase().includes(q));
+    return itens.filter((i) => (i.categoria || "Outros") === aba);
+  }, [itens, q, aba]);
 
-  function add() {
-    if (!sel) return;
+  function add(id: string) {
+    setAddId(id);
     start(async () => {
-      await adicionarItemComanda(comandaId, sel);
-      setSel("");
+      await adicionarItemComanda(comandaId, id);
       router.refresh();
+      setAddId("");
     });
   }
 
+  const mostrarPizza = temPizza && !q && aba === PIZZAS;
+
   return (
-    <div className="flex flex-wrap gap-2">
-      <select
-        value={sel}
-        onChange={(e) => setSel(e.target.value)}
-        className="min-w-56 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-      >
-        <option value="">+ adicionar item do cardápio...</option>
-        {[...grupos.entries()].map(([cat, its]) => (
-          <optgroup key={cat} label={cat}>
-            {its.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.nome} — {Number(i.preco).toFixed(2).replace(".", ",")}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-      <button
-        onClick={add}
-        disabled={p || !sel}
-        className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
-      >
-        Adicionar
-      </button>
+    <div className="rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+      {/* Busca */}
+      <input
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        placeholder="Buscar produto pelo nome..."
+        className="mb-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+      />
+
+      {/* Abas */}
+      {!q && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {categorias.map((c) => (
+            <button
+              key={c}
+              onClick={() => setAba(c)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                aba === c
+                  ? "bg-orange-500 text-white"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+          {temPizza && (
+            <button
+              onClick={() => setAba(PIZZAS)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                aba === PIZZAS
+                  ? "bg-orange-500 text-white"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {PIZZAS}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Conteúdo */}
+      {mostrarPizza ? (
+        <MontarPizza
+          comandaId={comandaId}
+          tamanhos={pizzaTamanhos}
+          sabores={pizzaSabores}
+          bordas={pizzaBordas}
+        />
+      ) : (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {visiveis.map((i) => (
+            <button
+              key={i.id}
+              onClick={() => add(i.id)}
+              disabled={p && addId === i.id}
+              className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-2.5 text-left hover:border-orange-300 hover:bg-orange-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-orange-500/50 dark:hover:bg-orange-950/30"
+            >
+              <span className="text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">
+                {i.nome}
+              </span>
+              <span className="mt-1 text-xs font-semibold text-orange-600">{brl(Number(i.preco))}</span>
+            </button>
+          ))}
+          {visiveis.length === 0 && (
+            <p className="col-span-full py-6 text-center text-sm text-zinc-400">
+              Nenhum produto {q ? "encontrado" : "nesta categoria"}.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

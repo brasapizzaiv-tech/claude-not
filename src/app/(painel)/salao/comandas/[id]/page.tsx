@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
-import { QRComanda, AddItem, MontarPizza } from "./cliente";
+import { QRComanda, LancarItens } from "./cliente";
 import type { PizzaOpcao } from "./cliente";
 import { ImprimirComanda } from "./print";
 import { AcoesComanda } from "./acoes";
@@ -223,25 +223,17 @@ export default async function ComandaPage({
         </table>
       </div>
 
-      {!fechada && pizzaTamanhos.length > 0 && (
-        <div className="mt-3">
-          <MontarPizza
-            comandaId={comanda.id}
-            tamanhos={pizzaTamanhos}
-            sabores={pizzaSabores}
-            bordas={pizzaBordas}
-          />
-        </div>
-      )}
-
       {!fechada && (
         <div className="mt-3">
-          <AddItem
+          <LancarItens
             comandaId={comanda.id}
             itens={
               (cardapio as { id: string; nome: string; categoria: string | null; preco: number }[]) ??
               []
             }
+            pizzaTamanhos={pizzaTamanhos}
+            pizzaSabores={pizzaSabores}
+            pizzaBordas={pizzaBordas}
           />
         </div>
       )}
