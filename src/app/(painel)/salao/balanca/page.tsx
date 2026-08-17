@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { criarComandaBuffet } from "../actions";
+import { BalancaLeitor } from "./leitor";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -23,9 +24,14 @@ export default async function BalancaPage() {
         Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido no Cardápio"}.
       </p>
 
+      <div className="mt-6">
+        <BalancaLeitor taraPadrao={taraPadrao} />
+      </div>
+
+      <p className="mt-6 mb-2 text-xs font-medium uppercase text-zinc-400">Ou digitar na mão</p>
       <form
         action={criarComandaBuffet}
-        className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
       >
         <input type="hidden" name="mesa" value="Balança" />
         <div>
@@ -53,9 +59,6 @@ export default async function BalancaPage() {
         </button>
       </form>
 
-      <p className="mt-3 text-xs text-zinc-400">
-        Amanhã o peso vem direto da balança Urano; por enquanto é digitado.
-      </p>
     </div>
   );
 }
