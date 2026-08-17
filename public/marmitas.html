@@ -498,7 +498,7 @@ async function lancarPedido(){
     renderMontagem('add',window.CARD_DIA,null); toast('Pedido adicionado ✓'); carregarDia();
   }catch(e){ toast(e.message,true); }
 }
-function descPedido(p){const partes=[];const pr=arr(p.pratos).join(', ');if(pr)partes.push('Pratos: '+escapeHtml(pr));if(p.proteina)partes.push('Proteína: '+escapeHtml(p.proteina));partes.push(p.salada?('Salada: '+escapeHtml(p.salada)):'Sem salada');return partes.join(' · ');}
+function descPedido(p){const pratos=arr(p.pratos);let h='';if(pratos.length){h+='<div><b>Pratos:</b></div>'+pratos.map(x=>`<div style="padding-left:10px">- ${escapeHtml(x)}</div>`).join('');}if(p.proteina)h+=`<div><b>Proteína:</b> ${escapeHtml(p.proteina)}</div>`;h+=`<div><b>Salada:</b> ${p.salada?escapeHtml(p.salada):'Não'}</div>`;return h;}
 function renderPedidos(){
   const filtro=$('#filtroFilial').value;
   const lista=filtro?PEDIDOS_DIA.filter(p=>p.filial===filtro):PEDIDOS_DIA;
