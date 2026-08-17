@@ -7,6 +7,8 @@ type Preco = {
   preco_unit: string;
   disponivel: boolean;
   foto_url: string;
+  embalagem: string;
+  observacao: string;
 };
 
 export type DadosCotacao = {
@@ -15,6 +17,7 @@ export type DadosCotacao = {
   pedido_minimo: string;
   condicao_pagamento: string;
   observacao: string;
+  rascunho?: boolean;
 };
 
 // Salva os preços + dados do rodapé informados pelo fornecedor via link público.
