@@ -43,6 +43,7 @@ export function CompararClient({
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
+  const [fotoAberta, setFotoAberta] = useState<string | null>(null);
   // Escolha por produto: fornecedor_id ou "" (não comprar). Padrão: mais barato.
   const [escolha, setEscolha] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -212,11 +213,9 @@ export function CompararClient({
                                   ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
                                   : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                             }`}
-                            title={cel.obs ? cel.obs : cel.foto ? "Tem foto do produto" : ""}
+                            title={cel.obs ?? ""}
                           >
                             {moeda(cel.preco)}
-                            {cel.foto ? " 📷" : ""}
-                            {cel.obs ? " 📝" : ""}
                           </button>
                           {(cel.emb || cel.obs) && (
                             <div className="mt-0.5 text-right text-[10px] leading-tight text-zinc-400">
@@ -224,6 +223,15 @@ export function CompararClient({
                               {cel.emb && cel.obs ? " · " : ""}
                               {cel.obs}
                             </div>
+                          )}
+                          {cel.foto && (
+                            <button
+                              type="button"
+                              onClick={() => setFotoAberta(cel.foto)}
+                              className="mt-0.5 text-[10px] font-medium text-orange-600 hover:underline"
+                            >
+                              📷 ver foto
+                            </button>
                           )}
                         </td>
                       );
@@ -268,8 +276,30 @@ export function CompararClient({
       </div>
       <p className="mt-2 text-xs text-zinc-400">
         Clique num preço para escolher o fornecedor daquele item (verde = mais
-        barato). ⚠ = total abaixo do pedido mínimo do fornecedor.
+        barato). ⚠ = total abaixo do pedido mínimo do fornecedor. 📷 = ver a foto
+        enviada pelo fornecedor.
       </p>
+
+      {fotoAberta && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setFotoAberta(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={fotoAberta}
+            alt="Foto do produto"
+            className="max-h-[90vh] max-w-full rounded-lg object-contain"
+          />
+          <button
+            type="button"
+            className="absolute right-4 top-4 text-4xl leading-none text-white/90 hover:text-white"
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }
