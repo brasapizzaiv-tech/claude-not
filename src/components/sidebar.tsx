@@ -17,6 +17,9 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
 
+  // A visão do garçom é tela cheia (celular): sem menu lateral.
+  if (pathname === "/garcom" || pathname.startsWith("/garcom/")) return null;
+
   const links: { href: string; label: string; icon: string }[] = [
     { href: "/dashboard", label: "Início", icon: "🏠" },
     ...MODULOS.filter((m) => admin || permissoes.includes(m.key)).map((m) => ({

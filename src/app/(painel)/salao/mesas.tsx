@@ -102,10 +102,10 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
           : "border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/5"
       }`}
     >
-      <div className="mb-2 flex items-start justify-between">
-        <span className="font-bold text-zinc-900 dark:text-zinc-100">{mesa.nome}</span>
+      <div className="mb-2 flex items-center gap-1">
+        <span className="truncate font-bold text-zinc-900 dark:text-zinc-100">{mesa.nome}</span>
         <span
-          className={`text-[11px] font-medium uppercase ${
+          className={`ml-auto shrink-0 whitespace-nowrap text-[11px] font-medium uppercase ${
             ocupada ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400"
           }`}
         >
