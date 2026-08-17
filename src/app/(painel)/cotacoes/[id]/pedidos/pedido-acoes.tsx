@@ -9,8 +9,8 @@ export function PedidoAcoes({
 }) {
   const zap = (whatsapp ?? "").replace(/\D/g, "");
   const waHref = zap
-    ? `https://wa.me/55${zap}?text=${encodeURIComponent(texto)}`
-    : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    ? `https://web.whatsapp.com/send?phone=55${zap}&text=${encodeURIComponent(texto)}`
+    : `https://web.whatsapp.com/`;
 
   return (
     <div className="flex flex-wrap items-center gap-2">

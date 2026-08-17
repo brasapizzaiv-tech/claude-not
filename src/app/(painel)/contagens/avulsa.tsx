@@ -166,7 +166,7 @@ function Resultado({
           {copiado ? "Copiado!" : "Copiar link"}
         </button>
         <a
-          href={zapNum ? `https://wa.me/${zapNum}?text=${msg}` : `https://wa.me/?text=${msg}`}
+          href={zapNum ? `https://web.whatsapp.com/send?phone=${zapNum}&text=${msg}` : `https://web.whatsapp.com/`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700"

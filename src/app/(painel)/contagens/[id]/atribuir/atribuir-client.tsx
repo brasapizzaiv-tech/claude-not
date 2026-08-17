@@ -184,8 +184,8 @@ export function AtribuirClient({
                   .join(", ")}. ${url}`,
               );
               const waHref = zap
-                ? `https://wa.me/55${zap}?text=${msg}`
-                : `https://wa.me/?text=${msg}`;
+                ? `https://web.whatsapp.com/send?phone=55${zap}&text=${msg}`
+                : `https://web.whatsapp.com/`;
 
               return (
                 <div

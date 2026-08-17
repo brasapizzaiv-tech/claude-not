@@ -50,7 +50,7 @@ function LinkApp({ c }: { c: Colaborador }) {
       </button>
       {zapNum && (
         <a
-          href={`https://wa.me/${zapNum}?text=${msg}`}
+          href={`https://web.whatsapp.com/send?phone=${zapNum}&text=${msg}`}
           target="_blank"
           rel="noopener noreferrer"
           className="rounded border border-green-500 px-2 py-1 font-medium text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
@@ -112,7 +112,7 @@ function CardApp({ c }: { c: Colaborador }) {
         </button>
         {zapNum && (
           <a
-            href={`https://wa.me/${zapNum}?text=${msg}`}
+            href={`https://web.whatsapp.com/send?phone=${zapNum}&text=${msg}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 rounded-lg bg-green-600 px-3 py-1.5 text-center text-sm font-medium text-white hover:bg-green-700"
