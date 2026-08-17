@@ -121,7 +121,7 @@ export function CotacaoClient({
             {dataBR(cotacao.data)} ·{" "}
             {fechada ? "Fechada" : "Aberta"} ·{" "}
             {temContagem
-              ? "cotando só o que foi pedido na contagem"
+              ? "cotando só os itens da contagem (sugestão = ideal − contado)"
               : "sem contagem (sugestão = ideal)"}
           </p>
         </div>
@@ -202,7 +202,7 @@ export function CotacaoClient({
                 <th className="px-4 py-3">Un.</th>
                 <th className="px-4 py-3 text-right">Contado</th>
                 <th className="px-4 py-3 text-right">Ideal</th>
-                <th className="px-4 py-3 text-right">{temContagem ? "Pedido" : "Sugestão"}</th>
+                <th className="px-4 py-3 text-right">Sugestão</th>
                 <th className="px-4 py-3 text-right">A cotar</th>
               </tr>
             </thead>

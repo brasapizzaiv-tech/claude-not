@@ -28,18 +28,15 @@ export default async function CotacaoDetalhePage({
     supabase.from("cotacao_itens").select("produto_id, qtd").eq("cotacao_id", id),
   ]);
 
-  // Estoque contado e quantidade pedida na contagem base (se houver).
+  // Estoque contado na contagem base (se houver). A presença aqui = produto
+  // que fez parte daquela contagem (o que foi "solicitado").
   const contado = new Map<string, number>();
-  const pedido = new Map<string, number>();
   if (cotacao.contagem_id) {
     const { data: cont } = await supabase
       .from("contagem_itens")
-      .select("produto_id, qtd_estoque, qtd_pedir")
+      .select("produto_id, qtd_estoque")
       .eq("contagem_id", cotacao.contagem_id);
-    for (const c of cont ?? []) {
-      contado.set(c.produto_id, Number(c.qtd_estoque) || 0);
-      pedido.set(c.produto_id, Number(c.qtd_pedir) || 0);
-    }
+    for (const c of cont ?? []) contado.set(c.produto_id, Number(c.qtd_estoque) || 0);
   }
 
   const jaCotado = new Map<string, number>();
@@ -47,23 +44,18 @@ export default async function CotacaoDetalhePage({
 
   let produtos = (prodData as unknown as Produto[]) ?? [];
 
-  // Cotação baseada em contagem: cota SÓ o que foi solicitado (qtd_pedir > 0),
-  // mais qualquer produto já salvo manualmente nesta cotação.
+  // Cotação baseada em contagem: cota SÓ os produtos que entraram naquela
+  // contagem, mais qualquer produto já salvo manualmente nesta cotação.
   if (cotacao.contagem_id) {
-    const permitidos = new Set<string>();
-    for (const [pid, q] of pedido) if (q > 0) permitidos.add(pid);
-    for (const pid of jaCotado.keys()) permitidos.add(pid);
+    const permitidos = new Set<string>([...contado.keys(), ...jaCotado.keys()]);
     produtos = produtos.filter((p) => permitidos.has(p.id));
   }
 
   const linhas: LinhaProduto[] = produtos.map((p) => {
     const cont = contado.get(p.id) ?? 0;
     const ideal = Number(p.estoque_ideal) || 0;
-    // Com contagem: a sugestão é o que foi pedido na contagem.
-    // Sem contagem: a sugestão é o que falta para o ideal.
-    const sugestao = cotacao.contagem_id
-      ? pedido.get(p.id) ?? 0
-      : Math.max(0, ideal - cont);
+    // Sugestão = o que falta para o estoque ideal.
+    const sugestao = Math.max(0, ideal - cont);
     const existente = jaCotado.get(p.id);
     return {
       id: p.id,
