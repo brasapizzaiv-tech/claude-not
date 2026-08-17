@@ -50,10 +50,12 @@ export default async function CotacaoFornecedoresPage({
       fornIds.length
         ? supabase
             .from("fornecedores")
-            .select("id, nome, whatsapp")
+            .select("id, nome, whatsapp, contato")
             .in("id", fornIds)
             .eq("ativo", true)
-        : Promise.resolve({ data: [] as { id: string; nome: string; whatsapp: string | null }[] }),
+        : Promise.resolve({
+            data: [] as { id: string; nome: string; whatsapp: string | null; contato: string | null }[],
+          }),
       supabase
         .from("cotacao_fornecedores")
         .select("fornecedor_id, status, token")
@@ -71,6 +73,7 @@ export default async function CotacaoFornecedoresPage({
           id: f.id,
           nome: f.nome,
           whatsapp: f.whatsapp,
+          contato: f.contato ?? null,
           cobertura: cobertura.get(f.id) ?? 0,
           convidado: !!conv,
           token: conv?.token ?? null,

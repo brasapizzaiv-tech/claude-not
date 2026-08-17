@@ -12,6 +12,7 @@ export type FornecedorLinha = {
   id: string;
   nome: string;
   whatsapp: string | null;
+  contato: string | null;
   cobertura: number;
   convidado: boolean;
   token: string | null;
@@ -123,7 +124,6 @@ export function FornecedoresClient({
     const zap = (l.whatsapp ?? "").replace(/\D/g, "");
     return `https://web.whatsapp.com/send?phone=55${zap}&text=${encodeURIComponent(textoMsg(l))}`;
   }
-  const comNumero = convidados.filter((l) => (l.whatsapp ?? "").replace(/\D/g, ""));
 
   const proximo = convidados.find((l) => !enviados.has(l.id));
   const enviadosCount = convidados.filter((l) => enviados.has(l.id)).length;
@@ -242,99 +242,89 @@ export function FornecedoresClient({
             </div>
           </details>
 
-          <p className="mb-3 text-xs text-zinc-400">
-            Clique em <b>Abrir WhatsApp do próximo</b>: abre a conversa já com a
-            mensagem e o link prontos — é só apertar enviar no WhatsApp e voltar
-            aqui para o próximo. (O envio automático não é possível pelo site.)
-          </p>
-
-          <div className="space-y-2">
-            {convidados.map((l) => {
-              const foi = enviados.has(l.id);
-              const url = l.token ? `${origin}/cotar/${l.token}` : "";
-              return (
-                <div
-                  key={l.id}
-                  className={`flex flex-wrap items-center gap-2 rounded-xl border p-3 ${
-                    foi
-                      ? "border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20"
-                      : "border-zinc-200 dark:border-zinc-800"
-                  }`}
-                >
-                  <span className="w-5 text-center">{foi ? "✓" : ""}</span>
-                  <span className="min-w-32 flex-1 font-medium text-zinc-900 dark:text-zinc-100">
-                    {l.nome}
-                    {!l.whatsapp && (
-                      <span className="ml-2 text-[10px] text-amber-500">sem número</span>
-                    )}
-                  </span>
-                  {l.respondido ? (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-                      Respondeu
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                      Aguardando
-                    </span>
-                  )}
-                  <button
-                    onClick={() => navigator.clipboard.writeText(url)}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    Copiar link
-                  </button>
-                  <button
-                    onClick={() => abrirWhats(l)}
-                    className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
-                  >
-                    WhatsApp
-                  </button>
-                </div>
-              );
-            })}
+          <div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
+            <b>Envio em massa (extensão VMarket):</b> deixe esta tela aberta e clique no
+            ícone da extensão <b>VMarket WhatsApp Sender</b> → <b>Enviar Mensagem</b>. Ela lê
+            os links da coluna <b>“Envio manual”</b> e dispara um a um (mantenha o WhatsApp
+            Web logado neste navegador). Ou envie manualmente clicando em cada botão.
           </div>
 
-          {/* Modo plugin: links de verdade para o VMarket WhatsApp Sender varrer */}
-          <details className="mt-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              🧩 Modo plugin (VMarket WhatsApp Sender)
-            </summary>
-            <div className="border-t border-zinc-100 p-4 dark:border-zinc-800">
-              <p className="mb-3 text-xs text-zinc-500">
-                O plugin procura <b>links de WhatsApp</b> na página. Abaixo estão os
-                links de cada fornecedor (com a mensagem e o link da cotação já
-                prontos). Deixe esta seção aberta e clique em <b>“Enviar Mensagem”</b>{" "}
-                no plugin — ele deve encontrá-los e disparar.
-                {comNumero.length < convidados.length && (
-                  <> Fornecedores sem número não entram.</>
-                )}
-              </p>
-              <div className="space-y-1 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900">
-                {comNumero.map((l) => (
-                  <div key={l.id}>
-                    <a
-                      href={apiHref(l)}
-                      className="text-sm text-blue-600 underline"
-                      data-whatsapp="1"
-                      data-telefone={`55${(l.whatsapp ?? "").replace(/\D/g, "")}`}
+          <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+                <tr>
+                  <th className="px-4 py-3">Fornecedor</th>
+                  <th className="px-4 py-3">Contato</th>
+                  <th className="px-4 py-3">Telefone</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Envio manual</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {convidados.map((l) => {
+                  const foi = enviados.has(l.id);
+                  const url = l.token ? `${origin}/cotar/${l.token}` : "";
+                  const zap = (l.whatsapp ?? "").replace(/\D/g, "");
+                  return (
+                    <tr
+                      key={l.id}
+                      className={foi ? "bg-green-50/50 dark:bg-green-950/15" : "bg-white dark:bg-zinc-950"}
                     >
-                      {l.nome} — {(l.whatsapp ?? "").replace(/\D/g, "")}
-                    </a>
-                  </div>
-                ))}
-                {comNumero.length === 0 && (
-                  <p className="text-sm text-zinc-400">
-                    Nenhum fornecedor com número de WhatsApp cadastrado.
-                  </p>
-                )}
-              </div>
-              <p className="mt-2 text-[11px] text-zinc-400">
-                Se o plugin ainda disser “nenhum link encontrado”, me avise o
-                formato que ele espera (às vezes é <code>wa.me</code> em vez de{" "}
-                <code>api.whatsapp.com</code>) que eu ajusto.
-              </p>
-            </div>
-          </details>
+                      <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                        {l.nome}
+                      </td>
+                      <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">
+                        {l.contato || "—"}
+                      </td>
+                      <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">
+                        {zap ? (
+                          zap
+                        ) : (
+                          <span className="text-amber-500">sem número</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {foi ? (
+                          <span className="font-medium text-green-600">✓ Enviado</span>
+                        ) : l.respondido ? (
+                          <span className="font-medium text-green-600">Respondeu</span>
+                        ) : (
+                          <span className="text-amber-600">Pendente</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          <a
+                            href={apiHref(l)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => marcarEnviado(l.id)}
+                            data-whatsapp="1"
+                            data-telefone={`55${zap}`}
+                            className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                          >
+                            Envio manual
+                          </a>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(url)}
+                            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                          >
+                            Copiar link
+                          </button>
+                          <button
+                            onClick={() => remover(l.id)}
+                            className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
+                          >
+                            Retirar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
