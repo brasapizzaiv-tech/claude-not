@@ -114,6 +114,21 @@ export function FornecedoresClient({
     marcarEnviado(l.id);
   }
 
+  // Texto da mensagem (com o link) para um fornecedor.
+  function textoMsg(l: FornecedorLinha) {
+    const url = l.token ? `${origin}/cotar/${l.token}` : "";
+    return template
+      .replaceAll("{itens}", String(l.cobertura))
+      .replaceAll("{nome}", l.nome)
+      .replaceAll("{link}", url);
+  }
+  // Link no formato api.whatsapp.com (o que os plugins de disparo costumam varrer).
+  function apiHref(l: FornecedorLinha) {
+    const zap = (l.whatsapp ?? "").replace(/\D/g, "");
+    return `https://api.whatsapp.com/send?phone=55${zap}&text=${encodeURIComponent(textoMsg(l))}`;
+  }
+  const comNumero = convidados.filter((l) => (l.whatsapp ?? "").replace(/\D/g, ""));
+
   const proximo = convidados.find((l) => !enviados.has(l.id));
   const enviadosCount = convidados.filter((l) => enviados.has(l.id)).length;
 
@@ -282,6 +297,48 @@ export function FornecedoresClient({
               );
             })}
           </div>
+
+          {/* Modo plugin: links de verdade para o VMarket WhatsApp Sender varrer */}
+          <details className="mt-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              🧩 Modo plugin (VMarket WhatsApp Sender)
+            </summary>
+            <div className="border-t border-zinc-100 p-4 dark:border-zinc-800">
+              <p className="mb-3 text-xs text-zinc-500">
+                O plugin procura <b>links de WhatsApp</b> na página. Abaixo estão os
+                links de cada fornecedor (com a mensagem e o link da cotação já
+                prontos). Deixe esta seção aberta e clique em <b>“Enviar Mensagem”</b>{" "}
+                no plugin — ele deve encontrá-los e disparar.
+                {comNumero.length < convidados.length && (
+                  <> Fornecedores sem número não entram.</>
+                )}
+              </p>
+              <div className="space-y-1 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900">
+                {comNumero.map((l) => (
+                  <div key={l.id}>
+                    <a
+                      href={apiHref(l)}
+                      className="text-sm text-blue-600 underline"
+                      data-whatsapp="1"
+                      data-telefone={`55${(l.whatsapp ?? "").replace(/\D/g, "")}`}
+                    >
+                      {l.nome} — {(l.whatsapp ?? "").replace(/\D/g, "")}
+                    </a>
+                  </div>
+                ))}
+                {comNumero.length === 0 && (
+                  <p className="text-sm text-zinc-400">
+                    Nenhum fornecedor com número de WhatsApp cadastrado.
+                  </p>
+                )}
+              </div>
+              <p className="mt-2 text-[11px] text-zinc-400">
+                Se o plugin ainda disser “nenhum link encontrado”, me avise o
+                formato que ele espera (às vezes é <code>wa.me</code> em vez de{" "}
+                <code>api.whatsapp.com</code>) que eu ajusto.
+              </p>
+            </div>
+          </details>
         </div>
       )}
     </div>
