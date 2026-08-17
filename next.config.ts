@@ -17,6 +17,20 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "no-store, must-revalidate" },
         ],
       },
+      // Links públicos abertos no celular (fornecedor, colaborador): nunca
+      // cachear, pra sempre pegar a versão atual e o rascunho salvo.
+      {
+        source: "/cotar/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      },
+      {
+        source: "/contar/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      },
+      {
+        source: "/eu/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      },
     ];
   },
 };
