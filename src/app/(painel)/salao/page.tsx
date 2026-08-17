@@ -1,114 +1,71 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { criarComandaBuffet } from "./actions";
-
-const moeda = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+import { MesasGrid, type Mesa, type ComandaMini } from "./mesas";
 
 export default async function SalaoPage() {
   const supabase = await createClient();
-  const [{ data: abertas }, { data: cfg }] = await Promise.all([
+  const [{ data: abertas }, { data: cfgRows }] = await Promise.all([
     supabase
       .from("pdv_comandas")
-      .select("id, numero, peso, valor_buffet, livre, aberta_em")
+      .select("id, numero, mesa, valor_buffet")
       .eq("status", "aberta")
-      .order("numero", { ascending: false }),
+      .order("numero", { ascending: true }),
     supabase.from("pdv_config").select("chave, valor"),
   ]);
+
+  const cfg: Record<string, string> = {};
+  for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
+  const qtdMesas = Number(cfg.qtd_mesas || 40);
+
   const comandas =
-    (abertas as {
-      id: string;
-      numero: number;
-      peso: number | null;
-      valor_buffet: number;
-      livre: boolean;
-    }[]) ?? [];
-  const config: Record<string, string> = {};
-  for (const r of cfg ?? []) config[r.chave] = r.valor;
-  const precoKg = Number(config.preco_kg ?? 0);
-  const taraPadrao = Number(config.tara_padrao ?? 0);
+    (abertas as { id: string; numero: number; mesa: string | null; valor_buffet: number }[]) ?? [];
+
+  // soma dos itens por comanda
+  const ids = comandas.map((c) => c.id);
+  const totItens = new Map<string, number>();
+  if (ids.length) {
+    const { data: itens } = await supabase
+      .from("pdv_comanda_itens")
+      .select("comanda_id, qtd, preco_unit")
+      .in("comanda_id", ids);
+    for (const it of itens ?? []) {
+      const v = Number(it.qtd) * Number(it.preco_unit);
+      totItens.set(it.comanda_id, (totItens.get(it.comanda_id) || 0) + v);
+    }
+  }
+
+  // agrupa comandas abertas por mesa
+  const porMesa = new Map<string, ComandaMini[]>();
+  for (const c of comandas) {
+    const nome = c.mesa || "Balcão";
+    const total = Number(c.valor_buffet) + (totItens.get(c.id) || 0);
+    porMesa.set(nome, [...(porMesa.get(nome) ?? []), { id: c.id, numero: c.numero, total }]);
+  }
+
+  // monta a lista fixa de mesas: Balcão, Mesa 1..N, Balança
+  const nomes: { nome: string; tipo: Mesa["tipo"] }[] = [
+    { nome: "Balcão", tipo: "balcao" },
+    ...Array.from({ length: qtdMesas }, (_, i) => ({
+      nome: `Mesa ${i + 1}`,
+      tipo: "mesa" as const,
+    })),
+    { nome: "Balança", tipo: "balanca" },
+  ];
+  const mesas: Mesa[] = nomes.map((m) => ({
+    ...m,
+    comandas: porMesa.get(m.nome) ?? [],
+  }));
+
+  // comandas de mesas fora da lista (ex.: a mesa foi reduzida) — não somem
+  for (const [nome, cs] of porMesa) {
+    if (!mesas.some((m) => m.nome === nome)) {
+      mesas.push({ nome, tipo: "mesa", comandas: cs });
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            Salão / Buffet
-          </h1>
-          <p className="mt-1 text-zinc-500">
-            Comandas abertas. Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido"}.
-          </p>
-        </div>
-        <Link
-          href="/salao/cardapio"
-          className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-        >
-          Cardápio / Config
-        </Link>
-      </div>
-
-      {/* Nova comanda de buffet (peso manual por enquanto; depois vem da balança) */}
-      <form
-        action={criarComandaBuffet}
-        className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
-      >
-        <div>
-          <label className="mb-1 block text-xs text-zinc-500">
-            Peso do prato (kg)
-          </label>
-          <input
-            name="peso"
-            inputMode="decimal"
-            placeholder="0,000"
-            className="w-32 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-zinc-500">Tara (kg)</label>
-          <input
-            name="tara"
-            inputMode="decimal"
-            defaultValue={taraPadrao ? String(taraPadrao).replace(".", ",") : ""}
-            placeholder="0,000"
-            className="w-24 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-          />
-        </div>
-        <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
-          ⚖️ Gerar comanda
-        </button>
-        <span className="text-xs text-zinc-400">
-          (amanhã o peso vem direto da balança)
-        </span>
-      </form>
-
-      {comandas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
-          Nenhuma comanda aberta.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {comandas.map((c) => (
-            <Link
-              key={c.id}
-              href={`/salao/comandas/${c.id}`}
-              className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 hover:border-orange-300 dark:border-zinc-800 dark:bg-zinc-950"
-            >
-              <div>
-                <p className="font-bold text-zinc-900 dark:text-zinc-100">
-                  Comanda #{c.numero}
-                </p>
-                <p className="text-xs text-zinc-500">
-                  {c.peso ? `${c.peso} kg` : "sem peso"}
-                  {c.livre ? " · livre" : ""}
-                </p>
-              </div>
-              <span className="text-lg font-semibold text-zinc-800 dark:text-zinc-200">
-                {moeda(Number(c.valor_buffet))}
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
+    <div className="mx-auto max-w-[1500px] p-6">
+      <h1 className="mb-4 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Salão</h1>
+      <MesasGrid mesas={mesas} />
     </div>
   );
 }

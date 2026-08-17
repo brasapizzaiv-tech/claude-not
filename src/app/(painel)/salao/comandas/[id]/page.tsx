@@ -21,7 +21,7 @@ export default async function ComandaPage({
 
   const { data: comanda } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, status, peso, tara, valor_buffet, livre, servico, forma_pagamento, aberta_em")
+    .select("id, numero, mesa, status, peso, tara, valor_buffet, livre, servico, forma_pagamento, aberta_em")
     .eq("id", id)
     .single();
   if (!comanda) notFound();
@@ -87,6 +87,7 @@ export default async function ComandaPage({
   const lista =
     (itens as { id: string; descricao: string; qtd: number; preco_unit: number }[]) ?? [];
   const fechada = comanda.status === "fechada";
+  const temBuffet = Number(comanda.valor_buffet) > 0 || Number(comanda.peso ?? 0) > 0;
 
   const subtotal =
     Number(comanda.valor_buffet) +
@@ -133,32 +134,34 @@ export default async function ComandaPage({
           </p>
         )}
         <p className="mt-1 text-xs uppercase tracking-wide text-zinc-400">
-          Comanda {fechada ? "· fechada" : ""}
+          Comanda {comanda.mesa ? `· ${comanda.mesa}` : ""} {fechada ? "· fechada" : ""}
         </p>
         <p className="text-4xl font-black text-zinc-900 dark:text-zinc-50">
           #{comanda.numero}
         </p>
 
-        <div className="mx-auto mt-4 grid max-w-sm grid-cols-3 gap-2 text-sm">
-          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-            <p className="text-[11px] uppercase text-zinc-400">Peso</p>
-            <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-              {Number(comanda.peso ?? 0)} kg
-            </p>
+        {temBuffet && (
+          <div className="mx-auto mt-4 grid max-w-sm grid-cols-3 gap-2 text-sm">
+            <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+              <p className="text-[11px] uppercase text-zinc-400">Peso</p>
+              <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {Number(comanda.peso ?? 0)} kg
+              </p>
+            </div>
+            <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+              <p className="text-[11px] uppercase text-zinc-400">Tara</p>
+              <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {Number(comanda.tara ?? 0)} kg
+              </p>
+            </div>
+            <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+              <p className="text-[11px] uppercase text-zinc-400">Valor</p>
+              <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {moeda(Number(comanda.valor_buffet))}
+              </p>
+            </div>
           </div>
-          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-            <p className="text-[11px] uppercase text-zinc-400">Tara</p>
-            <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-              {Number(comanda.tara ?? 0)} kg
-            </p>
-          </div>
-          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-            <p className="text-[11px] uppercase text-zinc-400">Valor</p>
-            <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-              {moeda(Number(comanda.valor_buffet))}
-            </p>
-          </div>
-        </div>
+        )}
 
         {comanda.livre && (
           <p className="mt-2 text-xs font-semibold text-orange-600">BUFFET LIVRE</p>
@@ -183,15 +186,17 @@ export default async function ComandaPage({
       <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-sm">
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            <tr className="bg-white dark:bg-zinc-950">
-              <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
-                Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}
-              </td>
-              <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
-                {moeda(Number(comanda.valor_buffet))}
-              </td>
-              <td className="px-4 py-2" />
-            </tr>
+            {temBuffet && (
+              <tr className="bg-white dark:bg-zinc-950">
+                <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                  Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}
+                </td>
+                <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                  {moeda(Number(comanda.valor_buffet))}
+                </td>
+                <td className="px-4 py-2" />
+              </tr>
+            )}
             {lista.map((i) => (
               <tr key={i.id} className="bg-white dark:bg-zinc-950">
                 <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">

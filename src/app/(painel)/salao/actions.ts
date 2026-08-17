@@ -13,6 +13,7 @@ export async function salvarConfigPdv(formData: FormData) {
   const supabase = await createClient();
   const linhas = [
     { chave: "nome_restaurante", valor: ((formData.get("nome_restaurante") as string) || "").trim() },
+    { chave: "qtd_mesas", valor: String(Math.max(0, Math.round(valorNum(formData.get("qtd_mesas"))))) },
     { chave: "tara_padrao", valor: String(valorNum(formData.get("tara_padrao"))) },
     { chave: "preco_kg", valor: String(valorNum(formData.get("preco_kg"))) },
     { chave: "buffet_livre", valor: String(valorNum(formData.get("buffet_livre"))) },
@@ -76,10 +77,25 @@ export async function criarComandaBuffet(formData: FormData) {
   if (peso <= 0) return;
   const cfg = await pdvCfg(supabase);
   const tara = valorNum(formData.get("tara")) || Number(cfg.tara_padrao || 0);
+  const mesa = ((formData.get("mesa") as string) || "Balança").trim();
   const { valor, livre } = calcBuffet(cfg, peso, tara);
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .insert({ peso, tara, valor_buffet: valor, livre })
+    .insert({ peso, tara, valor_buffet: valor, livre, mesa })
+    .select("id")
+    .single();
+  revalidatePath("/salao");
+  if (com) redirect(`/salao/comandas/${com.id}`);
+}
+
+// Nova comanda "à la carte" numa mesa (sem buffet). Abre a comanda em seguida.
+export async function criarComandaMesa(formData: FormData) {
+  const supabase = await createClient();
+  const mesa = ((formData.get("mesa") as string) || "").trim();
+  if (!mesa) return;
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .insert({ mesa, peso: 0, tara: 0, valor_buffet: 0, livre: false })
     .select("id")
     .single();
   revalidatePath("/salao");

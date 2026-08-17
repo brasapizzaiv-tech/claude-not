@@ -53,6 +53,16 @@ export function CardapioClient({
             />
           </div>
           <div>
+            <label className="mb-1 block text-xs text-zinc-500">Qtd. de mesas</label>
+            <input
+              name="qtd_mesas"
+              inputMode="numeric"
+              defaultValue={config.qtd_mesas ?? "40"}
+              placeholder="40"
+              className={`${inputCls} w-24`}
+            />
+          </div>
+          <div>
             <label className="mb-1 block text-xs text-zinc-500">Tara padrão (kg)</label>
             <input
               name="tara_padrao"
