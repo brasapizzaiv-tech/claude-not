@@ -527,13 +527,14 @@ async function removerPedido(id){ if(!confirm('Remover este pedido?'))return; tr
 /* ---- impressão de etiquetas (impressora térmica 80mm) ---- */
 function etiquetaHTML(p){
   const data=formatarData($('#dataDia').value||hoje());
-  const pr=arr(p.pratos).join(', ');
+  const pratosHtml=arr(p.pratos).map(x=>`<div class="et-l" style="padding-left:10px">- ${escapeHtml(x)}</div>`).join('');
   return `<div class="etiqueta">
     <div class="et-conv">${escapeHtml(CONFIG.nomeConvenio||'Kern')} · ${data}${CONFIG.horaEntrega?(' · entrega '+escapeHtml(CONFIG.horaEntrega)):''}</div>
     <div class="et-filial">${escapeHtml(p.filial)}</div>
     <div class="et-nome">${escapeHtml(p.cliente)} ${p.matricula?`<span>${escapeHtml(p.matricula)}</span>`:''}</div>
     <div class="et-sep"></div>
-    <div class="et-l"><b>Pratos:</b> ${escapeHtml(pr)}</div>
+    <div class="et-l"><b>Pratos:</b></div>
+    ${pratosHtml}
     ${p.proteina?`<div class="et-l"><b>Proteína:</b> ${escapeHtml(p.proteina)}</div>`:''}
     <div class="et-l"><b>Salada:</b> ${p.salada?escapeHtml(p.salada):'Não'}</div>
   </div>`;
