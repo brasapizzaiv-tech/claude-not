@@ -300,6 +300,56 @@ export async function adicionarPizzaComanda(
   revalidatePath(`/salao/comandas/${comandaId}`);
 }
 
+// Adiciona um item com complementos (marmita) à comanda.
+// Preço = preço base do item + soma das opções escolhidas (tudo validado no servidor).
+export async function adicionarComboComanda(
+  comandaId: string,
+  itemId: string,
+  opcaoIds: string[],
+) {
+  const supabase = await createClient();
+  const { data: item } = await supabase
+    .from("pdv_itens")
+    .select("nome, preco")
+    .eq("id", itemId)
+    .single();
+  if (!item) return;
+
+  const nomes: string[] = [];
+  let extra = 0;
+  if (opcaoIds.length > 0) {
+    // só opções que realmente pertencem aos grupos deste item
+    const { data: grupos } = await supabase
+      .from("pdv_item_grupos")
+      .select("id")
+      .eq("item_id", itemId);
+    const grupoIds = (grupos ?? []).map((g) => g.id);
+    if (grupoIds.length) {
+      const { data: ops } = await supabase
+        .from("pdv_item_opcoes")
+        .select("nome, preco")
+        .in("id", opcaoIds)
+        .in("grupo_id", grupoIds);
+      for (const o of ops ?? []) {
+        extra += Number(o.preco);
+        nomes.push(Number(o.preco) > 0 ? `${o.nome} (+${Number(o.preco)})` : o.nome);
+      }
+    }
+  }
+
+  const preco = Math.round((Number(item.preco) + extra) * 100) / 100;
+  const descricao = nomes.length ? `${item.nome} — ${nomes.join(", ")}` : item.nome;
+
+  await supabase.from("pdv_comanda_itens").insert({
+    comanda_id: comandaId,
+    item_id: itemId,
+    descricao,
+    qtd: 1,
+    preco_unit: preco,
+  });
+  revalidatePath(`/salao/comandas/${comandaId}`);
+}
+
 export async function removerItemComanda(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;

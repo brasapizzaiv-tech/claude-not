@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { adicionarItemComanda, adicionarPizzaComanda } from "../../actions";
+import {
+  adicionarItemComanda,
+  adicionarPizzaComanda,
+  adicionarComboComanda,
+} from "../../actions";
 
 export function QRComanda({ id }: { id: string }) {
   const [src, setSrc] = useState("");
@@ -20,6 +24,15 @@ export function QRComanda({ id }: { id: string }) {
 
 type Item = { id: string; nome: string; categoria: string | null; preco: number };
 
+export type ComboOpcao = { id: string; nome: string; preco: number };
+export type ComboGrupo = {
+  id: string;
+  nome: string;
+  min: number;
+  max: number;
+  opcoes: ComboOpcao[];
+};
+
 const PIZZAS = "🍕 Pizzas";
 
 // Lançador de itens estilo PDV: abas por categoria + busca + grade de cards.
@@ -28,6 +41,7 @@ export function LancarItens({
   comandaId,
   itens,
   categoriasOrdenadas,
+  complementos,
   pizzaTamanhos,
   pizzaSabores,
   pizzaBordas,
@@ -35,11 +49,13 @@ export function LancarItens({
   comandaId: string;
   itens: Item[];
   categoriasOrdenadas: string[];
+  complementos: Record<string, ComboGrupo[]>;
   pizzaTamanhos: PizzaTamanho[];
   pizzaSabores: PizzaOpcao[];
   pizzaBordas: PizzaOpcao[];
 }) {
   const temPizza = pizzaTamanhos.length > 0;
+  const [combo, setCombo] = useState<Item | null>(null);
   const categorias = useMemo(() => {
     const comItens = new Set(itens.map((i) => i.categoria || "Outros"));
     // ordem definida no cardápio, só categorias que têm itens
@@ -60,10 +76,15 @@ export function LancarItens({
     return itens.filter((i) => (i.categoria || "Outros") === aba);
   }, [itens, q, aba]);
 
-  function add(id: string) {
-    setAddId(id);
+  function add(item: Item) {
+    // item com complementos abre o montador
+    if (complementos[item.id]?.length) {
+      setCombo(item);
+      return;
+    }
+    setAddId(item.id);
     start(async () => {
-      await adicionarItemComanda(comandaId, id);
+      await adicionarItemComanda(comandaId, item.id);
       router.refresh();
       setAddId("");
     });
@@ -125,12 +146,15 @@ export function LancarItens({
           {visiveis.map((i) => (
             <button
               key={i.id}
-              onClick={() => add(i.id)}
+              onClick={() => add(i)}
               disabled={p && addId === i.id}
               className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-2.5 text-left hover:border-orange-300 hover:bg-orange-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-orange-500/50 dark:hover:bg-orange-950/30"
             >
               <span className="text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">
                 {i.nome}
+                {complementos[i.id]?.length ? (
+                  <span className="ml-1 text-[10px] text-zinc-400">montar ›</span>
+                ) : null}
               </span>
               <span className="mt-1 text-xs font-semibold text-orange-600">{brl(Number(i.preco))}</span>
             </button>
@@ -142,6 +166,125 @@ export function LancarItens({
           )}
         </div>
       )}
+
+      {combo && (
+        <MontarCombo
+          comandaId={comandaId}
+          item={combo}
+          grupos={complementos[combo.id] ?? []}
+          onFechar={() => setCombo(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function MontarCombo({
+  comandaId,
+  item,
+  grupos,
+  onFechar,
+}: {
+  comandaId: string;
+  item: Item;
+  grupos: ComboGrupo[];
+  onFechar: () => void;
+}) {
+  const [sel, setSel] = useState<Record<string, string[]>>({});
+  const [p, start] = useTransition();
+  const router = useRouter();
+
+  function toggle(g: ComboGrupo, opId: string) {
+    setSel((s) => {
+      const atual = s[g.id] ?? [];
+      if (atual.includes(opId)) return { ...s, [g.id]: atual.filter((x) => x !== opId) };
+      if (g.max === 1) return { ...s, [g.id]: [opId] }; // troca
+      if (atual.length >= g.max) return s; // no limite
+      return { ...s, [g.id]: [...atual, opId] };
+    });
+  }
+
+  const todosIds = Object.values(sel).flat();
+  const opcaoDe = new Map<string, ComboOpcao>();
+  for (const g of grupos) for (const o of g.opcoes) opcaoDe.set(o.id, o);
+  const extra = todosIds.reduce((s, id) => s + (opcaoDe.get(id)?.preco ?? 0), 0);
+  const total = Math.round((Number(item.preco) + extra) * 100) / 100;
+
+  const faltaMin = grupos.some((g) => (sel[g.id]?.length ?? 0) < g.min);
+
+  function confirmar() {
+    if (faltaMin) return;
+    start(async () => {
+      await adicionarComboComanda(comandaId, item.id, todosIds);
+      router.refresh();
+      onFechar();
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white sm:rounded-2xl dark:bg-zinc-950">
+        <div className="flex items-center justify-between border-b border-zinc-100 p-4 dark:border-zinc-800">
+          <div>
+            <p className="font-bold text-zinc-900 dark:text-zinc-100">{item.nome}</p>
+            <p className="text-xs text-zinc-500">Base {brl(Number(item.preco))}</p>
+          </div>
+          <button onClick={onFechar} className="text-2xl leading-none text-zinc-400 hover:text-zinc-700">
+            ×
+          </button>
+        </div>
+
+        <div className="space-y-4 overflow-y-auto p-4">
+          {grupos.map((g) => {
+            const escolhidas = sel[g.id]?.length ?? 0;
+            const okMin = escolhidas >= g.min;
+            return (
+              <div key={g.id}>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{g.nome}</p>
+                  <span className={`text-[11px] ${okMin ? "text-zinc-400" : "text-red-500"}`}>
+                    {g.min > 0 ? `escolha ${g.min}` : "opcional"}
+                    {g.max > 1 ? ` até ${g.max}` : ""} · {escolhidas}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {g.opcoes.map((o) => {
+                    const on = (sel[g.id] ?? []).includes(o.id);
+                    return (
+                      <button
+                        key={o.id}
+                        onClick={() => toggle(g, o.id)}
+                        className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-xs ${
+                          on
+                            ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
+                            : "border-zinc-200 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                        }`}
+                      >
+                        <span>
+                          {on ? "✓ " : ""}
+                          {o.nome}
+                        </span>
+                        {o.preco > 0 && <span className="ml-1 text-zinc-400">+{brl(o.preco)}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-between border-t border-zinc-100 p-4 dark:border-zinc-800">
+          <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{brl(total)}</span>
+          <button
+            onClick={confirmar}
+            disabled={p || faltaMin}
+            className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+          >
+            {faltaMin ? "Escolha as opções" : "Adicionar"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

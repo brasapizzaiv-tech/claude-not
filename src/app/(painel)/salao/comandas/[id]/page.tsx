@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
 import { QRComanda, LancarItens } from "./cliente";
-import type { PizzaOpcao } from "./cliente";
+import type { PizzaOpcao, ComboGrupo } from "./cliente";
 import { ImprimirComanda } from "./print";
 import { AcoesComanda } from "./acoes";
 import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
@@ -59,6 +59,56 @@ export default async function ComandaPage({
   const cardapioDisp = (
     (cardapio as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? []
   ).filter((i) => !i.categoria || catDisp.has(i.categoria));
+
+  // Complementos (marmitas): grupos + opções ativas dos itens do cardápio disponível
+  const complementos: Record<string, ComboGrupo[]> = {};
+  const itemIds = cardapioDisp.map((i) => i.id);
+  if (itemIds.length) {
+    const { data: gruposRows } = await supabase
+      .from("pdv_item_grupos")
+      .select("id, item_id, nome, min, max, ordem")
+      .in("item_id", itemIds)
+      .order("ordem");
+    const grupos = (gruposRows as {
+      id: string;
+      item_id: string;
+      nome: string;
+      min: number;
+      max: number;
+    }[]) ?? [];
+    if (grupos.length) {
+      const { data: opcoesRows } = await supabase
+        .from("pdv_item_opcoes")
+        .select("id, grupo_id, nome, preco, ordem")
+        .in("grupo_id", grupos.map((g) => g.id))
+        .eq("ativo", true)
+        .order("ordem");
+      const porGrupo = new Map<string, { id: string; nome: string; preco: number }[]>();
+      for (const o of (opcoesRows as {
+        id: string;
+        grupo_id: string;
+        nome: string;
+        preco: number;
+      }[]) ?? []) {
+        porGrupo.set(o.grupo_id, [
+          ...(porGrupo.get(o.grupo_id) ?? []),
+          { id: o.id, nome: o.nome, preco: Number(o.preco) },
+        ]);
+      }
+      for (const g of grupos) {
+        complementos[g.item_id] = [
+          ...(complementos[g.item_id] ?? []),
+          {
+            id: g.id,
+            nome: g.nome,
+            min: Number(g.min),
+            max: Number(g.max),
+            opcoes: porGrupo.get(g.id) ?? [],
+          },
+        ];
+      }
+    }
+  }
 
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
@@ -245,6 +295,7 @@ export default async function ComandaPage({
             comandaId={comanda.id}
             itens={cardapioDisp}
             categoriasOrdenadas={categoriasOrdenadas}
+            complementos={complementos}
             pizzaTamanhos={pizzaTamanhos}
             pizzaSabores={pizzaSabores}
             pizzaBordas={pizzaBordas}
