@@ -28,25 +28,42 @@ export default async function CotacaoDetalhePage({
     supabase.from("cotacao_itens").select("produto_id, qtd").eq("cotacao_id", id),
   ]);
 
-  // Estoque contado (da contagem base, se houver).
+  // Estoque contado e quantidade pedida na contagem base (se houver).
   const contado = new Map<string, number>();
+  const pedido = new Map<string, number>();
   if (cotacao.contagem_id) {
     const { data: cont } = await supabase
       .from("contagem_itens")
-      .select("produto_id, qtd_estoque")
+      .select("produto_id, qtd_estoque, qtd_pedir")
       .eq("contagem_id", cotacao.contagem_id);
-    for (const c of cont ?? [])
+    for (const c of cont ?? []) {
       contado.set(c.produto_id, Number(c.qtd_estoque) || 0);
+      pedido.set(c.produto_id, Number(c.qtd_pedir) || 0);
+    }
   }
 
   const jaCotado = new Map<string, number>();
   for (const i of itensData ?? []) jaCotado.set(i.produto_id, Number(i.qtd) || 0);
 
-  const produtos = (prodData as unknown as Produto[]) ?? [];
+  let produtos = (prodData as unknown as Produto[]) ?? [];
+
+  // Cotação baseada em contagem: cota SÓ o que foi solicitado (qtd_pedir > 0),
+  // mais qualquer produto já salvo manualmente nesta cotação.
+  if (cotacao.contagem_id) {
+    const permitidos = new Set<string>();
+    for (const [pid, q] of pedido) if (q > 0) permitidos.add(pid);
+    for (const pid of jaCotado.keys()) permitidos.add(pid);
+    produtos = produtos.filter((p) => permitidos.has(p.id));
+  }
+
   const linhas: LinhaProduto[] = produtos.map((p) => {
     const cont = contado.get(p.id) ?? 0;
     const ideal = Number(p.estoque_ideal) || 0;
-    const sugestao = Math.max(0, ideal - cont);
+    // Com contagem: a sugestão é o que foi pedido na contagem.
+    // Sem contagem: a sugestão é o que falta para o ideal.
+    const sugestao = cotacao.contagem_id
+      ? pedido.get(p.id) ?? 0
+      : Math.max(0, ideal - cont);
     const existente = jaCotado.get(p.id);
     return {
       id: p.id,
