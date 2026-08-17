@@ -367,7 +367,10 @@ export async function adicionarComboComanda(
   }
 
   const preco = Math.round((Number(item.preco) + extra) * 100) / 100;
-  const descricao = nomes.length ? `${item.nome} — ${nomes.join(", ")}` : item.nome;
+  // Cada opção numa linha (fica um embaixo do outro na tela e na impressão).
+  const descricao = nomes.length
+    ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}`
+    : item.nome;
 
   await supabase.from("pdv_comanda_itens").insert({
     comanda_id: comandaId,

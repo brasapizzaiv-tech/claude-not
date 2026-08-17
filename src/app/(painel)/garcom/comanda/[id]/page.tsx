@@ -151,11 +151,11 @@ export default async function GarcomComandaPage({
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {lista.map((i) => (
                 <tr key={i.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-3 py-2 text-zinc-800 dark:text-zinc-200">
+                  <td className="whitespace-pre-line px-3 py-2 text-zinc-800 dark:text-zinc-200">
                     {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
                     {i.descricao}
                   </td>
-                  <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-300">
+                  <td className="px-3 py-2 text-right align-top text-zinc-600 dark:text-zinc-300">
                     {moeda(Number(i.qtd) * Number(i.preco_unit))}
                   </td>
                   <td className="px-2 py-2 text-right">

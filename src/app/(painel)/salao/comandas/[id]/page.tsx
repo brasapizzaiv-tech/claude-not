@@ -244,6 +244,51 @@ export default async function ComandaPage({
             {cfg.cupom_msg}
           </p>
         )}
+
+        {/* Itens + totais — aparecem SÓ na impressão */}
+        <div className="hidden text-left text-[12px] leading-snug print:block">
+          <div className="my-2 border-t border-black/40" />
+          {temBuffet && (
+            <div className="flex justify-between gap-2">
+              <span>Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}</span>
+              <span>{moeda(Number(comanda.valor_buffet))}</span>
+            </div>
+          )}
+          {lista.map((i) => {
+            const linhas = i.descricao.split("\n");
+            return (
+              <div key={i.id} className="mt-1">
+                <div className="flex justify-between gap-2">
+                  <span>
+                    {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
+                    {linhas[0]}
+                  </span>
+                  <span>{moeda(Number(i.qtd) * Number(i.preco_unit))}</span>
+                </div>
+                {linhas.slice(1).map((l, idx) => (
+                  <div key={idx} className="pl-3">
+                    {l}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          <div className="my-2 border-t border-black/40" />
+          <div className="flex justify-between gap-2">
+            <span>Subtotal</span>
+            <span>{moeda(subtotal)}</span>
+          </div>
+          {servico > 0 && (
+            <div className="flex justify-between gap-2">
+              <span>Serviço ({Math.round(perc)}%)</span>
+              <span>{moeda(servico)}</span>
+            </div>
+          )}
+          <div className="flex justify-between gap-2 text-base font-bold">
+            <span>TOTAL</span>
+            <span>{moeda(total)}</span>
+          </div>
+        </div>
       </div>
 
       <div className="mt-3 flex justify-center">
@@ -267,11 +312,11 @@ export default async function ComandaPage({
             )}
             {lista.map((i) => (
               <tr key={i.id} className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
+                <td className="whitespace-pre-line px-4 py-2 text-zinc-800 dark:text-zinc-200">
                   {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
                   {i.descricao}
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                <td className="px-4 py-2 text-right align-top text-zinc-700 dark:text-zinc-300">
                   {moeda(Number(i.qtd) * Number(i.preco_unit))}
                 </td>
                 <td className="px-4 py-2 text-right">
