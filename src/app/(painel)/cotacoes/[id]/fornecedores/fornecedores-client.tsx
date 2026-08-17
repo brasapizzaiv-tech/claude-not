@@ -98,15 +98,11 @@ export function FornecedoresClient({
   const naoConvidados = linhas.filter((l) => !l.convidado);
 
   function waHref(l: FornecedorLinha) {
-    const url = l.token ? `${origin}/cotar/${l.token}` : "";
-    const texto = template
-      .replaceAll("{itens}", String(l.cobertura))
-      .replaceAll("{nome}", l.nome)
-      .replaceAll("{link}", url);
     const zap = (l.whatsapp ?? "").replace(/\D/g, "");
+    // web.whatsapp.com abre o WhatsApp Web no navegador (não o app instalado).
     return zap
-      ? `https://wa.me/55${zap}?text=${encodeURIComponent(texto)}`
-      : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+      ? `https://web.whatsapp.com/send?phone=55${zap}&text=${encodeURIComponent(textoMsg(l))}`
+      : `https://web.whatsapp.com/`;
   }
 
   function abrirWhats(l: FornecedorLinha) {
@@ -122,10 +118,10 @@ export function FornecedoresClient({
       .replaceAll("{nome}", l.nome)
       .replaceAll("{link}", url);
   }
-  // Link no formato api.whatsapp.com (o que os plugins de disparo costumam varrer).
+  // Link do WhatsApp Web (abre no navegador, não no app instalado).
   function apiHref(l: FornecedorLinha) {
     const zap = (l.whatsapp ?? "").replace(/\D/g, "");
-    return `https://api.whatsapp.com/send?phone=55${zap}&text=${encodeURIComponent(textoMsg(l))}`;
+    return `https://web.whatsapp.com/send?phone=55${zap}&text=${encodeURIComponent(textoMsg(l))}`;
   }
   const comNumero = convidados.filter((l) => (l.whatsapp ?? "").replace(/\D/g, ""));
 
