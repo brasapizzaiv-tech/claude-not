@@ -8,6 +8,7 @@ import { criarComandaBuffet } from "../actions";
 export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
   const [conectado, setConectado] = useState(false);
   const [raw, setRaw] = useState("");
+  const [bytes, setBytes] = useState(0);
   const [rawNum, setRawNum] = useState<number | null>(null);
   const [erro, setErro] = useState("");
 
@@ -41,9 +42,23 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       }
       portRef.current = port;
       setConectado(true);
+      setBytes(0);
+      setRaw("");
       lerLoop(port);
     } catch (e: any) {
       setErro("Não conectou: " + (e?.message || String(e)));
+    }
+  }
+
+  // Envia bytes para a balança (algumas só mandam o peso após um comando).
+  async function enviar(arr: number[], label: string) {
+    setErro("");
+    try {
+      const writer = portRef.current.writable.getWriter();
+      await writer.write(new Uint8Array(arr));
+      writer.releaseLock();
+    } catch (e: any) {
+      setErro(`Falha ao enviar ${label}: ` + (e?.message || String(e)));
     }
   }
 
@@ -56,6 +71,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
+        setBytes((b) => b + (value?.length ?? 0));
         buf += decoder.decode(value, { stream: true });
         if (buf.length > 800) buf = buf.slice(-800);
         setRaw(buf);
@@ -164,13 +180,36 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
         </div>
       </details>
 
-      {/* Dado bruto */}
+      {/* Dado bruto + diagnóstico */}
       {conectado && (
         <div>
-          <p className="mb-1 text-[11px] uppercase text-zinc-400">Dado bruto da balança</p>
+          <div className="mb-1 flex items-center justify-between">
+            <p className="text-[11px] uppercase text-zinc-400">Dado bruto da balança</p>
+            <p className={`text-[11px] font-medium ${bytes > 0 ? "text-green-600" : "text-amber-600"}`}>
+              {bytes} bytes recebidos
+            </p>
+          </div>
           <pre className="max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-900 p-2 text-[11px] text-green-400">
             {raw || "aguardando dados... (coloque um prato na balança)"}
           </pre>
+
+          {bytes === 0 && (
+            <div className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700 dark:bg-amber-950/30">
+              <p className="mb-2 font-medium">
+                Conectou, mas a balança não está enviando. Tente “cutucar” (a POP-31 às vezes só manda o peso quando recebe um comando):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <button onClick={() => enviar([0x05], "ENQ")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar ENQ</button>
+                <button onClick={() => enviar([0x0d], "CR")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar Enter</button>
+                <button onClick={() => enviar([0x50, 0x0d], "P")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar P</button>
+                <button onClick={() => enviar([0x57, 0x0d], "W")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar W</button>
+                <button onClick={() => enviar([0x11], "DC1")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar DC1</button>
+              </div>
+              <p className="mt-2">
+                Se nada mudar em nenhum, provavelmente a balança está com a **transmissão contínua desligada** (config da própria balança) ou a **velocidade** está diferente — tente 4800 ou 2400 nos ajustes (desconecte e reconecte).
+              </p>
+            </div>
+          )}
         </div>
       )}
 
