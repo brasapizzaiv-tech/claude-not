@@ -50,3 +50,54 @@ export async function excluirProduto(formData: FormData) {
   await supabase.from("produtos").update({ ativo: false }).eq("id", id);
   revalidatePath("/produtos");
 }
+
+// Define quais fornecedores fornecem um produto (substitui a lista atual).
+export async function definirFornecedoresDoProduto(
+  produtoId: string,
+  fornecedorIds: string[],
+) {
+  const supabase = await createClient();
+  await supabase.from("fornecedor_produto").delete().eq("produto_id", produtoId);
+  if (fornecedorIds.length > 0) {
+    await supabase.from("fornecedor_produto").insert(
+      fornecedorIds.map((fornecedor_id) => ({ produto_id: produtoId, fornecedor_id })),
+    );
+  }
+  revalidatePath("/produtos");
+  return { ok: true, total: fornecedorIds.length };
+}
+
+// Cria um fornecedor "Hortifrúti / Feira" (se não existir) e vincula a ele
+// todos os produtos que hoje estão sem nenhum fornecedor.
+export async function vincularSemFornecedorNaFeira() {
+  const supabase = await createClient();
+
+  let { data: forn } = await supabase
+    .from("fornecedores")
+    .select("id")
+    .eq("nome", "Hortifrúti / Feira")
+    .maybeSingle();
+  if (!forn) {
+    const { data } = await supabase
+      .from("fornecedores")
+      .insert({ nome: "Hortifrúti / Feira" })
+      .select("id")
+      .single();
+    forn = data;
+  }
+  if (!forn) return { ok: false, total: 0 };
+
+  // produtos ativos sem nenhum vínculo
+  const { data: prods } = await supabase.from("produtos").select("id").eq("ativo", true);
+  const { data: vinc } = await supabase.from("fornecedor_produto").select("produto_id");
+  const comForn = new Set((vinc ?? []).map((v) => v.produto_id));
+  const semForn = (prods ?? []).map((p) => p.id).filter((id) => !comForn.has(id));
+
+  if (semForn.length > 0) {
+    await supabase
+      .from("fornecedor_produto")
+      .insert(semForn.map((produto_id) => ({ produto_id, fornecedor_id: forn!.id })));
+  }
+  revalidatePath("/produtos");
+  return { ok: true, total: semForn.length };
+}

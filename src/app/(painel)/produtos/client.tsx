@@ -1,8 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import type { Produto, Categoria } from "@/lib/types";
-import { salvarProduto, excluirProduto } from "./actions";
+import {
+  salvarProduto,
+  excluirProduto,
+  definirFornecedoresDoProduto,
+  vincularSemFornecedorNaFeira,
+} from "./actions";
+
+type Fornecedor = { id: string; nome: string };
 
 const inputCls =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -20,15 +27,31 @@ export function ProdutosClient({
   produtos,
   categorias,
   categoriaInicial = "",
+  fornecedores,
+  vinculos,
 }: {
   produtos: Produto[];
   categorias: Categoria[];
   categoriaInicial?: string;
+  fornecedores: Fornecedor[];
+  vinculos: { produto_id: string; fornecedor_id: string }[];
 }) {
   const [editando, setEditando] = useState<Produto | null>(null);
   const [aberto, setAberto] = useState(false);
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState(categoriaInicial);
+
+  // Vínculos produto -> fornecedores (editável na tela).
+  const [vinc, setVinc] = useState<Map<string, Set<string>>>(() => {
+    const m = new Map<string, Set<string>>();
+    for (const v of vinculos) {
+      if (!m.has(v.produto_id)) m.set(v.produto_id, new Set());
+      m.get(v.produto_id)!.add(v.fornecedor_id);
+    }
+    return m;
+  });
+  const [fornDe, setFornDe] = useState<Produto | null>(null);
+  const semForn = produtos.filter((p) => !(vinc.get(p.id)?.size)).length;
 
   const filtrados = useMemo(() => {
     const b = busca.trim().toLowerCase();
@@ -60,6 +83,15 @@ export function ProdutosClient({
           + Adicionar
         </button>
       </div>
+
+      {semForn > 0 && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+          <span>
+            {semForn} produto(s) sem nenhum fornecedor — não aparecem pra ninguém na cotação.
+          </span>
+          <FeiraBotao />
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-3">
         <input
@@ -95,6 +127,7 @@ export function ProdutosClient({
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Un.</th>
                 <th className="px-4 py-3 text-right">Ideal</th>
+                <th className="px-4 py-3">Fornecedores</th>
                 <th className="px-4 py-3">Preço ref.</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -125,6 +158,23 @@ export function ProdutosClient({
                     ) : (
                       <span className="text-zinc-300 dark:text-zinc-600">—</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const n = vinc.get(p.id)?.size ?? 0;
+                      return (
+                        <button
+                          onClick={() => setFornDe(p)}
+                          className={`rounded-md px-2 py-1 text-xs font-medium ${
+                            n === 0
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+                              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                          }`}
+                        >
+                          {n === 0 ? "sem fornecedor" : `${n} fornecedor${n > 1 ? "es" : ""}`}
+                        </button>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {moeda(p.preco_referencia)}
@@ -309,6 +359,146 @@ export function ProdutosClient({
           </div>
         </div>
       )}
+
+      {fornDe && (
+        <FornecedoresModal
+          produto={fornDe}
+          fornecedores={fornecedores}
+          selecionados={vinc.get(fornDe.id) ?? new Set()}
+          onFechar={() => setFornDe(null)}
+          onSalvo={(ids) => {
+            const pid = fornDe.id;
+            setVinc((m) => {
+              const n = new Map(m);
+              n.set(pid, new Set(ids));
+              return n;
+            });
+            setFornDe(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function FeiraBotao() {
+  const [p, start] = useTransition();
+  const [feito, setFeito] = useState<number | null>(null);
+  return (
+    <button
+      onClick={() =>
+        start(async () => {
+          const r = await vincularSemFornecedorNaFeira();
+          setFeito(r?.total ?? 0);
+          setTimeout(() => window.location.reload(), 800);
+        })
+      }
+      disabled={p}
+      className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+    >
+      {p
+        ? "Vinculando..."
+        : feito != null
+          ? `✓ ${feito} vinculado(s) à Feira`
+          : "Jogar todos na Hortifrúti / Feira"}
+    </button>
+  );
+}
+
+function FornecedoresModal({
+  produto,
+  fornecedores,
+  selecionados,
+  onFechar,
+  onSalvo,
+}: {
+  produto: Produto;
+  fornecedores: Fornecedor[];
+  selecionados: Set<string>;
+  onFechar: () => void;
+  onSalvo: (ids: string[]) => void;
+}) {
+  const [sel, setSel] = useState<Set<string>>(new Set(selecionados));
+  const [busca, setBusca] = useState("");
+  const [p, start] = useTransition();
+
+  const filtrados = fornecedores.filter(
+    (f) => !busca.trim() || f.nome.toLowerCase().includes(busca.trim().toLowerCase()),
+  );
+
+  function toggle(id: string) {
+    setSel((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  function salvar() {
+    start(async () => {
+      const ids = [...sel];
+      await definirFornecedoresDoProduto(produto.id, ids);
+      onSalvo(ids);
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-xl dark:bg-zinc-900">
+        <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
+          <p className="text-xs uppercase text-zinc-400">Fornecedores de</p>
+          <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{produto.nome}</p>
+          <input
+            placeholder="Buscar fornecedor..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className={`${inputCls} mt-3`}
+          />
+          <p className="mt-1 text-xs text-zinc-400">{sel.size} marcado(s)</p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {filtrados.map((f) => {
+            const on = sel.has(f.id);
+            return (
+              <button
+                key={f.id}
+                onClick={() => toggle(f.id)}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${
+                  on
+                    ? "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
+                    : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 dark:border-zinc-600"}`}>
+                  {on ? "✓" : ""}
+                </span>
+                {f.nome}
+              </button>
+            );
+          })}
+          {filtrados.length === 0 && (
+            <p className="p-4 text-center text-sm text-zinc-400">Nenhum fornecedor.</p>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-zinc-100 p-4 dark:border-zinc-800">
+          <button
+            onClick={onFechar}
+            className="rounded-lg px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={salvar}
+            disabled={p}
+            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+          >
+            {p ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
