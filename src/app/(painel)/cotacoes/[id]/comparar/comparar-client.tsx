@@ -32,6 +32,18 @@ export type ProdutoLinha = {
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// Cada categoria ganha uma cor (faixa + tom das linhas, alternando claro/escuro).
+const CAT_CORES = [
+  { band: "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200", a: "bg-sky-50 dark:bg-sky-950/20", b: "bg-sky-100/70 dark:bg-sky-900/25" },
+  { band: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200", a: "bg-violet-50 dark:bg-violet-950/20", b: "bg-violet-100/70 dark:bg-violet-900/25" },
+  { band: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200", a: "bg-amber-50 dark:bg-amber-950/20", b: "bg-amber-100/70 dark:bg-amber-900/25" },
+  { band: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200", a: "bg-rose-50 dark:bg-rose-950/20", b: "bg-rose-100/70 dark:bg-rose-900/25" },
+  { band: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200", a: "bg-cyan-50 dark:bg-cyan-950/20", b: "bg-cyan-100/70 dark:bg-cyan-900/25" },
+  { band: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200", a: "bg-indigo-50 dark:bg-indigo-950/20", b: "bg-indigo-100/70 dark:bg-indigo-900/25" },
+  { band: "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200", a: "bg-teal-50 dark:bg-teal-950/20", b: "bg-teal-100/70 dark:bg-teal-900/25" },
+  { band: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/50 dark:text-fuchsia-200", a: "bg-fuchsia-50 dark:bg-fuchsia-950/20", b: "bg-fuchsia-100/70 dark:bg-fuchsia-900/25" },
+];
+
 export function CompararClient({
   cotacaoId,
   produtos,
@@ -44,6 +56,29 @@ export function CompararClient({
   const router = useRouter();
   const [salvando, startSave] = useTransition();
   const [fotoAberta, setFotoAberta] = useState<string | null>(null);
+
+  // "Conferido": marca os itens que você já revisou / vai pedir.
+  // Fica guardado no próprio navegador (não perde ao recarregar).
+  const confKey = `cmp_conf_${cotacaoId}`;
+  const [conf, setConf] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      return new Set(JSON.parse(localStorage.getItem(confKey) || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
+  function toggleConf(id: string) {
+    setConf((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      try {
+        localStorage.setItem(confKey, JSON.stringify([...n]));
+      } catch {}
+      return n;
+    });
+  }
   // Escolha por produto: fornecedor_id ou "" (não comprar). Padrão: mais barato.
   const [escolha, setEscolha] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -95,7 +130,8 @@ export function CompararClient({
     <div className="mt-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-500">
-          {itensEscolhidos} de {produtos.length} itens escolhidos · total{" "}
+          {itensEscolhidos} de {produtos.length} itens escolhidos ·{" "}
+          <b className="text-green-600">{conf.size} conferidos</b> · total{" "}
           <b className="text-zinc-900 dark:text-zinc-100">{moeda(totalGeral)}</b>
         </p>
         <button
@@ -152,28 +188,44 @@ export function CompararClient({
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {[...porCategoria.entries()].map(([cat, itensCat]) => (
+            {[...porCategoria.entries()].map(([cat, itensCat], ci) => (
               <Fragment key={cat}>
                 <tr>
                   <td
                     colSpan={2 + fornecedores.length}
-                    className="sticky left-0 bg-zinc-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                    className={`sticky left-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${CAT_CORES[ci % CAT_CORES.length].band}`}
                   >
                     {cat}
                   </td>
                 </tr>
                 {itensCat.map((p, idx) => {
-                  const zebra = idx % 2
-                    ? "bg-zinc-100 dark:bg-zinc-900"
-                    : "bg-white dark:bg-zinc-950";
+                  const cor = CAT_CORES[ci % CAT_CORES.length];
+                  const conferido = conf.has(p.produto_id);
+                  const rowBg = conferido
+                    ? "bg-green-100 dark:bg-green-900/40"
+                    : idx % 2
+                      ? cor.b
+                      : cor.a;
                   return (
                   <tr
                     key={p.produto_id}
-                    className={`group transition-colors ${zebra} hover:bg-orange-50 dark:hover:bg-orange-950/30`}
+                    className={`group transition-colors ${rowBg} hover:bg-orange-100 dark:hover:bg-orange-950/40`}
                   >
                     <td
-                      className={`sticky left-0 z-10 px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100 ${zebra} group-hover:bg-orange-50 dark:group-hover:bg-orange-950/30`}
+                      className={`sticky left-0 z-10 px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100 ${rowBg} group-hover:bg-orange-100 dark:group-hover:bg-orange-950/40`}
                     >
+                      <button
+                        type="button"
+                        onClick={() => toggleConf(p.produto_id)}
+                        title={conferido ? "Conferido — clique para desmarcar" : "Marcar como conferido"}
+                        className={`mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs align-middle ${
+                          conferido
+                            ? "border-green-600 bg-green-600 text-white"
+                            : "border-zinc-400 text-transparent hover:border-green-500 dark:border-zinc-500"
+                        }`}
+                      >
+                        ✓
+                      </button>
                       {p.nome}
                       <span className="ml-1 text-xs text-zinc-400">
                         {p.unidade}
@@ -286,8 +338,9 @@ export function CompararClient({
       </div>
       <p className="mt-2 text-xs text-zinc-400">
         Clique num preço para escolher o fornecedor daquele item (verde = mais
-        barato). ⚠ = total abaixo do pedido mínimo do fornecedor. 📷 = ver a foto
-        enviada pelo fornecedor.
+        barato). Clique no <b>✓</b> ao lado do nome para marcar o que já{" "}
+        <b>conferiu / vai pedir</b> (fica verde e é lembrado neste navegador). ⚠ =
+        abaixo do pedido mínimo. 📷 = ver a foto do fornecedor.
       </p>
 
       {fotoAberta && (
