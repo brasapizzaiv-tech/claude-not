@@ -45,6 +45,12 @@ export function MesasGrid({ mesas }: { mesas: Mesa[] }) {
           className="min-w-56 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         />
         <Link
+          href="/salao/caixa"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+        >
+          💵 Caixa
+        </Link>
+        <Link
           href="/salao/cardapio"
           className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
         >

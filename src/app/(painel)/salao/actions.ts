@@ -246,7 +246,7 @@ export async function fecharComanda(formData: FormData) {
   const forma = (formData.get("forma") as string) || null;
 
   const [{ data: com }, { data: itens }, cfg] = await Promise.all([
-    supabase.from("pdv_comandas").select("valor_buffet").eq("id", comandaId).single(),
+    supabase.from("pdv_comandas").select("numero, valor_buffet").eq("id", comandaId).single(),
     supabase.from("pdv_comanda_itens").select("qtd, preco_unit").eq("comanda_id", comandaId),
     pdvCfg(supabase),
   ]);
@@ -255,6 +255,7 @@ export async function fecharComanda(formData: FormData) {
     (itens ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
   const perc = servicoAgora(cfg);
   const servico = Math.round(subtotal * perc) / 100;
+  const total = subtotal + servico;
 
   await supabase
     .from("pdv_comandas")
@@ -265,8 +266,24 @@ export async function fecharComanda(formData: FormData) {
       servico,
     })
     .eq("id", comandaId);
+
+  // lança a venda no caixa aberto (se houver)
+  const caixaId = await caixaAberto(supabase);
+  if (caixaId) {
+    await supabase.from("pdv_caixa_mov").delete().eq("comanda_id", comandaId).eq("tipo", "venda");
+    await supabase.from("pdv_caixa_mov").insert({
+      caixa_id: caixaId,
+      tipo: "venda",
+      descricao: `Comanda #${com?.numero ?? ""}`,
+      forma_pagamento: forma,
+      valor: total,
+      comanda_id: comandaId,
+    });
+  }
+
   revalidatePath(`/salao/comandas/${comandaId}`);
   revalidatePath("/salao");
+  revalidatePath("/salao/caixa");
 }
 
 export async function reabrirComanda(formData: FormData) {
@@ -276,5 +293,71 @@ export async function reabrirComanda(formData: FormData) {
     .from("pdv_comandas")
     .update({ status: "aberta", fechada_em: null })
     .eq("id", comandaId);
+  // desfaz a venda lançada no caixa (se houver)
+  await supabase.from("pdv_caixa_mov").delete().eq("comanda_id", comandaId).eq("tipo", "venda");
   revalidatePath(`/salao/comandas/${comandaId}`);
+  revalidatePath("/salao/caixa");
+}
+
+// ---------- Frente de Caixa ----------
+async function caixaAberto(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await supabase
+    .from("pdv_caixas")
+    .select("id")
+    .eq("status", "aberto")
+    .order("aberto_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.id as string | undefined;
+}
+
+export async function abrirCaixa(formData: FormData) {
+  const supabase = await createClient();
+  const jaAberto = await caixaAberto(supabase);
+  if (jaAberto) redirect("/salao/caixa");
+  const nome = ((formData.get("nome") as string) || "Caixa").trim();
+  const saldo_inicial = valorNum(formData.get("saldo_inicial"));
+  await supabase.from("pdv_caixas").insert({ nome, saldo_inicial });
+  revalidatePath("/salao/caixa");
+  redirect("/salao/caixa");
+}
+
+export async function suprimento(formData: FormData) {
+  const supabase = await createClient();
+  const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
+  const valor = valorNum(formData.get("valor"));
+  if (!caixaId || valor <= 0) return;
+  await supabase.from("pdv_caixa_mov").insert({
+    caixa_id: caixaId,
+    tipo: "suprimento",
+    descricao: ((formData.get("descricao") as string) || "Suprimento").trim(),
+    forma_pagamento: "Dinheiro",
+    valor,
+  });
+  revalidatePath("/salao/caixa");
+}
+
+export async function sangria(formData: FormData) {
+  const supabase = await createClient();
+  const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
+  const valor = valorNum(formData.get("valor"));
+  if (!caixaId || valor <= 0) return;
+  await supabase.from("pdv_caixa_mov").insert({
+    caixa_id: caixaId,
+    tipo: "sangria",
+    descricao: ((formData.get("descricao") as string) || "Sangria").trim(),
+    forma_pagamento: "Dinheiro",
+    valor,
+  });
+  revalidatePath("/salao/caixa");
+}
+
+export async function fecharCaixa(formData: FormData) {
+  const supabase = await createClient();
+  const caixaId = formData.get("caixa_id") as string;
+  await supabase
+    .from("pdv_caixas")
+    .update({ status: "fechado", fechado_em: new Date().toISOString() })
+    .eq("id", caixaId);
+  revalidatePath("/salao/caixa");
 }
