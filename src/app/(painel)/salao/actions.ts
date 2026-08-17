@@ -102,6 +102,26 @@ export async function salvarItem(formData: FormData) {
   revalidatePath("/salao/cardapio");
 }
 
+// Liga/desliga uma opção de complemento (adicional)
+export async function toggleOpcaoComplemento(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const itemId = formData.get("item_id") as string;
+  const ativo = formData.get("ativo") === "1";
+  await supabase.from("pdv_item_opcoes").update({ ativo }).eq("id", id);
+  revalidatePath(`/salao/cardapio/adicionais/${itemId}`);
+}
+
+// Edita o preço de uma opção de complemento
+export async function editarPrecoOpcao(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const itemId = formData.get("item_id") as string;
+  const preco = valorNum(formData.get("preco"));
+  await supabase.from("pdv_item_opcoes").update({ preco }).eq("id", id);
+  revalidatePath(`/salao/cardapio/adicionais/${itemId}`);
+}
+
 export async function toggleItem(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;
@@ -318,6 +338,10 @@ export async function adicionarComboComanda(
   const nomes: string[] = [];
   let extra = 0;
   if (opcaoIds.length > 0) {
+    // conta repetições (opcaoIds pode ter ids repetidos)
+    const cont = new Map<string, number>();
+    for (const id of opcaoIds) cont.set(id, (cont.get(id) || 0) + 1);
+
     // só opções que realmente pertencem aos grupos deste item
     const { data: grupos } = await supabase
       .from("pdv_item_grupos")
@@ -327,12 +351,15 @@ export async function adicionarComboComanda(
     if (grupoIds.length) {
       const { data: ops } = await supabase
         .from("pdv_item_opcoes")
-        .select("nome, preco")
-        .in("id", opcaoIds)
+        .select("id, nome, preco")
+        .in("id", [...cont.keys()])
         .in("grupo_id", grupoIds);
       for (const o of ops ?? []) {
-        extra += Number(o.preco);
-        nomes.push(Number(o.preco) > 0 ? `${o.nome} (+${Number(o.preco)})` : o.nome);
+        const qtd = cont.get(o.id) || 0;
+        const preco = Number(o.preco);
+        extra += preco * qtd;
+        const prefixo = qtd > 1 ? `${qtd}× ` : "";
+        nomes.push(preco > 0 ? `${prefixo}${o.nome} (+${preco})` : `${prefixo}${o.nome}`);
       }
     }
   }

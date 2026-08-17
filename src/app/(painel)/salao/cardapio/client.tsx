@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   salvarConfigPdv,
   salvarItem,
@@ -24,12 +25,15 @@ export function CardapioClient({
   config,
   itens,
   categorias,
+  comAdicionais,
 }: {
   config: Record<string, string>;
   itens: Item[];
   categorias: Categoria[];
+  comAdicionais: string[];
 }) {
   const [editando, setEditando] = useState<Item | null>(null);
+  const setAdic = new Set(comAdicionais);
 
   const grupos = new Map<string, Item[]>();
   for (const i of itens) {
@@ -118,6 +122,7 @@ export function CardapioClient({
             primeira={idx === 0}
             ultima={idx === categorias.length - 1}
             onEditar={setEditando}
+            comAdicionais={setAdic}
           />
         ))}
 
@@ -129,7 +134,7 @@ export function CardapioClient({
             <p className="mb-2 text-xs font-semibold uppercase text-zinc-400">
               {nome} (sem categoria cadastrada)
             </p>
-            <ItensTabela itens={grupos.get(nome) ?? []} onEditar={setEditando} />
+            <ItensTabela itens={grupos.get(nome) ?? []} onEditar={setEditando} comAdicionais={setAdic} />
           </div>
         ))}
 
@@ -149,12 +154,14 @@ function CategoriaCard({
   primeira,
   ultima,
   onEditar,
+  comAdicionais,
 }: {
   cat: Categoria;
   itens: Item[];
   primeira: boolean;
   ultima: boolean;
   onEditar: (i: Item) => void;
+  comAdicionais: Set<string>;
 }) {
   return (
     <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
@@ -219,7 +226,7 @@ function CategoriaCard({
         </div>
       </div>
 
-      <ItensTabela itens={itens} onEditar={onEditar} />
+      <ItensTabela itens={itens} onEditar={onEditar} comAdicionais={comAdicionais} />
 
       {/* adicionar produto nesta categoria */}
       <form action={salvarItem} className="mt-3 flex flex-wrap items-end gap-2">
@@ -236,7 +243,15 @@ function CategoriaCard({
   );
 }
 
-function ItensTabela({ itens, onEditar }: { itens: Item[]; onEditar: (i: Item) => void }) {
+function ItensTabela({
+  itens,
+  onEditar,
+  comAdicionais,
+}: {
+  itens: Item[];
+  onEditar: (i: Item) => void;
+  comAdicionais: Set<string>;
+}) {
   if (itens.length === 0)
     return <p className="text-sm text-zinc-400">Nenhum produto nesta categoria.</p>;
   return (
@@ -263,6 +278,14 @@ function ItensTabela({ itens, onEditar }: { itens: Item[]; onEditar: (i: Item) =
                     {i.ativo ? "Ocultar" : "Mostrar"}
                   </button>
                 </form>
+                {comAdicionais.has(i.id) && (
+                  <Link
+                    href={`/salao/cardapio/adicionais/${i.id}`}
+                    className="mr-3 text-emerald-600 hover:underline"
+                  >
+                    Adicionais
+                  </Link>
+                )}
                 <button
                   onClick={() => onEditar(i)}
                   className="mr-3 text-orange-600 hover:underline"

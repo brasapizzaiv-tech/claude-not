@@ -30,6 +30,7 @@ export type ComboGrupo = {
   nome: string;
   min: number;
   max: number;
+  permite_repetir: boolean;
   opcoes: ComboOpcao[];
 };
 
@@ -203,6 +204,25 @@ function MontarCombo({
       return { ...s, [g.id]: [...atual, opId] };
     });
   }
+  function inc(g: ComboGrupo, opId: string) {
+    setSel((s) => {
+      const atual = s[g.id] ?? [];
+      if (atual.length >= g.max) return s;
+      return { ...s, [g.id]: [...atual, opId] };
+    });
+  }
+  function dec(g: ComboGrupo, opId: string) {
+    setSel((s) => {
+      const atual = s[g.id] ?? [];
+      const i = atual.indexOf(opId);
+      if (i < 0) return s;
+      const novo = [...atual];
+      novo.splice(i, 1);
+      return { ...s, [g.id]: novo };
+    });
+  }
+  const qtd = (gId: string, opId: string) =>
+    (sel[gId] ?? []).filter((x) => x === opId).length;
 
   const todosIds = Object.values(sel).flat();
   const opcaoDe = new Map<string, ComboOpcao>();
@@ -249,7 +269,43 @@ function MontarCombo({
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {g.opcoes.map((o) => {
-                    const on = (sel[g.id] ?? []).includes(o.id);
+                    const n = qtd(g.id, o.id);
+                    if (g.permite_repetir) {
+                      const cheio = escolhidas >= g.max;
+                      return (
+                        <div
+                          key={o.id}
+                          className={`flex items-center justify-between rounded-lg border px-2 py-1 text-xs ${
+                            n > 0
+                              ? "border-orange-500 bg-orange-50 dark:bg-orange-500/15"
+                              : "border-zinc-200 dark:border-zinc-700"
+                          }`}
+                        >
+                          <span className="min-w-0 flex-1 truncate text-zinc-700 dark:text-zinc-300">
+                            {o.nome}
+                            {o.preco > 0 && <span className="ml-1 text-zinc-400">+{brl(o.preco)}</span>}
+                          </span>
+                          <span className="ml-1 flex items-center gap-1">
+                            <button
+                              onClick={() => dec(g, o.id)}
+                              disabled={n === 0}
+                              className="h-6 w-6 rounded bg-zinc-100 text-zinc-600 disabled:opacity-30 dark:bg-zinc-800 dark:text-zinc-300"
+                            >
+                              −
+                            </button>
+                            <span className="w-4 text-center font-medium text-zinc-800 dark:text-zinc-200">{n}</span>
+                            <button
+                              onClick={() => inc(g, o.id)}
+                              disabled={cheio}
+                              className="h-6 w-6 rounded bg-orange-500 text-white disabled:opacity-30"
+                            >
+                              +
+                            </button>
+                          </span>
+                        </div>
+                      );
+                    }
+                    const on = n > 0;
                     return (
                       <button
                         key={o.id}

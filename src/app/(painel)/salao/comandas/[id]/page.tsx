@@ -66,7 +66,7 @@ export default async function ComandaPage({
   if (itemIds.length) {
     const { data: gruposRows } = await supabase
       .from("pdv_item_grupos")
-      .select("id, item_id, nome, min, max, ordem")
+      .select("id, item_id, nome, min, max, permite_repetir, ordem")
       .in("item_id", itemIds)
       .order("ordem");
     const grupos = (gruposRows as {
@@ -75,6 +75,7 @@ export default async function ComandaPage({
       nome: string;
       min: number;
       max: number;
+      permite_repetir: boolean;
     }[]) ?? [];
     if (grupos.length) {
       const { data: opcoesRows } = await supabase
@@ -103,6 +104,7 @@ export default async function ComandaPage({
             nome: g.nome,
             min: Number(g.min),
             max: Number(g.max),
+            permite_repetir: !!g.permite_repetir,
             opcoes: porGrupo.get(g.id) ?? [],
           },
         ];

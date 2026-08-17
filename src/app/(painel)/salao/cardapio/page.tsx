@@ -3,13 +3,15 @@ import { CardapioClient } from "./client";
 
 export default async function CardapioPage() {
   const supabase = await createClient();
-  const [{ data: cfg }, { data: itens }, { data: cats }] = await Promise.all([
+  const [{ data: cfg }, { data: itens }, { data: cats }, { data: gruposRows }] = await Promise.all([
     supabase.from("pdv_config").select("chave, valor"),
     supabase.from("pdv_itens").select("id, nome, categoria, preco, ativo").order("nome"),
     supabase.from("pdv_categorias").select("id, nome, ordem, disponivel").order("ordem"),
+    supabase.from("pdv_item_grupos").select("item_id"),
   ]);
   const config: Record<string, string> = {};
   for (const r of cfg ?? []) config[r.chave] = r.valor;
+  const comAdicionais = [...new Set(((gruposRows as { item_id: string }[]) ?? []).map((g) => g.item_id))];
 
   return (
     <div className="mx-auto max-w-4xl p-8">
@@ -31,6 +33,7 @@ export default async function CardapioPage() {
         categorias={
           (cats as { id: string; nome: string; ordem: number; disponivel: boolean }[]) ?? []
         }
+        comAdicionais={comAdicionais}
       />
     </div>
   );
