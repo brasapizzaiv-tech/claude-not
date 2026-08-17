@@ -81,6 +81,31 @@ export async function convidarFornecedor(
   revalidatePath(`/cotacoes/${cotacaoId}/fornecedores`);
 }
 
+// Convida vários fornecedores de uma vez (cria o link de quem ainda não tem).
+export async function convidarVarios(cotacaoId: string, fornecedorIds: string[]) {
+  const supabase = await createClient();
+  if (fornecedorIds.length === 0) return;
+
+  const { data: jaTem } = await supabase
+    .from("cotacao_fornecedores")
+    .select("fornecedor_id")
+    .eq("cotacao_id", cotacaoId)
+    .in("fornecedor_id", fornecedorIds);
+  const existentes = new Set((jaTem ?? []).map((x) => x.fornecedor_id));
+
+  const novos = fornecedorIds
+    .filter((id) => !existentes.has(id))
+    .map((fornecedor_id) => ({
+      cotacao_id: cotacaoId,
+      fornecedor_id,
+      token: randomUUID().replace(/-/g, ""),
+    }));
+  if (novos.length > 0) {
+    await supabase.from("cotacao_fornecedores").insert(novos);
+  }
+  revalidatePath(`/cotacoes/${cotacaoId}/fornecedores`);
+}
+
 export async function removerFornecedor(
   cotacaoId: string,
   fornecedorId: string,

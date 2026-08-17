@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { convidarFornecedor, removerFornecedor } from "../../actions";
+import {
+  convidarFornecedor,
+  convidarVarios,
+  removerFornecedor,
+} from "../../actions";
 
 export type FornecedorLinha = {
   id: string;
@@ -13,6 +17,9 @@ export type FornecedorLinha = {
   token: string | null;
   respondido: boolean;
 };
+
+const MSG_PADRAO =
+  "Olá! Segue o link para você nos passar os preços da nossa cotação ({itens} itens): {link}";
 
 export function FornecedoresClient({
   cotacaoId,
@@ -25,13 +32,62 @@ export function FornecedoresClient({
 }) {
   const router = useRouter();
   const [origin, setOrigin] = useState("");
+  const [convidandoTodos, setConvidandoTodos] = useState(false);
+  const [template, setTemplate] = useState<string>(() => {
+    if (typeof window === "undefined") return MSG_PADRAO;
+    try {
+      return localStorage.getItem("cot_msg_template") || MSG_PADRAO;
+    } catch {
+      return MSG_PADRAO;
+    }
+  });
+  const [enviados, setEnviados] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      return new Set(JSON.parse(localStorage.getItem(`cot_env_${cotacaoId}`) || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
+
   useMemo(() => {
     if (typeof window !== "undefined") setOrigin(window.location.origin);
   }, []);
 
+  function salvarTemplate(v: string) {
+    setTemplate(v);
+    try {
+      localStorage.setItem("cot_msg_template", v);
+    } catch {}
+  }
+  function marcarEnviado(id: string) {
+    setEnviados((s) => {
+      const n = new Set(s).add(id);
+      try {
+        localStorage.setItem(`cot_env_${cotacaoId}`, JSON.stringify([...n]));
+      } catch {}
+      return n;
+    });
+  }
+  function resetarEnviados() {
+    setEnviados(new Set());
+    try {
+      localStorage.removeItem(`cot_env_${cotacaoId}`);
+    } catch {}
+  }
+
   async function convidar(fornecedorId: string) {
     await convidarFornecedor(cotacaoId, fornecedorId);
     router.refresh();
+  }
+  async function convidarTodos() {
+    setConvidandoTodos(true);
+    await convidarVarios(
+      cotacaoId,
+      linhas.filter((l) => !l.convidado).map((l) => l.id),
+    );
+    router.refresh();
+    setConvidandoTodos(false);
   }
   async function remover(fornecedorId: string) {
     await removerFornecedor(cotacaoId, fornecedorId);
@@ -39,109 +95,189 @@ export function FornecedoresClient({
   }
 
   const convidados = linhas.filter((l) => l.convidado);
+  const naoConvidados = linhas.filter((l) => !l.convidado);
+
+  function waHref(l: FornecedorLinha) {
+    const url = l.token ? `${origin}/cotar/${l.token}` : "";
+    const texto = template
+      .replaceAll("{itens}", String(l.cobertura))
+      .replaceAll("{nome}", l.nome)
+      .replaceAll("{link}", url);
+    const zap = (l.whatsapp ?? "").replace(/\D/g, "");
+    return zap
+      ? `https://wa.me/55${zap}?text=${encodeURIComponent(texto)}`
+      : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  }
+
+  function abrirWhats(l: FornecedorLinha) {
+    window.open(waHref(l), "_blank", "noopener");
+    marcarEnviado(l.id);
+  }
+
+  const proximo = convidados.find((l) => !enviados.has(l.id));
+  const enviadosCount = convidados.filter((l) => enviados.has(l.id)).length;
 
   return (
     <div className="mt-6 space-y-8">
       {/* Fornecedores disponíveis */}
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
-            <tr>
-              <th className="px-4 py-3">Fornecedor</th>
-              <th className="px-4 py-3 text-right">Fornece</th>
-              <th className="px-4 py-3 text-right"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {linhas.map((l) => (
-              <tr key={l.id} className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
-                  {l.nome}
-                </td>
-                <td className="px-4 py-2 text-right text-zinc-500">
-                  {l.cobertura} de {totalItens}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  {l.convidado ? (
-                    <button
-                      onClick={() => remover(l.id)}
-                      className="text-xs text-zinc-400 hover:text-red-600"
-                    >
-                      Remover
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => convidar(l.id)}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    >
-                      Convidar
-                    </button>
-                  )}
-                </td>
+      <div>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            Fornecedores que atendem estes itens
+          </h2>
+          {naoConvidados.length > 0 && (
+            <button
+              onClick={convidarTodos}
+              disabled={convidandoTodos}
+              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            >
+              {convidandoTodos
+                ? "Convidando..."
+                : `Convidar todos (${naoConvidados.length})`}
+            </button>
+          )}
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+              <tr>
+                <th className="px-4 py-3">Fornecedor</th>
+                <th className="px-4 py-3 text-right">Fornece</th>
+                <th className="px-4 py-3 text-right"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {linhas.map((l) => (
+                <tr key={l.id} className="bg-white dark:bg-zinc-950">
+                  <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                    {l.nome}
+                    {!l.whatsapp && (
+                      <span className="ml-2 text-[10px] text-amber-500">sem WhatsApp</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-right text-zinc-500">
+                    {l.cobertura} de {totalItens}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    {l.convidado ? (
+                      <button
+                        onClick={() => remover(l.id)}
+                        className="text-xs text-zinc-400 hover:text-red-600"
+                      >
+                        Remover
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => convidar(l.id)}
+                        className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      >
+                        Convidar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Links para os fornecedores convidados */}
       {convidados.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            Links para enviar
-          </h2>
-          <div className="space-y-3">
-            {convidados.map((l) => {
-              const url = l.token ? `${origin}/cotar/${l.token}` : "";
-              const zap = (l.whatsapp ?? "").replace(/\D/g, "");
-              const msg = encodeURIComponent(
-                `Olá! Segue o link para você nos passar os preços da cotação (${l.cobertura} itens). ${url}`,
-              );
-              const waHref = zap
-                ? `https://wa.me/55${zap}?text=${msg}`
-                : `https://wa.me/?text=${msg}`;
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              Enviar os links ({enviadosCount}/{convidados.length} enviados)
+            </h2>
+            <div className="flex items-center gap-2">
+              {proximo ? (
+                <button
+                  onClick={() => abrirWhats(proximo)}
+                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                >
+                  📲 Abrir WhatsApp do próximo ({convidados.length - enviadosCount} faltam)
+                </button>
+              ) : (
+                <span className="rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                  ✓ Todos abertos
+                </span>
+              )}
+              {enviadosCount > 0 && (
+                <button
+                  onClick={resetarEnviados}
+                  className="text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                >
+                  Zerar
+                </button>
+              )}
+            </div>
+          </div>
 
+          {/* Mensagem configurável */}
+          <details className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <summary className="cursor-pointer px-4 py-2 text-sm text-zinc-500">
+              ✏️ Editar a mensagem enviada
+            </summary>
+            <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
+              <textarea
+                rows={3}
+                value={template}
+                onChange={(e) => salvarTemplate(e.target.value)}
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              />
+              <p className="mt-1 text-[11px] text-zinc-400">
+                Use <b>{"{link}"}</b> (o link), <b>{"{itens}"}</b> (qtd de itens) e{" "}
+                <b>{"{nome}"}</b> (nome do fornecedor). A mensagem fica salva.
+              </p>
+            </div>
+          </details>
+
+          <p className="mb-3 text-xs text-zinc-400">
+            Clique em <b>Abrir WhatsApp do próximo</b>: abre a conversa já com a
+            mensagem e o link prontos — é só apertar enviar no WhatsApp e voltar
+            aqui para o próximo. (O envio automático não é possível pelo site.)
+          </p>
+
+          <div className="space-y-2">
+            {convidados.map((l) => {
+              const foi = enviados.has(l.id);
+              const url = l.token ? `${origin}/cotar/${l.token}` : "";
               return (
                 <div
                   key={l.id}
-                  className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+                  className={`flex flex-wrap items-center gap-2 rounded-xl border p-3 ${
+                    foi
+                      ? "border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20"
+                      : "border-zinc-200 dark:border-zinc-800"
+                  }`}
                 >
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {l.nome}
-                    </span>
-                    {l.respondido ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-                        Respondeu
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                        Aguardando
-                      </span>
+                  <span className="w-5 text-center">{foi ? "✓" : ""}</span>
+                  <span className="min-w-32 flex-1 font-medium text-zinc-900 dark:text-zinc-100">
+                    {l.nome}
+                    {!l.whatsapp && (
+                      <span className="ml-2 text-[10px] text-amber-500">sem número</span>
                     )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      readOnly
-                      value={url}
-                      onFocus={(e) => e.currentTarget.select()}
-                      className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
-                    />
-                    <button
-                      onClick={() => navigator.clipboard.writeText(url)}
-                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    >
-                      Copiar
-                    </button>
-                    <a
-                      href={waHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
-                    >
-                      WhatsApp
-                    </a>
-                  </div>
+                  </span>
+                  {l.respondido ? (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                      Respondeu
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                      Aguardando
+                    </span>
+                  )}
+                  <button
+                    onClick={() => navigator.clipboard.writeText(url)}
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    Copiar link
+                  </button>
+                  <button
+                    onClick={() => abrirWhats(l)}
+                    className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                  >
+                    WhatsApp
+                  </button>
                 </div>
               );
             })}
