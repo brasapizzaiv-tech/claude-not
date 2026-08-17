@@ -157,14 +157,23 @@ export function CompararClient({
                 <tr>
                   <td
                     colSpan={2 + fornecedores.length}
-                    className="bg-zinc-100 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900"
+                    className="sticky left-0 bg-zinc-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
                   >
                     {cat}
                   </td>
                 </tr>
-                {itensCat.map((p) => (
-                  <tr key={p.produto_id} className="bg-white dark:bg-zinc-950">
-                    <td className="sticky left-0 z-10 bg-white px-3 py-2 font-medium text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+                {itensCat.map((p, idx) => {
+                  const zebra = idx % 2
+                    ? "bg-zinc-100 dark:bg-zinc-900"
+                    : "bg-white dark:bg-zinc-950";
+                  return (
+                  <tr
+                    key={p.produto_id}
+                    className={`group transition-colors ${zebra} hover:bg-orange-50 dark:hover:bg-orange-950/30`}
+                  >
+                    <td
+                      className={`sticky left-0 z-10 px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100 ${zebra} group-hover:bg-orange-50 dark:group-hover:bg-orange-950/30`}
+                    >
                       {p.nome}
                       <span className="ml-1 text-xs text-zinc-400">
                         {p.unidade}
@@ -237,7 +246,8 @@ export function CompararClient({
                       );
                     })}
                   </tr>
-                ))}
+                  );
+                })}
               </Fragment>
             ))}
           </tbody>
