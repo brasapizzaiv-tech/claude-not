@@ -106,12 +106,16 @@ export function CompararClient({
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="max-h-[75vh] overflow-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs text-zinc-500">
             <tr>
-              <th className="px-3 py-3 text-left">Produto</th>
-              <th className="px-3 py-3 text-right">Qtd</th>
+              <th className="sticky left-0 top-0 z-30 bg-zinc-100 px-3 py-3 text-left dark:bg-zinc-800">
+                Produto
+              </th>
+              <th className="sticky top-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800">
+                Qtd
+              </th>
               {fornecedores.map((f, i) => {
                 const respondeu = !!f.respondido_em;
                 const hora = f.respondido_em
@@ -126,7 +130,7 @@ export function CompararClient({
                 return (
                   <th
                     key={f.id}
-                    className={`px-3 py-3 text-right ${respondeu ? "" : "opacity-60"}`}
+                    className={`sticky top-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800 ${respondeu ? "" : "opacity-60"}`}
                   >
                     <div className="font-semibold text-zinc-700 dark:text-zinc-300">
                       {respondeu && (
@@ -159,7 +163,7 @@ export function CompararClient({
                 </tr>
                 {itensCat.map((p) => (
                   <tr key={p.produto_id} className="bg-white dark:bg-zinc-950">
-                    <td className="px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                    <td className="sticky left-0 z-10 bg-white px-3 py-2 font-medium text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
                       {p.nome}
                       <span className="ml-1 text-xs text-zinc-400">
                         {p.unidade}
@@ -230,8 +234,11 @@ export function CompararClient({
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-zinc-200 bg-zinc-50 font-semibold dark:border-zinc-700 dark:bg-zinc-900">
-              <td className="px-3 py-3 text-zinc-700 dark:text-zinc-300" colSpan={2}>
+            <tr className="border-t-2 border-zinc-200 font-semibold dark:border-zinc-700">
+              <td
+                className="sticky bottom-0 left-0 z-30 bg-zinc-100 px-3 py-3 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                colSpan={2}
+              >
                 Total escolhido
               </td>
               {fornecedores.map((f) => {
@@ -243,7 +250,7 @@ export function CompararClient({
                 return (
                   <td
                     key={f.id}
-                    className={`px-3 py-3 text-right ${
+                    className={`sticky bottom-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800 ${
                       abaixoMin
                         ? "text-amber-600"
                         : "text-zinc-900 dark:text-zinc-100"

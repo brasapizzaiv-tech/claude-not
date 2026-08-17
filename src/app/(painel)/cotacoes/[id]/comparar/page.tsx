@@ -123,7 +123,7 @@ export default async function CompararPage({
   );
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
+    <div className="mx-auto w-full max-w-[1800px] p-4 sm:p-6">
       <Link
         href={`/cotacoes/${cotacao.id}`}
         className="text-sm text-zinc-500 hover:text-orange-600"
