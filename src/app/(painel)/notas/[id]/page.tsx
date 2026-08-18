@@ -8,6 +8,9 @@ import { ManifestarNota } from "./manifestar";
 import { ItemProduto } from "./item-produto";
 import { LancamentoNota } from "./lancamento";
 
+// A "baixa completa" pode tentar buscar o XML por alguns segundos.
+export const maxDuration = 60;
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
