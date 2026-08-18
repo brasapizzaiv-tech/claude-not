@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 type ItemConf = {
@@ -9,6 +10,39 @@ type ItemConf = {
   preco_recebido: number | null;
   obs: string | null;
 };
+
+// Cria um pedido manual (compra direta, sem cotação) já pronto para conferir.
+export async function criarPedidoManual(
+  fornecedorId: string,
+  data: string,
+  itens: { produto_id: string; qtd: number; preco_unit: number | null }[],
+) {
+  const supabase = await createClient();
+  const { data: ped } = await supabase
+    .from("pedidos")
+    .insert({
+      cotacao_id: null,
+      fornecedor_id: fornecedorId || null,
+      data: data || new Date().toISOString().slice(0, 10),
+      status: "recebido",
+    })
+    .select("id")
+    .single();
+  if (!ped) return;
+  const validos = itens.filter((i) => i.produto_id && i.qtd > 0);
+  if (validos.length > 0) {
+    await supabase.from("pedido_itens").insert(
+      validos.map((i) => ({
+        pedido_id: ped.id,
+        produto_id: i.produto_id,
+        qtd: i.qtd,
+        preco_unit: i.preco_unit,
+      })),
+    );
+  }
+  revalidatePath("/conferencia");
+  redirect(`/conferencia/${ped.id}`);
+}
 
 // Salva a conferência de um pedido. finalizar=true marca como conferido.
 export async function salvarConferencia(
@@ -39,9 +73,24 @@ export async function salvarConferencia(
     })
     .eq("id", pedidoId);
 
-  // Ao confirmar a conferência, o pedido vira uma despesa de CMV no financeiro.
+  // Ao confirmar a conferência, o pedido vira uma despesa de CMV no financeiro,
+  // e o preço recebido atualiza a referência do produto (para próximas cotações).
   if (finalizar) {
     await lancarPedidoNoFinanceiro(supabase, pedidoId);
+    const { data: pis } = await supabase
+      .from("pedido_itens")
+      .select("produto_id, preco_recebido, preco_unit")
+      .eq("pedido_id", pedidoId);
+    for (const pi of pis ?? []) {
+      const preco = pi.preco_recebido ?? pi.preco_unit;
+      if (preco != null && pi.produto_id) {
+        await supabase
+          .from("produtos")
+          .update({ preco_referencia: preco })
+          .eq("id", pi.produto_id);
+      }
+    }
+    revalidatePath("/produtos");
   }
 
   revalidatePath(`/conferencia/${pedidoId}`);
