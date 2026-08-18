@@ -53,14 +53,19 @@ export type RespostaSefaz = {
   erro?: string;
 };
 
-function envelope(o: Opts) {
+function envelopeNSU(o: Opts) {
   const ult = (o.ultNSU || "0").padStart(15, "0");
   return `<?xml version="1.0" encoding="UTF-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe"><nfeDadosMsg><distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.35"><tpAmb>${o.ambiente}</tpAmb><cUFAutor>${o.cuf}</cUFAutor><CNPJ>${o.cnpj}</CNPJ><distNSU><ultNSU>${ult}</ultNSU></distNSU></distDFeInt></nfeDadosMsg></nfeDistDFeInteresse></soap12:Body></soap12:Envelope>`;
 }
 
-export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
+// Envelope para baixar UMA nota específica pela chave (consChNFe).
+// Não faz parte do "polling" (distNSU), então não cai no limite de 1/hora.
+function envelopeChave(o: Opts, chNFe: string) {
+  return `<?xml version="1.0" encoding="UTF-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe"><nfeDadosMsg><distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.35"><tpAmb>${o.ambiente}</tpAmb><cUFAutor>${o.cuf}</cUFAutor><CNPJ>${o.cnpj}</CNPJ><consChNFe><chNFe>${chNFe}</chNFe></consChNFe></distDFeInt></nfeDadosMsg></nfeDistDFeInteresse></soap12:Body></soap12:Envelope>`;
+}
+
+async function postDist(o: Opts, body: string): Promise<RespostaSefaz> {
   const url = new URL(ENDPOINTS[o.ambiente] ?? ENDPOINTS[1]);
-  const body = envelope(o);
 
   // Extrai chave + certificado do .pfx (trata senha errada / arquivo inválido).
   let pem: { key: string; cert: string };
@@ -71,8 +76,8 @@ export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
     return {
       cStat: "",
       xMotivo: "",
-      ultNSU: o.ultNSU,
-      maxNSU: o.ultNSU,
+      ultNSU: o.ultNSU || "0",
+      maxNSU: o.ultNSU || "0",
       docs: [],
       erro: `Certificado (técnico): ${msg}`,
     };
@@ -110,14 +115,26 @@ export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
     return {
       cStat: "",
       xMotivo: "",
-      ultNSU: o.ultNSU,
-      maxNSU: o.ultNSU,
+      ultNSU: o.ultNSU || "0",
+      maxNSU: o.ultNSU || "0",
       docs: [],
       erro: e instanceof Error ? e.message : "Falha na conexão com a SEFAZ.",
     };
   }
 
-  return parseResposta(respostaXml, o.ultNSU);
+  return parseResposta(respostaXml, o.ultNSU || "0");
+}
+
+export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {
+  return postDist(o, envelopeNSU(o));
+}
+
+// Baixa a nota completa por chave (imediato, fora do limite do polling).
+export async function distribuicaoPorChave(
+  o: Opts,
+  chNFe: string,
+): Promise<RespostaSefaz> {
+  return postDist(o, envelopeChave(o, chNFe));
 }
 
 function parseResposta(xml: string, ultNSUAtual: string): RespostaSefaz {

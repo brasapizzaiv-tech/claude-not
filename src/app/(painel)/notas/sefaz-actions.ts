@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { soDigitos } from "@/lib/nfe";
 import { manifestarCiencia } from "@/lib/sefaz/manifestacao";
 import { rodarBuscaSefaz, type ConfigSefaz } from "@/lib/sefaz/busca";
+import { distribuicaoPorChave } from "@/lib/sefaz/distribuicao";
+import { importarNota } from "./actions";
 
 async function getConfig() {
   const supabase = await createClient();
@@ -75,20 +77,52 @@ export async function manifestarNota(notaId: string) {
   };
 }
 
-// Manifesta E já busca a nota completa, num passo só (sem sair da tela).
+// Manifesta E já baixa a nota completa NA HORA, pela chave (consChNFe) —
+// que não entra no limite de 1/hora do polling. Tudo num clique só.
 export async function manifestarEBaixar(notaId: string) {
   const man = await manifestarNota(notaId);
   if (man.erro) return { ok: false, erro: man.erro };
 
-  // Puxa da SEFAZ o XML completo que o manifesto liberou.
-  const busca = await buscarNotasSefaz();
+  const { supabase, cfg } = await getConfig();
+  if (!cfg?.cert_pfx || !cfg.cert_senha || !cfg.cnpj) {
+    return { ok: true, cStat: man.cStat, xMotivo: man.xMotivo, completa: false };
+  }
 
-  // A nota agora tem itens?
-  const { supabase } = await getConfig();
+  const { data: nota } = await supabase
+    .from("notas_fiscais")
+    .select("chave")
+    .eq("id", notaId)
+    .maybeSingle();
+  if (!nota?.chave) return { ok: false, erro: "Nota sem chave." };
+
+  // Baixa a nota específica pela chave (imediato).
+  const r = await distribuicaoPorChave(
+    {
+      pfxBase64: cfg.cert_pfx,
+      senha: cfg.cert_senha,
+      cnpj: soDigitos(cfg.cnpj),
+      cuf: cfg.cuf,
+      ambiente: cfg.ambiente,
+      ultNSU: "0",
+    },
+    nota.chave as string,
+  );
+
+  const doc = (r.docs ?? []).find(
+    (d) =>
+      d.schema?.startsWith("procNFe") ||
+      d.xml?.includes("<nfeProc") ||
+      d.xml?.includes("<NFe"),
+  );
+  if (doc?.xml) {
+    await importarNota(doc.xml, supabase);
+  }
+
   const { count } = await supabase
     .from("nota_itens")
     .select("id", { count: "exact", head: true })
     .eq("nota_id", notaId);
+  const completa = (count ?? 0) > 0;
 
   revalidatePath(`/notas/${notaId}`);
   revalidatePath("/notas");
@@ -96,9 +130,8 @@ export async function manifestarEBaixar(notaId: string) {
     ok: true,
     cStat: man.cStat,
     xMotivo: man.xMotivo,
-    completa: (count ?? 0) > 0,
-    importadas: busca.importadas ?? 0,
-    buscaErro: busca.erro ?? "",
+    completa,
+    buscaErro: completa ? "" : r.erro || `${r.cStat} ${r.xMotivo}`.trim(),
   };
 }
 
