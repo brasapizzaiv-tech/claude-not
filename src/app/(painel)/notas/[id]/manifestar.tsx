@@ -13,7 +13,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
   function manifestar() {
     if (
       !window.confirm(
-        "Isto registra a 'Ciência da Operação' desta nota na SEFAZ (ação fiscal oficial) e já baixa a nota completa. Continuar?",
+        "Isto registra a 'Ciência da Operação' desta nota na SEFAZ (ação fiscal oficial) e tenta baixar a nota completa. Continuar?",
       )
     )
       return;
@@ -25,7 +25,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
         setMsg("✓ Nota completa baixada! Role para ver os itens e lançar.");
       else
         setMsg(
-          `✓ Manifestada! A SEFAZ ainda está liberando a nota completa. Clique de novo em instantes.${r?.buscaErro ? ` (${r.buscaErro})` : ""}`,
+          "✓ Manifestada! A SEFAZ libera o XML completo com um pequeno atraso — a busca automática vai completar esta nota em breve (sem precisar clicar de novo). Enquanto isso, dá pra lançar pelo valor total.",
         );
       router.refresh();
     });

@@ -5,8 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { soDigitos } from "@/lib/nfe";
 import { manifestarCiencia } from "@/lib/sefaz/manifestacao";
 import { rodarBuscaSefaz, type ConfigSefaz } from "@/lib/sefaz/busca";
-import { distribuicaoPorChave } from "@/lib/sefaz/distribuicao";
-import { importarNota } from "./actions";
 
 async function getConfig() {
   const supabase = await createClient();
@@ -77,8 +75,11 @@ export async function manifestarNota(notaId: string) {
   };
 }
 
-// Manifesta E já baixa a nota completa NA HORA, pela chave (consChNFe) —
-// que não entra no limite de 1/hora do polling. Tudo num clique só.
+// Manifesta e já tenta baixar a nota completa. A Receita SUSPENDEU a consulta
+// por chave (consChNFe) em 2022 — só sobrou o distNSU. Depois de manifestar, a
+// SEFAZ libera o XML completo com um pequeno atraso, então tentamos UMA busca
+// (sem loop: bater repetido dispara "656 Consumo Indevido" e trava por 1h). Se
+// não vier na hora, a busca automática completa em seguida.
 export async function manifestarEBaixar(notaId: string) {
   const man = await manifestarNota(notaId);
   if (man.erro) return { ok: false, erro: man.erro };
@@ -86,36 +87,6 @@ export async function manifestarEBaixar(notaId: string) {
   const { supabase, cfg } = await getConfig();
   if (!cfg?.cert_pfx || !cfg.cert_senha || !cfg.cnpj) {
     return { ok: true, cStat: man.cStat, xMotivo: man.xMotivo, completa: false };
-  }
-
-  const { data: nota } = await supabase
-    .from("notas_fiscais")
-    .select("chave")
-    .eq("id", notaId)
-    .maybeSingle();
-  if (!nota?.chave) return { ok: false, erro: "Nota sem chave." };
-
-  // Baixa a nota específica pela chave (imediato).
-  const r = await distribuicaoPorChave(
-    {
-      pfxBase64: cfg.cert_pfx,
-      senha: cfg.cert_senha,
-      cnpj: soDigitos(cfg.cnpj),
-      cuf: cfg.cuf,
-      ambiente: cfg.ambiente,
-      ultNSU: "0",
-    },
-    nota.chave as string,
-  );
-
-  const doc = (r.docs ?? []).find(
-    (d) =>
-      d.schema?.startsWith("procNFe") ||
-      d.xml?.includes("<nfeProc") ||
-      d.xml?.includes("<NFe"),
-  );
-  if (doc?.xml) {
-    await importarNota(doc.xml, supabase);
   }
 
   async function temItens() {
@@ -127,9 +98,6 @@ export async function manifestarEBaixar(notaId: string) {
   }
   let completa = await temItens();
 
-  // Reserva: se a consulta por chave não trouxe, tenta UMA busca (distNSU).
-  // Nunca em loop — bater repetido na SEFAZ dispara "656 Consumo Indevido"
-  // e trava por 1 hora. Uma tentativa só.
   let extraErro = "";
   if (!completa) {
     const busca = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
@@ -142,21 +110,15 @@ export async function manifestarEBaixar(notaId: string) {
   revalidatePath(`/notas/${notaId}`);
   revalidatePath("/notas");
 
-  // Diagnóstico (aparece só quando não completa) para acertar o formato.
   return {
     ok: true,
     cStat: man.cStat,
     xMotivo: man.xMotivo,
     completa,
-    buscaErro: completa
-      ? ""
-      : extraErro || r.erro || `${r.cStat} ${r.xMotivo}`.trim(),
+    buscaErro: completa ? "" : extraErro,
     diag: completa
       ? ""
-      : `manifesto: ${man.cStat} ${man.xMotivo ?? ""} | chave: ${r.cStat} ${r.xMotivo ?? ""} | ${extraErro}\nRESP: ${(r.raw ?? "")
-          .replace(/<docZip[\s\S]*?<\/docZip>/g, "[docZip]")
-          .replace(/\s+/g, " ")
-          .slice(0, 700)}`,
+      : `manifesto: ${man.cStat} ${man.xMotivo ?? ""} | ${extraErro}`,
   };
 }
 
