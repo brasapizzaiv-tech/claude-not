@@ -20,7 +20,8 @@
        modo escuro. Não afeta o modo claro nem as cores de texto. */
     --color-zinc-950: #262624; /* fundo principal / linhas */
     --color-zinc-900: #302e2c; /* superfícies (sidebar, cabeçalhos, cards) */
-    --color-zinc-800: #3d3b38; /* bordas e hover */
+    --color-zinc-800: #4a4640; /* bordas e hover — mais visíveis */
+    --color-zinc-700: #57534d; /* bordas de inputs/botões */
   }
 }
 
