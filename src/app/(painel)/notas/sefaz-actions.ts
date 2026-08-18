@@ -67,6 +67,15 @@ export async function manifestarNota(notaId: string) {
     chNFe: nota.chave as string,
   });
 
+  // 135 = evento registrado agora (a SEFAZ vai liberar o XML completo em
+  // seguida). Marca a nota como manifestada para a busca esperta completá-la.
+  if (r.ok && r.cStat === "135") {
+    await supabase
+      .from("notas_fiscais")
+      .update({ manifestado_em: new Date().toISOString() })
+      .eq("id", notaId);
+  }
+
   return {
     ok: r.ok,
     cStat: r.cStat,

@@ -13,6 +13,7 @@ export type ConfigSefaz = {
   cert_senha: string | null;
   ult_nsu: string;
   bloqueado_ate: string | null;
+  forcado_em?: string | null;
 };
 
 export type ResultadoBusca = {
@@ -128,10 +129,10 @@ export async function rodarBuscaSefaz(
   const bloqueadoAte = new Date(
     Date.now() + (maisDocs ? 30 * 1000 : 60 * 60 * 1000),
   ).toISOString();
-  await supabase
-    .from("config_sefaz")
-    .update({ bloqueado_ate: bloqueadoAte })
-    .eq("id", cfg.id);
+  const patch: Record<string, unknown> = { bloqueado_ate: bloqueadoAte };
+  // Marca quando foi a última busca forçada, para a busca esperta espaçar bem.
+  if (opts?.forcar) patch.forcado_em = new Date().toISOString();
+  await supabase.from("config_sefaz").update(patch).eq("id", cfg.id);
 
   return { importadas, resumos, falhas, cStat, xMotivo, erro, bloqueado_ate: bloqueadoAte };
 }
