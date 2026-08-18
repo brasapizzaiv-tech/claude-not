@@ -138,6 +138,11 @@ export async function manifestarEBaixar(notaId: string) {
 
   revalidatePath(`/notas/${notaId}`);
   revalidatePath("/notas");
+
+  // Diagnóstico (aparece só quando não completa) para acertar o formato.
+  const rawSnippet = (r.raw ?? "")
+    .replace(/<docZip[\s\S]*?<\/docZip>/g, "[docZip]")
+    .slice(0, 500);
   return {
     ok: true,
     cStat: man.cStat,
@@ -146,6 +151,9 @@ export async function manifestarEBaixar(notaId: string) {
     buscaErro: completa
       ? ""
       : extraErro || r.erro || `${r.cStat} ${r.xMotivo}`.trim(),
+    diag: completa
+      ? ""
+      : `manifesto: ${man.cStat} ${man.xMotivo ?? ""} | chave: ${r.cStat} ${r.xMotivo ?? ""} | resp: ${rawSnippet}`,
   };
 }
 

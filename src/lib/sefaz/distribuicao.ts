@@ -51,6 +51,7 @@ export type RespostaSefaz = {
   maxNSU: string;
   docs: DocSefaz[];
   erro?: string;
+  raw?: string;
 };
 
 function envelopeNSU(o: Opts) {
@@ -123,7 +124,7 @@ async function postDist(o: Opts, body: string): Promise<RespostaSefaz> {
     };
   }
 
-  return parseResposta(respostaXml, o.ultNSU || "0");
+  return { ...parseResposta(respostaXml, o.ultNSU || "0"), raw: respostaXml };
 }
 
 export async function distribuicaoDFe(o: Opts): Promise<RespostaSefaz> {

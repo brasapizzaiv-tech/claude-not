@@ -8,6 +8,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
   const router = useRouter();
   const [processando, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [diag, setDiag] = useState<string | null>(null);
 
   function manifestar() {
     if (
@@ -18,12 +19,13 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
       return;
     start(async () => {
       const r = await manifestarEBaixar(notaId);
+      setDiag(r?.completa ? null : (r?.diag ?? null));
       if (r?.erro) setMsg(`❌ ${r.erro}`);
       else if (r?.completa)
         setMsg("✓ Nota completa baixada! Role para ver os itens e lançar.");
       else
         setMsg(
-          `✓ Manifestada! A SEFAZ ainda está liberando a nota completa (leva alguns segundos). Clique de novo em instantes.${r?.buscaErro ? ` (${r.buscaErro})` : ""}`,
+          `✓ Manifestada! A SEFAZ ainda está liberando a nota completa. Clique de novo em instantes.${r?.buscaErro ? ` (${r.buscaErro})` : ""}`,
         );
       router.refresh();
     });
@@ -47,6 +49,16 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
       </button>
       {msg && (
         <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">{msg}</p>
+      )}
+      {diag && (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs text-zinc-400">
+            detalhe técnico (me mande isto para eu corrigir)
+          </summary>
+          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-900 p-2 text-[10px] text-green-400">
+            {diag}
+          </pre>
+        </details>
       )}
     </div>
   );
