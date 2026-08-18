@@ -127,20 +127,16 @@ export async function manifestarEBaixar(notaId: string) {
   }
   let completa = await temItens();
 
-  // Acabamos de manifestar: a SEFAZ libera o XML completo, mas ele entra na
-  // fila de distribuição alguns segundos depois. Forçamos algumas buscas
-  // seguidas (pulando a trava de 1h) até o XML cair. É o que o sistema
-  // profissional faz no "Obter nota".
+  // Reserva: se a consulta por chave não trouxe, tenta UMA busca (distNSU).
+  // Nunca em loop — bater repetido na SEFAZ dispara "656 Consumo Indevido"
+  // e trava por 1 hora. Uma tentativa só.
   let extraErro = "";
-  for (let tent = 0; tent < 4 && !completa; tent++) {
-    if (tent > 0) await new Promise((res) => setTimeout(res, 2500));
-    const atual = (await getConfig()).cfg ?? cfg;
-    const busca = await rodarBuscaSefaz(supabase, atual, { forcar: true });
+  if (!completa) {
+    const busca = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
     completa = await temItens();
     extraErro = busca.erro
       ? busca.erro
-      : `busca ${tent + 1}: ${busca.importadas ?? 0} nota(s), ${busca.resumos ?? 0} resumo(s), cStat ${busca.cStat} ${busca.xMotivo ?? ""}`;
-    if (busca.erro) break;
+      : `busca: ${busca.importadas ?? 0} nota(s), ${busca.resumos ?? 0} resumo(s), cStat ${busca.cStat} ${busca.xMotivo ?? ""}`;
   }
 
   revalidatePath(`/notas/${notaId}`);
