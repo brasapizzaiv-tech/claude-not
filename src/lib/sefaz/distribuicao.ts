@@ -61,7 +61,8 @@ function envelopeNSU(o: Opts) {
 // Envelope para baixar UMA nota específica pela chave (consChNFe).
 // Não faz parte do "polling" (distNSU), então não cai no limite de 1/hora.
 function envelopeChave(o: Opts, chNFe: string) {
-  return `<?xml version="1.0" encoding="UTF-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe"><nfeDadosMsg><distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.35"><tpAmb>${o.ambiente}</tpAmb><cUFAutor>${o.cuf}</cUFAutor><CNPJ>${o.cnpj}</CNPJ><consChNFe><chNFe>${chNFe}</chNFe></consChNFe></distDFeInt></nfeDadosMsg></nfeDistDFeInteresse></soap12:Body></soap12:Envelope>`;
+  const ch = (chNFe || "").replace(/\D/g, "");
+  return `<?xml version="1.0" encoding="UTF-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe"><nfeDadosMsg><distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.35"><tpAmb>${o.ambiente}</tpAmb><CNPJ>${o.cnpj}</CNPJ><consChNFe><chNFe>${ch}</chNFe></consChNFe></distDFeInt></nfeDadosMsg></nfeDistDFeInteresse></soap12:Body></soap12:Envelope>`;
 }
 
 async function postDist(o: Opts, body: string): Promise<RespostaSefaz> {
