@@ -127,25 +127,26 @@ export async function manifestarEBaixar(notaId: string) {
   }
   let completa = await temItens();
 
-  // Como acabamos de manifestar, há documento novo na SEFAZ: força uma busca
-  // (pula a trava de 1h — a SEFAZ permite quando há doc novo). É o que o
-  // sistema profissional faz no "Obter nota".
+  // Acabamos de manifestar: a SEFAZ libera o XML completo, mas ele entra na
+  // fila de distribuição alguns segundos depois. Forçamos algumas buscas
+  // seguidas (pulando a trava de 1h) até o XML cair. É o que o sistema
+  // profissional faz no "Obter nota".
   let extraErro = "";
-  if (!completa) {
-    const busca = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
+  for (let tent = 0; tent < 4 && !completa; tent++) {
+    if (tent > 0) await new Promise((res) => setTimeout(res, 2500));
+    const atual = (await getConfig()).cfg ?? cfg;
+    const busca = await rodarBuscaSefaz(supabase, atual, { forcar: true });
     completa = await temItens();
     extraErro = busca.erro
       ? busca.erro
-      : `busca forçada: ${busca.importadas ?? 0} nota(s), ${busca.resumos ?? 0} resumo(s), cStat ${busca.cStat} ${busca.xMotivo ?? ""}`;
+      : `busca ${tent + 1}: ${busca.importadas ?? 0} nota(s), ${busca.resumos ?? 0} resumo(s), cStat ${busca.cStat} ${busca.xMotivo ?? ""}`;
+    if (busca.erro) break;
   }
 
   revalidatePath(`/notas/${notaId}`);
   revalidatePath("/notas");
 
   // Diagnóstico (aparece só quando não completa) para acertar o formato.
-  const rawSnippet = (r.raw ?? "")
-    .replace(/<docZip[\s\S]*?<\/docZip>/g, "[docZip]")
-    .slice(0, 500);
   return {
     ok: true,
     cStat: man.cStat,
@@ -156,7 +157,7 @@ export async function manifestarEBaixar(notaId: string) {
       : extraErro || r.erro || `${r.cStat} ${r.xMotivo}`.trim(),
     diag: completa
       ? ""
-      : `manifesto: ${man.cStat} ${man.xMotivo ?? ""} | chave: ${r.cStat} ${r.xMotivo ?? ""}\nENVIADO: ${(r.req ?? "").slice(0, 900)}`,
+      : `manifesto: ${man.cStat} ${man.xMotivo ?? ""} | chave: ${r.cStat} ${r.xMotivo ?? ""} | ${extraErro}`,
   };
 }
 
