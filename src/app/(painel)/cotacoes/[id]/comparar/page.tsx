@@ -152,6 +152,49 @@ export default async function CompararPage({
     }
   }
 
+  // Última compra de cada produto (pedidos anteriores), para comparar.
+  const ultimaCompra: Record<
+    string,
+    { forn: string; preco: number | null; data: string }
+  > = {};
+  if (produtoIds.length) {
+    const { data: hist } = await supabase
+      .from("pedido_itens")
+      .select(
+        "produto_id, preco_unit, preco_recebido, pedidos!inner(fornecedor_id, criado_em, cotacao_id, fornecedores(nome))",
+      )
+      .in("produto_id", produtoIds);
+    const maisRecente: Record<string, string> = {};
+    for (const row of (hist as unknown as {
+      produto_id: string;
+      preco_unit: number | null;
+      preco_recebido: number | null;
+      pedidos: {
+        criado_em: string | null;
+        cotacao_id: string;
+        fornecedores: { nome: string } | null;
+      } | null;
+    }[]) ?? []) {
+      const ped = row.pedidos;
+      if (!ped || ped.cotacao_id === id) continue;
+      const quando = ped.criado_em || "";
+      const pid = row.produto_id;
+      if (!maisRecente[pid] || quando > maisRecente[pid]) {
+        maisRecente[pid] = quando;
+        ultimaCompra[pid] = {
+          forn: ped.fornecedores?.nome ?? "—",
+          preco:
+            row.preco_recebido != null
+              ? Number(row.preco_recebido)
+              : row.preco_unit != null
+                ? Number(row.preco_unit)
+                : null,
+          data: quando ? new Date(quando).toLocaleDateString("pt-BR") : "",
+        };
+      }
+    }
+  }
+
   // Separa: exclusivos (1 fornecedor) vão para pedido direto (sem cotação);
   // o resto fica na comparação de preços.
   const exclusivos: ExclusivoLinha[] = [];
@@ -206,6 +249,7 @@ export default async function CompararPage({
           produtos={comparados}
           fornecedores={fornecedores}
           exclusivos={exclusivos}
+          ultimaCompra={ultimaCompra}
         />
       )}
     </div>

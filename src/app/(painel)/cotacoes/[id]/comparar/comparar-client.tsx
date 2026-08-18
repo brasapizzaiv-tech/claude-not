@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState, useTransition } from "react";
+import { Fragment, useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { gerarPedidos } from "../../actions";
 
@@ -59,11 +59,13 @@ export function CompararClient({
   produtos,
   fornecedores,
   exclusivos,
+  ultimaCompra,
 }: {
   cotacaoId: string;
   produtos: ProdutoLinha[];
   fornecedores: FornecedorCol[];
   exclusivos: ExclusivoLinha[];
+  ultimaCompra: Record<string, { forn: string; preco: number | null; data: string }>;
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
@@ -116,31 +118,124 @@ export function CompararClient({
     });
   }
 
+  // Quantidade desejada por produto (editável) — persistida.
+  const qtdKey = `cmp_qtd_${cotacaoId}`;
+  const [qtds, setQtds] = useState<Record<string, number>>(() => {
+    const base = Object.fromEntries(produtos.map((p) => [p.produto_id, p.qtd]));
+    if (typeof window === "undefined") return base;
+    try {
+      return { ...base, ...JSON.parse(localStorage.getItem(qtdKey) || "{}") };
+    } catch {
+      return base;
+    }
+  });
+  function setQtd(pid: string, v: number) {
+    setQtds((s) => {
+      const n = { ...s, [pid]: v };
+      try {
+        localStorage.setItem(qtdKey, JSON.stringify(n));
+      } catch {}
+      return n;
+    });
+  }
+
+  // Dividir um item entre vários fornecedores.
+  const divKey = `cmp_div_${cotacaoId}`;
+  const [divisao, setDivisao] = useState<Record<string, Record<string, number>>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(localStorage.getItem(divKey) || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const dividKey = `cmp_dividindo_${cotacaoId}`;
+  const [dividindo, setDividindo] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      return new Set(JSON.parse(localStorage.getItem(dividKey) || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
+  function setDivQty(pid: string, fid: string, v: number) {
+    setDivisao((s) => {
+      const cur = { ...(s[pid] || {}) };
+      if (v > 0) cur[fid] = v;
+      else delete cur[fid];
+      const n = { ...s, [pid]: cur };
+      try {
+        localStorage.setItem(divKey, JSON.stringify(n));
+      } catch {}
+      return n;
+    });
+  }
+  function toggleDividir(pid: string) {
+    const jaDiv = dividindo.has(pid);
+    const n = new Set(dividindo);
+    if (jaDiv) n.delete(pid);
+    else n.add(pid);
+    setDividindo(n);
+    try {
+      localStorage.setItem(dividKey, JSON.stringify([...n]));
+    } catch {}
+    if (!jaDiv) {
+      const fid = escolha[pid];
+      if (fid) setDivQty(pid, fid, qtds[pid] ?? 0);
+    }
+  }
+
+  // Alocação final por produto: {fornecedor_id: qtd}.
+  const alocacaoDe = useCallback(
+    (pid: string): Record<string, number> => {
+      if (dividindo.has(pid)) {
+        const d = divisao[pid] || {};
+        const r: Record<string, number> = {};
+        for (const [fid, q] of Object.entries(d)) if (q > 0) r[fid] = q;
+        return r;
+      }
+      const fid = escolha[pid];
+      const q = qtds[pid] ?? 0;
+      return fid && q > 0 ? { [fid]: q } : {};
+    },
+    [dividindo, divisao, escolha, qtds],
+  );
+
   const totalPorForn = useMemo(() => {
     const t: Record<string, number> = {};
     for (const f of fornecedores) t[f.id] = 0;
     for (const p of produtos) {
-      const fid = escolha[p.produto_id];
-      if (!fid) continue;
-      const cel = p.precos[fid];
-      if (cel?.preco != null) t[fid] += cel.preco * p.qtd;
+      for (const [fid, q] of Object.entries(alocacaoDe(p.produto_id))) {
+        const cel = p.precos[fid];
+        if (cel?.preco != null) t[fid] += cel.preco * q;
+      }
     }
     return t;
-  }, [escolha, produtos, fornecedores]);
+  }, [alocacaoDe, produtos, fornecedores]);
 
   const totalGeral = Object.values(totalPorForn).reduce((a, b) => a + b, 0);
-  const itensEscolhidos = Object.values(escolha).filter(Boolean).length;
+  const itensEscolhidos = produtos.filter(
+    (p) => Object.keys(alocacaoDe(p.produto_id)).length > 0,
+  ).length;
 
   function gerar() {
     startSave(async () => {
-      const escolhas = produtos
-        .filter((p) => escolha[p.produto_id])
-        .map((p) => ({
-          fornecedor_id: escolha[p.produto_id],
-          produto_id: p.produto_id,
-          qtd: p.qtd,
-          preco_unit: p.precos[escolha[p.produto_id]]?.preco ?? null,
-        }));
+      const escolhas: {
+        fornecedor_id: string;
+        produto_id: string;
+        qtd: number;
+        preco_unit: number | null;
+      }[] = [];
+      for (const p of produtos) {
+        for (const [fid, q] of Object.entries(alocacaoDe(p.produto_id))) {
+          escolhas.push({
+            fornecedor_id: fid,
+            produto_id: p.produto_id,
+            qtd: q,
+            preco_unit: p.precos[fid]?.preco ?? null,
+          });
+        }
+      }
       // Exclusivos entram direto no pedido do seu único fornecedor (sem preço).
       const diretos = exclusivos.map((e) => ({
         fornecedor_id: e.fornecedorId,
@@ -203,6 +298,9 @@ export function CompararClient({
               <th className="sticky top-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800">
                 Qtd
               </th>
+              <th className="sticky top-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800">
+                Última compra
+              </th>
               {fornecedores.map((f, i) => {
                 const respondeu = !!f.respondido_em;
                 const hora = f.respondido_em
@@ -242,7 +340,7 @@ export function CompararClient({
               <Fragment key={cat}>
                 <tr>
                   <td
-                    colSpan={2 + fornecedores.length}
+                    colSpan={3 + fornecedores.length}
                     className={`sticky left-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${CAT_CORES[ci % CAT_CORES.length].band}`}
                   >
                     {cat}
@@ -281,8 +379,41 @@ export function CompararClient({
                         {p.unidade}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right text-zinc-500">
-                      {p.qtd}
+                    <td className="px-2 py-1 text-right align-top">
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={qtds[p.produto_id] ?? 0}
+                        onChange={(e) => setQtd(p.produto_id, Number(e.target.value) || 0)}
+                        className="w-16 rounded border border-zinc-300 bg-white px-1.5 py-1 text-right text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleDividir(p.produto_id)}
+                        className={`mt-0.5 block w-full text-[10px] ${
+                          dividindo.has(p.produto_id)
+                            ? "font-medium text-orange-600"
+                            : "text-zinc-400 hover:text-orange-600"
+                        }`}
+                      >
+                        {dividindo.has(p.produto_id) ? "✂️ dividido" : "dividir"}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2 text-right align-top text-[11px] leading-tight">
+                      {ultimaCompra[p.produto_id] ? (
+                        <>
+                          <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                            {ultimaCompra[p.produto_id].preco != null
+                              ? moeda(ultimaCompra[p.produto_id].preco as number)
+                              : "—"}
+                          </div>
+                          <div className="text-zinc-400">{ultimaCompra[p.produto_id].forn}</div>
+                          <div className="text-zinc-400">{ultimaCompra[p.produto_id].data}</div>
+                        </>
+                      ) : (
+                        <span className="text-zinc-300 dark:text-zinc-700">—</span>
+                      )}
                     </td>
                     {fornecedores.map((f) => {
                       const cel = p.precos[f.id];
@@ -308,21 +439,43 @@ export function CompararClient({
                           </td>
                         );
                       }
+                      const dividido = dividindo.has(p.produto_id);
                       return (
                         <td key={f.id} className="px-2 py-1 text-right align-top">
-                          <button
-                            onClick={() => mudarEscolha(p.produto_id, f.id)}
-                            className={`w-full rounded-md px-2 py-1 text-right text-sm transition ${
-                              escolhido
-                                ? "bg-orange-500 font-semibold text-white"
-                                : melhor
-                                  ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
-                                  : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                            }`}
-                            title={cel.obs ?? ""}
-                          >
-                            {moeda(cel.preco)}
-                          </button>
+                          {dividido ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-[10px] text-zinc-400">{moeda(cel.preco)}</span>
+                              <input
+                                type="number"
+                                min={0}
+                                step="any"
+                                placeholder="0"
+                                value={divisao[p.produto_id]?.[f.id] ?? ""}
+                                onChange={(e) =>
+                                  setDivQty(p.produto_id, f.id, Number(e.target.value) || 0)
+                                }
+                                className={`w-14 rounded border px-1 py-0.5 text-right text-sm ${
+                                  (divisao[p.produto_id]?.[f.id] ?? 0) > 0
+                                    ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-200"
+                                    : "border-zinc-300 dark:border-zinc-700 dark:bg-zinc-950"
+                                }`}
+                              />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => mudarEscolha(p.produto_id, f.id)}
+                              className={`w-full rounded-md px-2 py-1 text-right text-sm transition ${
+                                escolhido
+                                  ? "bg-orange-500 font-semibold text-white"
+                                  : melhor
+                                    ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
+                                    : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                              }`}
+                              title={cel.obs ?? ""}
+                            >
+                              {moeda(cel.preco)}
+                            </button>
+                          )}
                           {(cel.emb || cel.obs) && (
                             <div className="mt-0.5 text-right text-[10px] leading-tight text-zinc-400">
                               {cel.emb}
@@ -352,7 +505,7 @@ export function CompararClient({
             <tr className="border-t-2 border-zinc-200 font-semibold dark:border-zinc-700">
               <td
                 className="sticky bottom-0 left-0 z-30 bg-zinc-100 px-3 py-3 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                colSpan={2}
+                colSpan={3}
               >
                 Total escolhido
               </td>
@@ -427,8 +580,10 @@ export function CompararClient({
       <p className="mt-2 text-xs text-zinc-400">
         Clique num preço para escolher o fornecedor daquele item (verde = mais
         barato). Clique no <b>✓</b> ao lado do nome para marcar o que já{" "}
-        <b>conferiu / vai pedir</b> (fica verde e é lembrado neste navegador). ⚠ =
-        abaixo do pedido mínimo. 📷 = ver a foto do fornecedor.
+        <b>conferiu / vai pedir</b> (fica verde e é lembrado neste navegador). Edite a{" "}
+        <b>quantidade</b> na coluna Qtd; use <b>dividir</b> para pedir o mesmo item de{" "}
+        mais de um fornecedor (aí você digita quanto de cada). A coluna <b>Última compra</b>{" "}
+        mostra de quem e por quanto foi o último pedido. ⚠ = abaixo do mínimo. 📷 = foto.
       </p>
 
       {fotoAberta && (
