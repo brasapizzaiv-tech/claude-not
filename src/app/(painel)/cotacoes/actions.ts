@@ -135,8 +135,16 @@ type Escolha = {
 export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
   const supabase = await createClient();
 
-  // Regenera: remove pedidos anteriores desta cotação.
-  await supabase.from("pedidos").delete().eq("cotacao_id", cotacaoId);
+  // TRAVA: se esta cotação já gerou pedidos, NÃO regenera (senão apagaria os
+  // pedidos e conferências antigos). Para pedir o que faltou, abra nova cotação.
+  const { data: cot } = await supabase
+    .from("cotacoes")
+    .select("pedidos_gerados_em")
+    .eq("id", cotacaoId)
+    .maybeSingle();
+  if (cot?.pedidos_gerados_em) {
+    return { ok: false, travada: true };
+  }
 
   const porForn = new Map<string, Escolha[]>();
   for (const e of escolhas) {
@@ -164,7 +172,55 @@ export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
     }
   }
 
+  // Trava a cotação: pedidos gerados, não pode regenerar por cima.
+  await supabase
+    .from("cotacoes")
+    .update({ pedidos_gerados_em: new Date().toISOString(), status: "fechada" })
+    .eq("id", cotacaoId);
+
   revalidatePath(`/cotacoes/${cotacaoId}/pedidos`);
+  revalidatePath(`/cotacoes/${cotacaoId}/comparar`);
+  return { ok: true };
+}
+
+// Cria uma NOVA cotação só com os itens que ainda não foram pedidos na atual.
+export async function novaCotacaoDosFaltantes(cotacaoId: string) {
+  const supabase = await createClient();
+
+  const [{ data: itens }, { data: peds }] = await Promise.all([
+    supabase.from("cotacao_itens").select("produto_id, qtd").eq("cotacao_id", cotacaoId),
+    supabase.from("pedidos").select("id").eq("cotacao_id", cotacaoId),
+  ]);
+  const pedIds = (peds ?? []).map((p) => p.id);
+  const jaPedido = new Set<string>();
+  if (pedIds.length) {
+    const { data: pit } = await supabase
+      .from("pedido_itens")
+      .select("produto_id")
+      .in("pedido_id", pedIds);
+    for (const x of pit ?? []) jaPedido.add(x.produto_id);
+  }
+  const faltantes = (itens ?? []).filter((i) => !jaPedido.has(i.produto_id));
+  if (faltantes.length === 0) return { ok: false, erro: "nada" };
+
+  const { data: orig } = await supabase
+    .from("cotacoes")
+    .select("descricao, contagem_id")
+    .eq("id", cotacaoId)
+    .maybeSingle();
+  const { data: nova } = await supabase
+    .from("cotacoes")
+    .insert({
+      descricao: `${orig?.descricao ?? "Cotação"} — faltantes`,
+      contagem_id: orig?.contagem_id ?? null,
+    })
+    .select("id")
+    .single();
+  if (!nova) return { ok: false };
+  await supabase
+    .from("cotacao_itens")
+    .insert(faltantes.map((f) => ({ cotacao_id: nova.id, produto_id: f.produto_id, qtd: f.qtd })));
+  redirect(`/cotacoes/${nova.id}`);
 }
 
 export async function fecharCotacao(formData: FormData) {

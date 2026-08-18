@@ -24,6 +24,7 @@ export default async function CompararPage({
     .maybeSingle();
   if (!cotData) notFound();
   const cotacao = cotData as Cotacao;
+  const travada = !!(cotData as { pedidos_gerados_em?: string | null }).pedidos_gerados_em;
 
   const [{ data: itens }, { data: fornsData }, { data: precos }] =
     await Promise.all([
@@ -250,6 +251,7 @@ export default async function CompararPage({
           fornecedores={fornecedores}
           exclusivos={exclusivos}
           ultimaCompra={ultimaCompra}
+          travada={travada}
         />
       )}
     </div>

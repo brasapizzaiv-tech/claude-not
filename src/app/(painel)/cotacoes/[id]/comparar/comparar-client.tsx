@@ -2,7 +2,8 @@
 
 import { Fragment, useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { gerarPedidos } from "../../actions";
+import Link from "next/link";
+import { gerarPedidos, novaCotacaoDosFaltantes } from "../../actions";
 
 export type FornecedorCol = {
   id: string;
@@ -60,12 +61,14 @@ export function CompararClient({
   fornecedores,
   exclusivos,
   ultimaCompra,
+  travada,
 }: {
   cotacaoId: string;
   produtos: ProdutoLinha[];
   fornecedores: FornecedorCol[];
   exclusivos: ExclusivoLinha[];
   ultimaCompra: Record<string, { forn: string; preco: number | null; data: string }>;
+  travada: boolean;
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
@@ -271,6 +274,30 @@ export function CompararClient({
 
   return (
     <div className="mt-6">
+      {travada && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-green-300 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30">
+          <p className="text-sm font-medium text-green-800 dark:text-green-300">
+            🔒 Esta cotação já gerou pedidos e está travada — os pedidos e
+            conferências ficam salvos e não podem ser sobrescritos.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/cotacoes/${cotacaoId}/pedidos`}
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            >
+              Ver pedidos →
+            </Link>
+            <button
+              onClick={() => startSave(async () => { await novaCotacaoDosFaltantes(cotacaoId); })}
+              disabled={salvando}
+              className="rounded-lg border border-green-500 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-60 dark:text-green-300 dark:hover:bg-green-900/40"
+            >
+              Nova cotação com os itens que faltam
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-500">
           {itensEscolhidos} de {produtos.length} itens escolhidos ·{" "}
@@ -278,13 +305,15 @@ export function CompararClient({
           {exclusivos.length > 0 ? ` · ${exclusivos.length} exclusivos (direto)` : ""} · total{" "}
           <b className="text-zinc-900 dark:text-zinc-100">{moeda(totalGeral)}</b>
         </p>
-        <button
-          onClick={gerar}
-          disabled={salvando || (itensEscolhidos === 0 && exclusivos.length === 0)}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
-        >
-          {salvando ? "Gerando..." : "Gerar pedidos →"}
-        </button>
+        {!travada && (
+          <button
+            onClick={gerar}
+            disabled={salvando || (itensEscolhidos === 0 && exclusivos.length === 0)}
+            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+          >
+            {salvando ? "Gerando..." : "Gerar pedidos →"}
+          </button>
+        )}
       </div>
 
       {produtos.length > 0 && (
