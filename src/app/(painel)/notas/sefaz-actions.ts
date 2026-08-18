@@ -134,7 +134,9 @@ export async function manifestarEBaixar(notaId: string) {
   if (!completa) {
     const busca = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
     completa = await temItens();
-    extraErro = busca.erro ?? "";
+    extraErro = busca.erro
+      ? busca.erro
+      : `busca forçada: ${busca.importadas ?? 0} nota(s), ${busca.resumos ?? 0} resumo(s), cStat ${busca.cStat} ${busca.xMotivo ?? ""}`;
   }
 
   revalidatePath(`/notas/${notaId}`);
