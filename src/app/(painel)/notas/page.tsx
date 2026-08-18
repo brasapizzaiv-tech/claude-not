@@ -3,17 +3,22 @@ import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { UploadNota } from "./upload";
 import { NotaAcoes } from "./nota-acoes";
+import { BuscarNotas } from "./buscar-notas";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default async function NotasPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("notas_fiscais")
-    .select("id, numero, emit_nome, valor, data_emissao, vencimento, situacao")
-    .order("data_emissao", { ascending: false })
-    .limit(300);
+  const [{ data }, { data: cfg }] = await Promise.all([
+    supabase
+      .from("notas_fiscais")
+      .select("id, numero, emit_nome, valor, data_emissao, vencimento, situacao")
+      .order("data_emissao", { ascending: false })
+      .limit(300),
+    supabase.from("config_sefaz").select("bloqueado_ate").limit(1).maybeSingle(),
+  ]);
+  const bloqueadoAte = (cfg as { bloqueado_ate?: string | null } | null)?.bloqueado_ate ?? null;
 
   type Nota = {
     id: string;
@@ -58,6 +63,10 @@ export default async function NotasPage() {
           </Link>
           <UploadNota />
         </div>
+      </div>
+
+      <div className="mb-6">
+        <BuscarNotas bloqueadoAte={bloqueadoAte} />
       </div>
 
       {notas.length === 0 ? (
