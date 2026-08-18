@@ -56,10 +56,10 @@ export default async function DashboardPage() {
   const mesBruto = new Date().toLocaleDateString("pt-BR", { month: "long" });
   const mesNome = mesBruto.charAt(0).toUpperCase() + mesBruto.slice(1);
   const primeiroNome = (profile?.nome ?? "").split(" ")[0];
-  const iniciais = (profile?.nome ?? "U")
+  const iniciais = ((profile?.nome as string) ?? "U")
     .split(" ")
     .slice(0, 2)
-    .map((p) => p[0])
+    .map((p: string) => p[0])
     .join("")
     .toUpperCase();
 
