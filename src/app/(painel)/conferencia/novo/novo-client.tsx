@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { criarPedidoManual } from "../actions";
+import { Combobox } from "@/components/combobox";
 
 type Prod = { id: string; nome: string; unidade: string; preco_referencia: number | null };
 type Item = { produto_id: string; nome: string; unidade: string; qtd: string; preco: string };
@@ -85,18 +86,13 @@ export function NovoPedidoClient({
       <div className="mt-5 flex flex-wrap gap-3">
         <div className="min-w-56 flex-1">
           <label className="mb-1 block text-xs text-zinc-500">Fornecedor</label>
-          <select
+          <Combobox
+            options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))}
             value={fornecedorId}
-            onChange={(e) => setFornecedorId(e.target.value)}
+            onChange={setFornecedorId}
+            placeholder="Buscar fornecedor..."
             className={`${campo} w-full`}
-          >
-            <option value="">Selecione...</option>
-            {fornecedores.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.nome}
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">Data</label>

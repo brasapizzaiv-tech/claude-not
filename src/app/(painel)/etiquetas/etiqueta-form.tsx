@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { criarEtiqueta } from "./actions";
+import { Combobox } from "@/components/combobox";
 
 const input =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -77,21 +78,16 @@ export function EtiquetaForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs text-zinc-500">Produto</label>
-          <select
+          <Combobox
+            options={produtos.map((p) => ({ value: p.id, label: p.nome }))}
             value={produtoId}
-            onChange={(e) => {
-              setProdutoId(e.target.value);
-              recalc(e.target.value, conservacao);
+            onChange={(v) => {
+              setProdutoId(v);
+              recalc(v, conservacao);
             }}
+            placeholder="Buscar produto..."
             className={input}
-          >
-            <option value="">Escolha o produto...</option>
-            {produtos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div>
