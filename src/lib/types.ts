@@ -120,6 +120,8 @@ export type NotaFiscal = {
   fornecedor_id: string | null;
   pedido_id: string | null;
   status: "importada" | "conciliada";
+  tipo: "mercadoria" | "servico";
+  dre_categoria_id: string | null;
   criado_em: string;
 };
 

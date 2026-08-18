@@ -56,6 +56,18 @@ export default async function NotaDetalhePage({
   const fornecedores = (fornsData as { id: string; nome: string }[]) ?? [];
   const fornecedorNome =
     fornecedores.find((f) => f.id === nota.fornecedor_id)?.nome ?? null;
+
+  // Categorias de despesa (DRE) para nota de serviço — tudo menos receita/dedução.
+  const { data: catData } = await supabase
+    .from("dre_categorias")
+    .select("id, tipo, grupo, nome")
+    .eq("ativo", true)
+    .order("grupo")
+    .order("ordem");
+  const categorias = (
+    (catData as { id: string; tipo: string; grupo: string; nome: string }[]) ??
+    []
+  ).filter((c) => c.tipo !== "receita" && c.tipo !== "deducao");
   const competenciaInicial = (nota.data_emissao ?? new Date().toISOString().slice(0, 10)).slice(
     0,
     7,
@@ -114,16 +126,22 @@ export default async function NotaDetalhePage({
         fornecedorId={nota.fornecedor_id ?? null}
         fornecedorNome={fornecedorNome}
         emitCnpj={nota.emit_cnpj ?? null}
+        emitNome={nota.emit_nome ?? null}
         vencimento={nota.vencimento ?? null}
         competenciaInicial={competenciaInicial}
         fornecedores={fornecedores}
+        tipo={nota.tipo ?? "mercadoria"}
+        dreCategoriaId={nota.dre_categoria_id ?? null}
+        categorias={categorias}
       />
 
       {/* Nota em resumo (sem itens) → oferecer manifestação */}
-      {itens.length === 0 && <ManifestarNota notaId={nota.id} />}
+      {nota.tipo !== "servico" && itens.length === 0 && (
+        <ManifestarNota notaId={nota.id} />
+      )}
 
       {/* Itens */}
-      {itens.length > 0 && (
+      {nota.tipo !== "servico" && itens.length > 0 && (
         <>
           <h2 className="mt-6 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
             Itens da nota
@@ -169,7 +187,9 @@ export default async function NotaDetalhePage({
         </>
       )}
 
-      {/* Cruzamento com pedido */}
+      {/* Cruzamento com pedido (não se aplica a serviço) */}
+      {nota.tipo !== "servico" && (
+      <>
       <h2 className="mt-8 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
         Cruzar com pedido
       </h2>
@@ -227,6 +247,8 @@ export default async function NotaDetalhePage({
         <p className="mt-2 text-xs text-zinc-400">
           Conciliada: a conta provisória do pedido foi substituída por esta nota.
         </p>
+      )}
+      </>
       )}
     </div>
   );

@@ -197,10 +197,11 @@ export async function lancarNota(
   const supabase = await createClient();
   const { data: nota } = await supabase
     .from("notas_fiscais")
-    .select("id, numero, emit_nome, valor, data_emissao, vencimento, fornecedor_id, situacao")
+    .select("id, numero, emit_nome, valor, data_emissao, vencimento, fornecedor_id, situacao, tipo, dre_categoria_id")
     .eq("id", notaId)
     .maybeSingle();
   if (!nota || nota.situacao === "lancada") return { ok: false };
+  const ehServico = (nota as { tipo?: string }).tipo === "servico";
 
   // Persiste o vencimento informado na revisão.
   if (opts?.vencimento !== undefined) {
@@ -242,7 +243,13 @@ export async function lancarNota(
 
   // Agrupa o valor por conta do DRE.
   const porConta = new Map<string | null, number>();
-  if (itens.length > 0) {
+  if (ehServico) {
+    // Serviço → tudo na categoria de despesa escolhida (ou no fallback).
+    const contaServico =
+      (nota as { dre_categoria_id?: string | null }).dre_categoria_id ??
+      fallbackId;
+    porConta.set(contaServico, Number(nota.valor));
+  } else if (itens.length > 0) {
     for (const i of itens) {
       const contaId =
         i.produtos?.categorias?.dre_categoria_id ?? fallbackId;
@@ -278,6 +285,55 @@ export async function lancarNota(
   revalidatePath("/notas");
   revalidatePath("/financeiro/contas");
   return { ok: true };
+}
+
+// Marca a nota como mercadoria ou serviço.
+export async function definirTipoNota(notaId: string, tipo: string) {
+  const supabase = await createClient();
+  await supabase
+    .from("notas_fiscais")
+    .update({ tipo: tipo === "servico" ? "servico" : "mercadoria" })
+    .eq("id", notaId);
+  revalidatePath(`/notas/${notaId}`);
+  return { ok: true };
+}
+
+// Define a categoria de despesa (DRE) de uma nota de serviço.
+export async function definirCategoriaNota(
+  notaId: string,
+  categoriaId: string | null,
+) {
+  const supabase = await createClient();
+  await supabase
+    .from("notas_fiscais")
+    .update({ dre_categoria_id: categoriaId || null })
+    .eq("id", notaId);
+  revalidatePath(`/notas/${notaId}`);
+  return { ok: true };
+}
+
+// Cria um fornecedor novo (com o nome/CNPJ da nota) e já vincula à nota.
+export async function criarEVincularFornecedor(
+  notaId: string,
+  nome: string,
+  cnpj: string | null,
+) {
+  const supabase = await createClient();
+  if (!nome.trim()) return { ok: false, erro: "Informe o nome do fornecedor." };
+  const { data, error } = await supabase
+    .from("fornecedores")
+    .insert({ nome: nome.trim(), cnpj: cnpj || null })
+    .select("id")
+    .single();
+  if (error || !data) return { ok: false, erro: "Não foi possível cadastrar." };
+  await supabase
+    .from("notas_fiscais")
+    .update({ fornecedor_id: data.id })
+    .eq("id", notaId);
+  revalidatePath(`/notas/${notaId}`);
+  revalidatePath("/notas");
+  revalidatePath("/fornecedores");
+  return { ok: true, fornecedorId: data.id };
 }
 
 // Vincula um item da nota a um produto do sistema (para o CMV detalhado).
