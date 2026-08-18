@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { manifestarNota } from "../sefaz-actions";
+import { manifestarEBaixar } from "../sefaz-actions";
 
 export function ManifestarNota({ notaId }: { notaId: string }) {
   const router = useRouter();
@@ -12,18 +12,23 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
   function manifestar() {
     if (
       !window.confirm(
-        "Isto registra a 'Ciência da Operação' desta nota na SEFAZ (ação fiscal oficial). Depois, use 'Buscar notas' para baixar a nota completa. Continuar?",
+        "Isto registra a 'Ciência da Operação' desta nota na SEFAZ (ação fiscal oficial) e já baixa a nota completa. Continuar?",
       )
     )
       return;
     start(async () => {
-      const r = await manifestarNota(notaId);
+      const r = await manifestarEBaixar(notaId);
       if (r?.erro) setMsg(`❌ ${r.erro}`);
-      else if (r?.ok)
+      else if (r?.completa)
+        setMsg("✓ Nota completa baixada! Role para ver os itens e lançar.");
+      else if (r?.buscaErro)
         setMsg(
-          `✓ Manifestada! (${r.cStat} ${r.xMotivo}). Agora vá em "SEFAZ automático" e clique em "Buscar notas" para baixar a completa.`,
+          `✓ Manifestada. A completa chega na próxima busca (${r.buscaErro}). Tente de novo em alguns minutos.`,
         );
-      else setMsg(`SEFAZ: ${r?.cStat} ${r?.xMotivo ?? ""}`);
+      else
+        setMsg(
+          "✓ Manifestada! A SEFAZ leva alguns minutos para liberar a completa — clique de novo em instantes.",
+        );
       router.refresh();
     });
   }
@@ -42,7 +47,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
         disabled={processando}
         className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
       >
-        {processando ? "Manifestando na SEFAZ..." : "Manifestar e baixar completa"}
+        {processando ? "Manifestando e baixando..." : "Manifestar e baixar completa"}
       </button>
       {msg && (
         <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">{msg}</p>

@@ -75,6 +75,33 @@ export async function manifestarNota(notaId: string) {
   };
 }
 
+// Manifesta E já busca a nota completa, num passo só (sem sair da tela).
+export async function manifestarEBaixar(notaId: string) {
+  const man = await manifestarNota(notaId);
+  if (man.erro) return { ok: false, erro: man.erro };
+
+  // Puxa da SEFAZ o XML completo que o manifesto liberou.
+  const busca = await buscarNotasSefaz();
+
+  // A nota agora tem itens?
+  const { supabase } = await getConfig();
+  const { count } = await supabase
+    .from("nota_itens")
+    .select("id", { count: "exact", head: true })
+    .eq("nota_id", notaId);
+
+  revalidatePath(`/notas/${notaId}`);
+  revalidatePath("/notas");
+  return {
+    ok: true,
+    cStat: man.cStat,
+    xMotivo: man.xMotivo,
+    completa: (count ?? 0) > 0,
+    importadas: busca.importadas ?? 0,
+    buscaErro: busca.erro ?? "",
+  };
+}
+
 // Busca as notas na SEFAZ (NFeDistribuicaoDFe) e importa o que vier.
 export async function buscarNotasSefaz() {
   const { supabase, cfg } = await getConfig();
