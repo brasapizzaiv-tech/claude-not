@@ -10,6 +10,7 @@ import {
   definirCategoriaNota,
   criarEVincularFornecedor,
 } from "../actions";
+import { Combobox } from "@/components/combobox";
 
 const campo =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -189,18 +190,15 @@ export function LancamentoNota({
                 abaixo, ou cadastre um novo.
               </p>
             )}
-            <select
-              value={fornSel}
-              onChange={(e) => setFornSel(e.target.value)}
-              className={`${campo} min-w-56 flex-1`}
-            >
-              <option value="">Selecione o fornecedor...</option>
-              {fornecedores.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.nome}
-                </option>
-              ))}
-            </select>
+            <div className="min-w-56 flex-1">
+              <Combobox
+                options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))}
+                value={fornSel}
+                onChange={setFornSel}
+                placeholder="Buscar fornecedor..."
+                className={`${campo} w-full`}
+              />
+            </div>
             <button
               onClick={vincularForn}
               disabled={proc}
@@ -227,19 +225,17 @@ export function LancamentoNota({
           <label className="mb-1 block text-xs text-zinc-500">
             Categoria da despesa (DRE)
           </label>
-          <select
+          <Combobox
+            options={categorias.map((c) => ({
+              value: c.id,
+              label: `${c.grupo} — ${c.nome}`,
+            }))}
             value={catSel}
-            onChange={(e) => mudarCategoria(e.target.value)}
+            onChange={mudarCategoria}
+            placeholder="Buscar categoria..."
             disabled={lancada}
             className={`${campo} w-full`}
-          >
-            <option value="">Selecione a categoria...</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.grupo} — {c.nome}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       )}
 
