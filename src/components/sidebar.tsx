@@ -20,23 +20,32 @@ export function Sidebar({
   // A visão do garçom é tela cheia (celular): sem menu lateral.
   if (pathname === "/garcom" || pathname.startsWith("/garcom/")) return null;
 
-  const links: { href: string; label: string; icon: string }[] = [
-    { href: "/dashboard", label: "Início", icon: "🏠" },
-    ...MODULOS.filter((m) => admin || permissoes.includes(m.key)).map((m) => ({
-      href: m.rotas[0],
-      label: m.label,
-      icon: m.icon,
-    })),
+  // Sub-itens do Financeiro (aparecem quando o menu abre no hover).
+  const financeiroSub: { href: string; label: string; icon: string }[] = [
+    { href: "/financeiro", label: "Movimentações", icon: "💵" },
+    { href: "/financeiro/contas", label: "Contas a pagar", icon: "📄" },
+    { href: "/financeiro/orcamento", label: "Orçamento", icon: "🎯" },
+    { href: "/financeiro/banco", label: "Conciliação (banco)", icon: "🏦" },
+    { href: "/financeiro/vendas", label: "Vendas", icon: "🛒" },
+    { href: "/financeiro/dre", label: "DRE", icon: "📈" },
   ];
-  if (admin) {
-    links.push({ href: "/usuarios", label: "Usuários", icon: "🔑" });
-  }
+
+  const modulos = MODULOS.filter((m) => admin || permissoes.includes(m.key));
 
   const linkCls =
     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition";
   const iconeCls = "w-6 shrink-0 text-center text-lg";
   const textoCls =
     "whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100";
+
+  const ativoDe = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
+  const clsPara = (ativo: boolean) =>
+    `${linkCls} ${
+      ativo
+        ? "bg-white font-semibold text-orange-600"
+        : "text-orange-50 hover:bg-white/15"
+    }`;
 
   return (
     // Espaço reservado (barra recolhida). A barra real fica por cima no hover.
@@ -55,24 +64,77 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-2">
-          {links.map((l) => {
-            const ativo = pathname === l.href || pathname.startsWith(l.href + "/");
+          <Link
+            href="/dashboard"
+            title="Início"
+            className={clsPara(ativoDe("/dashboard"))}
+          >
+            <span className={iconeCls}>🏠</span>
+            <span className={`flex-1 ${textoCls}`}>Início</span>
+          </Link>
+
+          {modulos.map((m) => {
+            // Financeiro vira um grupo com submenu (aparece ao abrir o menu).
+            if (m.key === "financeiro") {
+              return (
+                <div key="financeiro">
+                  <Link
+                    href="/financeiro"
+                    title="Financeiro"
+                    className={clsPara(pathname.startsWith("/financeiro"))}
+                  >
+                    <span className={iconeCls}>{m.icon}</span>
+                    <span className={`flex-1 ${textoCls}`}>Financeiro</span>
+                  </Link>
+                  <div className="hidden space-y-0.5 py-0.5 group-hover:block">
+                    {financeiroSub.map((s) => {
+                      const ativo =
+                        s.href === "/financeiro"
+                          ? pathname === "/financeiro"
+                          : ativoDe(s.href);
+                      return (
+                        <Link
+                          key={s.href}
+                          href={s.href}
+                          className={`ml-4 flex items-center gap-2 rounded-lg py-1.5 pl-3 pr-2 text-xs transition ${
+                            ativo
+                              ? "bg-white font-semibold text-orange-600"
+                              : "text-orange-50 hover:bg-white/15"
+                          }`}
+                        >
+                          <span className="w-4 text-center text-sm">{s.icon}</span>
+                          <span className="whitespace-nowrap">{s.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
             return (
               <Link
-                key={l.href}
-                href={l.href}
-                title={l.label}
-                className={`${linkCls} ${
-                  ativo
-                    ? "bg-white font-semibold text-orange-600"
-                    : "text-orange-50 hover:bg-white/15"
-                }`}
+                key={m.key}
+                href={m.rotas[0]}
+                title={m.label}
+                className={clsPara(ativoDe(m.rotas[0]))}
               >
-                <span className={iconeCls}>{l.icon}</span>
-                <span className={`flex-1 ${textoCls}`}>{l.label}</span>
+                <span className={iconeCls}>{m.icon}</span>
+                <span className={`flex-1 ${textoCls}`}>{m.label}</span>
               </Link>
             );
           })}
+
+          {admin && (
+            <Link
+              href="/usuarios"
+              title="Usuários"
+              className={clsPara(ativoDe("/usuarios"))}
+            >
+              <span className={iconeCls}>🔑</span>
+              <span className={`flex-1 ${textoCls}`}>Usuários</span>
+            </Link>
+          )}
+
           <a
             href="/marmitas"
             title="Marmitas"
