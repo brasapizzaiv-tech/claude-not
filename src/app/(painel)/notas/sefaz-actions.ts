@@ -153,7 +153,7 @@ export async function manifestarEBaixar(notaId: string) {
       : extraErro || r.erro || `${r.cStat} ${r.xMotivo}`.trim(),
     diag: completa
       ? ""
-      : `manifesto: ${man.cStat} ${man.xMotivo ?? ""} | chave: ${r.cStat} ${r.xMotivo ?? ""} | resp: ${rawSnippet}`,
+      : `manifesto: ${man.cStat} ${man.xMotivo ?? ""} | chave: ${r.cStat} ${r.xMotivo ?? ""}\nENVIADO: ${(r.req ?? "").slice(0, 900)}`,
   };
 }
 
