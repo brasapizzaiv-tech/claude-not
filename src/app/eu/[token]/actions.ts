@@ -29,6 +29,24 @@ export async function definirPin(token: string, pinRaw: string) {
   return { ok: true };
 }
 
+// Conferência leve de um pedido pelo colaborador (só confirma itens/quantidade).
+export async function conferirPedidoColab(
+  token: string,
+  pedidoId: string,
+  itens: { id: string; qtd: string }[],
+) {
+  const jar = await cookies();
+  const pin = jar.get(`eu_${token}`)?.value ?? "";
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("colaborador_conferir_pedido", {
+    p_token: token,
+    p_pin: pin,
+    p_pedido_id: pedidoId,
+    p_itens: itens,
+  });
+  return { ok: !!data?.ok };
+}
+
 export async function entrarPin(token: string, pinRaw: string) {
   const pin = soDigitos(pinRaw);
   if (pin.length !== 4) return { ok: false, erro: "Digite os 4 números." };

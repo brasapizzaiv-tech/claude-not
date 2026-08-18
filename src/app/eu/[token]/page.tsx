@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { CriarPin, EntrarPin } from "./pin";
+import { PedidosColab, type PedidoColab } from "./pedidos";
 
 export const metadata: Metadata = {
   title: "Brasa · Contagem",
@@ -71,12 +72,14 @@ export default async function AppColaboradorPage({
   const jar = await cookies();
   const pinCookie = jar.get(`eu_${token}`)?.value ?? "";
   let home: { nome: string; contagens: Contagem[] } | null = null;
+  let pedidos: PedidoColab[] = [];
   if (pinCookie) {
-    const { data } = await supabase.rpc("colaborador_home", {
-      p_token: token,
-      p_pin: pinCookie,
-    });
+    const [{ data }, { data: peds }] = await Promise.all([
+      supabase.rpc("colaborador_home", { p_token: token, p_pin: pinCookie }),
+      supabase.rpc("colaborador_pedidos", { p_token: token, p_pin: pinCookie }),
+    ]);
     if (data && !data.erro) home = data as { nome: string; contagens: Contagem[] };
+    if (peds && !peds.erro) pedidos = (peds.pedidos as PedidoColab[]) ?? [];
   }
 
   if (!home) {
@@ -120,6 +123,8 @@ export default async function AppColaboradorPage({
           ))}
         </div>
       )}
+
+      <PedidosColab token={token} pedidos={pedidos} />
     </Moldura>
   );
 }
