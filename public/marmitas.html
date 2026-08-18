@@ -112,6 +112,8 @@
       <div class="resultLista" id="colResultados" style="margin-top:10px"></div>
     </div>
 
+    <div class="card" id="colCardapioLista" style="display:none"></div>
+
     <div id="colStep2" class="hidden">
       <div class="card">
         <h2>2. Confira e escolha a filial</h2>
@@ -132,7 +134,6 @@
         </div>
         <button class="block" id="colConfirmarBtn" onclick="colConfirmar()">Confirmar pedido</button>
       </div>
-      <div class="card" id="colCardapioLista" style="display:none"></div>
     </div>
 
     <div id="colSucesso" class="hidden">
@@ -391,6 +392,7 @@ async function iniciarColaborador(){
   $('#colAviso').classList.remove('hidden');
   $('#colSucesso').classList.add('hidden'); $('#colStep2').classList.add('hidden'); $('#colStep1').classList.remove('hidden');
   COL_SEL=null; FILIAL_COL=''; $('#colBusca').value=''; $('#colResultados').innerHTML='';
+  renderCardapioLista(PUBLICO.cardapioHoje||{pratos:[],proteinas:[],salada:''});
   if(!PUBLICO.aberto){ $('#colFechado').classList.remove('hidden'); $('#colStep1').classList.add('hidden'); $('#colFechadoMsg').innerHTML=`Os pedidos abrem às <b>${PUBLICO.horaAbertura}</b> (véspera) e vão até <b>${PUBLICO.horaLimite}</b> do dia da entrega.<br>Próximo pedido: <b>${fmtDiaBR(PUBLICO.data)}</b>.`; }
   else $('#colFechado').classList.add('hidden');
 }
