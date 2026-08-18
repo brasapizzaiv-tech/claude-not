@@ -11,6 +11,18 @@ type ItemConf = {
   obs: string | null;
 };
 
+// Apaga um pedido (e seus itens + o lançamento no financeiro, se houver).
+export async function excluirPedido(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  if (!id) return;
+  await supabase.from("lancamentos").delete().eq("pedido_id", id);
+  await supabase.from("pedido_itens").delete().eq("pedido_id", id);
+  await supabase.from("pedidos").delete().eq("id", id);
+  revalidatePath("/conferencia");
+  revalidatePath("/financeiro");
+}
+
 // Cria um pedido manual (compra direta, sem cotação) já pronto para conferir.
 export async function criarPedidoManual(
   fornecedorId: string,

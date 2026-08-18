@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { ExcluirPedido } from "./excluir";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -69,6 +70,7 @@ export default async function ConferenciaPage() {
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -111,6 +113,9 @@ export default async function ConferenciaPage() {
                       >
                         {p.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <ExcluirPedido id={p.id} nome={p.fornecedores?.nome ?? "fornecedor"} />
                     </td>
                   </tr>
                 );
