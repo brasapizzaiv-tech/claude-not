@@ -68,8 +68,11 @@ function envelopeChave(o: Opts, chNFe: string) {
   return `<?xml version="1.0" encoding="UTF-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDistDFeInteresse xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe"><nfeDadosMsg><distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.35"><tpAmb>${o.ambiente}</tpAmb><CNPJ>${o.cnpj}</CNPJ><consChNFe><chNFe>${ch}</chNFe></consChNFe></distDFeInt></nfeDadosMsg></nfeDistDFeInteresse></soap12:Body></soap12:Envelope>`;
 }
 
-async function postDist(o: Opts, body: string): Promise<RespostaSefaz> {
+async function postDist(o: Opts, body: string, action?: string): Promise<RespostaSefaz> {
   const url = new URL(ENDPOINTS[o.ambiente] ?? ENDPOINTS[1]);
+  const contentType = action
+    ? `application/soap+xml; charset=utf-8; action="${action}"`
+    : "application/soap+xml; charset=utf-8";
 
   // Extrai chave + certificado do .pfx (trata senha errada / arquivo inválido).
   let pem: { key: string; cert: string };
@@ -100,7 +103,7 @@ async function postDist(o: Opts, body: string): Promise<RespostaSefaz> {
           cert: pem.cert,
           minVersion: "TLSv1.2",
           headers: {
-            "Content-Type": "application/soap+xml; charset=utf-8",
+            "Content-Type": contentType,
             "Content-Length": Buffer.byteLength(body),
           },
         },
@@ -138,7 +141,11 @@ export async function distribuicaoPorChave(
   o: Opts,
   chNFe: string,
 ): Promise<RespostaSefaz> {
-  return postDist(o, envelopeChave(o, chNFe));
+  return postDist(
+    o,
+    envelopeChave(o, chNFe),
+    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse",
+  );
 }
 
 function parseResposta(xml: string, ultNSUAtual: string): RespostaSefaz {
