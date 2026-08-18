@@ -6,6 +6,7 @@ import type { NotaFiscal, NotaItem } from "@/lib/types";
 import { BotaoConciliar } from "./conciliar";
 import { ManifestarNota } from "./manifestar";
 import { ItemProduto } from "./item-produto";
+import { LancamentoNota } from "./lancamento";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -42,6 +43,20 @@ export default async function NotaDetalhePage({
           .order("nome")
       : { data: [] };
   const produtos = (prodData as { id: string; nome: string }[]) ?? [];
+
+  // Fornecedores para vincular/corrigir na revisão do lançamento.
+  const { data: fornsData } = await supabase
+    .from("fornecedores")
+    .select("id, nome")
+    .eq("ativo", true)
+    .order("nome");
+  const fornecedores = (fornsData as { id: string; nome: string }[]) ?? [];
+  const fornecedorNome =
+    fornecedores.find((f) => f.id === nota.fornecedor_id)?.nome ?? null;
+  const competenciaInicial = (nota.data_emissao ?? new Date().toISOString().slice(0, 10)).slice(
+    0,
+    7,
+  );
 
   // Pedidos candidatos (mesmo fornecedor).
   type Ped = {
@@ -88,6 +103,18 @@ export default async function NotaDetalhePage({
           com esse CNPJ para o sistema reconhecer as próximas notas.
         </p>
       )}
+
+      {/* Revisão + lançamento (fornecedor, vencimento, competência) */}
+      <LancamentoNota
+        notaId={nota.id}
+        situacao={(nota as { situacao?: string }).situacao ?? "pendente"}
+        fornecedorId={nota.fornecedor_id ?? null}
+        fornecedorNome={fornecedorNome}
+        emitCnpj={nota.emit_cnpj ?? null}
+        vencimento={nota.vencimento ?? null}
+        competenciaInicial={competenciaInicial}
+        fornecedores={fornecedores}
+      />
 
       {/* Nota em resumo (sem itens) → oferecer manifestação */}
       {itens.length === 0 && <ManifestarNota notaId={nota.id} />}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { lancarNota, estornarNota, cancelarNota } from "./actions";
+import { estornarNota, cancelarNota } from "./actions";
 
 export function NotaAcoes({
   notaId,
@@ -14,11 +15,6 @@ export function NotaAcoes({
   const router = useRouter();
   const [processando, start] = useTransition();
 
-  const lancar = () =>
-    start(async () => {
-      await lancarNota(notaId);
-      router.refresh();
-    });
   const estornar = () =>
     start(async () => {
       await estornarNota(notaId);
@@ -36,13 +32,12 @@ export function NotaAcoes({
     <div className="flex items-center justify-end gap-2">
       {situacao === "pendente" && (
         <>
-          <button
-            onClick={lancar}
-            disabled={processando}
-            className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
+          <Link
+            href={`/notas/${notaId}`}
+            className="whitespace-nowrap rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
           >
-            Lançar
-          </button>
+            Revisar e lançar →
+          </Link>
           <button
             onClick={cancelar}
             disabled={processando}

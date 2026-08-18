@@ -173,8 +173,27 @@ export async function importarResumo(
   return { ok: true };
 }
 
+// Vincula (ou corrige) o fornecedor da nota manualmente.
+export async function vincularFornecedorNota(
+  notaId: string,
+  fornecedorId: string | null,
+) {
+  const supabase = await createClient();
+  await supabase
+    .from("notas_fiscais")
+    .update({ fornecedor_id: fornecedorId || null })
+    .eq("id", notaId);
+  revalidatePath(`/notas/${notaId}`);
+  revalidatePath("/notas");
+  return { ok: true };
+}
+
 // Lança a nota no financeiro (vira conta a pagar) — comando do usuário.
-export async function lancarNota(notaId: string) {
+// opts: vencimento do boleto e competência (mês AAAA-MM) escolhidos na revisão.
+export async function lancarNota(
+  notaId: string,
+  opts?: { vencimento?: string | null; competencia?: string | null },
+) {
   const supabase = await createClient();
   const { data: nota } = await supabase
     .from("notas_fiscais")
@@ -182,6 +201,14 @@ export async function lancarNota(notaId: string) {
     .eq("id", notaId)
     .maybeSingle();
   if (!nota || nota.situacao === "lancada") return { ok: false };
+
+  // Persiste o vencimento informado na revisão.
+  if (opts?.vencimento !== undefined) {
+    await supabase
+      .from("notas_fiscais")
+      .update({ vencimento: opts.vencimento || null })
+      .eq("id", notaId);
+  }
 
   const { data: fallbackCat } = await supabase
     .from("dre_categorias")
@@ -191,10 +218,15 @@ export async function lancarNota(notaId: string) {
     .maybeSingle();
   const fallbackId = fallbackCat?.id ?? null;
 
-  const dataLanc =
-    (nota.data_emissao as string) ?? new Date().toISOString().slice(0, 10);
+  // Competência = mês escolhido (AAAA-MM → dia 01); senão, data de emissão.
+  const dataLanc = opts?.competencia
+    ? `${opts.competencia}-01`
+    : ((nota.data_emissao as string) ?? new Date().toISOString().slice(0, 10));
   const pago = dataLanc < inicioDoMes(); // histórico entra pago
-  const vencimento = (nota.vencimento as string) ?? null;
+  const vencimento =
+    opts?.vencimento !== undefined
+      ? opts.vencimento || null
+      : ((nota.vencimento as string) ?? null);
   const descricao = `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`;
 
   // Itens da nota (com o produto vinculado → conta do DRE).
