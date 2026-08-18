@@ -5,13 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pedidos de Marmita — Kern</title>
 <style>
-  :root{--bg:#0f1720;--card:#17212b;--card2:#1e2b38;--line:#2a3947;--txt:#e8eef4;--muted:#93a4b3;--accent:#ff7a2f;--danger:#e5534b;--ok:#2f9e6b}
+  :root{--bg:#f3f4f6;--card:#ffffff;--card2:#f7f8fa;--line:#e2e5ea;--txt:#1a2330;--muted:#6b7280;--accent:#e30613;--accent2:#f07e00;--danger:#d92d20;--ok:#12905a}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%}
-  header{position:sticky;top:0;z-index:5;background:#0f1720ee;backdrop-filter:blur(6px);padding:14px 16px calc(14px + env(safe-area-inset-top));border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  header{position:sticky;top:0;z-index:5;background:#ffffffee;backdrop-filter:blur(6px);padding:14px 16px calc(14px + env(safe-area-inset-top));border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
   header .logo{font-size:24px}
   header h1{font-size:17px;margin:0;font-weight:700}
   header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .klogo{display:flex;align-items:center;gap:9px}
+  .klogo svg{display:block;width:40px;height:40px;border-radius:9px;box-shadow:0 3px 8px rgba(227,6,19,.28)}
+  .klogo .wm{font:900 20px/1 Arial,sans-serif;color:var(--accent);letter-spacing:-.01em}
+  .klogo .wm small{display:block;font-size:8px;letter-spacing:.18em;color:var(--muted);font-weight:800;margin-top:3px}
   main{max-width:660px;margin:0 auto;padding:16px 16px 96px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
   .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 12px;font-weight:700}
@@ -22,7 +26,7 @@
   input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);border-color:transparent}
   textarea{min-height:80px;resize:vertical}
   .row{display:flex;gap:10px}.row>*{flex:1}
-  button{cursor:pointer;border:none;border-radius:10px;padding:13px 16px;font-weight:700;background:var(--accent);color:#111;transition:filter .15s}
+  button{cursor:pointer;border:none;border-radius:10px;padding:13px 16px;font-weight:700;background:var(--accent);color:#fff;transition:filter .15s}
   button:active{filter:brightness(.9)}
   button:disabled{opacity:.4;cursor:default}
   button.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
@@ -40,8 +44,8 @@
   .totbar{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:2px solid var(--line);font-weight:700}
   .tabs{display:flex;gap:8px;margin-bottom:16px;overflow:auto;-webkit-overflow-scrolling:touch}
   .tabs button{background:var(--card);border:1px solid var(--line);color:var(--muted);padding:9px 14px;font-size:14px;white-space:nowrap}
-  .tabs button.active{background:var(--accent);color:#111;border-color:transparent}
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#111;border:1px solid var(--line);color:var(--txt);padding:12px 18px;border-radius:10px;box-shadow:0 8px 30px #0008;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+  .tabs button.active{background:var(--accent);color:#fff;border-color:transparent}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#1f2937;border:1px solid #1f2937;color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 8px 30px #0004;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
   .toast.show{opacity:1}.toast.err{border-color:var(--danger)}
   .hidden{display:none!important}
   .miudo{font-size:13px;color:var(--muted)}
@@ -49,7 +53,7 @@
   .chip{position:relative;display:inline-flex}
   .chip input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
   .chip span{display:inline-block;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;user-select:none}
-  .chip input:checked + span{background:var(--accent);color:#111;border-color:transparent;font-weight:700}
+  .chip input:checked + span{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
   .chip input:disabled + span{opacity:.35}
   .prod{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
   .prod .fh{display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px}
@@ -60,7 +64,7 @@
   .cardapioLinha{margin-bottom:8px}
   .segbtns{display:flex;flex-wrap:wrap;gap:6px}
   .segbtns button{padding:8px 12px;font-size:14px;background:var(--card2);color:var(--txt);border:1px solid var(--line);font-weight:600}
-  .segbtns button.on{background:var(--accent);color:#111;border-color:transparent}
+  .segbtns button.on{background:var(--accent);color:#fff;border-color:transparent}
   .resultLista button{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--txt);margin-bottom:6px;font-weight:600}
   .modal{position:fixed;inset:0;z-index:70;background:#0009;display:flex;align-items:flex-end;justify-content:center;padding:0}
   .modal .box{background:var(--card);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:18px;width:100%;max-width:660px;max-height:90vh;overflow:auto}
@@ -95,7 +99,7 @@
 <!-- ============ COLABORADOR (sem senha) ============ -->
 <div id="colaboradorView" class="hidden">
   <header>
-    <div class="logo">🍱</div>
+    <div class="klogo"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kern"><rect width="100" height="100" rx="20" fill="#e30613"/><g fill="#fff"><rect x="20" y="17" width="17" height="33" rx="8.5"/><circle cx="28.5" cy="74" r="11"/><path d="M37 25c9-9 20-11 27-6 5 4 2 12-7 13-8 1-14 6-17 13-3-6-6-14-3-20z"/><path d="M30 30a46 46 0 0 1 46 46h-17a29 29 0 0 0-29-29z"/></g></svg><div class="wm">Kern<small>SUPERMERCADOS</small></div></div>
     <div style="flex:1"><h1 id="colTitulo">Faça seu pedido</h1><div class="sub" id="colSub">Convênio Kern</div></div>
   </header>
   <main>
@@ -128,6 +132,7 @@
         </div>
         <button class="block" id="colConfirmarBtn" onclick="colConfirmar()">Confirmar pedido</button>
       </div>
+      <div class="card" id="colCardapioLista" style="display:none"></div>
     </div>
 
     <div id="colSucesso" class="hidden">
@@ -158,7 +163,7 @@
 <!-- ============ ADMIN ============ -->
 <div id="adminView" class="hidden">
   <header>
-    <div class="logo">🍱</div>
+    <div class="klogo"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kern"><rect width="100" height="100" rx="20" fill="#e30613"/><g fill="#fff"><rect x="20" y="17" width="17" height="33" rx="8.5"/><circle cx="28.5" cy="74" r="11"/><path d="M37 25c9-9 20-11 27-6 5 4 2 12-7 13-8 1-14 6-17 13-3-6-6-14-3-20z"/><path d="M30 30a46 46 0 0 1 46 46h-17a29 29 0 0 0-29-29z"/></g></svg><div class="wm">Kern<small>SUPERMERCADOS</small></div></div>
     <div style="flex:1"><h1>Administração</h1><div class="sub" id="admSub">Convênio Kern</div></div>
     <button class="ghost mini" onclick="sair()">Sair</button>
   </header>
@@ -272,8 +277,10 @@
       <div class="card">
         <h2>Dados do convênio</h2>
         <label>Nome do convênio</label><input type="text" id="cNome">
-        <div class="row"><div><label>Hora limite do pedido</label><input type="time" id="cLimite"></div><div><label>Hora de entrega</label><input type="time" id="cEntrega"></div></div>
-        <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="cBloquear" style="width:auto"> Bloquear novos pedidos após a hora limite</label>
+        <div class="row"><div><label>Abre pedido às (véspera)</label><input type="time" id="cAbertura"></div><div><label>Hora limite (dia da entrega)</label><input type="time" id="cLimite"></div></div>
+        <div class="row"><div><label>Hora de entrega</label><input type="time" id="cEntrega"></div><div></div></div>
+        <p class="miudo" style="margin-top:6px">Ex.: abre <b>14:00</b> do dia anterior e fecha <b>08:30</b> do dia da entrega.</p>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="cBloquear" style="width:auto"> Bloquear novos pedidos fora da janela (abertura → limite)</label>
         <button class="sec block" onclick="salvarConfig()">Salvar</button>
       </div>
       <div class="card">
@@ -369,15 +376,22 @@ function mostrar(qual){
 window.addEventListener('hashchange',rotear);
 
 /* ===================== COLABORADOR ===================== */
+function fmtDiaBR(iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-').map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d));
+  const dias=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+  return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')} · ${dias[dt.getUTCDay()]}`;
+}
 async function iniciarColaborador(){
   try{ PUBLICO=await (await fetch('/api/marmitas/publico')).json(); }
   catch(e){ toast('Falha ao carregar',true); return; }
   $('#colSub').textContent='Convênio '+(PUBLICO.nomeConvenio||'Kern');
-  $('#colAviso').textContent=`⏰ Lembrete: os pedidos só podem ser feitos até ${PUBLICO.horaLimite} da manhã.`;
+  $('#colAviso').innerHTML=`⏰ Pedido para <b>${fmtDiaBR(PUBLICO.data)}</b> · até ${PUBLICO.horaLimite} do dia da entrega.`;
   $('#colAviso').classList.remove('hidden');
   $('#colSucesso').classList.add('hidden'); $('#colStep2').classList.add('hidden'); $('#colStep1').classList.remove('hidden');
   COL_SEL=null; FILIAL_COL=''; $('#colBusca').value=''; $('#colResultados').innerHTML='';
-  if(!PUBLICO.aberto){ $('#colFechado').classList.remove('hidden'); $('#colStep1').classList.add('hidden'); $('#colFechadoMsg').textContent=`Os pedidos de hoje já encerraram (após ${PUBLICO.horaLimite}).`; }
+  if(!PUBLICO.aberto){ $('#colFechado').classList.remove('hidden'); $('#colStep1').classList.add('hidden'); $('#colFechadoMsg').innerHTML=`Os pedidos abrem às <b>${PUBLICO.horaAbertura}</b> (véspera) e vão até <b>${PUBLICO.horaLimite}</b> do dia da entrega.<br>Próximo pedido: <b>${fmtDiaBR(PUBLICO.data)}</b>.`; }
   else $('#colFechado').classList.add('hidden');
 }
 function colBuscar(){
@@ -397,6 +411,18 @@ function colSelecionar(id){
   $('#colMontar').classList.toggle('hidden',vazio);
   $('#colConfirmarBtn').disabled=vazio;
   if(!vazio) renderMontagem('col',card,null);
+  renderCardapioLista(card);
+}
+function renderCardapioLista(card){
+  const el=$('#colCardapioLista'); if(!el) return;
+  const pr=arr(card.pratos), pt=arr(card.proteinas), sl=card.salada;
+  if(!pr.length && !pt.length){ el.style.display='none'; return; }
+  const li=a=>a.length?a.map(x=>`<li>${escapeHtml(x)}</li>`).join(''):'<li style="opacity:.6">—</li>';
+  el.style.display='';
+  el.innerHTML=`<h2>🍽️ Cardápio de ${fmtDiaBR(PUBLICO.data)}</h2>`+
+    `<h3>Pratos</h3><ul style="margin:4px 0 10px 18px;line-height:1.6">${li(pr)}</ul>`+
+    `<h3>Proteínas</h3><ul style="margin:4px 0 10px 18px;line-height:1.6">${li(pt)}</ul>`+
+    (sl?`<h3>Salada</h3><div style="opacity:.85">${escapeHtml(sl)}</div>`:'');
 }
 function colPickFilial(f){ FILIAL_COL=f; segFiliais('colFiliais','colPickFilial',f); }
 function colReset(recarrega){ if(recarrega) iniciarColaborador(); else { COL_SEL=null; $('#colStep2').classList.add('hidden'); $('#colStep1').classList.remove('hidden'); } }
@@ -639,10 +665,26 @@ async function carregarRelatorio(){
 }
 function baixarCSV(){
   if(!ULTIMO_REL)return;
-  let l=[['Filial','Funcionario','Matricula','Marmitas']];
-  arr(ULTIMO_REL.porFilial).forEach(f=>arr(f.porPessoa).forEach(p=>l.push([f.filial,p.cliente,p.matricula,p.quantidade])));
-  l.push([]);l.push(['TOTAL','','',ULTIMO_REL.quantidadeTotal||0]);
-  const csv='\ufeff'+l.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  const filiais=arr(ULTIMO_REL.porFilial).map(f=>f.filial);
+  // Uma linha por funcion\u00e1rio, com a quantidade em cada filial (colunas).
+  const pessoas=new Map();
+  arr(ULTIMO_REL.porFilial).forEach(f=>arr(f.porPessoa).forEach(p=>{
+    const k=p.cliente+'||'+(p.matricula||'');
+    if(!pessoas.has(k)) pessoas.set(k,{cliente:p.cliente,matricula:p.matricula||'',porFilial:{},total:0});
+    const o=pessoas.get(k);
+    o.porFilial[f.filial]=(o.porFilial[f.filial]||0)+(p.quantidade||0);
+    o.total+=(p.quantidade||0);
+  }));
+  const linhas=[['Funcionario','Matricula',...filiais,'Total']];
+  const totFilial={}; let totGeral=0;
+  [...pessoas.values()].sort((a,b)=>a.cliente.localeCompare(b.cliente)).forEach(o=>{
+    const row=[o.cliente,o.matricula];
+    filiais.forEach(fl=>{ const q=o.porFilial[fl]||0; row.push(q||''); totFilial[fl]=(totFilial[fl]||0)+q; });
+    row.push(o.total); totGeral+=o.total; linhas.push(row);
+  });
+  linhas.push([]);
+  linhas.push(['TOTAL','',...filiais.map(fl=>totFilial[fl]||0),totGeral]);
+  const csv='\ufeff'+linhas.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`marmitas-${ULTIMO_REL.de}_a_${ULTIMO_REL.ate}.csv`;a.click();
 }
 
@@ -669,13 +711,13 @@ async function removerUsuario(id){ if(!confirm('Remover usuário?'))return; try{
 /* ---- AJUSTES ---- */
 async function carregarConfigForm(){
   CONFIG=await (await fetch('/api/marmitas/config')).json();
-  $('#cNome').value=CONFIG.nomeConvenio||'';$('#cLimite').value=CONFIG.horaLimite||'';$('#cEntrega').value=CONFIG.horaEntrega||'';
+  $('#cNome').value=CONFIG.nomeConvenio||'';$('#cAbertura').value=CONFIG.horaAbertura||'14:00';$('#cLimite').value=CONFIG.horaLimite||'';$('#cEntrega').value=CONFIG.horaEntrega||'';
   $('#cBloquear').checked = CONFIG.bloquearAposLimite!==false;
   const el=$('#edFiliais');el.innerHTML='';arr(CONFIG.filiais).forEach(f=>addFilialInput(f));
 }
 function addFilialInput(nome){ const el=$('#edFiliais');const d=document.createElement('div');d.className='cardapioLinha';d.style.display='flex';d.style.gap='8px';d.innerHTML=`<input type="text" placeholder="Nome da filial" value="${escapeHtml(typeof nome==='string'?nome:'')}"><button class="danger mini" onclick="this.parentElement.remove()">✕</button>`;el.appendChild(d); }
 async function salvarConfig(){
-  try{ await api('/api/marmitas/config',{method:'POST',body:JSON.stringify({nomeConvenio:$('#cNome').value.trim(),horaLimite:$('#cLimite').value,horaEntrega:$('#cEntrega').value,bloquearAposLimite:$('#cBloquear').checked})}); CONFIG.nomeConvenio=$('#cNome').value.trim(); $('#admSub').textContent='Convênio '+(CONFIG.nomeConvenio||'Kern')+' · '+(USER.nome||''); toast('Salvo ✓'); }catch(e){ toast(e.message,true); }
+  try{ await api('/api/marmitas/config',{method:'POST',body:JSON.stringify({nomeConvenio:$('#cNome').value.trim(),horaAbertura:$('#cAbertura').value,horaLimite:$('#cLimite').value,horaEntrega:$('#cEntrega').value,bloquearAposLimite:$('#cBloquear').checked})}); CONFIG.nomeConvenio=$('#cNome').value.trim(); $('#admSub').textContent='Convênio '+(CONFIG.nomeConvenio||'Kern')+' · '+(USER.nome||''); toast('Salvo ✓'); }catch(e){ toast(e.message,true); }
 }
 async function salvarFiliais(){
   const filiais=[...document.querySelectorAll('#edFiliais input')].map(i=>i.value.trim()).filter(Boolean); if(!filiais.length)return toast('Pelo menos 1 filial',true);

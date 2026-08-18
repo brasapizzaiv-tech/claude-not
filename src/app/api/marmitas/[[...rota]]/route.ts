@@ -46,7 +46,7 @@ function semanasVazias() {
 }
 
 type Cfg = {
-  nomeConvenio: string; horaLimite: string; horaEntrega: string; bloquearAposLimite: boolean;
+  nomeConvenio: string; horaLimite: string; horaAbertura: string; horaEntrega: string; bloquearAposLimite: boolean;
   filiais: string[]; usuarios: { id: string; nome: string; senha: string; permissoes: string[] }[];
   colaboradores: { id: string; nome: string; matricula?: string }[];
   cardapios: { semanas: { id: string; nome: string; dias: Record<string, { pratos: string[]; proteinas: string[]; salada: string }> }[]; ativo: string | null };
@@ -60,7 +60,8 @@ async function getCfg(db: Db): Promise<Cfg> {
   if (!Array.isArray(cardapios.semanas) || cardapios.semanas.length !== 4) cardapios.semanas = semanasVazias();
   return {
     nomeConvenio: m.nomeConvenio ?? "Kern",
-    horaLimite: m.horaLimite ?? "10:00",
+    horaLimite: m.horaLimite ?? "08:30",
+    horaAbertura: m.horaAbertura ?? "14:00",
     horaEntrega: m.horaEntrega ?? "12:00",
     bloquearAposLimite: (m.bloquearAposLimite ?? "1") === "1",
     filiais: parseLista(m.filiais).length ? parseLista(m.filiais) : ["Filial 1", "Filial 2", "Filial 3"],
@@ -73,12 +74,41 @@ async function setCfg(db: Db, chave: string, valor: unknown) {
   await db.from("mkt_config").upsert({ chave, valor: String(valor) });
 }
 function configPublica(cfg: Cfg) {
-  return { nomeConvenio: cfg.nomeConvenio, horaLimite: cfg.horaLimite, horaEntrega: cfg.horaEntrega, bloquearAposLimite: cfg.bloquearAposLimite, filiais: cfg.filiais, precisaLogin: cfg.usuarios.length > 0 };
+  return { nomeConvenio: cfg.nomeConvenio, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, bloquearAposLimite: cfg.bloquearAposLimite, filiais: cfg.filiais, precisaLogin: cfg.usuarios.length > 0 };
 }
 function resolveCardapioHoje(cfg: Cfg, data: string) {
   const sem = cfg.cardapios.semanas.find((s) => s.id === cfg.cardapios.ativo);
   const dia = sem && sem.dias ? sem.dias[diaSemana(data)] : null;
   return dia ? { pratos: dia.pratos || [], proteinas: dia.proteinas || [], salada: dia.salada || "" } : { pratos: [], proteinas: [], salada: "" };
+}
+function addDias(data: string, n: number) {
+  const [y, m, d] = data.split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d + n));
+  const p = (x: number) => String(x).padStart(2, "0");
+  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
+}
+function temCardapio(cfg: Cfg, data: string) {
+  const c = resolveCardapioHoje(cfg, data);
+  return c.pratos.length > 0 || c.proteinas.length > 0;
+}
+function proximoComCardapio(cfg: Cfg, data: string) {
+  for (let i = 0; i < 8; i++) {
+    const d = addDias(data, i);
+    if (temCardapio(cfg, d)) return d;
+  }
+  return data;
+}
+// Janela de pedido: para o dia de ENTREGA D, os pedidos abrem às `horaAbertura`
+// de D-1 e fecham às `horaLimite` de D. Descobre para qual dia dá pra pedir
+// agora e se está aberto.
+function janelaPedido(cfg: Cfg, ag: { data: string; hora: string }) {
+  // Ainda dá pra pedir para HOJE (abriu ontem, fecha hoje no limite)?
+  if (temCardapio(cfg, ag.data) && ag.hora <= cfg.horaLimite) {
+    return { alvo: ag.data, aberto: true };
+  }
+  // Senão, o alvo é o próximo dia com cardápio (abre às horaAbertura do dia anterior).
+  const alvo = proximoComCardapio(cfg, addDias(ag.data, 1));
+  return { alvo, aberto: ag.hora >= cfg.horaAbertura };
 }
 async function resolveUsuario(cfg: Cfg, req: NextRequest) {
   if (cfg.usuarios.length === 0) return { nome: "Administrador", permissoes: PERMISSOES.slice() };
@@ -138,18 +168,26 @@ async function handle(req: NextRequest, rota: string[]) {
 
   // ===== ÁREA PÚBLICA (colaborador, sem senha) =====
   if (path === "/api/publico" && method === "GET") {
-    const data = agoraBR().data;
-    const { data: ped } = await db.from("mkt_pedidos").select("colaborador_id").eq("data", data);
+    const ag = agoraBR();
+    const { alvo, aberto: dentroJanela } = janelaPedido(cfg, ag);
+    const { data: ped } = await db.from("mkt_pedidos").select("colaborador_id").eq("data", alvo);
     const jaPediram = new Set((ped || []).map((x) => x.colaborador_id).filter(Boolean));
     const disponiveis = cfg.colaboradores.filter((c) => !jaPediram.has(c.id));
-    const ag = agoraBR();
-    const aberto = !cfg.bloquearAposLimite || ag.hora <= cfg.horaLimite;
-    return json({ nomeConvenio: cfg.nomeConvenio, filiais: cfg.filiais, horaLimite: cfg.horaLimite, horaEntrega: cfg.horaEntrega, data, aberto, cardapioHoje: resolveCardapioHoje(cfg, data), colaboradores: disponiveis });
+    const aberto = !cfg.bloquearAposLimite || dentroJanela;
+    return json({ nomeConvenio: cfg.nomeConvenio, filiais: cfg.filiais, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, data: alvo, aberto, cardapioHoje: resolveCardapioHoje(cfg, alvo), colaboradores: disponiveis });
   }
   if (path === "/api/publico/pedido" && method === "POST") {
-    const data = agoraBR().data;
     const ag = agoraBR();
-    if (cfg.bloquearAposLimite && ag.hora > cfg.horaLimite) return erro("Os pedidos de hoje ja encerraram (apos " + cfg.horaLimite + ").", 403);
+    const { alvo: data, aberto: dentroJanela } = janelaPedido(cfg, ag);
+    if (cfg.bloquearAposLimite && !dentroJanela) {
+      const noIntervalo = ag.hora > cfg.horaLimite && ag.hora < cfg.horaAbertura;
+      return erro(
+        noIntervalo
+          ? `Os pedidos para o próximo dia abrem às ${cfg.horaAbertura}.`
+          : `Os pedidos já encerraram (até ${cfg.horaLimite} do dia da entrega).`,
+        403,
+      );
+    }
     const p = pedidoDoBody(body || {}, "colaborador");
     if (!p.colaboradorId) return erro("Selecione seu nome na lista");
     const colab = cfg.colaboradores.find((c) => c.id === p.colaboradorId);
@@ -178,6 +216,7 @@ async function handle(req: NextRequest, rota: string[]) {
     if (!pode(user, "ajustes")) return erro("Sem permissao (ajustes).", 403);
     if (body?.nomeConvenio != null) await setCfg(db, "nomeConvenio", body.nomeConvenio);
     if (body?.horaLimite != null) await setCfg(db, "horaLimite", body.horaLimite);
+    if (body?.horaAbertura != null) await setCfg(db, "horaAbertura", body.horaAbertura);
     if (body?.horaEntrega != null) await setCfg(db, "horaEntrega", body.horaEntrega);
     if (body?.bloquearAposLimite != null) await setCfg(db, "bloquearAposLimite", body.bloquearAposLimite ? "1" : "0");
     if (Array.isArray(body?.filiais)) { const fs = limpaLista(body.filiais, 0); if (fs.length) await setCfg(db, "filiais", JSON.stringify(fs)); }
