@@ -38,7 +38,7 @@ export default async function NotasPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-6xl p-4 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
@@ -66,8 +66,8 @@ export default async function NotasPage() {
           arquivos <b>.xml</b> das notas.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
               <tr>
                 <th className="px-4 py-3">Fornecedor</th>
@@ -106,7 +106,7 @@ export default async function NotasPage() {
                       {rotulo[n.situacao] ?? n.situacao}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="whitespace-nowrap px-4 py-3 text-right">
                     <NotaAcoes notaId={n.id} situacao={n.situacao} />
                   </td>
                 </tr>
