@@ -13,7 +13,9 @@ export default async function NotasPage() {
   const [{ data }, { data: cfg }] = await Promise.all([
     supabase
       .from("notas_fiscais")
-      .select("id, numero, emit_nome, valor, data_emissao, vencimento, situacao")
+      .select(
+        "id, numero, emit_nome, valor, data_emissao, vencimento, situacao, manifestado_em",
+      )
       .order("data_emissao", { ascending: false })
       .limit(300),
     supabase.from("config_sefaz").select("bloqueado_ate").limit(1).maybeSingle(),
@@ -28,8 +30,23 @@ export default async function NotasPage() {
     data_emissao: string | null;
     vencimento: string | null;
     situacao: string;
+    manifestado_em: string | null;
   };
   const notas = (data as Nota[]) ?? [];
+
+  // "Aguardando itens": nota manifestada cujo XML completo ainda não chegou.
+  // Só checamos as manifestadas (poucas) para saber quais já têm itens.
+  const manifestadas = notas.filter((n) => n.manifestado_em).map((n) => n.id);
+  const comItens = new Set<string>();
+  if (manifestadas.length > 0) {
+    const { data: itens } = await supabase
+      .from("nota_itens")
+      .select("nota_id")
+      .in("nota_id", manifestadas);
+    for (const i of (itens as { nota_id: string }[]) ?? [])
+      comItens.add(i.nota_id);
+  }
+  const aguardando = (n: Nota) => !!n.manifestado_em && !comItens.has(n.id);
 
   const badge: Record<string, string> = {
     pendente: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
@@ -107,13 +124,23 @@ export default async function NotasPage() {
                     {moeda(Number(n.valor))}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        badge[n.situacao] ?? badge.pendente
-                      }`}
-                    >
-                      {rotulo[n.situacao] ?? n.situacao}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          badge[n.situacao] ?? badge.pendente
+                        }`}
+                      >
+                        {rotulo[n.situacao] ?? n.situacao}
+                      </span>
+                      {aguardando(n) && (
+                        <span
+                          className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                          title="Manifestada — a busca automática vai trazer os itens em alguns minutos."
+                        >
+                          ⏳ aguardando itens
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <NotaAcoes notaId={n.id} situacao={n.situacao} />
