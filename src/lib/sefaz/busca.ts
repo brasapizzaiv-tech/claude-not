@@ -37,13 +37,15 @@ function horaBR(iso: string) {
 export async function rodarBuscaSefaz(
   supabase: SupabaseClient,
   cfg: ConfigSefaz,
+  opts?: { forcar?: boolean },
 ): Promise<ResultadoBusca> {
   if (!cfg.cert_pfx || !cfg.cert_senha)
     return base({ erro: "Suba o certificado e a senha primeiro." });
   if (!cfg.cnpj) return base({ erro: "Informe o CNPJ." });
 
   // Trava anti consumo indevido: não chama a SEFAZ antes da hora liberar.
-  if (cfg.bloqueado_ate && new Date(cfg.bloqueado_ate) > new Date()) {
+  // (forcar=true pula a trava — usado logo após manifestar, quando há doc novo.)
+  if (!opts?.forcar && cfg.bloqueado_ate && new Date(cfg.bloqueado_ate) > new Date()) {
     return base({
       erro: `Aguarde: a SEFAZ libera a próxima busca às ${horaBR(cfg.bloqueado_ate)}. Consultar antes disso reinicia a contagem de 1 hora.`,
       bloqueado_ate: cfg.bloqueado_ate,

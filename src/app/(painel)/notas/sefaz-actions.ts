@@ -127,11 +127,12 @@ export async function manifestarEBaixar(notaId: string) {
   }
   let completa = await temItens();
 
-  // Rede de segurança: se a consulta por chave não trouxe, tenta a busca geral
-  // (respeita o limite de 1/hora; não reinicia o contador se estiver bloqueada).
+  // Como acabamos de manifestar, há documento novo na SEFAZ: força uma busca
+  // (pula a trava de 1h — a SEFAZ permite quando há doc novo). É o que o
+  // sistema profissional faz no "Obter nota".
   let extraErro = "";
   if (!completa) {
-    const busca = await buscarNotasSefaz();
+    const busca = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
     completa = await temItens();
     extraErro = busca.erro ?? "";
   }
