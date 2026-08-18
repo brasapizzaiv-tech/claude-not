@@ -118,11 +118,23 @@ export async function manifestarEBaixar(notaId: string) {
     await importarNota(doc.xml, supabase);
   }
 
-  const { count } = await supabase
-    .from("nota_itens")
-    .select("id", { count: "exact", head: true })
-    .eq("nota_id", notaId);
-  const completa = (count ?? 0) > 0;
+  async function temItens() {
+    const { count } = await supabase
+      .from("nota_itens")
+      .select("id", { count: "exact", head: true })
+      .eq("nota_id", notaId);
+    return (count ?? 0) > 0;
+  }
+  let completa = await temItens();
+
+  // Rede de segurança: se a consulta por chave não trouxe, tenta a busca geral
+  // (respeita o limite de 1/hora; não reinicia o contador se estiver bloqueada).
+  let extraErro = "";
+  if (!completa) {
+    const busca = await buscarNotasSefaz();
+    completa = await temItens();
+    extraErro = busca.erro ?? "";
+  }
 
   revalidatePath(`/notas/${notaId}`);
   revalidatePath("/notas");
@@ -131,7 +143,9 @@ export async function manifestarEBaixar(notaId: string) {
     cStat: man.cStat,
     xMotivo: man.xMotivo,
     completa,
-    buscaErro: completa ? "" : r.erro || `${r.cStat} ${r.xMotivo}`.trim(),
+    buscaErro: completa
+      ? ""
+      : extraErro || r.erro || `${r.cStat} ${r.xMotivo}`.trim(),
   };
 }
 
