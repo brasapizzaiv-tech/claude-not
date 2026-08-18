@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/sefaz/cron",
-      "schedule": "0 9 * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/contagem/cron",

@@ -23,11 +23,11 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
         setMsg("✓ Nota completa baixada! Role para ver os itens e lançar.");
       else if (r?.buscaErro)
         setMsg(
-          `✓ Manifestada. A completa chega na próxima busca (${r.buscaErro}). Tente de novo em alguns minutos.`,
+          `✓ Manifestada! A SEFAZ limita a busca a 1 por hora. A nota completa baixa sozinha na próxima busca automática (de hora em hora) — é só voltar aqui depois, sem precisar clicar. Detalhe: ${r.buscaErro}`,
         );
       else
         setMsg(
-          "✓ Manifestada! A SEFAZ leva alguns minutos para liberar a completa — clique de novo em instantes.",
+          "✓ Manifestada! A completa baixa sozinha na próxima busca automática (de hora em hora). Volte aqui em até 1 hora e os itens estarão prontos.",
         );
       router.refresh();
     });
