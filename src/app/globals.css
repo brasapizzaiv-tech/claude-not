@@ -14,8 +14,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #262624;
+    --foreground: #ececec;
+    /* Fundo grafite quente (estilo Claude) — remapeia os tons escuros só no
+       modo escuro. Não afeta o modo claro nem as cores de texto. */
+    --color-zinc-950: #262624; /* fundo principal / linhas */
+    --color-zinc-900: #302e2c; /* superfícies (sidebar, cabeçalhos, cards) */
+    --color-zinc-800: #3d3b38; /* bordas e hover */
   }
 }
 
