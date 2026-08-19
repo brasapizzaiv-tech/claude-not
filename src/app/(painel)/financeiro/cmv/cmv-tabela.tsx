@@ -27,6 +27,8 @@ export type CmvRow = {
   eiQtd: number;
   efQtd: number;
   compras: number;
+  precoCompra: number;
+  variacao: number | null;
 };
 
 export function CmvTabela({
@@ -212,7 +214,33 @@ export function CmvTabela({
                           />
                         </td>
                         <td className="px-4 py-1.5 text-right text-zinc-500">
-                          {r.compras ? moeda(r.compras) : "—"}
+                          {r.compras ? (
+                            <>
+                              <div>{moeda(r.compras)}</div>
+                              {r.precoCompra > 0 && (
+                                <div className="text-[10px] text-zinc-400">
+                                  un {moeda(r.precoCompra)}
+                                  {r.variacao != null && (
+                                    <span
+                                      className={`ml-1 font-semibold ${
+                                        r.variacao > 0.001
+                                          ? "text-red-500"
+                                          : r.variacao < -0.001
+                                            ? "text-green-600"
+                                            : "text-zinc-400"
+                                      }`}
+                                      title="variação de preço vs semana anterior"
+                                    >
+                                      {r.variacao > 0.001 ? "▲" : r.variacao < -0.001 ? "▼" : ""}
+                                      {Math.abs(r.variacao * 100).toFixed(0)}%
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            "—"
+                          )}
                         </td>
                         <td className="px-3 py-1 text-right">
                           <input

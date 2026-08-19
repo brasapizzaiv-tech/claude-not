@@ -86,28 +86,18 @@ export default async function CmvPage({
   const dEI = ei.data;
   const dEF = ef.data;
 
-  const [{ data: ciData }, { data: prodData }, { data: notasP }, { data: caixas }] =
-    await Promise.all([
-      supabase
-        .from("contagem_itens")
-        .select("contagem_id, produto_id, qtd_estoque")
-        .in("contagem_id", [ei.id, ef.id]),
-      supabase
-        .from("produtos")
-        .select("id, nome, unidade, preco_referencia, entra_cmv, categoria_id, estoque_minimo, estoque_ideal, categorias(nome)")
-        .eq("ativo", true)
-        .order("nome"),
-      supabase
-        .from("notas_fiscais")
-        .select("id, pedido_id, data_emissao")
-        .gt("data_emissao", dEI)
-        .lte("data_emissao", dEF),
-      supabase
-        .from("fechamentos_caixa")
-        .select("*")
-        .gt("data", dEI)
-        .lte("data", dEF),
-    ]);
+  const [{ data: ciData }, { data: prodData }, { data: caixas }] = await Promise.all([
+    supabase
+      .from("contagem_itens")
+      .select("contagem_id, produto_id, qtd_estoque")
+      .in("contagem_id", [ei.id, ef.id]),
+    supabase
+      .from("produtos")
+      .select("id, nome, unidade, preco_referencia, entra_cmv, categoria_id, estoque_minimo, estoque_ideal, categorias(nome)")
+      .eq("ativo", true)
+      .order("nome"),
+    supabase.from("fechamentos_caixa").select("*").gt("data", dEI).lte("data", dEF),
+  ]);
 
   const qtdEI = new Map<string, number>();
   const qtdEF = new Map<string, number>();
@@ -115,39 +105,56 @@ export default async function CmvPage({
     (r.contagem_id === ei.id ? qtdEI : qtdEF).set(r.produto_id, Number(r.qtd_estoque));
   }
 
-  const notas = (notasP as { id: string; pedido_id: string | null }[]) ?? [];
-  const pedidosComNota = new Set(notas.map((n) => n.pedido_id).filter(Boolean) as string[]);
-  const comprasValor = new Map<string, number>();
-  const soma = (k: string, v: number) => comprasValor.set(k, (comprasValor.get(k) ?? 0) + v);
-
-  if (notas.length > 0) {
-    const { data: ni } = await supabase
-      .from("nota_itens")
-      .select("produto_id, valor_total")
-      .in("nota_id", notas.map((n) => n.id));
-    for (const i of (ni as { produto_id: string | null; valor_total: number | null }[]) ?? []) {
-      if (i.produto_id) soma(i.produto_id, Number(i.valor_total ?? 0));
+  // Compras de um período: valor e quantidade por produto (nota quando existe;
+  // senão, pedido conferido). Usado no CMV e na variação de preço.
+  async function comprasNoPeriodo(dIni: string, dFim: string) {
+    const map = new Map<string, { valor: number; qtd: number }>();
+    const add = (id: string, v: number, q: number) => {
+      const o = map.get(id) ?? { valor: 0, qtd: 0 };
+      o.valor += v;
+      o.qtd += q;
+      map.set(id, o);
+    };
+    const { data: nn } = await supabase
+      .from("notas_fiscais")
+      .select("id, pedido_id")
+      .gt("data_emissao", dIni)
+      .lte("data_emissao", dFim);
+    const ns = (nn as { id: string; pedido_id: string | null }[]) ?? [];
+    const comNota = new Set(ns.map((n) => n.pedido_id).filter(Boolean) as string[]);
+    if (ns.length > 0) {
+      const { data: ni } = await supabase
+        .from("nota_itens")
+        .select("produto_id, qtd, valor_total")
+        .in("nota_id", ns.map((n) => n.id));
+      for (const i of (ni as { produto_id: string | null; qtd: number; valor_total: number | null }[]) ?? [])
+        if (i.produto_id) add(i.produto_id, Number(i.valor_total ?? 0), Number(i.qtd ?? 0));
     }
+    const { data: pp } = await supabase
+      .from("pedidos")
+      .select("id")
+      .eq("status", "conferido")
+      .gt("data", dIni)
+      .lte("data", dFim);
+    const pids = ((pp as { id: string }[]) ?? [])
+      .map((p) => p.id)
+      .filter((id) => !comNota.has(id));
+    if (pids.length > 0) {
+      const { data: pi } = await supabase
+        .from("pedido_itens")
+        .select("produto_id, qtd, preco_unit")
+        .in("pedido_id", pids);
+      for (const i of (pi as { produto_id: string; qtd: number; preco_unit: number | null }[]) ?? [])
+        add(i.produto_id, Number(i.qtd ?? 0) * Number(i.preco_unit ?? 0), Number(i.qtd ?? 0));
+    }
+    return map;
   }
 
-  const { data: pedsP } = await supabase
-    .from("pedidos")
-    .select("id")
-    .eq("status", "conferido")
-    .gt("data", dEI)
-    .lte("data", dEF);
-  const pedIds = ((pedsP as { id: string }[]) ?? [])
-    .map((p) => p.id)
-    .filter((id) => !pedidosComNota.has(id));
-  if (pedIds.length > 0) {
-    const { data: pi } = await supabase
-      .from("pedido_itens")
-      .select("produto_id, qtd, preco_unit")
-      .in("pedido_id", pedIds);
-    for (const i of (pi as { produto_id: string; qtd: number; preco_unit: number | null }[]) ?? []) {
-      soma(i.produto_id, Number(i.qtd ?? 0) * Number(i.preco_unit ?? 0));
-    }
-  }
+  const comprasAtual = await comprasNoPeriodo(dEI, dEF);
+  const eiPrev = contagens[efIdx + 2];
+  const comprasAnt = eiPrev
+    ? await comprasNoPeriodo(eiPrev.data, dEI)
+    : new Map<string, { valor: number; qtd: number }>();
 
   let faturamento = 0;
   for (const f of (caixas as unknown as FechamentoDados[]) ?? []) {
@@ -155,19 +162,28 @@ export default async function CmvPage({
   }
 
   const produtos = (prodData as unknown as Prod[]) ?? [];
-  const rows: CmvRow[] = produtos.map((p) => ({
-    produtoId: p.id,
-    nome: p.nome,
-    unidade: p.unidade,
-    grupo: p.categorias?.nome ?? "Sem categoria",
-    categoriaId: p.categoria_id,
-    entra: p.entra_cmv,
-    custo: Number(p.preco_referencia ?? 0),
-    nivel: Number(p.estoque_ideal ?? 0) || Number(p.estoque_minimo ?? 0),
-    eiQtd: qtdEI.get(p.id) ?? 0,
-    efQtd: qtdEF.get(p.id) ?? 0,
-    compras: comprasValor.get(p.id) ?? 0,
-  }));
+  const rows: CmvRow[] = produtos.map((p) => {
+    const ca = comprasAtual.get(p.id);
+    const cp = comprasAnt.get(p.id);
+    const precoAtual = ca && ca.qtd > 0 ? ca.valor / ca.qtd : 0;
+    const precoAnt = cp && cp.qtd > 0 ? cp.valor / cp.qtd : 0;
+    const variacao = precoAtual > 0 && precoAnt > 0 ? precoAtual / precoAnt - 1 : null;
+    return {
+      produtoId: p.id,
+      nome: p.nome,
+      unidade: p.unidade,
+      grupo: p.categorias?.nome ?? "Sem categoria",
+      categoriaId: p.categoria_id,
+      entra: p.entra_cmv,
+      custo: Number(p.preco_referencia ?? 0),
+      nivel: Number(p.estoque_ideal ?? 0) || Number(p.estoque_minimo ?? 0),
+      eiQtd: qtdEI.get(p.id) ?? 0,
+      efQtd: qtdEF.get(p.id) ?? 0,
+      compras: ca?.valor ?? 0,
+      precoCompra: precoAtual,
+      variacao,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-7xl p-6 sm:p-8">
