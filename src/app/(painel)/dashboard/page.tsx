@@ -63,13 +63,14 @@ export default async function DashboardPage() {
     .toUpperCase();
 
   // Série dos últimos 6 meses (faturamento + despesas).
-  const meses: { label: string; ym: string; fat: number; desp: number }[] = [];
+  const meses: { label: string; ym: string; fat: number; real: number; desp: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
     meses.push({
       ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
       label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
       fat: 0,
+      real: 0,
       desp: 0,
     });
   }
@@ -100,13 +101,15 @@ export default async function DashboardPage() {
       const i = idx.get((l.data || "").slice(0, 7));
       if (i == null) continue;
       const tipo = l.dre_categorias?.tipo;
-      // Despesa = tudo que não é receita (nem resultado não operacional).
-      if (tipo && tipo !== "receita" && tipo !== "nao_operacional") {
+      // Receita (faturamento real do caixa) vs despesa.
+      if (tipo === "receita") meses[i].real += Number(l.valor) || 0;
+      else if (tipo && tipo !== "nao_operacional")
         meses[i].desp += Number(l.valor) || 0;
-      }
     }
   }
-  const maxFat = Math.max(1, ...meses.map((m) => m.fat));
+  // Faturamento do gráfico: caixa (real) quando houver; senão, notas (fiscal).
+  const serie = meses.map((m) => ({ ...m, valor: m.real > 0 ? m.real : m.fat }));
+  const maxFat = Math.max(1, ...serie.map((m) => m.valor));
   const pctFat =
     r.faturamento_mes_ant > 0
       ? Math.round((r.faturamento_mes / r.faturamento_mes_ant - 1) * 100)
@@ -215,13 +218,13 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="flex h-44 items-end justify-between gap-2">
-                {meses.map((m, i) => {
-                  const h = Math.max(3, Math.round((m.fat / maxFat) * 100));
-                  const atual = i === meses.length - 1;
+                {serie.map((m, i) => {
+                  const h = Math.max(3, Math.round((m.valor / maxFat) * 100));
+                  const atual = i === serie.length - 1;
                   return (
                     <div key={m.ym} className="flex flex-1 flex-col items-center gap-1.5">
                       <span className="text-[10px] font-medium text-zinc-400">
-                        {m.fat > 0 ? curto(m.fat) : ""}
+                        {m.valor > 0 ? curto(m.valor) : ""}
                       </span>
                       <div className="flex h-full w-full items-end">
                         <div
