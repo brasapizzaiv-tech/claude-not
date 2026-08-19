@@ -3,6 +3,21 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Cor oficial da marca Brasa (#C78340) no lugar do laranja padrão do
+     Tailwind. Remapeia a escala inteira, então todos os `orange-*` do sistema
+     passam a usar o tom da marca de uma vez. */
+  --color-orange-50: #fbf5ee;
+  --color-orange-100: #f6e9da;
+  --color-orange-200: #ebceac;
+  --color-orange-300: #dfb27d;
+  --color-orange-400: #d59b58;
+  --color-orange-500: #c78340;
+  --color-orange-600: #b06f30;
+  --color-orange-700: #8d5827;
+  --color-orange-800: #6a4320;
+  --color-orange-900: #4b2f18;
+  --color-orange-950: #2a1a0d;
 }
 
 @theme inline {
@@ -14,14 +29,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #262624;
+    --background: #211915;
     --foreground: #ececec;
-    /* Fundo grafite quente (estilo Claude) — remapeia os tons escuros só no
-       modo escuro. Não afeta o modo claro nem as cores de texto. */
-    --color-zinc-950: #262624; /* fundo principal / linhas */
-    --color-zinc-900: #302e2c; /* superfícies (sidebar, cabeçalhos, cards) */
-    --color-zinc-800: #4a4640; /* bordas e hover — mais visíveis */
-    --color-zinc-700: #57534d; /* bordas de inputs/botões */
+    /* Grafite oficial da marca Brasa (#211915) como fundo, com superfícies e
+       bordas em tons quentes derivados dele — combinam com o laranja. */
+    --color-zinc-950: #211915; /* fundo principal / linhas */
+    --color-zinc-900: #2b211b; /* superfícies (sidebar, cabeçalhos, cards) */
+    --color-zinc-800: #3d2f26; /* bordas e hover — mais visíveis */
+    --color-zinc-700: #4d3b2f; /* bordas de inputs/botões */
   }
 }
 
