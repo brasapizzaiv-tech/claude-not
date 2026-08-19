@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
-import { dataBR } from "@/lib/format";
 import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
-import { criarLancamento, excluirLancamento } from "./actions";
+import { criarLancamento } from "./actions";
+import { LancamentoLinha } from "./lancamento-linha";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -39,13 +39,14 @@ export default async function FinanceiroPage({
     supabase.from("dre_categorias").select("*").eq("ativo", true).order("ordem"),
     supabase
       .from("lancamentos")
-      .select("id, data, descricao, valor, forma_pagamento, origem, dre_categorias(nome, tipo, grupo), fornecedores(nome)")
+      .select("id, data, descricao, valor, forma_pagamento, origem, categoria_id, vencimento, pago, dre_categorias(nome, tipo, grupo), fornecedores(nome)")
       .gte("data", ini)
       .lt("data", fim)
       .order("data", { ascending: false }),
   ]);
 
   const categorias = (catData as DreCategoria[]) ?? [];
+  const catsEdit = categorias.map((c) => ({ id: c.id, nome: c.nome, grupo: c.grupo }));
   type Lanc = {
     id: string;
     data: string;
@@ -53,6 +54,9 @@ export default async function FinanceiroPage({
     valor: number;
     forma_pagamento: string | null;
     origem: string;
+    categoria_id: string | null;
+    vencimento: string | null;
+    pago: boolean;
     dre_categorias: { nome?: string; tipo?: string; grupo?: string } | null;
     fornecedores: { nome?: string } | null;
   };
@@ -286,46 +290,25 @@ export default async function FinanceiroPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {lancamentos.map((l) => {
-                const receita = l.dre_categorias?.tipo === "receita";
-                return (
-                  <tr key={l.id} className="bg-white dark:bg-zinc-950">
-                    <td className="px-4 py-2 text-zinc-500">
-                      {dataBR(l.data)}
-                    </td>
-                    <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
-                      {l.dre_categorias?.nome ?? "—"}
-                    </td>
-                    <td className="px-4 py-2 text-zinc-500">
-                      {l.descricao ??
-                        (l.fornecedores?.nome ? l.fornecedores.nome : "")}
-                      {l.origem === "pedido" && (
-                        <span className="ml-2 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] text-orange-700 dark:bg-orange-950 dark:text-orange-300">
-                          auto
-                        </span>
-                      )}
-                    </td>
-                    <td
-                      className={`px-4 py-2 text-right font-medium ${
-                        receita ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {receita ? "" : "- "}
-                      {moeda(Number(l.valor))}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      {l.origem === "manual" && (
-                        <form action={excluirLancamento} className="inline">
-                          <input type="hidden" name="id" value={l.id} />
-                          <button className="text-zinc-400 hover:text-red-600">
-                            Remover
-                          </button>
-                        </form>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {lancamentos.map((l) => (
+                <LancamentoLinha
+                  key={l.id}
+                  l={{
+                    id: l.id,
+                    data: l.data,
+                    descricao: l.descricao,
+                    valor: Number(l.valor),
+                    origem: l.origem,
+                    categoria_id: l.categoria_id,
+                    tipo: l.dre_categorias?.tipo ?? null,
+                    categoria_nome: l.dre_categorias?.nome ?? null,
+                    fornecedor_nome: l.fornecedores?.nome ?? null,
+                    vencimento: l.vencimento,
+                    pago: l.pago,
+                  }}
+                  categorias={catsEdit}
+                />
+              ))}
             </tbody>
           </table>
         </div>

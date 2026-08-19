@@ -42,6 +42,7 @@ export function BancoTabela({
   const [filtro, setFiltro] = useState("Todos");
   const [painel, setPainel] = useState<string | null>(null);
   const [catSel, setCatSel] = useState("");
+  const [obs, setObs] = useState("");
   const [lancSel, setLancSel] = useState("");
 
   const bancos = [...new Set(transacoes.map((t) => t.banco || "Sem banco"))].sort();
@@ -55,6 +56,7 @@ export function BancoTabela({
   function abrir(id: string) {
     setPainel(painel === id ? null : id);
     setCatSel("");
+    setObs("");
     setLancSel("");
   }
   function run(fn: () => Promise<unknown>) {
@@ -213,10 +215,18 @@ export function BancoTabela({
                               placeholder="Buscar categoria..."
                               className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
                             />
+                            <input
+                              value={obs}
+                              onChange={(e) => setObs(e.target.value)}
+                              placeholder={`Observação (opcional) — padrão: ${t.descricao ?? "descrição do banco"}`}
+                              className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                            />
                             <button
                               disabled={proc || !catSel}
                               onClick={() =>
-                                run(() => gerarLancamentoDaTransacao(t.id, catSel))
+                                run(() =>
+                                  gerarLancamentoDaTransacao(t.id, catSel, obs),
+                                )
                               }
                               className="mt-2 rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
                             >

@@ -30,6 +30,7 @@ export async function importarOfx(texto: string, banco: string) {
 export async function gerarLancamentoDaTransacao(
   transacaoId: string,
   categoriaId: string,
+  observacao?: string,
 ) {
   const supabase = await createClient();
   const { data: t } = await supabase
@@ -44,7 +45,8 @@ export async function gerarLancamentoDaTransacao(
     .insert({
       data: t.data,
       valor: Math.abs(Number(t.valor)),
-      descricao: (t.descricao as string) || "Lançamento do extrato",
+      descricao:
+        observacao?.trim() || (t.descricao as string) || "Lançamento do extrato",
       categoria_id: categoriaId || null,
       origem: "manual",
       pago: true,

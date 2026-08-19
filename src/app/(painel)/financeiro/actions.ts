@@ -97,6 +97,39 @@ export async function excluirLancamento(formData: FormData) {
   revalidatePath("/financeiro/contas");
 }
 
+// Edita um lançamento manual (data, categoria, valor, descrição, vencimento).
+export async function editarLancamento(
+  id: string,
+  dados: {
+    data: string;
+    categoria_id: string;
+    valor: number;
+    descricao: string | null;
+    vencimento: string | null;
+    pago: boolean;
+  },
+) {
+  const supabase = await createClient();
+  if (!dados.categoria_id || !(dados.valor > 0))
+    return { ok: false, erro: "Categoria e valor são obrigatórios." };
+  await supabase
+    .from("lancamentos")
+    .update({
+      data: dados.data,
+      categoria_id: dados.categoria_id,
+      valor: dados.valor,
+      descricao: dados.descricao?.trim() || null,
+      vencimento: dados.vencimento || null,
+      pago: dados.pago,
+      pago_em: dados.pago ? dados.data : null,
+    })
+    .eq("id", id)
+    .eq("origem", "manual");
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/contas");
+  return { ok: true };
+}
+
 // Salva o orçamento (metas) de um mês.
 export async function salvarOrcamento(
   anoMes: string,
