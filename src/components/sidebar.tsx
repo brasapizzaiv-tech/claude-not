@@ -57,18 +57,29 @@ export function Sidebar({
     ...extra,
   });
 
+  // Setor de Compras: contagem → cotação → conferência (submenu, como o Financeiro).
+  const comprasSub: Sub[] = [
+    has("contagem") && { href: "/contagens", label: "Contagem de estoque", desc: "Conte o estoque atual", icon: "📋" },
+    has("cotacoes") && { href: "/cotacoes", label: "Cotações", desc: "Cote e compare preços", icon: "💰" },
+    has("conferencia") && { href: "/conferencia", label: "Conferência", desc: "Confira os pedidos recebidos", icon: "📥" },
+  ].filter(Boolean) as Sub[];
+
   // Monta as seções só com o que o usuário pode ver.
   const cru: Secao[] = [
     { titulo: null, itens: [{ key: "dashboard", href: "/dashboard", label: "Início", icon: "🏠" }] },
     {
-      titulo: "Compras",
+      titulo: "Cadastros",
       itens: [
         has("fornecedores") && mod("fornecedores"),
         has("produtos") && mod("produtos"),
-        has("contagem") && mod("contagem"),
-        has("cotacoes") && mod("cotacoes"),
-        has("conferencia") && mod("conferencia"),
+        has("colaboradores") && mod("colaboradores"),
       ].filter(Boolean) as Item[],
+    },
+    {
+      titulo: "Compras",
+      itens: (comprasSub.length > 0
+        ? [{ key: "compras", href: comprasSub[0].href, label: "Compras", icon: "🛒", sub: comprasSub }]
+        : []) as Item[],
     },
     {
       titulo: "Financeiro",
@@ -82,7 +93,6 @@ export function Sidebar({
       itens: [
         has("salao") && mod("salao"),
         has("etiquetas") && mod("etiquetas"),
-        has("colaboradores") && mod("colaboradores"),
       ].filter(Boolean) as Item[],
     },
     {
@@ -97,7 +107,10 @@ export function Sidebar({
   const todos = secoes.flatMap((s) => s.itens);
 
   const ativoDe = (item: Item) => {
-    if (item.key === "financeiro") return pathname.startsWith("/financeiro");
+    if (item.sub)
+      return item.sub.some(
+        (s) => pathname === s.href || pathname.startsWith(s.href + "/"),
+      );
     return pathname === item.href || pathname.startsWith(item.href + "/");
   };
 
