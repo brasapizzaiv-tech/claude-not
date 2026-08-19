@@ -1,8 +1,29 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MODULOS } from "@/lib/permissoes";
+import { MODULOS, type ModuloKey } from "@/lib/permissoes";
+
+type Sub = { href: string; label: string; desc: string; icon: string };
+type Item = {
+  key: string;
+  href: string;
+  label: string;
+  icon: string;
+  external?: boolean;
+  sub?: Sub[];
+};
+type Secao = { titulo: string | null; itens: Item[] };
+
+const financeiroSub: Sub[] = [
+  { href: "/financeiro", label: "Movimentações", desc: "Lançamentos de receitas e despesas", icon: "💵" },
+  { href: "/financeiro/contas", label: "Contas a pagar", desc: "Boletos e vencimentos", icon: "📄" },
+  { href: "/financeiro/orcamento", label: "Orçamento", desc: "Metas de gasto por categoria", icon: "🎯" },
+  { href: "/financeiro/banco", label: "Conciliação bancária", desc: "Extrato do banco x lançamentos", icon: "🏦" },
+  { href: "/financeiro/vendas", label: "Vendas", desc: "Faturamento e importação", icon: "🛒" },
+  { href: "/financeiro/dre", label: "DRE", desc: "Resultado do mês", icon: "📈" },
+];
 
 export function Sidebar({
   nome,
@@ -16,151 +37,233 @@ export function Sidebar({
   permissoes: string[];
 }) {
   const pathname = usePathname();
+  const [aberto, setAberto] = useState<{ key: string; top: number } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // A visão do garçom é tela cheia (celular): sem menu lateral.
   if (pathname === "/garcom" || pathname.startsWith("/garcom/")) return null;
 
-  // Sub-itens do Financeiro (aparecem quando o menu abre no hover).
-  const financeiroSub: { href: string; label: string; icon: string }[] = [
-    { href: "/financeiro", label: "Movimentações", icon: "💵" },
-    { href: "/financeiro/contas", label: "Contas a pagar", icon: "📄" },
-    { href: "/financeiro/orcamento", label: "Orçamento", icon: "🎯" },
-    { href: "/financeiro/banco", label: "Conciliação (banco)", icon: "🏦" },
-    { href: "/financeiro/vendas", label: "Vendas", icon: "🛒" },
-    { href: "/financeiro/dre", label: "DRE", icon: "📈" },
+  const has = (key: ModuloKey) => admin || permissoes.includes(key);
+  const M = Object.fromEntries(MODULOS.map((m) => [m.key, m])) as Record<
+    ModuloKey,
+    (typeof MODULOS)[number]
+  >;
+  const mod = (key: ModuloKey, extra?: Partial<Item>): Item => ({
+    key,
+    href: M[key].rotas[0],
+    label: M[key].label,
+    icon: M[key].icon,
+    ...extra,
+  });
+
+  // Monta as seções só com o que o usuário pode ver.
+  const cru: Secao[] = [
+    { titulo: null, itens: [{ key: "dashboard", href: "/dashboard", label: "Início", icon: "🏠" }] },
+    {
+      titulo: "Compras",
+      itens: [
+        has("fornecedores") && mod("fornecedores"),
+        has("produtos") && mod("produtos"),
+        has("contagem") && mod("contagem"),
+        has("cotacoes") && mod("cotacoes"),
+        has("conferencia") && mod("conferencia"),
+      ].filter(Boolean) as Item[],
+    },
+    {
+      titulo: "Financeiro",
+      itens: [
+        has("financeiro") && mod("financeiro", { label: "Financeiro", sub: financeiroSub }),
+        has("notas") && mod("notas"),
+      ].filter(Boolean) as Item[],
+    },
+    {
+      titulo: "Operação",
+      itens: [
+        has("salao") && mod("salao"),
+        has("etiquetas") && mod("etiquetas"),
+        has("colaboradores") && mod("colaboradores"),
+      ].filter(Boolean) as Item[],
+    },
+    {
+      titulo: "Apps",
+      itens: [{ key: "marmitas", href: "/marmitas", label: "Marmitas", icon: "🍱", external: true }],
+    },
   ];
+  if (admin) {
+    cru.push({ titulo: null, itens: [{ key: "usuarios", href: "/usuarios", label: "Usuários", icon: "🔑" }] });
+  }
+  const secoes = cru.filter((s) => s.itens.length > 0);
+  const todos = secoes.flatMap((s) => s.itens);
 
-  const modulos = MODULOS.filter((m) => admin || permissoes.includes(m.key));
+  const ativoDe = (item: Item) => {
+    if (item.key === "financeiro") return pathname.startsWith("/financeiro");
+    return pathname === item.href || pathname.startsWith(item.href + "/");
+  };
 
-  const linkCls =
-    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition";
-  const iconeCls = "w-6 shrink-0 text-center text-lg";
-  const textoCls =
-    "whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100";
+  function entrar(key: string, e: React.MouseEvent<HTMLElement>) {
+    if (timer.current) clearTimeout(timer.current);
+    const r = e.currentTarget.getBoundingClientRect();
+    setAberto({ key, top: r.top });
+  }
+  function sair() {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setAberto(null), 140);
+  }
+  function segurar() {
+    if (timer.current) clearTimeout(timer.current);
+  }
+  function fechar() {
+    if (timer.current) clearTimeout(timer.current);
+    setAberto(null);
+  }
 
-  const ativoDe = (href: string) =>
-    pathname === href || pathname.startsWith(href + "/");
-  const clsPara = (ativo: boolean) =>
-    `${linkCls} ${
-      ativo
-        ? "bg-white font-semibold text-orange-600"
-        : "text-orange-50 hover:bg-white/15"
+  const itemAberto = aberto ? todos.find((i) => i.key === aberto.key) : null;
+  const alturaFly = itemAberto?.sub ? itemAberto.sub.length * 58 + 56 : 40;
+  const topFly = aberto
+    ? Math.max(
+        8,
+        Math.min(
+          aberto.top,
+          (typeof window !== "undefined" ? window.innerHeight : 900) - alturaFly - 12,
+        ),
+      )
+    : 0;
+
+  const iconeBtn = (ativo: boolean) =>
+    `flex h-11 w-11 items-center justify-center rounded-xl text-xl transition ${
+      ativo ? "bg-white text-orange-600 shadow" : "text-orange-50 hover:bg-white/15"
     }`;
 
   return (
-    // Espaço reservado (barra recolhida). A barra real fica por cima no hover.
     <div className="w-16 shrink-0">
-      <aside className="group fixed inset-y-0 left-0 z-40 flex w-16 flex-col overflow-hidden bg-orange-500 transition-[width] duration-200 hover:w-60 hover:shadow-2xl">
-        <div className="flex items-center gap-3 border-b border-white/20 px-3 py-4">
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center overflow-visible bg-orange-500">
+        {/* Logo */}
+        <Link href="/dashboard" className="mt-3 mb-1 shrink-0" title="Início">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo-brasa.png"
             alt="Brasa"
-            className="h-10 w-10 shrink-0 rounded-lg bg-white/90 p-1 object-contain"
+            className="h-10 w-10 rounded-lg bg-white/90 p-1 object-contain"
           />
-          <p className={`text-sm font-bold text-white ${textoCls}`}>
-            Sistema de Cotação
-          </p>
-        </div>
+        </Link>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
-          <Link
-            href="/dashboard"
-            title="Início"
-            className={clsPara(ativoDe("/dashboard"))}
-          >
-            <span className={iconeCls}>🏠</span>
-            <span className={`flex-1 ${textoCls}`}>Início</span>
-          </Link>
-
-          {modulos.map((m) => {
-            // Financeiro vira um grupo com submenu (aparece ao abrir o menu).
-            if (m.key === "financeiro") {
-              return (
-                <div key="financeiro">
-                  <Link
-                    href="/financeiro"
-                    title="Financeiro"
-                    className={clsPara(pathname.startsWith("/financeiro"))}
+        {/* Navegação */}
+        <nav className="flex w-full flex-1 flex-col items-center gap-0.5 py-2">
+          {secoes.map((s, si) => (
+            <div key={si} className="flex w-full flex-col items-center">
+              {s.titulo && (
+                <p className="mt-2 mb-0.5 w-full text-center text-[9px] font-bold uppercase tracking-wide text-orange-200">
+                  {s.titulo}
+                </p>
+              )}
+              {s.itens.map((it) => {
+                const ativo = ativoDe(it);
+                const conteudo = (
+                  <span className={iconeBtn(ativo)}>{it.icon}</span>
+                );
+                return (
+                  <div
+                    key={it.key}
+                    className="py-0.5"
+                    onMouseEnter={(e) => entrar(it.key, e)}
+                    onMouseLeave={sair}
                   >
-                    <span className={iconeCls}>{m.icon}</span>
-                    <span className={`flex-1 ${textoCls}`}>Financeiro</span>
-                  </Link>
-                  <div className="hidden space-y-0.5 py-0.5 group-hover:block">
-                    {financeiroSub.map((s) => {
-                      const ativo =
-                        s.href === "/financeiro"
-                          ? pathname === "/financeiro"
-                          : ativoDe(s.href);
-                      return (
-                        <Link
-                          key={s.href}
-                          href={s.href}
-                          className={`ml-4 flex items-center gap-2 rounded-lg py-1.5 pl-3 pr-2 text-xs transition ${
-                            ativo
-                              ? "bg-white font-semibold text-orange-600"
-                              : "text-orange-50 hover:bg-white/15"
-                          }`}
-                        >
-                          <span className="w-4 text-center text-sm">{s.icon}</span>
-                          <span className="whitespace-nowrap">{s.label}</span>
-                        </Link>
-                      );
-                    })}
+                    {it.external ? (
+                      <a href={it.href} title={it.label}>
+                        {conteudo}
+                      </a>
+                    ) : (
+                      <Link href={it.href} title={it.label}>
+                        {conteudo}
+                      </Link>
+                    )}
                   </div>
-                </div>
-              );
-            }
-            return (
-              <Link
-                key={m.key}
-                href={m.rotas[0]}
-                title={m.label}
-                className={clsPara(ativoDe(m.rotas[0]))}
-              >
-                <span className={iconeCls}>{m.icon}</span>
-                <span className={`flex-1 ${textoCls}`}>{m.label}</span>
-              </Link>
-            );
-          })}
-
-          {admin && (
-            <Link
-              href="/usuarios"
-              title="Usuários"
-              className={clsPara(ativoDe("/usuarios"))}
-            >
-              <span className={iconeCls}>🔑</span>
-              <span className={`flex-1 ${textoCls}`}>Usuários</span>
-            </Link>
-          )}
-
-          <a
-            href="/marmitas"
-            title="Marmitas"
-            className={`${linkCls} text-orange-50 hover:bg-white/15`}
-          >
-            <span className={iconeCls}>🍱</span>
-            <span className={`flex-1 ${textoCls}`}>Marmitas</span>
-          </a>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
-        <div className="border-t border-white/20 p-2">
-          <div className={`mb-1 px-1 ${textoCls}`}>
-            <p className="truncate text-sm font-medium text-white">{nome}</p>
-            <p className="text-xs capitalize text-orange-100">{papel}</p>
+        {/* Rodapé: usuário + sair */}
+        <div className="mb-3 flex shrink-0 flex-col items-center gap-1">
+          <div
+            className="py-0.5"
+            onMouseEnter={(e) => entrar("__user", e)}
+            onMouseLeave={sair}
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
+              {(nome?.[0] ?? "U").toUpperCase()}
+            </div>
           </div>
           <form action="/auth/signout" method="post">
             <button
               title="Sair"
-              className={`${linkCls} w-full text-left text-orange-50 hover:bg-white/15`}
+              onMouseEnter={(e) => entrar("__sair", e)}
+              onMouseLeave={sair}
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-lg text-orange-50 transition hover:bg-white/15"
             >
-              <span className={iconeCls}>🚪</span>
-              <span className={`flex-1 ${textoCls}`}>Sair</span>
+              🚪
             </button>
           </form>
         </div>
       </aside>
+
+      {/* Painel flutuante (flyout) */}
+      {aberto && (
+        <div
+          className="fixed z-50"
+          style={{ left: 60, top: topFly }}
+          onMouseEnter={segurar}
+          onMouseLeave={sair}
+        >
+          {itemAberto?.sub ? (
+            <div className="ml-1 w-64 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+              <p className="border-b border-zinc-100 px-4 py-2 text-xs font-bold uppercase tracking-wide text-zinc-400 dark:border-zinc-800">
+                {itemAberto.label}
+              </p>
+              <div className="p-1">
+                {itemAberto.sub.map((s) => {
+                  const at =
+                    s.href === "/financeiro"
+                      ? pathname === "/financeiro"
+                      : pathname === s.href || pathname.startsWith(s.href + "/");
+                  return (
+                    <Link
+                      key={s.href}
+                      href={s.href}
+                      onClick={fechar}
+                      className={`flex items-start gap-3 rounded-lg px-3 py-2 transition ${
+                        at
+                          ? "bg-orange-50 dark:bg-orange-950/40"
+                          : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      <span className="mt-0.5 text-lg">{s.icon}</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                          {s.label}
+                        </span>
+                        <span className="block text-xs text-zinc-500">{s.desc}</span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : aberto.key === "__user" ? (
+            <div className="ml-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+              <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{nome}</p>
+              <p className="text-xs capitalize text-zinc-500">{papel}</p>
+            </div>
+          ) : (
+            <div className="ml-1 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-orange-700 shadow-2xl dark:bg-zinc-900 dark:text-orange-300">
+              {aberto.key === "__sair"
+                ? "Sair"
+                : todos.find((i) => i.key === aberto.key)?.label}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
