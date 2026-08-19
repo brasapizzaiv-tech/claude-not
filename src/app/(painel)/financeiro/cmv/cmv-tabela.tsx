@@ -79,6 +79,12 @@ export function CmvTabela({
   const cmvPct = faturamento > 0 ? totalCmv / faturamento : 0;
   const lacuna = cmvPct - meta;
 
+  // Maiores aumentos de preço de compra vs semana anterior.
+  const aumentos = rows
+    .filter((r) => r.variacao != null && r.variacao > 0.005)
+    .sort((a, b) => (b.variacao ?? 0) - (a.variacao ?? 0))
+    .slice(0, 6);
+
   // Agrupa por categoria.
   const grupos = useMemo(() => {
     const m = new Map<string, { nome: string; categoriaId: string | null; rows: CmvRow[] }>();
@@ -134,6 +140,33 @@ export function CmvTabela({
           faturamento > 0 ? `${lacuna <= 0 ? "▼ dentro" : "▲ acima"} ${pct(Math.abs(lacuna))}` : "",
         )}
       </div>
+
+      {aumentos.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
+          <h2 className="mb-2 text-sm font-semibold text-red-700 dark:text-red-300">
+            📈 Maiores aumentos de preço na semana
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {aumentos.map((r) => {
+              const antigo = r.precoCompra / (1 + (r.variacao ?? 0));
+              return (
+                <div
+                  key={r.produtoId}
+                  className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs dark:border-red-900/60 dark:bg-zinc-900"
+                >
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-100">{r.nome}</span>{" "}
+                  <span className="font-bold text-red-600">
+                    ▲ {((r.variacao ?? 0) * 100).toFixed(0)}%
+                  </span>
+                  <span className="ml-1 text-zinc-400">
+                    {moeda(antigo)} → {moeda(r.precoCompra)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <p className="mb-2 text-xs text-zinc-500">
         Dá pra <b>editar as contagens</b> (estoque inicial e final) direto aqui —
