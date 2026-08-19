@@ -109,7 +109,7 @@ export default async function DashboardPage() {
   }
   // Faturamento do gráfico: caixa (real) quando houver; senão, notas (fiscal).
   const serie = meses.map((m) => ({ ...m, valor: m.real > 0 ? m.real : m.fat }));
-  const maxFat = Math.max(1, ...serie.map((m) => m.valor));
+  const maxFat = Math.max(1, ...serie.map((m) => Math.max(m.valor, m.desp)));
   const pctFat =
     r.faturamento_mes_ant > 0
       ? Math.round((r.faturamento_mes / r.faturamento_mes_ant - 1) * 100)
@@ -218,28 +218,45 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="flex h-44 items-end justify-between gap-2">
-                {serie.map((m, i) => {
-                  const h = Math.max(3, Math.round((m.valor / maxFat) * 100));
-                  const atual = i === serie.length - 1;
+                {serie.map((m) => {
+                  const hf = Math.max(m.valor > 0 ? 3 : 0, Math.round((m.valor / maxFat) * 100));
+                  const hd = Math.max(m.desp > 0 ? 3 : 0, Math.round((m.desp / maxFat) * 100));
                   return (
                     <div key={m.ym} className="flex flex-1 flex-col items-center gap-1.5">
                       <span className="text-[10px] font-medium text-zinc-400">
                         {m.valor > 0 ? curto(m.valor) : ""}
                       </span>
-                      <div className="flex h-full w-full items-end">
+                      <div className="flex h-full w-full items-end justify-center gap-1">
                         <div
-                          className={`w-full rounded-t-lg transition-all ${
-                            atual
+                          title={`Faturamento ${m.real > 0 ? "(real do caixa)" : "(fiscal)"}: ${moedaBR(m.valor)}`}
+                          className={`w-1/2 rounded-t-md transition-all ${
+                            m.real > 0
                               ? "bg-orange-500"
-                              : "bg-orange-300 dark:bg-orange-500/60"
+                              : "bg-orange-300 dark:bg-orange-500/50"
                           }`}
-                          style={{ height: `${h}%` }}
+                          style={{ height: `${hf}%` }}
+                        />
+                        <div
+                          title={`Despesas: ${moedaBR(m.desp)}`}
+                          className="w-1/2 rounded-t-md bg-rose-400 transition-all dark:bg-rose-500/60"
+                          style={{ height: `${hd}%` }}
                         />
                       </div>
                       <span className="text-[11px] capitalize text-zinc-500">{m.label}</span>
                     </div>
                   );
                 })}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-orange-500" /> Faturamento
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-rose-400" /> Despesas
+                </span>
+                <span className="text-zinc-400">
+                  laranja forte = real do caixa · claro = fiscal (notas)
+                </span>
               </div>
             </div>
           )}
