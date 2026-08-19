@@ -23,6 +23,7 @@ export type CmvRow = {
   categoriaId: string | null;
   entra: boolean;
   custo: number;
+  nivel: number;
   eiQtd: number;
   efQtd: number;
   compras: number;
@@ -139,7 +140,7 @@ export function CmvTabela({
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
             <tr>
               <th className="px-3 py-3">CMV?</th>
@@ -148,6 +149,9 @@ export function CmvTabela({
               <th className="px-4 py-3 text-right">Compras</th>
               <th className="px-3 py-3 text-right">Est. final (qtd)</th>
               <th className="px-4 py-3 text-right">CMV (R$)</th>
+              <th className="px-3 py-3 text-right">Nível mín.</th>
+              <th className="px-3 py-3 text-right">Necessid.</th>
+              <th className="px-3 py-3">Decisão</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -174,10 +178,14 @@ export function CmvTabela({
                     <td className="px-4 py-1.5 text-right text-xs font-bold text-zinc-500">
                       {moeda(subCmv)}
                     </td>
+                    <td colSpan={3} />
                   </tr>
                   {g.rows.map((r) => {
                     const id = r.produtoId;
                     const dentro = entra[id];
+                    const estAtual = num(ef[id] ?? "");
+                    const necessidade = r.nivel - estAtual;
+                    const comprar = r.nivel > 0 && necessidade > 0;
                     return (
                       <tr
                         key={id}
@@ -219,6 +227,25 @@ export function CmvTabela({
                         <td className={`px-4 py-1.5 text-right font-medium ${dentro ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-400"}`}>
                           {moeda(cmvDe(id))}
                         </td>
+                        <td className="px-3 py-1.5 text-right text-zinc-400">
+                          {r.nivel > 0 ? r.nivel : "—"}
+                        </td>
+                        <td className={`px-3 py-1.5 text-right ${comprar ? "font-medium text-orange-600" : "text-zinc-400"}`}>
+                          {r.nivel > 0 ? necessidade : "—"}
+                        </td>
+                        <td className="px-3 py-1.5">
+                          {r.nivel <= 0 ? (
+                            <span className="text-xs text-zinc-300 dark:text-zinc-600">—</span>
+                          ) : comprar ? (
+                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                              COMPRAR
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                              ok
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -229,6 +256,7 @@ export function CmvTabela({
               <td className="px-3 py-2" />
               <td className="px-4 py-2" colSpan={4}>TOTAL CMV</td>
               <td className="px-4 py-2 text-right text-orange-600">{moeda(totalCmv)}</td>
+              <td colSpan={3} />
             </tr>
           </tbody>
         </table>

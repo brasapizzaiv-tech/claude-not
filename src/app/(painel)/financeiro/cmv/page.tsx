@@ -12,6 +12,8 @@ type Prod = {
   preco_referencia: number | null;
   entra_cmv: boolean;
   categoria_id: string | null;
+  estoque_minimo: number | null;
+  estoque_ideal: number | null;
   categorias: { nome?: string } | null;
 };
 
@@ -92,7 +94,7 @@ export default async function CmvPage({
         .in("contagem_id", [ei.id, ef.id]),
       supabase
         .from("produtos")
-        .select("id, nome, unidade, preco_referencia, entra_cmv, categoria_id, categorias(nome)")
+        .select("id, nome, unidade, preco_referencia, entra_cmv, categoria_id, estoque_minimo, estoque_ideal, categorias(nome)")
         .eq("ativo", true)
         .order("nome"),
       supabase
@@ -161,6 +163,7 @@ export default async function CmvPage({
     categoriaId: p.categoria_id,
     entra: p.entra_cmv,
     custo: Number(p.preco_referencia ?? 0),
+    nivel: Number(p.estoque_ideal ?? 0) || Number(p.estoque_minimo ?? 0),
     eiQtd: qtdEI.get(p.id) ?? 0,
     efQtd: qtdEF.get(p.id) ?? 0,
     compras: comprasValor.get(p.id) ?? 0,
