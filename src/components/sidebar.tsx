@@ -19,6 +19,7 @@ type Secao = { titulo: string | null; itens: Item[] };
 const financeiroSub: Sub[] = [
   { href: "/financeiro", label: "Movimentações", desc: "Lançamentos de receitas e despesas", icon: "💵" },
   { href: "/financeiro/caixa", label: "Fechamento de caixa", desc: "Faturamento do dia por forma de pagamento", icon: "🧮" },
+  { href: "/financeiro/cmv", label: "CMV / Consumo", desc: "Consumo real da semana vs meta", icon: "📉" },
   { href: "/financeiro/contas", label: "Contas a pagar", desc: "Boletos e vencimentos", icon: "📄" },
   { href: "/financeiro/orcamento", label: "Orçamento", desc: "Metas de gasto por categoria", icon: "🎯" },
   { href: "/financeiro/banco", label: "Conciliação bancária", desc: "Extrato do banco x lançamentos", icon: "🏦" },

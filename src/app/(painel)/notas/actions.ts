@@ -282,8 +282,24 @@ export async function lancarNota(
     .update({ situacao: "lancada" })
     .eq("id", notaId);
 
+  // Toda compra que entra atualiza o preço de referência do produto
+  // (usado nas contagens/CMV e nas próximas cotações).
+  const { data: itensRef } = await supabase
+    .from("nota_itens")
+    .select("produto_id, valor_unit")
+    .eq("nota_id", notaId);
+  for (const i of (itensRef as { produto_id: string | null; valor_unit: number | null }[]) ?? []) {
+    if (i.produto_id && i.valor_unit != null && Number(i.valor_unit) > 0) {
+      await supabase
+        .from("produtos")
+        .update({ preco_referencia: Number(i.valor_unit) })
+        .eq("id", i.produto_id);
+    }
+  }
+
   revalidatePath("/notas");
   revalidatePath("/financeiro/contas");
+  revalidatePath("/produtos");
   return { ok: true };
 }
 
