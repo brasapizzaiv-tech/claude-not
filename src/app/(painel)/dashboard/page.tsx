@@ -78,17 +78,32 @@ export default async function DashboardPage() {
       .toISOString()
       .slice(0, 10);
     const [{ data: notas }, { data: lanc }] = await Promise.all([
-      supabase.from("notas_emitidas").select("data_emissao, valor").gte("data_emissao", inicioISO),
-      supabase.from("lancamentos").select("data, valor").gte("data", inicioISO),
+      // limit alto: o padrão do Supabase é 1000 linhas, e há milhares de notas.
+      supabase
+        .from("notas_emitidas")
+        .select("data_emissao, valor")
+        .gte("data_emissao", inicioISO)
+        .limit(100000),
+      supabase
+        .from("lancamentos")
+        .select("data, valor, dre_categorias(tipo)")
+        .gte("data", inicioISO)
+        .limit(100000),
     ]);
     const idx = new Map(meses.map((m, i) => [m.ym, i]));
     for (const n of (notas as { data_emissao: string; valor: number }[]) ?? []) {
       const i = idx.get((n.data_emissao || "").slice(0, 7));
       if (i != null) meses[i].fat += Number(n.valor) || 0;
     }
-    for (const l of (lanc as { data: string; valor: number }[]) ?? []) {
+    type LancT = { data: string; valor: number; dre_categorias: { tipo: string } | null };
+    for (const l of (lanc as unknown as LancT[]) ?? []) {
       const i = idx.get((l.data || "").slice(0, 7));
-      if (i != null) meses[i].desp += Number(l.valor) || 0;
+      if (i == null) continue;
+      const tipo = l.dre_categorias?.tipo;
+      // Despesa = tudo que não é receita (nem resultado não operacional).
+      if (tipo && tipo !== "receita" && tipo !== "nao_operacional") {
+        meses[i].desp += Number(l.valor) || 0;
+      }
     }
   }
   const maxFat = Math.max(1, ...meses.map((m) => m.fat));
@@ -211,7 +226,9 @@ export default async function DashboardPage() {
                       <div className="flex h-full w-full items-end">
                         <div
                           className={`w-full rounded-t-lg transition-all ${
-                            atual ? "bg-orange-500" : "bg-orange-200 dark:bg-orange-500/25"
+                            atual
+                              ? "bg-orange-500"
+                              : "bg-orange-300 dark:bg-orange-500/60"
                           }`}
                           style={{ height: `${h}%` }}
                         />
