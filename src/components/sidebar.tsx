@@ -131,12 +131,12 @@ export function Sidebar({
 
   const iconeBtn = (ativo: boolean) =>
     `flex h-11 w-11 items-center justify-center rounded-xl text-xl transition ${
-      ativo ? "bg-white text-orange-600 shadow" : "text-orange-50 hover:bg-white/15"
+      ativo ? "bg-white text-[#C78340] shadow" : "text-white/90 hover:bg-white/15"
     }`;
 
   return (
     <div className="w-16 shrink-0">
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center overflow-visible bg-orange-500">
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center overflow-visible bg-[#C78340]">
         {/* Logo */}
         <Link href="/dashboard" className="mt-3 mb-1 shrink-0" title="Início">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -152,7 +152,7 @@ export function Sidebar({
           {secoes.map((s, si) => (
             <div key={si} className="flex w-full flex-col items-center">
               {s.titulo && (
-                <p className="mt-2 mb-0.5 w-full text-center text-[9px] font-bold uppercase tracking-wide text-orange-200">
+                <p className="mt-2 mb-0.5 w-full text-center text-[9px] font-bold uppercase tracking-wide text-white/60">
                   {s.titulo}
                 </p>
               )}
@@ -200,7 +200,7 @@ export function Sidebar({
               title="Sair"
               onMouseEnter={(e) => entrar("__sair", e)}
               onMouseLeave={sair}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-lg text-orange-50 transition hover:bg-white/15"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-lg text-white/90 transition hover:bg-white/15"
             >
               🚪
             </button>
@@ -234,7 +234,7 @@ export function Sidebar({
                       onClick={fechar}
                       className={`flex items-start gap-3 rounded-lg px-3 py-2 transition ${
                         at
-                          ? "bg-orange-50 dark:bg-orange-950/40"
+                          ? "bg-[#f6ece0] dark:bg-[#2a2016]"
                           : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
                       }`}
                     >
@@ -256,7 +256,7 @@ export function Sidebar({
               <p className="text-xs capitalize text-zinc-500">{papel}</p>
             </div>
           ) : (
-            <div className="ml-1 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-orange-700 shadow-2xl dark:bg-zinc-900 dark:text-orange-300">
+            <div className="ml-1 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-[#C78340] shadow-2xl dark:bg-zinc-900 dark:text-[#e0a568]">
               {aberto.key === "__sair"
                 ? "Sair"
                 : todos.find((i) => i.key === aberto.key)?.label}
