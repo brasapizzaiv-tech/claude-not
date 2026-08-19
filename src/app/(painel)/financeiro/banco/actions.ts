@@ -75,6 +75,22 @@ export async function conciliar(transacaoId: string, lancamentoId: string) {
   return { ok: true };
 }
 
+// Concilia várias transações de uma vez (cada uma com seu lançamento sugerido).
+export async function conciliarVarias(
+  pares: { transacaoId: string; lancamentoId: string }[],
+) {
+  const supabase = await createClient();
+  for (const p of pares) {
+    if (!p.lancamentoId) continue;
+    await supabase
+      .from("transacoes_banco")
+      .update({ lancamento_id: p.lancamentoId })
+      .eq("id", p.transacaoId);
+  }
+  revalidatePath("/financeiro/banco");
+  return { ok: true };
+}
+
 export async function desconciliar(transacaoId: string) {
   const supabase = await createClient();
   await supabase

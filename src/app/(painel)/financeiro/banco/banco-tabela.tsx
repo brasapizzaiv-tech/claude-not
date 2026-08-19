@@ -6,6 +6,7 @@ import { dataBR } from "@/lib/format";
 import { Combobox } from "@/components/combobox";
 import {
   conciliar,
+  conciliarVarias,
   desconciliar,
   gerarLancamentoDaTransacao,
   excluirTransacao,
@@ -44,6 +45,7 @@ export function BancoTabela({
   const [catSel, setCatSel] = useState("");
   const [obs, setObs] = useState("");
   const [lancSel, setLancSel] = useState("");
+  const [sel, setSel] = useState<Set<string>>(new Set());
 
   const bancos = [...new Set(transacoes.map((t) => t.banco || "Sem banco"))].sort();
   const lista =
@@ -52,6 +54,38 @@ export function BancoTabela({
       : transacoes.filter((t) => (t.banco || "Sem banco") === filtro);
   const aConciliar = lista.filter((t) => !t.lancamento_id).length;
   const conciliadas = lista.length - aConciliar;
+
+  // Seleção múltipla: só transações não conciliadas que têm sugestão.
+  const selecionaveis = lista.filter((t) => !t.lancamento_id && t.sugestaoId);
+  const todosSel =
+    selecionaveis.length > 0 && selecionaveis.every((t) => sel.has(t.id));
+  function toggleSel(id: string) {
+    setSel((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+  function toggleTodos() {
+    setSel((s) => {
+      const n = new Set(s);
+      if (todosSel) selecionaveis.forEach((t) => n.delete(t.id));
+      else selecionaveis.forEach((t) => n.add(t.id));
+      return n;
+    });
+  }
+  function conciliarSelecionadas() {
+    const pares = selecionaveis
+      .filter((t) => sel.has(t.id))
+      .map((t) => ({ transacaoId: t.id, lancamentoId: t.sugestaoId! }));
+    if (pares.length === 0) return;
+    start(async () => {
+      await conciliarVarias(pares);
+      setSel(new Set());
+      router.refresh();
+    });
+  }
 
   function abrir(id: string) {
     setPainel(painel === id ? null : id);
@@ -88,6 +122,27 @@ export function BancoTabela({
         </div>
       )}
 
+      {sel.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-green-300 bg-green-50 px-4 py-2.5 dark:border-green-900 dark:bg-green-950/30">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            {sel.size} selecionada(s)
+          </span>
+          <button
+            onClick={conciliarSelecionadas}
+            disabled={proc}
+            className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+          >
+            {proc ? "Conciliando..." : "Conciliar selecionadas"}
+          </button>
+          <button
+            onClick={() => setSel(new Set())}
+            className="text-xs text-zinc-500 hover:text-zinc-700"
+          >
+            limpar
+          </button>
+        </div>
+      )}
+
       <div className="mb-6 grid grid-cols-2 gap-4">
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
           <p className="text-xs text-zinc-500">Conciliadas</p>
@@ -103,6 +158,16 @@ export function BancoTabela({
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
             <tr>
+              <th className="w-8 px-3 py-3">
+                {selecionaveis.length > 0 && (
+                  <input
+                    type="checkbox"
+                    checked={todosSel}
+                    onChange={toggleTodos}
+                    title="Selecionar todas com sugestão"
+                  />
+                )}
+              </th>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Descrição (banco)</th>
               <th className="px-4 py-3 text-right">Valor</th>
@@ -124,6 +189,15 @@ export function BancoTabela({
               return (
                 <Fragment key={t.id}>
                   <tr className="bg-white dark:bg-zinc-950">
+                    <td className="px-3 py-2">
+                      {!conciliado && t.sugestaoId && (
+                        <input
+                          type="checkbox"
+                          checked={sel.has(t.id)}
+                          onChange={() => toggleSel(t.id)}
+                        />
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-zinc-500">{dataBR(t.data)}</td>
                     <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
                       {t.banco && (
@@ -198,7 +272,7 @@ export function BancoTabela({
                   </tr>
                   {aberto && !conciliado && (
                     <tr className="bg-orange-50/40 dark:bg-orange-950/10">
-                      <td colSpan={5} className="px-4 py-3">
+                      <td colSpan={6} className="px-4 py-3">
                         <div className="grid gap-4 sm:grid-cols-2">
                           {/* Gerar novo */}
                           <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
