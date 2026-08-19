@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   salvarContagemItem,
+  salvarFaturamentoDia,
   definirEntraCmvProduto,
   definirEntraCmvCategoria,
 } from "./actions";
@@ -28,24 +29,40 @@ export type CmvRow = {
   efQtd: number;
   compras: number;
   precoCompra: number;
+  precoAnterior: number;
   variacao: number | null;
 };
+
+const DIAS_SEM = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export function CmvTabela({
   rows,
   eiId,
   efId,
-  faturamento,
+  faturamentoCaixa,
+  fatManual,
+  dias,
   meta,
 }: {
   rows: CmvRow[];
   eiId: string;
   efId: string;
-  faturamento: number;
+  faturamentoCaixa: number;
+  fatManual: Record<string, number>;
+  dias: { data: string; dow: number }[];
   meta: number;
 }) {
   const router = useRouter();
   const [, start] = useTransition();
+  const [fatM, setFatM] = useState<Record<string, string>>(() => {
+    const o: Record<string, string> = {};
+    for (const d of dias)
+      for (const t of ["dia", "noite"]) {
+        const v = fatManual[`${d.data}|${t}`];
+        o[`${d.data}|${t}`] = v ? String(v) : "";
+      }
+    return o;
+  });
   const [ei, setEi] = useState<Record<string, string>>(() =>
     Object.fromEntries(rows.map((r) => [r.produtoId, r.eiQtd ? String(r.eiQtd) : ""])),
   );
@@ -76,6 +93,8 @@ export function CmvTabela({
     if (entra[r.produtoId]) totalCmv += c;
     else totalUniversal += c;
   }
+  const manualTotal = Object.values(fatM).reduce((s, v) => s + num(v), 0);
+  const faturamento = faturamentoCaixa + manualTotal;
   const cmvPct = faturamento > 0 ? totalCmv / faturamento : 0;
   const lacuna = cmvPct - meta;
 
@@ -100,6 +119,11 @@ export function CmvTabela({
     const contagemId = qual === "ei" ? eiId : efId;
     start(async () => {
       await salvarContagemItem(contagemId, produtoId, num(valor));
+    });
+  }
+  function persistFat(data: string, turno: string, valor: string) {
+    start(async () => {
+      await salvarFaturamentoDia(data, turno, num(valor));
     });
   }
   function toggleProduto(produtoId: string, v: boolean) {
@@ -141,29 +165,91 @@ export function CmvTabela({
         )}
       </div>
 
+      {/* Faturamento diário livre (por turno) */}
+      <div className="mb-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+            Faturamento da semana
+            {faturamentoCaixa > 0 && (
+              <span className="ml-1 text-xs font-normal text-zinc-400">
+                (+ caixa {moeda(faturamentoCaixa)})
+              </span>
+            )}
+          </h2>
+          <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+            {moeda(faturamento)}
+          </span>
+        </div>
+        <p className="mb-3 text-xs text-zinc-500">
+          Lance à mão por dia enquanto não usa o caixa. Almoço (seg–sáb) e noite (sex e sáb).
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {dias.map((d) => {
+            const temDia = d.dow >= 1 && d.dow <= 6;
+            const temNoite = d.dow === 5 || d.dow === 6;
+            if (!temDia && !temNoite) return null;
+            const [, m, dd] = d.data.split("-");
+            const campoFat =
+              "mt-0.5 block w-24 rounded border border-zinc-300 bg-white px-2 py-1 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+            return (
+              <div key={d.data} className="rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
+                <p className="mb-1 text-[11px] font-semibold text-zinc-500">
+                  {DIAS_SEM[d.dow]} {dd}/{m}
+                </p>
+                <div className="flex gap-2">
+                  {temDia && (
+                    <label className="text-[10px] text-zinc-400">
+                      almoço
+                      <input
+                        inputMode="decimal"
+                        value={fatM[`${d.data}|dia`] ?? ""}
+                        placeholder="0,00"
+                        onChange={(e) => setFatM((s) => ({ ...s, [`${d.data}|dia`]: e.target.value }))}
+                        onBlur={(e) => persistFat(d.data, "dia", e.target.value)}
+                        className={campoFat}
+                      />
+                    </label>
+                  )}
+                  {temNoite && (
+                    <label className="text-[10px] text-zinc-400">
+                      noite
+                      <input
+                        inputMode="decimal"
+                        value={fatM[`${d.data}|noite`] ?? ""}
+                        placeholder="0,00"
+                        onChange={(e) => setFatM((s) => ({ ...s, [`${d.data}|noite`]: e.target.value }))}
+                        onBlur={(e) => persistFat(d.data, "noite", e.target.value)}
+                        className={campoFat}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {aumentos.length > 0 && (
         <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
           <h2 className="mb-2 text-sm font-semibold text-red-700 dark:text-red-300">
             📈 Maiores aumentos de preço na semana
           </h2>
           <div className="flex flex-wrap gap-2">
-            {aumentos.map((r) => {
-              const antigo = r.precoCompra / (1 + (r.variacao ?? 0));
-              return (
-                <div
-                  key={r.produtoId}
-                  className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs dark:border-red-900/60 dark:bg-zinc-900"
-                >
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-100">{r.nome}</span>{" "}
-                  <span className="font-bold text-red-600">
-                    ▲ {((r.variacao ?? 0) * 100).toFixed(0)}%
-                  </span>
-                  <span className="ml-1 text-zinc-400">
-                    {moeda(antigo)} → {moeda(r.precoCompra)}
-                  </span>
-                </div>
-              );
-            })}
+            {aumentos.map((r) => (
+              <div
+                key={r.produtoId}
+                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs dark:border-red-900/60 dark:bg-zinc-900"
+              >
+                <span className="font-semibold text-zinc-800 dark:text-zinc-100">{r.nome}</span>{" "}
+                <span className="font-bold text-red-600">
+                  ▲ {((r.variacao ?? 0) * 100).toFixed(0)}% (+{moeda(r.precoCompra - r.precoAnterior)})
+                </span>
+                <span className="ml-1 text-zinc-400">
+                  {moeda(r.precoAnterior)} → {moeda(r.precoCompra)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -265,7 +351,9 @@ export function CmvTabela({
                                       title="variação de preço vs semana anterior"
                                     >
                                       {r.variacao > 0.001 ? "▲" : r.variacao < -0.001 ? "▼" : ""}
-                                      {Math.abs(r.variacao * 100).toFixed(0)}%
+                                      {Math.abs(r.variacao * 100).toFixed(0)}%{" "}
+                                      {r.precoCompra - r.precoAnterior >= 0 ? "+" : "−"}
+                                      {moeda(Math.abs(r.precoCompra - r.precoAnterior))}
                                     </span>
                                   )}
                                 </div>

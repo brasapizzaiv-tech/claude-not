@@ -21,6 +21,23 @@ export async function salvarContagemItem(
   return { ok: true };
 }
 
+// Lança/atualiza o faturamento de um dia e turno (dia/noite).
+export async function salvarFaturamentoDia(
+  data: string,
+  turno: string,
+  valor: number,
+) {
+  const supabase = await createClient();
+  await supabase
+    .from("faturamento_dia")
+    .upsert(
+      { data, turno: turno === "noite" ? "noite" : "dia", valor },
+      { onConflict: "data,turno" },
+    );
+  revalidatePath("/financeiro/cmv");
+  return { ok: true };
+}
+
 // Marca se um produto entra (ou não) no cálculo do CMV.
 export async function definirEntraCmvProduto(produtoId: string, entra: boolean) {
   const supabase = await createClient();

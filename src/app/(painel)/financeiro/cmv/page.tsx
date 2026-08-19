@@ -181,9 +181,31 @@ export default async function CmvPage({
       efQtd: qtdEF.get(p.id) ?? 0,
       compras: ca?.valor ?? 0,
       precoCompra: precoAtual,
+      precoAnterior: precoAnt,
       variacao,
     };
   });
+
+  // Faturamento manual do período (por dia/turno) + dias do período.
+  const { data: fatData } = await supabase
+    .from("faturamento_dia")
+    .select("data, turno, valor")
+    .gt("data", dEI)
+    .lte("data", dEF);
+  const fatManual: Record<string, number> = {};
+  for (const f of (fatData as { data: string; turno: string; valor: number }[]) ?? []) {
+    fatManual[`${f.data}|${f.turno}`] = Number(f.valor);
+  }
+  const dias: { data: string; dow: number }[] = [];
+  {
+    const cur = new Date(dEI + "T00:00:00Z");
+    cur.setUTCDate(cur.getUTCDate() + 1);
+    const fim = new Date(dEF + "T00:00:00Z");
+    while (cur <= fim) {
+      dias.push({ data: cur.toISOString().slice(0, 10), dow: cur.getUTCDay() });
+      cur.setUTCDate(cur.getUTCDate() + 1);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-7xl p-6 sm:p-8">
@@ -222,7 +244,15 @@ export default async function CmvPage({
         </span>
       </form>
 
-      <CmvTabela rows={rows} eiId={ei.id} efId={ef.id} faturamento={faturamento} meta={meta} />
+      <CmvTabela
+        rows={rows}
+        eiId={ei.id}
+        efId={ef.id}
+        faturamentoCaixa={faturamento}
+        fatManual={fatManual}
+        dias={dias}
+        meta={meta}
+      />
     </div>
   );
 }
