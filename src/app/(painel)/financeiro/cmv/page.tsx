@@ -54,7 +54,7 @@ export default async function CmvPage({
 
   if (contagens.length < 2) {
     return (
-      <div className="mx-auto max-w-5xl p-6 sm:p-8">
+      <div className="mx-auto max-w-7xl p-6 sm:p-8">
         {cabecalho}
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
           É preciso ter pelo menos <b>duas contagens finalizadas</b> (uma vira o
@@ -73,7 +73,7 @@ export default async function CmvPage({
 
   if (!ei) {
     return (
-      <div className="mx-auto max-w-5xl p-6 sm:p-8">
+      <div className="mx-auto max-w-7xl p-6 sm:p-8">
         {cabecalho}
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
           A contagem de <b>{dataBR(ef.data)}</b> é a primeira — não há contagem
@@ -170,7 +170,7 @@ export default async function CmvPage({
   }));
 
   return (
-    <div className="mx-auto max-w-5xl p-6 sm:p-8">
+    <div className="mx-auto max-w-7xl p-6 sm:p-8">
       {cabecalho}
 
       <form className="mb-5 flex flex-wrap items-end gap-2">
