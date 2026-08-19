@@ -4,12 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerOfx } from "@/lib/ofx";
 
-export async function importarOfx(texto: string) {
+export async function importarOfx(texto: string, banco: string) {
   const supabase = await createClient();
+  if (!banco?.trim()) return { ok: false, erro: "Escolha o banco do extrato." };
   const trans = lerOfx(texto);
   if (trans.length === 0) return { ok: false, erro: "Nenhuma transação encontrada no arquivo." };
 
-  // Insere ignorando duplicadas (fitid único).
+  // Insere ignorando duplicadas — dedup por (banco, fitid).
   let novas = 0;
   for (const t of trans) {
     const { error } = await supabase.from("transacoes_banco").insert({
@@ -17,11 +18,49 @@ export async function importarOfx(texto: string) {
       valor: t.valor,
       descricao: t.descricao,
       fitid: t.fitid,
+      banco: banco.trim(),
     });
     if (!error) novas++;
   }
   revalidatePath("/financeiro/banco");
   return { ok: true, total: trans.length, novas };
+}
+
+// Cria um lançamento a partir da transação do banco e já concilia.
+export async function gerarLancamentoDaTransacao(
+  transacaoId: string,
+  categoriaId: string,
+) {
+  const supabase = await createClient();
+  const { data: t } = await supabase
+    .from("transacoes_banco")
+    .select("data, valor, descricao")
+    .eq("id", transacaoId)
+    .maybeSingle();
+  if (!t) return { ok: false, erro: "Transação não encontrada." };
+
+  const { data: l } = await supabase
+    .from("lancamentos")
+    .insert({
+      data: t.data,
+      valor: Math.abs(Number(t.valor)),
+      descricao: (t.descricao as string) || "Lançamento do extrato",
+      categoria_id: categoriaId || null,
+      origem: "manual",
+      pago: true,
+      pago_em: t.data,
+    })
+    .select("id")
+    .single();
+  if (!l) return { ok: false, erro: "Não foi possível criar o lançamento." };
+
+  await supabase
+    .from("transacoes_banco")
+    .update({ lancamento_id: l.id })
+    .eq("id", transacaoId);
+  revalidatePath("/financeiro/banco");
+  revalidatePath("/financeiro");
+  return { ok: true };
 }
 
 export async function conciliar(transacaoId: string, lancamentoId: string) {
