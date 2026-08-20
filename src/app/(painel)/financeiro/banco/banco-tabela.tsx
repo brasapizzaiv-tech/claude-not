@@ -9,6 +9,7 @@ import {
   conciliarVarias,
   desconciliar,
   gerarLancamentoDaTransacao,
+  lancarNotaEConciliar,
   excluirTransacao,
 } from "./actions";
 
@@ -25,6 +26,8 @@ type TransRow = {
   lancamentoLabel: string | null;
   sugestaoId: string | null;
   sugestaoLabel: string | null;
+  notaSugeridaId: string | null;
+  notaSugeridaLabel: string | null;
 };
 type Cat = { id: string; nome: string; tipo: string; grupo: string };
 type LancOpt = { id: string; label: string; tipo: string };
@@ -221,6 +224,10 @@ export function BancoTabela({
                         </span>
                       ) : t.sugestaoLabel ? (
                         <span className="text-zinc-500">sugestão: {t.sugestaoLabel}</span>
+                      ) : t.notaSugeridaLabel ? (
+                        <span className="text-orange-600 dark:text-orange-400">
+                          nota pendente: {t.notaSugeridaLabel}
+                        </span>
                       ) : (
                         <span className="text-zinc-400">—</span>
                       )}
@@ -243,6 +250,18 @@ export function BancoTabela({
                               className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
                             >
                               Conciliar
+                            </button>
+                          )}
+                          {!t.sugestaoId && t.notaSugeridaId && (
+                            <button
+                              disabled={proc}
+                              onClick={() =>
+                                run(() => lancarNotaEConciliar(t.id, t.notaSugeridaId!))
+                              }
+                              title={t.notaSugeridaLabel ?? ""}
+                              className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+                            >
+                              Lançar nota e conciliar
                             </button>
                           )}
                           <button

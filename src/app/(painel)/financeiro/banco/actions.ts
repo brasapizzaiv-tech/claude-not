@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerOfx } from "@/lib/ofx";
+import { lancarNota } from "@/app/(painel)/notas/actions";
 
 export async function importarOfx(texto: string, banco: string) {
   const supabase = await createClient();
@@ -67,12 +68,53 @@ export async function gerarLancamentoDaTransacao(
 
 export async function conciliar(transacaoId: string, lancamentoId: string) {
   const supabase = await createClient();
+  const { data: t } = await supabase
+    .from("transacoes_banco")
+    .select("data")
+    .eq("id", transacaoId)
+    .maybeSingle();
   await supabase
     .from("transacoes_banco")
     .update({ lancamento_id: lancamentoId })
     .eq("id", transacaoId);
+  // Conciliou = o dinheiro saiu/entrou no banco → marca a conta como paga.
+  await supabase
+    .from("lancamentos")
+    .update({ pago: true, pago_em: (t?.data as string) ?? null })
+    .eq("id", lancamentoId);
   revalidatePath("/financeiro/banco");
+  revalidatePath("/financeiro/contas");
   return { ok: true };
+}
+
+// Lança uma nota pendente e já concilia com a transação do banco (marcando paga).
+export async function lancarNotaEConciliar(transacaoId: string, notaId: string) {
+  const supabase = await createClient();
+  const { data: t } = await supabase
+    .from("transacoes_banco")
+    .select("data")
+    .eq("id", transacaoId)
+    .maybeSingle();
+  await lancarNota(notaId, {});
+  const { data: lancs } = await supabase
+    .from("lancamentos")
+    .select("id")
+    .eq("nota_id", notaId);
+  const ids = ((lancs as { id: string }[]) ?? []).map((l) => l.id);
+  if (ids.length > 0) {
+    await supabase
+      .from("lancamentos")
+      .update({ pago: true, pago_em: (t?.data as string) ?? null })
+      .in("id", ids);
+    await supabase
+      .from("transacoes_banco")
+      .update({ lancamento_id: ids[0] })
+      .eq("id", transacaoId);
+  }
+  revalidatePath("/financeiro/banco");
+  revalidatePath("/notas");
+  revalidatePath("/financeiro/contas");
+  return { ok: ids.length > 0 };
 }
 
 // Concilia várias transações de uma vez (cada uma com seu lançamento sugerido).
@@ -82,12 +124,22 @@ export async function conciliarVarias(
   const supabase = await createClient();
   for (const p of pares) {
     if (!p.lancamentoId) continue;
+    const { data: t } = await supabase
+      .from("transacoes_banco")
+      .select("data")
+      .eq("id", p.transacaoId)
+      .maybeSingle();
     await supabase
       .from("transacoes_banco")
       .update({ lancamento_id: p.lancamentoId })
       .eq("id", p.transacaoId);
+    await supabase
+      .from("lancamentos")
+      .update({ pago: true, pago_em: (t?.data as string) ?? null })
+      .eq("id", p.lancamentoId);
   }
   revalidatePath("/financeiro/banco");
+  revalidatePath("/financeiro/contas");
   return { ok: true };
 }
 

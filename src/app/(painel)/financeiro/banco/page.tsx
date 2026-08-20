@@ -82,6 +82,30 @@ export default async function BancoPage() {
     }
   }
 
+  // Casa transações de saída sem par com notas PENDENTES (por valor) → oferece lançar a nota.
+  const { data: notasPend } = await supabase
+    .from("notas_fiscais")
+    .select("id, numero, emit_nome, valor")
+    .eq("situacao", "pendente")
+    .limit(500);
+  const notasP =
+    (notasPend as { id: string; numero: string | null; emit_nome: string | null; valor: number }[]) ?? [];
+  const notasUsadas = new Set<string>();
+  const notaMatchId = new Map<string, string>();
+  const notaMatchLabel = new Map<string, string>();
+  for (const t of transacoes) {
+    if (t.lancamento_id || Number(t.valor) >= 0 || sugId.has(t.id)) continue;
+    const alvo = Math.abs(Number(t.valor));
+    const cand = notasP.find(
+      (n) => !notasUsadas.has(n.id) && Math.abs(Number(n.valor) - alvo) < 0.01,
+    );
+    if (cand) {
+      notasUsadas.add(cand.id);
+      notaMatchId.set(t.id, cand.id);
+      notaMatchLabel.set(t.id, `NF ${cand.numero ?? "—"} — ${cand.emit_nome ?? "fornecedor"}`);
+    }
+  }
+
   const rows = transacoes.map((t) => ({
     id: t.id,
     data: t.data,
@@ -92,6 +116,8 @@ export default async function BancoPage() {
     lancamentoLabel: t.lancamentos?.descricao ?? null,
     sugestaoId: sugId.get(t.id) ?? null,
     sugestaoLabel: sugLabel.get(t.id) ?? null,
+    notaSugeridaId: notaMatchId.get(t.id) ?? null,
+    notaSugeridaLabel: notaMatchLabel.get(t.id) ?? null,
   }));
 
   const lancamentosOpt = lancs.map((l) => ({
