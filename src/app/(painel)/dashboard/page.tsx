@@ -206,19 +206,19 @@ export default async function DashboardPage() {
                   <p className="text-xs text-zinc-400">Últimos 6 meses</p>
                 </div>
               </div>
-              <div className="flex h-44 items-end justify-between gap-2">
+              <div className="flex h-48 items-stretch justify-between gap-3">
                 {serie.map((m) => {
-                  const hf = Math.max(m.valor > 0 ? 3 : 0, Math.round((m.valor / maxFat) * 100));
-                  const hd = Math.max(m.desp > 0 ? 3 : 0, Math.round((m.desp / maxFat) * 100));
+                  const hf = m.valor > 0 ? Math.max(4, Math.round((m.valor / maxFat) * 100)) : 0;
+                  const hd = m.desp > 0 ? Math.max(4, Math.round((m.desp / maxFat) * 100)) : 0;
                   return (
-                    <div key={m.ym} className="flex flex-1 flex-col items-center gap-1.5">
-                      <span className="text-[10px] font-medium text-zinc-400">
+                    <div key={m.ym} className="flex flex-1 flex-col items-center">
+                      <span className="mb-1 text-[10px] font-medium text-zinc-400">
                         {m.valor > 0 ? curto(m.valor) : ""}
                       </span>
-                      <div className="flex h-full w-full items-end justify-center gap-1">
+                      <div className="flex w-full flex-1 items-end justify-center gap-1">
                         <div
                           title={`Faturamento ${m.real > 0 ? "(real do caixa)" : "(fiscal)"}: ${moedaBR(m.valor)}`}
-                          className={`w-1/2 rounded-t-md transition-all ${
+                          className={`w-2/5 rounded-t-md transition-all ${
                             m.real > 0
                               ? "bg-orange-500"
                               : "bg-orange-300 dark:bg-orange-500/50"
@@ -227,11 +227,11 @@ export default async function DashboardPage() {
                         />
                         <div
                           title={`Despesas: ${moedaBR(m.desp)}`}
-                          className="w-1/2 rounded-t-md bg-rose-400 transition-all dark:bg-rose-500/60"
+                          className="w-2/5 rounded-t-md bg-rose-400 transition-all dark:bg-rose-500/60"
                           style={{ height: `${hd}%` }}
                         />
                       </div>
-                      <span className="text-[11px] capitalize text-zinc-500">{m.label}</span>
+                      <span className="mt-1.5 text-[11px] capitalize text-zinc-500">{m.label}</span>
                     </div>
                   );
                 })}
