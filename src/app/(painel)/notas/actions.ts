@@ -47,6 +47,26 @@ async function comProdutoVinculado(
   });
 }
 
+// Guarda as parcelas (duplicatas) da nota. Só quando há mais de uma — uma só é
+// apenas o vencimento único, que já vai na coluna vencimento da nota.
+async function salvarParcelas(
+  supabase: SupabaseClient,
+  notaId: string,
+  parcelas: { numero: string; vencimento: string | null; valor: number }[],
+) {
+  await supabase.from("nota_parcelas").delete().eq("nota_id", notaId);
+  if (parcelas.length > 1) {
+    await supabase.from("nota_parcelas").insert(
+      parcelas.map((p) => ({
+        nota_id: notaId,
+        numero: p.numero,
+        vencimento: p.vencimento,
+        valor: p.valor,
+      })),
+    );
+  }
+}
+
 export async function importarNota(
   xmlText: string,
   clienteExterno?: SupabaseClient,
@@ -97,6 +117,7 @@ export async function importarNota(
         .from("nota_itens")
         .insert(itens.map((i) => ({ ...i, nota_id: existe.id })));
     }
+    await salvarParcelas(supabase, existe.id, nf.parcelas);
 
     revalidatePath("/notas");
     return { ok: true, notaId: existe.id, enriquecida: true };
@@ -127,6 +148,7 @@ export async function importarNota(
       .from("nota_itens")
       .insert(itens.map((i) => ({ ...i, nota_id: nota.id })));
   }
+  await salvarParcelas(supabase, nota.id, nf.parcelas);
 
   // A nota entra como PENDENTE. Só vira conta a pagar quando o usuário lançar.
   revalidatePath("/notas");
@@ -192,7 +214,11 @@ export async function vincularFornecedorNota(
 // opts: vencimento do boleto e competência (mês AAAA-MM) escolhidos na revisão.
 export async function lancarNota(
   notaId: string,
-  opts?: { vencimento?: string | null; competencia?: string | null },
+  opts?: {
+    vencimento?: string | null;
+    competencia?: string | null;
+    parcelar?: boolean;
+  },
 ) {
   const supabase = await createClient();
   const { data: nota } = await supabase
@@ -202,6 +228,17 @@ export async function lancarNota(
     .maybeSingle();
   if (!nota || nota.situacao === "lancada") return { ok: false };
   const ehServico = (nota as { tipo?: string }).tipo === "servico";
+
+  // Parcelas (duplicatas) da nota — quando o usuário optar por lançar parcelado,
+  // cada parcela vira uma conta a pagar com seu vencimento e valor.
+  const { data: parcData } = await supabase
+    .from("nota_parcelas")
+    .select("numero, vencimento, valor")
+    .eq("nota_id", notaId)
+    .order("vencimento");
+  const parcelas =
+    (parcData as { numero: string | null; vencimento: string | null; valor: number }[]) ?? [];
+  const usarParcelas = opts?.parcelar === true && parcelas.length > 1;
 
   // Persiste o vencimento informado na revisão.
   if (opts?.vencimento !== undefined) {
@@ -261,20 +298,66 @@ export async function lancarNota(
   }
 
   await supabase.from("lancamentos").delete().eq("nota_id", notaId);
-  const novos = [...porConta.entries()]
-    .filter(([, v]) => v > 0)
-    .map(([contaId, valor]) => ({
-      data: dataLanc,
-      categoria_id: contaId,
-      valor,
-      descricao,
-      fornecedor_id: nota.fornecedor_id,
-      origem: "nota" as const,
-      nota_id: notaId,
-      vencimento,
-      pago,
-      pago_em: pago ? dataLanc : null,
-    }));
+  const contas = [...porConta.entries()].filter(([, v]) => v > 0);
+  const totalNota =
+    Number(nota.valor) || contas.reduce((s, [, v]) => s + v, 0);
+
+  type LancNovo = {
+    data: string;
+    categoria_id: string | null;
+    valor: number;
+    descricao: string;
+    fornecedor_id: string | null;
+    origem: "nota";
+    nota_id: string;
+    vencimento: string | null;
+    pago: boolean;
+    pago_em: string | null;
+  };
+  const novos: LancNovo[] = [];
+
+  if (usarParcelas && totalNota > 0) {
+    // Cada conta do DRE é distribuída entre as parcelas (proporcional ao valor
+    // de cada parcela); a última parcela absorve o centavo de arredondamento.
+    for (const [contaId, valorConta] of contas) {
+      let acumulado = 0;
+      parcelas.forEach((p, idx) => {
+        const ultima = idx === parcelas.length - 1;
+        const fatia = ultima
+          ? Math.round((valorConta - acumulado) * 100) / 100
+          : Math.round((valorConta * (Number(p.valor) / totalNota)) * 100) / 100;
+        acumulado += fatia;
+        if (fatia <= 0) return;
+        novos.push({
+          data: dataLanc,
+          categoria_id: contaId,
+          valor: fatia,
+          descricao: `${descricao} (parc. ${p.numero ?? idx + 1}/${parcelas.length})`,
+          fornecedor_id: nota.fornecedor_id,
+          origem: "nota",
+          nota_id: notaId,
+          vencimento: p.vencimento,
+          pago,
+          pago_em: pago ? dataLanc : null,
+        });
+      });
+    }
+  } else {
+    for (const [contaId, valor] of contas) {
+      novos.push({
+        data: dataLanc,
+        categoria_id: contaId,
+        valor,
+        descricao,
+        fornecedor_id: nota.fornecedor_id,
+        origem: "nota",
+        nota_id: notaId,
+        vencimento,
+        pago,
+        pago_em: pago ? dataLanc : null,
+      });
+    }
+  }
   if (novos.length > 0) await supabase.from("lancamentos").insert(novos);
 
   await supabase

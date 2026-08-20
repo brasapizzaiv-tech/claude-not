@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { dataBR } from "@/lib/format";
 import { UploadNota } from "./upload";
-import { NotaAcoes } from "./nota-acoes";
 import { BuscarNotas } from "./buscar-notas";
 import { ManifestarLote } from "./manifestar-lote";
-
-const moeda = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+import { NotasLista, type NotaLinha } from "./notas-lista";
 
 export default async function NotasPage() {
   const supabase = await createClient();
@@ -62,16 +58,28 @@ export default async function NotasPage() {
       data_emissao: n.data_emissao,
     }));
 
-  const badge: Record<string, string> = {
-    pendente: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-    lancada: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
-    cancelada: "bg-zinc-200 text-zinc-500 line-through dark:bg-zinc-800",
-  };
-  const rotulo: Record<string, string> = {
-    pendente: "pendente",
-    lancada: "lançada",
-    cancelada: "cancelada",
-  };
+  // Contagem de parcelas por nota (para o selo "Nx" na lista).
+  const parcCount = new Map<string, number>();
+  {
+    const { data: parc } = await supabase
+      .from("nota_parcelas")
+      .select("nota_id")
+      .in("nota_id", notas.map((n) => n.id));
+    for (const p of (parc as { nota_id: string }[]) ?? [])
+      parcCount.set(p.nota_id, (parcCount.get(p.nota_id) ?? 0) + 1);
+  }
+
+  const linhas: NotaLinha[] = notas.map((n) => ({
+    id: n.id,
+    numero: n.numero,
+    emit_nome: n.emit_nome,
+    valor: Number(n.valor),
+    data_emissao: n.data_emissao,
+    vencimento: n.vencimento,
+    situacao: n.situacao,
+    aguardando: aguardando(n),
+    parcelas: parcCount.get(n.id) ?? 0,
+  }));
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-8">
@@ -108,64 +116,7 @@ export default async function NotasPage() {
           arquivos <b>.xml</b> das notas.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
-              <tr>
-                <th className="px-4 py-3">Fornecedor</th>
-                <th className="px-4 py-3">Nº</th>
-                <th className="px-4 py-3">Emissão</th>
-                <th className="px-4 py-3">Vencimento</th>
-                <th className="px-4 py-3 text-right">Valor</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {notas.map((n) => (
-                <tr key={n.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                    <Link href={`/notas/${n.id}`} className="hover:text-orange-600 hover:underline">
-                      {n.emit_nome ?? "—"}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">{n.numero}</td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {n.data_emissao ? dataBR(n.data_emissao) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {n.vencimento ? dataBR(n.vencimento) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-zinc-800 dark:text-zinc-200">
-                    {moeda(Number(n.valor))}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-1">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          badge[n.situacao] ?? badge.pendente
-                        }`}
-                      >
-                        {rotulo[n.situacao] ?? n.situacao}
-                      </span>
-                      {aguardando(n) && (
-                        <span
-                          className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                          title="Manifestada — a busca automática vai trazer os itens em alguns minutos."
-                        >
-                          ⏳ aguardando itens
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
-                    <NotaAcoes notaId={n.id} situacao={n.situacao} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <NotasLista notas={linhas} />
       )}
     </div>
   );

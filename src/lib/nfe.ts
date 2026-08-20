@@ -21,6 +21,7 @@ export type NfeLida = {
   dest_cnpj: string;
   valor: number;
   vencimento: string | null;
+  parcelas: { numero: string; vencimento: string | null; valor: number }[];
   itens: {
     cprod: string;
     descricao: string;
@@ -40,6 +41,13 @@ export function lerNfe(xml: string): NfeLida {
   const ide = bloco(xml, "ide");
   const icmsTot = bloco(xml, "ICMSTot");
   const cobr = bloco(xml, "cobr");
+
+  // Parcelas (duplicatas) da cobrança — cada <dup> é um boleto/parcela.
+  const parcelas = (cobr.match(/<dup>[\s\S]*?<\/dup>/g) || []).map((dup, i) => ({
+    numero: pick(dup, "nDup") || String(i + 1),
+    vencimento: pick(dup, "dVenc").slice(0, 10) || null,
+    valor: Number(pick(dup, "vDup")) || 0,
+  }));
 
   const itens = (xml.match(/<det[^>]*>[\s\S]*?<\/det>/g) || []).map((det) => {
     const prod = bloco(det, "prod");
@@ -65,7 +73,10 @@ export function lerNfe(xml: string): NfeLida {
     emit_nome: pick(emit, "xNome"),
     dest_cnpj: soDigitos(pick(dest, "CNPJ")),
     valor: Number(pick(icmsTot, "vNF")) || 0,
-    vencimento: (cobr.match(/<dVenc>([\s\S]*?)<\/dVenc>/) || [])[1] ?? null,
+    vencimento:
+      parcelas[0]?.vencimento ??
+      ((cobr.match(/<dVenc>([\s\S]*?)<\/dVenc>/) || [])[1] || null),
+    parcelas,
     itens,
   };
 }

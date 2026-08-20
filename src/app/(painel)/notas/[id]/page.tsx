@@ -73,6 +73,15 @@ export default async function NotaDetalhePage({
     7,
   );
 
+  // Parcelas (duplicatas) lidas do XML — para lançar parcelado.
+  const { data: parcData } = await supabase
+    .from("nota_parcelas")
+    .select("numero, vencimento, valor")
+    .eq("nota_id", id)
+    .order("vencimento");
+  const parcelas =
+    (parcData as { numero: string | null; vencimento: string | null; valor: number }[]) ?? [];
+
   // Pedidos candidatos (mesmo fornecedor).
   type Ped = {
     id: string;
@@ -133,6 +142,7 @@ export default async function NotaDetalhePage({
         tipo={nota.tipo ?? "mercadoria"}
         dreCategoriaId={nota.dre_categoria_id ?? null}
         categorias={categorias}
+        parcelas={parcelas}
       />
 
       {/* Nota em resumo (sem itens) → oferecer manifestação */}

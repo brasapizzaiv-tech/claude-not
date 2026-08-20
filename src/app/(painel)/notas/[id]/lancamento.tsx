@@ -11,11 +11,15 @@ import {
   criarEVincularFornecedor,
 } from "../actions";
 import { Combobox } from "@/components/combobox";
+import { dataBR } from "@/lib/format";
 
 const campo =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+const moeda = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 type Cat = { id: string; tipo: string; grupo: string; nome: string };
+type Parcela = { numero: string | null; vencimento: string | null; valor: number };
 
 export function LancamentoNota({
   notaId,
@@ -30,6 +34,7 @@ export function LancamentoNota({
   tipo,
   dreCategoriaId,
   categorias,
+  parcelas,
 }: {
   notaId: string;
   situacao: string;
@@ -43,6 +48,7 @@ export function LancamentoNota({
   tipo: string;
   dreCategoriaId: string | null;
   categorias: Cat[];
+  parcelas: Parcela[];
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -53,6 +59,8 @@ export function LancamentoNota({
   const [modoNovo, setModoNovo] = useState(false);
   const [novoNome, setNovoNome] = useState(emitNome ?? "");
   const [catSel, setCatSel] = useState(dreCategoriaId ?? "");
+  const temParcelas = parcelas.length > 1;
+  const [parcelar, setParcelar] = useState(temParcelas);
 
   const lancada = situacao === "lancada";
   const ehServico = tipo === "servico";
@@ -87,7 +95,11 @@ export function LancamentoNota({
   }
   function lancar() {
     start(async () => {
-      await lancarNota(notaId, { vencimento: venc || null, competencia: comp || null });
+      await lancarNota(notaId, {
+        vencimento: venc || null,
+        competencia: comp || null,
+        parcelar: temParcelas && parcelar,
+      });
       router.refresh();
     });
   }
@@ -239,14 +251,47 @@ export function LancamentoNota({
         </div>
       )}
 
+      {/* Parcelamento (duplicatas do XML) */}
+      {temParcelas && (
+        <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3 dark:border-violet-900 dark:bg-violet-950/20">
+          <label className="flex items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <input
+              type="checkbox"
+              checked={parcelar}
+              disabled={lancada}
+              onChange={(e) => setParcelar(e.target.checked)}
+            />
+            Lançar parcelado — {parcelas.length}x (uma conta a pagar por parcela)
+          </label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {parcelas.map((p, i) => (
+              <span
+                key={i}
+                className="rounded-lg border border-violet-200 bg-white px-2.5 py-1 text-xs text-zinc-600 dark:border-violet-900 dark:bg-zinc-900 dark:text-zinc-300"
+              >
+                {p.numero ?? i + 1}: {p.vencimento ? dataBR(p.vencimento) : "—"} ·{" "}
+                {moeda(Number(p.valor))}
+              </span>
+            ))}
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-400">
+            Parcelas lidas do XML da nota. Desmarque para lançar como uma conta
+            única no vencimento abaixo.
+          </p>
+        </div>
+      )}
+
       {/* Vencimento + Competência */}
       <div className="flex flex-wrap gap-3">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Vencimento do boleto</label>
+          <label className="mb-1 block text-xs text-zinc-500">
+            Vencimento do boleto
+            {parcelar && temParcelas ? " (usando as parcelas acima)" : ""}
+          </label>
           <input
             type="date"
             value={venc}
-            disabled={lancada}
+            disabled={lancada || (parcelar && temParcelas)}
             onChange={(e) => setVenc(e.target.value)}
             className={campo}
           />
