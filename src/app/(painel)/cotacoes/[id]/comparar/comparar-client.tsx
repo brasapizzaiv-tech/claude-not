@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { dataBR } from "@/lib/format";
 import { gerarPedidos, novaCotacaoDosFaltantes } from "../../actions";
 
 export type FornecedorCol = {
@@ -15,6 +16,8 @@ export type FornecedorCol = {
   pedido_minimo: number | null;
   condicao_pagamento: string | null;
   observacao: string | null;
+  promocaoTexto: string | null;
+  promocaoFoto: string | null;
 };
 
 export type ExclusivoLinha = {
@@ -42,6 +45,7 @@ export type ProdutoLinha = {
       disp: boolean;
       foto: string | null;
       emb: string | null;
+      tam: string | null;
       obs: string | null;
     }
   >;
@@ -324,6 +328,40 @@ export function CompararClient({
         )}
       </div>
 
+      {fornecedores.some((f) => f.promocaoTexto || f.promocaoFoto) && (
+        <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            🎁 Ofertas dos fornecedores
+          </h2>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {fornecedores
+              .filter((f) => f.promocaoTexto || f.promocaoFoto)
+              .map((f) => (
+                <div
+                  key={f.id}
+                  className="flex gap-3 rounded-lg border border-violet-200 bg-white p-2 dark:border-violet-900 dark:bg-zinc-900"
+                >
+                  {f.promocaoFoto && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={f.promocaoFoto}
+                      alt="oferta"
+                      onClick={() => setFotoAberta(f.promocaoFoto)}
+                      className="h-14 w-14 cursor-pointer rounded-lg object-cover"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                      {f.nome}
+                    </p>
+                    <p className="text-xs text-zinc-500">{f.promocaoTexto}</p>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       {produtos.length > 0 && (
       <div className="max-h-[75vh] overflow-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-sm">
@@ -364,6 +402,7 @@ export function CompararClient({
                     </div>
                     <div className="text-[10px] font-normal text-zinc-400">
                       {respondeu ? `respondeu ${hora}` : "não respondeu"}
+                      {f.prazo_entrega ? ` · entrega ${dataBR(f.prazo_entrega)}` : ""}
                       {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
                       {f.condicao_pagamento ? ` · ${f.condicao_pagamento}` : ""}
                     </div>
@@ -522,11 +561,9 @@ export function CompararClient({
                                 : "ST inclusa"}
                             </div>
                           )}
-                          {(cel.emb || cel.obs) && (
+                          {(cel.emb || cel.tam || cel.obs) && (
                             <div className="mt-0.5 text-right text-[10px] leading-tight text-zinc-400">
-                              {cel.emb}
-                              {cel.emb && cel.obs ? " · " : ""}
-                              {cel.obs}
+                              {[cel.emb, cel.tam, cel.obs].filter(Boolean).join(" · ")}
                             </div>
                           )}
                           {cel.foto && (

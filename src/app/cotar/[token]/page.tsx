@@ -29,6 +29,7 @@ export default async function CotarPublicoPage({
   }
 
   const produtos = (data.produtos as LinhaPreco[]) ?? [];
+  const outros = (data.outros as LinhaPreco[]) ?? [];
 
   return (
     <CotarPreencher
@@ -38,11 +39,14 @@ export default async function CotarPublicoPage({
       prazo={data.cotacao?.prazo ?? null}
       fechada={data.cotacao?.status === "fechada"}
       produtos={produtos}
+      outros={outros}
       meta={{
         prazo_entrega: data.prazo_entrega ?? "",
         pedido_minimo: data.pedido_minimo != null ? String(data.pedido_minimo) : "",
         condicao_pagamento: data.condicao_pagamento ?? "",
         observacao: data.observacao ?? "",
+        promocao_texto: data.promocao_texto ?? "",
+        promocao_foto: data.promocao_foto ?? "",
       }}
     />
   );

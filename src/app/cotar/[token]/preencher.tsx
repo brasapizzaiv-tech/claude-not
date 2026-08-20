@@ -15,6 +15,7 @@ export type LinhaPreco = {
   disponivel: boolean;
   foto_url: string | null;
   embalagem: string | null;
+  tamanho_embalagem: string | null;
   observacao: string | null;
   tem_st: boolean;
   st_pct_padrao: number | null;
@@ -27,6 +28,8 @@ type Meta = {
   pedido_minimo: string;
   condicao_pagamento: string;
   observacao: string;
+  promocao_texto: string;
+  promocao_foto: string;
 };
 
 const EMBALAGENS = ["Unidade", "Fardo", "Caixa", "Pacote", "Kg", "Dúzia", "Saco", "Bandeja", "Litro"];
@@ -41,6 +44,7 @@ export function CotarPreencher({
   prazo,
   fechada,
   produtos,
+  outros,
   meta,
 }: {
   token: string;
@@ -49,31 +53,34 @@ export function CotarPreencher({
   prazo: string | null;
   fechada: boolean;
   produtos: LinhaPreco[];
+  outros: LinhaPreco[];
   meta: Meta;
 }) {
+  // Itens que ele já fornece + os "outros" da cotação (que ele pode incluir).
+  const todos = [...produtos, ...outros];
   const formRef = useRef<HTMLFormElement>(null);
   const [enviando, startSend] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState<"idle" | "salvando" | "ok">("idle");
   const [indisp, setIndisp] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(produtos.map((p) => [p.produto_id, !p.disponivel])),
+    Object.fromEntries(todos.map((p) => [p.produto_id, !p.disponivel])),
   );
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
   const [dados, setDados] = useState<Meta>(meta);
   const [emb, setEmb] = useState<Record<string, string>>(() =>
-    Object.fromEntries(produtos.map((p) => [p.produto_id, p.embalagem ?? ""])),
+    Object.fromEntries(todos.map((p) => [p.produto_id, p.embalagem ?? ""])),
   );
   const [obs, setObs] = useState<Record<string, string>>(() =>
-    Object.fromEntries(produtos.map((p) => [p.produto_id, p.observacao ?? ""])),
+    Object.fromEntries(todos.map((p) => [p.produto_id, p.observacao ?? ""])),
   );
   // ST por item: "inclusa" (o preço já inclui a ST?) e a % informada.
   const [stInc, setStInc] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(produtos.map((p) => [p.produto_id, p.st_inclusa ?? false])),
+    Object.fromEntries(todos.map((p) => [p.produto_id, p.st_inclusa ?? false])),
   );
   const [stPct, setStPct] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      produtos.map((p) => [
+      todos.map((p) => [
         p.produto_id,
         p.st_pct != null ? String(p.st_pct) : p.st_pct_padrao != null ? String(p.st_pct_padrao) : "",
       ]),
@@ -81,10 +88,22 @@ export function CotarPreencher({
   );
   const [fotos, setFotos] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      produtos.filter((p) => p.foto_url).map((p) => [p.produto_id, p.foto_url!]),
+      todos.filter((p) => p.foto_url).map((p) => [p.produto_id, p.foto_url!]),
     ),
   );
+  // "Outros" itens que o fornecedor decidiu incluir/cotar. Já vêm incluídos os
+  // que ele tiver preço salvo de um rascunho anterior.
+  const [incluidos, setIncluidos] = useState<Set<string>>(
+    () => new Set(outros.filter((o) => o.preco_unit != null).map((o) => o.produto_id)),
+  );
+  const [buscaOutros, setBuscaOutros] = useState("");
+  // Tamanho da embalagem por item (ex.: "fardo 12", "5kg") — separa preços que
+  // só diferem pelo tamanho.
+  const [tam, setTam] = useState<Record<string, string>>(() =>
+    Object.fromEntries(todos.map((p) => [p.produto_id, p.tamanho_embalagem ?? ""])),
+  );
   const [subindo, setSubindo] = useState<Record<string, boolean>>({});
+  const [subindoPromo, setSubindoPromo] = useState(false);
   const supabase = useMemo(() => createClient(), []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -95,15 +114,24 @@ export function CotarPreencher({
     return (el?.value ?? "").replace(",", ".").trim();
   };
 
+  // Itens ativos = os que ele fornece (menos removidos) + os "outros" incluídos.
+  const ativos = [
+    ...produtos.filter((p) => !removidos.has(p.produto_id)),
+    ...outros.filter((o) => incluidos.has(o.produto_id)),
+  ];
+  const outrosDisponiveis = outros.filter(
+    (o) => !incluidos.has(o.produto_id) && !removidos.has(o.produto_id),
+  );
+
   function montarPrecos() {
-    return produtos
-      .filter((p) => !removidos.has(p.produto_id))
+    return ativos
       .map((p) => ({
         produto_id: p.produto_id,
         preco_unit: indisp[p.produto_id] ? "" : ler(`preco_${p.produto_id}`),
         disponivel: !indisp[p.produto_id],
         foto_url: fotos[p.produto_id] ?? "",
         embalagem: emb[p.produto_id] ?? "",
+        tamanho_embalagem: tam[p.produto_id] ?? "",
         observacao: obs[p.produto_id] ?? "",
         st_inclusa: p.tem_st ? String(!!stInc[p.produto_id]) : "",
         st_pct: p.tem_st ? (stPct[p.produto_id] ?? "").replace(",", ".").trim() : "",
@@ -130,7 +158,7 @@ export function CotarPreencher({
   async function enviarFoto(produtoId: string, file: File) {
     setSubindo((s) => ({ ...s, [produtoId]: true }));
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `${token}/${produtoId}-${Date.now()}.${ext}`;
+    const path = `${token}/${produtoId}-${new Date().getTime()}.${ext}`;
     const { error } = await supabase.storage
       .from("cotacao-fotos")
       .upload(path, file, { upsert: true });
@@ -142,10 +170,32 @@ export function CotarPreencher({
     setSubindo((s) => ({ ...s, [produtoId]: false }));
   }
 
+  async function enviarFotoPromo(file: File) {
+    setSubindoPromo(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${token}/promocao-${new Date().getTime()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("cotacao-fotos")
+      .upload(path, file, { upsert: true });
+    if (!error) {
+      const { data } = supabase.storage.from("cotacao-fotos").getPublicUrl(path);
+      setDados((d) => ({ ...d, promocao_foto: data.publicUrl }));
+      agendarSalvar();
+    }
+    setSubindoPromo(false);
+  }
+
   function enviar() {
+    // Data de entrega é obrigatória.
+    if (!dados.prazo_entrega) {
+      setMsg(null);
+      setErro("Informe a data de entrega prevista (obrigatório) lá embaixo, em “Condições do pedido”.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     // Valida: cada item disponível precisa de preço e de embalagem/unidade.
     const faltando: string[] = [];
-    for (const p of produtos) {
+    for (const p of ativos) {
       if (removidos.has(p.produto_id) || indisp[p.produto_id]) continue;
       if (!ler(`preco_${p.produto_id}`)) faltando.push(`preço de ${p.nome}`);
       if (!(emb[p.produto_id] ?? "").trim()) faltando.push(`unidade de ${p.nome}`);
@@ -187,7 +237,15 @@ export function CotarPreencher({
     await removerItemPublico(token, produtoId);
   }
 
-  const visiveis = produtos.filter((p) => !removidos.has(p.produto_id));
+  function incluirOutro(produtoId: string) {
+    setIncluidos((s) => new Set(s).add(produtoId));
+    agendarSalvar();
+  }
+
+  const buscaOut = buscaOutros.trim().toLowerCase();
+  const outrosFiltrados = buscaOut
+    ? outrosDisponiveis.filter((o) => o.nome.toLowerCase().includes(buscaOut))
+    : outrosDisponiveis;
 
   return (
     <div className="min-h-screen bg-zinc-50 pb-24 dark:bg-zinc-950">
@@ -224,7 +282,7 @@ export function CotarPreencher({
         </p>
 
         <form ref={formRef} className="mt-4 space-y-3">
-          {visiveis.map((p) => {
+          {ativos.map((p) => {
             const emFalta = indisp[p.produto_id];
             return (
               <div
@@ -277,26 +335,41 @@ export function CotarPreencher({
                   </button>
                 </div>
 
-                {/* Embalagem / unidade de venda */}
+                {/* Embalagem / unidade de venda + tamanho */}
                 {!emFalta && (
-                  <div className="mt-2">
-                    <label className="text-xs text-zinc-500">Preço por (embalagem)</label>
-                    <select
-                      value={emb[p.produto_id] ?? ""}
-                      disabled={fechada}
-                      onChange={(e) => {
-                        setEmb((s) => ({ ...s, [p.produto_id]: e.target.value }));
-                        agendarSalvar();
-                      }}
-                      className={`${campo} mt-1 w-full`}
-                    >
-                      <option value="">Selecione...</option>
-                      {EMBALAGENS.map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-zinc-500">Preço por (embalagem)</label>
+                      <select
+                        value={emb[p.produto_id] ?? ""}
+                        disabled={fechada}
+                        onChange={(e) => {
+                          setEmb((s) => ({ ...s, [p.produto_id]: e.target.value }));
+                          agendarSalvar();
+                        }}
+                        className={`${campo} mt-1 w-full`}
+                      >
+                        <option value="">Selecione...</option>
+                        {EMBALAGENS.map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-500">Tamanho da embalagem</label>
+                      <input
+                        value={tam[p.produto_id] ?? ""}
+                        disabled={fechada}
+                        placeholder="Ex.: 12 un, 5 kg, 1 L"
+                        onChange={(e) => {
+                          setTam((s) => ({ ...s, [p.produto_id]: e.target.value }));
+                          agendarSalvar();
+                        }}
+                        className={`${campo} mt-1 w-full`}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -395,6 +468,104 @@ export function CotarPreencher({
             );
           })}
 
+          {/* Outros itens da cotação que ele ainda não fornece */}
+          {!fechada && outrosDisponiveis.length > 0 && (
+            <div className="rounded-2xl border border-dashed border-orange-300 bg-orange-50/40 p-4 dark:border-orange-800 dark:bg-orange-950/10">
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                Outros itens pedidos nesta cotação
+              </h2>
+              <p className="mt-1 text-xs text-zinc-500">
+                A loja também pediu estes itens (a outros fornecedores). Se você
+                trabalha com algum, clique em <b>Tenho / Cotar</b> — ele entra na
+                sua lista acima para você preço.
+              </p>
+              <input
+                value={buscaOutros}
+                onChange={(e) => setBuscaOutros(e.target.value)}
+                placeholder="🔎 Buscar item..."
+                className={`${campo} mt-3 w-full`}
+              />
+              <div className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-800">
+                {outrosFiltrados.map((o) => (
+                  <div
+                    key={o.produto_id}
+                    className="flex items-center justify-between gap-2 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                        {o.nome}
+                      </p>
+                      <p className="text-xs text-zinc-400">
+                        {o.marca ? `${o.marca} · ` : ""}Qtd: {o.qtd} {o.unidade}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => incluirOutro(o.produto_id)}
+                      className="shrink-0 rounded-lg border border-orange-400 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100 dark:text-orange-300 dark:hover:bg-orange-950"
+                    >
+                      + Tenho / Cotar
+                    </button>
+                  </div>
+                ))}
+                {outrosFiltrados.length === 0 && (
+                  <p className="py-2 text-xs text-zinc-400">Nenhum item encontrado.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Promoção / oferta do fornecedor */}
+          {!fechada && (
+            <div className="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                🎁 Tem alguma promoção ou oferta?
+              </h2>
+              <p className="mt-1 text-xs text-zinc-500">
+                Se quiser oferecer algo além da lista (um combo, um item em
+                promoção), escreva aqui e, se quiser, mande uma foto.
+              </p>
+              <textarea
+                rows={2}
+                value={dados.promocao_texto}
+                onChange={(e) => {
+                  setDados((d) => ({ ...d, promocao_texto: e.target.value }));
+                  agendarSalvar();
+                }}
+                placeholder="Ex.: Caixa de tomate pelado em promoção esta semana a R$ ..."
+                className={`${campo} mt-2 w-full`}
+              />
+              <div className="mt-2 flex items-center gap-3">
+                {dados.promocao_foto && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={dados.promocao_foto}
+                    alt="promoção"
+                    className="h-16 w-16 rounded-lg object-cover"
+                  />
+                )}
+                <label className="cursor-pointer text-xs font-medium text-violet-600 hover:underline">
+                  {subindoPromo
+                    ? "Enviando foto..."
+                    : dados.promocao_foto
+                      ? "Trocar foto"
+                      : "📷 Adicionar foto da oferta"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    disabled={subindoPromo}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) enviarFotoPromo(f);
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Rodapé: condições do fornecedor */}
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -402,16 +573,19 @@ export function CotarPreencher({
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs text-zinc-500">
-                Entrega prevista
+                Entrega prevista <span className="text-red-500">* obrigatório</span>
                 <input
                   type="date"
+                  required
                   value={dados.prazo_entrega}
                   disabled={fechada}
                   onChange={(e) => {
                     setDados((d) => ({ ...d, prazo_entrega: e.target.value }));
                     agendarSalvar();
                   }}
-                  className={`${campo} mt-1 w-full`}
+                  className={`${campo} mt-1 w-full ${
+                    !dados.prazo_entrega ? "border-red-300 dark:border-red-800" : ""
+                  }`}
                 />
               </label>
               <label className="text-xs text-zinc-500">

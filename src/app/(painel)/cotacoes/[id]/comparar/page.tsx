@@ -37,12 +37,12 @@ export default async function CompararPage({
       supabase
         .from("cotacao_fornecedores")
         .select(
-          "fornecedor_id, status, respondido_em, prazo_entrega, pedido_minimo, condicao_pagamento, observacao, fornecedores(nome, whatsapp)",
+          "fornecedor_id, status, respondido_em, prazo_entrega, pedido_minimo, condicao_pagamento, observacao, promocao_texto, promocao_foto, fornecedores(nome, whatsapp)",
         )
         .eq("cotacao_id", id),
       supabase
         .from("cotacao_precos")
-        .select("fornecedor_id, produto_id, preco_unit, disponivel, foto_url, embalagem, observacao, st_inclusa, st_pct")
+        .select("fornecedor_id, produto_id, preco_unit, disponivel, foto_url, embalagem, tamanho_embalagem, observacao, st_inclusa, st_pct")
         .eq("cotacao_id", id),
     ]);
 
@@ -67,6 +67,8 @@ export default async function CompararPage({
       pedido_minimo: f.pedido_minimo != null ? Number(f.pedido_minimo) : null,
       condicao_pagamento: (f.condicao_pagamento as string) ?? null,
       observacao: (f.observacao as string) ?? null,
+      promocaoTexto: (f.promocao_texto as string) ?? null,
+      promocaoFoto: (f.promocao_foto as string) ?? null,
     }),
   );
 
@@ -91,6 +93,7 @@ export default async function CompararPage({
       disp: boolean;
       foto: string | null;
       emb: string | null;
+      tam: string | null;
       obs: string | null;
     }
   >();
@@ -113,6 +116,7 @@ export default async function CompararPage({
       disp: p.disponivel,
       foto: p.foto_url ?? null,
       emb: (p.embalagem as string) ?? null,
+      tam: (p.tamanho_embalagem as string) ?? null,
       obs: (p.observacao as string) ?? null,
     });
   }
@@ -134,6 +138,7 @@ export default async function CompararPage({
           disp: boolean;
           foto: string | null;
           emb: string | null;
+          tam: string | null;
           obs: string | null;
         }
       > = {};

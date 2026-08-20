@@ -8,6 +8,7 @@ type Preco = {
   disponivel: boolean;
   foto_url: string;
   embalagem: string;
+  tamanho_embalagem: string;
   observacao: string;
   st_inclusa?: string; // "true" | "false" | ""
   st_pct?: string;
@@ -19,6 +20,8 @@ export type DadosCotacao = {
   pedido_minimo: string;
   condicao_pagamento: string;
   observacao: string;
+  promocao_texto?: string;
+  promocao_foto?: string;
   rascunho?: boolean;
 };
 
