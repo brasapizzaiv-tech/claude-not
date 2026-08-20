@@ -151,6 +151,16 @@ export default async function CmvPage({
   }
 
   const comprasAtual = await comprasNoPeriodo(dEI, dEF);
+
+  // Correções manuais de Compras desta semana (quando algo caiu fora da captura).
+  const { data: manData } = await supabase
+    .from("cmv_compras_manual")
+    .select("produto_id, valor")
+    .eq("contagem_id", ef.id);
+  const comprasManualMap = new Map<string, number>();
+  for (const m of (manData as { produto_id: string; valor: number }[]) ?? [])
+    comprasManualMap.set(m.produto_id, Number(m.valor));
+
   const eiPrev = contagens[efIdx + 2];
   const comprasAnt = eiPrev
     ? await comprasNoPeriodo(eiPrev.data, dEI)
@@ -168,6 +178,8 @@ export default async function CmvPage({
     const precoAtual = ca && ca.qtd > 0 ? ca.valor / ca.qtd : 0;
     const precoAnt = cp && cp.qtd > 0 ? cp.valor / cp.qtd : 0;
     const variacao = precoAtual > 0 && precoAnt > 0 ? precoAtual / precoAnt - 1 : null;
+    const auto = ca?.valor ?? 0;
+    const man = comprasManualMap.get(p.id);
     return {
       produtoId: p.id,
       nome: p.nome,
@@ -179,7 +191,9 @@ export default async function CmvPage({
       nivel: Number(p.estoque_ideal ?? 0) || Number(p.estoque_minimo ?? 0),
       eiQtd: qtdEI.get(p.id) ?? 0,
       efQtd: qtdEF.get(p.id) ?? 0,
-      compras: ca?.valor ?? 0,
+      compras: man != null ? man : auto,
+      comprasAuto: auto,
+      comprasManual: man != null,
       precoCompra: precoAtual,
       precoAnterior: precoAnt,
       variacao,

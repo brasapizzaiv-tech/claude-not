@@ -38,6 +38,32 @@ export async function salvarFaturamentoDia(
   return { ok: true };
 }
 
+// Corrige à mão o valor de Compras de um produto na semana (contagem final).
+// valor null (ou vazio) remove a correção e volta ao valor automático.
+export async function salvarComprasManual(
+  contagemId: string,
+  produtoId: string,
+  valor: number | null,
+) {
+  const supabase = await createClient();
+  if (valor == null) {
+    await supabase
+      .from("cmv_compras_manual")
+      .delete()
+      .eq("contagem_id", contagemId)
+      .eq("produto_id", produtoId);
+  } else {
+    await supabase
+      .from("cmv_compras_manual")
+      .upsert(
+        { contagem_id: contagemId, produto_id: produtoId, valor },
+        { onConflict: "contagem_id,produto_id" },
+      );
+  }
+  revalidatePath("/financeiro/cmv");
+  return { ok: true };
+}
+
 // Marca se um produto entra (ou não) no cálculo do CMV.
 export async function definirEntraCmvProduto(produtoId: string, entra: boolean) {
   const supabase = await createClient();

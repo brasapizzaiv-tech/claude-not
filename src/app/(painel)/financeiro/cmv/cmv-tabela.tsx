@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   salvarContagemItem,
   salvarFaturamentoDia,
+  salvarComprasManual,
   definirEntraCmvProduto,
   definirEntraCmvCategoria,
 } from "./actions";
@@ -28,6 +29,8 @@ export type CmvRow = {
   eiQtd: number;
   efQtd: number;
   compras: number;
+  comprasAuto: number;
+  comprasManual: boolean;
   precoCompra: number;
   precoAnterior: number;
   variacao: number | null;
@@ -79,13 +82,13 @@ export function CmvTabela({
     () => Object.fromEntries(rows.map((r) => [r.produtoId, r.custo])),
     [rows],
   );
-  const compras = useMemo(
-    () => Object.fromEntries(rows.map((r) => [r.produtoId, r.compras])),
-    [rows],
+  // Compras (R$) editável — inicia no valor efetivo (correção manual ou automático).
+  const [compras, setCompras] = useState<Record<string, string>>(() =>
+    Object.fromEntries(rows.map((r) => [r.produtoId, r.compras ? String(r.compras) : ""])),
   );
 
   const cmvDe = (id: string) =>
-    num(ei[id] ?? "") * custo[id] + (compras[id] ?? 0) - num(ef[id] ?? "") * custo[id];
+    num(ei[id] ?? "") * custo[id] + num(compras[id] ?? "") - num(ef[id] ?? "") * custo[id];
 
   // Totais (só do que entra no CMV).
   let totalCmv = 0;
@@ -140,6 +143,20 @@ export function CmvTabela({
   function persistFat(data: string, turno: string, valor: string) {
     start(async () => {
       await salvarFaturamentoDia(data, turno, num(valor));
+    });
+  }
+  function persistCompras(produtoId: string, valor: string, auto: number) {
+    const v = valor.trim();
+    // Vazio ou igual ao automático → remove a correção (volta ao automático).
+    const igualAuto = Math.abs(num(v) - auto) < 0.005;
+    start(async () => {
+      await salvarComprasManual(efId, produtoId, v === "" || igualAuto ? null : num(v));
+    });
+  }
+  function resetCompras(produtoId: string, auto: number) {
+    setCompras((s) => ({ ...s, [produtoId]: auto ? String(auto) : "" }));
+    start(async () => {
+      await salvarComprasManual(efId, produtoId, null);
     });
   }
   function toggleProduto(produtoId: string, v: boolean) {
@@ -271,9 +288,10 @@ export function CmvTabela({
       )}
 
       <p className="mb-2 text-xs text-zinc-500">
-        Dá pra <b>editar as contagens</b> (estoque inicial e final) direto aqui —
-        útil pra corrigir ou lançar uma contagem feita por fora. Ao{" "}
-        <b>desmarcar</b> um produto ele sai da tela e vai para{" "}
+        Dá pra <b>editar as contagens</b> (estoque inicial e final) e o valor de{" "}
+        <b>Compras</b> direto aqui — útil pra corrigir quando uma compra cai fora
+        da captura automática. Campo de Compras em laranja = valor corrigido à
+        mão. Ao <b>desmarcar</b> um produto ele sai da tela e vai para{" "}
         <b>Inativos</b> (dá pra trazer de volta quando quiser).
       </p>
 
@@ -341,6 +359,8 @@ export function CmvTabela({
                     const estAtual = num(ef[id] ?? "");
                     const necessidade = r.nivel - estAtual;
                     const comprar = r.nivel > 0 && necessidade > 0;
+                    const comprasManualNow =
+                      Math.abs(num(compras[id] ?? "") - r.comprasAuto) >= 0.005;
                     return (
                       <tr
                         key={id}
@@ -366,36 +386,53 @@ export function CmvTabela({
                             className={inp}
                           />
                         </td>
-                        <td className="px-4 py-1.5 text-right text-zinc-500">
-                          {r.compras ? (
-                            <>
-                              <div>{moeda(r.compras)}</div>
-                              {r.precoCompra > 0 && (
-                                <div className="text-[10px] text-zinc-400">
-                                  un {moeda(r.precoCompra)}
-                                  {r.variacao != null && (
-                                    <span
-                                      className={`ml-1 font-semibold ${
-                                        r.variacao > 0.001
-                                          ? "text-red-500"
-                                          : r.variacao < -0.001
-                                            ? "text-green-600"
-                                            : "text-zinc-400"
-                                      }`}
-                                      title="variação de preço vs semana anterior"
-                                    >
-                                      {r.variacao > 0.001 ? "▲" : r.variacao < -0.001 ? "▼" : ""}
-                                      {Math.abs(r.variacao * 100).toFixed(0)}%{" "}
-                                      {r.precoCompra - r.precoAnterior >= 0 ? "+" : "−"}
-                                      {moeda(Math.abs(r.precoCompra - r.precoAnterior))}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            "—"
-                          )}
+                        <td className="px-4 py-1 text-right align-top">
+                          <input
+                            inputMode="decimal"
+                            value={compras[id] ?? ""}
+                            placeholder="0,00"
+                            onChange={(e) => setCompras((s) => ({ ...s, [id]: e.target.value }))}
+                            onBlur={(e) => persistCompras(id, e.target.value, r.comprasAuto)}
+                            title="Valor de compras (R$) da semana — edite para corrigir quando algo cair fora."
+                            className={`w-24 rounded border px-2 py-1 text-right text-sm dark:bg-zinc-950 dark:text-zinc-100 ${
+                              comprasManualNow
+                                ? "border-orange-400 bg-orange-50/60 dark:border-orange-700 dark:bg-orange-950/20"
+                                : "border-zinc-300 bg-white dark:border-zinc-700"
+                            }`}
+                          />
+                          <div className="mt-0.5 text-[10px] leading-tight text-zinc-400">
+                            {r.precoCompra > 0 && (
+                              <div>
+                                un {moeda(r.precoCompra)}
+                                {r.variacao != null && (
+                                  <span
+                                    className={`ml-1 font-semibold ${
+                                      r.variacao > 0.001
+                                        ? "text-red-500"
+                                        : r.variacao < -0.001
+                                          ? "text-green-600"
+                                          : "text-zinc-400"
+                                    }`}
+                                    title="variação de preço vs semana anterior"
+                                  >
+                                    {r.variacao > 0.001 ? "▲" : r.variacao < -0.001 ? "▼" : ""}
+                                    {Math.abs(r.variacao * 100).toFixed(0)}%{" "}
+                                    {r.precoCompra - r.precoAnterior >= 0 ? "+" : "−"}
+                                    {moeda(Math.abs(r.precoCompra - r.precoAnterior))}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {comprasManualNow && (
+                              <button
+                                onClick={() => resetCompras(id, r.comprasAuto)}
+                                className="text-orange-500 hover:underline"
+                                title={`Valor automático: ${moeda(r.comprasAuto)}`}
+                              >
+                                ✎ manual · voltar p/ auto ({moeda(r.comprasAuto)})
+                              </button>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-1 text-right">
                           <input
