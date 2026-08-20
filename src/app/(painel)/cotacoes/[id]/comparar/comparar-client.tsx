@@ -30,25 +30,34 @@ export type ExclusivoLinha = {
   fornecedorNome: string;
 };
 
+export type CelExtra = {
+  id: string;
+  marca: string | null;
+  preco: number | null;
+  precoBruto: number | null;
+  temSt: boolean;
+  tam: string | null;
+  obs: string | null;
+};
+export type Cel = {
+  preco: number | null;
+  precoBruto: number | null;
+  temSt: boolean;
+  disp: boolean;
+  foto: string | null;
+  emb: string | null;
+  tam: string | null;
+  obs: string | null;
+  extras: CelExtra[];
+};
+
 export type ProdutoLinha = {
   produto_id: string;
   nome: string;
   unidade: string;
   categoria: string;
   qtd: number;
-  precos: Record<
-    string,
-    {
-      preco: number | null;
-      precoBruto: number | null;
-      temSt: boolean;
-      disp: boolean;
-      foto: string | null;
-      emb: string | null;
-      tam: string | null;
-      obs: string | null;
-    }
-  >;
+  precos: Record<string, Cel>;
   melhorForn: string | null;
 };
 
@@ -123,11 +132,30 @@ export function CompararClient({
       return base;
     }
   });
-  function mudarEscolha(produtoId: string, fornId: string) {
+  // Oferta escolhida por produto: "main" (marca principal) ou id da oferta extra.
+  const ofertaKey = `cmp_of_${cotacaoId}`;
+  const [oferta, setOferta] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(localStorage.getItem(ofertaKey) || "{}");
+    } catch {
+      return {};
+    }
+  });
+  function escolherOferta(produtoId: string, fornId: string, ofId: string) {
+    const jaEsse =
+      escolha[produtoId] === fornId && (oferta[produtoId] ?? "main") === ofId;
     setEscolha((s) => {
-      const novo = { ...s, [produtoId]: s[produtoId] === fornId ? "" : fornId };
+      const novo = { ...s, [produtoId]: jaEsse ? "" : fornId };
       try {
         localStorage.setItem(selKey, JSON.stringify(novo));
+      } catch {}
+      return novo;
+    });
+    setOferta((s) => {
+      const novo = { ...s, [produtoId]: jaEsse ? "main" : ofId };
+      try {
+        localStorage.setItem(ofertaKey, JSON.stringify(novo));
       } catch {}
       return novo;
     });
@@ -216,17 +244,34 @@ export function CompararClient({
     [dividindo, divisao, escolha, qtds],
   );
 
+  // Preço efetivo do fornecedor para o produto, já com a oferta (marca) escolhida.
+  const precoDe = useCallback(
+    (p: ProdutoLinha, fid: string): { preco: number | null; marca: string | null } => {
+      const cel = p.precos[fid];
+      if (!cel) return { preco: null, marca: null };
+      if (!dividindo.has(p.produto_id) && escolha[p.produto_id] === fid) {
+        const ofId = oferta[p.produto_id];
+        if (ofId && ofId !== "main") {
+          const ex = cel.extras.find((e) => e.id === ofId);
+          if (ex) return { preco: ex.preco, marca: ex.marca };
+        }
+      }
+      return { preco: cel.preco, marca: null };
+    },
+    [dividindo, escolha, oferta],
+  );
+
   const totalPorForn = useMemo(() => {
     const t: Record<string, number> = {};
     for (const f of fornecedores) t[f.id] = 0;
     for (const p of produtos) {
       for (const [fid, q] of Object.entries(alocacaoDe(p.produto_id))) {
-        const cel = p.precos[fid];
-        if (cel?.preco != null) t[fid] += cel.preco * q;
+        const { preco } = precoDe(p, fid);
+        if (preco != null) t[fid] += preco * q;
       }
     }
     return t;
-  }, [alocacaoDe, produtos, fornecedores]);
+  }, [alocacaoDe, precoDe, produtos, fornecedores]);
 
   const totalGeral = Object.values(totalPorForn).reduce((a, b) => a + b, 0);
   const itensEscolhidos = produtos.filter(
@@ -240,14 +285,17 @@ export function CompararClient({
         produto_id: string;
         qtd: number;
         preco_unit: number | null;
+        marca: string | null;
       }[] = [];
       for (const p of produtos) {
         for (const [fid, q] of Object.entries(alocacaoDe(p.produto_id))) {
+          const { preco, marca } = precoDe(p, fid);
           escolhas.push({
             fornecedor_id: fid,
             produto_id: p.produto_id,
             qtd: q,
-            preco_unit: p.precos[fid]?.preco ?? null,
+            preco_unit: preco,
+            marca,
           });
         }
       }
@@ -494,6 +542,7 @@ export function CompararClient({
                     {fornecedores.map((f) => {
                       const cel = p.precos[f.id];
                       const escolhido = escolha[p.produto_id] === f.id;
+                      const ofSel = oferta[p.produto_id] ?? "main";
                       const melhor = p.melhorForn === f.id;
                       if (!cel) {
                         return (
@@ -538,19 +587,36 @@ export function CompararClient({
                               />
                             </div>
                           ) : (
-                            <button
-                              onClick={() => mudarEscolha(p.produto_id, f.id)}
-                              className={`w-full rounded-md px-2 py-1 text-right text-sm transition ${
-                                escolhido
-                                  ? "bg-orange-500 font-semibold text-white"
-                                  : melhor
-                                    ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
-                                    : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                              }`}
-                              title={cel.obs ?? ""}
-                            >
-                              {moeda(cel.preco)}
-                            </button>
+                            <div className="space-y-0.5">
+                              <button
+                                onClick={() => escolherOferta(p.produto_id, f.id, "main")}
+                                className={`w-full rounded-md px-2 py-1 text-right text-sm transition ${
+                                  escolhido && ofSel === "main"
+                                    ? "bg-orange-500 font-semibold text-white"
+                                    : melhor
+                                      ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
+                                      : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                }`}
+                                title={cel.obs ?? ""}
+                              >
+                                {moeda(cel.preco)}
+                              </button>
+                              {cel.extras.map((ex) => (
+                                <button
+                                  key={ex.id}
+                                  onClick={() => escolherOferta(p.produto_id, f.id, ex.id)}
+                                  title={ex.obs ?? ""}
+                                  className={`flex w-full items-center justify-between gap-1 rounded-md px-2 py-1 text-[11px] transition ${
+                                    escolhido && ofSel === ex.id
+                                      ? "bg-sky-500 font-semibold text-white"
+                                      : "bg-sky-50 text-sky-800 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300"
+                                  }`}
+                                >
+                                  <span className="truncate">{ex.marca ?? "outra marca"}</span>
+                                  <span>{ex.preco != null ? moeda(ex.preco) : "—"}</span>
+                                </button>
+                              ))}
+                            </div>
                           )}
                           {cel.temSt && (
                             <div className="mt-0.5 text-right text-[10px] leading-tight text-violet-500 dark:text-violet-400">

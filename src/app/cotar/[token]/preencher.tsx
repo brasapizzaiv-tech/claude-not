@@ -21,6 +21,27 @@ export type LinhaPreco = {
   st_pct_padrao: number | null;
   st_inclusa: boolean | null;
   st_pct: number | null;
+  extras?: {
+    id: string;
+    marca: string | null;
+    preco_unit: number | null;
+    embalagem: string | null;
+    tamanho_embalagem: string | null;
+    observacao: string | null;
+    st_inclusa: boolean | null;
+    st_pct: number | null;
+  }[];
+};
+
+// Oferta extra (outra marca) editável no formulário.
+type ExtraLinha = {
+  marca: string;
+  preco: string;
+  embalagem: string;
+  tamanho: string;
+  obs: string;
+  st_inclusa: boolean;
+  st_pct: string;
 };
 
 type Meta = {
@@ -102,6 +123,23 @@ export function CotarPreencher({
   const [tam, setTam] = useState<Record<string, string>>(() =>
     Object.fromEntries(todos.map((p) => [p.produto_id, p.tamanho_embalagem ?? ""])),
   );
+  // Ofertas extras (outras marcas) por item.
+  const [extras, setExtras] = useState<Record<string, ExtraLinha[]>>(() =>
+    Object.fromEntries(
+      todos.map((p) => [
+        p.produto_id,
+        (p.extras ?? []).map((e) => ({
+          marca: e.marca ?? "",
+          preco: e.preco_unit != null ? String(e.preco_unit) : "",
+          embalagem: e.embalagem ?? "",
+          tamanho: e.tamanho_embalagem ?? "",
+          obs: e.observacao ?? "",
+          st_inclusa: e.st_inclusa ?? false,
+          st_pct: e.st_pct != null ? String(e.st_pct) : "",
+        })),
+      ]),
+    ),
+  );
   const [subindo, setSubindo] = useState<Record<string, boolean>>({});
   const [subindoPromo, setSubindoPromo] = useState(false);
   const supabase = useMemo(() => createClient(), []);
@@ -135,6 +173,17 @@ export function CotarPreencher({
         observacao: obs[p.produto_id] ?? "",
         st_inclusa: p.tem_st ? String(!!stInc[p.produto_id]) : "",
         st_pct: p.tem_st ? (stPct[p.produto_id] ?? "").replace(",", ".").trim() : "",
+        extras: (extras[p.produto_id] ?? [])
+          .filter((x) => x.preco.trim() || x.marca.trim())
+          .map((x) => ({
+            marca: x.marca.trim(),
+            preco_unit: x.preco.replace(",", ".").trim(),
+            embalagem: x.embalagem,
+            tamanho_embalagem: x.tamanho,
+            observacao: x.obs,
+            st_inclusa: p.tem_st ? String(!!x.st_inclusa) : "",
+            st_pct: p.tem_st ? x.st_pct.replace(",", ".").trim() : "",
+          })),
       }));
   }
 
@@ -239,6 +288,26 @@ export function CotarPreencher({
 
   function incluirOutro(produtoId: string) {
     setIncluidos((s) => new Set(s).add(produtoId));
+    agendarSalvar();
+  }
+  function addExtra(pid: string) {
+    setExtras((s) => ({
+      ...s,
+      [pid]: [
+        ...(s[pid] ?? []),
+        { marca: "", preco: "", embalagem: "", tamanho: "", obs: "", st_inclusa: false, st_pct: "" },
+      ],
+    }));
+  }
+  function setExtra(pid: string, i: number, campo: keyof ExtraLinha, v: string | boolean) {
+    setExtras((s) => ({
+      ...s,
+      [pid]: (s[pid] ?? []).map((x, idx) => (idx === i ? { ...x, [campo]: v } : x)),
+    }));
+    agendarSalvar();
+  }
+  function removeExtra(pid: string, i: number) {
+    setExtras((s) => ({ ...s, [pid]: (s[pid] ?? []).filter((_, idx) => idx !== i) }));
     agendarSalvar();
   }
 
@@ -430,6 +499,86 @@ export function CotarPreencher({
                       }}
                       className={`${campo} mt-1 w-full`}
                     />
+                  </div>
+                )}
+
+                {/* Ofertas extras: mesma item, outra marca */}
+                {!emFalta && (
+                  <div className="mt-2">
+                    {(extras[p.produto_id] ?? []).map((x, i) => (
+                      <div
+                        key={i}
+                        className="mt-2 rounded-lg border border-sky-200 bg-sky-50/50 p-2.5 dark:border-sky-900 dark:bg-sky-950/20"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-sky-800 dark:text-sky-300">
+                            Outra marca / oferta {i + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeExtra(p.produto_id, i)}
+                            className="text-xs text-zinc-400 hover:text-red-600"
+                          >
+                            remover
+                          </button>
+                        </div>
+                        <input
+                          value={x.marca}
+                          disabled={fechada}
+                          placeholder="Marca (ex.: Sadia, Seara...)"
+                          onChange={(e) => setExtra(p.produto_id, i, "marca", e.target.value)}
+                          className={`${campo} mt-2 w-full`}
+                        />
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm text-zinc-400">R$</span>
+                            <input
+                              inputMode="decimal"
+                              value={x.preco}
+                              disabled={fechada}
+                              placeholder="0,00"
+                              onChange={(e) => setExtra(p.produto_id, i, "preco", e.target.value)}
+                              className={`${campo} w-full text-right`}
+                            />
+                          </div>
+                          <input
+                            value={x.tamanho}
+                            disabled={fechada}
+                            placeholder="Tamanho (12 un, 5 kg)"
+                            onChange={(e) => setExtra(p.produto_id, i, "tamanho", e.target.value)}
+                            className={`${campo} w-full`}
+                          />
+                        </div>
+                        {p.tem_st && (
+                          <label className="mt-2 flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                            <input
+                              type="checkbox"
+                              checked={x.st_inclusa}
+                              disabled={fechada}
+                              onChange={(e) => setExtra(p.produto_id, i, "st_inclusa", e.target.checked)}
+                            />
+                            ST inclusa no preço
+                            <input
+                              inputMode="decimal"
+                              value={x.st_pct}
+                              disabled={fechada}
+                              placeholder="% ST"
+                              onChange={(e) => setExtra(p.produto_id, i, "st_pct", e.target.value)}
+                              className={`${campo} w-20 text-right`}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    ))}
+                    {!fechada && (
+                      <button
+                        type="button"
+                        onClick={() => addExtra(p.produto_id)}
+                        className="mt-2 text-xs font-medium text-sky-600 hover:underline"
+                      >
+                        + Tenho outra marca deste item
+                      </button>
+                    )}
                   </div>
                 )}
 

@@ -8,6 +8,7 @@ import {
   type ProdutoLinha,
   type FornecedorCol,
   type ExclusivoLinha,
+  type Cel,
 } from "./comparar-client";
 
 export default async function CompararPage({
@@ -82,21 +83,36 @@ export default async function CompararPage({
     return a.nome.localeCompare(b.nome);
   });
 
+  // Ofertas extras (outra marca) por fornecedor+produto, com custo real (ST).
+  const { data: extrasData } = await supabase
+    .from("cotacao_ofertas_extra")
+    .select("id, fornecedor_id, produto_id, marca, preco_unit, tamanho_embalagem, observacao, st_inclusa, st_pct")
+    .eq("cotacao_id", id);
+  const extrasMap = new Map<string, Cel["extras"]>();
+  for (const e of (extrasData ?? []) as Record<string, unknown>[]) {
+    const key = `${e.fornecedor_id}_${e.produto_id}`;
+    const raw = e.preco_unit != null ? Number(e.preco_unit) : null;
+    const temSt = temStMap.get(e.produto_id as string) ?? false;
+    const eff =
+      raw != null
+        ? custoComSt(raw, temSt, (e.st_inclusa as boolean | null) ?? null, e.st_pct != null ? Number(e.st_pct) : null)
+        : null;
+    const arr = extrasMap.get(key) ?? [];
+    arr.push({
+      id: e.id as string,
+      marca: (e.marca as string) ?? null,
+      preco: eff,
+      precoBruto: raw,
+      temSt,
+      tam: (e.tamanho_embalagem as string) ?? null,
+      obs: (e.observacao as string) ?? null,
+    });
+    extrasMap.set(key, arr);
+  }
+
   // Mapa de preços: fornecedorId -> produtoId -> célula. O `preco` já é o CUSTO
   // REAL (com ST quando o produto tem e o fornecedor não incluiu no preço).
-  const precoMap = new Map<
-    string,
-    {
-      preco: number | null;
-      precoBruto: number | null;
-      temSt: boolean;
-      disp: boolean;
-      foto: string | null;
-      emb: string | null;
-      tam: string | null;
-      obs: string | null;
-    }
-  >();
+  const precoMap = new Map<string, Cel>();
   for (const p of precos ?? []) {
     const raw = p.preco_unit != null ? Number(p.preco_unit) : null;
     const temSt = temStMap.get(p.produto_id as string) ?? false;
@@ -109,7 +125,8 @@ export default async function CompararPage({
             p.st_pct != null ? Number(p.st_pct) : null,
           )
         : null;
-    precoMap.set(`${p.fornecedor_id}_${p.produto_id}`, {
+    const key = `${p.fornecedor_id}_${p.produto_id}`;
+    precoMap.set(key, {
       preco: eff,
       precoBruto: raw,
       temSt,
@@ -118,6 +135,7 @@ export default async function CompararPage({
       emb: (p.embalagem as string) ?? null,
       tam: (p.tamanho_embalagem as string) ?? null,
       obs: (p.observacao as string) ?? null,
+      extras: extrasMap.get(key) ?? [],
     });
   }
 
@@ -129,28 +147,23 @@ export default async function CompararPage({
         categorias?: { nome?: string } | null;
       } | null;
       const produtoId = i.produto_id as string;
-      const precosDoProduto: Record<
-        string,
-        {
-          preco: number | null;
-          precoBruto: number | null;
-          temSt: boolean;
-          disp: boolean;
-          foto: string | null;
-          emb: string | null;
-          tam: string | null;
-          obs: string | null;
-        }
-      > = {};
+      const precosDoProduto: Record<string, Cel> = {};
       let melhorForn: string | null = null;
       let melhorPreco = Infinity;
       for (const f of fornecedores) {
         const cel = precoMap.get(`${f.id}_${produtoId}`);
         if (cel) {
           precosDoProduto[f.id] = cel;
-          if (cel.disp && cel.preco != null && cel.preco < melhorPreco) {
-            melhorPreco = cel.preco;
-            melhorForn = f.id;
+          if (cel.disp) {
+            // Melhor preço do fornecedor = menor entre a marca principal e as extras.
+            const precosForn = [cel.preco, ...cel.extras.map((e) => e.preco)].filter(
+              (v): v is number => v != null,
+            );
+            const best = precosForn.length ? Math.min(...precosForn) : null;
+            if (best != null && best < melhorPreco) {
+              melhorPreco = best;
+              melhorForn = f.id;
+            }
           }
         }
       }

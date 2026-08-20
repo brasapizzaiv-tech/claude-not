@@ -129,6 +129,7 @@ type Escolha = {
   produto_id: string;
   qtd: number;
   preco_unit: number | null;
+  marca?: string | null;
 };
 
 // Gera os pedidos de compra a partir das escolhas (agrupadas por fornecedor).
@@ -167,6 +168,7 @@ export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
           produto_id: i.produto_id,
           qtd: i.qtd,
           preco_unit: i.preco_unit,
+          marca: i.marca ?? null,
         })),
       );
     }

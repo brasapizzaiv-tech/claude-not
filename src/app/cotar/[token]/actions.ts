@@ -2,6 +2,16 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+type PrecoExtra = {
+  marca: string;
+  preco_unit: string;
+  embalagem: string;
+  tamanho_embalagem: string;
+  observacao: string;
+  st_inclusa?: string;
+  st_pct?: string;
+};
+
 type Preco = {
   produto_id: string;
   preco_unit: string;
@@ -12,6 +22,7 @@ type Preco = {
   observacao: string;
   st_inclusa?: string; // "true" | "false" | ""
   st_pct?: string;
+  extras?: PrecoExtra[];
 };
 
 export type DadosCotacao = {
