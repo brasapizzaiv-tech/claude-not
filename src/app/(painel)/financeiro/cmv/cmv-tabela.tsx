@@ -72,6 +72,8 @@ export function CmvTabela({
   const [entra, setEntra] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(rows.map((r) => [r.produtoId, r.entra])),
   );
+  const [busca, setBusca] = useState("");
+  const [inativosAberto, setInativosAberto] = useState(false);
 
   const custo = useMemo(
     () => Object.fromEntries(rows.map((r) => [r.produtoId, r.custo])),
@@ -87,12 +89,7 @@ export function CmvTabela({
 
   // Totais (só do que entra no CMV).
   let totalCmv = 0;
-  let totalUniversal = 0;
-  for (const r of rows) {
-    const c = cmvDe(r.produtoId);
-    if (entra[r.produtoId]) totalCmv += c;
-    else totalUniversal += c;
-  }
+  for (const r of rows) if (entra[r.produtoId]) totalCmv += cmvDe(r.produtoId);
   const manualTotal = Object.values(fatM).reduce((s, v) => s + num(v), 0);
   const faturamento = faturamentoCaixa + manualTotal;
   const cmvPct = faturamento > 0 ? totalCmv / faturamento : 0;
@@ -104,16 +101,35 @@ export function CmvTabela({
     .sort((a, b) => (b.variacao ?? 0) - (a.variacao ?? 0))
     .slice(0, 6);
 
-  // Agrupa por categoria.
-  const grupos = useMemo(() => {
+  const q = busca.trim().toLowerCase();
+  const match = (r: CmvRow) => !q || r.nome.toLowerCase().includes(q);
+
+  // Todos os produtos de cada categoria (ativos + inativos) — usado no checkbox do cabeçalho.
+  const allIdsByCat = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const r of rows) {
+      const k = r.categoriaId ?? "__none";
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r.produtoId);
+    }
+    return m;
+  }, [rows]);
+
+  // Só os ATIVOS entram na tabela; os desmarcados vão para o painel de inativos.
+  const grupos = (() => {
     const m = new Map<string, { nome: string; categoriaId: string | null; rows: CmvRow[] }>();
     for (const r of rows) {
+      if (!entra[r.produtoId] || !match(r)) continue;
       const k = r.categoriaId ?? "__none";
       if (!m.has(k)) m.set(k, { nome: r.grupo, categoriaId: r.categoriaId, rows: [] });
       m.get(k)!.rows.push(r);
     }
     return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome));
-  }, [rows]);
+  })();
+
+  const inativos = rows
+    .filter((r) => !entra[r.produtoId] && match(r))
+    .sort((a, b) => a.grupo.localeCompare(b.grupo) || a.nome.localeCompare(b.nome));
 
   function persistQtd(qual: "ei" | "ef", produtoId: string, valor: string) {
     const contagemId = qual === "ei" ? eiId : efId;
@@ -256,9 +272,27 @@ export function CmvTabela({
 
       <p className="mb-2 text-xs text-zinc-500">
         Dá pra <b>editar as contagens</b> (estoque inicial e final) direto aqui —
-        útil pra corrigir ou lançar uma contagem feita por fora. E marcar quais
-        produtos/categorias <b>entram no CMV</b>.
+        útil pra corrigir ou lançar uma contagem feita por fora. Ao{" "}
+        <b>desmarcar</b> um produto ele sai da tela e vai para{" "}
+        <b>Inativos</b> (dá pra trazer de volta quando quiser).
       </p>
+
+      <div className="mb-3 flex items-center gap-2">
+        <input
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="🔎 Buscar produto..."
+          className="w-full max-w-xs rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        />
+        {busca && (
+          <button
+            onClick={() => setBusca("")}
+            className="text-xs text-zinc-400 hover:text-orange-600"
+          >
+            limpar
+          </button>
+        )}
+      </div>
 
       <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <table className="w-full min-w-[900px] text-sm">
@@ -277,7 +311,7 @@ export function CmvTabela({
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {grupos.map((g) => {
-              const ids = g.rows.map((r) => r.produtoId);
+              const ids = allIdsByCat.get(g.categoriaId ?? "__none") ?? g.rows.map((r) => r.produtoId);
               const todosEntra = ids.every((id) => entra[id]);
               const subCmv = g.rows
                 .filter((r) => entra[r.produtoId])
@@ -411,11 +445,35 @@ export function CmvTabela({
         </table>
       </div>
 
-      {totalUniversal !== 0 && (
-        <p className="mt-4 text-sm text-zinc-500">
-          Itens <b>universais</b> (fora do CMV) consumiram <b>{moeda(totalUniversal)}</b> no
-          período — vão para a DRE, não para o CMV.
-        </p>
+      {inativos.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <button
+            onClick={() => setInativosAberto((v) => !v)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left"
+          >
+            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+              Produtos fora do CMV (inativos) · {inativos.length}
+            </span>
+            <span className="text-xs text-zinc-400">
+              {inativosAberto ? "ocultar ▲" : "mostrar ▼"}
+            </span>
+          </button>
+          {inativosAberto && (
+            <div className="flex flex-wrap gap-2 border-t border-zinc-100 p-4 dark:border-zinc-800">
+              {inativos.map((r) => (
+                <button
+                  key={r.produtoId}
+                  onClick={() => toggleProduto(r.produtoId, true)}
+                  title="Trazer de volta para o CMV"
+                  className="group inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                >
+                  <span className="font-medium">{r.nome}</span>
+                  <span className="text-zinc-400 group-hover:text-orange-500">+ voltar</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <button
