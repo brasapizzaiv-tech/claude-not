@@ -49,19 +49,56 @@ export function lerNfe(xml: string): NfeLida {
     valor: Number(pick(dup, "vDup")) || 0,
   }));
 
-  const itens = (xml.match(/<det[^>]*>[\s\S]*?<\/det>/g) || []).map((det) => {
+  // Cada item vira o CUSTO REAL: valor dos produtos + ICMS-ST + FCP-ST + IPI +
+  // frete + seguro + outros − desconto. Assim o preço/kg já sai com a ST
+  // embutida (importante em carne/frango, que têm ST) e a soma bate com o total.
+  const brutos = (xml.match(/<det[^>]*>[\s\S]*?<\/det>/g) || []).map((det) => {
     const prod = bloco(det, "prod");
+    const vProd = Number(pick(prod, "vProd")) || 0;
+    const extras =
+      (Number(pick(prod, "vFrete")) || 0) +
+      (Number(pick(prod, "vSeg")) || 0) +
+      (Number(pick(prod, "vOutro")) || 0) -
+      (Number(pick(prod, "vDesc")) || 0) +
+      (Number(pick(det, "vIPI")) || 0) +
+      (Number(pick(det, "vICMSST")) || 0) +
+      (Number(pick(det, "vFCPST")) || 0);
     return {
-      cprod: pick(prod, "cProd"),
-      descricao: pick(prod, "xProd"),
-      ncm: pick(prod, "NCM"),
-      ean: pick(prod, "cEAN"),
-      unidade: pick(prod, "uCom"),
-      qtd: Number(pick(prod, "qCom")) || 0,
-      valor_unit: Number(pick(prod, "vUnCom")) || 0,
-      valor_total: Number(pick(prod, "vProd")) || 0,
+      vProd,
+      item: {
+        cprod: pick(prod, "cProd"),
+        descricao: pick(prod, "xProd"),
+        ncm: pick(prod, "NCM"),
+        ean: pick(prod, "cEAN"),
+        unidade: pick(prod, "uCom"),
+        qtd: Number(pick(prod, "qCom")) || 0,
+        valor_unit: Number(pick(prod, "vUnCom")) || 0,
+        valor_total: Math.round((vProd + extras) * 100) / 100,
+      },
     };
   });
+  const itens = brutos.map((b) => b.item);
+
+  // Amarra a soma dos itens ao total da nota (vNF): distribui o resíduo (ex.:
+  // II, ICMS desonerado, arredondamentos) proporcional ao valor dos produtos.
+  const vnf = Number(pick(icmsTot, "vNF")) || 0;
+  const somaProd = brutos.reduce((s, b) => s + b.vProd, 0);
+  const somaLanded = itens.reduce((s, i) => s + i.valor_total, 0);
+  if (vnf > 0 && somaProd > 0 && Math.abs(vnf - somaLanded) > 0.01) {
+    const resid = vnf - somaLanded;
+    let acum = 0;
+    itens.forEach((i, idx) => {
+      const ultima = idx === itens.length - 1;
+      const extra = ultima
+        ? Math.round((resid - acum) * 100) / 100
+        : Math.round(resid * (brutos[idx].vProd / somaProd) * 100) / 100;
+      acum += extra;
+      i.valor_total = Math.round((i.valor_total + extra) * 100) / 100;
+    });
+  }
+  for (const i of itens) {
+    if (i.qtd > 0) i.valor_unit = Math.round((i.valor_total / i.qtd) * 1e6) / 1e6;
+  }
 
   return {
     chave: (xml.match(/Id="NFe(\d{44})"/) || [])[1] ?? "",
