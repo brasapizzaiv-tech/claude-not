@@ -195,6 +195,30 @@ export async function importarResumo(
   return { ok: true };
 }
 
+// Define as parcelas de uma nota manualmente (para notas já importadas sem as
+// duplicatas, ou para corrigir). Menos de 2 parcelas válidas = sem parcelamento.
+export async function salvarParcelasNota(
+  notaId: string,
+  parcelas: { numero?: string | null; vencimento: string | null; valor: number }[],
+) {
+  const supabase = await createClient();
+  await supabase.from("nota_parcelas").delete().eq("nota_id", notaId);
+  const validas = parcelas.filter((p) => Number(p.valor) > 0);
+  if (validas.length > 1) {
+    await supabase.from("nota_parcelas").insert(
+      validas.map((p, i) => ({
+        nota_id: notaId,
+        numero: p.numero ?? String(i + 1),
+        vencimento: p.vencimento || null,
+        valor: Number(p.valor),
+      })),
+    );
+  }
+  revalidatePath(`/notas/${notaId}`);
+  revalidatePath("/notas");
+  return { ok: true, total: validas.length > 1 ? validas.length : 0 };
+}
+
 // Vincula (ou corrige) o fornecedor da nota manualmente.
 export async function vincularFornecedorNota(
   notaId: string,

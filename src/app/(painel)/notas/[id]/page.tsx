@@ -7,6 +7,7 @@ import { BotaoConciliar } from "./conciliar";
 import { ManifestarNota } from "./manifestar";
 import { ItemProduto } from "./item-produto";
 import { LancamentoNota } from "./lancamento";
+import { ParcelasEditor } from "./parcelas-editor";
 
 // A "baixa completa" pode tentar buscar o XML por alguns segundos.
 export const maxDuration = 60;
@@ -143,6 +144,14 @@ export default async function NotaDetalhePage({
         dreCategoriaId={nota.dre_categoria_id ?? null}
         categorias={categorias}
         parcelas={parcelas}
+      />
+
+      <ParcelasEditor
+        notaId={nota.id}
+        valorNota={Number(nota.valor)}
+        vencimentoBase={nota.vencimento ?? null}
+        parcelas={parcelas}
+        lancada={(nota as { situacao?: string }).situacao === "lancada"}
       />
 
       {/* Nota em resumo (sem itens) → oferecer manifestação */}
