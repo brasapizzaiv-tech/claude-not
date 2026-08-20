@@ -156,16 +156,21 @@ export async function salvarOrcamento(
   return { ok: true };
 }
 
-// Marca uma conta como paga (ou volta para não paga).
+// Marca uma conta como paga (ou volta para não paga). A data do pagamento pode
+// vir do formulário (campo editável); se não vier, usa a data de hoje no fuso
+// de Brasília (UTC−3, sem horário de verão) — evita "pular" para o dia seguinte
+// quando o clique acontece à noite.
 export async function alternarPago(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const pago = formData.get("pago") === "true";
+  const dataInformada = (formData.get("data_pago") as string) || "";
+  const hojeBR = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
   await supabase
     .from("lancamentos")
     .update({
       pago,
-      pago_em: pago ? new Date().toISOString().slice(0, 10) : null,
+      pago_em: pago ? (dataInformada || hojeBR) : null,
     })
     .eq("id", id);
   revalidatePath("/financeiro/contas");
