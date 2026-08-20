@@ -244,7 +244,7 @@ export default async function DashboardPage() {
                   <span className="h-2.5 w-2.5 rounded-sm bg-rose-400" /> Despesas
                 </span>
                 <span className="text-zinc-400">
-                  laranja forte = real do caixa · claro = fiscal (notas)
+                  laranja = faturamento real · claro = fiscal (notas), quando faltar
                 </span>
               </div>
             </div>
