@@ -75,36 +75,25 @@ export default async function DashboardPage() {
     });
   }
   if (pode("financeiro")) {
-    const inicioISO = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1)
-      .toISOString()
-      .slice(0, 10);
-    const [{ data: notas }, { data: lanc }] = await Promise.all([
-      // limit alto: o padrão do Supabase é 1000 linhas, e há milhares de notas.
-      supabase
-        .from("notas_emitidas")
-        .select("data_emissao, valor")
-        .gte("data_emissao", inicioISO)
-        .limit(100000),
-      supabase
-        .from("lancamentos")
-        .select("data, valor, dre_categorias(tipo)")
-        .gte("data", inicioISO)
-        .limit(100000),
-    ]);
-    const idx = new Map(meses.map((m, i) => [m.ym, i]));
-    for (const n of (notas as { data_emissao: string; valor: number }[]) ?? []) {
-      const i = idx.get((n.data_emissao || "").slice(0, 7));
-      if (i != null) meses[i].fat += Number(n.valor) || 0;
-    }
-    type LancT = { data: string; valor: number; dre_categorias: { tipo: string } | null };
-    for (const l of (lanc as unknown as LancT[]) ?? []) {
-      const i = idx.get((l.data || "").slice(0, 7));
-      if (i == null) continue;
-      const tipo = l.dre_categorias?.tipo;
-      // Receita (faturamento real do caixa) vs despesa.
-      if (tipo === "receita") meses[i].real += Number(l.valor) || 0;
-      else if (tipo && tipo !== "nao_operacional")
-        meses[i].desp += Number(l.valor) || 0;
+    // Agregado no banco (função SQL) — evita o limite de 1000 linhas do Supabase.
+    const { data: serieData } = await supabase.rpc("dashboard_serie_6meses");
+    const byYm = new Map(
+      (
+        (serieData as {
+          ym: string;
+          fiscal: number;
+          receita: number;
+          despesa: number;
+        }[]) ?? []
+      ).map((s) => [s.ym, s]),
+    );
+    for (const m of meses) {
+      const s = byYm.get(m.ym);
+      if (s) {
+        m.fat = Number(s.fiscal) || 0;
+        m.real = Number(s.receita) || 0;
+        m.desp = Number(s.despesa) || 0;
+      }
     }
   }
   // Faturamento do gráfico: caixa (real) quando houver; senão, notas (fiscal).
