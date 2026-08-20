@@ -84,6 +84,33 @@ export async function manifestarNota(notaId: string) {
   };
 }
 
+// Manifesta VÁRIAS notas de uma vez e faz UMA busca no fim (não bate repetido
+// na SEFAZ). A busca esperta completa o resto em seguida.
+export async function manifestarVarias(notaIds: string[]) {
+  let manifestadas = 0;
+  let erros = 0;
+  let ultimoErro = "";
+  for (const id of notaIds) {
+    const r = await manifestarNota(id);
+    if (r.erro) {
+      erros++;
+      ultimoErro = r.erro;
+    } else {
+      manifestadas++;
+    }
+  }
+  let importadas = 0;
+  if (manifestadas > 0) {
+    const { supabase, cfg } = await getConfig();
+    if (cfg) {
+      const b = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
+      importadas = b.importadas ?? 0;
+    }
+  }
+  revalidatePath("/notas");
+  return { ok: erros === 0, manifestadas, erros, importadas, erro: ultimoErro };
+}
+
 // Manifesta e já tenta baixar a nota completa. A Receita SUSPENDEU a consulta
 // por chave (consChNFe) em 2022 — só sobrou o distNSU. Depois de manifestar, a
 // SEFAZ libera o XML completo com um pequeno atraso, então tentamos UMA busca

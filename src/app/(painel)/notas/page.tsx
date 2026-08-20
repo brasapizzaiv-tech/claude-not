@@ -4,6 +4,7 @@ import { dataBR } from "@/lib/format";
 import { UploadNota } from "./upload";
 import { NotaAcoes } from "./nota-acoes";
 import { BuscarNotas } from "./buscar-notas";
+import { ManifestarLote } from "./manifestar-lote";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -34,19 +35,30 @@ export default async function NotasPage() {
   };
   const notas = (data as Nota[]) ?? [];
 
-  // "Aguardando itens": nota manifestada cujo XML completo ainda não chegou.
-  // Só checamos as manifestadas (poucas) para saber quais já têm itens.
-  const manifestadas = notas.filter((n) => n.manifestado_em).map((n) => n.id);
+  // Checa itens das notas manifestadas ou pendentes (poucas) para saber quais
+  // ainda estão em resumo (sem itens).
+  const alvos = notas
+    .filter((n) => n.manifestado_em || n.situacao === "pendente")
+    .map((n) => n.id);
   const comItens = new Set<string>();
-  if (manifestadas.length > 0) {
+  if (alvos.length > 0) {
     const { data: itens } = await supabase
       .from("nota_itens")
       .select("nota_id")
-      .in("nota_id", manifestadas);
+      .in("nota_id", alvos);
     for (const i of (itens as { nota_id: string }[]) ?? [])
       comItens.add(i.nota_id);
   }
   const aguardando = (n: Nota) => !!n.manifestado_em && !comItens.has(n.id);
+  // Notas em resumo (pendentes, sem itens) para manifestar em lote.
+  const resumoParaManifestar = notas
+    .filter((n) => n.situacao === "pendente" && !comItens.has(n.id))
+    .map((n) => ({
+      id: n.id,
+      emit_nome: n.emit_nome,
+      numero: n.numero,
+      data_emissao: n.data_emissao,
+    }));
 
   const badge: Record<string, string> = {
     pendente: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
@@ -85,6 +97,8 @@ export default async function NotasPage() {
       <div className="mb-6">
         <BuscarNotas bloqueadoAte={bloqueadoAte} />
       </div>
+
+      <ManifestarLote notas={resumoParaManifestar} />
 
       {notas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
