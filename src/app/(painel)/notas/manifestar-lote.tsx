@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
-import { manifestarVarias } from "./sefaz-actions";
+import { manifestarVarias, completarItensAgora } from "./sefaz-actions";
 
 type NotaResumo = {
   id: string;
@@ -41,9 +41,23 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
       const r = await manifestarVarias(ids);
       setMsg(
         `✓ ${r.manifestadas} manifestada(s)${r.erros ? `, ${r.erros} com erro` : ""}. ` +
-          `${r.importadas} já baixaram; o resto completa sozinho em alguns minutos.`,
+          `${r.importadas} já vieram completas. A SEFAZ libera o XML (com os itens) aos poucos — ` +
+          `o resto entra sozinho nos próximos minutos, ou clique em "Buscar itens agora".`,
       );
       setSel(new Set());
+      router.refresh();
+    });
+  }
+  function completar() {
+    setMsg(null);
+    start(async () => {
+      const r = await completarItensAgora();
+      if (r.erro) setMsg(`SEFAZ: ${r.erro}`);
+      else
+        setMsg(
+          `✓ Busca feita: ${r.importadas ?? 0} nota(s) completa(s) e ${r.resumos ?? 0} resumo(s). ` +
+            `Se ainda faltar item, a SEFAZ pode não ter liberado — tente de novo em alguns minutos.`,
+        );
       router.refresh();
     });
   }
@@ -59,12 +73,22 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
             {notas.length} nota(s) em resumo — marque e manifeste várias de uma vez.
           </p>
         </div>
-        <button
-          onClick={() => setAberto((v) => !v)}
-          className="rounded-lg border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-950"
-        >
-          {aberto ? "Fechar" : "Selecionar notas"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={completar}
+            disabled={proc}
+            title="Puxa da SEFAZ o XML completo (com os itens) das notas já manifestadas"
+            className="rounded-lg border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:text-blue-300 dark:hover:bg-blue-950"
+          >
+            {proc ? "Buscando..." : "Buscar itens agora"}
+          </button>
+          <button
+            onClick={() => setAberto((v) => !v)}
+            className="rounded-lg border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-950"
+          >
+            {aberto ? "Fechar" : "Selecionar notas"}
+          </button>
+        </div>
       </div>
 
       {aberto && (

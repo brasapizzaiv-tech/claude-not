@@ -111,6 +111,23 @@ export async function manifestarVarias(notaIds: string[]) {
   return { ok: erros === 0, manifestadas, erros, importadas, erro: ultimoErro };
 }
 
+// Força UMA busca agora para puxar o XML completo (itens) das notas já
+// manifestadas cujo XML a SEFAZ já liberou. É ação do usuário, então bypassa a
+// trava — mas faz só UMA consulta (sem loop) para não cair no "656".
+export async function completarItensAgora() {
+  const { supabase, cfg } = await getConfig();
+  if (!cfg) return { ok: false, erro: "Configure o certificado e o CNPJ primeiro." };
+  const r = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
+  revalidatePath("/notas");
+  return {
+    ok: !r.erro,
+    importadas: r.importadas,
+    resumos: r.resumos,
+    erro: r.erro,
+    xMotivo: r.xMotivo,
+  };
+}
+
 // Manifesta e já tenta baixar a nota completa. A Receita SUSPENDEU a consulta
 // por chave (consChNFe) em 2022 — só sobrou o distNSU. Depois de manifestar, a
 // SEFAZ libera o XML completo com um pequeno atraso, então tentamos UMA busca

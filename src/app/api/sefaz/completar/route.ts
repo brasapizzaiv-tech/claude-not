@@ -27,22 +27,29 @@ export async function GET(req: NextRequest) {
 
   const agora = Date.now();
 
-  // Notas manifestadas nos últimos 25 min (e há pelo menos 1 min, dando tempo
-  // do XML aparecer) que ainda não têm itens — ou seja, aguardando o completo.
+  // Notas manifestadas nas últimas 3 h (e há pelo menos 1 min, dando tempo do
+  // XML aparecer) que ainda não têm itens — ou seja, aguardando o completo.
+  // Janela larga porque, em lote, a SEFAZ às vezes leva bem mais de meia hora
+  // para liberar o XML completo de todas as notas.
   const { data: candidatas } = await admin
     .from("notas_fiscais")
-    .select("id")
+    .select("id, manifestado_em")
     .not("manifestado_em", "is", null)
-    .gte("manifestado_em", new Date(agora - 25 * 60 * 1000).toISOString())
+    .gte("manifestado_em", new Date(agora - 3 * 60 * 60 * 1000).toISOString())
     .lte("manifestado_em", new Date(agora - 60 * 1000).toISOString());
 
   let aguardando = 0;
+  let manifestMaisNova = 0; // a mais recente entre as que ainda esperam itens
   for (const n of candidatas ?? []) {
     const { count } = await admin
       .from("nota_itens")
       .select("id", { count: "exact", head: true })
       .eq("nota_id", n.id as string);
-    if ((count ?? 0) === 0) aguardando++;
+    if ((count ?? 0) === 0) {
+      aguardando++;
+      const t = new Date(n.manifestado_em as string).getTime();
+      if (t > manifestMaisNova) manifestMaisNova = t;
+    }
   }
 
   // Nada aguardando: não força nada (deixa o cron de hora em hora cuidar).
@@ -50,9 +57,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, aguardando: 0, forcado: false });
   }
 
-  // Intervalo mínimo entre buscas forçadas (5 min) — evita bater demais.
+  // Espaçamento entre buscas forçadas: 5 min enquanto a manifestação é recente
+  // (até 30 min), depois afrouxa para 15 min — assim não fica batendo de 5 em 5
+  // por horas numa nota que emperrou, o que arriscaria o "656 Consumo Indevido".
+  const recente = agora - manifestMaisNova < 30 * 60 * 1000;
+  const intervaloMin = (recente ? 5 : 15) * 60 * 1000;
   const forcadoEm = cfg.forcado_em ? new Date(cfg.forcado_em).getTime() : 0;
-  if (agora - forcadoEm < 5 * 60 * 1000) {
+  if (agora - forcadoEm < intervaloMin) {
     return NextResponse.json({
       ok: true,
       aguardando,
