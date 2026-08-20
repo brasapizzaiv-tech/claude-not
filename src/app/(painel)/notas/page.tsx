@@ -49,7 +49,9 @@ export default async function NotasPage() {
     for (const i of (itens as { nota_id: string }[]) ?? [])
       comItens.add(i.nota_id);
   }
-  const aguardando = (n: Nota) => !!n.manifestado_em && !comItens.has(n.id);
+  // Só "aguardando itens" nas pendentes — uma nota já lançada está pronta.
+  const aguardando = (n: Nota) =>
+    n.situacao === "pendente" && !!n.manifestado_em && !comItens.has(n.id);
   // Notas em resumo (pendentes, sem itens) para manifestar em lote.
   const resumoParaManifestar = notas
     .filter((n) => n.situacao === "pendente" && !comItens.has(n.id))
