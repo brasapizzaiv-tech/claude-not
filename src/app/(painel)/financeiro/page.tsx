@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
 import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
 import { criarLancamento } from "./actions";
-import { LancamentoLinha } from "./lancamento-linha";
+import { LancamentosTabela } from "./lancamentos-tabela";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -278,40 +278,22 @@ export default async function FinanceiroPage({
           Nenhum lançamento neste mês.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
-              <tr>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Categoria</th>
-                <th className="px-4 py-3">Descrição</th>
-                <th className="px-4 py-3 text-right">Valor</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {lancamentos.map((l) => (
-                <LancamentoLinha
-                  key={l.id}
-                  l={{
-                    id: l.id,
-                    data: l.data,
-                    descricao: l.descricao,
-                    valor: Number(l.valor),
-                    origem: l.origem,
-                    categoria_id: l.categoria_id,
-                    tipo: l.dre_categorias?.tipo ?? null,
-                    categoria_nome: l.dre_categorias?.nome ?? null,
-                    fornecedor_nome: l.fornecedores?.nome ?? null,
-                    vencimento: l.vencimento,
-                    pago: l.pago,
-                  }}
-                  categorias={catsEdit}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <LancamentosTabela
+          lancamentos={lancamentos.map((l) => ({
+            id: l.id,
+            data: l.data,
+            descricao: l.descricao,
+            valor: Number(l.valor),
+            origem: l.origem,
+            categoria_id: l.categoria_id,
+            tipo: l.dre_categorias?.tipo ?? null,
+            categoria_nome: l.dre_categorias?.nome ?? null,
+            fornecedor_nome: l.fornecedores?.nome ?? null,
+            vencimento: l.vencimento,
+            pago: l.pago,
+          }))}
+          categorias={catsEdit}
+        />
       )}
     </div>
   );
