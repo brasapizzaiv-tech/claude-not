@@ -9,6 +9,8 @@ type Preco = {
   foto_url: string;
   embalagem: string;
   observacao: string;
+  st_inclusa?: string; // "true" | "false" | ""
+  st_pct?: string;
 };
 
 export type DadosCotacao = {

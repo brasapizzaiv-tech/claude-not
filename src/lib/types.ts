@@ -73,6 +73,8 @@ export type Produto = {
   preco_referencia: number | null;
   codigo: string | null;
   ativo: boolean;
+  tem_st: boolean;
+  st_pct_padrao: number | null;
   criado_em: string;
   // Vem do join com categorias.
   categorias?: { nome: string } | null;

@@ -24,6 +24,10 @@ export async function salvarProduto(formData: FormData) {
     return v ? Number(v) || null : null;
   };
 
+  const tem_st = formData.get("tem_st") === "on";
+  const stPctRaw = (formData.get("st_pct_padrao") as string)?.replace(",", ".").trim();
+  const st_pct_padrao = tem_st && stPctRaw ? Number(stPctRaw) || null : null;
+
   const payload = {
     nome,
     unidade,
@@ -34,6 +38,8 @@ export async function salvarProduto(formData: FormData) {
     validade_ambiente: dias("validade_ambiente"),
     observacoes,
     categoria_id,
+    tem_st,
+    st_pct_padrao,
   };
 
   if (id) {

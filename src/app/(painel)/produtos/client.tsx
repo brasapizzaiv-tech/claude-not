@@ -328,6 +328,35 @@ export function ProdutosClient({
                   Dias de validade por conservação (usado nas etiquetas).
                 </p>
               </div>
+              <div className="rounded-xl border border-violet-200 p-3 dark:border-violet-900">
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <input
+                    type="checkbox"
+                    name="tem_st"
+                    defaultChecked={editando?.tem_st ?? false}
+                  />
+                  Este produto tem ICMS-ST
+                </label>
+                <div className="mt-2">
+                  <label className="mb-1 block text-xs text-zinc-500">
+                    % de ST padrão (opcional) — já vem preenchida pro fornecedor
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      name="st_pct_padrao"
+                      inputMode="decimal"
+                      placeholder="Ex.: 17"
+                      defaultValue={editando?.st_pct_padrao ?? ""}
+                      className={`${inputCls} w-28`}
+                    />
+                    <span className="text-sm text-zinc-400">%</span>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Marcado: na cotação aparece um campo pro fornecedor dizer se a ST
+                  já está no preço e qual a %. O custo já sai correto.
+                </p>
+              </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Observações

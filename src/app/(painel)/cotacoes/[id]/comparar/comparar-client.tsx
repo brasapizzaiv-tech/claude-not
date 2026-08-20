@@ -35,7 +35,15 @@ export type ProdutoLinha = {
   qtd: number;
   precos: Record<
     string,
-    { preco: number | null; disp: boolean; foto: string | null; emb: string | null; obs: string | null }
+    {
+      preco: number | null;
+      precoBruto: number | null;
+      temSt: boolean;
+      disp: boolean;
+      foto: string | null;
+      emb: string | null;
+      obs: string | null;
+    }
   >;
   melhorForn: string | null;
 };
@@ -504,6 +512,15 @@ export function CompararClient({
                             >
                               {moeda(cel.preco)}
                             </button>
+                          )}
+                          {cel.temSt && (
+                            <div className="mt-0.5 text-right text-[10px] leading-tight text-violet-500 dark:text-violet-400">
+                              {cel.preco != null &&
+                              cel.precoBruto != null &&
+                              Math.abs(cel.preco - cel.precoBruto) > 0.001
+                                ? `c/ ST · bruto ${moeda(cel.precoBruto)}`
+                                : "ST inclusa"}
+                            </div>
                           )}
                           {(cel.emb || cel.obs) && (
                             <div className="mt-0.5 text-right text-[10px] leading-tight text-zinc-400">

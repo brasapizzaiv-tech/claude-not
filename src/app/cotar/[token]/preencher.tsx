@@ -16,6 +16,10 @@ export type LinhaPreco = {
   foto_url: string | null;
   embalagem: string | null;
   observacao: string | null;
+  tem_st: boolean;
+  st_pct_padrao: number | null;
+  st_inclusa: boolean | null;
+  st_pct: number | null;
 };
 
 type Meta = {
@@ -63,6 +67,18 @@ export function CotarPreencher({
   const [obs, setObs] = useState<Record<string, string>>(() =>
     Object.fromEntries(produtos.map((p) => [p.produto_id, p.observacao ?? ""])),
   );
+  // ST por item: "inclusa" (o preço já inclui a ST?) e a % informada.
+  const [stInc, setStInc] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(produtos.map((p) => [p.produto_id, p.st_inclusa ?? false])),
+  );
+  const [stPct, setStPct] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      produtos.map((p) => [
+        p.produto_id,
+        p.st_pct != null ? String(p.st_pct) : p.st_pct_padrao != null ? String(p.st_pct_padrao) : "",
+      ]),
+    ),
+  );
   const [fotos, setFotos] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       produtos.filter((p) => p.foto_url).map((p) => [p.produto_id, p.foto_url!]),
@@ -89,6 +105,8 @@ export function CotarPreencher({
         foto_url: fotos[p.produto_id] ?? "",
         embalagem: emb[p.produto_id] ?? "",
         observacao: obs[p.produto_id] ?? "",
+        st_inclusa: p.tem_st ? String(!!stInc[p.produto_id]) : "",
+        st_pct: p.tem_st ? (stPct[p.produto_id] ?? "").replace(",", ".").trim() : "",
       }));
   }
 
@@ -279,6 +297,49 @@ export function CotarPreencher({
                         </option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {/* ST (Substituição Tributária) — só nos produtos marcados */}
+                {p.tem_st && !emFalta && (
+                  <div className="mt-2 rounded-lg border border-violet-200 bg-violet-50/50 p-2.5 dark:border-violet-900 dark:bg-violet-950/20">
+                    <p className="text-xs font-semibold text-violet-800 dark:text-violet-300">
+                      ⚠️ Este item tem ICMS-ST
+                    </p>
+                    <label className="mt-1.5 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+                      <input
+                        type="checkbox"
+                        checked={!!stInc[p.produto_id]}
+                        disabled={fechada}
+                        onChange={(e) => {
+                          setStInc((s) => ({ ...s, [p.produto_id]: e.target.checked }));
+                          agendarSalvar();
+                        }}
+                      />
+                      A ST já está inclusa no preço acima
+                    </label>
+                    <div className="mt-2">
+                      <label className="text-xs text-zinc-500">% de ST</label>
+                      <div className="mt-1 flex items-center gap-1">
+                        <input
+                          inputMode="decimal"
+                          value={stPct[p.produto_id] ?? ""}
+                          placeholder="Ex.: 17"
+                          disabled={fechada}
+                          onChange={(e) => {
+                            setStPct((s) => ({ ...s, [p.produto_id]: e.target.value }));
+                            agendarSalvar();
+                          }}
+                          className={`${campo} w-24 text-right`}
+                        />
+                        <span className="text-sm text-zinc-400">%</span>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-[11px] text-zinc-400">
+                      {stInc[p.produto_id]
+                        ? "Já inclusa → usamos o preço como está."
+                        : "Não inclusa → somamos a % ao preço para o custo real."}
+                    </p>
                   </div>
                 )}
 

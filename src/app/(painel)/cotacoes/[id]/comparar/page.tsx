@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Cotacao } from "@/lib/types";
+import { custoComSt } from "@/lib/st";
 import {
   CompararClient,
   type ProdutoLinha,
@@ -30,7 +31,7 @@ export default async function CompararPage({
     await Promise.all([
       supabase
         .from("cotacao_itens")
-        .select("produto_id, qtd, produtos(nome, unidade, categorias(nome))")
+        .select("produto_id, qtd, produtos(nome, unidade, tem_st, categorias(nome))")
         .eq("cotacao_id", id)
         .gt("qtd", 0),
       supabase
@@ -41,9 +42,16 @@ export default async function CompararPage({
         .eq("cotacao_id", id),
       supabase
         .from("cotacao_precos")
-        .select("fornecedor_id, produto_id, preco_unit, disponivel, foto_url, embalagem, observacao")
+        .select("fornecedor_id, produto_id, preco_unit, disponivel, foto_url, embalagem, observacao, st_inclusa, st_pct")
         .eq("cotacao_id", id),
     ]);
+
+  // Quais produtos têm ST (para calcular o custo real com a ST).
+  const temStMap = new Map<string, boolean>();
+  for (const i of (itens ?? []) as Record<string, unknown>[]) {
+    const prod = i.produtos as { tem_st?: boolean } | null;
+    temStMap.set(i.produto_id as string, !!prod?.tem_st);
+  }
 
   const fornecedores: FornecedorCol[] = (fornsData ?? []).map(
     (f: Record<string, unknown>) => ({
@@ -72,14 +80,36 @@ export default async function CompararPage({
     return a.nome.localeCompare(b.nome);
   });
 
-  // Mapa de preços: fornecedorId -> produtoId -> {preco, disponivel, foto}
+  // Mapa de preços: fornecedorId -> produtoId -> célula. O `preco` já é o CUSTO
+  // REAL (com ST quando o produto tem e o fornecedor não incluiu no preço).
   const precoMap = new Map<
     string,
-    { preco: number | null; disp: boolean; foto: string | null; emb: string | null; obs: string | null }
+    {
+      preco: number | null;
+      precoBruto: number | null;
+      temSt: boolean;
+      disp: boolean;
+      foto: string | null;
+      emb: string | null;
+      obs: string | null;
+    }
   >();
   for (const p of precos ?? []) {
+    const raw = p.preco_unit != null ? Number(p.preco_unit) : null;
+    const temSt = temStMap.get(p.produto_id as string) ?? false;
+    const eff =
+      raw != null
+        ? custoComSt(
+            raw,
+            temSt,
+            (p.st_inclusa as boolean | null) ?? null,
+            p.st_pct != null ? Number(p.st_pct) : null,
+          )
+        : null;
     precoMap.set(`${p.fornecedor_id}_${p.produto_id}`, {
-      preco: p.preco_unit != null ? Number(p.preco_unit) : null,
+      preco: eff,
+      precoBruto: raw,
+      temSt,
       disp: p.disponivel,
       foto: p.foto_url ?? null,
       emb: (p.embalagem as string) ?? null,
@@ -97,7 +127,15 @@ export default async function CompararPage({
       const produtoId = i.produto_id as string;
       const precosDoProduto: Record<
         string,
-        { preco: number | null; disp: boolean; foto: string | null; emb: string | null; obs: string | null }
+        {
+          preco: number | null;
+          precoBruto: number | null;
+          temSt: boolean;
+          disp: boolean;
+          foto: string | null;
+          emb: string | null;
+          obs: string | null;
+        }
       > = {};
       let melhorForn: string | null = null;
       let melhorPreco = Infinity;
