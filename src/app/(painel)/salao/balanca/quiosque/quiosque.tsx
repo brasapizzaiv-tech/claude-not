@@ -208,7 +208,8 @@ export function QuiosqueBalanca({
             Conectar balança
           </button>
           <p className="text-xl text-white/40">
-            Clique uma vez, escolha a porta <b>COM5 (Prolific)</b> e deixe rodando.
+            Clique uma vez e escolha a porta da balança na lista
+            (<b>Prolific</b> ou <b>USB-Serial</b>) — pode ser COM3, COM5, COM7... Depois deixe rodando.
           </p>
           {erro && <p className="max-w-lg text-lg text-red-300">{erro}</p>}
         </div>
