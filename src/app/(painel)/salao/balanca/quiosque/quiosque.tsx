@@ -177,7 +177,7 @@ export function QuiosqueBalanca({
       <div className="flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa-branco.png" alt="Brasa" className="h-24 w-auto" />
+          <img src="/logo-brasa.png" alt="Brasa" className="h-28 w-auto" />
           <span className="text-3xl font-light text-white/60">Buffet</span>
         </div>
         <Link
