@@ -460,6 +460,39 @@ export function ProdutosClient({
                   já está no preço e qual a %. O custo já sai correto.
                 </p>
               </div>
+
+              {/* Dados fiscais (NF-e / NFC-e) */}
+              <details className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <summary className="cursor-pointer text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                  Dados fiscais (NF-e / NFC-e) — o contador informa
+                </summary>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-zinc-500">NCM</label>
+                    <input name="ncm" defaultValue={editando?.ncm ?? ""} placeholder="Ex.: 21069090" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-zinc-500">CFOP</label>
+                    <input name="cfop" defaultValue={editando?.cfop ?? ""} placeholder="Ex.: 5102" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-zinc-500">CSOSN</label>
+                    <input name="csosn" defaultValue={editando?.csosn ?? ""} placeholder="Ex.: 102" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-zinc-500">CEST (se ST)</label>
+                    <input name="cest" defaultValue={editando?.cest ?? ""} placeholder="—" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-zinc-500">Origem</label>
+                    <input name="origem" defaultValue={editando?.origem ?? "0"} placeholder="0" className={inputCls} />
+                  </div>
+                </div>
+                <p className="mt-2 text-[11px] text-zinc-400">
+                  Usado na emissão da nota fiscal. Deixe em branco por enquanto se ainda
+                  não tiver com o contador — dá pra preencher depois.
+                </p>
+              </details>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Observações

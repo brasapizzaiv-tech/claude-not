@@ -74,6 +74,7 @@ export function Sidebar({
         has("fornecedores") && mod("fornecedores"),
         has("produtos") && mod("produtos"),
         has("colaboradores") && mod("colaboradores"),
+        { key: "clientes", href: "/clientes", label: "Clientes", icon: "🧑" },
       ].filter(Boolean) as Item[],
     },
     {
@@ -87,6 +88,7 @@ export function Sidebar({
       itens: [
         has("financeiro") && mod("financeiro", { label: "Financeiro", sub: financeiroSub }),
         has("notas") && mod("notas"),
+        { key: "fiscal", href: "/fiscal", label: "Config fiscal", icon: "🧾" },
       ].filter(Boolean) as Item[],
     },
     {

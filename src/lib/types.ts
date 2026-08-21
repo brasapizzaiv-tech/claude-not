@@ -75,6 +75,11 @@ export type Produto = {
   ativo: boolean;
   tem_st: boolean;
   st_pct_padrao: number | null;
+  ncm: string | null;
+  cest: string | null;
+  cfop: string | null;
+  csosn: string | null;
+  origem: string | null;
   criado_em: string;
   // Vem do join com categorias.
   categorias?: { nome: string } | null;

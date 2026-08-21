@@ -28,6 +28,8 @@ export async function salvarProduto(formData: FormData) {
   const stPctRaw = (formData.get("st_pct_padrao") as string)?.replace(",", ".").trim();
   const st_pct_padrao = tem_st && stPctRaw ? Number(stPctRaw) || null : null;
 
+  const fiscalTxt = (campo: string) => ((formData.get(campo) as string) || "").trim() || null;
+
   const payload = {
     nome,
     unidade,
@@ -40,6 +42,11 @@ export async function salvarProduto(formData: FormData) {
     categoria_id,
     tem_st,
     st_pct_padrao,
+    ncm: fiscalTxt("ncm"),
+    cest: fiscalTxt("cest"),
+    cfop: fiscalTxt("cfop"),
+    csosn: fiscalTxt("csosn"),
+    origem: fiscalTxt("origem") ?? "0",
   };
 
   if (id) {
