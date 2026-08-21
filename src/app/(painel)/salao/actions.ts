@@ -176,6 +176,33 @@ export async function criarComandaBuffet(formData: FormData) {
   if (com) redirect(`/salao/comandas/${com.id}`);
 }
 
+// Quiosque de autoatendimento: gera a comanda de buffet e RETORNA os dados
+// (número, valor) para mostrar na tela — sem redirecionar.
+export async function gerarComandaBuffetKiosk(peso: number) {
+  const supabase = await createClient();
+  if (!(peso > 0)) return { ok: false as const };
+  const cfg = await pdvCfg(supabase);
+  const tara = Number(cfg.tara_padrao || 0);
+  const { valor, livre } = calcBuffet(cfg, peso, tara);
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .insert({ peso, tara, valor_buffet: valor, livre, mesa: "Balança" })
+    .select("id, numero")
+    .single();
+  revalidatePath("/salao");
+  if (!com) return { ok: false as const };
+  return {
+    ok: true as const,
+    id: com.id as string,
+    numero: Number(com.numero),
+    valor,
+    peso,
+    tara,
+    liquido: Math.max(0, peso - tara),
+    livre,
+  };
+}
+
 // Nova comanda "à la carte" numa mesa (sem buffet). Abre a comanda em seguida.
 export async function criarComandaMesa(formData: FormData) {
   const supabase = await createClient();

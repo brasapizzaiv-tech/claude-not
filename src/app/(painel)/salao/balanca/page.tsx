@@ -19,10 +19,20 @@ export default async function BalancaPage() {
       <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
         ← Salão
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">⚖️ Balança / Buffet</h1>
-      <p className="mt-1 text-zinc-500">
-        Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido no Cardápio"}.
-      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">⚖️ Balança / Buffet</h1>
+          <p className="mt-1 text-zinc-500">
+            Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido no Cardápio"}.
+          </p>
+        </div>
+        <Link
+          href="/salao/balanca/quiosque"
+          className="rounded-xl bg-[#C78340] px-5 py-3 text-sm font-bold text-white hover:brightness-110"
+        >
+          🖥️ Modo quiosque (autoatendimento)
+        </Link>
+      </div>
 
       <div className="mt-6">
         <BalancaLeitor taraPadrao={taraPadrao} />
