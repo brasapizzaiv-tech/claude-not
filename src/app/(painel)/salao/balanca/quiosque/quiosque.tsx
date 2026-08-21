@@ -184,8 +184,8 @@ export function QuiosqueBalanca({
       <div className="flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa.png" alt="Brasa" className="h-48 w-auto" />
-          <span className="text-3xl font-light text-white/60">Buffet</span>
+          <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(2.5rem,11vh,8rem)] w-auto" />
+          <span className="text-[clamp(1rem,3vw,2rem)] font-light text-white/60">Buffet</span>
         </div>
         <Link
           href="/salao/balanca"
@@ -198,16 +198,16 @@ export function QuiosqueBalanca({
 
       {estado === "conectar" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
-          <p className="max-w-2xl text-4xl font-medium text-white/80">
+          <p className="max-w-2xl text-[clamp(1.25rem,4vw,2.5rem)] font-medium text-white/80">
             Modo balança / autoatendimento
           </p>
           <button
             onClick={conectar}
-            className="rounded-3xl bg-[#C78340] px-16 py-8 text-4xl font-bold text-white shadow-lg hover:brightness-110"
+            className="rounded-3xl bg-[#C78340] px-[clamp(2rem,7vw,4rem)] py-[clamp(1rem,3vh,2rem)] text-[clamp(1.25rem,4vw,2.5rem)] font-bold text-white shadow-lg hover:brightness-110"
           >
             Conectar balança
           </button>
-          <p className="text-xl text-white/40">
+          <p className="text-[clamp(0.8rem,2vw,1.25rem)] text-white/40">
             Clique uma vez e escolha a porta da balança na lista
             (<b>Prolific</b> ou <b>USB-Serial</b>) — pode ser COM3, COM5, COM7... Depois deixe rodando.
           </p>
@@ -218,12 +218,12 @@ export function QuiosqueBalanca({
           {/* instrução / resultado */}
           {estado === "resultado" && resultado ? (
             <div className="text-center">
-              <div className="mb-6 inline-block rounded-full bg-green-500 px-12 py-5 text-6xl font-black">
+              <div className="mb-6 inline-block rounded-full bg-green-500 px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.5rem,5vw,3.5rem)] font-black">
                 ✓ COMANDA Nº {resultado.numero}
               </div>
-              <p className="text-4xl text-white/80">Retire o prato e pague no caixa</p>
-              <p className="mt-8 text-9xl font-black text-green-400">{moeda(resultado.valor)}</p>
-              <p className="mt-3 text-3xl text-white/50">
+              <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-white/80">Retire o prato e pague no caixa</p>
+              <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-green-400">{moeda(resultado.valor)}</p>
+              <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-white/50">
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
                 {resultado.livre ? " · à vontade (livre)" : ""}
               </p>
@@ -240,7 +240,7 @@ export function QuiosqueBalanca({
             </div>
           ) : (
             <>
-              <div className={`mb-8 rounded-3xl px-12 py-6 text-5xl font-black uppercase tracking-wide ${badge}`}>
+              <div className={`mb-6 rounded-3xl px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.5rem)] text-[clamp(1.25rem,5vw,3rem)] font-black uppercase tracking-wide ${badge}`}>
                 {estado === "processando"
                   ? "Gerando comanda..."
                   : estado === "pesando"
@@ -248,20 +248,20 @@ export function QuiosqueBalanca({
                     : "Coloque o prato na balança"}
               </div>
               {estado === "aguardando" && (
-                <div className="mb-6 animate-bounce text-7xl text-white/40">⌄</div>
+                <div className="mb-4 animate-bounce text-[clamp(2rem,6vw,4rem)] text-white/40">⌄</div>
               )}
               {/* peso grande */}
-              <div className="rounded-[2rem] border-4 border-white/15 bg-black/30 px-24 py-10 text-center">
-                <p className="text-[10rem] font-black leading-none tabular-nums">
+              <div className="rounded-[2rem] border-4 border-white/15 bg-black/30 px-[clamp(1.5rem,8vw,6rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-center">
+                <p className="text-[clamp(3.5rem,16vw,10rem)] font-black leading-none tabular-nums">
                   {liq.toFixed(3).replace(".", ",")}
-                  <span className="ml-3 text-6xl font-light text-white/50">kg</span>
+                  <span className="ml-3 text-[clamp(1.5rem,5vw,3.5rem)] font-light text-white/50">kg</span>
                 </p>
               </div>
 
               {/* Marmita: só por kg (sem virar livre) */}
               <button
                 onClick={toggleSoKg}
-                className={`mt-8 rounded-2xl px-10 py-5 text-3xl font-bold transition ${
+                className={`mt-[clamp(1rem,3vh,2rem)] rounded-2xl px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1rem,3vw,1.9rem)] font-bold transition ${
                   soKg
                     ? "bg-yellow-400 text-black"
                     : "border-2 border-white/25 text-white/70 hover:bg-white/10"
@@ -280,20 +280,20 @@ export function QuiosqueBalanca({
       )}
 
       {/* rodapé: preços de HOJE */}
-      <div className="grid grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-8 py-7 text-center">
+      <div className="grid grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-4 py-[clamp(0.5rem,2vh,1.5rem)] text-center">
         <div>
-          <p className="text-5xl font-black text-white">{buffetLivre > 0 ? moeda(buffetLivre) : "—"}</p>
-          <p className="mt-1 text-base uppercase tracking-wide text-white/40">Valor livre (à vontade)</p>
+          <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-white">{buffetLivre > 0 ? moeda(buffetLivre) : "—"}</p>
+          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-white/40">Valor livre (à vontade)</p>
         </div>
         <div>
-          <p className="text-8xl font-black leading-none text-[#C78340]">
+          <p className="text-[clamp(2rem,8vw,5.5rem)] font-black leading-none text-[#C78340]">
             {moeda(estado === "resultado" && resultado ? resultado.valor : valorAtual)}
           </p>
-          <p className="mt-1 text-lg uppercase tracking-wide text-white/50">Valor a pagar</p>
+          <p className="mt-1 text-[clamp(0.7rem,1.6vw,1.1rem)] uppercase tracking-wide text-white/50">Valor a pagar</p>
         </div>
         <div>
-          <p className="text-5xl font-black text-white">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
-          <p className="mt-1 text-base uppercase tracking-wide text-white/40">Valor por kg</p>
+          <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-white">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
+          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-white/40">Valor por kg</p>
         </div>
       </div>
 
