@@ -28,6 +28,7 @@ export function QuiosqueBalanca({
   const [pesoBruto, setPesoBruto] = useState(0);
   const [erro, setErro] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [diag, setDiag] = useState<{ bytes: number; raw: string }>({ bytes: 0, raw: "" });
   const [soKg, setSoKg] = useState(false); // marmita: só por kg (sem teto do livre)
   const soKgRef = useRef(false);
   const toggleSoKg = () => {
@@ -157,11 +158,14 @@ export function QuiosqueBalanca({
     try {
       const reader = port.readable.getReader();
       readerRef.current = reader;
+      let tot = 0;
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
+        tot += value?.length ?? 0;
         buf += decoder.decode(value, { stream: true });
         if (buf.length > 800) buf = buf.slice(-800);
+        setDiag({ bytes: tot, raw: buf.slice(-120) });
         const m = [...buf.matchAll(/PESO\s*L[:\s]*(-?\d+[.,]\d+)/gi)];
         if (m.length) processar(parseFloat(m[m.length - 1][1].replace(",", ".")));
       }
@@ -276,6 +280,19 @@ export function QuiosqueBalanca({
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* diagnóstico da balança (ajuda quando não lê) */}
+      {estado !== "conectar" && (
+        <div
+          className={`px-4 py-1 text-center text-[11px] ${
+            diag.bytes > 0 ? "text-white/30" : "text-amber-400/70"
+          }`}
+        >
+          {diag.bytes > 0
+            ? `balança: ${diag.bytes} bytes · ${diag.raw.replace(/[\x00-\x1F]/g, " ").trim().slice(-60) || "…"}`
+            : "balança conectada, mas sem dados ainda — coloque um prato; se continuar 0, veja a dica abaixo"}
         </div>
       )}
 
