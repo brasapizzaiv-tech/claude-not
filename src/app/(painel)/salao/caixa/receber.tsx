@@ -26,6 +26,13 @@ export function ReceberComandas({
   const [split, setSplit] = useState(false);
   const [linhas, setLinhas] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
+  const [recibo, setRecibo] = useState<{
+    itens: { numero: number; total: number }[];
+    total: number;
+    pagamentos: { forma: string; valor: number }[];
+    troco: number;
+    quando: string;
+  } | null>(null);
 
   const filtradas = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -67,6 +74,9 @@ export function ReceberComandas({
           .filter((f) => num(linhas[f] ?? "") > 0)
           .map((f) => ({ forma: f, valor: Math.round(num(linhas[f]) * 100) / 100 }))
       : [{ forma: formaSel, valor: somaR }];
+    const itensRecibo = comandas
+      .filter((c) => sel.has(c.id))
+      .map((c) => ({ numero: c.numero, total: c.total }));
     setMsg(null);
     start(async () => {
       const r = await receberComandas(ids, pagamentos);
@@ -75,6 +85,19 @@ export function ReceberComandas({
           `✓ Recebido ${brl(r.total)} — comanda(s) ${r.numeros.map((n) => `#${n}`).join(", ")}.` +
             (trocoQuick > 0.005 ? ` Troco: ${brl(trocoQuick)}.` : ""),
         );
+        // Cupom de recebimento (imprime na térmica).
+        setRecibo({
+          itens: itensRecibo,
+          total: r.total,
+          pagamentos,
+          troco: trocoQuick > 0.005 ? trocoQuick : 0,
+          quando: new Date().toLocaleString("pt-BR"),
+        });
+        setTimeout(() => {
+          try {
+            window.print();
+          } catch {}
+        }, 400);
         setSel(new Set());
         setFormaSel("");
         setRecebido("");
@@ -215,9 +238,72 @@ export function ReceberComandas({
               </>
             )}
             {msg && <p className="text-xs text-emerald-700 dark:text-emerald-400">{msg}</p>}
+            {recibo && (
+              <button
+                onClick={() => {
+                  try {
+                    window.print();
+                  } catch {}
+                }}
+                className="nao-imprimir text-xs text-zinc-400 hover:text-orange-600"
+              >
+                🖨️ Reimprimir último recibo
+              </button>
+            )}
           </div>
         </div>
       )}
+
+      {/* Cupom de recebimento (só na impressão — térmica 80mm) */}
+      {recibo && (
+        <div className="cupom-caixa">
+          <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "14pt" }}>
+            BRASA — Recebimento
+          </div>
+          <div>{recibo.quando}</div>
+          <div style={{ borderTop: "1px dashed #000", margin: "2mm 0" }} />
+          {recibo.itens.map((i) => (
+            <div key={i.numero} style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Comanda #{i.numero}</span>
+              <span>{brl(i.total)}</span>
+            </div>
+          ))}
+          <div style={{ borderTop: "1px dashed #000", margin: "2mm 0" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "16pt", fontWeight: "bold" }}>
+            <span>TOTAL</span>
+            <span>{brl(recibo.total)}</span>
+          </div>
+          <div style={{ marginTop: "2mm" }}>
+            {recibo.pagamentos.map((p) => (
+              <div key={p.forma} style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>{p.forma}</span>
+                <span>{brl(p.valor)}</span>
+              </div>
+            ))}
+            {recibo.troco > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                <span>Troco</span>
+                <span>{brl(recibo.troco)}</span>
+              </div>
+            )}
+          </div>
+          <div style={{ textAlign: "center", marginTop: "3mm" }}>Obrigado! Volte sempre.</div>
+        </div>
+      )}
+      <style>{`
+        .cupom-caixa { display: none; }
+        @media print {
+          @page { size: 80mm auto; margin: 0; }
+          html, body { margin: 0 !important; background: #fff !important; }
+          body * { visibility: hidden; }
+          .cupom-caixa, .cupom-caixa * { visibility: visible; color: #000 !important; }
+          .cupom-caixa {
+            display: block; position: absolute; left: 0; top: 0;
+            width: 80mm; box-sizing: border-box; padding: 4mm 3mm;
+            font-family: 'Courier New', monospace; font-size: 12pt; line-height: 1.35;
+          }
+        }
+      `}</style>
     </div>
   );
 }
