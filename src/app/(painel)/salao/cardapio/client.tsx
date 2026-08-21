@@ -393,8 +393,14 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
                 </tr>
               </thead>
               <tbody>
-                {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map(
-                  (nome, d) => (
+                {[
+                  [1, "Segunda"],
+                  [2, "Terça"],
+                  [3, "Quarta"],
+                  [4, "Quinta"],
+                  [5, "Sexta"],
+                  [6, "Sábado"],
+                ].map(([d, nome]) => (
                     <tr key={d}>
                       <td className="px-2 py-0.5 text-zinc-600 dark:text-zinc-300">{nome}</td>
                       <td className="px-2 py-0.5">

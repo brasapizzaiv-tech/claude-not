@@ -13,8 +13,9 @@ export default async function QuiosquePage() {
   const kgDia = (d: number) => Number(cfg[`preco_kg_${d}`] || cfg.preco_kg || 0);
   const livreDia = (d: number) => Number(cfg[`buffet_livre_${d}`] || cfg.buffet_livre || 0);
 
-  const legenda = DIAS.map((nome, d) => ({
-    nome,
+  // Domingo (0) não trabalha — fora da legenda.
+  const legenda = [1, 2, 3, 4, 5, 6].map((d) => ({
+    nome: DIAS[d],
     kg: kgDia(d),
     livre: livreDia(d),
     hoje: d === dow,

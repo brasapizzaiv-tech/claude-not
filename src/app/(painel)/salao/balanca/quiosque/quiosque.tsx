@@ -179,9 +179,11 @@ export function QuiosqueBalanca({
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gradient-to-b from-[#2b211b] via-[#211915] to-black text-white">
       {/* topo */}
       <div className="flex items-center justify-between px-6 py-4">
-        <span className="text-2xl font-black tracking-tight text-[#C78340]">
-          BRASA <span className="font-light text-white/70">Buffet</span>
-        </span>
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-brasa-branco.png" alt="Brasa" className="h-12 w-auto" />
+          <span className="text-lg font-light text-white/60">Buffet</span>
+        </div>
         <Link href="/salao/balanca" className="text-white/40 hover:text-white/80" title="Sair do modo quiosque">
           ✕
         </Link>
