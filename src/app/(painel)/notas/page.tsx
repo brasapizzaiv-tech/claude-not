@@ -38,12 +38,11 @@ export default async function NotasPage() {
     .map((n) => n.id);
   const comItens = new Set<string>();
   if (alvos.length > 0) {
-    const { data: itens } = await supabase
-      .from("nota_itens")
-      .select("nota_id")
-      .in("nota_id", alvos);
-    for (const i of (itens as { nota_id: string }[]) ?? [])
-      comItens.add(i.nota_id);
+    // Via função no banco (agrega) — não estoura o limite de 1000 linhas do
+    // PostgREST, que fazia notas COM itens aparecerem como "aguardando itens".
+    const { data: ids } = await supabase.rpc("notas_com_itens", { p_ids: alvos });
+    for (const row of (ids as ({ notas_com_itens: string } | string)[]) ?? [])
+      comItens.add(typeof row === "string" ? row : row.notas_com_itens);
   }
   // Só "aguardando itens" nas pendentes — uma nota já lançada está pronta.
   const aguardando = (n: Nota) =>
