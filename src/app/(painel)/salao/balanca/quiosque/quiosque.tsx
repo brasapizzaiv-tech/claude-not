@@ -13,18 +13,14 @@ const ESTAVEL_MS = 2000; // peso parado por 2s → fecha a comanda
 
 type Resultado = { numero: number; valor: number; liquido: number; livre: boolean };
 
-type DiaPreco = { nome: string; kg: number; livre: number; hoje: boolean };
-
 export function QuiosqueBalanca({
   precoKg,
   buffetLivre,
   taraPadrao,
-  legenda,
 }: {
   precoKg: number;
   buffetLivre: number;
   taraPadrao: number;
-  legenda: DiaPreco[];
 }) {
   const [estado, setEstado] = useState<
     "conectar" | "aguardando" | "pesando" | "processando" | "resultado"
@@ -178,51 +174,55 @@ export function QuiosqueBalanca({
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gradient-to-b from-[#2b211b] via-[#211915] to-black text-white">
       {/* topo */}
-      <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-8 py-5">
+        <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa-branco.png" alt="Brasa" className="h-12 w-auto" />
-          <span className="text-lg font-light text-white/60">Buffet</span>
+          <img src="/logo-brasa-branco.png" alt="Brasa" className="h-24 w-auto" />
+          <span className="text-3xl font-light text-white/60">Buffet</span>
         </div>
-        <Link href="/salao/balanca" className="text-white/40 hover:text-white/80" title="Sair do modo quiosque">
+        <Link
+          href="/salao/balanca"
+          className="text-4xl text-white/30 hover:text-white/80"
+          title="Sair do modo quiosque"
+        >
           ✕
         </Link>
       </div>
 
       {estado === "conectar" ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
-          <p className="max-w-xl text-2xl font-medium text-white/80">
+        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
+          <p className="max-w-2xl text-4xl font-medium text-white/80">
             Modo balança / autoatendimento
           </p>
           <button
             onClick={conectar}
-            className="rounded-2xl bg-[#C78340] px-10 py-5 text-2xl font-bold text-white shadow-lg hover:brightness-110"
+            className="rounded-3xl bg-[#C78340] px-16 py-8 text-4xl font-bold text-white shadow-lg hover:brightness-110"
           >
             Conectar balança
           </button>
-          <p className="text-sm text-white/40">
+          <p className="text-xl text-white/40">
             Clique uma vez, escolha a porta <b>COM5 (Prolific)</b> e deixe rodando.
           </p>
-          {erro && <p className="max-w-md text-sm text-red-300">{erro}</p>}
+          {erro && <p className="max-w-lg text-lg text-red-300">{erro}</p>}
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center px-6">
           {/* instrução / resultado */}
           {estado === "resultado" && resultado ? (
             <div className="text-center">
-              <div className="mb-4 inline-block rounded-full bg-green-500 px-8 py-3 text-3xl font-black">
+              <div className="mb-6 inline-block rounded-full bg-green-500 px-12 py-5 text-6xl font-black">
                 ✓ COMANDA Nº {resultado.numero}
               </div>
-              <p className="text-2xl text-white/80">Retire o prato e pague no caixa</p>
-              <p className="mt-6 text-7xl font-black text-green-400">{moeda(resultado.valor)}</p>
-              <p className="mt-2 text-xl text-white/50">
+              <p className="text-4xl text-white/80">Retire o prato e pague no caixa</p>
+              <p className="mt-8 text-9xl font-black text-green-400">{moeda(resultado.valor)}</p>
+              <p className="mt-3 text-3xl text-white/50">
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
                 {resultado.livre ? " · à vontade (livre)" : ""}
               </p>
             </div>
           ) : (
             <>
-              <div className={`mb-6 rounded-2xl px-8 py-4 text-3xl font-black uppercase tracking-wide ${badge}`}>
+              <div className={`mb-8 rounded-3xl px-12 py-6 text-5xl font-black uppercase tracking-wide ${badge}`}>
                 {estado === "processando"
                   ? "Gerando comanda..."
                   : estado === "pesando"
@@ -230,29 +230,29 @@ export function QuiosqueBalanca({
                     : "Coloque o prato na balança"}
               </div>
               {estado === "aguardando" && (
-                <div className="mb-4 animate-bounce text-5xl text-white/40">⌄</div>
+                <div className="mb-6 animate-bounce text-7xl text-white/40">⌄</div>
               )}
               {/* peso grande */}
-              <div className="rounded-3xl border-4 border-white/15 bg-black/30 px-16 py-8 text-center">
-                <p className="text-8xl font-black tabular-nums">
+              <div className="rounded-[2rem] border-4 border-white/15 bg-black/30 px-24 py-10 text-center">
+                <p className="text-[10rem] font-black leading-none tabular-nums">
                   {liq.toFixed(3).replace(".", ",")}
-                  <span className="ml-2 text-4xl font-light text-white/50">kg</span>
+                  <span className="ml-3 text-6xl font-light text-white/50">kg</span>
                 </p>
               </div>
 
               {/* Marmita: só por kg (sem virar livre) */}
               <button
                 onClick={toggleSoKg}
-                className={`mt-6 rounded-xl px-6 py-3 text-lg font-bold transition ${
+                className={`mt-8 rounded-2xl px-10 py-5 text-3xl font-bold transition ${
                   soKg
                     ? "bg-yellow-400 text-black"
-                    : "border border-white/25 text-white/70 hover:bg-white/10"
+                    : "border-2 border-white/25 text-white/70 hover:bg-white/10"
                 }`}
               >
                 {soKg ? "🍱 MARMITA (só por kg) — ativa" : "🍱 É marmita? (só por kg)"}
               </button>
               {soKg && (
-                <p className="mt-1 text-sm text-yellow-300">
+                <p className="mt-2 text-xl text-yellow-300">
                   Esta pesagem cobra por kg, sem virar “à vontade”.
                 </p>
               )}
@@ -261,34 +261,23 @@ export function QuiosqueBalanca({
         </div>
       )}
 
-      {/* rodapé: preços */}
-      <div className="grid grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-6 py-5 text-center">
+      {/* rodapé: preços de HOJE */}
+      <div className="grid grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-8 py-7 text-center">
         <div>
-          <p className="text-3xl font-black text-white">{buffetLivre > 0 ? moeda(buffetLivre) : "—"}</p>
-          <p className="text-xs uppercase tracking-wide text-white/40">Valor livre (à vontade)</p>
+          <p className="text-5xl font-black text-white">{buffetLivre > 0 ? moeda(buffetLivre) : "—"}</p>
+          <p className="mt-1 text-base uppercase tracking-wide text-white/40">Valor livre (à vontade)</p>
         </div>
         <div>
-          <p className="text-5xl font-black text-[#C78340]">
+          <p className="text-8xl font-black leading-none text-[#C78340]">
             {moeda(estado === "resultado" && resultado ? resultado.valor : valorAtual)}
           </p>
-          <p className="text-xs uppercase tracking-wide text-white/50">Valor a pagar</p>
+          <p className="mt-1 text-lg uppercase tracking-wide text-white/50">Valor a pagar</p>
         </div>
         <div>
-          <p className="text-3xl font-black text-white">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
-          <p className="text-xs uppercase tracking-wide text-white/40">Valor por kg</p>
+          <p className="text-5xl font-black text-white">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
+          <p className="mt-1 text-base uppercase tracking-wide text-white/40">Valor por kg</p>
         </div>
       </div>
-
-      {/* legenda de preços por dia (livre / kg) */}
-      {legenda.some((d) => d.kg > 0 || d.livre > 0) && (
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 bg-black/50 px-4 py-2 text-[13px] text-white/50">
-          {legenda.map((d) => (
-            <span key={d.nome} className={d.hoje ? "font-bold text-[#C78340]" : ""}>
-              {d.nome}: {d.livre > 0 ? moeda(d.livre) : "—"} / {d.kg > 0 ? `${moeda(d.kg)}kg` : "—"}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
