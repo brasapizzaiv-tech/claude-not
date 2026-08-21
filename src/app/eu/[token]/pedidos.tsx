@@ -23,26 +23,44 @@ export type PedidoColab = {
 };
 
 export function PedidosColab({ token, pedidos }: { token: string; pedidos: PedidoColab[] }) {
+  const [aba, setAba] = useState<"pendentes" | "conferidos">("pendentes");
   if (pedidos.length === 0) return null;
-  const naoConferidos = pedidos.filter((p) => !p.conf_em).length;
+
+  const pendentes = pedidos.filter((p) => !p.conf_em);
+  const conferidos = pedidos.filter((p) => p.conf_em);
+  const lista = aba === "pendentes" ? pendentes : conferidos;
+
+  const tab = (ativo: boolean) =>
+    `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
+      ativo
+        ? "bg-orange-500 text-white"
+        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+    }`;
 
   return (
     <div className="mt-5">
-      <div className="mb-2 flex items-center justify-center gap-2">
-        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          📦 Pedidos para conferir
-        </span>
-        {naoConferidos > 0 && (
-          <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-            {naoConferidos}
-          </span>
-        )}
+      <div className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+        📦 Pedidos
       </div>
-      <div className="space-y-2">
-        {pedidos.map((p) => (
-          <PedidoCard key={p.id} token={token} pedido={p} />
-        ))}
+      <div className="mb-3 flex gap-2">
+        <button onClick={() => setAba("pendentes")} className={tab(aba === "pendentes")}>
+          Para conferir{pendentes.length > 0 ? ` (${pendentes.length})` : ""}
+        </button>
+        <button onClick={() => setAba("conferidos")} className={tab(aba === "conferidos")}>
+          Conferidos{conferidos.length > 0 ? ` (${conferidos.length})` : ""}
+        </button>
       </div>
+      {lista.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">
+          {aba === "pendentes" ? "Nenhum pedido para conferir 🎉" : "Nenhum pedido conferido ainda."}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {lista.map((p) => (
+            <PedidoCard key={p.id} token={token} pedido={p} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
