@@ -73,6 +73,22 @@ export async function definirFornecedoresDoProduto(
   return { ok: true, total: fornecedorIds.length };
 }
 
+// Vincula VÁRIOS produtos a um fornecedor de uma vez (aditivo — mantém os
+// fornecedores que os produtos já tiverem).
+export async function vincularProdutosAoFornecedor(
+  produtoIds: string[],
+  fornecedorId: string,
+) {
+  const supabase = await createClient();
+  if (!fornecedorId || produtoIds.length === 0) return { ok: false, total: 0 };
+  await supabase.from("fornecedor_produto").upsert(
+    produtoIds.map((produto_id) => ({ produto_id, fornecedor_id: fornecedorId })),
+    { onConflict: "fornecedor_id,produto_id", ignoreDuplicates: true },
+  );
+  revalidatePath("/produtos");
+  return { ok: true, total: produtoIds.length };
+}
+
 // Cria um fornecedor "Hortifrúti / Feira" (se não existir) e vincula a ele
 // todos os produtos que hoje estão sem nenhum fornecedor.
 export async function vincularSemFornecedorNaFeira() {

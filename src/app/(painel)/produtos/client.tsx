@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { Produto, Categoria } from "@/lib/types";
+import { Combobox } from "@/components/combobox";
 import {
   salvarProduto,
   excluirProduto,
   definirFornecedoresDoProduto,
+  vincularProdutosAoFornecedor,
   vincularSemFornecedorNaFeira,
 } from "./actions";
 
@@ -53,6 +56,21 @@ export function ProdutosClient({
   const [fornDe, setFornDe] = useState<Produto | null>(null);
   const semForn = produtos.filter((p) => !(vinc.get(p.id)?.size)).length;
 
+  const router = useRouter();
+  const [proc, start] = useTransition();
+  // Seleção múltipla para vincular vários produtos a um fornecedor de uma vez.
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [bulkForn, setBulkForn] = useState("");
+  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
+  function toggleSel(id: string) {
+    setSel((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
   const filtrados = useMemo(() => {
     const b = busca.trim().toLowerCase();
     return produtos.filter((p) => {
@@ -61,6 +79,39 @@ export function ProdutosClient({
       return okBusca && okCat;
     });
   }, [produtos, busca, categoria]);
+
+  const todosSelecionados =
+    filtrados.length > 0 && filtrados.every((p) => sel.has(p.id));
+  function toggleTodos() {
+    setSel((s) => {
+      const n = new Set(s);
+      if (todosSelecionados) filtrados.forEach((p) => n.delete(p.id));
+      else filtrados.forEach((p) => n.add(p.id));
+      return n;
+    });
+  }
+  function vincularSelecionados() {
+    if (!bulkForn || sel.size === 0) return;
+    const ids = [...sel];
+    setBulkMsg(null);
+    start(async () => {
+      const r = await vincularProdutosAoFornecedor(ids, bulkForn);
+      // Atualiza o mapa local de vínculos.
+      setVinc((m) => {
+        const n = new Map(m);
+        for (const id of ids) {
+          const set = new Set(n.get(id) ?? []);
+          set.add(bulkForn);
+          n.set(id, set);
+        }
+        return n;
+      });
+      const nome = fornecedores.find((f) => f.id === bulkForn)?.nome ?? "fornecedor";
+      setBulkMsg(`✓ ${r.total} produto(s) vinculado(s) a ${nome}.`);
+      setSel(new Set());
+      router.refresh();
+    });
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-8">
@@ -114,6 +165,39 @@ export function ProdutosClient({
         </select>
       </div>
 
+      {sel.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 dark:border-orange-800 dark:bg-orange-950/20">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            {sel.size} produto(s) selecionado(s)
+          </span>
+          <div className="min-w-56 flex-1">
+            <Combobox
+              options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))}
+              value={bulkForn}
+              onChange={setBulkForn}
+              placeholder="Escolher fornecedor..."
+              className={`${inputCls}`}
+            />
+          </div>
+          <button
+            onClick={vincularSelecionados}
+            disabled={proc || !bulkForn}
+            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          >
+            {proc ? "Vinculando..." : "Vincular ao fornecedor"}
+          </button>
+          <button
+            onClick={() => setSel(new Set())}
+            className="text-xs text-zinc-500 hover:text-zinc-700"
+          >
+            limpar
+          </button>
+        </div>
+      )}
+      {bulkMsg && (
+        <p className="mb-3 text-sm text-green-700 dark:text-green-400">{bulkMsg}</p>
+      )}
+
       {filtrados.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
           Nenhum produto encontrado.
@@ -123,6 +207,14 @@ export function ProdutosClient({
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
               <tr>
+                <th className="w-8 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={todosSelecionados}
+                    onChange={toggleTodos}
+                    title="Selecionar todos os filtrados"
+                  />
+                </th>
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Un.</th>
@@ -136,8 +228,19 @@ export function ProdutosClient({
               {filtrados.map((p) => (
                 <tr
                   key={p.id}
-                  className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+                  className={`hover:bg-zinc-50 dark:hover:bg-zinc-900 ${
+                    sel.has(p.id)
+                      ? "bg-orange-50/50 dark:bg-orange-950/10"
+                      : "bg-white dark:bg-zinc-950"
+                  }`}
                 >
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={sel.has(p.id)}
+                      onChange={() => toggleSel(p.id)}
+                    />
+                  </td>
                   <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
                     {p.nome}
                     {p.marca && (
