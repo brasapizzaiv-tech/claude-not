@@ -3,19 +3,32 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { receberComandas } from "../actions";
+import { DividirConta } from "./dividir-conta";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (s: string) => Number(String(s).replace(".", "").replace(",", ".")) || 0;
 
-type Comanda = { id: string; numero: number; mesa: string; total: number };
+export type ItemComanda = { id: string; nome: string; qtd: number; preco: number; pago: boolean };
+export type Comanda = {
+  id: string;
+  numero: number;
+  mesa: string;
+  total: number;
+  restante: number;
+  buffet: number;
+  buffetPago: boolean;
+  itens: ItemComanda[];
+};
 
 export function ReceberComandas({
   comandas,
   formas,
+  servPercent,
 }: {
   comandas: Comanda[];
   formas: string[];
+  servPercent: number;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -27,6 +40,7 @@ export function ReceberComandas({
   const [linhas, setLinhas] = useState<Record<string, string>>({});
   const [pessoas, setPessoas] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [dividindo, setDividindo] = useState<Comanda | null>(null);
   const [recibo, setRecibo] = useState<{
     itens: { numero: number; total: number }[];
     total: number;
@@ -43,9 +57,10 @@ export function ReceberComandas({
     );
   }, [busca, comandas]);
 
+  // Cobra o que FALTA (restante) — respeita pagamentos parciais já feitos.
   const soma = comandas
     .filter((c) => sel.has(c.id))
-    .reduce((s, c) => s + c.total, 0);
+    .reduce((s, c) => s + c.restante, 0);
   const somaR = Math.round(soma * 100) / 100;
 
   function toggle(id: string) {
@@ -137,19 +152,41 @@ export function ReceberComandas({
         <div className="grid gap-3 lg:grid-cols-[1fr_300px]">
           {/* lista de comandas */}
           <div className="max-h-72 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-            {filtradas.map((c) => (
-              <label
-                key={c.id}
-                className={`flex cursor-pointer items-center gap-3 border-b border-zinc-100 px-3 py-2 text-sm last:border-0 dark:border-zinc-800 ${
-                  sel.has(c.id) ? "bg-orange-50 dark:bg-orange-950/20" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                }`}
-              >
-                <input type="checkbox" checked={sel.has(c.id)} onChange={() => toggle(c.id)} />
-                <span className="font-bold text-zinc-800 dark:text-zinc-100">Nº {c.numero}</span>
-                <span className="flex-1 truncate text-zinc-500">{c.mesa}</span>
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">{brl(c.total)}</span>
-              </label>
-            ))}
+            {filtradas.map((c) => {
+              const parcial = c.restante < c.total - 0.01;
+              return (
+                <div
+                  key={c.id}
+                  className={`flex items-center gap-2 border-b border-zinc-100 px-3 py-2 text-sm last:border-0 dark:border-zinc-800 ${
+                    sel.has(c.id) ? "bg-orange-50 dark:bg-orange-950/20" : ""
+                  }`}
+                >
+                  <input type="checkbox" checked={sel.has(c.id)} onChange={() => toggle(c.id)} />
+                  <span className="font-bold text-zinc-800 dark:text-zinc-100">Nº {c.numero}</span>
+                  <span className="flex-1 truncate text-zinc-500">
+                    {c.mesa}
+                    {parcial && (
+                      <span className="ml-1 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                        parcial
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                    {brl(c.restante)}
+                    {parcial && <span className="ml-1 text-[10px] text-zinc-400 line-through">{brl(c.total)}</span>}
+                  </span>
+                  {c.itens.length > 0 && (
+                    <button
+                      onClick={() => setDividindo(c)}
+                      title="Dividir por item / pessoa"
+                      className="rounded border border-zinc-300 px-1.5 py-0.5 text-[11px] text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    >
+                      🍽️ Dividir
+                    </button>
+                  )}
+                </div>
+              );
+            })}
             {filtradas.length === 0 && (
               <p className="p-4 text-center text-xs text-zinc-400">Nenhuma comanda encontrada.</p>
             )}
@@ -289,6 +326,18 @@ export function ReceberComandas({
             )}
           </div>
         </div>
+      )}
+
+      {dividindo && (
+        <DividirConta
+          comanda={dividindo}
+          formas={formas}
+          servPercent={servPercent}
+          onClose={() => {
+            setDividindo(null);
+            router.refresh();
+          }}
+        />
       )}
 
       {/* Cupom de recebimento (só na impressão — térmica 80mm) */}

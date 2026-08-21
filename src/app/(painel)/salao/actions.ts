@@ -485,8 +485,32 @@ async function calcTotalComanda(
   return { numero: com?.numero as number | undefined, servico, total: subtotal + servico };
 }
 
+// O que ainda falta pagar de uma comanda (itens e buffet não pagos + serviço).
+async function pendenteComanda(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  comandaId: string,
+  cfg: Record<string, string>,
+) {
+  const [{ data: com }, { data: itens }] = await Promise.all([
+    supabase.from("pdv_comandas").select("numero, valor_buffet, buffet_pago").eq("id", comandaId).single(),
+    supabase.from("pdv_comanda_itens").select("id, qtd, preco_unit, pago").eq("comanda_id", comandaId),
+  ]);
+  const buffetAberto = Number(com?.valor_buffet ?? 0) > 0 && !com?.buffet_pago;
+  const itensAbertos = (itens ?? []).filter((i) => !i.pago);
+  const sub =
+    (buffetAberto ? Number(com?.valor_buffet ?? 0) : 0) +
+    itensAbertos.reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  const servico = Math.round(sub * servicoAgora(cfg)) / 100;
+  return {
+    numero: com?.numero as number | undefined,
+    restante: Math.round((sub + servico) * 100) / 100,
+    itemIds: itensAbertos.map((i) => i.id as string),
+    buffetAberto,
+  };
+}
+
 // Frente de caixa: recebe VÁRIAS comandas de uma vez (somadas), com uma ou mais
-// formas de pagamento (split). Fecha cada comanda e lança no caixa por forma.
+// formas de pagamento (split). Cobra só o que falta, marca tudo pago e fecha.
 export async function receberComandas(
   comandaIds: string[],
   pagamentos: { forma: string; valor: number }[],
@@ -500,9 +524,12 @@ export async function receberComandas(
   const numeros: number[] = [];
   const formaUnica = pagamentos.length === 1 ? pagamentos[0].forma : "Múltiplas";
   for (const id of comandaIds) {
-    const { total, servico, numero } = await calcTotalComanda(supabase, id, cfg);
-    totalGeral += total;
+    const { restante, numero, itemIds, buffetAberto } = await pendenteComanda(supabase, id, cfg);
+    totalGeral += restante;
     if (numero != null) numeros.push(numero);
+    if (itemIds.length > 0)
+      await supabase.from("pdv_comanda_itens").update({ pago: true }).in("id", itemIds);
+    const { servico } = await calcTotalComanda(supabase, id, cfg);
     await supabase
       .from("pdv_comandas")
       .update({
@@ -510,9 +537,9 @@ export async function receberComandas(
         fechada_em: new Date().toISOString(),
         forma_pagamento: formaUnica,
         servico,
+        buffet_pago: buffetAberto ? true : undefined,
       })
       .eq("id", id);
-    await supabase.from("pdv_caixa_mov").delete().eq("comanda_id", id).eq("tipo", "venda");
   }
 
   if (caixaId) {
@@ -533,6 +560,69 @@ export async function receberComandas(
   revalidatePath("/salao/caixa");
   revalidatePath("/salao");
   return { ok: true as const, total: totalGeral, numeros };
+}
+
+// Conta dividida por item / pagamento parcial: recebe as LINHAS selecionadas
+// (itens e/ou buffet) de uma comanda, marca como pagas e lança no caixa. Fecha
+// a comanda só quando tudo estiver pago.
+export async function pagarLinhas(
+  comandaId: string,
+  itemIds: string[],
+  incluirBuffet: boolean,
+  pagamentos: { forma: string; valor: number }[],
+) {
+  const supabase = await createClient();
+  const cfg = await pdvCfg(supabase);
+  const caixaId = await caixaAberto(supabase);
+
+  if (itemIds.length > 0)
+    await supabase.from("pdv_comanda_itens").update({ pago: true }).in("id", itemIds);
+  if (incluirBuffet)
+    await supabase.from("pdv_comandas").update({ buffet_pago: true }).eq("id", comandaId);
+
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .select("numero")
+    .eq("id", comandaId)
+    .single();
+  if (caixaId) {
+    for (const p of pagamentos) {
+      if (!(p.valor > 0)) continue;
+      await supabase.from("pdv_caixa_mov").insert({
+        caixa_id: caixaId,
+        tipo: "venda",
+        descricao: `Comanda #${com?.numero ?? ""} (dividida)`,
+        forma_pagamento: p.forma,
+        valor: p.valor,
+        comanda_id: comandaId,
+      });
+    }
+  }
+
+  // Fecha a comanda se todos os itens e o buffet estiverem pagos.
+  const [{ data: itens }, { data: c2 }] = await Promise.all([
+    supabase.from("pdv_comanda_itens").select("pago").eq("comanda_id", comandaId),
+    supabase.from("pdv_comandas").select("valor_buffet, buffet_pago").eq("id", comandaId).single(),
+  ]);
+  const temBuffet = Number(c2?.valor_buffet ?? 0) > 0;
+  const todosItensPagos = (itens ?? []).every((i) => i.pago);
+  const quitou = todosItensPagos && (!temBuffet || !!c2?.buffet_pago);
+  if (quitou) {
+    const { servico } = await calcTotalComanda(supabase, comandaId, cfg);
+    await supabase
+      .from("pdv_comandas")
+      .update({
+        status: "fechada",
+        fechada_em: new Date().toISOString(),
+        forma_pagamento: "Dividido",
+        servico,
+      })
+      .eq("id", comandaId);
+  }
+
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao");
+  return { ok: true as const, quitou };
 }
 
 export async function fecharComanda(formData: FormData) {
