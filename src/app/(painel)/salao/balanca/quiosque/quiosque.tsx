@@ -10,8 +10,9 @@ const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const LIMIAR = 0.05; // kg de comida para considerar "prato na balança"
-const ESTAVEL_MS = 900; // peso parado por ~0,9s → fecha a comanda
+const ESTAVEL_MS = 450; // peso parado por ~0,45s → fecha a comanda (rápido)
 const TOL_ESTAVEL = 0.05; // oscilação tolerada (50 g) para considerar "parado"
+const RESET_MS = 6000; // após mostrar a comanda, volta sozinho p/ o próximo cliente
 
 type Resultado = {
   id: string;
@@ -66,6 +67,7 @@ export function QuiosqueBalanca({
   const portRef = useRef<any>(null);
   const readerRef = useRef<any>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const estadoRef = useRef(estado);
   const refPeso = useRef(0);
   const estavelDesde = useRef(0);
@@ -115,7 +117,16 @@ export function QuiosqueBalanca({
           try {
             window.print();
           } catch {}
-        }, 500);
+        }, 400);
+        // Volta sozinho para o próximo cliente (caso o prato não seja retirado
+        // ou a balança não mande mais leituras).
+        if (resetRef.current) clearTimeout(resetRef.current);
+        resetRef.current = setTimeout(() => {
+          refPeso.current = 0;
+          estavelDesde.current = 0;
+          setPesoBruto(0);
+          setEst("aguardando");
+        }, RESET_MS);
       } else {
         setEst("aguardando");
       }
@@ -139,7 +150,10 @@ export function QuiosqueBalanca({
     const est = estadoRef.current;
     if (est === "processando") return;
     if (est === "resultado") {
-      if (liquido <= LIMIAR) setEst("aguardando"); // prato retirado → próximo cliente
+      if (liquido <= LIMIAR) {
+        if (resetRef.current) clearTimeout(resetRef.current);
+        setEst("aguardando"); // prato retirado → próximo cliente
+      }
       return;
     }
     if (liquido <= LIMIAR) {
@@ -271,11 +285,11 @@ export function QuiosqueBalanca({
               <div className="mb-6 inline-block rounded-full bg-green-500 px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.5rem,5vw,3.5rem)] font-black">
                 ✓ COMANDA Nº {resultado.numero}
               </div>
-              <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-white/80">Retire o prato e pague no caixa</p>
+              <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-white/80">Retire o prato</p>
               <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-green-400">{moeda(resultado.valor)}</p>
               <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-white/50">
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
-                {resultado.livre ? " · à vontade (livre)" : ""}
+                {resultado.livre ? " · Buffet livre" : ""}
               </p>
               <button
                 onClick={() => {
@@ -417,7 +431,6 @@ export function QuiosqueBalanca({
               <span>TOTAL</span>
               <span>{moeda(resultado.valor)}</span>
             </div>
-            <div style={{ marginTop: "2mm" }}>Pague no caixa</div>
           </>
         )}
       </div>
