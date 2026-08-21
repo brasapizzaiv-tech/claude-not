@@ -20,7 +20,7 @@ type Prod = {
 export default async function CmvPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ef?: string; meta?: string }>;
+  searchParams: Promise<{ di?: string; df?: string; meta?: string }>;
 }) {
   const sp = await searchParams;
   const supabase = await createClient();
@@ -65,32 +65,55 @@ export default async function CmvPage({
     );
   }
 
-  const efId = sp.ef && contagens.some((c) => c.id === sp.ef) ? sp.ef : contagens[0].id;
-  const efIdx = contagens.findIndex((c) => c.id === efId);
-  const ef = contagens[efIdx];
-  const ei = contagens[efIdx + 1];
+  // Agrupa as contagens em "viradas": as feitas em dias próximos (<=2 dias) —
+  // Estoque, Bebidas, Limpeza da mesma semana — contam como uma só virada.
+  const TOL = 2;
+  const diffDias = (a: string, b: string) =>
+    Math.round(Math.abs(new Date(a).getTime() - new Date(b).getTime()) / 864e5);
+  const datasDesc = [...new Set(contagens.map((c) => c.data))].sort().reverse();
+  const clusters: string[][] = [];
+  for (const d of datasDesc) {
+    const ult = clusters[clusters.length - 1];
+    if (ult && diffDias(ult[ult.length - 1], d) <= TOL) ult.push(d);
+    else clusters.push([d]);
+  }
+  // Representante de cada virada = a MAIOR data do grupo (a lista está desc).
+  const reps = clusters.map((cl) => cl[0]);
+
+  // Semana = data de início e data de fim (default: as duas viradas mais recentes).
+  const validaData = (s?: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "");
+  const df = validaData(sp.df) || reps[0] || "";
+  const di = validaData(sp.di) || reps[1] || "";
   const meta = sp.meta ? Number(sp.meta) / 100 : 0.29;
 
-  if (!ei) {
+  if (!di || !df) {
     return (
       <div className="mx-auto max-w-7xl p-6 sm:p-8">
         {cabecalho}
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
-          A contagem de <b>{dataBR(ef.data)}</b> é a primeira — não há contagem
-          anterior para servir de estoque inicial.
+          É preciso ter pelo menos <b>duas viradas de contagem</b> (uma vira o
+          estoque inicial, a outra o final).
         </div>
       </div>
     );
   }
 
-  const dEI = ei.data;
-  const dEF = ef.data;
+  const dEI = di;
+  const dEF = df;
+  // Todas as contagens de cada virada (janela ±TOL dias).
+  const eiContagens = contagens.filter((c) => diffDias(c.data, di) <= TOL);
+  const efContagens = contagens.filter((c) => diffDias(c.data, df) <= TOL);
+  const eiRepId = eiContagens[0]?.id ?? ""; // p/ editar (contagens vêm desc)
+  const efRepId = efContagens[0]?.id ?? "";
+  const idsContagem = [
+    ...new Set([...eiContagens, ...efContagens].map((c) => c.id)),
+  ];
 
   const [{ data: ciData }, { data: prodData }, { data: caixas }] = await Promise.all([
     supabase
       .from("contagem_itens")
       .select("contagem_id, produto_id, qtd_estoque")
-      .in("contagem_id", [ei.id, ef.id]),
+      .in("contagem_id", idsContagem.length ? idsContagem : ["00000000-0000-0000-0000-000000000000"]),
     supabase
       .from("produtos")
       .select("id, nome, unidade, preco_referencia, entra_cmv, categoria_id, estoque_minimo, estoque_ideal, categorias(nome)")
@@ -99,10 +122,25 @@ export default async function CmvPage({
     supabase.from("fechamentos_caixa").select("*").gt("data", dEI).lte("data", dEF),
   ]);
 
+  // Combina as contagens de cada virada por produto (a contagem mais recente
+  // da virada vence — assim uma correção manual salva no representante ganha).
+  const dataDe = new Map(contagens.map((c) => [c.id, c.data]));
+  const eiIds = new Set(eiContagens.map((c) => c.id));
+  const efIds = new Set(efContagens.map((c) => c.id));
   const qtdEI = new Map<string, number>();
   const qtdEF = new Map<string, number>();
+  const qDataEI = new Map<string, string>();
+  const qDataEF = new Map<string, string>();
   for (const r of (ciData as { contagem_id: string; produto_id: string; qtd_estoque: number }[]) ?? []) {
-    (r.contagem_id === ei.id ? qtdEI : qtdEF).set(r.produto_id, Number(r.qtd_estoque));
+    const d = dataDe.get(r.contagem_id) ?? "";
+    if (eiIds.has(r.contagem_id) && (!qDataEI.has(r.produto_id) || d >= qDataEI.get(r.produto_id)!)) {
+      qtdEI.set(r.produto_id, Number(r.qtd_estoque));
+      qDataEI.set(r.produto_id, d);
+    }
+    if (efIds.has(r.contagem_id) && (!qDataEF.has(r.produto_id) || d >= qDataEF.get(r.produto_id)!)) {
+      qtdEF.set(r.produto_id, Number(r.qtd_estoque));
+      qDataEF.set(r.produto_id, d);
+    }
   }
 
   // Compras de um período: valor e quantidade por produto (nota quando existe;
@@ -152,18 +190,19 @@ export default async function CmvPage({
 
   const comprasAtual = await comprasNoPeriodo(dEI, dEF);
 
-  // Correções manuais de Compras desta semana (quando algo caiu fora da captura).
+  // Correções manuais de Compras desta semana (chaveadas pela virada final).
   const { data: manData } = await supabase
     .from("cmv_compras_manual")
     .select("produto_id, valor")
-    .eq("contagem_id", ef.id);
+    .eq("contagem_id", efRepId);
   const comprasManualMap = new Map<string, number>();
   for (const m of (manData as { produto_id: string; valor: number }[]) ?? [])
     comprasManualMap.set(m.produto_id, Number(m.valor));
 
-  const eiPrev = contagens[efIdx + 2];
-  const comprasAnt = eiPrev
-    ? await comprasNoPeriodo(eiPrev.data, dEI)
+  // Semana anterior (para a variação de preço) = da virada antes do início até o início.
+  const diAnt = reps.find((r) => r < di);
+  const comprasAnt = diAnt
+    ? await comprasNoPeriodo(diAnt, dEI)
     : new Map<string, { valor: number; qtd: number }>();
 
   let faturamento = 0;
@@ -225,22 +264,32 @@ export default async function CmvPage({
     <div className="mx-auto max-w-7xl p-6 sm:p-8">
       {cabecalho}
 
-      <form className="mb-5 flex flex-wrap items-end gap-2">
+      <form className="mb-2 flex flex-wrap items-end gap-2">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Semana (contagem final)</label>
-          <select
-            name="ef"
-            defaultValue={efId}
+          <label className="mb-1 block text-xs text-zinc-500">Início da semana</label>
+          <input
+            type="date"
+            name="di"
+            defaultValue={di}
+            list="viradas"
             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-          >
-            {contagens.slice(0, contagens.length - 1).map((c) => (
-              <option key={c.id} value={c.id}>
-                {dataBR(c.data)}
-                {c.descricao ? ` — ${c.descricao}` : ""}
-              </option>
-            ))}
-          </select>
+          />
         </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Fim da semana</label>
+          <input
+            type="date"
+            name="df"
+            defaultValue={df}
+            list="viradas"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          />
+        </div>
+        <datalist id="viradas">
+          {reps.map((r) => (
+            <option key={r} value={r} />
+          ))}
+        </datalist>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">Meta CMV (%)</label>
           <input
@@ -253,15 +302,25 @@ export default async function CmvPage({
         <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
           Ver
         </button>
-        <span className="pb-2 text-xs text-zinc-500">
-          Período: {dataBR(dEI)} → {dataBR(dEF)}
-        </span>
       </form>
+      <div className="mb-5 space-y-0.5 text-xs text-zinc-500">
+        <p>
+          Período: <b>{dataBR(dEI)} → {dataBR(dEF)}</b>
+        </p>
+        <p>
+          Estoque inicial:{" "}
+          {eiContagens.map((c) => c.descricao || dataBR(c.data)).join(" + ") || "—"}
+        </p>
+        <p>
+          Estoque final:{" "}
+          {efContagens.map((c) => c.descricao || dataBR(c.data)).join(" + ") || "—"}
+        </p>
+      </div>
 
       <CmvTabela
         rows={rows}
-        eiId={ei.id}
-        efId={ef.id}
+        eiId={eiRepId}
+        efId={efRepId}
         faturamentoCaixa={faturamento}
         fatManual={fatManual}
         dias={dias}
