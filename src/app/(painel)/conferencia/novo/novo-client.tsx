@@ -12,11 +12,13 @@ const campo =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 const num = (s: string) => Number(String(s).replace(",", ".")) || 0;
 
+type Forn = { id: string; nome: string; whatsapp: string | null };
+
 export function NovoPedidoClient({
   fornecedores,
   produtos,
 }: {
-  fornecedores: { id: string; nome: string }[];
+  fornecedores: Forn[];
   produtos: Prod[];
 }) {
   const [fornecedorId, setFornecedorId] = useState("");
@@ -55,6 +57,22 @@ export function NovoPedidoClient({
   }
 
   const total = itens.reduce((s, i) => s + num(i.qtd) * num(i.preco), 0);
+
+  const forn = fornecedores.find((f) => f.id === fornecedorId);
+  const zap = (forn?.whatsapp ?? "").replace(/\D/g, "");
+  // Garante o DDI 55 (Brasil) quando o número vem só com DDD.
+  const zapFull = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
+
+  function enviarWhats() {
+    if (!zapFull || itens.length === 0) return;
+    const linhas = itens.map(
+      (i) => `- ${i.qtd} ${i.unidade} ${i.nome}`,
+    );
+    const msg =
+      `Olá! Pedido do Restaurante Brasa:\n\n${linhas.join("\n")}\n\n` +
+      `Data prevista: ${data.split("-").reverse().join("/")}\nObrigado!`;
+    window.open(`https://wa.me/${zapFull}?text=${encodeURIComponent(msg)}`, "_blank");
+  }
 
   function criar() {
     start(async () => {
@@ -196,13 +214,35 @@ export function NovoPedidoClient({
         </div>
       )}
 
-      <button
-        onClick={criar}
-        disabled={salvando || !fornecedorId || itens.length === 0}
-        className="mt-5 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
-      >
-        {salvando ? "Criando..." : "Criar pedido e conferir →"}
-      </button>
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <button
+          onClick={criar}
+          disabled={salvando || !fornecedorId || itens.length === 0}
+          className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+        >
+          {salvando ? "Criando..." : "Criar pedido e conferir →"}
+        </button>
+        <button
+          onClick={enviarWhats}
+          disabled={itens.length === 0 || !zapFull}
+          title={
+            !fornecedorId
+              ? "Escolha o fornecedor"
+              : !zapFull
+                ? "Este fornecedor não tem WhatsApp cadastrado"
+                : "Enviar o pedido no WhatsApp do fornecedor"
+          }
+          className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+        >
+          📱 Enviar no WhatsApp
+        </button>
+      </div>
+      {fornecedorId && !zapFull && (
+        <p className="mt-2 text-xs text-amber-600">
+          O fornecedor <b>{forn?.nome}</b> não tem WhatsApp cadastrado — adicione em
+          Fornecedores para poder enviar o pedido.
+        </p>
+      )}
     </div>
   );
 }
