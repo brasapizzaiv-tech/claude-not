@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { editarBuffet, juntarComandas, excluirComanda } from "../../actions";
+import { editarBuffet, juntarComandas, excluirComanda, alternarMarmita } from "../../actions";
 
 const inputCls =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -11,11 +11,13 @@ export function AcoesComanda({
   comandaId,
   peso,
   tara,
+  soKg,
   outras,
 }: {
   comandaId: string;
   peso: number;
   tara: number;
+  soKg: boolean;
   outras: { id: string; numero: number }[];
 }) {
   const router = useRouter();
@@ -23,6 +25,14 @@ export function AcoesComanda({
   const [pesoV, setPeso] = useState(String(peso).replace(".", ","));
   const [taraV, setTara] = useState(String(tara).replace(".", ","));
   const [outra, setOutra] = useState("");
+
+  const alternar = () =>
+    start(async () => {
+      const fd = new FormData();
+      fd.set("id", comandaId);
+      await alternarMarmita(fd);
+      router.refresh();
+    });
 
   const salvarBuffet = () =>
     start(async () => {
@@ -80,6 +90,18 @@ export function AcoesComanda({
             className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
           >
             Recalcular buffet
+          </button>
+          <button
+            onClick={alternar}
+            disabled={p}
+            title="Marmita cobra só por kg (sem virar à vontade). Clique para alternar e recalcular."
+            className={`rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
+              soKg
+                ? "bg-yellow-400 text-black hover:brightness-105"
+                : "border border-yellow-500 text-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-950/30"
+            }`}
+          >
+            {soKg ? "🍱 Marmita (por kg) ✓" : "🍱 Marcar marmita (por kg)"}
           </button>
         </div>
 

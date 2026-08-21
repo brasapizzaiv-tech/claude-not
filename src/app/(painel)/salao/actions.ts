@@ -24,6 +24,13 @@ export async function salvarConfigPdv(formData: FormData) {
     { chave: "cupom_telefone", valor: ((formData.get("cupom_telefone") as string) || "").trim() },
     { chave: "cupom_msg", valor: ((formData.get("cupom_msg") as string) || "").trim() },
   ];
+  // Preços por dia da semana (0=Dom..6=Sáb). Vazio = usa o preço geral.
+  for (let d = 0; d <= 6; d++) {
+    const kg = formData.get(`preco_kg_${d}`);
+    const lv = formData.get(`buffet_livre_${d}`);
+    if (kg !== null) linhas.push({ chave: `preco_kg_${d}`, valor: kg ? String(valorNum(kg)) : "" });
+    if (lv !== null) linhas.push({ chave: `buffet_livre_${d}`, valor: lv ? String(valorNum(lv)) : "" });
+  }
   await supabase.from("pdv_config").upsert(linhas);
   revalidatePath("/salao/cardapio");
 }
@@ -144,14 +151,29 @@ async function pdvCfg(supabase: Awaited<ReturnType<typeof createClient>>) {
   return m;
 }
 
-// Calcula o valor do buffet a partir do peso/tara e da config (aplica "livre").
-function calcBuffet(cfg: Record<string, string>, peso: number, tara: number) {
+// Preço do buffet HOJE (por dia da semana). Se o dia não tiver preço próprio,
+// cai no preço geral (preco_kg / buffet_livre). Fuso de Brasília.
+function precoDoDia(cfg: Record<string, string>) {
+  const dow = new Date(new Date().getTime() - 3 * 3600 * 1000).getUTCDay(); // 0=Dom..6=Sáb
+  const kgDia = cfg[`preco_kg_${dow}`];
+  const livreDia = cfg[`buffet_livre_${dow}`];
+  const precoKg = kgDia != null && kgDia !== "" ? Number(kgDia) : Number(cfg.preco_kg || 0);
+  const livre = livreDia != null && livreDia !== "" ? Number(livreDia) : Number(cfg.buffet_livre || 0);
+  return { precoKg, livre };
+}
+
+// Calcula o valor do buffet. soPorKg=true (marmita) NÃO aplica o teto "livre".
+function calcBuffet(
+  cfg: Record<string, string>,
+  peso: number,
+  tara: number,
+  soPorKg = false,
+) {
   const liquido = Math.max(0, peso - tara);
-  const precoKg = Number(cfg.preco_kg || 0);
-  const livre = Number(cfg.buffet_livre || 0);
+  const { precoKg, livre } = precoDoDia(cfg);
   let valor = liquido * precoKg;
   let ehLivre = false;
-  if (livre > 0 && valor >= livre) {
+  if (!soPorKg && livre > 0 && valor >= livre) {
     valor = livre;
     ehLivre = true;
   }
@@ -166,10 +188,11 @@ export async function criarComandaBuffet(formData: FormData) {
   const cfg = await pdvCfg(supabase);
   const tara = valorNum(formData.get("tara")) || Number(cfg.tara_padrao || 0);
   const mesa = ((formData.get("mesa") as string) || "Balança").trim();
-  const { valor, livre } = calcBuffet(cfg, peso, tara);
+  const soPorKg = formData.get("so_kg") === "1";
+  const { valor, livre } = calcBuffet(cfg, peso, tara, soPorKg);
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .insert({ peso, tara, valor_buffet: valor, livre, mesa })
+    .insert({ peso, tara, valor_buffet: valor, livre, mesa, so_kg: soPorKg })
     .select("id")
     .single();
   revalidatePath("/salao");
@@ -178,15 +201,15 @@ export async function criarComandaBuffet(formData: FormData) {
 
 // Quiosque de autoatendimento: gera a comanda de buffet e RETORNA os dados
 // (número, valor) para mostrar na tela — sem redirecionar.
-export async function gerarComandaBuffetKiosk(peso: number) {
+export async function gerarComandaBuffetKiosk(peso: number, soPorKg = false) {
   const supabase = await createClient();
   if (!(peso > 0)) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
   const tara = Number(cfg.tara_padrao || 0);
-  const { valor, livre } = calcBuffet(cfg, peso, tara);
+  const { valor, livre } = calcBuffet(cfg, peso, tara, soPorKg);
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .insert({ peso, tara, valor_buffet: valor, livre, mesa: "Balança" })
+    .insert({ peso, tara, valor_buffet: valor, livre, mesa: "Balança", so_kg: soPorKg })
     .select("id, numero")
     .single();
   revalidatePath("/salao");
@@ -219,18 +242,45 @@ export async function criarComandaMesa(formData: FormData) {
   if (com) redirect(`${garcom ? "/garcom/comanda" : "/salao/comandas"}/${com.id}`);
 }
 
-// Edita o buffet da comanda (peso/tara) e recalcula o valor.
+// Edita o buffet da comanda (peso/tara) e recalcula o valor (respeita marmita).
 export async function editarBuffet(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const peso = valorNum(formData.get("peso"));
   const tara = valorNum(formData.get("tara"));
   const cfg = await pdvCfg(supabase);
-  const { valor, livre } = calcBuffet(cfg, peso, tara);
+  const { data: atual } = await supabase
+    .from("pdv_comandas")
+    .select("so_kg")
+    .eq("id", id)
+    .maybeSingle();
+  const { valor, livre } = calcBuffet(cfg, peso, tara, !!atual?.so_kg);
   await supabase
     .from("pdv_comandas")
     .update({ peso, tara, valor_buffet: valor, livre })
     .eq("id", id);
+  revalidatePath(`/salao/comandas/${id}`);
+}
+
+// Caixa: troca rápida entre buffet (com teto livre) e marmita (só por kg),
+// recalculando o valor da comanda.
+export async function alternarMarmita(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .select("peso, tara, so_kg")
+    .eq("id", id)
+    .maybeSingle();
+  if (!com) return;
+  const novo = !com.so_kg;
+  const cfg = await pdvCfg(supabase);
+  const { valor, livre } = calcBuffet(cfg, Number(com.peso), Number(com.tara), novo);
+  await supabase
+    .from("pdv_comandas")
+    .update({ so_kg: novo, valor_buffet: valor, livre })
+    .eq("id", id);
+  revalidatePath("/salao/caixa");
   revalidatePath(`/salao/comandas/${id}`);
 }
 

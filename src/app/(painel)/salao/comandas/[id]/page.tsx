@@ -21,7 +21,7 @@ export default async function ComandaPage({
 
   const { data: comanda } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, mesa, status, peso, tara, valor_buffet, livre, servico, forma_pagamento, aberta_em")
+    .select("id, numero, mesa, status, peso, tara, valor_buffet, livre, so_kg, servico, forma_pagamento, aberta_em")
     .eq("id", id)
     .single();
   if (!comanda) notFound();
@@ -407,6 +407,7 @@ export default async function ComandaPage({
           comandaId={comanda.id}
           peso={Number(comanda.peso ?? 0)}
           tara={Number(comanda.tara ?? 0)}
+          soKg={!!(comanda as { so_kg?: boolean }).so_kg}
           outras={outras}
         />
       )}

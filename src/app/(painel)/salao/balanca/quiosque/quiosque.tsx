@@ -13,14 +13,18 @@ const ESTAVEL_MS = 2000; // peso parado por 2s → fecha a comanda
 
 type Resultado = { numero: number; valor: number; liquido: number; livre: boolean };
 
+type DiaPreco = { nome: string; kg: number; livre: number; hoje: boolean };
+
 export function QuiosqueBalanca({
   precoKg,
   buffetLivre,
   taraPadrao,
+  legenda,
 }: {
   precoKg: number;
   buffetLivre: number;
   taraPadrao: number;
+  legenda: DiaPreco[];
 }) {
   const [estado, setEstado] = useState<
     "conectar" | "aguardando" | "pesando" | "processando" | "resultado"
@@ -28,6 +32,13 @@ export function QuiosqueBalanca({
   const [pesoBruto, setPesoBruto] = useState(0);
   const [erro, setErro] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [soKg, setSoKg] = useState(false); // marmita: só por kg (sem teto do livre)
+  const soKgRef = useRef(false);
+  const toggleSoKg = () => {
+    const v = !soKgRef.current;
+    soKgRef.current = v;
+    setSoKg(v);
+  };
 
   const portRef = useRef<any>(null);
   const readerRef = useRef<any>(null);
@@ -41,11 +52,11 @@ export function QuiosqueBalanca({
     setEstado(v);
   };
 
-  const calcValor = (bruto: number) => {
+  const calcValor = (bruto: number, soKgFlag: boolean) => {
     const liquido = Math.max(0, bruto - taraPadrao);
     let valor = liquido * precoKg;
     let livre = false;
-    if (buffetLivre > 0 && valor >= buffetLivre) {
+    if (!soKgFlag && buffetLivre > 0 && valor >= buffetLivre) {
       valor = buffetLivre;
       livre = true;
     }
@@ -53,12 +64,12 @@ export function QuiosqueBalanca({
   };
 
   const liq = Math.max(0, pesoBruto - taraPadrao);
-  const { valor: valorAtual } = calcValor(pesoBruto);
+  const { valor: valorAtual } = calcValor(pesoBruto, soKg);
 
   async function capturar(bruto: number) {
     setEst("processando");
     try {
-      const r = await gerarComandaBuffetKiosk(bruto);
+      const r = await gerarComandaBuffetKiosk(bruto, soKgRef.current);
       if (r.ok) {
         setResultado({ numero: r.numero, valor: r.valor, liquido: r.liquido, livre: r.livre });
         setEst("resultado");
@@ -68,6 +79,9 @@ export function QuiosqueBalanca({
     } catch {
       setEst("aguardando");
     }
+    // Marmita é por pesagem — volta ao normal para o próximo cliente.
+    soKgRef.current = false;
+    setSoKg(false);
   }
 
   // Processa cada leitura de peso (máquina de estados).
@@ -223,6 +237,23 @@ export function QuiosqueBalanca({
                   <span className="ml-2 text-4xl font-light text-white/50">kg</span>
                 </p>
               </div>
+
+              {/* Marmita: só por kg (sem virar livre) */}
+              <button
+                onClick={toggleSoKg}
+                className={`mt-6 rounded-xl px-6 py-3 text-lg font-bold transition ${
+                  soKg
+                    ? "bg-yellow-400 text-black"
+                    : "border border-white/25 text-white/70 hover:bg-white/10"
+                }`}
+              >
+                {soKg ? "🍱 MARMITA (só por kg) — ativa" : "🍱 É marmita? (só por kg)"}
+              </button>
+              {soKg && (
+                <p className="mt-1 text-sm text-yellow-300">
+                  Esta pesagem cobra por kg, sem virar “à vontade”.
+                </p>
+              )}
             </>
           )}
         </div>
@@ -245,6 +276,17 @@ export function QuiosqueBalanca({
           <p className="text-xs uppercase tracking-wide text-white/40">Valor por kg</p>
         </div>
       </div>
+
+      {/* legenda de preços por dia (livre / kg) */}
+      {legenda.some((d) => d.kg > 0 || d.livre > 0) && (
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 bg-black/50 px-4 py-2 text-[13px] text-white/50">
+          {legenda.map((d) => (
+            <span key={d.nome} className={d.hoje ? "font-bold text-[#C78340]" : ""}>
+              {d.nome}: {d.livre > 0 ? moeda(d.livre) : "—"} / {d.kg > 0 ? `${moeda(d.kg)}kg` : "—"}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

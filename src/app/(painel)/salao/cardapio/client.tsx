@@ -377,6 +377,60 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
             <p className="mt-1 text-[11px] text-zinc-400">acima disso, cobra fixo (0 = desligado)</p>
           </div>
         </div>
+
+        {/* Preços por dia da semana (vazio = usa o geral acima) */}
+        <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <p className="mb-2 text-xs font-medium text-zinc-500">
+            Preços por dia da semana (deixe vazio para usar o preço geral acima)
+          </p>
+          <div className="overflow-x-auto">
+            <table className="text-sm">
+              <thead>
+                <tr className="text-xs text-zinc-400">
+                  <th className="px-2 py-1 text-left">Dia</th>
+                  <th className="px-2 py-1">Livre (teto R$)</th>
+                  <th className="px-2 py-1">Por kg (R$)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map(
+                  (nome, d) => (
+                    <tr key={d}>
+                      <td className="px-2 py-0.5 text-zinc-600 dark:text-zinc-300">{nome}</td>
+                      <td className="px-2 py-0.5">
+                        <input
+                          name={`buffet_livre_${d}`}
+                          inputMode="decimal"
+                          defaultValue={
+                            config[`buffet_livre_${d}`]
+                              ? String(config[`buffet_livre_${d}`]).replace(".", ",")
+                              : ""
+                          }
+                          placeholder="—"
+                          className={`${inputCls} w-24`}
+                        />
+                      </td>
+                      <td className="px-2 py-0.5">
+                        <input
+                          name={`preco_kg_${d}`}
+                          inputMode="decimal"
+                          defaultValue={
+                            config[`preco_kg_${d}`]
+                              ? String(config[`preco_kg_${d}`]).replace(".", ",")
+                              : ""
+                          }
+                          placeholder="—"
+                          className={`${inputCls} w-24`}
+                        />
+                      </td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-end gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
           <div>
             <label className="mb-1 block text-xs text-zinc-500">Serviço (%)</label>
