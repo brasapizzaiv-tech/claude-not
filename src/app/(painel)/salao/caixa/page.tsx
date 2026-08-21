@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { abrirCaixa } from "../actions";
+import { servicoAgora } from "../util";
 import { CaixaAcoes } from "./acoes";
+import { ReceberComandas } from "./receber";
+
+const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito"];
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -72,6 +76,38 @@ export default async function CaixaPage() {
     .order("criado_em", { ascending: false });
   const movs = (movRows as Mov[]) ?? [];
 
+  // Comandas ABERTAS com o total (buffet + itens + serviço) — para receber aqui.
+  const { data: cfgRows } = await supabase.from("pdv_config").select("chave, valor");
+  const cfg: Record<string, string> = {};
+  for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
+  const serv = servicoAgora(cfg);
+
+  const { data: comAbertas } = await supabase
+    .from("pdv_comandas")
+    .select("id, numero, mesa, valor_buffet")
+    .eq("status", "aberta")
+    .order("numero", { ascending: false });
+  const abertas = (comAbertas as { id: string; numero: number; mesa: string | null; valor_buffet: number }[]) ?? [];
+  const itensSum = new Map<string, number>();
+  if (abertas.length > 0) {
+    const { data: itc } = await supabase
+      .from("pdv_comanda_itens")
+      .select("comanda_id, qtd, preco_unit")
+      .in("comanda_id", abertas.map((c) => c.id));
+    for (const i of (itc as { comanda_id: string; qtd: number; preco_unit: number }[]) ?? [])
+      itensSum.set(i.comanda_id, (itensSum.get(i.comanda_id) ?? 0) + Number(i.qtd) * Number(i.preco_unit));
+  }
+  const comandasReceber = abertas.map((c) => {
+    const sub = Number(c.valor_buffet ?? 0) + (itensSum.get(c.id) ?? 0);
+    const servico = Math.round(sub * serv) / 100;
+    return {
+      id: c.id,
+      numero: c.numero,
+      mesa: c.mesa ?? "",
+      total: Math.round((sub + servico) * 100) / 100,
+    };
+  });
+
   const saldoInicial = Number(caixa.saldo_inicial);
   const vendasPorForma = new Map<string, number>();
   let suprimentos = 0;
@@ -115,6 +151,11 @@ export default async function CaixaPage() {
           </p>
         </div>
         <CaixaAcoes caixaId={caixa.id} />
+      </div>
+
+      {/* Frente: receber comandas (buscar, somar várias, pagar) */}
+      <div className="mb-4">
+        <ReceberComandas comandas={comandasReceber} formas={FORMAS_PGTO} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">

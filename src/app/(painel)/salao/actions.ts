@@ -468,6 +468,73 @@ export async function removerItemComanda(formData: FormData) {
   revalidatePath(`/garcom/comanda/${comandaId}`);
 }
 
+// Total de uma comanda = buffet + itens + serviço (do horário).
+async function calcTotalComanda(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  comandaId: string,
+  cfg: Record<string, string>,
+) {
+  const [{ data: com }, { data: itens }] = await Promise.all([
+    supabase.from("pdv_comandas").select("numero, valor_buffet").eq("id", comandaId).single(),
+    supabase.from("pdv_comanda_itens").select("qtd, preco_unit").eq("comanda_id", comandaId),
+  ]);
+  const subtotal =
+    Number(com?.valor_buffet ?? 0) +
+    (itens ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  const servico = Math.round(subtotal * servicoAgora(cfg)) / 100;
+  return { numero: com?.numero as number | undefined, servico, total: subtotal + servico };
+}
+
+// Frente de caixa: recebe VÁRIAS comandas de uma vez (somadas), com uma ou mais
+// formas de pagamento (split). Fecha cada comanda e lança no caixa por forma.
+export async function receberComandas(
+  comandaIds: string[],
+  pagamentos: { forma: string; valor: number }[],
+) {
+  const supabase = await createClient();
+  if (comandaIds.length === 0) return { ok: false as const };
+  const cfg = await pdvCfg(supabase);
+  const caixaId = await caixaAberto(supabase);
+
+  let totalGeral = 0;
+  const numeros: number[] = [];
+  const formaUnica = pagamentos.length === 1 ? pagamentos[0].forma : "Múltiplas";
+  for (const id of comandaIds) {
+    const { total, servico, numero } = await calcTotalComanda(supabase, id, cfg);
+    totalGeral += total;
+    if (numero != null) numeros.push(numero);
+    await supabase
+      .from("pdv_comandas")
+      .update({
+        status: "fechada",
+        fechada_em: new Date().toISOString(),
+        forma_pagamento: formaUnica,
+        servico,
+      })
+      .eq("id", id);
+    await supabase.from("pdv_caixa_mov").delete().eq("comanda_id", id).eq("tipo", "venda");
+  }
+
+  if (caixaId) {
+    const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
+    for (const pg of pagamentos) {
+      if (!(pg.valor > 0)) continue;
+      await supabase.from("pdv_caixa_mov").insert({
+        caixa_id: caixaId,
+        tipo: "venda",
+        descricao: desc,
+        forma_pagamento: pg.forma,
+        valor: pg.valor,
+        comanda_id: comandaIds[0],
+      });
+    }
+  }
+
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao");
+  return { ok: true as const, total: totalGeral, numeros };
+}
+
 export async function fecharComanda(formData: FormData) {
   const supabase = await createClient();
   const comandaId = formData.get("id") as string;
