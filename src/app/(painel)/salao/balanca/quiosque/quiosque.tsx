@@ -1,18 +1,31 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any -- WebSerial não tem tipos no TS padrão */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import QRCode from "qrcode";
 import { gerarComandaBuffetKiosk } from "../../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const LIMIAR = 0.05; // kg de comida para considerar "prato na balança"
-const ESTAVEL_MS = 1500; // peso parado por 1,5s → fecha a comanda
-const TOL_ESTAVEL = 0.02; // oscilação tolerada (20 g) para considerar "parado"
+const ESTAVEL_MS = 900; // peso parado por ~0,9s → fecha a comanda
+const TOL_ESTAVEL = 0.05; // oscilação tolerada (50 g) para considerar "parado"
 
-type Resultado = { numero: number; valor: number; liquido: number; livre: boolean };
+type Resultado = { id: string; numero: number; valor: number; liquido: number; livre: boolean };
+
+// QR da comanda (mesmo das comandas normais — aponta para a página da comanda).
+function CupomQR({ id }: { id: string }) {
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    const url = (typeof window !== "undefined" ? window.location.origin : "") + `/salao/comandas/${id}`;
+    QRCode.toDataURL(url, { width: 220, margin: 1 }).then(setSrc).catch(() => {});
+  }, [id]);
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="QR da comanda" style={{ width: "40mm", height: "40mm", margin: "2mm auto 0" }} />;
+}
 
 export function QuiosqueBalanca({
   precoKg,
@@ -76,7 +89,7 @@ export function QuiosqueBalanca({
     try {
       const r = await gerarComandaBuffetKiosk(bruto, soKgRef.current, taraBalancaRef.current);
       if (r.ok) {
-        setResultado({ numero: r.numero, valor: r.valor, liquido: r.liquido, livre: r.livre });
+        setResultado({ id: r.id, numero: r.numero, valor: r.valor, liquido: r.liquido, livre: r.livre });
         setEst("resultado");
         // Imprime o cupom sozinho na impressora térmica (silencioso com Chrome
         // em --kiosk-printing e a POS-80 como impressora padrão).
@@ -354,7 +367,8 @@ export function QuiosqueBalanca({
             <div style={{ fontSize: "18pt", fontWeight: "bold", marginTop: "2mm" }}>
               VALOR: {moeda(resultado.valor)}
             </div>
-            <div style={{ textAlign: "center", marginTop: "3mm" }}>Pague no caixa</div>
+            <CupomQR id={resultado.id} />
+            <div style={{ textAlign: "center", marginTop: "2mm" }}>Pague no caixa</div>
           </>
         )}
       </div>
