@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any -- WebSerial não tem tipos no TS padrão */
 
 import { useRef, useState } from "react";
 import { criarComandaBuffet } from "../actions";
@@ -14,13 +15,14 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
 
   const [baud, setBaud] = useState(9600);
   const [dataBits, setDataBits] = useState(8);
-  const [stopBits, setStopBits] = useState(2);
+  const [stopBits, setStopBits] = useState(1);
   const [parity, setParity] = useState<"none" | "even" | "odd">("none");
   const [unidade, setUnidade] = useState<"kg" | "g">("kg");
   const [casas, setCasas] = useState(3); // p/ interpretar "1234" como 1.234 kg quando em kg sem ponto
 
   const portRef = useRef<any>(null);
   const readerRef = useRef<any>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const peso =
     rawNum == null ? null : unidade === "g" ? rawNum / 1000 : rawNum;
@@ -45,6 +47,12 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       setBytes(0);
       setRaw("");
       lerLoop(port);
+      // A POP-31 é computadora: só manda o peso quando recebe ENQ (0x05).
+      // Então "pedimos" o peso a cada 500ms.
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = setInterval(() => {
+        enviar([0x05], "ENQ").catch(() => {});
+      }, 500);
     } catch (e: any) {
       setErro("Não conectou: " + (e?.message || String(e)));
     }
@@ -75,13 +83,21 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
         buf += decoder.decode(value, { stream: true });
         if (buf.length > 800) buf = buf.slice(-800);
         setRaw(buf);
-        const nums = buf.match(/-?\d+[.,]\d+|-?\d+/g);
-        if (nums && nums.length) {
-          const ultimo = nums[nums.length - 1];
-          let n = parseFloat(ultimo.replace(",", "."));
-          // número inteiro sem vírgula? interpreta pelas casas decimais (ex.: 1234 -> 1.234)
-          if (!/[.,]/.test(ultimo) && casas > 0) n = n / Math.pow(10, casas);
-          setRawNum(n);
+        // Balança computadora (POP-31) manda um "rótulo" com vários campos.
+        // Pegamos o PESO L (peso líquido) especificamente — não o último número
+        // (que seria o TOTAL R$). Se não achar, cai no modo genérico.
+        const pesoL = [...buf.matchAll(/PESO\s*L[:\s]*(-?\d+[.,]\d+)/gi)];
+        if (pesoL.length) {
+          setRawNum(parseFloat(pesoL[pesoL.length - 1][1].replace(",", ".")));
+        } else {
+          const nums = buf.match(/-?\d+[.,]\d+|-?\d+/g);
+          if (nums && nums.length) {
+            const ultimo = nums[nums.length - 1];
+            let n = parseFloat(ultimo.replace(",", "."));
+            // número inteiro sem vírgula? interpreta pelas casas (ex.: 1234 -> 1.234)
+            if (!/[.,]/.test(ultimo) && casas > 0) n = n / Math.pow(10, casas);
+            setRawNum(n);
+          }
         }
       }
     } catch {
@@ -90,6 +106,10 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
   }
 
   async function desconectar() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
     try {
       await readerRef.current?.cancel();
     } catch {}
