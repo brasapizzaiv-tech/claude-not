@@ -25,6 +25,7 @@ export function ReceberComandas({
   const [recebido, setRecebido] = useState(""); // dinheiro entregue (p/ troco)
   const [split, setSplit] = useState(false);
   const [linhas, setLinhas] = useState<Record<string, string>>({});
+  const [pessoas, setPessoas] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [recibo, setRecibo] = useState<{
     itens: { numero: number; total: number }[];
@@ -103,6 +104,7 @@ export function ReceberComandas({
         setRecebido("");
         setSplit(false);
         setLinhas({});
+        setPessoas("");
         router.refresh();
       } else {
         setMsg("Não foi possível receber. Tente de novo.");
@@ -164,6 +166,41 @@ export function ReceberComandas({
 
             {sel.size > 0 && (
               <>
+                {/* Dividir por pessoa (calculadora do valor por pessoa) */}
+                <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                    <span>Dividir por</span>
+                    <div className="flex gap-1">
+                      {[2, 3, 4].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setPessoas(String(n))}
+                          className={`rounded px-2 py-0.5 font-medium ${
+                            num(pessoas) === n
+                              ? "bg-orange-500 text-white"
+                              : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      inputMode="numeric"
+                      value={pessoas}
+                      onChange={(e) => setPessoas(e.target.value)}
+                      placeholder="nº"
+                      className="w-12 rounded border border-zinc-300 bg-white px-1.5 py-0.5 text-center text-xs dark:border-zinc-700 dark:bg-zinc-950"
+                    />
+                    <span>pessoas</span>
+                  </div>
+                  {num(pessoas) >= 2 && (
+                    <p className="mt-1 text-center text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                      {brl(Math.round((somaR / Math.round(num(pessoas))) * 100) / 100)} por pessoa
+                    </p>
+                  )}
+                </div>
+
                 <label className="flex items-center gap-2 text-xs text-zinc-500">
                   <input type="checkbox" checked={split} onChange={(e) => setSplit(e.target.checked)} />
                   Dividir em várias formas
