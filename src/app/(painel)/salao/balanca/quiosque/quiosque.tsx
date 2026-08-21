@@ -9,7 +9,8 @@ const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const LIMIAR = 0.05; // kg de comida para considerar "prato na balança"
-const ESTAVEL_MS = 2000; // peso parado por 2s → fecha a comanda
+const ESTAVEL_MS = 1500; // peso parado por 1,5s → fecha a comanda
+const TOL_ESTAVEL = 0.02; // oscilação tolerada (20 g) para considerar "parado"
 
 type Resultado = { numero: number; valor: number; liquido: number; livre: boolean };
 
@@ -29,6 +30,8 @@ export function QuiosqueBalanca({
   const [erro, setErro] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [diag, setDiag] = useState<{ bytes: number; raw: string }>({ bytes: 0, raw: "" });
+  const [taraBalanca, setTaraBalanca] = useState(0); // tara feita NA balança (campo TARA)
+  const taraBalancaRef = useRef(0);
   const [soKg, setSoKg] = useState(false); // marmita: só por kg (sem teto do livre)
   const soKgRef = useRef(false);
   const toggleSoKg = () => {
@@ -49,8 +52,13 @@ export function QuiosqueBalanca({
     setEstado(v);
   };
 
+  // Peso líquido (comida): se tarou NA balança, o PESO L já é líquido → não
+  // desconta de novo; senão, desconta a tara do sistema (o prato).
+  const netDe = (bruto: number, taraBal: number) =>
+    taraBal > 0.001 ? Math.max(0, bruto) : Math.max(0, bruto - taraPadrao);
+
   const calcValor = (bruto: number, soKgFlag: boolean) => {
-    const liquido = Math.max(0, bruto - taraPadrao);
+    const liquido = netDe(bruto, taraBalanca);
     let valor = liquido * precoKg;
     let livre = false;
     if (!soKgFlag && buffetLivre > 0 && valor >= buffetLivre) {
@@ -60,13 +68,13 @@ export function QuiosqueBalanca({
     return { liquido, valor: Math.round(valor * 100) / 100, livre };
   };
 
-  const liq = Math.max(0, pesoBruto - taraPadrao);
+  const liq = netDe(pesoBruto, taraBalanca);
   const { valor: valorAtual } = calcValor(pesoBruto, soKg);
 
   async function capturar(bruto: number) {
     setEst("processando");
     try {
-      const r = await gerarComandaBuffetKiosk(bruto, soKgRef.current);
+      const r = await gerarComandaBuffetKiosk(bruto, soKgRef.current, taraBalancaRef.current);
       if (r.ok) {
         setResultado({ numero: r.numero, valor: r.valor, liquido: r.liquido, livre: r.livre });
         setEst("resultado");
@@ -92,11 +100,11 @@ export function QuiosqueBalanca({
   function processar(bruto: number) {
     setPesoBruto(bruto);
     const agora = Date.now();
-    if (Math.abs(bruto - refPeso.current) > 0.005) {
+    if (Math.abs(bruto - refPeso.current) > TOL_ESTAVEL) {
       refPeso.current = bruto;
       estavelDesde.current = agora;
     }
-    const liquido = Math.max(0, bruto - taraPadrao);
+    const liquido = netDe(bruto, taraBalancaRef.current);
     const est = estadoRef.current;
     if (est === "processando") return;
     if (est === "resultado") {
@@ -166,6 +174,13 @@ export function QuiosqueBalanca({
         buf += decoder.decode(value, { stream: true });
         if (buf.length > 800) buf = buf.slice(-800);
         setDiag({ bytes: tot, raw: buf.slice(-120) });
+        // Tara feita na própria balança (campo TARA do rótulo).
+        const t = [...buf.matchAll(/TARA[:\s]*(-?\d+[.,]\d+)/gi)];
+        if (t.length) {
+          const tb = parseFloat(t[t.length - 1][1].replace(",", "."));
+          taraBalancaRef.current = tb;
+          setTaraBalanca(tb);
+        }
         const m = [...buf.matchAll(/PESO\s*L[:\s]*(-?\d+[.,]\d+)/gi)];
         if (m.length) processar(parseFloat(m[m.length - 1][1].replace(",", ".")));
       }
@@ -277,6 +292,20 @@ export function QuiosqueBalanca({
                 <p className="mt-2 text-xl text-yellow-300">
                   Esta pesagem cobra por kg, sem virar “à vontade”.
                 </p>
+              )}
+              {taraBalanca > 0.001 && (
+                <p className="mt-2 text-sm text-white/40">
+                  Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg (peso já líquido)
+                </p>
+              )}
+              {/* Botão manual — garante gerar a comanda se a balança oscilar muito */}
+              {liq > LIMIAR && (
+                <button
+                  onClick={() => capturar(pesoBruto)}
+                  className="mt-[clamp(0.75rem,2vh,1.5rem)] rounded-2xl bg-emerald-600 px-[clamp(1.5rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.1rem,3.2vw,2rem)] font-bold text-white hover:bg-emerald-700"
+                >
+                  ✓ Gerar comanda
+                </button>
               )}
             </>
           )}

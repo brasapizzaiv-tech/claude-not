@@ -201,15 +201,27 @@ export async function criarComandaBuffet(formData: FormData) {
 
 // Quiosque de autoatendimento: gera a comanda de buffet e RETORNA os dados
 // (número, valor) para mostrar na tela — sem redirecionar.
-export async function gerarComandaBuffetKiosk(peso: number, soPorKg = false) {
+export async function gerarComandaBuffetKiosk(
+  peso: number,
+  soPorKg = false,
+  taraBalanca = 0,
+) {
   const supabase = await createClient();
   if (!(peso > 0)) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
-  const tara = Number(cfg.tara_padrao || 0);
+  // Se tarou NA balança, o peso já vem líquido → tara do sistema = 0.
+  const tara = taraBalanca > 0.001 ? 0 : Number(cfg.tara_padrao || 0);
   const { valor, livre } = calcBuffet(cfg, peso, tara, soPorKg);
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .insert({ peso, tara, valor_buffet: valor, livre, mesa: "Balança", so_kg: soPorKg })
+    .insert({
+      peso,
+      tara: taraBalanca > 0.001 ? taraBalanca : tara,
+      valor_buffet: valor,
+      livre,
+      mesa: "Balança",
+      so_kg: soPorKg,
+    })
     .select("id, numero")
     .single();
   revalidatePath("/salao");
