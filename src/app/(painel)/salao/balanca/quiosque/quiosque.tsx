@@ -69,6 +69,13 @@ export function QuiosqueBalanca({
       if (r.ok) {
         setResultado({ numero: r.numero, valor: r.valor, liquido: r.liquido, livre: r.livre });
         setEst("resultado");
+        // Imprime o cupom sozinho na impressora térmica (silencioso com Chrome
+        // em --kiosk-printing e a POS-80 como impressora padrão).
+        setTimeout(() => {
+          try {
+            window.print();
+          } catch {}
+        }, 500);
       } else {
         setEst("aguardando");
       }
@@ -219,6 +226,16 @@ export function QuiosqueBalanca({
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
                 {resultado.livre ? " · à vontade (livre)" : ""}
               </p>
+              <button
+                onClick={() => {
+                  try {
+                    window.print();
+                  } catch {}
+                }}
+                className="nao-imprimir mt-6 rounded-xl border border-white/25 px-6 py-3 text-xl text-white/70 hover:bg-white/10"
+              >
+                🖨️ Imprimir de novo
+              </button>
             </div>
           ) : (
             <>
@@ -278,6 +295,41 @@ export function QuiosqueBalanca({
           <p className="mt-1 text-base uppercase tracking-wide text-white/40">Valor por kg</p>
         </div>
       </div>
+
+      {/* Cupom da impressora térmica (só aparece na impressão) */}
+      <div className="cupom-print">
+        <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "14pt" }}>
+          BRASA — Buffet
+        </div>
+        {resultado && (
+          <>
+            <div style={{ textAlign: "center", fontSize: "20pt", fontWeight: "bold", margin: "2mm 0" }}>
+              COMANDA Nº {resultado.numero}
+            </div>
+            <div>{new Date().toLocaleString("pt-BR")}</div>
+            <div>Peso: {resultado.liquido.toFixed(3).replace(".", ",")} kg</div>
+            {resultado.livre && <div>À vontade (livre)</div>}
+            <div style={{ fontSize: "18pt", fontWeight: "bold", marginTop: "2mm" }}>
+              VALOR: {moeda(resultado.valor)}
+            </div>
+            <div style={{ textAlign: "center", marginTop: "3mm" }}>Pague no caixa</div>
+          </>
+        )}
+      </div>
+      <style>{`
+        .cupom-print { display: none; }
+        @media print {
+          @page { size: 80mm auto; margin: 0; }
+          html, body { margin: 0 !important; background: #fff !important; }
+          body * { visibility: hidden; }
+          .cupom-print, .cupom-print * { visibility: visible; color: #000 !important; }
+          .cupom-print {
+            display: block; position: absolute; left: 0; top: 0;
+            width: 80mm; box-sizing: border-box; padding: 4mm 3mm;
+            font-family: 'Courier New', monospace; font-size: 12pt; line-height: 1.35;
+          }
+        }
+      `}</style>
     </div>
   );
 }
