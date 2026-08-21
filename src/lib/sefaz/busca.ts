@@ -14,6 +14,7 @@ export type ConfigSefaz = {
   ult_nsu: string;
   bloqueado_ate: string | null;
   forcado_em?: string | null;
+  reprocessado_em?: string | null;
 };
 
 export type ResultadoBusca = {

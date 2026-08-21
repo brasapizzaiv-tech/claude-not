@@ -52,9 +52,40 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // AUTO-CURA: notas manifestadas entre 3h e 5 dias atrás que seguem SEM itens.
+  // A busca anda só para frente (por NSU); um XML perdido/que falhou só volta
+  // reprocessando desde o início. Faz isso sozinho, no máximo a cada 8h.
+  const { data: presas } = await admin
+    .from("notas_fiscais")
+    .select("id")
+    .not("manifestado_em", "is", null)
+    .gte("manifestado_em", new Date(agora - 5 * 24 * 60 * 60 * 1000).toISOString())
+    .lte("manifestado_em", new Date(agora - 3 * 60 * 60 * 1000).toISOString());
+  let travadas = 0;
+  for (const n of presas ?? []) {
+    const { count } = await admin
+      .from("nota_itens")
+      .select("id", { count: "exact", head: true })
+      .eq("nota_id", n.id as string);
+    if ((count ?? 0) === 0) travadas++;
+  }
+  const reprocEm = cfg.reprocessado_em ? new Date(cfg.reprocessado_em).getTime() : 0;
+  if (travadas > 0 && agora - reprocEm > 8 * 60 * 60 * 1000) {
+    await admin
+      .from("config_sefaz")
+      .update({ ult_nsu: "0", bloqueado_ate: null, reprocessado_em: new Date().toISOString() })
+      .eq("id", cfg.id);
+    const rr = await rodarBuscaSefaz(
+      admin,
+      { ...cfg, ult_nsu: "0", bloqueado_ate: null },
+      { forcar: true },
+    );
+    return NextResponse.json({ ok: !rr.erro, reprocessado: true, travadas, ...rr });
+  }
+
   // Nada aguardando: não força nada (deixa o cron de hora em hora cuidar).
   if (aguardando === 0) {
-    return NextResponse.json({ ok: true, aguardando: 0, forcado: false });
+    return NextResponse.json({ ok: true, aguardando: 0, forcado: false, travadas });
   }
 
   // Espaçamento entre buscas forçadas: 5 min enquanto a manifestação é recente
