@@ -283,16 +283,11 @@ export function QuiosqueBalanca({
         </div>
       )}
 
-      {/* diagnóstico da balança (ajuda quando não lê) */}
-      {estado !== "conectar" && (
-        <div
-          className={`px-4 py-1 text-center text-[11px] ${
-            diag.bytes > 0 ? "text-white/30" : "text-amber-400/70"
-          }`}
-        >
-          {diag.bytes > 0
-            ? `balança: ${diag.bytes} bytes · ${diag.raw.replace(/[\x00-\x1F]/g, " ").trim().slice(-60) || "…"}`
-            : "balança conectada, mas sem dados ainda — coloque um prato; se continuar 0, veja a dica abaixo"}
+      {/* Aviso só quando a balança conectou mas não manda dados (não some pro cliente). */}
+      {estado !== "conectar" && diag.bytes === 0 && (
+        <div className="px-4 py-1 text-center text-[11px] text-amber-400/70">
+          Balança conectada, mas sem dados — verifique o cabo/porta. Lembre: o peso mostrado
+          é <b>líquido</b> (desconta a tara).
         </div>
       )}
 
