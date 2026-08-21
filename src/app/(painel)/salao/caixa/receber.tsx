@@ -9,7 +9,14 @@ const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (s: string) => Number(String(s).replace(".", "").replace(",", ".")) || 0;
 
-export type ItemComanda = { id: string; nome: string; qtd: number; preco: number; pago: boolean };
+export type ItemComanda = {
+  id: string;
+  nome: string;
+  qtd: number;
+  preco: number;
+  pago: boolean;
+  valorPago: number;
+};
 export type Comanda = {
   id: string;
   numero: number;
@@ -18,6 +25,7 @@ export type Comanda = {
   restante: number;
   buffet: number;
   buffetPago: boolean;
+  buffetValorPago: number;
   itens: ItemComanda[];
 };
 
