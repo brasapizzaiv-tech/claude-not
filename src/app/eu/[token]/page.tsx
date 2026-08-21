@@ -73,13 +73,17 @@ export default async function AppColaboradorPage({
   const pinCookie = jar.get(`eu_${token}`)?.value ?? "";
   let home: { nome: string; contagens: Contagem[] } | null = null;
   let pedidos: PedidoColab[] = [];
+  let produtos: { id: string; nome: string }[] = [];
   if (pinCookie) {
     const [{ data }, { data: peds }] = await Promise.all([
       supabase.rpc("colaborador_home", { p_token: token, p_pin: pinCookie }),
       supabase.rpc("colaborador_pedidos", { p_token: token, p_pin: pinCookie }),
     ]);
     if (data && !data.erro) home = data as { nome: string; contagens: Contagem[] };
-    if (peds && !peds.erro) pedidos = (peds.pedidos as PedidoColab[]) ?? [];
+    if (peds && !peds.erro) {
+      pedidos = (peds.pedidos as PedidoColab[]) ?? [];
+      produtos = (peds.produtos as { id: string; nome: string }[]) ?? [];
+    }
   }
 
   if (!home) {
@@ -124,7 +128,7 @@ export default async function AppColaboradorPage({
         </div>
       )}
 
-      <PedidosColab token={token} pedidos={pedidos} />
+      <PedidosColab token={token} pedidos={pedidos} produtos={produtos} />
     </Moldura>
   );
 }

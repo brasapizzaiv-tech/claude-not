@@ -4,7 +4,12 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
-import { salvarConferencia } from "../actions";
+import { Combobox } from "@/components/combobox";
+import {
+  salvarConferencia,
+  adicionarItemConferencia,
+  removerItemConferencia,
+} from "../actions";
 
 export type ItemLinha = {
   id: string;
@@ -32,6 +37,7 @@ export function ConferirClient({
   status,
   observacoes,
   itens,
+  produtos,
 }: {
   pedidoId: string;
   fornecedor: string;
@@ -40,11 +46,14 @@ export function ConferirClient({
   status: string;
   observacoes: string;
   itens: ItemLinha[];
+  produtos: { id: string; nome: string }[];
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [obsGeral, setObsGeral] = useState(observacoes);
+  const [addProd, setAddProd] = useState("");
+  const [addQtd, setAddQtd] = useState("");
   const [estado, setEstado] = useState<Record<string, Estado>>(() =>
     Object.fromEntries(
       itens.map((i) => [
@@ -74,23 +83,44 @@ export function ConferirClient({
     return { pedido, recebido };
   }, [estado, itens]);
 
+  const payloadAtual = () =>
+    itens.map((i) => ({
+      id: i.id,
+      qtd_recebida: num(estado[i.id].qtd_recebida),
+      preco_recebido: estado[i.id].preco_recebido
+        ? num(estado[i.id].preco_recebido)
+        : null,
+      obs: estado[i.id].obs || null,
+    }));
+
   function persistir(finalizar: boolean) {
     startSave(async () => {
-      const payload = itens.map((i) => ({
-        id: i.id,
-        qtd_recebida: num(estado[i.id].qtd_recebida),
-        preco_recebido: estado[i.id].preco_recebido
-          ? num(estado[i.id].preco_recebido)
-          : null,
-        obs: estado[i.id].obs || null,
-      }));
-      await salvarConferencia(pedidoId, payload, obsGeral, finalizar);
+      await salvarConferencia(pedidoId, payloadAtual(), obsGeral, finalizar);
       if (finalizar) {
         router.push("/conferencia");
       } else {
         setMsg("Conferência salva.");
         setTimeout(() => setMsg(null), 4000);
       }
+    });
+  }
+
+  // Adiciona um item que veio a mais (salva as edições atuais antes, pra não perder).
+  function adicionar() {
+    if (!addProd || num(addQtd) <= 0) return;
+    startSave(async () => {
+      await salvarConferencia(pedidoId, payloadAtual(), obsGeral, false);
+      await adicionarItemConferencia(pedidoId, addProd, num(addQtd));
+      setAddProd("");
+      setAddQtd("");
+      router.refresh();
+    });
+  }
+  function remover(itemId: string) {
+    startSave(async () => {
+      await salvarConferencia(pedidoId, payloadAtual(), obsGeral, false);
+      await removerItemConferencia(itemId, pedidoId);
+      router.refresh();
     });
   }
 
@@ -167,6 +197,19 @@ export function ConferirClient({
                     <span className="ml-1 text-xs text-zinc-400">
                       {i.unidade}
                     </span>
+                    {i.qtd === 0 && (
+                      <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                        veio a mais
+                      </span>
+                    )}
+                    <button
+                      onClick={() => remover(i.id)}
+                      disabled={salvando}
+                      className="ml-2 text-xs text-zinc-300 hover:text-red-600 disabled:opacity-50 dark:text-zinc-600"
+                      title="Remover item da conferência"
+                    >
+                      ✕
+                    </button>
                   </td>
                   <td className="px-3 py-2 text-right text-zinc-500">{i.qtd}</td>
                   <td className="px-3 py-2 text-right">
@@ -224,6 +267,39 @@ export function ConferirClient({
             </tr>
           </tfoot>
         </table>
+      </div>
+
+      {/* Adicionar item que veio a mais */}
+      <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl border border-dashed border-sky-300 bg-sky-50/40 p-3 dark:border-sky-800 dark:bg-sky-950/10">
+        <div className="min-w-56 flex-1">
+          <label className="mb-1 block text-xs text-zinc-500">
+            Adicionar item que veio a mais (não estava no pedido)
+          </label>
+          <Combobox
+            options={produtos.map((p) => ({ value: p.id, label: p.nome }))}
+            value={addProd}
+            onChange={setAddProd}
+            placeholder="Buscar produto..."
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Qtd recebida</label>
+          <input
+            inputMode="decimal"
+            value={addQtd}
+            onChange={(e) => setAddQtd(e.target.value)}
+            placeholder="0"
+            className={numInput}
+          />
+        </div>
+        <button
+          onClick={adicionar}
+          disabled={salvando || !addProd || num(addQtd) <= 0}
+          className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+        >
+          + Adicionar
+        </button>
       </div>
 
       <label className="mt-4 block text-sm text-zinc-500">

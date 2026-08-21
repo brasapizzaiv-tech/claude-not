@@ -20,6 +20,13 @@ export default async function ConferirPage({
 
   if (!data) notFound();
 
+  const { data: prodData } = await supabase
+    .from("produtos")
+    .select("id, nome")
+    .eq("ativo", true)
+    .order("nome");
+  const produtos = (prodData as { id: string; nome: string }[]) ?? [];
+
   type Row = {
     id: string;
     data: string;
@@ -61,6 +68,7 @@ export default async function ConferirPage({
       status={ped.status}
       observacoes={ped.observacoes ?? ""}
       itens={itens}
+      produtos={produtos}
     />
   );
 }

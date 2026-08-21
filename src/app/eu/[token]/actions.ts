@@ -47,6 +47,39 @@ export async function conferirPedidoColab(
   return { ok: !!data?.ok };
 }
 
+// Adiciona um item que veio a mais na conferência do colaborador.
+export async function adicionarItemColab(
+  token: string,
+  pedidoId: string,
+  produtoId: string,
+  qtd: number,
+) {
+  const jar = await cookies();
+  const pin = jar.get(`eu_${token}`)?.value ?? "";
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("colaborador_add_item", {
+    p_token: token,
+    p_pin: pin,
+    p_pedido_id: pedidoId,
+    p_produto_id: produtoId,
+    p_qtd: qtd,
+  });
+  return { ok: !!data?.ok };
+}
+
+// Remove um item da conferência do colaborador.
+export async function removerItemColab(token: string, itemId: string) {
+  const jar = await cookies();
+  const pin = jar.get(`eu_${token}`)?.value ?? "";
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("colaborador_remove_item", {
+    p_token: token,
+    p_pin: pin,
+    p_item_id: itemId,
+  });
+  return { ok: !!data?.ok };
+}
+
 export async function entrarPin(token: string, pinRaw: string) {
   const pin = soDigitos(pinRaw);
   if (pin.length !== 4) return { ok: false, erro: "Digite os 4 números." };

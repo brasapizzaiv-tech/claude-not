@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { conferirPedidoColab } from "./actions";
+import { useRouter } from "next/navigation";
+import {
+  conferirPedidoColab,
+  adicionarItemColab,
+  removerItemColab,
+} from "./actions";
 import { dataBR } from "@/lib/format";
+import { Combobox } from "@/components/combobox";
 
 export type ItemPed = {
   id: string;
@@ -22,7 +28,15 @@ export type PedidoColab = {
   itens: ItemPed[];
 };
 
-export function PedidosColab({ token, pedidos }: { token: string; pedidos: PedidoColab[] }) {
+export function PedidosColab({
+  token,
+  pedidos,
+  produtos,
+}: {
+  token: string;
+  pedidos: PedidoColab[];
+  produtos: { id: string; nome: string }[];
+}) {
   const [aba, setAba] = useState<"pendentes" | "conferidos">("pendentes");
   if (pedidos.length === 0) return null;
 
@@ -57,7 +71,7 @@ export function PedidosColab({ token, pedidos }: { token: string; pedidos: Pedid
       ) : (
         <div className="space-y-2">
           {lista.map((p) => (
-            <PedidoCard key={p.id} token={token} pedido={p} />
+            <PedidoCard key={p.id} token={token} pedido={p} produtos={produtos} />
           ))}
         </div>
       )}
@@ -65,7 +79,16 @@ export function PedidosColab({ token, pedidos }: { token: string; pedidos: Pedid
   );
 }
 
-function PedidoCard({ token, pedido }: { token: string; pedido: PedidoColab }) {
+function PedidoCard({
+  token,
+  pedido,
+  produtos,
+}: {
+  token: string;
+  pedido: PedidoColab;
+  produtos: { id: string; nome: string }[];
+}) {
+  const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [qtds, setQtds] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -74,15 +97,37 @@ function PedidoCard({ token, pedido }: { token: string; pedido: PedidoColab }) {
   );
   const [salvando, start] = useTransition();
   const [feito, setFeito] = useState(!!pedido.conf_em);
+  const [addProd, setAddProd] = useState("");
+  const [addQtd, setAddQtd] = useState("");
+
+  const salvarAtual = () =>
+    conferirPedidoColab(
+      token,
+      pedido.id,
+      pedido.itens.map((i) => ({ id: i.id, qtd: qtds[i.id] ?? "" })),
+    );
 
   function confirmar() {
     start(async () => {
-      const r = await conferirPedidoColab(
-        token,
-        pedido.id,
-        pedido.itens.map((i) => ({ id: i.id, qtd: qtds[i.id] ?? "" })),
-      );
+      const r = await salvarAtual();
       if (r.ok) setFeito(true);
+    });
+  }
+  function adicionar() {
+    if (!addProd || !(Number(addQtd.replace(",", ".")) > 0)) return;
+    start(async () => {
+      await salvarAtual();
+      await adicionarItemColab(token, pedido.id, addProd, Number(addQtd.replace(",", ".")));
+      setAddProd("");
+      setAddQtd("");
+      router.refresh();
+    });
+  }
+  function remover(itemId: string) {
+    start(async () => {
+      await salvarAtual();
+      await removerItemColab(token, itemId);
+      router.refresh();
     });
   }
 
@@ -124,9 +169,15 @@ function PedidoCard({ token, pedido }: { token: string; pedido: PedidoColab }) {
             <div key={i.id} className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1 truncate text-sm text-zinc-700 dark:text-zinc-300">
                 {i.nome}
-                <span className="ml-1 text-xs text-zinc-400">
-                  (pedido: {i.qtd} {i.unidade})
-                </span>
+                {i.qtd === 0 ? (
+                  <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                    veio a mais
+                  </span>
+                ) : (
+                  <span className="ml-1 text-xs text-zinc-400">
+                    (pedido: {i.qtd} {i.unidade})
+                  </span>
+                )}
               </span>
               <input
                 inputMode="decimal"
@@ -136,8 +187,47 @@ function PedidoCard({ token, pedido }: { token: string; pedido: PedidoColab }) {
                 }
                 className="w-16 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
               />
+              <button
+                onClick={() => remover(i.id)}
+                disabled={salvando}
+                title="Remover item"
+                className="shrink-0 text-zinc-300 hover:text-red-600 disabled:opacity-50 dark:text-zinc-600"
+              >
+                ✕
+              </button>
             </div>
           ))}
+
+          {/* Adicionar item que veio a mais */}
+          <div className="rounded-xl border border-dashed border-sky-300 bg-sky-50/40 p-2.5 dark:border-sky-800 dark:bg-sky-950/10">
+            <p className="mb-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              Veio algo a mais? Adicione aqui:
+            </p>
+            <Combobox
+              options={produtos.map((p) => ({ value: p.id, label: p.nome }))}
+              value={addProd}
+              onChange={setAddProd}
+              placeholder="Buscar produto..."
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                inputMode="decimal"
+                value={addQtd}
+                onChange={(e) => setAddQtd(e.target.value)}
+                placeholder="Qtd"
+                className="w-20 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              />
+              <button
+                onClick={adicionar}
+                disabled={salvando || !addProd || !(Number(addQtd.replace(",", ".")) > 0)}
+                className="flex-1 rounded-lg bg-sky-600 py-1.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+              >
+                + Adicionar
+              </button>
+            </div>
+          </div>
+
           <p className="text-[11px] text-zinc-400">
             Confirme quanto de cada item chegou. Isso é só um aviso pro
             responsável — a conferência final continua com ele.

@@ -57,6 +57,32 @@ export async function criarPedidoManual(
 }
 
 // Salva a conferência de um pedido. finalizar=true marca como conferido.
+// Adiciona um item que veio a mais (não estava no pedido). qtd pedida = 0.
+export async function adicionarItemConferencia(
+  pedidoId: string,
+  produtoId: string,
+  qtd: number,
+) {
+  const supabase = await createClient();
+  if (!produtoId) return { ok: false };
+  await supabase.from("pedido_itens").insert({
+    pedido_id: pedidoId,
+    produto_id: produtoId,
+    qtd: 0,
+    qtd_recebida: qtd,
+  });
+  revalidatePath(`/conferencia/${pedidoId}`);
+  return { ok: true };
+}
+
+// Remove um item da conferência (ex.: produto que não veio).
+export async function removerItemConferencia(itemId: string, pedidoId: string) {
+  const supabase = await createClient();
+  await supabase.from("pedido_itens").delete().eq("id", itemId);
+  revalidatePath(`/conferencia/${pedidoId}`);
+  return { ok: true };
+}
+
 export async function salvarConferencia(
   pedidoId: string,
   itens: ItemConf[],
