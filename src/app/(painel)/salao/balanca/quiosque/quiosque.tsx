@@ -13,7 +13,15 @@ const LIMIAR = 0.05; // kg de comida para considerar "prato na balança"
 const ESTAVEL_MS = 900; // peso parado por ~0,9s → fecha a comanda
 const TOL_ESTAVEL = 0.05; // oscilação tolerada (50 g) para considerar "parado"
 
-type Resultado = { id: string; numero: number; valor: number; liquido: number; livre: boolean };
+type Resultado = {
+  id: string;
+  numero: number;
+  valor: number;
+  liquido: number;
+  peso: number;
+  tara: number;
+  livre: boolean;
+};
 
 // QR da comanda (mesmo das comandas normais — aponta para a página da comanda).
 function CupomQR({ id }: { id: string }) {
@@ -31,10 +39,12 @@ export function QuiosqueBalanca({
   precoKg,
   buffetLivre,
   taraPadrao,
+  cupom,
 }: {
   precoKg: number;
   buffetLivre: number;
   taraPadrao: number;
+  cupom: { nome: string; endereco: string; telefone: string; msg: string };
 }) {
   const [estado, setEstado] = useState<
     "conectar" | "aguardando" | "pesando" | "processando" | "resultado"
@@ -89,7 +99,15 @@ export function QuiosqueBalanca({
     try {
       const r = await gerarComandaBuffetKiosk(bruto, soKgRef.current, taraBalancaRef.current);
       if (r.ok) {
-        setResultado({ id: r.id, numero: r.numero, valor: r.valor, liquido: r.liquido, livre: r.livre });
+        setResultado({
+          id: r.id,
+          numero: r.numero,
+          valor: r.valor,
+          liquido: r.liquido,
+          peso: r.peso,
+          tara: r.tara,
+          livre: r.livre,
+        });
         setEst("resultado");
         // Imprime o cupom sozinho na impressora térmica (silencioso com Chrome
         // em --kiosk-printing e a POS-80 como impressora padrão).
@@ -351,24 +369,55 @@ export function QuiosqueBalanca({
         </div>
       </div>
 
-      {/* Cupom da impressora térmica (só aparece na impressão) */}
-      <div className="cupom-print">
-        <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "14pt" }}>
-          BRASA — Buffet
-        </div>
+      {/* Cupom da impressora térmica — igual ao da comanda normal */}
+      <div className="cupom-print" style={{ textAlign: "center" }}>
         {resultado && (
           <>
-            <div style={{ textAlign: "center", fontSize: "20pt", fontWeight: "bold", margin: "2mm 0" }}>
-              COMANDA Nº {resultado.numero}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-brasa.png" alt="" style={{ width: "18mm", height: "18mm", objectFit: "contain", margin: "0 auto 1mm" }} />
+            <div style={{ fontSize: "13pt", fontWeight: "bold", textTransform: "uppercase" }}>
+              {cupom.nome}
             </div>
-            <div>{new Date().toLocaleString("pt-BR")}</div>
-            <div>Peso: {resultado.liquido.toFixed(3).replace(".", ",")} kg</div>
-            {resultado.livre && <div>À vontade (livre)</div>}
-            <div style={{ fontSize: "18pt", fontWeight: "bold", marginTop: "2mm" }}>
-              VALOR: {moeda(resultado.valor)}
+            {(cupom.endereco || cupom.telefone) && (
+              <div style={{ fontSize: "8pt" }}>
+                {[cupom.endereco, cupom.telefone].filter(Boolean).join(" · ")}
+              </div>
+            )}
+            <div style={{ fontSize: "8pt", textTransform: "uppercase", marginTop: "1mm" }}>Comanda · Balança</div>
+            <div style={{ fontSize: "26pt", fontWeight: "bold", lineHeight: 1 }}>#{resultado.numero}</div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: "4mm", marginTop: "2mm", fontSize: "9pt" }}>
+              <div>
+                <div style={{ fontSize: "7pt" }}>PESO</div>
+                <b>{resultado.peso.toFixed(3).replace(".", ",")} kg</b>
+              </div>
+              <div>
+                <div style={{ fontSize: "7pt" }}>TARA</div>
+                <b>{resultado.tara.toFixed(3).replace(".", ",")} kg</b>
+              </div>
+              <div>
+                <div style={{ fontSize: "7pt" }}>VALOR</div>
+                <b>{moeda(resultado.valor)}</b>
+              </div>
             </div>
+            {resultado.livre && (
+              <div style={{ fontSize: "9pt", fontWeight: "bold", marginTop: "1mm" }}>BUFFET LIVRE</div>
+            )}
+
             <CupomQR id={resultado.id} />
-            <div style={{ textAlign: "center", marginTop: "2mm" }}>Pague no caixa</div>
+            <div style={{ fontSize: "8pt", marginTop: "1mm" }}>{new Date().toLocaleString("pt-BR")}</div>
+            {cupom.msg && <div style={{ fontSize: "9pt", marginTop: "1mm" }}>{cupom.msg}</div>}
+
+            <div style={{ borderTop: "1px dashed #000", margin: "2mm 0" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10pt" }}>
+              <span>Buffet ({resultado.liquido.toFixed(3).replace(".", ",")} kg)</span>
+              <span>{moeda(resultado.valor)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13pt", fontWeight: "bold", marginTop: "1mm" }}>
+              <span>TOTAL</span>
+              <span>{moeda(resultado.valor)}</span>
+            </div>
+            <div style={{ marginTop: "2mm" }}>Pague no caixa</div>
           </>
         )}
       </div>

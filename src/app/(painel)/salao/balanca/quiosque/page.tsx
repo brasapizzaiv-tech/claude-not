@@ -17,6 +17,12 @@ export default async function QuiosquePage() {
       precoKg={kgDia}
       buffetLivre={livreDia}
       taraPadrao={Number(cfg.tara_padrao ?? 0)}
+      cupom={{
+        nome: cfg.nome_restaurante || "Restaurante",
+        endereco: cfg.cupom_endereco || "",
+        telefone: cfg.cupom_telefone || "",
+        msg: cfg.cupom_msg || "",
+      }}
     />
   );
 }
