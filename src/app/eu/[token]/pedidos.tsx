@@ -15,6 +15,7 @@ export type PedidoColab = {
   id: string;
   fornecedor: string | null;
   data: string;
+  prazo_entrega: string | null;
   status: string;
   conf_em: string | null;
   conf_por: string | null;
@@ -84,6 +85,11 @@ function PedidoCard({ token, pedido }: { token: string; pedido: PedidoColab }) {
             {pedido.fornecedor || "Fornecedor"}
           </span>
           <span className="ml-2 text-xs text-zinc-400">{dataBR(pedido.data)}</span>
+          {pedido.prazo_entrega && (
+            <span className="mt-0.5 block text-xs font-medium text-orange-600 dark:text-orange-400">
+              🚚 entrega prevista: {dataBR(pedido.prazo_entrega)}
+            </span>
+          )}
         </span>
         <span className="text-xs">
           {feito ? (
