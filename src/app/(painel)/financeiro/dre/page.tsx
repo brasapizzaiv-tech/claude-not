@@ -21,9 +21,10 @@ function rotuloMes(mes: string) {
 export default async function DrePage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string }>;
+  searchParams: Promise<{ mes?: string; todas?: string }>;
 }) {
   const sp = await searchParams;
+  const mostrarTodas = sp.todas === "1";
   const mes =
     sp.mes && /^\d{4}-\d{2}$/.test(sp.mes)
       ? sp.mes
@@ -73,6 +74,27 @@ export default async function DrePage({
     else porGrupo.set(c.grupo ?? "", { tipo: c.tipo, total: v });
   }
 
+  // "Mostrar todas": semeia as categorias/grupos zerados para o DRE completo.
+  if (mostrarTodas) {
+    const { data: allCats } = await supabase
+      .from("dre_categorias")
+      .select("nome, tipo, grupo, ordem")
+      .eq("ativo", true);
+    for (const c of (allCats as { nome: string; tipo: string; grupo: string; ordem: number }[]) ?? []) {
+      const key = `${c.tipo}|${c.nome}`;
+      if (!porCategoria.has(key))
+        porCategoria.set(key, {
+          nome: c.nome,
+          tipo: c.tipo,
+          grupo: c.grupo ?? "",
+          ordem: c.ordem ?? 0,
+          total: 0,
+        });
+      if (!porGrupo.has(c.grupo ?? ""))
+        porGrupo.set(c.grupo ?? "", { tipo: c.tipo, total: 0 });
+    }
+  }
+
   const t = (tipo: string) => porTipo[tipo] ?? 0;
   const receitaBruta = t("receita");
   const deducoes = t("deducao");
@@ -93,11 +115,11 @@ export default async function DrePage({
 
   const cats = (tipo: string) =>
     [...porCategoria.values()]
-      .filter((c) => c.tipo === tipo && c.total !== 0)
+      .filter((c) => c.tipo === tipo && (mostrarTodas || c.total !== 0))
       .sort((a, b) => a.ordem - b.ordem);
   const grupos = (tipo: string) =>
     [...porGrupo.entries()]
-      .filter(([, g]) => g.tipo === tipo && g.total !== 0)
+      .filter(([, g]) => g.tipo === tipo && (mostrarTodas || g.total !== 0))
       .map(([nome, g]) => ({ nome, total: g.total }));
 
   const Linha = ({
@@ -147,7 +169,18 @@ export default async function DrePage({
         <div className="flex items-center gap-2">
           <Link href={`/financeiro/dre?mes=${desloca(mes, -1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">‹</Link>
           <Link href={`/financeiro/dre?mes=${desloca(mes, 1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">›</Link>
-          <Link href={`/financeiro?mes=${mes}`} className="ml-2 rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+          <Link
+            href={`/financeiro/dre?mes=${mes}${mostrarTodas ? "" : "&todas=1"}`}
+            className={`ml-2 rounded-lg border px-3 py-2 text-sm font-medium ${
+              mostrarTodas
+                ? "border-orange-500 bg-orange-500 text-white"
+                : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            }`}
+            title="Inclui as categorias sem valor no mês"
+          >
+            {mostrarTodas ? "✓ Todas as categorias" : "Mostrar todas"}
+          </Link>
+          <Link href={`/financeiro?mes=${mes}`} className="ml-1 rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
             Lançamentos
           </Link>
         </div>
