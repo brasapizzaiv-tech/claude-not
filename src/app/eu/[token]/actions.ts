@@ -34,6 +34,7 @@ export async function conferirPedidoColab(
   token: string,
   pedidoId: string,
   itens: { id: string; qtd: string }[],
+  marcar = true,
 ) {
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
@@ -43,6 +44,7 @@ export async function conferirPedidoColab(
     p_pin: pin,
     p_pedido_id: pedidoId,
     p_itens: itens,
+    p_marcar: marcar,
   });
   return { ok: !!data?.ok };
 }

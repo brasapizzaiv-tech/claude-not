@@ -100,23 +100,25 @@ function PedidoCard({
   const [addProd, setAddProd] = useState("");
   const [addQtd, setAddQtd] = useState("");
 
-  const salvarAtual = () =>
+  // marcar=false → salva as quantidades sem marcar como conferido (rascunho).
+  const salvarAtual = (marcar: boolean) =>
     conferirPedidoColab(
       token,
       pedido.id,
       pedido.itens.map((i) => ({ id: i.id, qtd: qtds[i.id] ?? "" })),
+      marcar,
     );
 
   function confirmar() {
     start(async () => {
-      const r = await salvarAtual();
+      const r = await salvarAtual(true);
       if (r.ok) setFeito(true);
     });
   }
   function adicionar() {
     if (!addProd || !(Number(addQtd.replace(",", ".")) > 0)) return;
     start(async () => {
-      await salvarAtual();
+      await salvarAtual(false);
       await adicionarItemColab(token, pedido.id, addProd, Number(addQtd.replace(",", ".")));
       setAddProd("");
       setAddQtd("");
@@ -125,7 +127,7 @@ function PedidoCard({
   }
   function remover(itemId: string) {
     start(async () => {
-      await salvarAtual();
+      await salvarAtual(false);
       await removerItemColab(token, itemId);
       router.refresh();
     });
