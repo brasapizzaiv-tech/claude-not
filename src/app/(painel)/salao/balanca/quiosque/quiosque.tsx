@@ -245,10 +245,10 @@ export function QuiosqueBalanca({
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gradient-to-b from-[#2b211b] via-[#211915] to-black text-white">
       {/* topo */}
-      <div className="flex items-center justify-between px-8 py-5">
+      <div className="flex shrink-0 items-center justify-between px-8 py-[clamp(0.5rem,2vh,1.25rem)]">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(2.5rem,11vh,8rem)] w-auto" />
+          <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(2rem,9vh,7rem)] w-auto" />
           <span className="text-[clamp(1rem,3vw,2rem)] font-light text-white/60">Buffet</span>
         </div>
         <Link
@@ -278,7 +278,8 @@ export function QuiosqueBalanca({
           {erro && <p className="max-w-lg text-lg text-red-300">{erro}</p>}
         </div>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center px-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6">
+         <div className="m-auto flex w-full flex-col items-center py-3">
           {/* instrução / resultado */}
           {estado === "resultado" && resultado ? (
             <div className="text-center">
@@ -354,6 +355,7 @@ export function QuiosqueBalanca({
               )}
             </>
           )}
+         </div>
         </div>
       )}
 
@@ -366,7 +368,7 @@ export function QuiosqueBalanca({
       )}
 
       {/* rodapé: preços de HOJE */}
-      <div className="grid grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-4 py-[clamp(0.5rem,2vh,1.5rem)] text-center">
+      <div className="grid shrink-0 grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-4 py-[clamp(0.4rem,1.6vh,1.25rem)] text-center">
         <div>
           <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-white">{buffetLivre > 0 ? moeda(buffetLivre) : "—"}</p>
           <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-white/40">Valor livre (à vontade)</p>

@@ -155,6 +155,7 @@ export function Sidebar({
 
   return (
     <div className="w-16 shrink-0">
+      <style>{`.sidebar-nav::-webkit-scrollbar{width:0;height:0}.sidebar-nav{scrollbar-width:none}`}</style>
       <aside className="fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center overflow-visible bg-[#C78340]">
         {/* Logo */}
         <Link href="/dashboard" className="mt-3 mb-1 shrink-0" title="Início">
@@ -166,8 +167,8 @@ export function Sidebar({
           />
         </Link>
 
-        {/* Navegação */}
-        <nav className="flex w-full flex-1 flex-col items-center gap-0.5 py-2">
+        {/* Navegação — rola quando não couber na altura da tela (telas baixas) */}
+        <nav className="sidebar-nav flex w-full flex-1 flex-col items-center gap-0.5 overflow-y-auto overflow-x-hidden py-2">
           {secoes.map((s, si) => (
             <div key={si} className="flex w-full flex-col items-center">
               {s.titulo && (
