@@ -1,6 +1,6 @@
 "use client";
 
-import { suprimento, sangria, fecharCaixa } from "../actions";
+import { suprimento, sangria } from "../actions";
 
 const inputCls =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -47,18 +47,6 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
           </button>
         </form>
       </details>
-
-      <form
-        action={fecharCaixa}
-        onSubmit={(e) => {
-          if (!confirm("Fechar o caixa agora? Depois de fechado não entra mais venda nele.")) e.preventDefault();
-        }}
-      >
-        <input type="hidden" name="caixa_id" value={caixaId} />
-        <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600">
-          🔒 Fechar caixa
-        </button>
-      </form>
     </div>
   );
 }

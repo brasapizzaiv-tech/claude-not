@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { abrirCaixa } from "../actions";
 import { servicoAgora } from "../util";
 import { CaixaAcoes } from "./acoes";
+import { FechamentoZ } from "./fechamento-z";
 import { ReceberComandas } from "./receber";
 
 const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito"];
@@ -221,7 +222,20 @@ export default async function CaixaPage({
             {caixa.nome} · <span className="font-medium text-emerald-600">Aberto</span> às {abertoHora}
           </p>
         </div>
-        <CaixaAcoes caixaId={caixa.id} />
+        <div className="flex flex-wrap items-start gap-2">
+          <CaixaAcoes caixaId={caixa.id} />
+          <FechamentoZ
+            caixaId={caixa.id}
+            nome={caixa.nome}
+            abertoHora={abertoHora}
+            saldoInicial={saldoInicial}
+            vendasPorForma={[...vendasPorForma.entries()]}
+            suprimentos={suprimentos}
+            sangrias={sangrias}
+            totalVendas={totalVendas}
+            esperado={dinheiroEmCaixa}
+          />
+        </div>
       </div>
 
       {/* Frente: receber comandas (buscar, somar várias, pagar) */}

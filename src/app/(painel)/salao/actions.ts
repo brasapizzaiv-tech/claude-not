@@ -922,3 +922,62 @@ export async function fecharCaixa(formData: FormData) {
     .eq("id", caixaId);
   revalidatePath("/salao/caixa");
 }
+
+// Fechamento Z: confere o dinheiro contado x esperado, grava a quebra e o
+// resumo por forma de pagamento, e fecha o caixa.
+export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs: string) {
+  const supabase = await createClient();
+  const { data: caixa } = await supabase
+    .from("pdv_caixas")
+    .select("saldo_inicial")
+    .eq("id", caixaId)
+    .single();
+  if (!caixa) return { ok: false as const };
+
+  const { data: movs } = await supabase
+    .from("pdv_caixa_mov")
+    .select("tipo, forma_pagamento, valor")
+    .eq("caixa_id", caixaId);
+
+  const vendasPorForma: Record<string, number> = {};
+  let suprimentos = 0;
+  let sangrias = 0;
+  for (const m of movs ?? []) {
+    const v = Number(m.valor);
+    if (m.tipo === "venda") {
+      const f = m.forma_pagamento || "Outros";
+      vendasPorForma[f] = (vendasPorForma[f] || 0) + v;
+    } else if (m.tipo === "suprimento") suprimentos += v;
+    else if (m.tipo === "sangria") sangrias += v;
+  }
+  const saldoInicial = Number(caixa.saldo_inicial);
+  const vendasDinheiro = vendasPorForma["Dinheiro"] || 0;
+  const esperado = Math.round((saldoInicial + vendasDinheiro + suprimentos - sangrias) * 100) / 100;
+  const contado = Math.round(dinheiroContado * 100) / 100;
+  const quebra = Math.round((contado - esperado) * 100) / 100;
+  const totalVendas = Object.values(vendasPorForma).reduce((s, v) => s + v, 0);
+
+  const resumo = {
+    saldoInicial,
+    vendasPorForma,
+    totalVendas: Math.round(totalVendas * 100) / 100,
+    suprimentos: Math.round(suprimentos * 100) / 100,
+    sangrias: Math.round(sangrias * 100) / 100,
+  };
+
+  await supabase
+    .from("pdv_caixas")
+    .update({
+      status: "fechado",
+      fechado_em: new Date().toISOString(),
+      dinheiro_contado: contado,
+      dinheiro_esperado: esperado,
+      quebra,
+      resumo,
+      obs: obs || null,
+    })
+    .eq("id", caixaId);
+
+  revalidatePath("/salao/caixa");
+  return { ok: true as const, esperado, contado, quebra };
+}
