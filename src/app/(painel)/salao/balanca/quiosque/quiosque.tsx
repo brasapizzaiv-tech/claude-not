@@ -388,7 +388,7 @@ export function QuiosqueBalanca({
         {resultado && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-brasa.png" alt="" style={{ width: "18mm", height: "18mm", objectFit: "contain", margin: "0 auto 1mm" }} />
+            <img src="/logo-brasa.png" alt="" style={{ width: "22mm", height: "22mm", objectFit: "contain", margin: "0 auto 1mm" }} />
             <div style={{ fontSize: "13pt", fontWeight: "bold", textTransform: "uppercase" }}>
               {cupom.nome}
             </div>
@@ -437,15 +437,17 @@ export function QuiosqueBalanca({
       <style>{`
         .cupom-print { display: none; }
         @media print {
-          @page { size: 80mm auto; margin: 0; }
+          @page { size: 72mm auto; margin: 0; }
           html, body { margin: 0 !important; background: #fff !important; }
           body * { visibility: hidden; }
-          .cupom-print, .cupom-print * { visibility: visible; color: #000 !important; }
+          .cupom-print, .cupom-print * { visibility: visible; color: #000 !important; background: transparent !important; }
           .cupom-print {
             display: block; position: absolute; left: 0; top: 0;
-            width: 80mm; box-sizing: border-box; padding: 4mm 3mm;
-            font-family: 'Courier New', monospace; font-size: 12pt; line-height: 1.35;
+            width: 72mm; box-sizing: border-box; padding: 3mm 3mm;
+            font-family: 'Courier New', monospace; font-size: 11pt; line-height: 1.3;
           }
+          /* Logo laranja vira preto sólido para sair nítida na térmica */
+          .cupom-print img { filter: brightness(0) !important; }
         }
       `}</style>
     </div>

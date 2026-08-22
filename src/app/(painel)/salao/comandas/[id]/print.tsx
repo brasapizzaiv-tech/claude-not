@@ -13,19 +13,20 @@ export function ImprimirComanda() {
       </button>
       <style>{`
         @media print {
-          @page { size: 80mm auto; margin: 0; }
+          @page { size: 72mm auto; margin: 0; }
           html, body { margin: 0 !important; background: #fff !important; }
           body * { visibility: hidden; }
           .comanda-cupom, .comanda-cupom * { visibility: visible; }
           .comanda-cupom {
             position: absolute; left: 0; top: 0;
-            width: 80mm; box-sizing: border-box;
+            width: 72mm; box-sizing: border-box;
             border: none !important; border-radius: 0 !important;
             background: #fff !important; color: #000 !important;
-            padding: 4mm 3mm !important; margin: 0 !important;
+            padding: 3mm 3mm !important; margin: 0 !important;
           }
           .comanda-cupom * { color: #000 !important; background: transparent !important; }
-          .comanda-cupom img { filter: grayscale(1) contrast(1.5); }
+          /* Logo laranja vira preto sólido para sair nítida na térmica */
+          .comanda-cupom img { filter: brightness(0) !important; }
           .nao-imprimir { display: none !important; }
         }
       `}</style>
