@@ -58,6 +58,15 @@ export function Sidebar({
     ...extra,
   });
 
+  // Operação/Salão: mesas → caixa → balança → cardápio → garçom (submenu).
+  const salaoSub: Sub[] = [
+    { href: "/salao", label: "Salão / Mesas", desc: "Mapa de mesas e comandas", icon: "🍕" },
+    { href: "/salao/caixa", label: "Caixa", desc: "Frente de caixa e recebimentos", icon: "💰" },
+    { href: "/salao/balanca", label: "Balança", desc: "Pesagem do buffet", icon: "⚖️" },
+    { href: "/salao/cardapio", label: "Cardápio / Config", desc: "Itens, preços e configurações", icon: "📖" },
+    { href: "/garcom", label: "Garçom", desc: "Tela do garçom (tablet)", icon: "🧑‍🍳" },
+  ];
+
   // Setor de Compras: contagem → cotação → conferência (submenu, como o Financeiro).
   const comprasSub: Sub[] = [
     has("contagem") && { href: "/contagens", label: "Contagem de estoque", desc: "Conte o estoque atual", icon: "📋" },
@@ -94,9 +103,7 @@ export function Sidebar({
     {
       titulo: "Operação",
       itens: [
-        has("salao") && mod("salao"),
-        has("salao") && { key: "caixa", href: "/salao/caixa", label: "Caixa", icon: "💰" },
-        has("salao") && { key: "balanca", href: "/salao/balanca", label: "Balança", icon: "⚖️" },
+        has("salao") && { key: "salao", href: "/salao", label: "Salão", icon: "🍕", sub: salaoSub },
         has("etiquetas") && mod("etiquetas"),
       ].filter(Boolean) as Item[],
     },
@@ -244,8 +251,8 @@ export function Sidebar({
               <div className="p-1">
                 {itemAberto.sub.map((s) => {
                   const at =
-                    s.href === "/financeiro"
-                      ? pathname === "/financeiro"
+                    s.href === "/financeiro" || s.href === "/salao"
+                      ? pathname === s.href
                       : pathname === s.href || pathname.startsWith(s.href + "/");
                   return (
                     <Link

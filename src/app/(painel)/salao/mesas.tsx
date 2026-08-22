@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { criarComandaMesa } from "./actions";
 
 const brl = (n: number) =>
@@ -21,8 +22,43 @@ export function MesasGrid({
   destino?: string;
   admin?: boolean;
 }) {
+  const router = useRouter();
   const [busca, setBusca] = useState("");
   const [situacao, setSituacao] = useState<"todas" | "livres" | "ocupadas">("todas");
+  const [pgto, setPgto] = useState("");
+  const [pgtoErro, setPgtoErro] = useState("");
+  const pgtoRef = useRef<HTMLInputElement>(null);
+
+  // Nº da comanda → id (todas as comandas abertas do salão).
+  const numeroParaId = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const mesa of mesas) for (const c of mesa.comandas) m.set(c.numero, c.id);
+    return m;
+  }, [mesas]);
+
+  // Pagamento rápido: aceita o nº digitado OU o QR lido pelo leitor
+  // (o QR contém a URL .../salao/comandas/<uuid>). Vai direto ao caixa
+  // com a comanda já selecionada.
+  function irPagamento() {
+    const v = pgto.trim();
+    if (!v) return;
+    const uuid = v.match(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+    );
+    let id: string | undefined;
+    if (uuid) id = uuid[0];
+    else {
+      const n = Number(v.replace(/\D/g, ""));
+      if (n) id = numeroParaId.get(n);
+    }
+    if (!id) {
+      setPgtoErro(`Comanda “${v}” não encontrada (aberta).`);
+      return;
+    }
+    setPgtoErro("");
+    setPgto("");
+    router.push(`/salao/caixa?abrir=${id}`);
+  }
 
   const filtradas = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -37,6 +73,36 @@ export function MesasGrid({
 
   return (
     <div>
+      {/* Pagamento rápido: nº da comanda ou leitura do QR pelo leitor */}
+      {admin && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 rounded-2xl border-2 border-emerald-500/60 bg-emerald-50 px-4 py-3 focus-within:border-emerald-600 dark:bg-emerald-500/10">
+            <span className="text-2xl">💳</span>
+            <input
+              ref={pgtoRef}
+              value={pgto}
+              onChange={(e) => {
+                setPgto(e.target.value);
+                if (pgtoErro) setPgtoErro("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") irPagamento();
+              }}
+              autoFocus
+              placeholder="Pagamento rápido — digite o nº da comanda ou leia o QR e tecle Enter"
+              className="min-w-0 flex-1 bg-transparent text-lg font-medium text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-50"
+            />
+            <button
+              onClick={irPagamento}
+              className="shrink-0 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              Ir ao caixa
+            </button>
+          </div>
+          {pgtoErro && <p className="mt-1 px-1 text-sm text-red-600">{pgtoErro}</p>}
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <select
@@ -54,28 +120,6 @@ export function MesasGrid({
           placeholder="Buscar por mesa..."
           className="min-w-56 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         />
-        {admin && (
-          <>
-            <Link
-              href="/salao/caixa"
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
-              💵 Caixa
-            </Link>
-            <Link
-              href="/salao/cardapio"
-              className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-            >
-              Cardápio / Config
-            </Link>
-            <Link
-              href="/garcom"
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-            >
-              🧑‍🍳 Garçom
-            </Link>
-          </>
-        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">

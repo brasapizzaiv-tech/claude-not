@@ -19,7 +19,12 @@ type Mov = {
   criado_em: string;
 };
 
-export default async function CaixaPage() {
+export default async function CaixaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ abrir?: string }>;
+}) {
+  const { abrir } = await searchParams;
   const supabase = await createClient();
   const { data: caixa } = await supabase
     .from("pdv_caixas")
@@ -205,7 +210,7 @@ export default async function CaixaPage() {
 
       {/* Frente: receber comandas (buscar, somar várias, pagar) */}
       <div className="mb-4">
-        <ReceberComandas comandas={comandasReceber} formas={FORMAS_PGTO} servPercent={servPercent} />
+        <ReceberComandas comandas={comandasReceber} formas={FORMAS_PGTO} servPercent={servPercent} autoAbrir={abrir} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">

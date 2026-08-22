@@ -33,15 +33,20 @@ export function ReceberComandas({
   comandas,
   formas,
   servPercent,
+  autoAbrir,
 }: {
   comandas: Comanda[];
   formas: string[];
   servPercent: number;
+  autoAbrir?: string;
 }) {
   const router = useRouter();
+  const alvo = autoAbrir ? comandas.find((c) => c.id === autoAbrir) : undefined;
   const [proc, start] = useTransition();
-  const [busca, setBusca] = useState("");
-  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [busca, setBusca] = useState(alvo ? String(alvo.numero) : "");
+  const [sel, setSel] = useState<Set<string>>(
+    alvo ? new Set([alvo.id]) : new Set(),
+  );
   const [formaSel, setFormaSel] = useState<string>("");
   const [recebido, setRecebido] = useState(""); // dinheiro entregue (p/ troco)
   const [split, setSplit] = useState(false);
