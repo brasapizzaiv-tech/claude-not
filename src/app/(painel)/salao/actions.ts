@@ -621,6 +621,74 @@ export async function pagarValores(
   return { ok: true as const, quitou };
 }
 
+// Frente de caixa (3 colunas): paga os ITENS/BUFFET selecionados de uma ou mais
+// comandas, com desconto/acréscimo já embutido nos pagamentos. Marca cada item
+// pago pelo valor devido (com serviço), fecha a comanda que quitou e lança o(s)
+// pagamento(s) no caixa aberto.
+export async function pagarSelecao(
+  sel: { comandaId: string; itemIds: string[]; buffet: boolean }[],
+  pagamentos: { forma: string; valor: number }[],
+) {
+  const supabase = await createClient();
+  if (sel.length === 0) return { ok: false as const };
+  const cfg = await pdvCfg(supabase);
+  const fator = 1 + servicoAgora(cfg) / 100;
+  const caixaId = await caixaAberto(supabase);
+
+  const numeros: number[] = [];
+  for (const s of sel) {
+    for (const itemId of s.itemIds) {
+      const { data: row } = await supabase
+        .from("pdv_comanda_itens")
+        .select("qtd, preco_unit")
+        .eq("id", itemId)
+        .single();
+      if (!row) continue;
+      const payable = Math.round(Number(row.qtd) * Number(row.preco_unit) * fator * 100) / 100;
+      await supabase
+        .from("pdv_comanda_itens")
+        .update({ valor_pago: payable, pago: true })
+        .eq("id", itemId);
+    }
+    if (s.buffet) {
+      const { data: c } = await supabase
+        .from("pdv_comandas")
+        .select("valor_buffet")
+        .eq("id", s.comandaId)
+        .single();
+      const payable = Math.round(Number(c?.valor_buffet ?? 0) * fator * 100) / 100;
+      await supabase
+        .from("pdv_comandas")
+        .update({ buffet_valor_pago: payable, buffet_pago: true })
+        .eq("id", s.comandaId);
+    }
+    const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", s.comandaId).single();
+    if (com?.numero != null) numeros.push(com.numero);
+    await fecharSeQuitou(supabase, s.comandaId, cfg);
+  }
+
+  const totalPago =
+    Math.round(pagamentos.reduce((a, p) => a + (p.valor > 0 ? p.valor : 0), 0) * 100) / 100;
+  if (caixaId && sel.length > 0) {
+    const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
+    for (const p of pagamentos) {
+      if (!(p.valor > 0)) continue;
+      await supabase.from("pdv_caixa_mov").insert({
+        caixa_id: caixaId,
+        tipo: "venda",
+        descricao: desc,
+        forma_pagamento: p.forma,
+        valor: p.valor,
+        comanda_id: sel[0].comandaId,
+      });
+    }
+  }
+
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao");
+  return { ok: true as const, numeros, total: totalPago };
+}
+
 // Frente de caixa: recebe VÁRIAS comandas de uma vez (somadas), com uma ou mais
 // formas de pagamento (split). Cobra só o que falta, marca tudo pago e fecha.
 export async function receberComandas(
