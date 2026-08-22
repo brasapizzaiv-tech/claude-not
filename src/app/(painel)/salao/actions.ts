@@ -628,12 +628,35 @@ export async function pagarValores(
 export async function pagarSelecao(
   sel: { comandaId: string; itemIds: string[]; buffet: boolean }[],
   pagamentos: { forma: string; valor: number }[],
+  extras: { comandaId: string; itemId: string; qtd: number }[] = [],
+  clienteId?: string | null,
 ) {
   const supabase = await createClient();
-  if (sel.length === 0) return { ok: false as const };
+  if (sel.length === 0 && extras.length === 0) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
   const fator = 1 + servicoAgora(cfg) / 100;
   const caixaId = await caixaAberto(supabase);
+
+  // Produtos avulsos inseridos no caixa: cria o item na comanda já pago.
+  for (const e of extras) {
+    if (!(e.qtd > 0)) continue;
+    const { data: prod } = await supabase
+      .from("pdv_itens")
+      .select("nome, preco")
+      .eq("id", e.itemId)
+      .single();
+    if (!prod) continue;
+    const payable = Math.round(Number(prod.preco) * e.qtd * fator * 100) / 100;
+    await supabase.from("pdv_comanda_itens").insert({
+      comanda_id: e.comandaId,
+      item_id: e.itemId,
+      descricao: prod.nome,
+      qtd: e.qtd,
+      preco_unit: prod.preco,
+      valor_pago: payable,
+      pago: true,
+    });
+  }
 
   const numeros: number[] = [];
   for (const s of sel) {
@@ -667,9 +690,27 @@ export async function pagarSelecao(
     await fecharSeQuitou(supabase, s.comandaId, cfg);
   }
 
+  // Comandas que receberam SÓ produtos avulsos (fora do "sel") também fecham.
+  const idsSel = new Set(sel.map((s) => s.comandaId));
+  const soExtras = [...new Set(extras.map((e) => e.comandaId))].filter((id) => !idsSel.has(id));
+  for (const id of soExtras) {
+    const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", id).single();
+    if (com?.numero != null) numeros.push(com.numero);
+    await fecharSeQuitou(supabase, id, cfg);
+  }
+
+  // Vincula o cliente às comandas envolvidas (destinatário de uma NF-e futura).
+  if (clienteId) {
+    const todas = [...new Set([...sel.map((s) => s.comandaId), ...extras.map((e) => e.comandaId)])];
+    if (todas.length > 0) {
+      await supabase.from("pdv_comandas").update({ cliente_id: clienteId }).in("id", todas);
+    }
+  }
+
   const totalPago =
     Math.round(pagamentos.reduce((a, p) => a + (p.valor > 0 ? p.valor : 0), 0) * 100) / 100;
-  if (caixaId && sel.length > 0) {
+  const primeiraComanda = sel[0]?.comandaId ?? extras[0]?.comandaId;
+  if (caixaId && primeiraComanda) {
     const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
     for (const p of pagamentos) {
       if (!(p.valor > 0)) continue;
@@ -679,7 +720,7 @@ export async function pagarSelecao(
         descricao: desc,
         forma_pagamento: p.forma,
         valor: p.valor,
-        comanda_id: sel[0].comandaId,
+        comanda_id: primeiraComanda,
       });
     }
   }

@@ -115,7 +115,7 @@ export default async function CaixaPage({
   if (abertas.length > 0) {
     const { data: itc } = await supabase
       .from("pdv_comanda_itens")
-      .select("id, comanda_id, qtd, preco_unit, pago, valor_pago, produtos(nome)")
+      .select("id, comanda_id, qtd, preco_unit, pago, valor_pago, descricao")
       .in("comanda_id", abertas.map((c) => c.id));
     for (const i of (itc as unknown as {
       id: string;
@@ -124,12 +124,12 @@ export default async function CaixaPage({
       preco_unit: number;
       pago: boolean;
       valor_pago: number;
-      produtos: { nome?: string } | null;
+      descricao: string | null;
     }[]) ?? []) {
       const arr = itensPorCom.get(i.comanda_id) ?? [];
       arr.push({
         id: i.id,
-        nome: i.produtos?.nome ?? "Item",
+        nome: i.descricao ?? "Item",
         qtd: Number(i.qtd),
         preco: Number(i.preco_unit),
         pago: !!i.pago,
@@ -162,6 +162,22 @@ export default async function CaixaPage({
     };
   });
   const servPercent = serv;
+
+  // Cardápio (para "Inserir Produto") e clientes (para "Vincular Cliente").
+  const [{ data: menuRows }, { data: cliRows }] = await Promise.all([
+    supabase.from("pdv_itens").select("id, nome, preco, ativo").order("nome"),
+    supabase.from("clientes").select("id, nome, cpf_cnpj").eq("ativo", true).order("nome"),
+  ]);
+  const menu =
+    ((menuRows as { id: string; nome: string; preco: number; ativo: boolean | null }[]) ?? [])
+      .filter((m) => m.ativo !== false)
+      .map((m) => ({ id: m.id, nome: m.nome, preco: Number(m.preco) }));
+  const clientes =
+    ((cliRows as { id: string; nome: string; cpf_cnpj: string | null }[]) ?? []).map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      cpfCnpj: c.cpf_cnpj,
+    }));
 
   const saldoInicial = Number(caixa.saldo_inicial);
   const vendasPorForma = new Map<string, number>();
@@ -210,7 +226,14 @@ export default async function CaixaPage({
 
       {/* Frente: receber comandas (buscar, somar várias, pagar) */}
       <div className="mb-4">
-        <ReceberComandas comandas={comandasReceber} formas={FORMAS_PGTO} servPercent={servPercent} autoAbrir={abrir} />
+        <ReceberComandas
+          comandas={comandasReceber}
+          formas={FORMAS_PGTO}
+          servPercent={servPercent}
+          autoAbrir={abrir}
+          menu={menu}
+          clientes={clientes}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
