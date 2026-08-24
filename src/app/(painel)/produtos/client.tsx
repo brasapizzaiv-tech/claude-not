@@ -11,6 +11,7 @@ import {
   vincularProdutosAoFornecedor,
   vincularSemFornecedorNaFeira,
   marcarExclusivo,
+  marcarExclusivosEmLote,
 } from "./actions";
 
 type Fornecedor = { id: string; nome: string };
@@ -77,9 +78,20 @@ export function ProdutosClient({
       return n;
     });
     start(async () => {
-      await marcarExclusivo(prod.id, marcar);
+      const r = await marcarExclusivo(prod.id, marcar);
+      // Servidor viu 2+ fornecedores: reverte e abre pra escolher qual fica.
+      if (marcar && !r.ok && "precisaEscolher" in r) {
+        setExclusivos((s) => {
+          const n = new Set(s);
+          n.delete(prod.id);
+          return n;
+        });
+        setForcarExc(true);
+        setFornDe(prod);
+      }
     });
   }
+
 
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -104,6 +116,23 @@ export function ProdutosClient({
       return okBusca && okCat;
     });
   }, [produtos, busca, categoria]);
+
+  function marcarTodosExclusivos() {
+    const ids = filtrados.map((p) => p.id);
+    if (ids.length === 0) return;
+    start(async () => {
+      const r = await marcarExclusivosEmLote(ids);
+      setExclusivos((s) => {
+        const n = new Set(s);
+        for (const id of r.marcados) n.add(id);
+        return n;
+      });
+      setBulkMsg(
+        `✓ ${r.marcados.length} produto(s) marcado(s) como exclusivo(s).` +
+          (r.pulados > 0 ? ` (${r.pulados} com 2+ fornecedores — marque um a um pra escolher qual fica)` : ""),
+      );
+    });
+  }
 
   const todosSelecionados =
     filtrados.length > 0 && filtrados.every((p) => sel.has(p.id));
@@ -249,7 +278,17 @@ export function ProdutosClient({
                 <th className="px-4 py-3">Un.</th>
                 <th className="px-4 py-3 text-right">Ideal</th>
                 <th className="px-4 py-3">Fornecedores</th>
-                <th className="px-4 py-3 text-center" title="Exclusivo (1 fornecedor)">🔒 Excl.</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap" title="Exclusivo (1 fornecedor)">
+                  🔒 Excl.
+                  <button
+                    type="button"
+                    onClick={marcarTodosExclusivos}
+                    className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium normal-case text-orange-700 hover:bg-orange-200 dark:bg-orange-500/15 dark:text-orange-300"
+                    title="Marcar todos os produtos filtrados como exclusivos (os que têm 1 fornecedor)"
+                  >
+                    todos
+                  </button>
+                </th>
                 <th className="px-4 py-3">Preço ref.</th>
                 <th className="px-4 py-3"></th>
               </tr>

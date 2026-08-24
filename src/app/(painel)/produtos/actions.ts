@@ -104,6 +104,31 @@ export async function marcarExclusivo(produtoId: string, valor: boolean) {
   return { ok: true as const };
 }
 
+// Marca vários produtos como exclusivos de uma vez. Só marca os que têm no
+// máximo 1 fornecedor; os que têm 2+ ficam de fora (precisam escolher qual).
+export async function marcarExclusivosEmLote(produtoIds: string[]) {
+  const supabase = await createClient();
+  if (produtoIds.length === 0) return { ok: true as const, marcados: [] as string[], pulados: 0 };
+  const cont = new Map<string, number>();
+  // Conta fornecedores por produto (paginando por segurança).
+  for (let de = 0; ; de += 1000) {
+    const { data: pg } = await supabase
+      .from("fornecedor_produto")
+      .select("produto_id")
+      .in("produto_id", produtoIds)
+      .range(de, de + 999);
+    if (!pg || pg.length === 0) break;
+    for (const r of pg) cont.set(r.produto_id, (cont.get(r.produto_id) ?? 0) + 1);
+    if (pg.length < 1000) break;
+  }
+  const marcados = produtoIds.filter((id) => (cont.get(id) ?? 0) <= 1);
+  if (marcados.length > 0) {
+    await supabase.from("produtos").update({ exclusivo: true }).in("id", marcados);
+  }
+  revalidatePath("/produtos");
+  return { ok: true as const, marcados, pulados: produtoIds.length - marcados.length };
+}
+
 // Vincula VÁRIOS produtos a um fornecedor de uma vez (aditivo — mantém os
 // fornecedores que os produtos já tiverem).
 export async function vincularProdutosAoFornecedor(
