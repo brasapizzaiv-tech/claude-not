@@ -20,6 +20,12 @@ export async function GET(req: NextRequest) {
   const cfg = data as ConfigSefaz | null;
   if (!cfg) return NextResponse.json({ erro: "sem configuração" });
 
+  // Batimento: marca que o cron horário realmente rodou.
+  await admin
+    .from("config_sefaz")
+    .update({ cron_hora_em: new Date().toISOString() })
+    .eq("id", cfg.id);
+
   const r = await rodarBuscaSefaz(admin, cfg);
   return NextResponse.json({ ok: !r.erro, ...r });
 }

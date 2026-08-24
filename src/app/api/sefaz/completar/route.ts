@@ -25,6 +25,13 @@ export async function GET(req: NextRequest) {
   const cfg = data as ConfigSefaz | null;
   if (!cfg) return NextResponse.json({ erro: "sem configuração" });
 
+  // Batimento: marca que o cron REALMENTE rodou (passou pela auth). Serve para
+  // verificar se o Vercel Cron está disparando.
+  await admin
+    .from("config_sefaz")
+    .update({ cron_completar_em: new Date().toISOString() })
+    .eq("id", cfg.id);
+
   const agora = Date.now();
 
   // Notas manifestadas nas últimas 3 h (e há pelo menos 1 min, dando tempo do
