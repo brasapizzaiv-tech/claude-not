@@ -71,16 +71,20 @@ export async function excluirProduto(formData: FormData) {
 export async function definirFornecedoresDoProduto(
   produtoId: string,
   fornecedorIds: string[],
+  exclusivo = false,
 ) {
   const supabase = await createClient();
+  // Produto exclusivo: garante no máximo 1 fornecedor.
+  const ids = exclusivo ? fornecedorIds.slice(0, 1) : fornecedorIds;
   await supabase.from("fornecedor_produto").delete().eq("produto_id", produtoId);
-  if (fornecedorIds.length > 0) {
+  if (ids.length > 0) {
     await supabase.from("fornecedor_produto").insert(
-      fornecedorIds.map((fornecedor_id) => ({ produto_id: produtoId, fornecedor_id })),
+      ids.map((fornecedor_id) => ({ produto_id: produtoId, fornecedor_id })),
     );
   }
+  await supabase.from("produtos").update({ exclusivo }).eq("id", produtoId);
   revalidatePath("/produtos");
-  return { ok: true, total: fornecedorIds.length };
+  return { ok: true, total: ids.length };
 }
 
 // Vincula VÁRIOS produtos a um fornecedor de uma vez (aditivo — mantém os
@@ -91,12 +95,22 @@ export async function vincularProdutosAoFornecedor(
 ) {
   const supabase = await createClient();
   if (!fornecedorId || produtoIds.length === 0) return { ok: false, total: 0 };
-  await supabase.from("fornecedor_produto").upsert(
-    produtoIds.map((produto_id) => ({ produto_id, fornecedor_id: fornecedorId })),
-    { onConflict: "fornecedor_id,produto_id", ignoreDuplicates: true },
-  );
+  // Não vincula em lote produtos exclusivos (eles têm 1 fornecedor fixo).
+  const { data: exc } = await supabase
+    .from("produtos")
+    .select("id")
+    .in("id", produtoIds)
+    .eq("exclusivo", true);
+  const bloqueados = new Set((exc ?? []).map((e) => e.id));
+  const alvos = produtoIds.filter((id) => !bloqueados.has(id));
+  if (alvos.length > 0) {
+    await supabase.from("fornecedor_produto").upsert(
+      alvos.map((produto_id) => ({ produto_id, fornecedor_id: fornecedorId })),
+      { onConflict: "fornecedor_id,produto_id", ignoreDuplicates: true },
+    );
+  }
   revalidatePath("/produtos");
-  return { ok: true, total: produtoIds.length };
+  return { ok: true, total: alvos.length, pulados: bloqueados.size };
 }
 
 // Cria um fornecedor "Hortifrúti / Feira" (se não existir) e vincula a ele

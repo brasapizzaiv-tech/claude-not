@@ -107,7 +107,11 @@ export function ProdutosClient({
         return n;
       });
       const nome = fornecedores.find((f) => f.id === bulkForn)?.nome ?? "fornecedor";
-      setBulkMsg(`✓ ${r.total} produto(s) vinculado(s) a ${nome}.`);
+      const pulados = (r as { pulados?: number }).pulados ?? 0;
+      setBulkMsg(
+        `✓ ${r.total} produto(s) vinculado(s) a ${nome}.` +
+          (pulados > 0 ? ` (${pulados} exclusivo(s) pulado(s))` : ""),
+      );
       setSel(new Set());
       router.refresh();
     });
@@ -266,16 +270,26 @@ export function ProdutosClient({
                     {(() => {
                       const n = vinc.get(p.id)?.size ?? 0;
                       return (
-                        <button
-                          onClick={() => setFornDe(p)}
-                          className={`rounded-md px-2 py-1 text-xs font-medium ${
-                            n === 0
-                              ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
-                              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
-                          }`}
-                        >
-                          {n === 0 ? "sem fornecedor" : `${n} fornecedor${n > 1 ? "es" : ""}`}
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => setFornDe(p)}
+                            className={`rounded-md px-2 py-1 text-xs font-medium ${
+                              n === 0
+                                ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+                                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                            }`}
+                          >
+                            {n === 0 ? "sem fornecedor" : `${n} fornecedor${n > 1 ? "es" : ""}`}
+                          </button>
+                          {p.exclusivo && (
+                            <span
+                              title="Fornecedor exclusivo"
+                              className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
+                            >
+                              🔒 Exclusivo
+                            </span>
+                          )}
+                        </div>
                       );
                     })()}
                   </td>
@@ -597,6 +611,7 @@ function FornecedoresModal({
   onSalvo: (ids: string[]) => void;
 }) {
   const [sel, setSel] = useState<Set<string>>(new Set(selecionados));
+  const [exclusivo, setExclusivo] = useState(produto.exclusivo);
   const [busca, setBusca] = useState("");
   const [p, start] = useTransition();
 
@@ -606,6 +621,10 @@ function FornecedoresModal({
 
   function toggle(id: string) {
     setSel((s) => {
+      if (exclusivo) {
+        // Exclusivo = só 1 fornecedor: clicar troca a seleção (ou desmarca).
+        return s.has(id) ? new Set() : new Set([id]);
+      }
       const n = new Set(s);
       if (n.has(id)) n.delete(id);
       else n.add(id);
@@ -613,10 +632,16 @@ function FornecedoresModal({
     });
   }
 
+  function alternarExclusivo(v: boolean) {
+    setExclusivo(v);
+    // Ao ligar exclusivo, mantém no máximo 1 fornecedor marcado.
+    if (v && sel.size > 1) setSel(new Set([[...sel][0]]));
+  }
+
   function salvar() {
     start(async () => {
-      const ids = [...sel];
-      await definirFornecedoresDoProduto(produto.id, ids);
+      const ids = exclusivo ? [...sel].slice(0, 1) : [...sel];
+      await definirFornecedoresDoProduto(produto.id, ids, exclusivo);
       onSalvo(ids);
     });
   }
@@ -627,13 +652,25 @@ function FornecedoresModal({
         <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
           <p className="text-xs uppercase text-zinc-400">Fornecedores de</p>
           <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{produto.nome}</p>
+          <label className="mt-3 flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800">
+            <input
+              type="checkbox"
+              checked={exclusivo}
+              onChange={(e) => alternarExclusivo(e.target.checked)}
+            />
+            <span className="text-zinc-700 dark:text-zinc-200">
+              🔒 Fornecedor exclusivo <span className="text-zinc-400">(só 1 — vai só pra ele na cotação)</span>
+            </span>
+          </label>
           <input
             placeholder="Buscar fornecedor..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className={`${inputCls} mt-3`}
           />
-          <p className="mt-1 text-xs text-zinc-400">{sel.size} marcado(s)</p>
+          <p className="mt-1 text-xs text-zinc-400">
+            {sel.size} marcado(s){exclusivo ? " · exclusivo: escolha 1 fornecedor" : ""}
+          </p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">

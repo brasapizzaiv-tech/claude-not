@@ -64,6 +64,7 @@ export type Produto = {
   estoque_minimo: number;
   estoque_ideal: number;
   fardo: number;
+  exclusivo: boolean;
   validade_dias: number | null;
   validade_congelado: number | null;
   validade_resfriado: number | null;
