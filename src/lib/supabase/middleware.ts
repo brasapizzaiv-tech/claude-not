@@ -42,7 +42,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/balanca-teste") ||
     path.startsWith("/marmitas") ||
     path.startsWith("/api/marmitas") ||
-    path.startsWith("/api/sefaz/cron") ||
+    path.startsWith("/api/sefaz/") ||
     path.startsWith("/api/contagem/cron");
 
   if (!user && !isPublic) {
