@@ -25,6 +25,97 @@ export async function criarCotacao(formData: FormData) {
 
 type ItemCotacao = { produto_id: string; qtd: number };
 
+// Gera (e mantém em sincronia) os pedidos dos itens EXCLUSIVOS da cotação —
+// produtos com 1 único fornecedor, que não precisam de comparação. Assim já dá
+// para enviar o pedido a esses fornecedores sem esperar as respostas dos outros.
+// Só gera para fornecedores "exclusivos puros" (que não competem em nenhum item
+// não-exclusivo desta cotação), para não conflitar com o "Gerar pedidos" depois.
+export async function gerarPedidosExclusivos(cotacaoId: string) {
+  const supabase = await createClient();
+  const { data: cot } = await supabase
+    .from("cotacoes")
+    .select("pedidos_gerados_em")
+    .eq("id", cotacaoId)
+    .maybeSingle();
+  if (cot?.pedidos_gerados_em) return { ok: false as const, travada: true as const };
+
+  const { data: itens } = await supabase
+    .from("cotacao_itens")
+    .select("produto_id, qtd")
+    .eq("cotacao_id", cotacaoId)
+    .gt("qtd", 0);
+  if (!itens || itens.length === 0) return { ok: true as const, gerados: 0 };
+
+  const produtoIds = itens.map((i) => i.produto_id as string);
+  const qtdDe = new Map(itens.map((i) => [i.produto_id as string, Number(i.qtd)]));
+
+  const { data: vinc } = await supabase
+    .from("fornecedor_produto")
+    .select("produto_id, fornecedor_id")
+    .in("produto_id", produtoIds);
+  const sups = new Map<string, string[]>();
+  for (const v of vinc ?? []) {
+    const arr = sups.get(v.produto_id as string) ?? [];
+    arr.push(v.fornecedor_id as string);
+    sups.set(v.produto_id as string, arr);
+  }
+
+  // Itens exclusivos (1 fornecedor) agrupados por fornecedor; e fornecedores que
+  // também competem em algum item não-exclusivo (esses ficam para a comparação).
+  const exclDoForn = new Map<string, { produto_id: string; qtd: number }[]>();
+  const fornMisto = new Set<string>();
+  for (const [pid, fs] of sups) {
+    if (fs.length === 1) {
+      const arr = exclDoForn.get(fs[0]) ?? [];
+      arr.push({ produto_id: pid, qtd: qtdDe.get(pid) ?? 0 });
+      exclDoForn.set(fs[0], arr);
+    } else if (fs.length > 1) {
+      for (const f of fs) fornMisto.add(f);
+    }
+  }
+
+  let gerados = 0;
+  for (const [forn, exItens] of exclDoForn) {
+    if (fornMisto.has(forn)) continue; // também compete em item não-exclusivo
+    const validos = exItens.filter((i) => i.qtd > 0);
+    if (validos.length === 0) continue;
+
+    let pedidoId: string | undefined;
+    const { data: ped } = await supabase
+      .from("pedidos")
+      .select("id")
+      .eq("cotacao_id", cotacaoId)
+      .eq("fornecedor_id", forn)
+      .maybeSingle();
+    if (ped) pedidoId = ped.id as string;
+    else {
+      const { data: novo } = await supabase
+        .from("pedidos")
+        .insert({ cotacao_id: cotacaoId, fornecedor_id: forn })
+        .select("id")
+        .single();
+      pedidoId = novo?.id as string | undefined;
+    }
+    if (!pedidoId) continue;
+
+    // Sincroniza os itens do pedido com as quantidades atuais.
+    await supabase.from("pedido_itens").delete().eq("pedido_id", pedidoId);
+    await supabase.from("pedido_itens").insert(
+      validos.map((i) => ({
+        pedido_id: pedidoId,
+        produto_id: i.produto_id,
+        qtd: i.qtd,
+        preco_unit: null,
+      })),
+    );
+    gerados++;
+  }
+
+  revalidatePath(`/cotacoes/${cotacaoId}/pedidos`);
+  revalidatePath(`/cotacoes/${cotacaoId}`);
+  return { ok: true as const, gerados };
+}
+
 export async function salvarCotacaoItens(
   cotacaoId: string,
   itens: ItemCotacao[],

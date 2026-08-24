@@ -8,6 +8,7 @@ import {
   salvarCotacaoItens,
   fecharCotacao,
   reabrirCotacao,
+  gerarPedidosExclusivos,
 } from "../actions";
 
 export type LinhaProduto = {
@@ -90,8 +91,14 @@ export function CotacaoClient({
   function salvar() {
     startSave(async () => {
       const r = await salvarCotacaoItens(cotacao.id, montarItens());
-      setMsg(`Salvo! (${r?.gravados ?? 0} itens para cotar)`);
-      setTimeout(() => setMsg(null), 4000);
+      // Itens exclusivos (1 fornecedor) já viram pedido, prontos para enviar.
+      const ex = await gerarPedidosExclusivos(cotacao.id);
+      const extra =
+        ex.ok && ex.gerados > 0
+          ? ` · ${ex.gerados} fornecedor(es) exclusivo(s) já com pedido pronto (veja em “Ver pedidos”)`
+          : "";
+      setMsg(`Salvo! (${r?.gravados ?? 0} itens para cotar)${extra}`);
+      setTimeout(() => setMsg(null), 6000);
     });
   }
 
@@ -156,6 +163,12 @@ export function CotacaoClient({
             className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Comparar preços →
+          </Link>
+          <Link
+            href={`/cotacoes/${cotacao.id}/pedidos`}
+            className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+          >
+            Ver pedidos →
           </Link>
           <button
             onClick={alternarStatus}
