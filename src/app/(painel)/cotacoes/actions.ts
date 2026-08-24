@@ -155,7 +155,15 @@ export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
     porForn.set(e.fornecedor_id, arr);
   }
 
+  // Fornecedores que já tiveram pedido adiantado — não gera de novo.
+  const { data: jaTem } = await supabase
+    .from("pedidos")
+    .select("fornecedor_id")
+    .eq("cotacao_id", cotacaoId);
+  const comPedido = new Set((jaTem ?? []).map((p) => p.fornecedor_id as string));
+
   for (const [fornId, itens] of porForn) {
+    if (comPedido.has(fornId)) continue; // já foi adiantado
     const { data: ped } = await supabase
       .from("pedidos")
       .insert({ cotacao_id: cotacaoId, fornecedor_id: fornId })
@@ -183,6 +191,54 @@ export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
   revalidatePath(`/cotacoes/${cotacaoId}/pedidos`);
   revalidatePath(`/cotacoes/${cotacaoId}/comparar`);
   return { ok: true };
+}
+
+// Adianta o pedido de UM fornecedor (sem travar a cotação nem esperar os outros).
+export async function adiantarPedidoFornecedor(
+  cotacaoId: string,
+  fornecedorId: string,
+  escolhas: Escolha[],
+) {
+  const supabase = await createClient();
+  const { data: cot } = await supabase
+    .from("cotacoes")
+    .select("pedidos_gerados_em")
+    .eq("id", cotacaoId)
+    .maybeSingle();
+  if (cot?.pedidos_gerados_em) return { ok: false as const, travada: true as const };
+
+  // Já existe pedido desse fornecedor nesta cotação?
+  const { data: existe } = await supabase
+    .from("pedidos")
+    .select("id")
+    .eq("cotacao_id", cotacaoId)
+    .eq("fornecedor_id", fornecedorId)
+    .maybeSingle();
+  if (existe) return { ok: false as const, jaGerado: true as const };
+
+  const itens = escolhas.filter((e) => e.fornecedor_id === fornecedorId && e.qtd > 0);
+  if (itens.length === 0) return { ok: false as const, semItens: true as const };
+
+  const { data: ped } = await supabase
+    .from("pedidos")
+    .insert({ cotacao_id: cotacaoId, fornecedor_id: fornecedorId })
+    .select("id")
+    .single();
+  if (ped) {
+    await supabase.from("pedido_itens").insert(
+      itens.map((i) => ({
+        pedido_id: ped.id,
+        produto_id: i.produto_id,
+        qtd: i.qtd,
+        preco_unit: i.preco_unit,
+        marca: i.marca ?? null,
+      })),
+    );
+  }
+
+  revalidatePath(`/cotacoes/${cotacaoId}/pedidos`);
+  revalidatePath(`/cotacoes/${cotacaoId}/comparar`);
+  return { ok: true as const };
 }
 
 // Cria uma NOVA cotação só com os itens que ainda não foram pedidos na atual.

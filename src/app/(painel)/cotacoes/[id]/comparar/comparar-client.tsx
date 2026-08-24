@@ -4,7 +4,7 @@ import { Fragment, useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dataBR } from "@/lib/format";
-import { gerarPedidos, novaCotacaoDosFaltantes } from "../../actions";
+import { gerarPedidos, novaCotacaoDosFaltantes, adiantarPedidoFornecedor } from "../../actions";
 
 export type FornecedorCol = {
   id: string;
@@ -83,6 +83,7 @@ export function CompararClient({
   exclusivos,
   ultimaCompra,
   travada,
+  fornecedoresComPedido,
 }: {
   cotacaoId: string;
   produtos: ProdutoLinha[];
@@ -90,9 +91,12 @@ export function CompararClient({
   exclusivos: ExclusivoLinha[];
   ultimaCompra: Record<string, { forn: string; preco: number | null; data: string }>;
   travada: boolean;
+  fornecedoresComPedido: string[];
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
+  const [gerados, setGerados] = useState<Set<string>>(() => new Set(fornecedoresComPedido));
+  const [adiantando, setAdiantando] = useState<string | null>(null);
   const [fotoAberta, setFotoAberta] = useState<string | null>(null);
 
   // "Conferido": marca os itens que você já revisou / vai pedir.
@@ -311,6 +315,52 @@ export function CompararClient({
     });
   }
 
+  // Itens escolhidos de UM fornecedor (para adiantar só o pedido dele).
+  function escolhasDoForn(fid: string) {
+    const arr: {
+      fornecedor_id: string;
+      produto_id: string;
+      qtd: number;
+      preco_unit: number | null;
+      marca: string | null;
+    }[] = [];
+    for (const p of produtos) {
+      const q = alocacaoDe(p.produto_id)[fid];
+      if (q) {
+        const { preco, marca } = precoDe(p, fid);
+        arr.push({ fornecedor_id: fid, produto_id: p.produto_id, qtd: q, preco_unit: preco, marca });
+      }
+    }
+    for (const e of exclusivos) {
+      if (e.fornecedorId === fid) {
+        arr.push({ fornecedor_id: fid, produto_id: e.produto_id, qtd: e.qtd, preco_unit: null, marca: null });
+      }
+    }
+    return arr;
+  }
+
+  function adiantar(fid: string, nome: string) {
+    const itens = escolhasDoForn(fid);
+    if (itens.length === 0) {
+      window.alert(`Nenhum item escolhido de ${nome}. Escolha ao menos um item desse fornecedor antes de adiantar.`);
+      return;
+    }
+    if (!window.confirm(`Adiantar o pedido de ${nome} agora (${itens.length} item(ns))? Os outros fornecedores continuam abertos.`))
+      return;
+    setAdiantando(fid);
+    startSave(async () => {
+      const r = await adiantarPedidoFornecedor(cotacaoId, fid, itens);
+      setAdiantando(null);
+      if (r.ok) {
+        setGerados((s) => new Set(s).add(fid));
+      } else if ("jaGerado" in r) {
+        setGerados((s) => new Set(s).add(fid));
+      } else if ("travada" in r) {
+        window.alert("A cotação já foi fechada — não dá mais para adiantar.");
+      }
+    });
+  }
+
   // Exclusivos agrupados por fornecedor (para o bloco de pedido direto).
   const exclusivosPorForn = useMemo(() => {
     const m = new Map<string, ExclusivoLinha[]>();
@@ -454,6 +504,24 @@ export function CompararClient({
                       {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
                       {f.condicao_pagamento ? ` · ${f.condicao_pagamento}` : ""}
                     </div>
+                    {!travada && (
+                      <div className="mt-1">
+                        {gerados.has(f.id) ? (
+                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+                            ✓ pedido gerado
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => adiantar(f.id, f.nome)}
+                            disabled={salvando}
+                            title="Gerar só o pedido deste fornecedor agora (sem esperar os outros)"
+                            className="rounded bg-orange-500 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+                          >
+                            {adiantando === f.id ? "..." : "⚡ Adiantar"}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </th>
                 );
               })}

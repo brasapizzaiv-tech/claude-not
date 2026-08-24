@@ -28,6 +28,15 @@ export default async function CompararPage({
   const cotacao = cotData as Cotacao;
   const travada = !!(cotData as { pedidos_gerados_em?: string | null }).pedidos_gerados_em;
 
+  // Fornecedores que já tiveram pedido adiantado nesta cotação.
+  const { data: pedidosExist } = await supabase
+    .from("pedidos")
+    .select("fornecedor_id")
+    .eq("cotacao_id", id);
+  const fornecedoresComPedido = [
+    ...new Set((pedidosExist ?? []).map((p) => p.fornecedor_id as string)),
+  ];
+
   const [{ data: itens }, { data: fornsData }, { data: precos }] =
     await Promise.all([
       supabase
@@ -308,6 +317,7 @@ export default async function CompararPage({
           exclusivos={exclusivos}
           ultimaCompra={ultimaCompra}
           travada={travada}
+          fornecedoresComPedido={fornecedoresComPedido}
         />
       )}
     </div>
