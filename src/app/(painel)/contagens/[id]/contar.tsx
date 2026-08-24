@@ -37,6 +37,12 @@ export function ContarClient({
   const [categoria, setCategoria] = useState("");
   const [salvando, startSave] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  // Itens já contados (linha existente = contado, inclusive "contei 0").
+  const [preenchidos, setPreenchidos] = useState<Set<string>>(
+    () => new Set(itens.map((i) => i.produto_id)),
+  );
+  // Aviso "faltam itens" antes de salvar/finalizar.
+  const [aviso, setAviso] = useState<{ faltam: string[]; acao: "salvar" | "finalizar" } | null>(null);
 
   const iniciais = useMemo(() => {
     const m = new Map<string, ItemInicial>();
@@ -83,24 +89,78 @@ export function ContarClient({
       produto_id: p.id,
       qtd_estoque: ler(`estoque_${p.id}`),
       qtd_pedir: 0,
+      contado: preenchidos.has(p.id),
     }));
   }
 
-  function salvar() {
-    startSave(async () => {
-      const r = await salvarContagemItens(contagem.id, montarItens());
-      setMsg(`Salvo! (${r?.gravados ?? 0} itens com valor lançado)`);
-      setTimeout(() => setMsg(null), 4000);
+  // Produtos ainda NÃO contados (nem valor, nem "contei 0").
+  const faltantes = useMemo(
+    () => produtos.filter((p) => !preenchidos.has(p.id)),
+    [produtos, preenchidos],
+  );
+
+  // Marca o item como contado (ao digitar) ou não (campo esvaziado).
+  function marcar(id: string, cheio: boolean) {
+    setPreenchidos((s) => {
+      if (cheio === s.has(id)) return s;
+      const n = new Set(s);
+      if (cheio) n.add(id);
+      else n.delete(id);
+      return n;
     });
   }
 
-  function finalizar() {
+  // Botão "0": preenche 0 e marca como contado (item que de fato zerou).
+  function contarZero(id: string) {
+    const el = formRef.current?.elements.namedItem(`estoque_${id}`) as HTMLInputElement | undefined;
+    if (el) el.value = "0";
+    marcar(id, true);
+  }
+
+  function gravar(entao?: () => Promise<void>) {
     startSave(async () => {
-      await salvarContagemItens(contagem.id, montarItens());
+      const r = await salvarContagemItens(contagem.id, montarItens());
+      if (entao) await entao();
+      else {
+        setMsg(`Salvo! (${r?.gravados ?? 0} itens contados)`);
+        setTimeout(() => setMsg(null), 4000);
+      }
+    });
+  }
+
+  function salvar() {
+    if (faltantes.length > 0) {
+      setAviso({ faltam: faltantes.map((p) => p.nome), acao: "salvar" });
+      return;
+    }
+    gravar();
+  }
+
+  function finalizar() {
+    if (faltantes.length > 0) {
+      setAviso({ faltam: faltantes.map((p) => p.nome), acao: "finalizar" });
+      return;
+    }
+    gravar(async () => {
       const fd = new FormData();
       fd.set("id", contagem.id);
       await finalizarContagem(fd);
     });
+  }
+
+  // Confirmou no aviso: salva/finaliza mesmo com itens faltando.
+  function confirmarAviso() {
+    const acao = aviso?.acao;
+    setAviso(null);
+    if (acao === "finalizar") {
+      gravar(async () => {
+        const fd = new FormData();
+        fd.set("id", contagem.id);
+        await finalizarContagem(fd);
+      });
+    } else {
+      gravar();
+    }
   }
 
   function reabrir() {
@@ -141,6 +201,15 @@ export function ContarClient({
             </button>
           ) : (
             <>
+              <span className="text-sm text-zinc-500">
+                {faltantes.length === 0 ? (
+                  <span className="font-medium text-emerald-600">✓ Tudo contado</span>
+                ) : (
+                  <>
+                    Faltam <b className="text-amber-600">{faltantes.length}</b> de {produtos.length}
+                  </>
+                )}
+              </span>
               <Link
                 href={`/contagens/${contagem.id}/atribuir`}
                 className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
@@ -240,15 +309,31 @@ export function ContarClient({
                             {p.unidade}
                           </td>
                           <td className="px-4 py-2 text-right">
-                            <input
-                              name={`estoque_${p.id}`}
-                              inputMode="decimal"
-                              disabled={finalizada}
-                              defaultValue={
-                                ini?.qtd_estoque ? ini.qtd_estoque : ""
-                              }
-                              className={numInput}
-                            />
+                            <div className="flex items-center justify-end gap-1.5">
+                              {!preenchidos.has(p.id) && !finalizada && (
+                                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                  falta
+                                </span>
+                              )}
+                              {!finalizada && (
+                                <button
+                                  type="button"
+                                  onClick={() => contarZero(p.id)}
+                                  title="Contei e deu 0 (item zerado)"
+                                  className="rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                                >
+                                  0
+                                </button>
+                              )}
+                              <input
+                                name={`estoque_${p.id}`}
+                                inputMode="decimal"
+                                disabled={finalizada}
+                                defaultValue={ini ? String(ini.qtd_estoque) : ""}
+                                onChange={(e) => marcar(p.id, e.target.value.trim() !== "")}
+                                className={numInput}
+                              />
+                            </div>
                           </td>
                         </tr>
                       );
@@ -260,6 +345,44 @@ export function ContarClient({
           </table>
         </div>
       </form>
+
+      {aviso && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 dark:bg-zinc-950">
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              Faltam {aviso.faltam.length} {aviso.faltam.length === 1 ? "item" : "itens"} sem contar
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Esses produtos ficaram em branco. Se algum realmente zerou, use o botão{" "}
+              <b>0</b> nele. Se não for contar, pode salvar assim mesmo.
+            </p>
+            <div className="mt-3 max-h-56 overflow-y-auto rounded-xl border border-zinc-200 p-2 text-sm dark:border-zinc-800">
+              {aviso.faltam.map((n) => (
+                <div key={n} className="px-1 py-0.5 text-zinc-700 dark:text-zinc-300">
+                  • {n}
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setAviso(null)}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Voltar e preencher
+              </button>
+              <button
+                onClick={confirmarAviso}
+                disabled={salvando}
+                className={`rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-60 ${
+                  aviso.acao === "finalizar" ? "bg-orange-500 hover:bg-orange-600" : "bg-zinc-800 hover:bg-zinc-900 dark:bg-zinc-700"
+                }`}
+              >
+                {aviso.acao === "finalizar" ? "Finalizar assim mesmo" : "Salvar assim mesmo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

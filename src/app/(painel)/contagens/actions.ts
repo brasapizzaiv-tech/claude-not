@@ -29,6 +29,7 @@ type ItemContagem = {
   produto_id: string;
   qtd_estoque: number;
   qtd_pedir: number;
+  contado?: boolean; // marcado quando o item foi contado (inclusive "contei 0")
 };
 
 export async function salvarContagemItens(
@@ -37,10 +38,17 @@ export async function salvarContagemItens(
 ) {
   const supabase = await createClient();
 
-  // Só grava itens com algum valor lançado.
+  // Grava os itens CONTADOS (inclusive os "contei 0"); se não vier o marcador
+  // (contado), mantém o comportamento antigo (grava quem tem valor > 0).
+  const contou = (i: ItemContagem) => i.contado ?? (i.qtd_estoque > 0 || i.qtd_pedir > 0);
   const paraGravar = itens
-    .filter((i) => i.qtd_estoque > 0 || i.qtd_pedir > 0)
-    .map((i) => ({ ...i, contagem_id: contagemId }));
+    .filter(contou)
+    .map(({ produto_id, qtd_estoque, qtd_pedir }) => ({
+      produto_id,
+      qtd_estoque,
+      qtd_pedir,
+      contagem_id: contagemId,
+    }));
 
   if (paraGravar.length > 0) {
     await supabase
