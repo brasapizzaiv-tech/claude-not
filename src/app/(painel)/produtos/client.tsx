@@ -381,10 +381,23 @@ export function ProdutosClient({
                     className={inputCls}
                   />
                 </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Fardo (und por fardo)
+                  </label>
+                  <input
+                    name="fardo"
+                    inputMode="numeric"
+                    defaultValue={editando?.fardo ? editando.fardo : ""}
+                    placeholder="ex.: 12 — vazio = por unidade"
+                    className={inputCls}
+                  />
+                </div>
               </div>
               <p className="-mt-1 text-xs text-zinc-400">
                 Estoque ideal = quanto você quer ter sempre. Na cotação, a
-                sugestão de compra será: ideal − o que foi contado.
+                sugestão de compra será: ideal − o que foi contado, arredondado
+                pra <b>fechar fardos inteiros</b> (se o fardo estiver preenchido).
               </p>
               <input
                 type="hidden"

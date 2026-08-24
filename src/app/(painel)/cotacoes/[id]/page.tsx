@@ -22,7 +22,7 @@ export default async function CotacaoDetalhePage({
   const [{ data: prodData }, { data: itensData }] = await Promise.all([
     supabase
       .from("produtos")
-      .select("id, nome, unidade, estoque_ideal, categorias(nome)")
+      .select("id, nome, unidade, estoque_ideal, fardo, categorias(nome)")
       .eq("ativo", true)
       .order("nome"),
     supabase.from("cotacao_itens").select("produto_id, qtd").eq("cotacao_id", id),
@@ -54,8 +54,11 @@ export default async function CotacaoDetalhePage({
   const linhas: LinhaProduto[] = produtos.map((p) => {
     const cont = contado.get(p.id) ?? 0;
     const ideal = Number(p.estoque_ideal) || 0;
-    // Sugestão = o que falta para o estoque ideal.
-    const sugestao = Math.max(0, ideal - cont);
+    const fardo = Number(p.fardo) || 0;
+    // Sugestão = o que falta para o estoque ideal, arredondada para CIMA
+    // até fechar fardos inteiros (quando o produto tem fardo definido).
+    const bruta = Math.max(0, ideal - cont);
+    const sugestao = fardo > 1 && bruta > 0 ? Math.ceil(bruta / fardo) * fardo : bruta;
     const existente = jaCotado.get(p.id);
     return {
       id: p.id,
@@ -65,6 +68,7 @@ export default async function CotacaoDetalhePage({
       contado: cont,
       ideal,
       sugestao,
+      fardo,
       // Se já foi salvo, usa o salvo; senão, começa com a sugestão.
       qtd: existente != null ? existente : sugestao,
     };

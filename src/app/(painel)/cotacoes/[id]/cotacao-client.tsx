@@ -18,6 +18,7 @@ export type LinhaProduto = {
   contado: number;
   ideal: number;
   sugestao: number;
+  fardo: number; // unidades por fardo (0 = por unidade)
   qtd: number;
 };
 
@@ -238,6 +239,11 @@ export function CotacaoClient({
                         </td>
                         <td className="px-4 py-2 text-right font-medium text-zinc-500">
                           {l.sugestao > 0 ? l.sugestao : "—"}
+                          {l.fardo > 1 && l.sugestao > 0 && (
+                            <span className="ml-1 block text-[10px] font-normal text-zinc-400">
+                              {l.sugestao / l.fardo} fardo{l.sugestao / l.fardo === 1 ? "" : "s"} de {l.fardo}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-2 text-right">
                           <input

@@ -15,6 +15,8 @@ export async function salvarProduto(formData: FormData) {
   const estoque_minimo = Number(estoqueMinimoRaw.replace(",", ".")) || 0;
   const estoqueIdealRaw = (formData.get("estoque_ideal") as string) || "0";
   const estoque_ideal = Number(estoqueIdealRaw.replace(",", ".")) || 0;
+  const fardoRaw = (formData.get("fardo") as string) || "0";
+  const fardo = Number(fardoRaw.replace(",", ".")) || 0;
   const observacoes =
     (formData.get("observacoes") as string)?.trim() || null;
   const categoria_id =
@@ -35,6 +37,7 @@ export async function salvarProduto(formData: FormData) {
     unidade,
     estoque_minimo,
     estoque_ideal,
+    fardo,
     validade_congelado: dias("validade_congelado"),
     validade_resfriado: dias("validade_resfriado"),
     validade_ambiente: dias("validade_ambiente"),
