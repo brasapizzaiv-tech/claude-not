@@ -10,6 +10,7 @@ import {
   definirFornecedoresDoProduto,
   vincularProdutosAoFornecedor,
   vincularSemFornecedorNaFeira,
+  marcarExclusivo,
 } from "./actions";
 
 type Fornecedor = { id: string; nome: string };
@@ -54,7 +55,31 @@ export function ProdutosClient({
     return m;
   });
   const [fornDe, setFornDe] = useState<Produto | null>(null);
+  const [forcarExc, setForcarExc] = useState(false); // abrir modal já forçando exclusivo
   const semForn = produtos.filter((p) => !(vinc.get(p.id)?.size)).length;
+
+  // Produtos marcados como exclusivos (editável na lista).
+  const [exclusivos, setExclusivos] = useState<Set<string>>(
+    () => new Set(produtos.filter((p) => p.exclusivo).map((p) => p.id)),
+  );
+
+  function alternarExclusivoLista(prod: Produto, marcar: boolean) {
+    if (marcar && (vinc.get(prod.id)?.size ?? 0) > 1) {
+      // Mais de um fornecedor: força escolher qual fica (abre o painel).
+      setForcarExc(true);
+      setFornDe(prod);
+      return;
+    }
+    setExclusivos((s) => {
+      const n = new Set(s);
+      if (marcar) n.add(prod.id);
+      else n.delete(prod.id);
+      return n;
+    });
+    start(async () => {
+      await marcarExclusivo(prod.id, marcar);
+    });
+  }
 
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -224,6 +249,7 @@ export function ProdutosClient({
                 <th className="px-4 py-3">Un.</th>
                 <th className="px-4 py-3 text-right">Ideal</th>
                 <th className="px-4 py-3">Fornecedores</th>
+                <th className="px-4 py-3 text-center" title="Exclusivo (1 fornecedor)">🔒 Excl.</th>
                 <th className="px-4 py-3">Preço ref.</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -270,28 +296,27 @@ export function ProdutosClient({
                     {(() => {
                       const n = vinc.get(p.id)?.size ?? 0;
                       return (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => setFornDe(p)}
-                            className={`rounded-md px-2 py-1 text-xs font-medium ${
-                              n === 0
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
-                                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
-                            }`}
-                          >
-                            {n === 0 ? "sem fornecedor" : `${n} fornecedor${n > 1 ? "es" : ""}`}
-                          </button>
-                          {p.exclusivo && (
-                            <span
-                              title="Fornecedor exclusivo"
-                              className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
-                            >
-                              🔒 Exclusivo
-                            </span>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => setFornDe(p)}
+                          className={`rounded-md px-2 py-1 text-xs font-medium ${
+                            n === 0
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+                              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                          }`}
+                        >
+                          {n === 0 ? "sem fornecedor" : `${n} fornecedor${n > 1 ? "es" : ""}`}
+                        </button>
                       );
                     })()}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={exclusivos.has(p.id)}
+                      onChange={(e) => alternarExclusivoLista(p, e.target.checked)}
+                      title="Fornecedor exclusivo (só 1 — vai só pra ele na cotação)"
+                      className="h-4 w-4 accent-orange-500"
+                    />
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {moeda(p.preco_referencia)}
@@ -557,15 +582,26 @@ export function ProdutosClient({
           produto={fornDe}
           fornecedores={fornecedores}
           selecionados={vinc.get(fornDe.id) ?? new Set()}
-          onFechar={() => setFornDe(null)}
-          onSalvo={(ids) => {
+          forcarExclusivo={forcarExc}
+          onFechar={() => {
+            setFornDe(null);
+            setForcarExc(false);
+          }}
+          onSalvo={(ids, exclusivo) => {
             const pid = fornDe.id;
             setVinc((m) => {
               const n = new Map(m);
               n.set(pid, new Set(ids));
               return n;
             });
+            setExclusivos((s) => {
+              const n = new Set(s);
+              if (exclusivo) n.add(pid);
+              else n.delete(pid);
+              return n;
+            });
             setFornDe(null);
+            setForcarExc(false);
           }}
         />
       )}
@@ -601,17 +637,23 @@ function FornecedoresModal({
   produto,
   fornecedores,
   selecionados,
+  forcarExclusivo,
   onFechar,
   onSalvo,
 }: {
   produto: Produto;
   fornecedores: Fornecedor[];
   selecionados: Set<string>;
+  forcarExclusivo?: boolean;
   onFechar: () => void;
-  onSalvo: (ids: string[]) => void;
+  onSalvo: (ids: string[], exclusivo: boolean) => void;
 }) {
-  const [sel, setSel] = useState<Set<string>>(new Set(selecionados));
-  const [exclusivo, setExclusivo] = useState(produto.exclusivo);
+  // Se abriu forçando exclusivo com vários fornecedores, começa sem nenhum
+  // marcado — obriga a escolher qual fornecedor fica.
+  const [sel, setSel] = useState<Set<string>>(
+    () => new Set(forcarExclusivo && selecionados.size > 1 ? [] : selecionados),
+  );
+  const [exclusivo, setExclusivo] = useState(forcarExclusivo || produto.exclusivo);
   const [busca, setBusca] = useState("");
   const [p, start] = useTransition();
 
@@ -642,7 +684,7 @@ function FornecedoresModal({
     start(async () => {
       const ids = exclusivo ? [...sel].slice(0, 1) : [...sel];
       await definirFornecedoresDoProduto(produto.id, ids, exclusivo);
-      onSalvo(ids);
+      onSalvo(ids, exclusivo);
     });
   }
 

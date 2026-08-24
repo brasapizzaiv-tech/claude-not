@@ -87,6 +87,23 @@ export async function definirFornecedoresDoProduto(
   return { ok: true, total: ids.length };
 }
 
+// Marca/desmarca um produto como exclusivo direto na lista. Se ligar exclusivo
+// com mais de 1 fornecedor, recusa (precisaEscolher) para a tela forçar a
+// escolha de qual fornecedor fica.
+export async function marcarExclusivo(produtoId: string, valor: boolean) {
+  const supabase = await createClient();
+  if (valor) {
+    const { count } = await supabase
+      .from("fornecedor_produto")
+      .select("*", { count: "exact", head: true })
+      .eq("produto_id", produtoId);
+    if ((count ?? 0) > 1) return { ok: false as const, precisaEscolher: true as const };
+  }
+  await supabase.from("produtos").update({ exclusivo: valor }).eq("id", produtoId);
+  revalidatePath("/produtos");
+  return { ok: true as const };
+}
+
 // Vincula VÁRIOS produtos a um fornecedor de uma vez (aditivo — mantém os
 // fornecedores que os produtos já tiverem).
 export async function vincularProdutosAoFornecedor(
