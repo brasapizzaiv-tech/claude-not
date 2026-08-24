@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dataBR } from "@/lib/format";
-import { salvarPrecosPublico, removerItemPublico } from "./actions";
+import { salvarPrecosPublico, removerItemPublico, type DadosCotacao } from "./actions";
 
 export type LinhaPreco = {
   produto_id: string;
@@ -92,6 +92,12 @@ export function CotarPreencher({
   const [emb, setEmb] = useState<Record<string, string>>(() =>
     Object.fromEntries(todos.map((p) => [p.produto_id, p.embalagem ?? ""])),
   );
+  // Preço por item — controlado por estado (não lê do DOM, evita "falta" falso).
+  const [precos, setPrecos] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      todos.map((p) => [p.produto_id, p.preco_unit != null ? String(p.preco_unit) : ""]),
+    ),
+  );
   const [obs, setObs] = useState<Record<string, string>>(() =>
     Object.fromEntries(todos.map((p) => [p.produto_id, p.observacao ?? ""])),
   );
@@ -145,12 +151,8 @@ export function CotarPreencher({
   const supabase = useMemo(() => createClient(), []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const ler = (name: string) => {
-    const el = formRef.current?.elements.namedItem(name) as
-      | HTMLInputElement
-      | undefined;
-    return (el?.value ?? "").replace(",", ".").trim();
-  };
+  // Preço do item, normalizado (vírgula → ponto).
+  const precoDe = (produtoId: string) => (precos[produtoId] ?? "").replace(",", ".").trim();
 
   // Itens ativos = os que ele fornece (menos removidos) + os "outros" incluídos.
   const ativos = [
@@ -165,7 +167,7 @@ export function CotarPreencher({
     return ativos
       .map((p) => ({
         produto_id: p.produto_id,
-        preco_unit: indisp[p.produto_id] ? "" : ler(`preco_${p.produto_id}`),
+        preco_unit: indisp[p.produto_id] ? "" : precoDe(p.produto_id),
         disponivel: !indisp[p.produto_id],
         foto_url: fotos[p.produto_id] ?? "",
         embalagem: emb[p.produto_id] ?? "",
@@ -187,6 +189,18 @@ export function CotarPreencher({
       }));
   }
 
+  // Payload do rascunho, sempre com o estado MAIS RECENTE (ref atualizado a cada
+  // render). Assim o auto-save agendado não grava valores antigos por closure.
+  const payloadRef = useRef<() => DadosCotacao>(() => ({ precos: [], prazo_entrega: "", pedido_minimo: "", condicao_pagamento: "", observacao: "" }));
+  useEffect(() => {
+    payloadRef.current = () => ({
+      precos: montarPrecos(),
+      ...dados,
+      pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
+      rascunho: true,
+    });
+  });
+
   // Auto-save (rascunho): grava sozinho ~1,2s depois de qualquer mudança,
   // pra não perder nada se o fornecedor sair e voltar.
   function agendarSalvar() {
@@ -195,12 +209,7 @@ export function CotarPreencher({
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       try {
-        const r = await salvarPrecosPublico(token, {
-          precos: montarPrecos(),
-          ...dados,
-          pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
-          rascunho: true,
-        });
+        const r = await salvarPrecosPublico(token, payloadRef.current());
         setSalvo(r?.ok ? "ok" : "idle");
       } catch {
         // Rede caiu ou a página ficou aberta durante uma atualização do sistema.
@@ -252,7 +261,7 @@ export function CotarPreencher({
     const faltando: string[] = [];
     for (const p of ativos) {
       if (removidos.has(p.produto_id) || indisp[p.produto_id]) continue;
-      if (!ler(`preco_${p.produto_id}`)) faltando.push(`preço de ${p.nome}`);
+      if (!precoDe(p.produto_id)) faltando.push(`preço de ${p.nome}`);
       if (!(emb[p.produto_id] ?? "").trim()) faltando.push(`unidade de ${p.nome}`);
     }
     if (faltando.length > 0) {
@@ -404,8 +413,11 @@ export function CotarPreencher({
                     inputMode="decimal"
                     placeholder="0,00"
                     disabled={fechada || emFalta}
-                    defaultValue={p.preco_unit != null ? p.preco_unit : ""}
-                    onChange={agendarSalvar}
+                    value={precos[p.produto_id] ?? ""}
+                    onChange={(e) => {
+                      setPrecos((s) => ({ ...s, [p.produto_id]: e.target.value }));
+                      agendarSalvar();
+                    }}
                     className={`${campo} flex-1 text-right ${emFalta ? "opacity-40" : ""}`}
                   />
                   <button
