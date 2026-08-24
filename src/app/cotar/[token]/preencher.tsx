@@ -194,13 +194,19 @@ export function CotarPreencher({
     setSalvo("salvando");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
-      await salvarPrecosPublico(token, {
-        precos: montarPrecos(),
-        ...dados,
-        pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
-        rascunho: true,
-      });
-      setSalvo("ok");
+      try {
+        const r = await salvarPrecosPublico(token, {
+          precos: montarPrecos(),
+          ...dados,
+          pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
+          rascunho: true,
+        });
+        setSalvo(r?.ok ? "ok" : "idle");
+      } catch {
+        // Rede caiu ou a página ficou aberta durante uma atualização do sistema.
+        // Não trava — o fornecedor tenta de novo (ou o próximo autosave resolve).
+        setSalvo("idle");
+      }
     }, 1200);
   }
 
@@ -260,18 +266,29 @@ export function CotarPreencher({
 
     setErro(null);
     startSend(async () => {
-      const r = await salvarPrecosPublico(token, {
-        precos: montarPrecos(),
-        ...dados,
-        pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
-      });
-      setMsg(
-        r?.ok
-          ? "Preços enviados! Obrigado. Você pode revisar e reenviar se quiser."
-          : (r?.erro ?? "Não foi possível enviar. Tente de novo."),
-      );
+      try {
+        const r = await salvarPrecosPublico(token, {
+          precos: montarPrecos(),
+          ...dados,
+          pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
+        });
+        if (r?.ok) {
+          setErro(null);
+          setMsg("Preços enviados! Obrigado. Você pode revisar e reenviar se quiser.");
+          setTimeout(() => setMsg(null), 6000);
+        } else {
+          setMsg(null);
+          setErro(r?.erro ?? "Não foi possível enviar. Tente de novo.");
+        }
+      } catch {
+        // A chamada falhou (internet caiu ou o sistema foi atualizado com a
+        // página aberta). Os dados ficam salvos aqui automaticamente.
+        setMsg(null);
+        setErro(
+          "Não conseguimos enviar agora. Seus preços ficam salvos automaticamente nesta página — atualize a página (F5) e clique em Enviar de novo.",
+        );
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
-      setTimeout(() => setMsg(null), 6000);
     });
   }
 
@@ -283,7 +300,11 @@ export function CotarPreencher({
     )
       return;
     setRemovidos((s) => new Set(s).add(produtoId));
-    await removerItemPublico(token, produtoId);
+    try {
+      await removerItemPublico(token, produtoId);
+    } catch {
+      /* rede/atualização — a remoção some da tela; recarregar reflete o servidor */
+    }
   }
 
   function incluirOutro(produtoId: string) {

@@ -44,7 +44,11 @@ export async function salvarPrecosPublico(token: string, dados: DadosCotacao) {
     p_token: token,
     p_dados: dados,
   });
-  if (error) return { ok: false, erro: "Não foi possível salvar." };
+  if (error) {
+    // Loga o motivo real (ex.: valor que não é número/data) para diagnóstico.
+    console.error("cotar_fornecedor_salvar erro:", error.message, error.details ?? "");
+    return { ok: false, erro: "Não foi possível salvar. Confira preços/valores e tente de novo." };
+  }
   return data as { ok: boolean; gravados?: number; erro?: string };
 }
 
