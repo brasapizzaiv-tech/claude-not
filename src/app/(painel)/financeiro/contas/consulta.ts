@@ -14,6 +14,8 @@ export type FiltroContas = {
 
 export type LinhaConta = {
   id: string;
+  ids?: string[]; // lançamentos agrupados neste boleto (nota) — para pagar juntos
+  nota_id?: string | null;
   data: string | null;
   lancamento_em: string | null;
   descricao: string | null;
@@ -29,6 +31,35 @@ export type LinhaConta = {
   fornecedores: { nome?: string } | null;
 };
 
+// Agrupa os lançamentos de uma MESMA nota + vencimento (= um boleto) numa linha
+// só, somando o valor. Usado só na TELA de Contas a pagar (o relatório da
+// contabilidade continua detalhado por categoria).
+export function agruparContas(linhas: LinhaConta[]): LinhaConta[] {
+  const grupos = new Map<string, LinhaConta>();
+  const cats = new Map<string, Set<string>>();
+  for (const l of linhas) {
+    const key =
+      l.nota_id && l.origem === "nota"
+        ? `nota|${l.nota_id}|${l.vencimento ?? ""}|${l.pago ? "1" : "0"}`
+        : `lanc|${l.id}`;
+    const g = grupos.get(key);
+    if (!g) {
+      grupos.set(key, { ...l, ids: [l.id] });
+      cats.set(key, new Set(l.dre_categorias?.nome ? [l.dre_categorias.nome] : []));
+    } else {
+      g.valor = Math.round((Number(g.valor) + Number(l.valor)) * 100) / 100;
+      g.ids!.push(l.id);
+      if (l.dre_categorias?.nome) cats.get(key)!.add(l.dre_categorias.nome);
+    }
+  }
+  // Categoria mostrada: única se só tem uma; senão "Vários itens".
+  for (const [key, g] of grupos) {
+    const nomes = [...(cats.get(key) ?? [])];
+    if (nomes.length > 1) g.dre_categorias = { nome: "Vários itens", tipo: "despesa" };
+  }
+  return [...grupos.values()];
+}
+
 function proxMes(comp: string) {
   const [a, m] = comp.split("-").map(Number);
   const d = new Date(a, m, 1);
@@ -40,7 +71,7 @@ export async function consultarContas(f: FiltroContas): Promise<LinhaConta[]> {
   let q = supabase
     .from("lancamentos")
     .select(
-      "id, data, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
+      "id, nota_id, data, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
     );
 
   if (f.status === "pagas") q = q.eq("pago", true);

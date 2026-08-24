@@ -46,7 +46,7 @@ function Linhas({
               </td>
               <td className="px-4 py-2 text-right">
                 <form action={alternarPago} className="inline-flex items-center gap-1.5">
-                  <input type="hidden" name="id" value={l.id} />
+                  <input type="hidden" name="ids" value={(l.ids ?? [l.id]).join(",")} />
                   <input type="hidden" name="pago" value={l.pago ? "false" : "true"} />
                   {!l.pago && (
                     <input

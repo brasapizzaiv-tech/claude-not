@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
-import { consultarContas, type FiltroContas } from "./consulta";
+import { consultarContas, agruparContas, type FiltroContas } from "./consulta";
 import { ListaContasView } from "./lista-contas";
 
 const moeda = (n: number) =>
@@ -37,11 +37,13 @@ export default async function ContasPagarPage({
       .order("nome"),
     consultarContas(f),
   ]);
+  // Agrupa lançamentos da mesma nota (por vencimento) numa conta só (o boleto).
+  const linhasAgrupadas = agruparContas(linhas);
   const categorias = (
     (catData as { id: string; nome: string; tipo: string }[]) ?? []
   ).filter((c) => c.tipo !== "receita");
 
-  const total = linhas.reduce((s, l) => s + Number(l.valor), 0);
+  const total = linhasAgrupadas.reduce((s, l) => s + Number(l.valor), 0);
   const querystring = new URLSearchParams(
     Object.entries(f).filter(([, v]) => v) as [string, string][],
   ).toString();
@@ -156,7 +158,7 @@ export default async function ContasPagarPage({
       {/* Total */}
       <div className="mb-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="text-xs text-zinc-500">
-          Total {aberto ? "em aberto" : "filtrado"} · {linhas.length} conta(s)
+          Total {aberto ? "em aberto" : "filtrado"} · {linhasAgrupadas.length} conta(s)
         </p>
         <p
           className={`mt-1 text-2xl font-bold ${aberto ? "text-red-600" : "text-zinc-900 dark:text-zinc-50"}`}
@@ -165,12 +167,12 @@ export default async function ContasPagarPage({
         </p>
       </div>
 
-      {linhas.length === 0 ? (
+      {linhasAgrupadas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
           Nenhuma conta com esses filtros.
         </div>
       ) : (
-        <ListaContasView linhas={linhas} aberto={aberto} />
+        <ListaContasView linhas={linhasAgrupadas} aberto={aberto} />
       )}
     </div>
   );

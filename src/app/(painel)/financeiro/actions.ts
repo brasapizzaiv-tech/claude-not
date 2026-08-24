@@ -162,17 +162,22 @@ export async function salvarOrcamento(
 // quando o clique acontece à noite.
 export async function alternarPago(formData: FormData) {
   const supabase = await createClient();
-  const id = formData.get("id") as string;
+  // Aceita 1 id (id) ou vários (ids, separados por vírgula) — uma nota no
+  // Contas a pagar agrupa vários lançamentos (por categoria) num boleto só.
+  const idsRaw = (formData.get("ids") as string) || (formData.get("id") as string) || "";
+  const ids = idsRaw.split(",").map((s) => s.trim()).filter(Boolean);
   const pago = formData.get("pago") === "true";
   const dataInformada = (formData.get("data_pago") as string) || "";
   const hojeBR = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
-  await supabase
-    .from("lancamentos")
-    .update({
-      pago,
-      pago_em: pago ? (dataInformada || hojeBR) : null,
-    })
-    .eq("id", id);
+  if (ids.length > 0) {
+    await supabase
+      .from("lancamentos")
+      .update({
+        pago,
+        pago_em: pago ? (dataInformada || hojeBR) : null,
+      })
+      .in("id", ids);
+  }
   revalidatePath("/financeiro/contas");
   revalidatePath("/financeiro");
 }
