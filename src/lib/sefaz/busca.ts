@@ -34,6 +34,19 @@ function horaBR(iso: string) {
   });
 }
 
+// Grava o NSU do documento na nota (pela chave), só se ainda não tiver — guarda
+// o PRIMEIRO NSU visto (o do resumo), que é o que interessa para reprocessar por
+// período sem perder a nota na borda.
+async function gravarNsu(supabase: SupabaseClient, xml: string, nsu: string) {
+  const chave = (xml.match(/\d{44}/) || [])[0];
+  if (!chave || !nsu) return;
+  await supabase
+    .from("notas_fiscais")
+    .update({ nsu })
+    .eq("chave", chave)
+    .is("nsu", null);
+}
+
 // Executa a busca na SEFAZ e importa o que vier. Recebe o cliente Supabase
 // (sessão do usuário no botão; admin no cron) e a configuração já carregada.
 export async function rodarBuscaSefaz(
@@ -85,10 +98,12 @@ export async function rodarBuscaSefaz(
           const r = await importarNota(doc.xml, supabase);
           if (r?.ok) importadas++;
           else falhas++;
+          await gravarNsu(supabase, doc.xml, doc.nsu);
         } else if (doc.schema.startsWith("resNFe")) {
           const r = await importarResumo(doc.xml, supabase);
           if (r?.ok) resumos++;
           else falhas++;
+          await gravarNsu(supabase, doc.xml, doc.nsu);
         } else if (doc.schema.includes("Evento")) {
           const tpEvento = (doc.xml.match(/<tpEvento>(\d+)<\/tpEvento>/) || [])[1];
           const chNFe = (doc.xml.match(/<chNFe>(\d{44})<\/chNFe>/) || [])[1];

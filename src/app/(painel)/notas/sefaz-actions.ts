@@ -194,9 +194,12 @@ export async function buscarNotasSefaz() {
   return r;
 }
 
-// Reprocessa TUDO: volta o marcador ao início e puxa novamente (recupera
-// notas que possam ter sido puladas). A SEFAZ entrega ~90 dias por NSU.
-export async function reprocessarSefaz() {
+// Reprocessa: volta o marcador (NSU) e puxa novamente (recupera notas puladas).
+// Sem "dias" → desde o início (~90 dias que a SEFAZ guarda).
+// Com "dias" (ex.: 15) → começa do NSU da nota mais antiga daquele período, para
+// reprocessar só o recente (mais rápido). Se ainda não houver NSU guardado no
+// período, cai para o início (a 1ª vez tem que ser completa para gravar os NSU).
+export async function reprocessarSefaz(dias?: number) {
   const { supabase, cfg } = await getConfig();
   if (!cfg)
     return {
@@ -208,14 +211,30 @@ export async function reprocessarSefaz() {
       erro: "Configure o certificado e o CNPJ primeiro.",
     };
 
+  let inicio = "0";
+  if (dias && dias > 0) {
+    const corte = new Date(Date.now() - dias * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const { data: base } = await supabase
+      .from("notas_fiscais")
+      .select("nsu")
+      .gte("data_emissao", corte)
+      .not("nsu", "is", null)
+      .order("nsu", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (base?.nsu) inicio = String(Math.max(0, Number(base.nsu) - 1));
+  }
+
   await supabase
     .from("config_sefaz")
-    .update({ ult_nsu: "0", bloqueado_ate: null })
+    .update({ ult_nsu: inicio, bloqueado_ate: null })
     .eq("id", cfg.id);
 
   const r = await rodarBuscaSefaz(supabase, {
     ...cfg,
-    ult_nsu: "0",
+    ult_nsu: inicio,
     bloqueado_ate: null,
   });
   revalidatePath("/notas");

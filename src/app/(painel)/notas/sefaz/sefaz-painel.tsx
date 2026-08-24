@@ -117,21 +117,19 @@ export function SefazPainel({
     });
   }
 
-  function reprocessar() {
-    if (
-      !confirm(
-        "Reprocessar volta ao início e puxa novamente as notas dos últimos ~90 dias, recuperando as que faltaram. Pode levar vários minutos e consome a cota da SEFAZ. Continuar?",
-      )
-    )
-      return;
+  function reprocessar(dias?: number) {
+    const msg = dias
+      ? `Reprocessar os últimos ${dias} dias (mais rápido) para recuperar notas que faltaram. Continuar?`
+      : "Reprocessar volta ao início e puxa novamente as notas dos últimos ~90 dias, recuperando as que faltaram. Pode levar vários minutos e consome a cota da SEFAZ. Continuar?";
+    if (!confirm(msg)) return;
     startBuscar(async () => {
       setResultado("Reprocessando...");
-      const r = await reprocessarSefaz();
+      const r = await reprocessarSefaz(dias);
       if (r?.bloqueado_ate) setBloqueadoAte(r.bloqueado_ate);
       if (r?.erro) setResultado(`❌ ${r.erro}`);
       else
         setResultado(
-          `✓ Reprocessado: ${r?.importadas ?? 0} nota(s) · ${r?.resumos ?? 0} resumo(s)${r?.falhas ? ` · ${r.falhas} falha(s)` : ""}.`,
+          `✓ Reprocessado${dias ? ` (${dias} dias)` : ""}: ${r?.importadas ?? 0} nota(s) · ${r?.resumos ?? 0} resumo(s)${r?.falhas ? ` · ${r.falhas} falha(s)` : ""}.`,
         );
       router.refresh();
     });
@@ -254,16 +252,26 @@ export function SefazPainel({
         </p>
 
         <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-          <button
-            onClick={reprocessar}
-            disabled={buscando || !status.temCert || travado}
-            className="text-xs font-medium text-zinc-500 underline hover:text-orange-600 disabled:opacity-60"
-          >
-            Faltam notas? Reprocessar desde o início
-          </button>
+          <p className="mb-1 text-xs font-medium text-zinc-500">Faltam notas? Reprocessar:</p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => reprocessar(15)}
+              disabled={buscando || !status.temCert || travado}
+              className="text-xs font-medium text-orange-600 underline hover:text-orange-700 disabled:opacity-60"
+            >
+              Últimos 15 dias (rápido)
+            </button>
+            <button
+              onClick={() => reprocessar()}
+              disabled={buscando || !status.temCert || travado}
+              className="text-xs font-medium text-zinc-500 underline hover:text-orange-600 disabled:opacity-60"
+            >
+              Desde o início (~90 dias)
+            </button>
+          </div>
           <p className="mt-1 text-xs text-zinc-400">
-            Volta ao início e puxa de novo os últimos ~90 dias, recuperando
-            notas que possam ter faltado.
+            O de 15 dias começa do NSU de ~15 dias atrás (mais rápido). Na
+            primeira vez pode cair para o completo, até o sistema guardar os NSU.
           </p>
         </div>
       </div>
