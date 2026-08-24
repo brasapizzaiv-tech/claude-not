@@ -339,6 +339,31 @@ export function CompararClient({
     return arr;
   }
 
+  // Texto do pedido de um fornecedor (mesmo formato da tela de Pedidos).
+  function textoPedidoForn(fid: string, nome: string) {
+    const linhas: string[] = [];
+    let total = 0;
+    for (const p of produtos) {
+      const q = alocacaoDe(p.produto_id)[fid];
+      if (q) {
+        const { preco } = precoDe(p, fid);
+        linhas.push(`- ${p.nome}: ${q} ${p.unidade}` + (preco != null ? ` (${moeda(preco)})` : ""));
+        if (preco != null) total += preco * q;
+      }
+    }
+    for (const e of exclusivos) {
+      if (e.fornecedorId === fid) linhas.push(`- ${e.nome}: ${e.qtd} ${e.unidade}`);
+    }
+    return `*Pedido - Brasa Pizza*\n${nome}\n\n` + linhas.join("\n") + `\n\nTotal: ${moeda(total)}`;
+  }
+
+  function waHref(whatsapp: string | null, texto: string) {
+    const zap = (whatsapp ?? "").replace(/\D/g, "");
+    return zap
+      ? `https://web.whatsapp.com/send?phone=55${zap}&text=${encodeURIComponent(texto)}`
+      : "https://web.whatsapp.com/";
+  }
+
   function adiantar(fid: string, nome: string) {
     const itens = escolhasDoForn(fid);
     if (itens.length === 0) {
@@ -504,13 +529,24 @@ export function CompararClient({
                       {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
                       {f.condicao_pagamento ? ` · ${f.condicao_pagamento}` : ""}
                     </div>
-                    {!travada && (
-                      <div className="mt-1">
-                        {gerados.has(f.id) ? (
+                    <div className="mt-1 flex flex-wrap items-center justify-end gap-1">
+                      {gerados.has(f.id) ? (
+                        <>
                           <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
-                            ✓ pedido gerado
+                            ✓ gerado
                           </span>
-                        ) : (
+                          <a
+                            href={waHref(f.whatsapp, textoPedidoForn(f.id, f.nome))}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Enviar este pedido pelo WhatsApp"
+                            className="rounded bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-700"
+                          >
+                            📤 Enviar
+                          </a>
+                        </>
+                      ) : (
+                        !travada && (
                           <button
                             onClick={() => adiantar(f.id, f.nome)}
                             disabled={salvando}
@@ -519,9 +555,9 @@ export function CompararClient({
                           >
                             {adiantando === f.id ? "..." : "⚡ Adiantar"}
                           </button>
-                        )}
-                      </div>
-                    )}
+                        )
+                      )}
+                    </div>
                   </th>
                 );
               })}
