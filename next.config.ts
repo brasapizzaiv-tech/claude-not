@@ -2,10 +2,18 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    return [
-      // URL curta do app de marmitas: /marmitas serve o /marmitas.html.
-      { source: "/marmitas", destination: "/marmitas.html" },
-    ];
+    return {
+      // beforeFiles roda antes das rotas do app: é o que faz a raiz do
+      // domínio (www.brasarestaurante.com.br) abrir o site do restaurante.
+      beforeFiles: [{ source: "/", destination: "/site/index.html" }],
+      afterFiles: [
+        // URL curta do app de marmitas: /marmitas serve o /marmitas.html.
+        { source: "/marmitas", destination: "/marmitas.html" },
+        // O site também responde em /site.
+        { source: "/site", destination: "/site/index.html" },
+      ],
+      fallback: [],
+    };
   },
   async headers() {
     return [
@@ -16,6 +24,11 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Cache-Control", value: "no-store, must-revalidate" },
         ],
+      },
+      // Site do restaurante: HTML sempre fresco (as fotos seguem em cache).
+      {
+        source: "/site/index.html",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
       // Links públicos abertos no celular (fornecedor, colaborador): nunca
       // cachear, pra sempre pegar a versão atual e o rascunho salvo.

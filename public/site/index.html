@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brasa Restaurante e Pizzaria — Ivoti/RS</title>
+<meta name="description" content="Buffet de almoço de segunda a sábado, rodízio de pizzas e massas na sexta e no sábado, delivery e marmitas. Ivoti/RS.">
+<meta name="theme-color" content="#211915">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="canonical" href="https://www.brasarestaurante.com.br/">
+<link rel="icon" href="/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brasa Restaurante e Pizzaria">
+<meta property="og:title" content="Brasa Restaurante e Pizzaria — Ivoti/RS">
+<meta property="og:description" content="Buffet de almoço de segunda a sábado, rodízio de pizzas e massas na sexta e no sábado, delivery e marmitas. Reserve sua mesa.">
+<meta property="og:image" content="https://www.brasarestaurante.com.br/site/img/deck-a-noite.jpg">
+<meta property="og:url" content="https://www.brasarestaurante.com.br/">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "url": "https://www.brasarestaurante.com.br/",
+  "name": "Brasa Restaurante e Pizzaria",
+  "image": "https://www.brasarestaurante.com.br/site/img/deck-a-noite.jpg",
+  "servesCuisine": ["Pizza", "Brasileira", "Buffet"],
+  "priceRange": "R$",
+  "telephone": "+55 51 98022-9859",
+  "acceptsReservations": "True",
+  "hasMenu": "https://brasarestauranteepizzaria.mandarpedido.com/site",
+  "sameAs": ["https://instagram.com/brasarestauranteiv"],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Av. Pres. Lucena, 1243 — Bom Jardim",
+    "addressLocality": "Ivoti",
+    "addressRegion": "RS",
+    "postalCode": "93900-000",
+    "addressCountry": "BR"
+  },
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "11:15", "closes": "13:30" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "11:15", "closes": "14:00" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Friday","Saturday"], "opens": "19:00", "closes": "22:30" }
+  ]
+}
+</script>
+<style>
+
+:root{
+  --escuro:#211915;
+  --escuro-2:#2C221C;
+  --escuro-3:#382B23;
+  --laranja:#C78340;
+  --laranja-forte:#A96729;
+  --branco:#FFFFFF;
+  --texto:#E8DED5;
+  --suave:#B2A196;
+  --linha:rgba(255,255,255,.12);
+  --max:1100px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+body{
+  background:var(--escuro);color:var(--texto);
+  font-family:'Karla',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:18px;line-height:1.65;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:'Bitter',Georgia,serif;font-weight:700;line-height:1.15;color:var(--branco)}
+.college{font-family:'Karla',system-ui,sans-serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2px solid var(--laranja);outline-offset:3px}
+
+/* topo */
+header{position:sticky;top:0;z-index:50;background:rgba(33,25,21,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--linha)}
+.topo{display:flex;align-items:center;gap:14px;max-width:var(--max);margin:0 auto;padding:12px 24px}
+.topo img{height:52px;width:auto;display:block}
+.status{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:13px;color:var(--suave)}
+.bolinha{width:9px;height:9px;border-radius:50%;background:#6B5A4E;flex:none}
+.status.aberto{color:var(--branco)}
+.status.aberto .bolinha{background:#7FB069;box-shadow:0 0 0 4px rgba(127,176,105,.2)}
+
+/* hero */
+.hero{position:relative;padding:104px 0 92px;border-bottom:1px solid var(--linha);
+  background-image:linear-gradient(90deg,rgba(33,25,21,.96) 0%,rgba(33,25,21,.88) 42%,rgba(33,25,21,.42) 100%),
+                   linear-gradient(180deg,rgba(33,25,21,.55) 0%,rgba(33,25,21,0) 30%,rgba(33,25,21,.85) 100%),
+                   url(/site/img/deck-a-noite.jpg);
+  background-size:cover;background-position:center 60%}
+.hero .wrap{max-width:var(--max)}
+.hero .texto{max-width:640px}
+.eyebrow{font-size:13.5px;color:var(--laranja);margin-bottom:20px}
+h1{font-size:clamp(34px,4.8vw,56px);letter-spacing:-.005em;text-shadow:0 2px 24px rgba(0,0,0,.5)}
+h1 span{color:var(--laranja)}
+.hero p.intro{margin-top:22px;color:var(--texto);font-size:19.5px;max-width:46ch}
+.botoes{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.btn{display:inline-block;padding:15px 32px;font-size:18px;text-decoration:none;border:1px solid var(--laranja);
+  font-family:'Bitter',Georgia,serif;font-weight:600;letter-spacing:.01em;transition:background .2s,color .2s,border-color .2s}
+.btn-cheio{background:var(--laranja);color:#1B120C}
+.btn-cheio:hover{background:var(--laranja-forte);border-color:var(--laranja-forte);color:#fff}
+.btn-vazio{color:var(--texto);border-color:rgba(255,255,255,.4);background:rgba(33,25,21,.5)}
+.btn-vazio:hover{border-color:var(--branco);color:var(--branco)}
+
+/* fotos */
+.fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.foto{position:relative;overflow:hidden;background:var(--escuro-2)}
+.foto img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;transition:transform .5s ease}
+.foto:hover img{transform:scale(1.04)}
+.foto figcaption{position:absolute;left:0;right:0;bottom:0;padding:36px 18px 15px;font-size:16px;color:#fff;
+  background:linear-gradient(180deg,rgba(33,25,21,0),rgba(33,25,21,.9))}
+
+/* vídeos */
+.videos{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.video h3{font-size:17.5px;margin-bottom:10px;color:var(--laranja);font-family:'Bitter',Georgia,serif}
+.moldura{position:relative;width:100%;aspect-ratio:.62;border:1px solid var(--linha);background:var(--escuro-2);overflow:hidden}
+.moldura iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* seções */
+section{padding:70px 0;border-bottom:1px solid var(--linha)}
+h2{font-size:clamp(26px,3.4vw,36px);margin-bottom:12px}
+.sub{color:var(--suave);font-size:17px;margin-bottom:34px}
+
+/* horários */
+.quadro{border:1px solid var(--linha);background:var(--escuro-2)}
+.linha-dia{display:grid;grid-template-columns:120px 1fr 1.25fr;gap:18px;font-size:16.5px;padding:16px 22px;border-bottom:1px solid var(--linha);align-items:baseline}
+.linha-dia:last-child{border-bottom:none}
+.cabecalho{background:var(--escuro-3);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--suave);
+  font-family:'Bitter',Georgia,serif;font-weight:600}
+.dia{font-size:14.5px;color:var(--branco)}
+.hora{font-size:16.5px}
+.fechado{color:#7A6A5F}
+.linha-dia.hoje{background:linear-gradient(90deg,rgba(199,131,64,.18),transparent);border-left:3px solid var(--laranja);padding-left:19px}
+.linha-dia.hoje .dia{color:var(--laranja)}
+.nota{margin-top:16px;font-size:17px;color:var(--suave)}
+
+/* serviços */
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:1px;background:var(--linha);border:1px solid var(--linha)}
+.card{background:var(--escuro-2);padding:28px 26px}
+.card h3{font-size:22px;margin-bottom:9px}
+.card p{font-size:16.5px;color:var(--suave)}
+
+/* preços */
+.precos{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.preco{background:var(--escuro-2);border:1px solid var(--linha);padding:26px 24px}
+.preco h3{font-size:23px;margin-bottom:4px}
+.preco .quando{font-size:13px;color:var(--laranja);text-transform:uppercase;letter-spacing:.12em;
+  font-weight:700;margin-bottom:16px}
+.preco .item{display:flex;justify-content:space-between;gap:14px;align-items:baseline;
+  padding:9px 0;border-bottom:1px solid var(--linha);font-size:16.5px}
+.preco .item:last-of-type{border-bottom:none}
+.preco .item b{color:var(--branco);white-space:nowrap;font-weight:700}
+.preco .obs{font-size:14.5px;color:var(--suave);margin-top:14px}
+.preco .inclui{font-size:15px;color:var(--suave);margin-top:12px;line-height:1.55}
+
+/* reservas */
+.reserva{display:grid;grid-template-columns:1.15fr .85fr;gap:52px;align-items:start}
+.regras li{list-style:none;padding:16px 0;border-bottom:1px solid var(--linha);font-size:17px}
+.regras li:last-child{border-bottom:none}
+.regras b{display:block;font-family:'Bitter',Georgia,serif;font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--laranja);margin-bottom:5px;font-weight:400}
+.caixa{background:var(--escuro-2);border:1px solid var(--linha);padding:32px 30px}
+.caixa h3{font-size:25px;margin-bottom:12px}
+.caixa p{color:var(--suave);font-size:17px;margin-bottom:24px}
+
+/* formulário */
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo.largo{grid-column:1 / -1}
+.campo label{font-family:'Bitter',Georgia,serif;font-weight:600;font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--laranja)}
+.campo input,.campo select,.campo textarea{
+  background:var(--escuro);border:1px solid var(--linha);color:var(--texto);
+  font-family:'Karla',system-ui,sans-serif;font-size:17px;padding:13px 14px;border-radius:0;width:100%}
+.campo input:focus,.campo select:focus,.campo textarea:focus{outline:none;border-color:var(--laranja)}
+.campo textarea{resize:vertical;min-height:64px}
+.campo small{color:#8C7E74;font-size:14px}
+.aviso{margin-top:14px;font-size:16px;color:var(--laranja);min-height:20px}
+.enviar{margin-top:18px;width:100%;text-align:center;cursor:pointer;font-size:19px;padding:17px}
+button.enviar{font-family:'Bitter',Georgia,serif;font-weight:600}
+
+/* rodapé */
+footer{padding:54px 0 70px}
+.pe{display:flex;flex-wrap:wrap;gap:44px;justify-content:space-between}
+.pe h4{font-size:12.5px;color:var(--laranja);margin-bottom:10px;font-weight:400}
+.pe p,.pe a{font-size:17px;color:var(--suave);text-decoration:none;display:block}
+.pe a:hover{color:var(--branco)}
+.creditos{margin-top:46px;padding-top:22px;border-top:1px solid var(--linha);font-size:13.5px;color:#7A6A5F}
+
+@media(max-width:900px){
+  .videos{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:820px){
+  .reserva{grid-template-columns:1fr;gap:36px}
+  .hero{background-position:center}
+}
+@media(max-width:600px){
+  .hero{padding:64px 0 60px}
+  section{padding:54px 0}
+  .fotos{grid-template-columns:1fr 1fr;gap:10px}
+  .videos{grid-template-columns:1fr;gap:26px}
+  .linha-dia{grid-template-columns:88px 1fr;gap:10px;padding:15px 16px;font-size:16px}
+  .linha-dia .noite{grid-column:2}
+  .cabecalho{display:none}
+  .linha-dia.hoje{padding-left:13px}
+  .topo img{height:44px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topo">
+    <img src="/site/img/logo-brasa.png" alt="Brasa Restaurante e Pizzaria" width="300" height="104" fetchpriority="high">
+    <div class="status college" id="status">
+      <span class="bolinha"></span><span id="status-texto">Horarios</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="texto">
+      <p class="eyebrow college">Ivoti · Rio Grande do Sul</p>
+      <h1>Buffet no almoço.<br><span>Rodízio na sexta e no sábado.</span></h1>
+      <p class="intro">Mais de 60 sabores de pizza entre salgadas e doces, passando na mesa junto com as massas a cada rodada. No almoço, comida de casa com buffet de saladas e sobremesas.</p>
+      <div class="botoes">
+        <a class="btn btn-cheio" href="#reservas">Reservar mesa</a>
+        <a class="btn btn-vazio" href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="horarios">
+  <div class="wrap">
+    <h2>Horário de funcionamento</h2>
+    <p class="sub">O dia de hoje aparece destacado.</p>
+
+    <div class="quadro">
+      <div class="linha-dia cabecalho"><span>Dia</span><span>Almoço</span><span>Noite</span></div>
+      <div class="linha-dia" data-dia="1"><span class="dia college">Segunda</span><span class="hora">11h15 às 13h30</span><span class="hora noite fechado">Fechado</span></div>
+      <div class="linha-dia" data-dia="2"><span class="dia college">Terça</span><span class="hora">11h15 às 13h30</span><span class="hora noite fechado">Fechado</span></div>
+      <div class="linha-dia" data-dia="3"><span class="dia college">Quarta</span><span class="hora">11h15 às 13h30</span><span class="hora noite fechado">Fechado</span></div>
+      <div class="linha-dia" data-dia="4"><span class="dia college">Quinta</span><span class="hora">11h15 às 13h30</span><span class="hora noite fechado">Fechado</span></div>
+      <div class="linha-dia" data-dia="5"><span class="dia college">Sexta</span><span class="hora">11h15 às 13h30</span><span class="hora noite">Rodízio e delivery das 19h às 22h30</span></div>
+      <div class="linha-dia" data-dia="6"><span class="dia college">Sábado</span><span class="hora">11h15 às 14h</span><span class="hora noite">Rodízio e delivery das 19h às 22h30</span></div>
+      <div class="linha-dia" data-dia="0"><span class="dia college">Domingo</span><span class="hora fechado">Fechado</span><span class="hora noite fechado">Fechado</span></div>
+    </div>
+
+    <p class="nota">Delivery na sexta e no sábado, pelo <a href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener" style="color:var(--laranja)">site de pedidos</a> ou pelo WhatsApp.</p>
+  </div>
+</section>
+
+<section id="servicos">
+  <div class="wrap">
+    <h2>O que servimos</h2>
+    <p class="sub">De segunda a sábado, em Ivoti.</p>
+    <div class="grade">
+      <div class="card"><h3>Buffet de almoço</h3><p>Comida de casa todos os dias, com buffet de saladas e sobremesas. Também no quilo.</p></div>
+      <div class="card"><h3>Rodízio completo</h3><p>Pizzas e massas passando na mesa, com saladas, batata frita, anéis de cebola e polenta. Refrigerante incluso: Coca-Cola 1 litro e Fruki Guaraná 600 ml.</p></div>
+      <div class="card"><h3>Delivery e marmitas</h3><p>Pizza em casa na sexta e no sábado. Marmita do dia, tradicional e premium de sábado.</p></div>
+      <div class="card"><h3>Área kids</h3><p>Espaço para as crianças com recreacionista, para a família almoçar ou jantar com calma.</p></div>
+      <div class="card"><h3>Deck aconchegante</h3><p>Mesas no deck e salão renovado, com aquecedor a gás para os dias frios.</p></div>
+      <div class="card"><h3>Eventos e grupos</h3><p>Aniversários, batizados e eventos fechados. Fale com a gente para montar o seu.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="fotos">
+  <div class="wrap">
+    <h2>O Brasa por dentro</h2>
+    <p class="sub">Um pouco do que espera por você.</p>
+    <div class="fotos">
+      <figure class="foto"><img src="/site/img/buffet-de-almoco-servido-nas-cubas.jpg" alt="Buffet de almoço servido nas cubas" loading="lazy"><figcaption>Buffet do almoço</figcaption></figure>
+      <figure class="foto"><img src="/site/img/buffet-de-saladas.jpg" alt="Buffet de saladas" loading="lazy"><figcaption>Buffet de saladas</figcaption></figure>
+      <figure class="foto"><img src="/site/img/mesa-de-sobremesas.jpg" alt="Mesa de sobremesas" loading="lazy"><figcaption>Sobremesas</figcaption></figure>
+      <figure class="foto"><img src="/site/img/pizza-salgada-com-fatia-sendo-servida.jpg" alt="Pizza salgada com fatia sendo servida" loading="lazy"><figcaption>Pizza salgada</figcaption></figure>
+      <figure class="foto"><img src="/site/img/pizza-doce-de-morango-com-chocolate.jpg" alt="Pizza doce de morango com chocolate" loading="lazy"><figcaption>Morango com chocolate</figcaption></figure>
+      <figure class="foto"><img src="/site/img/duas-pizzas-doces-na-mesa.jpg" alt="Duas pizzas doces na mesa" loading="lazy"><figcaption>Pizzas doces</figcaption></figure>
+      <figure class="foto"><img src="/site/img/deck-com-mesas-postas-e-aquecedor-a-gas.jpg" alt="Deck com mesas postas e aquecedor a gás" loading="lazy"><figcaption>Deck aquecido</figcaption></figure>
+      <figure class="foto"><img src="/site/img/drinks-em-taca-no-bar.jpg" alt="Drinks em taça no bar" loading="lazy"><figcaption>Drinks do bar</figcaption></figure>
+      <figure class="foto"><img src="/site/img/soda-italiana-de-morango.jpg" alt="Soda italiana de morango" loading="lazy"><figcaption>Sodas italianas</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="videos">
+  <div class="wrap">
+    <h2>No vídeo</h2>
+    <p class="sub">Direto do nosso Instagram.</p>
+    <div class="videos">
+      <div class="video">
+        <h3>O restaurante</h3>
+        <div class="moldura"><iframe src="https://www.instagram.com/reel/DaLBkvkRfSR/embed" title="O restaurante" loading="lazy" allowfullscreen scrolling="no"></iframe></div>
+      </div>
+      <div class="video">
+        <h3>Pizza salgada</h3>
+        <div class="moldura"><iframe src="https://www.instagram.com/reel/Da6Isuqhg7f/embed" title="Pizza salgada" loading="lazy" allowfullscreen scrolling="no"></iframe></div>
+      </div>
+      <div class="video">
+        <h3>Pizza doce</h3>
+        <div class="moldura"><iframe src="https://www.instagram.com/reel/DaqMgsiRLtG/embed" title="Pizza doce" loading="lazy" allowfullscreen scrolling="no"></iframe></div>
+      </div>
+      <div class="video">
+        <h3>Como chegar</h3>
+        <div class="moldura"><iframe src="https://www.instagram.com/reel/DaV1DlDsqr6/embed" title="Como chegar" loading="lazy" allowfullscreen scrolling="no"></iframe></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="precos">
+  <div class="wrap">
+    <h2>Valores</h2>
+    <p class="sub">Preços por pessoa, com crianças pagando conforme a idade.</p>
+    <div class="precos">
+
+      <div class="preco">
+        <h3>Rodízio</h3>
+        <p class="quando">Sexta e sábado à noite</p>
+        <div class="item"><span>Por pessoa</span><b>R$ 84,90</b></div>
+        <div class="item"><span>0 a 6 anos</span><b>não pagam</b></div>
+        <div class="item"><span>7 a 12 anos</span><b>meia</b></div>
+        <div class="item"><span>13 anos ou mais</span><b>valor normal</b></div>
+        <p class="inclui">Inclui pizzas e massas, saladas, batata frita, anéis de cebola e polenta.</p>
+        <p class="inclui" style="color:var(--branco)"><b>Refrigerante incluso:</b> Coca-Cola 1 litro e Fruki Guaraná 600 ml.</p>
+        <p class="obs">Para a meia é preciso apresentar documento com a idade.</p>
+      </div>
+
+      <div class="preco">
+        <h3>Buffet de almoço</h3>
+        <p class="quando">Segunda a sábado</p>
+        <div class="item"><span>Seg a qui — livre</span><b>R$ 40,90</b></div>
+        <div class="item"><span>Seg a qui — por quilo</span><b>R$ 94,90</b></div>
+        <div class="item"><span>Sexta — livre</span><b>R$ 45,90</b></div>
+        <div class="item"><span>Sexta — por quilo</span><b>R$ 99,90</b></div>
+        <div class="item"><span>Sábado — livre</span><b>R$ 67,90</b></div>
+        <div class="item"><span>Sábado — por quilo</span><b>R$ 149,90</b></div>
+      </div>
+
+      <div class="preco">
+        <h3>Pizzas à la carte</h3>
+        <p class="quando">Sexta e sábado</p>
+        <div class="item"><span>Mini</span><b>a partir de R$ 18</b></div>
+        <div class="item"><span>Pequena</span><b>a partir de R$ 62</b></div>
+        <div class="item"><span>Média</span><b>a partir de R$ 74</b></div>
+        <div class="item"><span>Grande</span><b>a partir de R$ 86</b></div>
+        <p class="obs">Sabores premium têm valor diferente.</p>
+      </div>
+
+      <div class="preco">
+        <h3>Marmitas</h3>
+        <p class="quando">Do dia e tradicional: seg a sáb</p>
+        <div class="item"><span>Do dia</span><b>R$ 26</b></div>
+        <div class="item"><span>Tradicional</span><b>R$ 36</b></div>
+        <div class="item"><span>Premium — só sábado</span><b>R$ 46</b></div>
+        <p class="inclui">A do dia vem em vianda redonda, com cardápio reduzido. A tradicional e a premium vêm em vianda quadrada de 4 divisórias.</p>
+        <p style="margin-top:16px"><a class="btn btn-vazio" href="https://brasarestauranteepizzaria.mandarpedido.com/whatsapp" target="_blank" rel="noopener">Pedir marmita</a></p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="reservas">
+  <div class="wrap reserva">
+    <div>
+      <h2>Reservas</h2>
+      <p class="sub">Como funciona a sua mesa.</p>
+      <ul class="regras">
+        <li><b>Almoço</b>A mesa fica garantida até 11h45, com 15 minutos de tolerância. Depois desse horário ela pode ser liberada.</li>
+        <li><b>Rodízio</b>A mesa fica garantida até 19h45, com 10 minutos de tolerância. A partir das 19h45 o atendimento passa a ser por ordem de chegada.</li>
+        <li><b>Atraso ou desistência</b>Imprevistos acontecem. Avise a gente o quanto antes pelo WhatsApp: dentro do possível seguramos a mesa por mais tempo, e assim conseguimos organizar a casa para todo mundo.</li>
+        <li><b>Grupos</b>Pode reservar para quantas pessoas quiser, temos espaço amplo. Acima de 12 pessoas a reserva entra como pedido e a gente confirma as mesas com você.</li>
+        <li><b>Crianças</b>Até 6 anos não pagam. De 7 a 12 anos pagam meia. A partir de 13 anos pagam integral, mediante documento. Diga quantas crianças vão para separarmos as cadeirinhas altas.</li>
+        <li><b>Aniversário</b>Com 5 pagantes, o aniversariante não paga. Com 10 pagantes, ganha também um drink.</li>
+      </ul>
+    </div>
+    <div class="caixa">
+      <h3>Fazer uma reserva</h3>
+      <p>Preencha os dados e envie. A reserva chega no nosso WhatsApp e a gente confirma por lá.</p>
+
+      <div class="campos">
+        <div class="campo largo">
+          <label for="r-nome">Nome completo</label>
+          <input id="r-nome" type="text" autocomplete="name" placeholder="Seu nome">
+        </div>
+        <div class="campo largo">
+          <label for="r-fone">Telefone / WhatsApp</label>
+          <input id="r-fone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(51) 90000-0000">
+        </div>
+        <div class="campo">
+          <label for="r-data">Dia</label>
+          <input id="r-data" type="date">
+        </div>
+        <div class="campo">
+          <label for="r-horario">Turno</label>
+          <select id="r-horario"></select>
+        </div>
+        <div class="campo largo">
+          <label for="r-chegada">Horário de chegada</label>
+          <select id="r-chegada"></select>
+          <small id="r-regra"></small>
+        </div>
+        <div class="campo">
+          <label for="r-adultos">Adultos</label>
+          <input id="r-adultos" type="number" min="0" max="60" step="1" value="2">
+        </div>
+        <div class="campo">
+          <label for="r-criancas">Crianças</label>
+          <input id="r-criancas" type="number" min="0" max="30" step="1" value="0">
+          <small>Assim já separamos as cadeirinhas altas.</small>
+        </div>
+        <div class="campo largo">
+          <label for="r-lugar">Onde prefere</label>
+          <select id="r-lugar">
+            <option>Tanto faz</option>
+            <option>Salão</option>
+            <option>Deck</option>
+          </select>
+        </div>
+        <div class="campo largo">
+          <label for="r-ocasiao">Ocasião</label>
+          <select id="r-ocasiao">
+            <option>Só uma reserva</option>
+            <option>Aniversário</option>
+            <option>Outra data especial</option>
+          </select>
+        </div>
+        <div class="campo largo">
+          <label for="r-nasc">Data de nascimento</label>
+          <input id="r-nasc" type="date">
+          <small>Opcional. É como avisamos das novidades do seu mês.</small>
+        </div>
+        <div class="campo largo">
+          <label for="r-obs">Alguma observação</label>
+          <textarea id="r-obs" placeholder="Cadeirão, mesa perto da área kids, alergia..."></textarea>
+        </div>
+      </div>
+
+      <p class="aviso" id="r-aviso"></p>
+      <button class="btn btn-cheio enviar" id="r-enviar" type="button">Enviar reserva</button>
+      <p style="margin-top:14px;font-size:15px;color:#8C7E74">Usamos seus dados só para organizar a reserva e avisar das novidades do Brasa. Para pedir a remoção, é só falar com a gente no WhatsApp.</p>
+    </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="pe">
+      <div>
+        <h4 class="college">Onde estamos</h4>
+        <p>Av. Pres. Lucena, 1243 — Bom Jardim<br>Ivoti / RS · 93900-000</p>
+      </div>
+      <div>
+        <h4 class="college">Contato</h4>
+        <a href="tel:+5551980229859">(51) 98022-9859</a>
+        <a href="https://wa.me/5551980229859" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+      <div>
+        <h4 class="college">Pedidos</h4>
+        <a href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+        <a href="https://instagram.com/brasarestauranteiv" target="_blank" rel="noopener">@brasarestauranteiv</a>
+      </div>
+    </div>
+    <p class="creditos">Brasa Restaurante e Pizzaria · Ivoti / RS ·
+      <a href="/login" style="color:inherit;opacity:.75">Equipe</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Horários usados no aviso "Aberto agora". Ajuste junto com a tabela acima.
+  var grade={0:[],1:[["11:15","13:30"]],2:[["11:15","13:30"]],3:[["11:15","13:30"]],
+             4:[["11:15","13:30"]],5:[["11:15","13:30"],["19:00","22:30"]],
+             6:[["11:15","14:00"],["19:00","22:30"]]};
+  function min(h){var p=h.split(":");return p[0]*60+ +p[1];}
+  var d=new Date(), dia=d.getDay(), agora=d.getHours()*60+d.getMinutes();
+  var linha=document.querySelector('.linha-dia[data-dia="'+dia+'"]');
+  if(linha){linha.classList.add("hoje");}
+  var aberto=(grade[dia]||[]).some(function(f){return agora>=min(f[0])&&agora<min(f[1]);});
+  var caixa=document.getElementById("status");
+  document.getElementById("status-texto").textContent=aberto?"Aberto agora":"Fechado agora";
+  if(aberto){caixa.classList.add("aberto");}
+
+  /* ---- formulário de reserva ---- */
+  /* =========================================================
+     COLE AQUI AS DUAS CREDENCIAIS DO SUPABASE (Settings > API).
+     Enquanto estiverem em branco, a reserva vai só pelo WhatsApp.
+     ========================================================= */
+  var SB_URL="https://lrjzytqnmtkocgtpiyod.supabase.co";
+  var SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxyanp5dHFubXRrb2NndHBpeW9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3NTI5OTQsImV4cCI6MjEwMTMyODk5NH0.cke4jdxVET_3UWX9hcKrXudsGo4r3Ptb9FVUIrMFgrU";
+
+  var FONE="5551980229859";
+  var data=document.getElementById("r-data"),
+      horario=document.getElementById("r-horario"),
+      chegada=document.getElementById("r-chegada"),
+      aviso=document.getElementById("r-aviso");
+  var bloqueadosDoDia=[];
+  var LIMITES={};       /* limites por turno, vindos do banco */
+  var LOTACAO={};       /* quantas pessoas já reservadas no dia escolhido */
+
+  function hoje(){var d=new Date();return d.toISOString().slice(0,10);}
+  data.min=hoje();
+
+  function diaDaData(v){
+    var p=v.split("-");
+    return new Date(+p[0],+p[1]-1,+p[2]).getDay();
+  }
+
+  function cabecalhos(){
+    return {apikey:SB_KEY,Authorization:"Bearer "+SB_KEY};
+  }
+
+  /* limites da casa (grupo grande, lotação máxima) */
+  if(SB_URL&&SB_KEY){
+    fetch(SB_URL+"/rest/v1/limites?select=*",{headers:cabecalhos()})
+      .then(function(r){return r.json();})
+      .then(function(l){ (l||[]).forEach(function(x){LIMITES[x.turno]=x;}); })
+      .catch(function(){});
+  }
+
+  function checarDia(v){
+    bloqueadosDoDia=[]; LOTACAO={};
+    if(!SB_URL||!SB_KEY) return;
+
+    fetch(SB_URL+"/rest/v1/bloqueios?select=turno,motivo&data=eq."+v,{headers:cabecalhos()})
+      .then(function(r){return r.json();}).then(function(lista){
+        if(!lista||!lista.length) return;
+        bloqueadosDoDia=lista.map(function(b){return b.turno;});
+        if(bloqueadosDoDia.indexOf("Dia todo")>-1){
+          aviso.textContent="Esse dia está fechado para reservas. Escolha outro.";
+        } else {
+          aviso.textContent="Nesse dia o "+bloqueadosDoDia.join(" e o ")+" já está fechado.";
+        }
+      }).catch(function(){});
+
+    fetch(SB_URL+"/rest/v1/rpc/disponibilidade",{
+      method:"POST",
+      headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({p_data:v})
+    }).then(function(r){return r.json();}).then(function(lista){
+      (lista||[]).forEach(function(x){LOTACAO[x.turno]={reservas:x.reservas,pessoas:x.pessoas};});
+    }).catch(function(){});
+  }
+
+  var CHEGADAS={
+    "Almoço":["11h15","11h30","11h45"],
+    "Rodízio":["19h00","19h15","19h30","19h45"]
+  };
+  var REGRAS={
+    "Almoço":"Mesa garantida até 11h45, com 15 minutos de tolerância.",
+    "Rodízio":"Mesa garantida até 19h45, com 10 minutos de tolerância. Depois disso, por ordem de chegada."
+  };
+  var LIMITE_PEDIDO={ "Almoço":"11:45", "Rodízio":"18:45" };
+
+  function turnoEscolhido(){
+    return horario.value.indexOf("Rodízio")===0?"Rodízio":"Almoço";
+  }
+
+  function atualizarChegada(){
+    var t=turnoEscolhido(), lista=CHEGADAS[t]||[];
+    chegada.innerHTML=lista.map(function(o){return '<option>'+o+'</option>';}).join("");
+    document.getElementById("r-regra").textContent=REGRAS[t]||"";
+  }
+
+  function agoraHHMM(){
+    var d=new Date();
+    return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+  }
+
+  function tardeDemais(dia,turno){
+    if(dia!==hoje()) return false;
+    var lim=LIMITE_PEDIDO[turno];
+    return lim ? agoraHHMM()>lim : false;
+  }
+
+  function opcoes(){
+    var v=data.value, opts=[];
+    horario.innerHTML="";
+    aviso.textContent="";
+    if(!v){horario.innerHTML='<option>Escolha o dia primeiro</option>';chegada.innerHTML="";return;}
+    var d=diaDaData(v);
+    if(d===0){
+      aviso.textContent="Domingo não abrimos. Escolha outro dia.";
+      horario.innerHTML='<option>Fechado</option>';
+      chegada.innerHTML="";
+      return;
+    }
+    opts.push(d===6?"Almoço — 11h15 às 14h":"Almoço — 11h15 às 13h30");
+    if(d===5||d===6){opts.push("Rodízio — 19h às 22h30");}
+    else{aviso.textContent="Nesse dia abrimos só no almoço. O rodízio é sexta e sábado.";}
+    horario.innerHTML=opts.map(function(o){return '<option>'+o+'</option>';}).join("");
+    atualizarChegada();
+    checarDia(v);
+  }
+  horario.addEventListener("change",function(){atualizarChegada();aviso.textContent="";});
+  data.addEventListener("change",opcoes);
+  opcoes();
+
+  function avisarGrupo(){
+    var turno=turnoEscolhido();
+    var lim=LIMITES[turno]||{}, g=lim.grupo_grande||12;
+    var total=numero("r-adultos")+numero("r-criancas");
+    if(total>=g){
+      aviso.textContent="Grupo de "+total+" pessoas: a reserva entra como pedido e a equipe confirma se há mesas.";
+    } else if(aviso.textContent.indexOf("Grupo de")===0){
+      aviso.textContent="";
+    }
+  }
+  document.getElementById("r-adultos").addEventListener("input",avisarGrupo);
+  document.getElementById("r-criancas").addEventListener("input",avisarGrupo);
+
+  function valor(id){return (document.getElementById(id).value||"").trim();}
+  function numero(id){return parseInt(valor(id)||"0",10)||0;}
+
+  function dataBR(v){
+    if(!v) return "";
+    var p=v.split("-");
+    return p[2]+"/"+p[1]+"/"+p[0];
+  }
+
+  document.getElementById("r-enviar").addEventListener("click",function(){
+    var nome=valor("r-nome"), fone=valor("r-fone"), dia=valor("r-data");
+    var adultos=numero("r-adultos"), criancas=numero("r-criancas"), pessoas=adultos+criancas;
+
+    if(!nome){aviso.textContent="Falta o seu nome.";return;}
+    if(!fone){aviso.textContent="Falta o seu telefone.";return;}
+    if(!dia){aviso.textContent="Escolha o dia da reserva.";return;}
+    if(diaDaData(dia)===0){aviso.textContent="Domingo não abrimos. Escolha outro dia.";return;}
+    if(pessoas<1){aviso.textContent="Quantas pessoas vão?";return;}
+
+    var turno=turnoEscolhido();
+    if(tardeDemais(dia,turno)){
+      aviso.textContent = turno==="Almoço"
+        ? "Já passou das 11h45, o horário limite para reservar o almoço de hoje. Pode vir sem reserva: atendemos por ordem de chegada."
+        : "Já passou das 18h45, o horário limite para reservar o rodízio de hoje. Pode vir sem reserva: atendemos por ordem de chegada.";
+      return;
+    }
+    if(bloqueadosDoDia.indexOf("Dia todo")>-1||bloqueadosDoDia.indexOf(turno)>-1){
+      aviso.textContent="Esse horário está fechado para reservas. Escolha outro dia ou nos chame no WhatsApp.";
+      return;
+    }
+
+    var lim=LIMITES[turno]||{}, uso=LOTACAO[turno]||{reservas:0,pessoas:0};
+    var maxPessoas=lim.max_pessoas||0, maxReservas=lim.max_reservas||0;
+    var grupoGrande=lim.grupo_grande||12;
+
+    if(maxPessoas && uso.pessoas+pessoas>maxPessoas){
+      aviso.textContent="Já estamos com as mesas tomadas nesse horário. Escolha outro dia ou nos chame no WhatsApp.";
+      return;
+    }
+    if(maxReservas && uso.reservas>=maxReservas){
+      aviso.textContent="As reservas desse horário se esgotaram. Escolha outro dia ou nos chame no WhatsApp.";
+      return;
+    }
+
+    var grande = pessoas>=grupoGrande;
+    var status = grande ? "aguardando" : "nova";
+
+    var linhas=[
+      grande?"Pedido de reserva para grupo — site do Brasa":"Reserva pelo site do Brasa",
+      "",
+      "Nome: "+nome,
+      "Telefone: "+fone,
+      "Dia: "+dataBR(dia),
+      "Horário: "+horario.value,
+      "Chegada prevista: "+chegada.value,
+      "Pessoas: "+pessoas+" ("+adultos+" adultos"+(criancas?" e "+criancas+" crianças":"")+")",
+      "Onde: "+valor("r-lugar"),
+      "Ocasião: "+valor("r-ocasiao")
+    ];
+    if(criancas>0){linhas.push("Precisa de "+criancas+" cadeirinha(s) alta(s)");}
+    if(valor("r-nasc")){linhas.push("Nascimento: "+dataBR(valor("r-nasc")));}
+    if(valor("r-obs")){linhas.push("Observação: "+valor("r-obs"));}
+    if(grande){linhas.push("", "Aguardando a equipe confirmar se há mesas para o grupo.");}
+
+    function irParaWhatsApp(){
+      window.open("https://wa.me/"+FONE+"?text="+encodeURIComponent(linhas.join("\n")),"_blank");
+    }
+
+    if(!SB_URL||!SB_KEY){
+      aviso.textContent="Abrindo o WhatsApp...";
+      irParaWhatsApp();
+      return;
+    }
+
+    aviso.textContent="Enviando sua reserva...";
+    fetch(SB_URL+"/rest/v1/reservas",{
+      method:"POST",
+      headers:{
+        "apikey":SB_KEY,
+        "Authorization":"Bearer "+SB_KEY,
+        "Content-Type":"application/json",
+        "Prefer":"return=minimal"
+      },
+      body:JSON.stringify({
+        nome:nome, telefone:fone, data:dia, turno:turno, chegada:chegada.value,
+        pessoas:pessoas, adultos:adultos, criancas:criancas,
+        lugar:valor("r-lugar"),
+        ocasiao:valor("r-ocasiao"),
+        nascimento:valor("r-nasc")||null,
+        observacao:valor("r-obs")||null,
+        status:status,
+        origem:"site"
+      })
+    }).then(function(r){
+      if(!r.ok){throw new Error("falhou");}
+      aviso.textContent = grande
+        ? "Pedido enviado. Como é um grupo maior, vamos conferir as mesas e confirmar com você pelo WhatsApp."
+        : "Reserva enviada. Vamos confirmar com você pelo WhatsApp.";
+      irParaWhatsApp();
+    }).catch(function(){
+      aviso.textContent="Não consegui registrar aqui. Vamos pelo WhatsApp.";
+      irParaWhatsApp();
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /cotar
+Disallow: /contar
+Disallow: /eu
+Disallow: /e
+Disallow: /marmitas
+
+Sitemap: https://www.brasarestaurante.com.br/sitemap.xml
