@@ -3,9 +3,22 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async rewrites() {
     return {
-      // beforeFiles roda antes das rotas do app: é o que faz a raiz do
-      // domínio (www.brasarestaurante.com.br) abrir o site do restaurante.
-      beforeFiles: [{ source: "/", destination: "/site/index.html" }],
+      // beforeFiles roda antes das rotas do app. A raiz abre coisas
+      // diferentes conforme o endereço: no sistema.* é a capa do sistema
+      // (equipe), em qualquer outro (www, .vercel.app) é o site do
+      // restaurante.
+      beforeFiles: [
+        {
+          source: "/",
+          has: [{ type: "host", value: "sistema.brasarestaurante.com.br" }],
+          destination: "/sistema",
+        },
+        {
+          source: "/",
+          missing: [{ type: "host", value: "sistema.brasarestaurante.com.br" }],
+          destination: "/site/index.html",
+        },
+      ],
       afterFiles: [
         // URL curta do app de marmitas: /marmitas serve o /marmitas.html.
         { source: "/marmitas", destination: "/marmitas.html" },
