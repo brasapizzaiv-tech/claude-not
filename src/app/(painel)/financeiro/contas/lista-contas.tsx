@@ -8,6 +8,23 @@ import type { LinhaConta } from "./consulta";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+const curto = (iso: string) => dataBR(iso).slice(0, 5); // 25/08
+
+// Contas com data "AAAA-MM-DD": soma/lê o dia em UTC para não escorregar de fuso.
+function addDias(iso: string, n: number) {
+  const [a, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10);
+}
+function diaDaSemana(iso: string) {
+  const [a, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d)).getUTCDay(); // 0 = domingo
+}
+// Segunda-feira da semana do vencimento (semana fecha segunda → domingo).
+function segundaDa(iso: string) {
+  return addDias(iso, -((diaDaSemana(iso) + 6) % 7));
+}
+
 const norm = (s: string) =>
   (s || "")
     .toLowerCase()
@@ -160,24 +177,55 @@ export function ListaContasView({
     );
   }, [busca, linhas]);
 
-  const baldes = useMemo(() => {
-    const hoje = new Date().toISOString().slice(0, 10);
-    const em7 = new Date(new Date().getTime() + 7 * 864e5).toISOString().slice(0, 10);
-    const b = [
-      { nome: "Vencidas", cor: "text-red-600", itens: [] as LinhaConta[] },
-      { nome: "Próximos 7 dias", cor: "text-amber-600", itens: [] as LinhaConta[] },
-      { nome: "A vencer", cor: "text-zinc-500", itens: [] as LinhaConta[] },
-      { nome: "Sem vencimento", cor: "text-zinc-400", itens: [] as LinhaConta[] },
-    ];
+  // Abertas: vencidas em bloco, o resto por DIA, dentro da semana (seg → dom).
+  const grupos = useMemo(() => {
+    const vencidas: LinhaConta[] = [];
+    const semVenc: LinhaConta[] = [];
+    const porDia = new Map<string, LinhaConta[]>();
     if (aberto)
       for (const l of filtradas) {
-        if (!l.vencimento) b[3].itens.push(l);
-        else if (l.vencimento < hoje) b[0].itens.push(l);
-        else if (l.vencimento <= em7) b[1].itens.push(l);
-        else b[2].itens.push(l);
+        if (!l.vencimento) semVenc.push(l);
+        else if (l.vencimento < hojeBR) vencidas.push(l);
+        else {
+          const a = porDia.get(l.vencimento) ?? [];
+          a.push(l);
+          porDia.set(l.vencimento, a);
+        }
       }
-    return b;
-  }, [filtradas, aberto]);
+
+    type Dia = { iso: string; itens: LinhaConta[]; total: number };
+    type Semana = { inicio: string; fim: string; dias: Dia[]; total: number };
+    const semanas = new Map<string, Semana>();
+    for (const iso of [...porDia.keys()].sort()) {
+      const itens = porDia.get(iso)!;
+      const total = itens.reduce((s, l) => s + Number(l.valor), 0);
+      const inicio = segundaDa(iso);
+      const sem =
+        semanas.get(inicio) ??
+        { inicio, fim: addDias(inicio, 6), dias: [], total: 0 };
+      sem.dias.push({ iso, itens, total });
+      sem.total += total;
+      semanas.set(inicio, sem);
+    }
+
+    return {
+      vencidas,
+      semVenc,
+      semanas: [...semanas.values()],
+      totalVencidas: vencidas.reduce((s, l) => s + Number(l.valor), 0),
+      totalSemVenc: semVenc.reduce((s, l) => s + Number(l.valor), 0),
+    };
+  }, [filtradas, aberto, hojeBR]);
+
+  const estaSemana = segundaDa(hojeBR);
+  const rotuloSemana = (inicio: string) =>
+    inicio === estaSemana
+      ? "esta semana"
+      : inicio === addDias(estaSemana, 7)
+        ? "próxima semana"
+        : null;
+  const rotuloDia = (iso: string) =>
+    iso === hojeBR ? "hoje" : iso === addDias(hojeBR, 1) ? "amanhã" : null;
 
   return (
     <div>
@@ -212,21 +260,74 @@ export function ListaContasView({
           )}
         </div>
       ) : aberto ? (
-        <div className="space-y-6">
-          {baldes
-            .filter((b) => b.itens.length > 0)
-            .map((b) => {
-              const soma = b.itens.reduce((s, l) => s + Number(l.valor), 0);
-              return (
-                <div key={b.nome}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <h2 className={`text-sm font-semibold ${b.cor}`}>{b.nome}</h2>
-                    <span className="text-sm font-medium text-zinc-500">{moeda(soma)}</span>
-                  </div>
-                  <Linhas itens={b.itens} hojeBR={hojeBR} />
+        <div className="space-y-8">
+          {grupos.vencidas.length > 0 && (
+            <section>
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-red-600">Vencidas</h2>
+                <span className="text-sm font-medium text-red-600">
+                  {moeda(grupos.totalVencidas)}
+                </span>
+              </div>
+              <Linhas itens={grupos.vencidas} hojeBR={hojeBR} />
+            </section>
+          )}
+
+          {grupos.semanas.map((sem) => {
+            const rot = rotuloSemana(sem.inicio);
+            return (
+              <section key={sem.inicio}>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-1.5 dark:border-zinc-800">
+                  <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                    Semana {curto(sem.inicio)} a {curto(sem.fim)}
+                    {rot && (
+                      <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                        {rot}
+                      </span>
+                    )}
+                  </h2>
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                    {moeda(sem.total)}
+                  </span>
                 </div>
-              );
-            })}
+                <div className="space-y-4">
+                  {sem.dias.map((d) => {
+                    const rd = rotuloDia(d.iso);
+                    return (
+                      <div key={d.iso}>
+                        <div className="mb-1 flex items-center justify-between">
+                          <h3 className="text-xs font-medium text-zinc-500">
+                            {DIAS[diaDaSemana(d.iso)]} {curto(d.iso)}
+                            {rd && (
+                              <span className="ml-1.5 font-semibold text-orange-600">
+                                · {rd}
+                              </span>
+                            )}
+                          </h3>
+                          <span className="text-xs font-medium text-zinc-500">
+                            {moeda(d.total)}
+                          </span>
+                        </div>
+                        <Linhas itens={d.itens} hojeBR={hojeBR} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+
+          {grupos.semVenc.length > 0 && (
+            <section>
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-zinc-400">Sem vencimento</h2>
+                <span className="text-sm font-medium text-zinc-500">
+                  {moeda(grupos.totalSemVenc)}
+                </span>
+              </div>
+              <Linhas itens={grupos.semVenc} hojeBR={hojeBR} />
+            </section>
+          )}
         </div>
       ) : (
         <Linhas itens={filtradas} mostrarPago hojeBR={hojeBR} />
