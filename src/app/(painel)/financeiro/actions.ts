@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { ajustarTotalBoleto, lerValorBR } from "@/lib/boleto";
 
 export async function criarLancamento(formData: FormData) {
   const supabase = await createClient();
@@ -180,4 +181,26 @@ export async function alternarPago(formData: FormData) {
   }
   revalidatePath("/financeiro/contas");
   revalidatePath("/financeiro");
+}
+
+// Ajusta o valor cobrado numa conta (o boleto veio com custas, juros ou
+// desconto). Conta vinda de nota: a diferença entra como lançamento à parte em
+// "Despesas Bancárias", sem mexer no valor da mercadoria (CMV). Conta manual:
+// muda o próprio valor.
+export async function ajustarValorConta(formData: FormData) {
+  const supabase = await createClient();
+  const idsRaw =
+    (formData.get("ids") as string) || (formData.get("id") as string) || "";
+  const ids = idsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const valor = lerValorBR(formData.get("valor") as string);
+  if (ids.length === 0 || !(valor > 0)) return;
+
+  await ajustarTotalBoleto(supabase, ids, valor);
+
+  revalidatePath("/financeiro/contas");
+  revalidatePath("/financeiro");
+  revalidatePath("/notas");
 }

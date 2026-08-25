@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
+import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
 
 // Primeiro dia do mês atual (AAAA-MM-01) — nota anterior a isso entra como paga.
 function inicioDoMes() {
@@ -389,6 +390,10 @@ export async function lancarNota(
     .update({ situacao: "lancada" })
     .eq("id", notaId);
 
+  // Valor do boleto informado (custas/juros/desconto) volta a valer depois de
+  // lançar — a diferença entra como lançamento à parte, sem sujar o CMV.
+  await aplicarValorBoletoNota(supabase, notaId);
+
   // Toda compra que entra atualiza o preço de referência do produto
   // (usado nas contagens/CMV e nas próximas cotações).
   const { data: itensRef } = await supabase
@@ -408,6 +413,53 @@ export async function lancarNota(
   revalidatePath("/financeiro/contas");
   revalidatePath("/produtos");
   return { ok: true };
+}
+
+// Valor cobrado no boleto (com custas/juros do banco) — quase sempre diferente
+// do valor da nota. Fica guardado na nota e, se ela já estiver lançada, a
+// diferença já entra como lançamento à parte em "Despesas Bancárias".
+export async function definirValorBoleto(notaId: string, valor: number | null) {
+  const supabase = await createClient();
+  const { data: nota } = await supabase
+    .from("notas_fiscais")
+    .select("valor, situacao")
+    .eq("id", notaId)
+    .maybeSingle();
+  if (!nota) return { ok: false, erro: "Nota não encontrada." };
+
+  const v = valor && valor > 0 ? Math.round(valor * 100) / 100 : null;
+  await supabase
+    .from("notas_fiscais")
+    .update({ valor_boleto: v })
+    .eq("id", notaId);
+
+  let erro: string | undefined;
+  if ((nota as { situacao?: string }).situacao === "lancada") {
+    const { data: lancData } = await supabase
+      .from("lancamentos")
+      .select("id, vencimento")
+      .eq("nota_id", notaId);
+    const lancs = (lancData as { id: string; vencimento: string | null }[]) ?? [];
+    const vencimentos = new Set(lancs.map((l) => l.vencimento ?? ""));
+    if (lancs.length === 0) {
+      erro = "Nota sem lançamento no financeiro.";
+    } else if (vencimentos.size > 1) {
+      erro = "Nota parcelada: ajuste o valor de cada boleto em Contas a pagar.";
+    } else {
+      const r = await ajustarTotalBoleto(
+        supabase,
+        lancs.map((l) => l.id),
+        v ?? Number(nota.valor),
+      );
+      erro = r.erro;
+    }
+  }
+
+  revalidatePath(`/notas/${notaId}`);
+  revalidatePath("/notas");
+  revalidatePath("/financeiro/contas");
+  revalidatePath("/financeiro");
+  return { ok: !erro, erro };
 }
 
 // Marca a nota como mercadoria ou serviço.

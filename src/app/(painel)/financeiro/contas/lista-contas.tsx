@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { dataBR } from "@/lib/format";
-import { alternarPago } from "../actions";
+import { alternarPago, ajustarValorConta } from "../actions";
 import type { LinhaConta } from "./consulta";
 
 const moeda = (n: number) =>
@@ -13,6 +13,67 @@ const norm = (s: string) =>
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
+
+
+// Valor do boleto: clicar abre a edição. O boleto quase nunca fecha com a nota
+// (custas, juros, desconto do banco) — aqui se coloca o valor cobrado de
+// verdade. Em conta de nota, a diferença vira uma linha de "Despesas
+// Bancárias" e o valor da mercadoria (CMV) fica intacto.
+function ValorConta({ l }: { l: LinhaConta }) {
+  const [editando, setEditando] = useState(false);
+  const custas = Number(l.custas ?? 0);
+
+  if (!editando)
+    return (
+      <button
+        onClick={() => setEditando(true)}
+        title="Ajustar o valor cobrado no boleto"
+        className="w-full text-right"
+      >
+        <span className="font-medium text-zinc-800 underline decoration-dotted decoration-zinc-300 underline-offset-4 hover:text-orange-600 dark:text-zinc-200">
+          {moeda(Number(l.valor))}
+        </span>
+        {Math.abs(custas) >= 0.01 && (
+          <span className="block text-[11px] text-amber-600">
+            {custas > 0 ? "+" : "−"} {moeda(Math.abs(custas))}{" "}
+            {custas > 0 ? "de custas" : "de desconto"}
+          </span>
+        )}
+      </button>
+    );
+
+  return (
+    <form
+      action={async (fd: FormData) => {
+        await ajustarValorConta(fd);
+        setEditando(false);
+      }}
+      className="flex items-center justify-end gap-1"
+    >
+      <input type="hidden" name="ids" value={(l.ids ?? [l.id]).join(",")} />
+      <input
+        name="valor"
+        autoFocus
+        inputMode="decimal"
+        defaultValue={Number(l.valor).toFixed(2).replace(".", ",")}
+        className="w-24 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-right text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+      />
+      <button
+        className="rounded-lg bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600"
+        title="Salvar o valor do boleto"
+      >
+        ✓
+      </button>
+      <button
+        type="button"
+        onClick={() => setEditando(false)}
+        className="text-xs text-zinc-400 hover:text-zinc-600"
+      >
+        ✕
+      </button>
+    </form>
+  );
+}
 
 function Linhas({
   itens,
@@ -41,8 +102,8 @@ function Linhas({
                   {mostrarPago && l.pago_em ? ` · pago ${dataBR(l.pago_em)}` : ""}
                 </div>
               </td>
-              <td className="px-4 py-2 text-right font-medium text-zinc-800 dark:text-zinc-200">
-                {moeda(Number(l.valor))}
+              <td className="px-4 py-2 text-right">
+                <ValorConta l={l} />
               </td>
               <td className="px-4 py-2 text-right">
                 <form action={alternarPago} className="inline-flex items-center gap-1.5">

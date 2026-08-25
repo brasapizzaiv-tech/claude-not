@@ -26,6 +26,8 @@ export type LinhaConta = {
   banco: string | null;
   forma_pagamento: string | null;
   origem: string;
+  ajuste?: boolean | null; // lançamento de custas/juros do boleto
+  custas?: number; // soma dos ajustes agrupados nesta linha
   categoria_id: string | null;
   dre_categorias: { nome?: string; tipo?: string } | null;
   fornecedores: { nome?: string } | null;
@@ -37,19 +39,27 @@ export type LinhaConta = {
 export function agruparContas(linhas: LinhaConta[]): LinhaConta[] {
   const grupos = new Map<string, LinhaConta>();
   const cats = new Map<string, Set<string>>();
-  for (const l of linhas) {
+  // O ajuste entra por último para a linha do boleto herdar a descrição da nota.
+  for (const l of [...linhas].sort((a, b) => Number(!!a.ajuste) - Number(!!b.ajuste))) {
     const key =
       l.nota_id && l.origem === "nota"
         ? `nota|${l.nota_id}|${l.vencimento ?? ""}|${l.pago ? "1" : "0"}`
         : `lanc|${l.id}`;
+    const custas = l.ajuste ? Number(l.valor) : 0;
     const g = grupos.get(key);
     if (!g) {
-      grupos.set(key, { ...l, ids: [l.id] });
-      cats.set(key, new Set(l.dre_categorias?.nome ? [l.dre_categorias.nome] : []));
+      grupos.set(key, { ...l, ids: [l.id], custas });
+      // O ajuste (custas do boleto) não conta como "categoria" da linha.
+      cats.set(
+        key,
+        new Set(!l.ajuste && l.dre_categorias?.nome ? [l.dre_categorias.nome] : []),
+      );
     } else {
       g.valor = Math.round((Number(g.valor) + Number(l.valor)) * 100) / 100;
+      g.custas = Math.round(((g.custas ?? 0) + custas) * 100) / 100;
       g.ids!.push(l.id);
-      if (l.dre_categorias?.nome) cats.get(key)!.add(l.dre_categorias.nome);
+      if (!l.ajuste && l.dre_categorias?.nome)
+        cats.get(key)!.add(l.dre_categorias.nome);
     }
   }
   // Categoria mostrada: única se só tem uma; senão "Vários itens".
@@ -71,7 +81,7 @@ export async function consultarContas(f: FiltroContas): Promise<LinhaConta[]> {
   let q = supabase
     .from("lancamentos")
     .select(
-      "id, nota_id, data, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
+      "id, nota_id, data, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, ajuste, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
     );
 
   if (f.status === "pagas") q = q.eq("pago", true);

@@ -120,6 +120,9 @@ export default async function NotaDetalhePage({
         NF {nota.numero} · série {nota.serie} ·{" "}
         {nota.data_emissao ? dataBR(nota.data_emissao) : "—"} ·{" "}
         {moeda(Number(nota.valor))}
+        {nota.valor_boleto != null
+          ? ` · boleto ${moeda(Number(nota.valor_boleto))}`
+          : ""}
         {nota.vencimento ? ` · vence ${dataBR(nota.vencimento)}` : ""}
       </p>
       {!nota.fornecedor_id && (
@@ -144,6 +147,8 @@ export default async function NotaDetalhePage({
         dreCategoriaId={nota.dre_categoria_id ?? null}
         categorias={categorias}
         parcelas={parcelas}
+        valorNota={Number(nota.valor)}
+        valorBoleto={nota.valor_boleto != null ? Number(nota.valor_boleto) : null}
       />
 
       <ParcelasEditor

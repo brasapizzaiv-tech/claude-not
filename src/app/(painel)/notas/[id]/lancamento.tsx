@@ -9,6 +9,7 @@ import {
   definirTipoNota,
   definirCategoriaNota,
   criarEVincularFornecedor,
+  definirValorBoleto,
 } from "../actions";
 import { Combobox } from "@/components/combobox";
 import { dataBR } from "@/lib/format";
@@ -17,6 +18,12 @@ const campo =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const num = (s: string) => {
+  const t = s.trim();
+  if (!t) return 0;
+  return Number((t.includes(",") ? t.replace(/./g, "").replace(",", ".") : t)
+    .replace(/[^0-9.-]/g, "")) || 0;
+};
 
 type Cat = { id: string; tipo: string; grupo: string; nome: string };
 type Parcela = { numero: string | null; vencimento: string | null; valor: number };
@@ -35,6 +42,8 @@ export function LancamentoNota({
   dreCategoriaId,
   categorias,
   parcelas,
+  valorNota,
+  valorBoleto,
 }: {
   notaId: string;
   situacao: string;
@@ -49,6 +58,8 @@ export function LancamentoNota({
   dreCategoriaId: string | null;
   categorias: Cat[];
   parcelas: Parcela[];
+  valorNota: number;
+  valorBoleto: number | null;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -61,6 +72,10 @@ export function LancamentoNota({
   const [catSel, setCatSel] = useState(dreCategoriaId ?? "");
   const temParcelas = parcelas.length > 1;
   const [parcelar, setParcelar] = useState(temParcelas);
+  const [boleto, setBoleto] = useState(
+    valorBoleto != null ? String(Number(valorBoleto).toFixed(2)).replace(".", ",") : "",
+  );
+  const [msgBoleto, setMsgBoleto] = useState<string | null>(null);
 
   const lancada = situacao === "lancada";
   const ehServico = tipo === "servico";
@@ -90,6 +105,27 @@ export function LancamentoNota({
     start(async () => {
       await criarEVincularFornecedor(notaId, novoNome.trim(), emitCnpj);
       setModoNovo(false);
+      router.refresh();
+    });
+  }
+  function salvarBoleto() {
+    setMsgBoleto(null);
+    const v = num(boleto);
+    start(async () => {
+      const r = await definirValorBoleto(notaId, v > 0 ? v : null);
+      setMsgBoleto(
+        r.erro
+          ? r.erro
+          : v > 0
+            ? `✓ Boleto de ${moeda(v)} salvo${
+                Math.abs(v - valorNota) >= 0.01
+                  ? ` — diferença de ${moeda(Math.abs(v - valorNota))} ${
+                      v > valorNota ? "em custas" : "de desconto"
+                    } vai para Despesas Bancárias`
+                  : ""
+              }.`
+            : "✓ Voltou a valer o valor da nota.",
+      );
       router.refresh();
     });
   }
@@ -307,6 +343,62 @@ export function LancamentoNota({
           />
         </div>
       </div>
+
+      {/* Valor cobrado no boleto (custas/juros do banco) */}
+      {!(parcelar && temParcelas) && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+          <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            Valor do boleto (com custas/juros)
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              inputMode="decimal"
+              value={boleto}
+              placeholder={String(valorNota.toFixed(2)).replace(".", ",")}
+              onChange={(e) => setBoleto(e.target.value)}
+              className={`${campo} w-32 text-right`}
+            />
+            <button
+              type="button"
+              onClick={salvarBoleto}
+              disabled={proc}
+              className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+            >
+              Salvar valor do boleto
+            </button>
+            {boleto && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBoleto("");
+                  start(async () => {
+                    await definirValorBoleto(notaId, null);
+                    setMsgBoleto("✓ Voltou a valer o valor da nota.");
+                    router.refresh();
+                  });
+                }}
+                className="text-xs text-zinc-400 hover:text-orange-600"
+              >
+                usar o valor da nota
+              </button>
+            )}
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Nota: {moeda(valorNota)}
+            {num(boleto) > 0 && Math.abs(num(boleto) - valorNota) >= 0.01 && (
+              <>
+                {" · "}
+                {num(boleto) > valorNota ? "custas" : "desconto"} de{" "}
+                <b>{moeda(Math.abs(num(boleto) - valorNota))}</b> (vai para
+                Despesas Bancárias, sem mexer no CMV)
+              </>
+            )}
+          </p>
+          {msgBoleto && (
+            <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-300">{msgBoleto}</p>
+          )}
+        </div>
+      )}
 
       {/* Ação */}
       <div className="flex items-center gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">

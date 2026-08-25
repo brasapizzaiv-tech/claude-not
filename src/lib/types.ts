@@ -124,6 +124,7 @@ export type NotaFiscal = {
   emit_nome: string | null;
   dest_cnpj: string | null;
   valor: number;
+  valor_boleto: number | null; // valor cobrado no boleto (com custas/juros)
   data_emissao: string | null;
   vencimento: string | null;
   fornecedor_id: string | null;
