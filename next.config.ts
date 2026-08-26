@@ -12,9 +12,6 @@ const nextConfig: NextConfig = {
         { source: "/marmitas", destination: "/marmitas.html" },
         // O site também responde em /site.
         { source: "/site", destination: "/site/index.html" },
-        // Esboço de layout novo (fora do ar para o público: sem link e sem Google).
-        { source: "/esboco", destination: "/site/esboco.html" },
-        { source: "/esboco2", destination: "/site/esboco2.html" },
       ],
       fallback: [],
     };
