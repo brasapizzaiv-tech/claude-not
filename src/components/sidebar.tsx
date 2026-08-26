@@ -104,6 +104,7 @@ export function Sidebar({
       titulo: "Operação",
       itens: [
         has("salao") && { key: "salao", href: "/salao", label: "Salão", icon: "🍕", sub: salaoSub },
+        has("reservas") && mod("reservas"),
         has("etiquetas") && mod("etiquetas"),
       ].filter(Boolean) as Item[],
     },

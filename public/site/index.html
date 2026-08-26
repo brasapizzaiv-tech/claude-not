@@ -491,12 +491,9 @@ footer{padding:54px 0 70px}
   if(aberto){caixa.classList.add("aberto");}
 
   /* ---- formulário de reserva ---- */
-  /* =========================================================
-     COLE AQUI AS DUAS CREDENCIAIS DO SUPABASE (Settings > API).
-     Enquanto estiverem em branco, a reserva vai só pelo WhatsApp.
-     ========================================================= */
-  var SB_URL="https://lrjzytqnmtkocgtpiyod.supabase.co";
-  var SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxyanp5dHFubXRrb2NndHBpeW9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3NTI5OTQsImV4cCI6MjEwMTMyODk5NH0.cke4jdxVET_3UWX9hcKrXudsGo4r3Ptb9FVUIrMFgrU";
+  /* A reserva passa pela API do sistema: quem valida e grava é o servidor,
+     então não existe nenhuma chave de banco aqui no código do site. */
+  var API="/api/reservas";
 
   var FONE="5551980229859";
   var data=document.getElementById("r-data"),
@@ -515,40 +512,25 @@ footer{padding:54px 0 70px}
     return new Date(+p[0],+p[1]-1,+p[2]).getDay();
   }
 
-  function cabecalhos(){
-    return {apikey:SB_KEY,Authorization:"Bearer "+SB_KEY};
-  }
-
   /* limites da casa (grupo grande, lotação máxima) */
-  if(SB_URL&&SB_KEY){
-    fetch(SB_URL+"/rest/v1/limites?select=*",{headers:cabecalhos()})
-      .then(function(r){return r.json();})
-      .then(function(l){ (l||[]).forEach(function(x){LIMITES[x.turno]=x;}); })
-      .catch(function(){});
-  }
+  fetch(API).then(function(r){return r.json();})
+    .then(function(d){ LIMITES=d.limites||{}; })
+    .catch(function(){});
 
   function checarDia(v){
     bloqueadosDoDia=[]; LOTACAO={};
-    if(!SB_URL||!SB_KEY) return;
-
-    fetch(SB_URL+"/rest/v1/bloqueios?select=turno,motivo&data=eq."+v,{headers:cabecalhos()})
-      .then(function(r){return r.json();}).then(function(lista){
-        if(!lista||!lista.length) return;
+    fetch(API+"?data="+encodeURIComponent(v))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        LIMITES=d.limites||LIMITES;
+        LOTACAO=d.lotacao||{};
+        var lista=d.bloqueios||[];
+        if(!lista.length) return;
         bloqueadosDoDia=lista.map(function(b){return b.turno;});
-        if(bloqueadosDoDia.indexOf("Dia todo")>-1){
-          aviso.textContent="Esse dia está fechado para reservas. Escolha outro.";
-        } else {
-          aviso.textContent="Nesse dia o "+bloqueadosDoDia.join(" e o ")+" já está fechado.";
-        }
+        aviso.textContent = bloqueadosDoDia.indexOf("Dia todo")>-1
+          ? "Esse dia está fechado para reservas. Escolha outro."
+          : "Nesse dia o "+bloqueadosDoDia.join(" e o ")+" já está fechado.";
       }).catch(function(){});
-
-    fetch(SB_URL+"/rest/v1/rpc/disponibilidade",{
-      method:"POST",
-      headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"},
-      body:JSON.stringify({p_data:v})
-    }).then(function(r){return r.json();}).then(function(lista){
-      (lista||[]).forEach(function(x){LOTACAO[x.turno]={reservas:x.reservas,pessoas:x.pessoas};});
-    }).catch(function(){});
   }
 
   var CHEGADAS={
@@ -686,34 +668,28 @@ footer{padding:54px 0 70px}
       window.open("https://wa.me/"+FONE+"?text="+encodeURIComponent(linhas.join("\n")),"_blank");
     }
 
-    if(!SB_URL||!SB_KEY){
-      aviso.textContent="Abrindo o WhatsApp...";
-      irParaWhatsApp();
-      return;
-    }
-
     aviso.textContent="Enviando sua reserva...";
-    fetch(SB_URL+"/rest/v1/reservas",{
+    fetch(API,{
       method:"POST",
-      headers:{
-        "apikey":SB_KEY,
-        "Authorization":"Bearer "+SB_KEY,
-        "Content-Type":"application/json",
-        "Prefer":"return=minimal"
-      },
+      headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
-        nome:nome, telefone:fone, data:dia, turno:turno, chegada:chegada.value,
-        pessoas:pessoas, adultos:adultos, criancas:criancas,
-        lugar:valor("r-lugar"),
-        ocasiao:valor("r-ocasiao"),
-        nascimento:valor("r-nasc")||null,
-        observacao:valor("r-obs")||null,
-        status:status,
-        origem:"site"
+        nome:nome, telefone:fone, data:dia, turno:turno,
+        chegada:chegada.value, adultos:adultos, criancas:criancas,
+        lugar:valor("r-lugar"), ocasiao:valor("r-ocasiao"),
+        nascimento:valor("r-nasc")||null, observacao:valor("r-obs")||null
       })
     }).then(function(r){
-      if(!r.ok){throw new Error("falhou");}
-      aviso.textContent = grande
+      return r.json().catch(function(){return {};}).then(function(d){
+        return {ok:r.ok, status:r.status, corpo:d};
+      });
+    }).then(function(res){
+      /* A casa recusou (dia fechado, lotado, dado faltando): mostra o motivo
+         e não abre o WhatsApp — senão a pessoa acha que reservou. */
+      if(!res.ok){
+        if(res.status<500){ aviso.textContent=res.corpo.erro||"Não consegui registrar."; return; }
+        throw new Error("servidor");
+      }
+      aviso.textContent = res.corpo.status==="aguardando"
         ? "Pedido enviado. Como é um grupo maior, vamos conferir as mesas e confirmar com você pelo WhatsApp."
         : "Reserva enviada. Vamos confirmar com você pelo WhatsApp.";
       irParaWhatsApp();
