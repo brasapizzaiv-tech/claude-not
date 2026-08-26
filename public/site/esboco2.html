@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Esboço 2 — Brasa Restaurante e Pizzaria</title>
+<link rel="icon" href="/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --preto:#0F0C0A;
+  --carvao:#171310;
+  --carvao-2:#221B16;
+  --carvao-3:#2E251E;
+  --laranja:#C78340;
+  --laranja-forte:#A96729;
+  --brasa:#B4472B;
+  --branco:#fff;
+  --texto:#DCD3CB;
+  --suave:#9A8C80;
+  --linha:rgba(255,255,255,.12);
+  --max:1180px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--carvao);color:var(--texto);font-family:'Karla',system-ui,sans-serif;font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.titulo{font-family:'Oswald',Impact,sans-serif;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--branco);line-height:1.15}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+/* ---------- topo ---------- */
+.topo{position:relative;z-index:30;background:var(--preto)}
+.topo-linha{display:flex;align-items:stretch;max-width:var(--max);margin:0 auto}
+.marca{background:var(--carvao-2);border:1px solid var(--linha);padding:14px 26px;display:flex;align-items:center}
+.marca img{height:56px;display:block}
+.menu{flex:1;background:var(--laranja);display:flex;align-items:center;justify-content:flex-end;gap:38px;padding:0 30px}
+.menu a{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#231710;
+  padding:20px 0;border-bottom:3px solid transparent;transition:.2s}
+.menu a:hover{color:#000;border-bottom-color:#231710}
+.hamburguer{display:none;margin-left:auto;background:none;border:1px solid var(--linha);color:var(--texto);
+  width:44px;height:44px;font-size:20px;cursor:pointer}
+.menu-cel{display:none;background:var(--laranja)}
+.menu-cel.aberto{display:block}
+.menu-cel a{display:block;padding:14px 24px;font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.1em;
+  text-transform:uppercase;color:#231710;border-bottom:1px solid rgba(0,0,0,.12)}
+
+/* faixa de informações */
+.faixa{background:var(--carvao-2);border-bottom:1px solid var(--linha)}
+.faixa .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.faixa .item{padding:22px 34px;border-left:1px solid var(--linha)}
+.faixa .item:first-child{border-left:0;padding-left:0}
+.faixa h4{font-size:19px;margin-bottom:5px}
+.faixa p{font-size:14.5px;color:var(--suave);line-height:1.55}
+.faixa a{color:var(--laranja)}
+.faixa a:hover{text-decoration:underline}
+.pontinho{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7FB069;margin-right:7px;
+  box-shadow:0 0 0 3px rgba(127,176,105,.2)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;height:min(78vh,660px);overflow:hidden;background:var(--preto)}
+.hero img{width:100%;height:100%;object-fit:cover;display:block;animation:zoom 30s ease-in-out infinite alternate}
+@keyframes zoom{from{transform:scale(1.02)}to{transform:scale(1.1)}}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,12,10,.45),rgba(15,12,10,0) 35%,rgba(15,12,10,.85))}
+.placa{position:absolute;left:0;bottom:64px;z-index:2}
+.placa .nome{display:inline-block;background:var(--branco);color:#171310;font-family:'Oswald',sans-serif;
+  font-size:clamp(24px,3.4vw,38px);letter-spacing:.02em;padding:14px 30px}
+.placa .tag{display:inline-block;background:var(--brasa);color:#fff;font-family:'Karla',sans-serif;font-style:italic;
+  font-size:16px;padding:8px 20px;margin-top:10px}
+.placa .dentro{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+/* ---------- fileira de cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);background:var(--preto)}
+.card{position:relative;border-top:4px solid transparent;background:var(--carvao);transition:background .3s,border-color .3s}
+.card:hover{background:var(--carvao-2);border-top-color:var(--laranja)}
+.card .foto{position:relative;aspect-ratio:16/10;overflow:hidden}
+.card .foto img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.25) brightness(.85);transition:.45s}
+.card:hover .foto img{filter:none;transform:scale(1.05)}
+.card .texto{padding:22px 24px 28px}
+.card h3{font-size:16px;margin-bottom:10px;color:var(--branco)}
+.card p{font-size:15px;color:var(--suave);line-height:1.6}
+.card .mais{display:inline-block;margin-top:14px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--laranja)}
+.card .mais:hover{color:var(--branco)}
+
+/* ---------- blocos gerais ---------- */
+section{padding:78px 0;border-bottom:1px solid var(--linha)}
+h2{font-size:clamp(26px,3.2vw,34px);margin-bottom:10px}
+.sub{color:var(--suave);margin-bottom:36px;max-width:640px}
+
+/* sobre: foto + texto + instagram */
+.sobre{display:grid;grid-template-columns:1fr 1.05fr .8fr;gap:38px;align-items:start}
+.sobre figure img{width:100%;display:block;filter:grayscale(.15)}
+.sobre .legenda{margin-top:10px;font-size:13.5px;color:var(--laranja)}
+.sobre p{color:var(--suave);margin-top:14px}
+.social{border:1px solid var(--linha);background:var(--carvao-2)}
+.social .cabeca{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--linha)}
+.social .cabeca img{width:44px;height:44px;object-fit:cover}
+.social .cabeca b{display:block;font-family:'Oswald',sans-serif;font-size:15px;color:var(--branco);letter-spacing:.04em}
+.social .cabeca span{font-size:13px;color:var(--suave)}
+.social .moldura{aspect-ratio:.72;background:var(--preto)}
+.social .moldura iframe{width:100%;height:100%;border:0;display:block}
+.social .pe{padding:12px 16px;font-size:13.5px;color:var(--laranja)}
+
+/* cardápio */
+.cardapio{background:var(--carvao-2)}
+.pratos{display:grid;grid-template-columns:1fr 1fr;gap:0 54px}
+.prato{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px dotted rgba(255,255,255,.16)}
+.prato .nome{font-family:'Oswald',sans-serif;font-size:17px;letter-spacing:.03em;color:var(--branco);text-transform:none}
+.prato .pontos{flex:1}
+.prato .grupo{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--laranja);white-space:nowrap}
+.selos{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+.selo{background:var(--laranja);color:#231710;padding:12px 26px;text-align:center}
+.selo b{display:block;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.16em}
+.selo span{font-family:'Oswald',sans-serif;font-size:23px;color:#231710}
+
+/* horários */
+.horas{display:grid;grid-template-columns:repeat(2,1fr);gap:0 40px}
+.hora-linha{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--linha);font-size:16px}
+.hora-linha b{font-family:'Oswald',sans-serif;font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:14px;color:var(--branco)}
+.hora-linha.hoje{color:var(--laranja)}
+.hora-linha.hoje b{color:var(--laranja)}
+.fechado{color:#6E625A}
+
+/* galeria em tira */
+.tira{display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.tira figure{position:relative;aspect-ratio:1;overflow:hidden;cursor:zoom-in}
+.tira img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.3);transition:.4s}
+.tira figure:hover img{filter:none;transform:scale(1.06)}
+
+/* chamada final */
+.chamada{background:var(--laranja);color:#231710;text-align:center;border:0}
+.chamada h2{color:#231710}
+.chamada p{color:#3A2A1B;max-width:600px;margin:0 auto 26px}
+.botao{display:inline-block;background:#231710;color:#fff;font-family:'Oswald',sans-serif;font-size:14px;
+  letter-spacing:.14em;text-transform:uppercase;padding:15px 34px;transition:.25s}
+.botao:hover{background:#000}
+.botao.claro{background:#fff;color:#231710;margin-left:10px}
+.botao.claro:hover{background:#f1e7dc}
+
+footer{background:var(--preto);padding:44px 0;text-align:center;color:var(--suave);font-size:14.5px}
+footer img{height:64px;margin-bottom:18px}
+footer .links{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+footer .links a:hover{color:var(--laranja)}
+
+.aviso-esboco{position:fixed;right:16px;bottom:16px;z-index:60;background:var(--brasa);color:#fff;
+  padding:11px 18px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+
+@media(max-width:1000px){
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .sobre{grid-template-columns:1fr 1fr}
+  .social{grid-column:span 2}
+  .tira{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:760px){
+  .menu{display:none}
+  .hamburguer{display:block}
+  .topo-linha{align-items:center;padding-right:16px}
+  .marca{border:0;padding:12px 16px}
+  .marca img{height:44px}
+  .faixa .wrap{grid-template-columns:1fr}
+  .faixa .item{border-left:0;border-top:1px solid var(--linha);padding:16px 0}
+  .faixa .item:first-child{border-top:0}
+  .hero{height:56vh}
+  .placa{bottom:26px}
+  .cards{grid-template-columns:1fr}
+  .sobre{grid-template-columns:1fr}
+  .social{grid-column:auto}
+  .pratos,.horas{grid-template-columns:1fr;gap:0}
+}
+</style>
+</head>
+<body>
+
+<!-- topo -->
+<header class="topo">
+  <div class="topo-linha">
+    <a class="marca" href="#inicio"><img src="/site/img/logo-brasa.png" alt="Brasa Restaurante e Pizzaria"></a>
+    <nav class="menu">
+      <a href="#sobre">A casa</a>
+      <a href="#cardapio">Cardápio de hoje</a>
+      <a href="#horarios">Horários</a>
+      <a href="#fotos">Fotos</a>
+      <a href="#reservas">Reservas</a>
+    </nav>
+    <button class="hamburguer" id="abrir" aria-label="Abrir o menu">☰</button>
+  </div>
+  <nav class="menu-cel" id="menu-cel">
+    <a href="#sobre">A casa</a>
+    <a href="#cardapio">Cardápio de hoje</a>
+    <a href="#horarios">Horários</a>
+    <a href="#fotos">Fotos</a>
+    <a href="#reservas">Reservas</a>
+  </nav>
+</header>
+
+<!-- faixa de informações -->
+<div class="faixa">
+  <div class="wrap">
+    <div class="item">
+      <h4>Venha nos ver</h4>
+      <p>Av. Pres. Lucena, 1243 — Bom Jardim<br>Ivoti / RS · 93900-000</p>
+    </div>
+    <div class="item">
+      <h4>Peça agora</h4>
+      <p>Pizza em casa na sexta e no sábado:<br><a href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">site de pedidos</a> ou <a href="https://wa.me/5551980229859" target="_blank" rel="noopener">(51) 98022-9859</a></p>
+    </div>
+    <div class="item">
+      <h4>Estamos abertos</h4>
+      <p><span class="pontinho"></span>Almoço 11h15 às 13h30<br><a href="#horarios">ver todos os horários</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- hero -->
+<section class="hero" id="inicio" style="padding:0;border:0">
+  <img src="/site/img/pizza-salgada-com-fatia-sendo-servida.jpg" alt="Pizza saindo do forno no Brasa">
+  <div class="placa">
+    <div class="dentro">
+      <span class="nome">Brasa Restaurante e Pizzaria</span>
+      <br>
+      <span class="tag">Rodízio na sexta e no sábado</span>
+    </div>
+  </div>
+</section>
+
+<!-- fileira de cards -->
+<div class="cards">
+  <article class="card">
+    <div class="foto"><img src="/site/img/buffet-de-almoco-servido-nas-cubas.jpg" alt="Buffet do almoço" loading="lazy"></div>
+    <div class="texto">
+      <h3>O cardápio de hoje</h3>
+      <p>Comida de casa todo dia, com buffet de saladas e sobremesas. Livre ou por quilo.</p>
+      <a class="mais" href="#cardapio">Ver o cardápio →</a>
+    </div>
+  </article>
+  <article class="card">
+    <div class="foto"><img src="/site/img/duas-pizzas-doces-na-mesa.jpg" alt="Pizzas doces" loading="lazy"></div>
+    <div class="texto">
+      <h3>Rodízio de pizzas e massas</h3>
+      <p>Mais de 60 sabores passando na mesa, com saladas, batata frita, anéis de cebola e polenta.</p>
+      <a class="mais" href="#reservas">Reservar mesa →</a>
+    </div>
+  </article>
+  <article class="card">
+    <div class="foto"><img src="/site/img/mesa-de-sobremesas.jpg" alt="Marmitas e delivery" loading="lazy"></div>
+    <div class="texto">
+      <h3>Delivery e marmitas</h3>
+      <p>Marmita do dia, tradicional e a premium de sábado. Pizza em casa na sexta e no sábado.</p>
+      <a class="mais" href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir agora →</a>
+    </div>
+  </article>
+  <article class="card">
+    <div class="foto"><img src="/site/img/deck-com-mesas-postas-e-aquecedor-a-gas.jpg" alt="Deck e eventos" loading="lazy"></div>
+    <div class="texto">
+      <h3>Eventos e grupos</h3>
+      <p>Aniversários, formaturas e confraternizações no deck ou no salão. Área kids com recreacionista.</p>
+      <a class="mais" href="https://wa.me/5551980229859" target="_blank" rel="noopener">Falar com a gente →</a>
+    </div>
+  </article>
+</div>
+
+<!-- sobre -->
+<section id="sobre">
+  <div class="wrap">
+    <h2>O Brasa</h2>
+    <p class="sub">Restaurante de família em Ivoti, com buffet no almoço e rodízio à noite.</p>
+    <div class="sobre">
+      <figure>
+        <img src="/site/img/buffet-de-saladas.jpg" alt="Buffet de saladas do Brasa" loading="lazy">
+        <figcaption class="legenda">Buffet de saladas, todos os dias</figcaption>
+      </figure>
+      <div>
+        <p>De segunda a sábado o almoço é comida de casa: proteínas na chapa e no forno, massas, arroz, feijão, buffet de saladas e uma mesa de sobremesas. Você escolhe entre o livre e o por quilo.</p>
+        <p>Na sexta e no sábado à noite entra o rodízio: mais de 60 sabores de pizza entre salgadas e doces, passando na mesa junto com as massas, saladas, batata frita, anéis de cebola e polenta. Refrigerante incluso.</p>
+        <p>Tem deck aquecido para os dias frios, salão renovado e área kids com recreacionista — dá para a família comer com calma.</p>
+      </div>
+      <aside class="social">
+        <div class="cabeca">
+          <img src="/site/img/logo-brasa.png" alt="">
+          <div>
+            <b>@brasarestauranteiv</b>
+            <span>Instagram</span>
+          </div>
+        </div>
+        <div class="moldura">
+          <iframe src="https://www.instagram.com/reel/DaLBkvkRfSR/embed" title="O restaurante" loading="lazy" allowfullscreen scrolling="no"></iframe>
+        </div>
+        <p class="pe"><a href="https://instagram.com/brasarestauranteiv" target="_blank" rel="noopener">Seguir no Instagram →</a></p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- cardápio do dia -->
+<section class="cardapio" id="cardapio">
+  <div class="wrap">
+    <h2>Cardápio de hoje</h2>
+    <p class="sub">Quarta-feira · buffet do almoço, das 11h15 às 13h30.</p>
+    <div class="pratos">
+      <div class="prato"><span class="nome">Molho bolonhesa</span><span class="pontos"></span><span class="grupo">proteína</span></div>
+      <div class="prato"><span class="nome">Arroz branco</span><span class="pontos"></span><span class="grupo">carboidrato</span></div>
+      <div class="prato"><span class="nome">Frango acebolado</span><span class="pontos"></span><span class="grupo">proteína</span></div>
+      <div class="prato"><span class="nome">Feijão</span><span class="pontos"></span><span class="grupo">carboidrato</span></div>
+      <div class="prato"><span class="nome">Suíno alho e óleo</span><span class="pontos"></span><span class="grupo">proteína</span></div>
+      <div class="prato"><span class="nome">Massa caseira</span><span class="pontos"></span><span class="grupo">carboidrato</span></div>
+      <div class="prato"><span class="nome">Frango empanado</span><span class="pontos"></span><span class="grupo">proteína</span></div>
+      <div class="prato"><span class="nome">Escondidinho de aipim com frango</span><span class="pontos"></span><span class="grupo">carboidrato</span></div>
+      <div class="prato"><span class="nome">Bife à cavalo</span><span class="pontos"></span><span class="grupo">proteína</span></div>
+      <div class="prato"><span class="nome">Pastel de chocolate</span><span class="pontos"></span><span class="grupo">especial</span></div>
+    </div>
+    <div class="selos">
+      <div class="selo"><b>Livre</b><span>R$ 40,90</span></div>
+      <div class="selo"><b>Por quilo</b><span>R$ 94,90</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- horários -->
+<section id="horarios">
+  <div class="wrap">
+    <h2>Horários</h2>
+    <p class="sub">Almoço de segunda a sábado. Rodízio e delivery na sexta e no sábado à noite.</p>
+    <div class="horas">
+      <div>
+        <div class="hora-linha"><b>Segunda</b><span>11h15 às 13h30</span></div>
+        <div class="hora-linha"><b>Terça</b><span>11h15 às 13h30</span></div>
+        <div class="hora-linha hoje"><b>Quarta · hoje</b><span>11h15 às 13h30</span></div>
+        <div class="hora-linha"><b>Quinta</b><span>11h15 às 13h30</span></div>
+      </div>
+      <div>
+        <div class="hora-linha"><b>Sexta</b><span>11h15 às 13h30 · rodízio 19h às 22h30</span></div>
+        <div class="hora-linha"><b>Sábado</b><span>11h15 às 14h · rodízio 19h às 22h30</span></div>
+        <div class="hora-linha"><b>Domingo</b><span class="fechado">Fechado</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- tira de fotos -->
+<section id="fotos" style="padding-bottom:0">
+  <div class="wrap">
+    <h2>O Brasa por dentro</h2>
+    <p class="sub">Buffet, rodízio, deck e as pizzas doces que saem da casa.</p>
+  </div>
+  <div class="tira">
+    <figure><img src="/site/img/buffet-de-almoco-servido-nas-cubas.jpg" alt="Buffet do almoço" loading="lazy"></figure>
+    <figure><img src="/site/img/buffet-de-saladas.jpg" alt="Buffet de saladas" loading="lazy"></figure>
+    <figure><img src="/site/img/mesa-de-sobremesas.jpg" alt="Sobremesas" loading="lazy"></figure>
+    <figure><img src="/site/img/pizza-salgada-com-fatia-sendo-servida.jpg" alt="Pizza salgada" loading="lazy"></figure>
+    <figure><img src="/site/img/pizza-doce-de-morango-com-chocolate.jpg" alt="Pizza doce" loading="lazy"></figure>
+    <figure><img src="/site/img/deck-com-mesas-postas-e-aquecedor-a-gas.jpg" alt="Deck" loading="lazy"></figure>
+    <figure><img src="/site/img/duas-pizzas-doces-na-mesa.jpg" alt="Pizzas doces" loading="lazy"></figure>
+    <figure><img src="/site/img/drinks-em-taca-no-bar.jpg" alt="Drinks" loading="lazy"></figure>
+    <figure><img src="/site/img/soda-italiana-de-morango.jpg" alt="Soda italiana" loading="lazy"></figure>
+    <figure><img src="/site/img/buffet-de-saladas.jpg" alt="Buffet" loading="lazy"></figure>
+    <figure><img src="/site/img/mesa-de-sobremesas.jpg" alt="Sobremesas" loading="lazy"></figure>
+    <figure><img src="/site/img/pizza-doce-de-morango-com-chocolate.jpg" alt="Pizza doce" loading="lazy"></figure>
+  </div>
+</section>
+
+<!-- chamada final -->
+<section class="chamada" id="reservas">
+  <div class="wrap">
+    <h2>Reserve a sua mesa</h2>
+    <p>Almoço garantido até 11h45, rodízio até 19h45. Até 6 anos não pagam e de 7 a 12 pagam meia. Acima de 12 pessoas a gente confirma as mesas com você.</p>
+    <a class="botao" href="https://wa.me/5551980229859" target="_blank" rel="noopener">Reservar pelo WhatsApp</a>
+    <a class="botao claro" href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+  </div>
+</section>
+
+<footer>
+  <img src="/site/img/logo-brasa.png" alt="Brasa">
+  <div class="links">
+    <a href="https://wa.me/5551980229859" target="_blank" rel="noopener">WhatsApp (51) 98022-9859</a>
+    <a href="https://instagram.com/brasarestauranteiv" target="_blank" rel="noopener">@brasarestauranteiv</a>
+    <a href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+  </div>
+  <p>Av. Pres. Lucena, 1243 — Bom Jardim · Ivoti / RS</p>
+</footer>
+
+<span class="aviso-esboco">Esboço 2</span>
+
+<script>
+(function(){
+  var b=document.getElementById("abrir"), m=document.getElementById("menu-cel");
+  b.addEventListener("click",function(){ var a=m.classList.toggle("aberto"); b.textContent=a?"✕":"☰"; });
+  m.addEventListener("click",function(e){ if(e.target.tagName==="A"){m.classList.remove("aberto");b.textContent="☰";} });
+})();
+</script>
+</body>
+</html>

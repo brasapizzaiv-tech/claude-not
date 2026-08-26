@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/reservas") ||
     path.startsWith("/api/cardapio") ||
     path === "/cardapio" ||
-    path === "/esboco" ||
+    path.startsWith("/esboco") ||
     path.startsWith("/api/sefaz/") ||
     path.startsWith("/api/contagem/cron");
 
