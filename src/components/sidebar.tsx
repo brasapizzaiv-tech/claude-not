@@ -13,6 +13,7 @@ type Item = {
   icon: string;
   external?: boolean;
   sub?: Sub[];
+  aviso?: number; // numerozinho vermelho (ex.: reservas novas)
 };
 type Secao = { titulo: string | null; itens: Item[] };
 
@@ -32,11 +33,13 @@ export function Sidebar({
   papel,
   admin,
   permissoes,
+  reservasNovas = 0,
 }: {
   nome: string;
   papel: string;
   admin: boolean;
   permissoes: string[];
+  reservasNovas?: number;
 }) {
   const pathname = usePathname();
   const [aberto, setAberto] = useState<{ key: string; top: number } | null>(null);
@@ -104,7 +107,7 @@ export function Sidebar({
       titulo: "Operação",
       itens: [
         has("salao") && { key: "salao", href: "/salao", label: "Salão", icon: "🍕", sub: salaoSub },
-        has("reservas") && mod("reservas"),
+        has("reservas") && mod("reservas", { aviso: reservasNovas }),
         has("etiquetas") && mod("etiquetas"),
       ].filter(Boolean) as Item[],
     },
@@ -187,7 +190,14 @@ export function Sidebar({
               {s.itens.map((it) => {
                 const ativo = ativoDe(it);
                 const conteudo = (
-                  <span className={iconeBtn(ativo)}>{it.icon}</span>
+                  <span className="relative block">
+                    <span className={iconeBtn(ativo)}>{it.icon}</span>
+                    {!!it.aviso && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                        {it.aviso > 9 ? "9+" : it.aviso}
+                      </span>
+                    )}
+                  </span>
                 );
                 return (
                   <div
