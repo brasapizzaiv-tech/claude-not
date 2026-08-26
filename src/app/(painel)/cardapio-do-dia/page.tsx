@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { EditorCardapio, type Cardapio } from "./editor";
+import { EditorCardapio, type Cardapio, type ItemCat } from "./editor";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
 function hojeBR() {
@@ -20,13 +20,21 @@ export default async function CardapioDoDiaPage({
   const dia = /^\d{4}-\d{2}-\d{2}$/.test(sp.dia ?? "") ? sp.dia : hoje;
 
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("cardapio_dia")
-    .select("*")
-    .gte("data", addDias(hoje, -7))
-    .lte("data", addDias(hoje, 21))
-    .order("data");
+  const [{ data }, { data: cat }] = await Promise.all([
+    supabase
+      .from("cardapio_dia")
+      .select("*")
+      .gte("data", addDias(hoje, -21))
+      .lte("data", addDias(hoje, 21))
+      .order("data"),
+    supabase
+      .from("cardapio_itens")
+      .select("id, grupo, nome, usos")
+      .eq("ativo", true)
+      .order("nome"),
+  ]);
   const dias = (data as Cardapio[]) ?? [];
+  const itens = (cat as ItemCat[]) ?? [];
 
   return (
     <EditorCardapio
@@ -35,6 +43,7 @@ export default async function CardapioDoDiaPage({
       hoje={hoje}
       dias={dias}
       atual={dias.find((c) => c.data === dia) ?? null}
+      itens={itens}
     />
   );
 }
