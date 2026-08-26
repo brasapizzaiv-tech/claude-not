@@ -76,23 +76,55 @@ h1,h2,h3{font-family:'Bitter',Georgia,serif;font-weight:700;line-height:1.15;col
 a{color:inherit}
 a:focus-visible,button:focus-visible{outline:2px solid var(--laranja);outline-offset:3px}
 
-/* topo */
-header{position:sticky;top:0;z-index:50;background:rgba(33,25,21,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--linha)}
-.topo{display:flex;align-items:center;gap:14px;max-width:var(--max);margin:0 auto;padding:12px 24px}
-.topo img{height:52px;width:auto;display:block}
-.status{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:13px;color:var(--suave)}
+/* topo: transparente sobre a foto e ganha fundo ao rolar */
+header{position:fixed;top:0;left:0;right:0;z-index:60;border-bottom:1px solid transparent;
+  transition:background .35s ease,border-color .35s ease,box-shadow .35s ease}
+header.menu-aberto{background:#1B1410;border-bottom-color:var(--linha)}
+header.rolou{background:rgba(27,20,16,.92);backdrop-filter:blur(12px) saturate(1.2);
+  border-bottom-color:var(--linha);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.topo{display:flex;align-items:center;gap:22px;max-width:1240px;margin:0 auto;padding:16px 24px;transition:padding .35s ease}
+header.rolou .topo{padding:10px 24px}
+.topo .marca{display:block;flex:none}
+.topo img{height:52px;width:auto;display:block;transition:height .35s ease}
+header.rolou .topo img{height:42px}
+.nav{display:flex;gap:26px;margin-left:8px}
+.nav a{font-size:15px;text-decoration:none;color:var(--texto);opacity:.85;position:relative;padding:4px 0;transition:opacity .2s,color .2s}
+.nav a::after{content:"";position:absolute;left:0;right:100%;bottom:0;height:2px;background:var(--laranja);transition:right .28s ease}
+.nav a:hover{opacity:1;color:var(--branco)}
+.nav a:hover::after{right:0}
+.status{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:13px;color:var(--suave);white-space:nowrap}
 .bolinha{width:9px;height:9px;border-radius:50%;background:#6B5A4E;flex:none}
 .status.aberto{color:var(--branco)}
-.status.aberto .bolinha{background:#7FB069;box-shadow:0 0 0 4px rgba(127,176,105,.2)}
+.status.aberto .bolinha{background:#7FB069;box-shadow:0 0 0 4px rgba(127,176,105,.2);animation:pulsa 2.6s ease-in-out infinite}
+@keyframes pulsa{0%,100%{box-shadow:0 0 0 4px rgba(127,176,105,.2)}50%{box-shadow:0 0 0 9px rgba(127,176,105,.04)}}
+.btn-topo{flex:none;display:inline-block;padding:10px 20px;font-size:15px;text-decoration:none;
+  background:var(--laranja);color:#1B120C;border-radius:999px;font-weight:700;transition:background .2s,transform .2s}
+.btn-topo:hover{background:var(--laranja-forte);color:#fff;transform:translateY(-1px)}
+.hamburguer{display:none;margin-left:auto;background:none;border:1px solid var(--linha);color:var(--texto);
+  width:44px;height:44px;border-radius:12px;font-size:20px;cursor:pointer;line-height:1}
+.menu-mobile{display:none;flex-direction:column;background:#1B1410;
+  border-top:1px solid var(--linha);box-shadow:0 24px 40px rgba(0,0,0,.55)}
+.menu-mobile a{padding:16px 24px;text-decoration:none;color:var(--texto);border-bottom:1px solid var(--linha);font-size:17px}
+.menu-mobile.aberto{display:flex}
 
-/* hero */
-.hero{position:relative;padding:104px 0 92px;border-bottom:1px solid var(--linha);
-  background-image:linear-gradient(90deg,rgba(33,25,21,.96) 0%,rgba(33,25,21,.88) 42%,rgba(33,25,21,.42) 100%),
-                   linear-gradient(180deg,rgba(33,25,21,.55) 0%,rgba(33,25,21,0) 30%,rgba(33,25,21,.85) 100%),
-                   url(/site/img/deck-a-noite.jpg);
-  background-size:cover;background-position:center 60%}
-.hero .wrap{max-width:var(--max)}
-.hero .texto{max-width:640px}
+/* hero: ocupa a tela, com a foto se aproximando devagar */
+.hero{position:relative;display:flex;align-items:center;min-height:94vh;padding:150px 0 110px;
+  border-bottom:1px solid var(--linha);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-3%;z-index:0;
+  background:url(/site/img/deck-a-noite.jpg) center 60%/cover;
+  animation:aproxima 28s ease-in-out infinite alternate}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(90deg,rgba(27,20,16,.95) 0%,rgba(27,20,16,.8) 45%,rgba(27,20,16,.3) 100%),
+             linear-gradient(180deg,rgba(27,20,16,.75) 0%,rgba(27,20,16,0) 34%,rgba(27,20,16,.94) 100%)}
+@keyframes aproxima{from{transform:scale(1)}to{transform:scale(1.09)}}
+.hero .wrap{max-width:var(--max);position:relative;z-index:2}
+.hero .texto{max-width:660px}
+.rolar{position:absolute;left:50%;bottom:26px;z-index:2;transform:translateX(-50%);
+  color:var(--suave);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;
+  display:flex;flex-direction:column;align-items:center;gap:9px}
+.rolar i{display:block;width:1px;height:40px;background:linear-gradient(var(--laranja),transparent);
+  animation:desce 2.2s ease-in-out infinite}
+@keyframes desce{0%,100%{opacity:.25;transform:scaleY(.55)}50%{opacity:1;transform:scaleY(1)}}
 .eyebrow{font-size:13.5px;color:var(--laranja);margin-bottom:20px}
 h1{font-size:clamp(34px,4.8vw,56px);letter-spacing:-.005em;text-shadow:0 2px 24px rgba(0,0,0,.5)}
 h1 span{color:var(--laranja)}
@@ -105,13 +137,48 @@ h1 span{color:var(--laranja)}
 .btn-vazio{color:var(--texto);border-color:rgba(255,255,255,.4);background:rgba(33,25,21,.5)}
 .btn-vazio:hover{border-color:var(--branco);color:var(--branco)}
 
-/* fotos */
-.fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.foto{position:relative;overflow:hidden;background:var(--escuro-2)}
-.foto img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;transition:transform .5s ease}
-.foto:hover img{transform:scale(1.04)}
-.foto figcaption{position:absolute;left:0;right:0;bottom:0;padding:36px 18px 15px;font-size:16px;color:#fff;
-  background:linear-gradient(180deg,rgba(33,25,21,0),rgba(33,25,21,.9))}
+/* fotos: a primeira ocupa quatro lugares; clicar amplia */
+.fotos{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.foto{position:relative;overflow:hidden;background:var(--escuro-2);cursor:zoom-in;border:0;padding:0;
+  display:block;width:100%;text-align:left;color:inherit;font:inherit}
+.foto:first-child{grid-column:span 2;grid-row:span 2}
+.foto img{width:100%;height:100%;aspect-ratio:3/4;object-fit:cover;display:block;
+  transition:transform .6s cubic-bezier(.2,.7,.3,1)}
+.foto:first-child img{aspect-ratio:auto}
+.foto:hover img{transform:scale(1.06)}
+.foto figcaption{position:absolute;left:0;right:0;bottom:0;padding:42px 18px 15px;font-size:16px;color:#fff;
+  background:linear-gradient(180deg,rgba(27,20,16,0),rgba(27,20,16,.92));
+  transform:translateY(4px);opacity:.92;transition:transform .3s,opacity .3s}
+.foto:hover figcaption{transform:none;opacity:1}
+.foto .lupa-icone{position:absolute;top:12px;right:14px;font-size:17px;color:#fff;opacity:0;
+  text-shadow:0 2px 8px rgba(0,0,0,.6);transition:opacity .3s}
+.foto:hover .lupa-icone{opacity:.9}
+
+/* foto ampliada */
+.lupa{position:fixed;inset:0;z-index:100;background:rgba(15,11,9,.96);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;padding:24px}
+.lupa.aberta{display:flex}
+.lupa img{max-width:min(1100px,92vw);max-height:80vh;object-fit:contain;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.lupa .legenda{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:var(--texto);font-size:16px}
+.lupa button{position:absolute;background:rgba(255,255,255,.08);border:1px solid var(--linha);color:#fff;
+  width:52px;height:52px;border-radius:999px;font-size:22px;cursor:pointer;transition:background .2s}
+.lupa button:hover{background:rgba(255,255,255,.18)}
+.lupa .fechar{top:22px;right:22px}
+.lupa .anterior{left:22px;top:50%;transform:translateY(-50%)}
+.lupa .proxima{right:22px;top:50%;transform:translateY(-50%)}
+
+/* botão flutuante do WhatsApp */
+.zap-flutua{position:fixed;right:20px;bottom:20px;z-index:70;display:flex;align-items:center;gap:10px;
+  background:#25D366;color:#0B2E19;text-decoration:none;padding:14px 20px 14px 16px;border-radius:999px;
+  font-weight:700;font-size:16px;box-shadow:0 12px 30px rgba(0,0,0,.45);
+  opacity:0;visibility:hidden;transform:translateY(14px);transition:opacity .35s,transform .35s,visibility .35s,background .2s}
+.zap-flutua.visivel{opacity:1;visibility:visible;transform:none}
+.zap-flutua:hover{background:#1FBA59}
+.zap-flutua svg{width:26px;height:26px;flex:none;fill:#0B2E19}
+
+/* entrada suave ao rolar */
+.surge{opacity:0;transform:translateY(24px);transition:opacity .75s ease,transform .75s cubic-bezier(.2,.7,.3,1)}
+.surge.visto{opacity:1;transform:none}
 
 /* Ao chegar por um link com #ancora, o título não fica escondido atrás do topo fixo. */
 section[id]{scroll-margin-top:92px}
@@ -158,7 +225,10 @@ h2{font-size:clamp(26px,3.4vw,36px);margin-bottom:12px}
 
 /* serviços */
 .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:1px;background:var(--linha);border:1px solid var(--linha)}
-.card{background:var(--escuro-2);padding:28px 26px}
+.card{background:var(--escuro-2);padding:28px 26px;position:relative;transition:background .3s}
+.card::before{content:"";position:absolute;left:0;top:0;height:3px;width:0;background:var(--laranja);transition:width .35s ease}
+.card:hover{background:var(--escuro-3)}
+.card:hover::before{width:100%}
 .card h3{font-size:22px;margin-bottom:9px}
 .card p{font-size:16.5px;color:var(--suave)}
 
@@ -208,15 +278,31 @@ footer{padding:54px 0 70px}
 .pe a:hover{color:var(--branco)}
 .creditos{margin-top:46px;padding-top:22px;border-top:1px solid var(--linha);font-size:13.5px;color:#7A6A5F}
 
+@media(max-width:1000px){
+  .nav{display:none}
+  .btn-topo{display:none}
+  .hamburguer{display:block}
+  .status{margin-left:auto}
+}
+@media(max-width:430px){
+  .status{display:none}
+}
 @media(max-width:900px){
   .videos{grid-template-columns:repeat(2,1fr)}
+  .fotos{grid-template-columns:repeat(2,1fr)}
+  .foto:first-child{grid-column:span 2;grid-row:auto}
+  .foto:first-child img{aspect-ratio:16/10}
 }
 @media(max-width:820px){
   .reserva{grid-template-columns:1fr;gap:36px}
   .hero{background-position:center}
 }
 @media(max-width:600px){
-  .hero{padding:64px 0 60px}
+  .hero{min-height:86vh;padding:120px 0 90px}
+  .lupa button{width:44px;height:44px}
+  .lupa .anterior{left:8px}
+  .lupa .proxima{right:8px}
+  .zap-flutua{right:14px;bottom:14px;padding:13px 17px 13px 14px;font-size:15px}
   section{padding:54px 0}
   .fotos{grid-template-columns:1fr 1fr;gap:10px}
   .videos{grid-template-columns:1fr;gap:26px}
@@ -230,18 +316,37 @@ footer{padding:54px 0 70px}
 </head>
 <body>
 
-<header>
+<header id="topo">
   <div class="topo">
-    <img src="/site/img/logo-brasa.png" alt="Brasa Restaurante e Pizzaria" width="300" height="104" fetchpriority="high">
+    <a href="#inicio" class="marca" aria-label="Brasa Restaurante e Pizzaria">
+      <img src="/site/img/logo-brasa.png" alt="Brasa Restaurante e Pizzaria" width="300" height="104" fetchpriority="high">
+    </a>
+    <nav class="nav">
+      <a href="#cardapio">Cardápio</a>
+      <a href="#horarios">Horários</a>
+      <a href="#fotos">Fotos</a>
+      <a href="#precos">Valores</a>
+      <a href="#reservas">Reservas</a>
+    </nav>
     <div class="status college" id="status">
       <span class="bolinha"></span><span id="status-texto">Horarios</span>
     </div>
+    <a class="btn-topo" href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+    <button class="hamburguer" id="abrir-menu" aria-label="Abrir o menu" aria-expanded="false">☰</button>
   </div>
+  <nav class="menu-mobile" id="menu-mobile">
+    <a href="#cardapio">Cardápio de hoje</a>
+    <a href="#horarios">Horários</a>
+    <a href="#fotos">Fotos</a>
+    <a href="#precos">Valores</a>
+    <a href="#reservas">Reservas</a>
+    <a href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+  </nav>
 </header>
 
 <main>
 
-<section class="hero">
+<section class="hero" id="inicio">
   <div class="wrap">
     <div class="texto">
       <p class="eyebrow college">Ivoti · Rio Grande do Sul</p>
@@ -254,6 +359,7 @@ footer{padding:54px 0 70px}
       </div>
     </div>
   </div>
+  <a class="rolar" href="#cardapio">ver o cardápio<i></i></a>
 </section>
 
 <section id="cardapio">
@@ -306,15 +412,15 @@ footer{padding:54px 0 70px}
     <h2>O Brasa por dentro</h2>
     <p class="sub">Um pouco do que espera por você.</p>
     <div class="fotos">
-      <figure class="foto"><img src="/site/img/buffet-de-almoco-servido-nas-cubas.jpg" alt="Buffet de almoço servido nas cubas" loading="lazy"><figcaption>Buffet do almoço</figcaption></figure>
-      <figure class="foto"><img src="/site/img/buffet-de-saladas.jpg" alt="Buffet de saladas" loading="lazy"><figcaption>Buffet de saladas</figcaption></figure>
-      <figure class="foto"><img src="/site/img/mesa-de-sobremesas.jpg" alt="Mesa de sobremesas" loading="lazy"><figcaption>Sobremesas</figcaption></figure>
-      <figure class="foto"><img src="/site/img/pizza-salgada-com-fatia-sendo-servida.jpg" alt="Pizza salgada com fatia sendo servida" loading="lazy"><figcaption>Pizza salgada</figcaption></figure>
-      <figure class="foto"><img src="/site/img/pizza-doce-de-morango-com-chocolate.jpg" alt="Pizza doce de morango com chocolate" loading="lazy"><figcaption>Morango com chocolate</figcaption></figure>
-      <figure class="foto"><img src="/site/img/duas-pizzas-doces-na-mesa.jpg" alt="Duas pizzas doces na mesa" loading="lazy"><figcaption>Pizzas doces</figcaption></figure>
-      <figure class="foto"><img src="/site/img/deck-com-mesas-postas-e-aquecedor-a-gas.jpg" alt="Deck com mesas postas e aquecedor a gás" loading="lazy"><figcaption>Deck aquecido</figcaption></figure>
-      <figure class="foto"><img src="/site/img/drinks-em-taca-no-bar.jpg" alt="Drinks em taça no bar" loading="lazy"><figcaption>Drinks do bar</figcaption></figure>
-      <figure class="foto"><img src="/site/img/soda-italiana-de-morango.jpg" alt="Soda italiana de morango" loading="lazy"><figcaption>Sodas italianas</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/buffet-de-almoco-servido-nas-cubas.jpg" data-legenda="Buffet do almoço"><img src="/site/img/buffet-de-almoco-servido-nas-cubas.jpg" alt="Buffet de almoço servido nas cubas" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Buffet do almoço</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/buffet-de-saladas.jpg" data-legenda="Buffet de saladas"><img src="/site/img/buffet-de-saladas.jpg" alt="Buffet de saladas" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Buffet de saladas</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/mesa-de-sobremesas.jpg" data-legenda="Sobremesas"><img src="/site/img/mesa-de-sobremesas.jpg" alt="Mesa de sobremesas" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Sobremesas</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/pizza-salgada-com-fatia-sendo-servida.jpg" data-legenda="Pizza salgada"><img src="/site/img/pizza-salgada-com-fatia-sendo-servida.jpg" alt="Pizza salgada com fatia sendo servida" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Pizza salgada</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/pizza-doce-de-morango-com-chocolate.jpg" data-legenda="Morango com chocolate"><img src="/site/img/pizza-doce-de-morango-com-chocolate.jpg" alt="Pizza doce de morango com chocolate" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Morango com chocolate</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/duas-pizzas-doces-na-mesa.jpg" data-legenda="Pizzas doces"><img src="/site/img/duas-pizzas-doces-na-mesa.jpg" alt="Duas pizzas doces na mesa" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Pizzas doces</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/deck-com-mesas-postas-e-aquecedor-a-gas.jpg" data-legenda="Deck aquecido"><img src="/site/img/deck-com-mesas-postas-e-aquecedor-a-gas.jpg" alt="Deck com mesas postas e aquecedor a gás" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Deck aquecido</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/drinks-em-taca-no-bar.jpg" data-legenda="Drinks do bar"><img src="/site/img/drinks-em-taca-no-bar.jpg" alt="Drinks em taça no bar" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Drinks do bar</figcaption></figure>
+      <figure class="foto" role="button" tabindex="0" data-foto="/site/img/soda-italiana-de-morango.jpg" data-legenda="Sodas italianas"><img src="/site/img/soda-italiana-de-morango.jpg" alt="Soda italiana de morango" loading="lazy"><span class="lupa-icone" aria-hidden="true">⤢</span><figcaption>Sodas italianas</figcaption></figure>
     </div>
   </div>
 </section>
@@ -505,6 +611,19 @@ footer{padding:54px 0 70px}
   </div>
 </footer>
 
+<div class="lupa" id="lupa" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <button class="fechar" id="lupa-fechar" aria-label="Fechar">✕</button>
+  <button class="anterior" id="lupa-anterior" aria-label="Foto anterior">‹</button>
+  <img id="lupa-img" src="" alt="">
+  <button class="proxima" id="lupa-proxima" aria-label="Próxima foto">›</button>
+  <p class="legenda" id="lupa-legenda"></p>
+</div>
+
+<a class="zap-flutua" id="zap-flutua" href="https://wa.me/5551980229859" target="_blank" rel="noopener">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.02c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.39c0-4.54 3.7-8.23 8.24-8.23a8.2 8.2 0 0 1 8.23 8.24c0 4.54-3.7 8.23-8.24 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.16.25-.64.81-.79.98-.14.16-.29.18-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.16.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.48c-.16 0-.43.06-.65.31-.22.25-.85.83-.85 2.03s.87 2.35.99 2.51c.12.16 1.71 2.61 4.15 3.66.58.25 1.03.4 1.39.51.58.19 1.11.16 1.53.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.11-.22-.17-.47-.29"/></svg>
+  Fale com a gente
+</a>
+
 <script>
 (function(){
   // Horários usados no aviso "Aberto agora". Ajuste junto com a tabela acima.
@@ -519,6 +638,105 @@ footer{padding:54px 0 70px}
   var caixa=document.getElementById("status");
   document.getElementById("status-texto").textContent=aberto?"Aberto agora":"Fechado agora";
   if(aberto){caixa.classList.add("aberto");}
+
+  /* ---- topo: fundo ao rolar e menu do celular ---- */
+  var cabecalho=document.getElementById("topo"),
+      botaoMenu=document.getElementById("abrir-menu"),
+      menuCel=document.getElementById("menu-mobile"),
+      zapFlutua=document.getElementById("zap-flutua");
+
+  /* O botão flutuante some na área de reservas, para não tapar o formulário. */
+  var naReserva=false;
+  function aoRolar(){
+    var y=window.scrollY;
+    cabecalho.classList.toggle("rolou", y>60);
+    zapFlutua.classList.toggle("visivel", y>420 && !naReserva);
+  }
+  if("IntersectionObserver" in window){
+    new IntersectionObserver(function(es){
+      naReserva=es[0].isIntersecting;
+      aoRolar();
+    },{threshold:.15}).observe(document.getElementById("reservas"));
+  }
+  window.addEventListener("scroll", aoRolar, {passive:true});
+  aoRolar();
+
+  botaoMenu.addEventListener("click", function(){
+    var aberto=menuCel.classList.toggle("aberto");
+    cabecalho.classList.toggle("menu-aberto", aberto);
+    botaoMenu.setAttribute("aria-expanded", aberto ? "true" : "false");
+    botaoMenu.textContent = aberto ? "✕" : "☰";
+  });
+  menuCel.addEventListener("click", function(e){
+    if(e.target.tagName==="A"){
+      menuCel.classList.remove("aberto");
+      cabecalho.classList.remove("menu-aberto");
+      botaoMenu.setAttribute("aria-expanded","false");
+      botaoMenu.textContent="☰";
+    }
+  });
+
+  /* ---- entrada suave das seções (só com JS: sem script, nada some) ---- */
+  var suave=!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(suave && "IntersectionObserver" in window){
+    var alvos=document.querySelectorAll("section h2, section .sub, .quadro, .grade, .fotos > *, .videos > *, .precos > *, .regras, .caixa, #cardapio-conteudo, .pe");
+    alvos.forEach(function(el,i){
+      el.classList.add("surge");
+      el.style.transitionDelay=((i%4)*70)+"ms";
+    });
+    var observador=new IntersectionObserver(function(entradas){
+      entradas.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add("visto"); observador.unobserve(e.target); }
+      });
+    },{rootMargin:"0px 0px -8% 0px",threshold:.08});
+    alvos.forEach(function(el){ observador.observe(el); });
+  }
+
+  /* ---- foto ampliada ---- */
+  var galeria=[].slice.call(document.querySelectorAll(".foto[data-foto]")),
+      lupa=document.getElementById("lupa"),
+      lupaImg=document.getElementById("lupa-img"),
+      lupaLegenda=document.getElementById("lupa-legenda"),
+      atualLupa=0;
+
+  function abrirLupa(i){
+    atualLupa=(i+galeria.length)%galeria.length;
+    var f=galeria[atualLupa];
+    lupaImg.src=f.dataset.foto;
+    lupaImg.alt=f.querySelector("img") ? f.querySelector("img").alt : "";
+    lupaLegenda.textContent=f.dataset.legenda||"";
+    lupa.classList.add("aberta");
+    document.body.style.overflow="hidden";
+  }
+  function fecharLupa(){
+    lupa.classList.remove("aberta");
+    document.body.style.overflow="";
+  }
+  galeria.forEach(function(f,i){
+    f.addEventListener("click", function(){ abrirLupa(i); });
+    f.addEventListener("keydown", function(e){
+      if(e.key==="Enter"||e.key===" "){ e.preventDefault(); abrirLupa(i); }
+    });
+  });
+  document.getElementById("lupa-fechar").addEventListener("click", fecharLupa);
+  document.getElementById("lupa-anterior").addEventListener("click", function(e){ e.stopPropagation(); abrirLupa(atualLupa-1); });
+  document.getElementById("lupa-proxima").addEventListener("click", function(e){ e.stopPropagation(); abrirLupa(atualLupa+1); });
+  lupa.addEventListener("click", function(e){ if(e.target===lupa||e.target===lupaImg) fecharLupa(); });
+  document.addEventListener("keydown", function(e){
+    if(!lupa.classList.contains("aberta")) return;
+    if(e.key==="Escape") fecharLupa();
+    if(e.key==="ArrowLeft") abrirLupa(atualLupa-1);
+    if(e.key==="ArrowRight") abrirLupa(atualLupa+1);
+  });
+  /* arrastar o dedo no celular */
+  var toqueX=null;
+  lupa.addEventListener("touchstart", function(e){ toqueX=e.changedTouches[0].clientX; }, {passive:true});
+  lupa.addEventListener("touchend", function(e){
+    if(toqueX===null) return;
+    var d=e.changedTouches[0].clientX-toqueX;
+    if(Math.abs(d)>50) abrirLupa(atualLupa+(d<0?1:-1));
+    toqueX=null;
+  }, {passive:true});
 
   /* ---- cardápio do dia ---- */
   /* O var FONE só é preenchido mais abaixo, então aqui vai o número direto. */

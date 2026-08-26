@@ -33,8 +33,13 @@ const nextConfig: NextConfig = {
         ],
       },
       // Site do restaurante: HTML sempre fresco (as fotos seguem em cache).
+      // Vale para os dois caminhos: a raiz do domínio e o /site.
       {
         source: "/site/index.html",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      },
+      {
+        source: "/",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
       // Links públicos abertos no celular (fornecedor, colaborador): nunca
