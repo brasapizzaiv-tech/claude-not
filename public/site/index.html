@@ -113,6 +113,25 @@ h1 span{color:var(--laranja)}
 .foto figcaption{position:absolute;left:0;right:0;bottom:0;padding:36px 18px 15px;font-size:16px;color:#fff;
   background:linear-gradient(180deg,rgba(33,25,21,0),rgba(33,25,21,.9))}
 
+/* Ao chegar por um link com #ancora, o título não fica escondido atrás do topo fixo. */
+section[id]{scroll-margin-top:92px}
+
+/* cardápio do dia */
+#cardapio .quadro-cardapio{border:1px solid var(--linha);background:var(--escuro-2);padding:28px 26px}
+#cardapio .grupos{display:grid;grid-template-columns:1fr 1fr;gap:26px 32px}
+#cardapio .grupo h3{margin:0 0 10px}
+#cardapio .selo{display:inline-block;background:var(--laranja);color:#1B120C;
+  font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:3px 10px}
+#cardapio ul{list-style:none;padding:0;margin:0}
+#cardapio ul li{padding:2px 0;color:var(--texto)}
+#cardapio .precos{display:flex;gap:14px;justify-content:center;margin-top:26px;flex-wrap:wrap}
+#cardapio .preco-selo{background:var(--laranja);color:#1B120C;padding:10px 26px;text-align:center;min-width:132px}
+#cardapio .preco-selo b{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+#cardapio .preco-selo span{font-size:23px;font-weight:700}
+#cardapio .sem-cardapio{border:1px solid var(--linha);background:var(--escuro-2);padding:30px 26px;text-align:center}
+#cardapio .sem-cardapio p{margin:0 0 16px;color:var(--suave)}
+@media(max-width:700px){#cardapio .grupos{grid-template-columns:1fr;gap:22px}}
+
 /* vídeos */
 .videos{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .video h3{font-size:17.5px;margin-bottom:10px;color:var(--laranja);font-family:'Bitter',Georgia,serif}
@@ -230,8 +249,19 @@ footer{padding:54px 0 70px}
       <p class="intro">Mais de 60 sabores de pizza entre salgadas e doces, passando na mesa junto com as massas a cada rodada. No almoço, comida de casa com buffet de saladas e sobremesas.</p>
       <div class="botoes">
         <a class="btn btn-cheio" href="#reservas">Reservar mesa</a>
+        <a class="btn btn-vazio" href="#cardapio">Cardápio de hoje</a>
         <a class="btn btn-vazio" href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="cardapio">
+  <div class="wrap">
+    <h2>Cardápio de hoje</h2>
+    <p class="sub" id="cardapio-dia">Buffet do almoço, de segunda a sábado.</p>
+    <div id="cardapio-conteudo">
+      <div class="sem-cardapio"><p>Carregando o cardápio...</p></div>
     </div>
   </div>
 </section>
@@ -489,6 +519,42 @@ footer{padding:54px 0 70px}
   var caixa=document.getElementById("status");
   document.getElementById("status-texto").textContent=aberto?"Aberto agora":"Fechado agora";
   if(aberto){caixa.classList.add("aberto");}
+
+  /* ---- cardápio do dia ---- */
+  /* O var FONE só é preenchido mais abaixo, então aqui vai o número direto. */
+  var ZAP="5551980229859";
+  var SEMANA=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+  function reais(v){
+    return v==null ? "" : Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  }
+  function bloco(titulo,itens){
+    if(!itens||!itens.length) return "";
+    return '<div class="grupo"><h3><span class="selo">'+titulo+'</span></h3><ul>'+
+      itens.map(function(i){return "<li>"+i.replace(/[<>]/g,"")+"</li>";}).join("")+"</ul></div>";
+  }
+  (function cardapioDoDia(){
+    var alvo=document.getElementById("cardapio-conteudo"),
+        sub=document.getElementById("cardapio-dia");
+    var semCardapio='<div class="sem-cardapio">'+
+      '<p>O cardápio de hoje ainda não foi publicado. Chame a gente no WhatsApp que a gente conta o que tem hoje.</p>'+
+      '<a class="btn btn-cheio" href="https://wa.me/'+ZAP+'?text='+
+      encodeURIComponent("Olá! Qual é o cardápio de hoje no Brasa?")+'" target="_blank" rel="noopener">Perguntar no WhatsApp</a></div>';
+
+    fetch("/api/cardapio").then(function(r){return r.json();}).then(function(c){
+      if(!c.tem||!c.hoje){ alvo.innerHTML=semCardapio; return; }
+      sub.textContent=SEMANA[new Date(c.data+"T12:00:00").getDay()]+" · buffet do almoço";
+      var grupos=bloco("Proteínas",c.proteinas)+bloco("Carboidratos",c.carboidratos)+
+                 bloco("Especial do dia",c.especial);
+      var precos="";
+      if(c.preco_livre!=null||c.preco_kg!=null){
+        precos='<div class="precos">'+
+          (c.preco_livre!=null?'<div class="preco-selo"><b>Livre</b><span>'+reais(c.preco_livre)+"</span></div>":"")+
+          (c.preco_kg!=null?'<div class="preco-selo"><b>Kg</b><span>'+reais(c.preco_kg)+"</span></div>":"")+
+        "</div>";
+      }
+      alvo.innerHTML='<div class="quadro-cardapio"><div class="grupos">'+grupos+"</div>"+precos+"</div>";
+    }).catch(function(){ alvo.innerHTML=semCardapio; });
+  })();
 
   /* ---- formulário de reserva ---- */
   /* A reserva passa pela API do sistema: quem valida e grava é o servidor,

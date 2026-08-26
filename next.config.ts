@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
       fallback: [],
     };
   },
+  async redirects() {
+    return [
+      // Link curto para mandar a quem pede o cardápio.
+      { source: "/cardapio", destination: "/#cardapio", permanent: false },
+    ];
+  },
   async headers() {
     return [
       // O app de marmitas é atualizado com frequência: nunca cachear o HTML,

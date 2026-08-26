@@ -108,6 +108,7 @@ export function Sidebar({
       itens: [
         has("salao") && { key: "salao", href: "/salao", label: "Salão", icon: "🍕", sub: salaoSub },
         has("reservas") && mod("reservas", { aviso: reservasNovas }),
+        has("cardapio_dia") && mod("cardapio_dia", { label: "Cardápio do dia" }),
         has("etiquetas") && mod("etiquetas"),
       ].filter(Boolean) as Item[],
     },
