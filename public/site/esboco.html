@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Esboço — Brasa Restaurante e Pizzaria</title>
+<link rel="icon" href="/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Parisienne&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --escuro:#211915;
+  --escuro-2:#2A2119;
+  --creme:#F3EDE4;
+  --creme-2:#FBF8F4;
+  --laranja:#C78340;
+  --laranja-forte:#A96729;
+  --branco:#fff;
+  --texto:#E8DED5;
+  --suave:#B2A196;
+  --grafite:#3A3129;
+  --linha:rgba(255,255,255,.13);
+  --barra:250px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--creme-2);color:#3A3129;font-family:'Karla',system-ui,sans-serif;font-size:17px;line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:700;line-height:1.15}
+a{color:inherit;text-decoration:none}
+.script{font-family:'Parisienne',cursive;font-weight:400;color:var(--laranja)}
+.rotulo{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--laranja);font-weight:700}
+
+/* ---------- barra lateral ---------- */
+.barra{position:fixed;left:0;top:0;bottom:0;width:var(--barra);background:#1B1410;color:var(--texto);
+  display:flex;flex-direction:column;padding:30px 0;z-index:40;border-right:1px solid var(--linha)}
+.barra .logo{padding:0 30px 26px;border-bottom:1px solid var(--linha)}
+.barra .logo img{width:104px;display:block;margin:0 auto}
+.barra nav{padding:24px 0;display:flex;flex-direction:column}
+.barra nav a{padding:11px 30px;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--suave);
+  border-left:2px solid transparent;transition:.25s}
+.barra nav a:hover,.barra nav a.ativo{color:var(--branco);border-left-color:var(--laranja);background:rgba(199,131,64,.07)}
+.barra .aberto-agora{margin:8px 30px 0;padding:14px 0;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha);
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:9px}
+.pontinho{width:8px;height:8px;border-radius:50%;background:#7FB069;box-shadow:0 0 0 4px rgba(127,176,105,.18)}
+.barra .contato{padding:20px 30px;font-size:13.5px;color:var(--suave);line-height:1.6}
+.barra .contato b{display:block;color:var(--branco);font-weight:500}
+.barra .redes{margin-top:auto;padding:18px 30px 0;display:flex;gap:16px;font-size:13px;color:var(--suave)}
+.barra .redes a:hover{color:var(--laranja)}
+.barra .creditos{padding:14px 30px 0;font-size:11px;color:#6B5A4E}
+
+/* topo do celular */
+.topo-cel{display:none;position:fixed;top:0;left:0;right:0;z-index:50;background:#1B1410;color:var(--texto);
+  align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--linha)}
+.topo-cel img{height:40px}
+.topo-cel button{margin-left:auto;background:none;border:1px solid var(--linha);color:var(--texto);
+  width:42px;height:42px;border-radius:10px;font-size:19px;cursor:pointer}
+.menu-cel{display:none;position:fixed;top:65px;left:0;right:0;z-index:49;background:#1B1410;border-bottom:1px solid var(--linha)}
+.menu-cel.aberto{display:block}
+.menu-cel a{display:block;padding:14px 20px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--suave);border-bottom:1px solid var(--linha)}
+
+/* ---------- conteúdo ---------- */
+main{margin-left:var(--barra)}
+section{padding:96px 56px}
+.centro{max-width:900px;margin:0 auto;text-align:center}
+.titulo-secao{margin-bottom:16px}
+.titulo-secao .script{font-size:44px;display:block;line-height:1}
+.titulo-secao h2{font-size:36px;letter-spacing:.02em;margin-top:-6px}
+.subtitulo{color:#7C6E62;max-width:620px;margin:0 auto 44px}
+
+/* hero */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:60px 56px;text-align:center;color:#fff;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-2%;background:url(/site/img/deck-a-noite.jpg) center/cover;
+  animation:zoom 30s ease-in-out infinite alternate}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,20,16,.72),rgba(27,20,16,.55) 45%,rgba(27,20,16,.9))}
+@keyframes zoom{from{transform:scale(1)}to{transform:scale(1.08)}}
+.hero .dentro{position:relative;z-index:2;max-width:760px}
+.hero .selo{display:inline-block;border-top:1px solid rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.5);
+  padding:6px 26px;font-size:11px;letter-spacing:.34em;text-transform:uppercase;margin-bottom:26px}
+.hero h1{font-size:clamp(46px,7vw,88px);letter-spacing:.06em;text-transform:uppercase;text-shadow:0 4px 30px rgba(0,0,0,.5)}
+.hero .script{font-size:clamp(30px,4.4vw,52px);color:#fff;display:block;margin-top:6px;text-shadow:0 3px 20px rgba(0,0,0,.5)}
+.hero p{margin:22px auto 0;max-width:520px;color:#EFE6DC}
+.botao{display:inline-block;margin-top:34px;background:var(--laranja);color:#1B120C;padding:15px 38px;
+  font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;transition:.25s}
+.botao:hover{background:var(--laranja-forte);color:#fff}
+.botao.vazio{background:transparent;border:1px solid rgba(255,255,255,.45);color:#fff;margin-left:10px}
+.botao.vazio:hover{background:#fff;color:#1B120C;border-color:#fff}
+
+/* nossa casa (claro) */
+.casa{background:var(--creme);display:grid;grid-template-columns:1fr 1fr;gap:0;padding:0;align-items:stretch}
+.casa .texto{padding:96px 60px;max-width:620px;margin-left:auto}
+.casa .texto p{color:#6E6157;margin-top:18px}
+.casa figure{background:url(/site/img/buffet-de-almoco-servido-nas-cubas.jpg) center/cover;min-height:520px}
+.assinatura{margin-top:26px;font-family:'Parisienne',cursive;font-size:30px;color:var(--laranja)}
+
+/* galeria densa */
+.galeria{background:var(--escuro);color:var(--texto);padding-bottom:0}
+.galeria .subtitulo{color:var(--suave)}
+.filtros{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:38px}
+.filtros button{background:transparent;border:1px solid var(--linha);color:var(--suave);cursor:pointer;
+  padding:8px 20px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-family:inherit;transition:.2s}
+.filtros button:hover,.filtros button.on{background:var(--laranja);border-color:var(--laranja);color:#1B120C}
+.grade-fotos{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin:0 -56px}
+.grade-fotos figure{position:relative;overflow:hidden;aspect-ratio:1;cursor:zoom-in}
+.grade-fotos figure.g{grid-column:span 2;grid-row:span 2;aspect-ratio:auto}
+.grade-fotos img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .7s cubic-bezier(.2,.7,.3,1),filter .4s}
+.grade-fotos figure:hover img{transform:scale(1.07);filter:brightness(.55)}
+.grade-fotos figcaption{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:16px;color:#fff;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+  opacity:0;transition:opacity .35s}
+.grade-fotos figure:hover figcaption{opacity:1}
+
+/* serviços */
+.servicos{background:#fff}
+.icones{display:grid;grid-template-columns:repeat(4,1fr);gap:42px;margin-top:10px}
+.icone{text-align:center}
+.icone svg{width:56px;height:56px;stroke:var(--laranja);fill:none;stroke-width:1.3}
+.icone h3{font-size:20px;color:var(--laranja);margin:16px 0 8px}
+.icone p{font-size:15px;color:#7C6E62}
+
+/* cardápio */
+.cardapio{position:relative;color:var(--texto);padding-top:110px;padding-bottom:110px}
+.cardapio::before{content:"";position:absolute;inset:0;background:url(/site/img/mesa-de-sobremesas.jpg) center/cover;filter:grayscale(.4)}
+.cardapio::after{content:"";position:absolute;inset:0;background:rgba(24,18,14,.93)}
+.cardapio > *{position:relative;z-index:2}
+.pratos{display:grid;grid-template-columns:1fr 1fr;gap:6px 60px;max-width:1000px;margin:0 auto}
+.prato{display:flex;align-items:baseline;gap:10px;padding:13px 0;border-bottom:1px dotted rgba(255,255,255,.18)}
+.prato .nome{font-family:'Playfair Display',Georgia,serif;font-size:19px;color:#fff}
+.prato .pontos{flex:1;border-bottom:1px dotted rgba(255,255,255,.3);transform:translateY(-4px)}
+.prato .obs{display:block;font-size:14px;color:var(--suave);font-family:'Karla',sans-serif;font-style:italic}
+.precos-dia{display:flex;justify-content:center;gap:16px;margin-top:44px;flex-wrap:wrap}
+.selo-preco{border:1px solid var(--laranja);padding:14px 30px;text-align:center}
+.selo-preco b{display:block;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--laranja)}
+.selo-preco span{font-family:'Playfair Display',serif;font-size:26px;color:#fff}
+
+/* horários */
+.horarios{background:var(--creme)}
+.tabela{max-width:820px;margin:0 auto;border:1px solid #E0D6C8;background:#fff}
+.linha{display:grid;grid-template-columns:150px 1fr 1fr;gap:16px;padding:17px 26px;border-bottom:1px solid #EFE7DC;align-items:baseline}
+.linha:last-child{border-bottom:none}
+.linha .dia{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--grafite);font-weight:700}
+.linha.hoje{background:#FBF3E9;border-left:3px solid var(--laranja);padding-left:23px}
+.linha.hoje .dia{color:var(--laranja)}
+.linha .fechado{color:#A99B8D}
+
+/* reservas + rodapé */
+.reservas{background:var(--escuro-2);color:var(--texto)}
+.caixa-reserva{max-width:560px;margin:0 auto;background:#fff;color:#3A3129;padding:44px 42px;text-align:left;
+  box-shadow:0 30px 60px rgba(0,0,0,.35)}
+.caixa-reserva h3{font-size:26px;text-align:center;margin-bottom:6px}
+.caixa-reserva .script{display:block;text-align:center;font-size:26px;margin-bottom:22px}
+.campo{margin-bottom:16px}
+.campo label{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--laranja);margin-bottom:6px;font-weight:700}
+.campo input,.campo select{width:100%;border:0;border-bottom:1px solid #DDD2C4;padding:10px 2px;font-family:inherit;font-size:16px;background:transparent}
+.campo input:focus,.campo select:focus{outline:none;border-bottom-color:var(--laranja)}
+.duplo{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.enviar{width:100%;margin-top:10px;background:var(--laranja);color:#1B120C;border:0;padding:16px;cursor:pointer;
+  font-family:inherit;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+.enviar:hover{background:var(--laranja-forte);color:#fff}
+
+footer{background:#1B1410;color:var(--suave);padding:56px;text-align:center}
+footer img{width:96px;margin:0 auto 20px;display:block}
+footer .linha-pe{display:flex;justify-content:center;gap:34px;flex-wrap:wrap;font-size:14.5px;margin-bottom:22px}
+footer small{display:block;margin-top:24px;color:#6B5A4E;font-size:12px}
+
+.aviso-esboco{position:fixed;right:16px;bottom:16px;z-index:60;background:var(--laranja);color:#1B120C;
+  padding:11px 18px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+  box-shadow:0 10px 24px rgba(0,0,0,.35)}
+
+@media(max-width:1100px){
+  .grade-fotos{grid-template-columns:repeat(3,1fr)}
+  .casa{grid-template-columns:1fr}
+  .casa .texto{padding:70px 40px;margin:0}
+  .casa figure{min-height:340px}
+}
+@media(max-width:900px){
+  :root{--barra:0px}
+  .barra{display:none}
+  .topo-cel{display:flex}
+  main{margin-left:0;padding-top:65px}
+  section{padding:64px 22px}
+  .grade-fotos{margin:0 -22px;grid-template-columns:repeat(2,1fr)}
+  .icones{grid-template-columns:repeat(2,1fr);gap:32px}
+  .pratos{grid-template-columns:1fr;gap:0}
+  .linha{grid-template-columns:96px 1fr;gap:8px;padding:14px 16px}
+  .linha .noite{grid-column:2}
+  .caixa-reserva{padding:32px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- barra lateral fixa -->
+<aside class="barra">
+  <div class="logo"><a href="#inicio"><img src="/site/img/logo-brasa.png" alt="Brasa"></a></div>
+  <nav>
+    <a href="#inicio" class="ativo">Início</a>
+    <a href="#casa">A casa</a>
+    <a href="#fotos">Galeria</a>
+    <a href="#servicos">O que servimos</a>
+    <a href="#cardapio">Cardápio de hoje</a>
+    <a href="#horarios">Horários</a>
+    <a href="#reservas">Reservas</a>
+  </nav>
+  <div class="aberto-agora"><span class="pontinho"></span> Aberto agora</div>
+  <div class="contato">
+    <b>Av. Pres. Lucena, 1243</b>
+    Bom Jardim · Ivoti/RS<br>
+    <b style="margin-top:10px">(51) 98022-9859</b>
+  </div>
+  <div class="redes">
+    <a href="https://instagram.com/brasarestauranteiv" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/5551980229859" target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+  <p class="creditos">© 2026 Brasa Restaurante e Pizzaria</p>
+</aside>
+
+<!-- topo do celular -->
+<div class="topo-cel">
+  <img src="/site/img/logo-brasa.png" alt="Brasa">
+  <button id="abrir" aria-label="Abrir o menu">☰</button>
+</div>
+<nav class="menu-cel" id="menu">
+  <a href="#casa">A casa</a>
+  <a href="#fotos">Galeria</a>
+  <a href="#servicos">O que servimos</a>
+  <a href="#cardapio">Cardápio de hoje</a>
+  <a href="#horarios">Horários</a>
+  <a href="#reservas">Reservas</a>
+</nav>
+
+<main>
+
+<section class="hero" id="inicio">
+  <div class="dentro">
+    <span class="selo">Ivoti · Rio Grande do Sul</span>
+    <h1>Brasa</h1>
+    <span class="script">buffet, rodízio e pizza</span>
+    <p>Mais de 60 sabores entre salgadas e doces, passando na mesa junto com as massas. No almoço, comida de casa com buffet de saladas e sobremesas.</p>
+    <div>
+      <a class="botao" href="#cardapio">Cardápio de hoje</a>
+      <a class="botao vazio" href="#reservas">Reservar mesa</a>
+    </div>
+  </div>
+</section>
+
+<section class="casa" id="casa">
+  <div class="texto">
+    <div class="titulo-secao" style="text-align:left">
+      <span class="script">Nossa</span>
+      <h2>Casa</h2>
+    </div>
+    <p>Um restaurante de família em Ivoti: buffet no almoço de segunda a sábado, com comida de casa, buffet de saladas e sobremesas. À noite, na sexta e no sábado, o rodízio de pizzas e massas passa de mesa em mesa.</p>
+    <p>Tem deck com aquecedor para os dias frios, salão renovado e área kids com recreacionista — para a família comer com calma.</p>
+    <p class="assinatura">Família Brasa</p>
+    <a class="botao" href="#reservas" style="margin-top:24px">Reservar uma mesa</a>
+  </div>
+  <figure></figure>
+</section>
+
+<section class="galeria" id="fotos">
+  <div class="centro">
+    <div class="titulo-secao">
+      <span class="script">Nossa</span>
+      <h2>Galeria</h2>
+    </div>
+    <p class="subtitulo">Um pouco do que espera por você — buffet, rodízio, deck e as pizzas doces que saem da casa.</p>
+    <div class="filtros">
+      <button class="on">Tudo</button>
+      <button>Buffet</button>
+      <button>Pizzas</button>
+      <button>Ambiente</button>
+      <button>Bebidas</button>
+    </div>
+  </div>
+  <div class="grade-fotos">
+    <figure class="g"><img src="/site/img/buffet-de-almoco-servido-nas-cubas.jpg" alt="Buffet do almoço" loading="lazy"><figcaption>Buffet do almoço</figcaption></figure>
+    <figure><img src="/site/img/buffet-de-saladas.jpg" alt="Buffet de saladas" loading="lazy"><figcaption>Buffet de saladas</figcaption></figure>
+    <figure><img src="/site/img/pizza-salgada-com-fatia-sendo-servida.jpg" alt="Pizza salgada" loading="lazy"><figcaption>Pizza salgada</figcaption></figure>
+    <figure><img src="/site/img/mesa-de-sobremesas.jpg" alt="Sobremesas" loading="lazy"><figcaption>Sobremesas</figcaption></figure>
+    <figure><img src="/site/img/pizza-doce-de-morango-com-chocolate.jpg" alt="Pizza doce" loading="lazy"><figcaption>Morango com chocolate</figcaption></figure>
+    <figure><img src="/site/img/deck-com-mesas-postas-e-aquecedor-a-gas.jpg" alt="Deck" loading="lazy"><figcaption>Deck aquecido</figcaption></figure>
+    <figure><img src="/site/img/duas-pizzas-doces-na-mesa.jpg" alt="Pizzas doces" loading="lazy"><figcaption>Pizzas doces</figcaption></figure>
+    <figure><img src="/site/img/drinks-em-taca-no-bar.jpg" alt="Drinks" loading="lazy"><figcaption>Drinks do bar</figcaption></figure>
+    <figure><img src="/site/img/soda-italiana-de-morango.jpg" alt="Soda italiana" loading="lazy"><figcaption>Sodas italianas</figcaption></figure>
+  </div>
+</section>
+
+<section class="servicos" id="servicos">
+  <div class="centro">
+    <div class="titulo-secao">
+      <span class="script">O que</span>
+      <h2>Servimos</h2>
+    </div>
+    <p class="subtitulo">De segunda a sábado, em Ivoti.</p>
+    <div class="icones">
+      <div class="icone">
+        <svg viewBox="0 0 64 64"><path d="M12 30h34v8a14 14 0 0 1-14 14H26a14 14 0 0 1-14-14v-8Z"/><path d="M46 32h4a6 6 0 0 1 0 12h-4"/><path d="M20 22c0-4 4-4 4-8M28 22c0-4 4-4 4-8M36 22c0-4 4-4 4-8"/></svg>
+        <h3>Buffet de almoço</h3>
+        <p>Comida de casa todo dia, com saladas e sobremesas. Livre ou por quilo.</p>
+      </div>
+      <div class="icone">
+        <svg viewBox="0 0 64 64"><path d="M32 8 8 52h48L32 8Z"/><circle cx="32" cy="40" r="3"/><circle cx="24" cy="46" r="2.5"/><circle cx="40" cy="46" r="2.5"/></svg>
+        <h3>Rodízio</h3>
+        <p>Pizzas e massas na mesa, com saladas, batata, anéis de cebola e polenta.</p>
+      </div>
+      <div class="icone">
+        <svg viewBox="0 0 64 64"><rect x="12" y="18" width="40" height="32" rx="3"/><path d="M12 28h40M24 18v-6h16v6"/></svg>
+        <h3>Delivery e marmitas</h3>
+        <p>Pizza em casa na sexta e no sábado. Marmita do dia, tradicional e premium.</p>
+      </div>
+      <div class="icone">
+        <svg viewBox="0 0 64 64"><circle cx="32" cy="20" r="8"/><path d="M14 52c0-10 8-18 18-18s18 8 18 18"/><path d="M24 44h16"/></svg>
+        <h3>Área kids</h3>
+        <p>Espaço para as crianças com recreacionista, para a família comer com calma.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cardapio" id="cardapio">
+  <div class="centro">
+    <div class="titulo-secao">
+      <span class="script">Cardápio de</span>
+      <h2>Hoje</h2>
+    </div>
+    <p class="subtitulo" style="color:var(--suave)">Quarta-feira · buffet do almoço, das 11h15 às 13h30</p>
+  </div>
+  <div class="pratos">
+    <div class="prato"><span class="nome">Molho bolonhesa<span class="obs">proteínas</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Arroz branco<span class="obs">carboidratos</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Frango acebolado<span class="obs">proteínas</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Feijão<span class="obs">carboidratos</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Suíno alho e óleo<span class="obs">proteínas</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Massa caseira<span class="obs">carboidratos</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Bife à cavalo<span class="obs">proteínas</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Escondidinho de aipim com frango<span class="obs">carboidratos</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Frango empanado<span class="obs">proteínas</span></span><span class="pontos"></span></div>
+    <div class="prato"><span class="nome">Pastel de chocolate<span class="obs">especial do dia</span></span><span class="pontos"></span></div>
+  </div>
+  <div class="precos-dia">
+    <div class="selo-preco"><b>Livre</b><span>R$ 40,90</span></div>
+    <div class="selo-preco"><b>Por quilo</b><span>R$ 94,90</span></div>
+  </div>
+  <div class="centro" style="margin-top:34px">
+    <a class="botao" href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+  </div>
+</section>
+
+<section class="horarios" id="horarios">
+  <div class="centro">
+    <div class="titulo-secao">
+      <span class="script">Nossos</span>
+      <h2>Horários</h2>
+    </div>
+    <p class="subtitulo">Almoço de segunda a sábado. Rodízio e delivery na sexta e no sábado à noite.</p>
+  </div>
+  <div class="tabela">
+    <div class="linha"><span class="dia">Segunda</span><span>11h15 às 13h30</span><span class="noite fechado">—</span></div>
+    <div class="linha"><span class="dia">Terça</span><span>11h15 às 13h30</span><span class="noite fechado">—</span></div>
+    <div class="linha hoje"><span class="dia">Quarta</span><span>11h15 às 13h30</span><span class="noite fechado">—</span></div>
+    <div class="linha"><span class="dia">Quinta</span><span>11h15 às 13h30</span><span class="noite fechado">—</span></div>
+    <div class="linha"><span class="dia">Sexta</span><span>11h15 às 13h30</span><span class="noite">Rodízio 19h às 22h30</span></div>
+    <div class="linha"><span class="dia">Sábado</span><span>11h15 às 14h</span><span class="noite">Rodízio 19h às 22h30</span></div>
+    <div class="linha"><span class="dia">Domingo</span><span class="fechado">Fechado</span><span class="noite fechado">—</span></div>
+  </div>
+</section>
+
+<section class="reservas" id="reservas">
+  <div class="centro" style="margin-bottom:40px">
+    <div class="titulo-secao">
+      <span class="script">Sua mesa</span>
+      <h2>Reservas</h2>
+    </div>
+    <p class="subtitulo" style="color:var(--suave)">Almoço garantido até 11h45 · rodízio até 19h45. Até 6 anos não pagam, de 7 a 12 pagam meia.</p>
+  </div>
+  <div class="caixa-reserva">
+    <span class="script">faça sua</span>
+    <h3>Reserva</h3>
+    <div class="campo"><label>Nome completo</label><input placeholder="Seu nome"></div>
+    <div class="campo"><label>Telefone / WhatsApp</label><input placeholder="(51) 90000-0000"></div>
+    <div class="duplo">
+      <div class="campo"><label>Dia</label><input type="date"></div>
+      <div class="campo"><label>Turno</label><select><option>Almoço — 11h15 às 13h30</option><option>Rodízio — 19h às 22h30</option></select></div>
+    </div>
+    <div class="duplo">
+      <div class="campo"><label>Adultos</label><input type="number" value="2"></div>
+      <div class="campo"><label>Crianças</label><input type="number" value="0"></div>
+    </div>
+    <div class="campo"><label>Onde prefere</label><select><option>Tanto faz</option><option>Salão</option><option>Deck</option></select></div>
+    <button class="enviar" type="button">Enviar reserva</button>
+  </div>
+</section>
+
+<footer>
+  <img src="/site/img/logo-brasa.png" alt="Brasa">
+  <div class="linha-pe">
+    <a href="https://wa.me/5551980229859" target="_blank" rel="noopener">WhatsApp (51) 98022-9859</a>
+    <a href="https://instagram.com/brasarestauranteiv" target="_blank" rel="noopener">@brasarestauranteiv</a>
+    <a href="https://brasarestauranteepizzaria.mandarpedido.com/site" target="_blank" rel="noopener">Pedir delivery</a>
+  </div>
+  <p>Av. Pres. Lucena, 1243 — Bom Jardim · Ivoti / RS</p>
+  <small>Esboço de layout — conteúdo real, visual em estudo.</small>
+</footer>
+
+</main>
+
+<span class="aviso-esboco">Esboço</span>
+
+<script>
+(function(){
+  var b=document.getElementById("abrir"), m=document.getElementById("menu");
+  b.addEventListener("click",function(){
+    var a=m.classList.toggle("aberto");
+    b.textContent=a?"✕":"☰";
+  });
+  m.addEventListener("click",function(e){ if(e.target.tagName==="A"){m.classList.remove("aberto");b.textContent="☰";} });
+
+  /* marca o item do menu conforme a seção na tela */
+  var links=[].slice.call(document.querySelectorAll(".barra nav a"));
+  var secoes=links.map(function(a){ return document.querySelector(a.getAttribute("href")); });
+  if("IntersectionObserver" in window){
+    var obs=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting) return;
+        links.forEach(function(a,i){ a.classList.toggle("ativo", secoes[i]===e.target); });
+      });
+    },{rootMargin:"-45% 0px -50% 0px"});
+    secoes.forEach(function(s){ if(s) obs.observe(s); });
+  }
+
+  /* filtros da galeria são só demonstração neste esboço */
+  var fs=[].slice.call(document.querySelectorAll(".filtros button"));
+  fs.forEach(function(f){ f.addEventListener("click",function(){ fs.forEach(function(x){x.classList.remove("on");}); f.classList.add("on"); }); });
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /login
+Disallow: /esboco
+Disallow: /site/esboco.html
 Disallow: /dashboard
 Disallow: /cotar
 Disallow: /contar
