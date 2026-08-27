@@ -9,6 +9,7 @@ import {
   fecharCotacao,
   reabrirCotacao,
   gerarPedidosExclusivos,
+  reverterCotacao,
 } from "../actions";
 
 export type LinhaProduto = {
@@ -91,14 +92,34 @@ export function CotacaoClient({
   function salvar() {
     startSave(async () => {
       const r = await salvarCotacaoItens(cotacao.id, montarItens());
-      // Itens exclusivos (1 fornecedor) já viram pedido, prontos para enviar.
+      setMsg(`Salvo! (${r?.gravados ?? 0} itens para cotar)`);
+      setTimeout(() => setMsg(null), 4000);
+    });
+  }
+
+  function gerarExclusivos() {
+    startSave(async () => {
+      // Salva as quantidades atuais antes de gerar os pedidos.
+      await salvarCotacaoItens(cotacao.id, montarItens());
       const ex = await gerarPedidosExclusivos(cotacao.id);
-      const extra =
-        ex.ok && ex.gerados > 0
-          ? ` · ${ex.gerados} fornecedor(es) exclusivo(s) já com pedido pronto (veja em “Ver pedidos”)`
-          : "";
-      setMsg(`Salvo! (${r?.gravados ?? 0} itens para cotar)${extra}`);
-      setTimeout(() => setMsg(null), 6000);
+      if (ex.ok && ex.gerados > 0)
+        setMsg(`✓ ${ex.gerados} fornecedor(es) exclusivo(s) com pedido pronto — envie em “Ver pedidos”.`);
+      else if (ex.ok)
+        setMsg("Nenhum item exclusivo pronto (confira se o produto tem 1 fornecedor só e quantidade > 0).");
+      else setMsg("Não foi possível gerar (a cotação já pode estar fechada).");
+      setTimeout(() => setMsg(null), 7000);
+    });
+  }
+
+  function desfazer() {
+    if (!confirm("Desfazer o último salvamento e voltar as quantidades como estavam antes dele?")) return;
+    startSave(async () => {
+      const r = await reverterCotacao(cotacao.id);
+      if (r.ok) window.location.reload();
+      else {
+        setMsg("Nada para desfazer (não há salvamento anterior guardado).");
+        setTimeout(() => setMsg(null), 5000);
+      }
     });
   }
 
@@ -149,6 +170,22 @@ export function CotacaoClient({
                 className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
               >
                 {salvando ? "Salvando..." : "Salvar"}
+              </button>
+              <button
+                onClick={desfazer}
+                disabled={salvando}
+                title="Volta as quantidades como estavam antes do último salvamento"
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                ↩︎ Desfazer salvamento
+              </button>
+              <button
+                onClick={gerarExclusivos}
+                disabled={salvando}
+                title="Gera o pedido dos itens exclusivos (1 fornecedor) para você já enviar"
+                className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-950"
+              >
+                ⚡ Gerar pedidos exclusivos
               </button>
             </>
           )}

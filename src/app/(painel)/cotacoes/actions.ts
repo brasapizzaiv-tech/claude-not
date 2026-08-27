@@ -122,6 +122,30 @@ export async function salvarCotacaoItens(
 ) {
   const supabase = await createClient();
 
+  // Backup do estado ATUAL antes de sobrescrever (para "Desfazer").
+  const { data: atuais } = await supabase
+    .from("cotacao_itens")
+    .select("produto_id, qtd")
+    .eq("cotacao_id", cotacaoId);
+  if (atuais && atuais.length > 0) {
+    await supabase
+      .from("cotacao_itens_backup")
+      .insert({ cotacao_id: cotacaoId, itens: atuais });
+    // Mantém só os 15 backups mais recentes por cotação.
+    const { data: velhos } = await supabase
+      .from("cotacao_itens_backup")
+      .select("id")
+      .eq("cotacao_id", cotacaoId)
+      .order("criado_em", { ascending: false })
+      .range(15, 1000);
+    if (velhos && velhos.length > 0) {
+      await supabase
+        .from("cotacao_itens_backup")
+        .delete()
+        .in("id", velhos.map((v) => v.id as string));
+    }
+  }
+
   const paraGravar = itens
     .filter((i) => i.qtd > 0)
     .map((i) => ({ ...i, cotacao_id: cotacaoId }));
@@ -146,6 +170,34 @@ export async function salvarCotacaoItens(
 
   revalidatePath(`/cotacoes/${cotacaoId}`);
   return { ok: true, gravados: paraGravar.length };
+}
+
+// Desfaz o último salvamento: restaura as quantidades do backup mais recente.
+export async function reverterCotacao(cotacaoId: string) {
+  const supabase = await createClient();
+  const { data: bkp } = await supabase
+    .from("cotacao_itens_backup")
+    .select("id, itens")
+    .eq("cotacao_id", cotacaoId)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!bkp) return { ok: false as const, vazio: true as const };
+
+  const itens = ((bkp.itens as { produto_id: string; qtd: number }[]) ?? []).filter(
+    (i) => Number(i.qtd) > 0,
+  );
+  await supabase.from("cotacao_itens").delete().eq("cotacao_id", cotacaoId);
+  if (itens.length > 0) {
+    await supabase.from("cotacao_itens").insert(
+      itens.map((i) => ({ cotacao_id: cotacaoId, produto_id: i.produto_id, qtd: i.qtd })),
+    );
+  }
+  // Consome o backup usado (para o próximo "desfazer" ir mais para trás).
+  await supabase.from("cotacao_itens_backup").delete().eq("id", bkp.id as string);
+
+  revalidatePath(`/cotacoes/${cotacaoId}`);
+  return { ok: true as const, restaurados: itens.length };
 }
 
 // Convida um fornecedor para a cotação (cria o link/token se ainda não existe).
