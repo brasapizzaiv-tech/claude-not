@@ -2,11 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
-import { QRComanda, LancarItens } from "./cliente";
+import { LancarItens } from "./cliente";
 import type { PizzaOpcao, ComboGrupo } from "./cliente";
-import { ImprimirComanda } from "./print";
 import { AcoesComanda } from "./acoes";
-import { EmitirNfce } from "./emitir-nfce";
 import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
 
 const moeda = (n: number) =>
@@ -26,14 +24,6 @@ export default async function ComandaPage({
     .eq("id", id)
     .single();
   if (!comanda) notFound();
-
-  const { data: nfce } = await supabase
-    .from("nfce_emitidas")
-    .select("status, numero, url_danfe")
-    .eq("comanda_id", id)
-    .order("criado_em", { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
   const [
     { data: itens },
@@ -177,135 +167,29 @@ export default async function ComandaPage({
   const servico = fechada ? Number(comanda.servico) : Math.round(subtotal * perc) / 100;
   const total = subtotal + servico;
 
-  const dataHora = new Date(comanda.aberta_em).toLocaleString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
   return (
     <div className="mx-auto max-w-xl p-6">
       <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
         ← Salão
       </Link>
 
-      {/* Cupom da comanda */}
-      <div className="comanda-cupom mt-3 rounded-2xl border border-zinc-200 bg-white p-5 text-center dark:border-zinc-800 dark:bg-zinc-950">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-brasa.png"
-          alt=""
-          className="mx-auto mb-2 h-14 w-14 object-contain"
-        />
-        <p className="text-lg font-extrabold uppercase tracking-wide text-zinc-900 dark:text-zinc-50">
-          {cfg.nome_restaurante || "Restaurante"}
-        </p>
-        {(cfg.cupom_endereco || cfg.cupom_telefone) && (
-          <p className="text-[11px] text-zinc-500">
-            {cfg.cupom_endereco}
-            {cfg.cupom_endereco && cfg.cupom_telefone ? " · " : ""}
-            {cfg.cupom_telefone}
+      {/* Cabeçalho simples da comanda */}
+      <div className="mt-3 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-zinc-400">
+            Comanda {comanda.mesa ? `· ${comanda.mesa}` : ""} {fechada ? "· fechada" : ""}
           </p>
-        )}
-        <p className="mt-1 text-xs uppercase tracking-wide text-zinc-400">
-          Comanda {comanda.mesa ? `· ${comanda.mesa}` : ""} {fechada ? "· fechada" : ""}
-        </p>
-        <p className="text-4xl font-black text-zinc-900 dark:text-zinc-50">
-          #{comanda.numero}
-        </p>
-
+          <p className="text-3xl font-black text-zinc-900 dark:text-zinc-50">#{comanda.numero}</p>
+        </div>
         {temBuffet && (
-          <div className="mx-auto mt-4 grid max-w-sm grid-cols-3 gap-2 text-sm">
-            <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-              <p className="text-[11px] uppercase text-zinc-400">Peso</p>
-              <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                {Number(comanda.peso ?? 0)} kg
-              </p>
-            </div>
-            <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-              <p className="text-[11px] uppercase text-zinc-400">Tara</p>
-              <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                {Number(comanda.tara ?? 0)} kg
-              </p>
-            </div>
-            <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-              <p className="text-[11px] uppercase text-zinc-400">Valor</p>
-              <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                {moeda(Number(comanda.valor_buffet))}
-              </p>
-            </div>
+          <div className="text-right">
+            <p className="text-[11px] uppercase text-zinc-400">Buffet</p>
+            <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+              {moeda(Number(comanda.valor_buffet))}
+            </p>
+            {comanda.livre && <p className="text-[11px] font-semibold text-orange-600">BUFFET LIVRE</p>}
           </div>
         )}
-
-        {comanda.livre && (
-          <p className="mt-2 text-xs font-semibold text-orange-600">BUFFET LIVRE</p>
-        )}
-
-        <div className="mt-4 flex justify-center">
-          <QRComanda id={comanda.id} />
-        </div>
-        <p className="mt-2 text-[11px] text-zinc-400">{dataHora}</p>
-        {cfg.cupom_msg && (
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
-            {cfg.cupom_msg}
-          </p>
-        )}
-
-        {/* Itens + totais — aparecem SÓ na impressão */}
-        <div className="hidden text-left text-[12px] leading-snug print:block">
-          <div className="my-2 border-t border-black/40" />
-          {temBuffet && (
-            <div className="flex justify-between gap-2">
-              <span>Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}</span>
-              <span>{moeda(Number(comanda.valor_buffet))}</span>
-            </div>
-          )}
-          {lista.map((i) => {
-            const linhas = i.descricao.split("\n");
-            return (
-              <div key={i.id} className="mt-1">
-                <div className="flex justify-between gap-2">
-                  <span>
-                    {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
-                    {linhas[0]}
-                  </span>
-                  <span>{moeda(Number(i.qtd) * Number(i.preco_unit))}</span>
-                </div>
-                {linhas.slice(1).map((l, idx) => (
-                  <div key={idx} className="pl-3">
-                    {l}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-          <div className="my-2 border-t border-black/40" />
-          <div className="flex justify-between gap-2">
-            <span>Subtotal</span>
-            <span>{moeda(subtotal)}</span>
-          </div>
-          {servico > 0 && (
-            <div className="flex justify-between gap-2">
-              <span>Serviço ({Math.round(perc)}%)</span>
-              <span>{moeda(servico)}</span>
-            </div>
-          )}
-          <div className="flex justify-between gap-2 text-base font-bold">
-            <span>TOTAL</span>
-            <span>{moeda(total)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-3 flex justify-center">
-        <ImprimirComanda />
-      </div>
-
-      <div className="mx-auto mt-2 max-w-sm">
-        <EmitirNfce comandaId={comanda.id} emitida={nfce ?? null} />
       </div>
 
       {/* Itens */}
