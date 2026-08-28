@@ -6,6 +6,7 @@ import { QRComanda, LancarItens } from "./cliente";
 import type { PizzaOpcao, ComboGrupo } from "./cliente";
 import { ImprimirComanda } from "./print";
 import { AcoesComanda } from "./acoes";
+import { EmitirNfce } from "./emitir-nfce";
 import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
 
 const moeda = (n: number) =>
@@ -25,6 +26,14 @@ export default async function ComandaPage({
     .eq("id", id)
     .single();
   if (!comanda) notFound();
+
+  const { data: nfce } = await supabase
+    .from("nfce_emitidas")
+    .select("status, numero, url_danfe")
+    .eq("comanda_id", id)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const [
     { data: itens },
@@ -293,6 +302,10 @@ export default async function ComandaPage({
 
       <div className="mt-3 flex justify-center">
         <ImprimirComanda />
+      </div>
+
+      <div className="mx-auto mt-2 max-w-sm">
+        <EmitirNfce comandaId={comanda.id} emitida={nfce ?? null} />
       </div>
 
       {/* Itens */}
