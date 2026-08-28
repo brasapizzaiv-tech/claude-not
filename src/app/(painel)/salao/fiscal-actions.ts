@@ -185,3 +185,46 @@ export async function cancelarNfceEmitida(id: string, justificativa: string) {
   revalidatePath("/salao/notas-fiscais");
   return { ok: r.ok, status: r.status, mensagem: r.mensagem };
 }
+
+// Cancela itens específicos de comandas (a "Cancelar produtos" da mesa). Registra
+// o motivo no log e apaga os itens. Só cancela itens ainda NÃO pagos.
+export async function cancelarItensComanda(itemIds: string[], motivo: string) {
+  const supabase = await createClient();
+  const just = (motivo || "").trim();
+  if (just.length < 3) return { ok: false, mensagem: "Informe o motivo (mín. 3 caracteres)." };
+  if (itemIds.length === 0) return { ok: false, mensagem: "Selecione ao menos um item." };
+
+  const { data: itens } = await supabase
+    .from("pdv_comanda_itens")
+    .select("id, descricao, qtd, preco_unit, pago, comanda_id")
+    .in("id", itemIds);
+  const canc = (itens ?? []).filter((i) => !i.pago); // não cancela item já pago
+  if (canc.length === 0) return { ok: false, mensagem: "Nada a cancelar (itens já pagos não podem ser cancelados aqui)." };
+
+  const comIds = [...new Set(canc.map((i) => i.comanda_id as string))];
+  const { data: coms } = await supabase
+    .from("pdv_comandas")
+    .select("id, numero, mesa")
+    .in("id", comIds);
+  const comInfo = new Map((coms ?? []).map((c) => [c.id as string, { numero: c.numero as number, mesa: c.mesa as string | null }]));
+  const { data: userData } = await supabase.auth.getUser();
+
+  await supabase.from("pdv_itens_cancelados").insert(
+    canc.map((i) => {
+      const ci = comInfo.get(i.comanda_id as string);
+      return {
+        comanda_numero: ci?.numero ?? null,
+        mesa: ci?.mesa ?? null,
+        descricao: (i.descricao as string) || null,
+        qtd: Number(i.qtd),
+        valor: Number(i.qtd) * Number(i.preco_unit),
+        motivo: just,
+        cancelado_por: userData.user?.id ?? null,
+      };
+    }),
+  );
+  await supabase.from("pdv_comanda_itens").delete().in("id", canc.map((i) => i.id as string));
+
+  revalidatePath("/salao");
+  return { ok: true, cancelados: canc.length };
+}

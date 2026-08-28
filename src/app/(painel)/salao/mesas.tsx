@@ -147,7 +147,17 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
       }`}
     >
       <div className="mb-2 flex items-center gap-1">
-        <span className="truncate font-bold text-zinc-900 dark:text-zinc-100">{mesa.nome}</span>
+        {ocupada && mesa.tipo !== "balanca" ? (
+          <Link
+            href={`/salao/mesa/${encodeURIComponent(mesa.nome)}`}
+            className="truncate font-bold text-zinc-900 hover:text-orange-600 hover:underline dark:text-zinc-100"
+            title="Ver detalhes da mesa"
+          >
+            {mesa.nome}
+          </Link>
+        ) : (
+          <span className="truncate font-bold text-zinc-900 dark:text-zinc-100">{mesa.nome}</span>
+        )}
         <span
           className={`ml-auto shrink-0 whitespace-nowrap text-[11px] font-medium uppercase ${
             ocupada ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400"
