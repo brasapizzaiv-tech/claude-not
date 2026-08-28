@@ -251,7 +251,13 @@
         <div class="stat"><div class="n" id="relQtd">0</div><div class="l">Marmitas</div></div>
         <div class="stat"><div class="n" id="relPessoasN">0</div><div class="l">Pessoas</div></div>
       </div>
-      <div class="card"><h2>Por filial e funcionário</h2><div id="relFiliais"></div></div>
+      <div class="card">
+        <div class="segbtns" style="margin-bottom:10px">
+          <button id="relBtnFilial" onclick="relModo('filial')">🏢 Totais por filial</button>
+          <button id="relBtnFunc" onclick="relModo('funcionario')">👤 Por funcionário</button>
+        </div>
+        <div id="relFiliais"></div>
+      </div>
       <div class="card"><h2>Consumo</h2><div id="relConsumo"></div></div>
       <button class="sec block" onclick="baixarCSV()">⬇️ Baixar planilha (CSV)</button>
     </section>
@@ -657,10 +663,35 @@ async function carregarRelatorio(){
     ULTIMO_REL=r;
     let tp=0;r.porFilial.forEach(f=>tp+=f.porPessoa.length);
     $('#relQtd').textContent=r.quantidadeTotal||0;$('#relPessoasN').textContent=tp;
-    $('#relFiliais').innerHTML=r.porFilial.length?r.porFilial.map(f=>`<div class="prod"><div class="fh"><span>${escapeHtml(f.filial)}</span><span>${f.quantidade} marmita(s)</span></div>${f.porPessoa.map(p=>`<div class="item"><div class="grow"><div class="nome">${escapeHtml(p.cliente)} ${p.matricula?`<span class="pill">${escapeHtml(p.matricula)}</span>`:''}</div></div><div class="nome">${p.quantidade}</div></div>`).join('')}</div>`).join(''):'<div class="empty">Sem pedidos no período.</div>';
+    renderRel();
     const c=r.consumo,bl=(t,a)=>`<div class="ln"><b>${t}:</b> ${a.length?a.map(x=>`${x.quantidade}× ${escapeHtml(x.nome)}`).join(' · '):'—'}</div>`;
     $('#relConsumo').innerHTML=`<div class="prod">${bl('Pratos',c.pratos)}${bl('Proteínas',c.proteinas)}${bl('Saladas',c.saladas)}</div>`;
   }catch(e){ toast(e.message,true); }
+}
+let REL_MODO='filial';
+function relModo(m){ REL_MODO=m; renderRel(); }
+function renderRel(){
+  const r=ULTIMO_REL; if(!r)return;
+  $('#relBtnFilial').classList.toggle('sec',REL_MODO==='filial');
+  $('#relBtnFunc').classList.toggle('sec',REL_MODO==='funcionario');
+  const fil=arr(r.porFilial);
+  if(!fil.length){ $('#relFiliais').innerHTML='<div class="empty">Sem pedidos no período.</div>'; return; }
+  if(REL_MODO==='filial'){
+    // Só os totais por filial (sem detalhar pessoas).
+    const total=fil.reduce((s,f)=>s+(f.quantidade||0),0);
+    $('#relFiliais').innerHTML=`<div class="prod">${fil.map(f=>`<div class="item"><div class="grow"><div class="nome">🏢 ${escapeHtml(f.filial)}</div></div><div class="nome">${f.quantidade} marmita(s)</div></div>`).join('')}<div class="fh" style="margin-top:6px"><span>TOTAL</span><span>${total} marmita(s)</span></div></div>`;
+  } else {
+    // Um por funcionário (soma entre filiais), em ordem alfabética.
+    const pes=new Map();
+    fil.forEach(f=>arr(f.porPessoa).forEach(p=>{
+      const k=(p.cliente+'||'+(p.matricula||'')).toLowerCase();
+      if(!pes.has(k)) pes.set(k,{cliente:p.cliente,matricula:p.matricula||'',filiais:new Set(),qtd:0});
+      const o=pes.get(k); o.qtd+=(p.quantidade||0); o.filiais.add(f.filial);
+    }));
+    const lst=[...pes.values()].sort((a,b)=>a.cliente.localeCompare(b.cliente,'pt-BR'));
+    const total=lst.reduce((s,x)=>s+x.qtd,0);
+    $('#relFiliais').innerHTML=`<div class="prod">${lst.map(o=>`<div class="item"><div class="grow"><div class="nome">${escapeHtml(o.cliente)} ${o.matricula?`<span class="pill">${escapeHtml(o.matricula)}</span>`:''}</div><div class="meta">${[...o.filiais].map(escapeHtml).join(', ')}</div></div><div class="nome">${o.qtd}</div></div>`).join('')}<div class="fh" style="margin-top:6px"><span>TOTAL (${lst.length} funcionário(s))</span><span>${total} marmita(s)</span></div></div>`;
+  }
 }
 function baixarCSV(){
   if(!ULTIMO_REL)return;
