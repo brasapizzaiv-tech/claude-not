@@ -2,17 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { acharComanda } from "./actions";
+import { acharComanda, abrirComanda } from "./actions";
 
 // Busca rápida do garçom: digitar o número da comanda/cartão OU ler o QR do
 // cupom / código de barras do cartão pela câmera do celular. Ao achar, abre o
-// cardápio da mesa já com a comanda selecionada.
-export function BuscaComanda() {
+// cardápio da mesa já com a comanda selecionada. Se não achar, oferece abrir
+// uma nova comanda escolhendo a mesa.
+export function BuscaComanda({ mesas }: { mesas: string[] }) {
   const router = useRouter();
   const [proc, start] = useTransition();
   const [codigo, setCodigo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [scan, setScan] = useState(false);
+  // Quando não acha: guarda o código e mostra a escolha de mesa para abrir nova.
+  const [abrirCod, setAbrirCod] = useState<string | null>(null);
 
   const abrir = useCallback(
     (valor: string) => {
@@ -24,13 +27,26 @@ export function BuscaComanda() {
         if (r.ok) {
           router.push(`/garcom/mesa/${encodeURIComponent(r.mesa)}?comanda=${r.comandaId}`);
         } else {
-          setErro("Comanda não encontrada. Confira o número.");
-          setTimeout(() => setErro(null), 3500);
+          setAbrirCod(v);
         }
       });
     },
     [router],
   );
+
+  function novaComanda(mesa: string) {
+    const cod = abrirCod ?? "";
+    start(async () => {
+      const r = await abrirComanda(mesa, cod);
+      if (r.ok) {
+        setAbrirCod(null);
+        router.push(`/garcom/mesa/${encodeURIComponent(r.mesa)}?comanda=${r.comandaId}`);
+      } else {
+        setErro(r.mensagem || "Não foi possível abrir.");
+        setTimeout(() => setErro(null), 3500);
+      }
+    });
+  }
 
   const onLido = useCallback(
     (v: string) => { setScan(false); setCodigo(v); abrir(v); },
@@ -66,6 +82,32 @@ export function BuscaComanda() {
       {erro && <p className="mb-2 px-1 text-sm text-red-400">{erro}</p>}
       {scan && (
         <Scanner onClose={() => setScan(false)} onLido={onLido} />
+      )}
+      {abrirCod !== null && (
+        <div className="fixed inset-0 z-[65] flex flex-col bg-zinc-950 text-zinc-100">
+          <div className="flex items-center justify-between border-b border-zinc-800 p-3">
+            <span className="text-lg font-bold">Abrir comanda</span>
+            <button onClick={() => setAbrirCod(null)} className="text-zinc-400">✕</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            <p className="mb-3 text-sm text-zinc-400">
+              Não existe comanda aberta com <span className="font-semibold text-zinc-200">{abrirCod}</span>.
+              Escolha a mesa para abrir uma nova:
+            </p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {mesas.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => novaComanda(m)}
+                  disabled={proc}
+                  className="rounded-lg border border-zinc-700 px-2 py-3 text-sm font-medium text-zinc-200 active:bg-blue-600 disabled:opacity-50"
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

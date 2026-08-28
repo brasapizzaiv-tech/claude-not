@@ -65,22 +65,56 @@ export async function acharComanda(codigo: string) {
   if (uuid) {
     com = (await supabase.from("pdv_comandas").select("id, mesa").eq("id", uuid).maybeSingle()).data;
   } else {
-    const num = Number(v.replace(/\D/g, ""));
-    if (num > 0) {
-      com = (
-        await supabase
-          .from("pdv_comandas")
-          .select("id, mesa")
-          .eq("numero", num)
-          .eq("status", "aberta")
-          .order("aberta_em", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      ).data;
+    // 1) pelo código do cartão físico (comanda aberta)
+    com = (
+      await supabase
+        .from("pdv_comandas")
+        .select("id, mesa")
+        .eq("cartao", v)
+        .eq("status", "aberta")
+        .order("aberta_em", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ).data;
+    // 2) pelo número interno da comanda
+    if (!com) {
+      const num = Number(v.replace(/\D/g, ""));
+      if (num > 0) {
+        com = (
+          await supabase
+            .from("pdv_comandas")
+            .select("id, mesa")
+            .eq("numero", num)
+            .eq("status", "aberta")
+            .order("aberta_em", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        ).data;
+      }
     }
   }
   if (!com) return { ok: false as const };
   return { ok: true as const, comandaId: com.id, mesa: com.mesa || "Balcão" };
+}
+
+// Abre uma nova comanda numa mesa. Se veio de um cartão lido, guarda o código
+// para achar da próxima vez. Não guarda QR/URL (id de comanda) como cartão.
+export async function abrirComanda(mesa: string, cartao?: string) {
+  const supabase = await createClient();
+  const m = (mesa || "").trim();
+  if (!m) return { ok: false as const, mensagem: "Escolha a mesa." };
+  const raw = (cartao || "").trim();
+  const ehUrlOuUuid = /https?:\/\//i.test(raw) || /[0-9a-f]{8}-[0-9a-f]{4}-/i.test(raw);
+  const card = raw && !ehUrlOuUuid ? raw : null;
+  const { data: com, error } = await supabase
+    .from("pdv_comandas")
+    .insert({ mesa: m, peso: 0, tara: 0, valor_buffet: 0, livre: false, cartao: card })
+    .select("id, numero")
+    .single();
+  if (error || !com) return { ok: false as const, mensagem: error?.message || "Não foi possível abrir a comanda." };
+  revalidatePath("/garcom");
+  revalidatePath("/salao");
+  return { ok: true as const, comandaId: com.id as string, mesa: m, numero: com.numero as number };
 }
 
 // Move uma comanda aberta para outra mesa.

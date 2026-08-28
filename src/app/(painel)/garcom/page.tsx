@@ -98,7 +98,7 @@ export default async function GarcomPage() {
   return (
     <div className="min-h-screen bg-zinc-950 p-2 text-zinc-100">
       <h1 className="px-1 py-2 text-xl font-bold">🧑‍🍳 Mesas</h1>
-      <BuscaComanda />
+      <BuscaComanda mesas={nomes} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {nomes.map((nome) => {
           const comandas = porMesa.get(nome) ?? [];
