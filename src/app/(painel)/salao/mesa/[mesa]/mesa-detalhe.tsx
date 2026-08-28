@@ -89,7 +89,7 @@ export function MesaDetalhe({
 
   const visivel = (l: Linha) => {
     const q = busca.trim().toLowerCase();
-    if (q && !l.descricao.toLowerCase().includes(q)) return false;
+    if (q && !l.descricao.toLowerCase().includes(q) && !String(l.comandaNumero).includes(q)) return false;
     if (ocultarPagos && l.quitado) return false;
     return true;
   };
@@ -132,10 +132,15 @@ export function MesaDetalhe({
       )}
       <span className="font-medium text-emerald-600">{l.qtd > 1 ? `${l.qtd}× ` : "1× "}</span>
       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">{l.descricao}</span>
-      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${l.quitado ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"}`}>
-        {l.quitado ? "Pago" : "Pendente"}
+      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${l.quitado ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : l.pago > 0.005 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"}`}>
+        {l.quitado ? "Pago" : l.pago > 0.005 ? "Parcial" : "Pendente"}
       </span>
-      <span className="w-20 text-right text-zinc-700 dark:text-zinc-300">{brl(l.payable)}</span>
+      <div className="w-28 shrink-0 text-right">
+        <div className="text-zinc-700 dark:text-zinc-300">{brl(l.payable)}</div>
+        {l.pago > 0.005 && !l.quitado && (
+          <div className="text-[10px] text-zinc-400">pago {brl(l.pago)} · falta {brl(l.pendente)}</div>
+        )}
+      </div>
     </div>
   );
 
@@ -146,7 +151,10 @@ export function MesaDetalhe({
           <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Detalhes da mesa · {mesa}</h1>
           <p className="text-sm text-zinc-500">Comandas, itens e o que está pago/pendente da mesa.</p>
         </div>
-        <Link href="/salao" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700">Fechar</Link>
+        <div className="flex gap-2">
+          <Link href="/salao/cancelados" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">🗒️ Cancelados</Link>
+          <Link href="/salao" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700">Fechar</Link>
+        </div>
       </div>
 
       {/* Busca + abas */}
@@ -154,7 +162,7 @@ export function MesaDetalhe({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Buscar produto..."
+          placeholder="🔎 Buscar produto ou nº da comanda..."
           className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
         />
         <div className="flex rounded-lg border border-zinc-300 p-0.5 dark:border-zinc-700">
