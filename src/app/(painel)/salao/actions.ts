@@ -298,7 +298,33 @@ export async function alternarMarmita(formData: FormData) {
 
 export async function excluirComanda(formData: FormData) {
   const supabase = await createClient();
-  await supabase.from("pdv_comandas").delete().eq("id", formData.get("id") as string);
+  const id = formData.get("id") as string;
+  const motivo = ((formData.get("motivo") as string) || "").trim();
+  if (motivo.length < 3) return; // motivo obrigatório
+
+  // Registra no log de auditoria antes de apagar.
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .select("numero, mesa, valor_buffet")
+    .eq("id", id)
+    .maybeSingle();
+  const { data: itc } = await supabase
+    .from("pdv_comanda_itens")
+    .select("qtd, preco_unit")
+    .eq("comanda_id", id);
+  const valor =
+    Number(com?.valor_buffet ?? 0) +
+    (itc ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  const { data: userData } = await supabase.auth.getUser();
+  await supabase.from("pdv_comandas_excluidas").insert({
+    comanda_numero: com?.numero ?? null,
+    mesa: com?.mesa ?? null,
+    valor,
+    motivo,
+    excluido_por: userData.user?.id ?? null,
+  });
+
+  await supabase.from("pdv_comandas").delete().eq("id", id);
   revalidatePath("/salao");
   redirect("/salao");
 }

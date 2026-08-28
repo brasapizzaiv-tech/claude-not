@@ -5,7 +5,7 @@ import { servicoAgora } from "../../util";
 import { LancarItens } from "./cliente";
 import type { PizzaOpcao, ComboGrupo } from "./cliente";
 import { AcoesComanda } from "./acoes";
-import { removerItemComanda, fecharComanda, reabrirComanda } from "../../actions";
+import { removerItemComanda } from "../../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -29,7 +29,6 @@ export default async function ComandaPage({
     { data: itens },
     { data: cardapio },
     { data: cfgRows },
-    { data: outrasRows },
     { data: catRows },
   ] = await Promise.all([
     supabase
@@ -40,18 +39,11 @@ export default async function ComandaPage({
     supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
     supabase.from("pdv_config").select("chave, valor"),
     supabase
-      .from("pdv_comandas")
-      .select("id, numero")
-      .eq("status", "aberta")
-      .neq("id", id)
-      .order("numero"),
-    supabase
       .from("pdv_categorias")
       .select("nome, disponivel, ordem")
       .eq("disponivel", true)
       .order("ordem"),
   ]);
-  const outras = (outrasRows as { id: string; numero: number }[]) ?? [];
   const categoriasOrdenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome);
   const catDisp = new Set(categoriasOrdenadas);
   // só itens de categorias disponíveis (ou sem categoria)
@@ -265,49 +257,11 @@ export default async function ComandaPage({
         </div>
       </div>
 
-      {/* Fechar / reabrir */}
-      {fechada ? (
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-sm text-green-600">
-            ✓ Paga{comanda.forma_pagamento ? ` · ${comanda.forma_pagamento}` : ""}
-          </span>
-          <form action={reabrirComanda}>
-            <input type="hidden" name="id" value={comanda.id} />
-            <button className="text-sm text-zinc-400 hover:text-orange-600">
-              Reabrir
-            </button>
-          </form>
-        </div>
-      ) : (
-        <form action={fecharComanda} className="mt-4 flex flex-wrap items-end gap-2">
-          <input type="hidden" name="id" value={comanda.id} />
-          <div>
-            <label className="mb-1 block text-xs text-zinc-500">Pagamento</label>
-            <select
-              name="forma"
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-            >
-              <option value="Dinheiro">Dinheiro</option>
-              <option value="Pix">Pix</option>
-              <option value="Cartão de débito">Cartão de débito</option>
-              <option value="Cartão de crédito">Cartão de crédito</option>
-            </select>
-          </div>
-          <button className="rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
-            Fechar e receber ({moeda(total)})
-          </button>
-        </form>
-      )}
+      <p className="mt-3 text-center text-xs text-zinc-400">
+        O pagamento é feito no caixa. Aqui você só adiciona ou retira itens.
+      </p>
 
-      {!fechada && (
-        <AcoesComanda
-          comandaId={comanda.id}
-          peso={Number(comanda.peso ?? 0)}
-          tara={Number(comanda.tara ?? 0)}
-          soKg={!!(comanda as { so_kg?: boolean }).so_kg}
-          outras={outras}
-        />
-      )}
+      {!fechada && <AcoesComanda comandaId={comanda.id} />}
     </div>
   );
 }
