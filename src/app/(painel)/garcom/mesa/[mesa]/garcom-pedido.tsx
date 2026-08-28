@@ -17,11 +17,13 @@ export function GarcomPedido({
   itens,
   categorias,
   comandas,
+  comandaInicial,
 }: {
   mesa: string;
   itens: ItemMenu[];
   categorias: string[];
   comandas: { id: string; numero: number }[];
+  comandaInicial?: string;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -33,7 +35,7 @@ export function GarcomPedido({
   const [obs, setObs] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   // Comanda escolhida: "nova" = cria uma nova; senão o id de uma existente.
-  const [comandaSel, setComandaSel] = useState<string>(comandas[0]?.id ?? "nova");
+  const [comandaSel, setComandaSel] = useState<string>(comandaInicial ?? comandas[0]?.id ?? "nova");
 
   const abas = ["Todos", ...categorias];
   const corDe = (c: string) => (c === "Todos" ? "#3b82f6" : CORES[(categorias.indexOf(c) + CORES.length) % CORES.length]);

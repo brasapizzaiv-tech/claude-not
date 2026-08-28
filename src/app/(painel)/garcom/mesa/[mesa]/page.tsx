@@ -3,10 +3,13 @@ import { GarcomPedido, type ItemMenu } from "./garcom-pedido";
 
 export default async function GarcomMesaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ mesa: string }>;
+  searchParams: Promise<{ comanda?: string }>;
 }) {
   const { mesa: mesaRaw } = await params;
+  const { comanda: comandaInicial } = await searchParams;
   const mesa = decodeURIComponent(mesaRaw);
   const supabase = await createClient();
 
@@ -29,5 +32,13 @@ export default async function GarcomMesaPage({
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
 
-  return <GarcomPedido mesa={mesa} itens={itens} categorias={categorias} comandas={comandas} />;
+  return (
+    <GarcomPedido
+      mesa={mesa}
+      itens={itens}
+      categorias={categorias}
+      comandas={comandas}
+      comandaInicial={comandas.some((c) => c.id === comandaInicial) ? comandaInicial : undefined}
+    />
+  );
 }

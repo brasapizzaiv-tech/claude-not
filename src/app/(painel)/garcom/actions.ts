@@ -46,3 +46,33 @@ export async function lancarPedidoGarcom(
   revalidatePath("/salao");
   return { ok: true as const, comandaId: cid, numero };
 }
+
+// Acha uma comanda pelo código lido (QR do cupom = URL com o id, ou o número
+// digitado/lido do cartão). Devolve a mesa para abrir o cardápio.
+export async function acharComanda(codigo: string) {
+  const supabase = await createClient();
+  const v = (codigo || "").trim();
+  if (!v) return { ok: false as const };
+  const uuid = v.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
+
+  let com: { id: string; mesa: string | null } | null = null;
+  if (uuid) {
+    com = (await supabase.from("pdv_comandas").select("id, mesa").eq("id", uuid).maybeSingle()).data;
+  } else {
+    const num = Number(v.replace(/\D/g, ""));
+    if (num > 0) {
+      com = (
+        await supabase
+          .from("pdv_comandas")
+          .select("id, mesa")
+          .eq("numero", num)
+          .eq("status", "aberta")
+          .order("aberta_em", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ).data;
+    }
+  }
+  if (!com) return { ok: false as const };
+  return { ok: true as const, comandaId: com.id, mesa: com.mesa || "Balcão" };
+}

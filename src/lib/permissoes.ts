@@ -12,6 +12,7 @@ export type ModuloKey =
   | "notas"
   | "financeiro"
   | "etiquetas"
+  | "garcom"
   | "salao"
   | "recepcao"
   | "reservas"
@@ -32,7 +33,10 @@ export const MODULOS: {
   { key: "notas", label: "Notas Fiscais", icon: "🧾", rotas: ["/notas"] },
   { key: "financeiro", label: "Financeiro", icon: "📊", rotas: ["/financeiro"] },
   { key: "etiquetas", label: "Etiquetas", icon: "🏷️", rotas: ["/etiquetas"] },
-  { key: "salao", label: "Salão / PDV", icon: "🍕", rotas: ["/salao", "/garcom"] },
+  // Garçom: só o app do garçom (/garcom). Vem ANTES de "salao" para que /garcom
+  // seja controlado por esta permissão (mais específica).
+  { key: "garcom", label: "Garçom (app do celular)", icon: "🧑‍🍳", rotas: ["/garcom"] },
+  { key: "salao", label: "Salão / PDV", icon: "🍕", rotas: ["/salao"] },
   // Recepção: só a tela de celular das reservas. Vem ANTES de "reservas" para
   // que /reservas/hoje seja controlada por esta permissão (mais específica).
   { key: "recepcao", label: "Recepção (reservas no celular)", icon: "📱", rotas: ["/reservas/hoje"] },
@@ -61,5 +65,7 @@ export function podeAcessar(
   const mod = moduloDaRota(path);
   if (mod === null) return true; // rota livre (dashboard etc.)
   if (mod === "usuarios") return false; // só o dono
+  // Quem tem acesso ao Salão também usa o app do garçom.
+  if (mod === "garcom") return permissoes.includes("garcom") || permissoes.includes("salao");
   return permissoes.includes(mod);
 }

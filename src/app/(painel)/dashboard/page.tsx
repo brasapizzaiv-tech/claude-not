@@ -55,6 +55,10 @@ export default async function DashboardPage() {
   if (!admin && permissoes.includes("recepcao") && permissoes.every((p) => p === "recepcao")) {
     redirect("/reservas/hoje");
   }
+  // Usuário só-garçom: entra direto no app do garçom.
+  if (!admin && permissoes.includes("garcom") && permissoes.every((p) => p === "garcom")) {
+    redirect("/garcom");
+  }
 
   const pode = (k: string) => admin || permissoes.includes(k);
   const r = (resumoData as Resumo) ?? ({} as Resumo);
