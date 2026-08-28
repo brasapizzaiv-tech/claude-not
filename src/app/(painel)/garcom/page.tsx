@@ -1,58 +1,52 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { MesasGrid, type Mesa, type ComandaMini } from "../salao/mesas";
 
 export default async function GarcomPage() {
   const supabase = await createClient();
   const [{ data: abertas }, { data: cfgRows }] = await Promise.all([
-    supabase
-      .from("pdv_comandas")
-      .select("id, numero, mesa, valor_buffet")
-      .eq("status", "aberta")
-      .order("numero", { ascending: true }),
+    supabase.from("pdv_comandas").select("id, numero, mesa").eq("status", "aberta").order("numero"),
     supabase.from("pdv_config").select("chave, valor"),
   ]);
-
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
   const qtdMesas = Number(cfg.qtd_mesas || 40);
 
-  const comandas =
-    (abertas as { id: string; numero: number; mesa: string | null; valor_buffet: number }[]) ?? [];
-
-  const ids = comandas.map((c) => c.id);
-  const totItens = new Map<string, number>();
-  if (ids.length) {
-    const { data: itens } = await supabase
-      .from("pdv_comanda_itens")
-      .select("comanda_id, qtd, preco_unit")
-      .in("comanda_id", ids);
-    for (const it of itens ?? []) {
-      const v = Number(it.qtd) * Number(it.preco_unit);
-      totItens.set(it.comanda_id, (totItens.get(it.comanda_id) || 0) + v);
-    }
-  }
-
-  const porMesa = new Map<string, ComandaMini[]>();
-  for (const c of comandas) {
+  const porMesa = new Map<string, number[]>();
+  for (const c of (abertas as { numero: number; mesa: string | null }[]) ?? []) {
     const nome = c.mesa || "Balcão";
-    const total = Number(c.valor_buffet) + (totItens.get(c.id) || 0);
-    porMesa.set(nome, [...(porMesa.get(nome) ?? []), { id: c.id, numero: c.numero, total }]);
+    porMesa.set(nome, [...(porMesa.get(nome) ?? []), c.numero]);
   }
 
-  const nomes: { nome: string; tipo: Mesa["tipo"] }[] = [
-    { nome: "Balcão", tipo: "balcao" },
-    ...Array.from({ length: qtdMesas }, (_, i) => ({ nome: `Mesa ${i + 1}`, tipo: "mesa" as const })),
-    { nome: "Balança", tipo: "balanca" },
-  ];
-  const mesas: Mesa[] = nomes.map((m) => ({ ...m, comandas: porMesa.get(m.nome) ?? [] }));
-  for (const [nome, cs] of porMesa) {
-    if (!mesas.some((m) => m.nome === nome)) mesas.push({ nome, tipo: "mesa", comandas: cs });
-  }
+  const nomes = ["Balcão", ...Array.from({ length: qtdMesas }, (_, i) => `Mesa ${i + 1}`), "Balança"];
+  for (const nome of porMesa.keys()) if (!nomes.includes(nome)) nomes.push(nome);
 
   return (
-    <div className="mx-auto max-w-[1500px] p-4">
-      <h1 className="mb-4 text-2xl font-bold text-zinc-900 dark:text-zinc-50">🧑‍🍳 Garçom</h1>
-      <MesasGrid mesas={mesas} base="/garcom/comanda" destino="garcom" admin={false} />
+    <div className="min-h-screen bg-zinc-950 p-2 text-zinc-100">
+      <h1 className="px-1 py-2 text-xl font-bold">🧑‍🍳 Mesas</h1>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        {nomes.map((nome) => {
+          const comandas = porMesa.get(nome) ?? [];
+          const ocupada = comandas.length > 0;
+          return (
+            <Link
+              key={nome}
+              href={`/garcom/mesa/${encodeURIComponent(nome)}`}
+              className="flex min-h-[84px] flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-2"
+            >
+              <span className={`rounded px-2 py-1 text-center text-sm font-bold ${ocupada ? "bg-red-400/90 text-red-950" : "bg-emerald-400/90 text-emerald-950"}`}>
+                {nome}
+              </span>
+              {ocupada && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {comandas.map((n) => (
+                    <span key={n} className="rounded bg-zinc-700 px-1.5 text-[11px] text-zinc-200">{n}</span>
+                  ))}
+                </div>
+              )}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
