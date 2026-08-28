@@ -13,6 +13,7 @@ export type ModuloKey =
   | "financeiro"
   | "etiquetas"
   | "salao"
+  | "recepcao"
   | "reservas"
   | "cardapio_dia";
 
@@ -32,6 +33,9 @@ export const MODULOS: {
   { key: "financeiro", label: "Financeiro", icon: "📊", rotas: ["/financeiro"] },
   { key: "etiquetas", label: "Etiquetas", icon: "🏷️", rotas: ["/etiquetas"] },
   { key: "salao", label: "Salão / PDV", icon: "🍕", rotas: ["/salao", "/garcom"] },
+  // Recepção: só a tela de celular das reservas. Vem ANTES de "reservas" para
+  // que /reservas/hoje seja controlada por esta permissão (mais específica).
+  { key: "recepcao", label: "Recepção (reservas no celular)", icon: "📱", rotas: ["/reservas/hoje"] },
   { key: "reservas", label: "Reservas", icon: "📅", rotas: ["/reservas"] },
   { key: "cardapio_dia", label: "Cardápio do dia (site)", icon: "🍽️", rotas: ["/cardapio-do-dia"] },
 ];

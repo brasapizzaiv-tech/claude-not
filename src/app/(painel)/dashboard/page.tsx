@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { moedaBR } from "@/lib/format";
 
@@ -48,6 +49,13 @@ export default async function DashboardPage() {
 
   const admin = profile?.papel === "dono";
   const permissoes = (profile?.permissoes as string[] | null) ?? [];
+
+  // Usuário só de recepção: vai direto pra tela de celular das reservas, sem
+  // ver o dashboard nem o resto do sistema.
+  if (!admin && permissoes.includes("recepcao") && permissoes.every((p) => p === "recepcao")) {
+    redirect("/reservas/hoje");
+  }
+
   const pode = (k: string) => admin || permissoes.includes(k);
   const r = (resumoData as Resumo) ?? ({} as Resumo);
 

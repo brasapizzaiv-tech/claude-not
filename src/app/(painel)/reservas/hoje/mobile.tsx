@@ -2,9 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { dataBR } from "@/lib/format";
-import { marcarChegou, definirStatus, atribuirMesa } from "../actions";
+import { marcarChegou, atribuirMesa } from "../actions";
 
 export type ResMobile = {
   id: string;
@@ -21,10 +20,6 @@ export type ResMobile = {
   chegou_em: string | null;
 };
 
-const foneWhats = (t: string | null) => {
-  const d = (t ?? "").replace(/\D/g, "");
-  return d.length >= 10 ? (d.length <= 11 ? "55" + d : d) : "";
-};
 const diaSemana = (iso: string) =>
   new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" });
 
@@ -62,10 +57,7 @@ export function ReservasHoje({
     <div className="mx-auto max-w-md px-3 pb-16">
       {/* Cabeçalho fixo */}
       <div className="sticky top-0 z-10 -mx-3 border-b border-zinc-200 bg-white/95 px-3 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Reservas</h1>
-          <Link href="/reservas" className="text-xs text-zinc-400 hover:text-orange-600">versão completa</Link>
-        </div>
+        <h1 className="text-center text-lg font-bold text-zinc-900 dark:text-zinc-50">Reservas</h1>
         <div className="mt-2 flex items-center justify-between">
           <button onClick={() => irDia(addDias(dia, -1))} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">◀</button>
           <div className="text-center">
@@ -91,7 +83,6 @@ export function ReservasHoje({
           <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-400 dark:border-zinc-700">Nenhuma reserva.</div>
         )}
         {lista.map((r) => {
-          const zap = foneWhats(r.telefone);
           return (
             <div
               key={r.id}
@@ -140,30 +131,18 @@ export function ReservasHoje({
                 )}
               </div>
 
-              {/* Ações */}
-              <div className="mt-2 flex gap-2">
-                <button
-                  onClick={() => acao(() => marcarChegou(r.id, !r.chegou_em))}
-                  disabled={proc}
-                  className={`flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-60 ${
-                    r.chegou_em
-                      ? "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-                      : "bg-emerald-600 text-white hover:bg-emerald-700"
-                  }`}
-                >
-                  {r.chegou_em ? "Desmarcar" : "✓ Chegou"}
-                </button>
-                {zap && (
-                  <a href={`https://wa.me/${zap}`} target="_blank" rel="noopener noreferrer" className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-200">💬</a>
-                )}
-                <button
-                  onClick={() => { if (confirm(`Cancelar a reserva de ${r.nome}?`)) acao(() => definirStatus(r.id, "cancelada")); }}
-                  disabled={proc}
-                  className="rounded-xl border border-zinc-300 px-3 py-2.5 text-sm text-zinc-400 hover:text-red-600 disabled:opacity-60 dark:border-zinc-700"
-                >
-                  ✕
-                </button>
-              </div>
+              {/* Ação: só marcar que chegou */}
+              <button
+                onClick={() => acao(() => marcarChegou(r.id, !r.chegou_em))}
+                disabled={proc}
+                className={`mt-2 w-full rounded-xl py-3 text-base font-bold disabled:opacity-60 ${
+                  r.chegou_em
+                    ? "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+                }`}
+              >
+                {r.chegou_em ? "Desmarcar chegada" : "✓ Chegou"}
+              </button>
             </div>
           );
         })}

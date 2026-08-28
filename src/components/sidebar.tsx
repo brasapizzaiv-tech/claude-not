@@ -45,8 +45,13 @@ export function Sidebar({
   const [aberto, setAberto] = useState<{ key: string; top: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // A visão do garçom é tela cheia (celular): sem menu lateral.
-  if (pathname === "/garcom" || pathname.startsWith("/garcom/")) return null;
+  // Telas de tela cheia (celular): sem menu lateral.
+  if (
+    pathname === "/garcom" ||
+    pathname.startsWith("/garcom/") ||
+    pathname.startsWith("/reservas/hoje")
+  )
+    return null;
 
   const has = (key: ModuloKey) => admin || permissoes.includes(key);
   const M = Object.fromEntries(MODULOS.map((m) => [m.key, m])) as Record<
