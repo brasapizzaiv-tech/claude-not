@@ -67,6 +67,7 @@ export function Sidebar({
     { href: "/salao/caixa", label: "Caixa", desc: "Frente de caixa e recebimentos", icon: "💰" },
     { href: "/salao/balanca", label: "Balança", desc: "Pesagem do buffet", icon: "⚖️" },
     { href: "/salao/cardapio", label: "Cardápio / Config", desc: "Itens, preços e configurações", icon: "📖" },
+    { href: "/salao/notas-fiscais", label: "Notas fiscais", desc: "NFC-e/NF-e emitidas pelo sistema", icon: "🧾" },
     { href: "/garcom", label: "Garçom", desc: "Tela do garçom (tablet)", icon: "🧑‍🍳" },
   ];
 

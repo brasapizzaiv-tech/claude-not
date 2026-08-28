@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { emitirNfce, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
+import { emitirNfce, cancelarNfce, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
 const FORMA_FOCUS: Record<string, string> = {
@@ -139,6 +139,7 @@ export async function emitirNfceComanda(comandaId: string) {
     url_danfe: r.urlDanfe ?? null,
     url_xml: r.urlXml ?? null,
     mensagem: r.mensagem ?? null,
+    valor: total,
   });
 
   revalidatePath(`/salao/comandas/${comandaId}`);
@@ -151,4 +152,34 @@ export async function emitirNfceComanda(comandaId: string) {
     mensagem: r.mensagem,
     erros: r.erros ? JSON.stringify(r.erros).slice(0, 500) : undefined,
   };
+}
+
+// Cancela uma NFC-e já autorizada (dentro do prazo legal). Justificativa >= 15
+// caracteres (exigência da SEFAZ).
+export async function cancelarNfceEmitida(id: string, justificativa: string) {
+  const supabase = await createClient();
+  const just = (justificativa || "").trim();
+  if (just.length < 15) return { ok: false, mensagem: "A justificativa precisa ter pelo menos 15 caracteres." };
+
+  const { data: nota } = await supabase
+    .from("nfce_emitidas")
+    .select("ref, ambiente, status")
+    .eq("id", id)
+    .maybeSingle();
+  if (!nota) return { ok: false, mensagem: "Nota não encontrada." };
+  if (nota.status !== "autorizado") return { ok: false, mensagem: "Só dá pra cancelar nota autorizada." };
+
+  const cfg = await cfgFiscal(supabase);
+  if (!cfg.emissor_token) return { ok: false, mensagem: "Falta o token do emissor." };
+
+  const r = await cancelarNfce(
+    { token: cfg.emissor_token, ambiente: (nota.ambiente as FocusAmbiente) || "homologacao" },
+    nota.ref as string,
+    just,
+  );
+  if (r.ok) {
+    await supabase.from("nfce_emitidas").update({ status: "cancelado", mensagem: just }).eq("id", id);
+  }
+  revalidatePath("/salao/notas-fiscais");
+  return { ok: r.ok, status: r.status, mensagem: r.mensagem };
 }
