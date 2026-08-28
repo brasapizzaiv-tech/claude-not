@@ -1,0 +1,13 @@
+{
+  "name": "Brasa Garçom",
+  "short_name": "Garçom",
+  "description": "App do garçom da Brasa",
+  "start_url": "/garcom",
+  "scope": "/garcom",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/logo-brasa.png", "sizes": "any", "type": "image/png", "purpose": "any" }
+  ]
+}

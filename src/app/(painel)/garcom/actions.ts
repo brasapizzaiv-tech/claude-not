@@ -16,6 +16,9 @@ export async function lancarPedidoGarcom(
   const validos = itens.filter((i) => i.qtd > 0);
   if (!mesa || validos.length === 0) return { ok: false as const, mensagem: "Carrinho vazio." };
 
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth.user?.id ?? null;
+
   let cid = comandaId;
   let numero: number | undefined;
   if (!cid) {
@@ -33,12 +36,15 @@ export async function lancarPedidoGarcom(
   if (!cid) return { ok: false as const, mensagem: "Não foi possível criar a comanda." };
 
   const obs = (observacao || "").trim();
+  const lancamentoId = crypto.randomUUID();
   const rows = validos.map((i, idx) => ({
     comanda_id: cid,
     item_id: i.itemId,
     descricao: i.nome + (idx === 0 && obs ? `\n📝 ${obs}` : ""),
     qtd: i.qtd,
     preco_unit: i.preco,
+    criado_por: uid,
+    lancamento_id: lancamentoId,
   }));
   await supabase.from("pdv_comanda_itens").insert(rows);
 
