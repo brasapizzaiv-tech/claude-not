@@ -137,3 +137,15 @@ export async function salvarMensagens(msgs: { chave: string; valor: string }[]) 
   revalidatePath("/reservas");
   return { ok: true };
 }
+
+// Atribui/limpa a mesa de uma reserva (usado na tela de celular da recepção).
+export async function atribuirMesa(id: string, mesa: string) {
+  const supabase = await createClient();
+  await supabase
+    .from("reservas")
+    .update({ mesa: mesa.trim() || null })
+    .eq("id", id);
+  revalidatePath("/reservas");
+  revalidatePath("/reservas/hoje");
+  return { ok: true };
+}

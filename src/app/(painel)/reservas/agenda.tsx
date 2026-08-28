@@ -134,7 +134,15 @@ export function AgendaReservas({
 
   return (
     <div className="mx-auto max-w-6xl p-8">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Reservas</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Reservas</h1>
+        <a
+          href="/reservas/hoje"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+        >
+          📱 Ver no celular
+        </a>
+      </div>
       <p className="mt-1 text-zinc-500">
         As reservas do site caem aqui. Confirme, remarque, feche datas e lance a
         reserva de quem ligar.
