@@ -76,3 +76,20 @@ export async function acharComanda(codigo: string) {
   if (!com) return { ok: false as const };
   return { ok: true as const, comandaId: com.id, mesa: com.mesa || "Balcão" };
 }
+
+// Move uma comanda aberta para outra mesa.
+export async function transferirComanda(comandaId: string, novaMesa: string) {
+  const supabase = await createClient();
+  const cid = (comandaId || "").trim();
+  const mesa = (novaMesa || "").trim();
+  if (!cid || !mesa) return { ok: false as const, mensagem: "Escolha a comanda e a mesa." };
+  const { error } = await supabase
+    .from("pdv_comandas")
+    .update({ mesa })
+    .eq("id", cid)
+    .eq("status", "aberta");
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath("/garcom");
+  revalidatePath("/salao");
+  return { ok: true as const };
+}

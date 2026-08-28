@@ -3,9 +3,16 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { lancarPedidoGarcom } from "../../actions";
+import { lancarPedidoGarcom, transferirComanda } from "../../actions";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
+export type Comanda = {
+  id: string;
+  numero: number;
+  buffet: number;
+  total: number;
+  itens: { descricao: string; qtd: number; preco: number }[];
+};
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -17,12 +24,14 @@ export function GarcomPedido({
   itens,
   categorias,
   comandas,
+  mesas,
   comandaInicial,
 }: {
   mesa: string;
   itens: ItemMenu[];
   categorias: string[];
-  comandas: { id: string; numero: number }[];
+  comandas: Comanda[];
+  mesas: string[];
   comandaInicial?: string;
 }) {
   const router = useRouter();
@@ -36,6 +45,10 @@ export function GarcomPedido({
   const [toast, setToast] = useState<string | null>(null);
   // Comanda escolhida: "nova" = cria uma nova; senão o id de uma existente.
   const [comandaSel, setComandaSel] = useState<string>(comandaInicial ?? comandas[0]?.id ?? "nova");
+  const [contaOpen, setContaOpen] = useState(false);
+  const [trocaOpen, setTrocaOpen] = useState(false);
+  const [trocaComanda, setTrocaComanda] = useState<string>(comandas[0]?.id ?? "");
+  const [trocaMesa, setTrocaMesa] = useState<string>("");
 
   const abas = ["Todos", ...categorias];
   const corDe = (c: string) => (c === "Todos" ? "#3b82f6" : CORES[(categorias.indexOf(c) + CORES.length) % CORES.length]);
@@ -60,6 +73,23 @@ export function GarcomPedido({
   const setQtd = (id: string, q: number) =>
     setCart((c) => { const n = { ...c }; if (q <= 0) delete n[id]; else n[id] = q; return n; });
   const add = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
+
+  const totalMesa = comandas.reduce((s, c) => s + c.total, 0);
+
+  function transferir() {
+    if (!trocaComanda || !trocaMesa) return;
+    start(async () => {
+      const r = await transferirComanda(trocaComanda, trocaMesa);
+      if (r.ok) {
+        setTrocaOpen(false);
+        setToast(`Comanda movida para ${trocaMesa}!`);
+        setTimeout(() => router.push(`/garcom/mesa/${encodeURIComponent(trocaMesa)}`), 900);
+      } else {
+        setToast(r.mensagem || "Não foi possível transferir.");
+        setTimeout(() => setToast(null), 3000);
+      }
+    });
+  }
 
   function lancar() {
     if (cartLista.length === 0) return;
@@ -89,8 +119,8 @@ export function GarcomPedido({
           <span className="text-lg font-bold">{mesa}</span>
         </div>
         <div className="flex items-center gap-4 text-sm font-medium text-blue-400">
-          <Link href={`/salao/mesa/${encodeURIComponent(mesa)}`}>🧾 Conta</Link>
-          <Link href="/garcom">⇄ Trocar mesa</Link>
+          <button onClick={() => setContaOpen(true)}>🧾 Conta</button>
+          <button onClick={() => { setTrocaComanda(comandas[0]?.id ?? ""); setTrocaMesa(""); setTrocaOpen(true); }}>⇄ Trocar mesa</button>
         </div>
       </div>
 
@@ -234,6 +264,113 @@ export function GarcomPedido({
               {proc ? "Lançando..." : "✓ Lançar pedido"}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Conta / histórico do que foi lançado */}
+      {contaOpen && (
+        <div className="fixed inset-0 z-[65] flex flex-col bg-zinc-950">
+          <div className="flex items-center justify-between border-b border-zinc-800 p-3">
+            <span className="text-lg font-bold">Conta · {mesa}</span>
+            <button onClick={() => setContaOpen(false)} className="text-zinc-400">✕</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            {comandas.length === 0 ? (
+              <p className="py-10 text-center text-sm text-zinc-500">Esta mesa não tem comanda aberta.</p>
+            ) : (
+              <div className="space-y-4">
+                {comandas.map((c) => (
+                  <div key={c.id} className="rounded-lg border border-zinc-800 bg-zinc-900">
+                    <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-2">
+                      <span className="font-bold">Comanda {c.numero}</span>
+                      <span className="font-bold text-emerald-400">{brl(c.total)}</span>
+                    </div>
+                    <div className="divide-y divide-zinc-800/60">
+                      {c.buffet > 0 && (
+                        <div className="flex justify-between px-3 py-1.5 text-sm">
+                          <span className="text-zinc-300">Buffet (balança)</span>
+                          <span>{brl(c.buffet)}</span>
+                        </div>
+                      )}
+                      {c.itens.length === 0 && c.buffet === 0 ? (
+                        <p className="px-3 py-2 text-sm text-zinc-500">Nada lançado ainda.</p>
+                      ) : (
+                        c.itens.map((it, idx) => (
+                          <div key={idx} className="flex justify-between px-3 py-1.5 text-sm">
+                            <span className="min-w-0 flex-1 truncate whitespace-pre-line text-zinc-200">
+                              {it.qtd}× {it.descricao}
+                            </span>
+                            <span className="ml-2 shrink-0">{it.preco > 0 ? brl(it.qtd * it.preco) : "—"}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between border-t border-zinc-800 p-3 text-lg">
+            <span className="font-medium text-zinc-300">Total da mesa</span>
+            <span className="font-bold text-emerald-400">{brl(totalMesa)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Trocar mesa: mover a comanda para outra mesa */}
+      {trocaOpen && (
+        <div className="fixed inset-0 z-[65] flex flex-col bg-zinc-950">
+          <div className="flex items-center justify-between border-b border-zinc-800 p-3">
+            <span className="text-lg font-bold">Trocar mesa</span>
+            <button onClick={() => setTrocaOpen(false)} className="text-zinc-400">✕</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            {comandas.length === 0 ? (
+              <p className="py-10 text-center text-sm text-zinc-500">Esta mesa não tem comanda para mover.</p>
+            ) : (
+              <>
+                {comandas.length > 1 && (
+                  <>
+                    <p className="mb-1 text-xs text-zinc-400">Qual comanda mover?</p>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {comandas.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => setTrocaComanda(c.id)}
+                          className={`rounded-lg px-3 py-1.5 text-sm font-medium ${trocaComanda === c.id ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+                        >
+                          Comanda {c.numero}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p className="mb-1 text-xs text-zinc-400">Mover para qual mesa?</p>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {mesas.map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setTrocaMesa(m)}
+                      className={`rounded-lg px-2 py-2.5 text-sm font-medium ${trocaMesa === m ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          {comandas.length > 0 && (
+            <div className="border-t border-zinc-800 p-3">
+              <button
+                onClick={transferir}
+                disabled={proc || !trocaComanda || !trocaMesa}
+                className="w-full rounded-xl bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
+              >
+                {proc ? "Movendo..." : trocaMesa ? `⇄ Mover para ${trocaMesa}` : "Escolha a mesa"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
