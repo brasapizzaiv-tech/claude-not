@@ -301,8 +301,12 @@ async function handle(req: NextRequest, rota: string[]) {
   if (path === "/api/pedidos") {
     if (method === "GET") {
       const data = url.searchParams.get("data") || agoraBR().data;
-      const { data: rows } = await db.from("mkt_pedidos").select("*").eq("data", data).order("criado_em");
-      return json(((rows as Row[]) || []).map(saidaPedido));
+      const { data: rows } = await db.from("mkt_pedidos").select("*").eq("data", data);
+      // Ordem alfabética pelo nome (facilita achar repetidos). Acentos tratados.
+      const lista = ((rows as Row[]) || [])
+        .map(saidaPedido)
+        .sort((a, b) => a.cliente.localeCompare(b.cliente, "pt-BR", { sensitivity: "base" }));
+      return json(lista);
     }
     if (method === "POST") {
       if (!pode(user, "pedidos_add")) return erro("Sem permissao (lancar pedidos).", 403);
