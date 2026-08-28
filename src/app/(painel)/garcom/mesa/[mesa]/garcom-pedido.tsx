@@ -16,10 +16,12 @@ export function GarcomPedido({
   mesa,
   itens,
   categorias,
+  comandas,
 }: {
   mesa: string;
   itens: ItemMenu[];
   categorias: string[];
+  comandas: { id: string; numero: number }[];
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -30,6 +32,8 @@ export function GarcomPedido({
   const [cartOpen, setCartOpen] = useState(false);
   const [obs, setObs] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  // Comanda escolhida: "nova" = cria uma nova; senão o id de uma existente.
+  const [comandaSel, setComandaSel] = useState<string>(comandas[0]?.id ?? "nova");
 
   const abas = ["Todos", ...categorias];
   const corDe = (c: string) => (c === "Todos" ? "#3b82f6" : CORES[(categorias.indexOf(c) + CORES.length) % CORES.length]);
@@ -62,6 +66,7 @@ export function GarcomPedido({
         mesa,
         cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd })),
         obs,
+        comandaSel === "nova" ? undefined : comandaSel,
       );
       if (r.ok) {
         setToast("Pedido realizado com sucesso!");
@@ -189,6 +194,25 @@ export function GarcomPedido({
             )}
           </div>
           <div className="border-t border-zinc-800 p-3">
+            {/* Escolher a comanda */}
+            <p className="mb-1 text-xs text-zinc-400">Lançar na comanda:</p>
+            <div className="mb-2 flex flex-wrap gap-2">
+              {comandas.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setComandaSel(c.id)}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium ${comandaSel === c.id ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+                >
+                  Comanda {c.numero}
+                </button>
+              ))}
+              <button
+                onClick={() => setComandaSel("nova")}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${comandaSel === "nova" ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+              >
+                + Nova comanda
+              </button>
+            </div>
             <textarea
               value={obs}
               onChange={(e) => setObs(e.target.value)}

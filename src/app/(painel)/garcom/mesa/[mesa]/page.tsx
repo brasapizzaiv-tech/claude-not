@@ -10,10 +10,12 @@ export default async function GarcomMesaPage({
   const mesa = decodeURIComponent(mesaRaw);
   const supabase = await createClient();
 
-  const [{ data: itensRows }, { data: catRows }] = await Promise.all([
+  const [{ data: itensRows }, { data: catRows }, { data: comRows }] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, disponivel").eq("disponivel", true).order("ordem"),
+    supabase.from("pdv_comandas").select("id, numero").eq("mesa", mesa).eq("status", "aberta").order("numero"),
   ]);
+  const comandas = ((comRows as { id: string; numero: number }[]) ?? []).map((c) => ({ id: c.id, numero: c.numero }));
 
   const itens: ItemMenu[] = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? []).map((i) => ({
     id: i.id,
@@ -27,5 +29,5 @@ export default async function GarcomMesaPage({
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
 
-  return <GarcomPedido mesa={mesa} itens={itens} categorias={categorias} />;
+  return <GarcomPedido mesa={mesa} itens={itens} categorias={categorias} comandas={comandas} />;
 }
