@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { salvarConfigFiscal } from "./actions";
+import { TesteNota } from "./teste-nota";
 
 const campo =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -106,6 +107,10 @@ export default async function FiscalPage() {
           Salvar configuração fiscal
         </button>
       </form>
+
+      <div className="mt-6">
+        <TesteNota />
+      </div>
     </div>
   );
 }
