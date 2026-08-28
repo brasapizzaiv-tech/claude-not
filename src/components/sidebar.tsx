@@ -58,66 +58,56 @@ export function Sidebar({
     ModuloKey,
     (typeof MODULOS)[number]
   >;
-  const mod = (key: ModuloKey, extra?: Partial<Item>): Item => ({
-    key,
-    href: M[key].rotas[0],
-    label: M[key].label,
-    icon: M[key].icon,
-    ...extra,
-  });
 
-  // Operação/Salão: mesas → caixa → balança → cardápio → garçom (submenu).
-  const salaoSub: Sub[] = [
-    { href: "/salao", label: "Salão / Mesas", desc: "Mapa de mesas e comandas", icon: "🍕" },
-    { href: "/salao/caixa", label: "Caixa", desc: "Frente de caixa e recebimentos", icon: "💰" },
-    { href: "/salao/balanca", label: "Balança", desc: "Pesagem do buffet", icon: "⚖️" },
-    { href: "/salao/cardapio", label: "Cardápio / Config", desc: "Itens, preços e configurações", icon: "📖" },
-    { href: "/salao/notas-fiscais", label: "Notas fiscais", desc: "NFC-e/NF-e emitidas pelo sistema", icon: "🧾" },
-    { href: "/garcom", label: "Garçom", desc: "Tela do garçom (tablet)", icon: "🧑‍🍳" },
-  ];
+  // Submenus (menos ícones na barra, tudo agrupado — sem precisar rolar).
+  const cadastrosSub: Sub[] = [
+    has("fornecedores") && { href: "/fornecedores", label: "Fornecedores", desc: "Fornecedores", icon: M.fornecedores.icon },
+    has("produtos") && { href: "/produtos", label: "Produtos", desc: "Produtos e categorias", icon: M.produtos.icon },
+    has("colaboradores") && { href: "/colaboradores", label: "Colaboradores", desc: "Equipe", icon: M.colaboradores.icon },
+    { href: "/clientes", label: "Clientes", desc: "Clientes para NF-e", icon: "🧑" },
+  ].filter(Boolean) as Sub[];
 
-  // Setor de Compras: contagem → cotação → conferência (submenu, como o Financeiro).
   const comprasSub: Sub[] = [
     has("contagem") && { href: "/contagens", label: "Contagem de estoque", desc: "Conte o estoque atual", icon: "📋" },
     has("cotacoes") && { href: "/cotacoes", label: "Cotações", desc: "Cote e compare preços", icon: "💰" },
     has("conferencia") && { href: "/conferencia", label: "Conferência", desc: "Confira os pedidos recebidos", icon: "📥" },
   ].filter(Boolean) as Sub[];
 
+  // Financeiro agora inclui Notas e Config fiscal.
+  const financeiroSubFull: Sub[] = [
+    ...(has("financeiro") ? financeiroSub : []),
+    ...(has("notas") ? [{ href: "/notas", label: "Notas de entrada", desc: "Lançamento de notas de compra", icon: "📥" }] : []),
+    ...(has("financeiro") ? [{ href: "/fiscal", label: "Config fiscal", desc: "Emissor, empresa, NFC-e/NF-e", icon: "🧾" }] : []),
+  ];
+
+  // Operação: Salão + Reservas + Cardápio do dia + Etiquetas num submenu só.
+  const operacaoSub: Sub[] = [
+    ...(has("salao")
+      ? [
+          { href: "/salao", label: "Salão / Mesas", desc: "Mapa de mesas e comandas", icon: "🍕" },
+          { href: "/salao/caixa", label: "Caixa", desc: "Frente de caixa e recebimentos", icon: "💰" },
+          { href: "/salao/balanca", label: "Balança", desc: "Pesagem do buffet", icon: "⚖️" },
+          { href: "/salao/cardapio", label: "Cardápio / Config", desc: "Itens, preços e configurações", icon: "📖" },
+          { href: "/salao/notas-fiscais", label: "Notas fiscais", desc: "NFC-e/NF-e emitidas", icon: "🧾" },
+          { href: "/salao/cancelados", label: "Cancelados", desc: "Auditoria de exclusões", icon: "🗒️" },
+          { href: "/garcom", label: "Garçom", desc: "Tela do garçom (tablet)", icon: "🧑‍🍳" },
+        ]
+      : []),
+    ...(has("reservas") ? [{ href: "/reservas", label: "Reservas", desc: "Agenda de reservas", icon: M.reservas.icon }] : []),
+    ...(has("cardapio_dia") ? [{ href: "/cardapio-do-dia", label: "Cardápio do dia", desc: "Cardápio do site", icon: M.cardapio_dia.icon }] : []),
+    ...(has("etiquetas") ? [{ href: "/etiquetas", label: "Etiquetas", desc: "Etiquetas de validade", icon: M.etiquetas.icon }] : []),
+  ];
+
+  const subItem = (key: string, label: string, icon: string, sub: Sub[], extra?: Partial<Item>): Item[] =>
+    sub.length > 0 ? [{ key, href: sub[0].href, label, icon, sub, ...extra }] : [];
+
   // Monta as seções só com o que o usuário pode ver.
   const cru: Secao[] = [
     { titulo: null, itens: [{ key: "dashboard", href: "/dashboard", label: "Início", icon: "🏠" }] },
-    {
-      titulo: "Cadastros",
-      itens: [
-        has("fornecedores") && mod("fornecedores"),
-        has("produtos") && mod("produtos"),
-        has("colaboradores") && mod("colaboradores"),
-        { key: "clientes", href: "/clientes", label: "Clientes", icon: "🧑" },
-      ].filter(Boolean) as Item[],
-    },
-    {
-      titulo: "Compras",
-      itens: (comprasSub.length > 0
-        ? [{ key: "compras", href: comprasSub[0].href, label: "Compras", icon: "🛒", sub: comprasSub }]
-        : []) as Item[],
-    },
-    {
-      titulo: "Financeiro",
-      itens: [
-        has("financeiro") && mod("financeiro", { label: "Financeiro", sub: financeiroSub }),
-        has("notas") && mod("notas"),
-        { key: "fiscal", href: "/fiscal", label: "Config fiscal", icon: "🧾" },
-      ].filter(Boolean) as Item[],
-    },
-    {
-      titulo: "Operação",
-      itens: [
-        has("salao") && { key: "salao", href: "/salao", label: "Salão", icon: "🍕", sub: salaoSub },
-        has("reservas") && mod("reservas", { aviso: reservasNovas }),
-        has("cardapio_dia") && mod("cardapio_dia", { label: "Cardápio do dia" }),
-        has("etiquetas") && mod("etiquetas"),
-      ].filter(Boolean) as Item[],
-    },
+    { titulo: "Cadastros", itens: subItem("cadastros", "Cadastros", "🗂️", cadastrosSub) },
+    { titulo: "Compras", itens: subItem("compras", "Compras", "🛒", comprasSub) },
+    { titulo: "Financeiro", itens: subItem("financeiro", "Financeiro", "📊", financeiroSubFull) },
+    { titulo: "Operação", itens: subItem("operacao", "Operação", "🍕", operacaoSub, { aviso: reservasNovas || undefined }) },
     {
       titulo: "Apps",
       itens: [{ key: "marmitas", href: "/marmitas", label: "Marmitas", icon: "🍱", external: true }],
