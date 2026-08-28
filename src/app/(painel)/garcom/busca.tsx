@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { acharComanda } from "./actions";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyWin = any;
 
 // Busca rápida do garçom: digitar o número da comanda/cartão OU ler o QR do
 // cupom / código de barras do cartão pela câmera do celular. Ao achar, abre o
@@ -17,20 +14,28 @@ export function BuscaComanda() {
   const [erro, setErro] = useState<string | null>(null);
   const [scan, setScan] = useState(false);
 
-  function abrir(valor: string) {
-    const v = (valor || "").trim();
-    if (!v) return;
-    setErro(null);
-    start(async () => {
-      const r = await acharComanda(v);
-      if (r.ok) {
-        router.push(`/garcom/mesa/${encodeURIComponent(r.mesa)}?comanda=${r.comandaId}`);
-      } else {
-        setErro("Comanda não encontrada. Confira o número.");
-        setTimeout(() => setErro(null), 3500);
-      }
-    });
-  }
+  const abrir = useCallback(
+    (valor: string) => {
+      const v = (valor || "").trim();
+      if (!v) return;
+      setErro(null);
+      start(async () => {
+        const r = await acharComanda(v);
+        if (r.ok) {
+          router.push(`/garcom/mesa/${encodeURIComponent(r.mesa)}?comanda=${r.comandaId}`);
+        } else {
+          setErro("Comanda não encontrada. Confira o número.");
+          setTimeout(() => setErro(null), 3500);
+        }
+      });
+    },
+    [router],
+  );
+
+  const onLido = useCallback(
+    (v: string) => { setScan(false); setCodigo(v); abrir(v); },
+    [abrir],
+  );
 
   return (
     <>
@@ -60,10 +65,7 @@ export function BuscaComanda() {
       </div>
       {erro && <p className="mb-2 px-1 text-sm text-red-400">{erro}</p>}
       {scan && (
-        <Scanner
-          onClose={() => setScan(false)}
-          onLido={(v) => { setScan(false); setCodigo(v); abrir(v); }}
-        />
+        <Scanner onClose={() => setScan(false)} onLido={onLido} />
       )}
     </>
   );
@@ -74,55 +76,46 @@ function Scanner({ onClose, onLido }: { onClose: () => void; onLido: (v: string)
   const [msg, setMsg] = useState("Aponte para o QR do cupom ou o código do cartão…");
 
   useEffect(() => {
-    let parado = false;
-    let stream: MediaStream | null = null;
-    let loopId = 0;
-    const win = window as AnyWin;
+    let cancelado = false;
+    let jaLeu = false;
+    // controls do ZXing (para parar a câmera ao sair)
+    let controls: { stop: () => void } | null = null;
 
-    async function iniciar() {
-      if (!("BarcodeDetector" in win)) {
-        setMsg("Este celular não suporta leitura por câmera. Digite o número.");
+    (async () => {
+      // ZXing: leitor de QR + código de barras que roda em qualquer navegador
+      // (Android, iPhone/Safari). Carregado só quando abre a câmera.
+      let BrowserMultiFormatReader;
+      try {
+        ({ BrowserMultiFormatReader } = await import("@zxing/browser"));
+      } catch {
+        setMsg("Não foi possível carregar o leitor. Digite o número.");
         return;
       }
+      const video = videoRef.current;
+      if (!video || cancelado) return;
+      const reader = new BrowserMultiFormatReader();
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-        });
+        controls = await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: "environment" } } },
+          video,
+          (result) => {
+            if (result && !jaLeu) {
+              jaLeu = true;
+              controls?.stop();
+              onLido(String(result.getText()));
+            }
+          },
+        );
       } catch {
         setMsg("Não foi possível abrir a câmera. Autorize o acesso ou digite o número.");
         return;
       }
-      if (parado) { stream.getTracks().forEach((t) => t.stop()); return; }
-      const video = videoRef.current;
-      if (!video) return;
-      video.srcObject = stream;
-      await video.play().catch(() => {});
+      if (cancelado) controls.stop();
+    })();
 
-      const detector = new win.BarcodeDetector({
-        formats: ["qr_code", "code_128", "ean_13", "ean_8", "code_39", "upc_a", "itf"],
-      });
-
-      const tick = async () => {
-        if (parado) return;
-        try {
-          const found = await detector.detect(video);
-          if (found && found.length > 0 && found[0].rawValue) {
-            onLido(String(found[0].rawValue));
-            return;
-          }
-        } catch {
-          /* ignora frames que falham */
-        }
-        loopId = win.requestAnimationFrame(tick);
-      };
-      loopId = win.requestAnimationFrame(tick);
-    }
-
-    iniciar();
     return () => {
-      parado = true;
-      if (loopId) win.cancelAnimationFrame(loopId);
-      if (stream) stream.getTracks().forEach((t) => t.stop());
+      cancelado = true;
+      controls?.stop();
     };
   }, [onLido]);
 
