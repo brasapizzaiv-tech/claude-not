@@ -23,8 +23,9 @@ async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
 
 // Emite a NFC-e de uma comanda (itens + buffet). Idempotente: se já tem uma
 // autorizada, devolve ela. Códigos fiscais: padrões da Config (fallback típico).
-export async function emitirNfceComanda(comandaId: string) {
+export async function emitirNfceComanda(comandaId: string, cpf?: string) {
   const supabase = await createClient();
+  const cpfLimpo = (cpf || "").replace(/\D/g, "");
 
   // Já autorizada? devolve.
   const { data: jaTem } = await supabase
@@ -122,6 +123,7 @@ export async function emitirNfceComanda(comandaId: string) {
       presenca_comprador: "1",
       modalidade_frete: "9",
       cnpj_emitente: cfg.cnpj ? cfg.cnpj.replace(/\D/g, "") : undefined,
+      cpf: cpfLimpo.length === 11 ? cpfLimpo : undefined,
       items,
       formas_pagamento: [{ forma_pagamento: forma, valor_pagamento: total.toFixed(2) }],
     },

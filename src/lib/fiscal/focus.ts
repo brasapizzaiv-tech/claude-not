@@ -44,7 +44,7 @@ export type FocusNfcePayload = {
   presenca_comprador: string; // "1" presencial
   modalidade_frete: string; // "9" sem frete
   cnpj_emitente?: string;
-  cpf_destinatario?: string; // CPF do consumidor (opcional na NFC-e)
+  cpf?: string; // CPF do consumidor na NFC-e (opcional)
   items: FocusItem[];
   formas_pagamento: FocusPagamento[];
 };

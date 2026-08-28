@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { pagarSelecao } from "../actions";
+import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -81,6 +82,7 @@ export function ReceberComandas({
   const [buscaCli, setBuscaCli] = useState("");
   const [abrirCli, setAbrirCli] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [pagas, setPagas] = useState<{ id: string; numero: number }[]>([]);
   const [recibo, setRecibo] = useState<{
     itens: { numero: number; total: number }[];
     subtotal: number;
@@ -284,6 +286,7 @@ export function ReceberComandas({
             window.print();
           } catch {}
         }, 400);
+        setPagas([...totPorCom.entries()].map(([id, t]) => ({ id, numero: t.numero })));
         setCarrinho(new Set());
         setExtras([]);
         setClienteSel(null);
@@ -706,6 +709,9 @@ export function ReceberComandas({
           </div>
         </div>
       )}
+
+      {/* Após receber: emitir NFC-e das comandas pagas */}
+      {pagas.length > 0 && <EmitirNotaCaixa comandas={pagas} />}
 
       {/* Cupom de recebimento (só na impressão — térmica) */}
       {recibo && (

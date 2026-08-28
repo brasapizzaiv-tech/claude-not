@@ -14,6 +14,7 @@ export function EmitirNfce({
 }) {
   const [proc, start] = useTransition();
   const [res, setRes] = useState<Res | null>(null);
+  const [cpf, setCpf] = useState("");
 
   const autorizada =
     (emitida && emitida.status === "autorizado") || (res && res.ok);
@@ -22,7 +23,7 @@ export function EmitirNfce({
 
   function emitir() {
     setRes(null);
-    start(async () => setRes(await emitirNfceComanda(comandaId)));
+    start(async () => setRes(await emitirNfceComanda(comandaId, cpf)));
   }
 
   return (
@@ -38,6 +39,13 @@ export function EmitirNfce({
         </div>
       ) : (
         <>
+          <input
+            value={cpf}
+            onChange={(e) => setCpf(e.target.value)}
+            inputMode="numeric"
+            placeholder="CPF na nota? (opcional)"
+            className="mb-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          />
           <button
             onClick={emitir}
             disabled={proc}
