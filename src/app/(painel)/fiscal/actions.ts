@@ -50,10 +50,11 @@ export async function emitirNotaTeste() {
   if (!cfg.emissor_token) return { ok: false, mensagem: "Falta o token de API na Config fiscal." };
   const ambiente = (cfg.emissor_ambiente as FocusAmbiente) || "homologacao";
 
-  const agora = new Date();
-  const fuso = "-03:00";
-  const iso = agora.toISOString().slice(0, 19) + fuso;
-  const ref = "teste-" + agora.getTime();
+  // Horário de Brasília (UTC-3) com o fuso -03:00. Tira um minutinho pra nunca
+  // ficar à frente do relógio da SEFAZ (senão rejeita "data posterior").
+  const bras = new Date(Date.now() - 3 * 3600 * 1000 - 60 * 1000);
+  const iso = bras.toISOString().slice(0, 19) + "-03:00";
+  const ref = "teste-" + Date.now();
 
   const ncm = cfg.ncm_buffet || "21069090"; // preparações alimentícias (típico)
   const cfop = cfg.cfop_padrao || "5102";
