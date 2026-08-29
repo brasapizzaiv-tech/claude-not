@@ -50,49 +50,58 @@ export function EtiquetaImpressao({
     <div>
       <style>{`
         @media print {
-          @page { size: 58mm auto; margin: 0; }
+          @page { size: 55mm 55mm; margin: 0; }
           body * { visibility: hidden !important; }
           .etiqueta-print, .etiqueta-print * { visibility: visible !important; }
           .etiqueta-print { position: absolute; left: 0; top: 0; }
         }
       `}</style>
 
-      {/* Etiqueta 58mm (impressora térmica Sunmi) */}
+      {/* Etiqueta 55x55mm (impressora térmica Elgin L42 Pro, etiqueta picotada) */}
       <div
         className="etiqueta-print bg-white text-black"
-        style={{ width: "56mm", padding: "2mm", fontFamily: "Arial, sans-serif" }}
+        style={{
+          width: "55mm",
+          height: "55mm",
+          padding: "3mm",
+          boxSizing: "border-box",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "Arial, sans-serif",
+        }}
       >
         <div style={{ textAlign: "center", fontSize: "9px", fontWeight: 700, letterSpacing: 1 }}>
           BRASA · MANIPULAÇÃO
         </div>
-        <div style={{ textAlign: "center", fontSize: "16px", fontWeight: 800, lineHeight: 1.1, margin: "2px 0" }}>
+        <div style={{ textAlign: "center", fontSize: "15px", fontWeight: 800, lineHeight: 1.1, margin: "2px 0" }}>
           {produto}
         </div>
         {conservacao && (
-          <div style={{ textAlign: "center", fontSize: "11px", fontWeight: 700, border: "1px solid #000", borderRadius: 4, padding: "1px 0", margin: "2px 0" }}>
+          <div style={{ textAlign: "center", fontSize: "11px", fontWeight: 700, border: "1px solid #000", borderRadius: 4, padding: "1px 0", margin: "1px 6mm" }}>
             {consLabel[conservacao] ?? conservacao}
           </div>
         )}
         {quantidade != null && (
-          <div style={{ textAlign: "center", fontSize: "12px" }}>
+          <div style={{ textAlign: "center", fontSize: "11px" }}>
             Qtd: <b>{quantidade} {unidade ?? ""}</b>
           </div>
         )}
 
-        <div style={{ textAlign: "center", fontSize: "10px", marginTop: 4 }}>VALIDADE</div>
-        <div style={{ textAlign: "center", fontSize: "20px", fontWeight: 800 }}>
+        <div style={{ textAlign: "center", fontSize: "9px", marginTop: "2mm" }}>VALIDADE</div>
+        <div style={{ textAlign: "center", fontSize: "22px", fontWeight: 800, lineHeight: 1 }}>
           {validade ? dataBR(validade) : "—"}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 4 }}>
-          <div style={{ fontSize: "10px", lineHeight: 1.35 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "auto" }}>
+          <div style={{ fontSize: "9px", lineHeight: 1.35 }}>
             <div>Manip.: {manip}</div>
             <div>Por: {colaborador ?? "—"}</div>
             <div>Nº {numero}</div>
           </div>
           {qr && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={qr} alt="QR" style={{ width: "18mm", height: "18mm" }} />
+            <img src={qr} alt="QR" style={{ width: "16mm", height: "16mm" }} />
           )}
         </div>
       </div>
@@ -105,8 +114,8 @@ export function EtiquetaImpressao({
           Imprimir etiqueta
         </button>
         <p className="mt-2 text-xs text-zinc-400">
-          Tamanho 58mm (impressora térmica). Na Sunmi, toque em Imprimir e
-          escolha a impressora interna.
+          Etiqueta 55×55mm (Elgin L42 Pro). Na janela de impressão, escolha a
+          impressora <b>Elgin L42</b> e o papel <b>55×55mm</b>.
         </p>
       </div>
     </div>
