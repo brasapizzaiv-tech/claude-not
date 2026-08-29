@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { dataBR } from "@/lib/format";
 import { CriarPin, EntrarPin } from "./pin";
 import { PedidosColab, type PedidoColab } from "./pedidos";
@@ -19,7 +20,7 @@ function Moldura({ children }: { children: React.ReactNode }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-brasa.png" alt="Brasa" className="h-14 w-14 object-contain" />
           <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Contagem de estoque
+            Brasa · Equipe
           </p>
         </div>
         {children}
@@ -97,9 +98,27 @@ export default async function AppColaboradorPage({
 
   const contagens = home.contagens ?? [];
 
+  // Hub: se a pessoa tem perfil de folga, mostra o atalho "Minhas folgas".
+  const admin = createAdminClient();
+  const { data: folgaProf } = await admin
+    .from("folgas_funcionarios")
+    .select("id")
+    .eq("token", token)
+    .eq("ativo", true)
+    .maybeSingle();
+  const temFolga = !!folgaProf;
+
   return (
     <Moldura>
       {saudacao}
+      {temFolga && (
+        <Link
+          href={`/folga/${token}`}
+          className="mb-3 block rounded-2xl bg-emerald-600 p-4 text-center font-semibold text-white hover:bg-emerald-700"
+        >
+          🌴 Minhas folgas
+        </Link>
+      )}
       {contagens.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
           Nenhuma contagem agora. 🍕
