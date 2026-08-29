@@ -1,0 +1,13 @@
+{
+  "name": "brasa-agente-impressao",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Agente de impressão de etiquetas da Brasa (PC central).",
+  "scripts": {
+    "start": "node agente.mjs"
+  },
+  "dependencies": {
+    "pdf-to-printer": "^5.6.0"
+  }
+}

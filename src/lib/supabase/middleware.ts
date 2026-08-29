@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/cardapio") ||
     path === "/cardapio" ||
     path.startsWith("/api/sefaz/") ||
+    path.startsWith("/api/impressao/") ||
     path.startsWith("/api/contagem/cron");
 
   if (!user && !isPublic) {

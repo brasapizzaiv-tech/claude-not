@@ -1,0 +1,56 @@
+AGENTE DE IMPRESSAO DA BRASA
+============================
+
+O que e: um programinha que roda no PC central (onde ficam as impressoras) e
+imprime sozinho as etiquetas do sistema, mandando cada uma para a impressora
+certa. Parecido com o aplicativo do Suitable.
+
+--------------------------------------------------
+INSTALACAO (uma vez, no PC das impressoras)
+--------------------------------------------------
+
+1) Instale o Node.js
+   - Entre em https://nodejs.org e baixe a versao "LTS".
+   - Instale (Avancar, Avancar, Concluir).
+
+2) Copie esta pasta (agente-impressao) para o PC das impressoras.
+   Sugestao: C:\brasa-agente
+
+3) Confira o config.json (abra com o Bloco de Notas):
+   - "baseUrl": ja vem com o endereco do sistema.
+   - "token":  cole o token que aparece no sistema em
+               Etiquetas -> Estacoes -> "Agente de impressao" (botao Copiar).
+
+4) Instale as dependencias (uma vez):
+   - Abra a pasta, clique na barra de endereco, escreva  cmd  e tecle Enter.
+   - Na janela preta, digite:   npm install     e tecle Enter. Aguarde terminar.
+
+5) No sistema, em Etiquetas -> Estacoes, coloque em cada impressora o
+   "Nome no Windows" (o nome EXATO como aparece em Dispositivos e Impressoras).
+
+6) Ligue o agente: de dois cliques em  iniciar.bat
+   - Vai abrir uma janela preta escrito "Agente de impressao da Brasa iniciado".
+   - Deixe essa janela aberta (pode minimizar).
+
+--------------------------------------------------
+LIGAR SOZINHO QUANDO O PC INICIAR (recomendado)
+--------------------------------------------------
+
+1) Clique com o botao direito em iniciar.bat -> "Enviar para" -> "Area de
+   trabalho (criar atalho)".
+2) Tecle Windows + R, escreva:  shell:startup   e tecle Enter.
+3) Arraste o atalho que voce criou para dentro dessa pasta que abriu.
+   Pronto: toda vez que o PC ligar, o agente sobe sozinho.
+
+--------------------------------------------------
+DIA A DIA
+--------------------------------------------------
+
+- Qualquer pessoa gera a etiqueta no sistema (celular, tablet, PC).
+- O agente imprime na impressora escolhida, automatico.
+- Se aparecer "sem Nome no Windows", configure o nome da impressora em
+  Etiquetas -> Estacoes.
+- Se aparecer "Token invalido", copie o token de novo do sistema para o
+  config.json.
+
+Duvidas? Chame o suporte.

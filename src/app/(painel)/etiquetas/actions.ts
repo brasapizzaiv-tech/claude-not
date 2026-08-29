@@ -146,6 +146,13 @@ export async function renomearImpressora(id: string, nome: string) {
   return { ok: true as const };
 }
 
+export async function definirImpressoraWindows(id: string, nome: string) {
+  const supabase = await createClient();
+  await supabase.from("impressoras").update({ impressora_windows: nome?.trim() || null }).eq("id", id);
+  revalidatePath("/etiquetas/estacao");
+  return { ok: true as const };
+}
+
 export async function definirImpressoraAtiva(id: string, ativo: boolean) {
   const supabase = await createClient();
   await supabase.from("impressoras").update({ ativo }).eq("id", id);

@@ -1,0 +1,5 @@
+{
+  "baseUrl": "https://www.brasarestaurante.com.br",
+  "token": "COLE_O_TOKEN_AQUI",
+  "intervaloMs": 3000
+}
