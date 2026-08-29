@@ -7,10 +7,19 @@ import { dataBR } from "@/lib/format";
 import { CriarPin, EntrarPin } from "./pin";
 import { PedidosColab, type PedidoColab } from "./pedidos";
 
-export const metadata: Metadata = {
-  title: "Brasa · Contagem",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Brasa" },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  return {
+    title: "Brasa · Equipe",
+    appleWebApp: { capable: true, statusBarStyle: "default", title: "Brasa" },
+    // Manifesto próprio: o app instalado abre no link da pessoa, não no site.
+    manifest: `/eu/${token}/manifest.json`,
+  };
+}
 
 function Moldura({ children }: { children: React.ReactNode }) {
   return (
