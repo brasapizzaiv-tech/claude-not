@@ -108,11 +108,11 @@ export default async function AppColaboradorPage({
   const fazContagem = colab?.faz_contagem ?? true;
 
   // Minhas compras internas (só leitura).
-  let compras: { item: string; valor: number; data: string; status: string }[] = [];
+  let compras: { item: string; valor: number; data: string; status: string; data_pagamento: string | null; obs_pagamento: string | null }[] = [];
   if (colab?.id) {
     const { data: rets } = await admin
       .from("retiradas")
-      .select("item, valor, data, status")
+      .select("item, valor, data, status, data_pagamento, obs_pagamento")
       .eq("colaborador_id", colab.id)
       .order("data", { ascending: false })
       .limit(60);
@@ -143,8 +143,13 @@ export default async function AppColaboradorPage({
           </div>
           <ul className="space-y-1 text-sm">
             {compras.slice(0, 8).map((r, i) => (
-              <li key={i} className="flex items-center justify-between gap-2 text-zinc-600 dark:text-zinc-300">
-                <span className="min-w-0 truncate">{fData(r.data)} · {r.item}</span>
+              <li key={i} className="flex items-start justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+                <span className="min-w-0">
+                  <span className="block truncate">{fData(r.data)} · {r.item}</span>
+                  {r.status === "pago" && (r.data_pagamento || r.obs_pagamento) && (
+                    <span className="block text-xs text-emerald-600">pago{r.data_pagamento ? ` ${fData(r.data_pagamento)}` : ""}{r.obs_pagamento ? ` · ${r.obs_pagamento}` : ""}</span>
+                  )}
+                </span>
                 <span className="flex shrink-0 items-center gap-2">
                   {brl(Number(r.valor))}
                   <span className={r.status === "pago" ? "text-emerald-600" : "text-amber-600"}>{r.status === "pago" ? "pago" : "aberto"}</span>

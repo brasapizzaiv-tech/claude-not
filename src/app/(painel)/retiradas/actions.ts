@@ -47,21 +47,25 @@ export async function lancarRetirada(input: {
   return error ? erro(error.message) : ok();
 }
 
-export async function definirStatusRetirada(id: number, pago: boolean) {
+export async function definirStatusRetirada(id: number, pago: boolean, obs?: string) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("retiradas")
-    .update({ status: pago ? "pago" : "aberto", data_pagamento: pago ? hojeBR() : null })
+    .update({
+      status: pago ? "pago" : "aberto",
+      data_pagamento: pago ? hojeBR() : null,
+      obs_pagamento: pago ? (obs?.trim() || null) : null,
+    })
     .eq("id", id);
   return error ? erro(error.message) : ok();
 }
 
 // Quita tudo que está em aberto de um colaborador (marca como pago hoje).
-export async function quitarColaborador(colaboradorId: string) {
+export async function quitarColaborador(colaboradorId: string, obs?: string) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("retiradas")
-    .update({ status: "pago", data_pagamento: hojeBR() })
+    .update({ status: "pago", data_pagamento: hojeBR(), obs_pagamento: obs?.trim() || null })
     .eq("colaborador_id", colaboradorId)
     .eq("status", "aberto");
   return error ? erro(error.message) : ok();

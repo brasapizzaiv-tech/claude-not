@@ -20,6 +20,7 @@ export type Retirada = {
   status: "aberto" | "pago";
   data_pagamento: string | null;
   observacao: string | null;
+  obs_pagamento: string | null;
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -107,12 +108,20 @@ export function RetiradasClient({
                       <td className="py-2 pr-2">
                         <div className="font-medium">{r.nome}</div>
                         <div className="text-xs text-zinc-500">{r.item}{r.peso ? ` · ${r.peso} kg` : ""}{r.observacao ? ` · ${r.observacao}` : ""}</div>
+                        {r.status === "pago" && (r.data_pagamento || r.obs_pagamento) && (
+                          <div className="text-xs text-emerald-600">pago{r.data_pagamento ? ` ${fmtData(r.data_pagamento)}` : ""}{r.obs_pagamento ? ` · ${r.obs_pagamento}` : ""}</div>
+                        )}
                       </td>
                       <td className="py-2 pr-2 text-right whitespace-nowrap font-medium">{brl(Number(r.valor))}</td>
                       <td className="py-2 pr-2 whitespace-nowrap text-center">
                         <button
                           disabled={proc}
-                          onClick={() => run(() => definirStatusRetirada(r.id, r.status !== "pago"))}
+                          onClick={() => {
+                            if (r.status === "pago") { run(() => definirStatusRetirada(r.id, false)); return; }
+                            const obs = window.prompt("Observação do pagamento (opcional):", "");
+                            if (obs === null) return;
+                            run(() => definirStatusRetirada(r.id, true, obs));
+                          }}
                           className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "pago" ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"}`}
                           title="Clique para alternar"
                         >
@@ -286,7 +295,11 @@ function ResumoTab({ retiradas, proc, run }: {
                     {p.aberto > 0 && p.colaboradorId && (
                       <button
                         disabled={proc}
-                        onClick={() => { if (window.confirm(`Quitar tudo em aberto de ${p.nome} (${brl(p.aberto)})?`)) run(() => quitarColaborador(p.colaboradorId!)); }}
+                        onClick={() => {
+                          const obs = window.prompt(`Quitar tudo em aberto de ${p.nome} (${brl(p.aberto)}). Observação do pagamento (opcional):`, "");
+                          if (obs === null) return;
+                          run(() => quitarColaborador(p.colaboradorId!, obs));
+                        }}
                         className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white"
                       >
                         Quitar

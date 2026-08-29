@@ -10,7 +10,7 @@ export default async function RetiradasPage() {
     supabase.from("retirada_produtos").select("id, nome, categoria, preco, ativo").order("nome"),
     supabase
       .from("retiradas")
-      .select("id, colaborador_id, nome, produto_id, item, valor, peso, data, status, data_pagamento, observacao")
+      .select("id, colaborador_id, nome, produto_id, item, valor, peso, data, status, data_pagamento, observacao, obs_pagamento")
       .order("data", { ascending: false })
       .limit(2000),
   ]);
