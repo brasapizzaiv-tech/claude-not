@@ -28,7 +28,7 @@ export function Scanner() {
   const [ultima, setUltima] = useState<Resultado | null>(null);
   const [contagem, setContagem] = useState(0);
   const modoRef = useRef(modo);
-  modoRef.current = modo;
+  useEffect(() => { modoRef.current = modo; }, [modo]);
 
   function beep(ok: boolean) {
     try {

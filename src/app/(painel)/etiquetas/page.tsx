@@ -14,7 +14,7 @@ export default async function EtiquetasPage({
   const historico = sp.ver === "historico";
 
   const supabase = await createClient();
-  const [{ data: prods }, { data: colabs }, { data: etiqs }] =
+  const [{ data: prods }, { data: colabs }, { data: imps }, { data: etiqs }] =
     await Promise.all([
       supabase
         .from("produtos")
@@ -22,6 +22,7 @@ export default async function EtiquetasPage({
         .eq("ativo", true)
         .order("nome"),
       supabase.from("colaboradores").select("nome").eq("ativo", true).order("nome"),
+      supabase.from("impressoras").select("id, nome").eq("ativo", true).order("criado_em"),
       historico
         ? supabase
             .from("etiquetas")
@@ -46,6 +47,7 @@ export default async function EtiquetasPage({
       validade_ambiente: number | null;
     }[]) ?? [];
   const colaboradores = (colabs as { nome: string }[]) ?? [];
+  const impressoras = (imps as { id: string; nome: string }[]) ?? [];
   type Et = {
     id: string;
     numero: number;
@@ -61,7 +63,7 @@ export default async function EtiquetasPage({
   const etiquetas = (etiqs as Et[]) ?? [];
 
   const hoje = new Date().toISOString().slice(0, 10);
-  const em2 = new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10);
+  const em2 = new Date(new Date().getTime() + 2 * 864e5).toISOString().slice(0, 10);
   const vencidas = etiquetas.filter((e) => e.validade && e.validade < hoje).length;
   const vencendo = etiquetas.filter(
     (e) => e.validade && e.validade >= hoje && e.validade <= em2,
@@ -78,15 +80,23 @@ export default async function EtiquetasPage({
             Gere etiquetas de manipulação e controle a validade dos insumos.
           </p>
         </div>
-        <Link
-          href="/etiquetas/scanner"
-          className="shrink-0 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
-        >
-          📷 Modo Leitor
-        </Link>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <Link
+            href="/etiquetas/estacao"
+            className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          >
+            🖨️ Estações
+          </Link>
+          <Link
+            href="/etiquetas/scanner"
+            className="rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
+          >
+            📷 Modo Leitor
+          </Link>
+        </div>
       </div>
 
-      <EtiquetaForm produtos={produtos} colaboradores={colaboradores} />
+      <EtiquetaForm produtos={produtos} colaboradores={colaboradores} impressoras={impressoras} />
 
       {/* Abas + resumo */}
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">

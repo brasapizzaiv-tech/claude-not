@@ -25,9 +25,11 @@ type Prod = {
 export function EtiquetaForm({
   produtos,
   colaboradores,
+  impressoras,
 }: {
   produtos: Prod[];
   colaboradores: { nome: string }[];
+  impressoras: { id: string; nome: string }[];
 }) {
   const router = useRouter();
   const [gerando, start] = useTransition();
@@ -37,6 +39,7 @@ export function EtiquetaForm({
   const [unidade, setUnidade] = useState("un");
   const [colaborador, setColaborador] = useState("");
   const [validade, setValidade] = useState("");
+  const [impressoraId, setImpressoraId] = useState(impressoras[0]?.id ?? "");
 
   function diasDe(p: Prod | undefined, cons: string) {
     if (!p) return null;
@@ -65,6 +68,7 @@ export function EtiquetaForm({
         conservacao,
         quantidade,
         unidade,
+        impressora_id: impressoraId || undefined,
       });
       if (r?.ok && r.id) router.push(`/etiquetas/${r.id}`);
     });
@@ -158,6 +162,17 @@ export function EtiquetaForm({
             className={input}
           />
         </div>
+
+        {impressoras.length > 1 && (
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs text-zinc-500">Imprimir na</label>
+            <select value={impressoraId} onChange={(e) => setImpressoraId(e.target.value)} className={input}>
+              {impressoras.map((i) => (
+                <option key={i.id} value={i.id}>{i.nome}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       <button
         onClick={gerar}
