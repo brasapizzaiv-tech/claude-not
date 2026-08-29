@@ -100,13 +100,12 @@ export default async function AppColaboradorPage({
 
   // Hub: se a pessoa tem perfil de folga, mostra o atalho "Minhas folgas".
   const admin = createAdminClient();
-  const { data: folgaProf } = await admin
-    .from("folgas_funcionarios")
-    .select("id")
-    .eq("token", token)
-    .eq("ativo", true)
-    .maybeSingle();
+  const [{ data: folgaProf }, { data: colab }] = await Promise.all([
+    admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
+    admin.from("colaboradores").select("faz_contagem").eq("token", token).maybeSingle(),
+  ]);
   const temFolga = !!folgaProf;
+  const fazContagem = colab?.faz_contagem ?? true;
 
   return (
     <Moldura>
@@ -119,35 +118,39 @@ export default async function AppColaboradorPage({
           🌴 Minhas folgas
         </Link>
       )}
-      {contagens.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-          Nenhuma contagem agora. 🍕
-          <br />
-          Volte no dia da contagem.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <p className="text-center text-sm text-zinc-500">
-            Você tem contagem para fazer:
-          </p>
-          {contagens.map((c) => (
-            <Link
-              key={c.token}
-              href={`/contar/${c.token}`}
-              className="block rounded-2xl bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600"
-            >
-              📦 {c.descricao || "Contagem"}
-              {c.data && (
-                <span className="mt-0.5 block text-xs font-normal text-orange-100">
-                  {dataBR(c.data)}
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      )}
+      {fazContagem && (
+        <>
+          {contagens.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
+              Nenhuma contagem agora. 🍕
+              <br />
+              Volte no dia da contagem.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-center text-sm text-zinc-500">
+                Você tem contagem para fazer:
+              </p>
+              {contagens.map((c) => (
+                <Link
+                  key={c.token}
+                  href={`/contar/${c.token}`}
+                  className="block rounded-2xl bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600"
+                >
+                  📦 {c.descricao || "Contagem"}
+                  {c.data && (
+                    <span className="mt-0.5 block text-xs font-normal text-orange-100">
+                      {dataBR(c.data)}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
 
-      <PedidosColab token={token} pedidos={pedidos} produtos={produtos} />
+          <PedidosColab token={token} pedidos={pedidos} produtos={produtos} />
+        </>
+      )}
     </Moldura>
   );
 }
