@@ -17,7 +17,8 @@ export type ModuloKey =
   | "recepcao"
   | "reservas"
   | "cardapio_dia"
-  | "folgas";
+  | "folgas"
+  | "retiradas";
 
 export const MODULOS: {
   key: ModuloKey;
@@ -44,6 +45,7 @@ export const MODULOS: {
   { key: "reservas", label: "Reservas", icon: "📅", rotas: ["/reservas"] },
   { key: "cardapio_dia", label: "Cardápio do dia (site)", icon: "🍽️", rotas: ["/cardapio-do-dia"] },
   { key: "folgas", label: "Folgas (gestão)", icon: "🌴", rotas: ["/folgas"] },
+  { key: "retiradas", label: "Compras internas", icon: "🛒", rotas: ["/retiradas"] },
 ];
 
 // Qual módulo "controla" a rota. "usuarios" é só do dono. null = rota livre

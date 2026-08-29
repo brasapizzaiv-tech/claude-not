@@ -97,6 +97,7 @@ export function Sidebar({
     ...(has("cardapio_dia") ? [{ href: "/cardapio-do-dia", label: "Cardápio do dia", desc: "Cardápio do site", icon: M.cardapio_dia.icon }] : []),
     ...(has("etiquetas") ? [{ href: "/etiquetas", label: "Etiquetas", desc: "Etiquetas de validade", icon: M.etiquetas.icon }] : []),
     ...(has("folgas") ? [{ href: "/folgas", label: "Folgas", desc: "Pedidos e escala de folgas", icon: M.folgas.icon }] : []),
+    ...(has("retiradas") ? [{ href: "/retiradas", label: "Compras internas", desc: "Compras/retiradas dos funcionários", icon: M.retiradas.icon }] : []),
   ];
 
   const subItem = (key: string, label: string, icon: string, sub: Sub[], extra?: Partial<Item>): Item[] =>

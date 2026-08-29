@@ -102,10 +102,25 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("faz_contagem").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
+
+  // Minhas compras internas (só leitura).
+  let compras: { item: string; valor: number; data: string; status: string }[] = [];
+  if (colab?.id) {
+    const { data: rets } = await admin
+      .from("retiradas")
+      .select("item, valor, data, status")
+      .eq("colaborador_id", colab.id)
+      .order("data", { ascending: false })
+      .limit(60);
+    compras = (rets as typeof compras) ?? [];
+  }
+  const abertoTotal = compras.filter((r) => r.status === "aberto").reduce((s, r) => s + Number(r.valor), 0);
+  const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const fData = (s: string) => { const [, m, d] = s.split("-"); return `${d}/${m}`; };
 
   return (
     <Moldura>
@@ -117,6 +132,27 @@ export default async function AppColaboradorPage({
         >
           🌴 Minhas folgas
         </Link>
+      )}
+      {compras.length > 0 && (
+        <div className="mb-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-semibold text-zinc-900 dark:text-zinc-50">🛒 Minhas compras</span>
+            <span className={`text-sm font-bold ${abertoTotal > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+              {abertoTotal > 0 ? `Em aberto: ${brl(abertoTotal)}` : "Tudo pago ✓"}
+            </span>
+          </div>
+          <ul className="space-y-1 text-sm">
+            {compras.slice(0, 8).map((r, i) => (
+              <li key={i} className="flex items-center justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+                <span className="min-w-0 truncate">{fData(r.data)} · {r.item}</span>
+                <span className="flex shrink-0 items-center gap-2">
+                  {brl(Number(r.valor))}
+                  <span className={r.status === "pago" ? "text-emerald-600" : "text-amber-600"}>{r.status === "pago" ? "pago" : "aberto"}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {fazContagem && (
         <>
