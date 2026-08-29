@@ -5,15 +5,15 @@ import { useRouter } from "next/navigation";
 import {
   GRUPOS, GRUPO_KEYS, DIAS, MESES, TURNO, DIAS_ANTECEDENCIA,
   type GrupoKey, type Funcionario, type Pedido, type Limites, type Ajustes, type Bloqueios,
-  iso, dow, fmtData, difDias, gruposDe, diasTodos, alvosDe, limiteDe, contar, semGerente,
+  iso, dow, fmtData, difDias, gruposDe, alvosDe, limiteDe, contar, semGerente,
 } from "@/lib/folgas";
 import {
   decidirPedido, reabrirPedido, lancarFolga, excluirPedido,
-  salvarFuncionario, definirAtivo, gerarLink, salvarLimites, definirAjuste, limparAjuste,
+  salvarLimites, definirAjuste, limparAjuste,
   travarData, destravarData,
 } from "./actions";
 
-type Aba = "pedidos" | "calendario" | "limites" | "equipe";
+type Aba = "pedidos" | "calendario" | "limites";
 
 export function GestaoFolgas({
   equipe, pedidos, limitesRows, ajustesRows, bloqueiosRows, hojeIso,
@@ -65,15 +65,15 @@ export function GestaoFolgas({
     ["pedidos", `Pedidos (${pendentes.length})`],
     ["calendario", "Calendário"],
     ["limites", "Limites padrão"],
-    ["equipe", "Equipe"],
   ];
 
   const ctx = { equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIso, proc, run, setAviso };
 
   return (
     <div className="mx-auto max-w-4xl p-3 sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mb-4">
         <h1 className="text-xl font-bold">🌴 Folgas</h1>
+        <p className="text-xs text-zinc-500">Cadastro da equipe e escala agora em <b>Cadastros → Colaboradores</b>.</p>
       </div>
 
       {aviso && (
@@ -97,7 +97,6 @@ export function GestaoFolgas({
       {aba === "pedidos" && <AbaPedidos {...ctx} />}
       {aba === "calendario" && <AbaCalendario {...ctx} />}
       {aba === "limites" && <AbaLimites limites={limites} proc={proc} run={run} />}
-      {aba === "equipe" && <AbaEquipe {...ctx} />}
     </div>
   );
 }
@@ -574,191 +573,3 @@ function AbaLimites({ limites, proc, run }: { limites: Limites; proc: boolean; r
   );
 }
 
-// ======================= ABA EQUIPE =======================
-function AbaEquipe({ equipe, pedidos, proc, run }: Ctx) {
-  const [editando, setEditando] = useState<Funcionario | "novo" | null>(null);
-  const [link, setLink] = useState<{ id: number; url: string } | null>(null);
-
-  const ativos = equipe.filter((e) => e.ativo);
-  const inativos = equipe.filter((e) => !e.ativo);
-
-  function mostrarLink(f: Funcionario) {
-    if (f.token) {
-      setLink({ id: f.id, url: `${window.location.origin}/folga/${f.token}` });
-    } else {
-      run(async () => {
-        const r = await gerarLink(f.id);
-        if (r.ok) setLink({ id: f.id, url: `${window.location.origin}/folga/${r.token}` });
-        return r;
-      });
-    }
-  }
-
-  return (
-    <div className="space-y-3">
-      {editando && (
-        <FormFuncionario
-          alvo={editando}
-          proc={proc}
-          run={run}
-          onDone={() => setEditando(null)}
-        />
-      )}
-
-      <div className={card}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-zinc-500">{ativos.length} ativo(s){inativos.length ? ` · ${inativos.length} inativo(s)` : ""}</p>
-          <button onClick={() => setEditando("novo")} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-bold text-white">+ Novo funcionário</button>
-        </div>
-
-        {GRUPO_KEYS.map((g) => {
-          const gente = ativos.filter((e) => e.grupo === g);
-          if (!gente.length) return null;
-          return (
-            <div key={g} className="mt-3">
-              <h3 className="mb-1 font-semibold" style={{ color: GRUPOS[g].cor }}>{GRUPOS[g].nome}</h3>
-              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {gente.map((f) => {
-                  const tot = pedidos.filter((p) => p.funcionario_id === f.id && p.status === "Aprovado").length;
-                  const sab = pedidos.filter((p) => p.funcionario_id === f.id && p.status === "Aprovado" && dow(p.data) === 6).length;
-                  return (
-                    <li key={f.id} className="py-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <span className="font-medium">{f.nome}</span>
-                          {f.gerente && <span className="ml-1 rounded bg-rose-500/15 px-1.5 py-0.5 text-[11px] text-rose-500">gerência</span>}
-                          <div className="text-xs text-zinc-500">
-                            {f.funcao ? `${f.funcao} · ` : ""}
-                            {diasTodos(f).length ? diasTodos(f).map((d) => DIAS[d]).join(", ") : "escala não cadastrada"}
-                            {f.grupo2 ? ` · também em ${GRUPOS[f.grupo2].nome.toLowerCase()}` : ""}
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs">
-                          <span className="text-zinc-400">{tot} · {sab} sáb</span>
-                          <button onClick={() => mostrarLink(f)} className="text-blue-500 underline">link</button>
-                          <button onClick={() => setEditando(f)} className="text-blue-500 underline">editar</button>
-                        </div>
-                      </div>
-                      {link?.id === f.id && (
-                        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-zinc-100 p-2 text-xs dark:bg-zinc-800">
-                          <span className="min-w-0 flex-1 truncate">{link.url}</span>
-                          <button onClick={() => navigator.clipboard?.writeText(link.url)} className="rounded bg-blue-600 px-2 py-1 text-white">copiar</button>
-                          <button onClick={() => run(async () => { const r = await gerarLink(f.id); if (r.ok) setLink({ id: f.id, url: `${window.location.origin}/folga/${r.token}` }); return r; })} className="rounded border border-zinc-300 px-2 py-1 dark:border-zinc-600">novo link</button>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
-
-      {inativos.length > 0 && (
-        <div className={card}>
-          <h2 className="font-bold text-zinc-400">Inativos</h2>
-          <p className="text-sm text-zinc-500">Não aparecem para a equipe, mas o histórico continua guardado.</p>
-          <ul className="mt-2 space-y-1 text-sm">
-            {inativos.map((f) => (
-              <li key={f.id} className="flex items-center justify-between text-zinc-400">
-                <span>{f.nome} · {GRUPOS[f.grupo].nome}</span>
-                <button onClick={() => run(() => definirAtivo(f.id, true))} className="text-xs text-blue-500 underline">reativar</button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FormFuncionario({ alvo, proc, run, onDone }: {
-  alvo: Funcionario | "novo"; proc: boolean; run: Ctx["run"]; onDone: () => void;
-}) {
-  const novo = alvo === "novo";
-  const base: Funcionario | { id?: number } = novo
-    ? { nome: "", grupo: "almoco", vinculo: "Freelance", funcao: "", dias: [], grupo2: null, dias2: [], gerente: false } as unknown as Funcionario
-    : (alvo as Funcionario);
-  const d = base as Funcionario;
-
-  const [nome, setNome] = useState(d.nome || "");
-  const [funcao, setFuncao] = useState(d.funcao || "");
-  const [grupo, setGrupo] = useState<GrupoKey>(d.grupo || "almoco");
-  const [vinculo, setVinculo] = useState<"CLT" | "Freelance">(d.vinculo || "Freelance");
-  const [dias, setDias] = useState<number[]>(d.dias || []);
-  const [grupo2, setGrupo2] = useState<GrupoKey | "">(d.grupo2 || "");
-  const [dias2, setDias2] = useState<number[]>(d.dias2 || []);
-  const [gerente, setGerente] = useState(!!d.gerente);
-
-  const toggle = (arr: number[], set: (v: number[]) => void, n: number) =>
-    set(arr.includes(n) ? arr.filter((x) => x !== n) : [...arr, n].sort());
-
-  function salvar() {
-    run(() => salvarFuncionario({
-      id: novo ? undefined : d.id,
-      nome, grupo, vinculo, funcao, dias,
-      grupo2: grupo2 || null, dias2: grupo2 ? dias2 : null, gerente,
-    }), novo ? "Funcionário cadastrado." : "Alterações salvas.");
-    onDone();
-  }
-
-  const diaBtn = "h-9 w-11 rounded-lg border text-sm";
-  return (
-    <div className={`${card} border-blue-500/30`}>
-      <h2 className="font-bold">{novo ? "Novo funcionário" : `Editar ${d.nome}`}</h2>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome (com sobrenome se repetir)" className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
-        <input value={funcao} onChange={(e) => setFuncao(e.target.value)} placeholder="Função (ex.: Garçom, Forno)" className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
-        <select value={grupo} onChange={(e) => setGrupo(e.target.value as GrupoKey)} className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700">
-          {GRUPO_KEYS.map((g) => <option key={g} value={g}>{GRUPOS[g].nome}</option>)}
-        </select>
-        <select value={vinculo} onChange={(e) => setVinculo(e.target.value as "CLT" | "Freelance")} className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700">
-          <option value="CLT">Carteira assinada</option>
-          <option value="Freelance">Freelance</option>
-        </select>
-      </div>
-
-      <p className="mt-3 text-xs font-bold uppercase text-zinc-400">Dias fixos nesse grupo</p>
-      <div className="mt-1 flex gap-1.5">
-        {[1, 2, 3, 4, 5, 6].map((n) => (
-          <button key={n} onClick={() => toggle(dias, setDias, n)} className={`${diaBtn} ${dias.includes(n) ? "border-blue-500 bg-blue-500/15 text-blue-500" : "border-zinc-300 dark:border-zinc-700"}`}>{DIAS[n]}</button>
-        ))}
-      </div>
-
-      <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
-        <p className="text-xs font-bold uppercase text-zinc-400">Segundo turno (só pra quem trabalha nos dois)</p>
-        <p className="text-xs text-zinc-500">A folga dessa pessoa desconta vaga nos dois grupos.</p>
-        <select value={grupo2} onChange={(e) => setGrupo2(e.target.value as GrupoKey | "")} className="mt-2 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700">
-          <option value="">Não trabalha em outro grupo</option>
-          {GRUPO_KEYS.map((g) => <option key={g} value={g}>{GRUPOS[g].nome}</option>)}
-        </select>
-        {grupo2 && (
-          <div className="mt-2 flex gap-1.5">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <button key={n} onClick={() => toggle(dias2, setDias2, n)} className={`${diaBtn} ${dias2.includes(n) ? "border-blue-500 bg-blue-500/15 text-blue-500" : "border-zinc-300 dark:border-zinc-700"}`}>{DIAS[n]}</button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <label className="mt-3 flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={gerente} onChange={(e) => setGerente(e.target.checked)} /> Faz parte da gerência
-      </label>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button disabled={proc || !nome.trim()} onClick={salvar} className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">{novo ? "Cadastrar" : "Salvar alterações"}</button>
-        <button onClick={onDone} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">Cancelar</button>
-        {!novo && (
-          <button
-            disabled={proc}
-            onClick={() => { if (window.confirm(`Inativar ${d.nome}?`)) { run(() => definirAtivo(d.id, false)); onDone(); } }}
-            className="ml-auto rounded-lg bg-red-600 px-3 py-2 text-sm font-bold text-white"
-          >
-            Inativar
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
