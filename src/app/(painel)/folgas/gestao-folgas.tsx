@@ -118,7 +118,7 @@ type Ctx = {
 const card = "rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900";
 
 // ======================= ABA PEDIDOS =======================
-function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, hojeIso, proc, run }: Ctx) {
+function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIso, proc, run }: Ctx) {
   const [negando, setNegando] = useState<number | null>(null);
   const [motivoNeg, setMotivoNeg] = useState("");
   const [lancar, setLancar] = useState(false);
@@ -216,6 +216,8 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, hojeIso, proc, ru
         );
       })}
 
+      <CalendarioAprovadas pedidos={pedidos} byId={byId} bloqueios={bloqueios} hojeIso={hojeIso} proc={proc} run={run} />
+
       {negados.length > 0 && (
         <div className={card}>
           <h2 className="mb-2 font-bold">Negados recentes</h2>
@@ -236,6 +238,83 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, hojeIso, proc, ru
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+// Calendário do mês com os nomes de quem está de folga (aprovado) em cada dia.
+function CalendarioAprovadas({ pedidos, byId, bloqueios, hojeIso, proc, run }: {
+  pedidos: Pedido[]; byId: Map<number, Funcionario>; bloqueios: Bloqueios;
+  hojeIso: string; proc: boolean; run: Ctx["run"];
+}) {
+  const [ano, setAno] = useState(Number(hojeIso.slice(0, 4)));
+  const [mes, setMes] = useState(Number(hojeIso.slice(5, 7)) - 1);
+
+  const primeiro = new Date(ano, mes, 1).getDay();
+  const total = new Date(ano, mes + 1, 0).getDate();
+
+  function navega(delta: number) {
+    let m = mes + delta, a = ano;
+    if (m < 0) { m = 11; a--; } else if (m > 11) { m = 0; a++; }
+    setMes(m); setAno(a);
+  }
+
+  const aprovadas = pedidos.filter((p) => p.status === "Aprovado");
+
+  const celulas: ReactNode[] = [];
+  for (let i = 0; i < primeiro; i++) celulas.push(<div key={`v${i}`} />);
+  for (let d = 1; d <= total; d++) {
+    const data = iso(ano, mes, d);
+    const doDia = aprovadas.filter((p) => p.data === data);
+    const trav = bloqueios[data];
+    celulas.push(
+      <div key={data} className="min-h-[64px] rounded-lg border border-zinc-200 p-1 dark:border-zinc-800">
+        <div className="flex items-center justify-between text-xs font-semibold text-zinc-500">
+          {d}{trav && <span className="h-2 w-2 rounded-full bg-red-500" title={trav} />}
+        </div>
+        <div className="mt-0.5 flex flex-col gap-0.5">
+          {doDia.map((p) => {
+            const f = byId.get(p.funcionario_id);
+            if (!f) return null;
+            const g = (p.grupo_alvo as GrupoKey) || f.grupo;
+            return (
+              <button
+                key={p.id}
+                onClick={() => { if (window.confirm(`Excluir a folga de ${f.nome} em ${fmtData(p.data)}?`)) run(() => excluirPedido(p.id)); }}
+                disabled={proc}
+                className="truncate rounded px-1 py-0.5 text-left text-[11px] leading-tight"
+                style={{ color: GRUPOS[g]?.cor, background: `${GRUPOS[g]?.cor}1f` }}
+                title={`${f.nome} — ${GRUPOS[g]?.nome ?? ""} (clique para excluir)`}
+              >
+                {f.nome.split(" ")[0]}
+              </button>
+            );
+          })}
+        </div>
+      </div>,
+    );
+  }
+
+  return (
+    <div className={card}>
+      <h2 className="font-bold">Folgas aprovadas</h2>
+      <p className="text-sm text-zinc-500">Quem está de folga em cada dia. Toque num nome para excluir.</p>
+      <div className="mt-3 flex items-center justify-between">
+        <button onClick={() => navega(-1)} className="text-sm text-zinc-500">‹ Anterior</button>
+        <h3 className="font-bold">{MESES[mes]} {ano}</h3>
+        <button onClick={() => navega(1)} className="text-sm text-zinc-500">Próximo ›</button>
+      </div>
+      <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-zinc-400">
+        {DIAS.map((d) => <div key={d}>{d}</div>)}
+      </div>
+      <div className="mt-1 grid grid-cols-7 gap-1">{celulas}</div>
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-zinc-500">
+        {GRUPO_KEYS.map((g) => (
+          <span key={g} className="flex items-center gap-1">
+            <i className="h-2 w-2 rounded-full" style={{ background: GRUPOS[g].cor }} />{GRUPOS[g].nome}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
