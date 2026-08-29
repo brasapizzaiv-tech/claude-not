@@ -37,7 +37,7 @@ export function RetiradasClient({
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
-  const [aba, setAba] = useState<"lancamentos" | "produtos">("lancamentos");
+  const [aba, setAba] = useState<"lancamentos" | "resumo" | "produtos">("resumo");
   const [aviso, setAviso] = useState<string | null>(null);
   const [ano, setAno] = useState(Number(hojeIso.slice(0, 4)));
   const [mes, setMes] = useState(Number(hojeIso.slice(5, 7)) - 1);
@@ -63,20 +63,6 @@ export function RetiradasClient({
     [retiradas, mesTag],
   );
 
-  // Saldo em aberto por pessoa (global)
-  const emAberto = useMemo(() => {
-    const m = new Map<string, { nome: string; colaboradorId: string | null; total: number; qtd: number }>();
-    for (const r of retiradas) {
-      if (r.status !== "aberto") continue;
-      const key = r.colaborador_id ?? `nome:${r.nome}`;
-      const cur = m.get(key) ?? { nome: r.nome, colaboradorId: r.colaborador_id, total: 0, qtd: 0 };
-      cur.total += Number(r.valor); cur.qtd++;
-      m.set(key, cur);
-    }
-    return [...m.values()].sort((a, b) => b.total - a.total);
-  }, [retiradas]);
-  const totalAberto = emAberto.reduce((s, x) => s + x.total, 0);
-
   return (
     <div className="mx-auto max-w-4xl p-3 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
@@ -89,105 +75,73 @@ export function RetiradasClient({
       {aviso && <div className="mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600">{aviso}</div>}
 
       <div className="mb-4 flex gap-2">
-        {(["lancamentos", "produtos"] as const).map((k) => (
+        {([["resumo", "Resumo"], ["lancamentos", "Lançamentos"], ["produtos", "Produtos e preços"]] as const).map(([k, label]) => (
           <button
             key={k}
             onClick={() => setAba(k)}
             className={`rounded-lg px-3 py-2 text-sm font-medium ${aba === k ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}
           >
-            {k === "lancamentos" ? "Lançamentos" : "Produtos e preços"}
+            {label}
           </button>
         ))}
       </div>
 
-      {aba === "lancamentos" ? (
-        <div className="space-y-4">
-          {/* Em aberto (global) */}
-          <div className={card}>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-bold">Em aberto</h2>
-              <span className="font-bold text-red-500">{brl(totalAberto)}</span>
-            </div>
-            {emAberto.length === 0 ? (
-              <p className="text-sm text-zinc-500">Ninguém devendo. 🎉</p>
-            ) : (
-              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {emAberto.map((p) => (
-                  <li key={p.colaboradorId ?? p.nome} className="flex items-center justify-between gap-2 py-2 text-sm">
-                    <span className="min-w-0 truncate">{p.nome} <span className="text-zinc-400">· {p.qtd} item(ns)</span></span>
-                    <span className="flex shrink-0 items-center gap-3">
-                      <b className="text-red-500">{brl(p.total)}</b>
-                      {p.colaboradorId && (
+      {aba === "resumo" && <ResumoTab retiradas={retiradas} proc={proc} run={run} />}
+
+      {aba === "lancamentos" && (
+        <div className={card}>
+          <div className="mb-2 flex items-center justify-between">
+            <button onClick={() => navega(-1)} className="text-sm text-zinc-500">‹ Anterior</button>
+            <h2 className="font-bold">{MESES[mes]} {ano}</h2>
+            <button onClick={() => navega(1)} className="text-sm text-zinc-500">Próximo ›</button>
+          </div>
+          {doMes.length === 0 ? (
+            <p className="py-4 text-center text-sm text-zinc-500">Nenhuma compra nesse mês.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {doMes.map((r) => (
+                    <tr key={r.id}>
+                      <td className="py-2 pr-2 whitespace-nowrap text-zinc-500">{fmtData(r.data)}</td>
+                      <td className="py-2 pr-2">
+                        <div className="font-medium">{r.nome}</div>
+                        <div className="text-xs text-zinc-500">{r.item}{r.peso ? ` · ${r.peso} kg` : ""}{r.observacao ? ` · ${r.observacao}` : ""}</div>
+                      </td>
+                      <td className="py-2 pr-2 text-right whitespace-nowrap font-medium">{brl(Number(r.valor))}</td>
+                      <td className="py-2 pr-2 whitespace-nowrap text-center">
                         <button
                           disabled={proc}
-                          onClick={() => { if (window.confirm(`Quitar tudo em aberto de ${p.nome} (${brl(p.total)})?`)) run(() => quitarColaborador(p.colaboradorId!)); }}
-                          className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white"
+                          onClick={() => run(() => definirStatusRetirada(r.id, r.status !== "pago"))}
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "pago" ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"}`}
+                          title="Clique para alternar"
                         >
-                          Quitar
+                          {r.status === "pago" ? "Pago" : "Em aberto"}
                         </button>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Lançamentos do mês */}
-          <div className={card}>
-            <div className="mb-2 flex items-center justify-between">
-              <button onClick={() => navega(-1)} className="text-sm text-zinc-500">‹ Anterior</button>
-              <h2 className="font-bold">{MESES[mes]} {ano}</h2>
-              <button onClick={() => navega(1)} className="text-sm text-zinc-500">Próximo ›</button>
-            </div>
-            {doMes.length === 0 ? (
-              <p className="py-4 text-center text-sm text-zinc-500">Nenhuma compra nesse mês.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    {doMes.map((r) => (
-                      <tr key={r.id}>
-                        <td className="py-2 pr-2 whitespace-nowrap text-zinc-500">{fmtData(r.data)}</td>
-                        <td className="py-2 pr-2">
-                          <div className="font-medium">{r.nome}</div>
-                          <div className="text-xs text-zinc-500">{r.item}{r.peso ? ` · ${r.peso} kg` : ""}{r.observacao ? ` · ${r.observacao}` : ""}</div>
-                        </td>
-                        <td className="py-2 pr-2 text-right whitespace-nowrap font-medium">{brl(Number(r.valor))}</td>
-                        <td className="py-2 pr-2 whitespace-nowrap text-center">
-                          <button
-                            disabled={proc}
-                            onClick={() => run(() => definirStatusRetirada(r.id, r.status !== "pago"))}
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "pago" ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"}`}
-                            title="Clique para alternar"
-                          >
-                            {r.status === "pago" ? "Pago" : "Em aberto"}
-                          </button>
-                        </td>
-                        <td className="py-2 text-right">
-                          <button
-                            disabled={proc}
-                            onClick={() => { if (window.confirm("Excluir este lançamento?")) run(() => excluirRetirada(r.id)); }}
-                            className="text-xs text-zinc-400 hover:text-red-600"
-                          >
-                            excluir
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="mt-2 flex justify-between border-t border-zinc-200 pt-2 text-sm font-semibold dark:border-zinc-800">
-                  <span>Total do mês</span>
-                  <span>{brl(doMes.reduce((s, r) => s + Number(r.valor), 0))}</span>
-                </div>
+                      </td>
+                      <td className="py-2 text-right">
+                        <button
+                          disabled={proc}
+                          onClick={() => { if (window.confirm("Excluir este lançamento?")) run(() => excluirRetirada(r.id)); }}
+                          className="text-xs text-zinc-400 hover:text-red-600"
+                        >
+                          excluir
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="mt-2 flex justify-between border-t border-zinc-200 pt-2 text-sm font-semibold dark:border-zinc-800">
+                <span>Total do mês</span>
+                <span>{brl(doMes.reduce((s, r) => s + Number(r.valor), 0))}</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      ) : (
-        <ProdutosTab produtos={produtos} proc={proc} run={run} />
       )}
+
+      {aba === "produtos" && <ProdutosTab produtos={produtos} proc={proc} run={run} />}
 
       {novo && (
         <NovaCompra
@@ -266,6 +220,117 @@ function NovaCompra({
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ResumoTab({ retiradas, proc, run }: {
+  retiradas: Retirada[];
+  proc: boolean;
+  run: (fn: () => Promise<{ ok: boolean; mensagem?: string }>) => void;
+}) {
+  const porPessoa = useMemo(() => {
+    const m = new Map<string, { nome: string; colaboradorId: string | null; comprado: number; pago: number; aberto: number }>();
+    for (const r of retiradas) {
+      const key = r.colaborador_id ?? `nome:${r.nome}`;
+      const cur = m.get(key) ?? { nome: r.nome, colaboradorId: r.colaborador_id, comprado: 0, pago: 0, aberto: 0 };
+      const v = Number(r.valor);
+      cur.comprado += v;
+      if (r.status === "pago") cur.pago += v; else cur.aberto += v;
+      m.set(key, cur);
+    }
+    return [...m.values()].sort((a, b) => b.aberto - a.aberto || b.comprado - a.comprado);
+  }, [retiradas]);
+  const totais = porPessoa.reduce(
+    (s, p) => ({ comprado: s.comprado + p.comprado, pago: s.pago + p.pago, aberto: s.aberto + p.aberto }),
+    { comprado: 0, pago: 0, aberto: 0 },
+  );
+
+  const porMes = useMemo(() => {
+    const m = new Map<string, { comprado: number; aberto: number }>();
+    for (const r of retiradas) {
+      const mm = r.data.slice(0, 7);
+      const cur = m.get(mm) ?? { comprado: 0, aberto: 0 };
+      cur.comprado += Number(r.valor);
+      if (r.status === "aberto") cur.aberto += Number(r.valor);
+      m.set(mm, cur);
+    }
+    return [...m.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  }, [retiradas]);
+  const mesLabel = (mm: string) => { const [a, m] = mm.split("-"); return `${MESES[Number(m) - 1]} ${a}`; };
+
+  return (
+    <div className="space-y-4">
+      <div className={card}>
+        <h2 className="mb-2 font-bold">Por funcionário</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase text-zinc-400">
+              <tr>
+                <th className="py-1 pr-2">Nome</th>
+                <th className="py-1 pr-2 text-right">Comprado</th>
+                <th className="py-1 pr-2 text-right">Pago</th>
+                <th className="py-1 pr-2 text-right">Em aberto</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {porPessoa.map((p) => (
+                <tr key={p.colaboradorId ?? p.nome}>
+                  <td className="py-2 pr-2">{p.nome}</td>
+                  <td className="py-2 pr-2 text-right">{brl(p.comprado)}</td>
+                  <td className="py-2 pr-2 text-right text-emerald-600">{brl(p.pago)}</td>
+                  <td className={`py-2 pr-2 text-right font-semibold ${p.aberto > 0 ? "text-red-500" : "text-zinc-400"}`}>{brl(p.aberto)}</td>
+                  <td className="py-2 text-right">
+                    {p.aberto > 0 && p.colaboradorId && (
+                      <button
+                        disabled={proc}
+                        onClick={() => { if (window.confirm(`Quitar tudo em aberto de ${p.nome} (${brl(p.aberto)})?`)) run(() => quitarColaborador(p.colaboradorId!)); }}
+                        className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-zinc-200 font-bold dark:border-zinc-700">
+                <td className="py-2 pr-2">Total</td>
+                <td className="py-2 pr-2 text-right">{brl(totais.comprado)}</td>
+                <td className="py-2 pr-2 text-right text-emerald-600">{brl(totais.pago)}</td>
+                <td className="py-2 pr-2 text-right text-red-500">{brl(totais.aberto)}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div className={card}>
+        <h2 className="mb-2 font-bold">Por mês</h2>
+        <table className="w-full text-sm">
+          <thead className="text-left text-xs uppercase text-zinc-400">
+            <tr>
+              <th className="py-1 pr-2">Mês</th>
+              <th className="py-1 pr-2 text-right">Comprado</th>
+              <th className="py-1 pr-2 text-right">Em aberto</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {porMes.length === 0 ? (
+              <tr><td colSpan={3} className="py-3 text-center text-zinc-500">Sem lançamentos.</td></tr>
+            ) : porMes.map(([mm, v]) => (
+              <tr key={mm}>
+                <td className="py-2 pr-2">{mesLabel(mm)}</td>
+                <td className="py-2 pr-2 text-right">{brl(v.comprado)}</td>
+                <td className={`py-2 pr-2 text-right ${v.aberto > 0 ? "text-red-500" : "text-zinc-400"}`}>{brl(v.aberto)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
