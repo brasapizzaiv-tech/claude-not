@@ -111,10 +111,11 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("id, faz_contagem").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
+  const fazEtiquetas = !!colab?.faz_etiquetas;
 
   // Minhas compras internas (só leitura).
   let compras: { item: string; valor: number; data: string; status: string; data_pagamento: string | null; obs_pagamento: string | null }[] = [];
@@ -141,6 +142,16 @@ export default async function AppColaboradorPage({
         >
           🌴 Minhas folgas
         </Link>
+      )}
+      {fazEtiquetas && (
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          <Link href={`/eu/${token}/etiqueta`} className="rounded-2xl bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600">
+            🏷️ Nova etiqueta
+          </Link>
+          <Link href={`/eu/${token}/baixa`} className="rounded-2xl bg-zinc-800 p-4 text-center font-semibold text-white hover:bg-zinc-700">
+            📷 Dar baixa
+          </Link>
+        </div>
       )}
       {compras.length > 0 && (
         <div className="mb-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">

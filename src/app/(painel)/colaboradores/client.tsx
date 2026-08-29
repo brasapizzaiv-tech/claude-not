@@ -210,7 +210,7 @@ export function ColaboradoresClient({ rows }: { rows: Row[] }) {
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
                     {c.folga ? <div style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}>🌴 {resumoFolga(c.folga)}</div> : <span className="text-zinc-400">sem folga</span>}
-                    <div className="text-zinc-400">{c.faz_contagem ? "📦 faz contagem" : ""}</div>
+                    <div className="text-zinc-400">{[c.faz_contagem ? "📦 contagem" : "", c.faz_etiquetas ? "🏷️ etiquetas" : ""].filter(Boolean).join(" · ")}</div>
                   </td>
                   <td className="px-4 py-3"><LinkApp c={c} /></td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -267,6 +267,9 @@ function EditModal({ editando, onClose }: { editando: Row | null; onClose: () =>
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_contagem" defaultChecked={editando ? editando.faz_contagem : false} /> Faz contagem de estoque
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="faz_etiquetas" defaultChecked={editando ? editando.faz_etiquetas : false} /> Faz etiquetas (gerar / dar baixa)
           </label>
 
           <label className="flex items-center gap-2 border-t border-zinc-200 pt-3 text-sm dark:border-zinc-800">

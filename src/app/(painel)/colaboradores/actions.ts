@@ -16,6 +16,7 @@ export async function salvarColaborador(formData: FormData) {
   if (!nome) return;
   const whatsapp = (formData.get("whatsapp") as string)?.trim() || null;
   const fazContagem = formData.get("faz_contagem") === "on";
+  const fazEtiquetas = formData.get("faz_etiquetas") === "on";
   const temFolga = formData.get("tem_folga") === "on";
 
   let colaboradorId = id;
@@ -24,7 +25,7 @@ export async function salvarColaborador(formData: FormData) {
   if (id) {
     await supabase
       .from("colaboradores")
-      .update({ nome, whatsapp, faz_contagem: fazContagem })
+      .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas })
       .eq("id", id);
     token = (await supabase.from("colaboradores").select("token").eq("id", id).maybeSingle()).data?.token ?? null;
     if (!token) {
@@ -35,7 +36,7 @@ export async function salvarColaborador(formData: FormData) {
     token = novoToken();
     const { data } = await supabase
       .from("colaboradores")
-      .insert({ nome, whatsapp, token, faz_contagem: fazContagem })
+      .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas })
       .select("id")
       .single();
     colaboradorId = data?.id ?? null;

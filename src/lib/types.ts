@@ -35,6 +35,7 @@ export type Colaborador = {
   pin: string | null;
   ativo: boolean;
   faz_contagem: boolean;
+  faz_etiquetas: boolean;
   criado_em: string;
 };
 
