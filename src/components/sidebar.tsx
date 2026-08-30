@@ -99,6 +99,7 @@ export function Sidebar({
     ...(has("folgas") ? [{ href: "/folgas", label: "Folgas", desc: "Pedidos e escala de folgas", icon: M.folgas.icon }] : []),
     ...(has("retiradas") ? [{ href: "/retiradas", label: "Compras internas", desc: "Compras/retiradas dos funcionários", icon: M.retiradas.icon }] : []),
     ...(has("impressao") ? [{ href: "/impressao", label: "Central de Impressões", desc: "Impressoras e agente de impressão", icon: M.impressao.icon }] : []),
+    ...(has("pdv") ? [{ href: "/pdv", label: "PDV (balcão)", desc: "Venda no balcão", icon: M.pdv.icon }] : []),
   ];
 
   const subItem = (key: string, label: string, icon: string, sub: Sub[], extra?: Partial<Item>): Item[] =>
