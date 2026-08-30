@@ -16,8 +16,19 @@ export default async function SalaoPage() {
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
   const qtdMesas = Number(cfg.qtd_mesas || 40);
 
-  const comandas =
+  const todasAbertas =
     (abertas as { id: string; numero: number; mesa: string | null; valor_buffet: number }[]) ?? [];
+
+  // Comandas de delivery têm painel próprio (/delivery) — não entram no salão.
+  let comandas = todasAbertas;
+  if (todasAbertas.length) {
+    const { data: dels } = await supabase
+      .from("delivery_pedidos")
+      .select("comanda_id")
+      .in("comanda_id", todasAbertas.map((c) => c.id));
+    const delIds = new Set((dels ?? []).map((d) => d.comanda_id as string));
+    if (delIds.size) comandas = todasAbertas.filter((c) => !delIds.has(c.id));
+  }
 
   // soma dos itens por comanda
   const ids = comandas.map((c) => c.id);
