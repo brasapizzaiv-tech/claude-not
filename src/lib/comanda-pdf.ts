@@ -3,6 +3,7 @@ import PDFDocument from "pdfkit";
 const MM = 2.834645669;
 
 export type ComandaPdfDados = {
+  via: string | null; // nome da impressora/via (ex.: "Cozinha", "Bar")
   mesa: string;
   numero: number | null;
   hora: string; // "HH:MM"
@@ -35,7 +36,7 @@ export async function gerarComandaPdf(d: ComandaPdfDados): Promise<Buffer> {
   let y = 8;
   const linha = () => { doc.moveTo(pad, y).lineTo(W - pad, y).lineWidth(1).dash(2, { space: 2 }).stroke().undash(); y += 8; };
 
-  doc.font("Helvetica-Bold").fontSize(11).text("COMANDA — COZINHA", pad, y, { width: contentW, align: "center" });
+  doc.font("Helvetica-Bold").fontSize(11).text(`COMANDA${d.via ? " — " + d.via.toUpperCase() : ""}`, pad, y, { width: contentW, align: "center" });
   y = doc.y + 4;
   doc.font("Helvetica-Bold").fontSize(20).text(d.mesa, pad, y, { width: contentW, align: "center" });
   y = doc.y + 2;

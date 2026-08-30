@@ -3,15 +3,16 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaCategorias,
 } from "./actions";
 
-export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean };
+export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_categorias: string[] | null };
 
 export function CentralImpressao({
-  impressoras, token, hostname, printersPc, online, vistoEm,
+  impressoras, categorias, token, hostname, printersPc, online, vistoEm,
 }: {
   impressoras: Impressora[];
+  categorias: string[];
   token: string;
   hostname: string | null;
   printersPc: string[];
@@ -114,8 +115,9 @@ export function CentralImpressao({
                 <WinField im={im} printersPc={printersPc} proc={proc} run={run} />
                 <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
                   <input type="checkbox" checked={im.recebe_comandas} disabled={proc} onChange={(e) => run(() => definirRecebeComandas(im.id, e.target.checked))} />
-                  🍳 Recebe comandas (cozinha)
+                  🍳 Recebe comandas (cozinha/bar)
                 </label>
+                {im.recebe_comandas && <ViaCategorias im={im} categorias={categorias} proc={proc} run={run} />}
               </>
             )}
           </div>
@@ -127,6 +129,29 @@ export function CentralImpressao({
         <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           + Adicionar impressora
         </button>
+      </div>
+    </div>
+  );
+}
+
+function ViaCategorias({ im, categorias, proc, run }: {
+  im: Impressora; categorias: string[]; proc: boolean; run: (fn: () => Promise<unknown>) => void;
+}) {
+  const [sel, setSel] = useState<string[]>(im.comanda_categorias ?? []);
+  const cls = (on: boolean) =>
+    `rounded-full px-2.5 py-1 text-xs font-medium ${on ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-300"}`;
+
+  function salvar(novo: string[]) { setSel(novo); run(() => definirComandaCategorias(im.id, novo)); }
+  const toggle = (cat: string) => salvar(sel.includes(cat) ? sel.filter((c) => c !== cat) : [...sel, cat]);
+
+  return (
+    <div className="mt-2 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/40">
+      <div className="mb-1.5 text-xs text-zinc-500">Imprime as categorias {sel.length === 0 ? "(todas)" : `(${sel.length})`}:</div>
+      <div className="flex flex-wrap gap-1.5">
+        <button disabled={proc} onClick={() => salvar([])} className={cls(sel.length === 0)}>Todas</button>
+        {categorias.map((cat) => (
+          <button key={cat} disabled={proc} onClick={() => toggle(cat)} className={cls(sel.includes(cat))}>{cat}</button>
+        ))}
       </div>
     </div>
   );

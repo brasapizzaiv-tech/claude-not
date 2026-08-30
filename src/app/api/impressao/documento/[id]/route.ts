@@ -12,7 +12,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const admin = createAdminClient();
   const baseUrl = new URL(req.url).origin;
 
-  const { data: job } = await admin.from("impressao_fila").select("tipo, ref_id").eq("id", id).maybeSingle();
+  const { data: job } = await admin.from("impressao_fila").select("tipo, ref_id, impressora_id").eq("id", id).maybeSingle();
   if (!job) return new Response("nao encontrado", { status: 404 });
 
   let pdf: Buffer;
@@ -39,15 +39,31 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       baseUrl,
     );
   } else {
-    // comanda: itens de um lançamento (ref_id = lancamento_id)
-    const { data: itens } = await admin
+    // comanda: itens de um lançamento (ref_id = lancamento_id), filtrados pela
+    // via (categorias) da impressora.
+    const { data: itensRaw } = await admin
       .from("pdv_comanda_itens")
-      .select("descricao, qtd, comanda_id, criado_por, criado_em")
+      .select("descricao, qtd, comanda_id, criado_por, criado_em, item_id, pdv_itens(categoria)")
       .eq("lancamento_id", job.ref_id)
       .order("criado_em");
-    if (!itens || itens.length === 0) return new Response("comanda vazia", { status: 404 });
+    const itens = (itensRaw as unknown as {
+      descricao: string; qtd: number; comanda_id: string; criado_por: string | null; criado_em: string;
+      pdv_itens: { categoria: string | null } | { categoria: string | null }[] | null;
+    }[]) ?? [];
+    if (itens.length === 0) return new Response("comanda vazia", { status: 404 });
 
-    const primeiro = itens[0] as { comanda_id: string; criado_por: string | null; criado_em: string };
+    const { data: imp } = job.impressora_id
+      ? await admin.from("impressoras").select("nome, comanda_categorias").eq("id", job.impressora_id).maybeSingle()
+      : { data: null as { nome: string; comanda_categorias: string[] | null } | null };
+    const cats = (imp?.comanda_categorias as string[] | null) ?? null;
+    const catDe = (it: (typeof itens)[number]) => {
+      const p = Array.isArray(it.pdv_itens) ? it.pdv_itens[0] : it.pdv_itens;
+      return p?.categoria ?? null;
+    };
+    const filtrados = !cats || cats.length === 0 ? itens : itens.filter((it) => { const c = catDe(it); return c !== null && cats.includes(c); });
+    if (filtrados.length === 0) return new Response("sem itens para esta via", { status: 404 });
+
+    const primeiro = itens[0];
     const [{ data: com }, { data: prof }] = await Promise.all([
       admin.from("pdv_comandas").select("numero, mesa").eq("id", primeiro.comanda_id).maybeSingle(),
       primeiro.criado_por
@@ -58,12 +74,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit",
     });
     pdf = await gerarComandaPdf({
+      via: (imp?.nome as string) ?? null,
       mesa: (com?.mesa as string) || "Balcão",
       numero: (com?.numero as number) ?? null,
       hora,
       garcom: (prof?.nome as string) ?? null,
       observacao: null,
-      itens: (itens as { descricao: string; qtd: number }[]).map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao })),
+      itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao })),
     });
   }
 

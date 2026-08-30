@@ -48,17 +48,26 @@ export async function lancarPedidoGarcom(
   }));
   await supabase.from("pdv_comanda_itens").insert(rows);
 
-  // Envia a comanda pra impressão nas impressoras de cozinha (recebe_comandas).
+  // Roteamento por categoria: cada impressora de comanda imprime só as suas.
+  const itemIds = validos.map((i) => i.itemId).filter(Boolean);
+  const catsItens = new Set<string>();
+  if (itemIds.length > 0) {
+    const { data: pis } = await supabase.from("pdv_itens").select("categoria").in("id", itemIds);
+    for (const p of (pis as { categoria: string | null }[]) ?? []) if (p.categoria) catsItens.add(p.categoria);
+  }
   const { data: cozinhas } = await supabase
     .from("impressoras")
-    .select("id")
+    .select("id, comanda_categorias")
     .eq("ativo", true)
     .eq("recebe_comandas", true);
-  if (cozinhas && cozinhas.length > 0) {
-    await supabase.from("impressao_fila").insert(
-      cozinhas.map((im) => ({ tipo: "comanda", ref_id: lancamentoId, impressora_id: im.id })),
-    );
-  }
+  const jobs = ((cozinhas as { id: string; comanda_categorias: string[] | null }[]) ?? [])
+    .filter((im) => {
+      const cats = im.comanda_categorias;
+      if (!cats || cats.length === 0) return true; // imprime todas
+      return [...catsItens].some((c) => cats.includes(c)); // tem item da categoria dela?
+    })
+    .map((im) => ({ tipo: "comanda", ref_id: lancamentoId, impressora_id: im.id }));
+  if (jobs.length > 0) await supabase.from("impressao_fila").insert(jobs);
 
   revalidatePath("/garcom");
   revalidatePath("/salao");

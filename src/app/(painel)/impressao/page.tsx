@@ -6,10 +6,11 @@ export const metadata = { title: "Central de Impressões · Brasa" };
 
 export default async function CentralImpressaoPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("impressoras")
-    .select("id, nome, ativo, impressora_windows, recebe_comandas")
-    .order("criado_em");
+  const [{ data }, { data: cats }] = await Promise.all([
+    supabase.from("impressoras").select("id, nome, ativo, impressora_windows, recebe_comandas, comanda_categorias").order("criado_em"),
+    supabase.from("pdv_categorias").select("nome").order("nome"),
+  ]);
+  const categorias = ((cats as { nome: string }[]) ?? []).map((c) => c.nome);
 
   const admin = createAdminClient();
   const { data: cfg } = await admin
@@ -24,6 +25,7 @@ export default async function CentralImpressaoPage() {
   return (
     <CentralImpressao
       impressoras={(data as Impressora[]) ?? []}
+      categorias={categorias}
       token={(cfg?.token as string) ?? ""}
       hostname={(cfg?.hostname as string) ?? null}
       printersPc={(cfg?.printers as string[]) ?? []}
