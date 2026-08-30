@@ -14,7 +14,7 @@ const FORMAS = [
   { id: "Pix", label: "📱 Pix" },
 ];
 
-type Feito = { numero: number; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean };
+type Feito = { numero: number; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
 
 export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias: string[] }) {
   const [proc, start] = useTransition();
@@ -23,6 +23,7 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
   const [cart, setCart] = useState<Record<string, number>>({});
   const [obs, setObs] = useState("");
   const [fase, setFase] = useState<"menu" | "pagar">("menu");
+  const [local, setLocal] = useState<"aqui" | "viagem">("aqui");
   const [forma, setForma] = useState("Dinheiro");
   const [recebido, setRecebido] = useState("");
   const [feito, setFeito] = useState<Feito | null>(null);
@@ -51,11 +52,12 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
   function finalizar(pagamento: { forma: string } | null) {
     if (cartLista.length === 0) return;
     const trocoAtual = troco;
+    const ehViagem = local === "viagem";
     start(async () => {
-      const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento);
+      const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
       if (r.ok) {
-        setFeito({ numero: r.numero ?? 0, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false });
-        setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro");
+        setFeito({ numero: r.numero ?? 0, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
+        setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro"); setLocal("aqui");
       } else {
         setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
       }
@@ -67,6 +69,7 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
       <div className="mx-auto max-w-md p-10 text-center">
         <div className="mb-3 text-5xl">{feito.pago ? "✅" : "🍳"}</div>
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Venda nº {feito.numero} {feito.pago ? "paga!" : "enviada!"}</h1>
+        {feito.viagem && <div className="mt-2 inline-block rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-amber-600">🥡 Viagem</div>}
         <p className="mt-1 text-zinc-500">
           {feito.pago ? <>Pagou em <b>{feito.forma}</b> e o pedido foi pra cozinha.</> : "O pedido foi pra cozinha. Receba o pagamento no caixa."}
         </p>
@@ -141,6 +144,10 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
               )}
             </div>
             <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                <button onClick={() => setLocal("aqui")} className={`rounded-lg border py-2 text-sm font-semibold ${local === "aqui" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}>🍽️ Comer aqui</button>
+                <button onClick={() => setLocal("viagem")} className={`rounded-lg border py-2 text-sm font-semibold ${local === "viagem" ? "border-amber-500 bg-amber-500/10 text-amber-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}>🥡 Viagem</button>
+              </div>
               <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
               <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
               {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
@@ -151,7 +158,7 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
         ) : (
           <div className="flex flex-1 flex-col p-3">
             <div className="mb-3 rounded-xl bg-zinc-100 p-3 text-center dark:bg-zinc-800">
-              <div className="text-sm text-zinc-500">Total a cobrar</div>
+              <div className="text-sm text-zinc-500">Total a cobrar {local === "viagem" && <span className="font-bold text-amber-600">· 🥡 Viagem</span>}</div>
               <div className="text-3xl font-bold">{brl(total)}</div>
             </div>
             <div className="mb-3 grid grid-cols-3 gap-2">

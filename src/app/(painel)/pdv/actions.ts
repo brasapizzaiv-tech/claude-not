@@ -12,8 +12,12 @@ export async function finalizarVendaPdv(
   itens: ItemVenda[],
   obs: string,
   pagamento: { forma: string } | null,
+  local: "aqui" | "viagem" = "aqui",
 ) {
-  const r = await lancarPedidoGarcom("Balcão", itens, obs);
+  // O rótulo da "mesa" vira o cabeçalho grande da comanda na cozinha — então
+  // "VIAGEM" aparece bem visível pra saberem que é pra embalar.
+  const mesa = local === "viagem" ? "Balcão · VIAGEM" : "Balcão";
+  const r = await lancarPedidoGarcom(mesa, itens, obs);
   if (!r.ok || !r.comandaId) return r;
 
   if (!pagamento) {
