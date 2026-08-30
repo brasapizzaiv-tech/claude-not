@@ -3,10 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig,
 } from "./actions";
 
-export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null };
+export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean };
+export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null };
 export type Produto = { id: string; nome: string; categoria: string };
 
 export function CentralImpressao({
@@ -119,6 +120,7 @@ export function CentralImpressao({
                   🍳 Recebe comandas (cozinha/bar)
                 </label>
                 {im.recebe_comandas && <ViaProdutos im={im} produtos={produtos} proc={proc} run={run} />}
+                {im.recebe_comandas && <ViaFormato im={im} proc={proc} run={run} />}
               </>
             )}
           </div>
@@ -130,6 +132,30 @@ export function CentralImpressao({
         <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           + Adicionar impressora
         </button>
+      </div>
+    </div>
+  );
+}
+
+function ViaFormato({ im, proc, run }: {
+  im: Impressora; proc: boolean; run: (fn: () => Promise<unknown>) => void;
+}) {
+  const def: ComandaConfig = { largura: 80, precos: false, garcom: true, hora: true };
+  const [c, setC] = useState<ComandaConfig>(im.comanda_config ?? def);
+  function salvar(novo: ComandaConfig) { setC(novo); run(() => definirComandaConfig(im.id, novo)); }
+  const wbtn = (mm: number) => `rounded-lg px-3 py-1 text-sm font-medium ${c.largura === mm ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`;
+  return (
+    <div className="mt-2 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/40">
+      <div className="mb-1.5 text-xs text-zinc-500">Formato da impressão:</div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-zinc-500">Largura:</span>
+        <button disabled={proc} onClick={() => salvar({ ...c, largura: 58 })} className={wbtn(58)}>58mm</button>
+        <button disabled={proc} onClick={() => salvar({ ...c, largura: 80 })} className={wbtn(80)}>80mm</button>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.precos} disabled={proc} onChange={(e) => salvar({ ...c, precos: e.target.checked })} /> Mostrar preços</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.garcom} disabled={proc} onChange={(e) => salvar({ ...c, garcom: e.target.checked })} /> Mostrar garçom</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.hora} disabled={proc} onChange={(e) => salvar({ ...c, hora: e.target.checked })} /> Mostrar hora</label>
       </div>
     </div>
   );

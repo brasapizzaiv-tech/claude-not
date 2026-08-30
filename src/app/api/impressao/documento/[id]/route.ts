@@ -43,18 +43,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // via (categorias) da impressora.
     const { data: itensRaw } = await admin
       .from("pdv_comanda_itens")
-      .select("descricao, qtd, comanda_id, criado_por, criado_em, item_id")
+      .select("descricao, qtd, preco_unit, comanda_id, criado_por, criado_em, item_id")
       .eq("lancamento_id", job.ref_id)
       .order("criado_em");
     const itens = (itensRaw as {
-      descricao: string; qtd: number; comanda_id: string; criado_por: string | null; criado_em: string; item_id: string | null;
+      descricao: string; qtd: number; preco_unit: number | null; comanda_id: string; criado_por: string | null; criado_em: string; item_id: string | null;
     }[]) ?? [];
     if (itens.length === 0) return new Response("comanda vazia", { status: 404 });
 
     const { data: imp } = job.impressora_id
-      ? await admin.from("impressoras").select("nome, comanda_produtos").eq("id", job.impressora_id).maybeSingle()
-      : { data: null as { nome: string; comanda_produtos: string[] | null } | null };
+      ? await admin.from("impressoras").select("nome, comanda_produtos, comanda_config").eq("id", job.impressora_id).maybeSingle()
+      : { data: null as { nome: string; comanda_produtos: string[] | null; comanda_config: Record<string, unknown> | null } | null };
     const prods = (imp?.comanda_produtos as string[] | null) ?? null;
+    const config = (imp?.comanda_config as { largura?: number; precos?: boolean; garcom?: boolean; hora?: boolean } | null) ?? null;
     const filtrados = prods === null ? itens : itens.filter((it) => it.item_id !== null && prods.includes(it.item_id));
     if (filtrados.length === 0) return new Response("sem itens para esta via", { status: 404 });
 
@@ -68,15 +69,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const hora = new Date(primeiro.criado_em).toLocaleTimeString("pt-BR", {
       timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit",
     });
-    pdf = await gerarComandaPdf({
-      via: (imp?.nome as string) ?? null,
-      mesa: (com?.mesa as string) || "Balcão",
-      numero: (com?.numero as number) ?? null,
-      hora,
-      garcom: (prof?.nome as string) ?? null,
-      observacao: null,
-      itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao })),
-    });
+    pdf = await gerarComandaPdf(
+      {
+        via: (imp?.nome as string) ?? null,
+        mesa: (com?.mesa as string) || "Balcão",
+        numero: (com?.numero as number) ?? null,
+        hora,
+        garcom: (prof?.nome as string) ?? null,
+        observacao: null,
+        itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: i.preco_unit != null ? Number(i.preco_unit) : undefined })),
+      },
+      config,
+    );
   }
 
   return new Response(new Uint8Array(pdf), {
