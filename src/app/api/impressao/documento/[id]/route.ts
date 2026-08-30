@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { agenteAutorizado } from "@/lib/impressao-agente";
 import { gerarEtiquetaPdf } from "@/lib/etiqueta-pdf";
-import { gerarComandaPdf } from "@/lib/comanda-pdf";
+import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
 
 export const runtime = "nodejs";
@@ -48,19 +48,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // via (categorias) da impressora.
     const { data: itensRaw } = await admin
       .from("pdv_comanda_itens")
-      .select("descricao, qtd, preco_unit, comanda_id, criado_por, criado_em, item_id")
+      .select("descricao, qtd, preco_unit, comanda_id, criado_por, criado_em, item_id, pdv_itens(categoria)")
       .eq("lancamento_id", job.ref_id)
       .order("criado_em");
-    const itens = (itensRaw as {
+    const itens = (itensRaw as unknown as {
       descricao: string; qtd: number; preco_unit: number | null; comanda_id: string; criado_por: string | null; criado_em: string; item_id: string | null;
+      pdv_itens: { categoria: string | null } | { categoria: string | null }[] | null;
     }[]) ?? [];
+    const catDe = (it: (typeof itens)[number]) => {
+      const p = Array.isArray(it.pdv_itens) ? it.pdv_itens[0] : it.pdv_itens;
+      return p?.categoria ?? undefined;
+    };
     if (itens.length === 0) return new Response("comanda vazia", { status: 404 });
 
     const { data: imp } = job.impressora_id
       ? await admin.from("impressoras").select("nome, comanda_produtos, comanda_config").eq("id", job.impressora_id).maybeSingle()
       : { data: null as { nome: string; comanda_produtos: string[] | null; comanda_config: Record<string, unknown> | null } | null };
     const prods = (imp?.comanda_produtos as string[] | null) ?? null;
-    const config = (imp?.comanda_config as { largura?: number; precos?: boolean; garcom?: boolean; hora?: boolean } | null) ?? null;
+    const config = (imp?.comanda_config as ComandaConfig | null) ?? null;
     const filtrados = prods === null ? itens : itens.filter((it) => it.item_id !== null && prods.includes(it.item_id));
     if (filtrados.length === 0) return new Response("sem itens para esta via", { status: 404 });
 
@@ -82,7 +87,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         hora,
         garcom: (prof?.nome as string) ?? null,
         observacao: null,
-        itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: i.preco_unit != null ? Number(i.preco_unit) : undefined })),
+        itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: i.preco_unit != null ? Number(i.preco_unit) : undefined, categoria: catDe(i) })),
       },
       config,
     );

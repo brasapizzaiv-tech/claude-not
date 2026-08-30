@@ -55,8 +55,11 @@ export async function definirComandaProdutos(id: string, produtos: string[] | nu
   return { ok: true as const };
 }
 
-// Formato da comanda (largura, preços, garçom, hora).
-export async function definirComandaConfig(id: string, config: { largura: number; precos: boolean; garcom: boolean; hora: boolean }) {
+// Formato da comanda (largura, preços, garçom, hora, agrupar/qtd por categoria, destacar obs).
+export async function definirComandaConfig(id: string, config: {
+  largura: number; precos: boolean; garcom: boolean; hora: boolean;
+  agrupar: boolean; qtdCat: boolean; destObs: boolean;
+}) {
   const supabase = await createClient();
   await supabase.from("impressoras").update({ comanda_config: config }).eq("id", id);
   revalidatePath("/impressao");

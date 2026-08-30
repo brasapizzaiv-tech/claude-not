@@ -6,7 +6,7 @@ import {
   criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig, imprimirTeste,
 } from "./actions";
 
-export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean };
+export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean; agrupar: boolean; qtdCat: boolean; destObs: boolean };
 export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null };
 export type Produto = { id: string; nome: string; categoria: string };
 
@@ -154,8 +154,8 @@ export function CentralImpressao({
 function ViaFormato({ im, proc, run }: {
   im: Impressora; proc: boolean; run: (fn: () => Promise<unknown>) => void;
 }) {
-  const def: ComandaConfig = { largura: 80, precos: false, garcom: true, hora: true };
-  const [c, setC] = useState<ComandaConfig>(im.comanda_config ?? def);
+  const def: ComandaConfig = { largura: 80, precos: false, garcom: true, hora: true, agrupar: false, qtdCat: false, destObs: false };
+  const [c, setC] = useState<ComandaConfig>({ ...def, ...(im.comanda_config ?? {}) });
   function salvar(novo: ComandaConfig) { setC(novo); run(() => definirComandaConfig(im.id, novo)); }
   const wbtn = (mm: number) => `rounded-lg px-3 py-1 text-sm font-medium ${c.largura === mm ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`;
   return (
@@ -170,6 +170,9 @@ function ViaFormato({ im, proc, run }: {
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.precos} disabled={proc} onChange={(e) => salvar({ ...c, precos: e.target.checked })} /> Mostrar preços</label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.garcom} disabled={proc} onChange={(e) => salvar({ ...c, garcom: e.target.checked })} /> Mostrar garçom</label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.hora} disabled={proc} onChange={(e) => salvar({ ...c, hora: e.target.checked })} /> Mostrar hora</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.agrupar} disabled={proc} onChange={(e) => salvar({ ...c, agrupar: e.target.checked })} /> Agrupar por categoria</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.qtdCat} disabled={proc} onChange={(e) => salvar({ ...c, qtdCat: e.target.checked })} /> Qtd por categoria</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.destObs} disabled={proc} onChange={(e) => salvar({ ...c, destObs: e.target.checked })} /> Destacar observações</label>
       </div>
     </div>
   );
