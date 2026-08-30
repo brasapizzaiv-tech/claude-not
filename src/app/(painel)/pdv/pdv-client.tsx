@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import { lancarPedidoGarcom } from "../garcom/actions";
+import { finalizarVendaPdv } from "./actions";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const CORES = ["#6366f1", "#10b981", "#ec4899", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e", "#84cc16", "#8b5cf6"];
+const FORMAS = [
+  { id: "Dinheiro", label: "💵 Dinheiro" },
+  { id: "Cartão", label: "💳 Cartão" },
+  { id: "Pix", label: "📱 Pix" },
+];
+
+type Feito = { numero: number; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean };
 
 export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias: string[] }) {
   const [proc, start] = useTransition();
@@ -15,7 +22,10 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
   const [busca, setBusca] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [obs, setObs] = useState("");
-  const [feito, setFeito] = useState<{ numero: number } | null>(null);
+  const [fase, setFase] = useState<"menu" | "pagar">("menu");
+  const [forma, setForma] = useState("Dinheiro");
+  const [recebido, setRecebido] = useState("");
+  const [feito, setFeito] = useState<Feito | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const abas = ["Todos", ...categorias];
@@ -28,34 +38,47 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
 
   const itemDe = useMemo(() => new Map(itens.map((i) => [i.id, i])), [itens]);
   const cartLista = Object.entries(cart).filter(([, q]) => q > 0).map(([id, q]) => ({ item: itemDe.get(id)!, qtd: q })).filter((x) => x.item);
-  const total = cartLista.reduce((s, x) => s + x.item.preco * x.qtd, 0);
+  const total = Math.round(cartLista.reduce((s, x) => s + x.item.preco * x.qtd, 0) * 100) / 100;
   const cartCount = cartLista.reduce((s, x) => s + x.qtd, 0);
+  const recebidoNum = Number(recebido.replace(",", ".")) || 0;
+  const troco = forma === "Dinheiro" && recebidoNum > total ? Math.round((recebidoNum - total) * 100) / 100 : 0;
 
   const setQtd = (id: string, q: number) => setCart((c) => { const n = { ...c }; if (q <= 0) delete n[id]; else n[id] = q; return n; });
   const add = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
 
-  function enviar() {
+  const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd }));
+
+  function finalizar(pagamento: { forma: string } | null) {
     if (cartLista.length === 0) return;
+    const trocoAtual = troco;
     start(async () => {
-      const r = await lancarPedidoGarcom(
-        "Balcão",
-        cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd })),
-        obs,
-      );
-      if (r.ok) { setFeito({ numero: r.numero ?? 0 }); setCart({}); setObs(""); }
-      else { setErro(r.mensagem || "Não foi possível enviar."); setTimeout(() => setErro(null), 3000); }
+      const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento);
+      if (r.ok) {
+        setFeito({ numero: r.numero ?? 0, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false });
+        setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro");
+      } else {
+        setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
+      }
     });
   }
 
   if (feito) {
     return (
       <div className="mx-auto max-w-md p-10 text-center">
-        <div className="mb-3 text-5xl">🍳</div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Venda nº {feito.numero} enviada!</h1>
-        <p className="mt-1 text-zinc-500">O pedido foi pra cozinha. Agora receba o pagamento no caixa.</p>
+        <div className="mb-3 text-5xl">{feito.pago ? "✅" : "🍳"}</div>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Venda nº {feito.numero} {feito.pago ? "paga!" : "enviada!"}</h1>
+        <p className="mt-1 text-zinc-500">
+          {feito.pago ? <>Pagou em <b>{feito.forma}</b> e o pedido foi pra cozinha.</> : "O pedido foi pra cozinha. Receba o pagamento no caixa."}
+        </p>
+        {feito.pago && (feito.troco ?? 0) > 0 && (
+          <div className="mt-4 rounded-xl bg-amber-500/10 px-4 py-3 text-xl font-bold text-amber-600">Troco: {brl(feito.troco!)}</div>
+        )}
+        {feito.pago && feito.semCaixa && (
+          <p className="mt-3 text-sm text-amber-600">⚠️ Nenhum caixa aberto — a venda foi registrada, mas não entrou no caixa. Abra o caixa pra controlar o dinheiro.</p>
+        )}
         <div className="mt-6 flex justify-center gap-3">
-          <button onClick={() => setFeito(null)} className="rounded-xl border border-zinc-300 px-5 py-3 font-semibold dark:border-zinc-700">Nova venda</button>
-          <Link href="/salao/caixa" className="rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white">Ir pro caixa →</Link>
+          <button onClick={() => setFeito(null)} className="rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white">Nova venda</button>
+          {!feito.pago && <Link href="/salao/caixa" className="rounded-xl border border-zinc-300 px-5 py-3 font-semibold dark:border-zinc-700">Ir pro caixa →</Link>}
         </div>
       </div>
     );
@@ -88,38 +111,66 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
         </div>
       </div>
 
-      {/* Carrinho */}
+      {/* Carrinho / Pagamento */}
       <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <div className="border-b border-zinc-200 p-3 font-bold dark:border-zinc-800">🛒 Pedido {cartCount > 0 ? `(${cartCount})` : ""}</div>
-        <div className="flex-1 overflow-y-auto p-2">
-          {cartLista.length === 0 ? (
-            <p className="py-10 text-center text-sm text-zinc-500">Toque nos produtos pra adicionar.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {cartLista.map((x) => (
-                <div key={x.item.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{x.item.nome}</div>
-                    <div className="text-xs text-emerald-600">{brl(x.item.preco * x.qtd)}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setQtd(x.item.id, x.qtd - 1)} className="h-7 w-7 rounded border border-zinc-300 dark:border-zinc-600">{x.qtd === 1 ? "🗑️" : "−"}</button>
-                    <span className="w-5 text-center font-bold">{x.qtd}</span>
-                    <button onClick={() => setQtd(x.item.id, x.qtd + 1)} className="h-7 w-7 rounded border border-zinc-300 text-emerald-600 dark:border-zinc-600">+</button>
-                  </div>
+        <div className="border-b border-zinc-200 p-3 font-bold dark:border-zinc-800">
+          {fase === "pagar" ? <button onClick={() => setFase("menu")} className="text-emerald-600">← Voltar</button> : <>🛒 Pedido {cartCount > 0 ? `(${cartCount})` : ""}</>}
+        </div>
+
+        {fase === "menu" ? (
+          <>
+            <div className="flex-1 overflow-y-auto p-2">
+              {cartLista.length === 0 ? (
+                <p className="py-10 text-center text-sm text-zinc-500">Toque nos produtos pra adicionar.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {cartLista.map((x) => (
+                    <div key={x.item.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">{x.item.nome}</div>
+                        <div className="text-xs text-emerald-600">{brl(x.item.preco * x.qtd)}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setQtd(x.item.id, x.qtd - 1)} className="h-7 w-7 rounded border border-zinc-300 dark:border-zinc-600">{x.qtd === 1 ? "🗑️" : "−"}</button>
+                        <span className="w-5 text-center font-bold">{x.qtd}</span>
+                        <button onClick={() => setQtd(x.item.id, x.qtd + 1)} className="h-7 w-7 rounded border border-zinc-300 text-emerald-600 dark:border-zinc-600">+</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              )}
+            </div>
+            <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+              <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+              <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
+              {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
+              <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="mb-2 w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50">💰 Cobrar e finalizar</button>
+              <button onClick={() => finalizar(null)} disabled={proc || cartLista.length === 0} className="w-full rounded-xl border border-zinc-300 py-2.5 text-sm font-semibold disabled:opacity-50 dark:border-zinc-700">{proc ? "Enviando..." : "🍳 Só enviar pra cozinha (pago no caixa)"}</button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-1 flex-col p-3">
+            <div className="mb-3 rounded-xl bg-zinc-100 p-3 text-center dark:bg-zinc-800">
+              <div className="text-sm text-zinc-500">Total a cobrar</div>
+              <div className="text-3xl font-bold">{brl(total)}</div>
+            </div>
+            <div className="mb-3 grid grid-cols-3 gap-2">
+              {FORMAS.map((f) => (
+                <button key={f.id} onClick={() => setForma(f.id)} className={`rounded-xl border py-3 text-sm font-semibold ${forma === f.id ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 dark:border-zinc-800"}`}>{f.label}</button>
               ))}
             </div>
-          )}
-        </div>
-        <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
-          <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
-          <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
-          {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-          <button onClick={enviar} disabled={proc || cartLista.length === 0} className="w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50">
-            {proc ? "Enviando..." : "🍳 Enviar pra cozinha"}
-          </button>
-        </div>
+            {forma === "Dinheiro" && (
+              <div className="mb-3">
+                <label className="text-sm text-zinc-500">Valor recebido</label>
+                <input value={recebido} onChange={(e) => setRecebido(e.target.value)} inputMode="decimal" placeholder="Ex.: 50" className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2.5 text-lg outline-none dark:border-zinc-700" />
+                <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
+              </div>
+            )}
+            <div className="flex-1" />
+            {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
+            <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-50">{proc ? "Concluindo..." : "✅ Confirmar e enviar pra cozinha"}</button>
+          </div>
+        )}
       </div>
     </div>
   );
