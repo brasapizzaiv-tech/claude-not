@@ -36,8 +36,26 @@ export default async function DeliveryConfigPage() {
           <label className="text-sm font-semibold">Endereço do restaurante</label>
           <input name="origem_endereco" defaultValue={c.origem_endereco ?? ""} placeholder="Rua, número, bairro, Ivoti - RS" className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
           <p className="mt-1 text-xs text-zinc-500">
-            {geocodificado ? `📍 Localizado no mapa (${Number(c.origem_lat).toFixed(4)}, ${Number(c.origem_lng).toFixed(4)}).` : "Ao salvar, o sistema localiza o endereço no mapa (ponto de partida das entregas)."}
+            {geocodificado ? "📍 Localizado no mapa — confira abaixo se o pino está no lugar certo." : "Ao salvar, o sistema localiza o endereço no mapa (ponto de partida das entregas)."}
           </p>
+          {geocodificado && (
+            <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+              <iframe
+                title="Localização do restaurante"
+                className="h-64 w-full"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(c.origem_lng) - 0.006},${Number(c.origem_lat) - 0.004},${Number(c.origem_lng) + 0.006},${Number(c.origem_lat) + 0.004}&layer=mapnik&marker=${Number(c.origem_lat)},${Number(c.origem_lng)}`}
+              />
+              <div className="flex items-center justify-between bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900">
+                <span className="text-zinc-500">O pino é o ponto de partida das entregas.</span>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${Number(c.origem_lat)},${Number(c.origem_lng)}`}
+                  target="_blank" rel="noreferrer" className="font-semibold text-emerald-600 hover:underline"
+                >
+                  Abrir no Google Maps →
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

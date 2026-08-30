@@ -203,7 +203,17 @@ export function NovoPedido({
               <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700" />
               <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência" className="w-full rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700" />
               <button type="button" onClick={calcularTaxa} disabled={calculando} className="w-full rounded-lg border border-emerald-500 py-1.5 text-sm font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "Calculando..." : "📍 Calcular taxa pela distância"}</button>
-              {calcMsg && <p className={`text-xs ${geo?.fora ? "text-rose-600" : "text-zinc-500"}`}>{calcMsg}</p>}
+              {calcMsg && (
+                <p className={`text-xs ${geo?.fora ? "text-rose-600" : "text-zinc-500"}`}>
+                  {calcMsg}
+                  {geo && (
+                    <>
+                      {" · "}
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${geo.lat},${geo.lng}`} target="_blank" rel="noreferrer" className="font-semibold text-emerald-600 hover:underline">conferir no mapa</a>
+                    </>
+                  )}
+                </p>
+              )}
             </div>
           )}
 
