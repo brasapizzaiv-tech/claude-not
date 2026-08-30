@@ -15,7 +15,7 @@ export default async function GarcomMesaPage({
 
   const [{ data: itensRows }, { data: catRows }, { data: comRows }, { data: cfgRows }] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
-    supabase.from("pdv_categorias").select("nome, ordem, disponivel").eq("disponivel", true).order("ordem"),
+    supabase.from("pdv_categorias").select("nome, ordem, disponivel, canal_garcom").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_comandas").select("id, numero, valor_buffet").eq("mesa", mesa).eq("status", "aberta").order("numero"),
     supabase.from("pdv_config").select("chave, valor").eq("chave", "qtd_mesas"),
   ]);
@@ -54,12 +54,18 @@ export default async function GarcomMesaPage({
     (m) => m !== mesa,
   );
 
-  const itens: ItemMenu[] = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? []).map((i) => ({
-    id: i.id,
-    nome: i.nome,
-    categoria: i.categoria || "Outros",
-    preco: Number(i.preco) || 0,
-  }));
+  // Categoria desligada pro canal Garçom esconde os produtos dela.
+  const catBloqueada = new Set(
+    (((catRows as { nome: string; canal_garcom?: boolean }[]) ?? [])).filter((c) => c.canal_garcom === false).map((c) => c.nome),
+  );
+  const itens: ItemMenu[] = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? [])
+    .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
+    .map((i) => ({
+      id: i.id,
+      nome: i.nome,
+      categoria: i.categoria || "Outros",
+      preco: Number(i.preco) || 0,
+    }));
 
   // Ordem das categorias: as do cardápio (com itens) + as que sobraram.
   const comItens = new Set(itens.map((i) => i.categoria));

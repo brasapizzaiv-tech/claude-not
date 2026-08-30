@@ -86,11 +86,14 @@ export async function enviarPedidoPublico(d: {
     const agora = new Date().getTime();
     const [{ data: its }, { data: cats }] = await Promise.all([
       admin.from("pdv_itens").select("id, nome, ativo, delivery, disponivel, horarios, categoria").in("id", idsPedidos),
-      admin.from("pdv_categorias").select("nome, horarios"),
+      admin.from("pdv_categorias").select("nome, horarios, canal_app"),
     ]);
-    const catH = new Map(((cats ?? []) as { nome: string; horarios: Horarios }[]).map((c) => [c.nome, c.horarios]));
+    const catRows = ((cats ?? []) as { nome: string; horarios: Horarios; canal_app: boolean }[]);
+    const catH = new Map(catRows.map((c) => [c.nome, c.horarios]));
+    const catBloqueada = new Set(catRows.filter((c) => c.canal_app === false).map((c) => c.nome));
     for (const it of (its ?? []) as { id: string; nome: string; ativo: boolean; delivery: boolean; disponivel: boolean; horarios: Horarios; categoria: string | null }[]) {
       const ok = it.ativo && it.delivery && it.disponivel
+        && !catBloqueada.has(it.categoria || "Outros")
         && disponivelAgora(it.horarios, agora)
         && disponivelAgora(catH.get(it.categoria || "Outros") ?? null, agora);
       if (!ok) return { ok: false as const, mensagem: `"${it.nome}" não está disponível agora — tire do carrinho e tente de novo.` };

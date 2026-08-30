@@ -40,7 +40,7 @@ export default async function GarcomComandaPage({
       .eq("comanda_id", id)
       .order("criado_em"),
     supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
-    supabase.from("pdv_categorias").select("nome").eq("disponivel", true).order("ordem"),
+    supabase.from("pdv_categorias").select("nome").eq("disponivel", true).eq("canal_garcom", true).order("ordem"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores").order("ordem"),
     supabase.from("pdv_pizza_sabores").select("id, nome").eq("ativo", true).order("nome"),
     supabase.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco"),

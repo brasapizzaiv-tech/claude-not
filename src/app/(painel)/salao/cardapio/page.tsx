@@ -10,7 +10,7 @@ export default async function CardapioPage() {
       .from("pdv_itens")
       .select("id, nome, categoria, preco, ativo, delivery, canal_garcom, canal_pdv, disponivel, horarios, foto_url, descricao")
       .order("nome"),
-    supabase.from("pdv_categorias").select("id, nome, ordem, disponivel, horarios").order("ordem"),
+    supabase.from("pdv_categorias").select("id, nome, ordem, disponivel, horarios, canal_app, canal_garcom, canal_pdv").order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem"),
     supabase.from("pdv_pizza_sabores").select("id, nome, ativo, foto_url, descricao").eq("ativo", true).order("ordem"),
@@ -35,7 +35,7 @@ export default async function CardapioPage() {
           }[]) ?? []
         }
         categorias={
-          (cats as { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios }[]) ?? []
+          (cats as { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios; canal_app: boolean; canal_garcom: boolean; canal_pdv: boolean }[]) ?? []
         }
         comAdicionais={comAdicionais}
         tamanhos={(tamanhos as { id: string; nome: string; max_sabores: number; fatias: number | null }[]) ?? []}

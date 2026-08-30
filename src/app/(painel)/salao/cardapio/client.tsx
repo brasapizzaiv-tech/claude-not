@@ -9,6 +9,7 @@ import {
   toggleItem,
   toggleDisponivelItem,
   salvarHorarios,
+  salvarCanaisCategoria,
   adicionarCategoria,
   toggleCategoria,
   moverCategoria,
@@ -27,7 +28,7 @@ type Item = {
   delivery: boolean; canal_garcom: boolean; canal_pdv: boolean; disponivel: boolean;
   horarios: Horarios; foto_url: string | null; descricao: string | null;
 };
-type Categoria = { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios };
+type Categoria = { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios; canal_app: boolean; canal_garcom: boolean; canal_pdv: boolean };
 type Tam = { id: string; nome: string; max_sabores: number; fatias: number | null };
 type Sabor = { id: string; nome: string; foto_url: string | null; descricao: string | null };
 
@@ -320,6 +321,8 @@ function CategoriaCard({
 }) {
   const resumo = resumoHorarios(cat.horarios);
   const foraAgora = resumo != null && !disponivelAgora(cat.horarios, new Date().getTime());
+  const [canaisAberto, setCanaisAberto] = useState(false);
+  const nCanais = [cat.canal_app, cat.canal_garcom, cat.canal_pdv].filter(Boolean).length;
   return (
     <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -340,6 +343,13 @@ function CategoriaCard({
         <span className="text-xs text-zinc-400">({itens.length})</span>
 
         <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setCanaisAberto((v) => !v)}
+            className={`rounded-md px-2.5 py-1 text-xs font-semibold ${nCanais === 3 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" : nCanais === 0 ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"}`}
+            title="Em quais canais essa categoria aparece"
+          >
+            Ativa em {nCanais} {nCanais === 1 ? "canal" : "canais"} ▾
+          </button>
           <button
             onClick={() => onHorarios(cat)}
             className={`rounded-md px-2.5 py-1 text-xs font-semibold ${resumo ? (foraAgora ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" : "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400") : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}`}
@@ -371,6 +381,20 @@ function CategoriaCard({
           </form>
         </div>
       </div>
+
+      {canaisAberto && (
+        <form
+          action={async (fd) => { await salvarCanaisCategoria(fd); setCanaisAberto(false); }}
+          className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900"
+        >
+          <input type="hidden" name="id" value={cat.id} />
+          <span className="text-xs font-semibold uppercase text-zinc-400">Onde essa categoria aparece:</span>
+          <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_app" defaultChecked={cat.canal_app} className="h-4 w-4" /> 📱 App</label>
+          <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_garcom" defaultChecked={cat.canal_garcom} className="h-4 w-4" /> 🧑‍🍳 Garçom</label>
+          <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_pdv" defaultChecked={cat.canal_pdv} className="h-4 w-4" /> 🧾 PDV</label>
+          <button className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">Salvar</button>
+        </form>
+      )}
 
       <ItensTabela itens={itens} onEditar={onEditar} comAdicionais={comAdicionais} />
 

@@ -143,6 +143,22 @@ export async function salvarHorarios(formData: FormData) {
   revalidatePath("/salao/cardapio");
 }
 
+// Canais onde a categoria aparece (App/Garçom/PDV).
+export async function salvarCanaisCategoria(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  if (!id) return;
+  await supabase
+    .from("pdv_categorias")
+    .update({
+      canal_app: formData.get("canal_app") === "on",
+      canal_garcom: formData.get("canal_garcom") === "on",
+      canal_pdv: formData.get("canal_pdv") === "on",
+    })
+    .eq("id", id);
+  revalidatePath("/salao/cardapio");
+}
+
 // Disponível/indisponível manual (ex.: esgotou) — vale em todos os canais.
 export async function toggleDisponivelItem(formData: FormData) {
   const supabase = await createClient();
