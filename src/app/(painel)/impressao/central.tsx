@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig, imprimirTeste,
 } from "./actions";
 
 export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean };
@@ -28,6 +28,7 @@ export function CentralImpressao({
   const [editNome, setEditNome] = useState("");
   const [copiado, setCopiado] = useState(false);
   const [verConfig, setVerConfig] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   function run(fn: () => Promise<unknown>) {
@@ -110,6 +111,13 @@ export function CentralImpressao({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="font-semibold text-zinc-900 dark:text-zinc-100">🖨️ {im.nome}{im.ativo ? "" : " (inativa)"}</div>
                   <div className="flex items-center gap-2">
+                    <button
+                      disabled={proc}
+                      onClick={() => { run(() => imprimirTeste(im.id)); setMsg(`Teste enviado para "${im.nome}". Deve sair na impressora.`); setTimeout(() => setMsg(null), 4000); }}
+                      className="rounded-lg border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    >
+                      🖨️ testar
+                    </button>
                     <button onClick={() => { setEditId(im.id); setEditNome(im.nome); }} className="text-sm text-orange-600 hover:underline">renomear</button>
                     <button onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-zinc-400 hover:text-zinc-600">{im.ativo ? "desativar" : "reativar"}</button>
                   </div>
@@ -133,6 +141,12 @@ export function CentralImpressao({
           + Adicionar impressora
         </button>
       </div>
+
+      {msg && (
+        <div className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-md rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg">
+          {msg}
+        </div>
+      )}
     </div>
   );
 }

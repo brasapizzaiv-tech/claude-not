@@ -63,6 +63,14 @@ export async function definirComandaConfig(id: string, config: { largura: number
   return { ok: true as const };
 }
 
+// Enfileira uma página de teste para a impressora (o agente imprime).
+export async function imprimirTeste(impressoraId: string) {
+  const supabase = await createClient();
+  await supabase.from("impressao_fila").insert({ tipo: "teste", ref_id: impressoraId, impressora_id: impressoraId });
+  revalidatePath("/impressao");
+  return { ok: true as const };
+}
+
 export async function definirImpressoraAtiva(id: string, ativo: boolean) {
   const supabase = await createClient();
   await supabase.from("impressoras").update({ ativo }).eq("id", id);

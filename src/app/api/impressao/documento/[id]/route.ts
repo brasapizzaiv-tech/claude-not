@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { agenteAutorizado } from "@/lib/impressao-agente";
 import { gerarEtiquetaPdf } from "@/lib/etiqueta-pdf";
 import { gerarComandaPdf } from "@/lib/comanda-pdf";
+import { gerarTestePdf } from "@/lib/teste-pdf";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       },
       baseUrl,
     );
+  } else if (job.tipo === "teste") {
+    const { data: imp } = await admin.from("impressoras").select("nome, comanda_config").eq("id", job.ref_id).maybeSingle();
+    const largura = ((imp?.comanda_config as { largura?: number } | null)?.largura) ?? 80;
+    pdf = await gerarTestePdf((imp?.nome as string) ?? "Impressora", largura);
   } else {
     // comanda: itens de um lançamento (ref_id = lancamento_id), filtrados pela
     // via (categorias) da impressora.
