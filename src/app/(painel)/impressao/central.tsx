@@ -3,10 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas,
 } from "./actions";
 
-export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null };
+export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean };
 
 export function CentralImpressao({
   impressoras, token, hostname, printersPc, online, vistoEm,
@@ -112,6 +112,10 @@ export function CentralImpressao({
                   </div>
                 </div>
                 <WinField im={im} printersPc={printersPc} proc={proc} run={run} />
+                <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  <input type="checkbox" checked={im.recebe_comandas} disabled={proc} onChange={(e) => run(() => definirRecebeComandas(im.id, e.target.checked))} />
+                  🍳 Recebe comandas (cozinha)
+                </label>
               </>
             )}
           </div>

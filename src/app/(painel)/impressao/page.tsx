@@ -8,7 +8,7 @@ export default async function CentralImpressaoPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("impressoras")
-    .select("id, nome, ativo, impressora_windows")
+    .select("id, nome, ativo, impressora_windows, recebe_comandas")
     .order("criado_em");
 
   const admin = createAdminClient();

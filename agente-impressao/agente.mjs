@@ -69,7 +69,7 @@ async function ciclo() {
         continue;
       }
       try {
-        const pr = await fetch(`${baseUrl}/api/impressao/etiqueta/${job.id}`, { headers });
+        const pr = await fetch(`${baseUrl}${job.url}`, { headers });
         if (!pr.ok) { log(`Erro ao gerar o PDF (${pr.status}).`); continue; }
         const buf = Buffer.from(await pr.arrayBuffer());
         const file = path.join(tmp, `${job.id}.pdf`);
@@ -80,7 +80,7 @@ async function ciclo() {
           headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify({ id: job.id }),
         });
-        log(`Etiqueta impressa em "${job.printer}".`);
+        log(`Impresso em "${job.printer}".`);
       } catch (e) {
         log(`Falha ao imprimir: ${e.message}`);
       }

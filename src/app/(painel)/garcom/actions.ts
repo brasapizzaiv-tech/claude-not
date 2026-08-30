@@ -48,6 +48,18 @@ export async function lancarPedidoGarcom(
   }));
   await supabase.from("pdv_comanda_itens").insert(rows);
 
+  // Envia a comanda pra impressão nas impressoras de cozinha (recebe_comandas).
+  const { data: cozinhas } = await supabase
+    .from("impressoras")
+    .select("id")
+    .eq("ativo", true)
+    .eq("recebe_comandas", true);
+  if (cozinhas && cozinhas.length > 0) {
+    await supabase.from("impressao_fila").insert(
+      cozinhas.map((im) => ({ tipo: "comanda", ref_id: lancamentoId, impressora_id: im.id })),
+    );
+  }
+
   revalidatePath("/garcom");
   revalidatePath("/salao");
   return { ok: true as const, comandaId: cid, numero };

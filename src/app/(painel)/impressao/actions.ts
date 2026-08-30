@@ -40,6 +40,13 @@ export async function definirImpressoraWindows(id: string, nome: string) {
   return { ok: true as const };
 }
 
+export async function definirRecebeComandas(id: string, valor: boolean) {
+  const supabase = await createClient();
+  await supabase.from("impressoras").update({ recebe_comandas: valor }).eq("id", id);
+  revalidatePath("/impressao");
+  return { ok: true as const };
+}
+
 export async function definirImpressoraAtiva(id: string, ativo: boolean) {
   const supabase = await createClient();
   await supabase.from("impressoras").update({ ativo }).eq("id", id);

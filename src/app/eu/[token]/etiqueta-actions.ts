@@ -42,12 +42,12 @@ export async function criarEtiquetaColab(token: string, dados: {
       quantidade: dados.quantidade ? Number(dados.quantidade.replace(",", ".")) || null : null,
       unidade: dados.unidade || null,
       impressora_id: impressoraId,
-      impressao_solicitada_em: new Date().toISOString(),
     })
     .select("id, numero")
     .single();
 
   if (error || !data) return { ok: false as const, mensagem: error?.message || "Não foi possível gerar." };
+  await admin.from("impressao_fila").insert({ tipo: "etiqueta", ref_id: data.id, impressora_id: impressoraId });
   return { ok: true as const, id: data.id as string, numero: data.numero as number };
 }
 
