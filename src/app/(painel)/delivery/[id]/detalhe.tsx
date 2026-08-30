@@ -28,6 +28,7 @@ export type PedidoDetalhe = {
   };
   itens: { descricao: string; qtd: number; preco: number }[];
   historicoCliente: number;
+  historico: { numero: number | null; criado_em: string; status: string; tipo: string }[];
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -131,6 +132,20 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
             <div className="rounded-2xl border border-amber-300 bg-amber-500/5 p-4 dark:border-amber-800">
               <h2 className="mb-1 font-bold text-amber-600">📝 Observação</h2>
               <p className="text-sm">{p.observacao}</p>
+            </div>
+          )}
+
+          {p.historico.length > 0 && (
+            <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+              <h2 className="mb-2 font-bold">🕘 Últimos pedidos do cliente</h2>
+              <div className="space-y-1">
+                {p.historico.map((h, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span>#{h.numero ?? "—"} · {new Date(h.criado_em).toLocaleDateString("pt-BR")}</span>
+                    <span className="text-zinc-500">{h.tipo === "retirada" ? "Retirada" : "Entrega"} · {h.status}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { criarPedidoDelivery, buscarClientePorTelefone, type LinhaPedido } from "../actions";
+import { criarPedidoDelivery, buscarClientePorTelefone, calcularEntrega, type LinhaPedido } from "../actions";
 
 type Item = { id: string; nome: string; categoria: string; preco: number };
 type Tam = { id: string; nome: string; max_sabores: number };
@@ -45,6 +45,9 @@ export function NovoPedido({
   const [tipo, setTipo] = useState<"entrega" | "retirada">("entrega");
   const [end, setEnd] = useState({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
   const [taxa, setTaxa] = useState<string>(String(cfg.taxaBase || ""));
+  const [geo, setGeo] = useState<{ km: number; lat: number; lng: number; aprox: boolean; fora: boolean } | null>(null);
+  const [calcMsg, setCalcMsg] = useState<string | null>(null);
+  const [calculando, setCalculando] = useState(false);
   const [desconto, setDesconto] = useState("");
   const [descMotivo, setDescMotivo] = useState("");
   const [forma, setForma] = useState("Dinheiro");
@@ -92,6 +95,21 @@ export function NovoPedido({
     setSugestoes([]);
   }
 
+  async function calcularTaxa() {
+    if (!end.logradouro.trim()) { setCalcMsg("Preencha a rua primeiro."); return; }
+    setCalculando(true); setCalcMsg(null);
+    const r = await calcularEntrega({ logradouro: end.logradouro, numero: end.numero, bairro: end.bairro, cidade: end.cidade, cep: end.cep });
+    setCalculando(false);
+    if (r.ok) {
+      setTaxa(String(r.taxa));
+      setGeo({ km: r.distanciaKm, lat: r.lat, lng: r.lng, aprox: r.aproximado, fora: r.foraDeArea });
+      setCalcMsg(`${r.distanciaKm} km${r.aproximado ? " (aprox.)" : ""}${r.foraDeArea ? " · ⚠️ fora da área!" : ""}`);
+    } else {
+      setGeo(null);
+      setCalcMsg(r.mensagem ?? "Não consegui calcular.");
+    }
+  }
+
   function finalizar() {
     if (cart.length === 0) { setErro("Adicione itens ao pedido."); return; }
     if (!nome.trim()) { setErro("Informe o nome do cliente."); return; }
@@ -100,6 +118,7 @@ export function NovoPedido({
       const r = await criarPedidoDelivery({
         clienteId, nome, telefone, tipo,
         endereco: tipo === "entrega" ? end : undefined,
+        distanciaKm: geo?.km ?? null, lat: geo?.lat ?? null, lng: geo?.lng ?? null,
         taxaEntrega: taxaN, desconto: descN, descontoMotivo: descMotivo,
         formaPagamento: forma, trocoPara: trocoN || null,
         origem: origem as "app" | "whatsapp" | "instagram" | "telefone" | "balcao",
@@ -183,6 +202,8 @@ export function NovoPedido({
               </div>
               <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700" />
               <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência" className="w-full rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700" />
+              <button type="button" onClick={calcularTaxa} disabled={calculando} className="w-full rounded-lg border border-emerald-500 py-1.5 text-sm font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "Calculando..." : "📍 Calcular taxa pela distância"}</button>
+              {calcMsg && <p className={`text-xs ${geo?.fora ? "text-rose-600" : "text-zinc-500"}`}>{calcMsg}</p>}
             </div>
           )}
 
@@ -231,7 +252,10 @@ export function NovoPedido({
           <div className="grid grid-cols-2 gap-2">
             {tipo === "entrega" && (
               <div>
-                <label className="text-xs font-semibold text-zinc-500">Taxa entrega</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zinc-500">Taxa entrega</label>
+                  <button type="button" onClick={calcularTaxa} disabled={calculando} className="text-xs font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "..." : "📍 calcular"}</button>
+                </div>
                 <input value={taxa} onChange={(e) => setTaxa(e.target.value)} inputMode="decimal" placeholder="0,00" className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
               </div>
             )}

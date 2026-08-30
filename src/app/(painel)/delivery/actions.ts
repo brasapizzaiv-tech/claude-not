@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { geocodificar, distanciaKm, temChaveMapa } from "@/lib/geo";
 
 // ---------- Tipos do carrinho (o cliente manda ids; o servidor resolve preço) ----------
 export type LinhaPedido =
@@ -19,6 +20,8 @@ export type DadosPedidoDelivery = {
     cidade?: string; referencia?: string; cep?: string;
   };
   distanciaKm?: number | null;
+  lat?: number | null;
+  lng?: number | null;
   taxaEntrega: number;
   desconto: number;
   descontoMotivo?: string;
@@ -145,6 +148,11 @@ export async function criarPedidoDelivery(d: DadosPedidoDelivery) {
   }));
   await supabase.from("pdv_comanda_itens").insert(rows);
 
+  // Previsão = agora + tempo de preparo configurado.
+  const { data: cfg } = await supabase.from("delivery_config").select("tempo_preparo_min").eq("id", 1).maybeSingle();
+  const preparoMin = Number(cfg?.tempo_preparo_min ?? 40) || 40;
+  const previsaoEm = new Date(Date.now() + preparoMin * 60000).toISOString();
+
   // Registro do delivery.
   const { data: ped } = await supabase
     .from("delivery_pedidos")
@@ -162,6 +170,9 @@ export async function criarPedidoDelivery(d: DadosPedidoDelivery) {
       referencia: d.endereco?.referencia ?? null,
       cep: d.endereco?.cep ?? null,
       distancia_km: d.distanciaKm ?? null,
+      lat: d.lat ?? null,
+      lng: d.lng ?? null,
+      previsao_em: previsaoEm,
       taxa_entrega: d.tipo === "retirada" ? 0 : r2(Number(d.taxaEntrega) || 0),
       desconto: r2(Number(d.desconto) || 0),
       desconto_motivo: (d.descontoMotivo || "").trim() || null,
@@ -274,6 +285,64 @@ export async function alternarEntregador(formData: FormData) {
   const ativo = formData.get("ativo") === "1";
   await supabase.from("entregadores").update({ ativo: !ativo }).eq("id", id);
   revalidatePath("/delivery/entregadores");
+}
+
+// Calcula a taxa de entrega pela distância (endereço → restaurante).
+export async function calcularEntrega(endereco: {
+  logradouro?: string; numero?: string; bairro?: string; cidade?: string; cep?: string;
+}) {
+  const supabase = await createClient();
+  const { data: cfg } = await supabase
+    .from("delivery_config")
+    .select("origem_lat, origem_lng, taxa_base, preco_km, raio_max_km, tempo_preparo_min")
+    .eq("id", 1)
+    .maybeSingle();
+  if (cfg?.origem_lat == null || cfg?.origem_lng == null) {
+    return { ok: false as const, mensagem: "Configure o endereço do restaurante em Delivery → Config." };
+  }
+  const partes = [endereco.logradouro, endereco.numero, endereco.bairro, endereco.cidade || "Ivoti", "RS", endereco.cep]
+    .map((x) => (x || "").trim()).filter(Boolean);
+  const destino = await geocodificar(partes.join(", "));
+  if (!destino) return { ok: false as const, mensagem: "Não encontrei esse endereço no mapa. Confira a rua/número." };
+
+  const km = await distanciaKm({ lat: Number(cfg.origem_lat), lng: Number(cfg.origem_lng) }, destino);
+  if (km == null) return { ok: false as const, mensagem: "Não consegui medir a distância." };
+
+  const base = Number(cfg.taxa_base ?? 0);
+  const porKm = Number(cfg.preco_km ?? 0);
+  const taxa = Math.round((base + porKm * km) * 100) / 100;
+  const raio = Number(cfg.raio_max_km ?? 0);
+  const foraDeArea = raio > 0 && km > raio;
+  return {
+    ok: true as const,
+    distanciaKm: km, taxa, foraDeArea,
+    lat: destino.lat, lng: destino.lng,
+    aproximado: !temChaveMapa(),
+  };
+}
+
+// Salva a config do delivery e geocodifica o endereço do restaurante.
+export async function salvarConfigDelivery(formData: FormData) {
+  const supabase = await createClient();
+  const num = (k: string) => { const v = Number(String(formData.get(k) ?? "").replace(",", ".")); return Number.isFinite(v) ? v : 0; };
+  const origemEndereco = String(formData.get("origem_endereco") ?? "").trim();
+
+  const patch: Record<string, unknown> = {
+    id: 1,
+    origem_endereco: origemEndereco || null,
+    taxa_base: num("taxa_base"),
+    preco_km: num("preco_km"),
+    raio_max_km: num("raio_max_km"),
+    tempo_preparo_min: Math.round(num("tempo_preparo_min")) || 40,
+    aberto: formData.get("aberto") === "on",
+    atualizado_em: new Date().toISOString(),
+  };
+  if (origemEndereco) {
+    const c = await geocodificar(origemEndereco);
+    if (c) { patch.origem_lat = c.lat; patch.origem_lng = c.lng; }
+  }
+  await supabase.from("delivery_config").upsert(patch, { onConflict: "id" });
+  revalidatePath("/delivery/config");
 }
 
 // Busca cliente por telefone (autocompleta o Novo pedido).

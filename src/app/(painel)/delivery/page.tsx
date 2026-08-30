@@ -53,7 +53,11 @@ export default async function DeliveryPage() {
       <div className="mb-4 flex items-center gap-3">
         <h1 className="text-xl font-bold">🛵 Delivery</h1>
         <Link href="/delivery/novo" className="rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white">+ Novo pedido</Link>
-        <Link href="/delivery/entregadores" className="ml-auto text-sm text-zinc-500 hover:underline">Entregadores</Link>
+        <div className="ml-auto flex gap-3 text-sm text-zinc-500">
+          <Link href="/delivery/relatorios" className="hover:underline">📊 Relatórios</Link>
+          <Link href="/delivery/entregadores" className="hover:underline">🛵 Entregadores</Link>
+          <Link href="/delivery/config" className="hover:underline">⚙️ Config</Link>
+        </div>
       </div>
       <Board pedidos={pedidos} entregadores={(entregadores ?? []) as EntregadorOpt[]} />
     </div>

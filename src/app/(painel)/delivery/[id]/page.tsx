@@ -18,13 +18,19 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
 
   const p = ped as Record<string, unknown> & { comanda_id: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
 
-  const [{ data: itensRaw }, { data: entregadores }, { count: histCount }] = await Promise.all([
+  const tel = (p.telefone as string) ?? "___";
+  const [{ data: itensRaw }, { data: entregadores }, { data: histRows, count: histCount }] = await Promise.all([
     p.comanda_id
       ? supabase.from("pdv_comanda_itens").select("descricao, qtd, preco_unit").eq("comanda_id", p.comanda_id).order("criado_em")
       : Promise.resolve({ data: [] as { descricao: string; qtd: number; preco_unit: number | null }[] }),
     supabase.from("entregadores").select("id, nome").eq("ativo", true).order("nome"),
-    supabase.from("delivery_pedidos").select("id", { count: "exact", head: true }).eq("telefone", (p.telefone as string) ?? "___").neq("id", id),
+    supabase.from("delivery_pedidos").select("id, criado_em, status, tipo, pdv_comandas(numero)", { count: "exact" }).eq("telefone", tel).neq("id", id).order("criado_em", { ascending: false }).limit(5),
   ]);
+
+  const historico = ((histRows as unknown as { criado_em: string; status: string; tipo: string; pdv_comandas: { numero: number } | { numero: number }[] | null }[]) ?? []).map((h) => {
+    const hc = Array.isArray(h.pdv_comandas) ? h.pdv_comandas[0] : h.pdv_comandas;
+    return { numero: hc?.numero ?? null, criado_em: h.criado_em, status: h.status, tipo: h.tipo };
+  });
 
   const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
   const itens = ((itensRaw as { descricao: string; qtd: number; preco_unit: number | null }[]) ?? []).map((i) => ({
@@ -61,6 +67,7 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
     },
     itens,
     historicoCliente: histCount ?? 0,
+    historico,
   };
 
   return (
