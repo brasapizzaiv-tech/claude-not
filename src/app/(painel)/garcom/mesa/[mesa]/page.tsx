@@ -14,7 +14,7 @@ export default async function GarcomMesaPage({
   const supabase = await createClient();
 
   const [{ data: itensRows }, { data: catRows }, { data: comRows }, { data: cfgRows }] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, disponivel").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_comandas").select("id, numero, valor_buffet").eq("mesa", mesa).eq("status", "aberta").order("numero"),
     supabase.from("pdv_config").select("chave, valor").eq("chave", "qtd_mesas"),

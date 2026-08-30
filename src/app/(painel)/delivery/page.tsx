@@ -54,7 +54,7 @@ export default async function DeliveryPage() {
         <h1 className="text-xl font-bold">🛵 Delivery</h1>
         <Link href="/delivery/novo" className="rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white">+ Novo pedido</Link>
         <div className="ml-auto flex gap-3 text-sm text-zinc-500">
-          <Link href="/delivery/cardapio" className="hover:underline">🖼️ Cardápio do app</Link>
+          <Link href="/salao/cardapio" className="hover:underline">📖 Cardápio</Link>
           <Link href="/delivery/relatorios" className="hover:underline">📊 Relatórios</Link>
           <Link href="/delivery/entregadores" className="hover:underline">🛵 Entregadores</Link>
           <Link href="/delivery/config" className="hover:underline">⚙️ Config</Link>

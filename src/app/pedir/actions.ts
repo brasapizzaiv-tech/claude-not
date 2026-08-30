@@ -5,6 +5,7 @@
 // nada do que vem do navegador é confiado.
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
+import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 
 export type { LinhaPedido } from "@/lib/delivery-core";
 
@@ -78,6 +79,23 @@ export async function enviarPedidoPublico(d: {
   // Delivery precisa estar aberto.
   const { data: cfg } = await admin.from("delivery_config").select("aberto").eq("id", 1).maybeSingle();
   if (cfg && cfg.aberto === false) return { ok: false as const, mensagem: "O delivery está fechado agora. Tente mais tarde!" };
+
+  // Confere se todos os itens ainda estão à venda no app (canal, esgotado, horário).
+  const idsPedidos = [...new Set(d.itens.flatMap((i) => ("itemId" in i && i.itemId ? [i.itemId] : [])))];
+  if (idsPedidos.length) {
+    const agora = new Date().getTime();
+    const [{ data: its }, { data: cats }] = await Promise.all([
+      admin.from("pdv_itens").select("id, nome, ativo, delivery, disponivel, horarios, categoria").in("id", idsPedidos),
+      admin.from("pdv_categorias").select("nome, horarios"),
+    ]);
+    const catH = new Map(((cats ?? []) as { nome: string; horarios: Horarios }[]).map((c) => [c.nome, c.horarios]));
+    for (const it of (its ?? []) as { id: string; nome: string; ativo: boolean; delivery: boolean; disponivel: boolean; horarios: Horarios; categoria: string | null }[]) {
+      const ok = it.ativo && it.delivery && it.disponivel
+        && disponivelAgora(it.horarios, agora)
+        && disponivelAgora(catH.get(it.categoria || "Outros") ?? null, agora);
+      if (!ok) return { ok: false as const, mensagem: `"${it.nome}" não está disponível agora — tire do carrinho e tente de novo.` };
+    }
+  }
 
   // Entrega: recalcula a taxa AQUI (autoritativo) e valida o endereço.
   let taxa = 0;

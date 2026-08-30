@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { PedirClient } from "./pedir-client";
 
 export const metadata: Metadata = {
@@ -17,8 +18,8 @@ export default async function PedirPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg }, { data: vendidos },
   ] = await Promise.all([
-    admin.from("pdv_itens").select("id, nome, categoria, preco, foto_url, descricao").eq("ativo", true).eq("delivery", true).order("nome"),
-    admin.from("pdv_categorias").select("nome, ordem").eq("disponivel", true).order("ordem"),
+    admin.from("pdv_itens").select("id, nome, categoria, preco, foto_url, descricao, horarios").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
+    admin.from("pdv_categorias").select("nome, ordem, horarios").eq("disponivel", true).order("ordem"),
     admin.from("pdv_item_grupos").select("item_id"),
     admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem"),
     admin.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao").eq("ativo", true).order("ordem"),
@@ -31,10 +32,19 @@ export default async function PedirPage() {
     admin.from("pdv_comanda_itens").select("item_id").not("item_id", "is", null).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1000),
   ]);
 
-  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; foto_url: string | null; descricao: string | null }[]) ?? []).map((i) => ({
-    id: i.id, nome: i.nome, categoria: i.categoria || "Outros", preco: Number(i.preco) || 0,
-    foto_url: i.foto_url, descricao: i.descricao,
-  }));
+  // Horários de disponibilidade (categoria e item) — só o que está no horário
+  // aparece pro cliente agora.
+  const agora = new Date().getTime();
+  const catHorarios = new Map(
+    (((catRows as { nome: string; horarios: Horarios }[]) ?? [])).map((c) => [c.nome, c.horarios]),
+  );
+  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; foto_url: string | null; descricao: string | null; horarios: Horarios }[]) ?? [])
+    .filter((i) => disponivelAgora(i.horarios, agora))
+    .filter((i) => disponivelAgora(catHorarios.get(i.categoria || "Outros") ?? null, agora))
+    .map((i) => ({
+      id: i.id, nome: i.nome, categoria: i.categoria || "Outros", preco: Number(i.preco) || 0,
+      foto_url: i.foto_url, descricao: i.descricao,
+    }));
 
   // "Os mais vendidos": itens do cardápio mais lançados nos últimos 60 dias.
   const cont = new Map<string, number>();

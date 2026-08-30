@@ -11,7 +11,7 @@ export default async function NovoPedidoPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg },
   ] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("delivery", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, ordem").order("ordem"),

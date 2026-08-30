@@ -103,9 +103,52 @@ export async function salvarItem(formData: FormData) {
   const categoria = (formData.get("categoria") as string)?.trim() || null;
   const preco = valorNum(formData.get("preco"));
   if (categoria) await garantirCategoria(supabase, categoria);
+
+  // O editor completo manda também descrição, canais e disponibilidade.
+  const extras: Record<string, unknown> = {};
+  if (formData.get("completo") === "1") {
+    extras.descricao = String(formData.get("descricao") ?? "").trim().slice(0, 400) || null;
+    extras.delivery = formData.get("canal_app") === "on";
+    extras.canal_garcom = formData.get("canal_garcom") === "on";
+    extras.canal_pdv = formData.get("canal_pdv") === "on";
+    extras.disponivel = formData.get("disponivel") === "on";
+  }
+
   if (id)
-    await supabase.from("pdv_itens").update({ nome, categoria, preco }).eq("id", id);
-  else await supabase.from("pdv_itens").insert({ nome, categoria, preco });
+    await supabase.from("pdv_itens").update({ nome, categoria, preco, ...extras }).eq("id", id);
+  else await supabase.from("pdv_itens").insert({ nome, categoria, preco, ...extras });
+  revalidatePath("/salao/cardapio");
+}
+
+// Horários de disponibilidade (app do cliente) por categoria ou item.
+export async function salvarHorarios(formData: FormData) {
+  const supabase = await createClient();
+  const tipo = formData.get("tipo") as string; // 'categoria' | 'item'
+  const id = formData.get("id") as string;
+  if (!["categoria", "item"].includes(tipo) || !id) return;
+  const raw = String(formData.get("horarios") ?? "").trim();
+  let horarios: unknown = null;
+  if (raw) {
+    try {
+      const p = JSON.parse(raw) as { dias?: number[]; turnos?: { ini: string; fim: string }[] };
+      const dias = (Array.isArray(p.dias) ? p.dias : []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+      const turnos = (Array.isArray(p.turnos) ? p.turnos : [])
+        .filter((t) => /^\d{2}:\d{2}$/.test(t?.ini ?? "") && /^\d{2}:\d{2}$/.test(t?.fim ?? ""))
+        .slice(0, 4);
+      horarios = dias.length === 0 && turnos.length === 0 ? null : { dias, turnos };
+    } catch { horarios = null; }
+  }
+  const tabela = tipo === "categoria" ? "pdv_categorias" : "pdv_itens";
+  await supabase.from(tabela).update({ horarios }).eq("id", id);
+  revalidatePath("/salao/cardapio");
+}
+
+// Disponível/indisponível manual (ex.: esgotou) — vale em todos os canais.
+export async function toggleDisponivelItem(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const disponivel = formData.get("disponivel") === "1";
+  await supabase.from("pdv_itens").update({ disponivel }).eq("id", id);
   revalidatePath("/salao/cardapio");
 }
 

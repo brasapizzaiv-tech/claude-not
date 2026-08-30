@@ -157,7 +157,7 @@ export async function salvarFotoCardapio(formData: FormData) {
   const url = `${pub.publicUrl}?v=${new Date().getTime()}`; // cache-bust ao trocar a foto
   const tabela = tipo === "item" ? "pdv_itens" : "pdv_pizza_sabores";
   await supabase.from(tabela).update({ foto_url: url }).eq("id", id);
-  revalidatePath("/delivery/cardapio");
+  revalidatePath("/salao/cardapio");
   return { ok: true as const, url };
 }
 
@@ -168,7 +168,7 @@ export async function removerFotoCardapio(formData: FormData) {
   if (!["item", "sabor"].includes(tipo) || !id) return;
   const tabela = tipo === "item" ? "pdv_itens" : "pdv_pizza_sabores";
   await supabase.from(tabela).update({ foto_url: null }).eq("id", id);
-  revalidatePath("/delivery/cardapio");
+  revalidatePath("/salao/cardapio");
 }
 
 // Salva descrição (item/sabor) e a visibilidade do item no app.
@@ -184,7 +184,7 @@ export async function salvarDetalheCardapio(formData: FormData) {
   } else {
     await supabase.from("pdv_pizza_sabores").update({ descricao }).eq("id", id);
   }
-  revalidatePath("/delivery/cardapio");
+  revalidatePath("/salao/cardapio");
 }
 
 export async function salvarFatias(formData: FormData) {
@@ -193,7 +193,7 @@ export async function salvarFatias(formData: FormData) {
   const fatias = Math.round(Number(formData.get("fatias"))) || null;
   if (!id) return;
   await supabase.from("pdv_pizza_tamanhos").update({ fatias }).eq("id", id);
-  revalidatePath("/delivery/cardapio");
+  revalidatePath("/salao/cardapio");
 }
 
 // Busca cliente por telefone (autocompleta o Novo pedido).
