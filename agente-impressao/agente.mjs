@@ -4,6 +4,7 @@
 import ptp from "pdf-to-printer";
 import { writeFile, mkdir } from "node:fs/promises";
 import { readFileSync, appendFileSync, writeFileSync } from "node:fs";
+import { execFile } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,6 +24,34 @@ function log(m) {
   const linha = `[${t}] ${m}`;
   console.log(linha);
   try { appendFileSync(logFile, linha + "\n"); } catch { /* sem log em arquivo */ }
+}
+
+// Lista as impressoras do Windows (Get-Printer funciona no Windows novo;
+// o getPrinters da lib usa wmic, que foi removido no Win11 recente).
+function listarImpressoras() {
+  return new Promise((res) => {
+    execFile(
+      "powershell",
+      ["-NoProfile", "-Command", "Get-Printer | Select-Object -ExpandProperty Name"],
+      { windowsHide: true, timeout: 10000 },
+      (err, stdout) => {
+        if (err || !stdout) return res([]);
+        res(stdout.split(/\r?\n/).map((s) => s.trim()).filter(Boolean));
+      },
+    );
+  });
+}
+
+// Avisa o sistema que está online e manda a lista de impressoras deste PC.
+async function heartbeat() {
+  try {
+    const printers = await listarImpressoras();
+    await fetch(`${baseUrl}/api/impressao/heartbeat`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ hostname: os.hostname(), printers }),
+    });
+  } catch { /* silencioso */ }
 }
 
 let rodando = false;
@@ -70,3 +99,5 @@ if (!token) log("ATENÇÃO: token vazio no config.json.");
 await mkdir(tmp, { recursive: true });
 setInterval(ciclo, intervalo);
 ciclo();
+heartbeat();
+setInterval(heartbeat, 15000);

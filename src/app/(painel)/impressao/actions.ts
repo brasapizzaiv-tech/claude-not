@@ -14,6 +14,16 @@ export async function criarImpressora(nome: string) {
   return { ok: true as const };
 }
 
+// Cadastra rápido uma impressora detectada no PC (nome = nome do Windows).
+export async function criarImpressoraDetectada(windowsName: string) {
+  const supabase = await createClient();
+  const n = windowsName?.trim();
+  if (!n) return { ok: false as const };
+  await supabase.from("impressoras").insert({ nome: n, impressora_windows: n });
+  revalidatePath("/impressao");
+  return { ok: true as const };
+}
+
 export async function renomearImpressora(id: string, nome: string) {
   const supabase = await createClient();
   const n = nome?.trim();

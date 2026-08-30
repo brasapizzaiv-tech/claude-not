@@ -12,7 +12,23 @@ export default async function CentralImpressaoPage() {
     .order("criado_em");
 
   const admin = createAdminClient();
-  const { data: cfg } = await admin.from("impressao_config").select("token").eq("id", 1).maybeSingle();
+  const { data: cfg } = await admin
+    .from("impressao_config")
+    .select("token, hostname, printers, visto_em")
+    .eq("id", 1)
+    .maybeSingle();
 
-  return <CentralImpressao impressoras={(data as Impressora[]) ?? []} token={(cfg?.token as string) ?? ""} />;
+  const vistoEm = (cfg?.visto_em as string) ?? null;
+  const online = vistoEm ? new Date().getTime() - new Date(vistoEm).getTime() < 40000 : false;
+
+  return (
+    <CentralImpressao
+      impressoras={(data as Impressora[]) ?? []}
+      token={(cfg?.token as string) ?? ""}
+      hostname={(cfg?.hostname as string) ?? null}
+      printersPc={(cfg?.printers as string[]) ?? []}
+      online={online}
+      vistoEm={vistoEm}
+    />
+  );
 }

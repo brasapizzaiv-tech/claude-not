@@ -3,59 +3,97 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows,
 } from "./actions";
 
 export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null };
 
-export function CentralImpressao({ impressoras, token }: { impressoras: Impressora[]; token: string }) {
+export function CentralImpressao({
+  impressoras, token, hostname, printersPc, online, vistoEm,
+}: {
+  impressoras: Impressora[];
+  token: string;
+  hostname: string | null;
+  printersPc: string[];
+  online: boolean;
+  vistoEm: string | null;
+}) {
   const router = useRouter();
   const [proc, start] = useTransition();
   const [novo, setNovo] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editNome, setEditNome] = useState("");
   const [copiado, setCopiado] = useState(false);
+  const [verConfig, setVerConfig] = useState(false);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-
   function run(fn: () => Promise<unknown>) {
     start(async () => { await fn(); router.refresh(); });
   }
+
+  const jaCadastradas = new Set(impressoras.map((i) => (i.impressora_windows || "").toLowerCase()));
+  const detectadasNovas = printersPc.filter((p) => !jaCadastradas.has(p.toLowerCase()));
+  const vistoTxt = vistoEm ? new Date(vistoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : null;
 
   return (
     <div className="mx-auto max-w-3xl p-6">
       <h1 className="mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">🖨️ Central de Impressões</h1>
       <p className="mb-5 text-sm text-zinc-500">
-        Aqui ficam <b>todas as impressoras</b> do sistema (etiquetas hoje; comandas e cupons no futuro). As impressões
-        saem por um <b>PC central</b> com o <b>Agente</b> instalado.
+        Aqui ficam <b>todas as impressoras</b> (etiquetas hoje; comandas e cupons no futuro). As impressões saem por um
+        <b> PC central</b> com o <b>Agente</b> instalado.
       </p>
 
-      {/* Agente / PC central */}
-      <div className="mb-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="font-bold text-zinc-900 dark:text-zinc-50">🤖 Agente de impressão (PC central)</h2>
-        <p className="mt-1 text-sm text-zinc-500">Instale o agente no computador responsável pelas impressões. Use estes dados no assistente:</p>
-        <div className="mt-3 space-y-2 text-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="w-24 shrink-0 text-zinc-400">Endereço:</span>
-            <code className="rounded bg-zinc-100 px-2 py-1 dark:bg-zinc-800">{baseUrl}</code>
+      {/* Status do agente / PC responsável */}
+      <div className={`mb-4 rounded-2xl border p-4 ${online ? "border-emerald-500/40 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${online ? "bg-emerald-500" : "bg-amber-500"}`} />
+            <span className="font-bold text-zinc-900 dark:text-zinc-50">
+              {online ? "Agente conectado" : "Agente não conectado"}
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="w-24 shrink-0 text-zinc-400">Token:</span>
-            <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 dark:bg-zinc-800">{token}</code>
-            <button
-              onClick={() => { navigator.clipboard?.writeText(token); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }}
-              className="rounded border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700"
-            >
-              {copiado ? "Copiado!" : "Copiar"}
-            </button>
-          </div>
+          <span className="text-sm text-zinc-500">
+            {hostname ? `PC: ${hostname}` : "Nenhum PC vinculado ainda"}
+          </span>
         </div>
-        <p className="mt-3 text-xs text-zinc-400">O token é a senha do agente — não compartilhe.</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          {online
+            ? `Recebendo as impressões normalmente.${vistoTxt ? ` Último sinal: ${vistoTxt}.` : ""}`
+            : "Instale o Agente no PC responsável (ou verifique se ele está aberto). Enquanto isso, nada será impresso."}
+        </p>
+        <button onClick={() => setVerConfig((v) => !v)} className="mt-2 text-xs text-blue-500 underline">
+          {verConfig ? "esconder" : "ver"} dados do agente (endereço/token)
+        </button>
+        {verConfig && (
+          <div className="mt-2 space-y-2 rounded-lg bg-zinc-100 p-3 text-sm dark:bg-zinc-800">
+            <div className="flex flex-wrap items-center gap-2"><span className="w-20 shrink-0 text-zinc-400">Endereço:</span><code className="rounded bg-white px-2 py-0.5 dark:bg-zinc-900">{baseUrl}</code></div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="w-20 shrink-0 text-zinc-400">Token:</span>
+              <code className="min-w-0 flex-1 truncate rounded bg-white px-2 py-0.5 dark:bg-zinc-900">{token}</code>
+              <button onClick={() => { navigator.clipboard?.writeText(token); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }} className="rounded border border-zinc-300 px-2 py-0.5 text-xs dark:border-zinc-700">{copiado ? "Copiado!" : "Copiar"}</button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Impressoras */}
+      {/* Impressoras detectadas ainda não cadastradas */}
+      {online && detectadasNovas.length > 0 && (
+        <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/5 p-3">
+          <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">Impressoras detectadas no PC (ainda não usadas):</p>
+          <div className="flex flex-wrap gap-2">
+            {detectadasNovas.map((p) => (
+              <button key={p} disabled={proc} onClick={() => run(() => criarImpressoraDetectada(p))} className="rounded-lg border border-blue-400 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-500/10">
+                + {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Impressoras cadastradas */}
       <h2 className="mb-2 font-bold text-zinc-900 dark:text-zinc-50">Impressoras</h2>
       <div className="space-y-2">
+        {impressoras.length === 0 && <p className="text-sm text-zinc-500">Nenhuma impressora ainda. Adicione uma detectada acima, ou manualmente abaixo.</p>}
         {impressoras.map((im) => (
           <div key={im.id} className={`rounded-xl border p-3 dark:border-zinc-800 ${im.ativo ? "border-zinc-200" : "border-zinc-200 opacity-60"}`}>
             {editId === im.id ? (
@@ -73,7 +111,7 @@ export function CentralImpressao({ impressoras, token }: { impressoras: Impresso
                     <button onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-zinc-400 hover:text-zinc-600">{im.ativo ? "desativar" : "reativar"}</button>
                   </div>
                 </div>
-                <WinField im={im} proc={proc} run={run} />
+                <WinField im={im} printersPc={printersPc} proc={proc} run={run} />
               </>
             )}
           </div>
@@ -82,11 +120,7 @@ export function CentralImpressao({ impressoras, token }: { impressoras: Impresso
 
       <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
         <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
-        <button
-          disabled={proc || !novo.trim()}
-          onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
+        <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           + Adicionar impressora
         </button>
       </div>
@@ -94,18 +128,37 @@ export function CentralImpressao({ impressoras, token }: { impressoras: Impresso
   );
 }
 
-function WinField({ im, proc, run }: { im: Impressora; proc: boolean; run: (fn: () => Promise<unknown>) => void }) {
+function WinField({ im, printersPc, proc, run }: {
+  im: Impressora; printersPc: string[]; proc: boolean; run: (fn: () => Promise<unknown>) => void;
+}) {
   const [val, setVal] = useState(im.impressora_windows ?? "");
   const mudou = val.trim() !== (im.impressora_windows ?? "");
+  const temLista = printersPc.length > 0;
+  // se o valor atual não está na lista detectada, oferece opção "outro"
+  const naLista = printersPc.some((p) => p === val);
+
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      <span className="text-xs text-zinc-400">Nome no Windows:</span>
-      <input
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        placeholder="ex.: ELGIN L42PRO FULL"
-        className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700"
-      />
+      <span className="text-xs text-zinc-400">Impressora no PC:</span>
+      {temLista ? (
+        <select
+          value={naLista || val === "" ? val : "__outro__"}
+          onChange={(e) => setVal(e.target.value === "__outro__" ? " " : e.target.value)}
+          className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700"
+        >
+          <option value="">(escolher)</option>
+          {printersPc.map((p) => <option key={p} value={p}>{p}</option>)}
+          <option value="__outro__">Outro (digitar)…</option>
+        </select>
+      ) : null}
+      {(!temLista || !naLista) && (
+        <input
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          placeholder="ex.: ELGIN L42PRO FULL"
+          className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700"
+        />
+      )}
       {mudou && (
         <button disabled={proc} onClick={() => run(() => definirImpressoraWindows(im.id, val))} className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white">Salvar</button>
       )}
