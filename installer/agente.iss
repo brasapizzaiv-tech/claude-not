@@ -74,6 +74,21 @@ begin
   end;
 end;
 
+{ Antes de copiar os arquivos, para o agente que já estiver rodando (senão o
+  node.exe fica travado e a atualização falha). }
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  pid: AnsiString;
+  rc: Integer;
+begin
+  Result := '';
+  if LoadStringFromFile(ExpandConstant('{app}\bandeja.pid'), pid) then
+    Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
+  if LoadStringFromFile(ExpandConstant('{app}\agente.pid'), pid) then
+    Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
+  Sleep(700);
+end;
+
 procedure GravarConfig();
 var
   s: String;
