@@ -49,3 +49,8 @@ Desktop.ini
 scripts/_lote-*.json
 scripts/_*.mjs
 scripts/_cat.json
+
+# agente runtime
+agente-impressao/node_modules/
+agente-impressao/agente.log
+agente-impressao/agente.pid

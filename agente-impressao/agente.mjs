@@ -3,7 +3,7 @@
 // impressora certa do Windows (pelo nome). Não precisa abrir janela.
 import ptp from "pdf-to-printer";
 import { writeFile, mkdir } from "node:fs/promises";
-import { readFileSync } from "node:fs";
+import { readFileSync, appendFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,10 +16,13 @@ const token = cfg.token || "";
 const intervalo = Number(cfg.intervaloMs) || 3000;
 const headers = { Authorization: `Bearer ${token}` };
 const tmp = path.join(os.tmpdir(), "brasa-etiquetas");
+const logFile = path.join(dir, "agente.log");
 
 function log(m) {
-  const t = new Date().toLocaleTimeString("pt-BR");
-  console.log(`[${t}] ${m}`);
+  const t = new Date().toLocaleString("pt-BR");
+  const linha = `[${t}] ${m}`;
+  console.log(linha);
+  try { appendFileSync(logFile, linha + "\n"); } catch { /* sem log em arquivo */ }
 }
 
 let rodando = false;
@@ -60,7 +63,8 @@ async function ciclo() {
   }
 }
 
-log("Agente de impressão da Brasa iniciado.");
+try { writeFileSync(path.join(dir, "agente.pid"), String(process.pid)); } catch { /* ok */ }
+log("Agente de impressão iniciado.");
 log(`Servidor: ${baseUrl || "(vazio!)"}`);
 if (!token) log("ATENÇÃO: token vazio no config.json.");
 await mkdir(tmp, { recursive: true });
