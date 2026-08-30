@@ -48,23 +48,18 @@ export async function lancarPedidoGarcom(
   }));
   await supabase.from("pdv_comanda_itens").insert(rows);
 
-  // Roteamento por categoria: cada impressora de comanda imprime só as suas.
+  // Roteamento por produto (a "via"): cada impressora imprime só os seus itens.
   const itemIds = validos.map((i) => i.itemId).filter(Boolean);
-  const catsItens = new Set<string>();
-  if (itemIds.length > 0) {
-    const { data: pis } = await supabase.from("pdv_itens").select("categoria").in("id", itemIds);
-    for (const p of (pis as { categoria: string | null }[]) ?? []) if (p.categoria) catsItens.add(p.categoria);
-  }
   const { data: cozinhas } = await supabase
     .from("impressoras")
-    .select("id, comanda_categorias")
+    .select("id, comanda_produtos")
     .eq("ativo", true)
     .eq("recebe_comandas", true);
-  const jobs = ((cozinhas as { id: string; comanda_categorias: string[] | null }[]) ?? [])
+  const jobs = ((cozinhas as { id: string; comanda_produtos: string[] | null }[]) ?? [])
     .filter((im) => {
-      const cats = im.comanda_categorias;
-      if (!cats || cats.length === 0) return true; // imprime todas
-      return [...catsItens].some((c) => cats.includes(c)); // tem item da categoria dela?
+      const prods = im.comanda_produtos;
+      if (prods === null) return true; // imprime todos
+      return itemIds.some((id) => prods.includes(id)); // tem item dessa via?
     })
     .map((im) => ({ tipo: "comanda", ref_id: lancamentoId, impressora_id: im.id }));
   if (jobs.length > 0) await supabase.from("impressao_fila").insert(jobs);

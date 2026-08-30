@@ -47,10 +47,10 @@ export async function definirRecebeComandas(id: string, valor: boolean) {
   return { ok: true as const };
 }
 
-// Categorias que essa impressora imprime nas comandas (vazio = todas).
-export async function definirComandaCategorias(id: string, categorias: string[]) {
+// Produtos que essa impressora imprime nas comandas (null = todos).
+export async function definirComandaProdutos(id: string, produtos: string[] | null) {
   const supabase = await createClient();
-  await supabase.from("impressoras").update({ comanda_categorias: categorias.length ? categorias : null }).eq("id", id);
+  await supabase.from("impressoras").update({ comanda_produtos: produtos }).eq("id", id);
   revalidatePath("/impressao");
   return { ok: true as const };
 }

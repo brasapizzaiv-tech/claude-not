@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaCategorias,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos,
 } from "./actions";
 
-export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_categorias: string[] | null };
+export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null };
+export type Produto = { id: string; nome: string; categoria: string };
 
 export function CentralImpressao({
-  impressoras, categorias, token, hostname, printersPc, online, vistoEm,
+  impressoras, produtos, token, hostname, printersPc, online, vistoEm,
 }: {
   impressoras: Impressora[];
-  categorias: string[];
+  produtos: Produto[];
   token: string;
   hostname: string | null;
   printersPc: string[];
@@ -117,7 +118,7 @@ export function CentralImpressao({
                   <input type="checkbox" checked={im.recebe_comandas} disabled={proc} onChange={(e) => run(() => definirRecebeComandas(im.id, e.target.checked))} />
                   🍳 Recebe comandas (cozinha/bar)
                 </label>
-                {im.recebe_comandas && <ViaCategorias im={im} categorias={categorias} proc={proc} run={run} />}
+                {im.recebe_comandas && <ViaProdutos im={im} produtos={produtos} proc={proc} run={run} />}
               </>
             )}
           </div>
@@ -134,24 +135,75 @@ export function CentralImpressao({
   );
 }
 
-function ViaCategorias({ im, categorias, proc, run }: {
-  im: Impressora; categorias: string[]; proc: boolean; run: (fn: () => Promise<unknown>) => void;
+function ViaProdutos({ im, produtos, proc, run }: {
+  im: Impressora; produtos: Produto[]; proc: boolean; run: (fn: () => Promise<unknown>) => void;
 }) {
-  const [sel, setSel] = useState<string[]>(im.comanda_categorias ?? []);
-  const cls = (on: boolean) =>
-    `rounded-full px-2.5 py-1 text-xs font-medium ${on ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-300"}`;
+  const allIds = useMemo(() => produtos.map((p) => p.id), [produtos]);
+  const grupos = useMemo(() => {
+    const m = new Map<string, Produto[]>();
+    for (const p of produtos) { const l = m.get(p.categoria) ?? []; l.push(p); m.set(p.categoria, l); }
+    return [...m.entries()];
+  }, [produtos]);
 
-  function salvar(novo: string[]) { setSel(novo); run(() => definirComandaCategorias(im.id, novo)); }
-  const toggle = (cat: string) => salvar(sel.includes(cat) ? sel.filter((c) => c !== cat) : [...sel, cat]);
+  // null = todos → começa com tudo marcado
+  const [sel, setSel] = useState<Set<string>>(new Set(im.comanda_produtos ?? allIds));
+  const [abertas, setAbertas] = useState<Set<string>>(new Set());
+
+  function salvar(novo: Set<string>) {
+    setSel(novo);
+    const valor = novo.size === allIds.length ? null : [...novo]; // tudo = todos (null)
+    run(() => definirComandaProdutos(im.id, valor));
+  }
+  function toggleProd(id: string) { const n = new Set(sel); if (n.has(id)) n.delete(id); else n.add(id); salvar(n); }
+  function toggleCat(prods: Produto[], marcar: boolean) {
+    const n = new Set(sel);
+    for (const p of prods) { if (marcar) n.add(p.id); else n.delete(p.id); }
+    salvar(n);
+  }
+  const toggleAberta = (cat: string) => setAbertas((a) => { const n = new Set(a); if (n.has(cat)) n.delete(cat); else n.add(cat); return n; });
 
   return (
     <div className="mt-2 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/40">
-      <div className="mb-1.5 text-xs text-zinc-500">Imprime as categorias {sel.length === 0 ? "(todas)" : `(${sel.length})`}:</div>
-      <div className="flex flex-wrap gap-1.5">
-        <button disabled={proc} onClick={() => salvar([])} className={cls(sel.length === 0)}>Todas</button>
-        {categorias.map((cat) => (
-          <button key={cat} disabled={proc} onClick={() => toggle(cat)} className={cls(sel.includes(cat))}>{cat}</button>
-        ))}
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-xs text-zinc-500">Imprime {sel.size === allIds.length ? "todos os produtos" : `${sel.size} de ${allIds.length} produtos`}:</span>
+        <span className="flex gap-2 text-xs">
+          <button disabled={proc} onClick={() => salvar(new Set(allIds))} className="text-blue-500 hover:underline">todos</button>
+          <button disabled={proc} onClick={() => salvar(new Set())} className="text-zinc-400 hover:underline">nenhum</button>
+        </span>
+      </div>
+      <div className="space-y-1">
+        {grupos.map(([cat, prods]) => {
+          const marcados = prods.filter((p) => sel.has(p.id)).length;
+          const todos = marcados === prods.length;
+          const alguns = marcados > 0 && !todos;
+          const aberta = abertas.has(cat);
+          return (
+            <div key={cat} className="rounded-md border border-zinc-200 dark:border-zinc-700">
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                <button onClick={() => toggleAberta(cat)} className="text-zinc-400">{aberta ? "▾" : "▸"}</button>
+                <input
+                  type="checkbox"
+                  ref={(el) => { if (el) el.indeterminate = alguns; }}
+                  checked={todos}
+                  disabled={proc}
+                  onChange={() => toggleCat(prods, !todos)}
+                />
+                <span className="flex-1 text-sm font-medium">{cat}</span>
+                <span className="text-xs text-zinc-400">{marcados}/{prods.length}</span>
+              </div>
+              {aberta && (
+                <div className="space-y-0.5 border-t border-zinc-200 px-3 py-1.5 dark:border-zinc-700">
+                  {prods.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                      <input type="checkbox" checked={sel.has(p.id)} disabled={proc} onChange={() => toggleProd(p.id)} />
+                      {p.nome}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

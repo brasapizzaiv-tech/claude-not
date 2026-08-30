@@ -43,24 +43,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // via (categorias) da impressora.
     const { data: itensRaw } = await admin
       .from("pdv_comanda_itens")
-      .select("descricao, qtd, comanda_id, criado_por, criado_em, item_id, pdv_itens(categoria)")
+      .select("descricao, qtd, comanda_id, criado_por, criado_em, item_id")
       .eq("lancamento_id", job.ref_id)
       .order("criado_em");
-    const itens = (itensRaw as unknown as {
-      descricao: string; qtd: number; comanda_id: string; criado_por: string | null; criado_em: string;
-      pdv_itens: { categoria: string | null } | { categoria: string | null }[] | null;
+    const itens = (itensRaw as {
+      descricao: string; qtd: number; comanda_id: string; criado_por: string | null; criado_em: string; item_id: string | null;
     }[]) ?? [];
     if (itens.length === 0) return new Response("comanda vazia", { status: 404 });
 
     const { data: imp } = job.impressora_id
-      ? await admin.from("impressoras").select("nome, comanda_categorias").eq("id", job.impressora_id).maybeSingle()
-      : { data: null as { nome: string; comanda_categorias: string[] | null } | null };
-    const cats = (imp?.comanda_categorias as string[] | null) ?? null;
-    const catDe = (it: (typeof itens)[number]) => {
-      const p = Array.isArray(it.pdv_itens) ? it.pdv_itens[0] : it.pdv_itens;
-      return p?.categoria ?? null;
-    };
-    const filtrados = !cats || cats.length === 0 ? itens : itens.filter((it) => { const c = catDe(it); return c !== null && cats.includes(c); });
+      ? await admin.from("impressoras").select("nome, comanda_produtos").eq("id", job.impressora_id).maybeSingle()
+      : { data: null as { nome: string; comanda_produtos: string[] | null } | null };
+    const prods = (imp?.comanda_produtos as string[] | null) ?? null;
+    const filtrados = prods === null ? itens : itens.filter((it) => it.item_id !== null && prods.includes(it.item_id));
     if (filtrados.length === 0) return new Response("sem itens para esta via", { status: 404 });
 
     const primeiro = itens[0];
