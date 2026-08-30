@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const { print } = ptp;
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const cfg = JSON.parse(readFileSync(path.join(dir, "config.json"), "utf8"));
+const cfg = JSON.parse(readFileSync(path.join(dir, "config.json"), "utf8").replace(/^﻿/, ""));
 const baseUrl = String(cfg.baseUrl || "").replace(/\/$/, "");
 const token = cfg.token || "";
 const intervalo = Number(cfg.intervaloMs) || 3000;

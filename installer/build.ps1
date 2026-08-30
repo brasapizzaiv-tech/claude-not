@@ -15,6 +15,7 @@ Write-Host "==> Copiando arquivos do agente..." -ForegroundColor Cyan
 Copy-Item (Join-Path $src "agente.mjs")   $app
 Copy-Item (Join-Path $src "package.json") $app
 Copy-Item (Join-Path $src "start.vbs")    $app
+Copy-Item (Join-Path $src "bandeja.ps1")  $app
 
 Write-Host "==> Copiando o Node (node.exe)..." -ForegroundColor Cyan
 $node = (Get-Command node).Source

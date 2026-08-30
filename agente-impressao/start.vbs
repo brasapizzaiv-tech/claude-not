@@ -1,7 +1,6 @@
-' Inicia o agente de impressão SEM abrir janela (roda em segundo plano).
+' Inicia o Agente com o ícone na bandeja (perto do relógio), SEM janela.
 Set sh  = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)
 sh.CurrentDirectory = dir
-' 0 = janela oculta ; False = não espera terminar
-sh.Run """" & dir & "\node.exe"" """ & dir & "\agente.mjs""", 0, False
+sh.Run "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File """ & dir & "\bandeja.ps1""", 0, False

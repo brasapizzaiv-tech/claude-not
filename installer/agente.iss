@@ -28,6 +28,10 @@ Name: "pt"; MessagesFile: "compiler:Languages\Portuguese.isl"
 [Files]
 Source: "build\app\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
+[Icons]
+; Atalho na Inicialização (Todos os usuários) -> liga o agente oculto a cada logon.
+Name: "{commonstartup}\Agente de Impressao"; Filename: "{app}\start.vbs"; WorkingDir: "{app}"
+
 [Code]
 var
   PageCfg: TInputQueryWizardPage;
@@ -89,11 +93,7 @@ begin
   if CurStep = ssPostInstall then
   begin
     GravarConfig();
-    { Cria a tarefa que roda o agente (oculto) toda vez que o Windows inicia sessao }
-    Exec('schtasks.exe',
-      '/Create /F /SC ONLOGON /RL LIMITED /TN "{#TaskName}" /TR "wscript.exe ""' + ExpandConstant('{app}\start.vbs') + '"""',
-      '', SW_HIDE, ewWaitUntilTerminated, rc);
-    { Liga agora, sem esperar reiniciar }
+    { Liga agora, sem esperar reiniciar (no boot, o atalho da Inicializacao cuida) }
     Exec('wscript.exe', '"' + ExpandConstant('{app}\start.vbs') + '"', '', SW_HIDE, ewNoWait, rc);
   end;
 end;
@@ -105,8 +105,9 @@ var
 begin
   if CurUninstallStep = usUninstall then
   begin
-    Exec('schtasks.exe', '/Delete /F /TN "{#TaskName}"', '', SW_HIDE, ewWaitUntilTerminated, rc);
-    { Mata só o processo do agente (pelo PID gravado), sem afetar outros node }
+    { Primeiro para a bandeja (senão ela reinicia o agente), depois o agente. }
+    if LoadStringFromFile(ExpandConstant('{app}\bandeja.pid'), pid) then
+      Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
     if LoadStringFromFile(ExpandConstant('{app}\agente.pid'), pid) then
       Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
   end;
