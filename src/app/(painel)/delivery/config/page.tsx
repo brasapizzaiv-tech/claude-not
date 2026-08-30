@@ -43,7 +43,9 @@ export default async function DeliveryConfigPage() {
               <iframe
                 title="Localização do restaurante"
                 className="h-64 w-full"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(c.origem_lng) - 0.006},${Number(c.origem_lat) - 0.004},${Number(c.origem_lng) + 0.006},${Number(c.origem_lat) + 0.004}&layer=mapnik&marker=${Number(c.origem_lat)},${Number(c.origem_lng)}`}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://maps.google.com/maps?q=${Number(c.origem_lat)},${Number(c.origem_lng)}&z=16&hl=pt-BR&output=embed`}
               />
               <div className="flex items-center justify-between bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900">
                 <span className="text-zinc-500">O pino é o ponto de partida das entregas.</span>
