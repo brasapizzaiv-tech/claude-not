@@ -51,22 +51,37 @@ export async function criarEtiquetaColab(token: string, dados: {
   return { ok: true as const, id: data.id as string, numero: data.numero as number };
 }
 
-// Dá baixa numa etiqueta lida pelo QR.
-export async function darBaixaColab(token: string, etiquetaId: string, status: "usada" | "descartada") {
+// Consulta uma etiqueta lida pelo QR (para montar a lista antes da baixa).
+export async function consultarEtiquetaColab(token: string, etiquetaId: string) {
   const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
-
-  const { data: etq } = await admin
+  const { data } = await admin
     .from("etiquetas")
     .select("id, numero, produto_nome, status")
     .eq("id", etiquetaId)
     .maybeSingle();
-  if (!etq) return { ok: false as const, mensagem: "Etiqueta não encontrada." };
-  if (etq.status !== "ativa") {
-    return { ok: false as const, mensagem: `Essa etiqueta já está como "${etq.status}".`, produto: etq.produto_nome as string };
-  }
+  if (!data) return { ok: false as const, mensagem: "Etiqueta não encontrada." };
+  return {
+    ok: true as const,
+    id: data.id as string,
+    numero: data.numero as number,
+    produto: data.produto_nome as string,
+    status: data.status as string,
+  };
+}
 
-  await admin.from("etiquetas").update({ status, baixa_em: new Date().toISOString() }).eq("id", etiquetaId);
-  return { ok: true as const, produto: etq.produto_nome as string, numero: etq.numero as number, status };
+// Dá baixa em várias etiquetas de uma vez (só as que ainda estão ativas).
+export async function darBaixaLoteColab(token: string, ids: string[], status: "usada" | "descartada") {
+  const admin = createAdminClient();
+  const colab = await colabDoToken(token);
+  if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
+  if (!ids?.length) return { ok: false as const, mensagem: "Nada para dar baixa." };
+  const { data } = await admin
+    .from("etiquetas")
+    .update({ status, baixa_em: new Date().toISOString() })
+    .in("id", ids)
+    .eq("status", "ativa")
+    .select("id");
+  return { ok: true as const, quantidade: data?.length ?? 0 };
 }
