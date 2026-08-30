@@ -16,6 +16,45 @@ export async function calcularEntregaPublico(endereco: {
   return calcularTaxaEntrega(admin, endereco);
 }
 
+// Últimos pedidos do cliente (pelo telefone) — mostra o mínimo: nº, data,
+// status, tipo e total, com o link de acompanhamento (id).
+export async function meusPedidos(telefone: string) {
+  const fone = (telefone || "").replace(/\D/g, "");
+  if (fone.length < 10) return [];
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("delivery_pedidos")
+    .select("id, criado_em, status, tipo, taxa_entrega, desconto, comanda_id, pdv_comandas(numero)")
+    .eq("telefone", fone)
+    .order("criado_em", { ascending: false })
+    .limit(10);
+  const rows = (data as unknown as {
+    id: string; criado_em: string; status: string; tipo: string; taxa_entrega: number; desconto: number;
+    comanda_id: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null;
+  }[]) ?? [];
+
+  const comandaIds = rows.map((r) => r.comanda_id).filter(Boolean) as string[];
+  const somaDe = new Map<string, number>();
+  if (comandaIds.length) {
+    const { data: itens } = await admin.from("pdv_comanda_itens").select("comanda_id, qtd, preco_unit").in("comanda_id", comandaIds);
+    for (const it of (itens ?? []) as { comanda_id: string; qtd: number; preco_unit: number | null }[]) {
+      somaDe.set(it.comanda_id, (somaDe.get(it.comanda_id) ?? 0) + Number(it.qtd) * Number(it.preco_unit || 0));
+    }
+  }
+  return rows.map((r) => {
+    const c = Array.isArray(r.pdv_comandas) ? r.pdv_comandas[0] : r.pdv_comandas;
+    const taxa = r.tipo === "retirada" ? 0 : Number(r.taxa_entrega || 0);
+    return {
+      id: r.id,
+      numero: c?.numero ?? null,
+      criadoEm: r.criado_em,
+      status: r.status,
+      tipo: r.tipo,
+      total: Math.round(((somaDe.get(r.comanda_id ?? "") ?? 0) + taxa - Number(r.desconto || 0)) * 100) / 100,
+    };
+  });
+}
+
 export async function enviarPedidoPublico(d: {
   nome: string;
   telefone: string;

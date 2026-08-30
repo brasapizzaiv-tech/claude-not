@@ -10,9 +10,9 @@ import { geocodificar, distanciaKm, temChaveMapa } from "@/lib/geo";
 export type Db = SupabaseClient<any, any, any>;
 
 export type LinhaPedido =
-  | { kind: "item"; itemId: string; qtd: number }
-  | { kind: "pizza"; tamanhoId: string; saborIds: string[]; bordaId: string | null; qtd: number }
-  | { kind: "combo"; itemId: string; opcaoIds: string[]; qtd: number };
+  | { kind: "item"; itemId: string; qtd: number; obs?: string }
+  | { kind: "pizza"; tamanhoId: string; saborIds: string[]; bordaId: string | null; qtd: number; obs?: string }
+  | { kind: "combo"; itemId: string; opcaoIds: string[]; qtd: number; obs?: string };
 
 export type DadosPedidoDelivery = {
   clienteId?: string | null;
@@ -166,16 +166,19 @@ export async function criarPedidoDeliveryCore(
   const linhas: Linha[] = [];
   for (const it of validos) {
     const q = Math.max(1, Math.round(Number((it as { qtd?: number }).qtd) || 1));
+    // Observação do item (ex.: "sem cebola") vira uma linha extra na descrição.
+    const obsItem = ((it as { obs?: string }).obs || "").trim().slice(0, 200);
+    const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\n📝 ${obsItem}` } : l);
     if (it.kind === "item") {
       const { data: prod } = await db.from("pdv_itens").select("nome, preco").eq("id", it.itemId).single();
       if (!prod) continue;
-      linhas.push({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(Number((prod as { preco: number }).preco)), itemId: it.itemId });
+      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(Number((prod as { preco: number }).preco)), itemId: it.itemId }));
     } else if (it.kind === "pizza") {
       const l = await resolverPizza(db, it.tamanhoId, it.saborIds, it.bordaId);
-      if (l) linhas.push({ ...l, qtd: q });
+      if (l) linhas.push(comObs({ ...l, qtd: q }));
     } else {
       const l = await resolverCombo(db, it.itemId, it.opcaoIds);
-      if (l) linhas.push({ ...l, qtd: q });
+      if (l) linhas.push(comObs({ ...l, qtd: q }));
     }
   }
   if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };

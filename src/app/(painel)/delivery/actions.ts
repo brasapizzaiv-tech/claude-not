@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
 
@@ -119,6 +120,7 @@ export async function salvarConfigDelivery(formData: FormData) {
     raio_max_km: num("raio_max_km"),
     tempo_preparo_min: Math.round(num("tempo_preparo_min")) || 40,
     aberto: formData.get("aberto") === "on",
+    aviso: String(formData.get("aviso") ?? "").trim() || null,
     atualizado_em: new Date().toISOString(),
   };
   if (origemEndereco) {
@@ -127,6 +129,71 @@ export async function salvarConfigDelivery(formData: FormData) {
   }
   await supabase.from("delivery_config").upsert(patch, { onConflict: "id" });
   revalidatePath("/delivery/config");
+}
+
+// ---------- Cardápio do app (/delivery/cardapio) ----------
+
+// Sobe a foto de um item ou sabor pro bucket público e grava a URL.
+export async function salvarFotoCardapio(formData: FormData) {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return { ok: false as const, mensagem: "Sem acesso." };
+
+  const tipo = formData.get("tipo") as string; // 'item' | 'sabor'
+  const id = formData.get("id") as string;
+  const file = formData.get("foto") as File | null;
+  if (!["item", "sabor"].includes(tipo) || !id || !file || file.size === 0) return { ok: false as const, mensagem: "Escolha uma foto." };
+  if (file.size > 4 * 1024 * 1024) return { ok: false as const, mensagem: "Foto muito grande (máx. 4MB)." };
+  if (!file.type.startsWith("image/")) return { ok: false as const, mensagem: "O arquivo precisa ser uma imagem." };
+
+  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `${tipo}/${id}.${ext}`;
+  const admin = createAdminClient();
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const { error } = await admin.storage.from("cardapio").upload(path, bytes, { contentType: file.type, upsert: true });
+  if (error) return { ok: false as const, mensagem: `Falha no upload: ${error.message}` };
+
+  const { data: pub } = admin.storage.from("cardapio").getPublicUrl(path);
+  const url = `${pub.publicUrl}?v=${new Date().getTime()}`; // cache-bust ao trocar a foto
+  const tabela = tipo === "item" ? "pdv_itens" : "pdv_pizza_sabores";
+  await supabase.from(tabela).update({ foto_url: url }).eq("id", id);
+  revalidatePath("/delivery/cardapio");
+  return { ok: true as const, url };
+}
+
+export async function removerFotoCardapio(formData: FormData) {
+  const supabase = await createClient();
+  const tipo = formData.get("tipo") as string;
+  const id = formData.get("id") as string;
+  if (!["item", "sabor"].includes(tipo) || !id) return;
+  const tabela = tipo === "item" ? "pdv_itens" : "pdv_pizza_sabores";
+  await supabase.from(tabela).update({ foto_url: null }).eq("id", id);
+  revalidatePath("/delivery/cardapio");
+}
+
+// Salva descrição (item/sabor) e a visibilidade do item no app.
+export async function salvarDetalheCardapio(formData: FormData) {
+  const supabase = await createClient();
+  const tipo = formData.get("tipo") as string;
+  const id = formData.get("id") as string;
+  if (!["item", "sabor"].includes(tipo) || !id) return;
+  const descricao = String(formData.get("descricao") ?? "").trim().slice(0, 300) || null;
+  if (tipo === "item") {
+    const delivery = formData.get("delivery") === "on";
+    await supabase.from("pdv_itens").update({ descricao, delivery }).eq("id", id);
+  } else {
+    await supabase.from("pdv_pizza_sabores").update({ descricao }).eq("id", id);
+  }
+  revalidatePath("/delivery/cardapio");
+}
+
+export async function salvarFatias(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const fatias = Math.round(Number(formData.get("fatias"))) || null;
+  if (!id) return;
+  await supabase.from("pdv_pizza_tamanhos").update({ fatias }).eq("id", id);
+  revalidatePath("/delivery/cardapio");
 }
 
 // Busca cliente por telefone (autocompleta o Novo pedido).

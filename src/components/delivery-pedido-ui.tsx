@@ -6,9 +6,9 @@
 import { useMemo, useState } from "react";
 import type { LinhaPedido } from "@/lib/delivery-core";
 
-export type Item = { id: string; nome: string; categoria: string; preco: number };
-export type Tam = { id: string; nome: string; max_sabores: number };
-export type Sabor = { id: string; nome: string };
+export type Item = { id: string; nome: string; categoria: string; preco: number; foto_url?: string | null; descricao?: string | null };
+export type Tam = { id: string; nome: string; max_sabores: number; fatias?: number | null };
+export type Sabor = { id: string; nome: string; foto_url?: string | null; descricao?: string | null };
 export type Borda = { id: string; nome: string };
 export type Grupo = { id: string; item_id: string; nome: string; min: number; max: number; permite_repetir: boolean };
 export type Opcao = { id: string; grupo_id: string; nome: string; preco: number };
@@ -24,14 +24,17 @@ export const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency",
 let seq = 0;
 export const novoUid = () => `l${++seq}`;
 
-export function PizzaModal({ pizza, onClose, onAdd }: {
+export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, comObs }: {
   pizza: PizzaData;
   onClose: () => void;
   onAdd: (l: CartLine) => void;
+  tamanhoInicial?: string;
+  comObs?: boolean;
 }) {
-  const [tamId, setTamId] = useState(pizza.tamanhos[0]?.id ?? "");
+  const [tamId, setTamId] = useState(tamanhoInicial ?? pizza.tamanhos[0]?.id ?? "");
   const [sabIds, setSabIds] = useState<string[]>([]);
   const [bordaId, setBordaId] = useState<string>("");
+  const [obs, setObs] = useState("");
   const tam = pizza.tamanhos.find((t) => t.id === tamId);
   const max = tam?.max_sabores ?? 1;
 
@@ -48,11 +51,12 @@ export function PizzaModal({ pizza, onClose, onAdd }: {
     if (!tam || usados.length === 0) return;
     const nomes = usados.map((id) => pizza.sabores.find((s) => s.id === id)?.nome ?? "?").join(" / ");
     const bordaNome = bordaId ? pizza.bordas.find((b) => b.id === bordaId)?.nome : "";
+    const o = obs.trim();
     onAdd({
       uid: novoUid(),
-      descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : ""),
+      descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : "") + (o ? `\n📝 ${o}` : ""),
       preco, qtd: 1,
-      payload: { kind: "pizza", tamanhoId: tamId, saborIds: usados, bordaId: bordaId || null, qtd: 1 },
+      payload: { kind: "pizza", tamanhoId: tamId, saborIds: usados, bordaId: bordaId || null, qtd: 1, obs: o || undefined },
     });
   }
 
@@ -68,13 +72,21 @@ export function PizzaModal({ pizza, onClose, onAdd }: {
       </div>
       <div className="mb-3">
         <div className="mb-1 text-xs font-semibold text-zinc-500">Sabores ({usados.length}/{max})</div>
-        <div className="grid max-h-52 grid-cols-2 gap-1.5 overflow-y-auto">
+        <div className="max-h-64 space-y-1.5 overflow-y-auto">
           {pizza.sabores.map((s) => {
             const on = sabIds.includes(s.id);
             const p = precoSabor(s.id);
             return (
-              <button key={s.id} onClick={() => toggleSabor(s.id)} className={`flex justify-between rounded-lg border px-2 py-1.5 text-left text-sm ${on ? "border-emerald-500 bg-emerald-500/10" : "border-zinc-200 dark:border-zinc-800"}`}>
-                <span className="truncate">{s.nome}</span><span className="text-xs text-zinc-400">{p ? brl(p) : ""}</span>
+              <button key={s.id} onClick={() => toggleSabor(s.id)} className={`flex w-full items-center gap-2.5 rounded-xl border p-2 text-left ${on ? "border-emerald-500 bg-emerald-500/10" : "border-zinc-200 dark:border-zinc-800"}`}>
+                {s.foto_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.foto_url} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium leading-tight">{s.nome}</span>
+                  {s.descricao && <span className="block text-xs leading-tight text-zinc-500">{s.descricao}</span>}
+                </span>
+                <span className="shrink-0 text-xs text-zinc-400">{p ? brl(p) : ""}</span>
               </button>
             );
           })}
@@ -91,6 +103,9 @@ export function PizzaModal({ pizza, onClose, onAdd }: {
           </div>
         </div>
       )}
+      {comObs && (
+        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="📝 Observação (ex.: sem cebola)" className="mb-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+      )}
       <div className="flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>
         <button onClick={adicionar} disabled={usados.length === 0} className="rounded-xl bg-emerald-600 px-5 py-2.5 font-bold text-white disabled:opacity-50">Adicionar</button>
@@ -99,14 +114,16 @@ export function PizzaModal({ pizza, onClose, onAdd }: {
   );
 }
 
-export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd }: {
+export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
   item: Item;
   grupos: Grupo[];
   opcoesDe: (grupoId: string) => Opcao[];
   onClose: () => void;
   onAdd: (l: CartLine) => void;
+  comObs?: boolean;
 }) {
   const [sel, setSel] = useState<Record<string, string[]>>({});
+  const [obs, setObs] = useState("");
   const escolhidas = Object.values(sel).flat();
   const opcaoById = useMemo(() => new Map(grupos.flatMap((g) => opcoesDe(g.id)).map((o) => [o.id, o])), [grupos, opcoesDe]);
   const extra = escolhidas.reduce((s, id) => s + (opcaoById.get(id)?.preco ?? 0), 0);
@@ -128,11 +145,13 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd }: {
   function adicionar() {
     const nomes: string[] = [];
     for (const g of grupos) for (const id of sel[g.id] ?? []) { const o = opcaoById.get(id); if (o) nomes.push(o.preco > 0 ? `${o.nome} (+${o.preco})` : o.nome); }
+    const o = obs.trim();
+    const base = nomes.length ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}` : item.nome;
     onAdd({
       uid: novoUid(),
-      descricao: nomes.length ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}` : item.nome,
+      descricao: base + (o ? `\n📝 ${o}` : ""),
       preco, qtd: 1,
-      payload: { kind: "combo", itemId: item.id, opcaoIds: escolhidas, qtd: 1 },
+      payload: { kind: "combo", itemId: item.id, opcaoIds: escolhidas, qtd: 1, obs: o || undefined },
     });
   }
 
@@ -155,6 +174,9 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd }: {
           </div>
         ))}
       </div>
+      {comObs && (
+        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="📝 Observação (ex.: sem cebola)" className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+      )}
       <div className="mt-3 flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>
         <button onClick={adicionar} disabled={!okMin} className="rounded-xl bg-emerald-600 px-5 py-2.5 font-bold text-white disabled:opacity-50">Adicionar</button>

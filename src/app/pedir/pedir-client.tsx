@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { enviarPedidoPublico, calcularEntregaPublico } from "./actions";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos } from "./actions";
 import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -14,9 +14,19 @@ const FORMAS = [
   { id: "Pix", label: "📱 Pix na entrega" },
   { id: "Cartão", label: "💳 Cartão na entrega" },
 ];
+const STATUS_LABEL: Record<string, string> = {
+  pendente: "Aguardando confirmação", aceito: "Confirmado", em_preparo: "Preparando",
+  pronto: "Pronto", saiu: "Saiu pra entrega", entregue: "Entregue", cancelado: "Cancelado",
+};
+
+function FotoItem({ url, size = "h-20 w-24" }: { url?: string | null; size?: string }) {
+  if (!url) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt="" className={`${size} shrink-0 rounded-xl object-cover`} />;
+}
 
 export function PedirClient({
-  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo,
+  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos,
 }: {
   itens: Item[];
   categorias: string[];
@@ -25,9 +35,11 @@ export function PedirClient({
   complementos: { grupos: Grupo[]; opcoes: Opcao[] };
   aberto: boolean;
   tempoPreparo: number;
+  aviso: string | null;
+  maisVendidos: string[];
 }) {
   const [proc, start] = useTransition();
-  const [fase, setFase] = useState<"menu" | "checkout">("menu");
+  const [fase, setFase] = useState<"menu" | "checkout" | "historico">("menu");
   const [aba, setAba] = useState(categorias[0] ?? "");
   const [busca, setBusca] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -45,17 +57,47 @@ export function PedirClient({
   const [erro, setErro] = useState<string | null>(null);
   const [feito, setFeito] = useState<{ id: string; numero?: number } | null>(null);
 
-  const [pzOpen, setPzOpen] = useState(false);
+  const [pzTamanho, setPzTamanho] = useState<string | null>(null);
   const [comboItem, setComboItem] = useState<Item | null>(null);
+
+  // histórico
+  const [histTel, setHistTel] = useState("");
+  const [histLista, setHistLista] = useState<Awaited<ReturnType<typeof meusPedidos>> | null>(null);
+  const [histBuscando, setHistBuscando] = useState(false);
+
+  // Preenche nome/telefone salvos do último pedido (fora do corpo do effect
+  // pra não causar render em cascata).
+  useEffect(() => {
+    const id = setTimeout(() => {
+      try {
+        const t = localStorage.getItem("pedir_tel") || "";
+        const n = localStorage.getItem("pedir_nome") || "";
+        if (t) { setTelefone(t); setHistTel(t); }
+        if (n) setNome(n);
+      } catch { /* sem storage */ }
+    }, 0);
+    return () => clearTimeout(id);
+  }, []);
 
   const comComplSet = useMemo(() => new Set(comComplemento), [comComplemento]);
   const gruposDe = (itemId: string) => complementos.grupos.filter((g) => g.item_id === itemId);
   const opcoesDe = (grupoId: string) => complementos.opcoes.filter((o) => o.grupo_id === grupoId);
+  const itemDe = useMemo(() => new Map(itens.map((i) => [i.id, i])), [itens]);
 
   const visiveis = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return itens.filter((i) => (!q ? i.categoria === aba : i.nome.toLowerCase().includes(q)));
   }, [itens, aba, busca]);
+
+  // menor preço de sabor por tamanho ("a partir de")
+  const aPartirDe = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of pizza.saborPrecos) {
+      const cur = m.get(p.tamanho_id);
+      if (cur == null || p.preco < cur) m.set(p.tamanho_id, p.preco);
+    }
+    return m;
+  }, [pizza.saborPrecos]);
 
   const subtotal = cart.reduce((s, l) => s + l.preco * l.qtd, 0);
   const qtdItens = cart.reduce((s, l) => s + l.qtd, 0);
@@ -64,6 +106,9 @@ export function PedirClient({
 
   function addLinha(l: CartLine) { setCart((c) => [...c, l]); }
   function setQtd(uid: string, q: number) { setCart((c) => c.map((l) => (l.uid === uid ? { ...l, qtd: q } : l)).filter((l) => l.qtd > 0)); }
+  function setObsLinha(uid: string, v: string) {
+    setCart((c) => c.map((l) => (l.uid === uid ? { ...l, payload: { ...l.payload, obs: v || undefined } } : l)));
+  }
   function clicarItem(i: Item) {
     if (comComplSet.has(i.id) && gruposDe(i.id).length) { setComboItem(i); return; }
     addLinha({ uid: novoUid(), descricao: i.nome, preco: i.preco, qtd: 1, payload: { kind: "item", itemId: i.id, qtd: 1 } });
@@ -100,15 +145,25 @@ export function PedirClient({
         observacao: obs,
         itens: cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
       });
-      if (r.ok) { setFeito({ id: r.id, numero: r.numero }); setCart([]); }
-      else setErro(r.mensagem || "Não foi possível enviar. Tente de novo.");
+      if (r.ok) {
+        try { localStorage.setItem("pedir_tel", telefone); localStorage.setItem("pedir_nome", nome); } catch { /* sem storage */ }
+        setFeito({ id: r.id, numero: r.numero }); setCart([]);
+      } else setErro(r.mensagem || "Não foi possível enviar. Tente de novo.");
     });
+  }
+
+  async function buscarHistorico() {
+    if (histTel.replace(/\D/g, "").length < 10) { setHistLista([]); return; }
+    setHistBuscando(true);
+    const lista = await meusPedidos(histTel);
+    setHistBuscando(false);
+    setHistLista(lista);
   }
 
   // ---------- telas ----------
   if (feito) {
     return (
-      <Casca>
+      <Casca onMeusPedidos={() => { setFeito(null); setFase("historico"); }}>
         <div className="px-5 py-14 text-center">
           <div className="mb-3 text-6xl">🎉</div>
           <h1 className="text-2xl font-bold">Pedido enviado!</h1>
@@ -116,11 +171,7 @@ export function PedirClient({
             {feito.numero ? <>Seu pedido é o <b>nº {feito.numero}</b>. </> : null}
             O restaurante vai confirmar em instantes — tempo estimado de preparo: ~{tempoPreparo} min.
           </p>
-          <a
-            href={`/pedir/acompanhar/${feito.id}`}
-            className="mt-6 inline-block rounded-2xl px-6 py-3.5 font-bold text-white"
-            style={{ background: LARANJA }}
-          >
+          <a href={`/pedir/acompanhar/${feito.id}`} className="mt-6 inline-block rounded-2xl px-6 py-3.5 font-bold text-white" style={{ background: LARANJA }}>
             Acompanhar meu pedido →
           </a>
           <p className="mt-4 text-xs text-zinc-400">Guarde esse link pra ver o andamento.</p>
@@ -129,25 +180,67 @@ export function PedirClient({
     );
   }
 
+  if (fase === "historico") {
+    return (
+      <Casca onMeusPedidos={() => setFase("menu")}>
+        <div className="p-4">
+          <button onClick={() => setFase("menu")} className="mb-3 text-sm font-semibold" style={{ color: LARANJA }}>← Voltar pro cardápio</button>
+          <h1 className="mb-3 text-xl font-bold">📋 Meus pedidos</h1>
+          <div className="mb-4 flex gap-2">
+            <input value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
+            <button onClick={buscarHistorico} disabled={histBuscando} className="rounded-xl px-4 font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>{histBuscando ? "..." : "Buscar"}</button>
+          </div>
+          {histLista !== null && (
+            histLista.length === 0 ? <p className="py-8 text-center text-sm text-zinc-400">Nenhum pedido encontrado pra esse telefone.</p> : (
+              <div className="space-y-2">
+                {histLista.map((h) => (
+                  <a key={h.id} href={`/pedir/acompanhar/${h.id}`} className="block rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">Pedido nº {h.numero ?? "—"}</span>
+                      <span className="text-sm font-semibold" style={{ color: LARANJA }}>{brl(h.total)}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center justify-between text-xs text-zinc-500">
+                      <span>{new Date(h.criadoEm).toLocaleDateString("pt-BR")} · {h.tipo === "retirada" ? "Retirada" : "Entrega"}</span>
+                      <span>{STATUS_LABEL[h.status] ?? h.status}</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )
+          )}
+        </div>
+      </Casca>
+    );
+  }
+
   if (fase === "checkout") {
     return (
-      <Casca>
-        <div className="p-4 pb-40">
+      <Casca onMeusPedidos={() => setFase("historico")}>
+        <div className="p-4 pb-44">
           <button onClick={() => setFase("menu")} className="mb-3 text-sm font-semibold" style={{ color: LARANJA }}>← Voltar pro cardápio</button>
           <h1 className="mb-3 text-xl font-bold">Seu pedido</h1>
 
           <div className="mb-4 space-y-1.5">
             {cart.map((l) => (
-              <div key={l.uid} className="flex items-start justify-between gap-2 rounded-xl border border-zinc-200 p-2.5 dark:border-zinc-700">
-                <div className="min-w-0 flex-1">
-                  <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
-                  <div className="text-xs" style={{ color: LARANJA }}>{brl(l.preco * l.qtd)}</div>
+              <div key={l.uid} className="rounded-xl border border-zinc-200 p-2.5 dark:border-zinc-700">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
+                    <div className="text-xs" style={{ color: LARANJA }}>{brl(l.preco * l.qtd)}</div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setQtd(l.uid, l.qtd - 1)} className="h-7 w-7 rounded-lg border border-zinc-300 dark:border-zinc-600">{l.qtd === 1 ? "🗑️" : "−"}</button>
+                    <span className="w-5 text-center font-bold">{l.qtd}</span>
+                    <button onClick={() => setQtd(l.uid, l.qtd + 1)} className="h-7 w-7 rounded-lg border border-zinc-300 font-bold dark:border-zinc-600" style={{ color: LARANJA }}>+</button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <button onClick={() => setQtd(l.uid, l.qtd - 1)} className="h-7 w-7 rounded-lg border border-zinc-300 dark:border-zinc-600">{l.qtd === 1 ? "🗑️" : "−"}</button>
-                  <span className="w-5 text-center font-bold">{l.qtd}</span>
-                  <button onClick={() => setQtd(l.uid, l.qtd + 1)} className="h-7 w-7 rounded-lg border border-zinc-300 font-bold dark:border-zinc-600" style={{ color: LARANJA }}>+</button>
-                </div>
+                <input
+                  value={l.payload.obs ?? ""}
+                  onChange={(e) => setObsLinha(l.uid, e.target.value)}
+                  maxLength={200}
+                  placeholder="📝 Observação deste item (ex.: sem cebola)"
+                  className="mt-2 w-full rounded-lg border border-zinc-200 bg-transparent px-2.5 py-1.5 text-xs outline-none dark:border-zinc-800"
+                />
               </div>
             ))}
             {cart.length === 0 && <p className="py-6 text-center text-sm text-zinc-400">Carrinho vazio — volte pro cardápio.</p>}
@@ -193,10 +286,9 @@ export function PedirClient({
           {forma === "Dinheiro" && (
             <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
           )}
-          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação? (opcional)" rows={2} className="w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
+          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
         </div>
 
-        {/* rodapé fixo */}
         <div className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
           <div className="mx-auto max-w-lg">
             <div className="mb-1 flex justify-between text-sm text-zinc-500"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
@@ -213,17 +305,21 @@ export function PedirClient({
   }
 
   // fase "menu"
+  const destaque = maisVendidos.map((id) => itemDe.get(id)).filter(Boolean) as Item[];
   return (
-    <Casca>
+    <Casca onMeusPedidos={() => setFase("historico")}>
       {!aberto && (
         <div className="bg-rose-600 px-4 py-2 text-center text-sm font-bold text-white">😴 Estamos fechados agora — você pode olhar o cardápio, mas não dá pra pedir.</div>
+      )}
+      {aviso && (
+        <div className="px-4 py-2 text-center text-sm font-semibold text-white" style={{ background: LARANJA }}>📢 {aviso}</div>
       )}
       <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 p-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
         <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔍 Buscar no cardápio..." className="w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
         {!busca && (
           <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
             {pizza.tamanhos.length > 0 && (
-              <button onClick={() => setPzOpen(true)} className="shrink-0 rounded-full px-3.5 py-1.5 text-sm font-bold text-white" style={{ background: LARANJA }}>🍕 Montar pizza</button>
+              <button onClick={() => setAba("__pizzas__")} className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-bold ${aba === "__pizzas__" ? "text-white" : ""}`} style={aba === "__pizzas__" ? { background: LARANJA } : { color: LARANJA, background: "rgba(199,131,64,0.12)" }}>🍕 Pizzas</button>
             )}
             {categorias.map((c) => (
               <button key={c} onClick={() => setAba(c)} className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium ${aba === c ? "text-white" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"}`} style={aba === c ? { background: ESCURO } : {}}>{c}</button>
@@ -232,20 +328,55 @@ export function PedirClient({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-2 p-3 pb-28 sm:grid-cols-2">
-        {visiveis.map((i) => {
-          const noCarrinho = cart.filter((l) => l.payload.kind !== "pizza" && "itemId" in l.payload && l.payload.itemId === i.id).reduce((s, l) => s + l.qtd, 0);
+      {/* Os mais vendidos */}
+      {!busca && destaque.length > 0 && aba !== "__pizzas__" && (
+        <div className="pt-3">
+          <h2 className="px-3 font-bold">🔥 Os mais vendidos</h2>
+          <div className="flex gap-2 overflow-x-auto p-3">
+            {destaque.map((i) => (
+              <button key={i.id} onClick={() => clicarItem(i)} className="w-40 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 text-left dark:border-zinc-800">
+                {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center text-3xl" style={{ background: "rgba(199,131,64,0.1)" }}>🍽️</div>}
+                <div className="p-2">
+                  <div className="truncate text-sm font-medium">{i.nome}</div>
+                  <div className="text-sm font-semibold" style={{ color: LARANJA }}>{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2 p-3 pb-28">
+        {/* Pizzas por tamanho */}
+        {!busca && aba === "__pizzas__" && pizza.tamanhos.map((t) => {
+          const min = aPartirDe.get(t.id);
           return (
-            <button key={i.id} onClick={() => clicarItem(i)} className={`flex items-center justify-between rounded-2xl border p-3 text-left ${noCarrinho > 0 ? "" : "border-zinc-200 dark:border-zinc-800"}`} style={noCarrinho > 0 ? { borderColor: LARANJA, background: "rgba(199,131,64,0.06)" } : {}}>
-              <div className="min-w-0">
-                <div className="font-medium leading-tight">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) ? " ⚙️" : ""}</div>
-                <div className="text-sm font-semibold" style={{ color: LARANJA }}>{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
+            <button key={t.id} onClick={() => setPzTamanho(t.id)} className="flex w-full items-center justify-between rounded-2xl border border-zinc-200 p-3 text-left dark:border-zinc-800">
+              <div>
+                <div className="font-bold">{t.nome}</div>
+                <div className="text-xs text-zinc-500">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}{t.fatias ? `, ${t.fatias} fatia${t.fatias > 1 ? "s" : ""}` : ""}</div>
+                {min != null && <div className="mt-0.5 text-sm font-semibold text-emerald-600">A partir de {brl(min)}</div>}
               </div>
-              <span className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white" style={{ background: LARANJA }}>+</span>
+              <span className="text-3xl">🍕</span>
             </button>
           );
         })}
-        {visiveis.length === 0 && <p className="col-span-full py-10 text-center text-sm text-zinc-400">Nada encontrado.</p>}
+
+        {/* Itens */}
+        {(busca || aba !== "__pizzas__") && visiveis.map((i) => {
+          const noCarrinho = cart.filter((l) => l.payload.kind !== "pizza" && "itemId" in l.payload && l.payload.itemId === i.id).reduce((s, l) => s + l.qtd, 0);
+          return (
+            <button key={i.id} onClick={() => clicarItem(i)} className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-3 text-left ${noCarrinho > 0 ? "" : "border-zinc-200 dark:border-zinc-800"}`} style={noCarrinho > 0 ? { borderColor: LARANJA, background: "rgba(199,131,64,0.06)" } : {}}>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium leading-tight">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) ? " ⚙️" : ""}</div>
+                {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-zinc-500">{i.descricao}</div>}
+                <div className="mt-0.5 text-sm font-semibold" style={{ color: LARANJA }}>{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
+              </div>
+              {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white" style={{ background: LARANJA }}>+</span>}
+            </button>
+          );
+        })}
+        {(busca || aba !== "__pizzas__") && visiveis.length === 0 && <p className="py-10 text-center text-sm text-zinc-400">Nada encontrado.</p>}
       </div>
 
       {qtdItens > 0 && (
@@ -259,22 +390,25 @@ export function PedirClient({
         </div>
       )}
 
-      {pzOpen && <PizzaModal pizza={pizza} onClose={() => setPzOpen(false)} onAdd={(l) => { addLinha(l); setPzOpen(false); }} />}
-      {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
+      {pzTamanho && <PizzaModal pizza={pizza} tamanhoInicial={pzTamanho} comObs onClose={() => setPzTamanho(null)} onAdd={(l) => { addLinha(l); setPzTamanho(null); }} />}
+      {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} comObs onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
     </Casca>
   );
 }
 
-function Casca({ children }: { children: React.ReactNode }) {
+function Casca({ children, onMeusPedidos }: { children: React.ReactNode; onMeusPedidos?: () => void }) {
   return (
     <div className="min-h-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
       <header className="px-4 py-3 text-white" style={{ background: ESCURO }}>
         <div className="mx-auto flex max-w-lg items-center gap-2">
           <span className="text-2xl">🍕</span>
-          <div>
-            <div className="text-lg font-bold" style={{ color: LARANJA }}>Brasa Pizzaria e Restaurante</div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-lg font-bold" style={{ color: LARANJA }}>Brasa Pizzaria e Restaurante</div>
             <div className="text-xs text-zinc-300">Peça online · entrega ou retirada</div>
           </div>
+          {onMeusPedidos && (
+            <button onClick={onMeusPedidos} className="shrink-0 rounded-xl border border-zinc-600 px-3 py-1.5 text-xs font-semibold text-zinc-200">📋 Meus pedidos</button>
+          )}
         </div>
       </header>
       <main className="mx-auto max-w-lg">{children}</main>

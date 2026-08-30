@@ -9,12 +9,12 @@ export default async function DeliveryConfigPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("delivery_config")
-    .select("origem_endereco, origem_lat, origem_lng, taxa_base, preco_km, raio_max_km, tempo_preparo_min, aberto")
+    .select("origem_endereco, origem_lat, origem_lng, taxa_base, preco_km, raio_max_km, tempo_preparo_min, aberto, aviso")
     .eq("id", 1)
     .maybeSingle();
   const c = (data ?? {}) as {
     origem_endereco?: string; origem_lat?: number; origem_lng?: number;
-    taxa_base?: number; preco_km?: number; raio_max_km?: number; tempo_preparo_min?: number; aberto?: boolean;
+    taxa_base?: number; preco_km?: number; raio_max_km?: number; tempo_preparo_min?: number; aberto?: boolean; aviso?: string | null;
   };
   const temChave = temChaveMapa();
   const geocodificado = c.origem_lat != null && c.origem_lng != null;
@@ -81,6 +81,12 @@ export default async function DeliveryConfigPage() {
             <input name="tempo_preparo_min" defaultValue={c.tempo_preparo_min ?? 40} inputMode="numeric" className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
             <p className="mt-1 text-xs text-zinc-500">Usado pra calcular a previsão de entrega.</p>
           </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold">Aviso no app do cliente (opcional)</label>
+          <input name="aviso" defaultValue={c.aviso ?? ""} placeholder="Ex.: Sexta e sábado têm rodízio por aqui! 🔥" className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+          <p className="mt-1 text-xs text-zinc-500">Aparece como faixa no topo do /pedir. Deixe vazio pra não mostrar.</p>
         </div>
 
         <label className="flex items-center gap-2">
