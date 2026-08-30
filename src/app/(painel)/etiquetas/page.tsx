@@ -82,10 +82,10 @@ export default async function EtiquetasPage({
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
           <Link
-            href="/etiquetas/estacao"
+            href="/impressao"
             className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
           >
-            🖨️ Estações
+            🖨️ Impressoras
           </Link>
           <Link
             href="/etiquetas/scanner"

@@ -125,42 +125,6 @@ export async function excluirEtiqueta(formData: FormData) {
   revalidatePath("/etiquetas");
 }
 
-// ---- Impressoras ----
-export async function criarImpressora(nome: string) {
-  const supabase = await createClient();
-  const n = nome?.trim();
-  if (!n) return { ok: false as const };
-  await supabase.from("impressoras").insert({ nome: n });
-  revalidatePath("/etiquetas/estacao");
-  revalidatePath("/etiquetas");
-  return { ok: true as const };
-}
-
-export async function renomearImpressora(id: string, nome: string) {
-  const supabase = await createClient();
-  const n = nome?.trim();
-  if (!n) return { ok: false as const };
-  await supabase.from("impressoras").update({ nome: n }).eq("id", id);
-  revalidatePath("/etiquetas/estacao");
-  revalidatePath("/etiquetas");
-  return { ok: true as const };
-}
-
-export async function definirImpressoraWindows(id: string, nome: string) {
-  const supabase = await createClient();
-  await supabase.from("impressoras").update({ impressora_windows: nome?.trim() || null }).eq("id", id);
-  revalidatePath("/etiquetas/estacao");
-  return { ok: true as const };
-}
-
-export async function definirImpressoraAtiva(id: string, ativo: boolean) {
-  const supabase = await createClient();
-  await supabase.from("impressoras").update({ ativo }).eq("id", id);
-  revalidatePath("/etiquetas/estacao");
-  revalidatePath("/etiquetas");
-  return { ok: true as const };
-}
-
 // Atualiza a validade padrão (dias) de um produto.
 export async function salvarValidadeProduto(produtoId: string, dias: number | null) {
   const supabase = await createClient();

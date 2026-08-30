@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   criarImpressora, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows,
-} from "../actions";
+} from "./actions";
 
 export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null };
 
-export function EstacaoHub({ impressoras, token }: { impressoras: Impressora[]; token: string }) {
+export function CentralImpressao({ impressoras, token }: { impressoras: Impressora[]; token: string }) {
   const router = useRouter();
   const [proc, start] = useTransition();
   const [novo, setNovo] = useState("");
@@ -24,18 +23,17 @@ export function EstacaoHub({ impressoras, token }: { impressoras: Impressora[]; 
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
-      <Link href="/etiquetas" className="text-sm text-zinc-500 hover:text-orange-600">← Etiquetas</Link>
-      <h1 className="mt-2 mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Estações de impressão</h1>
+    <div className="mx-auto max-w-3xl p-6">
+      <h1 className="mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">🖨️ Central de Impressões</h1>
       <p className="mb-5 text-sm text-zinc-500">
-        As etiquetas saem por um <b>PC central</b> com o <b>Agente</b> rodando. Cada impressora tem um nome no
-        Windows; o agente manda cada etiqueta para a impressora certa.
+        Aqui ficam <b>todas as impressoras</b> do sistema (etiquetas hoje; comandas e cupons no futuro). As impressões
+        saem por um <b>PC central</b> com o <b>Agente</b> instalado.
       </p>
 
-      {/* Agente do PC central */}
+      {/* Agente / PC central */}
       <div className="mb-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
         <h2 className="font-bold text-zinc-900 dark:text-zinc-50">🤖 Agente de impressão (PC central)</h2>
-        <p className="mt-1 text-sm text-zinc-500">Instale o agente no PC onde ficam as impressoras. Use estes dados no <code>config.json</code>:</p>
+        <p className="mt-1 text-sm text-zinc-500">Instale o agente no computador responsável pelas impressões. Use estes dados no assistente:</p>
         <div className="mt-3 space-y-2 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="w-24 shrink-0 text-zinc-400">Endereço:</span>
@@ -52,9 +50,7 @@ export function EstacaoHub({ impressoras, token }: { impressoras: Impressora[]; 
             </button>
           </div>
         </div>
-        <p className="mt-3 text-xs text-zinc-400">
-          O token é a senha do agente — não compartilhe. As instruções de instalação vêm junto com a pasta do agente (arquivo LEIA-ME).
-        </p>
+        <p className="mt-3 text-xs text-zinc-400">O token é a senha do agente — não compartilhe.</p>
       </div>
 
       {/* Impressoras */}
@@ -73,7 +69,6 @@ export function EstacaoHub({ impressoras, token }: { impressoras: Impressora[]; 
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="font-semibold text-zinc-900 dark:text-zinc-100">🖨️ {im.nome}{im.ativo ? "" : " (inativa)"}</div>
                   <div className="flex items-center gap-2">
-                    <Link href={`/etiquetas/estacao/${im.id}`} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">Testar no navegador</Link>
                     <button onClick={() => { setEditId(im.id); setEditNome(im.nome); }} className="text-sm text-orange-600 hover:underline">renomear</button>
                     <button onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-zinc-400 hover:text-zinc-600">{im.ativo ? "desativar" : "reativar"}</button>
                   </div>
@@ -86,7 +81,7 @@ export function EstacaoHub({ impressoras, token }: { impressoras: Impressora[]; 
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
-        <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha)" className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
+        <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
         <button
           disabled={proc || !novo.trim()}
           onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }}
@@ -108,7 +103,7 @@ function WinField({ im, proc, run }: { im: Impressora; proc: boolean; run: (fn: 
       <input
         value={val}
         onChange={(e) => setVal(e.target.value)}
-        placeholder="ex.: Elgin L42PRO"
+        placeholder="ex.: ELGIN L42PRO FULL"
         className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700"
       />
       {mudou && (
