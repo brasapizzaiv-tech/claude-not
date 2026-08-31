@@ -42,6 +42,11 @@ export default async function CotacaoDetalhePage({
   const jaCotado = new Map<string, number>();
   for (const i of itensData ?? []) jaCotado.set(i.produto_id, Number(i.qtd) || 0);
 
+  // A sugestão só pré-preenche na PRIMEIRA vez (cotação ainda sem itens
+  // salvos). Depois de salvar, o que o comprador zerou/deixou de fora tem que
+  // voltar vazio — senão a sugestão "ressuscita" itens tirados de propósito.
+  const primeiraVez = jaCotado.size === 0;
+
   let produtos = (prodData as unknown as Produto[]) ?? [];
 
   // Cotação baseada em contagem: cota SÓ os produtos que entraram naquela
@@ -69,8 +74,8 @@ export default async function CotacaoDetalhePage({
       ideal,
       sugestao,
       fardo,
-      // Se já foi salvo, usa o salvo; senão, começa com a sugestão.
-      qtd: existente != null ? existente : sugestao,
+      // Se já foi salvo, usa o salvo. Sugestão só na primeira abertura.
+      qtd: existente != null ? existente : primeiraVez ? sugestao : 0,
     };
   });
 
