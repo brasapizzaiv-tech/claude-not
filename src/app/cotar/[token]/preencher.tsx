@@ -67,6 +67,7 @@ export function CotarPreencher({
   produtos,
   outros,
   meta,
+  jaEnviadoEm,
 }: {
   token: string;
   descricao: string;
@@ -76,6 +77,7 @@ export function CotarPreencher({
   produtos: LinhaPreco[];
   outros: LinhaPreco[];
   meta: Meta;
+  jaEnviadoEm?: string | null;
 }) {
   // Itens que ele já fornece + os "outros" da cotação (que ele pode incluir).
   const todos = [...produtos, ...outros];
@@ -386,6 +388,16 @@ export function CotarPreencher({
           </div>
         )}
 
+        {!fechada && jaEnviadoEm && !msg && (
+          <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300">
+            ✅ Você já enviou esta cotação
+            {jaEnviadoEm !== "sim"
+              ? ` em ${new Date(jaEnviadoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+              : ""}
+            . Se algo mudou, é só ajustar e clicar em <b>Enviar preços</b> de novo.
+          </div>
+        )}
+
         <p className="mt-4 text-sm text-zinc-500">
           Informe o <b>preço</b> e a <b>unidade/embalagem</b> (fardo, caixa, unidade...) de cada
           item. Se estiver <b>em falta</b>, marque o botão. O que você preencher é{" "}
@@ -411,9 +423,9 @@ export function CotarPreencher({
                     <button
                       type="button"
                       onClick={() => naoTrabalho(p.produto_id, p.nome)}
-                      className="shrink-0 text-xs text-zinc-400 hover:text-red-600"
+                      className="shrink-0 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-red-800 dark:hover:bg-red-950"
                     >
-                      Não trabalho
+                      🚫 Não trabalho
                     </button>
                   )}
                 </div>

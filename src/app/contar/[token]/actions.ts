@@ -2,7 +2,16 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-type Item = { produto_id: string; qtd_estoque: number; qtd_pedir: number };
+type Item = { produto_id: string; qtd_estoque: number; qtd_pedir: number; preenchido?: string };
+
+// Busca produtos do estoque pro contador ADICIONAR um item fora da lista dele.
+export async function buscarProdutosContagem(token: string, termo: string) {
+  const supabase = await createClient();
+  const t = (termo || "").trim();
+  if (t.length < 2) return [];
+  const { data } = await supabase.rpc("contar_buscar_produtos", { p_token: token, p_busca: t });
+  return ((data as { id: string; nome: string; unidade: string; categoria: string }[]) ?? []);
+}
 
 // Salva a contagem preenchida pelo colaborador via link público.
 // Usa uma função no banco (SECURITY DEFINER) que valida o token — não precisa

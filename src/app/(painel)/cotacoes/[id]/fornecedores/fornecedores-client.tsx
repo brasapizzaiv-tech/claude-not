@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   convidarFornecedor,
@@ -19,8 +19,11 @@ export type FornecedorLinha = {
   respondido: boolean;
 };
 
-const MSG_PADRAO =
+const EMPRESA = "Brasa Pizzaria e Restaurante";
+const MSG_PADRAO_ANTIGA =
   "Olá! Segue o link para você nos passar os preços da nossa cotação ({itens} itens): {link}";
+const MSG_PADRAO =
+  "Olá {nome}! Aqui é da {empresa}. Segue o link para você nos passar os preços da nossa cotação ({itens} itens): {link}";
 
 export function FornecedoresClient({
   cotacaoId,
@@ -32,12 +35,16 @@ export function FornecedoresClient({
   linhas: FornecedorLinha[];
 }) {
   const router = useRouter();
-  const [origin, setOrigin] = useState("");
+  // Origem do site lida na hora do clique (evita setState em render).
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
   const [convidandoTodos, setConvidandoTodos] = useState(false);
   const [template, setTemplate] = useState<string>(() => {
     if (typeof window === "undefined") return MSG_PADRAO;
     try {
-      return localStorage.getItem("cot_msg_template") || MSG_PADRAO;
+      const salvo = localStorage.getItem("cot_msg_template");
+      // Quem nunca personalizou (ou ainda tem o padrão antigo) ganha o novo.
+      if (!salvo || salvo === MSG_PADRAO_ANTIGA) return MSG_PADRAO;
+      return salvo;
     } catch {
       return MSG_PADRAO;
     }
@@ -50,10 +57,6 @@ export function FornecedoresClient({
       return new Set();
     }
   });
-
-  useMemo(() => {
-    if (typeof window !== "undefined") setOrigin(window.location.origin);
-  }, []);
 
   function salvarTemplate(v: string) {
     setTemplate(v);
@@ -117,6 +120,7 @@ export function FornecedoresClient({
     return template
       .replaceAll("{itens}", String(l.cobertura))
       .replaceAll("{nome}", l.nome)
+      .replaceAll("{empresa}", EMPRESA)
       .replaceAll("{link}", url);
   }
   // Link do WhatsApp Web (abre no navegador, não no app instalado).
@@ -127,6 +131,21 @@ export function FornecedoresClient({
 
   const proximo = convidados.find((l) => !enviados.has(l.id));
   const enviadosCount = convidados.filter((l) => enviados.has(l.id)).length;
+
+  // Link ÚNICO do vendedor (várias empresas do mesmo vendedor num link só).
+  const [selUnico, setSelUnico] = useState<Set<string>>(new Set());
+  const [copiadoUnico, setCopiadoUnico] = useState(false);
+  const toggleUnico = (id: string) =>
+    setSelUnico((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  function copiarLinkUnico() {
+    const toks = convidados.filter((l) => selUnico.has(l.id) && l.token).map((l) => l.token as string);
+    if (toks.length < 2) return;
+    const url = `${origin}/cotar/escolher?e=${toks.join(",")}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiadoUnico(true);
+      setTimeout(() => setCopiadoUnico(false), 2500);
+    });
+  }
 
   return (
     <div className="mt-6 space-y-8">
@@ -223,6 +242,35 @@ export function FornecedoresClient({
             </div>
           </div>
 
+          {/* Link único: um vendedor que representa várias empresas */}
+          {convidados.length > 1 && (
+            <details className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <summary className="cursor-pointer px-4 py-2 text-sm text-zinc-500">
+                🔗 Link único (um vendedor com várias empresas)
+              </summary>
+              <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
+                <p className="mb-2 text-xs text-zinc-500">
+                  Marque as empresas do mesmo vendedor. Ele recebe UM link e escolhe pra qual empresa vai passar cada preço.
+                </p>
+                <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1">
+                  {convidados.map((l) => (
+                    <label key={l.id} className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+                      <input type="checkbox" checked={selUnico.has(l.id)} onChange={() => toggleUnico(l.id)} className="h-4 w-4" />
+                      {l.nome}
+                    </label>
+                  ))}
+                </div>
+                <button
+                  onClick={copiarLinkUnico}
+                  disabled={selUnico.size < 2}
+                  className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {copiadoUnico ? "✓ Link copiado!" : `Copiar link único (${selUnico.size} empresas)`}
+                </button>
+              </div>
+            </details>
+          )}
+
           {/* Mensagem configurável */}
           <details className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
             <summary className="cursor-pointer px-4 py-2 text-sm text-zinc-500">
@@ -236,8 +284,8 @@ export function FornecedoresClient({
                 className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
               />
               <p className="mt-1 text-[11px] text-zinc-400">
-                Use <b>{"{link}"}</b> (o link), <b>{"{itens}"}</b> (qtd de itens) e{" "}
-                <b>{"{nome}"}</b> (nome do fornecedor). A mensagem fica salva.
+                Use <b>{"{link}"}</b> (o link), <b>{"{itens}"}</b> (qtd de itens),{" "}
+                <b>{"{nome}"}</b> (nome do fornecedor) e <b>{"{empresa}"}</b> (nossa empresa). A mensagem fica salva.
               </p>
             </div>
           </details>

@@ -9,9 +9,10 @@ export default async function CotarPublicoPage({
   const { token } = await params;
   const supabase = await createClient();
 
-  const { data } = await supabase.rpc("cotar_fornecedor_dados", {
-    p_token: token,
-  });
+  const [{ data }, { data: st }] = await Promise.all([
+    supabase.rpc("cotar_fornecedor_dados", { p_token: token }),
+    supabase.rpc("cotar_fornecedor_status", { p_token: token }),
+  ]);
 
   if (!data) {
     return (
@@ -38,6 +39,7 @@ export default async function CotarPublicoPage({
       fornecedor={data.fornecedor ?? ""}
       prazo={data.cotacao?.prazo ?? null}
       fechada={data.cotacao?.status === "fechada"}
+      jaEnviadoEm={(st as { status?: string; respondido_em?: string } | null)?.status === "respondido" ? ((st as { respondido_em?: string })?.respondido_em ?? "sim") : null}
       produtos={produtos}
       outros={outros}
       meta={{

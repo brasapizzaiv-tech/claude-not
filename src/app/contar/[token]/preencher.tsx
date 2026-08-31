@@ -3,7 +3,9 @@
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import type { Produto } from "@/lib/types";
 import { EstoqueInput, calcular } from "@/components/estoque-input";
-import { salvarContagemPublica } from "./actions";
+import { salvarContagemPublica, buscarProdutosContagem } from "./actions";
+
+type ExtraProduto = { id: string; nome: string; unidade: string; categoria: string };
 
 type ItemInicial = {
   produto_id: string;
@@ -28,7 +30,15 @@ export function PreencherClient({
 }) {
   const [salvando, startSave] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
+
+  // Itens que o contador ADICIONOU (não estavam na lista dele, mas existem no estoque).
+  const [extras, setExtras] = useState<ExtraProduto[]>([]);
+  const [addAberto, setAddAberto] = useState(false);
+  const [addBusca, setAddBusca] = useState("");
+  const [addResultados, setAddResultados] = useState<ExtraProduto[]>([]);
+  const [addBuscando, setAddBuscando] = useState(false);
 
   // TODOS os valores vivem AQUI (não nos campos da tela). Assim, filtrar a
   // busca ou rolar a página nunca apaga o que já foi digitado.
@@ -46,9 +56,17 @@ export function PreencherClient({
       try {
         const raw = localStorage.getItem(chaveRascunho);
         if (!raw) return;
-        const draft = JSON.parse(raw) as Record<string, string[]>;
+        const draft = JSON.parse(raw) as { v?: Record<string, string[]>; x?: ExtraProduto[] } | Record<string, string[]>;
         if (draft && typeof draft === "object") {
-          setValores((atual) => ({ ...atual, ...draft }));
+          const novo = draft as { v?: Record<string, string[]>; x?: ExtraProduto[] };
+          if (novo.v && typeof novo.v === "object" && !Array.isArray(novo.v)) {
+            const v = novo.v;
+            setValores((atual) => ({ ...atual, ...v }));
+            if (Array.isArray(novo.x)) setExtras(novo.x);
+          } else {
+            const antigo = draft as Record<string, string[]>;
+            setValores((atual) => ({ ...atual, ...antigo }));
+          }
           setMsg("📝 Recuperei o que você já tinha digitado neste aparelho.");
         }
       } catch { /* sem storage */ }
@@ -56,10 +74,13 @@ export function PreencherClient({
     return () => clearTimeout(id);
   }, [chaveRascunho]);
 
+  function gravarRascunho(v: Record<string, string[]>, x: ExtraProduto[]) {
+    try { localStorage.setItem(chaveRascunho, JSON.stringify({ v, x })); } catch { /* sem storage */ }
+  }
   function setCaixas(produtoId: string, caixas: string[]) {
     setValores((v) => {
       const novo = { ...v, [produtoId]: caixas };
-      try { localStorage.setItem(chaveRascunho, JSON.stringify(novo)); } catch { /* sem storage */ }
+      gravarRascunho(novo, extras);
       return novo;
     });
   }
@@ -67,7 +88,44 @@ export function PreencherClient({
   const totalDe = (produtoId: string) =>
     Math.round((valores[produtoId] ?? []).reduce((s, b) => s + calcular(b), 0) * 1000) / 1000;
 
-  const preenchidos = produtos.filter((p) => totalDe(p.id) > 0).length;
+  // Preenchido = o contador respondeu algo (0 também vale!).
+  const foiPreenchido = (produtoId: string) =>
+    (valores[produtoId] ?? []).some((b) => b.trim() !== "");
+
+  const todosItens = useMemo(
+    () => [
+      ...produtos.map((p) => ({ id: p.id, nome: p.nome })),
+      ...extras.map((x) => ({ id: x.id, nome: x.nome })),
+    ],
+    [produtos, extras],
+  );
+  const preenchidos = todosItens.filter((p) => foiPreenchido(p.id)).length;
+
+  // ---- adicionar item fora da lista ----
+  async function buscarAdd() {
+    if (addBusca.trim().length < 2) return;
+    setAddBuscando(true);
+    const r = await buscarProdutosContagem(token, addBusca);
+    setAddBuscando(false);
+    const jaTem = new Set([...produtos.map((p) => p.id), ...extras.map((x) => x.id)]);
+    setAddResultados(r.filter((p) => !jaTem.has(p.id)));
+  }
+  function adicionarExtra(p: ExtraProduto) {
+    setExtras((x) => {
+      const novo = [...x, p];
+      gravarRascunho(valores, novo);
+      return novo;
+    });
+    setAddResultados((r) => r.filter((i) => i.id !== p.id));
+    setAddBusca(""); setAddResultados([]); setAddAberto(false);
+  }
+  function removerExtra(id: string) {
+    setExtras((x) => {
+      const novo = x.filter((i) => i.id !== id);
+      gravarRascunho(valores, novo);
+      return novo;
+    });
+  }
 
   const grupos = useMemo(() => {
     const m = new Map<string, Produto[]>();
@@ -94,24 +152,32 @@ export function PreencherClient({
   }, [grupos, busca]);
 
   function salvar() {
-    // Confirma se ficou muita coisa sem preencher (proteção extra).
-    if (preenchidos < produtos.length) {
-      const faltam = produtos.length - preenchidos;
-      const ok = confirm(
-        `Você preencheu ${preenchidos} de ${produtos.length} itens (${faltam} em branco).\n\nItens em branco NÃO entram na contagem. Enviar mesmo assim?`,
+    // TODO item precisa de resposta — não tem nenhum? Digite 0.
+    const faltando = todosItens.filter((p) => !foiPreenchido(p.id));
+    if (faltando.length > 0) {
+      setMsg(null);
+      const nomes = faltando.slice(0, 6).map((f) => f.nome).join(", ");
+      const resto = faltando.length > 6 ? ` e mais ${faltando.length - 6}` : "";
+      setErroEnvio(
+        `Faltam ${faltando.length} itens: ${nomes}${resto}. Preencha todos — se não tiver nenhum, digite 0.`,
       );
-      if (!ok) return;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
+    setErroEnvio(null);
     startSave(async () => {
-      const payload = produtos.map((p) => ({
-        produto_id: p.id,
-        qtd_estoque: totalDe(p.id),
-        qtd_pedir: 0,
-      }));
+      const payload = todosItens
+        .filter((p) => foiPreenchido(p.id))
+        .map((p) => ({
+          produto_id: p.id,
+          qtd_estoque: totalDe(p.id),
+          qtd_pedir: 0,
+          preenchido: "true",
+        }));
       const r = await salvarContagemPublica(token, payload);
       if (r.ok) {
         try { localStorage.removeItem(chaveRascunho); } catch { /* sem storage */ }
-        setMsg(`✅ Contagem enviada! ${r.gravados} de ${produtos.length} itens gravados. Obrigado, ${colaborador}.`);
+        setMsg(`✅ Contagem enviada! ${r.gravados} de ${todosItens.length} itens gravados. Obrigado, ${colaborador}.`);
       } else {
         setMsg(r.erro ?? "Não foi possível salvar. Tente de novo — o que você digitou está guardado neste aparelho.");
       }
@@ -132,6 +198,11 @@ export function PreencherClient({
         {msg && (
           <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
             {msg}
+          </div>
+        )}
+        {erroEnvio && (
+          <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+            ⚠️ {erroEnvio}
           </div>
         )}
 
@@ -168,7 +239,7 @@ export function PreencherClient({
                     </h2>
                     <div className="space-y-2">
                       {itensCat.map((p) => {
-                        const feito = totalDe(p.id) > 0;
+                        const feito = foiPreenchido(p.id);
                         return (
                           <div
                             key={p.id}
@@ -201,6 +272,77 @@ export function PreencherClient({
                   </div>
                 </Fragment>
               ))}
+
+              {/* Itens que o contador adicionou por conta */}
+              {extras.length > 0 && (
+                <div>
+                  <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-500">
+                    ➕ Adicionados por você ({extras.length})
+                  </h2>
+                  <div className="space-y-2">
+                    {extras.map((p) => {
+                      const feito = foiPreenchido(p.id);
+                      return (
+                        <div key={p.id} className={`rounded-xl border bg-white p-3 dark:bg-zinc-900 ${feito ? "border-emerald-300 dark:border-emerald-800" : "border-orange-200 dark:border-orange-900"}`}>
+                          <div className="mb-2 flex items-start justify-between gap-2">
+                            <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                              {feito && <span className="mr-1 text-emerald-600">✓</span>}
+                              {p.nome}
+                              <span className="ml-1 text-xs font-normal text-zinc-400">({p.unidade})</span>
+                            </div>
+                            <button onClick={() => removerExtra(p.id)} className="text-xs text-zinc-400 hover:text-red-600">remover</button>
+                          </div>
+                          <label className="block text-sm text-zinc-500">
+                            Em estoque
+                            <div className="mt-1">
+                              <EstoqueInput
+                                name={`estoque_${p.id}`}
+                                caixas={valores[p.id] ?? [""]}
+                                onCaixasChange={(cs) => setCaixas(p.id, cs)}
+                              />
+                            </div>
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Adicionar item fora da lista */}
+              <div className="rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
+                {!addAberto ? (
+                  <button onClick={() => setAddAberto(true)} className="w-full text-sm font-semibold text-orange-600">
+                    ➕ Tem um item no estoque que não está na lista? Adicionar
+                  </button>
+                ) : (
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        value={addBusca}
+                        onChange={(e) => setAddBusca(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") buscarAdd(); }}
+                        placeholder="Nome do item (ex.: vinagre)"
+                        className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base outline-none dark:border-zinc-700 dark:bg-zinc-950"
+                      />
+                      <button onClick={buscarAdd} disabled={addBuscando || addBusca.trim().length < 2} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                        {addBuscando ? "..." : "Buscar"}
+                      </button>
+                      <button onClick={() => { setAddAberto(false); setAddBusca(""); setAddResultados([]); }} className="text-zinc-400">✕</button>
+                    </div>
+                    {addResultados.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {addResultados.map((p) => (
+                          <button key={p.id} onClick={() => adicionarExtra(p)} className="flex w-full items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 text-left text-sm hover:bg-orange-50 dark:border-zinc-700 dark:hover:bg-orange-950">
+                            <span>{p.nome} <span className="text-xs text-zinc-400">({p.unidade})</span></span>
+                            <span className="text-xs text-zinc-400">{p.categoria}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -210,7 +352,7 @@ export function PreencherClient({
         <div className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="mx-auto max-w-xl">
             <div className="mb-1.5 text-center text-xs text-zinc-500">
-              {preenchidos} de {produtos.length} itens preenchidos
+              {preenchidos} de {todosItens.length} itens preenchidos · não tem nenhum? digite <b>0</b>
               {busca && " · a busca só filtra a tela, nada se perde"}
             </div>
             <button
