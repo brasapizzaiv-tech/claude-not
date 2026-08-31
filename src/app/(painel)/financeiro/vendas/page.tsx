@@ -23,22 +23,28 @@ export default async function VendasPage({
   const ate = sp.ate && /^\d{4}-\d{2}-\d{2}$/.test(sp.ate) ? sp.ate : hojeISO();
 
   const supabase = await createClient();
-  const [{ data: notas }, { data: fatRows }] = await Promise.all([
-    supabase
+
+  // O banco devolve no máximo 1000 linhas por vez — pagina até o fim.
+  const lista: { data_emissao: string; valor: number }[] = [];
+  for (let i = 0; ; i += 1000) {
+    const { data: pagina } = await supabase
       .from("notas_emitidas")
       .select("data_emissao, valor")
       .eq("status", "Autorizado")
       .gte("data_emissao", de)
       .lte("data_emissao", ate)
-      .limit(50000),
-    supabase
-      .from("faturamento_dias")
-      .select("data, almoco, noite")
-      .gte("data", de)
-      .lte("data", ate),
-  ]);
+      .order("data_emissao")
+      .range(i, i + 999);
+    const rows = (pagina as { data_emissao: string; valor: number }[]) ?? [];
+    lista.push(...rows);
+    if (rows.length < 1000) break;
+  }
 
-  const lista = (notas as { data_emissao: string; valor: number }[]) ?? [];
+  const { data: fatRows } = await supabase
+    .from("faturamento_dias")
+    .select("data, almoco, noite")
+    .gte("data", de)
+    .lte("data", ate);
   const totalNotas = lista.length;
   const totalEmitido = lista.reduce((s, n) => s + Number(n.valor), 0);
 
