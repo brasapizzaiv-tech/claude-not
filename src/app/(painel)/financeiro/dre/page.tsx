@@ -74,6 +74,34 @@ export default async function DrePage({
     else porGrupo.set(c.grupo ?? "", { tipo: c.tipo, total: v });
   }
 
+  // Receita REAL: faturamento importado da planilha (dia a dia, almoço+noite).
+  // Entra como Receita Bruta no DRE; lançamentos de receita continuam somando
+  // por cima (receitas extras). Cuidado para não lançar o mesmo faturamento
+  // duas vezes (ex.: "lançar faturamento" do fechamento do caixa).
+  const { data: fatData } = await supabase
+    .from("faturamento_dias")
+    .select("almoco, noite")
+    .gte("data", ini)
+    .lt("data", fim);
+  let fatAlmoco = 0;
+  let fatNoite = 0;
+  for (const f of ((fatData as { almoco: number | null; noite: number | null }[]) ?? [])) {
+    fatAlmoco += Number(f.almoco ?? 0);
+    fatNoite += Number(f.noite ?? 0);
+  }
+  fatAlmoco = Math.round(fatAlmoco * 100) / 100;
+  fatNoite = Math.round(fatNoite * 100) / 100;
+  if (fatAlmoco > 0 || fatNoite > 0) {
+    porTipo["receita"] = (porTipo["receita"] ?? 0) + fatAlmoco + fatNoite;
+    if (fatAlmoco > 0)
+      porCategoria.set("receita|Faturamento Almoço (real)", { nome: "Faturamento Almoço (real)", tipo: "receita", grupo: "Receita Bruta", ordem: -2, total: fatAlmoco });
+    if (fatNoite > 0)
+      porCategoria.set("receita|Faturamento Noite (real)", { nome: "Faturamento Noite (real)", tipo: "receita", grupo: "Receita Bruta", ordem: -1, total: fatNoite });
+    const g = porGrupo.get("Receita Bruta");
+    if (g) g.total += fatAlmoco + fatNoite;
+    else porGrupo.set("Receita Bruta", { tipo: "receita", total: fatAlmoco + fatNoite });
+  }
+
   // "Mostrar todas": semeia as categorias/grupos zerados para o DRE completo.
   if (mostrarTodas) {
     const { data: allCats } = await supabase
