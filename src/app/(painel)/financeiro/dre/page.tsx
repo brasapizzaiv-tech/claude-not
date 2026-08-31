@@ -18,6 +18,31 @@ function rotuloMes(mes: string) {
   });
 }
 
+function Linha({
+  label, valor, neg, bold, ind, pct,
+}: {
+  label: string; valor: number; neg?: boolean; bold?: boolean; ind?: boolean; pct: (n: number) => string;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between px-4 py-1.5 ${
+        bold
+          ? "border-y border-zinc-200 bg-zinc-50 font-semibold text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+          : ""
+      } ${ind ? "pl-8 text-sm text-zinc-500" : "text-zinc-700 dark:text-zinc-300"}`}
+    >
+      <span>{label}</span>
+      <span className="flex gap-4">
+        <span className={neg ? "text-red-600" : ""}>
+          {neg ? "- " : ""}
+          {moeda(valor)}
+        </span>
+        <span className="w-14 text-right text-xs text-zinc-400">{pct(valor)}</span>
+      </span>
+    </div>
+  );
+}
+
 export default async function DrePage({
   searchParams,
 }: {
@@ -150,38 +175,6 @@ export default async function DrePage({
       .filter(([, g]) => g.tipo === tipo && (mostrarTodas || g.total !== 0))
       .map(([nome, g]) => ({ nome, total: g.total }));
 
-  const Linha = ({
-    label,
-    valor,
-    neg,
-    bold,
-    ind,
-  }: {
-    label: string;
-    valor: number;
-    neg?: boolean;
-    bold?: boolean;
-    ind?: boolean;
-  }) => (
-    <div
-      className={`flex items-center justify-between px-4 py-1.5 ${
-        bold
-          ? "border-y border-zinc-200 bg-zinc-50 font-semibold text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-          : ""
-      } ${ind ? "pl-8 text-sm text-zinc-500" : "text-zinc-700 dark:text-zinc-300"}`}
-    >
-      <span>{label}</span>
-      <span className="flex gap-4">
-        <span className={neg ? "text-red-600" : ""}>
-          {neg ? "- " : ""}
-          {moeda(valor)}
-        </span>
-        <span className="w-14 text-right text-xs text-zinc-400">
-          {pct(valor)}
-        </span>
-      </span>
-    </div>
-  );
 
   return (
     <div className="mx-auto max-w-3xl p-8">
@@ -215,30 +208,30 @@ export default async function DrePage({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <Linha label="Receita Bruta de Vendas" valor={receitaBruta} bold />
+        <Linha pct={pct} label="Receita Bruta de Vendas" valor={receitaBruta} bold />
         {cats("receita").map((c) => (
-          <Linha key={c.nome} label={c.nome} valor={c.total} ind />
+          <Linha pct={pct} key={c.nome} label={c.nome} valor={c.total} ind />
         ))}
         {cats("deducao").map((c) => (
-          <Linha key={c.nome} label={`(-) ${c.nome}`} valor={c.total} ind neg />
+          <Linha pct={pct} key={c.nome} label={`(-) ${c.nome}`} valor={c.total} ind neg />
         ))}
-        <Linha label="(=) Receita Líquida" valor={receitaLiquida} bold />
+        <Linha pct={pct} label="(=) Receita Líquida" valor={receitaLiquida} bold />
 
-        <Linha label="(-) CMV" valor={cmv} neg />
+        <Linha pct={pct} label="(-) CMV" valor={cmv} neg />
         {cats("cmv").map((c) => (
-          <Linha key={c.nome} label={c.nome} valor={c.total} ind neg />
+          <Linha pct={pct} key={c.nome} label={c.nome} valor={c.total} ind neg />
         ))}
-        {cmo !== 0 && <Linha label="(-) CMO Variável" valor={cmo} neg />}
-        {tarifa !== 0 && <Linha label="(-) Tarifas de cartão/marketplace" valor={tarifa} neg />}
-        {imposto !== 0 && <Linha label="(-) Impostos (Simples)" valor={imposto} neg />}
-        <Linha label="(=) Margem de Contribuição" valor={margem} bold />
+        {cmo !== 0 && <Linha pct={pct} label="(-) CMO Variável" valor={cmo} neg />}
+        {tarifa !== 0 && <Linha pct={pct} label="(-) Tarifas de cartão/marketplace" valor={tarifa} neg />}
+        {imposto !== 0 && <Linha pct={pct} label="(-) Impostos (Simples)" valor={imposto} neg />}
+        <Linha pct={pct} label="(=) Margem de Contribuição" valor={margem} bold />
 
-        <Linha label="(-) Despesas Fixas" valor={despFixas} neg />
+        <Linha pct={pct} label="(-) Despesas Fixas" valor={despFixas} neg />
         {grupos("despesa_fixa").map((g) => (
-          <Linha key={g.nome} label={g.nome} valor={g.total} ind neg />
+          <Linha pct={pct} key={g.nome} label={g.nome} valor={g.total} ind neg />
         ))}
-        {financeira !== 0 && <Linha label="(-) Despesas Financeiras" valor={financeira} neg />}
-        <Linha label="(=) Resultado Operacional" valor={resultado} bold />
+        {financeira !== 0 && <Linha pct={pct} label="(-) Despesas Financeiras" valor={financeira} neg />}
+        <Linha pct={pct} label="(=) Resultado Operacional" valor={resultado} bold />
       </div>
 
       {/* Indicadores */}
