@@ -17,12 +17,15 @@ export default async function ContasPagarPage({
 }) {
   const sp = await searchParams;
   const f: FiltroContas = {
-    status: sp.status || "aberto",
+    // Filtrar por dia de pagamento só faz sentido em contas pagas.
+    status: sp.status || (sp.pde || sp.pate ? "pagas" : "aberto"),
     comp: sp.comp,
     vde: sp.vde,
     vate: sp.vate,
     lde: sp.lde,
     late: sp.late,
+    pde: sp.pde,
+    pate: sp.pate,
     banco: sp.banco,
     forma: sp.forma,
     cat: sp.cat,
@@ -110,6 +113,14 @@ export default async function ContasPagarPage({
         <div>
           <label className="mb-1 block text-xs text-zinc-500">até</label>
           <input type="date" name="late" defaultValue={f.late} className={inputCls} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Pago de</label>
+          <input type="date" name="pde" defaultValue={f.pde} className={inputCls} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">até</label>
+          <input type="date" name="pate" defaultValue={f.pate} className={inputCls} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">Origem (banco)</label>

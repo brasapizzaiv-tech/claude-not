@@ -7,6 +7,8 @@ export type FiltroContas = {
   vate?: string; // vencimento até
   lde?: string; // lançamento de
   late?: string; // lançamento até
+  pde?: string; // pago de (dia do pagamento)
+  pate?: string; // pago até
   banco?: string; // origem do pagamento
   forma?: string; // tipo de pagamento
   cat?: string; // categoria_id
@@ -94,6 +96,9 @@ export async function consultarContas(f: FiltroContas): Promise<LinhaConta[]> {
   if (f.vate) q = q.lte("vencimento", f.vate);
   if (f.lde) q = q.gte("lancamento_em", f.lde);
   if (f.late) q = q.lte("lancamento_em", f.late);
+  // Dia do pagamento (pago_em é data+hora: o "até" vai até o fim do dia).
+  if (f.pde) q = q.gte("pago_em", f.pde);
+  if (f.pate) q = q.lte("pago_em", `${f.pate}T23:59:59.999`);
   if (f.banco) q = q.eq("banco", f.banco);
   if (f.forma) q = q.eq("forma_pagamento", f.forma);
   if (f.cat) q = q.eq("categoria_id", f.cat);

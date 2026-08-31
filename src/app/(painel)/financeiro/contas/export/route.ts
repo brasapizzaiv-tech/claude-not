@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
     vate: sp.get("vate") || undefined,
     lde: sp.get("lde") || undefined,
     late: sp.get("late") || undefined,
+    pde: sp.get("pde") || undefined,
+    pate: sp.get("pate") || undefined,
     banco: sp.get("banco") || undefined,
     forma: sp.get("forma") || undefined,
     cat: sp.get("cat") || undefined,
