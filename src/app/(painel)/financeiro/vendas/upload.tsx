@@ -51,7 +51,7 @@ export function UploadVendas() {
       const texto = await file.text();
       const r = await importarNotasEmitidas(texto);
       if (r?.ok)
-        setMsg(`✓ ${r.novas} nova(s) de ${r.total} no arquivo.`);
+        setMsg(`✓ ${r.novas} nova(s) e ${r.atualizadas ?? 0} atualizada(s), de ${r.total} no arquivo.`);
       else setMsg(`❌ ${r?.erro ?? "erro"}`);
       router.refresh();
     });

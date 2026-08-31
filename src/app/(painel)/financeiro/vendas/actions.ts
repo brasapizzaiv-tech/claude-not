@@ -76,7 +76,19 @@ export async function importarNotasEmitidas(html: string) {
   if (notas.length === 0)
     return { ok: false, erro: "Nenhuma nota encontrada no arquivo." };
 
-  let novas = 0;
+  // Conta quantas já existiam (pra reportar novas × atualizadas).
+  let existentes = 0;
+  for (let i = 0; i < notas.length; i += 500) {
+    const chaves = notas.slice(i, i + 500).map((n) => n.chave);
+    const { count } = await supabase
+      .from("notas_emitidas")
+      .select("chave", { count: "exact", head: true })
+      .in("chave", chaves);
+    existentes += count ?? 0;
+  }
+
+  // Upsert de verdade: nota que já existia é ATUALIZADA (status/valor podem
+  // mudar — ex.: cancelamento depois da 1ª importação).
   for (let i = 0; i < notas.length; i += 500) {
     const lote = notas.slice(i, i + 500).map((n) => ({
       chave: n.chave,
@@ -88,13 +100,12 @@ export async function importarNotasEmitidas(html: string) {
       data_emissao: n.data_emissao,
       consumidor: n.consumidor,
     }));
-    const { data } = await supabase
+    const { error } = await supabase
       .from("notas_emitidas")
-      .upsert(lote, { onConflict: "chave", ignoreDuplicates: true })
-      .select("id");
-    novas += data?.length ?? 0;
+      .upsert(lote, { onConflict: "chave" });
+    if (error) return { ok: false, erro: `Falha ao gravar: ${error.message}` };
   }
 
   revalidatePath("/financeiro/vendas");
-  return { ok: true, total: notas.length, novas };
+  return { ok: true, total: notas.length, novas: notas.length - existentes, atualizadas: existentes };
 }
