@@ -151,8 +151,18 @@ export function CotarPreencher({
   const supabase = useMemo(() => createClient(), []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Preço do item, normalizado (vírgula → ponto).
-  const precoDe = (produtoId: string) => (precos[produtoId] ?? "").replace(",", ".").trim();
+  // Normaliza número em formato brasileiro: "2,99" → "2.99", "1.234,56" →
+  // "1234.56", "R$ 3,90" → "3.90". Se não der pra entender, devolve "".
+  const normNum = (raw: string) => {
+    let s = (raw || "").replace(/[^\d.,-]/g, "").trim();
+    if (!s) return "";
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(/,/g, ".");
+    const n = Number(s);
+    return Number.isFinite(n) ? String(n) : "";
+  };
+
+  // Preço do item, normalizado.
+  const precoDe = (produtoId: string) => normNum(precos[produtoId] ?? "");
 
   // Itens ativos = os que ele fornece (menos removidos) + os "outros" incluídos.
   const ativos = [
@@ -174,17 +184,17 @@ export function CotarPreencher({
         tamanho_embalagem: tam[p.produto_id] ?? "",
         observacao: obs[p.produto_id] ?? "",
         st_inclusa: p.tem_st ? String(!!stInc[p.produto_id]) : "",
-        st_pct: p.tem_st ? (stPct[p.produto_id] ?? "").replace(",", ".").trim() : "",
+        st_pct: p.tem_st ? normNum(stPct[p.produto_id] ?? "") : "",
         extras: (extras[p.produto_id] ?? [])
           .filter((x) => x.preco.trim() || x.marca.trim())
           .map((x) => ({
             marca: x.marca.trim(),
-            preco_unit: x.preco.replace(",", ".").trim(),
+            preco_unit: normNum(x.preco),
             embalagem: x.embalagem,
             tamanho_embalagem: x.tamanho,
             observacao: x.obs,
             st_inclusa: p.tem_st ? String(!!x.st_inclusa) : "",
-            st_pct: p.tem_st ? x.st_pct.replace(",", ".").trim() : "",
+            st_pct: p.tem_st ? normNum(x.st_pct) : "",
           })),
       }));
   }
@@ -196,7 +206,7 @@ export function CotarPreencher({
     payloadRef.current = () => ({
       precos: montarPrecos(),
       ...dados,
-      pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
+      pedido_minimo: normNum(dados.pedido_minimo),
       rascunho: true,
     });
   });
@@ -261,7 +271,9 @@ export function CotarPreencher({
     const faltando: string[] = [];
     for (const p of ativos) {
       if (removidos.has(p.produto_id) || indisp[p.produto_id]) continue;
-      if (!precoDe(p.produto_id)) faltando.push(`preço de ${p.nome}`);
+      const bruto = (precos[p.produto_id] ?? "").trim();
+      if (!bruto) faltando.push(`preço de ${p.nome}`);
+      else if (!precoDe(p.produto_id)) faltando.push(`preço de ${p.nome} — "${bruto}" não é um número válido`);
       if (!(emb[p.produto_id] ?? "").trim()) faltando.push(`unidade de ${p.nome}`);
     }
     if (faltando.length > 0) {
@@ -279,7 +291,7 @@ export function CotarPreencher({
         const r = await salvarPrecosPublico(token, {
           precos: montarPrecos(),
           ...dados,
-          pedido_minimo: dados.pedido_minimo.replace(",", ".").trim(),
+          pedido_minimo: normNum(dados.pedido_minimo),
         });
         if (r?.ok) {
           setErro(null);
