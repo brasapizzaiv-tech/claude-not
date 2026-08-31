@@ -23,7 +23,7 @@ export default async function VendasPage({
   const ate = sp.ate && /^\d{4}-\d{2}-\d{2}$/.test(sp.ate) ? sp.ate : hojeISO();
 
   const supabase = await createClient();
-  const [{ data: notas }, { data: receitas }] = await Promise.all([
+  const [{ data: notas }, { data: fatRows }] = await Promise.all([
     supabase
       .from("notas_emitidas")
       .select("data_emissao, valor")
@@ -32,9 +32,8 @@ export default async function VendasPage({
       .lte("data_emissao", ate)
       .limit(50000),
     supabase
-      .from("lancamentos")
-      .select("valor, dre_categorias!inner(tipo)")
-      .eq("dre_categorias.tipo", "receita")
+      .from("faturamento_dias")
+      .select("data, almoco, noite")
       .gte("data", de)
       .lte("data", ate),
   ]);
@@ -42,12 +41,16 @@ export default async function VendasPage({
   const lista = (notas as { data_emissao: string; valor: number }[]) ?? [];
   const totalNotas = lista.length;
   const totalEmitido = lista.reduce((s, n) => s + Number(n.valor), 0);
-  const faturamentoLancado = (
-    (receitas as { valor: number }[]) ?? []
-  ).reduce((s, r) => s + Number(r.valor), 0);
+
+  // Faturamento da planilha (tabela própria — não mexe no DRE).
+  const fatDe = new Map<string, number>();
+  for (const f of ((fatRows as { data: string; almoco: number | null; noite: number | null }[]) ?? [])) {
+    fatDe.set(f.data, Number(f.almoco ?? 0) + Number(f.noite ?? 0));
+  }
+  const faturamentoLancado = [...fatDe.values()].reduce((s, v) => s + v, 0);
   const diferenca = faturamentoLancado - totalEmitido;
 
-  // Agrupa por dia.
+  // Agrupa por dia (notas + faturamento no mesmo dia).
   const porDia = new Map<string, { n: number; valor: number }>();
   for (const n of lista) {
     const g = porDia.get(n.data_emissao) ?? { n: 0, valor: 0 };
@@ -55,6 +58,7 @@ export default async function VendasPage({
     g.valor += Number(n.valor);
     porDia.set(n.data_emissao, g);
   }
+  for (const d of fatDe.keys()) if (!porDia.has(d)) porDia.set(d, { n: 0, valor: 0 });
   const dias = [...porDia.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
 
   const inputCls =
@@ -68,8 +72,8 @@ export default async function VendasPage({
             Notas emitidas × Faturamento
           </h1>
           <p className="mt-1 text-zinc-500">
-            Valor das notas de venda (NFC-e) no período vs. o faturamento
-            lançado.
+            Valor das notas de venda (NFC-e) no período vs. o faturamento da
+            planilha (almoço + noite). Não mexe no Financeiro/DRE.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -114,7 +118,7 @@ export default async function VendasPage({
           </p>
         </div>
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Faturamento lançado</p>
+          <p className="text-xs text-zinc-500">Faturamento (planilha)</p>
           <p className="mt-1 text-xl font-bold text-green-600">
             {moeda(faturamentoLancado)}
           </p>
@@ -132,8 +136,9 @@ export default async function VendasPage({
       </div>
       {faturamentoLancado === 0 && (
         <p className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-          Ainda não há receitas lançadas neste período. Lance o faturamento no
-          Financeiro para comparar com as notas emitidas.
+          Sem faturamento importado neste período. Use o botão{" "}
+          <b>Importar faturamento (planilha)</b> acima — os valores ficam só
+          nesta comparação, sem mexer no Financeiro/DRE.
         </p>
       )}
 
@@ -145,20 +150,32 @@ export default async function VendasPage({
               <th className="px-4 py-3">Dia</th>
               <th className="px-4 py-3 text-right">Notas</th>
               <th className="px-4 py-3 text-right">Valor emitido</th>
+              <th className="px-4 py-3 text-right">Faturamento</th>
+              <th className="px-4 py-3 text-right">Diferença</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {dias.map(([dia, g]) => (
-              <tr key={dia} className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300">
-                  {dataBR(dia)}
-                </td>
-                <td className="px-4 py-2 text-right text-zinc-500">{g.n}</td>
-                <td className="px-4 py-2 text-right font-medium text-zinc-800 dark:text-zinc-200">
-                  {moeda(g.valor)}
-                </td>
-              </tr>
-            ))}
+            {dias.map(([dia, g]) => {
+              const fat = fatDe.get(dia);
+              const dif = fat != null ? fat - g.valor : null;
+              return (
+                <tr key={dia} className="bg-white dark:bg-zinc-950">
+                  <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300">
+                    {dataBR(dia)}
+                  </td>
+                  <td className="px-4 py-2 text-right text-zinc-500">{g.n}</td>
+                  <td className="px-4 py-2 text-right font-medium text-zinc-800 dark:text-zinc-200">
+                    {moeda(g.valor)}
+                  </td>
+                  <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
+                    {fat != null ? moeda(fat) : "—"}
+                  </td>
+                  <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-zinc-400" : Math.abs(dif) < 0.01 ? "text-zinc-400" : "text-amber-600"}`}>
+                    {dif != null ? moeda(dif) : "—"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

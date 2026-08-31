@@ -52,38 +52,22 @@ export async function importarFaturamentoPlanilha(fd: FormData) {
     return { ok: false as const, erro: "Não achei valores de faturamento (coluna REALIZADO) na planilha." };
   }
 
-  // Categorias de receita do import (cria se não existirem).
-  async function categoriaId(nomeCat: string) {
-    const { data: existe } = await supabase
-      .from("dre_categorias").select("id").eq("tipo", "receita").eq("nome", nomeCat).maybeSingle();
-    if (existe?.id) return existe.id as string;
-    const { data: nova } = await supabase
-      .from("dre_categorias")
-      .insert({ tipo: "receita", grupo: "Receita Bruta", nome: nomeCat, ordem: 90 })
-      .select("id").single();
-    return nova?.id as string;
-  }
-  const catAlmoco = await categoriaId("Faturamento Almoço");
-  const catNoite = await categoriaId("Faturamento Noite");
-
-  // Substitui o que já veio de planilha nas mesmas datas (reimportar não duplica).
-  const datas = [...new Set(comValor.map((d) => d.data))];
-  for (let i = 0; i < datas.length; i += 200) {
-    await supabase.from("lancamentos").delete().eq("origem", "planilha").in("data", datas.slice(i, i + 200));
-  }
-
-  const linhas = comValor.flatMap((d) => [
-    ...(d.almoco != null ? [{ data: d.data, descricao: "Faturamento almoço (planilha)", categoria_id: catAlmoco, valor: d.almoco, origem: "planilha" }] : []),
-    ...(d.noite != null ? [{ data: d.data, descricao: "Faturamento noite (planilha)", categoria_id: catNoite, valor: d.noite, origem: "planilha" }] : []),
-  ]);
+  // Grava na tabela PRÓPRIA da comparação (não mexe no Financeiro/DRE).
+  // Reimportar a mesma data substitui o valor (upsert).
+  const linhas = comValor.map((d) => ({
+    data: d.data,
+    almoco: d.almoco,
+    noite: d.noite,
+    atualizado_em: new Date().toISOString(),
+  }));
   for (let i = 0; i < linhas.length; i += 500) {
-    await supabase.from("lancamentos").insert(linhas.slice(i, i + 500));
+    const { error } = await supabase.from("faturamento_dias").upsert(linhas.slice(i, i + 500), { onConflict: "data" });
+    if (error) return { ok: false as const, erro: `Falha ao gravar: ${error.message}` };
   }
 
-  const total = Math.round(linhas.reduce((s, l) => s + l.valor, 0) * 100) / 100;
+  const total = Math.round(comValor.reduce((s, d) => s + (d.almoco ?? 0) + (d.noite ?? 0), 0) * 100) / 100;
   revalidatePath("/financeiro/vendas");
-  revalidatePath("/financeiro");
-  return { ok: true as const, dias: datas.length, lancamentos: linhas.length, total };
+  return { ok: true as const, dias: comValor.length, total };
 }
 
 export async function importarNotasEmitidas(html: string) {

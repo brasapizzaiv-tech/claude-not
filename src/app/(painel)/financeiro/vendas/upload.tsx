@@ -17,7 +17,7 @@ export function UploadFaturamento() {
       fd.set("arquivo", file);
       const r = await importarFaturamentoPlanilha(fd);
       if (r?.ok)
-        setMsg(`✓ ${r.dias} dia(s), ${r.lancamentos} lançamento(s), total ${r.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.`);
+        setMsg(`✓ ${r.dias} dia(s) importado(s), total ${r.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.`);
       else setMsg(`❌ ${r?.erro ?? "erro"}`);
       router.refresh();
     });
