@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { agenteAutorizado } from "@/lib/impressao-agente";
-import { gerarEtiquetaPdf } from "@/lib/etiqueta-pdf";
+import { gerarEtiquetaPdf, type EtiquetaConfig } from "@/lib/etiqueta-pdf";
 import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
 
@@ -19,11 +19,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   let pdf: Buffer;
 
   if (job.tipo === "etiqueta") {
-    const { data } = await admin
-      .from("etiquetas")
-      .select("id, numero, produto_nome, colaborador_nome, manipulado_em, validade, conservacao, quantidade, unidade")
-      .eq("id", job.ref_id)
-      .maybeSingle();
+    const [{ data }, { data: imp }] = await Promise.all([
+      admin
+        .from("etiquetas")
+        .select("id, numero, produto_nome, colaborador_nome, manipulado_em, validade, conservacao, quantidade, unidade")
+        .eq("id", job.ref_id)
+        .maybeSingle(),
+      job.impressora_id
+        ? admin.from("impressoras").select("etiqueta_config").eq("id", job.impressora_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
     if (!data) return new Response("etiqueta nao encontrada", { status: 404 });
     pdf = await gerarEtiquetaPdf(
       {
@@ -38,6 +43,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         unidade: (data.unidade as string) ?? null,
       },
       baseUrl,
+      ((imp as { etiqueta_config?: EtiquetaConfig | null } | null)?.etiqueta_config) ?? null,
     );
   } else if (job.tipo === "teste") {
     const { data: imp } = await admin.from("impressoras").select("nome, comanda_config").eq("id", job.ref_id).maybeSingle();

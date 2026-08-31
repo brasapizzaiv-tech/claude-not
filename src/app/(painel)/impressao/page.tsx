@@ -7,7 +7,7 @@ export const metadata = { title: "Central de Impressões · Brasa" };
 export default async function CentralImpressaoPage() {
   const supabase = await createClient();
   const [{ data }, { data: prods }] = await Promise.all([
-    supabase.from("impressoras").select("id, nome, ativo, impressora_windows, recebe_comandas, comanda_produtos, comanda_config").order("criado_em"),
+    supabase.from("impressoras").select("id, nome, ativo, impressora_windows, recebe_comandas, comanda_produtos, comanda_config, etiqueta_config").order("criado_em"),
     supabase.from("pdv_itens").select("id, nome, categoria").eq("ativo", true).order("categoria").order("nome"),
   ]);
   const produtos = ((prods as { id: string; nome: string; categoria: string | null }[]) ?? []).map((p) => ({

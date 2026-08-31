@@ -56,6 +56,16 @@ export async function definirComandaProdutos(id: string, produtos: string[] | nu
 }
 
 // Formato da comanda (largura, preços, garçom, hora, agrupar/qtd por categoria, destacar obs).
+// Formato da etiqueta desta impressora (tamanho do papel, margem, letra, QR).
+export async function definirEtiquetaConfig(id: string, config: {
+  largura: number; altura: number; margem: number; escala: number; qr: boolean;
+}) {
+  const supabase = await createClient();
+  await supabase.from("impressoras").update({ etiqueta_config: config }).eq("id", id);
+  revalidatePath("/impressao");
+  return { ok: true as const };
+}
+
 export async function definirComandaConfig(id: string, config: {
   largura: number; precos: boolean; garcom: boolean; hora: boolean;
   agrupar: boolean; qtdCat: boolean; destObs: boolean;

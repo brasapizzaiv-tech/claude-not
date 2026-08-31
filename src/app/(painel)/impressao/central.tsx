@@ -3,11 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig, imprimirTeste,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste,
 } from "./actions";
 
 export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean; agrupar: boolean; qtdCat: boolean; destObs: boolean };
-export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null };
+export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean };
+export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null; etiqueta_config: EtiquetaConfig | null };
 export type Produto = { id: string; nome: string; categoria: string };
 
 export function CentralImpressao({
@@ -129,6 +130,7 @@ export function CentralImpressao({
                 </label>
                 {im.recebe_comandas && <ViaProdutos im={im} produtos={produtos} proc={proc} run={run} />}
                 {im.recebe_comandas && <ViaFormato im={im} proc={proc} run={run} />}
+                <EtiquetaFormato im={im} proc={proc} run={run} />
               </>
             )}
           </div>
@@ -147,6 +149,59 @@ export function CentralImpressao({
           {msg}
         </div>
       )}
+    </div>
+  );
+}
+
+// Formato da ETIQUETA desta impressora (aparece pra qualquer impressora — só
+// importa pra quem imprime etiquetas, ex.: a Elgin).
+function EtiquetaFormato({ im, proc, run }: {
+  im: Impressora; proc: boolean; run: (fn: () => Promise<unknown>) => void;
+}) {
+  const def: EtiquetaConfig = { largura: 55, altura: 55, margem: 3, escala: 100, qr: true };
+  const [aberto, setAberto] = useState(!!im.etiqueta_config);
+  const [c, setC] = useState<EtiquetaConfig>({ ...def, ...(im.etiqueta_config ?? {}) });
+  const [salvo, setSalvo] = useState(false);
+
+  const num = (v: string, min: number, max: number, fb: number) => {
+    const n = Number(String(v).replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? Math.min(Math.max(n, min), max) : fb;
+  };
+  function salvar(novo: EtiquetaConfig) {
+    setC(novo);
+    run(async () => { await definirEtiquetaConfig(im.id, novo); setSalvo(true); setTimeout(() => setSalvo(false), 2000); });
+  }
+  const campo = "w-16 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700";
+
+  if (!aberto) {
+    return (
+      <button onClick={() => setAberto(true)} className="mt-2 text-xs font-medium text-zinc-500 hover:text-orange-600">
+        🏷️ Formato da etiqueta {im.etiqueta_config ? `(${c.largura}×${c.altura}mm)` : "(padrão 55×55mm)"} ▸
+      </button>
+    );
+  }
+  return (
+    <div className="mt-2 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/40">
+      <button onClick={() => setAberto(false)} className="mb-1.5 text-xs text-zinc-500">🏷️ Formato da etiqueta ▾</button>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5">Largura
+          <input defaultValue={c.largura} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, largura: num(e.target.value, 25, 120, 55) })} className={campo} /> mm
+        </label>
+        <label className="flex items-center gap-1.5">Altura
+          <input defaultValue={c.altura} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, altura: num(e.target.value, 25, 120, 55) })} className={campo} /> mm
+        </label>
+        <label className="flex items-center gap-1.5">Margem
+          <input defaultValue={c.margem} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, margem: num(e.target.value, 0, 10, 3) })} className={campo} /> mm
+        </label>
+        <label className="flex items-center gap-1.5">Letra:
+          {[["Pequena", 85], ["Normal", 100], ["Grande", 115]].map(([lbl, v]) => (
+            <button key={v} disabled={proc} onClick={() => salvar({ ...c, escala: v as number })} className={`rounded-lg px-2.5 py-1 text-xs font-medium ${c.escala === v ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>{lbl}</button>
+          ))}
+        </label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.qr} disabled={proc} onChange={(e) => salvar({ ...c, qr: e.target.checked })} /> QR code</label>
+        {salvo && <span className="text-xs font-semibold text-emerald-600">✓ salvo</span>}
+      </div>
+      <p className="mt-1 text-[11px] text-zinc-400">Vale pras etiquetas de manipulação impressas nesta impressora. A Elgin L42 usa 55×55mm.</p>
     </div>
   );
 }
