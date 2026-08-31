@@ -23,16 +23,28 @@ const boxCls =
 
 // Campo de estoque com CAIXAS separadas (um por local/lugar) que somam,
 // mais uma calculadora. O total vai num input escondido (name) para salvar.
+// Pode ser CONTROLADO de fora (caixas + onCaixasChange): assim o valor vive no
+// pai e NÃO se perde quando o campo sai da tela (ex.: filtro de busca).
 export function EstoqueInput({
   name,
   defaultValue,
   disabled,
+  caixas: caixasProp,
+  onCaixasChange,
 }: {
   name: string;
   defaultValue?: string;
   disabled?: boolean;
+  caixas?: string[];
+  onCaixasChange?: (caixas: string[]) => void;
 }) {
-  const [caixas, setCaixas] = useState<string[]>([defaultValue ?? ""]);
+  const [caixasInterno, setCaixasInterno] = useState<string[]>([defaultValue ?? ""]);
+  const controlado = caixasProp !== undefined;
+  const caixas = controlado ? (caixasProp.length ? caixasProp : [""]) : caixasInterno;
+  const setCaixas = (fn: (cs: string[]) => string[]) => {
+    if (controlado) onCaixasChange?.(fn(caixas));
+    else setCaixasInterno(fn);
+  };
   const [calc, setCalc] = useState(false);
   const [ativo, setAtivo] = useState(0);
 
