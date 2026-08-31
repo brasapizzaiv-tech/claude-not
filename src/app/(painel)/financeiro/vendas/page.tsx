@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
-import { UploadVendas } from "./upload";
+import { UploadVendas, UploadFaturamento } from "./upload";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -80,6 +80,7 @@ export default async function VendasPage({
             Financeiro
           </Link>
           <UploadVendas />
+          <UploadFaturamento />
         </div>
       </div>
 
