@@ -56,6 +56,33 @@ export async function meusPedidos(telefone: string) {
   });
 }
 
+// Valida um cupom e devolve os dados pra prévia do desconto no carrinho.
+type CupomRow = { id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; validade: string | null; max_usos: number | null; usos: number; ativo: boolean };
+async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, codigo: string) {
+  const cod = (codigo || "").trim().toUpperCase();
+  if (!cod) return { ok: false as const, mensagem: "Digite o código do cupom." };
+  const { data } = await admin.from("cupons").select("*").ilike("codigo", cod).maybeSingle();
+  const c = data as CupomRow | null;
+  if (!c || !c.ativo) return { ok: false as const, mensagem: "Cupom não encontrado ou desativado." };
+  if (c.validade && c.validade < new Date().toISOString().slice(0, 10)) return { ok: false as const, mensagem: "Esse cupom venceu. 😕" };
+  if (c.max_usos != null && c.usos >= c.max_usos) return { ok: false as const, mensagem: "Esse cupom esgotou." };
+  return { ok: true as const, cupom: c };
+}
+
+export async function validarCupomPublico(codigo: string) {
+  const admin = createAdminClient();
+  const r = await buscarCupomValido(admin, codigo);
+  if (!r.ok) return r;
+  const c = r.cupom;
+  return {
+    ok: true as const,
+    codigo: c.codigo,
+    tipo: c.tipo,
+    valor: Number(c.valor),
+    minimo: c.minimo != null ? Number(c.minimo) : null,
+  };
+}
+
 export async function enviarPedidoPublico(d: {
   nome: string;
   telefone: string;
@@ -64,6 +91,7 @@ export async function enviarPedidoPublico(d: {
   formaPagamento: string;
   trocoPara?: number | null;
   observacao?: string;
+  cupom?: string | null;
   itens: LinhaPedido[];
 }) {
   const admin = createAdminClient();
@@ -136,6 +164,17 @@ export async function enviarPedidoPublico(d: {
     clienteId = (novo?.id as string) ?? null;
   }
 
+  // Cupom (revalidado aqui — o desconto real é calculado no core, sobre o
+  // subtotal resolvido no servidor).
+  let cupom: { codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null } | null = null;
+  let cupomId: string | null = null;
+  if ((d.cupom || "").trim()) {
+    const rc = await buscarCupomValido(admin, d.cupom!);
+    if (!rc.ok) return { ok: false as const, mensagem: rc.mensagem };
+    cupom = { codigo: rc.cupom.codigo, tipo: rc.cupom.tipo, valor: Number(rc.cupom.valor), minimo: rc.cupom.minimo != null ? Number(rc.cupom.minimo) : null };
+    cupomId = rc.cupom.id;
+  }
+
   const r = await criarPedidoDeliveryCore(
     admin,
     {
@@ -154,8 +193,12 @@ export async function enviarPedidoPublico(d: {
       observacao: d.observacao,
       itens: d.itens,
     },
-    { status: "pendente", atendenteId: null, criadoPor: null },
+    { status: "pendente", atendenteId: null, criadoPor: null, cupom },
   );
   if (!r.ok) return r;
-  return { ok: true as const, id: r.id, numero: r.numero, taxa };
+  if (cupomId) {
+    const { data: cAtual } = await admin.from("cupons").select("usos").eq("id", cupomId).single();
+    await admin.from("cupons").update({ usos: Number((cAtual as { usos: number } | null)?.usos ?? 0) + 1 }).eq("id", cupomId);
+  }
+  return { ok: true as const, id: r.id, numero: r.numero, taxa, desconto: r.desconto ?? 0 };
 }

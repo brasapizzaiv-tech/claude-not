@@ -11,7 +11,7 @@ export default async function NovoPedidoPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg },
   ] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, canal_app").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, ordem").order("ordem"),
@@ -28,10 +28,10 @@ export default async function NovoPedidoPage() {
   const catBloqueada = new Set(
     (((catRows as { nome: string; canal_app?: boolean }[]) ?? [])).filter((c) => c.canal_app === false).map((c) => c.nome),
   );
-  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? [])
+  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco?: number | null }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
     .map((i) => ({
-      id: i.id, nome: i.nome, categoria: i.categoria || "Outros", preco: Number(i.preco) || 0,
+      id: i.id, nome: i.nome, categoria: i.categoria || "Outros", preco: Number(i.promo_preco ?? 0) > 0 ? Number(i.promo_preco) : Number(i.preco) || 0,
     }));
   const comItens = new Set(itens.map((i) => i.categoria));
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));

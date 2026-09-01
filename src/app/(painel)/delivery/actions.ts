@@ -131,6 +131,37 @@ export async function salvarConfigDelivery(formData: FormData) {
   revalidatePath("/delivery/config");
 }
 
+// ---------- Cupons de desconto do app ----------
+export async function criarCupom(formData: FormData) {
+  const supabase = await createClient();
+  const codigo = String(formData.get("codigo") ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!codigo) return;
+  const num = (k: string) => { const v = Number(String(formData.get(k) ?? "").replace(",", ".")); return Number.isFinite(v) && v > 0 ? v : null; };
+  await supabase.from("cupons").insert({
+    codigo,
+    tipo: formData.get("tipo") === "valor" ? "valor" : "percent",
+    valor: num("valor") ?? 0,
+    minimo: num("minimo"),
+    validade: String(formData.get("validade") ?? "").trim() || null,
+    max_usos: num("max_usos") ? Math.round(num("max_usos")!) : null,
+  });
+  revalidatePath("/delivery/cupons");
+}
+
+export async function alternarCupom(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const ativo = formData.get("ativo") === "1";
+  await supabase.from("cupons").update({ ativo }).eq("id", id);
+  revalidatePath("/delivery/cupons");
+}
+
+export async function excluirCupom(formData: FormData) {
+  const supabase = await createClient();
+  await supabase.from("cupons").delete().eq("id", formData.get("id") as string);
+  revalidatePath("/delivery/cupons");
+}
+
 // ---------- Cardápio do app (/delivery/cardapio) ----------
 
 // Sobe a foto de um item ou sabor pro bucket público e grava a URL.

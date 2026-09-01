@@ -39,7 +39,7 @@ export default async function GarcomComandaPage({
       .select("id, descricao, qtd, preco_unit")
       .eq("comanda_id", id)
       .order("criado_em"),
-    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_categorias").select("nome").eq("disponivel", true).eq("canal_garcom", true).order("ordem"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores").order("ordem"),
     supabase.from("pdv_pizza_sabores").select("id, nome").eq("ativo", true).order("nome"),
@@ -55,7 +55,7 @@ export default async function GarcomComandaPage({
   const categoriasOrdenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome);
   const catDisp = new Set(categoriasOrdenadas);
   const cardapioDisp = (
-    (cardapio as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? []
+    ((cardapio as { id: string; nome: string; categoria: string | null; preco: number; promo_preco?: number | null }[]) ?? []).map((i) => ({ ...i, preco: Number(i.promo_preco ?? 0) > 0 ? Number(i.promo_preco) : Number(i.preco) || 0 })) ?? []
   ).filter((i) => !i.categoria || catDisp.has(i.categoria));
 
   // Complementos

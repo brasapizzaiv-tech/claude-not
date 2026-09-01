@@ -8,7 +8,7 @@ export default async function CardapioPage() {
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_itens")
-      .select("id, nome, categoria, preco, ativo, delivery, canal_garcom, canal_pdv, disponivel, horarios, foto_url, descricao")
+      .select("id, nome, categoria, preco, promo_preco, ativo, delivery, canal_garcom, canal_pdv, disponivel, horarios, foto_url, descricao")
       .order("nome"),
     supabase.from("pdv_categorias").select("id, nome, ordem, disponivel, horarios, canal_app, canal_garcom, canal_pdv").order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),
@@ -29,7 +29,7 @@ export default async function CardapioPage() {
         config={config}
         itens={
           (itens as {
-            id: string; nome: string; categoria: string | null; preco: number; ativo: boolean;
+            id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; ativo: boolean;
             delivery: boolean; canal_garcom: boolean; canal_pdv: boolean; disponivel: boolean;
             horarios: Horarios; foto_url: string | null; descricao: string | null;
           }[]) ?? []

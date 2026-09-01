@@ -14,7 +14,7 @@ export default async function GarcomMesaPage({
   const supabase = await createClient();
 
   const [{ data: itensRows }, { data: catRows }, { data: comRows }, { data: cfgRows }] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, disponivel, canal_garcom").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_comandas").select("id, numero, valor_buffet").eq("mesa", mesa).eq("status", "aberta").order("numero"),
     supabase.from("pdv_config").select("chave, valor").eq("chave", "qtd_mesas"),
@@ -58,13 +58,13 @@ export default async function GarcomMesaPage({
   const catBloqueada = new Set(
     (((catRows as { nome: string; canal_garcom?: boolean }[]) ?? [])).filter((c) => c.canal_garcom === false).map((c) => c.nome),
   );
-  const itens: ItemMenu[] = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? [])
+  const itens: ItemMenu[] = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco?: number | null }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
     .map((i) => ({
       id: i.id,
       nome: i.nome,
       categoria: i.categoria || "Outros",
-      preco: Number(i.preco) || 0,
+      preco: Number(i.promo_preco ?? 0) > 0 ? Number(i.promo_preco) : Number(i.preco) || 0,
     }));
 
   // Ordem das categorias: as do cardápio (com itens) + as que sobraram.

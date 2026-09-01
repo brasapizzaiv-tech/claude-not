@@ -18,7 +18,7 @@ export default async function PedirPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg }, { data: vendidos },
   ] = await Promise.all([
-    admin.from("pdv_itens").select("id, nome, categoria, preco, foto_url, descricao, horarios").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
+    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, descricao, horarios").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
     admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app").eq("disponivel", true).order("ordem"),
     admin.from("pdv_item_grupos").select("item_id"),
     admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem"),
@@ -39,14 +39,19 @@ export default async function PedirPage() {
   const catHorarios = new Map(cats.map((c) => [c.nome, c.horarios]));
   // Categoria cadastrada mas desligada pro App esconde os produtos dela.
   const catBloqueada = new Set(cats.filter((c) => c.canal_app === false).map((c) => c.nome));
-  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; foto_url: string | null; descricao: string | null; horarios: Horarios }[]) ?? [])
+  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; foto_url: string | null; descricao: string | null; horarios: Horarios }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
     .filter((i) => disponivelAgora(i.horarios, agora))
     .filter((i) => disponivelAgora(catHorarios.get(i.categoria || "Outros") ?? null, agora))
-    .map((i) => ({
-      id: i.id, nome: i.nome, categoria: i.categoria || "Outros", preco: Number(i.preco) || 0,
-      foto_url: i.foto_url, descricao: i.descricao,
-    }));
+    .map((i) => {
+      const promo = Number(i.promo_preco ?? 0);
+      return {
+        id: i.id, nome: i.nome, categoria: i.categoria || "Outros",
+        preco: promo > 0 ? promo : Number(i.preco) || 0,
+        preco_antigo: promo > 0 ? Number(i.preco) || 0 : null,
+        foto_url: i.foto_url, descricao: i.descricao,
+      };
+    });
 
   // "Os mais vendidos": itens do cardápio mais lançados nos últimos 60 dias.
   const cont = new Map<string, number>();

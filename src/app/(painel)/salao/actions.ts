@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
 
+
+// Preço de venda: promoção ativa (promo_preco > 0) substitui o preço normal.
+const precoVenda = (p: { preco?: number | null; promo_preco?: number | null } | null) => { const promo = Number(p?.promo_preco ?? 0); return promo > 0 ? promo : Number(p?.preco ?? 0); };
 const valorNum = (s: unknown) =>
   Number(String(s ?? "").replace(/\./g, "").replace(",", ".")) || 0;
 
@@ -107,6 +110,8 @@ export async function salvarItem(formData: FormData) {
   // O editor completo manda também descrição, canais e disponibilidade.
   const extras: Record<string, unknown> = {};
   if (formData.get("completo") === "1") {
+    const promo = valorNum(formData.get("promo_preco"));
+    extras.promo_preco = promo > 0 ? promo : null;
     extras.descricao = String(formData.get("descricao") ?? "").trim().slice(0, 400) || null;
     extras.delivery = formData.get("canal_app") === "on";
     extras.canal_garcom = formData.get("canal_garcom") === "on";
@@ -420,7 +425,7 @@ export async function adicionarItemComanda(comandaId: string, itemId: string) {
   const supabase = await createClient();
   const { data: item } = await supabase
     .from("pdv_itens")
-    .select("nome, preco")
+    .select("nome, preco, promo_preco")
     .eq("id", itemId)
     .single();
   if (!item) return;
@@ -429,7 +434,7 @@ export async function adicionarItemComanda(comandaId: string, itemId: string) {
     item_id: itemId,
     descricao: item.nome,
     qtd: 1,
-    preco_unit: item.preco,
+    preco_unit: precoVenda(item),
   });
   revalidatePath(`/salao/comandas/${comandaId}`);
 }
@@ -506,7 +511,7 @@ export async function adicionarComboComanda(
   const supabase = await createClient();
   const { data: item } = await supabase
     .from("pdv_itens")
-    .select("nome, preco")
+    .select("nome, preco, promo_preco")
     .eq("id", itemId)
     .single();
   if (!item) return;
@@ -540,7 +545,7 @@ export async function adicionarComboComanda(
     }
   }
 
-  const preco = Math.round((Number(item.preco) + extra) * 100) / 100;
+  const preco = Math.round((precoVenda(item) + extra) * 100) / 100;
   // Cada opção numa linha (fica um embaixo do outro na tela e na impressão).
   const descricao = nomes.length
     ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}`
@@ -727,17 +732,17 @@ export async function pagarSelecao(
     if (!(e.qtd > 0)) continue;
     const { data: prod } = await supabase
       .from("pdv_itens")
-      .select("nome, preco")
+      .select("nome, preco, promo_preco")
       .eq("id", e.itemId)
       .single();
     if (!prod) continue;
-    const payable = Math.round(Number(prod.preco) * e.qtd * fator * 100) / 100;
+    const payable = Math.round(precoVenda(prod) * e.qtd * fator * 100) / 100;
     await supabase.from("pdv_comanda_itens").insert({
       comanda_id: e.comandaId,
       item_id: e.itemId,
       descricao: prod.nome,
       qtd: e.qtd,
-      preco_unit: prod.preco,
+      preco_unit: precoVenda(prod),
       valor_pago: payable,
       pago: true,
     });

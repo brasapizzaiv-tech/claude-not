@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import type { LinhaPedido } from "@/lib/delivery-core";
 
-export type Item = { id: string; nome: string; categoria: string; preco: number; foto_url?: string | null; descricao?: string | null };
+export type Item = { id: string; nome: string; categoria: string; preco: number; preco_antigo?: number | null; foto_url?: string | null; descricao?: string | null };
 export type Tam = { id: string; nome: string; max_sabores: number; fatias?: number | null };
 export type Sabor = { id: string; nome: string; foto_url?: string | null; descricao?: string | null };
 export type Borda = { id: string; nome: string };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos } from "./actions";
+import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico } from "./actions";
 import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -54,6 +54,10 @@ export function PedirClient({
   const [forma, setForma] = useState("Dinheiro");
   const [trocoPara, setTrocoPara] = useState("");
   const [obs, setObs] = useState("");
+  const [cupomCodigo, setCupomCodigo] = useState("");
+  const [cupom, setCupom] = useState<{ codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null } | null>(null);
+  const [cupomMsg, setCupomMsg] = useState<string | null>(null);
+  const [cupomProc, setCupomProc] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [feito, setFeito] = useState<{ id: string; numero?: number } | null>(null);
 
@@ -102,7 +106,26 @@ export function PedirClient({
   const subtotal = cart.reduce((s, l) => s + l.preco * l.qtd, 0);
   const qtdItens = cart.reduce((s, l) => s + l.qtd, 0);
   const taxaN = tipo === "retirada" ? 0 : taxa ?? 0;
-  const total = Math.round((subtotal + taxaN) * 100) / 100;
+  const descontoCupom = !cupom || (cupom.minimo != null && subtotal < cupom.minimo)
+    ? 0
+    : cupom.tipo === "percent"
+      ? Math.round(subtotal * cupom.valor) / 100
+      : Math.min(subtotal, cupom.valor);
+  const total = Math.round((subtotal + taxaN - descontoCupom) * 100) / 100;
+
+  async function aplicarCupom() {
+    if (!cupomCodigo.trim()) return;
+    setCupomProc(true); setCupomMsg(null);
+    const r = await validarCupomPublico(cupomCodigo);
+    setCupomProc(false);
+    if (r.ok) {
+      setCupom({ codigo: r.codigo, tipo: r.tipo, valor: r.valor, minimo: r.minimo });
+      setCupomMsg(`✅ Cupom ${r.codigo}: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `R$ ${r.valor.toFixed(2).replace(".", ",")} de desconto`}${r.minimo != null ? ` (pedido mínimo R$ ${r.minimo.toFixed(2).replace(".", ",")})` : ""}`);
+    } else {
+      setCupom(null);
+      setCupomMsg(`❌ ${r.mensagem}`);
+    }
+  }
 
   function addLinha(l: CartLine) { setCart((c) => [...c, l]); }
   function setQtd(uid: string, q: number) { setCart((c) => c.map((l) => (l.uid === uid ? { ...l, qtd: q } : l)).filter((l) => l.qtd > 0)); }
@@ -143,6 +166,7 @@ export function PedirClient({
         endereco: tipo === "entrega" ? end : undefined,
         formaPagamento: forma, trocoPara: trocoN || null,
         observacao: obs,
+        cupom: cupom?.codigo ?? null,
         itens: cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
       });
       if (r.ok) {
@@ -286,6 +310,11 @@ export function PedirClient({
           {forma === "Dinheiro" && (
             <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
           )}
+          <div className="mb-3 flex gap-2">
+            <input value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="🎟️ Cupom de desconto" className="flex-1 rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 uppercase outline-none dark:border-zinc-700" />
+            <button onClick={aplicarCupom} disabled={cupomProc || !cupomCodigo.trim()} className="rounded-xl border-2 px-4 font-bold disabled:opacity-50" style={{ borderColor: LARANJA, color: LARANJA }}>{cupomProc ? "..." : "Aplicar"}</button>
+          </div>
+          {cupomMsg && <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-300">{cupomMsg}</p>}
           <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
         </div>
 
@@ -293,6 +322,7 @@ export function PedirClient({
           <div className="mx-auto max-w-lg">
             <div className="mb-1 flex justify-between text-sm text-zinc-500"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
             {tipo === "entrega" && <div className="mb-1 flex justify-between text-sm text-zinc-500"><span>Entrega</span><span>{taxa == null ? "—" : brl(taxaN)}</span></div>}
+            {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
             <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
             <button onClick={enviar} disabled={proc || !aberto} className="w-full rounded-2xl py-3.5 text-base font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>
@@ -338,7 +368,7 @@ export function PedirClient({
                 {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center text-3xl" style={{ background: "rgba(199,131,64,0.1)" }}>🍽️</div>}
                 <div className="p-2">
                   <div className="truncate text-sm font-medium">{i.nome}</div>
-                  <div className="text-sm font-semibold" style={{ color: LARANJA }}>{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
+                  <div className="text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1 text-xs font-normal text-zinc-400 line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
                 </div>
               </button>
             ))}
@@ -370,7 +400,7 @@ export function PedirClient({
               <div className="min-w-0 flex-1">
                 <div className="font-medium leading-tight">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) ? " ⚙️" : ""}</div>
                 {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-zinc-500">{i.descricao}</div>}
-                <div className="mt-0.5 text-sm font-semibold" style={{ color: LARANJA }}>{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
+                <div className="mt-0.5 text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1.5 text-xs font-normal text-zinc-400 line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="ml-1.5 rounded bg-rose-500/10 px-1 text-[10px] font-bold text-rose-500">PROMO</span>}</div>
               </div>
               {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white" style={{ background: LARANJA }}>+</span>}
             </button>

@@ -40,6 +40,9 @@ type Linha = { descricao: string; qtd: number; preco: number; itemId: string | n
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
+// Preço de venda: promoção ativa (promo_preco > 0) substitui o preço normal.
+const precoVenda = (p: { preco?: number | null; promo_preco?: number | null } | null) => { const promo = Number(p?.promo_preco ?? 0); return promo > 0 ? promo : Number(p?.preco ?? 0); };
+
 async function resolverPizza(db: Db, tamanhoId: string, saborIds: string[], bordaId: string | null): Promise<Linha | null> {
   if (!tamanhoId || saborIds.length === 0) return null;
   const [{ data: tam }, { data: sabPrecos }, { data: sabores }] = await Promise.all([
@@ -69,7 +72,7 @@ async function resolverPizza(db: Db, tamanhoId: string, saborIds: string[], bord
 }
 
 async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]): Promise<Linha | null> {
-  const { data: item } = await db.from("pdv_itens").select("nome, preco").eq("id", itemId).single();
+  const { data: item } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", itemId).single();
   if (!item) return null;
   const nomes: string[] = [];
   let extra = 0;
@@ -89,7 +92,7 @@ async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]): Promis
       }
     }
   }
-  const preco = r2(Number(item.preco) + extra);
+  const preco = r2(precoVenda(item) + extra);
   const descricao = nomes.length ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}` : item.nome;
   return { descricao, qtd: 1, preco, itemId };
 }
@@ -157,7 +160,14 @@ export async function imprimirComandaDoPedido(db: Db, pedidoId: string) {
 export async function criarPedidoDeliveryCore(
   db: Db,
   d: DadosPedidoDelivery,
-  opts: { status: "pendente" | "aceito"; atendenteId: string | null; criadoPor: string | null },
+  opts: {
+    status: "pendente" | "aceito";
+    atendenteId: string | null;
+    criadoPor: string | null;
+    // Cupom já validado (ativo/validade/usos) — o desconto é calculado AQUI,
+    // sobre o subtotal real resolvido no servidor.
+    cupom?: { codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null } | null;
+  },
 ) {
   const validos = (d.itens ?? []).filter((i) => Math.round(Number((i as { qtd?: number }).qtd) || 1) > 0);
   if (validos.length === 0) return { ok: false as const, mensagem: "Pedido sem itens." };
@@ -170,9 +180,9 @@ export async function criarPedidoDeliveryCore(
     const obsItem = ((it as { obs?: string }).obs || "").trim().slice(0, 200);
     const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\n📝 ${obsItem}` } : l);
     if (it.kind === "item") {
-      const { data: prod } = await db.from("pdv_itens").select("nome, preco").eq("id", it.itemId).single();
+      const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", it.itemId).single();
       if (!prod) continue;
-      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(Number((prod as { preco: number }).preco)), itemId: it.itemId }));
+      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId }));
     } else if (it.kind === "pizza") {
       const l = await resolverPizza(db, it.tamanhoId, it.saborIds, it.bordaId);
       if (l) linhas.push(comObs({ ...l, qtd: q }));
@@ -182,6 +192,21 @@ export async function criarPedidoDeliveryCore(
     }
   }
   if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };
+
+  // Desconto do cupom sobre o subtotal REAL (resolvido acima).
+  let desconto = r2(Number(d.desconto) || 0);
+  let descontoMotivo = (d.descontoMotivo || "").trim() || null;
+  if (opts.cupom) {
+    const subtotal = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
+    if (opts.cupom.minimo != null && subtotal < Number(opts.cupom.minimo)) {
+      return { ok: false as const, mensagem: `O cupom ${opts.cupom.codigo} vale só pra pedidos a partir de R$ ${Number(opts.cupom.minimo).toFixed(2).replace(".", ",")}.` };
+    }
+    const valorCupom = opts.cupom.tipo === "percent"
+      ? r2(subtotal * Number(opts.cupom.valor) / 100)
+      : Math.min(subtotal, r2(Number(opts.cupom.valor)));
+    desconto = r2(desconto + valorCupom);
+    descontoMotivo = [descontoMotivo, `Cupom ${opts.cupom.codigo}`].filter(Boolean).join(" · ");
+  }
 
   const mesa = `${d.nome.trim().split(" ")[0]} · ${d.tipo === "retirada" ? "RETIRADA" : "ENTREGA"}`;
   const { data: com } = await db
@@ -229,8 +254,8 @@ export async function criarPedidoDeliveryCore(
       lng: d.lng ?? null,
       previsao_em: previsaoEm,
       taxa_entrega: d.tipo === "retirada" ? 0 : r2(Number(d.taxaEntrega) || 0),
-      desconto: r2(Number(d.desconto) || 0),
-      desconto_motivo: (d.descontoMotivo || "").trim() || null,
+      desconto,
+      desconto_motivo: descontoMotivo,
       forma_pagamento: d.formaPagamento || null,
       troco_para: d.trocoPara ?? null,
       origem: d.origem,
@@ -251,5 +276,6 @@ export async function criarPedidoDeliveryCore(
     ok: true as const,
     id: (ped as { id: string } | null)?.id as string,
     numero: (com as { numero?: number } | null)?.numero as number | undefined,
+    desconto,
   };
 }

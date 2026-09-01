@@ -24,7 +24,7 @@ const inputCls =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
 type Item = {
-  id: string; nome: string; categoria: string | null; preco: number; ativo: boolean;
+  id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; ativo: boolean;
   delivery: boolean; canal_garcom: boolean; canal_pdv: boolean; disponivel: boolean;
   horarios: Horarios; foto_url: string | null; descricao: string | null;
 };
@@ -185,6 +185,10 @@ export function CardapioClient({
               <div>
                 <label className="mb-1 block text-xs text-zinc-500">Preço</label>
                 <input name="preco" inputMode="decimal" defaultValue={String(editando.preco).replace(".", ",")} className={`${inputCls} w-28`} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-zinc-500">🔥 Promoção (R$)</label>
+                <input name="promo_preco" inputMode="decimal" defaultValue={editando.promo_preco != null ? String(editando.promo_preco).replace(".", ",") : ""} placeholder="vazio = sem" className={`${inputCls} w-28`} />
               </div>
             </div>
             <div>
@@ -437,7 +441,11 @@ function ItensTabela({
                   {canaisOff.length > 0 && <span className="ml-2 text-[10px] text-zinc-400">sem: {canaisOff.join(", ")}</span>}
                   {temHorario && <span className="ml-2 text-[10px] text-sky-500">🕐 {temHorario}</span>}
                 </td>
-                <td className="px-2 py-2 text-right text-zinc-700 dark:text-zinc-300">{moeda(Number(i.preco))}</td>
+                <td className="px-2 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                  {i.promo_preco != null && Number(i.promo_preco) > 0 ? (
+                    <><span className="mr-1 text-xs text-zinc-400 line-through">{moeda(Number(i.preco))}</span><span className="font-semibold text-orange-600">{moeda(Number(i.promo_preco))}</span></>
+                  ) : moeda(Number(i.preco))}
+                </td>
                 <td className="px-2 py-2 text-right">
                   <form action={toggleDisponivelItem} className="inline">
                     <input type="hidden" name="id" value={i.id} />
