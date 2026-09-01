@@ -54,3 +54,8 @@ scripts/_cat.json
 agente-impressao/node_modules/
 agente-impressao/agente.log
 agente-impressao/agente.pid
+agente-balanca/node_modules/
+agente-balanca/agente.log
+agente-balanca/agente.pid
+agente-balanca/fila.json
+agente-balanca/package-lock.json

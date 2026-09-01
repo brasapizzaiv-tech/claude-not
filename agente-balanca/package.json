@@ -1,0 +1,9 @@
+{
+  "name": "agente-balanca-brasa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "serialport": "^12.0.0"
+  }
+}

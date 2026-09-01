@@ -8,11 +8,18 @@ const moeda = (n: number) =>
 
 export default async function BalancaPage() {
   const supabase = await createClient();
-  const { data: cfgRows } = await supabase.from("pdv_config").select("chave, valor");
+  const [{ data: cfgRows }, { data: agStatus }] = await Promise.all([
+    supabase.from("pdv_config").select("chave, valor"),
+    supabase.from("balanca_status").select("hostname, visto_em, fila_pendente").eq("id", 1).maybeSingle(),
+  ]);
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
   const precoKg = Number(cfg.preco_kg ?? 0);
   const taraPadrao = Number(cfg.tara_padrao ?? 0);
+
+  const ag = agStatus as { hostname: string | null; visto_em: string | null; fila_pendente: number } | null;
+  const agenteOnline = !!ag?.visto_em && new Date().getTime() - new Date(ag.visto_em).getTime() < 60000;
+  const filaPendente = Number(ag?.fila_pendente ?? 0);
 
   return (
     <div className="mx-auto max-w-lg p-6">
@@ -33,6 +40,19 @@ export default async function BalancaPage() {
           🖥️ Modo quiosque (autoatendimento)
         </Link>
       </div>
+
+      {/* Agente da balança: status + ALERTA de fila offline (nunca em silêncio) */}
+      {filaPendente > 0 && (
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          ⚠️ {filaPendente} pesagem(ns) na fila offline do agente — sincronizam sozinhas quando a internet do PC da balança voltar.
+        </div>
+      )}
+      {ag?.visto_em && (
+        <p className="mt-3 text-xs text-zinc-400">
+          Agente da balança: {agenteOnline ? "🟢 online" : "🔴 sem sinal"}
+          {ag.hostname ? ` · PC ${ag.hostname}` : ""} · visto {new Date(ag.visto_em).toLocaleString("pt-BR")}
+        </p>
+      )}
 
       <div className="mt-6">
         <BalancaLeitor taraPadrao={taraPadrao} />

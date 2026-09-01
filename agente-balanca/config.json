@@ -1,0 +1,6 @@
+{
+  "baseUrl": "https://www.brasarestaurante.com.br",
+  "token": "COLE_AQUI_O_TOKEN_DO_AGENTE",
+  "portaHttp": 8543,
+  "portaSerial": "auto"
+}

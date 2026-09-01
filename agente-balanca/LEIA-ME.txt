@@ -1,0 +1,23 @@
+AGENTE DA BALANCA - BRASA
+=========================
+
+O que ele faz:
+- Le a balanca Urano POP-31 direto na porta serial (sem Chrome/permissoes).
+- Serve o peso para a tela do quiosque em http://localhost:8543/peso.
+- Cria as comandas no sistema. Sem internet? Guarda na fila local (fila.json)
+  e sincroniza sozinho quando a conexao voltar (tenta para sempre).
+- Avisa o sistema quantas pesagens estao pendentes (alerta no painel).
+
+Como instalar neste PC (o PC da balanca):
+1. Instale o Node.js (https://nodejs.org - versao LTS).
+2. Nesta pasta, rode uma vez:  npm install
+3. Edite o config.json: cole o TOKEN do agente (Central de Impressoes do sistema).
+4. De dois cliques em iniciar.bat. Deixe a janela aberta (ou use o start.vbs
+   na Inicializacao do Windows para ligar sozinho e escondido).
+
+Config:
+- portaSerial: "auto" acha sozinho (Prolific/USB-Serial). Se precisar, troque
+  por "COM5" (ou a porta certa).
+- portaHttp: 8543 (a tela do quiosque procura nessa porta).
+
+Log: agente.log nesta pasta. Fila offline: fila.json.

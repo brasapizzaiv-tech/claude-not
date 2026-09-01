@@ -22,9 +22,12 @@ type Resultado = {
   peso: number;
   tara: number;
   livre: boolean;
-  viradaLivre?: boolean; // pesou antes e virou livre pelo QR
-  antes?: number;        // valor que era antes de virar livre
+  viradaLivre?: boolean;  // pesou antes e virou livre pelo QR
+  antes?: number;         // valor que era antes de virar livre
+  codigoOffline?: string; // sem internet: código local da fila do agente
 };
+
+const AGENTE_URL = "http://localhost:8543";
 
 // QR da comanda (mesmo das comandas normais — aponta para a página da comanda).
 function CupomQR({ id }: { id: string }) {
@@ -133,11 +136,77 @@ export function QuiosqueBalanca({
         setEst("aguardando");
       }
     } catch {
-      setEst("aguardando");
+      // Sistema fora do ar (internet caiu) → fila offline do agente.
+      const ok = await capturarViaAgente({ peso: bruto, tara_balanca: taraBalancaRef.current, so_kg: soKgRef.current });
+      if (!ok) setEst("aguardando");
     }
     // Marmita é por pesagem — volta ao normal para o próximo cliente.
     soKgRef.current = false;
     setSoKg(false);
+  }
+
+  // ---------- agente da balança (programa no PC) ----------
+  const [agente, setAgente] = useState(false);
+  const agenteRef = useRef(false);
+  const [filaAgente, setFilaAgente] = useState(0);
+
+  // Procura o agente local: se existir, ele vira a fonte do peso (nada de
+  // Web Serial) e a tela pula direto pro atendimento.
+  useEffect(() => {
+    let vivo = true;
+    let timer: ReturnType<typeof setTimeout>;
+    async function tick() {
+      try {
+        const r = await fetch(`${AGENTE_URL}/peso`, { signal: AbortSignal.timeout(1200) });
+        const j = await r.json();
+        if (!vivo) return;
+        if (!agenteRef.current) {
+          agenteRef.current = true;
+          setAgente(true);
+          if (estadoRef.current === "conectar") setEst("aguardando");
+        }
+        setFilaAgente(Number(j.fila) || 0);
+        if (j.lendo) {
+          setDiag((d) => ({ bytes: d.bytes + 1, raw: "via agente" }));
+          taraBalancaRef.current = Number(j.tara) || 0;
+          setTaraBalanca(Number(j.tara) || 0);
+          processar(Number(j.peso) || 0);
+        }
+      } catch {
+        if (vivo && agenteRef.current) { agenteRef.current = false; setAgente(false); }
+      }
+      if (vivo) timer = setTimeout(tick, 400);
+    }
+    tick();
+    return () => { vivo = false; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sem internet no sistema? Manda pro agente: ele cria a comanda (se ele
+  // tiver conexão) ou guarda na fila offline e devolve um código local.
+  async function capturarViaAgente(payload: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean }): Promise<boolean> {
+    try {
+      const r = await fetch(`${AGENTE_URL}/pesagem`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(12000),
+      });
+      const j = await r.json();
+      if (!j.ok) return false;
+      if (j.offline) {
+        const bruto = Number(payload.peso) || 0;
+        const { liquido, valor, livre } = payload.livre_direto
+          ? { liquido: 0, valor: buffetLivre, livre: true }
+          : calcValor(bruto, !!payload.so_kg);
+        concluir({ id: "", numero: 0, valor, liquido, peso: bruto, tara: Number(payload.tara_balanca) || 0, livre, codigoOffline: String(j.codigo || "OFF") });
+      } else {
+        concluir({ id: j.id, numero: j.numero, valor: j.valor, liquido: j.liquido, peso: j.peso, tara: j.tara, livre: j.livre });
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // Fecha um resultado (livre direto ou virada de livre): mostra, imprime, agenda o reset.
@@ -163,7 +232,8 @@ export function QuiosqueBalanca({
       if (r.ok) concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true });
       else { setErro(r.mensagem ?? ""); setEst("aguardando"); setTimeout(() => setErro(""), 4000); }
     } catch {
-      setEst("aguardando");
+      const ok = await capturarViaAgente({ livre_direto: true });
+      if (!ok) setEst("aguardando");
     }
   }
 
@@ -348,9 +418,18 @@ export function QuiosqueBalanca({
           {/* instrução / resultado */}
           {estado === "resultado" && resultado ? (
             <div className="text-center">
-              <div className="mb-6 inline-block rounded-full bg-green-500 px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.5rem,5vw,3.5rem)] font-black">
-                {resultado.viradaLivre ? `✓ COMANDA Nº ${resultado.numero} AGORA É LIVRE` : `✓ COMANDA Nº ${resultado.numero}`}
+              <div className={`mb-6 inline-block rounded-full px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.5rem,5vw,3.5rem)] font-black ${resultado.codigoOffline ? "bg-amber-500" : "bg-green-500"}`}>
+                {resultado.codigoOffline
+                  ? `✓ REGISTRADO · ${resultado.codigoOffline}`
+                  : resultado.viradaLivre
+                    ? `✓ COMANDA Nº ${resultado.numero} AGORA É LIVRE`
+                    : `✓ COMANDA Nº ${resultado.numero}`}
               </div>
+              {resultado.codigoOffline && (
+                <p className="mb-2 text-[clamp(0.9rem,2.5vw,1.4rem)] text-amber-300">
+                  Sem internet agora — a comanda entra no sistema sozinha quando a conexão voltar.
+                </p>
+              )}
               <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-white/80">
                 {resultado.peso > 0 ? "Retire o prato" : "Pegue seu cupom · bom apetite!"}
               </p>
@@ -445,6 +524,15 @@ export function QuiosqueBalanca({
         </div>
       )}
 
+      {filaAgente > 0 && (
+        <div className="px-4 py-1 text-center text-[12px] font-bold text-amber-300">
+          ⚠️ {filaAgente} pesagem(ns) na fila offline — sincronizam sozinhas quando a internet voltar.
+        </div>
+      )}
+      {agente && (
+        <div className="px-4 py-0.5 text-center text-[10px] text-white/25">balança via agente local ✓</div>
+      )}
+
       {/* rodapé: preços de HOJE */}
       <div className="grid shrink-0 grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-4 py-[clamp(0.4rem,1.6vh,1.25rem)] text-center">
         <div>
@@ -478,7 +566,7 @@ export function QuiosqueBalanca({
               </div>
             )}
             <div style={{ fontSize: "8pt", textTransform: "uppercase", marginTop: "1mm" }}>Comanda · Balança</div>
-            <div style={{ fontSize: "26pt", fontWeight: "bold", lineHeight: 1 }}>#{resultado.numero}</div>
+            <div style={{ fontSize: "26pt", fontWeight: "bold", lineHeight: 1 }}>{resultado.codigoOffline ? resultado.codigoOffline : `#${resultado.numero}`}</div>
 
             {resultado.peso > 0 ? (
               <div style={{ display: "flex", justifyContent: "center", gap: "4mm", marginTop: "2mm", fontSize: "9pt" }}>
@@ -510,7 +598,13 @@ export function QuiosqueBalanca({
               <div style={{ fontSize: "8pt" }}>era {moeda(resultado.antes)} por peso</div>
             )}
 
-            <CupomQR id={resultado.id} />
+            {resultado.codigoOffline ? (
+              <div style={{ fontSize: "9pt", fontWeight: "bold", border: "1px solid #000", padding: "2mm", margin: "2mm 0" }}>
+                SEM INTERNET NO MOMENTO<br />Guarde este cupom — código {resultado.codigoOffline}.<br />A comanda entra no sistema automaticamente.
+              </div>
+            ) : (
+              <CupomQR id={resultado.id} />
+            )}
             <div style={{ fontSize: "8pt", marginTop: "1mm" }}>{new Date().toLocaleString("pt-BR")}</div>
             {cupom.msg && <div style={{ fontSize: "9pt", marginTop: "1mm" }}>{cupom.msg}</div>}
 
