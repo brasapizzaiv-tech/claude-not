@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
+import { pixConfigurado } from "@/lib/pix-sicredi";
 import { PedirClient } from "./pedir-client";
 
 export const metadata: Metadata = {
@@ -86,6 +87,7 @@ export default async function PedirPage() {
       tempoPreparo={Number((cfg as { tempo_preparo_min?: number } | null)?.tempo_preparo_min ?? 40)}
       aviso={((cfg as { aviso?: string | null } | null)?.aviso || "").trim() || null}
       maisVendidos={maisVendidos}
+      pixAtivo={pixConfigurado()}
     />
   );
 }

@@ -6,6 +6,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
+import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix-sicredi";
 
 export type { LinhaPedido } from "@/lib/delivery-core";
 
@@ -200,5 +201,53 @@ export async function enviarPedidoPublico(d: {
     const { data: cAtual } = await admin.from("cupons").select("usos").eq("id", cupomId).single();
     await admin.from("cupons").update({ usos: Number((cAtual as { usos: number } | null)?.usos ?? 0) + 1 }).eq("id", cupomId);
   }
-  return { ok: true as const, id: r.id, numero: r.numero, taxa, desconto: r.desconto ?? 0 };
+
+  // Pix online: cria a cobrança e devolve o copia-e-cola pro QR na tela.
+  let pix: { copiaECola: string } | null = null;
+  if (d.formaPagamento === "Pix online" && pixConfigurado() && (r.total ?? 0) > 0) {
+    try {
+      const cob = await criarCobrancaPix({
+        txid: gerarTxid(),
+        valor: r.total!,
+        nomeDevedor: nome,
+        descricao: `Pedido Brasa #${r.numero ?? ""}`.trim(),
+      });
+      await admin.from("delivery_pedidos").update({
+        pix_txid: cob.txid,
+        pix_copia_cola: cob.copiaECola,
+        pix_status: "aguardando",
+        pix_criado_em: new Date().toISOString(),
+      }).eq("id", r.id);
+      pix = { copiaECola: cob.copiaECola };
+    } catch {
+      // Cobrança falhou (API fora/credencial) — pedido segue como Pix na entrega.
+      await admin.from("delivery_pedidos").update({ forma_pagamento: "Pix", pix_status: "erro" }).eq("id", r.id);
+    }
+  }
+
+  return { ok: true as const, id: r.id, numero: r.numero, taxa, desconto: r.desconto ?? 0, total: r.total ?? 0, pix };
+}
+
+// Confere se o Pix do pedido caiu (o app do cliente consulta a cada poucos
+// segundos na tela do QR). Quando cai, o pedido vira PAGO sozinho.
+export async function verificarPixPedido(pedidoId: string) {
+  const admin = createAdminClient();
+  const { data: ped } = await admin
+    .from("delivery_pedidos")
+    .select("id, pix_txid, pix_status, pago")
+    .eq("id", (pedidoId || "").trim())
+    .maybeSingle();
+  const p = ped as { id: string; pix_txid: string | null; pix_status: string | null; pago: boolean } | null;
+  if (!p?.pix_txid) return { ok: false as const };
+  if (p.pago || p.pix_status === "pago") return { ok: true as const, pago: true };
+  try {
+    const c = await consultarCobrancaPix(p.pix_txid);
+    if (c.pago) {
+      await admin.from("delivery_pedidos").update({ pago: true, pix_status: "pago", forma_pagamento: "Pix (app)" }).eq("id", p.id);
+      return { ok: true as const, pago: true };
+    }
+    return { ok: true as const, pago: false };
+  } catch {
+    return { ok: true as const, pago: false };
+  }
 }

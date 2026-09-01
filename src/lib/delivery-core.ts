@@ -278,10 +278,13 @@ export async function criarPedidoDeliveryCore(
     await enfileirarCozinha(db, lancamentoId, itemIds);
   }
 
+  const subtotalLinhas = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
+  const taxaFinal = d.tipo === "retirada" ? 0 : r2(Number(d.taxaEntrega) || 0);
   return {
     ok: true as const,
     id: (ped as { id: string } | null)?.id as string,
     numero: (com as { numero?: number } | null)?.numero as number | undefined,
     desconto,
+    total: r2(subtotalLinhas + taxaFinal - desconto),
   };
 }

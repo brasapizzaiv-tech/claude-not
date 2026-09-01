@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico } from "./actions";
+import QRCode from "qrcode";
+import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico, verificarPixPedido } from "./actions";
 import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -9,11 +10,22 @@ import {
 
 const LARANJA = "#C78340";
 const ESCURO = "#211915";
-const FORMAS = [
+const FORMAS_BASE = [
   { id: "Dinheiro", label: "💵 Dinheiro" },
   { id: "Pix", label: "📱 Pix na entrega" },
   { id: "Cartão", label: "💳 Cartão na entrega" },
 ];
+
+// QR do Pix gerado na hora a partir do copia-e-cola.
+function QrPix({ codigo }: { codigo: string }) {
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    QRCode.toDataURL(codigo, { width: 260, margin: 1 }).then(setSrc).catch(() => {});
+  }, [codigo]);
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="QR Code Pix" className="mx-auto h-64 w-64 rounded-xl bg-white p-2" />;
+}
 const STATUS_LABEL: Record<string, string> = {
   pendente: "Aguardando confirmação", aceito: "Confirmado", em_preparo: "Preparando",
   pronto: "Pronto", saiu: "Saiu pra entrega", entregue: "Entregue", cancelado: "Cancelado",
@@ -26,7 +38,7 @@ function FotoItem({ url, size = "h-20 w-24" }: { url?: string | null; size?: str
 }
 
 export function PedirClient({
-  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos,
+  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo,
 }: {
   itens: Item[];
   categorias: string[];
@@ -37,6 +49,7 @@ export function PedirClient({
   tempoPreparo: number;
   aviso: string | null;
   maisVendidos: string[];
+  pixAtivo?: boolean;
 }) {
   const [proc, start] = useTransition();
   const [fase, setFase] = useState<"menu" | "checkout" | "historico">("menu");
@@ -59,7 +72,10 @@ export function PedirClient({
   const [cupomMsg, setCupomMsg] = useState<string | null>(null);
   const [cupomProc, setCupomProc] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [feito, setFeito] = useState<{ id: string; numero?: number } | null>(null);
+  const [feito, setFeito] = useState<{ id: string; numero?: number; pix?: { copiaECola: string } | null } | null>(null);
+  const [pixPago, setPixPago] = useState(false);
+  const [pixCopiado, setPixCopiado] = useState(false);
+  const FORMAS = pixAtivo ? [{ id: "Pix online", label: "💠 Pix agora" }, ...FORMAS_BASE] : FORMAS_BASE;
 
   const [pzTamanho, setPzTamanho] = useState<string | null>(null);
   const [comboItem, setComboItem] = useState<Item | null>(null);
@@ -171,7 +187,7 @@ export function PedirClient({
       });
       if (r.ok) {
         try { localStorage.setItem("pedir_tel", telefone); localStorage.setItem("pedir_nome", nome); } catch { /* sem storage */ }
-        setFeito({ id: r.id, numero: r.numero }); setCart([]);
+        setFeito({ id: r.id, numero: r.numero, pix: r.pix ?? null }); setPixPago(false); setCart([]);
       } else setErro(r.mensagem || "Não foi possível enviar. Tente de novo.");
     });
   }
@@ -184,6 +200,18 @@ export function PedirClient({
     setHistLista(lista);
   }
 
+  // Fica de olho no Pix: quando cair, confirma sozinho na tela.
+  useEffect(() => {
+    if (!feito?.pix || pixPago) return;
+    const t = setInterval(async () => {
+      try {
+        const r = await verificarPixPedido(feito.id);
+        if (r.ok && r.pago) setPixPago(true);
+      } catch { /* tenta de novo */ }
+    }, 4000);
+    return () => clearInterval(t);
+  }, [feito, pixPago]);
+
   // ---------- telas ----------
   if (feito) {
     return (
@@ -195,6 +223,30 @@ export function PedirClient({
             {feito.numero ? <>Seu pedido é o <b>nº {feito.numero}</b>. </> : null}
             O restaurante vai confirmar em instantes — tempo estimado de preparo: ~{tempoPreparo} min.
           </p>
+          {feito.pix && !pixPago && (
+            <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 p-4" style={{ borderColor: LARANJA }}>
+              <p className="mb-3 font-bold">💠 Pague agora com Pix</p>
+              <QrPix codigo={feito.pix.copiaECola} />
+              <button
+                onClick={() => {
+                  try { navigator.clipboard.writeText(feito.pix!.copiaECola); setPixCopiado(true); setTimeout(() => setPixCopiado(false), 2500); } catch { /* sem clipboard */ }
+                }}
+                className="mt-3 w-full rounded-xl border-2 py-2.5 font-bold"
+                style={{ borderColor: LARANJA, color: LARANJA }}
+              >
+                {pixCopiado ? "✓ Código copiado!" : "📋 Copiar código Pix"}
+              </button>
+              <p className="mt-3 flex items-center justify-center gap-2 text-sm text-zinc-500">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+                Aguardando o pagamento... confirma sozinho aqui.
+              </p>
+            </div>
+          )}
+          {feito.pix && pixPago && (
+            <div className="mx-auto mt-6 max-w-sm rounded-2xl bg-emerald-500/10 p-4 text-lg font-bold text-emerald-600">
+              💚 Pagamento confirmado! Seu pedido já está como PAGO.
+            </div>
+          )}
           <a href={`/pedir/acompanhar/${feito.id}`} className="mt-6 inline-block rounded-2xl px-6 py-3.5 font-bold text-white" style={{ background: LARANJA }}>
             Acompanhar meu pedido →
           </a>
