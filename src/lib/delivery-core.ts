@@ -154,6 +154,29 @@ export async function imprimirComandaDoPedido(db: Db, pedidoId: string) {
   return enfileirarCozinha(db, lanc, itemIds);
 }
 
+// Resolve as linhas do pedido (item simples / pizza / combo) com preço do
+// servidor e observação por item. Usado pelo delivery E pelo garçom.
+export async function resolverLinhas(db: Db, itens: LinhaPedido[]): Promise<Linha[]> {
+  const linhas: Linha[] = [];
+  for (const it of itens) {
+    const q = Math.max(1, Math.round(Number((it as { qtd?: number }).qtd) || 1));
+    const obsItem = ((it as { obs?: string }).obs || "").trim().slice(0, 200);
+    const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\n📝 ${obsItem}` } : l);
+    if (it.kind === "item") {
+      const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", it.itemId).single();
+      if (!prod) continue;
+      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId }));
+    } else if (it.kind === "pizza") {
+      const l = await resolverPizza(db, it.tamanhoId, it.saborIds, it.bordaId);
+      if (l) linhas.push(comObs({ ...l, qtd: q }));
+    } else {
+      const l = await resolverCombo(db, it.itemId, it.opcaoIds);
+      if (l) linhas.push(comObs({ ...l, qtd: q }));
+    }
+  }
+  return linhas;
+}
+
 // Cria o pedido: comanda + itens (mesmo lançamento) + registro do delivery.
 // status "aceito" (painel) imprime na hora; "pendente" (app do cliente) só
 // imprime quando o restaurante aceitar.
@@ -173,24 +196,7 @@ export async function criarPedidoDeliveryCore(
   if (validos.length === 0) return { ok: false as const, mensagem: "Pedido sem itens." };
   if (!d.nome.trim()) return { ok: false as const, mensagem: "Informe o nome do cliente." };
 
-  const linhas: Linha[] = [];
-  for (const it of validos) {
-    const q = Math.max(1, Math.round(Number((it as { qtd?: number }).qtd) || 1));
-    // Observação do item (ex.: "sem cebola") vira uma linha extra na descrição.
-    const obsItem = ((it as { obs?: string }).obs || "").trim().slice(0, 200);
-    const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\n📝 ${obsItem}` } : l);
-    if (it.kind === "item") {
-      const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", it.itemId).single();
-      if (!prod) continue;
-      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId }));
-    } else if (it.kind === "pizza") {
-      const l = await resolverPizza(db, it.tamanhoId, it.saborIds, it.bordaId);
-      if (l) linhas.push(comObs({ ...l, qtd: q }));
-    } else {
-      const l = await resolverCombo(db, it.itemId, it.opcaoIds);
-      if (l) linhas.push(comObs({ ...l, qtd: q }));
-    }
-  }
+  const linhas = await resolverLinhas(db, validos);
   if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };
 
   // Desconto do cupom sobre o subtotal REAL (resolvido acima).

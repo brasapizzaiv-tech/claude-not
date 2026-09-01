@@ -13,11 +13,23 @@ export default async function GarcomMesaPage({
   const mesa = decodeURIComponent(mesaRaw);
   const supabase = await createClient();
 
-  const [{ data: itensRows }, { data: catRows }, { data: comRows }, { data: cfgRows }] = await Promise.all([
+  const [
+    { data: itensRows }, { data: catRows }, { data: comRows }, { data: cfgRows },
+    { data: gruposItem }, { data: tamanhos }, { data: sabores }, { data: saborPrecos },
+    { data: bordas }, { data: bordaPrecos }, { data: grupos }, { data: opcoes },
+  ] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, disponivel, canal_garcom").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_comandas").select("id, numero, valor_buffet").eq("mesa", mesa).eq("status", "aberta").order("numero"),
     supabase.from("pdv_config").select("chave, valor").eq("chave", "qtd_mesas"),
+    supabase.from("pdv_item_grupos").select("item_id"),
+    supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, ordem").order("ordem"),
+    supabase.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao").eq("ativo", true).order("ordem"),
+    supabase.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco"),
+    supabase.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem"),
+    supabase.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco"),
+    supabase.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem"),
+    supabase.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem"),
   ]);
   const comRaw = (comRows as { id: string; numero: number; valor_buffet: number | null }[]) ?? [];
 
@@ -80,6 +92,18 @@ export default async function GarcomMesaPage({
       comandas={comandas}
       mesas={mesas}
       comandaInicial={comandas.some((c) => c.id === comandaInicial) ? comandaInicial : undefined}
+      comComplemento={[...new Set(((gruposItem as { item_id: string }[]) ?? []).map((g) => g.item_id))]}
+      pizza={{
+        tamanhos: ((tamanhos as { id: string; nome: string; max_sabores: number }[]) ?? []),
+        sabores: ((sabores as { id: string; nome: string; foto_url: string | null; descricao: string | null }[]) ?? []),
+        saborPrecos: ((saborPrecos as { sabor_id: string; tamanho_id: string; preco: number }[]) ?? []).map((p) => ({ ...p, preco: Number(p.preco) })),
+        bordas: ((bordas as { id: string; nome: string }[]) ?? []),
+        bordaPrecos: ((bordaPrecos as { borda_id: string; tamanho_id: string; preco: number }[]) ?? []).map((p) => ({ ...p, preco: Number(p.preco) })),
+      }}
+      complementos={{
+        grupos: ((grupos as { id: string; item_id: string; nome: string; min: number; max: number; permite_repetir: boolean }[]) ?? []),
+        opcoes: ((opcoes as { id: string; grupo_id: string; nome: string; preco: number }[]) ?? []).map((o) => ({ ...o, preco: Number(o.preco) })),
+      }}
     />
   );
 }

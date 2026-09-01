@@ -2,6 +2,61 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { resolverLinhas, enfileirarCozinha, type LinhaPedido } from "@/lib/delivery-core";
+
+// Lança um pedido com PIZZA/COMBO/itens (Fase C): as linhas chegam como ids e
+// os preços/descrições são resolvidos no servidor (mesmo motor do delivery).
+export async function lancarPedidoGarcomLinhas(
+  mesa: string,
+  itens: LinhaPedido[],
+  observacao?: string,
+  comandaId?: string,
+) {
+  const supabase = await createClient();
+  if (!mesa || !Array.isArray(itens) || itens.length === 0) return { ok: false as const, mensagem: "Carrinho vazio." };
+
+  const linhas = await resolverLinhas(supabase, itens);
+  if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };
+
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth.user?.id ?? null;
+
+  let cid = comandaId;
+  let numero: number | undefined;
+  if (!cid) {
+    const { data: com } = await supabase
+      .from("pdv_comandas")
+      .insert({ mesa, peso: 0, tara: 0, valor_buffet: 0, livre: false })
+      .select("id, numero")
+      .single();
+    cid = com?.id as string | undefined;
+    numero = com?.numero as number | undefined;
+  } else {
+    const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", cid).single();
+    numero = com?.numero as number | undefined;
+  }
+  if (!cid) return { ok: false as const, mensagem: "Não foi possível criar a comanda." };
+
+  const obs = (observacao || "").trim();
+  const lancamentoId = crypto.randomUUID();
+  const rows = linhas.map((l, idx) => ({
+    comanda_id: cid,
+    item_id: l.itemId,
+    descricao: l.descricao + (idx === 0 && obs ? `\n📝 ${obs}` : ""),
+    qtd: l.qtd,
+    preco_unit: l.preco,
+    criado_por: uid,
+    lancamento_id: lancamentoId,
+  }));
+  await supabase.from("pdv_comanda_itens").insert(rows);
+
+  const itemIds = linhas.map((l) => l.itemId).filter(Boolean) as string[];
+  await enfileirarCozinha(supabase, lancamentoId, itemIds);
+
+  revalidatePath("/garcom");
+  revalidatePath("/salao");
+  return { ok: true as const, comandaId: cid, numero };
+}
 
 // Lança um pedido do garçom numa comanda da mesa (cria a comanda se não vier
 // uma). Adiciona todos os itens do carrinho de uma vez. Impressão na cozinha

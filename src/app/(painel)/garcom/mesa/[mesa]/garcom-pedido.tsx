@@ -3,7 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { lancarPedidoGarcom, transferirComanda } from "../../actions";
+import { lancarPedidoGarcomLinhas, transferirComanda } from "../../actions";
+import {
+  PizzaModal, ComboModal, novoUid,
+  type Grupo, type Opcao, type PizzaData, type CartLine,
+} from "@/components/delivery-pedido-ui";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 export type Comanda = {
@@ -26,6 +30,9 @@ export function GarcomPedido({
   comandas,
   mesas,
   comandaInicial,
+  comComplemento,
+  pizza,
+  complementos,
 }: {
   mesa: string;
   itens: ItemMenu[];
@@ -33,14 +40,19 @@ export function GarcomPedido({
   comandas: Comanda[];
   mesas: string[];
   comandaInicial?: string;
+  comComplemento: string[];
+  pizza: PizzaData;
+  complementos: { grupos: Grupo[]; opcoes: Opcao[] };
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
   const [aba, setAba] = useState<string>("Todos");
   const [busca, setBusca] = useState("");
   const [buscaOn, setBuscaOn] = useState(false);
-  const [cart, setCart] = useState<Record<string, number>>({});
+  const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [pzOpen, setPzOpen] = useState(false);
+  const [comboItem, setComboItem] = useState<ItemMenu | null>(null);
   const [obs, setObs] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   // Comanda escolhida: "nova" = cria uma nova; senão o id de uma existente.
@@ -62,17 +74,41 @@ export function GarcomPedido({
     });
   }, [itens, aba, busca]);
 
-  const itemDe = useMemo(() => new Map(itens.map((i) => [i.id, i])), [itens]);
-  const cartCount = Object.values(cart).reduce((s, q) => s + q, 0);
-  const cartLista = Object.entries(cart)
-    .filter(([, q]) => q > 0)
-    .map(([id, q]) => ({ item: itemDe.get(id)!, qtd: q }))
-    .filter((x) => x.item);
-  const cartTotal = cartLista.reduce((s, x) => s + x.item.preco * x.qtd, 0);
+  const comComplSet = useMemo(() => new Set(comComplemento), [comComplemento]);
+  const gruposDe = (itemId: string) => complementos.grupos.filter((g) => g.item_id === itemId);
+  const opcoesDe = (grupoId: string) => complementos.opcoes.filter((o) => o.grupo_id === grupoId);
 
-  const setQtd = (id: string, q: number) =>
-    setCart((c) => { const n = { ...c }; if (q <= 0) delete n[id]; else n[id] = q; return n; });
-  const add = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
+  const cartCount = cart.reduce((s, l) => s + l.qtd, 0);
+  const cartTotal = cart.reduce((s, l) => s + l.preco * l.qtd, 0);
+
+  // Quantidade daquele produto no carrinho (itens simples e combos dele).
+  const qtdDoItem = (id: string) =>
+    cart.filter((l) => "itemId" in l.payload && l.payload.itemId === id).reduce((s, l) => s + l.qtd, 0);
+
+  const addLinha = (l: CartLine) => setCart((c) => [...c, l]);
+  const setQtdLinha = (uid: string, q: number) =>
+    setCart((c) => c.map((l) => (l.uid === uid ? { ...l, qtd: q } : l)).filter((l) => l.qtd > 0));
+
+  // Toque no produto: com complementos abre o montador; simples soma 1.
+  const add = (i: ItemMenu) => {
+    if (comComplSet.has(i.id) && gruposDe(i.id).length) { setComboItem(i); return; }
+    setCart((c) => {
+      const simples = c.find((l) => l.payload.kind === "item" && l.payload.itemId === i.id);
+      if (simples) return c.map((l) => (l.uid === simples.uid ? { ...l, qtd: l.qtd + 1 } : l));
+      return [...c, { uid: novoUid(), descricao: i.nome, preco: i.preco, qtd: 1, payload: { kind: "item", itemId: i.id, qtd: 1 } }];
+    });
+  };
+  // "−" no card do produto: tira 1 da última linha daquele produto.
+  const tiraUm = (id: string) => {
+    setCart((c) => {
+      const idx = [...c].reverse().findIndex((l) => "itemId" in l.payload && l.payload.itemId === id);
+      if (idx < 0) return c;
+      const real = c.length - 1 - idx;
+      const l = c[real];
+      if (l.qtd <= 1) return c.filter((_, j) => j !== real);
+      return c.map((x, j) => (j === real ? { ...x, qtd: x.qtd - 1 } : x));
+    });
+  };
 
   const totalMesa = comandas.reduce((s, c) => s + c.total, 0);
 
@@ -92,11 +128,11 @@ export function GarcomPedido({
   }
 
   function lancar() {
-    if (cartLista.length === 0) return;
+    if (cart.length === 0) return;
     start(async () => {
-      const r = await lancarPedidoGarcom(
+      const r = await lancarPedidoGarcomLinhas(
         mesa,
-        cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd })),
+        cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
         obs,
         comandaSel === "nova" ? undefined : comandaSel,
       );
@@ -145,22 +181,23 @@ export function GarcomPedido({
           ) : (
             <div className="space-y-2">
               {visiveis.map((i) => {
-                const q = cart[i.id] || 0;
+                const q = qtdDoItem(i.id);
+                const temCompl = comComplSet.has(i.id) && gruposDe(i.id).length > 0;
                 return (
                   <div
                     key={i.id}
-                    onClick={() => q === 0 && add(i.id)}
+                    onClick={() => (q === 0 || temCompl) && add(i)}
                     className={`flex items-center justify-between rounded-lg border p-3 ${q > 0 ? "border-blue-500 bg-blue-500/10" : "border-zinc-800 bg-zinc-900"}`}
                   >
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{i.nome}</div>
+                      <div className="truncate font-medium">{i.nome}{temCompl ? " ⚙️" : ""}</div>
                       <div className="text-sm text-emerald-400">{i.preco > 0 ? brl(i.preco) : "Preço variável"}</div>
                     </div>
                     {q > 0 && (
                       <div className="flex items-center gap-3 rounded-lg border border-blue-500 px-2 py-1">
-                        <button onClick={(e) => { e.stopPropagation(); setQtd(i.id, q - 1); }} className="text-lg">{q === 1 ? "🗑️" : "−"}</button>
+                        <button onClick={(e) => { e.stopPropagation(); tiraUm(i.id); }} className="text-lg">{q === 1 ? "🗑️" : "−"}</button>
                         <span className="w-5 text-center font-bold">{q}</span>
-                        <button onClick={(e) => { e.stopPropagation(); setQtd(i.id, q + 1); }} className="text-lg text-blue-400">+</button>
+                        <button onClick={(e) => { e.stopPropagation(); add(i); }} className="text-lg text-blue-400">+</button>
                       </div>
                     )}
                   </div>
@@ -172,6 +209,14 @@ export function GarcomPedido({
 
         {/* Rail de categorias */}
         <div className="w-28 shrink-0 overflow-y-auto border-l border-zinc-800 bg-zinc-900/50 p-1.5">
+          {pizza.tamanhos.length > 0 && (
+            <button
+              onClick={() => setPzOpen(true)}
+              className="mb-1.5 w-full rounded-md bg-orange-500 px-2 py-3 text-xs font-bold text-white"
+            >
+              🍕 Montar pizza
+            </button>
+          )}
           {abas.map((c) => (
             <button
               key={c}
@@ -205,20 +250,20 @@ export function GarcomPedido({
             <button onClick={() => setCartOpen(false)} className="text-zinc-400">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
-            {cartLista.length === 0 ? (
+            {cart.length === 0 ? (
               <p className="py-10 text-center text-sm text-zinc-500">Carrinho vazio.</p>
             ) : (
               <div className="space-y-2">
-                {cartLista.map((x) => (
-                  <div key={x.item.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{x.item.nome}</div>
-                      <div className="text-sm text-emerald-400">{brl(x.item.preco * x.qtd)}</div>
+                {cart.map((l) => (
+                  <div key={l.uid} className="flex items-start justify-between rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
+                      <div className="mt-0.5 text-sm text-emerald-400">{brl(l.preco * l.qtd)}</div>
                     </div>
-                    <div className="flex items-center gap-3 rounded-lg border border-zinc-700 px-2 py-1">
-                      <button onClick={() => setQtd(x.item.id, x.qtd - 1)} className="text-lg">{x.qtd === 1 ? "🗑️" : "−"}</button>
-                      <span className="w-5 text-center font-bold">{x.qtd}</span>
-                      <button onClick={() => setQtd(x.item.id, x.qtd + 1)} className="text-lg text-blue-400">+</button>
+                    <div className="ml-2 flex items-center gap-3 rounded-lg border border-zinc-700 px-2 py-1">
+                      <button onClick={() => setQtdLinha(l.uid, l.qtd - 1)} className="text-lg">{l.qtd === 1 ? "🗑️" : "−"}</button>
+                      <span className="w-5 text-center font-bold">{l.qtd}</span>
+                      <button onClick={() => setQtdLinha(l.uid, l.qtd + 1)} className="text-lg text-blue-400">+</button>
                     </div>
                   </div>
                 ))}
@@ -258,7 +303,7 @@ export function GarcomPedido({
             </div>
             <button
               onClick={lancar}
-              disabled={proc || cartLista.length === 0}
+              disabled={proc || cart.length === 0}
               className="w-full rounded-xl bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
             >
               {proc ? "Lançando..." : "✓ Lançar pedido"}
@@ -373,6 +418,10 @@ export function GarcomPedido({
           )}
         </div>
       )}
+
+      {/* Montador de pizza / combos (compartilhados com o delivery) */}
+      {pzOpen && <PizzaModal pizza={pizza} comObs onClose={() => setPzOpen(false)} onAdd={(l) => { addLinha(l); setPzOpen(false); }} />}
+      {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} comObs onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
 
       {/* Toast */}
       {toast && (
