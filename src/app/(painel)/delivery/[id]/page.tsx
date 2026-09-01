@@ -40,6 +40,7 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
   const pedido: PedidoDetalhe = {
     id,
     numero: com?.numero ?? null,
+    comandaId: p.comanda_id,
     nome: (p.nome as string) ?? "",
     telefone: (p.telefone as string) ?? "",
     tipo: (p.tipo as "entrega" | "retirada") ?? "entrega",

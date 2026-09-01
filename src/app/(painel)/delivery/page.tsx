@@ -7,16 +7,21 @@ export const metadata = { title: "Delivery · Brasa" };
 export default async function DeliveryPage() {
   const supabase = await createClient();
 
-  const [{ data: pedidosRaw }, { data: entregadores }] = await Promise.all([
+  const [{ data: pedidosRaw }, { data: entregadores }, { data: cfgMapa }] = await Promise.all([
     supabase
       .from("delivery_pedidos")
       .select(
-        "id, comanda_id, nome, telefone, tipo, logradouro, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, entregador_id, pdv_comandas(numero)",
+        "id, comanda_id, nome, telefone, tipo, logradouro, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, entregador_id, lat, lng, pdv_comandas(numero)",
       )
       .order("criado_em", { ascending: false })
       .limit(120),
     supabase.from("entregadores").select("id, nome").eq("ativo", true).order("nome"),
+    supabase.from("delivery_config").select("origem_lat, origem_lng").eq("id", 1).maybeSingle(),
   ]);
+  const cfgM = cfgMapa as { origem_lat?: number | null; origem_lng?: number | null } | null;
+  const origemMapa = cfgM?.origem_lat != null && cfgM?.origem_lng != null
+    ? { lat: Number(cfgM.origem_lat), lng: Number(cfgM.origem_lng) }
+    : null;
 
   const linhas = (pedidosRaw as unknown as (Omit<PedidoBoard, "numero" | "subtotal" | "entregadorNome"> & {
     comanda_id: string | null;
@@ -61,7 +66,7 @@ export default async function DeliveryPage() {
           <Link href="/delivery/config" className="hover:underline">⚙️ Config</Link>
         </div>
       </div>
-      <Board pedidos={pedidos} entregadores={(entregadores ?? []) as EntregadorOpt[]} />
+      <Board pedidos={pedidos} entregadores={(entregadores ?? []) as EntregadorOpt[]} origemMapa={origemMapa} />
     </div>
   );
 }

@@ -3,10 +3,12 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, definirPagoDelivery, reimprimirDelivery } from "../actions";
+import { emitirNfceComanda } from "../../salao/fiscal-actions";
 
 export type PedidoDetalhe = {
   id: string;
   numero: number | null;
+  comandaId: string | null;
   nome: string;
   telefone: string;
   tipo: "entrega" | "retirada";
@@ -69,6 +71,28 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
             <button onClick={() => act(() => definirStatusDelivery(p.id, PROX[p.status]))} disabled={proc} className="rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-50">→ {ETAPAS.find((e) => e.key === PROX[p.status])?.label}</button>
           )}
           <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">🖨️ Reimprimir</button>
+          {p.comandaId && (
+            <button
+              onClick={() => {
+                const cpf = prompt("CPF na nota? (deixe vazio pra emitir sem CPF)") ?? "";
+                start(async () => {
+                  const r = await emitirNfceComanda(p.comandaId!, cpf.trim() || undefined);
+                  if (r.ok) {
+                    alert(`✅ NFC-e ${"jaEmitida" in r && r.jaEmitida ? "já estava emitida" : "emitida"}!${"numero" in r && r.numero ? ` Nº ${r.numero}` : ""}`);
+                    if ("urlDanfe" in r && r.urlDanfe) window.open(r.urlDanfe as string, "_blank");
+                  } else {
+                    alert(`❌ ${"mensagem" in r && r.mensagem ? r.mensagem : "Não foi possível emitir."}`);
+                  }
+                  router.refresh();
+                });
+              }}
+              disabled={proc}
+              className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+              title="Emitir a nota fiscal do consumidor deste pedido"
+            >
+              🧾 NFC-e
+            </button>
+          )}
           {!cancelado && p.status !== "entregue" && (
             <button onClick={() => { if (confirm("Cancelar este pedido?")) act(() => definirStatusDelivery(p.id, "cancelado")); }} disabled={proc} className="rounded-xl border border-rose-300 px-3 py-2 text-sm text-rose-600 dark:border-rose-800">Cancelar</button>
           )}
