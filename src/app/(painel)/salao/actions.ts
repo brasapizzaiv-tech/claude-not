@@ -244,6 +244,53 @@ function calcBuffet(
   return { valor: Math.round(valor * 100) / 100, livre: ehLivre };
 }
 
+// Botão LIVRE do quiosque touch: comanda de buffet livre direto, sem pesar.
+export async function gerarComandaLivreKiosk() {
+  const supabase = await createClient();
+  const cfg = await pdvCfg(supabase);
+  const { livre } = precoDoDia(cfg);
+  if (!(livre > 0)) return { ok: false as const, mensagem: "Preço do buffet livre não está configurado hoje." };
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .insert({ peso: 0, tara: 0, valor_buffet: livre, livre: true, mesa: "Balança" })
+    .select("id, numero")
+    .single();
+  if (!com) return { ok: false as const, mensagem: "Não foi possível criar a comanda." };
+  revalidatePath("/salao");
+  return { ok: true as const, id: com.id as string, numero: com.numero as number, valor: livre };
+}
+
+// Leitor QR do quiosque: pessoa pesou antes e decidiu virar LIVRE — o valor da
+// comanda é SUBSTITUÍDO pelo livre do dia (regra do Rafael).
+export async function virarLivreKiosk(comandaId: string) {
+  const supabase = await createClient();
+  const cid = (comandaId || "").trim();
+  if (!/^[0-9a-f-]{36}$/i.test(cid)) return { ok: false as const, mensagem: "QR inválido." };
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .select("id, numero, status, valor_buffet, livre")
+    .eq("id", cid)
+    .maybeSingle();
+  if (!com) return { ok: false as const, mensagem: "Comanda não encontrada." };
+  if (com.status !== "aberta") return { ok: false as const, mensagem: `Comanda ${com.numero} já está fechada.` };
+  if (com.livre) return { ok: false as const, mensagem: `Comanda ${com.numero} já é BUFFET LIVRE.` };
+  const cfg = await pdvCfg(supabase);
+  const { livre } = precoDoDia(cfg);
+  if (!(livre > 0)) return { ok: false as const, mensagem: "Preço do buffet livre não está configurado hoje." };
+  await supabase
+    .from("pdv_comandas")
+    .update({ valor_buffet: livre, livre: true, so_kg: false })
+    .eq("id", cid);
+  revalidatePath("/salao");
+  return {
+    ok: true as const,
+    id: com.id as string,
+    numero: com.numero as number,
+    valor: livre,
+    antes: Math.round(Number(com.valor_buffet ?? 0) * 100) / 100,
+  };
+}
+
 // Nova comanda de buffet a partir do peso (kg). Aplica "livre" (teto) se passar.
 export async function criarComandaBuffet(formData: FormData) {
   const supabase = await createClient();

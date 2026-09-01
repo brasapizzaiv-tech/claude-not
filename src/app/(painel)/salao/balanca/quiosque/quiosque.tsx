@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
-import { gerarComandaBuffetKiosk } from "../../actions";
+import { gerarComandaBuffetKiosk, gerarComandaLivreKiosk, virarLivreKiosk } from "../../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -22,6 +22,8 @@ type Resultado = {
   peso: number;
   tara: number;
   livre: boolean;
+  viradaLivre?: boolean; // pesou antes e virou livre pelo QR
+  antes?: number;        // valor que era antes de virar livre
 };
 
 // QR da comanda (mesmo das comandas normais — aponta para a página da comanda).
@@ -137,6 +139,69 @@ export function QuiosqueBalanca({
     soKgRef.current = false;
     setSoKg(false);
   }
+
+  // Fecha um resultado (livre direto ou virada de livre): mostra, imprime, agenda o reset.
+  function concluir(r: Resultado) {
+    setResultado(r);
+    setEst("resultado");
+    setTimeout(() => { try { window.print(); } catch {} }, 400);
+    if (resetRef.current) clearTimeout(resetRef.current);
+    resetRef.current = setTimeout(() => {
+      refPeso.current = 0;
+      estavelDesde.current = 0;
+      setPesoBruto(0);
+      setEst("aguardando");
+    }, RESET_MS);
+  }
+
+  // Botão touch: BUFFET LIVRE direto (sem pesar) — imprime na hora.
+  async function livreDireto() {
+    if (estadoRef.current === "processando") return;
+    setEst("processando");
+    try {
+      const r = await gerarComandaLivreKiosk();
+      if (r.ok) concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true });
+      else { setErro(r.mensagem ?? ""); setEst("aguardando"); setTimeout(() => setErro(""), 4000); }
+    } catch {
+      setEst("aguardando");
+    }
+  }
+
+  // Leitor QR (age como teclado): comanda pesada vira LIVRE (substitui o valor).
+  async function virarLivre(comandaId: string) {
+    if (estadoRef.current === "processando") return;
+    setEst("processando");
+    try {
+      const r = await virarLivreKiosk(comandaId);
+      if (r.ok) concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true, viradaLivre: true, antes: r.antes });
+      else { setErro(r.mensagem ?? "Não deu certo."); setEst("aguardando"); setTimeout(() => setErro(""), 5000); }
+    } catch {
+      setEst("aguardando");
+    }
+  }
+
+  // Captura o QR lido pelo leitor USB: rajada de teclas rápidas terminando em
+  // Enter. Extrai o id da comanda da URL do cupom.
+  const qrBuf = useRef({ txt: "", ts: 0 });
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const agora = Date.now();
+      if (agora - qrBuf.current.ts > 120) qrBuf.current.txt = "";
+      qrBuf.current.ts = agora;
+      if (e.key === "Enter") {
+        const m =
+          qrBuf.current.txt.match(/comandas\/([0-9a-f-]{36})/i) ||
+          qrBuf.current.txt.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+        if (m) virarLivre(m[1]);
+        qrBuf.current.txt = "";
+      } else if (e.key.length === 1) {
+        qrBuf.current.txt += e.key;
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Processa cada leitura de peso (máquina de estados).
   function processar(bruto: number) {
@@ -284,9 +349,11 @@ export function QuiosqueBalanca({
           {estado === "resultado" && resultado ? (
             <div className="text-center">
               <div className="mb-6 inline-block rounded-full bg-green-500 px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.5rem,5vw,3.5rem)] font-black">
-                ✓ COMANDA Nº {resultado.numero}
+                {resultado.viradaLivre ? `✓ COMANDA Nº ${resultado.numero} AGORA É LIVRE` : `✓ COMANDA Nº ${resultado.numero}`}
               </div>
-              <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-white/80">Retire o prato</p>
+              <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-white/80">
+                {resultado.peso > 0 ? "Retire o prato" : "Pegue seu cupom · bom apetite!"}
+              </p>
               <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-green-400">{moeda(resultado.valor)}</p>
               <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-white/50">
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
@@ -322,6 +389,17 @@ export function QuiosqueBalanca({
                   <span className="ml-3 text-[clamp(1.5rem,5vw,3.5rem)] font-light text-white/50">kg</span>
                 </p>
               </div>
+
+              {/* Botões touch: LIVRE direto + Marmita */}
+              {buffetLivre > 0 && liq <= LIMIAR && (
+                <button
+                  onClick={livreDireto}
+                  className="mt-[clamp(1rem,3vh,2rem)] w-full max-w-2xl rounded-3xl bg-[#C78340] px-[clamp(1.5rem,6vw,3.5rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.4rem,4.5vw,2.8rem)] font-black text-white shadow-lg active:brightness-90"
+                >
+                  🍽️ QUERO O BUFFET LIVRE — {moeda(buffetLivre)}
+                </button>
+              )}
+              {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-300">{erro}</p>}
 
               {/* Marmita: só por kg (sem virar livre) */}
               <button
@@ -402,22 +480,34 @@ export function QuiosqueBalanca({
             <div style={{ fontSize: "8pt", textTransform: "uppercase", marginTop: "1mm" }}>Comanda · Balança</div>
             <div style={{ fontSize: "26pt", fontWeight: "bold", lineHeight: 1 }}>#{resultado.numero}</div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: "4mm", marginTop: "2mm", fontSize: "9pt" }}>
-              <div>
-                <div style={{ fontSize: "7pt" }}>PESO</div>
-                <b>{resultado.peso.toFixed(3).replace(".", ",")} kg</b>
+            {resultado.peso > 0 ? (
+              <div style={{ display: "flex", justifyContent: "center", gap: "4mm", marginTop: "2mm", fontSize: "9pt" }}>
+                <div>
+                  <div style={{ fontSize: "7pt" }}>PESO</div>
+                  <b>{resultado.peso.toFixed(3).replace(".", ",")} kg</b>
+                </div>
+                <div>
+                  <div style={{ fontSize: "7pt" }}>TARA</div>
+                  <b>{resultado.tara.toFixed(3).replace(".", ",")} kg</b>
+                </div>
+                <div>
+                  <div style={{ fontSize: "7pt" }}>VALOR</div>
+                  <b>{moeda(resultado.valor)}</b>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: "7pt" }}>TARA</div>
-                <b>{resultado.tara.toFixed(3).replace(".", ",")} kg</b>
-              </div>
-              <div>
+            ) : (
+              <div style={{ marginTop: "2mm", fontSize: "9pt" }}>
                 <div style={{ fontSize: "7pt" }}>VALOR</div>
                 <b>{moeda(resultado.valor)}</b>
               </div>
-            </div>
+            )}
             {resultado.livre && (
-              <div style={{ fontSize: "9pt", fontWeight: "bold", marginTop: "1mm" }}>BUFFET LIVRE</div>
+              <div style={{ fontSize: "11pt", fontWeight: "bold", marginTop: "1mm" }}>
+                {resultado.viradaLivre ? "★ AGORA É BUFFET LIVRE ★" : "BUFFET LIVRE"}
+              </div>
+            )}
+            {resultado.viradaLivre && resultado.antes != null && (
+              <div style={{ fontSize: "8pt" }}>era {moeda(resultado.antes)} por peso</div>
             )}
 
             <CupomQR id={resultado.id} />
@@ -426,7 +516,7 @@ export function QuiosqueBalanca({
 
             <div style={{ borderTop: "1px dashed #000", margin: "2mm 0" }} />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10pt" }}>
-              <span>Buffet ({resultado.liquido.toFixed(3).replace(".", ",")} kg)</span>
+              <span>{resultado.peso > 0 ? `Buffet (${resultado.liquido.toFixed(3).replace(".", ",")} kg)` : "Buffet livre (à vontade)"}</span>
               <span>{moeda(resultado.valor)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13pt", fontWeight: "bold", marginTop: "1mm" }}>
