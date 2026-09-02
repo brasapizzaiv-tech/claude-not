@@ -1,11 +1,19 @@
-// Pix via API Pix do SICREDI (padrão BACEN v2). Roda só no servidor.
+// Pix via API Pix do SICREDI (padrão BACEN; conforme "Guia Técnico Integração
+// API Pix Sicredi v2.1"). Roda só no servidor.
 //
 // Variáveis de ambiente (Vercel):
-//   PIX_SICREDI_CLIENT_ID / PIX_SICREDI_CLIENT_SECRET  — credenciais da app
+//   PIX_SICREDI_CLIENT_ID / PIX_SICREDI_CLIENT_SECRET — credenciais geradas NO
+//       PORTAL a partir do CERTIFICADO VALIDADO (Certificados e Credenciais →
+//       Gerar Credenciais). Credencial de app OAuth genérica não serve.
+//       Homologação: credenciais vêm pelo Internet Banking (Acesso à API Pix).
 //   PIX_SICREDI_CHAVE       — a chave Pix da conta da Brasa (CNPJ/e-mail/aleatória)
-//   PIX_SICREDI_AMBIENTE    — "sandbox" (padrão) ou "producao"
-//   PIX_SICREDI_CERT_B64 / PIX_SICREDI_KEY_B64 — certificado e chave privada
-//       validados pelo Sicredi, em BASE64 (produção exige mTLS; sandbox não)
+//   PIX_SICREDI_AMBIENTE    — "sandbox" (padrão, api-pix-h) ou "producao"
+//   PIX_SICREDI_CERT_B64 / PIX_SICREDI_KEY_B64 — certificado validado (.CER em
+//       PEM) e chave privada SEM SENHA (.KEY), em BASE64. mTLS é exigido nos
+//       DOIS ambientes. PIX_SICREDI_CA_B64 (opcional) — cadeia completa Sicredi.
+//   PIX_SICREDI_ESCOPOS     — padrão "cob.read cob.write" (tem que bater com o
+//       que a cooperativa liberou; pedir escopo não liberado dá 400)
+//   PIX_SICREDI_COB_VERSAO  — "v3" (padrão do Sicredi) ou "v2"
 //   PIX_SICREDI_URL_API / PIX_SICREDI_URL_TOKEN — só se precisar sobrescrever
 import { Agent, fetch as ufetch } from "undici";
 
@@ -17,32 +25,40 @@ const URL_TOKEN = process.env.PIX_SICREDI_URL_TOKEN || `${URL_API}/oauth/token`;
 const CLIENT_ID = process.env.PIX_SICREDI_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.PIX_SICREDI_CLIENT_SECRET || "";
 const CHAVE_PIX = process.env.PIX_SICREDI_CHAVE || "";
+const ESCOPOS = (process.env.PIX_SICREDI_ESCOPOS || "cob.read cob.write").trim();
+const COB_VERSAO = process.env.PIX_SICREDI_COB_VERSAO === "v2" ? "v2" : "v3";
 
 export function pixConfigurado() {
   return !!(CLIENT_ID && CLIENT_SECRET && CHAVE_PIX);
 }
 
-// mTLS (certificado validado pelo Sicredi) — obrigatório em produção.
+// mTLS (certificado validado pelo Sicredi + chave privada) — exigido em
+// homologação e produção. Sem cert/key a API responde 403.
 let dispatcher: Agent | undefined;
 function getDispatcher() {
   if (dispatcher) return dispatcher;
-  const cert = process.env.PIX_SICREDI_CERT_B64 ? Buffer.from(process.env.PIX_SICREDI_CERT_B64, "base64").toString("utf8") : undefined;
-  const key = process.env.PIX_SICREDI_KEY_B64 ? Buffer.from(process.env.PIX_SICREDI_KEY_B64, "base64").toString("utf8") : undefined;
-  dispatcher = new Agent({ connect: cert && key ? { cert, key } : {} });
+  const b64 = (v?: string) => (v ? Buffer.from(v, "base64").toString("utf8") : undefined);
+  const cert = b64(process.env.PIX_SICREDI_CERT_B64);
+  const key = b64(process.env.PIX_SICREDI_KEY_B64);
+  const ca = b64(process.env.PIX_SICREDI_CA_B64);
+  dispatcher = new Agent({ connect: { ...(cert && key ? { cert, key } : {}), ...(ca ? { ca } : {}) } });
   return dispatcher;
 }
 
-// Token OAuth (client_credentials) com cache até quase expirar.
+// Token OAuth (client_credentials) com cache até quase expirar (o Sicredi expira
+// em 300 s e pode bloquear o IP por excesso de pedidos de token).
 let tokenCache: { token: string; expira: number } | null = null;
 async function obterToken(): Promise<string> {
   if (tokenCache && Date.now() < tokenCache.expira) return tokenCache.token;
   const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-  const r = await ufetch(`${URL_TOKEN}?grant_type=client_credentials&scope=${encodeURIComponent("cob.write cob.read pix.read")}`, {
+  const form = new URLSearchParams({ grant_type: "client_credentials", scope: ESCOPOS });
+  const r = await ufetch(`${URL_TOKEN}?grant_type=client_credentials`, {
     method: "POST",
     headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: form.toString(),
     dispatcher: getDispatcher(),
   });
-  if (!r.ok) throw new Error(`token HTTP ${r.status}`);
+  if (!r.ok) throw new Error(`token HTTP ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
   const j = (await r.json()) as { access_token: string; expires_in?: number };
   tokenCache = { token: j.access_token, expira: Date.now() + (Number(j.expires_in ?? 300) - 30) * 1000 };
   return j.access_token;
@@ -89,7 +105,7 @@ export function gerarTxid(): string {
   return t;
 }
 
-// Cria a cobrança imediata (PUT /api/v2/cob/{txid}) e devolve o copia-e-cola.
+// Cria a cobrança imediata (PUT /api/v3/cob/{txid} no Sicredi) e devolve o copia-e-cola.
 export async function criarCobrancaPix(dados: {
   txid: string;
   valor: number;
@@ -98,21 +114,24 @@ export async function criarCobrancaPix(dados: {
   descricao?: string;
 }) {
   const token = await obterToken();
+  // devedor só com nome não é aceito pelo padrão BACEN (exige cpf/cnpj junto);
+  // o nome do cliente vai em infoAdicionais, que aparece pro pagador.
   const body = {
     calendario: { expiracao: dados.expiracaoSeg ?? 1800 },
-    ...(dados.nomeDevedor ? { devedor: { nome: dados.nomeDevedor.slice(0, 200) } } : {}),
-    valor: { original: dados.valor.toFixed(2) },
+    // modalidadeAlteracao 0 = pagador NÃO pode mudar o valor (recomendação do Sicredi)
+    valor: { original: dados.valor.toFixed(2), modalidadeAlteracao: 0 },
     chave: CHAVE_PIX,
     solicitacaoPagador: (dados.descricao ?? "Pedido Brasa").slice(0, 140),
+    ...(dados.nomeDevedor ? { infoAdicionais: [{ nome: "Cliente", valor: dados.nomeDevedor.slice(0, 200) }] } : {}),
   };
-  const r = await ufetch(`${URL_API}/api/v2/cob/${dados.txid}`, {
+  const r = await ufetch(`${URL_API}/api/${COB_VERSAO}/cob/${dados.txid}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
     dispatcher: getDispatcher(),
   });
-  const j = (await r.json().catch(() => null)) as { location?: string; loc?: { location?: string }; pixCopiaECola?: string; brcode?: string } | null;
-  if (!r.ok || !j) throw new Error(`cob HTTP ${r.status}`);
+  const j = (await r.json().catch(() => null)) as { location?: string; loc?: { location?: string }; pixCopiaECola?: string; brcode?: string; detail?: string } | null;
+  if (!r.ok || !j) throw new Error(`cob HTTP ${r.status}${j?.detail ? `: ${j.detail}` : ""}`);
   const location = j.location || j.loc?.location || "";
   // Alguns PSPs já devolvem o copia-e-cola pronto; senão, montamos do location.
   const copiaECola = j.pixCopiaECola || j.brcode || (location ? montarBrCode(location, "BRASA PIZZARIA", "IVOTI") : "");
@@ -123,7 +142,7 @@ export async function criarCobrancaPix(dados: {
 // Consulta a cobrança: status CONCLUIDA = pago.
 export async function consultarCobrancaPix(txid: string) {
   const token = await obterToken();
-  const r = await ufetch(`${URL_API}/api/v2/cob/${txid}`, {
+  const r = await ufetch(`${URL_API}/api/${COB_VERSAO}/cob/${txid}`, {
     headers: { Authorization: `Bearer ${token}` },
     dispatcher: getDispatcher(),
   });
