@@ -245,12 +245,14 @@ export function TipoSelector({ value, onChange }: { value: TipoEtiqueta; onChang
           type="button"
           onClick={() => onChange(t.key)}
           title={t.dica}
-          className={`rounded-xl border px-1 py-2 text-center text-[11px] font-semibold leading-tight ${
+          className={`min-w-0 overflow-hidden rounded-xl border px-1 py-2 text-center text-[11px] font-semibold leading-tight ${
             value === t.key ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
           }`}
         >
           <div className="text-base">{t.icone}</div>
-          {t.titulo}
+          {/* nome curto no celular, completo em tela larga */}
+          <span className="sm:hidden">{t.curto}</span>
+          <span className="hidden sm:inline">{t.titulo}</span>
         </button>
       ))}
     </div>

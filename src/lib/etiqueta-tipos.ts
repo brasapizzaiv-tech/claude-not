@@ -2,12 +2,12 @@
 // PDF no servidor e a pré-visualização no navegador — sem dependências de Node).
 export type TipoEtiqueta = "manipulacao" | "fracionamento" | "descongelamento" | "amostra" | "livre";
 
-export const TIPOS: { key: TipoEtiqueta; titulo: string; icone: string; cabecalho: string; dataLabel: string; dica: string }[] = [
-  { key: "manipulacao", titulo: "Manipulação", icone: "🔪", cabecalho: "MANIPULAÇÃO", dataLabel: "Manip.", dica: "Preparo feito na cozinha." },
-  { key: "fracionamento", titulo: "Fracionamento", icone: "📦", cabecalho: "FRACIONAMENTO", dataLabel: "Fracion.", dica: "Embalagem aberta / porcionada." },
-  { key: "descongelamento", titulo: "Descongelamento", icone: "❄️", cabecalho: "DESCONGELAMENTO", dataLabel: "Início", dica: "Começou a descongelar agora; validade = prazo pra usar." },
-  { key: "amostra", titulo: "Amostra", icone: "🧪", cabecalho: "AMOSTRA", dataLabel: "Coleta", dica: "Amostra guardada por 72h." },
-  { key: "livre", titulo: "Livre", icone: "✏️", cabecalho: "", dataLabel: "Emitida", dica: "Título + texto à sua escolha." },
+export const TIPOS: { key: TipoEtiqueta; titulo: string; curto: string; icone: string; cabecalho: string; dataLabel: string; dica: string }[] = [
+  { key: "manipulacao", titulo: "Manipulação", curto: "Manipul.", icone: "🔪", cabecalho: "MANIPULAÇÃO", dataLabel: "Manip.", dica: "Preparo feito na cozinha." },
+  { key: "fracionamento", titulo: "Fracionamento", curto: "Fracion.", icone: "📦", cabecalho: "FRACIONAMENTO", dataLabel: "Fracion.", dica: "Embalagem aberta / porcionada." },
+  { key: "descongelamento", titulo: "Descongelamento", curto: "Descong.", icone: "❄️", cabecalho: "DESCONGELAMENTO", dataLabel: "Início", dica: "Começou a descongelar agora; validade = prazo pra usar." },
+  { key: "amostra", titulo: "Amostra", curto: "Amostra", icone: "🧪", cabecalho: "AMOSTRA", dataLabel: "Coleta", dica: "Amostra guardada por 72h." },
+  { key: "livre", titulo: "Livre", curto: "Livre", icone: "✏️", cabecalho: "", dataLabel: "Emitida", dica: "Título + texto à sua escolha." },
 ];
 
 export const tipoInfo = (t?: string | null) => TIPOS.find((x) => x.key === t) ?? TIPOS[0];
