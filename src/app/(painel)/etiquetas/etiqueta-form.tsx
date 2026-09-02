@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { criarEtiqueta, criarItemEtiqueta } from "./actions";
 import {
-  SeletorItem, PreviewEtiqueta, Copias, TipoSelector, CamposExtras, EXTRAS_VAZIO, emDias, diasPadrao,
+  SeletorItem, PreviewEtiqueta, Copias, TipoSelector, CamposExtras, EXTRAS_VAZIO, emDias, diasPadrao, conservacaoPadrao,
   type Extras, type ItemEtq, type CatEtq, type NovoItemDados,
 } from "@/components/etiqueta-ui";
 import type { EtiquetaConfig, EtiquetaDados, TipoEtiqueta } from "@/lib/etiqueta-tipos";
@@ -142,7 +142,14 @@ export function EtiquetaForm({
                 categorias={categorias}
                 recentes={recentes}
                 value={itemId}
-                onChange={(v) => { setItemId(v); recalc(v, conservacao); }}
+                onChange={(v) => {
+                  setItemId(v);
+                  const it = itens.find((x) => x.id === v);
+                  if (it?.unidade) setUnidade(it.unidade);
+                  const cons = tipo === "descongelamento" ? "resfriado" : conservacaoPadrao(it, conservacao);
+                  setConservacao(cons);
+                  recalc(v, cons);
+                }}
                 onNovo={novoItem}
               />
             </div>

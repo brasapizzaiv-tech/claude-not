@@ -27,7 +27,7 @@ export default async function NovaEtiquetaColabPage({ params }: { params: Promis
   const [{ data: its }, { data: cats }, { data: recs }, { data: imps }] = await Promise.all([
     admin
       .from("etiqueta_itens")
-      .select("id, nome, categoria_id, validade_congelado, validade_resfriado, validade_ambiente")
+      .select("id, nome, categoria_id, validade_congelado, validade_resfriado, validade_ambiente, unidade")
       .eq("ativo", true)
       .order("nome"),
     admin.from("etiqueta_categorias").select("id, nome").eq("ativo", true).order("ordem").order("nome"),

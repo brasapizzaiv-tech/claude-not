@@ -37,7 +37,16 @@ export type ItemEtq = {
   validade_congelado: number | null;
   validade_resfriado: number | null;
   validade_ambiente: number | null;
+  unidade?: string | null;
 };
+// Conservação sugerida pelo cadastro do item (a que tem validade; resfriado ganha).
+export function conservacaoPadrao(p: ItemEtq | undefined, atual: string) {
+  if (!p) return atual;
+  if (p.validade_resfriado) return "resfriado";
+  if (p.validade_congelado) return "congelado";
+  if (p.validade_ambiente) return "ambiente";
+  return atual;
+}
 export type CatEtq = { id: string; nome: string };
 export type NovoItemDados = {
   nome: string;

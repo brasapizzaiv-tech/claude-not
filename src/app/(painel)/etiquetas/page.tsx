@@ -22,7 +22,7 @@ export default async function EtiquetasPage({
     await Promise.all([
       supabase
         .from("etiqueta_itens")
-        .select("id, nome, categoria_id, validade_congelado, validade_resfriado, validade_ambiente")
+        .select("id, nome, categoria_id, validade_congelado, validade_resfriado, validade_ambiente, unidade")
         .eq("ativo", true)
         .order("nome"),
       supabase.from("etiqueta_categorias").select("id, nome").eq("ativo", true).order("ordem").order("nome"),
