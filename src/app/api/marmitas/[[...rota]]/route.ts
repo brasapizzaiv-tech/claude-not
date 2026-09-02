@@ -49,7 +49,12 @@ type Cfg = {
   nomeConvenio: string; horaLimite: string; horaAbertura: string; horaEntrega: string; bloquearAposLimite: boolean;
   filiais: string[]; usuarios: { id: string; nome: string; senha: string; permissoes: string[] }[];
   colaboradores: { id: string; nome: string; matricula?: string }[];
-  cardapios: { semanas: { id: string; nome: string; dias: Record<string, { pratos: string[]; proteinas: string[]; salada: string }> }[]; ativo: string | null };
+  cardapios: {
+    semanas: { id: string; nome: string; dias: Record<string, { pratos: string[]; proteinas: string[]; salada: string }> }[];
+    ativo: string | null;
+    // segunda-feira (YYYY-MM-DD) → id da semana que vale a partir dali
+    programacao?: Record<string, string>;
+  };
 };
 
 async function getCfg(db: Db): Promise<Cfg> {
@@ -76,39 +81,82 @@ async function setCfg(db: Db, chave: string, valor: unknown) {
 function configPublica(cfg: Cfg) {
   return { nomeConvenio: cfg.nomeConvenio, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, bloquearAposLimite: cfg.bloquearAposLimite, filiais: cfg.filiais, precisaLogin: cfg.usuarios.length > 0 };
 }
-function resolveCardapioHoje(cfg: Cfg, data: string) {
-  const sem = cfg.cardapios.semanas.find((s) => s.id === cfg.cardapios.ativo);
-  const dia = sem && sem.dias ? sem.dias[diaSemana(data)] : null;
-  return dia ? { pratos: dia.pratos || [], proteinas: dia.proteinas || [], salada: dia.salada || "" } : { pratos: [], proteinas: [], salada: "" };
-}
 function addDias(data: string, n: number) {
   const [y, m, d] = data.split("-").map(Number);
   const t = new Date(Date.UTC(y, m - 1, d + n));
   const p = (x: number) => String(x).padStart(2, "0");
   return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
 }
+function segundaDe(data: string) {
+  const [y, m, d] = data.split("-").map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return addDias(data, dow === 0 ? -6 : 1 - dow);
+}
+const DIAS_NOME = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+function fmtDia(data: string) {
+  const [y, m, d] = data.split("-").map(Number);
+  return `${DIAS_NOME[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]} ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`;
+}
+// Qual semana do cadastro vale para uma data. A programação guarda, por
+// segunda-feira, a semana escolhida; a partir da última programada a rotação
+// segue sozinha (1→2→3→4→1). Sem programação, a "ativa" vale pra semana atual.
+// Isso resolve o sábado às 14h: os pedidos de segunda já abrem com a semana
+// seguinte, sem depender de alguém "ativar" na mão antes.
+function semanaPara(cfg: Cfg, data: string) {
+  const semanas = cfg.cardapios.semanas;
+  if (!semanas.length) return null;
+  const seg = segundaDe(data);
+  let ancDesde: string | null = null;
+  let ancId: string | null = null;
+  for (const [desde, id] of Object.entries(cfg.cardapios.programacao || {})) {
+    if (desde <= seg && (!ancDesde || desde > ancDesde)) { ancDesde = desde; ancId = id; }
+  }
+  if (!ancDesde) { ancDesde = segundaDe(agoraBR().data); ancId = cfg.cardapios.ativo; }
+  const idx = semanas.findIndex((s) => s.id === ancId);
+  if (idx < 0) return null;
+  const dif = Math.round((Date.parse(seg + "T00:00:00Z") - Date.parse(ancDesde + "T00:00:00Z")) / (7 * 86400000));
+  const n = semanas.length;
+  return semanas[(((idx + dif) % n) + n) % n];
+}
+function resolveCardapioHoje(cfg: Cfg, data: string) {
+  const sem = semanaPara(cfg, data);
+  const dia = sem && sem.dias ? sem.dias[diaSemana(data)] : null;
+  return dia ? { pratos: dia.pratos || [], proteinas: dia.proteinas || [], salada: dia.salada || "" } : { pratos: [], proteinas: [], salada: "" };
+}
 function temCardapio(cfg: Cfg, data: string) {
   const c = resolveCardapioHoje(cfg, data);
   return c.pratos.length > 0 || c.proteinas.length > 0;
 }
-function proximoComCardapio(cfg: Cfg, data: string) {
-  for (let i = 0; i < 8; i++) {
-    const d = addDias(data, i);
-    if (temCardapio(cfg, d)) return d;
-  }
-  return data;
+// Entrega de segunda a sábado: só o domingo é pulado. Um dia sem cardápio NÃO é
+// pulado (antes era, e o pedido ia parar até uma semana à frente, com o
+// cardápio velho daquele dia) — fica "aguardando cardápio".
+function proximoDiaEntrega(data: string) {
+  let d = data;
+  while (diaSemana(d) === "dom") d = addDias(d, 1);
+  return d;
 }
 // Janela de pedido: para o dia de ENTREGA D, os pedidos abrem às `horaAbertura`
-// de D-1 e fecham às `horaLimite` de D. Descobre para qual dia dá pra pedir
-// agora e se está aberto.
+// do último dia de entrega antes de D (sábado, no caso da segunda) e fecham às
+// `horaLimite` de D. Descobre para qual dia dá pra pedir agora e se está aberto.
 function janelaPedido(cfg: Cfg, ag: { data: string; hora: string }) {
   // Ainda dá pra pedir para HOJE (abriu ontem, fecha hoje no limite)?
-  if (temCardapio(cfg, ag.data) && ag.hora <= cfg.horaLimite) {
+  if (diaSemana(ag.data) !== "dom" && ag.hora <= cfg.horaLimite) {
     return { alvo: ag.data, aberto: true };
   }
-  // Senão, o alvo é o próximo dia com cardápio (abre às horaAbertura do dia anterior).
-  const alvo = proximoComCardapio(cfg, addDias(ag.data, 1));
-  return { alvo, aberto: ag.hora >= cfg.horaAbertura };
+  const alvo = proximoDiaEntrega(addDias(ag.data, 1));
+  let vespera = addDias(alvo, -1);
+  while (diaSemana(vespera) === "dom") vespera = addDias(vespera, -1);
+  const aberto = ag.data > vespera || (ag.data === vespera && ag.hora >= cfg.horaAbertura);
+  return { alvo, aberto };
+}
+// Itens do pedido que não estão no cardápio do dia (tela desatualizada).
+function itensForaDoCardapio(card: { pratos: string[]; proteinas: string[] }, p: Pedido) {
+  const n = (s: string) => s.trim().toLowerCase();
+  const pratos = new Set(card.pratos.map(n));
+  const prots = new Set(card.proteinas.map(n));
+  const fora = p.pratos.filter((x) => !pratos.has(n(x)));
+  if (p.proteina && !prots.has(n(p.proteina))) fora.push(p.proteina);
+  return fora;
 }
 async function resolveUsuario(cfg: Cfg, req: NextRequest) {
   if (cfg.usuarios.length === 0) return { nome: "Administrador", permissoes: PERMISSOES.slice() };
@@ -174,7 +222,8 @@ async function handle(req: NextRequest, rota: string[]) {
     const jaPediram = new Set((ped || []).map((x) => x.colaborador_id).filter(Boolean));
     const disponiveis = cfg.colaboradores.filter((c) => !jaPediram.has(c.id));
     const aberto = !cfg.bloquearAposLimite || dentroJanela;
-    return json({ nomeConvenio: cfg.nomeConvenio, filiais: cfg.filiais, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, data: alvo, aberto, cardapioHoje: resolveCardapioHoje(cfg, alvo), colaboradores: disponiveis });
+    const semCardapio = !temCardapio(cfg, alvo);
+    return json({ nomeConvenio: cfg.nomeConvenio, filiais: cfg.filiais, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, data: alvo, aberto, semCardapio, semana: semanaPara(cfg, alvo)?.nome ?? null, cardapioHoje: resolveCardapioHoje(cfg, alvo), colaboradores: disponiveis });
   }
   if (path === "/api/publico/pedido" && method === "POST") {
     const ag = agoraBR();
@@ -188,12 +237,27 @@ async function handle(req: NextRequest, rota: string[]) {
         403,
       );
     }
+    // A tela manda pra qual dia ela achava que era o pedido. Se a janela virou
+    // enquanto a página ficou aberta (celular no bolso), recusa e manda
+    // recarregar — antes gravava no dia seguinte com o cardápio do dia anterior.
+    const dataTela = String(body?.data || "");
+    if (dataTela && dataTela !== data) {
+      return json({ erro: `O dia do pedido mudou: agora os pedidos são para ${fmtDia(data)}. A tela foi atualizada — monte seu pedido de novo.`, recarregar: true }, 409);
+    }
+    const card = resolveCardapioHoje(cfg, data);
+    if (!card.pratos.length && !card.proteinas.length) {
+      return json({ erro: `O cardápio de ${fmtDia(data)} ainda não foi publicado.`, recarregar: true }, 409);
+    }
     const p = pedidoDoBody(body || {}, "colaborador");
     if (!p.colaboradorId) return erro("Selecione seu nome na lista");
     const colab = cfg.colaboradores.find((c) => c.id === p.colaboradorId);
     if (!colab) return erro("Colaborador nao encontrado");
     p.cliente = colab.nome; p.matricula = colab.matricula || "";
     const v = validaPedido(p); if (v) return erro(v);
+    const fora = itensForaDoCardapio(card, p);
+    if (fora.length) {
+      return json({ erro: `O cardápio foi atualizado e "${fora[0]}" não está mais nele. A tela foi recarregada — monte seu pedido de novo.`, recarregar: true }, 409);
+    }
     if (await jaPediu(db, data, p.colaboradorId)) return erro("Voce ja fez seu pedido hoje.", 409);
     return json(await inserePedido(db, data, p), 201);
   }
@@ -276,10 +340,15 @@ async function handle(req: NextRequest, rota: string[]) {
 
   if (path === "/api/cardapios") {
     if (!pode(user, "cardapio")) return erro("Sem permissao (cardapio).", 403);
-    if (method === "GET") return json(cfg.cardapios);
+    const estaSeg = segundaDe(agoraBR().data);
+    const proxSeg = addDias(estaSeg, 7);
+    const infoSemana = (seg: string) => {
+      const s = semanaPara(cfg, seg);
+      return { inicio: seg, fim: addDias(seg, 5), id: s?.id ?? null, nome: s?.nome ?? null, programada: !!(cfg.cardapios.programacao || {})[seg] };
+    };
+    if (method === "GET") return json({ ...cfg.cardapios, programacao: cfg.cardapios.programacao || {}, estaSemana: infoSemana(estaSeg), proximaSemana: infoSemana(proxSeg) });
     if (method === "POST") {
       const semanas = Array.isArray(body?.semanas) ? (body.semanas as Cfg["cardapios"]["semanas"]) : cfg.cardapios.semanas;
-      const ativo = (body?.ativo as string) ?? cfg.cardapios.ativo;
       const limpo = semanas.slice(0, 4).map((s, idx) => {
         const dias: Record<string, { pratos: string[]; proteinas: string[]; salada: string }> = {};
         for (const dk of ["seg", "ter", "qua", "qui", "sex", "sab"]) {
@@ -288,14 +357,28 @@ async function handle(req: NextRequest, rota: string[]) {
         }
         return { id: s.id || "s" + (idx + 1), nome: String(s.nome || "Semana " + (idx + 1)).trim(), dias };
       });
-      await setCfg(db, "cardapios", JSON.stringify({ semanas: limpo, ativo }));
+      const ids = new Set(limpo.map((s) => s.id));
+      // Programação por segunda-feira (YYYY-MM-DD → id). Guarda só as últimas 12 semanas.
+      const progIn = body?.programacao && typeof body.programacao === "object" ? (body.programacao as Record<string, unknown>) : cfg.cardapios.programacao || {};
+      const programacao: Record<string, string> = {};
+      for (const [k, v] of Object.entries(progIn)) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(k) && ids.has(String(v)) && k >= addDias(estaSeg, -84)) programacao[segundaDe(k)] = String(v);
+      }
+      // Compatibilidade com o "ativar semana" antigo (manda só `ativo`): vale pra esta semana.
+      const ativoBody = typeof body?.ativo === "string" ? body.ativo : null;
+      if (ativoBody && ids.has(ativoBody) && ativoBody !== cfg.cardapios.ativo && !(body?.programacao)) programacao[estaSeg] = ativoBody;
+      // Sem programação nenhuma, fixa a semana atual pra rotação partir dela.
+      if (!Object.keys(programacao).length && cfg.cardapios.ativo && ids.has(cfg.cardapios.ativo)) programacao[estaSeg] = cfg.cardapios.ativo;
+      const cfgNovo: Cfg = { ...cfg, cardapios: { semanas: limpo, ativo: cfg.cardapios.ativo, programacao } };
+      const ativo = semanaPara(cfgNovo, estaSeg)?.id ?? null;
+      await setCfg(db, "cardapios", JSON.stringify({ semanas: limpo, ativo, programacao }));
       return json({ ok: true, ativo });
     }
   }
 
   if (path === "/api/cardapio" && method === "GET") {
     const data = url.searchParams.get("data") || agoraBR().data;
-    return json(resolveCardapioHoje(cfg, data));
+    return json({ ...resolveCardapioHoje(cfg, data), semana: semanaPara(cfg, data)?.nome ?? null });
   }
 
   if (path === "/api/pedidos") {

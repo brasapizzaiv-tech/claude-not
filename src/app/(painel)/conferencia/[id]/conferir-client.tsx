@@ -26,6 +26,14 @@ type Estado = { qtd_recebida: string; preco_recebido: string; obs: string };
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Item adicionado depois (chega via router.refresh) ainda não tem estado — cai
+// no valor que veio do pedido.
+const estadoDe = (estado: Record<string, Estado>, i: ItemLinha): Estado =>
+  estado[i.id] ?? {
+    qtd_recebida: String(i.qtd_recebida ?? i.qtd),
+    preco_recebido: String(i.preco_recebido ?? i.preco_unit ?? ""),
+    obs: i.obs ?? "",
+  };
 const numInput =
   "w-20 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
@@ -54,18 +62,7 @@ export function ConferirClient({
   const [obsGeral, setObsGeral] = useState(observacoes);
   const [addProd, setAddProd] = useState("");
   const [addQtd, setAddQtd] = useState("");
-  const [estado, setEstado] = useState<Record<string, Estado>>(() =>
-    Object.fromEntries(
-      itens.map((i) => [
-        i.id,
-        {
-          qtd_recebida: String(i.qtd_recebida ?? i.qtd),
-          preco_recebido: String(i.preco_recebido ?? i.preco_unit ?? ""),
-          obs: i.obs ?? "",
-        },
-      ]),
-    ),
-  );
+  const [estado, setEstado] = useState<Record<string, Estado>>({});
 
   const num = (s: string) => {
     const v = Number((s ?? "").replace(",", "."));
@@ -77,21 +74,22 @@ export function ConferirClient({
     let recebido = 0;
     for (const i of itens) {
       pedido += (i.preco_unit ?? 0) * i.qtd;
-      const e = estado[i.id];
+      const e = estadoDe(estado, i);
       recebido += num(e.preco_recebido) * num(e.qtd_recebida);
     }
     return { pedido, recebido };
   }, [estado, itens]);
 
   const payloadAtual = () =>
-    itens.map((i) => ({
-      id: i.id,
-      qtd_recebida: num(estado[i.id].qtd_recebida),
-      preco_recebido: estado[i.id].preco_recebido
-        ? num(estado[i.id].preco_recebido)
-        : null,
-      obs: estado[i.id].obs || null,
-    }));
+    itens.map((i) => {
+      const e = estadoDe(estado, i);
+      return {
+        id: i.id,
+        qtd_recebida: num(e.qtd_recebida),
+        preco_recebido: e.preco_recebido ? num(e.preco_recebido) : null,
+        obs: e.obs || null,
+      };
+    });
 
   function persistir(finalizar: boolean) {
     startSave(async () => {
@@ -183,13 +181,13 @@ export function ConferirClient({
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {itens.map((i) => {
-              const e = estado[i.id];
+              const e = estadoDe(estado, i);
               const divQtd = num(e.qtd_recebida) !== i.qtd;
               const divPreco =
                 e.preco_recebido !== "" &&
                 num(e.preco_recebido) !== (i.preco_unit ?? 0);
               const set = (campo: keyof Estado, v: string) =>
-                setEstado((s) => ({ ...s, [i.id]: { ...s[i.id], [campo]: v } }));
+                setEstado((s) => ({ ...s, [i.id]: { ...estadoDe(s, i), [campo]: v } }));
               return (
                 <tr key={i.id} className="bg-white dark:bg-zinc-950">
                   <td className="px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">

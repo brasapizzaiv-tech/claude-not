@@ -177,7 +177,7 @@
 
     <!-- PEDIDOS -->
     <section id="tab-dia" class="hidden">
-      <div class="card"><h2>Dia</h2><input type="date" id="dataDia" onchange="carregarDia()"></div>
+      <div class="card"><h2>Dia</h2><input type="date" id="dataDia" onchange="carregarDia()"><div class="miudo" id="diaSemanaInfo" style="margin-top:6px"></div></div>
       <div class="card" id="cardLancar">
         <h2>Lançar pedido (buffet)</h2>
         <label>Colaborador (opcional — busque ou digite um nome)</label>
@@ -207,8 +207,9 @@
     <section id="tab-cardapios" class="hidden">
       <div class="card">
         <h2>Semana ativa</h2>
-        <p class="miudo">O cardápio da semana ativa é o que aparece para os colaboradores. Seg a sáb.</p>
-        <div class="segbtns" id="ativarBtns"></div>
+        <p class="miudo">Os pedidos de segunda abrem no <b>sábado às 14h</b>, já com o cardápio da "próxima semana". Se ninguém escolher, segue a rotação (1→2→3→4→1).</p>
+        <label id="lblEstaSemana">Esta semana</label><div class="segbtns" id="ativarBtns"></div>
+        <label id="lblProxSemana" style="margin-top:10px">Próxima semana</label><div class="segbtns" id="proximaBtns"></div>
       </div>
       <div class="card">
         <h2>Editar cardápio</h2>
@@ -322,14 +323,14 @@ const PERMS=Object.keys(PERM_LABELS);
 const DIA_LABEL={seg:'Seg',ter:'Ter',qua:'Qua',qui:'Qui',sex:'Sex',sab:'Sáb'};
 let SENHA=localStorage.getItem('marmitas_admin_senha')||'';
 let USER=null, CONFIG={}, CARDAPIOS={semanas:[],ativo:null}, COLABORADORES=[], USUARIOS=[], PEDIDOS_DIA=[], PUBLICO=null;
-let COL_SEL=null, ADD_SEL=null, SEM_ATUAL=0, DIA_ATUAL='seg', ULTIMO_REL=null;
+let COL_SEL=null, ADD_SEL=null, SEM_ATUAL=null, DIA_ATUAL='seg', ULTIMO_REL=null, PUBLICO_EM=0;
 let FILIAL_COL='', FILIAL_ADD='', FILIAL_ED='';
 
 function hoje(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function arr(v){return Array.isArray(v)?v:(v==null||v===''?[]:[v]);}
 function formatarData(d){if(!d)return'';const[a,m,dia]=d.split('-');return `${dia}/${m}/${a}`;}
-function toast(m,e){const t=$('#toast');t.textContent=m;t.className='toast show'+(e?' err':'');setTimeout(()=>t.className='toast',2600);}
+function toast(m,e,ms){const t=$('#toast');t.textContent=m;t.className='toast show'+(e?' err':'');setTimeout(()=>t.className='toast',ms||2600);}
 function perm(p){return USER&&(USER.permissoes||[]).includes(p);}
 
 async function api(path,opts={}){
@@ -388,17 +389,31 @@ function fmtDiaBR(iso){
   return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')} · ${dias[dt.getUTCDay()]}`;
 }
 async function iniciarColaborador(){
-  try{ PUBLICO=await (await fetch('/api/marmitas/publico')).json(); }
+  try{ PUBLICO=await (await fetch('/api/marmitas/publico',{cache:'no-store'})).json(); }
   catch(e){ toast('Falha ao carregar',true); return; }
+  PUBLICO_EM=Date.now();
   $('#colSub').textContent='Convênio '+(PUBLICO.nomeConvenio||'Kern');
   $('#colAviso').innerHTML=`⏰ Pedido para <b>${fmtDiaBR(PUBLICO.data)}</b> · até ${PUBLICO.horaLimite} do dia da entrega.`;
   $('#colAviso').classList.remove('hidden');
   $('#colSucesso').classList.add('hidden'); $('#colStep2').classList.add('hidden'); $('#colStep1').classList.remove('hidden');
   COL_SEL=null; FILIAL_COL=''; $('#colBusca').value=''; $('#colResultados').innerHTML='';
   renderCardapioLista(PUBLICO.cardapioHoje||{pratos:[],proteinas:[],salada:''});
-  if(!PUBLICO.aberto){ $('#colFechado').classList.remove('hidden'); $('#colStep1').classList.add('hidden'); $('#colFechadoMsg').innerHTML=`Os pedidos abrem às <b>${PUBLICO.horaAbertura}</b> (véspera) e vão até <b>${PUBLICO.horaLimite}</b> do dia da entrega.<br>Próximo pedido: <b>${fmtDiaBR(PUBLICO.data)}</b>.`; }
+  if(PUBLICO.semCardapio){ $('#colFechado').classList.remove('hidden'); $('#colStep1').classList.add('hidden'); $('#colFechadoMsg').innerHTML=`O cardápio de <b>${fmtDiaBR(PUBLICO.data)}</b> ainda não foi publicado.<br>Volte mais tarde.`; }
+  else if(!PUBLICO.aberto){ $('#colFechado').classList.remove('hidden'); $('#colStep1').classList.add('hidden'); $('#colFechadoMsg').innerHTML=`Os pedidos abrem às <b>${PUBLICO.horaAbertura}</b> (véspera) e vão até <b>${PUBLICO.horaLimite}</b> do dia da entrega.<br>Próximo pedido: <b>${fmtDiaBR(PUBLICO.data)}</b>.`; }
   else $('#colFechado').classList.add('hidden');
 }
+// Página que ficou aberta (celular no bolso) e voltou: se o dia ou o cardápio
+// mudaram nesse meio tempo, recarrega em vez de deixar mandar pedido velho.
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||location.hash==='#admin'||!PUBLICO) return;
+  if(Date.now()-PUBLICO_EM<60000) return;
+  try{
+    const novo=await (await fetch('/api/marmitas/publico',{cache:'no-store'})).json();
+    const chave=p=>JSON.stringify([p.data,p.aberto,p.semCardapio,p.cardapioHoje]);
+    if(chave(novo)!==chave(PUBLICO)){ toast('O cardápio foi atualizado — confira seu pedido.',false,5000); iniciarColaborador(); }
+    else PUBLICO_EM=Date.now();
+  }catch(e){}
+});
 function colBuscar(){
   const q=($('#colBusca').value||'').toLowerCase().trim();
   const lista=arr(PUBLICO.colaboradores).filter(c=>c.nome.toLowerCase().includes(q)).slice(0,12);
@@ -437,11 +452,11 @@ async function colConfirmar(){
   const m=lerMontagem('col');
   if(m.pratos.length<1) return toast('Escolha pelo menos 1 prato',true);
   try{
-    await fetch('/api/marmitas/publico/pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({colaboradorId:COL_SEL.id,filial:FILIAL_COL,pratos:m.pratos,proteina:m.proteina,salada:m.salada})}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');return d;});
+    await fetch('/api/marmitas/publico/pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:PUBLICO.data,colaboradorId:COL_SEL.id,filial:FILIAL_COL,pratos:m.pratos,proteina:m.proteina,salada:m.salada})}).then(async r=>{const d=await r.json();if(!r.ok){const e=new Error(d.erro||'Erro');e.recarregar=!!d.recarregar;throw e;}return d;});
     $('#colStep2').classList.add('hidden');
     $('#colResumo').textContent=`${COL_SEL.nome} · ${FILIAL_COL} · ${m.pratos.join(', ')}${m.proteina?' · '+m.proteina:''}${m.salada?' · salada: '+m.salada:''}`;
     $('#colSucesso').classList.remove('hidden');
-  }catch(e){ toast(e.message,true); }
+  }catch(e){ toast(e.message,true,e.recarregar?7000:2600); if(e.recarregar) setTimeout(iniciarColaborador,1500); }
 }
 
 /* ===================== ADMIN ===================== */
@@ -500,6 +515,7 @@ async function carregarDia(){
   try{
     const card=await api('/api/marmitas/cardapio?data='+data);
     window.CARD_DIA={pratos:arr(card.pratos),proteinas:arr(card.proteinas),salada:card.salada||''};
+    $('#diaSemanaInfo').textContent=card.semana?`Cardápio: ${card.semana}`+(window.CARD_DIA.pratos.length?'':' — sem pratos cadastrados neste dia'):'';
     if(perm('pedidos_add')){ segFiliais('addFiliais','addPickFilial',FILIAL_ADD); renderMontagem('add',window.CARD_DIA,null); }
     // filtro filial
     const fs=arr(CONFIG.filiais); const ff=$('#filtroFilial');const at=ff.value;
@@ -530,17 +546,28 @@ async function lancarPedido(){
   }catch(e){ toast(e.message,true); }
 }
 function descPedido(p){const pratos=arr(p.pratos);let h='';if(pratos.length){h+='<div><b>Pratos:</b></div>'+pratos.map(x=>`<div style="padding-left:10px">- ${escapeHtml(x)}</div>`).join('');}if(p.proteina)h+=`<div><b>Proteína:</b> ${escapeHtml(p.proteina)}</div>`;h+=`<div><b>Salada:</b> ${p.salada?escapeHtml(p.salada):'Não'}</div>`;return h;}
+// Itens do pedido que não estão no cardápio do dia (pedido feito com a tela
+// desatualizada ou cardápio trocado depois) — destaca pra conferir antes de imprimir.
+function foraDoCardapio(p){
+  const c=window.CARD_DIA; if(!c||!c.pratos.length) return [];
+  const n=s=>String(s).trim().toLowerCase();
+  const pr=new Set(c.pratos.map(n)), pt=new Set(c.proteinas.map(n));
+  const fora=arr(p.pratos).filter(x=>!pr.has(n(x)));
+  if(p.proteina&&!pt.has(n(p.proteina))) fora.push(p.proteina);
+  return fora;
+}
 function renderPedidos(){
   const filtro=$('#filtroFilial').value;
   const lista=filtro?PEDIDOS_DIA.filter(p=>p.filial===filtro):PEDIDOS_DIA;
   const el=$('#listaPedidos');
   const podeEdit=perm('pedidos_edit');
-  el.innerHTML = lista.length===0?'<div class="empty">Nenhum pedido'+(filtro?' nesta filial':'')+'.</div>':lista.map(p=>`<div class="item">
-    <div class="grow"><div class="nome">${escapeHtml(p.cliente)} ${p.matricula?`<span class="pill">${escapeHtml(p.matricula)}</span>`:''} <span class="pill fil">${escapeHtml(p.filial)}</span> ${p.origem==='colaborador'?'<span class="pill ok">app</span>':''}</div>
+  const nFora=lista.filter(p=>foraDoCardapio(p).length).length;
+  el.innerHTML = (nFora?`<div class="aviso">⚠ ${nFora} pedido(s) com itens fora do cardápio do dia — confira antes de imprimir.</div>`:'')+(lista.length===0?'<div class="empty">Nenhum pedido'+(filtro?' nesta filial':'')+'.</div>':lista.map(p=>{const fora=foraDoCardapio(p);return `<div class="item">
+    <div class="grow"><div class="nome">${escapeHtml(p.cliente)} ${p.matricula?`<span class="pill">${escapeHtml(p.matricula)}</span>`:''} <span class="pill fil">${escapeHtml(p.filial)}</span> ${p.origem==='colaborador'?'<span class="pill ok">app</span>':''} ${fora.length?`<span class="pill" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b">⚠ fora do cardápio: ${escapeHtml(fora.join(', '))}</span>`:''}</div>
     <div class="meta">${descPedido(p)}</div></div>
     <button class="ghost mini" onclick="imprimirPedido('${p.id}')" title="Imprimir etiqueta">🖨️</button>
     ${podeEdit?`<button class="ghost mini" onclick="abrirEdicao('${p.id}')">✎</button><button class="danger mini" onclick="removerPedido('${p.id}')">✕</button>`:''}
-  </div>`).join('');
+  </div>`;}).join(''));
   const q=lista.length;$('#totQtd').textContent=q+(q===1?' marmita':' marmitas')+(filtro?'':' (todas)');
 }
 function contar(lista,fn){const m={};lista.forEach(p=>{arr(fn(p)).forEach(k=>{if(k)m[k]=(m[k]||0)+1;});});return m;}
@@ -600,14 +627,27 @@ async function salvarEdicao(){
 /* ---- CARDAPIOS ---- */
 async function carregarCardapios(){
   try{ CARDAPIOS=await api('/api/marmitas/cardapios'); }catch(e){ toast(e.message,true); return; }
-  CARDAPIOS.semanas=arr(CARDAPIOS.semanas);
-  $('#ativarBtns').innerHTML=CARDAPIOS.semanas.map(s=>`<button class="${s.id===CARDAPIOS.ativo?'on':''}" onclick="ativarSemana('${s.id}')">${escapeHtml(s.nome)}${s.id===CARDAPIOS.ativo?' ✓':''}</button>`).join('');
-  $('#semSel').innerHTML=CARDAPIOS.semanas.map((s,i)=>`<button class="${i===SEM_ATUAL?'on':''}" onclick="selSemana(${i})">${escapeHtml(s.nome)}</button>`).join('');
+  CARDAPIOS.semanas=arr(CARDAPIOS.semanas); CARDAPIOS.programacao=CARDAPIOS.programacao||{};
+  renderCardapios();
+}
+function fmtCurto(iso){ if(!iso)return''; const [y,m,d]=iso.split('-'); return `${d}/${m}`; }
+function renderCardapios(){
+  const esta=CARDAPIOS.estaSemana||{}, prox=CARDAPIOS.proximaSemana||{};
+  const per=s=>s.inicio?` (seg ${fmtCurto(s.inicio)} a sáb ${fmtCurto(s.fim)})`:'';
+  $('#lblEstaSemana').textContent='Esta semana'+per(esta);
+  $('#lblProxSemana').textContent='Próxima semana'+per(prox);
+  const btns=(alvo)=>CARDAPIOS.semanas.map(s=>`<button class="${s.id===alvo.id?'on':''}" onclick="definirSemana('${alvo.inicio}','${s.id}')">${escapeHtml(s.nome)}${s.id===alvo.id?(alvo.programada?' ✓':' ✓ (rotação)'):''}</button>`).join('');
+  $('#ativarBtns').innerHTML=btns(esta);
+  $('#proximaBtns').innerHTML=btns(prox);
+  // Editor abre na semana do próximo dia de entrega (sábado/domingo → próxima semana).
+  if(SEM_ATUAL===null){ const dow=new Date().getDay(); const id=(dow===6||dow===0)?prox.id:esta.id; const i=CARDAPIOS.semanas.findIndex(s=>s.id===id); SEM_ATUAL=i>=0?i:0; }
+  $('#semSel').innerHTML=CARDAPIOS.semanas.map((s,i)=>{const tag=s.id===esta.id?' · atual':(s.id===prox.id?' · próxima':'');return `<button class="${i===SEM_ATUAL?'on':''}" onclick="selSemana(${i})">${escapeHtml(s.nome)}${tag}</button>`;}).join('');
   $('#diaSel').innerHTML=Object.keys(DIA_LABEL).map(d=>`<button class="${d===DIA_ATUAL?'on':''}" onclick="selDia('${d}')">${DIA_LABEL[d]}</button>`).join('');
   montarEditorDia();
 }
-function selSemana(i){ SEM_ATUAL=i; carregarCardapios(); }
-function selDia(d){ DIA_ATUAL=d; carregarCardapios(); }
+// Trocar de semana/dia guarda o que foi digitado (antes recarregava do servidor e perdia o dia não salvo).
+function selSemana(i){ aplicarEditorNaMemoria(); SEM_ATUAL=i; renderCardapios(); }
+function selDia(d){ aplicarEditorNaMemoria(); DIA_ATUAL=d; renderCardapios(); }
 function montarEditorDia(){
   const dia=(CARDAPIOS.semanas[SEM_ATUAL]&&CARDAPIOS.semanas[SEM_ATUAL].dias[DIA_ATUAL])||{pratos:[],proteinas:[],salada:''};
   const linhas=(cont,vals,n,ph)=>{ $('#'+cont).innerHTML=''; for(let i=0;i<n;i++){const d=document.createElement('div');d.className='cardapioLinha';d.innerHTML=`<input type="text" placeholder="${ph} ${i+1}" value="${escapeHtml(arr(vals)[i]||'')}">`;$('#'+cont).appendChild(d);} };
@@ -621,12 +661,14 @@ function lerEditorDia(){
 function aplicarEditorNaMemoria(){ if(CARDAPIOS.semanas[SEM_ATUAL]){ CARDAPIOS.semanas[SEM_ATUAL].dias[DIA_ATUAL]=lerEditorDia(); } }
 async function salvarCardapios(){
   aplicarEditorNaMemoria();
-  try{ await api('/api/marmitas/cardapios',{method:'POST',body:JSON.stringify({semanas:CARDAPIOS.semanas,ativo:CARDAPIOS.ativo})}); toast('Cardápios salvos ✓'); }
+  try{ await api('/api/marmitas/cardapios',{method:'POST',body:JSON.stringify({semanas:CARDAPIOS.semanas,programacao:CARDAPIOS.programacao||{}})}); toast('Cardápios salvos ✓'); carregarCardapios(); }
   catch(e){ toast(e.message,true); }
 }
-async function ativarSemana(id){
-  aplicarEditorNaMemoria(); CARDAPIOS.ativo=id;
-  try{ await api('/api/marmitas/cardapios',{method:'POST',body:JSON.stringify({semanas:CARDAPIOS.semanas,ativo:id})}); toast('Semana ativada ✓'); carregarCardapios(); }
+// Define qual semana do cadastro vale a partir da segunda `desde` (esta ou a próxima).
+async function definirSemana(desde,id){
+  aplicarEditorNaMemoria();
+  const programacao=Object.assign({},CARDAPIOS.programacao||{}); programacao[desde]=id;
+  try{ await api('/api/marmitas/cardapios',{method:'POST',body:JSON.stringify({semanas:CARDAPIOS.semanas,programacao})}); toast('Semana definida ✓'); carregarCardapios(); }
   catch(e){ toast(e.message,true); }
 }
 

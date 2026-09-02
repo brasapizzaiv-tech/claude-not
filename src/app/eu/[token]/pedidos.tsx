@@ -28,6 +28,11 @@ export type PedidoColab = {
   itens: ItemPed[];
 };
 
+const numOk = (s: string) => /^\s*\d+([.,]\d+)?\s*$/.test(s);
+const paraEnvio = (s: string) => s.trim().replace(",", ".");
+const mostrar = (n: number | null | undefined) =>
+  n == null ? "" : String(n).replace(".", ",");
+
 export function PedidosColab({
   token,
   pedidos,
@@ -90,13 +95,14 @@ function PedidoCard({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  const [qtds, setQtds] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      pedido.itens.map((i) => [i.id, String(i.qtd_conf ?? i.qtd)]),
-    ),
-  );
+  // Só o que a pessoa digitou; o resto vem do pedido. Assim um item adicionado
+  // depois (que chega via router.refresh) já aparece com a quantidade e não é
+  // apagado ao confirmar.
+  const [qtds, setQtds] = useState<Record<string, string>>({});
+  const valorDe = (i: ItemPed) => qtds[i.id] ?? mostrar(i.qtd_conf ?? i.qtd);
   const [salvando, start] = useTransition();
   const [feito, setFeito] = useState(!!pedido.conf_em);
+  const [erro, setErro] = useState<string | null>(null);
   const [addProd, setAddProd] = useState("");
   const [addQtd, setAddQtd] = useState("");
 
@@ -105,21 +111,35 @@ function PedidoCard({
     conferirPedidoColab(
       token,
       pedido.id,
-      pedido.itens.map((i) => ({ id: i.id, qtd: qtds[i.id] ?? "" })),
+      pedido.itens.map((i) => ({ id: i.id, qtd: paraEnvio(valorDe(i)) })),
       marcar,
     );
 
+  function invalido() {
+    const ruim = pedido.itens.find((i) => valorDe(i).trim() !== "" && !numOk(valorDe(i)));
+    if (!ruim) return false;
+    setErro(`Quantidade inválida em "${ruim.nome}". Use só números (ex.: 1,5).`);
+    return true;
+  }
+
   function confirmar() {
+    setErro(null);
+    if (invalido()) return;
     start(async () => {
       const r = await salvarAtual(true);
       if (r.ok) setFeito(true);
+      else setErro("Não foi possível salvar. Confira as quantidades e tente de novo.");
     });
   }
+  const addQtdNum = Number(paraEnvio(addQtd));
   function adicionar() {
-    if (!addProd || !(Number(addQtd.replace(",", ".")) > 0)) return;
+    if (!addProd || !(addQtdNum > 0)) return;
+    setErro(null);
+    if (invalido()) return;
     start(async () => {
       await salvarAtual(false);
-      await adicionarItemColab(token, pedido.id, addProd, Number(addQtd.replace(",", ".")));
+      const r = await adicionarItemColab(token, pedido.id, addProd, addQtdNum);
+      if (!r.ok) { setErro("Não foi possível adicionar o item."); return; }
       setAddProd("");
       setAddQtd("");
       router.refresh();
@@ -167,38 +187,46 @@ function PedidoCard({
 
       {aberto && (
         <div className="mt-3 space-y-2">
-          {pedido.itens.map((i) => (
-            <div key={i.id} className="flex items-center justify-between gap-2">
-              <span className="min-w-0 flex-1 truncate text-sm text-zinc-700 dark:text-zinc-300">
-                {i.nome}
-                {i.qtd === 0 ? (
-                  <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
-                    veio a mais
-                  </span>
-                ) : (
-                  <span className="ml-1 text-xs text-zinc-400">
-                    (pedido: {i.qtd} {i.unidade})
-                  </span>
-                )}
-              </span>
-              <input
-                inputMode="decimal"
-                value={qtds[i.id] ?? ""}
-                onChange={(e) =>
-                  setQtds((s) => ({ ...s, [i.id]: e.target.value }))
-                }
-                className="w-16 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-              />
-              <button
-                onClick={() => remover(i.id)}
-                disabled={salvando}
-                title="Remover item"
-                className="shrink-0 text-zinc-300 hover:text-red-600 disabled:opacity-50 dark:text-zinc-600"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          {pedido.itens.map((i) => {
+            const v = valorDe(i);
+            const ruim = v.trim() !== "" && !numOk(v);
+            return (
+              <div key={i.id} className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="break-words text-sm leading-snug text-zinc-700 dark:text-zinc-300">
+                    {i.nome}
+                  </div>
+                  {i.qtd === 0 ? (
+                    <span className="rounded bg-sky-100 px-1 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                      veio a mais
+                    </span>
+                  ) : (
+                    <div className="text-xs text-zinc-400">
+                      pedido: {mostrar(i.qtd)} {i.unidade}
+                    </div>
+                  )}
+                </div>
+                <input
+                  inputMode="decimal"
+                  value={v}
+                  onChange={(e) =>
+                    setQtds((s) => ({ ...s, [i.id]: e.target.value }))
+                  }
+                  className={`w-20 shrink-0 rounded-lg border bg-white px-2 py-1.5 text-right text-sm dark:bg-zinc-950 dark:text-zinc-100 ${
+                    ruim ? "border-red-400" : "border-zinc-300 dark:border-zinc-700"
+                  }`}
+                />
+                <button
+                  onClick={() => remover(i.id)}
+                  disabled={salvando}
+                  title="Remover item"
+                  className="shrink-0 text-zinc-300 hover:text-red-600 disabled:opacity-50 dark:text-zinc-600"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
 
           {/* Adicionar item que veio a mais */}
           <div className="rounded-xl border border-dashed border-sky-300 bg-sky-50/40 p-2.5 dark:border-sky-800 dark:bg-sky-950/10">
@@ -222,7 +250,7 @@ function PedidoCard({
               />
               <button
                 onClick={adicionar}
-                disabled={salvando || !addProd || !(Number(addQtd.replace(",", ".")) > 0)}
+                disabled={salvando || !addProd || !(addQtdNum > 0)}
                 className="flex-1 rounded-lg bg-sky-600 py-1.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
               >
                 + Adicionar
@@ -230,8 +258,13 @@ function PedidoCard({
             </div>
           </div>
 
+          {erro && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+              {erro}
+            </p>
+          )}
           <p className="text-[11px] text-zinc-400">
-            Confirme quanto de cada item chegou. Isso é só um aviso pro
+            Confirme quanto de cada item chegou (pode usar vírgula, ex.: 1,5 kg). Isso é só um aviso pro
             responsável — a conferência final continua com ele.
           </p>
           <button
