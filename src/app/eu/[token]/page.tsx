@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { dataBR } from "@/lib/format";
 import { CriarPin, EntrarPin } from "./pin";
 import { PedidosColab, type PedidoColab } from "./pedidos";
+import { PainelVencimentos } from "@/components/etiqueta-ui";
+import { contarFaixas, hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export async function generateMetadata({
   params,
@@ -117,6 +119,13 @@ export default async function AppColaboradorPage({
   const fazContagem = colab?.faz_contagem ?? true;
   const fazEtiquetas = !!colab?.faz_etiquetas;
 
+  // Painel de vencimentos das etiquetas (só pra quem mexe com etiquetas).
+  let contagemEtq = null as ReturnType<typeof contarFaixas> | null;
+  if (fazEtiquetas) {
+    const { data: ativas } = await admin.from("etiquetas").select("validade").eq("status", "ativa").limit(2000);
+    contagemEtq = contarFaixas((ativas as { validade: string | null }[]) ?? [], hojeSP());
+  }
+
   // Minhas compras internas (só leitura).
   let compras: { item: string; valor: number; data: string; status: string; data_pagamento: string | null; obs_pagamento: string | null }[] = [];
   if (colab?.id) {
@@ -142,6 +151,12 @@ export default async function AppColaboradorPage({
         >
           🌴 Minhas folgas
         </Link>
+      )}
+      {fazEtiquetas && contagemEtq && (
+        <div className="mb-3">
+          <p className="mb-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Vencimentos das etiquetas</p>
+          <PainelVencimentos contagem={contagemEtq} base={`/eu/${token}/etiqueta/vencimentos`} />
+        </div>
       )}
       {fazEtiquetas && (
         <div className="mb-3 grid grid-cols-2 gap-3">

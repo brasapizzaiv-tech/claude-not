@@ -12,20 +12,29 @@ async function colabDoToken(token: string) {
   return data && data.ativo && data.faz_etiquetas ? data : null;
 }
 
-// Cria uma etiqueta pelo app do colaborador (entra na fila da impressora).
+// Cria uma etiqueta pelo app do colaborador (entra na fila da impressora,
+// uma vez por cópia).
 export async function criarEtiquetaColab(token: string, dados: {
-  produto_id: string;
+  item_id: string;
   conservacao: string;
   quantidade: string;
   unidade: string;
   validade: string;
+  copias?: number;
 }) {
   const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
-  if (!dados.produto_id) return { ok: false as const, mensagem: "Escolha o produto." };
+  if (!dados.item_id) return { ok: false as const, mensagem: "Escolha o item." };
 
-  const { data: prod } = await admin.from("produtos").select("nome").eq("id", dados.produto_id).maybeSingle();
+  const { data: item } = await admin
+    .from("etiqueta_itens")
+    .select("nome, produto_id, etiqueta_categorias(nome)")
+    .eq("id", dados.item_id)
+    .maybeSingle();
+  if (!item) return { ok: false as const, mensagem: "Item não encontrado." };
+  const cat = item.etiqueta_categorias as { nome?: string } | { nome?: string }[] | null;
+  const categoriaNome = (Array.isArray(cat) ? cat[0]?.nome : cat?.nome) ?? null;
 
   // impressora: a única ativa (ou nenhuma se houver várias — cai na primeira).
   const { data: imps } = await admin.from("impressoras").select("id").eq("ativo", true).order("criado_em").limit(1);
@@ -34,8 +43,10 @@ export async function criarEtiquetaColab(token: string, dados: {
   const { data, error } = await admin
     .from("etiquetas")
     .insert({
-      produto_id: dados.produto_id,
-      produto_nome: prod?.nome ?? "Produto",
+      item_id: dados.item_id,
+      produto_id: (item.produto_id as string | null) ?? null,
+      produto_nome: item.nome as string,
+      categoria_nome: categoriaNome,
       colaborador_nome: colab.nome,
       validade: dados.validade || null,
       conservacao: dados.conservacao || null,
@@ -47,8 +58,39 @@ export async function criarEtiquetaColab(token: string, dados: {
     .single();
 
   if (error || !data) return { ok: false as const, mensagem: error?.message || "Não foi possível gerar." };
-  await admin.from("impressao_fila").insert({ tipo: "etiqueta", ref_id: data.id, impressora_id: impressoraId });
+  const copias = Math.min(Math.max(Math.floor(dados.copias ?? 1), 1), 10);
+  await admin.from("impressao_fila").insert(
+    Array.from({ length: copias }, () => ({ tipo: "etiqueta", ref_id: data.id, impressora_id: impressoraId })),
+  );
   return { ok: true as const, id: data.id as string, numero: data.numero as number };
+}
+
+// Cadastro rápido de item de etiqueta pelo app (o "＋" da categoria).
+export async function criarItemEtiquetaColab(token: string, d: {
+  nome: string;
+  categoria_id: string | null;
+  validade_congelado: number | null;
+  validade_resfriado: number | null;
+  validade_ambiente: number | null;
+}) {
+  const admin = createAdminClient();
+  const colab = await colabDoToken(token);
+  if (!colab) return null;
+  const nome = (d.nome || "").trim();
+  if (!nome) return null;
+  const dias = (v: number | null) => (v == null ? null : Math.max(0, Math.floor(Number(v))) || null);
+  const { data } = await admin
+    .from("etiqueta_itens")
+    .insert({
+      nome,
+      categoria_id: d.categoria_id || null,
+      validade_congelado: dias(d.validade_congelado),
+      validade_resfriado: dias(d.validade_resfriado),
+      validade_ambiente: dias(d.validade_ambiente),
+    })
+    .select("id, nome, categoria_id, validade_congelado, validade_resfriado, validade_ambiente")
+    .single();
+  return data ?? null;
 }
 
 // Consulta uma etiqueta lida pelo QR (para montar a lista antes da baixa).

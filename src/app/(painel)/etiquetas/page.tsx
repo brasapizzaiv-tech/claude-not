@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { contarFaixas, faixaDe, faixaValida, hojeSP, somarDias } from "@/lib/etiqueta-vencimentos";
+import { PainelVencimentos, type ItemEtq, type CatEtq } from "@/components/etiqueta-ui";
 import { EtiquetaForm } from "./etiqueta-form";
 import { EtiquetaBaixa } from "./baixa";
 import { excluirEtiqueta } from "./actions";
@@ -8,19 +10,22 @@ import { excluirEtiqueta } from "./actions";
 export default async function EtiquetasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ver?: string }>;
+  searchParams: Promise<{ ver?: string; f?: string }>;
 }) {
   const sp = await searchParams;
   const historico = sp.ver === "historico";
+  const faixa = historico ? null : faixaValida(sp.f);
 
   const supabase = await createClient();
-  const [{ data: prods }, { data: colabs }, { data: imps }, { data: etiqs }] =
+  const [{ data: its }, { data: cats }, { data: recs }, { data: colabs }, { data: imps }, { data: etiqs }, { data: ativas }] =
     await Promise.all([
       supabase
-        .from("produtos")
-        .select("id, nome, validade_congelado, validade_resfriado, validade_ambiente")
+        .from("etiqueta_itens")
+        .select("id, nome, categoria_id, validade_congelado, validade_resfriado, validade_ambiente")
         .eq("ativo", true)
         .order("nome"),
+      supabase.from("etiqueta_categorias").select("id, nome").eq("ativo", true).order("ordem").order("nome"),
+      supabase.from("etiquetas").select("item_id").not("item_id", "is", null).order("criado_em", { ascending: false }).limit(80),
       supabase.from("colaboradores").select("nome").eq("ativo", true).order("nome"),
       supabase.from("impressoras").select("id, nome").eq("ativo", true).order("criado_em"),
       historico
@@ -36,16 +41,12 @@ export default async function EtiquetasPage({
             .eq("status", "ativa")
             .order("validade", { ascending: true, nullsFirst: false })
             .limit(300),
+      supabase.from("etiquetas").select("validade").eq("status", "ativa").limit(2000),
     ]);
 
-  const produtos =
-    (prods as {
-      id: string;
-      nome: string;
-      validade_congelado: number | null;
-      validade_resfriado: number | null;
-      validade_ambiente: number | null;
-    }[]) ?? [];
+  const itens = (its as ItemEtq[]) ?? [];
+  const categorias = (cats as CatEtq[]) ?? [];
+  const recentes = [...new Set(((recs as { item_id: string }[]) ?? []).map((r) => r.item_id))];
   const colaboradores = (colabs as { nome: string }[]) ?? [];
   const impressoras = (imps as { id: string; nome: string }[]) ?? [];
   type Et = {
@@ -60,17 +61,14 @@ export default async function EtiquetasPage({
     status: string;
     baixa_em: string | null;
   };
-  const etiquetas = (etiqs as Et[]) ?? [];
-
-  const hoje = new Date().toISOString().slice(0, 10);
-  const em2 = new Date(new Date().getTime() + 2 * 864e5).toISOString().slice(0, 10);
-  const vencidas = etiquetas.filter((e) => e.validade && e.validade < hoje).length;
-  const vencendo = etiquetas.filter(
-    (e) => e.validade && e.validade >= hoje && e.validade <= em2,
-  ).length;
+  const hoje = hojeSP();
+  const em2 = somarDias(hoje, 2);
+  const todas = (etiqs as Et[]) ?? [];
+  const etiquetas = faixa ? todas.filter((e) => faixaDe(e.validade, hoje) === faixa) : todas;
+  const contagem = contarFaixas((ativas as { validade: string | null }[]) ?? [], hoje);
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
@@ -81,6 +79,12 @@ export default async function EtiquetasPage({
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <Link
+            href="/etiquetas/itens"
+            className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          >
+            📋 Itens e categorias
+          </Link>
           <Link
             href="/impressao"
             className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
@@ -96,7 +100,18 @@ export default async function EtiquetasPage({
         </div>
       </div>
 
-      <EtiquetaForm produtos={produtos} colaboradores={colaboradores} impressoras={impressoras} />
+      <div className="mb-6">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Painel de vencimentos</p>
+        <PainelVencimentos contagem={contagem} base="/etiquetas" ativo={faixa} />
+      </div>
+
+      {itens.length === 0 && (
+        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          Ainda não há itens de etiqueta cadastrados. Abra uma categoria e use <b>＋ Novo item</b> (ou cadastre em <Link href="/etiquetas/itens" className="underline">Itens e categorias</Link>).
+        </div>
+      )}
+
+      <EtiquetaForm itens={itens} categorias={categorias} recentes={recentes} colaboradores={colaboradores} impressoras={impressoras} />
 
       {/* Abas + resumo */}
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -109,7 +124,7 @@ export default async function EtiquetasPage({
                 : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
             }`}
           >
-            Ativas
+            Ativas{faixa ? " · filtradas" : ""}
           </Link>
           <Link
             href="/etiquetas?ver=historico"
@@ -124,15 +139,15 @@ export default async function EtiquetasPage({
         </div>
         {!historico && (
           <div className="flex gap-4 text-sm">
-            <span className="text-red-600">{vencidas} vencida(s)</span>
-            <span className="text-amber-600">{vencendo} vencendo</span>
+            <span className="text-red-600">{contagem.vencidas} vencida(s)</span>
+            <span className="text-amber-600">{contagem.hoje - contagem.vencidas + contagem.amanha} vencendo</span>
           </div>
         )}
       </div>
 
       {etiquetas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
-          {historico ? "Nenhuma etiqueta baixada ainda." : "Nenhuma etiqueta ativa."}
+          {historico ? "Nenhuma etiqueta baixada ainda." : faixa ? "Nenhuma etiqueta nessa faixa." : "Nenhuma etiqueta ativa."}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
