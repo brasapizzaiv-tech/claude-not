@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FAIXAS, type Contagem, type Faixa } from "@/lib/etiqueta-vencimentos";
+import { FAIXAS, type Contagem, type Faixa, type DiaFaixa } from "@/lib/etiqueta-vencimentos";
 import { CONS_LABEL, TIPOS, dataBRcurta, linhasExtras, tipoInfo, type EtiquetaConfig, type EtiquetaDados, type TipoEtiqueta } from "@/lib/etiqueta-tipos";
 
 // ---------- Painel de vencimentos (4 cartões) ----------
@@ -22,6 +22,29 @@ export function PainelVencimentos({ contagem, base, ativo }: { contagem: Contage
             {f.key === "hoje" && contagem.vencidas > 0 && (
               <div className="text-[11px] opacity-90">{contagem.vencidas} já vencida(s)</div>
             )}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------- Faixa dia a dia (Ontem · Hoje · Amanhã · +5 dias) ----------
+export function FaixaDias({ dias, contagens, base, ativo }: { dias: DiaFaixa[]; contagens: Record<string, number>; base: string; ativo?: string | null }) {
+  return (
+    <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+      {dias.map((d) => {
+        const sel = ativo === d.data;
+        return (
+          <Link
+            key={d.data}
+            href={sel ? base : `${base}?d=${d.data}`}
+            className={`rounded-xl p-2 text-center transition ${d.cor} ${sel ? "ring-4 ring-zinc-900/40 dark:ring-white/50" : "hover:opacity-90"}`}
+          >
+            <div className="text-[10px] font-bold uppercase">{d.rotulo}</div>
+            <div className="text-[10px] opacity-80">{d.sub}</div>
+            <div className="text-2xl font-black leading-tight">{contagens[d.data] ?? 0}</div>
+            <div className="text-[10px]">etiq.</div>
           </Link>
         );
       })}
