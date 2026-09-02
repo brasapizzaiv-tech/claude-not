@@ -42,12 +42,20 @@ export function PedidosColab({
   pedidos: PedidoColab[];
   produtos: { id: string; nome: string }[];
 }) {
-  const [aba, setAba] = useState<"pendentes" | "conferidos">("pendentes");
+  const [aba, setAba] = useState<"pendentes" | "antigos" | "conferidos">("pendentes");
   if (pedidos.length === 0) return null;
 
-  const pendentes = pedidos.filter((p) => !p.conf_em);
+  // Idade em dias contando da entrega prevista (ou da data do pedido). Mais de
+  // 7 dias sem conferir vai pra aba "Antigos" (o banco já corta os com +10 dias).
+  const hojeMs = new Date().getTime();
+  const idade = (p: PedidoColab) => {
+    const [y, m, d] = (p.prazo_entrega ?? p.data).split("-").map(Number);
+    return Math.floor((hojeMs - Date.UTC(y, m - 1, d)) / 86400000);
+  };
+  const pendentes = pedidos.filter((p) => !p.conf_em && idade(p) <= 7);
+  const antigos = pedidos.filter((p) => !p.conf_em && idade(p) > 7);
   const conferidos = pedidos.filter((p) => p.conf_em);
-  const lista = aba === "pendentes" ? pendentes : conferidos;
+  const lista = aba === "pendentes" ? pendentes : aba === "antigos" ? antigos : conferidos;
 
   const tab = (ativo: boolean) =>
     `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -63,15 +71,29 @@ export function PedidosColab({
       </div>
       <div className="mb-3 flex gap-2">
         <button onClick={() => setAba("pendentes")} className={tab(aba === "pendentes")}>
-          Para conferir{pendentes.length > 0 ? ` (${pendentes.length})` : ""}
+          A conferir{pendentes.length > 0 ? ` (${pendentes.length})` : ""}
         </button>
+        {(antigos.length > 0 || aba === "antigos") && (
+          <button onClick={() => setAba("antigos")} className={tab(aba === "antigos")}>
+            Antigos{antigos.length > 0 ? ` (${antigos.length})` : ""}
+          </button>
+        )}
         <button onClick={() => setAba("conferidos")} className={tab(aba === "conferidos")}>
           Conferidos{conferidos.length > 0 ? ` (${conferidos.length})` : ""}
         </button>
       </div>
+      {aba === "antigos" && (
+        <p className="mb-2 text-center text-[11px] text-zinc-400">
+          Mais de 7 dias sem conferir. Com mais de 10 dias somem daqui sozinhos.
+        </p>
+      )}
       {lista.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">
-          {aba === "pendentes" ? "Nenhum pedido para conferir 🎉" : "Nenhum pedido conferido ainda."}
+          {aba === "pendentes"
+            ? "Nenhum pedido para conferir 🎉"
+            : aba === "antigos"
+              ? "Nenhum pedido antigo."
+              : "Nenhum pedido conferido ainda."}
         </p>
       ) : (
         <div className="space-y-2">
