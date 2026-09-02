@@ -20,12 +20,14 @@ export function EtiquetaForm({
   recentes,
   colaboradores,
   impressoras,
+  responsavel,
 }: {
   itens: ItemEtq[];
   categorias: CatEtq[];
   recentes: string[];
   colaboradores: { nome: string }[];
   impressoras: Imp[];
+  responsavel: string;
 }) {
   const router = useRouter();
   const [gerando, start] = useTransition();
@@ -37,7 +39,8 @@ export function EtiquetaForm({
   const [conservacao, setConservacao] = useState("resfriado");
   const [quantidade, setQuantidade] = useState("");
   const [unidade, setUnidade] = useState("un");
-  const [colaborador, setColaborador] = useState("");
+  // Vem com o usuário logado; dá pra trocar se estiver imprimindo pra outra pessoa.
+  const [colaborador, setColaborador] = useState(responsavel);
   const [validade, setValidade] = useState("");
   const [extras, setExtras] = useState<Extras>(EXTRAS_VAZIO);
   const [copias, setCopias] = useState(1);
@@ -189,7 +192,7 @@ export function EtiquetaForm({
           )}
 
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Responsável</label>
+            <label className="mb-1 block text-xs text-zinc-500">Responsável {colaborador === responsavel && responsavel ? "(você)" : ""}</label>
             <input list="colabs" value={colaborador} onChange={(e) => setColaborador(e.target.value)} placeholder="nome" className={input} />
             <datalist id="colabs">
               {colaboradores.map((c) => (

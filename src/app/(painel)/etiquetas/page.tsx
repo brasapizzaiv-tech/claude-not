@@ -19,6 +19,11 @@ export default async function EtiquetasPage({
   const dia = historico ? null : ehData(sp.d);
 
   const supabase = await createClient();
+  // Responsável = usuário logado (nome do perfil).
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: perfil } = user ? await supabase.from("profiles").select("nome").eq("id", user.id).maybeSingle() : { data: null };
+  const responsavel = ((perfil as { nome?: string } | null)?.nome || user?.email?.split("@")[0] || "").trim();
+
   const [{ data: its }, { data: cats }, { data: recs }, { data: colabs }, { data: imps }, { data: etiqs }, { data: ativas }, { count: baixadas }] =
     await Promise.all([
       supabase
@@ -108,7 +113,7 @@ export default async function EtiquetasPage({
         </div>
       )}
 
-      <EtiquetaForm itens={itens} categorias={categorias} recentes={recentes} colaboradores={colaboradores} impressoras={impressoras} />
+      <EtiquetaForm itens={itens} categorias={categorias} recentes={recentes} colaboradores={colaboradores} impressoras={impressoras} responsavel={responsavel} />
 
       {/* Abas */}
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
