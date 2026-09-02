@@ -3,11 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste, imprimirTesteEtiqueta,
 } from "./actions";
 
 export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean; agrupar: boolean; qtdCat: boolean; destObs: boolean };
-export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean; barraValidade?: boolean; categoria?: boolean; empresa?: string | null };
+export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean; barraValidade?: boolean; categoria?: boolean; empresa?: string | null; deslocX?: number; deslocY?: number };
 export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null; etiqueta_config: EtiquetaConfig | null };
 export type Produto = { id: string; nome: string; categoria: string };
 
@@ -208,7 +208,26 @@ function EtiquetaFormato({ im, proc, run }: {
           <input defaultValue={c.empresa ?? ""} placeholder="Brasa Pizzaria · 47.261.660/0001-90" disabled={proc} onBlur={(e) => salvar({ ...c, empresa: e.target.value.trim() || null })} className="w-72 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
         </label>
       </div>
-      <p className="mt-1 text-[11px] text-zinc-400">Vale pras etiquetas impressas nesta impressora (todos os tipos). A Elgin L42 usa 55×55mm. A pré-visualização nos formulários já segue essas opções.</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <span className="font-medium">Calibração:</span>
+        <label className="flex items-center gap-1.5">↕ vertical
+          <input defaultValue={c.deslocY ?? 0} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, deslocY: Math.max(-15, Math.min(15, Number(String(e.target.value).replace(",", ".")) || 0)) })} className={campo} /> mm
+        </label>
+        <label className="flex items-center gap-1.5">↔ horizontal
+          <input defaultValue={c.deslocX ?? 0} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, deslocX: Math.max(-15, Math.min(15, Number(String(e.target.value).replace(",", ".")) || 0)) })} className={campo} /> mm
+        </label>
+        <button
+          disabled={proc}
+          onClick={() => { setSalvo(false); run(async () => { await imprimirTesteEtiqueta(im.id); setSalvo(true); setTimeout(() => setSalvo(false), 2500); }); }}
+          className="rounded-lg border border-orange-400 px-2.5 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+        >
+          🏷️ Imprimir etiqueta de teste
+        </button>
+      </div>
+      <p className="mt-1 text-[11px] text-zinc-400">
+        Vale pras etiquetas impressas nesta impressora (todos os tipos). A Elgin L42 usa 55×55mm. A pré-visualização nos formulários já segue essas opções.
+        <b> Calibração:</b> a etiqueta de teste sai com uma moldura na borda — se a moldura sair pra baixo, use vertical <b>negativo</b> (ex.: −5 sobe 5 mm); pra direita, horizontal negativo.
+      </p>
     </div>
   );
 }

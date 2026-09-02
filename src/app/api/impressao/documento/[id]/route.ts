@@ -52,6 +52,27 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       baseUrl,
       ((imp as { etiqueta_config?: EtiquetaConfig | null } | null)?.etiqueta_config) ?? null,
     );
+  } else if (job.tipo === "teste_etiqueta") {
+    // Etiqueta de exemplo com moldura na borda, no formato desta impressora.
+    const { data: imp } = await admin.from("impressoras").select("etiqueta_config").eq("id", job.ref_id).maybeSingle();
+    pdf = await gerarEtiquetaPdf(
+      {
+        id: "00000000-0000-0000-0000-000000000000",
+        numero: 0,
+        produto: "Etiqueta de teste",
+        colaborador: "Calibração",
+        manipuladoEm: new Date().toISOString(),
+        validade: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+        conservacao: "resfriado",
+        quantidade: 1,
+        unidade: "un",
+        tipo: "manipulacao",
+        categoria: "Teste",
+      },
+      baseUrl,
+      ((imp as { etiqueta_config?: EtiquetaConfig | null } | null)?.etiqueta_config) ?? null,
+      { moldura: true },
+    );
   } else if (job.tipo === "teste") {
     const { data: imp } = await admin.from("impressoras").select("nome, comanda_config").eq("id", job.ref_id).maybeSingle();
     const largura = ((imp?.comanda_config as { largura?: number } | null)?.largura) ?? 80;

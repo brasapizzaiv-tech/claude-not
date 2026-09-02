@@ -66,7 +66,7 @@ function desenharCorpo(doc: PDFKit.PDFDocument, fe: number, g: Geo, d: EtiquetaP
 // Gera a etiqueta como PDF (padrão 55x55mm; formato vem da impressora).
 // QR aponta para {baseUrl}/e/{id}. O desenho é o mesmo da pré-visualização
 // (EtiquetaVisual em src/components/etiqueta-ui.tsx) — mudou aqui, muda lá.
-export async function gerarEtiquetaPdf(d: EtiquetaPdfDados, baseUrl: string, cfg?: EtiquetaConfig | null): Promise<Buffer> {
+export async function gerarEtiquetaPdf(d: EtiquetaPdfDados, baseUrl: string, cfg?: EtiquetaConfig | null, opts?: { moldura?: boolean }): Promise<Buffer> {
   const c: EtiquetaConfig = { ...DEF, ...(cfg ?? {}) };
   const Wmm = Math.min(Math.max(c.largura || 55, 25), 120);
   const Hmm = Math.min(Math.max(c.altura || 55, 25), 120);
@@ -110,6 +110,19 @@ export async function gerarEtiquetaPdf(d: EtiquetaPdfDados, baseUrl: string, cfg
   const chunks: Buffer[] = [];
   doc.on("data", (x: Buffer) => chunks.push(x));
   const fim = new Promise<Buffer>((res) => doc.on("end", () => res(Buffer.concat(chunks))));
+
+  // Moldura na borda + marcas de centro: mostra onde a impressora acha que é a
+  // etiqueta, pra acertar o deslocamento. Desenhada ANTES do deslocamento.
+  if (opts?.moldura) {
+    doc.lineWidth(0.6).rect(0.8, 0.8, width - 1.6, height - 1.6).stroke("#000");
+    const cx = width / 2, cy = height / 2, m = 3 * MM;
+    doc.moveTo(cx - m, cy).lineTo(cx + m, cy).moveTo(cx, cy - m).lineTo(cx, cy + m).stroke("#000");
+    doc.font("Helvetica").fontSize(5).fillColor("#000").text(`${Wmm}×${Hmm}mm`, 3, height - 9, { width: 60 });
+  }
+  // Calibração: desloca todo o desenho (mm) conforme a impressora imprime fora do lugar.
+  const dx = Math.max(-15, Math.min(15, Number(c.deslocX) || 0)) * MM;
+  const dy = Math.max(-15, Math.min(15, Number(c.deslocY) || 0)) * MM;
+  if (dx || dy) doc.translate(dx, dy);
 
   desenharCorpo(doc, fe, g, d, c);
 

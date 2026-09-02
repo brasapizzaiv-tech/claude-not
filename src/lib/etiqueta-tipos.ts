@@ -43,6 +43,9 @@ export type EtiquetaConfig = {
   barraValidade?: boolean; // VALIDADE em barra preta (estilo KALI)
   categoria?: boolean;     // mostra a categoria do item
   empresa?: string | null; // rodapé: razão social / CNPJ
+  // Calibração da impressora: desloca TODO o desenho (mm). Negativo = sobe / esquerda.
+  deslocX?: number;
+  deslocY?: number;
 };
 
 export const CONS_LABEL: Record<string, string> = { congelado: "CONGELADO", resfriado: "RESFRIADO", ambiente: "AMBIENTE" };

@@ -60,9 +60,18 @@ export async function definirComandaProdutos(id: string, produtos: string[] | nu
 export async function definirEtiquetaConfig(id: string, config: {
   largura: number; altura: number; margem: number; escala: number; qr: boolean;
   barraValidade?: boolean; categoria?: boolean; empresa?: string | null;
+  deslocX?: number; deslocY?: number;
 }) {
   const supabase = await createClient();
   await supabase.from("impressoras").update({ etiqueta_config: config }).eq("id", id);
+  revalidatePath("/impressao");
+  return { ok: true as const };
+}
+
+// Etiqueta de teste com moldura na borda (pra calibrar o deslocamento).
+export async function imprimirTesteEtiqueta(impressoraId: string) {
+  const supabase = await createClient();
+  await supabase.from("impressao_fila").insert({ tipo: "teste_etiqueta", ref_id: impressoraId, impressora_id: impressoraId });
   revalidatePath("/impressao");
   return { ok: true as const };
 }
