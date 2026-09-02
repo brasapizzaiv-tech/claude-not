@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FAIXAS, type Contagem, type Faixa } from "@/lib/etiqueta-vencimentos";
-import { dataBR } from "@/lib/format";
+import { CONS_LABEL, TIPOS, dataBRcurta, linhasExtras, tipoInfo, type EtiquetaConfig, type EtiquetaDados, type TipoEtiqueta } from "@/lib/etiqueta-tipos";
 
 // ---------- Painel de vencimentos (4 cartões) ----------
 export function PainelVencimentos({ contagem, base, ativo }: { contagem: Contagem; base: string; ativo?: Faixa | null }) {
@@ -203,57 +203,156 @@ export function SeletorItem({
   );
 }
 
-// ---------- Pré-visualização da etiqueta (mesmo desenho do PDF 55×55) ----------
-const CONS: Record<string, string> = { congelado: "CONGELADO", resfriado: "RESFRIADO", ambiente: "AMBIENTE" };
-
-export function PreviewEtiqueta({
-  produto,
-  conservacao,
-  quantidade,
-  unidade,
-  validade,
-  colaborador,
-}: {
-  produto: string;
-  conservacao: string;
-  quantidade: string;
-  unidade: string;
-  validade: string;
-  colaborador: string;
-}) {
-  const agora = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
-  const qtd = quantidade.trim();
+// ---------- Tipo da etiqueta ----------
+export function TipoSelector({ value, onChange }: { value: TipoEtiqueta; onChange: (t: TipoEtiqueta) => void }) {
   return (
-    <div
-      className="mx-auto bg-white text-black shadow-md ring-1 ring-zinc-300"
-      style={{ width: "55mm", height: "55mm", padding: "3mm", boxSizing: "border-box", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: "Arial, sans-serif" }}
-    >
-      <div style={{ textAlign: "center", fontSize: "9px", fontWeight: 700, letterSpacing: 1 }}>BRASA · MANIPULAÇÃO</div>
-      <div style={{ textAlign: "center", fontSize: "15px", fontWeight: 800, lineHeight: 1.1, margin: "2px 0", color: produto ? "#000" : "#bbb" }}>
-        {produto || "Escolha o item"}
-      </div>
-      {CONS[conservacao] && (
-        <div style={{ textAlign: "center", fontSize: "11px", fontWeight: 700, border: "1px solid #000", borderRadius: 4, padding: "1px 0", margin: "1px 6mm" }}>
-          {CONS[conservacao]}
-        </div>
-      )}
-      {qtd && (
-        <div style={{ textAlign: "center", fontSize: "11px" }}>
-          Qtd: <b>{qtd} {unidade}</b>
-        </div>
-      )}
-      <div style={{ textAlign: "center", fontSize: "9px", marginTop: "2mm" }}>VALIDADE</div>
-      <div style={{ textAlign: "center", fontSize: "22px", fontWeight: 800, lineHeight: 1 }}>{validade ? dataBR(validade) : "—"}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "auto" }}>
-        <div style={{ fontSize: "9px", lineHeight: 1.35 }}>
-          <div>Manip.: {agora}</div>
-          <div>Por: {colaborador || "—"}</div>
-          <div>Nº —</div>
-        </div>
-        <div style={{ width: "16mm", height: "16mm", background: "repeating-linear-gradient(45deg,#000 0 2px,#fff 2px 5px)", opacity: 0.35 }} />
+    <div className="grid grid-cols-5 gap-1.5">
+      {TIPOS.map((t) => (
+        <button
+          key={t.key}
+          type="button"
+          onClick={() => onChange(t.key)}
+          title={t.dica}
+          className={`rounded-xl border px-1 py-2 text-center text-[11px] font-semibold leading-tight ${
+            value === t.key ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+          }`}
+        >
+          <div className="text-base">{t.icone}</div>
+          {t.titulo}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---------- Campos opcionais (marca, lote, validade original, SIF) ----------
+export type Extras = { marca: string; lote: string; validadeOriginal: string; sif: string };
+export const EXTRAS_VAZIO: Extras = { marca: "", lote: "", validadeOriginal: "", sif: "" };
+
+export function CamposExtras({ value, onChange }: { value: Extras; onChange: (v: Extras) => void }) {
+  const [aberto, setAberto] = useState(false);
+  const preenchidos = Object.values(value).filter(Boolean).length;
+  if (!aberto) {
+    return (
+      <button type="button" onClick={() => setAberto(true)} className="text-xs font-medium text-zinc-500 hover:text-orange-600">
+        ＋ Mais campos (marca, lote, validade original, SIF){preenchidos ? ` · ${preenchidos} preenchido(s)` : ""} ▸
+      </button>
+    );
+  }
+  const set = (p: Partial<Extras>) => onChange({ ...value, ...p });
+  return (
+    <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+      <button type="button" onClick={() => setAberto(false)} className="mb-2 text-xs font-medium text-zinc-500">Mais campos ▾</button>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-[11px] text-zinc-500">Marca / fornecedor
+          <input value={value.marca} onChange={(e) => set({ marca: e.target.value })} className={`${inputCls} mt-0.5 py-2`} />
+        </label>
+        <label className="text-[11px] text-zinc-500">Lote
+          <input value={value.lote} onChange={(e) => set({ lote: e.target.value })} className={`${inputCls} mt-0.5 py-2`} />
+        </label>
+        <label className="text-[11px] text-zinc-500">Validade original (fabricante)
+          <input type="date" value={value.validadeOriginal} onChange={(e) => set({ validadeOriginal: e.target.value })} className={`${inputCls} mt-0.5 py-2`} />
+        </label>
+        <label className="text-[11px] text-zinc-500">SIF / registro
+          <input value={value.sif} onChange={(e) => set({ sif: e.target.value })} className={`${inputCls} mt-0.5 py-2`} />
+        </label>
       </div>
     </div>
   );
+}
+
+// ---------- Desenho da etiqueta (mesmo layout do PDF em src/lib/etiqueta-pdf.ts) ----------
+// `qr` = data URL do QR real; sem ele desenha um quadrado (pré-visualização).
+export function EtiquetaVisual({ d, config, qr, className }: { d: EtiquetaDados; config?: EtiquetaConfig | null; qr?: string | null; className?: string }) {
+  const c = { largura: 55, altura: 55, margem: 3, escala: 100, qr: true, barraValidade: false, categoria: false, empresa: null as string | null, ...(config ?? {}) };
+  // Quanto mais coisa na etiqueta, menor a letra (o PDF mede de verdade; aqui é
+  // uma aproximação pra pré-visualização não estourar).
+  const cheio =
+    (c.categoria && d.categoria ? 1 : 0) + (linhasExtras(d).length ? 1 : 0) + (c.barraValidade ? 1 : 0) + (c.empresa ? 1 : 0) + (d.quantidade != null ? 0.5 : 0);
+  const fe = Math.min(Math.max((c.escala || 100) / 100, 0.6), 1.6) * Math.max(0.74, 1 - 0.07 * cheio);
+  const px = (n: number) => `${(n * fe).toFixed(1)}px`;
+  const t = tipoInfo(d.tipo);
+  const livre = t.key === "livre";
+  const manip = new Date(d.manipuladoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const extras = linhasExtras(d);
+  const linhas = [`${t.dataLabel}: ${manip}`, `Resp.: ${d.colaborador ?? "—"}`, `Nº ${d.numero || "—"}`, ...(c.empresa ? [c.empresa] : [])];
+  const qrMm = (16 * Math.min(c.largura, c.altura)) / 55;
+  const rotulo = livre ? "VÁLIDO ATÉ" : "VALIDADE";
+  const data = d.validade ? dataBRcurta(d.validade) : "—";
+
+  return (
+    <div
+      className={`etiqueta-print bg-white text-black ${className ?? ""}`}
+      style={{ width: `${c.largura}mm`, height: `${c.altura}mm`, padding: `${c.margem}mm`, boxSizing: "border-box", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: "Arial, Helvetica, sans-serif" }}
+    >
+      <div style={{ textAlign: "center", fontSize: px(9), fontWeight: 700, letterSpacing: 1 }}>{livre ? "BRASA" : `BRASA · ${t.cabecalho}`}</div>
+      <div style={{ textAlign: "center", fontSize: px(15), fontWeight: 800, lineHeight: 1.1, margin: "2px 0", color: d.produto ? "#000" : "#bbb" }}>{d.produto || "Escolha o item"}</div>
+      {c.categoria && d.categoria && <div style={{ textAlign: "center", fontSize: px(8) }}>{">> " + d.categoria.toUpperCase()}</div>}
+      {livre ? (
+        d.texto && <div style={{ textAlign: "center", fontSize: px(10.5), whiteSpace: "pre-wrap", marginTop: 3, lineHeight: 1.25 }}>{d.texto}</div>
+      ) : (
+        <>
+          {d.conservacao && (
+            <div style={{ textAlign: "center", fontSize: px(11), fontWeight: 700, border: "1px solid #000", borderRadius: 4, padding: "1px 0", margin: "1px 6mm" }}>
+              {CONS_LABEL[d.conservacao] ?? d.conservacao}
+            </div>
+          )}
+          {d.quantidade != null && (
+            <div style={{ textAlign: "center", fontSize: px(11) }}>
+              Qtd: <b>{d.quantidade} {d.unidade ?? ""}</b>
+            </div>
+          )}
+          {extras.length > 0 && <div style={{ textAlign: "center", fontSize: px(8) }}>{extras.join("  ·  ")}</div>}
+        </>
+      )}
+      {(!livre || d.validade) &&
+        (c.barraValidade ? (
+          <div style={{ background: "#000", color: "#fff", textAlign: "center", marginTop: 4, padding: "2px 0" }}>
+            <div style={{ fontSize: px(8) }}>{rotulo}</div>
+            <div style={{ fontSize: px(19), fontWeight: 800, lineHeight: 1 }}>{data}</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ textAlign: "center", fontSize: px(9), marginTop: "2mm" }}>{rotulo}</div>
+            <div style={{ textAlign: "center", fontSize: px(22), fontWeight: 800, lineHeight: 1 }}>{data}</div>
+          </>
+        ))}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "auto", gap: 4 }}>
+        <div style={{ fontSize: px(linhas.length > 3 ? 8 : 9), lineHeight: 1.3, minWidth: 0 }}>
+          {linhas.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+        {c.qr &&
+          (qr ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={qr} alt="QR" style={{ width: `${qrMm}mm`, height: `${qrMm}mm`, flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: `${qrMm}mm`, height: `${qrMm}mm`, flexShrink: 0, background: "repeating-linear-gradient(45deg,#000 0 2px,#fff 2px 5px)", opacity: 0.35 }} />
+          ))}
+      </div>
+    </div>
+  );
+}
+
+// Pré-visualização enquanto preenche o formulário.
+export function PreviewEtiqueta({ d, config }: { d: EtiquetaDados; config?: EtiquetaConfig | null }) {
+  return <EtiquetaVisual d={d} config={config} className="mx-auto shadow-md ring-1 ring-zinc-300" />;
+}
+
+// ---------- Validade padrão ----------
+export function emDias(dias: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+export function diasDoItem(p: ItemEtq | undefined, cons: string) {
+  if (!p) return null;
+  return cons === "congelado" ? p.validade_congelado : cons === "ambiente" ? p.validade_ambiente : p.validade_resfriado;
+}
+// Amostra: 72 h. Descongelamento: prazo resfriado do item (ou 3 dias). Demais: validade do item na conservação.
+export function diasPadrao(p: ItemEtq | undefined, cons: string, tipo: TipoEtiqueta): number | null {
+  if (tipo === "amostra") return 3;
+  if (tipo === "descongelamento") return p?.validade_resfriado ?? 3;
+  return diasDoItem(p, cons);
 }
 
 // ---------- Contador de cópias ----------

@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { contarFaixas, faixaDe, faixaValida, hojeSP, somarDias } from "@/lib/etiqueta-vencimentos";
 import { PainelVencimentos, type ItemEtq, type CatEtq } from "@/components/etiqueta-ui";
-import { EtiquetaForm } from "./etiqueta-form";
+import { EtiquetaForm, type Imp } from "./etiqueta-form";
+import { tipoInfo } from "@/lib/etiqueta-tipos";
 import { EtiquetaBaixa } from "./baixa";
 import { excluirEtiqueta } from "./actions";
 
@@ -27,17 +28,17 @@ export default async function EtiquetasPage({
       supabase.from("etiqueta_categorias").select("id, nome").eq("ativo", true).order("ordem").order("nome"),
       supabase.from("etiquetas").select("item_id").not("item_id", "is", null).order("criado_em", { ascending: false }).limit(80),
       supabase.from("colaboradores").select("nome").eq("ativo", true).order("nome"),
-      supabase.from("impressoras").select("id, nome").eq("ativo", true).order("criado_em"),
+      supabase.from("impressoras").select("id, nome, etiqueta_config").eq("ativo", true).order("criado_em"),
       historico
         ? supabase
             .from("etiquetas")
-            .select("id, numero, produto_nome, colaborador_nome, validade, conservacao, quantidade, unidade, status, baixa_em")
+            .select("id, numero, produto_nome, colaborador_nome, validade, conservacao, quantidade, unidade, status, baixa_em, tipo")
             .in("status", ["usada", "descartada"])
             .order("baixa_em", { ascending: false })
             .limit(100)
         : supabase
             .from("etiquetas")
-            .select("id, numero, produto_nome, colaborador_nome, validade, conservacao, quantidade, unidade, status, baixa_em")
+            .select("id, numero, produto_nome, colaborador_nome, validade, conservacao, quantidade, unidade, status, baixa_em, tipo")
             .eq("status", "ativa")
             .order("validade", { ascending: true, nullsFirst: false })
             .limit(300),
@@ -48,7 +49,7 @@ export default async function EtiquetasPage({
   const categorias = (cats as CatEtq[]) ?? [];
   const recentes = [...new Set(((recs as { item_id: string }[]) ?? []).map((r) => r.item_id))];
   const colaboradores = (colabs as { nome: string }[]) ?? [];
-  const impressoras = (imps as { id: string; nome: string }[]) ?? [];
+  const impressoras = (imps as Imp[]) ?? [];
   type Et = {
     id: string;
     numero: number;
@@ -60,6 +61,7 @@ export default async function EtiquetasPage({
     unidade: string | null;
     status: string;
     baixa_em: string | null;
+    tipo: string | null;
   };
   const hoje = hojeSP();
   const em2 = somarDias(hoje, 2);
@@ -180,6 +182,11 @@ export default async function EtiquetasPage({
                     <td className="px-4 py-2">
                       <div className="font-medium text-zinc-900 dark:text-zinc-100">
                         {e.produto_nome}
+                        {e.tipo && e.tipo !== "manipulacao" && (
+                          <span className="ml-2 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                            {tipoInfo(e.tipo).icone} {tipoInfo(e.tipo).titulo}
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-400">
                         {e.conservacao ? e.conservacao : ""}

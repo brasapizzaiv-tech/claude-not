@@ -7,7 +7,7 @@ import {
 } from "./actions";
 
 export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean; agrupar: boolean; qtdCat: boolean; destObs: boolean };
-export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean };
+export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean; barraValidade?: boolean; categoria?: boolean; empresa?: string | null };
 export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null; etiqueta_config: EtiquetaConfig | null };
 export type Produto = { id: string; nome: string; categoria: string };
 
@@ -201,7 +201,14 @@ function EtiquetaFormato({ im, proc, run }: {
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.qr} disabled={proc} onChange={(e) => salvar({ ...c, qr: e.target.checked })} /> QR code</label>
         {salvo && <span className="text-xs font-semibold text-emerald-600">✓ salvo</span>}
       </div>
-      <p className="mt-1 text-[11px] text-zinc-400">Vale pras etiquetas de manipulação impressas nesta impressora. A Elgin L42 usa 55×55mm.</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={!!c.barraValidade} disabled={proc} onChange={(e) => salvar({ ...c, barraValidade: e.target.checked })} /> VALIDADE em barra preta</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={!!c.categoria} disabled={proc} onChange={(e) => salvar({ ...c, categoria: e.target.checked })} /> Mostrar categoria</label>
+        <label className="flex items-center gap-1.5">Rodapé (empresa/CNPJ):
+          <input defaultValue={c.empresa ?? ""} placeholder="Brasa Pizzaria · 47.261.660/0001-90" disabled={proc} onBlur={(e) => salvar({ ...c, empresa: e.target.value.trim() || null })} className="w-72 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
+        </label>
+      </div>
+      <p className="mt-1 text-[11px] text-zinc-400">Vale pras etiquetas impressas nesta impressora (todos os tipos). A Elgin L42 usa 55×55mm. A pré-visualização nos formulários já segue essas opções.</p>
     </div>
   );
 }

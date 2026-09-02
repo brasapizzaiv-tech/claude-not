@@ -22,7 +22,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const [{ data }, { data: imp }] = await Promise.all([
       admin
         .from("etiquetas")
-        .select("id, numero, produto_nome, colaborador_nome, manipulado_em, validade, conservacao, quantidade, unidade")
+        .select("id, numero, produto_nome, colaborador_nome, manipulado_em, validade, conservacao, quantidade, unidade, tipo, categoria_nome, marca, lote, validade_original, sif, texto")
         .eq("id", job.ref_id)
         .maybeSingle(),
       job.impressora_id
@@ -41,6 +41,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         conservacao: (data.conservacao as string) ?? null,
         quantidade: (data.quantidade as number) ?? null,
         unidade: (data.unidade as string) ?? null,
+        tipo: (data.tipo as string) ?? null,
+        categoria: (data.categoria_nome as string) ?? null,
+        marca: (data.marca as string) ?? null,
+        lote: (data.lote as string) ?? null,
+        validadeOriginal: (data.validade_original as string) ?? null,
+        sif: (data.sif as string) ?? null,
+        texto: (data.texto as string) ?? null,
       },
       baseUrl,
       ((imp as { etiqueta_config?: EtiquetaConfig | null } | null)?.etiqueta_config) ?? null,

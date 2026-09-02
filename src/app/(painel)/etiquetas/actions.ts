@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { tipoValido } from "@/lib/etiqueta-tipos";
 
 type DadosItem = {
   nome: string;
@@ -12,22 +13,34 @@ type DadosItem = {
 };
 
 export async function criarEtiqueta(dados: {
+  tipo?: string;
   item_id?: string;
   produto_id?: string;
+  titulo?: string;
+  texto?: string;
   colaborador_nome: string;
   validade: string;
   conservacao: string;
   quantidade: string;
   unidade: string;
+  marca?: string;
+  lote?: string;
+  validade_original?: string;
+  sif?: string;
   impressora_id?: string;
   copias?: number;
 }) {
   const supabase = await createClient();
+  const tipo = tipoValido(dados.tipo);
+  const livre = tipo === "livre";
 
   let nome = "Produto";
   let produtoId: string | null = dados.produto_id || null;
   let categoriaNome: string | null = null;
-  if (dados.item_id) {
+  if (livre) {
+    nome = (dados.titulo || "").trim();
+    if (!nome) return { ok: false };
+  } else if (dados.item_id) {
     const { data: item } = await supabase
       .from("etiqueta_itens")
       .select("nome, produto_id, etiqueta_categorias(nome)")
@@ -55,17 +68,23 @@ export async function criarEtiqueta(dados: {
   const { data, error } = await supabase
     .from("etiquetas")
     .insert({
-      item_id: dados.item_id || null,
-      produto_id: produtoId,
+      tipo,
+      item_id: livre ? null : dados.item_id || null,
+      produto_id: livre ? null : produtoId,
       produto_nome: nome,
       categoria_nome: categoriaNome,
       colaborador_nome: dados.colaborador_nome || null,
       validade: dados.validade || null,
-      conservacao: dados.conservacao || null,
-      quantidade: dados.quantidade
+      conservacao: livre ? null : dados.conservacao || null,
+      quantidade: !livre && dados.quantidade
         ? Number(dados.quantidade.replace(",", ".")) || null
         : null,
-      unidade: dados.unidade || null,
+      unidade: livre ? null : dados.unidade || null,
+      marca: (dados.marca || "").trim() || null,
+      lote: (dados.lote || "").trim() || null,
+      validade_original: dados.validade_original || null,
+      sif: (dados.sif || "").trim() || null,
+      texto: livre ? (dados.texto || "").trim().slice(0, 200) || null : null,
       impressora_id: impressoraId,
     })
     .select("id")

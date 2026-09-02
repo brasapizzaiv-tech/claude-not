@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { tipoValido } from "@/lib/etiqueta-tipos";
 
 async function colabDoToken(token: string) {
   const admin = createAdminClient();
@@ -15,26 +16,45 @@ async function colabDoToken(token: string) {
 // Cria uma etiqueta pelo app do colaborador (entra na fila da impressora,
 // uma vez por cópia).
 export async function criarEtiquetaColab(token: string, dados: {
+  tipo?: string;
   item_id: string;
+  titulo?: string;
+  texto?: string;
   conservacao: string;
   quantidade: string;
   unidade: string;
   validade: string;
+  marca?: string;
+  lote?: string;
+  validade_original?: string;
+  sif?: string;
   copias?: number;
 }) {
   const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
-  if (!dados.item_id) return { ok: false as const, mensagem: "Escolha o item." };
+  const tipo = tipoValido(dados.tipo);
+  const livre = tipo === "livre";
 
-  const { data: item } = await admin
-    .from("etiqueta_itens")
-    .select("nome, produto_id, etiqueta_categorias(nome)")
-    .eq("id", dados.item_id)
-    .maybeSingle();
-  if (!item) return { ok: false as const, mensagem: "Item não encontrado." };
-  const cat = item.etiqueta_categorias as { nome?: string } | { nome?: string }[] | null;
-  const categoriaNome = (Array.isArray(cat) ? cat[0]?.nome : cat?.nome) ?? null;
+  let nome = "";
+  let produtoId: string | null = null;
+  let categoriaNome: string | null = null;
+  if (livre) {
+    nome = (dados.titulo || "").trim();
+    if (!nome) return { ok: false as const, mensagem: "Informe o título." };
+  } else {
+    if (!dados.item_id) return { ok: false as const, mensagem: "Escolha o item." };
+    const { data: item } = await admin
+      .from("etiqueta_itens")
+      .select("nome, produto_id, etiqueta_categorias(nome)")
+      .eq("id", dados.item_id)
+      .maybeSingle();
+    if (!item) return { ok: false as const, mensagem: "Item não encontrado." };
+    nome = item.nome as string;
+    produtoId = (item.produto_id as string | null) ?? null;
+    const cat = item.etiqueta_categorias as { nome?: string } | { nome?: string }[] | null;
+    categoriaNome = (Array.isArray(cat) ? cat[0]?.nome : cat?.nome) ?? null;
+  }
 
   // impressora: a única ativa (ou nenhuma se houver várias — cai na primeira).
   const { data: imps } = await admin.from("impressoras").select("id").eq("ativo", true).order("criado_em").limit(1);
@@ -43,15 +63,21 @@ export async function criarEtiquetaColab(token: string, dados: {
   const { data, error } = await admin
     .from("etiquetas")
     .insert({
-      item_id: dados.item_id,
-      produto_id: (item.produto_id as string | null) ?? null,
-      produto_nome: item.nome as string,
+      tipo,
+      item_id: livre ? null : dados.item_id,
+      produto_id: produtoId,
+      produto_nome: nome,
       categoria_nome: categoriaNome,
       colaborador_nome: colab.nome,
       validade: dados.validade || null,
-      conservacao: dados.conservacao || null,
-      quantidade: dados.quantidade ? Number(dados.quantidade.replace(",", ".")) || null : null,
-      unidade: dados.unidade || null,
+      conservacao: livre ? null : dados.conservacao || null,
+      quantidade: !livre && dados.quantidade ? Number(dados.quantidade.replace(",", ".")) || null : null,
+      unidade: livre ? null : dados.unidade || null,
+      marca: (dados.marca || "").trim() || null,
+      lote: (dados.lote || "").trim() || null,
+      validade_original: dados.validade_original || null,
+      sif: (dados.sif || "").trim() || null,
+      texto: livre ? (dados.texto || "").trim().slice(0, 200) || null : null,
       impressora_id: impressoraId,
     })
     .select("id, numero")
