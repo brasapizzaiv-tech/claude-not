@@ -18,14 +18,12 @@ export function EtiquetaForm({
   itens: itensIniciais,
   categorias,
   recentes,
-  colaboradores,
   impressoras,
   responsavel,
 }: {
   itens: ItemEtq[];
   categorias: CatEtq[];
   recentes: string[];
-  colaboradores: { nome: string }[];
   impressoras: Imp[];
   responsavel: string;
 }) {
@@ -39,8 +37,8 @@ export function EtiquetaForm({
   const [conservacao, setConservacao] = useState("resfriado");
   const [quantidade, setQuantidade] = useState("");
   const [unidade, setUnidade] = useState("un");
-  // Vem com o usuário logado; dá pra trocar se estiver imprimindo pra outra pessoa.
-  const [colaborador, setColaborador] = useState(responsavel);
+  // Sempre o usuário logado (o servidor também ignora qualquer outro nome).
+  const colaborador = responsavel;
   const [validade, setValidade] = useState("");
   const [extras, setExtras] = useState<Extras>(EXTRAS_VAZIO);
   const [copias, setCopias] = useState(1);
@@ -192,13 +190,10 @@ export function EtiquetaForm({
           )}
 
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Responsável {colaborador === responsavel && responsavel ? "(você)" : ""}</label>
-            <input list="colabs" value={colaborador} onChange={(e) => setColaborador(e.target.value)} placeholder="nome" className={input} />
-            <datalist id="colabs">
-              {colaboradores.map((c) => (
-                <option key={c.nome} value={c.nome} />
-              ))}
-            </datalist>
+            <label className="mb-1 block text-xs text-zinc-500">Responsável (usuário logado)</label>
+            <div className={`${input} cursor-not-allowed bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300`} title="Sempre quem está logado">
+              🔒 {colaborador || "—"}
+            </div>
           </div>
           <div>
             <label className="mb-1 block text-xs text-zinc-500">{tipo === "descongelamento" ? "Usar até" : livre ? "Válido até (opcional)" : "Validade"}</label>

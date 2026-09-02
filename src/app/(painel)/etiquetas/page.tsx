@@ -24,7 +24,7 @@ export default async function EtiquetasPage({
   const { data: perfil } = user ? await supabase.from("profiles").select("nome").eq("id", user.id).maybeSingle() : { data: null };
   const responsavel = ((perfil as { nome?: string } | null)?.nome || user?.email?.split("@")[0] || "").trim();
 
-  const [{ data: its }, { data: cats }, { data: recs }, { data: colabs }, { data: imps }, { data: etiqs }, { data: ativas }, { count: baixadas }] =
+  const [{ data: its }, { data: cats }, { data: recs }, { data: imps }, { data: etiqs }, { data: ativas }, { count: baixadas }] =
     await Promise.all([
       supabase
         .from("etiqueta_itens")
@@ -33,7 +33,6 @@ export default async function EtiquetasPage({
         .order("nome"),
       supabase.from("etiqueta_categorias").select("id, nome").eq("ativo", true).order("ordem").order("nome"),
       supabase.from("etiquetas").select("item_id").not("item_id", "is", null).order("criado_em", { ascending: false }).limit(80),
-      supabase.from("colaboradores").select("nome").eq("ativo", true).order("nome"),
       supabase.from("impressoras").select("id, nome, etiqueta_config").eq("ativo", true).order("criado_em"),
       historico
         ? supabase.from("etiquetas").select(COLS).in("status", ["usada", "descartada"]).order("baixa_em", { ascending: false }).limit(300)
@@ -45,7 +44,6 @@ export default async function EtiquetasPage({
   const itens = (its as ItemEtq[]) ?? [];
   const categorias = (cats as CatEtq[]) ?? [];
   const recentes = [...new Set(((recs as { item_id: string }[]) ?? []).map((r) => r.item_id))];
-  const colaboradores = (colabs as { nome: string }[]) ?? [];
   const impressoras = (imps as Imp[]) ?? [];
 
   const hoje = hojeSP();
@@ -113,7 +111,7 @@ export default async function EtiquetasPage({
         </div>
       )}
 
-      <EtiquetaForm itens={itens} categorias={categorias} recentes={recentes} colaboradores={colaboradores} impressoras={impressoras} responsavel={responsavel} />
+      <EtiquetaForm itens={itens} categorias={categorias} recentes={recentes} impressoras={impressoras} responsavel={responsavel} />
 
       {/* Abas */}
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">

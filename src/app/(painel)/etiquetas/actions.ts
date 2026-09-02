@@ -34,6 +34,14 @@ export async function criarEtiqueta(dados: {
   const tipo = tipoValido(dados.tipo);
   const livre = tipo === "livre";
 
+  // Responsável é SEMPRE o usuário logado — o nome vindo da tela é ignorado.
+  const { data: { user } } = await supabase.auth.getUser();
+  let responsavel = (dados.colaborador_nome || "").trim() || null;
+  if (user) {
+    const { data: perfil } = await supabase.from("profiles").select("nome").eq("id", user.id).maybeSingle();
+    responsavel = ((perfil as { nome?: string } | null)?.nome || user.email?.split("@")[0] || "").trim() || responsavel;
+  }
+
   let nome = "Produto";
   let produtoId: string | null = dados.produto_id || null;
   let categoriaNome: string | null = null;
@@ -73,7 +81,7 @@ export async function criarEtiqueta(dados: {
       produto_id: livre ? null : produtoId,
       produto_nome: nome,
       categoria_nome: categoriaNome,
-      colaborador_nome: dados.colaborador_nome || null,
+      colaborador_nome: responsavel,
       validade: dados.validade || null,
       conservacao: livre ? null : dados.conservacao || null,
       quantidade: !livre && dados.quantidade
