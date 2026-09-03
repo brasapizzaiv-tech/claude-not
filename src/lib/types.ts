@@ -36,6 +36,7 @@ export type Colaborador = {
   ativo: boolean;
   faz_contagem: boolean;
   faz_etiquetas: boolean;
+  faz_contas?: boolean;
   criado_em: string;
 };
 

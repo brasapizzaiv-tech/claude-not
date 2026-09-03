@@ -113,11 +113,26 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
   const fazEtiquetas = !!colab?.faz_etiquetas;
+  const fazContas = !!colab?.faz_contas;
+
+  // Contas abertas (só pra quem tem a função gerencial).
+  let contasAbertas = 0;
+  let contasVencidas = 0;
+  if (fazContas) {
+    const { data: abertas } = await admin.from("lancamentos").select("vencimento, dre_categorias(tipo)").eq("pago", false).limit(3000);
+    const hojeC = new Date(new Date().getTime() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+    for (const l of (abertas as { vencimento: string | null; dre_categorias: { tipo?: string } | { tipo?: string }[] | null }[]) ?? []) {
+      const cat = Array.isArray(l.dre_categorias) ? l.dre_categorias[0] : l.dre_categorias;
+      if (cat?.tipo === "receita") continue;
+      contasAbertas++;
+      if (l.vencimento && l.vencimento < hojeC) contasVencidas++;
+    }
+  }
 
   // Painel de vencimentos das etiquetas (só pra quem mexe com etiquetas).
   let contagemEtq = null as ReturnType<typeof contarFaixas> | null;
@@ -150,6 +165,17 @@ export default async function AppColaboradorPage({
           className="mb-3 block rounded-2xl bg-emerald-600 p-4 text-center font-semibold text-white hover:bg-emerald-700"
         >
           🌴 Minhas folgas
+        </Link>
+      )}
+      {fazContas && (
+        <Link
+          href={`/eu/${token}/contas`}
+          className="mb-3 flex items-center justify-between rounded-2xl bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
+        >
+          <span>💰 Contas a pagar</span>
+          <span className="text-xs font-normal opacity-80">
+            {contasAbertas} aberta(s){contasVencidas > 0 ? ` · ${contasVencidas} vencida(s)` : ""}
+          </span>
         </Link>
       )}
       {fazEtiquetas && contagemEtq && (
