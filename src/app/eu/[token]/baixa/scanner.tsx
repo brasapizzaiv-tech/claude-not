@@ -2,9 +2,17 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { consultarEtiquetaColab, darBaixaLoteColab } from "../etiqueta-actions";
+import { consultarEtiquetaColab, consultarEtiquetaPorNumeroColab, darBaixaLoteColab } from "../etiqueta-actions";
 
 type Item = { id: string; produto: string; numero: number };
+type Consulta = { ok: true; id: string; numero: number; produto: string; status: string } | { ok: false; mensagem: string };
+
+// Prefere a câmera traseira principal (não a ultra-wide/tele) quando o aparelho tem várias.
+function escolherCamera(devs: MediaDeviceInfo[]) {
+  const tras = devs.filter((d) => /back|tras|rear|environment/i.test(d.label));
+  const principal = tras.find((d) => !/ultra|wide|tele|0[.,]5|macro/i.test(d.label));
+  return principal ?? tras[0] ?? devs[devs.length - 1] ?? null;
+}
 
 export function BaixaScanner({ token }: { token: string }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -14,16 +22,35 @@ export function BaixaScanner({ token }: { token: string }) {
   const [lista, setLista] = useState<Item[]>([]);
   const [proc, start] = useTransition();
   const [feito, setFeito] = useState<string | null>(null);
+  const [devs, setDevs] = useState<MediaDeviceInfo[]>([]);
+  const [devId, setDevId] = useState<string | null>(null);
+  const [torchOk, setTorchOk] = useState(false);
+  const [torch, setTorch] = useState(false);
+  const [numero, setNumero] = useState("");
+  const [manual, setManual] = useState(false);
 
   const listaRef = useRef<Item[]>([]);
   useEffect(() => { listaRef.current = lista; }, [lista]);
   const ocupadoRef = useRef(false);
   const ultimoRef = useRef<{ id: string; t: number } | null>(null);
+  const trackRef = useRef<MediaStreamTrack | null>(null);
 
   function aviso(txt: string) {
     setFlash(txt);
     setTimeout(() => setFlash(null), 1500);
   }
+
+  const tratar = useCallback((r: Consulta) => {
+    if (r.ok && r.status === "ativa") {
+      setLista((l) => (l.some((x) => x.id === r.id) ? l : [{ id: r.id, produto: r.produto, numero: r.numero }, ...l]));
+      aviso(`+ ${r.produto}`);
+      if (navigator.vibrate) navigator.vibrate(90);
+    } else if (r.ok) {
+      aviso(`Nº ${r.numero} já estava "${r.status}"`);
+    } else {
+      aviso(r.mensagem || "Não encontrada");
+    }
+  }, []);
 
   const aoLer = useCallback((valor: string) => {
     const id = valor.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
@@ -35,48 +62,87 @@ export function BaixaScanner({ token }: { token: string }) {
     if (listaRef.current.some((x) => x.id === id)) { aviso("Já está na lista"); return; }
     ocupadoRef.current = true;
     (async () => {
-      const r = await consultarEtiquetaColab(token, id);
-      if (r.ok && r.status === "ativa") {
-        setLista((l) => (l.some((x) => x.id === r.id) ? l : [{ id: r.id, produto: r.produto, numero: r.numero }, ...l]));
-        aviso(`+ ${r.produto}`);
-        if (navigator.vibrate) navigator.vibrate(90);
-      } else if (r.ok) {
-        aviso(`Já estava "${r.status}"`);
-      } else {
-        aviso(r.mensagem || "Não encontrada");
-      }
+      tratar(await consultarEtiquetaColab(token, id));
       setTimeout(() => { ocupadoRef.current = false; }, 600);
     })();
-  }, [token]);
+  }, [token, tratar]);
 
   useEffect(() => {
     let cancelado = false;
     let controls: { stop: () => void } | null = null;
     (async () => {
-      let BrowserMultiFormatReader;
+      let BrowserMultiFormatReader, BarcodeFormat, DecodeHintType;
       try {
         ({ BrowserMultiFormatReader } = await import("@zxing/browser"));
+        ({ BarcodeFormat, DecodeHintType } = await import("@zxing/library"));
       } catch {
         setMsg("Não foi possível carregar o leitor.");
         return;
       }
       const video = videoRef.current;
       if (!video || cancelado) return;
-      const reader = new BrowserMultiFormatReader();
+      // Só QR e "tentar mais forte": lê QR pequeno (16 mm) com mais facilidade.
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
+      hints.set(DecodeHintType.TRY_HARDER, true);
+      const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
+      // Resolução alta: no iPhone o padrão vem baixo e o QR fica borrado.
+      const constraints: MediaStreamConstraints = {
+        video: {
+          ...(devId ? { deviceId: { exact: devId } } : { facingMode: { ideal: "environment" } }),
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+      };
       try {
-        controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: "environment" } } },
-          video,
-          (result) => { if (result) aoLer(String(result.getText())); },
-        );
+        controls = await reader.decodeFromConstraints(constraints, video, (result) => {
+          if (result) aoLer(String(result.getText()));
+        });
       } catch {
-        setMsg("Não foi possível abrir a câmera. Autorize o acesso.");
+        setMsg("Não foi possível abrir a câmera. Autorize o acesso nas configurações do navegador.");
         return;
       }
-      if (cancelado) controls.stop();
+      if (cancelado) { controls.stop(); return; }
+      // Depois de abrir: lista as câmeras (os nomes só aparecem após a permissão),
+      // tenta foco contínuo e vê se tem lanterna.
+      try {
+        const lista = await BrowserMultiFormatReader.listVideoInputDevices();
+        setDevs(lista);
+        if (!devId) { const pref = escolherCamera(lista); if (pref && lista.length > 1) setDevId(pref.deviceId); }
+      } catch {}
+      const track = (video.srcObject as MediaStream | null)?.getVideoTracks()[0] ?? null;
+      trackRef.current = track;
+      if (track) {
+        try { await track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }); } catch {}
+        const caps = (track.getCapabilities?.() ?? {}) as Record<string, unknown>;
+        setTorchOk(!!caps.torch);
+      }
     })();
-    return () => { cancelado = true; controls?.stop(); };
-  }, [aoLer]);
+    return () => { cancelado = true; controls?.stop(); trackRef.current = null; };
+  }, [aoLer, devId]);
+
+  async function alternarTorch() {
+    const track = trackRef.current;
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: !torch } as MediaTrackConstraintSet] });
+      setTorch(!torch);
+    } catch { aviso("Lanterna não disponível"); }
+  }
+  function trocarCamera() {
+    if (devs.length < 2) return;
+    const i = devs.findIndex((d) => d.deviceId === devId);
+    setDevId(devs[(i + 1) % devs.length].deviceId);
+    setTorch(false);
+  }
+  function adicionarPorNumero() {
+    const n = Number(numero.replace(/\D/g, ""));
+    if (!n) return;
+    start(async () => {
+      tratar(await consultarEtiquetaPorNumeroColab(token, n));
+      setNumero("");
+    });
+  }
 
   const remover = (id: string) => setLista((l) => l.filter((x) => x.id !== id));
 
@@ -108,10 +174,18 @@ export function BaixaScanner({ token }: { token: string }) {
       </div>
 
       {/* Câmera */}
-      <div className="relative h-44 shrink-0 overflow-hidden">
-        <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
+      <div className="relative h-[42vh] min-h-56 shrink-0 overflow-hidden bg-zinc-900">
+        <video ref={videoRef} playsInline muted autoPlay className="h-full w-full object-cover" />
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-28 w-28 rounded-2xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+          <div className="h-44 w-44 rounded-2xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+        </div>
+        <div className="absolute right-2 top-2 flex gap-1.5">
+          {torchOk && (
+            <button onClick={alternarTorch} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${torch ? "bg-amber-400 text-black" : "bg-black/60"}`}>🔦</button>
+          )}
+          {devs.length > 1 && (
+            <button onClick={trocarCamera} className="rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold">🔄 câmera</button>
+          )}
         </div>
         {flash && (
           <div className="absolute inset-x-0 bottom-2 text-center">
@@ -119,7 +193,23 @@ export function BaixaScanner({ token }: { token: string }) {
           </div>
         )}
       </div>
-      <p className="py-1 text-center text-xs text-zinc-400">{lista.length === 0 ? msg : "Continue lendo as etiquetas…"}</p>
+      <p className="py-1 text-center text-xs text-zinc-400">
+        {lista.length === 0 ? msg : "Continue lendo as etiquetas…"} ·{" "}
+        <button onClick={() => setManual((v) => !v)} className="underline">digitar o nº</button>
+      </p>
+      {manual && (
+        <div className="flex gap-2 px-3 pb-2">
+          <input
+            inputMode="numeric"
+            value={numero}
+            onChange={(e) => setNumero(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") adicionarPorNumero(); }}
+            placeholder="Nº da etiqueta"
+            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none"
+          />
+          <button onClick={adicionarPorNumero} disabled={proc || !numero.trim()} className="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-semibold disabled:opacity-50">Adicionar</button>
+        </div>
+      )}
 
       {/* Lista acumulada */}
       <div className="flex-1 overflow-y-auto px-3">

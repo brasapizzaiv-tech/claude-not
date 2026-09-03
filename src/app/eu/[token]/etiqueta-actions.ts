@@ -141,6 +141,27 @@ export async function consultarEtiquetaColab(token: string, etiquetaId: string) 
   };
 }
 
+// Consulta pelo NÚMERO impresso na etiqueta (quando o QR não lê).
+export async function consultarEtiquetaPorNumeroColab(token: string, numero: number) {
+  const admin = createAdminClient();
+  const colab = await colabDoToken(token);
+  if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
+  if (!Number.isFinite(numero) || numero <= 0) return { ok: false as const, mensagem: "Número inválido." };
+  const { data } = await admin
+    .from("etiquetas")
+    .select("id, numero, produto_nome, status")
+    .eq("numero", numero)
+    .maybeSingle();
+  if (!data) return { ok: false as const, mensagem: `Etiqueta nº ${numero} não encontrada.` };
+  return {
+    ok: true as const,
+    id: data.id as string,
+    numero: data.numero as number,
+    produto: data.produto_nome as string,
+    status: data.status as string,
+  };
+}
+
 // Dá baixa em várias etiquetas de uma vez (só as que ainda estão ativas).
 export async function darBaixaLoteColab(token: string, ids: string[], status: "usada" | "descartada") {
   const admin = createAdminClient();
