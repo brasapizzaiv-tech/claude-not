@@ -44,6 +44,8 @@ export async function criarEtiquetaColab(token: string, dados: {
     if (!nome) return { ok: false as const, mensagem: "Informe o título." };
   } else {
     if (!dados.item_id) return { ok: false as const, mensagem: "Escolha o item." };
+    if (!(Number((dados.quantidade || "").replace(",", ".")) > 0)) return { ok: false as const, mensagem: "Informe a quantidade (ex.: 1,5)." };
+    if (!dados.validade) return { ok: false as const, mensagem: "Informe a validade." };
     const { data: item } = await admin
       .from("etiqueta_itens")
       .select("nome, produto_id, etiqueta_categorias(nome)")

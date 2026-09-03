@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { criarEtiquetaColab, criarItemEtiquetaColab } from "../etiqueta-actions";
 import {
-  SeletorItem, PreviewEtiqueta, Copias, TipoSelector, CamposExtras, EXTRAS_VAZIO, emDias, diasPadrao, conservacaoPadrao,
+  SeletorItem, PreviewEtiqueta, Copias, TipoSelector, CamposExtras, EXTRAS_VAZIO, emDias, diasPadrao, conservacaoPadrao, ValidadePresets, qtdValida,
   type Extras, type ItemEtq, type CatEtq, type NovoItemDados,
 } from "@/components/etiqueta-ui";
 import type { EtiquetaConfig, EtiquetaDados, TipoEtiqueta } from "@/lib/etiqueta-tipos";
@@ -82,7 +82,7 @@ export function EtiquetaColabForm({
     sif: extras.sif || null,
     texto: livre ? texto : null,
   };
-  const pronto = livre ? !!titulo.trim() : !!itemId;
+  const pronto = livre ? !!titulo.trim() : !!itemId && qtdValida(quantidade) && !!validade;
 
   function gerar() {
     if (!pronto) return;
@@ -175,8 +175,14 @@ export function EtiquetaColabForm({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">Quantidade</label>
-                  <input inputMode="decimal" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} placeholder="opcional" className={input} />
+                  <label className="mb-1 block text-xs text-zinc-500">Quantidade *</label>
+                  <input
+                    inputMode="decimal"
+                    value={quantidade}
+                    onChange={(e) => setQuantidade(e.target.value)}
+                    placeholder="ex.: 1,5"
+                    className={`${input} ${quantidade && !qtdValida(quantidade) ? "border-red-400" : ""}`}
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-zinc-500">Unidade</label>
@@ -192,10 +198,11 @@ export function EtiquetaColabForm({
             </>
           )}
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">{tipo === "descongelamento" ? "Usar até" : livre ? "Válido até (opcional)" : "Validade"}</label>
-            <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={input} />
-            {!livre && item && !diasPadrao(item, conservacao, tipo) && (
-              <p className="mt-1 text-[11px] text-amber-600">Este item não tem validade cadastrada pra {conservacao} — informe a data.</p>
+            <label className="mb-1 block text-xs text-zinc-500">{tipo === "descongelamento" ? "Usar até *" : livre ? "Válido até (opcional)" : "Validade *"}</label>
+            <ValidadePresets value={validade} onChange={setValidade} />
+            <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={`${input} mt-2`} />
+            {!livre && item && !diasPadrao(item, conservacao, tipo) && !validade && (
+              <p className="mt-1 text-[11px] text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
             )}
           </div>
           {!livre && <CamposExtras value={extras} onChange={setExtras} />}
@@ -215,6 +222,9 @@ export function EtiquetaColabForm({
           >
             {proc ? "Gerando..." : copias > 1 ? `🖨️ Imprimir ${copias} etiquetas` : "🖨️ Imprimir etiqueta"}
           </button>
+          {!pronto && !livre && (
+            <p className="text-center text-xs text-zinc-500">Falta: {[!qtdValida(quantidade) && "quantidade", !validade && "validade"].filter(Boolean).join(" e ")}.</p>
+          )}
         </>
       )}
 

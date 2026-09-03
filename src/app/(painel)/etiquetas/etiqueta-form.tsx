@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { criarEtiqueta, criarItemEtiqueta } from "./actions";
 import {
-  SeletorItem, PreviewEtiqueta, Copias, TipoSelector, CamposExtras, EXTRAS_VAZIO, emDias, diasPadrao, conservacaoPadrao,
+  SeletorItem, PreviewEtiqueta, Copias, TipoSelector, CamposExtras, EXTRAS_VAZIO, emDias, diasPadrao, conservacaoPadrao, ValidadePresets, qtdValida,
   type Extras, type ItemEtq, type CatEtq, type NovoItemDados,
 } from "@/components/etiqueta-ui";
 import type { EtiquetaConfig, EtiquetaDados, TipoEtiqueta } from "@/lib/etiqueta-tipos";
@@ -88,10 +88,12 @@ export function EtiquetaForm({
     sif: extras.sif || null,
     texto: livre ? texto : null,
   };
-  const pronto = livre ? !!titulo.trim() : !!itemId;
+  const [erro, setErro] = useState<string | null>(null);
+  const pronto = livre ? !!titulo.trim() : !!itemId && qtdValida(quantidade) && !!validade;
 
   function gerar() {
     if (!pronto) return;
+    setErro(null);
     start(async () => {
       const r = await criarEtiqueta({
         tipo,
@@ -111,6 +113,7 @@ export function EtiquetaForm({
         copias,
       });
       if (r?.ok && r.id) router.push(`/etiquetas/${r.id}`);
+      else setErro(("mensagem" in (r ?? {}) && (r as { mensagem?: string }).mensagem) || "Não foi possível gerar a etiqueta.");
     });
   }
 
@@ -172,8 +175,14 @@ export function EtiquetaForm({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">Quantidade</label>
-                  <input inputMode="decimal" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} placeholder="opcional" className={input} />
+                  <label className="mb-1 block text-xs text-zinc-500">Quantidade *</label>
+                  <input
+                    inputMode="decimal"
+                    value={quantidade}
+                    onChange={(e) => setQuantidade(e.target.value)}
+                    placeholder="ex.: 1,5"
+                    className={`${input} ${quantidade && !qtdValida(quantidade) ? "border-red-400" : ""}`}
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-zinc-500">Unidade</label>
@@ -195,11 +204,14 @@ export function EtiquetaForm({
               🔒 {colaborador || "—"}
             </div>
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-zinc-500">{tipo === "descongelamento" ? "Usar até" : livre ? "Válido até (opcional)" : "Validade"}</label>
-            <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={input} />
-            {!livre && item && !diasPadrao(item, conservacao, tipo) && (
-              <p className="mt-1 text-[11px] text-amber-600">Este item não tem validade cadastrada pra {conservacao} — informe a data.</p>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs text-zinc-500">{tipo === "descongelamento" ? "Usar até *" : livre ? "Válido até (opcional)" : "Validade *"}</label>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <ValidadePresets value={validade} onChange={setValidade} />
+              <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={input} />
+            </div>
+            {!livre && item && !diasPadrao(item, conservacao, tipo) && !validade && (
+              <p className="mt-1 text-[11px] text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
             )}
           </div>
 
@@ -227,6 +239,7 @@ export function EtiquetaForm({
           <Copias value={copias} onChange={setCopias} />
         </div>
       </div>
+      {erro && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{erro}</p>}
       <button
         onClick={gerar}
         disabled={gerando || !pronto}
@@ -234,6 +247,9 @@ export function EtiquetaForm({
       >
         {gerando ? "Gerando..." : copias > 1 ? `Gerar e imprimir ${copias}×` : "Gerar etiqueta"}
       </button>
+      {!pronto && !livre && itemId && (
+        <p className="mt-2 text-xs text-zinc-500">Falta: {[!qtdValida(quantidade) && "quantidade", !validade && "validade"].filter(Boolean).join(" e ")}.</p>
+      )}
     </div>
   );
 }

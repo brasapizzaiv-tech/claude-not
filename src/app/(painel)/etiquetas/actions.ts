@@ -47,8 +47,11 @@ export async function criarEtiqueta(dados: {
   let categoriaNome: string | null = null;
   if (livre) {
     nome = (dados.titulo || "").trim();
-    if (!nome) return { ok: false };
+    if (!nome) return { ok: false, mensagem: "Informe o título." };
   } else if (dados.item_id) {
+    const q = Number((dados.quantidade || "").replace(",", "."));
+    if (!(q > 0)) return { ok: false, mensagem: "Informe a quantidade (ex.: 1,5)." };
+    if (!dados.validade) return { ok: false, mensagem: "Informe a validade." };
     const { data: item } = await supabase
       .from("etiqueta_itens")
       .select("nome, produto_id, etiqueta_categorias(nome)")

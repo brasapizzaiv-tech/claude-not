@@ -389,6 +389,32 @@ export function diasPadrao(p: ItemEtq | undefined, cons: string, tipo: TipoEtiqu
   return diasDoItem(p, cons);
 }
 
+// ---------- Atalhos de validade (3 · 7 · 15 · 30 dias) ----------
+export const PRESETS_VALIDADE = [3, 7, 15, 30];
+export function ValidadePresets({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+  return (
+    <div className="grid grid-cols-4 gap-1.5">
+      {PRESETS_VALIDADE.map((n) => {
+        const iso = emDias(n);
+        const sel = value === iso;
+        return (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(iso)}
+            className={`rounded-lg border py-2 text-sm font-semibold ${sel ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+          >
+            {n} dias
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Quantidade válida: número > 0, aceita vírgula (1,5).
+export const qtdValida = (s: string) => /^\s*\d+([.,]\d+)?\s*$/.test(s) && Number(s.replace(",", ".")) > 0;
+
 // ---------- Contador de cópias ----------
 export function Copias({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   const b = "h-10 w-10 rounded-lg border border-zinc-300 text-lg font-bold text-zinc-700 dark:border-zinc-700 dark:text-zinc-200";
