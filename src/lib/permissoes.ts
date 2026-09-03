@@ -11,6 +11,7 @@ export type ModuloKey =
   | "conferencia"
   | "notas"
   | "financeiro"
+  | "contas"
   | "etiquetas"
   | "garcom"
   | "salao"
@@ -36,7 +37,10 @@ export const MODULOS: {
   { key: "cotacoes", label: "Cotações", icon: "💰", rotas: ["/cotacoes"] },
   { key: "conferencia", label: "Conferência", icon: "📥", rotas: ["/conferencia"] },
   { key: "notas", label: "Notas Fiscais", icon: "🧾", rotas: ["/notas"] },
-  { key: "financeiro", label: "Financeiro", icon: "📊", rotas: ["/financeiro"] },
+  // Contas a pagar sozinha (dar baixa nos boletos) — vem ANTES de "financeiro"
+  // para /financeiro/contas ser controlada por esta permissão (mais específica).
+  { key: "contas", label: "Contas a pagar (só baixa de boletos)", icon: "📄", rotas: ["/financeiro/contas"] },
+  { key: "financeiro", label: "Financeiro (completo)", icon: "📊", rotas: ["/financeiro"] },
   { key: "etiquetas", label: "Etiquetas", icon: "🏷️", rotas: ["/etiquetas"] },
   // Garçom: só o app do garçom (/garcom). Vem ANTES de "salao" para que /garcom
   // seja controlado por esta permissão (mais específica).
@@ -77,5 +81,7 @@ export function podeAcessar(
   if (mod === "usuarios") return false; // só o dono
   // Quem tem acesso ao Salão também usa o app do garçom.
   if (mod === "garcom") return permissoes.includes("garcom") || permissoes.includes("salao");
+  // Quem tem o Financeiro completo também abre as Contas a pagar.
+  if (mod === "contas") return permissoes.includes("contas") || permissoes.includes("financeiro");
   return permissoes.includes(mod);
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
-import { alternarPago, ajustarValorConta } from "../actions";
+import { alternarPago, ajustarValorConta, pagarVarias } from "../actions";
 import type { LinhaConta } from "./consulta";
 
 const moeda = (n: number) =>
@@ -92,21 +93,36 @@ function ValorConta({ l }: { l: LinhaConta }) {
   );
 }
 
+type Selecao = { marcadas: Set<string>; alternar: (id: string) => void };
+
 function Linhas({
   itens,
   mostrarPago,
   hojeBR,
+  selecao,
 }: {
   itens: LinhaConta[];
   mostrarPago?: boolean;
   hojeBR: string;
+  selecao?: Selecao;
 }) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
       <table className="w-full text-sm">
         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {itens.map((l) => (
-            <tr key={l.id} className="bg-white dark:bg-zinc-950">
+            <tr key={l.id} className={`bg-white dark:bg-zinc-950 ${selecao?.marcadas.has(l.id) ? "bg-green-50 dark:bg-green-950/20" : ""}`}>
+              {selecao && !l.pago && (
+                <td className="w-8 pl-3">
+                  <input
+                    type="checkbox"
+                    checked={selecao.marcadas.has(l.id)}
+                    onChange={() => selecao.alternar(l.id)}
+                    className="h-4 w-4 accent-green-600"
+                    title="Selecionar pra pagar em lote"
+                  />
+                </td>
+              )}
               <td className="px-4 py-2">
                 <div className="font-medium text-zinc-900 dark:text-zinc-100">
                   {l.descricao ?? l.fornecedores?.nome ?? "Despesa"}
@@ -165,6 +181,34 @@ export function ListaContasView({
   const hojeBR = new Date(new Date().getTime() - 3 * 3600 * 1000)
     .toISOString()
     .slice(0, 10);
+
+  // Seleção pra dar baixa em lote (só nas abertas).
+  const router = useRouter();
+  const [pagando, startPagar] = useTransition();
+  const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
+  const [dataLote, setDataLote] = useState(hojeBR);
+  const [msgLote, setMsgLote] = useState<string | null>(null);
+  const alternar = (id: string) =>
+    setMarcadas((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const selecao: Selecao | undefined = aberto ? { marcadas, alternar } : undefined;
+  const selecionadas = useMemo(() => linhas.filter((l) => marcadas.has(l.id)), [linhas, marcadas]);
+  const totalSel = selecionadas.reduce((s, l) => s + Number(l.valor), 0);
+  function pagarSelecionadas() {
+    if (selecionadas.length === 0) return;
+    if (!confirm(`Dar baixa em ${selecionadas.length} conta(s) — ${moeda(totalSel)} — com pagamento em ${dataBR(dataLote)}?`)) return;
+    const ids = selecionadas.flatMap((l) => l.ids ?? [l.id]);
+    startPagar(async () => {
+      const r = await pagarVarias(ids, dataLote);
+      if (r.ok) {
+        setMsgLote(`✓ ${selecionadas.length} conta(s) baixada(s).`);
+        setMarcadas(new Set());
+        router.refresh();
+      } else {
+        setMsgLote(r.mensagem || "Não foi possível.");
+      }
+      setTimeout(() => setMsgLote(null), 4000);
+    });
+  }
 
   const filtradas = useMemo(() => {
     const q = norm(busca.trim());
@@ -249,6 +293,32 @@ export function ListaContasView({
         </span>
       </div>
 
+      {aberto && (
+        <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-green-300 bg-green-50 px-3 py-2 text-sm shadow-sm dark:border-green-900 dark:bg-green-950/40">
+          <span className="font-semibold text-green-800 dark:text-green-200">
+            {marcadas.size === 0 ? "Marque as contas pagas na caixinha ☑ e dê baixa em lote" : `${marcadas.size} selecionada(s) · ${moeda(totalSel)}`}
+          </span>
+          {marcadas.size > 0 && (
+            <>
+              <button onClick={() => setMarcadas(new Set(filtradas.filter((l) => !l.pago).map((l) => l.id)))} className="text-xs text-green-700 underline dark:text-green-300">todas da busca</button>
+              <button onClick={() => setMarcadas(new Set())} className="text-xs text-zinc-500 underline">limpar</button>
+              <label className="ml-auto flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+                pago em
+                <input type="date" value={dataLote} onChange={(e) => setDataLote(e.target.value)} className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-700 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200" />
+              </label>
+              <button
+                onClick={pagarSelecionadas}
+                disabled={pagando}
+                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+              >
+                {pagando ? "Baixando..." : `✓ Dar baixa em ${marcadas.size}`}
+              </button>
+            </>
+          )}
+          {msgLote && <span className="w-full text-xs font-medium text-green-700 dark:text-green-300">{msgLote}</span>}
+        </div>
+      )}
+
       {filtradas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-500 dark:border-zinc-700">
           {busca ? (
@@ -269,7 +339,7 @@ export function ListaContasView({
                   {moeda(grupos.totalVencidas)}
                 </span>
               </div>
-              <Linhas itens={grupos.vencidas} hojeBR={hojeBR} />
+              <Linhas itens={grupos.vencidas} hojeBR={hojeBR} selecao={selecao} />
             </section>
           )}
 
@@ -308,7 +378,7 @@ export function ListaContasView({
                             {moeda(d.total)}
                           </span>
                         </div>
-                        <Linhas itens={d.itens} hojeBR={hojeBR} />
+                        <Linhas itens={d.itens} hojeBR={hojeBR} selecao={selecao} />
                       </div>
                     );
                   })}
@@ -325,7 +395,7 @@ export function ListaContasView({
                   {moeda(grupos.totalSemVenc)}
                 </span>
               </div>
-              <Linhas itens={grupos.semVenc} hojeBR={hojeBR} />
+              <Linhas itens={grupos.semVenc} hojeBR={hojeBR} selecao={selecao} />
             </section>
           )}
         </div>

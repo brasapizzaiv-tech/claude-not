@@ -75,7 +75,7 @@ export function Sidebar({
 
   // Financeiro agora inclui Notas e Config fiscal.
   const financeiroSubFull: Sub[] = [
-    ...(has("financeiro") ? financeiroSub : []),
+    ...(has("financeiro") ? financeiroSub : has("contas") ? financeiroSub.filter((s) => s.href === "/financeiro/contas") : []),
     ...(has("notas") ? [{ href: "/notas", label: "Notas de entrada", desc: "Lançamento de notas de compra", icon: "📥" }] : []),
     ...(has("financeiro") ? [{ href: "/fiscal", label: "Config fiscal", desc: "Emissor, empresa, NFC-e/NF-e", icon: "🧾" }] : []),
   ];

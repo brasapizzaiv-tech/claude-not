@@ -183,6 +183,25 @@ export async function alternarPago(formData: FormData) {
   revalidatePath("/financeiro");
 }
 
+// Dá baixa em várias contas de uma vez (seleção na tela de Contas a pagar).
+export async function pagarVarias(ids: string[], dataPago: string) {
+  const supabase = await createClient();
+  const lista = (ids ?? []).map((s) => String(s).trim()).filter(Boolean);
+  if (lista.length === 0) return { ok: false as const, mensagem: "Nada selecionado." };
+  const hojeBR = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+  const data = /^\d{4}-\d{2}-\d{2}$/.test(dataPago) ? dataPago : hojeBR;
+  const { data: upd, error } = await supabase
+    .from("lancamentos")
+    .update({ pago: true, pago_em: data })
+    .in("id", lista)
+    .eq("pago", false)
+    .select("id");
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath("/financeiro/contas");
+  revalidatePath("/financeiro");
+  return { ok: true as const, quantidade: upd?.length ?? 0 };
+}
+
 // Ajusta o valor cobrado numa conta (o boleto veio com custas, juros ou
 // desconto). Conta vinda de nota: a diferença entra como lançamento à parte em
 // "Despesas Bancárias", sem mexer no valor da mercadoria (CMV). Conta manual:
