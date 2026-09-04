@@ -59,3 +59,7 @@ agente-balanca/agente.log
 agente-balanca/agente.pid
 agente-balanca/fila.json
 agente-balanca/package-lock.json
+
+# instalador do agente da balanca (gerado)
+installer-balanca/build/
+installer-balanca/Output/
