@@ -3,6 +3,7 @@ import { agenteAutorizado } from "@/lib/impressao-agente";
 import { gerarEtiquetaPdf, type EtiquetaConfig } from "@/lib/etiqueta-pdf";
 import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
+import { gerarMarmitaPdf } from "@/lib/marmita-pdf";
 
 export const runtime = "nodejs";
 
@@ -50,6 +51,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         texto: (data.texto as string) ?? null,
       },
       baseUrl,
+      ((imp as { etiqueta_config?: EtiquetaConfig | null } | null)?.etiqueta_config) ?? null,
+    );
+  } else if (job.tipo === "marmita") {
+    // Etiqueta da marmita do convênio (Kern), no formato da impressora de etiquetas.
+    const [{ data: ped }, { data: imp }, { data: cfgRows }] = await Promise.all([
+      admin.from("mkt_pedidos").select("data, filial, cliente, matricula, pratos, proteina, salada").eq("id", job.ref_id).maybeSingle(),
+      job.impressora_id
+        ? admin.from("impressoras").select("etiqueta_config").eq("id", job.impressora_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      admin.from("mkt_config").select("chave, valor").in("chave", ["nomeConvenio", "horaEntrega"]),
+    ]);
+    if (!ped) return new Response("pedido nao encontrado", { status: 404 });
+    const cfg = Object.fromEntries((((cfgRows as { chave: string; valor: string }[]) ?? [])).map((r) => [r.chave, r.valor]));
+    let pratos: string[] = [];
+    try { const a = JSON.parse((ped.pratos as string) || "[]"); pratos = Array.isArray(a) ? a.map(String) : []; } catch {}
+    const sal = ped.salada as string | null;
+    pdf = await gerarMarmitaPdf(
+      {
+        convenio: cfg.nomeConvenio || "Kern",
+        data: ped.data as string,
+        horaEntrega: cfg.horaEntrega || null,
+        filial: ped.filial as string,
+        cliente: ped.cliente as string,
+        matricula: (ped.matricula as string) || null,
+        pratos,
+        proteina: (ped.proteina as string) || null,
+        salada: sal && sal !== "0" ? sal : null,
+      },
       ((imp as { etiqueta_config?: EtiquetaConfig | null } | null)?.etiqueta_config) ?? null,
     );
   } else if (job.tipo === "teste_etiqueta") {

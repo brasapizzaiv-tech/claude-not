@@ -3,12 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste, imprimirTesteEtiqueta,
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirRecebeMarmitas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste, imprimirTesteEtiqueta,
 } from "./actions";
 
 export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean; agrupar: boolean; qtdCat: boolean; destObs: boolean };
 export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean; barraValidade?: boolean; categoria?: boolean; empresa?: string | null; deslocX?: number; deslocY?: number };
-export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null; etiqueta_config: EtiquetaConfig | null };
+export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; recebe_marmitas?: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null; etiqueta_config: EtiquetaConfig | null };
 export type Produto = { id: string; nome: string; categoria: string };
 
 export function CentralImpressao({
@@ -130,6 +130,10 @@ export function CentralImpressao({
                 </label>
                 {im.recebe_comandas && <ViaProdutos im={im} produtos={produtos} proc={proc} run={run} />}
                 {im.recebe_comandas && <ViaFormato im={im} proc={proc} run={run} />}
+                <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  <input type="checkbox" checked={!!im.recebe_marmitas} disabled={proc} onChange={(e) => run(() => definirRecebeMarmitas(im.id, e.target.checked))} />
+                  🍱 Etiquetas das marmitas (convênio Kern) — usa o Formato da etiqueta abaixo
+                </label>
                 <EtiquetaFormato im={im} proc={proc} run={run} />
               </>
             )}

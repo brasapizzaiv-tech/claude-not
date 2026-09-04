@@ -276,6 +276,27 @@ async function handle(req: NextRequest, rota: string[]) {
   const user = await resolveUsuario(cfg, req);
   if (!user) return erro("Acesso negado.", 401);
 
+  // ===== IMPRESSÃO NA ELGIN (pelo agente de impressão) =====
+  // Qual impressora está marcada pras marmitas na Central de Impressões.
+  if (path === "/api/impressora" && method === "GET") {
+    const { data: imp } = await db.from("impressoras").select("id, nome").eq("recebe_marmitas", true).eq("ativo", true).limit(1).maybeSingle();
+    return json({ ok: !!imp, nome: imp?.nome ?? null });
+  }
+  // Manda os pedidos pra fila; o agente imprime uma etiqueta por pedido.
+  if (path === "/api/imprimir" && method === "POST") {
+    const ids = limpaLista(body?.ids, 500);
+    if (!ids.length) return erro("Nada para imprimir");
+    const { data: imp } = await db.from("impressoras").select("id, nome").eq("recebe_marmitas", true).eq("ativo", true).limit(1).maybeSingle();
+    if (!imp) return erro("Nenhuma impressora marcada para as marmitas (Central de Impressões).");
+    const { data: peds } = await db.from("mkt_pedidos").select("id").in("id", ids);
+    const existem = new Set((peds || []).map((p) => p.id as string));
+    const validos = ids.filter((id) => existem.has(id));
+    if (!validos.length) return erro("Pedidos nao encontrados");
+    const { error } = await db.from("impressao_fila").insert(validos.map((id) => ({ tipo: "marmita", ref_id: id, impressora_id: imp.id })));
+    if (error) return erro("Falha ao enfileirar: " + error.message, 500);
+    return json({ ok: true, quantidade: validos.length, impressora: imp.nome });
+  }
+
   if (path === "/api/config" && method === "POST") {
     if (!pode(user, "ajustes")) return erro("Sem permissao (ajustes).", 403);
     if (body?.nomeConvenio != null) await setCfg(db, "nomeConvenio", body.nomeConvenio);

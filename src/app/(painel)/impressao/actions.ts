@@ -47,6 +47,16 @@ export async function definirRecebeComandas(id: string, valor: boolean) {
   return { ok: true as const };
 }
 
+// Impressora que imprime as etiquetas das marmitas do convênio (Kern).
+export async function definirRecebeMarmitas(id: string, valor: boolean) {
+  const supabase = await createClient();
+  // Só uma impressora recebe as marmitas.
+  if (valor) await supabase.from("impressoras").update({ recebe_marmitas: false }).neq("id", id);
+  await supabase.from("impressoras").update({ recebe_marmitas: valor }).eq("id", id);
+  revalidatePath("/impressao");
+  return { ok: true as const };
+}
+
 // Produtos que essa impressora imprime nas comandas (null = todos).
 export async function definirComandaProdutos(id: string, produtos: string[] | null) {
   const supabase = await createClient();

@@ -196,7 +196,10 @@
       <div class="card">
         <h2>Pedidos do dia</h2>
         <label>Filtrar por filial</label><select id="filtroFilial" onchange="renderPedidos()"></select>
-        <button class="ghost" style="margin-top:8px" onclick="imprimirTodos()">🖨️ Imprimir etiquetas (todos os mostrados)</button>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="ghost" onclick="imprimirTodos()">🖨️ Imprimir etiquetas (todos os mostrados)</button>
+          <span id="impInfo" class="miudo"></span>
+        </div>
         <div id="listaPedidos" style="margin-top:8px"></div>
         <div class="totbar"><span id="totQtd">0 marmitas</span></div>
       </div>
@@ -501,7 +504,7 @@ async function abrirAdmin(){
 function admAba(nome){
   document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===nome));
   ['dia','cardapios','colab','relatorio','usuarios','config'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',t!==nome));
-  if(nome==='dia'){ $('#dataDia').value=$('#dataDia').value||hoje(); if(perm('pedidos_add'))garantirColaboradores(); carregarDia(); }
+  if(nome==='dia'){ $('#dataDia').value=$('#dataDia').value||hoje(); if(perm('pedidos_add'))garantirColaboradores(); carregarDia(); if(IMPRESSORA===null) carregarImpressora(); }
   if(nome==='cardapios') carregarCardapios();
   if(nome==='colab') carregarColaboradores();
   if(nome==='relatorio'){ if(!$('#relDe').value) relPeriodo(7); else carregarRelatorio(); }
@@ -602,8 +605,30 @@ function imprimirEtiquetas(lista){
   $('#printArea').innerHTML = lista.map(etiquetaHTML).join('');
   window.print();
 }
-function imprimirPedido(id){ const p=PEDIDOS_DIA.find(x=>x.id===id); if(p) imprimirEtiquetas([p]); }
-function imprimirTodos(){ const f=$('#filtroFilial').value; imprimirEtiquetas(f?PEDIDOS_DIA.filter(p=>p.filial===f):PEDIDOS_DIA); }
+// Impressora de etiquetas (Elgin) marcada pras marmitas na Central de Impressões.
+// Com ela, o botão manda pra fila e o agente imprime sozinho; sem ela, cai na
+// impressão pelo navegador (80mm) de antes.
+let IMPRESSORA=null;
+async function carregarImpressora(){
+  try{ IMPRESSORA=await api('/api/marmitas/impressora'); }catch(e){ IMPRESSORA=null; }
+  const el=$('#impInfo'); if(!el) return;
+  el.innerHTML = (IMPRESSORA&&IMPRESSORA.ok)
+    ? `→ sai direto na <b>${escapeHtml(IMPRESSORA.nome)}</b> · <a class="link" onclick="imprimirTodos(true)">imprimir pelo navegador</a>`
+    : 'impressão pelo navegador (nenhuma impressora marcada pras marmitas na Central de Impressões)';
+}
+async function enviarImpressao(lista){
+  if(!lista||!lista.length){ toast('Nada para imprimir',true); return; }
+  try{
+    const r=await api('/api/marmitas/imprimir',{method:'POST',body:JSON.stringify({ids:lista.map(p=>p.id)})});
+    toast(`${r.quantidade} etiqueta(s) enviada(s) pra ${r.impressora} 🖨️`);
+  }catch(e){ toast(e.message,true); }
+}
+function imprimirPedido(id){ const p=PEDIDOS_DIA.find(x=>x.id===id); if(!p) return; if(IMPRESSORA&&IMPRESSORA.ok) enviarImpressao([p]); else imprimirEtiquetas([p]); }
+function imprimirTodos(navegador){
+  const f=$('#filtroFilial').value; const lista=f?PEDIDOS_DIA.filter(p=>p.filial===f):PEDIDOS_DIA;
+  if(!navegador&&IMPRESSORA&&IMPRESSORA.ok){ if(confirm(`Imprimir ${lista.length} etiqueta(s) na ${IMPRESSORA.nome}?`)) enviarImpressao(lista); }
+  else imprimirEtiquetas(lista);
+}
 
 /* editar pedido (modal) */
 function abrirEdicao(id){
