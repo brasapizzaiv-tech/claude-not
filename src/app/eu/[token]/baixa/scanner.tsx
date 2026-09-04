@@ -28,6 +28,8 @@ export function BaixaScanner({ token }: { token: string }) {
   const [torch, setTorch] = useState(false);
   const [numero, setNumero] = useState("");
   const [manual, setManual] = useState(false);
+  const [lendoFoto, setLendoFoto] = useState(false);
+  const fotoRef = useRef<HTMLInputElement | null>(null);
 
   const listaRef = useRef<Item[]>([]);
   useEffect(() => { listaRef.current = lista; }, [lista]);
@@ -135,6 +137,36 @@ export function BaixaScanner({ token }: { token: string }) {
     setDevId(devs[(i + 1) % devs.length].deviceId);
     setTorch(false);
   }
+  // Plano B: foto pela câmera nativa (foca de perto, alta resolução) e lê o QR da imagem.
+  async function lerFoto(arquivo: File | undefined) {
+    if (!arquivo) return;
+    setLendoFoto(true);
+    const url = URL.createObjectURL(arquivo);
+    try {
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const { BarcodeFormat, DecodeHintType } = await import("@zxing/library");
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
+      hints.set(DecodeHintType.TRY_HARDER, true);
+      const reader = new BrowserMultiFormatReader(hints);
+      // Foto de celular é grande demais pro leitor: reduz pra ~1400px antes de decodificar.
+      const img = new Image();
+      await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error("imagem")); img.src = url; });
+      const esc = Math.min(1, 1400 / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * esc); cv.height = Math.round(img.height * esc);
+      cv.getContext("2d")!.drawImage(img, 0, 0, cv.width, cv.height);
+      const r = await reader.decodeFromCanvas(cv);
+      ultimoRef.current = null;
+      aoLer(String(r.getText()));
+    } catch {
+      aviso("Não achei o QR na foto — tenta mais perto e com luz");
+    } finally {
+      setLendoFoto(false);
+      URL.revokeObjectURL(url);
+      if (fotoRef.current) fotoRef.current.value = "";
+    }
+  }
   function adicionarPorNumero() {
     const n = Number(numero.replace(/\D/g, ""));
     if (!n) return;
@@ -194,9 +226,19 @@ export function BaixaScanner({ token }: { token: string }) {
         )}
       </div>
       <p className="py-1 text-center text-xs text-zinc-400">
-        {lista.length === 0 ? msg : "Continue lendo as etiquetas…"} ·{" "}
-        <button onClick={() => setManual((v) => !v)} className="underline">digitar o nº</button>
+        {lista.length === 0 ? msg : "Continue lendo as etiquetas…"} · segure a uns <b>15–20 cm</b>
       </p>
+      <div className="flex gap-2 px-3 pb-2">
+        <button
+          onClick={() => fotoRef.current?.click()}
+          disabled={lendoFoto}
+          className="flex-1 rounded-lg bg-zinc-800 py-2 text-sm font-semibold disabled:opacity-50"
+        >
+          {lendoFoto ? "Lendo a foto…" : "📸 Tirar foto do QR"}
+        </button>
+        <button onClick={() => setManual((v) => !v)} className="flex-1 rounded-lg bg-zinc-800 py-2 text-sm font-semibold">⌨️ Digitar o nº</button>
+        <input ref={fotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => lerFoto(e.target.files?.[0])} />
+      </div>
       {manual && (
         <div className="flex gap-2 px-3 pb-2">
           <input
