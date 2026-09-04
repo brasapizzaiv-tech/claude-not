@@ -96,13 +96,15 @@ export async function gerarEtiquetaPdf(d: EtiquetaPdfDados, baseUrl: string, cfg
   // Acha a maior letra em que corpo + rodapé cabem (encolhe até 8 vezes).
   let fe = feBase;
   for (let i = 0; i < 8; i++) {
-    const m = new PDFDocument({ size: [width, height], margin: 0 });
+    const m = new PDFDocument({ size: [width, height], margin: 0, bufferPages: true });
     const yCorpo = desenharCorpo(m, fe, g, d, c);
+    // o pdfkit abre página nova sozinho se o texto passar do fim — isso conta como "não coube"
+    const paginas = m.bufferedPageRange().count;
     const fs = (linhas.length > 3 ? 6.3 : 7) * fe;
     const hRodape = m.font("Helvetica").fontSize(fs).heightOfString(rodape, { width: rodapeW, lineGap: fs * 0.2 });
     m.end();
     const topoRodape = baseY + qrSize - Math.max(hRodape, c.qr ? qrSize : 0);
-    if (yCorpo + 2 <= topoRodape) break;
+    if (paginas === 1 && yCorpo + 2 <= topoRodape) break;
     fe *= 0.92;
   }
 

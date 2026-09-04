@@ -55,12 +55,15 @@ export async function gerarMarmitaPdf(d: MarmitaPdfDados, cfg?: EtiquetaConfig |
 
   // Maior letra em que tudo cabe: começa 45% maior que o padrão (marmita com
   // 1 prato fica grande) e encolhe até caber (até 14 vezes).
+  // O pdfkit abre uma página nova sozinho quando o texto passa do fim — por
+  // isso conferimos também o número de páginas (senão "cabe" numa 2ª etiqueta).
   let fe = feBase * 1.45;
   for (let i = 0; i < 14; i++) {
-    const m = new PDFDocument({ size: [width, height], margin: 0 });
+    const m = new PDFDocument({ size: [width, height], margin: 0, bufferPages: true });
     const fim = desenhar(m, fe, pad, W, d);
+    const paginas = m.bufferedPageRange().count;
     m.end();
-    if (fim <= height - pad) break;
+    if (paginas === 1 && fim <= height - pad) break;
     fe *= 0.9;
   }
 
