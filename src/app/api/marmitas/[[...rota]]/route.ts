@@ -49,6 +49,8 @@ type Cfg = {
   nomeConvenio: string; horaLimite: string; horaAbertura: string; horaEntrega: string; bloquearAposLimite: boolean;
   filiais: string[]; usuarios: { id: string; nome: string; senha: string; permissoes: string[] }[];
   colaboradores: { id: string; nome: string; matricula?: string }[];
+  // Dias sem marmita (feriados): o app pula esses dias.
+  bloqueios: { data: string; motivo: string }[];
   cardapios: {
     semanas: { id: string; nome: string; dias: Record<string, { pratos: string[]; proteinas: string[]; salada: string }> }[];
     ativo: string | null;
@@ -72,8 +74,14 @@ async function getCfg(db: Db): Promise<Cfg> {
     filiais: parseLista(m.filiais).length ? parseLista(m.filiais) : ["Filial 1", "Filial 2", "Filial 3"],
     usuarios: parseLista(m.usuarios) as unknown as Cfg["usuarios"],
     colaboradores: parseLista(m.colaboradores) as unknown as Cfg["colaboradores"],
+    bloqueios: (parseLista(m.bloqueios) as unknown as { data?: string; motivo?: string }[])
+      .filter((b) => b && typeof b.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.data))
+      .map((b) => ({ data: b.data as string, motivo: String(b.motivo || "").trim() })),
     cardapios,
   };
+}
+function bloqueado(cfg: Cfg, data: string) {
+  return cfg.bloqueios.find((b) => b.data === data) ?? null;
 }
 async function setCfg(db: Db, chave: string, valor: unknown) {
   await db.from("mkt_config").upsert({ chave, valor: String(valor) });
@@ -127,25 +135,29 @@ function temCardapio(cfg: Cfg, data: string) {
   const c = resolveCardapioHoje(cfg, data);
   return c.pratos.length > 0 || c.proteinas.length > 0;
 }
-// Entrega de segunda a sábado: só o domingo é pulado. Um dia sem cardápio NÃO é
-// pulado (antes era, e o pedido ia parar até uma semana à frente, com o
+// Dia sem entrega: domingo ou dia bloqueado (feriado). Um dia sem cardápio NÃO
+// é pulado (antes era, e o pedido ia parar até uma semana à frente, com o
 // cardápio velho daquele dia) — fica "aguardando cardápio".
-function proximoDiaEntrega(data: string) {
+function semEntrega(cfg: Cfg, data: string) {
+  return diaSemana(data) === "dom" || !!bloqueado(cfg, data);
+}
+function proximoDiaEntrega(cfg: Cfg, data: string) {
   let d = data;
-  while (diaSemana(d) === "dom") d = addDias(d, 1);
+  for (let i = 0; i < 30 && semEntrega(cfg, d); i++) d = addDias(d, 1);
   return d;
 }
 // Janela de pedido: para o dia de ENTREGA D, os pedidos abrem às `horaAbertura`
-// do último dia de entrega antes de D (sábado, no caso da segunda) e fecham às
-// `horaLimite` de D. Descobre para qual dia dá pra pedir agora e se está aberto.
+// do último dia de entrega antes de D (sábado, no caso da segunda; ou a
+// véspera do feriado) e fecham às `horaLimite` de D. Descobre para qual dia
+// dá pra pedir agora e se está aberto.
 function janelaPedido(cfg: Cfg, ag: { data: string; hora: string }) {
   // Ainda dá pra pedir para HOJE (abriu ontem, fecha hoje no limite)?
-  if (diaSemana(ag.data) !== "dom" && ag.hora <= cfg.horaLimite) {
+  if (!semEntrega(cfg, ag.data) && ag.hora <= cfg.horaLimite) {
     return { alvo: ag.data, aberto: true };
   }
-  const alvo = proximoDiaEntrega(addDias(ag.data, 1));
+  const alvo = proximoDiaEntrega(cfg, addDias(ag.data, 1));
   let vespera = addDias(alvo, -1);
-  while (diaSemana(vespera) === "dom") vespera = addDias(vespera, -1);
+  for (let i = 0; i < 30 && semEntrega(cfg, vespera); i++) vespera = addDias(vespera, -1);
   const aberto = ag.data > vespera || (ag.data === vespera && ag.hora >= cfg.horaAbertura);
   return { alvo, aberto };
 }
@@ -223,7 +235,9 @@ async function handle(req: NextRequest, rota: string[]) {
     const disponiveis = cfg.colaboradores.filter((c) => !jaPediram.has(c.id));
     const aberto = !cfg.bloquearAposLimite || dentroJanela;
     const semCardapio = !temCardapio(cfg, alvo);
-    return json({ nomeConvenio: cfg.nomeConvenio, filiais: cfg.filiais, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, data: alvo, aberto, semCardapio, semana: semanaPara(cfg, alvo)?.nome ?? null, cardapioHoje: resolveCardapioHoje(cfg, alvo), colaboradores: disponiveis });
+    // Feriados dos próximos 10 dias, pro aviso na tela do colaborador.
+    const proximosBloqueios = cfg.bloqueios.filter((b) => b.data >= ag.data && b.data <= addDias(ag.data, 10)).sort((a, b) => (a.data < b.data ? -1 : 1));
+    return json({ nomeConvenio: cfg.nomeConvenio, filiais: cfg.filiais, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, data: alvo, aberto, semCardapio, semana: semanaPara(cfg, alvo)?.nome ?? null, cardapioHoje: resolveCardapioHoje(cfg, alvo), colaboradores: disponiveis, proximosBloqueios });
   }
   if (path === "/api/publico/pedido" && method === "POST") {
     const ag = agoraBR();
@@ -399,7 +413,27 @@ async function handle(req: NextRequest, rota: string[]) {
 
   if (path === "/api/cardapio" && method === "GET") {
     const data = url.searchParams.get("data") || agoraBR().data;
-    return json({ ...resolveCardapioHoje(cfg, data), semana: semanaPara(cfg, data)?.nome ?? null });
+    return json({ ...resolveCardapioHoje(cfg, data), semana: semanaPara(cfg, data)?.nome ?? null, bloqueio: bloqueado(cfg, data)?.motivo ?? null, domingo: diaSemana(data) === "dom" });
+  }
+
+  // ===== DIAS SEM MARMITA (feriados) =====
+  if (path === "/api/bloqueios") {
+    if (method === "GET") return json(cfg.bloqueios.sort((a, b) => (a.data < b.data ? -1 : 1)));
+    if (!pode(user, "ajustes") && !pode(user, "cardapio")) return erro("Sem permissao (ajustes ou cardapio).", 403);
+    if (method === "POST") {
+      const data = String(body?.data || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return erro("Informe a data");
+      const motivo = String(body?.motivo || "").trim().slice(0, 60) || "Sem marmita";
+      const lista = cfg.bloqueios.filter((b) => b.data !== data);
+      lista.push({ data, motivo });
+      await setCfg(db, "bloqueios", JSON.stringify(lista));
+      return json({ ok: true });
+    }
+    if (method === "DELETE") {
+      const data = url.searchParams.get("data") || "";
+      await setCfg(db, "bloqueios", JSON.stringify(cfg.bloqueios.filter((b) => b.data !== data)));
+      return json({ ok: true });
+    }
   }
 
   if (path === "/api/pedidos") {

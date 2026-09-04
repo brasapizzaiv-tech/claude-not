@@ -292,6 +292,13 @@
         <button class="sec block" onclick="salvarConfig()">Salvar</button>
       </div>
       <div class="card">
+        <h2>Dias sem marmita (feriados)</h2>
+        <p class="miudo">Nesses dias o app não recebe pedidos: pula pro próximo dia útil (o pedido de terça abre já no sábado, por exemplo) e avisa o pessoal.</p>
+        <div class="row"><div><label>Data</label><input type="date" id="bqData"></div><div><label>Motivo</label><input type="text" id="bqMotivo" placeholder="Feriado" maxlength="60"></div></div>
+        <button class="sec block" onclick="addBloqueio()">+ Bloquear dia</button>
+        <div id="listaBloqueios" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
         <h2>Filiais</h2>
         <div id="edFiliais"></div>
         <button class="ghost" onclick="addFilialInput()">+ Adicionar filial</button>
@@ -396,7 +403,8 @@ async function iniciarColaborador(){
   catch(e){ toast('Falha ao carregar',true); return; }
   PUBLICO_EM=Date.now();
   $('#colSub').textContent='Convênio '+(PUBLICO.nomeConvenio||'Kern');
-  $('#colAviso').innerHTML=`⏰ Pedido para <b>${fmtDiaBR(PUBLICO.data)}</b> · até ${PUBLICO.horaLimite} do dia da entrega.`;
+  const bq=arr(PUBLICO.proximosBloqueios).map(b=>`🚫 <b>${fmtDiaBR(b.data)}</b> sem marmita${b.motivo?' ('+escapeHtml(b.motivo)+')':''}`).join('<br>');
+  $('#colAviso').innerHTML=`⏰ Pedido para <b>${fmtDiaBR(PUBLICO.data)}</b> · até ${PUBLICO.horaLimite} do dia da entrega.`+(bq?'<br>'+bq:'');
   $('#colAviso').classList.remove('hidden');
   $('#colSucesso').classList.add('hidden'); $('#colStep2').classList.add('hidden'); $('#colStep1').classList.remove('hidden');
   COL_SEL=null; FILIAL_COL=''; $('#colBusca').value=''; $('#colResultados').innerHTML='';
@@ -518,7 +526,7 @@ async function carregarDia(){
   try{
     const card=await api('/api/marmitas/cardapio?data='+data);
     window.CARD_DIA={pratos:arr(card.pratos),proteinas:arr(card.proteinas),salada:card.salada||''};
-    $('#diaSemanaInfo').textContent=card.semana?`Cardápio: ${card.semana}`+(window.CARD_DIA.pratos.length?'':' — sem pratos cadastrados neste dia'):'';
+    $('#diaSemanaInfo').innerHTML=(card.bloqueio?`<b style="color:var(--danger)">🚫 Dia sem marmita: ${escapeHtml(card.bloqueio)}</b> · `:'')+(card.semana?`Cardápio: ${escapeHtml(card.semana)}`+(window.CARD_DIA.pratos.length?'':' — sem pratos cadastrados neste dia'):'');
     if(perm('pedidos_add')){ segFiliais('addFiliais','addPickFilial',FILIAL_ADD); renderMontagem('add',window.CARD_DIA,null); }
     // filtro filial
     const fs=arr(CONFIG.filiais); const ff=$('#filtroFilial');const at=ff.value;
@@ -811,6 +819,22 @@ async function carregarConfigForm(){
   $('#cNome').value=CONFIG.nomeConvenio||'';$('#cAbertura').value=CONFIG.horaAbertura||'14:00';$('#cLimite').value=CONFIG.horaLimite||'';$('#cEntrega').value=CONFIG.horaEntrega||'';
   $('#cBloquear').checked = CONFIG.bloquearAposLimite!==false;
   const el=$('#edFiliais');el.innerHTML='';arr(CONFIG.filiais).forEach(f=>addFilialInput(f));
+  carregarBloqueios();
+}
+/* ---- DIAS SEM MARMITA (feriados) ---- */
+async function carregarBloqueios(){
+  let lista=[]; try{ lista=arr(await api('/api/marmitas/bloqueios')); }catch(e){ toast(e.message,true); return; }
+  const h=hoje();
+  $('#listaBloqueios').innerHTML = lista.length===0 ? '<div class="empty">Nenhum dia bloqueado.</div>' :
+    lista.map(b=>`<div class="item"><div class="grow"><div class="nome">🚫 ${fmtDiaBR(b.data)}${b.data<h?' <span class="miudo">(passado)</span>':''}</div><div class="meta">${escapeHtml(b.motivo||'')}</div></div><button class="danger mini" onclick="removerBloqueio('${b.data}')">✕</button></div>`).join('');
+}
+async function addBloqueio(){
+  const data=$('#bqData').value; if(!data) return toast('Escolha a data',true);
+  try{ await api('/api/marmitas/bloqueios',{method:'POST',body:JSON.stringify({data,motivo:$('#bqMotivo').value.trim()})}); $('#bqData').value=''; $('#bqMotivo').value=''; toast('Dia bloqueado ✓'); carregarBloqueios(); }
+  catch(e){ toast(e.message,true); }
+}
+async function removerBloqueio(data){
+  try{ await api('/api/marmitas/bloqueios?data='+data,{method:'DELETE'}); toast('Liberado'); carregarBloqueios(); }catch(e){ toast(e.message,true); }
 }
 function addFilialInput(nome){ const el=$('#edFiliais');const d=document.createElement('div');d.className='cardapioLinha';d.style.display='flex';d.style.gap='8px';d.innerHTML=`<input type="text" placeholder="Nome da filial" value="${escapeHtml(typeof nome==='string'?nome:'')}"><button class="danger mini" onclick="this.parentElement.remove()">✕</button>`;el.appendChild(d); }
 async function salvarConfig(){
