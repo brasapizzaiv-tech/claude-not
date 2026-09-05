@@ -176,6 +176,17 @@ export function QuiosqueBalanca({
   const [impressoras, setImpressoras] = useState<{ nome: string; padrao: boolean }[]>([]);
   const [impressoraCupom, setImpressoraCupom] = useState("");
   const [msgConfig, setMsgConfig] = useState<string | null>(null);
+  // Diagnóstico da balança (o que o agente recebeu por último, cru).
+  const [rawBal, setRawBal] = useState<{ raw: string; peso: number; tara: number; lendo: boolean; versao?: string } | null>(null);
+  async function lerRaw() {
+    try {
+      const r = await fetch(`${AGENTE_URL}/raw`, { signal: AbortSignal.timeout(3000) });
+      const j = await r.json();
+      setRawBal({ raw: String(j.raw ?? ""), peso: Number(j.peso) || 0, tara: Number(j.tara) || 0, lendo: !!j.lendo, versao: j.versao });
+    } catch {
+      setRawBal(null);
+    }
+  }
 
   // "Virar livre": pessoa que pesou antes e voltou — passa o cupom no leitor
   // (ou digita o nº) e a comanda vira BUFFET LIVRE.
@@ -225,6 +236,7 @@ export function QuiosqueBalanca({
   async function abrirConfig() {
     setConfigAberta(true);
     setMsgConfig(null);
+    lerRaw();
     try {
       const r = await fetch(`${AGENTE_URL}/impressoras`, { signal: AbortSignal.timeout(20000) });
       const j = await r.json();
@@ -463,14 +475,19 @@ export function QuiosqueBalanca({
         if (buf.length > 800) buf = buf.slice(-800);
         setDiag({ bytes: tot, raw: buf.slice(-120) });
         // Tara feita na própria balança (campo TARA do rótulo).
-        const t = [...buf.matchAll(/TARA[:\s]*(-?\d+[.,]\d+)/gi)];
+        // Sinal negativo antes ou depois do número ("-0.180", "- 0,180", "0.180-").
+        const numDe = (mm: RegExpMatchArray) => {
+          const v = parseFloat(String(mm[2]).replace(",", "."));
+          return mm[1] || mm[3] ? -v : v;
+        };
+        const t = [...buf.matchAll(/TARA\s*[:=]?\s*([-−]?)\s*(\d+[.,]\d+)()/gi)];
         if (t.length) {
-          const tb = parseFloat(t[t.length - 1][1].replace(",", "."));
+          const tb = numDe(t[t.length - 1]);
           taraBalancaRef.current = tb;
           setTaraBalanca(tb);
         }
-        const m = [...buf.matchAll(/PESO\s*L[:\s]*(-?\d+[.,]\d+)/gi)];
-        if (m.length) processar(parseFloat(m[m.length - 1][1].replace(",", ".")));
+        const m = [...buf.matchAll(/PESO\s*L\s*[:=]?\s*([-−]?)\s*(\d+[.,]\d+)\s*(?:kg)?\s*([-−]?)/gi)];
+        if (m.length) processar(numDe(m[m.length - 1]));
       }
     } catch {
       /* leitura cancelada */
@@ -535,6 +552,23 @@ export function QuiosqueBalanca({
               {impressoras.length === 0 && !msgConfig && <p className="text-[#211915]/50">Procurando impressoras…</p>}
             </div>
             {msgConfig && <p className="mt-3 text-sm text-[#C78340]">{msgConfig}</p>}
+            {/* Diagnóstico da balança: leitura crua que chegou no agente */}
+            <div className="mt-4 rounded-xl border border-[#211915]/15 bg-[#f6efe6] p-3 text-xs">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="font-semibold">⚖️ Balança (o que o agente recebeu por último)</span>
+                <button onClick={lerRaw} className="rounded-md border border-[#211915]/20 px-2 py-0.5">atualizar</button>
+              </div>
+              {rawBal ? (
+                <>
+                  <div className="text-[#211915]/70">
+                    peso lido: <b>{rawBal.peso.toFixed(3).replace(".", ",")}</b> · tara: <b>{rawBal.tara.toFixed(3).replace(".", ",")}</b> · {rawBal.lendo ? "respondendo ✓" : "sem resposta"}{rawBal.versao ? ` · agente ${rawBal.versao}` : ""}
+                  </div>
+                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-white p-2 font-mono text-[10px] text-[#211915]/80">{rawBal.raw || "(nada recebido ainda)"}</pre>
+                </>
+              ) : (
+                <p className="text-[#211915]/50">Agente sem a função de diagnóstico (versão antiga) ou não respondeu.</p>
+              )}
+            </div>
             <div className="mt-5 flex gap-3">
               <button onClick={testarImpressora} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5">🧾 Imprimir teste</button>
               <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-[#C78340] py-3 text-lg font-bold">Fechar</button>

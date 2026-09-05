@@ -16,7 +16,7 @@ import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const VERSAO = "1.1.1"; // fila: pesagem recusada (4xx) vai pra fila-erros.json em vez de travar as demais
+const VERSAO = "1.1.2"; // 1.1.1: fila-erros.json; 1.1.2: peso negativo em qualquer formato + GET /raw
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -100,6 +100,12 @@ function salvarFila() {
 }
 
 // ---------- leitura da balança ----------
+// Número do rótulo: grupo 1 = sinal antes, grupo 2 = dígitos, grupo 3 = sinal depois.
+function numDe(m) {
+  const v = parseFloat(String(m[2]).replace(",", "."));
+  const neg = (m[1] && m[1] !== "") || (m[3] && m[3] !== "");
+  return neg ? -v : v;
+}
 let peso = 0;
 let tara = 0;
 let ultimaLeitura = 0; // timestamp da última leitura válida
@@ -124,11 +130,13 @@ async function conectarBalanca() {
     serial.on("data", (chunk) => {
       buf += chunk.toString("latin1");
       if (buf.length > 800) buf = buf.slice(-800);
-      const t = [...buf.matchAll(/TARA[:\s]*(-?\d+[.,]\d+)/gi)];
-      if (t.length) tara = parseFloat(t[t.length - 1][1].replace(",", "."));
-      const m = [...buf.matchAll(/PESO\s*L[:\s]*(-?\d+[.,]\d+)/gi)];
+      // Peso NEGATIVO (marmita sem o prato, com tara na balança): o sinal pode vir
+      // antes ("-0.180", "- 0.180", "−0,180") ou depois ("0.180-"). Tudo aceito.
+      const t = [...buf.matchAll(/TARA\s*[:=]?\s*([-−]?)\s*(\d+[.,]\d+)/gi)];
+      if (t.length) tara = numDe(t[t.length - 1]);
+      const m = [...buf.matchAll(/PESO\s*L\s*[:=]?\s*([-−]?)\s*(\d+[.,]\d+)\s*(?:kg)?\s*([-−]?)/gi)];
       if (m.length) {
-        peso = parseFloat(m[m.length - 1][1].replace(",", "."));
+        peso = numDe(m[m.length - 1]);
         ultimaLeitura = Date.now();
       }
     });
@@ -242,6 +250,12 @@ const server = http.createServer(async (req, res) => {
       fila: fila.length,
       versao: VERSAO,
     }));
+  }
+
+  // Diagnóstico: o que a balança mandou por último, cru (pra ver o formato do negativo etc.).
+  if (req.method === "GET" && req.url === "/raw") {
+    res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ ok: true, raw: buf.slice(-400), peso, tara, lendo: Date.now() - ultimaLeitura < 3000, versao: VERSAO }));
   }
 
   if (req.method === "POST" && req.url === "/pesagem") {
