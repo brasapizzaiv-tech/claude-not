@@ -44,10 +44,12 @@ function CupomQR({ id }: { id: string }) {
 export function QuiosqueBalanca({
   precoKg,
   buffetLivre,
+  taraPadrao,
   cupom,
 }: {
   precoKg: number;
   buffetLivre: number;
+  taraPadrao: number; // peso do prato, usado SÓ quando a balança NÃO está tarada
   cupom: { nome: string; endereco: string; telefone: string; msg: string };
 }) {
   const [estado, setEstado] = useState<
@@ -87,13 +89,17 @@ export function QuiosqueBalanca({
     setEstado(v);
   };
 
-  // Peso a cobrar = SEMPRE o que a balança manda (PESO L, já com a tara do
-  // prato descontada na própria balança). Não existe mais "tara padrão".
-  // MARMITA: ela vai direto na balança, sem prato — a balança desconta a tara
-  // do prato mesmo assim e mostra negativo/baixo. Então devolve a tara:
-  // peso da marmita = leitura + tara da balança (nunca negativo).
-  const netDe = (leitura: number, taraBal: number, marmita: boolean) =>
-    marmita ? Math.max(0, leitura + Math.max(0, taraBal)) : Math.max(0, leitura);
+  // Dois jeitos de trabalhar (a POP-31 NÃO transmite peso negativo — ela só
+  // manda o rótulo com peso positivo acima da carga mínima):
+  //  A) Balança TARADA (campo TARA > 0): PESO L já é líquido → cobra o que vem.
+  //     Marmita sem prato lê negativo e a balança silencia → pese a marmita
+  //     EM CIMA de um prato (aí PESO L = marmita).
+  //  B) Balança SEM tara: PESO L é o bruto → prato desconta a tara padrão do
+  //     sistema; marmita (sem prato) cobra o bruto inteiro. Nunca fica negativo.
+  const netDe = (leitura: number, taraBal: number, marmita: boolean) => {
+    if (taraBal > 0.001) return marmita ? Math.max(0, leitura + taraBal) : Math.max(0, leitura);
+    return marmita ? Math.max(0, leitura) : Math.max(0, leitura - taraPadrao);
+  };
 
   // Valor a partir do peso LÍQUIDO já resolvido.
   const valorDe = (liquido: number, soKgFlag: boolean) => {
@@ -715,12 +721,16 @@ export function QuiosqueBalanca({
                 </button>
               </div>
               {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
-              {taraBalanca > 0.001 && (
+              {taraBalanca > 0.001 ? (
                 <p className="mt-2 text-sm text-[#211915]/40">
                   Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg
-                  {soKg ? " · marmita: peso = leitura + tara" : " (peso já líquido)"}
+                  {soKg ? " · marmita: pese em cima de um prato" : " (peso já líquido)"}
                 </p>
-              )}
+              ) : taraPadrao > 0 ? (
+                <p className="mt-2 text-sm text-[#211915]/40">
+                  {soKg ? "Marmita: cobra o peso inteiro (sem descontar prato)" : `Prato: desconta ${taraPadrao.toFixed(3).replace(".", ",")} kg (tara do sistema)`}
+                </p>
+              ) : null}
               {/* Botão manual — garante gerar a comanda se a balança oscilar muito */}
               {liq > LIMIAR && (
                 <button
