@@ -39,7 +39,7 @@ export async function salvarDezPorCento(data: string, valor: number, pagarEm?: s
 }
 
 // Extra da pessoa na semana (algo que fez a mais). Valor 0 e sem motivo = apaga.
-export async function salvarExtra(segunda: string, colaboradorId: string, valor: number, motivo: string) {
+export async function salvarExtra(segunda: string, colaboradorId: string, valor: number, motivo: string, turno: Turno = "noite") {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const v = Math.max(0, Math.round((valor || 0) * 100) / 100);
@@ -50,7 +50,7 @@ export async function salvarExtra(segunda: string, colaboradorId: string, valor:
   }
   const { error } = await supabase
     .from("semana_extras")
-    .upsert({ segunda, colaborador_id: colaboradorId, valor: v, motivo: m }, { onConflict: "segunda,colaborador_id" });
+    .upsert({ segunda, colaborador_id: colaboradorId, valor: v, motivo: m, turno: turno === "dia" ? "dia" : "noite" }, { onConflict: "segunda,colaborador_id" });
   return error ? { erro: error.message } : { ok: true };
 }
 

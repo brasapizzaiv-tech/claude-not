@@ -27,7 +27,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     supabase.from("semana_pagamentos").select("colaborador_id, valor, lancamento_id, desconto").eq("segunda", segunda),
     // Fiado em aberto (compras internas) — pra poder descontar no acerto.
     supabase.from("retiradas").select("colaborador_id, valor").eq("status", "aberto").limit(5000),
-    supabase.from("semana_extras").select("colaborador_id, valor, motivo").eq("segunda", segunda),
+    supabase.from("semana_extras").select("colaborador_id, valor, motivo, turno").eq("segunda", segunda),
   ]);
 
   // Presenças da semana + das noites de 10% que entram neste acerto (podem ser de outra semana).
@@ -56,7 +56,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       dezIniciais={(dez ?? []) as { data: string; valor: number; pagar_em: string }[]}
       pagos={(pagos ?? []) as { colaborador_id: string; valor: number; lancamento_id: string | null; desconto: number }[]}
       fiadoPor={fiadoPor}
-      extrasIniciais={(extras ?? []) as { colaborador_id: string; valor: number; motivo: string | null }[]}
+      extrasIniciais={(extras ?? []) as { colaborador_id: string; valor: number; motivo: string | null; turno: "dia" | "noite" }[]}
     />
   );
 }
