@@ -467,10 +467,13 @@ export function QuiosqueBalanca({
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#f6efe6] text-[#211915]">
       {/* topo */}
       <div className="flex shrink-0 items-center justify-between px-8 py-[clamp(0.5rem,2vh,1.25rem)]">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-[clamp(0.75rem,2vw,1.5rem)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(2rem,9vh,7rem)] w-auto" />
-          <span className="text-[clamp(1rem,3vw,2rem)] font-light text-[#211915]/60">Buffet</span>
+          <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(4rem,15vh,11rem)] w-auto" />
+          <div>
+            <p className="text-[clamp(1.4rem,4vw,3rem)] font-black leading-tight text-[#211915]">{cupom.nome || "Brasa Pizzaria e Restaurante"}</p>
+            <p className="text-[clamp(0.8rem,1.8vw,1.2rem)] text-[#211915]/50">Autoatendimento · pese o prato e pegue seu cupom</p>
+          </div>
         </div>
         <div className="flex items-center gap-6">
           {agente && (
@@ -625,42 +628,37 @@ export function QuiosqueBalanca({
               </div>
 
               {/* Botões touch: LIVRE direto + Marmita */}
-              {buffetLivre > 0 && liq <= LIMIAR && (
+              {/* Botões lado a lado: LIVRE direto · virar livre · marmita */}
+              <div className="mt-[clamp(1rem,3vh,2rem)] flex w-full max-w-6xl flex-wrap items-stretch justify-center gap-[clamp(0.5rem,1.5vw,1rem)]">
+                {buffetLivre > 0 && liq <= LIMIAR && (
+                  <button
+                    onClick={livreDireto}
+                    className="min-w-[14rem] flex-1 rounded-3xl bg-[#C78340] px-[clamp(1rem,3vw,2rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.2rem,3vw,2.2rem)] font-black leading-tight text-white shadow-lg active:brightness-90"
+                  >
+                    🍽️ QUERO O BUFFET LIVRE
+                    <span className="block text-[clamp(1rem,2.4vw,1.6rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>
+                  </button>
+                )}
+                {buffetLivre > 0 && liq <= LIMIAR && (
+                  <button
+                    onClick={() => { setVirarAberto(true); setNumeroVirar(""); }}
+                    className="min-w-[14rem] flex-1 rounded-3xl border-4 border-[#C78340] bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.1rem,2.6vw,1.9rem)] font-black leading-tight text-[#C78340] shadow-md active:brightness-95"
+                  >
+                    🔄 JÁ PESEI, QUERO VIRAR LIVRE
+                    <span className="block text-[clamp(0.85rem,1.8vw,1.2rem)] font-medium text-[#211915]/50">passe o cupom no leitor</span>
+                  </button>
+                )}
                 <button
-                  onClick={livreDireto}
-                  className="mt-[clamp(1rem,3vh,2rem)] w-full max-w-2xl rounded-3xl bg-[#C78340] px-[clamp(1.5rem,6vw,3.5rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.4rem,4.5vw,2.8rem)] font-black text-white shadow-lg active:brightness-90"
+                  onClick={toggleSoKg}
+                  className={`min-w-[12rem] flex-1 rounded-3xl px-[clamp(1rem,3vw,2rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.1rem,2.6vw,1.9rem)] font-black leading-tight shadow-md transition ${
+                    soKg ? "bg-yellow-400 text-black" : "border-4 border-[#211915]/15 bg-white text-[#211915]/70 hover:bg-[#211915]/5"
+                  }`}
                 >
-                  🍽️ QUERO O BUFFET LIVRE — {moeda(buffetLivre)}
+                  🍱 {soKg ? "MARMITA — ativa" : "É MARMITA?"}
+                  <span className="block text-[clamp(0.85rem,1.8vw,1.2rem)] font-medium opacity-70">{soKg ? "cobra só por kg nesta pesagem" : "cobra só por kg"}</span>
                 </button>
-              )}
+              </div>
               {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
-
-              {/* Já pesou e voltou: virar a comanda pra LIVRE pelo cupom */}
-              {buffetLivre > 0 && liq <= LIMIAR && (
-                <button
-                  onClick={() => { setVirarAberto(true); setNumeroVirar(""); }}
-                  className="mt-[clamp(0.75rem,2vh,1.25rem)] w-full max-w-2xl rounded-3xl border-4 border-[#C78340] bg-white px-[clamp(1.5rem,6vw,3.5rem)] py-[clamp(0.75rem,2.5vh,1.5rem)] text-[clamp(1.1rem,3.5vw,2.2rem)] font-black text-[#C78340] shadow-md active:brightness-95"
-                >
-                  🔄 JÁ PESEI E QUERO VIRAR LIVRE
-                </button>
-              )}
-
-              {/* Marmita: só por kg (sem virar livre) */}
-              <button
-                onClick={toggleSoKg}
-                className={`mt-[clamp(1rem,3vh,2rem)] rounded-2xl px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1rem,3vw,1.9rem)] font-bold transition ${
-                  soKg
-                    ? "bg-yellow-400 text-black"
-                    : "border-2 border-[#211915]/20 text-[#211915]/70 hover:bg-[#211915]/5"
-                }`}
-              >
-                {soKg ? "🍱 MARMITA (só por kg) — ativa" : "🍱 É marmita? (só por kg)"}
-              </button>
-              {soKg && (
-                <p className="mt-2 text-xl text-yellow-700">
-                  Esta pesagem cobra por kg, sem virar “à vontade”.
-                </p>
-              )}
               {taraBalanca > 0.001 && (
                 <p className="mt-2 text-sm text-[#211915]/40">
                   Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg (peso já líquido)
