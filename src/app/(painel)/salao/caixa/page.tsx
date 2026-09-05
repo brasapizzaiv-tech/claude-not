@@ -166,13 +166,15 @@ export default async function CaixaPage({
 
   // Cardápio (para "Inserir Produto") e clientes (para "Vincular Cliente").
   const [{ data: menuRows }, { data: cliRows }] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, preco, ativo").order("nome"),
+    supabase.from("pdv_itens").select("id, nome, preco, promo_preco, ativo").order("nome"),
     supabase.from("clientes").select("id, nome, cpf_cnpj").eq("ativo", true).order("nome"),
   ]);
   const menu =
-    ((menuRows as { id: string; nome: string; preco: number; ativo: boolean | null }[]) ?? [])
+    ((menuRows as { id: string; nome: string; preco: number; promo_preco: number | null; ativo: boolean | null }[]) ?? [])
       .filter((m) => m.ativo !== false)
-      .map((m) => ({ id: m.id, nome: m.nome, preco: Number(m.preco) }));
+      // Mesmo preço que o servidor cobra (promoção ativa substitui o normal) —
+      // senão o total na tela do caixa fica maior que o gravado na comanda.
+      .map((m) => ({ id: m.id, nome: m.nome, preco: Number(m.promo_preco ?? 0) > 0 ? Number(m.promo_preco) : Number(m.preco) }));
   const clientes =
     ((cliRows as { id: string; nome: string; cpf_cnpj: string | null }[]) ?? []).map((c) => ({
       id: c.id,

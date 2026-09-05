@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerOfx } from "@/lib/ofx";
 import { lancarNota } from "@/app/(painel)/notas/actions";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 export async function importarOfx(texto: string, banco: string) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   if (!banco?.trim()) return { ok: false, erro: "Escolha o banco do extrato." };
   const trans = lerOfx(texto);
@@ -33,6 +35,7 @@ export async function gerarLancamentoDaTransacao(
   categoriaId: string,
   observacao?: string,
 ) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const { data: t } = await supabase
     .from("transacoes_banco")
@@ -67,6 +70,7 @@ export async function gerarLancamentoDaTransacao(
 }
 
 export async function conciliar(transacaoId: string, lancamentoId: string) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const { data: t } = await supabase
     .from("transacoes_banco")
@@ -89,6 +93,7 @@ export async function conciliar(transacaoId: string, lancamentoId: string) {
 
 // Lança uma nota pendente e já concilia com a transação do banco (marcando paga).
 export async function lancarNotaEConciliar(transacaoId: string, notaId: string) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const { data: t } = await supabase
     .from("transacoes_banco")
@@ -121,6 +126,7 @@ export async function lancarNotaEConciliar(transacaoId: string, notaId: string) 
 export async function conciliarVarias(
   pares: { transacaoId: string; lancamentoId: string }[],
 ) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   for (const p of pares) {
     if (!p.lancamentoId) continue;
@@ -144,6 +150,7 @@ export async function conciliarVarias(
 }
 
 export async function desconciliar(transacaoId: string) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   await supabase
     .from("transacoes_banco")
@@ -154,6 +161,7 @@ export async function desconciliar(transacaoId: string) {
 }
 
 export async function excluirTransacao(formData: FormData) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("transacoes_banco").delete().eq("id", id);

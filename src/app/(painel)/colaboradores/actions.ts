@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { numBR, parseAniversario } from "@/lib/equipe";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 function novoToken() {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
@@ -11,10 +12,11 @@ function novoToken() {
 // Salva o colaborador e, junto, o perfil de folga dele (se marcado). Mantém o
 // token (link pessoal) sincronizado entre colaborador e folga.
 export async function salvarColaborador(formData: FormData) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const id = (formData.get("id") as string) || null;
   const nome = (formData.get("nome") as string)?.trim();
-  if (!nome) return;
+  if (!nome) return { erro: "Informe o nome." };
   const whatsapp = (formData.get("whatsapp") as string)?.trim() || null;
   const fazContagem = formData.get("faz_contagem") === "on";
   const fazEtiquetas = formData.get("faz_etiquetas") === "on";
@@ -51,10 +53,11 @@ export async function salvarColaborador(formData: FormData) {
   let token: string | null = null;
 
   if (id) {
-    await supabase
+    const { error } = await supabase
       .from("colaboradores")
       .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, ...quadro })
       .eq("id", id);
+    if (error) return { erro: `Não salvou: ${error.message}` };
     token = (await supabase.from("colaboradores").select("token").eq("id", id).maybeSingle()).data?.token ?? null;
     if (!token) {
       token = novoToken();
@@ -62,14 +65,15 @@ export async function salvarColaborador(formData: FormData) {
     }
   } else {
     token = novoToken();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("colaboradores")
       .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, ...quadro })
       .select("id")
       .single();
+    if (error) return { erro: `Não salvou: ${error.message}` };
     colaboradorId = data?.id ?? null;
   }
-  if (!colaboradorId) return;
+  if (!colaboradorId) return { erro: "Não salvou." };
 
   // perfil de folga
   const existente = (
@@ -102,10 +106,12 @@ export async function salvarColaborador(formData: FormData) {
   revalidatePath("/colaboradores");
   revalidatePath("/folgas");
   revalidatePath("/colaboradores/semana");
+  return { ok: true };
 }
 
 // (Re)gera o link pessoal e sincroniza com o perfil de folga.
 export async function gerarTokenColaborador(formData: FormData) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const token = novoToken();
@@ -117,6 +123,7 @@ export async function gerarTokenColaborador(formData: FormData) {
 
 // Zera o PIN do colaborador (ele cria um novo no próximo acesso ao app).
 export async function zerarPinColaborador(formData: FormData) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("colaboradores").update({ pin: null }).eq("id", id);
@@ -124,6 +131,7 @@ export async function zerarPinColaborador(formData: FormData) {
 }
 
 export async function excluirColaborador(formData: FormData) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("colaboradores").update({ ativo: false }).eq("id", id);

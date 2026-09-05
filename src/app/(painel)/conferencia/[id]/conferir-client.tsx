@@ -65,7 +65,9 @@ export function ConferirClient({
   const [estado, setEstado] = useState<Record<string, Estado>>({});
 
   const num = (s: string) => {
-    const v = Number((s ?? "").replace(",", "."));
+    // "1.234,56" → 1234.56 ; "1,5" → 1.5 ; "1.5" → 1.5
+    const t = (s ?? "").trim();
+    const v = t.includes(",") ? Number(t.replace(/\./g, "").replace(",", ".")) : Number(t);
     return isNaN(v) ? 0 : v;
   };
 

@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ajustarTotalBoleto, lerValorBR } from "@/lib/boleto";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 export async function criarLancamento(formData: FormData) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
 
   const data = (formData.get("data") as string) || null;
@@ -92,6 +94,7 @@ function avancar(dataStr: string, i: number, frequencia: string, dias: number) {
 }
 
 export async function excluirLancamento(formData: FormData) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("lancamentos").delete().eq("id", id).eq("origem", "manual");
@@ -111,6 +114,7 @@ export async function editarLancamento(
     pago: boolean;
   },
 ) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   if (!dados.categoria_id || !(dados.valor > 0))
     return { ok: false, erro: "Categoria e valor são obrigatórios." };
@@ -137,6 +141,7 @@ export async function salvarOrcamento(
   anoMes: string,
   itens: { categoria_id: string; valor: number }[],
 ) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const comValor = itens.filter((i) => i.valor > 0);
   if (comValor.length > 0) {
@@ -163,6 +168,7 @@ export async function salvarOrcamento(
 // de Brasília (UTC−3, sem horário de verão) — evita "pular" para o dia seguinte
 // quando o clique acontece à noite.
 export async function alternarPago(formData: FormData) {
+  await exigirAcesso("/financeiro/contas"); // quem só dá baixa em boletos também pode
   const supabase = await createClient();
   // Aceita 1 id (id) ou vários (ids, separados por vírgula) — uma nota no
   // Contas a pagar agrupa vários lançamentos (por categoria) num boleto só.
@@ -186,6 +192,7 @@ export async function alternarPago(formData: FormData) {
 
 // Dá baixa em várias contas de uma vez (seleção na tela de Contas a pagar).
 export async function pagarVarias(ids: string[], dataPago: string) {
+  await exigirAcesso("/financeiro/contas"); // quem só dá baixa em boletos também pode
   const supabase = await createClient();
   const lista = (ids ?? []).map((s) => String(s).trim()).filter(Boolean);
   if (lista.length === 0) return { ok: false as const, mensagem: "Nada selecionado." };
@@ -208,6 +215,7 @@ export async function pagarVarias(ids: string[], dataPago: string) {
 // "Despesas Bancárias", sem mexer no valor da mercadoria (CMV). Conta manual:
 // muda o próprio valor.
 export async function ajustarValorConta(formData: FormData) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const idsRaw =
     (formData.get("ids") as string) || (formData.get("id") as string) || "";

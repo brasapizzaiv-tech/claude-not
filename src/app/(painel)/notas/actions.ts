@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
 import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 // Primeiro dia do mês atual (AAAA-MM-01) — nota anterior a isso entra como paga.
 function inicioDoMes() {
@@ -72,6 +73,9 @@ export async function importarNota(
   xmlText: string,
   clienteExterno?: SupabaseClient,
 ) {
+  // Com cliente externo é a busca automática do SEFAZ (cron, já autenticada
+  // pelo próprio segredo) — não há usuário logado pra conferir.
+  if (!clienteExterno) await exigirAcesso("/notas");
   const supabase = clienteExterno ?? (await createClient());
   const nf = lerNfe(xmlText);
 
@@ -161,6 +165,7 @@ export async function importarResumo(
   resumoXml: string,
   clienteExterno?: SupabaseClient,
 ) {
+  if (!clienteExterno) await exigirAcesso("/notas");
   const supabase = clienteExterno ?? (await createClient());
   const r = lerResumo(resumoXml);
   if (!r.chave) return { ok: false };
@@ -202,6 +207,7 @@ export async function salvarParcelasNota(
   notaId: string,
   parcelas: { numero?: string | null; vencimento: string | null; valor: number }[],
 ) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase.from("nota_parcelas").delete().eq("nota_id", notaId);
   const validas = parcelas.filter((p) => Number(p.valor) > 0);
@@ -225,6 +231,7 @@ export async function vincularFornecedorNota(
   notaId: string,
   fornecedorId: string | null,
 ) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase
     .from("notas_fiscais")
@@ -245,6 +252,7 @@ export async function lancarNota(
     parcelar?: boolean;
   },
 ) {
+  await exigirAcesso(["/notas", "/financeiro"]); // também usada pela conciliação bancária
   const supabase = await createClient();
   const { data: nota } = await supabase
     .from("notas_fiscais")
@@ -419,6 +427,7 @@ export async function lancarNota(
 // do valor da nota. Fica guardado na nota e, se ela já estiver lançada, a
 // diferença já entra como lançamento à parte em "Despesas Bancárias".
 export async function definirValorBoleto(notaId: string, valor: number | null) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   const { data: nota } = await supabase
     .from("notas_fiscais")
@@ -464,6 +473,7 @@ export async function definirValorBoleto(notaId: string, valor: number | null) {
 
 // Marca a nota como mercadoria ou serviço.
 export async function definirTipoNota(notaId: string, tipo: string) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase
     .from("notas_fiscais")
@@ -478,6 +488,7 @@ export async function definirCategoriaNota(
   notaId: string,
   categoriaId: string | null,
 ) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase
     .from("notas_fiscais")
@@ -493,6 +504,7 @@ export async function criarEVincularFornecedor(
   nome: string,
   cnpj: string | null,
 ) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   if (!nome.trim()) return { ok: false, erro: "Informe o nome do fornecedor." };
   const { data, error } = await supabase
@@ -516,6 +528,7 @@ export async function vincularItemProduto(
   itemId: string,
   produtoId: string | null,
 ) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase
     .from("nota_itens")
@@ -526,6 +539,7 @@ export async function vincularItemProduto(
 
 // Estorna a nota lançada: remove a conta e volta para pendente (pode relançar).
 export async function estornarNota(notaId: string) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase.from("lancamentos").delete().eq("nota_id", notaId);
   await supabase
@@ -539,6 +553,7 @@ export async function estornarNota(notaId: string) {
 
 // Marca a nota como cancelada e remove qualquer conta gerada por ela.
 export async function cancelarNota(notaId: string) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase.from("lancamentos").delete().eq("nota_id", notaId);
   await supabase
@@ -552,6 +567,7 @@ export async function cancelarNota(notaId: string) {
 
 // Vincula (concilia) a nota a um pedido; remove o lançamento provisório do pedido.
 export async function vincularPedido(notaId: string, pedidoId: string | null) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   await supabase
     .from("notas_fiscais")
@@ -574,6 +590,7 @@ export async function vincularPedido(notaId: string, pedidoId: string | null) {
 }
 
 export async function excluirNota(formData: FormData) {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("lancamentos").delete().eq("nota_id", id);

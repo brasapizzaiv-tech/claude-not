@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { diasDaSemana, segundaDe, somarDias, ymd } from "@/lib/equipe";
+import { diasDaSemana, segundaDe, somarDias } from "@/lib/equipe";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { SemanaClient, type Pessoa } from "./semana";
 
 export const dynamic = "force-dynamic";
 
 export default async function SemanaPage({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
   const { s } = await searchParams;
-  const segunda = segundaDe(/^\d{4}-\d{2}-\d{2}$/.test(s ?? "") ? (s as string) : ymd(new Date()));
+  const segunda = segundaDe(/^\d{4}-\d{2}-\d{2}$/.test(s ?? "") ? (s as string) : hojeSP());
   const dias = diasDaSemana(segunda);
   const fim = somarDias(segunda, 6);
 

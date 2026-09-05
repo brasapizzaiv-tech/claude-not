@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 function ok() {
   revalidatePath("/folgas");
@@ -13,6 +14,7 @@ function erro(mensagem: string) {
 
 // ---- pedidos ----
 export async function decidirPedido(id: number, aprovar: boolean, motivoNeg?: string) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase
     .from("folgas_pedidos")
@@ -26,6 +28,7 @@ export async function decidirPedido(id: number, aprovar: boolean, motivoNeg?: st
 }
 
 export async function reabrirPedido(id: number) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase
     .from("folgas_pedidos")
@@ -35,6 +38,7 @@ export async function reabrirPedido(id: number) {
 }
 
 export async function lancarFolga(funcionarioId: number, data: string, motivo: string, grupoAlvo?: string) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   if (!funcionarioId || !data) return erro("Escolha a pessoa e a data.");
   const trava = (await supabase.from("folgas_bloqueios").select("motivo").eq("data", data).maybeSingle()).data;
@@ -57,6 +61,7 @@ export async function lancarFolga(funcionarioId: number, data: string, motivo: s
 }
 
 export async function editarPedido(id: number, data: string, motivo: string) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase
     .from("folgas_pedidos")
@@ -66,6 +71,7 @@ export async function editarPedido(id: number, data: string, motivo: string) {
 }
 
 export async function excluirPedido(id: number) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase.from("folgas_pedidos").delete().eq("id", id);
   return error ? erro(error.message) : ok();
@@ -85,6 +91,7 @@ type FuncPayload = {
 };
 
 export async function salvarFuncionario(p: FuncPayload) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const nome = p.nome?.trim();
   if (!nome) return erro("Informe o nome.");
@@ -112,6 +119,7 @@ export async function salvarFuncionario(p: FuncPayload) {
 }
 
 export async function definirAtivo(id: number, ativo: boolean) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase.from("folgas_funcionarios").update({ ativo }).eq("id", id);
   return error ? erro(error.message) : ok();
@@ -119,6 +127,7 @@ export async function definirAtivo(id: number, ativo: boolean) {
 
 // Gera (ou regenera) o link pessoal do funcionário.
 export async function gerarLink(id: number) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   const { error } = await supabase.from("folgas_funcionarios").update({ token }).eq("id", id);
@@ -129,6 +138,7 @@ export async function gerarLink(id: number) {
 
 // ---- limites padrão ----
 export async function salvarLimites(rows: { grupo: string; dia_semana: number; limite: number | null }[]) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase
     .from("folgas_limites")
@@ -138,6 +148,7 @@ export async function salvarLimites(rows: { grupo: string; dia_semana: number; l
 
 // ---- ajuste de um dia específico (calendário) ----
 export async function definirAjuste(data: string, grupo: string, limite: number) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   if (limite < 0) return erro("Limite inválido.");
   const { error } = await supabase
@@ -147,6 +158,7 @@ export async function definirAjuste(data: string, grupo: string, limite: number)
 }
 
 export async function limparAjuste(data: string) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase.from("folgas_ajustes").delete().eq("data", data);
   return error ? erro(error.message) : ok();
@@ -154,6 +166,7 @@ export async function limparAjuste(data: string) {
 
 // ---- travar / destravar data ----
 export async function travarData(data: string, motivo: string) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const m = motivo?.trim();
   if (!m) return erro("Informe o motivo da trava.");
@@ -164,6 +177,7 @@ export async function travarData(data: string, motivo: string) {
 }
 
 export async function destravarData(data: string) {
+  await exigirAcesso("/folgas");
   const supabase = await createClient();
   const { error } = await supabase.from("folgas_bloqueios").delete().eq("data", data);
   return error ? erro(error.message) : ok();

@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 export type Turno = "dia" | "noite";
 
 // Marca/desmarca que a pessoa trabalhou naquele dia/turno.
 export async function marcarPresenca(colaboradorId: string, data: string, turno: Turno, marcar: boolean) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   if (marcar) {
     const { error } = await supabase
@@ -25,6 +27,7 @@ export async function marcarPresenca(colaboradorId: string, data: string, turno:
 // Valor do 10% arrecadado na noite (digitado à mão por enquanto).
 // pagarEm = segunda da semana em que entra no acerto (padrão: semana seguinte).
 export async function salvarDezPorCento(data: string, valor: number, pagarEm?: string) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
   const pagar_em = pagarEm && /^\d{4}-\d{2}-\d{2}$/.test(pagarEm) ? segundaDe(pagarEm) : somarDias(segundaDe(data), 7);
@@ -37,6 +40,7 @@ export async function salvarDezPorCento(data: string, valor: number, pagarEm?: s
 
 // Extra da pessoa na semana (algo que fez a mais). Valor 0 e sem motivo = apaga.
 export async function salvarExtra(segunda: string, colaboradorId: string, valor: number, motivo: string) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const v = Math.max(0, Math.round((valor || 0) * 100) / 100);
   const m = motivo.trim() || null;
@@ -51,6 +55,7 @@ export async function salvarExtra(segunda: string, colaboradorId: string, valor:
 }
 
 export async function excluirDezPorCento(data: string) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const { error } = await supabase.from("dez_por_cento_noites").delete().eq("data", data);
   if (error) return { erro: error.message };
@@ -60,6 +65,7 @@ export async function excluirDezPorCento(data: string) {
 // Preenche a semana com a escala fixa de cada pessoa (dias_dia / dias_noite).
 // Só acrescenta — não apaga o que já foi marcado à mão.
 export async function preencherEscalaFixa(segunda: string) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const { data: colabs } = await supabase
     .from("colaboradores")
@@ -94,6 +100,7 @@ export async function lancarPagamentosSemana(
   itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean }[],
   opts: { jaPago: boolean; data: string; forma: string | null },
 ) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const { data: cat } = await supabase
     .from("dre_categorias")
@@ -173,6 +180,7 @@ export async function lancarPagamentosSemana(
 
 // Cadastro rápido de um free esporádico direto da tela da semana.
 export async function criarEsporadico(nome: string, valorDia: number | null, valorNoite: number | null) {
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const n = nome.trim();
   if (!n) return { erro: "Informe o nome." };

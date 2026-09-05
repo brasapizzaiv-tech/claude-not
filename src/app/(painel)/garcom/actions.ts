@@ -61,67 +61,19 @@ export async function lancarPedidoGarcomLinhas(
 // Lança um pedido do garçom numa comanda da mesa (cria a comanda se não vier
 // uma). Adiciona todos os itens do carrinho de uma vez. Impressão na cozinha
 // fica para outra etapa.
+// Itens simples (sem pizza/combo). O preço que vem do navegador é IGNORADO:
+// é resolvido no servidor pelo mesmo motor (com promoção), como nos outros fluxos.
 export async function lancarPedidoGarcom(
   mesa: string,
   itens: { itemId: string; nome: string; preco: number; qtd: number }[],
   observacao?: string,
   comandaId?: string,
 ) {
-  const supabase = await createClient();
-  const validos = itens.filter((i) => i.qtd > 0);
-  if (!mesa || validos.length === 0) return { ok: false as const, mensagem: "Carrinho vazio." };
-
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth.user?.id ?? null;
-
-  let cid = comandaId;
-  let numero: number | undefined;
-  if (!cid) {
-    const { data: com } = await supabase
-      .from("pdv_comandas")
-      .insert({ mesa, peso: 0, tara: 0, valor_buffet: 0, livre: false })
-      .select("id, numero")
-      .single();
-    cid = com?.id as string | undefined;
-    numero = com?.numero as number | undefined;
-  } else {
-    const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", cid).single();
-    numero = com?.numero as number | undefined;
-  }
-  if (!cid) return { ok: false as const, mensagem: "Não foi possível criar a comanda." };
-
-  const obs = (observacao || "").trim();
-  const lancamentoId = crypto.randomUUID();
-  const rows = validos.map((i, idx) => ({
-    comanda_id: cid,
-    item_id: i.itemId,
-    descricao: i.nome + (idx === 0 && obs ? `\n📝 ${obs}` : ""),
-    qtd: i.qtd,
-    preco_unit: i.preco,
-    criado_por: uid,
-    lancamento_id: lancamentoId,
-  }));
-  await supabase.from("pdv_comanda_itens").insert(rows);
-
-  // Roteamento por produto (a "via"): cada impressora imprime só os seus itens.
-  const itemIds = validos.map((i) => i.itemId).filter(Boolean);
-  const { data: cozinhas } = await supabase
-    .from("impressoras")
-    .select("id, comanda_produtos")
-    .eq("ativo", true)
-    .eq("recebe_comandas", true);
-  const jobs = ((cozinhas as { id: string; comanda_produtos: string[] | null }[]) ?? [])
-    .filter((im) => {
-      const prods = im.comanda_produtos;
-      if (prods === null) return true; // imprime todos
-      return itemIds.some((id) => prods.includes(id)); // tem item dessa via?
-    })
-    .map((im) => ({ tipo: "comanda", ref_id: lancamentoId, impressora_id: im.id }));
-  if (jobs.length > 0) await supabase.from("impressao_fila").insert(jobs);
-
-  revalidatePath("/garcom");
-  revalidatePath("/salao");
-  return { ok: true as const, comandaId: cid, numero };
+  const linhas: LinhaPedido[] = itens
+    .filter((i) => i.qtd > 0 && i.itemId)
+    .map((i) => ({ kind: "item" as const, itemId: i.itemId, qtd: i.qtd }));
+  if (!mesa || linhas.length === 0) return { ok: false as const, mensagem: "Carrinho vazio." };
+  return lancarPedidoGarcomLinhas(mesa, linhas, observacao, comandaId);
 }
 
 // Acha uma comanda pelo código lido (QR do cupom = URL com o id, ou o número

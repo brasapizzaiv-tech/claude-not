@@ -308,7 +308,14 @@ function EditModal({ editando, onClose }: { editando: Row | null; onClose: () =>
         <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           {editando ? "Editar pessoa" : "Nova pessoa"}
         </h2>
-        <form action={async (fd) => { await salvarColaborador(fd); onClose(); }} className="space-y-3">
+        <form
+          action={async (fd) => {
+            const r = await salvarColaborador(fd);
+            if (r && "erro" in r && r.erro) { window.alert(r.erro); return; }
+            onClose();
+          }}
+          className="space-y-3"
+        >
           {editando && <input type="hidden" name="id" value={editando.id} />}
           <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
             <div>

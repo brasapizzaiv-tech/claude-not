@@ -161,9 +161,14 @@ async function criarComandaNoSistema(p) {
     body: JSON.stringify(p),
     signal: AbortSignal.timeout(8000),
   });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  if (!r.ok) {
+    let detalhe = "";
+    try { detalhe = (await r.json()).erro || ""; } catch { /* sem corpo */ }
+    // status 4xx = o sistema RECUSOU a pesagem (não é falta de internet)
+    throw Object.assign(new Error(`HTTP ${r.status}${detalhe ? ` — ${detalhe}` : ""}`), { status: r.status });
+  }
   const j = await r.json();
-  if (!j.ok) throw new Error(j.erro || "falha");
+  if (!j.ok) throw Object.assign(new Error(j.erro || "falha"), { status: 400 });
   return j;
 }
 
@@ -181,6 +186,20 @@ async function sincronizarFila() {
         fila.shift();
         salvarFila();
       } catch (e) {
+        if (e.status >= 400 && e.status < 500) {
+          // Recusada de vez (peso inválido, token errado, preço não configurado…):
+          // tira da fila e guarda em fila-erros.json — senão ela trava as de trás pra sempre.
+          log(`Fila: pesagem de ${p.ts} RECUSADA pelo sistema (${e.message}) — movida para fila-erros.json.`);
+          try {
+            const errosFile = path.join(dir, "fila-erros.json");
+            const erros = existsSync(errosFile) ? JSON.parse(readFileSync(errosFile, "utf8")) : [];
+            erros.push({ ...p, erro: e.message, em: new Date().toISOString() });
+            writeFileSync(errosFile, JSON.stringify(erros, null, 2));
+          } catch (e2) { log(`Não gravei fila-erros.json: ${e2.message}`); }
+          fila.shift();
+          salvarFila();
+          continue;
+        }
         log(`Fila: ainda sem conexão (${e.message}) — ${fila.length} pendente(s), tento de novo.`);
         break;
       }

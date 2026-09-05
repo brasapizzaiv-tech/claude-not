@@ -171,7 +171,8 @@ function itensForaDoCardapio(card: { pratos: string[]; proteinas: string[] }, p:
   return fora;
 }
 async function resolveUsuario(cfg: Cfg, req: NextRequest) {
-  if (cfg.usuarios.length === 0) return { nome: "Administrador", permissoes: PERMISSOES.slice() };
+  // Sem usuários cadastrados só o dono logado no ERP administra (antes qualquer
+  // um virava administrador — e apagar o último usuário abria a API inteira).
   const senha = req.headers.get("x-senha") || "";
   const u = cfg.usuarios.find((x) => x.senha === senha && senha !== "");
   if (u) return { nome: u.nome, permissoes: u.permissoes || [] };
@@ -208,7 +209,8 @@ function validaPedido(p: Pedido) {
 async function inserePedido(db: Db, data: string, p: Pedido) {
   const id = novoId();
   const criadoEm = new Date().toISOString().replace("T", " ").slice(0, 19);
-  await db.from("mkt_pedidos").insert({ id, data, filial: p.filial, colaborador_id: p.colaboradorId || null, cliente: p.cliente, matricula: p.matricula, pratos: JSON.stringify(p.pratos), proteina: p.proteina, salada: p.salada, origem: p.origem, criado_em: criadoEm });
+  const { error } = await db.from("mkt_pedidos").insert({ id, data, filial: p.filial, colaborador_id: p.colaboradorId || null, cliente: p.cliente, matricula: p.matricula, pratos: JSON.stringify(p.pratos), proteina: p.proteina, salada: p.salada, origem: p.origem, criado_em: criadoEm });
+  if (error) throw Object.assign(new Error(error.message), { code: error.code });
   return { id, data, filial: p.filial, colaboradorId: p.colaboradorId, cliente: p.cliente, matricula: p.matricula, pratos: p.pratos, proteina: p.proteina, salada: p.salada, origem: p.origem, criadoEm };
 }
 type Row = { id: string; data: string; filial: string; colaborador_id: string | null; cliente: string; matricula: string | null; pratos: string | null; proteina: string | null; salada: string | null; origem: string | null; criado_em: string | null };
@@ -273,12 +275,17 @@ async function handle(req: NextRequest, rota: string[]) {
       return json({ erro: `O cardápio foi atualizado e "${fora[0]}" não está mais nele. A tela foi recarregada — monte seu pedido de novo.`, recarregar: true }, 409);
     }
     if (await jaPediu(db, data, p.colaboradorId)) return erro("Voce ja fez seu pedido hoje.", 409);
-    return json(await inserePedido(db, data, p), 201);
+    try {
+      return json(await inserePedido(db, data, p), 201);
+    } catch (e) {
+      // Dois toques ao mesmo tempo: o índice único segura o segundo.
+      if ((e as { code?: string }).code === "23505") return erro("Voce ja fez seu pedido hoje.", 409);
+      throw e;
+    }
   }
 
   // ===== LOGIN =====
   if (path === "/api/login" && method === "POST") {
-    if (cfg.usuarios.length === 0) return json({ ok: true, nome: "Administrador", permissoes: PERMISSOES.slice() });
     const u = cfg.usuarios.find((x) => x.senha === String(body?.senha || "") && x.senha !== "");
     if (u) return json({ ok: true, nome: u.nome, permissoes: u.permissoes || [] });
     if (await erpDono()) return json({ ok: true, nome: "Administrador", permissoes: PERMISSOES.slice() });

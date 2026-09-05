@@ -128,6 +128,10 @@ export function QuiosqueBalanca({
         if (resetRef.current) clearTimeout(resetRef.current);
         precisaZerar.current = true;
       } else {
+        // O sistema respondeu mas recusou (ex.: preço do livre não configurado):
+        // mostra o motivo em vez de sumir com a pesagem em silêncio.
+        setErro((r as { mensagem?: string }).mensagem || "Não consegui gerar a comanda. Chame alguém do caixa.");
+        setTimeout(() => setErro(""), 8000);
         setEst("aguardando");
       }
     } catch {

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { FORMAS_CAIXA, moedaNum, type FormaLinha } from "@/lib/caixa";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 // De→para: forma de pagamento do caixa → categoria de receita do DRE.
 const MAPA_FORMA_CATEGORIA: Record<string, string> = {
@@ -70,6 +71,7 @@ export type EntradaFechamento = {
 };
 
 export async function salvarFechamento(e: EntradaFechamento) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
 
   const formas: FormaLinha[] = FORMAS_CAIXA.map((f) => {
@@ -120,6 +122,7 @@ export async function salvarFechamento(e: EntradaFechamento) {
 }
 
 export async function excluirFechamento(formData: FormData) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("fechamentos_caixa").delete().eq("id", id);

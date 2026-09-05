@@ -59,14 +59,25 @@ export default async function DrePage({
   const fim = `${desloca(mes, 1)}-01`;
 
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("lancamentos")
-    .select("valor, dre_categorias(nome, tipo, grupo, ordem)")
-    .gte("data", ini)
-    .lt("data", fim);
+  const [{ data }, { data: fatData }] = await Promise.all([
+    supabase
+      .from("lancamentos")
+      .select("valor, data, origem, dre_categorias(nome, tipo, grupo, ordem)")
+      .gte("data", ini)
+      .lt("data", fim)
+      .limit(5000),
+    // Receita REAL: faturamento importado da planilha (dia a dia, almoço+noite).
+    supabase.from("faturamento_dias").select("data, almoco, noite").gte("data", ini).lt("data", fim),
+  ]);
+  const fatRows = (fatData as { data: string; almoco: number | null; noite: number | null }[]) ?? [];
+  // Dias que já têm o faturamento da planilha: a receita lançada pelo fechamento
+  // do caixa (origem 'caixa') nesses dias NÃO entra de novo — seria duplicar.
+  const diasComPlanilha = new Set(fatRows.map((f) => f.data));
 
   type L = {
     valor: number;
+    data: string;
+    origem: string | null;
     dre_categorias: {
       nome?: string;
       tipo?: DreTipo;
@@ -82,6 +93,7 @@ export default async function DrePage({
   for (const l of lancs) {
     const c = l.dre_categorias;
     if (!c?.tipo) continue;
+    if (c.tipo === "receita" && l.origem === "caixa" && diasComPlanilha.has(l.data)) continue;
     const v = Number(l.valor);
     porTipo[c.tipo] = (porTipo[c.tipo] ?? 0) + v;
     const key = `${c.tipo}|${c.nome}`;
@@ -100,18 +112,11 @@ export default async function DrePage({
     else porGrupo.set(c.grupo ?? "", { tipo: c.tipo, total: v });
   }
 
-  // Receita REAL: faturamento importado da planilha (dia a dia, almoço+noite).
-  // Entra como Receita Bruta no DRE; lançamentos de receita continuam somando
-  // por cima (receitas extras). Cuidado para não lançar o mesmo faturamento
-  // duas vezes (ex.: "lançar faturamento" do fechamento do caixa).
-  const { data: fatData } = await supabase
-    .from("faturamento_dias")
-    .select("almoco, noite")
-    .gte("data", ini)
-    .lt("data", fim);
+  // Faturamento da planilha entra como Receita Bruta; lançamentos de receita
+  // (exceto os do caixa em dias já cobertos, filtrados acima) somam por cima.
   let fatAlmoco = 0;
   let fatNoite = 0;
-  for (const f of ((fatData as { almoco: number | null; noite: number | null }[]) ?? [])) {
+  for (const f of fatRows) {
     fatAlmoco += Number(f.almoco ?? 0);
     fatNoite += Number(f.noite ?? 0);
   }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 const hojeBR = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
@@ -22,6 +23,7 @@ export async function lancarRetirada(input: {
   data: string;
   observacao: string;
 }) {
+  await exigirAcesso("/retiradas");
   const supabase = await createClient();
   const item = input.item?.trim();
   if (!input.colaboradorId) return erro("Escolha a pessoa.");
@@ -48,6 +50,7 @@ export async function lancarRetirada(input: {
 }
 
 export async function definirStatusRetirada(id: number, pago: boolean, obs?: string) {
+  await exigirAcesso("/retiradas");
   const supabase = await createClient();
   const { error } = await supabase
     .from("retiradas")
@@ -62,6 +65,7 @@ export async function definirStatusRetirada(id: number, pago: boolean, obs?: str
 
 // Quita tudo que está em aberto de um colaborador (marca como pago hoje).
 export async function quitarColaborador(colaboradorId: string, obs?: string) {
+  await exigirAcesso("/retiradas");
   const supabase = await createClient();
   const { error } = await supabase
     .from("retiradas")
@@ -72,6 +76,7 @@ export async function quitarColaborador(colaboradorId: string, obs?: string) {
 }
 
 export async function excluirRetirada(id: number) {
+  await exigirAcesso("/retiradas");
   const supabase = await createClient();
   const { error } = await supabase.from("retiradas").delete().eq("id", id);
   return error ? erro(error.message) : ok();
@@ -84,6 +89,7 @@ export async function salvarProduto(input: {
   preco: number;
   ativo: boolean;
 }) {
+  await exigirAcesso("/retiradas");
   const supabase = await createClient();
   const nome = input.nome?.trim();
   if (!nome) return erro("Informe o nome do produto.");
