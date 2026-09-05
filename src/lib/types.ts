@@ -37,6 +37,24 @@ export type Colaborador = {
   faz_contagem: boolean;
   faz_etiquetas: boolean;
   faz_contas?: boolean;
+  // Quadro de funcionários (migration 0126)
+  nascimento?: string | null;
+  turno?: "dia" | "noite" | "ambos" | "proprietario";
+  vinculo?: "clt" | "freelance";
+  funcao?: string | null;
+  salario_base?: number | null;
+  valor_dia?: number | null;
+  valor_noite?: number | null;
+  recebe_10?: boolean;
+  peso_10?: number;
+  esporadico?: boolean;
+  filhos?: boolean | null;
+  conjuge?: boolean | null;
+  uniforme_estilo?: string | null;
+  uniforme_qtd?: number | null;
+  uniforme_tamanho?: string | null;
+  dias_dia?: number[];
+  dias_noite?: number[];
   criado_em: string;
 };
 

@@ -64,6 +64,7 @@ export function Sidebar({
     has("fornecedores") && { href: "/fornecedores", label: "Fornecedores", desc: "Fornecedores", icon: M.fornecedores.icon },
     has("produtos") && { href: "/produtos", label: "Produtos", desc: "Produtos e categorias", icon: M.produtos.icon },
     has("colaboradores") && { href: "/colaboradores", label: "Colaboradores", desc: "Equipe", icon: M.colaboradores.icon },
+    has("colaboradores") && { href: "/colaboradores/semana", label: "Semana e 10%", desc: "Dias trabalhados e divisão do 10%", icon: "🗓️" },
     { href: "/clientes", label: "Clientes", desc: "Clientes para NF-e", icon: "🧑" },
   ].filter(Boolean) as Sub[];
 
