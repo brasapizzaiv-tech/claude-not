@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Colaborador } from "@/lib/types";
 import { GRUPOS, GRUPO_KEYS, DIAS, type GrupoKey } from "@/lib/folgas";
-import { TURNOS, aniversarioBR } from "@/lib/equipe";
+import { TURNOS, aniversarioBR, vinculoDoTurno } from "@/lib/equipe";
 import {
   salvarColaborador,
   excluirColaborador,
@@ -152,11 +152,14 @@ const fmtR = (v: number | null | undefined) =>
 function resumoQuadro(c: Colaborador): string {
   const partes: string[] = [];
   if (c.turno) partes.push(`${TURNOS[c.turno].icone} ${TURNOS[c.turno].nome}`);
-  if (c.vinculo === "clt") partes.push(c.salario_base ? `CLT R$ ${fmtR(c.salario_base)}` : "CLT");
-  else {
-    const v = [c.valor_dia ? `dia ${fmtR(c.valor_dia)}` : "", c.valor_noite ? `noite ${fmtR(c.valor_noite)}` : ""].filter(Boolean).join(" / ");
-    if (v) partes.push(`R$ ${v}`);
-  }
+  const cltDia = vinculoDoTurno(c, "dia") === "clt";
+  const cltNoite = vinculoDoTurno(c, "noite") === "clt";
+  if (cltDia || cltNoite) partes.push(c.salario_base ? `CLT R$ ${fmtR(c.salario_base)}` : "CLT");
+  const v = [
+    !cltDia && c.valor_dia ? `dia ${fmtR(c.valor_dia)}` : "",
+    !cltNoite && c.valor_noite ? `noite ${fmtR(c.valor_noite)}` : "",
+  ].filter(Boolean).join(" / ");
+  if (v) partes.push(`free R$ ${v}`);
   if (c.recebe_10) partes.push("10%");
   if (c.esporadico) partes.push("free esporádico");
   return partes.join(" · ");
@@ -292,8 +295,12 @@ function EditModal({ editando, onClose }: { editando: Row | null; onClose: () =>
     </label>
   );
   const lbl = "mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400";
+  const [vincNoite, setVincNoite] = useState<string>(editando?.vinculo_noite ?? editando?.vinculo ?? "freelance");
   const temDia = turno === "dia" || turno === "ambos";
   const temNoite = turno === "noite" || turno === "ambos";
+  // Pessoa "dia e noite" pode ter carteira de dia e ser free de noite.
+  const cltDia = vinc === "clt";
+  const cltNoite = turno === "ambos" ? vincNoite === "clt" : vinc === "clt";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -332,30 +339,40 @@ function EditModal({ editando, onClose }: { editando: Row | null; onClose: () =>
                 </select>
               </div>
               <div>
-                <label className={lbl}>Vínculo</label>
+                <label className={lbl}>{turno === "ambos" ? "☀️ Vínculo de DIA" : "Vínculo"}</label>
                 <select name="vinc" value={vinc} onChange={(e) => setVinc(e.target.value)} className={inputCls}>
                   <option value="freelance">Freelance (por dia)</option>
                   <option value="clt">Carteira assinada (salário)</option>
                 </select>
               </div>
+              {turno === "ambos" && (
+                <div>
+                  <label className={lbl}>🌙 Vínculo de NOITE</label>
+                  <select name="vinc_noite" value={vincNoite} onChange={(e) => setVincNoite(e.target.value)} className={inputCls}>
+                    <option value="freelance">Freelance (por noite)</option>
+                    <option value="clt">Carteira assinada (salário)</option>
+                  </select>
+                </div>
+              )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {vinc === "clt" ? (
+              {(cltDia || cltNoite) && (
                 <div>
                   <label className={lbl}>Salário (R$)</label>
                   <input name="salario_base" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.salario_base)} className={inputCls} />
                 </div>
-              ) : (
-                <>
-                  <div className={temDia ? "" : "opacity-40"}>
-                    <label className={lbl}>☀️ Valor do dia (R$)</label>
-                    <input name="valor_dia" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_dia)} className={inputCls} />
-                  </div>
-                  <div className={temNoite ? "" : "opacity-40"}>
-                    <label className={lbl}>🌙 Valor da noite (R$)</label>
-                    <input name="valor_noite" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_noite)} className={inputCls} />
-                  </div>
-                </>
+              )}
+              {temDia && !cltDia && (
+                <div>
+                  <label className={lbl}>☀️ Valor do dia (R$)</label>
+                  <input name="valor_dia" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_dia)} className={inputCls} />
+                </div>
+              )}
+              {temNoite && !cltNoite && (
+                <div>
+                  <label className={lbl}>🌙 Valor da noite (R$)</label>
+                  <input name="valor_noite" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_noite)} className={inputCls} />
+                </div>
               )}
               <div>
                 <label className={lbl}>Função</label>

@@ -29,6 +29,8 @@ export async function salvarColaborador(formData: FormData) {
     nascimento: parseAniversario((formData.get("nascimento") as string) ?? ""),
     turno,
     vinculo: (formData.get("vinc") as string) === "clt" ? "clt" : "freelance",
+    vinculo_noite:
+      turno === "ambos" ? ((formData.get("vinc_noite") as string) === "clt" ? "clt" : "freelance") : null,
     funcao: (formData.get("funcao_c") as string)?.trim() || null,
     salario_base: numBR(formData.get("salario_base")),
     valor_dia: numBR(formData.get("valor_dia")),

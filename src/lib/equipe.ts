@@ -8,6 +8,16 @@ export const TURNOS: Record<NonNullable<Colaborador["turno"]>, { nome: string; i
   proprietario: { nome: "Proprietário", icone: "👑" },
 };
 
+// Vínculo de cada turno. Quem é "dia e noite" pode ter carteira de dia e free de noite.
+export function vinculoDoTurno(
+  c: { turno?: string | null; vinculo?: string | null; vinculo_noite?: string | null },
+  turno: "dia" | "noite",
+): "clt" | "freelance" {
+  const base = c.vinculo === "clt" ? "clt" : "freelance";
+  if (turno === "noite" && c.turno === "ambos" && c.vinculo_noite) return c.vinculo_noite === "clt" ? "clt" : "freelance";
+  return base;
+}
+
 export const DIAS_CURTO = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
 export function ymd(d: Date) {

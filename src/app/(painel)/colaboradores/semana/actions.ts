@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { deYmd, diasDaSemana } from "@/lib/equipe";
+import { deYmd, diasDaSemana, rotuloSemana } from "@/lib/equipe";
 
 export type Turno = "dia" | "noite";
 
@@ -56,6 +56,60 @@ export async function preencherEscalaFixa(segunda: string) {
   }
   revalidatePath("/colaboradores/semana");
   return { ok: true, n: linhas.length };
+}
+
+// Lança o pagamento da semana no Contas a pagar (categoria "CMO Eventual /
+// Diaristas"), uma conta por pessoa. Quem já foi lançado nessa semana é pulado.
+export async function lancarPagamentosSemana(
+  segunda: string,
+  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string }[],
+  opts: { jaPago: boolean; data: string; forma: string | null },
+) {
+  const supabase = await createClient();
+  const { data: cat } = await supabase
+    .from("dre_categorias")
+    .select("id")
+    .ilike("nome", "%eventual%diarista%")
+    .limit(1)
+    .maybeSingle();
+  if (!cat) return { erro: 'Categoria "CMO Eventual / Diaristas" não encontrada no plano de contas.' };
+
+  const { data: jaPagos } = await supabase.from("semana_pagamentos").select("colaborador_id").eq("segunda", segunda);
+  const pulados = new Set((jaPagos ?? []).map((x) => x.colaborador_id as string));
+  const validos = itens.filter((i) => i.valor > 0 && !pulados.has(i.colaboradorId));
+  if (!validos.length) return { erro: "Nada pra lançar (já lançado ou valor zero)." };
+
+  const dataLanc = /^\d{4}-\d{2}-\d{2}$/.test(opts.data) ? opts.data : new Date().toISOString().slice(0, 10);
+  const hoje = new Date().toISOString().slice(0, 10);
+  const rotulo = rotuloSemana(segunda);
+  let n = 0;
+  for (const it of validos) {
+    const { data: l, error } = await supabase
+      .from("lancamentos")
+      .insert({
+        data: dataLanc,
+        categoria_id: cat.id,
+        descricao: `Semana ${rotulo} — ${it.nome} (${it.detalhe})`,
+        forma_pagamento: opts.forma,
+        lancamento_em: hoje,
+        valor: Math.round(it.valor * 100) / 100,
+        origem: "manual",
+        vencimento: dataLanc,
+        pago: opts.jaPago,
+        pago_em: opts.jaPago ? dataLanc : null,
+      })
+      .select("id")
+      .single();
+    if (error) return { erro: error.message, n };
+    await supabase.from("semana_pagamentos").insert({
+      segunda, colaborador_id: it.colaboradorId, valor: it.valor, lancamento_id: l.id,
+    });
+    n++;
+  }
+  revalidatePath("/colaboradores/semana");
+  revalidatePath("/financeiro/contas");
+  revalidatePath("/financeiro");
+  return { ok: true, n };
 }
 
 // Cadastro rápido de um free esporádico direto da tela da semana.

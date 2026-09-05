@@ -91,7 +91,7 @@ export async function gerarEtiquetaPdf(d: EtiquetaPdfDados, baseUrl: string, cfg
   const linhas = [`${t.dataLabel}: ${manip}`, `Resp.: ${d.colaborador ?? "—"}`, `Nº ${d.numero}`];
   if (c.empresa) linhas.push(c.empresa);
   const rodape = linhas.join("\n");
-  const rodapeW = c.qr ? W - qrSize - 4 : W;
+  const rodapeW = c.qr ? W - qrSize - 4 - 2 * MM : W; // 2 mm = folga do QR até a borda
 
   // Acha a maior letra em que corpo + rodapé cabem (encolhe até 8 vezes).
   let fe = feBase;
@@ -129,8 +129,12 @@ export async function gerarEtiquetaPdf(d: EtiquetaPdfDados, baseUrl: string, cfg
   desenharCorpo(doc, fe, g, d, c);
 
   if (c.qr) {
-    const qr = await QRCode.toBuffer(`${baseUrl}/e/${d.id}`, { margin: 0, width: 220 });
-    doc.image(qr, width - pad - qrSize, baseY, { width: qrSize, height: qrSize });
+    // Zona de silêncio (borda branca de 2 módulos) dentro da própria imagem +
+    // 2 mm afastado da borda direita: a impressora corta a bordinha da etiqueta
+    // e o leitor precisa de branco em volta do QR. Correção "Q" aguenta ~25% de dano.
+    const qr = await QRCode.toBuffer(`${baseUrl}/e/${d.id}`, { margin: 2, width: 300, errorCorrectionLevel: "Q" });
+    const folga = 2 * MM;
+    doc.image(qr, width - pad - qrSize - folga, baseY, { width: qrSize, height: qrSize });
   }
   const fs = (linhas.length > 3 ? 6.3 : 7) * fe;
   doc.font("Helvetica").fontSize(fs);

@@ -41,6 +41,7 @@ export type Colaborador = {
   nascimento?: string | null;
   turno?: "dia" | "noite" | "ambos" | "proprietario";
   vinculo?: "clt" | "freelance";
+  vinculo_noite?: "clt" | "freelance" | null; // só quando turno = ambos (dia com carteira, noite free…)
   funcao?: string | null;
   salario_base?: number | null;
   valor_dia?: number | null;

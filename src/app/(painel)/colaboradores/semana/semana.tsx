@@ -3,14 +3,15 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, TURNOS } from "@/lib/equipe";
-import { criarEsporadico, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, type Turno } from "./actions";
+import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, TURNOS, vinculoDoTurno } from "@/lib/equipe";
+import { criarEsporadico, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, type Turno } from "./actions";
 
 export type Pessoa = {
   id: string;
   nome: string;
   turno: "dia" | "noite" | "ambos" | "proprietario";
   vinculo: "clt" | "freelance";
+  vinculo_noite: "clt" | "freelance" | null;
   funcao: string | null;
   valor_dia: number | null;
   valor_noite: number | null;
@@ -39,17 +40,29 @@ function numBRtxt(s: string) {
 }
 const fmtNum = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+type Pago = { colaborador_id: string; valor: number; lancamento_id: string | null };
+
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais,
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos,
 }: {
   segunda: string;
   dias: string[];
   pessoas: Pessoa[];
   presencasIniciais: Presenca[];
   dezIniciais: Dez[];
+  pagos: Pago[];
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const pagoDe = useMemo(() => new Map(pagos.map((p) => [p.colaborador_id, p])), [pagos]);
+  const [desmarcados, setDesmarcados] = useState<Set<string>>(new Set()); // quem NÃO lançar agora
+  const [jaPago, setJaPago] = useState(false);
+  const [dataPag, setDataPag] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  const [formaPag, setFormaPag] = useState("Dinheiro");
+  const [msg, setMsg] = useState<string | null>(null);
   const [marcadas, setMarcadas] = useState<Set<string>>(
     () => new Set(presencasIniciais.map((p) => chave(p.colaborador_id, p.data, p.turno))),
   );
@@ -101,9 +114,15 @@ export function SemanaClient({
           if (p.recebe_10) dez10 += porNoite[i].unit * (Number(p.peso_10) || 1);
         }
       }
-      const clt = p.vinculo === "clt";
-      const diarias = clt ? 0 : nDias * (Number(p.valor_dia) || 0) + nNoites * (Number(p.valor_noite) || 0);
-      return { p, nDias, nNoites, diarias, dez10, total: diarias + dez10, clt };
+      // Carteira assinada = salário à parte (não entra diária); pode ser CLT de dia e free de noite.
+      const cltDia = vinculoDoTurno(p, "dia") === "clt";
+      const cltNoite = vinculoDoTurno(p, "noite") === "clt";
+      const diarias = (cltDia ? 0 : nDias * (Number(p.valor_dia) || 0)) + (cltNoite ? 0 : nNoites * (Number(p.valor_noite) || 0));
+      const clt = cltDia && cltNoite;
+      const rotuloVinculo = cltDia && cltNoite ? "CLT (salário fixo — só o 10%)"
+        : !cltDia && !cltNoite ? "Freelance"
+        : cltDia ? "CLT de dia · free de noite" : "free de dia · CLT de noite";
+      return { p, nDias, nNoites, diarias, dez10, total: diarias + dez10, clt, cltDia, cltNoite, rotuloVinculo };
     });
     const totalPool = porNoite.reduce((s, n) => s + n.pool, 0);
     const totalDiarias = porPessoa.reduce((s, x) => s + x.diarias, 0);
@@ -138,8 +157,8 @@ export function SemanaClient({
       ["Semana", rotuloSemana(segunda)],
       [],
       ["Nome", "Vínculo", "Dias", "Noites", "Valor dia", "Valor noite", "Diárias", "10%", "Total"],
-      ...calc.porPessoa.map(({ p, nDias, nNoites, diarias, dez10, total, clt }) => [
-        p.nome, clt ? "CLT" : "Freelance", String(nDias), String(nNoites),
+      ...calc.porPessoa.map(({ p, nDias, nNoites, diarias, dez10, total, rotuloVinculo }) => [
+        p.nome, rotuloVinculo, String(nDias), String(nNoites),
         fmtNum(Number(p.valor_dia) || 0), fmtNum(Number(p.valor_noite) || 0),
         fmtNum(diarias), fmtNum(dez10), fmtNum(total),
       ]),
@@ -157,6 +176,36 @@ export function SemanaClient({
 
   const hoje = new Date();
   const ehHoje = (d: string) => deYmd(d).toDateString() === hoje.toDateString();
+
+  // Quem entra no lançamento: tem valor, ainda não foi lançado e não foi desmarcado.
+  const aLancar = calc.porPessoa.filter((x) => x.total > 0.005 && !pagoDe.has(x.p.id) && !desmarcados.has(x.p.id));
+  const totalALancar = aLancar.reduce((s, x) => s + x.total, 0);
+
+  function lancar() {
+    if (!aLancar.length) return;
+    const ok = window.confirm(
+      `Lançar ${aLancar.length} pagamento(s) somando ${brl(totalALancar)} no Contas a pagar (CMO Eventual / Diaristas)${jaPago ? ", já marcados como pagos" : ""}?`,
+    );
+    if (!ok) return;
+    start(async () => {
+      const r = await lancarPagamentosSemana(
+        segunda,
+        aLancar.map((x) => ({
+          colaboradorId: x.p.id,
+          nome: x.p.nome,
+          valor: Math.round(x.total * 100) / 100,
+          detalhe: [
+            x.nDias ? `${x.nDias} dia${x.nDias > 1 ? "s" : ""}` : "",
+            x.nNoites ? `${x.nNoites} noite${x.nNoites > 1 ? "s" : ""}` : "",
+            x.dez10 > 0.005 ? `10% ${fmtNum(x.dez10)}` : "",
+          ].filter(Boolean).join(", "),
+        })),
+        { jaPago, data: dataPag, forma: formaPag || null },
+      );
+      if (r.erro) setErro(r.erro);
+      else { setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar.`); router.refresh(); }
+    });
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-8">
@@ -260,7 +309,7 @@ export function SemanaClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {calc.porPessoa.map(({ p, nDias, nNoites, total, clt }) => (
+              {calc.porPessoa.map(({ p, nDias, nNoites, total, clt, cltDia, cltNoite }) => (
                 <tr key={p.id} className="bg-white dark:bg-zinc-950">
                   <td className="sticky left-0 z-10 bg-white px-3 py-1.5 dark:bg-zinc-950">
                     <div className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -268,7 +317,13 @@ export function SemanaClient({
                       {p.esporadico && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">free</span>}
                     </div>
                     <div className="text-[11px] text-zinc-400">
-                      {TURNOS[p.turno]?.icone} {clt ? "CLT" : `${p.valor_dia ? `dia ${fmtNum(Number(p.valor_dia))}` : ""}${p.valor_dia && p.valor_noite ? " · " : ""}${p.valor_noite ? `noite ${fmtNum(Number(p.valor_noite))}` : ""}`}
+                      {TURNOS[p.turno]?.icone}{" "}
+                      {clt
+                        ? "CLT"
+                        : [
+                            p.turno !== "noite" ? (cltDia ? "dia CLT" : p.valor_dia ? `dia ${fmtNum(Number(p.valor_dia))}` : "") : "",
+                            p.turno !== "dia" ? (cltNoite ? "noite CLT" : p.valor_noite ? `noite ${fmtNum(Number(p.valor_noite))}` : "") : "",
+                          ].filter(Boolean).join(" · ")}
                       {p.recebe_10 ? " · 10%" : ""}
                     </div>
                   </td>
@@ -335,6 +390,7 @@ export function SemanaClient({
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
               <tr>
+                <th className="px-3 py-3 text-center" title="Entra no lançamento">💸</th>
                 <th className="px-4 py-3">Pessoa</th>
                 <th className="px-3 py-3 text-center">Dias</th>
                 <th className="px-3 py-3 text-center">Noites</th>
@@ -347,11 +403,25 @@ export function SemanaClient({
               {calc.porPessoa
                 .filter((x) => x.nDias + x.nNoites > 0)
                 .sort((a, b) => b.total - a.total)
-                .map(({ p, nDias, nNoites, diarias, dez10, total, clt }) => (
-                  <tr key={p.id} className="bg-white dark:bg-zinc-950">
+                .map(({ p, nDias, nNoites, diarias, dez10, total, rotuloVinculo }) => (
+                  <tr key={p.id} className={`bg-white dark:bg-zinc-950 ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
+                    <td className="px-3 py-2 text-center">
+                      {pagoDe.has(p.id) ? (
+                        <span className="text-xs text-green-600" title={`Lançado: ${brl(Number(pagoDe.get(p.id)!.valor))}`}>✓</span>
+                      ) : total > 0.005 ? (
+                        <input
+                          type="checkbox"
+                          checked={!desmarcados.has(p.id)}
+                          onChange={(e) => setDesmarcados((s) => { const n = new Set(s); if (e.target.checked) n.delete(p.id); else n.add(p.id); return n; })}
+                        />
+                      ) : null}
+                    </td>
                     <td className="px-4 py-2">
                       <div className="font-medium text-zinc-900 dark:text-zinc-100">{p.nome}</div>
-                      <div className="text-[11px] text-zinc-400">{clt ? "CLT (salário fixo — só o 10%)" : "Freelance"}{p.funcao ? ` · ${p.funcao}` : ""}</div>
+                      <div className="text-[11px] text-zinc-400">
+                        {rotuloVinculo}{p.funcao ? ` · ${p.funcao}` : ""}
+                        {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))})</span>}
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-center">{nDias}</td>
                     <td className="px-3 py-2 text-center">{nNoites}</td>
@@ -361,7 +431,7 @@ export function SemanaClient({
                   </tr>
                 ))}
               <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
-                <td className="px-4 py-3" colSpan={3}>Total da semana</td>
+                <td className="px-4 py-3" colSpan={4}>Total da semana</td>
                 <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
                 <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
                 <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez)}</td>
@@ -373,6 +443,32 @@ export function SemanaClient({
             {Math.abs(calc.totalPool - calc.totalDez) > 0.01 && (
               <span className="ml-2 text-amber-600">— {brl(calc.totalPool - calc.totalDez)} sem ninguém marcado pra receber.</span>
             )}
+          </div>
+
+          {/* Pagar → Contas a pagar (CMO Eventual / Diaristas) */}
+          <div className="flex flex-wrap items-center gap-3 border-t border-zinc-200 bg-orange-50/60 p-3 text-sm dark:border-zinc-800 dark:bg-orange-950/20">
+            <label className="flex items-center gap-1">
+              Data
+              <input type="date" value={dataPag} onChange={(e) => setDataPag(e.target.value)} className={inputCls} />
+            </label>
+            <select value={formaPag} onChange={(e) => setFormaPag(e.target.value)} className={inputCls}>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Pix">Pix</option>
+              <option value="Transferência">Transferência</option>
+              <option value="">(sem forma)</option>
+            </select>
+            <label className="flex items-center gap-1">
+              <input type="checkbox" checked={jaPago} onChange={(e) => setJaPago(e.target.checked)} /> já paguei (entra como pago)
+            </label>
+            <button
+              onClick={lancar}
+              disabled={pending || aLancar.length === 0}
+              className="rounded-lg bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600 disabled:opacity-40"
+            >
+              💸 Lançar {aLancar.length} pagamento{aLancar.length === 1 ? "" : "s"} · {brl(totalALancar)} no Contas a pagar
+            </button>
+            <span className="text-xs text-zinc-500">categoria: CMO Eventual / Diaristas</span>
+            {msg && <span className="text-xs text-green-700">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}
           </div>
         </div>
       )}
