@@ -13,6 +13,7 @@ New-Item -ItemType Directory -Force -Path $app | Out-Null
 
 Write-Host "==> Copiando arquivos do agente..." -ForegroundColor Cyan
 Copy-Item (Join-Path $src "agente.mjs")   $app
+Copy-Item (Join-Path $src "cupom.mjs")    $app
 Copy-Item (Join-Path $src "package.json") $app
 Copy-Item (Join-Path $src "start.vbs")    $app
 Copy-Item (Join-Path $src "bandeja.ps1")  $app
@@ -28,7 +29,7 @@ Push-Location $app
 Pop-Location
 
 # nao empacotar config/log/pid/fila de teste
-foreach ($f in @("config.json","agente.log","agente.pid","bandeja.pid","fila.json")) {
+foreach ($f in @("config.json","agente.log","agente.pid","bandeja.pid","fila.json","logo.png")) {
   $p = Join-Path $app $f; if (Test-Path $p) { Remove-Item $p -Force }
 }
 

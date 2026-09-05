@@ -6,28 +6,75 @@
 //  3. Recebe as pesagens do quiosque (POST /pesagem) e cria a comanda no
 //     sistema. SEM internet? Guarda na fila local e sincroniza depois com
 //     RETRY INFINITO — e avisa o sistema quantas estão pendentes (heartbeat).
+//  4. Imprime o CUPOM na térmica ligada neste PC (POST /imprimir) — sem a
+//     janela de impressão do navegador. Impressora escolhida na tela do quiosque.
 import { SerialPort } from "serialport";
+import { print as imprimirPdf } from "pdf-to-printer";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { readFileSync, appendFileSync, writeFileSync, existsSync } from "node:fs";
+import { execFile } from "node:child_process";
+import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { gerarCupomPdf } from "./cupom.mjs";
 
-const VERSAO = "1.0.0";
+const VERSAO = "1.1.0";
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const cfg = JSON.parse(readFileSync(path.join(dir, "config.json"), "utf8").replace(/^﻿/, ""));
+const cfgFile = path.join(dir, "config.json");
+const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
 const baseUrl = String(cfg.baseUrl || "").replace(/\/$/, "");
 const token = cfg.token || "";
 const portaHttp = Number(cfg.portaHttp) || 8543;
 const portaSerial = cfg.portaSerial || "auto"; // "COM5" ou "auto" (procura Prolific/USB-Serial)
+let impressoraCupom = String(cfg.impressoraCupom || ""); // nome no Windows; "" = impressora padrão
 const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 const logFile = path.join(dir, "agente.log");
 const filaFile = path.join(dir, "fila.json");
+const logoFile = path.join(dir, "logo.png");
+const tmpDir = path.join(dir, "tmp");
 
 function log(m) {
   const linha = `[${new Date().toLocaleString("pt-BR")}] ${m}`;
   console.log(linha);
   try { appendFileSync(logFile, linha + "\n"); } catch { /* sem log */ }
+}
+function salvarConfig() {
+  try { writeFileSync(cfgFile, JSON.stringify({ ...cfg, impressoraCupom }, null, 2)); } catch (e) { log(`Não gravei o config.json: ${e.message}`); }
+}
+
+// ---------- impressão do cupom ----------
+// Impressoras do Windows (Get-CimInstance; o wmic sumiu no Win11).
+function listarImpressoras() {
+  return new Promise((res) => {
+    execFile("powershell", ["-NoProfile", "-Command", "Get-CimInstance Win32_Printer | Select-Object Name, Default | ConvertTo-Json -Compress"],
+      { windowsHide: true, timeout: 15000 }, (err, out) => {
+        if (err) return res([]);
+        try {
+          const j = JSON.parse(String(out || "[]").trim() || "[]");
+          const lista = Array.isArray(j) ? j : [j];
+          res(lista.filter((p) => p && p.Name).map((p) => ({ nome: String(p.Name), padrao: !!p.Default })));
+        } catch { res([]); }
+      });
+  });
+}
+// Logo do cupom: baixa do sistema uma vez e guarda (funciona offline depois).
+async function atualizarLogo() {
+  try {
+    const r = await fetch(`${baseUrl}/logo-brasa.png`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) writeFileSync(logoFile, Buffer.from(await r.arrayBuffer()));
+  } catch { /* fica com a logo antiga (ou sem) */ }
+}
+async function imprimirCupom(d) {
+  const logo = existsSync(logoFile) ? readFileSync(logoFile) : null;
+  const urlComanda = d.id ? `${baseUrl}/salao/comandas/${d.id}` : null;
+  const pdf = await gerarCupomPdf({ ...d, logo, urlComanda });
+  mkdirSync(tmpDir, { recursive: true });
+  const file = path.join(tmpDir, `cupom-${Date.now()}.pdf`);
+  writeFileSync(file, pdf);
+  const opts = { scale: "noscale" };
+  if (impressoraCupom) opts.printer = impressoraCupom;
+  await imprimirPdf(file, opts);
+  log(`Cupom ${d.codigoOffline || "#" + d.numero} impresso em "${impressoraCupom || "impressora padrão"}".`);
 }
 
 // ---------- fila offline (persistida em disco, retry infinito) ----------
@@ -188,6 +235,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Impressoras deste PC + a escolhida pro cupom.
+  if (req.method === "GET" && req.url === "/impressoras") {
+    const impressoras = await listarImpressoras();
+    res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ ok: true, impressoras, atual: impressoraCupom }));
+  }
+
+  // Escolha da impressora do cupom (gravada no config.json).
+  if (req.method === "POST" && req.url === "/config") {
+    let corpo = "";
+    req.on("data", (c) => { corpo += c; if (corpo.length > 10000) req.destroy(); });
+    req.on("end", () => {
+      try {
+        const p = JSON.parse(corpo);
+        if (typeof p.impressoraCupom === "string") { impressoraCupom = p.impressoraCupom.trim(); salvarConfig(); log(`Impressora do cupom: "${impressoraCupom || "padrão"}".`); }
+        res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true, atual: impressoraCupom }));
+      } catch { res.writeHead(400, cors); res.end(); }
+    });
+    return;
+  }
+
+  // Imprime o cupom da pesagem na térmica deste PC.
+  if (req.method === "POST" && req.url === "/imprimir") {
+    let corpo = "";
+    req.on("data", (c) => { corpo += c; if (corpo.length > 20000) req.destroy(); });
+    req.on("end", async () => {
+      let d;
+      try { d = JSON.parse(corpo); } catch { res.writeHead(400, cors); return res.end(); }
+      try {
+        await imprimirCupom(d);
+        res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        log(`Falha ao imprimir o cupom: ${e.message}`);
+        res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, erro: e.message }));
+      }
+    });
+    return;
+  }
+
   res.writeHead(404, cors);
   res.end();
 });
@@ -202,3 +291,6 @@ try { writeFileSync(path.join(dir, "agente.pid"), String(process.pid)); } catch 
 conectarBalanca();
 heartbeat();
 sincronizarFila();
+atualizarLogo();
+setInterval(atualizarLogo, 6 * 3600 * 1000);
+log(`Impressora do cupom: "${impressoraCupom || "padrão do Windows"}" (escolha na tela do quiosque, ⚙️).`);

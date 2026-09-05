@@ -106,7 +106,7 @@ export function QuiosqueBalanca({
     try {
       const r = await gerarComandaBuffetKiosk(bruto, soKgRef.current, taraBalancaRef.current);
       if (r.ok) {
-        setResultado({
+        const res: Resultado = {
           id: r.id,
           numero: r.numero,
           valor: r.valor,
@@ -114,15 +114,12 @@ export function QuiosqueBalanca({
           peso: r.peso,
           tara: r.tara,
           livre: r.livre,
-        });
+        };
+        setResultado(res);
         setEst("resultado");
-        // Imprime o cupom sozinho na impressora térmica (silencioso com Chrome
-        // em --kiosk-printing e a POS-80 como impressora padrão).
-        setTimeout(() => {
-          try {
-            window.print();
-          } catch {}
-        }, 400);
+        // Imprime o cupom sozinho: pelo agente (térmica deste PC) ou, sem
+        // agente, pelo navegador (silencioso com Chrome em --kiosk-printing).
+        setTimeout(() => imprimirCupom(res), 400);
         // Volta sozinho para o próximo cliente (caso o prato não seja retirado
         // ou a balança não mande mais leituras).
         if (resetRef.current) clearTimeout(resetRef.current);
@@ -149,6 +146,57 @@ export function QuiosqueBalanca({
   const [agente, setAgente] = useState(false);
   const agenteRef = useRef(false);
   const [filaAgente, setFilaAgente] = useState(0);
+
+  // Impressão do cupom: com agente, sai na térmica deste PC (sem janela);
+  // sem agente, cai no window.print (Chrome --kiosk-printing).
+  const [erroImpressao, setErroImpressao] = useState<string | null>(null);
+  const [configAberta, setConfigAberta] = useState(false);
+  const [impressoras, setImpressoras] = useState<{ nome: string; padrao: boolean }[]>([]);
+  const [impressoraCupom, setImpressoraCupom] = useState("");
+  const [msgConfig, setMsgConfig] = useState<string | null>(null);
+
+  async function imprimirCupom(r: Resultado | null) {
+    if (!r) return;
+    if (!agenteRef.current) { try { window.print(); } catch {} return; }
+    setErroImpressao(null);
+    try {
+      const res = await fetch(`${AGENTE_URL}/imprimir`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...cupom, ...r }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const j = await res.json();
+      if (!j.ok) setErroImpressao(j.erro || "falha ao imprimir");
+    } catch {
+      setErroImpressao("o agente não respondeu");
+    }
+  }
+  async function abrirConfig() {
+    setConfigAberta(true);
+    setMsgConfig(null);
+    try {
+      const r = await fetch(`${AGENTE_URL}/impressoras`, { signal: AbortSignal.timeout(20000) });
+      const j = await r.json();
+      setImpressoras(j.impressoras ?? []);
+      setImpressoraCupom(j.atual ?? "");
+    } catch {
+      setMsgConfig("Não consegui listar as impressoras (agente não respondeu).");
+    }
+  }
+  async function escolherImpressora(nome: string) {
+    setImpressoraCupom(nome);
+    try {
+      await fetch(`${AGENTE_URL}/config`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ impressoraCupom: nome }) });
+      setMsgConfig(`✓ Cupom vai sair em "${nome || "impressora padrão do Windows"}"`);
+    } catch {
+      setMsgConfig("Não consegui salvar.");
+    }
+  }
+  function testarImpressora() {
+    setMsgConfig("Imprimindo teste…");
+    imprimirCupom({ id: "", numero: 0, valor: 0, liquido: 0, peso: 0, tara: 0, livre: false, codigoOffline: "TESTE" }).then(() => setMsgConfig("Teste enviado — saiu na impressora?"));
+  }
 
   // Procura o agente local: se existir, ele vira a fonte do peso (nada de
   // Web Serial) e a tela pula direto pro atendimento.
@@ -213,7 +261,7 @@ export function QuiosqueBalanca({
   function concluir(r: Resultado) {
     setResultado(r);
     setEst("resultado");
-    setTimeout(() => { try { window.print(); } catch {} }, 400);
+    setTimeout(() => imprimirCupom(r), 400);
     if (resetRef.current) clearTimeout(resetRef.current);
     resetRef.current = setTimeout(() => {
       refPeso.current = 0;
@@ -386,14 +434,51 @@ export function QuiosqueBalanca({
           <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(2rem,9vh,7rem)] w-auto" />
           <span className="text-[clamp(1rem,3vw,2rem)] font-light text-white/60">Buffet</span>
         </div>
-        <Link
-          href="/salao/balanca"
-          className="text-4xl text-white/30 hover:text-white/80"
-          title="Sair do modo quiosque"
-        >
-          ✕
-        </Link>
+        <div className="flex items-center gap-6">
+          {agente && (
+            <button onClick={abrirConfig} className="text-3xl text-white/30 hover:text-white/80" title="Impressora do cupom">⚙️</button>
+          )}
+          <Link
+            href="/salao/balanca"
+            className="text-4xl text-white/30 hover:text-white/80"
+            title="Sair do modo quiosque"
+          >
+            ✕
+          </Link>
+        </div>
       </div>
+
+      {configAberta && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-6" onClick={() => setConfigAberta(false)}>
+          <div className="w-full max-w-xl rounded-3xl bg-[#211915] p-6 text-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-1 text-2xl font-bold">🖨️ Impressora do cupom</h2>
+            <p className="mb-4 text-sm text-white/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
+            <div className="max-h-72 space-y-2 overflow-y-auto">
+              <button
+                onClick={() => escolherImpressora("")}
+                className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === "" ? "border-[#C78340] bg-[#C78340]/30" : "border-white/20 hover:bg-white/10"}`}
+              >
+                Padrão do Windows
+              </button>
+              {impressoras.map((p) => (
+                <button
+                  key={p.nome}
+                  onClick={() => escolherImpressora(p.nome)}
+                  className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === p.nome ? "border-[#C78340] bg-[#C78340]/30" : "border-white/20 hover:bg-white/10"}`}
+                >
+                  {p.nome}{p.padrao ? <span className="ml-2 text-xs text-white/50">(padrão)</span> : null}
+                </button>
+              ))}
+              {impressoras.length === 0 && !msgConfig && <p className="text-white/50">Procurando impressoras…</p>}
+            </div>
+            {msgConfig && <p className="mt-3 text-sm text-[#C78340]">{msgConfig}</p>}
+            <div className="mt-5 flex gap-3">
+              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-white/25 py-3 text-lg hover:bg-white/10">🧾 Imprimir teste</button>
+              <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-[#C78340] py-3 text-lg font-bold">Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {estado === "conectar" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
@@ -439,15 +524,14 @@ export function QuiosqueBalanca({
                 {resultado.livre ? " · Buffet livre" : ""}
               </p>
               <button
-                onClick={() => {
-                  try {
-                    window.print();
-                  } catch {}
-                }}
+                onClick={() => imprimirCupom(resultado)}
                 className="nao-imprimir mt-6 rounded-xl border border-white/25 px-6 py-3 text-xl text-white/70 hover:bg-white/10"
               >
                 🖨️ Imprimir de novo
               </button>
+              {erroImpressao && (
+                <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-300">Impressora: {erroImpressao} — confira em ⚙️</p>
+              )}
             </div>
           ) : (
             <>
