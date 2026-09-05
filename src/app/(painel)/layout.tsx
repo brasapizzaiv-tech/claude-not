@@ -15,9 +15,17 @@ export default async function PainelLayout({
   const supabase = await createClient();
   const {
     data: { user },
+    error: erroAuth,
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) {
+    // Erro transitório do Auth (rede/limite/5xx) NÃO é "deslogado": mostra erro
+    // em vez de jogar a pessoa no login (o middleware já deixou passar).
+    if (erroAuth && !/session|jwt|token|refresh/i.test(`${erroAuth.name} ${erroAuth.message}`)) {
+      throw new Error(`Login instável no momento (${erroAuth.message}). Recarregue a página.`);
+    }
+    redirect("/login");
+  }
 
   const { data: profile } = await supabase
     .from("profiles")

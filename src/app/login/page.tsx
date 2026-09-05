@@ -25,7 +25,9 @@ export default function LoginPage() {
       setCarregando(false);
       return;
     }
-    router.push("/dashboard");
+    // Volta pra página que a pessoa estava tentando abrir (só caminhos internos).
+    const next = new URLSearchParams(window.location.search).get("next") || "";
+    router.push(next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
     router.refresh();
   }
 
