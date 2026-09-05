@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { deYmd, diasDaSemana, rotuloSemana } from "@/lib/equipe";
+import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
 
 export type Turno = "dia" | "noite";
 
@@ -22,11 +22,21 @@ export async function marcarPresenca(colaboradorId: string, data: string, turno:
 }
 
 // Valor do 10% arrecadado na noite (digitado à mão por enquanto).
-export async function salvarDezPorCento(data: string, valor: number, obs?: string) {
+// pagarEm = segunda da semana em que entra no acerto (padrão: semana seguinte).
+export async function salvarDezPorCento(data: string, valor: number, pagarEm?: string) {
   const supabase = await createClient();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
+  const pagar_em = pagarEm && /^\d{4}-\d{2}-\d{2}$/.test(pagarEm) ? segundaDe(pagarEm) : somarDias(segundaDe(data), 7);
   const { error } = await supabase
     .from("dez_por_cento_noites")
-    .upsert({ data, valor: Math.max(0, valor || 0), obs: obs?.trim() || null }, { onConflict: "data" });
+    .upsert({ data, valor: Math.max(0, valor || 0), pagar_em }, { onConflict: "data" });
+  if (error) return { erro: error.message };
+  return { ok: true, pagar_em };
+}
+
+export async function excluirDezPorCento(data: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("dez_por_cento_noites").delete().eq("data", data);
   if (error) return { erro: error.message };
   return { ok: true };
 }

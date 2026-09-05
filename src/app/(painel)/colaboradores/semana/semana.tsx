@@ -3,8 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, TURNOS, vinculoDoTurno } from "@/lib/equipe";
-import { criarEsporadico, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, type Turno } from "./actions";
+import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, TURNOS, vinculoDoTurno } from "@/lib/equipe";
+import { criarEsporadico, excluirDezPorCento, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, type Turno } from "./actions";
 
 export type Pessoa = {
   id: string;
@@ -23,7 +23,9 @@ export type Pessoa = {
 };
 
 type Presenca = { colaborador_id: string; data: string; turno: Turno };
-type Dez = { data: string; valor: number; obs: string | null };
+type Dez = { data: string; valor: number; pagar_em: string };
+// Linha do painel de 10%: valor como texto (digitação) + em que semana é pago.
+type DezLinha = { data: string; valor: string; pagar_em: string };
 
 const chave = (id: string, data: string, turno: Turno) => `${id}|${data}|${turno}`;
 
@@ -68,11 +70,10 @@ export function SemanaClient({
   const [marcadas, setMarcadas] = useState<Set<string>>(
     () => new Set(presencasIniciais.map((p) => chave(p.colaborador_id, p.data, p.turno))),
   );
-  const [dez, setDez] = useState<Record<string, string>>(() => {
-    const o: Record<string, string> = {};
-    for (const d of dezIniciais) o[d.data] = d.valor ? fmtNum(Number(d.valor)) : "";
-    return o;
-  });
+  const [dez, setDez] = useState<DezLinha[]>(() =>
+    dezIniciais.map((d) => ({ data: d.data, valor: Number(d.valor) ? fmtNum(Number(d.valor)) : "", pagar_em: d.pagar_em })),
+  );
+  const [novaNoite, setNovaNoite] = useState("");
   const [extras, setExtras] = useState<Set<string>>(new Set()); // esporádicos trazidos pra semana
   const [erro, setErro] = useState<string | null>(null);
   const [addAberto, setAddAberto] = useState(false);
@@ -97,23 +98,28 @@ export function SemanaClient({
     return pessoas.filter((p) => !ids.has(p.id) && p.turno !== "proprietario");
   }, [pessoas, naGrade]);
 
-  // Cálculo: por noite, o 10% é dividido entre os presentes que recebem 10%
-  // (proporcional ao peso — normalmente 1 pra todo mundo).
+  // Cálculo: cada noite de 10% é dividida entre quem trabalhou NAQUELA noite e
+  // recebe 10% (proporcional ao peso — normalmente 1 pra todo mundo). Entram no
+  // acerto desta semana as noites com pagar_em = esta segunda (em geral, a
+  // semana passada). As diárias são só dos dias desta semana.
   const calc = useMemo(() => {
-    const porNoite = dias.map((d) => {
-      const pool = numBRtxt(dez[d] ?? "");
-      const presentes = naGrade.filter((p) => p.recebe_10 && marcadas.has(chave(p.id, d, "noite")));
+    const porNoite = dez.map((e) => {
+      const pool = numBRtxt(e.valor);
+      const presentes = pessoas.filter((p) => p.recebe_10 && marcadas.has(chave(p.id, e.data, "noite")));
       const pesoTotal = presentes.reduce((s, p) => s + (Number(p.peso_10) || 1), 0);
       const unit = pesoTotal > 0 ? pool / pesoTotal : 0;
-      return { data: d, pool, presentes: presentes.length, pesoTotal, unit };
+      return { data: e.data, pagar_em: e.pagar_em, pool, presentes: presentes.length, pesoTotal, unit, nestaSemana: e.pagar_em === segunda };
     });
+    const noitesPagas = porNoite.filter((n) => n.nestaSemana);
     const porPessoa = naGrade.map((p) => {
       let nDias = 0, nNoites = 0, dez10 = 0;
-      for (const [i, d] of dias.entries()) {
+      for (const d of dias) {
         if (marcadas.has(chave(p.id, d, "dia"))) nDias++;
-        if (marcadas.has(chave(p.id, d, "noite"))) {
-          nNoites++;
-          if (p.recebe_10) dez10 += porNoite[i].unit * (Number(p.peso_10) || 1);
+        if (marcadas.has(chave(p.id, d, "noite"))) nNoites++;
+      }
+      if (p.recebe_10) {
+        for (const n of noitesPagas) {
+          if (marcadas.has(chave(p.id, n.data, "noite"))) dez10 += n.unit * (Number(p.peso_10) || 1);
         }
       }
       // Carteira assinada = salário à parte (não entra diária); pode ser CLT de dia e free de noite.
@@ -126,11 +132,11 @@ export function SemanaClient({
         : cltDia ? "CLT de dia · free de noite" : "free de dia · CLT de noite";
       return { p, nDias, nNoites, diarias, dez10, total: diarias + dez10, clt, cltDia, cltNoite, rotuloVinculo };
     });
-    const totalPool = porNoite.reduce((s, n) => s + n.pool, 0);
+    const totalPool = noitesPagas.reduce((s, n) => s + n.pool, 0);
     const totalDiarias = porPessoa.reduce((s, x) => s + x.diarias, 0);
     const totalDez = porPessoa.reduce((s, x) => s + x.dez10, 0);
-    return { porNoite, porPessoa, totalPool, totalDiarias, totalDez };
-  }, [dias, dez, naGrade, marcadas]);
+    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez };
+  }, [dias, dez, naGrade, pessoas, marcadas, segunda]);
 
   function toggle(p: Pessoa, d: string, turno: Turno) {
     const k = chave(p.id, d, turno);
@@ -145,11 +151,31 @@ export function SemanaClient({
     });
   }
 
-  function salvarDez(d: string) {
-    const v = numBRtxt(dez[d] ?? "");
-    setDez((o) => ({ ...o, [d]: v ? fmtNum(v) : "" }));
+  function salvarDez(data: string, valorTxt: string, pagarEm: string) {
+    const v = numBRtxt(valorTxt);
+    setDez((lista) => lista.map((e) => (e.data === data ? { ...e, valor: v ? fmtNum(v) : "", pagar_em: pagarEm } : e)));
     start(async () => {
-      const r = await salvarDezPorCento(d, v);
+      const r = await salvarDezPorCento(data, v, pagarEm);
+      if (r.erro) setErro(r.erro);
+    });
+  }
+  function addNoite() {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(novaNoite)) return;
+    if (dez.some((e) => e.data === novaNoite)) { setErro("Essa noite já está na lista."); return; }
+    const pagarEm = somarDias(segundaDe(novaNoite), 7);
+    setDez((l) => [...l, { data: novaNoite, valor: "", pagar_em: pagarEm }].sort((a, b) => (a.data < b.data ? -1 : 1)));
+    setNovaNoite("");
+    start(async () => {
+      const r = await salvarDezPorCento(novaNoite, 0, pagarEm);
+      if (r.erro) setErro(r.erro);
+      else router.refresh(); // carrega as presenças daquela noite se for de outra semana
+    });
+  }
+  function removerNoite(data: string) {
+    if (!window.confirm(`Apagar o 10% da noite ${rotuloDia(data)}?`)) return;
+    setDez((l) => l.filter((e) => e.data !== data));
+    start(async () => {
+      const r = await excluirDezPorCento(data);
       if (r.erro) setErro(r.erro);
     });
   }
@@ -165,8 +191,8 @@ export function SemanaClient({
         fmtNum(diarias), fmtNum(dez10), fmtNum(total),
       ]),
       [],
-      ["Noite", "10% arrecadado", "Presentes", "Cada um"],
-      ...calc.porNoite.map((n) => [rotuloDia(n.data), fmtNum(n.pool), String(n.presentes), fmtNum(n.unit)]),
+      ["Noite (10% pago nesta semana)", "10% arrecadado", "Presentes", "Cada um"],
+      ...calc.noitesPagas.map((n) => [rotuloDia(n.data), fmtNum(n.pool), String(n.presentes), fmtNum(n.unit)]),
     ];
     const csv = linhas.map((l) => l.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
@@ -226,7 +252,7 @@ export function SemanaClient({
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Semana e 10%</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Marque quem trabalhou em cada dia (☀️ dia / 🌙 noite), digite o 10% de cada noite e o sistema soma o que pagar.
+            Marque quem trabalhou em cada dia (☀️ dia / 🌙 noite). O 10% de cada noite é dividido por quem trabalhou naquela noite e entra no acerto da semana seguinte.
             {" "}<Link href="/colaboradores" className="text-orange-600 hover:underline">Cadastro da equipe</Link>
           </p>
         </div>
@@ -309,6 +335,95 @@ export function SemanaClient({
         </div>
       )}
 
+      {/* 10% da noite: painel separado. Cada noite tem a data em que foi gerada e a
+          semana em que é paga (padrão: a seguinte). A divisão usa quem trabalhou NAQUELA noite. */}
+      <div className="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="font-semibold">🌙 10% da noite</p>
+            <p className="text-xs text-zinc-500">
+              Digite o arrecadado de cada noite. Entra no acerto desta semana ({rotuloSemana(segunda)}) o que está marcado como <b>paga nesta semana</b> — normalmente as noites da semana passada.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <input type="date" value={novaNoite} onChange={(e) => setNovaNoite(e.target.value)} className={inputCls} />
+            <button onClick={addNoite} disabled={!novaNoite} className="rounded-lg bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700 disabled:opacity-40">
+              + Adicionar noite
+            </button>
+          </div>
+        </div>
+        {dez.length === 0 ? (
+          <p className="text-sm text-zinc-500">Nenhuma noite lançada. Adicione a data da noite e digite o valor.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wide text-zinc-500">
+                <tr>
+                  <th className="px-2 py-1">Noite</th>
+                  <th className="px-2 py-1 text-right">10% arrecadado</th>
+                  <th className="px-2 py-1">Paga em</th>
+                  <th className="px-2 py-1 text-center">Trabalharam</th>
+                  <th className="px-2 py-1 text-right">Cada um</th>
+                  <th className="px-2 py-1"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {calc.porNoite.map((n, i) => {
+                  const e = dez[i];
+                  const opcoesPagar = Array.from(new Set([somarDias(segundaDe(n.data), 7), segunda, somarDias(segunda, 7), n.pagar_em])).sort();
+                  return (
+                    <tr key={n.data} className={n.nestaSemana ? "bg-white dark:bg-zinc-950" : "opacity-70"}>
+                      <td className="px-2 py-1 font-medium whitespace-nowrap">
+                        {rotuloDia(n.data)}
+                        {(n.data < dias[0] || n.data > dias[6]) && <span className="ml-1 text-[10px] text-zinc-400">(outra semana)</span>}
+                      </td>
+                      <td className="px-2 py-1 text-right">
+                        <input
+                          value={e.valor}
+                          onChange={(ev) => setDez((l) => l.map((x) => (x.data === n.data ? { ...x, valor: ev.target.value } : x)))}
+                          onBlur={(ev) => salvarDez(n.data, ev.target.value, e.pagar_em)}
+                          onKeyDown={(ev) => { if (ev.key === "Enter") (ev.target as HTMLInputElement).blur(); }}
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          className={`${inputCls} w-28 text-right font-semibold`}
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <select
+                          value={e.pagar_em}
+                          onChange={(ev) => salvarDez(n.data, e.valor, ev.target.value)}
+                          className={`${inputCls} ${n.nestaSemana ? "border-indigo-400 font-medium" : ""}`}
+                        >
+                          {opcoesPagar.map((s) => (
+                            <option key={s} value={s}>
+                              semana {rotuloSemana(s)}{s === segunda ? " (esta)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {n.presentes > 0 ? `${n.presentes} 🌙` : n.pool > 0 ? <span className="text-red-600">ninguém marcado nessa noite</span> : "—"}
+                      </td>
+                      <td className="px-2 py-1 text-right font-semibold">{n.presentes > 0 ? brl(n.unit) : "—"}</td>
+                      <td className="px-2 py-1 text-right">
+                        <button onClick={() => removerNoite(n.data)} className="text-zinc-400 hover:text-red-600" title="Apagar">🗑</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr className="border-t border-indigo-200 font-semibold dark:border-indigo-900">
+                  <td className="px-2 py-1" colSpan={1}>Entra nesta semana</td>
+                  <td className="px-2 py-1 text-right">{brl(calc.totalPool)}</td>
+                  <td className="px-2 py-1 text-xs font-normal text-zinc-500" colSpan={4}>
+                    {calc.noitesPagas.length} noite{calc.noitesPagas.length === 1 ? "" : "s"} · quem trabalhou nelas recebe no acerto desta semana, mesmo sem trabalhar agora
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {modo === "grade" ? (
         <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
           <table className="w-full text-sm">
@@ -372,29 +487,6 @@ export function SemanaClient({
                   </td>
                 </tr>
               ))}
-              <tr className="bg-indigo-50/60 dark:bg-indigo-950/30">
-                <td className="sticky left-0 z-10 bg-indigo-50 px-3 py-2 font-semibold dark:bg-indigo-950">
-                  🌙 10% da noite (R$)
-                  <div className="text-[11px] font-normal text-zinc-500">digite o arrecadado</div>
-                </td>
-                {calc.porNoite.map((n) => (
-                  <td key={n.data} className="px-1 py-2 text-center align-top">
-                    <input
-                      value={dez[n.data] ?? ""}
-                      onChange={(e) => setDez((o) => ({ ...o, [n.data]: e.target.value }))}
-                      onBlur={() => salvarDez(n.data)}
-                      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      className={`${inputCls} w-[4.6rem] text-right font-semibold`}
-                    />
-                    <div className="mt-1 text-[11px] text-zinc-500">
-                      {n.presentes > 0 ? <>÷ {n.presentes} = <b>{fmtNum(n.unit)}</b></> : n.pool > 0 ? <span className="text-red-600">ninguém marcado</span> : "—"}
-                    </div>
-                  </td>
-                ))}
-                <td className="px-3 py-2 text-right font-semibold">{brl(calc.totalPool)}</td>
-              </tr>
             </tbody>
           </table>
         </div>
@@ -416,7 +508,7 @@ export function SemanaClient({
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {calc.porPessoa
-                .filter((x) => x.nDias + x.nNoites > 0)
+                .filter((x) => x.nDias + x.nNoites > 0 || x.dez10 > 0.005 || pagoDe.has(x.p.id))
                 .sort((a, b) => b.total - a.total)
                 .map(({ p, nDias, nNoites, diarias, dez10, total, rotuloVinculo }) => (
                   <tr key={p.id} className={`bg-white dark:bg-zinc-950 ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
@@ -477,7 +569,7 @@ export function SemanaClient({
             </tbody>
           </table>
           <div className="border-t border-zinc-200 p-3 text-xs text-zinc-500 dark:border-zinc-800">
-            10% arrecadado na semana: <b>{brl(calc.totalPool)}</b>
+            10% que entra neste acerto: <b>{brl(calc.totalPool)}</b> ({calc.noitesPagas.map((n) => rotuloDia(n.data)).join(", ") || "nenhuma noite"})
             {Math.abs(calc.totalPool - calc.totalDez) > 0.01 && (
               <span className="ml-2 text-amber-600">— {brl(calc.totalPool - calc.totalDez)} sem ninguém marcado pra receber.</span>
             )}
