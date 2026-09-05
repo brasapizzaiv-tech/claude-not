@@ -29,5 +29,5 @@ export function suspeito(valor: number, r: Referencia | undefined) {
 export function explicacao(r: Referencia, valor: number) {
   const d = r.ultima_data ? `${r.ultima_data.slice(8, 10)}/${r.ultima_data.slice(5, 7)}` : "";
   const f = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
-  return `Na última contagem (${d}) tinha ${f(r.ultima_qtd)}${r.comprado > 0 ? ` e chegou ${f(r.comprado)} depois` : " e não chegou nada depois"} = no máximo ${f(maximoEsperado(r) ?? 0)}. Você digitou ${f(valor)}. Confere de novo?`;
+  return `Na última contagem (${d}) tinha ${f(r.ultima_qtd)}${r.comprado > 0 ? ` e chegou ${f(r.comprado)} depois (notas e pedidos da cotação)` : " e não chegou nada depois (nem nota, nem pedido)"} = no máximo ${f(maximoEsperado(r) ?? 0)}. Você digitou ${f(valor)}. Confere de novo?`;
 }
