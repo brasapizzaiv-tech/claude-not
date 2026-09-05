@@ -80,6 +80,25 @@ export function QuiosqueBalanca({
     setBalancaTarada(v);
     try { localStorage.setItem("quiosque_balanca_tarada", v ? "1" : "0"); } catch { /* sem storage */ }
   }
+  // Tara do prato aprendida da própria balança (leitura com ela vazia e tarada =
+  // −tara). Vale mais que a tara padrão do sistema. Guardada neste PC.
+  const [taraPrato, setTaraPrato] = useState<number | null>(null);
+  const taraPratoRef = useRef<number | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        const v = Number(localStorage.getItem("quiosque_tara_prato"));
+        if (v > 0) { taraPratoRef.current = v; setTaraPrato(v); }
+      } catch { /* sem storage */ }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+  function definirTaraPrato(v: number | null) {
+    taraPratoRef.current = v;
+    setTaraPrato(v);
+    try { if (v) localStorage.setItem("quiosque_tara_prato", String(v)); else localStorage.removeItem("quiosque_tara_prato"); } catch { /* sem storage */ }
+  }
+  const taraEmUso = () => taraPratoRef.current ?? taraPadrao;
   const [soKg, setSoKg] = useState(false); // marmita: só por kg (sem teto do livre)
   const soKgRef = useRef(false);
   const toggleSoKg = () => {
@@ -120,9 +139,9 @@ export function QuiosqueBalanca({
   //  aí a chave "balança tarada com o prato" (⚙️) diz que a tara é a tara padrão.
   const netDe = (leitura: number, taraBal: number, marmita: boolean) => {
     const tarada = taraBal > 0.001 || balancaTaradaRef.current;
-    const tara = taraBal > 0.001 ? taraBal : taraPadrao;
+    const tara = taraBal > 0.001 ? taraBal : taraEmUso();
     if (tarada) return marmita ? Math.max(0, leitura + tara) : Math.max(0, leitura);
-    return marmita ? Math.max(0, leitura) : Math.max(0, leitura - taraPadrao);
+    return marmita ? Math.max(0, leitura) : Math.max(0, leitura - taraEmUso());
   };
 
   // Valor a partir do peso LÍQUIDO já resolvido.
@@ -600,11 +619,36 @@ export function QuiosqueBalanca({
               <span>
                 <b>A balança está tarada com o prato</b> (apertaram T com o prato em cima).
                 <span className="block text-xs text-[#211915]/60">
-                  Marcado: o peso que ela manda já é líquido e a marmita = leitura + {taraPadrao.toFixed(3).replace(".", ",")} kg (tara padrão).
-                  Desmarcado: o prato desconta a tara padrão e a marmita cobra o peso inteiro.
+                  Marcado: o peso que ela manda já é líquido e a marmita = leitura + tara do prato.
+                  Desmarcado: o prato desconta a tara do prato e a marmita cobra o peso inteiro.
                 </span>
               </span>
             </label>
+            {/* Tara do prato: aprendida da balança vazia (leitura negativa = −tara) */}
+            <div className="mt-2 rounded-xl border border-[#211915]/15 p-3 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  Tara do prato em uso: <b>{(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg</b>
+                  <span className="ml-1 text-xs text-[#211915]/50">{taraPrato ? "(aprendida da balança)" : "(tara padrão do sistema)"}</span>
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => definirTaraPrato(Math.round(-pesoBruto * 1000) / 1000)}
+                    disabled={!(pesoBruto < -0.02)}
+                    title="Com a balança tarada e VAZIA, a leitura negativa é exatamente o peso do prato"
+                    className="rounded-lg bg-[#211915] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
+                  >
+                    Balança vazia agora → usar {pesoBruto < -0.02 ? (-pesoBruto).toFixed(3).replace(".", ",") : "…"} kg
+                  </button>
+                  {taraPrato && (
+                    <button onClick={() => definirTaraPrato(null)} className="rounded-lg border border-[#211915]/20 px-3 py-1.5 text-xs">
+                      voltar à padrão
+                    </button>
+                  )}
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-[#211915]/50">Leitura agora: {pesoBruto.toFixed(3).replace(".", ",")} kg. Tire tudo da balança (tarada) e clique no botão.</p>
+            </div>
             {/* Diagnóstico da balança: leitura crua que chegou no agente */}
             <div className="mt-4 rounded-xl border border-[#211915]/15 bg-[#f6efe6] p-3 text-xs">
               <div className="mb-1 flex items-center justify-between">
@@ -775,12 +819,12 @@ export function QuiosqueBalanca({
                 </p>
               ) : balancaTarada ? (
                 <p className="mt-2 text-sm text-[#211915]/40">
-                  Balança tarada com o prato ({taraPadrao.toFixed(3).replace(".", ",")} kg)
+                  Balança tarada com o prato ({(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg)
                   {soKg ? " · marmita: leitura + tara" : " · peso já líquido"}
                 </p>
-              ) : taraPadrao > 0 ? (
+              ) : (taraPrato ?? taraPadrao) > 0 ? (
                 <p className="mt-2 text-sm text-[#211915]/40">
-                  {soKg ? "Marmita: cobra o peso inteiro (sem descontar prato)" : `Prato: desconta ${taraPadrao.toFixed(3).replace(".", ",")} kg (tara do sistema)`}
+                  {soKg ? "Marmita: cobra o peso inteiro (sem descontar prato)" : `Prato: desconta ${(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg`}
                 </p>
               ) : null}
               {/* Botão manual — garante gerar a comanda se a balança oscilar muito */}
