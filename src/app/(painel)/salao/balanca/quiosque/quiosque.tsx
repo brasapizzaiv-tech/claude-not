@@ -74,6 +74,10 @@ export function QuiosqueBalanca({
   // Depois de pesar, a próxima comanda só sai quando a balança ZERAR (prato
   // retirado) — senão o mesmo prato parado gerava outra comanda.
   const precisaZerar = useRef(false);
+  // Leitura crua e líquido no momento da captura: "retirou" = a leitura caiu
+  // pelo menos o peso capturado (funciona com prato E com marmita, mesmo quando
+  // a balança lê negativo por causa da tara).
+  const capturaRef = useRef<{ bruto: number; liquido: number } | null>(null);
   const estadoRef = useRef(estado);
   const refPeso = useRef(0);
   const estavelDesde = useRef(0);
@@ -106,10 +110,23 @@ export function QuiosqueBalanca({
   const liq = netDe(pesoBruto, taraBalanca, soKg);
   const { valor: valorAtual } = calcValor(pesoBruto, soKg);
 
+  // Volta pro próximo cliente: zera tudo, inclusive o modo marmita.
+  function voltarAguardando() {
+    if (resetRef.current) clearTimeout(resetRef.current);
+    precisaZerar.current = false;
+    capturaRef.current = null;
+    refPeso.current = 0;
+    estavelDesde.current = 0;
+    soKgRef.current = false;
+    setSoKg(false);
+    setEst("aguardando");
+  }
+
   async function capturar(bruto: number) {
     setEst("processando");
     // O que vai pro sistema é o peso LÍQUIDO já resolvido (marmita = leitura + tara).
     const liquido = Math.round(netDe(bruto, taraBalancaRef.current, soKgRef.current) * 1000) / 1000;
+    capturaRef.current = { bruto, liquido };
     try {
       const r = await gerarComandaBuffetKiosk(liquido, soKgRef.current, taraBalancaRef.current);
       if (r.ok) {
@@ -136,16 +153,15 @@ export function QuiosqueBalanca({
         // mostra o motivo em vez de sumir com a pesagem em silêncio.
         setErro((r as { mensagem?: string }).mensagem || "Não consegui gerar a comanda. Chame alguém do caixa.");
         setTimeout(() => setErro(""), 8000);
-        setEst("aguardando");
+        voltarAguardando();
       }
     } catch {
       // Sistema fora do ar (internet caiu) → fila offline do agente.
       const ok = await capturarViaAgente({ peso: liquido, tara_balanca: taraBalancaRef.current, so_kg: soKgRef.current });
-      if (!ok) setEst("aguardando");
+      if (!ok) voltarAguardando();
     }
-    // Marmita é por pesagem — volta ao normal para o próximo cliente.
-    soKgRef.current = false;
-    setSoKg(false);
+    // O modo marmita fica ligado até a marmita ser retirada (senão a conta do
+    // "retire" muda no meio) — é desligado em voltarAguardando().
   }
 
   // ---------- agente da balança (programa no PC) ----------
@@ -373,13 +389,11 @@ export function QuiosqueBalanca({
     const est = estadoRef.current;
     if (est === "processando") return;
     if (est === "resultado") {
-      if (liquido <= LIMIAR) {
-        if (resetRef.current) clearTimeout(resetRef.current);
-        precisaZerar.current = false;
-        refPeso.current = 0;
-        estavelDesde.current = 0;
-        setEst("aguardando"); // prato retirado → próximo cliente
-      }
+      // Retirou o prato/marmita? Líquido zerou OU a leitura crua caiu pelo menos
+      // o peso capturado (cobre a marmita, que a balança lê negativo com a tara).
+      const cap = capturaRef.current;
+      const removido = liquido <= LIMIAR || (!!cap && bruto <= cap.bruto - cap.liquido + LIMIAR);
+      if (removido) voltarAguardando(); // → próximo cliente
       return;
     }
     if (liquido <= LIMIAR) {
@@ -594,7 +608,7 @@ export function QuiosqueBalanca({
               )}
               {resultado.peso > 0 ? (
                 <div className="mx-auto max-w-3xl rounded-3xl border-4 border-amber-400 bg-amber-100 px-8 py-4">
-                  <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-amber-700">⬆ RETIRE O PRATO</p>
+                  <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-amber-700">⬆ {soKg ? "RETIRE SUA MARMITA" : "RETIRE O PRATO"}</p>
                   <p className="mt-1 text-[clamp(0.9rem,2.5vw,1.5rem)] text-[#211915]/70">Pegue seu cupom · a próxima pesagem começa quando a balança zerar</p>
                 </div>
               ) : (
