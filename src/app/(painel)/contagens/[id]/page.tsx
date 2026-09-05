@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Contagem, Produto, ContagemItem } from "@/lib/types";
 import { ContarClient } from "./contar";
+import type { Referencia } from "@/lib/contagem-referencia";
 
 export default async function ContagemPage({
   params,
@@ -36,12 +37,13 @@ export default async function ContagemPage({
     .order("nome");
   if (catIds.length) prodQuery = prodQuery.in("categoria_id", catIds);
 
-  const [{ data: produtos }, { data: itens }] = await Promise.all([
+  const [{ data: produtos }, { data: itens }, { data: ref }] = await Promise.all([
     prodQuery,
     supabase
       .from("contagem_itens")
       .select("produto_id, qtd_estoque, qtd_pedir")
       .eq("contagem_id", id),
+    supabase.rpc("contagem_referencia", { p_contagem_id: id }),
   ]);
 
   return (
@@ -52,6 +54,7 @@ export default async function ContagemPage({
         ContagemItem,
         "produto_id" | "qtd_estoque" | "qtd_pedir"
       >[]) ?? []}
+      referencia={(ref as Referencia[] | null) ?? []}
     />
   );
 }

@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import type { Produto } from "@/lib/types";
 import { EstoqueInput, calcular } from "@/components/estoque-input";
 import { salvarContagemPublica, buscarProdutosContagem } from "./actions";
+import { mapaReferencia, suspeito, explicacao, type Referencia } from "@/lib/contagem-referencia";
 
 type ExtraProduto = { id: string; nome: string; unidade: string; categoria: string };
 
@@ -20,6 +21,7 @@ export function PreencherClient({
   finalizada,
   produtos,
   itens,
+  referencia,
 }: {
   token: string;
   descricao: string;
@@ -27,8 +29,12 @@ export function PreencherClient({
   finalizada: boolean;
   produtos: Produto[];
   itens: ItemInicial[];
+  referencia: Referencia[];
 }) {
   const [salvando, startSave] = useTransition();
+  // Conferência: "tinha X na última contagem + chegou Y" = máximo possível.
+  const refs = useMemo(() => mapaReferencia(referencia), [referencia]);
+  const [confirmados, setConfirmados] = useState<Set<string>>(new Set()); // "contei de novo, está certo"
   const [msg, setMsg] = useState<string | null>(null);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
@@ -92,6 +98,40 @@ export function PreencherClient({
   // Preenchido = o contador respondeu algo (0 também vale!).
   const foiPreenchido = (produtoId: string) =>
     (valores[produtoId] ?? []).some((b) => b.trim() !== "");
+  // Digitou mais do que podia ter e ainda não confirmou que contou de novo.
+  const ehSuspeito = (produtoId: string) => suspeito(totalDe(produtoId), refs.get(produtoId));
+  const precisaConferir = (produtoId: string) => ehSuspeito(produtoId) && !confirmados.has(produtoId);
+
+  function AvisoRef({ id }: { id: string }) {
+    const r = refs.get(id);
+    if (!r) return null;
+    const f = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+    if (!ehSuspeito(id)) {
+      return (
+        <div className="mt-1 text-[11px] text-zinc-400">
+          última contagem: {f(r.ultima_qtd)}{r.comprado > 0 ? ` · chegou depois: ${f(r.comprado)}` : ""}
+        </div>
+      );
+    }
+    if (confirmados.has(id)) {
+      return <div className="mt-1 text-[11px] text-emerald-600">✓ Conferido: você contou de novo e confirmou {f(totalDe(id))}.</div>;
+    }
+    return (
+      <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+        ⚠️ {explicacao(r, totalDe(id))}
+        <div className="mt-1.5 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setConfirmados((s) => new Set(s).add(id))}
+            className="rounded-md bg-amber-600 px-2 py-1 font-semibold text-white"
+          >
+            Contei de novo, está certo
+          </button>
+          <span className="self-center text-[11px]">ou corrija o número acima</span>
+        </div>
+      </div>
+    );
+  }
 
   const todosItens = useMemo(
     () => [
@@ -161,6 +201,16 @@ export function PreencherClient({
       const resto = faltando.length > 6 ? ` e mais ${faltando.length - 6}` : "";
       setErroEnvio(
         `Faltam ${faltando.length} itens: ${nomes}${resto}. Preencha todos — se não tiver nenhum, digite 0.`,
+      );
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    // Números acima do possível: precisa contar de novo (ou confirmar).
+    const conferir = todosItens.filter((p) => precisaConferir(p.id));
+    if (conferir.length > 0) {
+      setMsg(null);
+      setErroEnvio(
+        `${conferir.length} item(ns) com número maior do que podia ter: ${conferir.slice(0, 5).map((f) => f.nome).join(", ")}${conferir.length > 5 ? "…" : ""}. Conte de novo — se estiver certo mesmo, toque em "Contei de novo, está certo" no item.`,
       );
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -266,6 +316,7 @@ export function PreencherClient({
                                 />
                               </div>
                             </label>
+                            <AvisoRef id={p.id} />
                           </div>
                         );
                       })}
@@ -303,6 +354,7 @@ export function PreencherClient({
                               />
                             </div>
                           </label>
+                          <AvisoRef id={p.id} />
                         </div>
                       );
                     })}

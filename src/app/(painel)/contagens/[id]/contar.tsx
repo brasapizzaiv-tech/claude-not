@@ -10,6 +10,7 @@ import {
   finalizarContagem,
   reabrirContagem,
 } from "../actions";
+import { mapaReferencia, suspeito, explicacao, type Referencia } from "@/lib/contagem-referencia";
 
 type ItemInicial = {
   produto_id: string;
@@ -26,12 +27,25 @@ export function ContarClient({
   contagem,
   produtos,
   itens,
+  referencia,
 }: {
   contagem: Contagem;
   produtos: Produto[];
   itens: ItemInicial[];
+  referencia: Referencia[];
 }) {
   const finalizada = contagem.status === "finalizada";
+  // Conferência: última contagem + o que chegou = máximo possível por produto.
+  const refs = useMemo(() => mapaReferencia(referencia), [referencia]);
+  const [valores, setValores] = useState<Record<string, number>>(() => {
+    const v: Record<string, number> = {};
+    for (const i of itens) v[i.produto_id] = Number(i.qtd_estoque) || 0;
+    return v;
+  });
+  const [confirmados, setConfirmados] = useState<Set<string>>(new Set());
+  const [avisoSusp, setAvisoSusp] = useState<{ nomes: string[]; acao: "salvar" | "finalizar" } | null>(null);
+  const ehSuspeito = (id: string) => suspeito(valores[id] ?? 0, refs.get(id));
+  const precisaConferir = (id: string) => ehSuspeito(id) && !confirmados.has(id);
   const formRef = useRef<HTMLFormElement>(null);
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("");
@@ -133,7 +147,12 @@ export function ContarClient({
     });
   }
 
+  // Itens com número acima do possível e ainda não confirmados.
+  const suspeitos = () => produtos.filter((p) => precisaConferir(p.id));
+
   function salvar() {
+    const s = suspeitos();
+    if (s.length > 0) { setAvisoSusp({ nomes: s.map((p) => p.nome), acao: "salvar" }); return; }
     if (faltantes.length > 0) {
       setAviso({ faltam: faltantes.map((p) => p.nome), acao: "salvar" });
       return;
@@ -142,6 +161,8 @@ export function ContarClient({
   }
 
   function finalizar() {
+    const s = suspeitos();
+    if (s.length > 0) { setAvisoSusp({ nomes: s.map((p) => p.nome), acao: "finalizar" }); return; }
     if (faltantes.length > 0) {
       setAviso({ faltam: faltantes.map((p) => p.nome), acao: "finalizar" });
       return;
@@ -337,10 +358,30 @@ export function ContarClient({
                                 inputMode="decimal"
                                 disabled={finalizada}
                                 defaultValue={ini ? String(ini.qtd_estoque) : ""}
-                                onChange={(e) => marcar(p.id, e.target.value.trim() !== "")}
-                                className={numInput}
+                                onChange={(e) => {
+                                  marcar(p.id, e.target.value.trim() !== "");
+                                  const v = calcular(e.target.value);
+                                  setValores((o) => ({ ...o, [p.id]: v }));
+                                  setConfirmados((s) => { if (!s.has(p.id)) return s; const n = new Set(s); n.delete(p.id); return n; });
+                                }}
+                                className={`${numInput} ${precisaConferir(p.id) ? "border-amber-500 ring-2 ring-amber-200" : ""}`}
                               />
                             </div>
+                            {refs.get(p.id) && !finalizada && (
+                              precisaConferir(p.id) ? (
+                                <div className="mt-1 max-w-md text-right text-[11px] text-amber-700 dark:text-amber-300">
+                                  ⚠️ {explicacao(refs.get(p.id)!, valores[p.id] ?? 0)}{" "}
+                                  <button type="button" onClick={() => setConfirmados((s) => new Set(s).add(p.id))} className="ml-1 rounded bg-amber-600 px-1.5 py-0.5 font-semibold text-white">
+                                    contei de novo, está certo
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="mt-0.5 text-right text-[10px] text-zinc-400">
+                                  {confirmados.has(p.id) && ehSuspeito(p.id) ? "✓ conferido · " : ""}
+                                  última: {refs.get(p.id)!.ultima_qtd}{refs.get(p.id)!.comprado > 0 ? ` · chegou: ${refs.get(p.id)!.comprado}` : ""}
+                                </div>
+                              )
+                            )}
                           </td>
                         </tr>
                       );
@@ -352,6 +393,43 @@ export function ContarClient({
           </table>
         </div>
       </form>
+
+      {avisoSusp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 dark:bg-zinc-950">
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              ⚠️ {avisoSusp.nomes.length} {avisoSusp.nomes.length === 1 ? "item" : "itens"} com número maior do que podia ter
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Na última contagem tinha menos, e o que chegou depois não fecha com o número digitado. Pode ser erro de digitação ou entrada que não foi conferida no sistema. Conte de novo antes de seguir.
+            </p>
+            <div className="mt-3 max-h-56 overflow-y-auto rounded-xl border border-zinc-200 p-2 text-sm dark:border-zinc-800">
+              {avisoSusp.nomes.map((n) => (
+                <div key={n} className="px-1 py-0.5 text-zinc-700 dark:text-zinc-300">• {n}</div>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setAvisoSusp(null)}
+                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+              >
+                Voltar e conferir
+              </button>
+              <button
+                onClick={() => {
+                  const acao = avisoSusp.acao;
+                  setConfirmados((s) => { const n = new Set(s); for (const p of produtos) if (ehSuspeito(p.id)) n.add(p.id); return n; });
+                  setAvisoSusp(null);
+                  setTimeout(() => (acao === "finalizar" ? finalizar() : salvar()), 0);
+                }}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Já contei de novo, está certo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {aviso && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

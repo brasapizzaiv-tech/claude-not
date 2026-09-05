@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Produto } from "@/lib/types";
 import { PreencherClient } from "./preencher";
+import type { Referencia } from "@/lib/contagem-referencia";
 
 type RpcProduto = {
   id: string;
@@ -17,7 +18,10 @@ export default async function ContarPublicoPage({
   const { token } = await params;
   const supabase = await createClient();
 
-  const { data } = await supabase.rpc("contar_dados", { p_token: token });
+  const [{ data }, { data: ref }] = await Promise.all([
+    supabase.rpc("contar_dados", { p_token: token }),
+    supabase.rpc("contar_referencia", { p_token: token }),
+  ]);
 
   if (!data) {
     return (
@@ -52,6 +56,7 @@ export default async function ContarPublicoPage({
       finalizada={data.contagem?.status === "finalizada"}
       produtos={produtos}
       itens={data.itens ?? []}
+      referencia={(ref as Referencia[] | null) ?? []}
     />
   );
 }
