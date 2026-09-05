@@ -62,9 +62,10 @@ export async function criarEtiquetaColab(token: string, dados: {
   const { data: imps } = await admin.from("impressoras").select("id").eq("ativo", true).order("criado_em").limit(1);
   const impressoraId = imps?.[0]?.id ?? null;
 
-  const { data, error } = await admin
-    .from("etiquetas")
-    .insert({
+  // Cada cópia é uma etiqueta PRÓPRIA (número e QR diferentes) — cada pote
+  // recebe baixa separado. Antes saíam N cópias do mesmo número.
+  const copias = Math.min(Math.max(Math.floor(dados.copias ?? 1), 1), 10);
+  const linha = {
       tipo,
       item_id: livre ? null : dados.item_id,
       produto_id: produtoId,
@@ -81,16 +82,19 @@ export async function criarEtiquetaColab(token: string, dados: {
       sif: (dados.sif || "").trim() || null,
       texto: livre ? (dados.texto || "").trim().slice(0, 200) || null : null,
       impressora_id: impressoraId,
-    })
+  };
+  const { data, error } = await admin
+    .from("etiquetas")
+    .insert(Array.from({ length: copias }, () => ({ ...linha })))
     .select("id, numero")
-    .single();
+    .order("numero");
 
-  if (error || !data) return { ok: false as const, mensagem: error?.message || "Não foi possível gerar." };
-  const copias = Math.min(Math.max(Math.floor(dados.copias ?? 1), 1), 10);
+  if (error || !data || data.length === 0) return { ok: false as const, mensagem: error?.message || "Não foi possível gerar." };
   await admin.from("impressao_fila").insert(
-    Array.from({ length: copias }, () => ({ tipo: "etiqueta", ref_id: data.id, impressora_id: impressoraId })),
+    data.map((e) => ({ tipo: "etiqueta", ref_id: e.id, impressora_id: impressoraId })),
   );
-  return { ok: true as const, id: data.id as string, numero: data.numero as number };
+  const numeros = data.map((e) => e.numero as number);
+  return { ok: true as const, id: data[0].id as string, numero: numeros[0], numeros };
 }
 
 // Cadastro rápido de item de etiqueta pelo app (o "＋" da categoria).

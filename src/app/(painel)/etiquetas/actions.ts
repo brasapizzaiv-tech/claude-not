@@ -76,9 +76,10 @@ export async function criarEtiqueta(dados: {
     if (imps && imps.length === 1) impressoraId = imps[0].id as string;
   }
 
-  const { data, error } = await supabase
-    .from("etiquetas")
-    .insert({
+  // Cada cópia é uma etiqueta PRÓPRIA (número e QR diferentes) — assim cada
+  // pote recebe baixa separado. Antes saíam N cópias do mesmo número.
+  const copias = Math.min(Math.max(Math.floor(dados.copias ?? 1), 1), 10);
+  const linha = {
       tipo,
       item_id: livre ? null : dados.item_id || null,
       produto_id: livre ? null : produtoId,
@@ -97,18 +98,19 @@ export async function criarEtiqueta(dados: {
       sif: (dados.sif || "").trim() || null,
       texto: livre ? (dados.texto || "").trim().slice(0, 200) || null : null,
       impressora_id: impressoraId,
-    })
-    .select("id")
-    .single();
+  };
+  const { data, error } = await supabase
+    .from("etiquetas")
+    .insert(Array.from({ length: copias }, () => ({ ...linha })))
+    .select("id");
 
-  if (error || !data) return { ok: false };
-  // entra na fila de impressão (genérica) — uma vez por cópia
-  const copias = Math.min(Math.max(Math.floor(dados.copias ?? 1), 1), 10);
+  if (error || !data || data.length === 0) return { ok: false };
+  // entra na fila de impressão (genérica) — uma etiqueta por cópia
   await supabase.from("impressao_fila").insert(
-    Array.from({ length: copias }, () => ({ tipo: "etiqueta", ref_id: data.id, impressora_id: impressoraId })),
+    data.map((e) => ({ tipo: "etiqueta", ref_id: e.id, impressora_id: impressoraId })),
   );
   revalidatePath("/etiquetas");
-  return { ok: true, id: data.id };
+  return { ok: true, id: data[0].id, ids: data.map((e) => e.id as string) };
 }
 
 // Reenvia uma etiqueta para a fila de impressão (reimprimir).

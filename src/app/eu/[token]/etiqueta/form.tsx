@@ -103,7 +103,11 @@ export function EtiquetaColabForm({
         copias,
       });
       if (r.ok) {
-        setToast(copias > 1 ? `${copias} etiquetas saindo na impressora 🖨️` : "Etiqueta gerada! Saindo na impressora 🖨️");
+        setToast(
+          copias > 1
+            ? `${copias} etiquetas (nº ${r.numeros[0]} a ${r.numeros[r.numeros.length - 1]}) saindo na impressora 🖨️`
+            : `Etiqueta nº ${r.numero} gerada! Saindo na impressora 🖨️`,
+        );
         setItemId(""); setTitulo(""); setTexto(""); setQuantidade(""); setValidade(""); setExtras(EXTRAS_VAZIO); setCopias(1);
         setTimeout(() => setToast(null), 2500);
       } else {
