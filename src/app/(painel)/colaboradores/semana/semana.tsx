@@ -99,6 +99,9 @@ export function SemanaClient({
   const [buscaExtra, setBuscaExtra] = useState("");
   const [modo, setModo] = useState<"grade" | "resumo">("grade");
   const [turnoFiltro, setTurnoFiltro] = useState<"todos" | "dia" | "noite">("todos");
+  // Pessoas puxadas pro Resumo só pra receber um extra (ex.: CLT que fez algo a mais, sem contar como dia).
+  const [soExtra, setSoExtra] = useState<Set<string>>(new Set());
+  const [escolhendoExtra, setEscolhendoExtra] = useState("");
   const cabeNoFiltro = (p: Pessoa) =>
     turnoFiltro === "todos" || p.turno === "ambos" || p.turno === turnoFiltro;
 
@@ -107,10 +110,11 @@ export function SemanaClient({
   const naGrade = useMemo(() => {
     const comPresenca = new Set(presencasIniciais.map((p) => p.colaborador_id));
     for (const k of marcadas) comPresenca.add(k.split("|")[0]);
+    for (const e of extrasIniciais) if (Number(e.valor) > 0) comPresenca.add(e.colaborador_id);
     return pessoas.filter(
-      (p) => p.turno !== "proprietario" && (!p.esporadico || comPresenca.has(p.id) || extras.has(p.id)),
+      (p) => p.turno !== "proprietario" && (!p.esporadico || comPresenca.has(p.id) || extras.has(p.id) || soExtra.has(p.id)),
     );
-  }, [pessoas, presencasIniciais, marcadas, extras]);
+  }, [pessoas, presencasIniciais, marcadas, extras, extrasIniciais, soExtra]);
 
   const foraDaGrade = useMemo(() => {
     const ids = new Set(naGrade.map((p) => p.id));
@@ -549,6 +553,26 @@ export function SemanaClient({
               <div className="text-xs text-zinc-500">diárias {brl(calc.totalDiarias)} + 10% {brl(calc.totalDez)}{calc.totalExtras > 0 ? ` + extras ${brl(calc.totalExtras)}` : ""}</div>
             </div>
           </div>
+          {turnoFiltro === "todos" && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800">
+              <span className="text-zinc-500">Dar um extra pra alguém que não está na lista (ex.: carteira assinada que fez algo a mais — não conta como dia):</span>
+              <select
+                value={escolhendoExtra}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  if (id) { setSoExtra((s) => new Set(s).add(id)); setExtrasSem((o) => ({ ...o, [id]: o[id] ?? { valor: "", motivo: "" } })); }
+                  setEscolhendoExtra("");
+                }}
+                className={inputCls}
+              >
+                <option value="">+ escolher pessoa…</option>
+                {pessoas
+                  .filter((p) => p.turno !== "proprietario" && !soExtra.has(p.id))
+                  .filter((p) => { const x = calc.porPessoa.find((y) => y.p.id === p.id); return !x || (x.nDias + x.nNoites === 0 && x.dez10 < 0.005 && x.extra < 0.005 && !pagoDe.has(p.id)); })
+                  .map((p) => <option key={p.id} value={p.id}>{p.nome}{vinculoDoTurno(p, "dia") === "clt" || vinculoDoTurno(p, "noite") === "clt" ? " (CLT)" : ""}</option>)}
+              </select>
+            </div>
+          )}
           {turnoFiltro !== "todos" && (
             <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
               Mostrando só o turno {turnoFiltro === "dia" ? "☀️ DIA" : "🌙 NOITE"}: os valores abaixo são só desse turno. Pra lançar o pagamento, volte em <b>Todos</b>.
@@ -581,7 +605,7 @@ export function SemanaClient({
                   presM: turnoFiltro === "dia" ? x.nDias : turnoFiltro === "noite" ? x.nNoites : x.nDias + x.nNoites,
                 }))
                 .map((x) => ({ ...x, totalM: x.diariasM + x.dezM + x.extraM }))
-                .filter((x) => x.presM > 0 || x.dezM > 0.005 || x.extraM > 0.005 || (turnoFiltro === "todos" && pagoDe.has(x.p.id)))
+                .filter((x) => x.presM > 0 || x.dezM > 0.005 || x.extraM > 0.005 || (turnoFiltro === "todos" && (pagoDe.has(x.p.id) || soExtra.has(x.p.id) || !!extrasSem[x.p.id]?.motivo)))
                 .sort((a, b) => b.totalM - a.totalM)
                 .map(({ p, nDias, nNoites, diariasM, dezM, totalM, total, rotuloVinculo }) => (
                   <tr key={p.id} className={`bg-white dark:bg-zinc-950 ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
