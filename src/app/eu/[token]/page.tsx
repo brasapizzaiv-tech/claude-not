@@ -153,6 +153,22 @@ export default async function AppColaboradorPage({
     compras = (rets as typeof compras) ?? [];
   }
   const abertoTotal = compras.filter((r) => r.status === "aberto").reduce((s, r) => s + Number(r.valor), 0);
+
+  // Último acerto da semana (Meus pagamentos).
+  let ultimoPag: { segunda: string; emMaos: number; pago: boolean } | null = null;
+  if (colab?.id) {
+    const { data: sp } = await admin
+      .from("semana_pagamentos")
+      .select("segunda, valor, desconto, lancamentos(pago)")
+      .eq("colaborador_id", colab.id)
+      .order("segunda", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (sp) {
+      const lanc = Array.isArray(sp.lancamentos) ? (sp.lancamentos as { pago: boolean }[])[0] : (sp.lancamentos as { pago: boolean } | null);
+      ultimoPag = { segunda: sp.segunda as string, emMaos: Number(sp.valor) - (Number(sp.desconto) || 0), pago: !!lanc?.pago };
+    }
+  }
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const fData = (s: string) => { const [, m, d] = s.split("-"); return `${d}/${m}`; };
 
@@ -194,6 +210,17 @@ export default async function AppColaboradorPage({
           </Link>
         </div>
       )}
+      <Link
+        href={`/eu/${token}/pagamentos`}
+        className="mb-3 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"
+      >
+        <span>💵 Meus pagamentos</span>
+        <span className="text-xs font-normal opacity-80">
+          {ultimoPag
+            ? `${ultimoPag.segunda.slice(8, 10)}/${ultimoPag.segunda.slice(5, 7)}: ${brl(ultimoPag.emMaos)} ${ultimoPag.pago ? "✓" : "· aguardando"}`
+            : "ver semanas"}
+        </span>
+      </Link>
       {compras.length > 0 && (
         <div className="mb-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="mb-2 flex items-center justify-between">
