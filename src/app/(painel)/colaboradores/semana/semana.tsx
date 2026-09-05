@@ -82,6 +82,9 @@ export function SemanaClient({
   const [novoNoite, setNovoNoite] = useState("");
   const [buscaExtra, setBuscaExtra] = useState("");
   const [modo, setModo] = useState<"grade" | "resumo">("grade");
+  const [turnoFiltro, setTurnoFiltro] = useState<"todos" | "dia" | "noite">("todos");
+  const cabeNoFiltro = (p: Pessoa) =>
+    turnoFiltro === "todos" || p.turno === "ambos" || p.turno === turnoFiltro;
 
   // Quem aparece na grade: fixos (não esporádicos, não proprietários) + esporádicos
   // que têm presença na semana ou foram adicionados agora.
@@ -125,17 +128,22 @@ export function SemanaClient({
       // Carteira assinada = salário à parte (não entra diária); pode ser CLT de dia e free de noite.
       const cltDia = vinculoDoTurno(p, "dia") === "clt";
       const cltNoite = vinculoDoTurno(p, "noite") === "clt";
-      const diarias = (cltDia ? 0 : nDias * (Number(p.valor_dia) || 0)) + (cltNoite ? 0 : nNoites * (Number(p.valor_noite) || 0));
+      const diariasDia = cltDia ? 0 : nDias * (Number(p.valor_dia) || 0);
+      const diariasNoite = cltNoite ? 0 : nNoites * (Number(p.valor_noite) || 0);
+      const diarias = diariasDia + diariasNoite;
       const clt = cltDia && cltNoite;
       const rotuloVinculo = cltDia && cltNoite ? "CLT (salário fixo — só o 10%)"
         : !cltDia && !cltNoite ? "Freelance"
         : cltDia ? "CLT de dia · free de noite" : "free de dia · CLT de noite";
-      return { p, nDias, nNoites, diarias, dez10, total: diarias + dez10, clt, cltDia, cltNoite, rotuloVinculo };
+      return { p, nDias, nNoites, diarias, diariasDia, diariasNoite, dez10, total: diarias + dez10, clt, cltDia, cltNoite, rotuloVinculo };
     });
     const totalPool = noitesPagas.reduce((s, n) => s + n.pool, 0);
     const totalDiarias = porPessoa.reduce((s, x) => s + x.diarias, 0);
     const totalDez = porPessoa.reduce((s, x) => s + x.dez10, 0);
-    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez };
+    // Gasto por turno: dia = diárias de dia; noite = diárias de noite + 10%.
+    const turnoDia = { presencas: porPessoa.reduce((s, x) => s + x.nDias, 0), diarias: porPessoa.reduce((s, x) => s + x.diariasDia, 0) };
+    const turnoNoite = { presencas: porPessoa.reduce((s, x) => s + x.nNoites, 0), diarias: porPessoa.reduce((s, x) => s + x.diariasNoite, 0), dez: totalDez };
+    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez, turnoDia, turnoNoite };
   }, [dias, dez, naGrade, pessoas, marcadas, segunda]);
 
   function toggle(p: Pessoa, d: string, turno: Turno) {
@@ -184,12 +192,16 @@ export function SemanaClient({
     const linhas: string[][] = [
       ["Semana", rotuloSemana(segunda)],
       [],
-      ["Nome", "Vínculo", "Dias", "Noites", "Valor dia", "Valor noite", "Diárias", "10%", "Total"],
-      ...calc.porPessoa.map(({ p, nDias, nNoites, diarias, dez10, total, rotuloVinculo }) => [
+      ["Nome", "Vínculo", "Dias", "Noites", "Valor dia", "Valor noite", "Diárias dia", "Diárias noite", "10%", "Total"],
+      ...calc.porPessoa.map(({ p, nDias, nNoites, diariasDia, diariasNoite, dez10, total, rotuloVinculo }) => [
         p.nome, rotuloVinculo, String(nDias), String(nNoites),
         fmtNum(Number(p.valor_dia) || 0), fmtNum(Number(p.valor_noite) || 0),
-        fmtNum(diarias), fmtNum(dez10), fmtNum(total),
+        fmtNum(diariasDia), fmtNum(diariasNoite), fmtNum(dez10), fmtNum(total),
       ]),
+      [],
+      ["Turno", "Presenças", "Diárias", "10%", "Total"],
+      ["Dia", String(calc.turnoDia.presencas), fmtNum(calc.turnoDia.diarias), "0,00", fmtNum(calc.turnoDia.diarias)],
+      ["Noite", String(calc.turnoNoite.presencas), fmtNum(calc.turnoNoite.diarias), fmtNum(calc.turnoNoite.dez), fmtNum(calc.turnoNoite.diarias + calc.turnoNoite.dez)],
       [],
       ["Noite (10% pago nesta semana)", "10% arrecadado", "Presentes", "Cada um"],
       ...calc.noitesPagas.map((n) => [rotuloDia(n.data), fmtNum(n.pool), String(n.presentes), fmtNum(n.unit)]),
@@ -281,6 +293,13 @@ export function SemanaClient({
         <button onClick={baixarCsv} className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
           ⬇️ Planilha (CSV)
         </button>
+        <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700" title="Filtrar por turno">
+          {([["todos", "Todos"], ["dia", "☀️ Dia"], ["noite", "🌙 Noite"]] as const).map(([k, rot]) => (
+            <button key={k} onClick={() => setTurnoFiltro(k)} className={`px-3 py-1.5 ${turnoFiltro === k ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : ""}`}>
+              {rot}
+            </button>
+          ))}
+        </div>
         {pending && <span className="text-xs text-zinc-400">salvando…</span>}
         {erro && <span className="text-xs text-red-600">{erro}</span>}
       </div>
@@ -437,7 +456,7 @@ export function SemanaClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {calc.porPessoa.map(({ p, nDias, nNoites, total, clt, cltDia, cltNoite }) => (
+              {calc.porPessoa.filter((x) => cabeNoFiltro(x.p)).map(({ p, nDias, nNoites, total, clt, cltDia, cltNoite }) => (
                 <tr key={p.id} className="bg-white dark:bg-zinc-950">
                   <td className="sticky left-0 z-10 bg-white px-3 py-1.5 dark:bg-zinc-950">
                     <div className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -458,8 +477,8 @@ export function SemanaClient({
                   {dias.map((d) => {
                     const kd = marcadas.has(chave(p.id, d, "dia"));
                     const kn = marcadas.has(chave(p.id, d, "noite"));
-                    const mostraDia = p.turno !== "noite";
-                    const mostraNoite = p.turno !== "dia";
+                    const mostraDia = p.turno !== "noite" && turnoFiltro !== "noite";
+                    const mostraNoite = p.turno !== "dia" && turnoFiltro !== "dia";
                     return (
                       <td key={d} className={`px-1 py-1 text-center ${ehHoje(d) ? "bg-orange-50/60 dark:bg-orange-950/20" : ""}`}>
                         <div className="flex justify-center gap-0.5">
@@ -492,27 +511,59 @@ export function SemanaClient({
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          {/* Gasto por turno da semana */}
+          <div className="grid gap-3 border-b border-zinc-200 bg-zinc-50 p-3 sm:grid-cols-3 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className={`rounded-xl border bg-white p-3 dark:bg-zinc-950 ${turnoFiltro === "dia" ? "border-yellow-500" : "border-zinc-200 dark:border-zinc-800"}`}>
+              <div className="text-xs font-bold uppercase text-zinc-500">☀️ Dia</div>
+              <div className="text-lg font-semibold">{brl(calc.turnoDia.diarias)}</div>
+              <div className="text-xs text-zinc-500">{calc.turnoDia.presencas} presença{calc.turnoDia.presencas === 1 ? "" : "s"} · só diárias (CLT não entra)</div>
+            </div>
+            <div className={`rounded-xl border bg-white p-3 dark:bg-zinc-950 ${turnoFiltro === "noite" ? "border-indigo-500" : "border-zinc-200 dark:border-zinc-800"}`}>
+              <div className="text-xs font-bold uppercase text-zinc-500">🌙 Noite</div>
+              <div className="text-lg font-semibold">{brl(calc.turnoNoite.diarias + calc.turnoNoite.dez)}</div>
+              <div className="text-xs text-zinc-500">{calc.turnoNoite.presencas} presença{calc.turnoNoite.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoNoite.diarias)} + 10% {brl(calc.turnoNoite.dez)}</div>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+              <div className="text-xs font-bold uppercase text-zinc-500">Semana</div>
+              <div className="text-lg font-semibold">{brl(calc.totalDiarias + calc.totalDez)}</div>
+              <div className="text-xs text-zinc-500">diárias {brl(calc.totalDiarias)} + 10% {brl(calc.totalDez)}</div>
+            </div>
+          </div>
+          {turnoFiltro !== "todos" && (
+            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+              Mostrando só o turno {turnoFiltro === "dia" ? "☀️ DIA" : "🌙 NOITE"}: os valores abaixo são só desse turno. Pra lançar o pagamento, volte em <b>Todos</b>.
+            </div>
+          )}
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
               <tr>
-                <th className="px-3 py-3 text-center" title="Entra no lançamento">💸</th>
+                {turnoFiltro === "todos" && <th className="px-3 py-3 text-center" title="Entra no lançamento">💸</th>}
                 <th className="px-4 py-3">Pessoa</th>
-                <th className="px-3 py-3 text-center">Dias</th>
-                <th className="px-3 py-3 text-center">Noites</th>
+                {turnoFiltro !== "noite" && <th className="px-3 py-3 text-center">Dias</th>}
+                {turnoFiltro !== "dia" && <th className="px-3 py-3 text-center">Noites</th>}
                 <th className="px-3 py-3 text-right">Diárias</th>
-                <th className="px-3 py-3 text-right">10%</th>
+                {turnoFiltro !== "dia" && <th className="px-3 py-3 text-right">10%</th>}
                 <th className="px-4 py-3 text-right">Total a pagar</th>
-                <th className="px-3 py-3 text-right" title="Compras internas em aberto (opcional descontar)">Fiado</th>
-                <th className="px-4 py-3 text-right">Em mãos</th>
+                {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Compras internas em aberto (opcional descontar)">Fiado</th>}
+                {turnoFiltro === "todos" && <th className="px-4 py-3 text-right">Em mãos</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {calc.porPessoa
-                .filter((x) => x.nDias + x.nNoites > 0 || x.dez10 > 0.005 || pagoDe.has(x.p.id))
-                .sort((a, b) => b.total - a.total)
-                .map(({ p, nDias, nNoites, diarias, dez10, total, rotuloVinculo }) => (
+                .filter((x) => cabeNoFiltro(x.p))
+                .map((x) => ({
+                  ...x,
+                  // No filtro por turno, mostra só a parte daquele turno.
+                  diariasM: turnoFiltro === "dia" ? x.diariasDia : turnoFiltro === "noite" ? x.diariasNoite : x.diarias,
+                  dezM: turnoFiltro === "dia" ? 0 : x.dez10,
+                  presM: turnoFiltro === "dia" ? x.nDias : turnoFiltro === "noite" ? x.nNoites : x.nDias + x.nNoites,
+                }))
+                .map((x) => ({ ...x, totalM: x.diariasM + x.dezM }))
+                .filter((x) => x.presM > 0 || x.dezM > 0.005 || (turnoFiltro === "todos" && pagoDe.has(x.p.id)))
+                .sort((a, b) => b.totalM - a.totalM)
+                .map(({ p, nDias, nNoites, diariasM, dezM, totalM, total, rotuloVinculo }) => (
                   <tr key={p.id} className={`bg-white dark:bg-zinc-950 ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
-                    <td className="px-3 py-2 text-center">
+                    {turnoFiltro === "todos" && <td className="px-3 py-2 text-center">
                       {pagoDe.has(p.id) ? (
                         <span className="text-xs text-green-600" title={`Lançado: ${brl(Number(pagoDe.get(p.id)!.valor))}`}>✓</span>
                       ) : total > 0.005 ? (
@@ -522,7 +573,7 @@ export function SemanaClient({
                           onChange={(e) => setDesmarcados((s) => { const n = new Set(s); if (e.target.checked) n.delete(p.id); else n.add(p.id); return n; })}
                         />
                       ) : null}
-                    </td>
+                    </td>}
                     <td className="px-4 py-2">
                       <div className="font-medium text-zinc-900 dark:text-zinc-100">{p.nome}</div>
                       <div className="text-[11px] text-zinc-400">
@@ -530,12 +581,12 @@ export function SemanaClient({
                         {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))})</span>}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-center">{nDias}</td>
-                    <td className="px-3 py-2 text-center">{nNoites}</td>
-                    <td className="px-3 py-2 text-right">{brl(diarias)}</td>
-                    <td className="px-3 py-2 text-right">{brl(dez10)}</td>
-                    <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-zinc-100">{brl(total)}</td>
-                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                    {turnoFiltro !== "noite" && <td className="px-3 py-2 text-center">{nDias}</td>}
+                    {turnoFiltro !== "dia" && <td className="px-3 py-2 text-center">{nNoites}</td>}
+                    <td className="px-3 py-2 text-right">{brl(diariasM)}</td>
+                    {turnoFiltro !== "dia" && <td className="px-3 py-2 text-right">{brl(dezM)}</td>}
+                    <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-zinc-100">{brl(totalM)}</td>
+                    {turnoFiltro === "todos" && <td className="px-3 py-2 text-right whitespace-nowrap">
                       {pagoDe.has(p.id) ? (
                         Number(pagoDe.get(p.id)!.desconto) > 0 ? <span className="text-xs text-zinc-500">− {brl(Number(pagoDe.get(p.id)!.desconto))}</span> : <span className="text-zinc-300">—</span>
                       ) : (fiadoPor[p.id]?.valor ?? 0) > 0.005 ? (
@@ -550,22 +601,37 @@ export function SemanaClient({
                       ) : (
                         <span className="text-zinc-300">—</span>
                       )}
-                    </td>
-                    <td className="px-4 py-2 text-right font-semibold text-green-700 dark:text-green-400">
+                    </td>}
+                    {turnoFiltro === "todos" && <td className="px-4 py-2 text-right font-semibold text-green-700 dark:text-green-400">
                       {pagoDe.has(p.id)
                         ? brl(Number(pagoDe.get(p.id)!.valor) - Number(pagoDe.get(p.id)!.desconto || 0))
                         : brl(total - descontoDe(p.id, total))}
-                    </td>
+                    </td>}
                   </tr>
                 ))}
-              <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
-                <td className="px-4 py-3" colSpan={4}>Total da semana</td>
-                <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
-                <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
-                <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez)}</td>
-                <td className="px-3 py-3 text-right text-red-600">{totalDesconto > 0 ? `− ${brl(totalDesconto)}` : ""}</td>
-                <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez - totalDesconto)}</td>
-              </tr>
+              {turnoFiltro === "todos" ? (
+                <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
+                  <td className="px-4 py-3" colSpan={4}>Total da semana</td>
+                  <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
+                  <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
+                  <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez)}</td>
+                  <td className="px-3 py-3 text-right text-red-600">{totalDesconto > 0 ? `− ${brl(totalDesconto)}` : ""}</td>
+                  <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez - totalDesconto)}</td>
+                </tr>
+              ) : turnoFiltro === "dia" ? (
+                <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
+                  <td className="px-4 py-3" colSpan={2}>Total do turno ☀️ Dia</td>
+                  <td className="px-3 py-3 text-right">{brl(calc.turnoDia.diarias)}</td>
+                  <td className="px-4 py-3 text-right">{brl(calc.turnoDia.diarias)}</td>
+                </tr>
+              ) : (
+                <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
+                  <td className="px-4 py-3" colSpan={2}>Total do turno 🌙 Noite</td>
+                  <td className="px-3 py-3 text-right">{brl(calc.turnoNoite.diarias)}</td>
+                  <td className="px-3 py-3 text-right">{brl(calc.turnoNoite.dez)}</td>
+                  <td className="px-4 py-3 text-right">{brl(calc.turnoNoite.diarias + calc.turnoNoite.dez)}</td>
+                </tr>
+              )}
             </tbody>
           </table>
           <div className="border-t border-zinc-200 p-3 text-xs text-zinc-500 dark:border-zinc-800">
@@ -576,7 +642,7 @@ export function SemanaClient({
           </div>
 
           {/* Pagar → Contas a pagar (CMO Eventual / Diaristas) */}
-          <div className="flex flex-wrap items-center gap-3 border-t border-zinc-200 bg-orange-50/60 p-3 text-sm dark:border-zinc-800 dark:bg-orange-950/20">
+          {turnoFiltro === "todos" && <div className="flex flex-wrap items-center gap-3 border-t border-zinc-200 bg-orange-50/60 p-3 text-sm dark:border-zinc-800 dark:bg-orange-950/20">
             <label className="flex items-center gap-1">
               Data
               <input type="date" value={dataPag} onChange={(e) => setDataPag(e.target.value)} className={inputCls} />
@@ -608,7 +674,7 @@ export function SemanaClient({
               </button>
             )}
             {msg && <span className="text-xs text-green-700">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}
-          </div>
+          </div>}
         </div>
       )}
     </div>
