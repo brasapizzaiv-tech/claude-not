@@ -2,7 +2,7 @@
 ; Compile com: ISCC.exe balanca.iss  (após rodar build.ps1, que monta build\app).
 
 #define AppName "Agente da Balanca"
-#define AppVer "1.1.4"
+#define AppVer "1.1.5"
 #define AppPublisher "Brasa Sistemas"
 
 [Setup]
@@ -37,6 +37,8 @@ Name: "{commonstartup}\Agente da Balanca"; Filename: "{app}\start.vbs"; WorkingD
 ; Menu Iniciar e Área de trabalho: pra ligar de novo depois de "Sair" na bandeja.
 Name: "{commonprograms}\Agente da Balanca"; Filename: "wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\balanca.ico"; Comment: "Liga o Agente da Balança (ícone na bandeja)"
 Name: "{commondesktop}\Agente da Balanca"; Filename: "wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\balanca.ico"; Comment: "Liga o Agente da Balança (ícone na bandeja)"
+; Quiosque em tela cheia (Chrome --kiosk). Sair: Alt+F4.
+Name: "{commondesktop}\Quiosque da Balanca"; Filename: "{code:ChromePath}"; Parameters: "--kiosk --kiosk-printing {code:BaseUrlParam}/salao/balanca/quiosque"; IconFilename: "{app}\balanca.ico"; Check: ChromeExiste; Comment: "Abre o quiosque da balança em tela cheia (sair: Alt+F4)"
 
 [Code]
 var
@@ -58,6 +60,24 @@ end;
 function BaseUrl(): String;
 begin
   Result := Trim(PageCfg.Values[0]);
+end;
+
+function BaseUrlParam(Param: String): String;
+begin
+  Result := BaseUrl();
+  if Result = '' then Result := 'https://www.brasarestaurante.com.br';
+end;
+
+function ChromePath(Param: String): String;
+begin
+  Result := ExpandConstant('{commonpf}\Google\Chrome\Application\chrome.exe');
+  if not FileExists(Result) then Result := ExpandConstant('{commonpf32}\Google\Chrome\Application\chrome.exe');
+  if not FileExists(Result) then Result := ExpandConstant('{localappdata}\Google\Chrome\Application\chrome.exe');
+end;
+
+function ChromeExiste(): Boolean;
+begin
+  Result := FileExists(ChromePath(''));
 end;
 
 function Token(): String;

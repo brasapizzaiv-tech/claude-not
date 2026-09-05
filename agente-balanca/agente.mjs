@@ -16,7 +16,7 @@ import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const VERSAO = "1.1.4"; // 1.1.1: fila-erros.json; 1.1.2: negativo + GET /raw; 1.1.3: Prot F / Prot 3; 1.1.4: atalhos no Menu Iniciar/Area de trabalho
+const VERSAO = "1.1.5"; // 1.1.3: Prot F / Prot 3; 1.1.4: atalhos; 1.1.5: watchdog da serial (reabre a porta se parar de chegar peso)
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -167,18 +167,33 @@ async function conectarBalanca() {
   }
 }
 let reconectando = false;
-function tentarReconectar() {
+function tentarReconectar(espera = 10000) {
   if (reconectando) return;
   reconectando = true;
-  try { serial?.close(() => {}); } catch { /* já fechada */ }
+  try { serial?.removeAllListeners("close"); serial?.close(() => {}); } catch { /* já fechada */ }
   serial = null;
-  setTimeout(() => { reconectando = false; conectarBalanca(); }, 10000);
+  buf = "";
+  setTimeout(() => { reconectando = false; conectarBalanca(); }, espera);
 }
 
 // A POP-31 é "computadora": só responde quando recebe ENQ (0x05).
 setInterval(() => {
   try { if (serial?.isOpen) serial.write(Buffer.from([0x05])); } catch { /* fechada */ }
 }, 500);
+
+// WATCHDOG da serial: o driver USB-Serial (Prolific) às vezes "congela" sem
+// avisar — a porta continua aberta mas não chega mais nada. Antes só um
+// reinício do agente resolvia. Agora: 15 s sem leitura (já tendo lido antes)
+// → fecha e reabre a porta sozinho. Balança desligada? Fica tentando a cada 15 s.
+setInterval(() => {
+  if (!serial?.isOpen || reconectando) return;
+  const semLeitura = Date.now() - ultimaLeitura;
+  if (ultimaLeitura > 0 && semLeitura > 15000) {
+    log(`Sem leitura da balança há ${Math.round(semLeitura / 1000)}s com a porta aberta — reabrindo a serial (watchdog).`);
+    ultimaLeitura = 0;
+    tentarReconectar(2000);
+  }
+}, 5000);
 
 // ---------- sincronização com o sistema ----------
 async function criarComandaNoSistema(p) {
