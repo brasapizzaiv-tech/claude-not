@@ -9,14 +9,12 @@
 //  4. Imprime o CUPOM na térmica ligada neste PC (POST /imprimir) — sem a
 //     janela de impressão do navegador. Impressora escolhida na tela do quiosque.
 import { SerialPort } from "serialport";
-import { print as imprimirPdf } from "pdf-to-printer";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { gerarCupomPdf } from "./cupom.mjs";
 
 const VERSAO = "1.1.0";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -37,6 +35,22 @@ function log(m) {
   const linha = `[${new Date().toLocaleString("pt-BR")}] ${m}`;
   console.log(linha);
   try { appendFileSync(logFile, linha + "\n"); } catch { /* sem log */ }
+}
+// Qualquer erro inesperado vai pro log (em vez de matar o agente em silêncio).
+process.on("uncaughtException", (e) => log(`ERRO inesperado: ${e?.stack || e}`));
+process.on("unhandledRejection", (e) => log(`ERRO (promise): ${e?.stack || e}`));
+
+// Bibliotecas de impressão carregadas só na hora de imprimir: se faltar algo
+// neste PC, o agente continua lendo a balança e o erro aparece no log.
+let libsImpressao = null;
+async function carregarImpressao() {
+  if (libsImpressao) return libsImpressao;
+  const ptp = await import("pdf-to-printer");
+  const { gerarCupomPdf } = await import("./cupom.mjs");
+  const imprimirPdf = ptp.print || ptp.default?.print;
+  if (typeof imprimirPdf !== "function") throw new Error("pdf-to-printer sem função print");
+  libsImpressao = { imprimirPdf, gerarCupomPdf };
+  return libsImpressao;
 }
 function salvarConfig() {
   try { writeFileSync(cfgFile, JSON.stringify({ ...cfg, impressoraCupom }, null, 2)); } catch (e) { log(`Não gravei o config.json: ${e.message}`); }
@@ -65,6 +79,7 @@ async function atualizarLogo() {
   } catch { /* fica com a logo antiga (ou sem) */ }
 }
 async function imprimirCupom(d) {
+  const { imprimirPdf, gerarCupomPdf } = await carregarImpressao();
   const logo = existsSync(logoFile) ? readFileSync(logoFile) : null;
   const urlComanda = d.id ? `${baseUrl}/salao/comandas/${d.id}` : null;
   const pdf = await gerarCupomPdf({ ...d, logo, urlComanda });
@@ -294,3 +309,5 @@ sincronizarFila();
 atualizarLogo();
 setInterval(atualizarLogo, 6 * 3600 * 1000);
 log(`Impressora do cupom: "${impressoraCupom || "padrão do Windows"}" (escolha na tela do quiosque, ⚙️).`);
+// Confere logo no início se a impressão vai funcionar (só avisa no log).
+carregarImpressao().then(() => log("Impressão de cupom pronta.")).catch((e) => log(`Impressão de cupom INDISPONÍVEL: ${e.message}`));
