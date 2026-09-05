@@ -16,7 +16,7 @@ import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const VERSAO = "1.1.2"; // 1.1.1: fila-erros.json; 1.1.2: peso negativo em qualquer formato + GET /raw
+const VERSAO = "1.1.3"; // 1.1.1: fila-erros.json; 1.1.2: negativo + GET /raw; 1.1.3: protocolos Prot F / Prot 3 da POP-S
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -138,6 +138,25 @@ async function conectarBalanca() {
       if (m.length) {
         peso = numDe(m[m.length - 1]);
         ultimaLeitura = Date.now();
+      } else {
+        // Protocolos curtos da POP-S (F3 na balança):
+        //  "Prot F": STX + peso COM ponto e SINAL (ex.: "-0.180") — transmite negativo.
+        //  "Prot 3" (Toledo): STX + 5 dígitos sem ponto (gramas) + CR; "IIIII" instável,
+        //  "SSSSS" sobrecarga, "NNNNN" negativo (sem o valor).
+        const f = [...buf.matchAll(/\x02\s*([-+−]?)\s*(\d+[.,]\d+)/g)];
+        if (f.length) {
+          peso = numDe([f[f.length - 1][0], f[f.length - 1][1], f[f.length - 1][2], ""]);
+          ultimaLeitura = Date.now();
+        } else {
+          const t3 = [...buf.matchAll(/\x02(\d{5})\r/g)];
+          if (t3.length) {
+            peso = parseInt(t3[t3.length - 1][1], 10) / 1000;
+            ultimaLeitura = Date.now();
+          } else if (/\x02NNNNN/.test(buf.slice(-40))) {
+            peso = -0.001; // negativo sem valor (Prot 3): troque a balança para "Prot F" pra ter o número
+            ultimaLeitura = Date.now();
+          }
+        }
       }
     });
     serial.on("error", (e) => { log(`Erro na serial: ${e.message}`); tentarReconectar(); });

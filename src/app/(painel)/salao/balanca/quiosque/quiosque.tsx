@@ -61,6 +61,25 @@ export function QuiosqueBalanca({
   const [diag, setDiag] = useState<{ bytes: number; raw: string }>({ bytes: 0, raw: "" });
   const [taraBalanca, setTaraBalanca] = useState(0); // tara feita NA balança (campo TARA)
   const taraBalancaRef = useRef(0);
+  // "A balança está tarada com o prato?" — lembrado neste PC (⚙️). Necessário
+  // quando o protocolo não manda o valor da tara (Prot F): a tara vale a padrão.
+  const [balancaTarada, setBalancaTarada] = useState(false);
+  const balancaTaradaRef = useRef(false);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        const v = localStorage.getItem("quiosque_balanca_tarada") === "1";
+        balancaTaradaRef.current = v;
+        setBalancaTarada(v);
+      } catch { /* sem storage */ }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+  function definirBalancaTarada(v: boolean) {
+    balancaTaradaRef.current = v;
+    setBalancaTarada(v);
+    try { localStorage.setItem("quiosque_balanca_tarada", v ? "1" : "0"); } catch { /* sem storage */ }
+  }
   const [soKg, setSoKg] = useState(false); // marmita: só por kg (sem teto do livre)
   const soKgRef = useRef(false);
   const toggleSoKg = () => {
@@ -96,8 +115,12 @@ export function QuiosqueBalanca({
   //     EM CIMA de um prato (aí PESO L = marmita).
   //  B) Balança SEM tara: PESO L é o bruto → prato desconta a tara padrão do
   //     sistema; marmita (sem prato) cobra o bruto inteiro. Nunca fica negativo.
+  //  Protocolos curtos (Prot F) mandam o peso com sinal mas SEM o valor da tara:
+  //  aí a chave "balança tarada com o prato" (⚙️) diz que a tara é a tara padrão.
   const netDe = (leitura: number, taraBal: number, marmita: boolean) => {
-    if (taraBal > 0.001) return marmita ? Math.max(0, leitura + taraBal) : Math.max(0, leitura);
+    const tarada = taraBal > 0.001 || balancaTaradaRef.current;
+    const tara = taraBal > 0.001 ? taraBal : taraPadrao;
+    if (tarada) return marmita ? Math.max(0, leitura + tara) : Math.max(0, leitura);
     return marmita ? Math.max(0, leitura) : Math.max(0, leitura - taraPadrao);
   };
 
@@ -558,6 +581,17 @@ export function QuiosqueBalanca({
               {impressoras.length === 0 && !msgConfig && <p className="text-[#211915]/50">Procurando impressoras…</p>}
             </div>
             {msgConfig && <p className="mt-3 text-sm text-[#C78340]">{msgConfig}</p>}
+            {/* Como a balança está sendo usada (tara) */}
+            <label className="mt-4 flex items-start gap-2 rounded-xl border border-[#211915]/15 p-3 text-sm">
+              <input type="checkbox" checked={balancaTarada} onChange={(e) => definirBalancaTarada(e.target.checked)} className="mt-1 h-5 w-5" />
+              <span>
+                <b>A balança está tarada com o prato</b> (apertaram T com o prato em cima).
+                <span className="block text-xs text-[#211915]/60">
+                  Marcado: o peso que ela manda já é líquido e a marmita = leitura + {taraPadrao.toFixed(3).replace(".", ",")} kg (tara padrão).
+                  Desmarcado: o prato desconta a tara padrão e a marmita cobra o peso inteiro.
+                </span>
+              </span>
+            </label>
             {/* Diagnóstico da balança: leitura crua que chegou no agente */}
             <div className="mt-4 rounded-xl border border-[#211915]/15 bg-[#f6efe6] p-3 text-xs">
               <div className="mb-1 flex items-center justify-between">
@@ -724,7 +758,12 @@ export function QuiosqueBalanca({
               {taraBalanca > 0.001 ? (
                 <p className="mt-2 text-sm text-[#211915]/40">
                   Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg
-                  {soKg ? " · marmita: pese em cima de um prato" : " (peso já líquido)"}
+                  {soKg ? " · marmita: leitura + tara" : " (peso já líquido)"}
+                </p>
+              ) : balancaTarada ? (
+                <p className="mt-2 text-sm text-[#211915]/40">
+                  Balança tarada com o prato ({taraPadrao.toFixed(3).replace(".", ",")} kg)
+                  {soKg ? " · marmita: leitura + tara" : " · peso já líquido"}
                 </p>
               ) : taraPadrao > 0 ? (
                 <p className="mt-2 text-sm text-[#211915]/40">
