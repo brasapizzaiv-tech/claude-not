@@ -11,7 +11,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
   const fim = somarDias(segunda, 6);
 
   const supabase = await createClient();
-  const [{ data: colabs }, { data: dez }, { data: pagos }, { data: fiado }] = await Promise.all([
+  const [{ data: colabs }, { data: dez }, { data: pagos }, { data: fiado }, { data: extras }] = await Promise.all([
     supabase
       .from("colaboradores")
       .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, salario_base, recebe_10, peso_10, esporadico, ativo")
@@ -26,6 +26,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     supabase.from("semana_pagamentos").select("colaborador_id, valor, lancamento_id, desconto").eq("segunda", segunda),
     // Fiado em aberto (compras internas) — pra poder descontar no acerto.
     supabase.from("retiradas").select("colaborador_id, valor").eq("status", "aberto").limit(5000),
+    supabase.from("semana_extras").select("colaborador_id, valor, motivo").eq("segunda", segunda),
   ]);
 
   // Presenças da semana + das noites de 10% que entram neste acerto (podem ser de outra semana).
@@ -54,6 +55,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       dezIniciais={(dez ?? []) as { data: string; valor: number; pagar_em: string }[]}
       pagos={(pagos ?? []) as { colaborador_id: string; valor: number; lancamento_id: string | null; desconto: number }[]}
       fiadoPor={fiadoPor}
+      extrasIniciais={(extras ?? []) as { colaborador_id: string; valor: number; motivo: string | null }[]}
     />
   );
 }

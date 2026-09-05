@@ -34,6 +34,21 @@ export async function salvarDezPorCento(data: string, valor: number, pagarEm?: s
   return { ok: true, pagar_em };
 }
 
+// Extra da pessoa na semana (algo que fez a mais). Valor 0 e sem motivo = apaga.
+export async function salvarExtra(segunda: string, colaboradorId: string, valor: number, motivo: string) {
+  const supabase = await createClient();
+  const v = Math.max(0, Math.round((valor || 0) * 100) / 100);
+  const m = motivo.trim() || null;
+  if (!v && !m) {
+    const { error } = await supabase.from("semana_extras").delete().match({ segunda, colaborador_id: colaboradorId });
+    return error ? { erro: error.message } : { ok: true };
+  }
+  const { error } = await supabase
+    .from("semana_extras")
+    .upsert({ segunda, colaborador_id: colaboradorId, valor: v, motivo: m }, { onConflict: "segunda,colaborador_id" });
+  return error ? { erro: error.message } : { ok: true };
+}
+
 export async function excluirDezPorCento(data: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("dez_por_cento_noites").delete().eq("data", data);

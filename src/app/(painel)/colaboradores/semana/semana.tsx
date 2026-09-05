@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, TURNOS, vinculoDoTurno } from "@/lib/equipe";
-import { criarEsporadico, excluirDezPorCento, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, type Turno } from "./actions";
+import { criarEsporadico, excluirDezPorCento, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
   id: string;
@@ -45,7 +45,7 @@ const fmtNum = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits:
 type Pago = { colaborador_id: string; valor: number; lancamento_id: string | null; desconto: number };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor,
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais,
 }: {
   segunda: string;
   dias: string[];
@@ -54,9 +54,25 @@ export function SemanaClient({
   dezIniciais: Dez[];
   pagos: Pago[];
   fiadoPor: Record<string, { valor: number; n: number }>;
+  extrasIniciais: { colaborador_id: string; valor: number; motivo: string | null }[];
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  // Extra por pessoa na semana (valor digitado + motivo).
+  const [extrasSem, setExtrasSem] = useState<Record<string, { valor: string; motivo: string }>>(() => {
+    const o: Record<string, { valor: string; motivo: string }> = {};
+    for (const e of extrasIniciais) o[e.colaborador_id] = { valor: Number(e.valor) ? fmtNum(Number(e.valor)) : "", motivo: e.motivo ?? "" };
+    return o;
+  });
+  function salvarExtraDe(id: string) {
+    const e = extrasSem[id] ?? { valor: "", motivo: "" };
+    const v = numBRtxt(e.valor);
+    setExtrasSem((o) => ({ ...o, [id]: { valor: v ? fmtNum(v) : "", motivo: e.motivo } }));
+    start(async () => {
+      const r = await salvarExtra(segunda, id, v, e.motivo);
+      if (r.erro) setErro(r.erro);
+    });
+  }
   const pagoDe = useMemo(() => new Map(pagos.map((p) => [p.colaborador_id, p])), [pagos]);
   const [desmarcados, setDesmarcados] = useState<Set<string>>(new Set()); // quem NÃO lançar agora
   const [descontar, setDescontar] = useState<Set<string>>(new Set()); // de quem descontar o fiado (opcional)
@@ -135,16 +151,19 @@ export function SemanaClient({
       const rotuloVinculo = cltDia && cltNoite ? "CLT (salário fixo — só o 10%)"
         : !cltDia && !cltNoite ? "Freelance"
         : cltDia ? "CLT de dia · free de noite" : "free de dia · CLT de noite";
-      return { p, nDias, nNoites, diarias, diariasDia, diariasNoite, dez10, total: diarias + dez10, clt, cltDia, cltNoite, rotuloVinculo };
+      const extra = numBRtxt(extrasSem[p.id]?.valor ?? "");
+      const extraMotivo = extrasSem[p.id]?.motivo ?? "";
+      return { p, nDias, nNoites, diarias, diariasDia, diariasNoite, dez10, extra, extraMotivo, total: diarias + dez10 + extra, clt, cltDia, cltNoite, rotuloVinculo };
     });
     const totalPool = noitesPagas.reduce((s, n) => s + n.pool, 0);
     const totalDiarias = porPessoa.reduce((s, x) => s + x.diarias, 0);
     const totalDez = porPessoa.reduce((s, x) => s + x.dez10, 0);
+    const totalExtras = porPessoa.reduce((s, x) => s + x.extra, 0);
     // Gasto por turno: dia = diárias de dia; noite = diárias de noite + 10%.
     const turnoDia = { presencas: porPessoa.reduce((s, x) => s + x.nDias, 0), diarias: porPessoa.reduce((s, x) => s + x.diariasDia, 0) };
     const turnoNoite = { presencas: porPessoa.reduce((s, x) => s + x.nNoites, 0), diarias: porPessoa.reduce((s, x) => s + x.diariasNoite, 0), dez: totalDez };
-    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez, turnoDia, turnoNoite };
-  }, [dias, dez, naGrade, pessoas, marcadas, segunda]);
+    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez, totalExtras, turnoDia, turnoNoite };
+  }, [dias, dez, naGrade, pessoas, marcadas, segunda, extrasSem]);
 
   function toggle(p: Pessoa, d: string, turno: Turno) {
     const k = chave(p.id, d, turno);
@@ -192,11 +211,11 @@ export function SemanaClient({
     const linhas: string[][] = [
       ["Semana", rotuloSemana(segunda)],
       [],
-      ["Nome", "Vínculo", "Dias", "Noites", "Valor dia", "Valor noite", "Diárias dia", "Diárias noite", "10%", "Total"],
-      ...calc.porPessoa.map(({ p, nDias, nNoites, diariasDia, diariasNoite, dez10, total, rotuloVinculo }) => [
+      ["Nome", "Vínculo", "Dias", "Noites", "Valor dia", "Valor noite", "Diárias dia", "Diárias noite", "10%", "Extra", "Motivo extra", "Total"],
+      ...calc.porPessoa.map(({ p, nDias, nNoites, diariasDia, diariasNoite, dez10, extra, extraMotivo, total, rotuloVinculo }) => [
         p.nome, rotuloVinculo, String(nDias), String(nNoites),
         fmtNum(Number(p.valor_dia) || 0), fmtNum(Number(p.valor_noite) || 0),
-        fmtNum(diariasDia), fmtNum(diariasNoite), fmtNum(dez10), fmtNum(total),
+        fmtNum(diariasDia), fmtNum(diariasNoite), fmtNum(dez10), fmtNum(extra), extraMotivo, fmtNum(total),
       ]),
       [],
       ["Turno", "Presenças", "Diárias", "10%", "Total"],
@@ -244,6 +263,7 @@ export function SemanaClient({
             x.nDias ? `${x.nDias} dia${x.nDias > 1 ? "s" : ""}` : "",
             x.nNoites ? `${x.nNoites} noite${x.nNoites > 1 ? "s" : ""}` : "",
             x.dez10 > 0.005 ? `10% ${fmtNum(x.dez10)}` : "",
+            x.extra > 0.005 ? `extra ${fmtNum(x.extra)}${x.extraMotivo ? ` ${x.extraMotivo}` : ""}` : "",
           ].filter(Boolean).join(", "),
           descontarFiado: descontar.has(x.p.id),
         })),
@@ -525,8 +545,8 @@ export function SemanaClient({
             </div>
             <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
               <div className="text-xs font-bold uppercase text-zinc-500">Semana</div>
-              <div className="text-lg font-semibold">{brl(calc.totalDiarias + calc.totalDez)}</div>
-              <div className="text-xs text-zinc-500">diárias {brl(calc.totalDiarias)} + 10% {brl(calc.totalDez)}</div>
+              <div className="text-lg font-semibold">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras)}</div>
+              <div className="text-xs text-zinc-500">diárias {brl(calc.totalDiarias)} + 10% {brl(calc.totalDez)}{calc.totalExtras > 0 ? ` + extras ${brl(calc.totalExtras)}` : ""}</div>
             </div>
           </div>
           {turnoFiltro !== "todos" && (
@@ -543,6 +563,7 @@ export function SemanaClient({
                 {turnoFiltro !== "dia" && <th className="px-3 py-3 text-center">Noites</th>}
                 <th className="px-3 py-3 text-right">Diárias</th>
                 {turnoFiltro !== "dia" && <th className="px-3 py-3 text-right">10%</th>}
+                {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Algo que fez a mais nesta semana">Extra</th>}
                 <th className="px-4 py-3 text-right">Total a pagar</th>
                 {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Compras internas em aberto (opcional descontar)">Fiado</th>}
                 {turnoFiltro === "todos" && <th className="px-4 py-3 text-right">Em mãos</th>}
@@ -556,10 +577,11 @@ export function SemanaClient({
                   // No filtro por turno, mostra só a parte daquele turno.
                   diariasM: turnoFiltro === "dia" ? x.diariasDia : turnoFiltro === "noite" ? x.diariasNoite : x.diarias,
                   dezM: turnoFiltro === "dia" ? 0 : x.dez10,
+                  extraM: turnoFiltro === "todos" ? x.extra : 0,
                   presM: turnoFiltro === "dia" ? x.nDias : turnoFiltro === "noite" ? x.nNoites : x.nDias + x.nNoites,
                 }))
-                .map((x) => ({ ...x, totalM: x.diariasM + x.dezM }))
-                .filter((x) => x.presM > 0 || x.dezM > 0.005 || (turnoFiltro === "todos" && pagoDe.has(x.p.id)))
+                .map((x) => ({ ...x, totalM: x.diariasM + x.dezM + x.extraM }))
+                .filter((x) => x.presM > 0 || x.dezM > 0.005 || x.extraM > 0.005 || (turnoFiltro === "todos" && pagoDe.has(x.p.id)))
                 .sort((a, b) => b.totalM - a.totalM)
                 .map(({ p, nDias, nNoites, diariasM, dezM, totalM, total, rotuloVinculo }) => (
                   <tr key={p.id} className={`bg-white dark:bg-zinc-950 ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
@@ -585,6 +607,33 @@ export function SemanaClient({
                     {turnoFiltro !== "dia" && <td className="px-3 py-2 text-center">{nNoites}</td>}
                     <td className="px-3 py-2 text-right">{brl(diariasM)}</td>
                     {turnoFiltro !== "dia" && <td className="px-3 py-2 text-right">{brl(dezM)}</td>}
+                    {turnoFiltro === "todos" && <td className="px-3 py-2 text-right">
+                      {pagoDe.has(p.id) ? (
+                        <span className="text-xs text-zinc-500">{extrasSem[p.id]?.valor ? `${extrasSem[p.id].valor}${extrasSem[p.id].motivo ? ` · ${extrasSem[p.id].motivo}` : ""}` : "—"}</span>
+                      ) : (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <input
+                            value={extrasSem[p.id]?.valor ?? ""}
+                            onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { valor: e.target.value, motivo: o[p.id]?.motivo ?? "" } }))}
+                            onBlur={() => salvarExtraDe(p.id)}
+                            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                            inputMode="decimal"
+                            placeholder="0,00"
+                            className={`${inputCls} w-20 text-right`}
+                          />
+                          {(extrasSem[p.id]?.valor || extrasSem[p.id]?.motivo) && (
+                            <input
+                              value={extrasSem[p.id]?.motivo ?? ""}
+                              onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { valor: o[p.id]?.valor ?? "", motivo: e.target.value } }))}
+                              onBlur={() => salvarExtraDe(p.id)}
+                              onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                              placeholder="motivo (ex.: hora extra)"
+                              className={`${inputCls} w-32 px-1 py-0.5 text-[11px]`}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </td>}
                     <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-zinc-100">{brl(totalM)}</td>
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-right whitespace-nowrap">
                       {pagoDe.has(p.id) ? (
@@ -614,9 +663,10 @@ export function SemanaClient({
                   <td className="px-4 py-3" colSpan={4}>Total da semana</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
-                  <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez)}</td>
+                  <td className="px-3 py-3 text-right">{brl(calc.totalExtras)}</td>
+                  <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras)}</td>
                   <td className="px-3 py-3 text-right text-red-600">{totalDesconto > 0 ? `− ${brl(totalDesconto)}` : ""}</td>
-                  <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez - totalDesconto)}</td>
+                  <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - totalDesconto)}</td>
                 </tr>
               ) : turnoFiltro === "dia" ? (
                 <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
