@@ -40,10 +40,10 @@ function numBRtxt(s: string) {
 }
 const fmtNum = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-type Pago = { colaborador_id: string; valor: number; lancamento_id: string | null };
+type Pago = { colaborador_id: string; valor: number; lancamento_id: string | null; desconto: number };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos,
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor,
 }: {
   segunda: string;
   dias: string[];
@@ -51,11 +51,13 @@ export function SemanaClient({
   presencasIniciais: Presenca[];
   dezIniciais: Dez[];
   pagos: Pago[];
+  fiadoPor: Record<string, { valor: number; n: number }>;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const pagoDe = useMemo(() => new Map(pagos.map((p) => [p.colaborador_id, p])), [pagos]);
   const [desmarcados, setDesmarcados] = useState<Set<string>>(new Set()); // quem NÃO lançar agora
+  const [descontar, setDescontar] = useState<Set<string>>(new Set()); // de quem descontar o fiado (opcional)
   const [jaPago, setJaPago] = useState(false);
   const [dataPag, setDataPag] = useState(() => {
     const d = new Date();
@@ -180,11 +182,17 @@ export function SemanaClient({
   // Quem entra no lançamento: tem valor, ainda não foi lançado e não foi desmarcado.
   const aLancar = calc.porPessoa.filter((x) => x.total > 0.005 && !pagoDe.has(x.p.id) && !desmarcados.has(x.p.id));
   const totalALancar = aLancar.reduce((s, x) => s + x.total, 0);
+  // Fiado que será descontado (só até o valor da pessoa; a conta continua cheia).
+  const descontoDe = (id: string, total: number) =>
+    descontar.has(id) ? Math.min(fiadoPor[id]?.valor ?? 0, total) : 0;
+  const totalDesconto = aLancar.reduce((s, x) => s + descontoDe(x.p.id, x.total), 0);
+  const comFiado = aLancar.filter((x) => (fiadoPor[x.p.id]?.valor ?? 0) > 0.005);
 
   function lancar() {
     if (!aLancar.length) return;
     const ok = window.confirm(
-      `Lançar ${aLancar.length} pagamento(s) somando ${brl(totalALancar)} no Contas a pagar (CMO Eventual / Diaristas)${jaPago ? ", já marcados como pagos" : ""}?`,
+      `Lançar ${aLancar.length} pagamento(s) somando ${brl(totalALancar)} no Contas a pagar (CMO Eventual / Diaristas)${jaPago ? ", já marcados como pagos" : ""}?` +
+        (totalDesconto > 0 ? `\n\nFiado descontado: ${brl(totalDesconto)} (sai em mãos ${brl(totalALancar - totalDesconto)}). As compras internas dessas pessoas serão marcadas como pagas.` : ""),
     );
     if (!ok) return;
     start(async () => {
@@ -199,11 +207,16 @@ export function SemanaClient({
             x.nNoites ? `${x.nNoites} noite${x.nNoites > 1 ? "s" : ""}` : "",
             x.dez10 > 0.005 ? `10% ${fmtNum(x.dez10)}` : "",
           ].filter(Boolean).join(", "),
+          descontarFiado: descontar.has(x.p.id),
         })),
         { jaPago, data: dataPag, forma: formaPag || null },
       );
       if (r.erro) setErro(r.erro);
-      else { setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar.`); router.refresh(); }
+      else {
+        setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar${r.totalDesc ? `, fiado descontado ${brl(r.totalDesc)}` : ""}.`);
+        setDescontar(new Set());
+        router.refresh();
+      }
     });
   }
 
@@ -397,6 +410,8 @@ export function SemanaClient({
                 <th className="px-3 py-3 text-right">Diárias</th>
                 <th className="px-3 py-3 text-right">10%</th>
                 <th className="px-4 py-3 text-right">Total a pagar</th>
+                <th className="px-3 py-3 text-right" title="Compras internas em aberto (opcional descontar)">Fiado</th>
+                <th className="px-4 py-3 text-right">Em mãos</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -428,6 +443,27 @@ export function SemanaClient({
                     <td className="px-3 py-2 text-right">{brl(diarias)}</td>
                     <td className="px-3 py-2 text-right">{brl(dez10)}</td>
                     <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-zinc-100">{brl(total)}</td>
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      {pagoDe.has(p.id) ? (
+                        Number(pagoDe.get(p.id)!.desconto) > 0 ? <span className="text-xs text-zinc-500">− {brl(Number(pagoDe.get(p.id)!.desconto))}</span> : <span className="text-zinc-300">—</span>
+                      ) : (fiadoPor[p.id]?.valor ?? 0) > 0.005 ? (
+                        <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-red-600" title={`${fiadoPor[p.id].n} compra(s) em aberto — marque pra descontar no acerto`}>
+                          <input
+                            type="checkbox"
+                            checked={descontar.has(p.id)}
+                            onChange={(e) => setDescontar((s) => { const n = new Set(s); if (e.target.checked) n.add(p.id); else n.delete(p.id); return n; })}
+                          />
+                          deve {brl(fiadoPor[p.id].valor)}
+                        </label>
+                      ) : (
+                        <span className="text-zinc-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right font-semibold text-green-700 dark:text-green-400">
+                      {pagoDe.has(p.id)
+                        ? brl(Number(pagoDe.get(p.id)!.valor) - Number(pagoDe.get(p.id)!.desconto || 0))
+                        : brl(total - descontoDe(p.id, total))}
+                    </td>
                   </tr>
                 ))}
               <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
@@ -435,6 +471,8 @@ export function SemanaClient({
                 <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
                 <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
                 <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez)}</td>
+                <td className="px-3 py-3 text-right text-red-600">{totalDesconto > 0 ? `− ${brl(totalDesconto)}` : ""}</td>
+                <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez - totalDesconto)}</td>
               </tr>
             </tbody>
           </table>
@@ -467,7 +505,16 @@ export function SemanaClient({
             >
               💸 Lançar {aLancar.length} pagamento{aLancar.length === 1 ? "" : "s"} · {brl(totalALancar)} no Contas a pagar
             </button>
-            <span className="text-xs text-zinc-500">categoria: CMO Eventual / Diaristas</span>
+            <span className="text-xs text-zinc-500">categoria: CMO Eventual / Diaristas · a conta entra com o valor cheio; o fiado só abate o que sai em mãos</span>
+            {comFiado.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setDescontar((s) => (s.size >= comFiado.length ? new Set() : new Set(comFiado.map((x) => x.p.id))))}
+                className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+              >
+                {descontar.size >= comFiado.length ? "não descontar fiado de ninguém" : `descontar fiado de todos (${comFiado.length})`}
+              </button>
+            )}
             {msg && <span className="text-xs text-green-700">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}
           </div>
         </div>

@@ -60,9 +60,12 @@ export async function preencherEscalaFixa(segunda: string) {
 
 // Lança o pagamento da semana no Contas a pagar (categoria "CMO Eventual /
 // Diaristas"), uma conta por pessoa. Quem já foi lançado nessa semana é pulado.
+// Opcional: descontar o fiado (retiradas em aberto) — as retiradas viram "pago"
+// com a observação da semana, mas a conta no contas a pagar fica com o valor
+// CHEIO (pra somar a mão de obra do mês); o desconto só reduz o que sai em mãos.
 export async function lancarPagamentosSemana(
   segunda: string,
-  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string }[],
+  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean }[],
   opts: { jaPago: boolean; data: string; forma: string | null },
 ) {
   const supabase = await createClient();
@@ -83,13 +86,35 @@ export async function lancarPagamentosSemana(
   const hoje = new Date().toISOString().slice(0, 10);
   const rotulo = rotuloSemana(segunda);
   let n = 0;
+  let totalDesc = 0;
   for (const it of validos) {
+    // Fiado: pega as retiradas em aberto (mais antigas primeiro) enquanto couber no valor.
+    let desconto = 0;
+    const idsFiado: number[] = [];
+    if (it.descontarFiado) {
+      const { data: abertas } = await supabase
+        .from("retiradas")
+        .select("id, valor")
+        .eq("colaborador_id", it.colaboradorId)
+        .eq("status", "aberto")
+        .order("data", { ascending: true })
+        .order("id", { ascending: true });
+      for (const r of (abertas ?? []) as { id: number; valor: number }[]) {
+        const v = Number(r.valor) || 0;
+        if (desconto + v > it.valor + 0.005) break;
+        desconto += v;
+        idsFiado.push(r.id);
+      }
+    }
+    const emMaos = Math.round((it.valor - desconto) * 100) / 100;
+    const sufixo = desconto > 0 ? ` · fiado descontado ${desconto.toFixed(2).replace(".", ",")} → em mãos ${emMaos.toFixed(2).replace(".", ",")}` : "";
+
     const { data: l, error } = await supabase
       .from("lancamentos")
       .insert({
         data: dataLanc,
         categoria_id: cat.id,
-        descricao: `Semana ${rotulo} — ${it.nome} (${it.detalhe})`,
+        descricao: `Semana ${rotulo} — ${it.nome} (${it.detalhe})${sufixo}`,
         forma_pagamento: opts.forma,
         lancamento_em: hoje,
         valor: Math.round(it.valor * 100) / 100,
@@ -102,14 +127,22 @@ export async function lancarPagamentosSemana(
       .single();
     if (error) return { erro: error.message, n };
     await supabase.from("semana_pagamentos").insert({
-      segunda, colaborador_id: it.colaboradorId, valor: it.valor, lancamento_id: l.id,
+      segunda, colaborador_id: it.colaboradorId, valor: it.valor, lancamento_id: l.id, desconto,
     });
+    if (idsFiado.length) {
+      await supabase
+        .from("retiradas")
+        .update({ status: "pago", data_pagamento: dataLanc, obs_pagamento: `Descontado no acerto da semana ${rotulo}` })
+        .in("id", idsFiado);
+      totalDesc += desconto;
+    }
     n++;
   }
   revalidatePath("/colaboradores/semana");
   revalidatePath("/financeiro/contas");
   revalidatePath("/financeiro");
-  return { ok: true, n };
+  revalidatePath("/retiradas");
+  return { ok: true, n, totalDesc };
 }
 
 // Cadastro rápido de um free esporádico direto da tela da semana.
