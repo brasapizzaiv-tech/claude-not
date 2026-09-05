@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DreTipo } from "@/lib/types";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -53,7 +54,7 @@ export default async function DrePage({
   const mes =
     sp.mes && /^\d{4}-\d{2}$/.test(sp.mes)
       ? sp.mes
-      : new Date().toISOString().slice(0, 7);
+      : hojeSP().slice(0, 7);
   const ini = `${mes}-01`;
   const fim = `${desloca(mes, 1)}-01`;
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import type { NotaFiscal, NotaItem } from "@/lib/types";
 import { BotaoConciliar } from "./conciliar";
 import { ManifestarNota } from "./manifestar";
@@ -69,7 +70,7 @@ export default async function NotaDetalhePage({
     (catData as { id: string; tipo: string; grupo: string; nome: string }[]) ??
     []
   ).filter((c) => c.tipo !== "receita" && c.tipo !== "deducao");
-  const competenciaInicial = (nota.data_emissao ?? new Date().toISOString().slice(0, 10)).slice(
+  const competenciaInicial = (nota.data_emissao ?? hojeSP()).slice(
     0,
     7,
   );

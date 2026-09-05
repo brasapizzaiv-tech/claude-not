@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export type Turno = "dia" | "noite";
 
@@ -107,8 +108,8 @@ export async function lancarPagamentosSemana(
   const validos = itens.filter((i) => i.valor > 0 && !pulados.has(i.colaboradorId));
   if (!validos.length) return { erro: "Nada pra lançar (já lançado ou valor zero)." };
 
-  const dataLanc = /^\d{4}-\d{2}-\d{2}$/.test(opts.data) ? opts.data : new Date().toISOString().slice(0, 10);
-  const hoje = new Date().toISOString().slice(0, 10);
+  const dataLanc = /^\d{4}-\d{2}-\d{2}$/.test(opts.data) ? opts.data : hojeSP();
+  const hoje = hojeSP();
   const rotulo = rotuloSemana(segunda);
   let n = 0;
   let totalDesc = 0;

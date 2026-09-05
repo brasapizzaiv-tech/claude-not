@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { UploadVendas, UploadFaturamento } from "./upload";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function hojeISO() {
-  return new Date().toISOString().slice(0, 10);
+  return hojeSP(); // fuso de Brasília (o servidor roda em UTC)
 }
 function inicioMesISO() {
   return hojeISO().slice(0, 8) + "01";

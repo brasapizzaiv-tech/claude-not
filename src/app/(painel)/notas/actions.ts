@@ -5,11 +5,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
 import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 // Primeiro dia do mês atual (AAAA-MM-01) — nota anterior a isso entra como paga.
 function inicioDoMes() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+  return `${hojeSP().slice(0, 7)}-01`; // fuso de Brasília
 }
 
 const norm = (s: string) =>
@@ -284,7 +284,7 @@ export async function lancarNota(
   // Competência = mês escolhido (AAAA-MM → dia 01); senão, data de emissão.
   const dataLanc = opts?.competencia
     ? `${opts.competencia}-01`
-    : ((nota.data_emissao as string) ?? new Date().toISOString().slice(0, 10));
+    : ((nota.data_emissao as string) ?? hojeSP());
   const pago = dataLanc < inicioDoMes(); // histórico entra pago
   const vencimento =
     opts?.vencimento !== undefined

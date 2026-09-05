@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ajustarTotalBoleto, lerValorBR } from "@/lib/boleto";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export async function criarLancamento(formData: FormData) {
   const supabase = await createClient();
@@ -20,8 +21,8 @@ export async function criarLancamento(formData: FormData) {
 
   if (!categoria_id || valor <= 0) return;
 
-  const dataLanc = data || new Date().toISOString().slice(0, 10);
-  const hoje = new Date().toISOString().slice(0, 10);
+  const dataLanc = data || hojeSP();
+  const hoje = hojeSP();
   const repeticao = (formData.get("repeticao") as string) || "nenhuma";
   const vezes = Math.max(1, Math.min(60, Number(formData.get("vezes")) || 1));
   const frequencia = (formData.get("frequencia") as string) || "mensal";

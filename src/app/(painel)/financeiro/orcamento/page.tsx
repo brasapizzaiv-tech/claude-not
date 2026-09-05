@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { OrcamentoClient, type LinhaOrc } from "./orcamento-client";
 
 function desloca(mes: string, delta: number) {
@@ -25,7 +26,7 @@ export default async function OrcamentoPage({
   const mes =
     sp.mes && /^\d{4}-\d{2}$/.test(sp.mes)
       ? sp.mes
-      : new Date().toISOString().slice(0, 7);
+      : hojeSP().slice(0, 7);
   const ini = `${mes}-01`;
   const fim = `${desloca(mes, 1)}-01`;
 

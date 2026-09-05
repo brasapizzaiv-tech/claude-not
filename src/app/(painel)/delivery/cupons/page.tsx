@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { criarCupom, alternarCupom, excluirCupom } from "../actions";
 import { dataBR } from "@/lib/format";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export const metadata = { title: "Cupons · Delivery" };
 
@@ -15,7 +16,7 @@ export default async function CuponsPage() {
     id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null;
     validade: string | null; max_usos: number | null; usos: number; ativo: boolean;
   }[]) ?? [];
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeSP();
 
   return (
     <div className="mx-auto max-w-3xl p-4">

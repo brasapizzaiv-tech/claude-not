@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { criarPedidoManual } from "../actions";
 import { Combobox } from "@/components/combobox";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 type Prod = { id: string; nome: string; unidade: string; preco_referencia: number | null };
 type Item = { produto_id: string; nome: string; unidade: string; qtd: string; preco: string };
@@ -22,7 +23,7 @@ export function NovoPedidoClient({
   produtos: Prod[];
 }) {
   const [fornecedorId, setFornecedorId] = useState("");
-  const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [data, setData] = useState(() => hojeSP());
   const [itens, setItens] = useState<Item[]>([]);
   const [busca, setBusca] = useState("");
   const [salvando, start] = useTransition();

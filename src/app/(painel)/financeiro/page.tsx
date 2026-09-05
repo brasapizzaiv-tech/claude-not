@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
 import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { criarLancamento } from "./actions";
 import { LancamentosTabela } from "./lancamentos-tabela";
 
@@ -9,7 +10,7 @@ const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function mesAtual() {
-  return new Date().toISOString().slice(0, 7);
+  return hojeSP().slice(0, 7); // fuso de Brasília
 }
 function desloca(mes: string, delta: number) {
   const [a, m] = mes.split("-").map(Number);

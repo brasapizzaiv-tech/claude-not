@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { salvarParcelasNota } from "../actions";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -63,7 +64,7 @@ export function ParcelasEditor({
   // Gera N parcelas iguais (a última absorve o centavo) a partir do 1º venc.
   function gerar() {
     const n = Math.max(2, Math.min(36, Math.round(num(nGerar))));
-    const base = linhas[0]?.vencimento || vencimentoBase || new Date().toISOString().slice(0, 10);
+    const base = linhas[0]?.vencimento || vencimentoBase || hojeSP();
     const parcela = Math.round((valorNota / n) * 100) / 100;
     const novas: Linha[] = [];
     let acum = 0;

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FORMAS_CAIXA, type FormaLinha } from "@/lib/caixa";
 import { FechamentoForm } from "../fechamento-form";
 import type { EntradaFechamento } from "../actions";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 const s = (n: number | null | undefined) =>
   n ? String(n).replace(".", ",") : "";
@@ -9,7 +10,7 @@ const s = (n: number | null | undefined) =>
 function vazio(): EntradaFechamento {
   return {
     id: null,
-    data: new Date().toISOString().slice(0, 10),
+    data: hojeSP(),
     venda_bruta: "",
     acrescimos: "",
     cancelados: "",

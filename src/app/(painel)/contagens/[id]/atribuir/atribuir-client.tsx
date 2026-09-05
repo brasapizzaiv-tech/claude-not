@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Contagem, Colaborador } from "@/lib/types";
@@ -25,13 +25,12 @@ export function AtribuirClient({
   links: Record<string, string>;
 }) {
   const router = useRouter();
+  // Origem do link só existe no navegador (SSR não tem window).
   const [origin, setOrigin] = useState("");
-  useMemo(() => {
-    if (typeof window !== "undefined") setOrigin(window.location.origin);
+  useEffect(() => {
+    const t = setTimeout(() => setOrigin(window.location.origin), 0);
+    return () => clearTimeout(t);
   }, []);
-
-  const nomeColab = (id: string | null) =>
-    colaboradores.find((c) => c.id === id)?.nome ?? null;
 
   const [todosPara, setTodosPara] = useState("");
 

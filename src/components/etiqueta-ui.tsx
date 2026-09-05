@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FAIXAS, type Contagem, type Faixa, type DiaFaixa } from "@/lib/etiqueta-vencimentos";
+import { FAIXAS, hojeSP, somarDias, type Contagem, type Faixa, type DiaFaixa } from "@/lib/etiqueta-vencimentos";
 import { CONS_LABEL, TIPOS, dataBRcurta, linhasExtras, tipoInfo, type EtiquetaConfig, type EtiquetaDados, type TipoEtiqueta } from "@/lib/etiqueta-tipos";
 
 // ---------- Painel de vencimentos (4 cartões) ----------
@@ -374,9 +374,8 @@ export function PreviewEtiqueta({ d, config }: { d: EtiquetaDados; config?: Etiq
 
 // ---------- Validade padrão ----------
 export function emDias(dias: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + dias);
-  return d.toISOString().slice(0, 10);
+  // Sempre no fuso de Brasília: à noite o toISOString() já virava o dia seguinte (UTC).
+  return somarDias(hojeSP(), dias);
 }
 export function diasDoItem(p: ItemEtq | undefined, cons: string) {
   if (!p) return null;

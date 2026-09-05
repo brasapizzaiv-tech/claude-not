@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix-sicredi";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export type { LinhaPedido } from "@/lib/delivery-core";
 
@@ -65,7 +66,7 @@ async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, co
   const { data } = await admin.from("cupons").select("*").ilike("codigo", cod).maybeSingle();
   const c = data as CupomRow | null;
   if (!c || !c.ativo) return { ok: false as const, mensagem: "Cupom não encontrado ou desativado." };
-  if (c.validade && c.validade < new Date().toISOString().slice(0, 10)) return { ok: false as const, mensagem: "Esse cupom venceu. 😕" };
+  if (c.validade && c.validade < hojeSP()) return { ok: false as const, mensagem: "Esse cupom venceu. 😕" };
   if (c.max_usos != null && c.usos >= c.max_usos) return { ok: false as const, mensagem: "Esse cupom esgotou." };
   return { ok: true as const, cupom: c };
 }

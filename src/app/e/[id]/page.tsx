@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { BaixaPublica } from "./baixa-publica";
 
 export default async function EtiquetaPublicaPage({
@@ -24,7 +25,7 @@ export default async function EtiquetaPublicaPage({
   }
 
   const validade = data.validade as string | null;
-  const vencida = validade ? validade < new Date().toISOString().slice(0, 10) : false;
+  const vencida = validade ? validade < hojeSP() : false;
   const manip = data.manipulado_em
     ? new Date(data.manipulado_em).toLocaleString("pt-BR", {
         day: "2-digit",

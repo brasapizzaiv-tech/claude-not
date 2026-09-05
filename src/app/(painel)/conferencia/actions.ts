@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 type ItemConf = {
   id: string;
@@ -35,7 +36,7 @@ export async function criarPedidoManual(
     .insert({
       cotacao_id: null,
       fornecedor_id: fornecedorId || null,
-      data: data || new Date().toISOString().slice(0, 10),
+      data: data || hojeSP(),
       status: "recebido",
     })
     .select("id")
