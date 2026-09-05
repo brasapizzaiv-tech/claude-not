@@ -28,6 +28,15 @@ Push-Location $app
 & npm install --omit=dev --no-audit --no-fund | Out-Host
 Pop-Location
 
+# enxuga: binarios da serialport de outras plataformas (so win32-x64 interessa)
+$preb = Join-Path $app "node_modules\@serialport\bindings-cpp\prebuilds"
+if (Test-Path $preb) { Get-ChildItem $preb -Directory | Where-Object { $_.Name -ne "win32-x64" } | Remove-Item -Recurse -Force }
+Get-ChildItem $app -Recurse -Include *.md,*.markdown,*.ts,*.map -File | Remove-Item -Force -ErrorAction SilentlyContinue
+# bundles de navegador e arquivos de teste que o agente nao usa (so peso no instalador)
+foreach ($f in @("node_modules\pdfkit\js\pdfkit.standalone.js","node_modules\pngjs\browser.js","node_modules\jpeg-exif\test")) {
+  $p = Join-Path $app $f; if (Test-Path $p) { Remove-Item $p -Recurse -Force }
+}
+
 # nao empacotar config/log/pid/fila de teste
 foreach ($f in @("config.json","agente.log","agente.pid","bandeja.pid","fila.json","logo.png")) {
   $p = Join-Path $app $f; if (Test-Path $p) { Remove-Item $p -Force }
