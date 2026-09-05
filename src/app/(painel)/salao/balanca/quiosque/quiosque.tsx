@@ -461,7 +461,7 @@ export function QuiosqueBalanca({
       ? "bg-green-500 text-white"
       : estado === "pesando" || estado === "processando"
         ? "bg-[#C78340] text-white"
-        : "bg-white text-[#211915] shadow-md";
+        : "bg-[#211915] text-white shadow-md";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#f6efe6] text-[#211915]">
@@ -469,7 +469,7 @@ export function QuiosqueBalanca({
       <div className="flex shrink-0 items-center justify-between px-8 py-[clamp(0.5rem,2vh,1.25rem)]">
         <div className="flex items-center gap-[clamp(0.75rem,2vw,1.5rem)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(4rem,15vh,11rem)] w-auto" />
+          <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(5rem,20vh,14rem)] w-auto" />
           <div>
             <p className="text-[clamp(1.4rem,4vw,3rem)] font-black leading-tight text-[#211915]">{cupom.nome || "Brasa Pizzaria e Restaurante"}</p>
             <p className="text-[clamp(0.8rem,1.8vw,1.2rem)] text-[#211915]/50">Autoatendimento · pese o prato e pegue seu cupom</p>
@@ -620,8 +620,8 @@ export function QuiosqueBalanca({
                 <div className="mb-4 animate-bounce text-[clamp(2rem,6vw,4rem)] text-[#211915]/40">⌄</div>
               )}
               {/* peso grande */}
-              <div className="rounded-[2rem] border-4 border-[#C78340]/40 bg-white shadow-xl px-[clamp(1.5rem,8vw,6rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-center">
-                <p className="text-[clamp(3.5rem,16vw,10rem)] font-black leading-none tabular-nums">
+              <div className="rounded-[2rem] border-4 border-[#C78340]/40 bg-white shadow-xl px-[clamp(2rem,10vw,8rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-center">
+                <p className="text-[clamp(4rem,19vw,13rem)] font-black leading-none tabular-nums">
                   {liq.toFixed(3).replace(".", ",")}
                   <span className="ml-3 text-[clamp(1.5rem,5vw,3.5rem)] font-light text-[#211915]/50">kg</span>
                 </p>
@@ -629,33 +629,33 @@ export function QuiosqueBalanca({
 
               {/* Botões touch: LIVRE direto + Marmita */}
               {/* Botões lado a lado: LIVRE direto · virar livre · marmita */}
-              <div className="mt-[clamp(1rem,3vh,2rem)] flex w-full max-w-6xl flex-wrap items-stretch justify-center gap-[clamp(0.5rem,1.5vw,1rem)]">
+              <div className="mt-[clamp(1rem,4vh,2.5rem)] flex w-[94%] max-w-[1600px] flex-wrap items-stretch justify-center gap-[clamp(0.75rem,2vw,1.5rem)]">
                 {buffetLivre > 0 && liq <= LIMIAR && (
                   <button
                     onClick={livreDireto}
-                    className="min-w-[14rem] flex-1 rounded-3xl bg-[#C78340] px-[clamp(1rem,3vw,2rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.2rem,3vw,2.2rem)] font-black leading-tight text-white shadow-lg active:brightness-90"
+                    className="min-w-[16rem] flex-1 rounded-3xl bg-[#C78340] px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-white shadow-lg active:brightness-90"
                   >
                     🍽️ QUERO O BUFFET LIVRE
-                    <span className="block text-[clamp(1rem,2.4vw,1.6rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>
+                    <span className="block text-[clamp(1.1rem,2.8vw,2.2rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>
                   </button>
                 )}
                 {buffetLivre > 0 && liq <= LIMIAR && (
                   <button
                     onClick={() => { setVirarAberto(true); setNumeroVirar(""); }}
-                    className="min-w-[14rem] flex-1 rounded-3xl border-4 border-[#C78340] bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.1rem,2.6vw,1.9rem)] font-black leading-tight text-[#C78340] shadow-md active:brightness-95"
+                    className="min-w-[16rem] flex-1 rounded-3xl border-4 border-[#C78340] bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-[#C78340] shadow-md active:brightness-95"
                   >
                     🔄 JÁ PESEI, QUERO VIRAR LIVRE
-                    <span className="block text-[clamp(0.85rem,1.8vw,1.2rem)] font-medium text-[#211915]/50">passe o cupom no leitor</span>
+                    <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium text-[#211915]/50">passe o cupom no leitor</span>
                   </button>
                 )}
                 <button
                   onClick={toggleSoKg}
-                  className={`min-w-[12rem] flex-1 rounded-3xl px-[clamp(1rem,3vw,2rem)] py-[clamp(1rem,3.5vh,2.25rem)] text-[clamp(1.1rem,2.6vw,1.9rem)] font-black leading-tight shadow-md transition ${
+                  className={`min-w-[14rem] flex-1 rounded-3xl px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight shadow-md transition ${
                     soKg ? "bg-yellow-400 text-black" : "border-4 border-[#211915]/15 bg-white text-[#211915]/70 hover:bg-[#211915]/5"
                   }`}
                 >
                   🍱 {soKg ? "MARMITA — ativa" : "É MARMITA?"}
-                  <span className="block text-[clamp(0.85rem,1.8vw,1.2rem)] font-medium opacity-70">{soKg ? "cobra só por kg nesta pesagem" : "cobra só por kg"}</span>
+                  <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium opacity-70">{soKg ? "cobra só por kg nesta pesagem" : "cobra só por kg"}</span>
                 </button>
               </div>
               {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
