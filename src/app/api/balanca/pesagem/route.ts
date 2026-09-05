@@ -40,16 +40,16 @@ export async function POST(req: Request) {
     if (!(peso > 0)) return Response.json({ ok: false, erro: "peso inválido" }, { status: 422 });
     const taraBalanca = Number(body.tara_balanca) || 0;
     soKg = !!body.so_kg;
-    // Se tarou NA balança, o peso já vem líquido.
-    tara = taraBalanca > 0.001 ? 0 : Number(cfg.tara_padrao || 0);
-    liquido = Math.max(0, peso - tara);
+    // O peso já vem LÍQUIDO resolvido pelo quiosque (marmita = leitura + tara da
+    // balança). Sem "tara padrão"; a tara da balança fica só como registro.
+    liquido = Math.max(0, peso);
     valor = liquido * precoKg;
     if (!soKg && livrePreco > 0 && valor >= livrePreco) {
       valor = livrePreco;
       livre = true;
     }
     valor = Math.round(valor * 100) / 100;
-    tara = taraBalanca > 0.001 ? taraBalanca : tara;
+    tara = Math.max(0, taraBalanca);
   }
 
   const { data: com, error } = await admin

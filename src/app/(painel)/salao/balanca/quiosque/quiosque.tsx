@@ -44,12 +44,10 @@ function CupomQR({ id }: { id: string }) {
 export function QuiosqueBalanca({
   precoKg,
   buffetLivre,
-  taraPadrao,
   cupom,
 }: {
   precoKg: number;
   buffetLivre: number;
-  taraPadrao: number;
   cupom: { nome: string; endereco: string; telefone: string; msg: string };
 }) {
   const [estado, setEstado] = useState<
@@ -85,13 +83,16 @@ export function QuiosqueBalanca({
     setEstado(v);
   };
 
-  // Peso líquido (comida): se tarou NA balança, o PESO L já é líquido → não
-  // desconta de novo; senão, desconta a tara do sistema (o prato).
-  const netDe = (bruto: number, taraBal: number) =>
-    taraBal > 0.001 ? Math.max(0, bruto) : Math.max(0, bruto - taraPadrao);
+  // Peso a cobrar = SEMPRE o que a balança manda (PESO L, já com a tara do
+  // prato descontada na própria balança). Não existe mais "tara padrão".
+  // MARMITA: ela vai direto na balança, sem prato — a balança desconta a tara
+  // do prato mesmo assim e mostra negativo/baixo. Então devolve a tara:
+  // peso da marmita = leitura + tara da balança (nunca negativo).
+  const netDe = (leitura: number, taraBal: number, marmita: boolean) =>
+    marmita ? Math.max(0, leitura + Math.max(0, taraBal)) : Math.max(0, leitura);
 
-  const calcValor = (bruto: number, soKgFlag: boolean) => {
-    const liquido = netDe(bruto, taraBalanca);
+  // Valor a partir do peso LÍQUIDO já resolvido.
+  const valorDe = (liquido: number, soKgFlag: boolean) => {
     let valor = liquido * precoKg;
     let livre = false;
     if (!soKgFlag && buffetLivre > 0 && valor >= buffetLivre) {
@@ -100,14 +101,17 @@ export function QuiosqueBalanca({
     }
     return { liquido, valor: Math.round(valor * 100) / 100, livre };
   };
+  const calcValor = (leitura: number, soKgFlag: boolean) => valorDe(netDe(leitura, taraBalanca, soKgFlag), soKgFlag);
 
-  const liq = netDe(pesoBruto, taraBalanca);
+  const liq = netDe(pesoBruto, taraBalanca, soKg);
   const { valor: valorAtual } = calcValor(pesoBruto, soKg);
 
   async function capturar(bruto: number) {
     setEst("processando");
+    // O que vai pro sistema é o peso LÍQUIDO já resolvido (marmita = leitura + tara).
+    const liquido = Math.round(netDe(bruto, taraBalancaRef.current, soKgRef.current) * 1000) / 1000;
     try {
-      const r = await gerarComandaBuffetKiosk(bruto, soKgRef.current, taraBalancaRef.current);
+      const r = await gerarComandaBuffetKiosk(liquido, soKgRef.current, taraBalancaRef.current);
       if (r.ok) {
         const res: Resultado = {
           id: r.id,
@@ -136,7 +140,7 @@ export function QuiosqueBalanca({
       }
     } catch {
       // Sistema fora do ar (internet caiu) → fila offline do agente.
-      const ok = await capturarViaAgente({ peso: bruto, tara_balanca: taraBalancaRef.current, so_kg: soKgRef.current });
+      const ok = await capturarViaAgente({ peso: liquido, tara_balanca: taraBalancaRef.current, so_kg: soKgRef.current });
       if (!ok) setEst("aguardando");
     }
     // Marmita é por pesagem — volta ao normal para o próximo cliente.
@@ -273,10 +277,10 @@ export function QuiosqueBalanca({
       const j = await r.json();
       if (!j.ok) return false;
       if (j.offline) {
-        const bruto = Number(payload.peso) || 0;
+        const bruto = Number(payload.peso) || 0; // já é o líquido resolvido
         const { liquido, valor, livre } = payload.livre_direto
           ? { liquido: 0, valor: buffetLivre, livre: true }
-          : calcValor(bruto, !!payload.so_kg);
+          : valorDe(bruto, !!payload.so_kg);
         concluir({ id: "", numero: 0, valor, liquido, peso: bruto, tara: Number(payload.tara_balanca) || 0, livre, codigoOffline: String(j.codigo || "OFF") });
       } else {
         concluir({ id: j.id, numero: j.numero, valor: j.valor, liquido: j.liquido, peso: j.peso, tara: j.tara, livre: j.livre });
@@ -365,7 +369,7 @@ export function QuiosqueBalanca({
       refPeso.current = bruto;
       estavelDesde.current = agora;
     }
-    const liquido = netDe(bruto, taraBalancaRef.current);
+    const liquido = netDe(bruto, taraBalancaRef.current, soKgRef.current);
     const est = estadoRef.current;
     if (est === "processando") return;
     if (est === "resultado") {
@@ -665,7 +669,8 @@ export function QuiosqueBalanca({
               {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
               {taraBalanca > 0.001 && (
                 <p className="mt-2 text-sm text-[#211915]/40">
-                  Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg (peso já líquido)
+                  Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg
+                  {soKg ? " · marmita: peso = leitura + tara" : " (peso já líquido)"}
                 </p>
               )}
               {/* Botão manual — garante gerar a comanda se a balança oscilar muito */}

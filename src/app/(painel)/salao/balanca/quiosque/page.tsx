@@ -16,7 +16,6 @@ export default async function QuiosquePage() {
     <QuiosqueBalanca
       precoKg={kgDia}
       buffetLivre={livreDia}
-      taraPadrao={Number(cfg.tara_padrao ?? 0)}
       cupom={{
         nome: cfg.nome_restaurante || "Restaurante",
         endereco: cfg.cupom_endereco || "",

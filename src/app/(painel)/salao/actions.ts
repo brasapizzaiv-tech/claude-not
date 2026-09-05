@@ -338,14 +338,15 @@ export async function gerarComandaBuffetKiosk(
   const supabase = await createClient();
   if (!(peso > 0)) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
-  // Se tarou NA balança, o peso já vem líquido → tara do sistema = 0.
-  const tara = taraBalanca > 0.001 ? 0 : Number(cfg.tara_padrao || 0);
+  // O quiosque manda o peso LÍQUIDO já resolvido (o que a balança lê; marmita =
+  // leitura + tara da balança). Nada de "tara padrão" aqui — tara é só registro.
+  const tara = 0;
   const { valor, livre } = calcBuffet(cfg, peso, tara, soPorKg);
   const { data: com } = await supabase
     .from("pdv_comandas")
     .insert({
       peso,
-      tara: taraBalanca > 0.001 ? taraBalanca : tara,
+      tara: Math.max(0, taraBalanca),
       valor_buffet: valor,
       livre,
       mesa: "Balança",
