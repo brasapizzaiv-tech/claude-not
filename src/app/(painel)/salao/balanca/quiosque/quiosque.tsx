@@ -99,6 +99,7 @@ export function QuiosqueBalanca({
   // pelo menos o peso capturado (funciona com prato E com marmita, mesmo quando
   // a balança lê negativo por causa da tara).
   const capturaRef = useRef<{ bruto: number; liquido: number } | null>(null);
+  const silencioDesde = useRef(0); // desde quando a balança parou de responder (0 = respondendo)
   const estadoRef = useRef(estado);
   const refPeso = useRef(0);
   const estavelDesde = useRef(0);
@@ -306,10 +307,22 @@ export function QuiosqueBalanca({
         }
         setFilaAgente(Number(j.fila) || 0);
         if (j.lendo) {
+          silencioDesde.current = 0;
           setDiag((d) => ({ bytes: d.bytes + 1, raw: "via agente" }));
           taraBalancaRef.current = Number(j.tara) || 0;
           setTaraBalanca(Number(j.tara) || 0);
           processar(Number(j.peso) || 0);
+        } else {
+          // Balança MUDA: no protocolo de rótulo ela para de transmitir quando o
+          // peso fica negativo (prato tirado com tara feita). Silêncio de ~2s na
+          // tela "retire" = prato saiu → libera o próximo cliente (antes travava).
+          const agora = Date.now();
+          if (!silencioDesde.current) silencioDesde.current = agora;
+          else if (agora - silencioDesde.current > 2000) {
+            const est = estadoRef.current;
+            if (est === "resultado") voltarAguardando();
+            else if (est === "pesando") { refPeso.current = 0; estavelDesde.current = 0; setPesoBruto(0); setEst("aguardando"); }
+          }
         }
       } catch {
         if (vivo && agenteRef.current) { agenteRef.current = false; setAgente(false); }
