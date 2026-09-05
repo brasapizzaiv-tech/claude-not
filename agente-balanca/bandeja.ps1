@@ -16,7 +16,16 @@ $node   = Join-Path $dir "node.exe"
 $script = Join-Path $dir "agente.mjs"
 $log    = Join-Path $dir "agente.log"
 
-try { Set-Content -Path (Join-Path $dir "bandeja.pid") -Value $PID -Encoding ascii } catch {}
+# Já tem uma bandeja rodando? (clicou no atalho duas vezes) Então não abre outra —
+# senão viram dois agentes brigando pela porta serial e pela porta 8543.
+$pidFile = Join-Path $dir "bandeja.pid"
+try {
+  if (Test-Path $pidFile) {
+    $old = (Get-Content $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1)
+    if ($old -and ([int]$old -ne $PID) -and (Get-Process -Id ([int]$old) -ErrorAction SilentlyContinue)) { exit }
+  }
+} catch {}
+try { Set-Content -Path $pidFile -Value $PID -Encoding ascii } catch {}
 
 $global:proc = $null
 function Start-Agente {
@@ -36,6 +45,10 @@ Start-Agente
 
 $icon = New-Object System.Windows.Forms.NotifyIcon
 $icon.Icon    = [System.Drawing.SystemIcons]::Information
+try {
+  $icoFile = Join-Path $dir "balanca.ico"
+  if (Test-Path $icoFile) { $icon.Icon = New-Object System.Drawing.Icon($icoFile) }
+} catch {}
 $icon.Text    = "Agente da Balanca"
 $icon.Visible = $true
 

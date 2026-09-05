@@ -2,7 +2,7 @@
 ; Compile com: ISCC.exe balanca.iss  (após rodar build.ps1, que monta build\app).
 
 #define AppName "Agente da Balanca"
-#define AppVer "1.1.3"
+#define AppVer "1.1.4"
 #define AppPublisher "Brasa Sistemas"
 
 [Setup]
@@ -21,16 +21,22 @@ LZMAUseSeparateProcess=yes
 PrivilegesRequired=admin
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64compatible
+SetupIconFile=balanca.ico
+UninstallDisplayIcon={app}\balanca.ico
 
 [Languages]
 Name: "pt"; MessagesFile: "compiler:Languages\Portuguese.isl"
 
 [Files]
 Source: "build\app\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "balanca.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; Atalho na Inicialização (Todos os usuários) -> liga o agente oculto a cada logon.
 Name: "{commonstartup}\Agente da Balanca"; Filename: "{app}\start.vbs"; WorkingDir: "{app}"
+; Menu Iniciar e Área de trabalho: pra ligar de novo depois de "Sair" na bandeja.
+Name: "{commonprograms}\Agente da Balanca"; Filename: "wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\balanca.ico"; Comment: "Liga o Agente da Balança (ícone na bandeja)"
+Name: "{commondesktop}\Agente da Balanca"; Filename: "wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\balanca.ico"; Comment: "Liga o Agente da Balança (ícone na bandeja)"
 
 [Code]
 var

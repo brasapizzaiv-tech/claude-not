@@ -16,7 +16,7 @@ import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const VERSAO = "1.1.3"; // 1.1.1: fila-erros.json; 1.1.2: negativo + GET /raw; 1.1.3: protocolos Prot F / Prot 3 da POP-S
+const VERSAO = "1.1.4"; // 1.1.1: fila-erros.json; 1.1.2: negativo + GET /raw; 1.1.3: Prot F / Prot 3; 1.1.4: atalhos no Menu Iniciar/Area de trabalho
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
