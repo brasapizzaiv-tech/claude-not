@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
-import { gerarComandaBuffetKiosk, gerarComandaLivreKiosk, virarLivreKiosk } from "../../actions";
+import { gerarComandaBuffetKiosk, gerarComandaLivreKiosk, virarLivreKiosk, virarLivrePorNumeroKiosk } from "../../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -73,6 +73,9 @@ export function QuiosqueBalanca({
   const readerRef = useRef<any>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Depois de pesar, a próxima comanda só sai quando a balança ZERAR (prato
+  // retirado) — senão o mesmo prato parado gerava outra comanda.
+  const precisaZerar = useRef(false);
   const estadoRef = useRef(estado);
   const refPeso = useRef(0);
   const estavelDesde = useRef(0);
@@ -120,15 +123,10 @@ export function QuiosqueBalanca({
         // Imprime o cupom sozinho: pelo agente (térmica deste PC) ou, sem
         // agente, pelo navegador (silencioso com Chrome em --kiosk-printing).
         setTimeout(() => imprimirCupom(res), 400);
-        // Volta sozinho para o próximo cliente (caso o prato não seja retirado
-        // ou a balança não mande mais leituras).
+        // Fica em "retire o prato" até a balança zerar (sem temporizador: com
+        // o prato ainda em cima, o reset por tempo gerava uma 2ª comanda).
         if (resetRef.current) clearTimeout(resetRef.current);
-        resetRef.current = setTimeout(() => {
-          refPeso.current = 0;
-          estavelDesde.current = 0;
-          setPesoBruto(0);
-          setEst("aguardando");
-        }, RESET_MS);
+        precisaZerar.current = true;
       } else {
         setEst("aguardando");
       }
@@ -154,6 +152,34 @@ export function QuiosqueBalanca({
   const [impressoras, setImpressoras] = useState<{ nome: string; padrao: boolean }[]>([]);
   const [impressoraCupom, setImpressoraCupom] = useState("");
   const [msgConfig, setMsgConfig] = useState<string | null>(null);
+
+  // "Virar livre": pessoa que pesou antes e voltou — passa o cupom no leitor
+  // (ou digita o nº) e a comanda vira BUFFET LIVRE.
+  const [virarAberto, setVirarAberto] = useState(false);
+  const [numeroVirar, setNumeroVirar] = useState("");
+  const [virando, setVirando] = useState(false);
+  async function virarPorNumero() {
+    const n = Number(numeroVirar.replace(/\D/g, ""));
+    if (!n || virando) return;
+    setVirando(true);
+    setErro("");
+    try {
+      const r = await virarLivrePorNumeroKiosk(n);
+      if (r.ok) {
+        setVirarAberto(false);
+        setNumeroVirar("");
+        concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true, viradaLivre: true, antes: r.antes });
+      } else {
+        setErro(r.mensagem ?? "Não deu certo.");
+        setTimeout(() => setErro(""), 5000);
+      }
+    } catch {
+      setErro("Sem conexão com o sistema.");
+      setTimeout(() => setErro(""), 5000);
+    } finally {
+      setVirando(false);
+    }
+  }
 
   async function imprimirCupom(r: Resultado | null) {
     if (!r) return;
@@ -263,12 +289,18 @@ export function QuiosqueBalanca({
     setEst("resultado");
     setTimeout(() => imprimirCupom(r), 400);
     if (resetRef.current) clearTimeout(resetRef.current);
-    resetRef.current = setTimeout(() => {
-      refPeso.current = 0;
-      estavelDesde.current = 0;
-      setPesoBruto(0);
-      setEst("aguardando");
-    }, RESET_MS);
+    if (r.peso > 0) {
+      // Pesou: espera a balança zerar (prato retirado).
+      precisaZerar.current = true;
+    } else {
+      // Livre direto / virada de livre (sem prato na balança): volta por tempo.
+      resetRef.current = setTimeout(() => {
+        refPeso.current = 0;
+        estavelDesde.current = 0;
+        setPesoBruto(0);
+        setEst("aguardando");
+      }, RESET_MS);
+    }
   }
 
   // Botão touch: BUFFET LIVRE direto (sem pesar) — imprime na hora.
@@ -291,7 +323,7 @@ export function QuiosqueBalanca({
     setEst("processando");
     try {
       const r = await virarLivreKiosk(comandaId);
-      if (r.ok) concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true, viradaLivre: true, antes: r.antes });
+      if (r.ok) { setVirarAberto(false); concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true, viradaLivre: true, antes: r.antes }); }
       else { setErro(r.mensagem ?? "Não deu certo."); setEst("aguardando"); setTimeout(() => setErro(""), 5000); }
     } catch {
       setEst("aguardando");
@@ -335,14 +367,20 @@ export function QuiosqueBalanca({
     if (est === "resultado") {
       if (liquido <= LIMIAR) {
         if (resetRef.current) clearTimeout(resetRef.current);
+        precisaZerar.current = false;
+        refPeso.current = 0;
+        estavelDesde.current = 0;
         setEst("aguardando"); // prato retirado → próximo cliente
       }
       return;
     }
     if (liquido <= LIMIAR) {
+      precisaZerar.current = false;
       if (est !== "aguardando") setEst("aguardando");
       return;
     }
+    // Ainda é o prato da pesagem anterior (a balança não zerou): não pesa de novo.
+    if (precisaZerar.current) return;
     // Tem prato com comida.
     if (est !== "pesando") {
       setEst("pesando");
@@ -423,24 +461,24 @@ export function QuiosqueBalanca({
       ? "bg-green-500 text-white"
       : estado === "pesando" || estado === "processando"
         ? "bg-[#C78340] text-white"
-        : "bg-white/15 text-white";
+        : "bg-white text-[#211915] shadow-md";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gradient-to-b from-[#2b211b] via-[#211915] to-black text-white">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#f6efe6] text-[#211915]">
       {/* topo */}
       <div className="flex shrink-0 items-center justify-between px-8 py-[clamp(0.5rem,2vh,1.25rem)]">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(2rem,9vh,7rem)] w-auto" />
-          <span className="text-[clamp(1rem,3vw,2rem)] font-light text-white/60">Buffet</span>
+          <span className="text-[clamp(1rem,3vw,2rem)] font-light text-[#211915]/60">Buffet</span>
         </div>
         <div className="flex items-center gap-6">
           {agente && (
-            <button onClick={abrirConfig} className="text-3xl text-white/30 hover:text-white/80" title="Impressora do cupom">⚙️</button>
+            <button onClick={abrirConfig} className="text-3xl text-[#211915]/40 hover:text-[#211915]/80" title="Impressora do cupom">⚙️</button>
           )}
           <Link
             href="/salao/balanca"
-            className="text-4xl text-white/30 hover:text-white/80"
+            className="text-4xl text-[#211915]/40 hover:text-[#211915]/80"
             title="Sair do modo quiosque"
           >
             ✕
@@ -450,13 +488,13 @@ export function QuiosqueBalanca({
 
       {configAberta && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-6" onClick={() => setConfigAberta(false)}>
-          <div className="w-full max-w-xl rounded-3xl bg-[#211915] p-6 text-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-xl rounded-3xl bg-white p-6 text-[#211915] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-1 text-2xl font-bold">🖨️ Impressora do cupom</h2>
-            <p className="mb-4 text-sm text-white/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
+            <p className="mb-4 text-sm text-[#211915]/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
             <div className="max-h-72 space-y-2 overflow-y-auto">
               <button
                 onClick={() => escolherImpressora("")}
-                className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === "" ? "border-[#C78340] bg-[#C78340]/30" : "border-white/20 hover:bg-white/10"}`}
+                className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === "" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15 hover:bg-[#211915]/5"}`}
               >
                 Padrão do Windows
               </button>
@@ -464,25 +502,53 @@ export function QuiosqueBalanca({
                 <button
                   key={p.nome}
                   onClick={() => escolherImpressora(p.nome)}
-                  className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === p.nome ? "border-[#C78340] bg-[#C78340]/30" : "border-white/20 hover:bg-white/10"}`}
+                  className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === p.nome ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15 hover:bg-[#211915]/5"}`}
                 >
-                  {p.nome}{p.padrao ? <span className="ml-2 text-xs text-white/50">(padrão)</span> : null}
+                  {p.nome}{p.padrao ? <span className="ml-2 text-xs text-[#211915]/50">(padrão)</span> : null}
                 </button>
               ))}
-              {impressoras.length === 0 && !msgConfig && <p className="text-white/50">Procurando impressoras…</p>}
+              {impressoras.length === 0 && !msgConfig && <p className="text-[#211915]/50">Procurando impressoras…</p>}
             </div>
             {msgConfig && <p className="mt-3 text-sm text-[#C78340]">{msgConfig}</p>}
             <div className="mt-5 flex gap-3">
-              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-white/25 py-3 text-lg hover:bg-white/10">🧾 Imprimir teste</button>
+              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5">🧾 Imprimir teste</button>
               <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-[#C78340] py-3 text-lg font-bold">Fechar</button>
             </div>
           </div>
         </div>
       )}
 
+      {virarAberto && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6" onClick={() => setVirarAberto(false)}>
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-[#211915] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-[#C78340]">🔄 Virar buffet livre</h2>
+            <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-[#211915]/80">
+              Passe o <b>QR do seu cupom</b> no leitor. A comanda pesada vira <b>BUFFET LIVRE ({moeda(buffetLivre)})</b> e sai um cupom novo.
+            </p>
+            <div className="my-5 text-[clamp(3rem,10vw,6rem)]">📷</div>
+            <p className="mb-2 text-sm text-[#211915]/50">Não leu? Digite o número da comanda que está no cupom:</p>
+            <div className="flex justify-center gap-2">
+              <input
+                inputMode="numeric"
+                value={numeroVirar}
+                onChange={(e) => setNumeroVirar(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") virarPorNumero(); }}
+                placeholder="Nº"
+                className="w-40 rounded-2xl border-2 border-[#211915]/20 px-4 py-3 text-center text-3xl font-black outline-none focus:border-[#C78340]"
+              />
+              <button onClick={virarPorNumero} disabled={virando || !numeroVirar.trim()} className="rounded-2xl bg-[#C78340] px-6 py-3 text-2xl font-bold text-white disabled:opacity-40">
+                {virando ? "..." : "Virar livre"}
+              </button>
+            </div>
+            {erro && <p className="mt-3 text-lg text-red-600">{erro}</p>}
+            <button onClick={() => setVirarAberto(false)} className="mt-6 text-lg text-[#211915]/50 underline">Cancelar</button>
+          </div>
+        </div>
+      )}
+
       {estado === "conectar" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
-          <p className="max-w-2xl text-[clamp(1.25rem,4vw,2.5rem)] font-medium text-white/80">
+          <p className="max-w-2xl text-[clamp(1.25rem,4vw,2.5rem)] font-medium text-[#211915]/80">
             Modo balança / autoatendimento
           </p>
           <button
@@ -491,11 +557,11 @@ export function QuiosqueBalanca({
           >
             Conectar balança
           </button>
-          <p className="text-[clamp(0.8rem,2vw,1.25rem)] text-white/40">
+          <p className="text-[clamp(0.8rem,2vw,1.25rem)] text-[#211915]/40">
             Clique uma vez e escolha a porta da balança na lista
             (<b>Prolific</b> ou <b>USB-Serial</b>) — pode ser COM3, COM5, COM7... Depois deixe rodando.
           </p>
-          {erro && <p className="max-w-lg text-lg text-red-300">{erro}</p>}
+          {erro && <p className="max-w-lg text-lg text-red-600">{erro}</p>}
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6">
@@ -503,7 +569,7 @@ export function QuiosqueBalanca({
           {/* instrução / resultado */}
           {estado === "resultado" && resultado ? (
             <div className="text-center">
-              <div className={`mb-6 inline-block rounded-full px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.5rem,5vw,3.5rem)] font-black ${resultado.codigoOffline ? "bg-amber-500" : "bg-green-500"}`}>
+              <div className={`mb-6 inline-block rounded-full px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.5rem,5vw,3.5rem)] font-black text-white shadow-lg ${resultado.codigoOffline ? "bg-amber-500" : "bg-green-500"}`}>
                 {resultado.codigoOffline
                   ? `✓ REGISTRADO · ${resultado.codigoOffline}`
                   : resultado.viradaLivre
@@ -511,26 +577,31 @@ export function QuiosqueBalanca({
                     : `✓ COMANDA Nº ${resultado.numero}`}
               </div>
               {resultado.codigoOffline && (
-                <p className="mb-2 text-[clamp(0.9rem,2.5vw,1.4rem)] text-amber-300">
+                <p className="mb-2 text-[clamp(0.9rem,2.5vw,1.4rem)] text-amber-700">
                   Sem internet agora — a comanda entra no sistema sozinha quando a conexão voltar.
                 </p>
               )}
-              <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-white/80">
-                {resultado.peso > 0 ? "Retire o prato" : "Pegue seu cupom · bom apetite!"}
-              </p>
-              <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-green-400">{moeda(resultado.valor)}</p>
-              <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-white/50">
+              {resultado.peso > 0 ? (
+                <div className="mx-auto max-w-3xl rounded-3xl border-4 border-amber-400 bg-amber-100 px-8 py-4">
+                  <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-amber-700">⬆ RETIRE O PRATO</p>
+                  <p className="mt-1 text-[clamp(0.9rem,2.5vw,1.5rem)] text-[#211915]/70">Pegue seu cupom · a próxima pesagem começa quando a balança zerar</p>
+                </div>
+              ) : (
+                <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-[#211915]/80">Pegue seu cupom · bom apetite!</p>
+              )}
+              <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-green-600">{moeda(resultado.valor)}</p>
+              <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-[#211915]/50">
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
                 {resultado.livre ? " · Buffet livre" : ""}
               </p>
               <button
                 onClick={() => imprimirCupom(resultado)}
-                className="nao-imprimir mt-6 rounded-xl border border-white/25 px-6 py-3 text-xl text-white/70 hover:bg-white/10"
+                className="nao-imprimir mt-6 rounded-xl border border-[#211915]/20 px-6 py-3 text-xl text-[#211915]/70 hover:bg-[#211915]/5"
               >
                 🖨️ Imprimir de novo
               </button>
               {erroImpressao && (
-                <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-300">Impressora: {erroImpressao} — confira em ⚙️</p>
+                <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira em ⚙️</p>
               )}
             </div>
           ) : (
@@ -543,13 +614,13 @@ export function QuiosqueBalanca({
                     : "Coloque o prato na balança"}
               </div>
               {estado === "aguardando" && (
-                <div className="mb-4 animate-bounce text-[clamp(2rem,6vw,4rem)] text-white/40">⌄</div>
+                <div className="mb-4 animate-bounce text-[clamp(2rem,6vw,4rem)] text-[#211915]/40">⌄</div>
               )}
               {/* peso grande */}
-              <div className="rounded-[2rem] border-4 border-white/15 bg-black/30 px-[clamp(1.5rem,8vw,6rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-center">
+              <div className="rounded-[2rem] border-4 border-[#C78340]/40 bg-white shadow-xl px-[clamp(1.5rem,8vw,6rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-center">
                 <p className="text-[clamp(3.5rem,16vw,10rem)] font-black leading-none tabular-nums">
                   {liq.toFixed(3).replace(".", ",")}
-                  <span className="ml-3 text-[clamp(1.5rem,5vw,3.5rem)] font-light text-white/50">kg</span>
+                  <span className="ml-3 text-[clamp(1.5rem,5vw,3.5rem)] font-light text-[#211915]/50">kg</span>
                 </p>
               </div>
 
@@ -562,7 +633,17 @@ export function QuiosqueBalanca({
                   🍽️ QUERO O BUFFET LIVRE — {moeda(buffetLivre)}
                 </button>
               )}
-              {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-300">{erro}</p>}
+              {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
+
+              {/* Já pesou e voltou: virar a comanda pra LIVRE pelo cupom */}
+              {buffetLivre > 0 && liq <= LIMIAR && (
+                <button
+                  onClick={() => { setVirarAberto(true); setNumeroVirar(""); }}
+                  className="mt-[clamp(0.75rem,2vh,1.25rem)] w-full max-w-2xl rounded-3xl border-4 border-[#C78340] bg-white px-[clamp(1.5rem,6vw,3.5rem)] py-[clamp(0.75rem,2.5vh,1.5rem)] text-[clamp(1.1rem,3.5vw,2.2rem)] font-black text-[#C78340] shadow-md active:brightness-95"
+                >
+                  🔄 JÁ PESEI E QUERO VIRAR LIVRE
+                </button>
+              )}
 
               {/* Marmita: só por kg (sem virar livre) */}
               <button
@@ -570,18 +651,18 @@ export function QuiosqueBalanca({
                 className={`mt-[clamp(1rem,3vh,2rem)] rounded-2xl px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1rem,3vw,1.9rem)] font-bold transition ${
                   soKg
                     ? "bg-yellow-400 text-black"
-                    : "border-2 border-white/25 text-white/70 hover:bg-white/10"
+                    : "border-2 border-[#211915]/20 text-[#211915]/70 hover:bg-[#211915]/5"
                 }`}
               >
                 {soKg ? "🍱 MARMITA (só por kg) — ativa" : "🍱 É marmita? (só por kg)"}
               </button>
               {soKg && (
-                <p className="mt-2 text-xl text-yellow-300">
+                <p className="mt-2 text-xl text-yellow-700">
                   Esta pesagem cobra por kg, sem virar “à vontade”.
                 </p>
               )}
               {taraBalanca > 0.001 && (
-                <p className="mt-2 text-sm text-white/40">
+                <p className="mt-2 text-sm text-[#211915]/40">
                   Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg (peso já líquido)
                 </p>
               )}
@@ -609,7 +690,7 @@ export function QuiosqueBalanca({
       )}
 
       {filaAgente > 0 && (
-        <div className="px-4 py-1 text-center text-[12px] font-bold text-amber-300">
+        <div className="px-4 py-1 text-center text-[12px] font-bold text-amber-700">
           ⚠️ {filaAgente} pesagem(ns) na fila offline — sincronizam sozinhas quando a internet voltar.
         </div>
       )}
@@ -621,17 +702,17 @@ export function QuiosqueBalanca({
       <div className="grid shrink-0 grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-4 py-[clamp(0.4rem,1.6vh,1.25rem)] text-center">
         <div>
           <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-white">{buffetLivre > 0 ? moeda(buffetLivre) : "—"}</p>
-          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-white/40">Valor livre (à vontade)</p>
+          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-[#211915]/40">Valor livre (à vontade)</p>
         </div>
         <div>
           <p className="text-[clamp(2rem,8vw,5.5rem)] font-black leading-none text-[#C78340]">
             {moeda(estado === "resultado" && resultado ? resultado.valor : valorAtual)}
           </p>
-          <p className="mt-1 text-[clamp(0.7rem,1.6vw,1.1rem)] uppercase tracking-wide text-white/50">Valor a pagar</p>
+          <p className="mt-1 text-[clamp(0.7rem,1.6vw,1.1rem)] uppercase tracking-wide text-[#211915]/50">Valor a pagar</p>
         </div>
         <div>
-          <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-white">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
-          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-white/40">Valor por kg</p>
+          <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-[#211915]">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
+          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-[#211915]/40">Valor por kg</p>
         </div>
       </div>
 

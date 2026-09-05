@@ -291,6 +291,24 @@ export async function virarLivreKiosk(comandaId: string) {
   };
 }
 
+// Mesmo que virarLivreKiosk, mas pelo NÚMERO da comanda (digitado no quiosque
+// quando o QR não lê). Pega a comanda aberta mais recente com esse número.
+export async function virarLivrePorNumeroKiosk(numero: number) {
+  const supabase = await createClient();
+  const n = Math.floor(Number(numero));
+  if (!(n > 0)) return { ok: false as const, mensagem: "Número inválido." };
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .select("id")
+    .eq("numero", n)
+    .eq("status", "aberta")
+    .order("aberta_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!com) return { ok: false as const, mensagem: `Comanda ${n} não está aberta.` };
+  return virarLivreKiosk(com.id as string);
+}
+
 // Nova comanda de buffet a partir do peso (kg). Aplica "livre" (teto) se passar.
 export async function criarComandaBuffet(formData: FormData) {
   const supabase = await createClient();
