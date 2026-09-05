@@ -16,7 +16,7 @@ import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const VERSAO = "1.1.0";
+const VERSAO = "1.1.1"; // fila: pesagem recusada (4xx) vai pra fila-erros.json em vez de travar as demais
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
