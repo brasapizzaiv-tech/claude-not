@@ -84,13 +84,18 @@ export function ContarClient({
     return calcular(el?.value ?? "");
   }
 
-  function montarItens() {
-    return produtos.map((p) => ({
-      produto_id: p.id,
-      qtd_estoque: ler(`estoque_${p.id}`),
-      qtd_pedir: 0,
-      contado: preenchidos.has(p.id),
-    }));
+  // zerarFaltantes: ao FINALIZAR, item em branco vira "contei 0" (assim entra na
+  // cotação com estoque 0 em vez de sumir da lista).
+  function montarItens(zerarFaltantes = false) {
+    return produtos.map((p) => {
+      const contado = preenchidos.has(p.id);
+      return {
+        produto_id: p.id,
+        qtd_estoque: contado ? ler(`estoque_${p.id}`) : 0,
+        qtd_pedir: 0,
+        contado: contado || zerarFaltantes,
+      };
+    });
   }
 
   // Produtos ainda NÃO contados (nem valor, nem "contei 0").
@@ -117,9 +122,9 @@ export function ContarClient({
     marcar(id, true);
   }
 
-  function gravar(entao?: () => Promise<void>) {
+  function gravar(entao?: () => Promise<void>, zerarFaltantes = false) {
     startSave(async () => {
-      const r = await salvarContagemItens(contagem.id, montarItens());
+      const r = await salvarContagemItens(contagem.id, montarItens(zerarFaltantes));
       if (entao) await entao();
       else {
         setMsg(`Salvo! (${r?.gravados ?? 0} itens contados)`);
@@ -149,6 +154,8 @@ export function ContarClient({
   }
 
   // Confirmou no aviso: salva/finaliza mesmo com itens faltando.
+  // Finalizar: os itens em branco são gravados como 0 (contagem fechada não
+  // pode ter "buraco" — senão a cotação não puxa o item).
   function confirmarAviso() {
     const acao = aviso?.acao;
     setAviso(null);
@@ -157,7 +164,7 @@ export function ContarClient({
         const fd = new FormData();
         fd.set("id", contagem.id);
         await finalizarContagem(fd);
-      });
+      }, true);
     } else {
       gravar();
     }
@@ -353,8 +360,11 @@ export function ContarClient({
               Faltam {aviso.faltam.length} {aviso.faltam.length === 1 ? "item" : "itens"} sem contar
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Esses produtos ficaram em branco. Se algum realmente zerou, use o botão{" "}
-              <b>0</b> nele. Se não for contar, pode salvar assim mesmo.
+              {aviso.acao === "finalizar" ? (
+                <>Esses produtos ficaram em branco. Ao finalizar, <b>eles serão gravados como 0</b> (estoque zerado) e vão entrar na cotação. Se algum não era pra contar, volte e tire ele da lista.</>
+              ) : (
+                <>Esses produtos ficaram em branco. Se algum realmente zerou, use o botão <b>0</b> nele. Se não for contar agora, pode salvar assim mesmo.</>
+              )}
             </p>
             <div className="mt-3 max-h-56 overflow-y-auto rounded-xl border border-zinc-200 p-2 text-sm dark:border-zinc-800">
               {aviso.faltam.map((n) => (
@@ -377,7 +387,7 @@ export function ContarClient({
                   aviso.acao === "finalizar" ? "bg-orange-500 hover:bg-orange-600" : "bg-zinc-800 hover:bg-zinc-900 dark:bg-zinc-700"
                 }`}
               >
-                {aviso.acao === "finalizar" ? "Finalizar assim mesmo" : "Salvar assim mesmo"}
+                {aviso.acao === "finalizar" ? "Finalizar (em branco = 0)" : "Salvar assim mesmo"}
               </button>
             </div>
           </div>

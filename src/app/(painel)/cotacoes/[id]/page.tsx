@@ -22,7 +22,7 @@ export default async function CotacaoDetalhePage({
   const [{ data: prodData }, { data: itensData }] = await Promise.all([
     supabase
       .from("produtos")
-      .select("id, nome, unidade, estoque_ideal, fardo, categorias(nome)")
+      .select("id, nome, unidade, estoque_ideal, fardo, categoria_id, categorias(nome)")
       .eq("ativo", true)
       .order("nome"),
     supabase.from("cotacao_itens").select("produto_id, qtd").eq("cotacao_id", id),
@@ -31,12 +31,21 @@ export default async function CotacaoDetalhePage({
   // Estoque contado na contagem base (se houver). A presença aqui = produto
   // que fez parte daquela contagem (o que foi "solicitado").
   const contado = new Map<string, number>();
+  // Produtos que faziam parte da LISTA da contagem (pelas categorias atribuídas):
+  // item deixado em branco na contagem vale 0 e entra na cotação do mesmo jeito.
+  const daLista = new Set<string>();
   if (cotacao.contagem_id) {
-    const { data: cont } = await supabase
-      .from("contagem_itens")
-      .select("produto_id, qtd_estoque")
-      .eq("contagem_id", cotacao.contagem_id);
+    const [{ data: cont }, { data: atrib }] = await Promise.all([
+      supabase.from("contagem_itens").select("produto_id, qtd_estoque").eq("contagem_id", cotacao.contagem_id),
+      supabase.from("contagem_atribuicoes").select("categoria_id").eq("contagem_id", cotacao.contagem_id),
+    ]);
     for (const c of cont ?? []) contado.set(c.produto_id, Number(c.qtd_estoque) || 0);
+    const catIds = new Set((atrib ?? []).map((a) => a.categoria_id as string | null).filter(Boolean) as string[]);
+    if (catIds.size) {
+      for (const p of (prodData as unknown as { id: string; categoria_id?: string | null }[]) ?? []) {
+        if (p.categoria_id && catIds.has(p.categoria_id)) daLista.add(p.id);
+      }
+    }
   }
 
   const jaCotado = new Map<string, number>();
@@ -52,7 +61,7 @@ export default async function CotacaoDetalhePage({
   // Cotação baseada em contagem: cota SÓ os produtos que entraram naquela
   // contagem, mais qualquer produto já salvo manualmente nesta cotação.
   if (cotacao.contagem_id) {
-    const permitidos = new Set<string>([...contado.keys(), ...jaCotado.keys()]);
+    const permitidos = new Set<string>([...contado.keys(), ...daLista, ...jaCotado.keys()]);
     produtos = produtos.filter((p) => permitidos.has(p.id));
   }
 

@@ -44,7 +44,8 @@ export function PreencherClient({
   // busca ou rolar a página nunca apaga o que já foi digitado.
   const [valores, setValores] = useState<Record<string, string[]>>(() => {
     const v: Record<string, string[]> = {};
-    for (const i of itens) if (i.qtd_estoque) v[i.produto_id] = [String(i.qtd_estoque)];
+    // Linha gravada = item respondido (0 também): mostra o 0 em vez de vazio.
+    for (const i of itens) v[i.produto_id] = [String(i.qtd_estoque ?? 0)];
     return v;
   });
 
