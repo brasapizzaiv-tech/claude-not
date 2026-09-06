@@ -22,6 +22,7 @@ export type Fornecedor = {
   criado_em: string;
   dre_categoria_id?: string | null; // categoria padrão das notas desse fornecedor
   tipo_nota?: "mercadoria" | "servico" | null;
+  categoria_ids?: string[]; // categorias de produto que ele fornece (cotação)
 };
 
 export type Categoria = {

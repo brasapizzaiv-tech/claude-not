@@ -10,10 +10,13 @@ const inputCls =
 export function FornecedoresClient({
   fornecedores,
   categorias,
+  categoriasProduto,
 }: {
   fornecedores: Fornecedor[];
   categorias: { id: string; grupo: string; nome: string }[];
+  categoriasProduto: { id: string; nome: string }[];
 }) {
+  const nomeCatProd = (id: string) => categoriasProduto.find((c) => c.id === id)?.nome ?? "";
   const nomeCat = (id: string | null | undefined) => {
     const c = categorias.find((x) => x.id === id);
     return c ? `${c.grupo} — ${c.nome}` : "";
@@ -79,6 +82,15 @@ export function FornecedoresClient({
                     {f.cnpj && (
                       <span className="block text-xs font-normal text-zinc-400">
                         {f.cnpj}
+                      </span>
+                    )}
+                    {(f.categoria_ids ?? []).length > 0 && (
+                      <span className="mt-0.5 flex flex-wrap gap-1">
+                        {(f.categoria_ids ?? []).map((c) => (
+                          <span key={c} className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                            {nomeCatProd(c) || "?"}
+                          </span>
+                        ))}
                       </span>
                     )}
                   </td>
@@ -205,6 +217,26 @@ export function FornecedoresClient({
                   defaultValue={editando?.observacoes ?? ""}
                   className={inputCls}
                 />
+              </div>
+
+              {/* Categorias de produto que ele fornece → cotação já sugere/envia pra ele */}
+              <div className="rounded-xl border border-orange-200 bg-orange-50/40 p-3 dark:border-orange-900 dark:bg-orange-950/10">
+                <p className="mb-1 text-xs font-bold uppercase text-zinc-400">O que este fornecedor vende (categorias de produto)</p>
+                <p className="mb-2 text-[11px] text-zinc-500">
+                  Ao salvar, ele fica vinculado a todos os produtos dessas categorias — a cotação já sugere ele e manda os itens. Produto novo na categoria entra sozinho.
+                </p>
+                {categoriasProduto.length === 0 ? (
+                  <p className="text-xs text-zinc-400">Nenhuma categoria de produto cadastrada.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {categoriasProduto.map((c) => (
+                      <label key={c.id} className="flex cursor-pointer items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950">
+                        <input type="checkbox" name="categoria_ids" value={c.id} defaultChecked={(editando?.categoria_ids ?? []).includes(c.id)} />
+                        {c.nome}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Padrão das notas: já vem preenchido ao vincular/importar uma nota dele */}

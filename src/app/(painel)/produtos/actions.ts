@@ -52,10 +52,25 @@ export async function salvarProduto(formData: FormData) {
     origem: fiscalTxt("origem") ?? "0",
   };
 
+  let produtoId = id;
   if (id) {
     await supabase.from("produtos").update(payload).eq("id", id);
   } else {
-    await supabase.from("produtos").insert(payload);
+    const { data } = await supabase.from("produtos").insert(payload).select("id").single();
+    produtoId = (data?.id as string | undefined) ?? null;
+  }
+  // Fornecedores que atendem a categoria do produto já ficam vinculados
+  // (cadastro do fornecedor → "o que ele vende"). Não tira vínculos existentes.
+  if (produtoId && categoria_id) {
+    const { data: forns } = await supabase
+      .from("fornecedores")
+      .select("id")
+      .contains("categoria_ids", [categoria_id])
+      .eq("ativo", true);
+    const linhas = ((forns as { id: string }[]) ?? []).map((f) => ({ fornecedor_id: f.id, produto_id: produtoId as string }));
+    if (linhas.length) {
+      await supabase.from("fornecedor_produto").upsert(linhas, { onConflict: "fornecedor_id,produto_id", ignoreDuplicates: true });
+    }
   }
   revalidatePath("/produtos");
 }
