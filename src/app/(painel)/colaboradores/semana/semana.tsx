@@ -314,7 +314,7 @@ export function SemanaClient({
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-8">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Semana e 10%</h1>
@@ -613,13 +613,13 @@ export function SemanaClient({
               Mostrando só o turno {turnoFiltro === "dia" ? "☀️ DIA" : "🌙 NOITE"}: os valores abaixo são só desse turno. Pra lançar o pagamento, volte em <b>Todos</b>.
             </div>
           )}
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[1080px] text-sm">
+            <thead className="bg-zinc-50 text-left text-[11px] uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
               <tr>
-                {turnoFiltro === "todos" && <th className="px-3 py-3 text-center" title="Entra no lançamento">💸</th>}
-                <th className="px-4 py-3">Pessoa</th>
-                {turnoFiltro !== "noite" && <th className="px-3 py-3 text-center">Dias</th>}
-                {turnoFiltro !== "dia" && <th className="px-3 py-3 text-center">Noites</th>}
+                {turnoFiltro === "todos" && <th className="px-2 py-3 text-center" title="Entra no lançamento">💸</th>}
+                <th className="px-3 py-3">Pessoa</th>
+                <th className="px-2 py-3 text-center" title="Presenças: dias ☀️ e noites 🌙">Pres.</th>
                 <th className="px-3 py-3 text-right">Diárias</th>
                 {turnoFiltro !== "dia" && <th className="px-3 py-3 text-right">10%</th>}
                 <th className="px-3 py-3 text-right" title="Algo que fez a mais nesta semana (conta no turno escolhido)">Extra</th>
@@ -663,9 +663,10 @@ export function SemanaClient({
                         {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))})</span>}
                       </div>
                     </td>
-                    {turnoFiltro !== "noite" && <td className="px-3 py-2 text-center">{nDias}</td>}
-                    {turnoFiltro !== "dia" && <td className="px-3 py-2 text-center">{nNoites}</td>}
-                    <td className="px-3 py-2 text-right">{brl(diariasM)}</td>
+                    <td className="px-2 py-2 text-center whitespace-nowrap text-zinc-600 dark:text-zinc-300">
+                      {turnoFiltro !== "noite" ? `${nDias}☀️` : ""}{turnoFiltro === "todos" ? " " : ""}{turnoFiltro !== "dia" ? `${nNoites}🌙` : ""}
+                    </td>
+                    <td className="px-3 py-2 text-right whitespace-nowrap">{brl(diariasM)}</td>
                     {turnoFiltro !== "dia" && <td className="px-3 py-2 text-right">{brl(dezM)}</td>}
                     <td className="px-3 py-2 text-right">
                       {turnoFiltro !== "todos" ? (
@@ -703,7 +704,7 @@ export function SemanaClient({
                               onBlur={() => salvarExtraDe(p)}
                               onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                               placeholder="motivo (ex.: hora extra)"
-                              className={`${inputCls} w-40 px-1 py-0.5 text-[11px]`}
+                              className={`${inputCls} w-28 px-1 py-0.5 text-[11px]`}
                             />
                           )}
                         </div>
@@ -730,7 +731,7 @@ export function SemanaClient({
                               onBlur={() => salvarExtraDe(p)}
                               onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                               placeholder="motivo (ex.: atraso)"
-                              className={`${inputCls} w-32 px-1 py-0.5 text-[11px]`}
+                              className={`${inputCls} w-28 px-1 py-0.5 text-[11px]`}
                             />
                           )}
                         </div>
@@ -762,7 +763,7 @@ export function SemanaClient({
                 ))}
               {turnoFiltro === "todos" ? (
                 <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
-                  <td className="px-4 py-3" colSpan={4}>Total da semana</td>
+                  <td className="px-4 py-3" colSpan={3}>Total da semana</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalExtras)}</td>
@@ -789,6 +790,7 @@ export function SemanaClient({
               )}
             </tbody>
           </table>
+          </div>
           <div className="border-t border-zinc-200 p-3 text-xs text-zinc-500 dark:border-zinc-800">
             10% que entra neste acerto: <b>{brl(calc.totalPool)}</b> ({calc.noitesPagas.map((n) => rotuloDia(n.data)).join(", ") || "nenhuma noite"})
             {Math.abs(calc.totalPool - calc.totalDez) > 0.01 && (
