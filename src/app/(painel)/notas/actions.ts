@@ -154,6 +154,7 @@ export async function importarNota(
       .insert(itens.map((i) => ({ ...i, nota_id: nota.id })));
   }
   await salvarParcelas(supabase, nota.id, nf.parcelas);
+  await aplicarPadraoFornecedor(supabase, nota.id, fornecedor?.id ?? null);
 
   // A nota entra como PENDENTE. Só vira conta a pagar quando o usuário lançar.
   revalidatePath("/notas");
@@ -196,6 +197,7 @@ export async function importarResumo(
     .select("id")
     .single();
   if (!nota) return { ok: false };
+  await aplicarPadraoFornecedor(supabase, nota.id, fornecedor?.id ?? null);
 
   // A nota entra como PENDENTE (não vira conta automaticamente).
   return { ok: true };
@@ -237,6 +239,7 @@ export async function vincularFornecedorNota(
     .from("notas_fiscais")
     .update({ fornecedor_id: fornecedorId || null })
     .eq("id", notaId);
+  await aplicarPadraoFornecedor(supabase, notaId, fornecedorId || null);
   revalidatePath(`/notas/${notaId}`);
   revalidatePath("/notas");
   return { ok: true };
@@ -485,10 +488,27 @@ export async function definirTipoNota(notaId: string, tipo: string) {
   return { ok: true };
 }
 
+// Padrão do fornecedor (categoria DRE / tipo de nota) → preenche a nota que
+// ainda não tem esses campos. Chamado ao vincular e ao importar.
+async function aplicarPadraoFornecedor(supabase: SupabaseClient, notaId: string, fornecedorId: string | null) {
+  if (!fornecedorId) return;
+  const [{ data: f }, { data: n }] = await Promise.all([
+    supabase.from("fornecedores").select("dre_categoria_id, tipo_nota").eq("id", fornecedorId).maybeSingle(),
+    supabase.from("notas_fiscais").select("dre_categoria_id, tipo, situacao").eq("id", notaId).maybeSingle(),
+  ]);
+  if (!f || !n || n.situacao === "lancada") return;
+  const patch: Record<string, string> = {};
+  if (f.dre_categoria_id && !n.dre_categoria_id) patch.dre_categoria_id = f.dre_categoria_id as string;
+  if (f.tipo_nota && n.tipo !== f.tipo_nota) patch.tipo = f.tipo_nota as string;
+  if (Object.keys(patch).length) await supabase.from("notas_fiscais").update(patch).eq("id", notaId);
+}
+
 // Define a categoria de despesa (DRE) de uma nota de serviço.
+// salvarNoFornecedor: grava também como padrão do fornecedor da nota.
 export async function definirCategoriaNota(
   notaId: string,
   categoriaId: string | null,
+  salvarNoFornecedor = false,
 ) {
   await exigirAcesso("/notas");
   const supabase = await createClient();
@@ -496,6 +516,16 @@ export async function definirCategoriaNota(
     .from("notas_fiscais")
     .update({ dre_categoria_id: categoriaId || null })
     .eq("id", notaId);
+  if (salvarNoFornecedor && categoriaId) {
+    const { data: n } = await supabase.from("notas_fiscais").select("fornecedor_id, tipo").eq("id", notaId).maybeSingle();
+    if (n?.fornecedor_id) {
+      await supabase
+        .from("fornecedores")
+        .update({ dre_categoria_id: categoriaId, tipo_nota: n.tipo === "servico" ? "servico" : "mercadoria" })
+        .eq("id", n.fornecedor_id);
+      revalidatePath("/fornecedores");
+    }
+  }
   revalidatePath(`/notas/${notaId}`);
   return { ok: true };
 }

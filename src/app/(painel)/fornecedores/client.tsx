@@ -9,9 +9,16 @@ const inputCls =
 
 export function FornecedoresClient({
   fornecedores,
+  categorias,
 }: {
   fornecedores: Fornecedor[];
+  categorias: { id: string; grupo: string; nome: string }[];
 }) {
+  const nomeCat = (id: string | null | undefined) => {
+    const c = categorias.find((x) => x.id === id);
+    return c ? `${c.grupo} — ${c.nome}` : "";
+  };
+  const grupos = [...new Set(categorias.map((c) => c.grupo))];
   const [editando, setEditando] = useState<Fornecedor | null>(null);
   const [aberto, setAberto] = useState(false);
 
@@ -198,6 +205,35 @@ export function FornecedoresClient({
                   defaultValue={editando?.observacoes ?? ""}
                   className={inputCls}
                 />
+              </div>
+
+              {/* Padrão das notas: já vem preenchido ao vincular/importar uma nota dele */}
+              <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <p className="mb-2 text-xs font-bold uppercase text-zinc-400">Padrão das notas deste fornecedor</p>
+                <div className="grid gap-2 sm:grid-cols-[1fr_11rem]">
+                  <div>
+                    <label className="mb-1 block text-xs text-zinc-500">Categoria da despesa (DRE)</label>
+                    <select name="dre_categoria_id" defaultValue={editando?.dre_categoria_id ?? ""} className={inputCls}>
+                      <option value="">— nenhuma (escolher em cada nota) —</option>
+                      {grupos.map((g) => (
+                        <optgroup key={g} label={g}>
+                          {categorias.filter((c) => c.grupo === g).map((c) => (
+                            <option key={c.id} value={c.id}>{c.nome}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-zinc-500">Tipo de nota</label>
+                    <select name="tipo_nota" defaultValue={editando?.tipo_nota ?? ""} className={inputCls}>
+                      <option value="">— como vier —</option>
+                      <option value="mercadoria">🛒 Mercadoria</option>
+                      <option value="servico">🧾 Serviço</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="mt-1 text-[11px] text-zinc-400">Ex.: conta de luz → Serviço + Energia elétrica. Na nota, dá pra trocar se precisar.</p>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

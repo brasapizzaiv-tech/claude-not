@@ -54,26 +54,34 @@ export function SemanaClient({
   dezIniciais: Dez[];
   pagos: Pago[];
   fiadoPor: Record<string, { valor: number; n: number }>;
-  extrasIniciais: { colaborador_id: string; valor: number; motivo: string | null; turno: Turno }[];
+  extrasIniciais: { colaborador_id: string; valor: number; motivo: string | null; turno: Turno; desconto?: number; desconto_motivo?: string | null }[];
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  // Extra por pessoa na semana (valor digitado + motivo + turno em que conta).
-  type ExtraSem = { valor: string; motivo: string; turno: Turno };
+  // Extra e desconto por pessoa na semana (valor + motivo; extra tem turno).
+  type ExtraSem = { valor: string; motivo: string; turno: Turno; desconto: string; descMotivo: string };
   const [extrasSem, setExtrasSem] = useState<Record<string, ExtraSem>>(() => {
     const o: Record<string, ExtraSem> = {};
-    for (const e of extrasIniciais) o[e.colaborador_id] = { valor: Number(e.valor) ? fmtNum(Number(e.valor)) : "", motivo: e.motivo ?? "", turno: e.turno === "dia" ? "dia" : "noite" };
+    for (const e of extrasIniciais)
+      o[e.colaborador_id] = {
+        valor: Number(e.valor) ? fmtNum(Number(e.valor)) : "",
+        motivo: e.motivo ?? "",
+        turno: e.turno === "dia" ? "dia" : "noite",
+        desconto: Number(e.desconto) ? fmtNum(Number(e.desconto)) : "",
+        descMotivo: e.desconto_motivo ?? "",
+      };
     return o;
   });
   // Turno padrão do extra: quem é só de dia → dia; os demais → noite.
   const turnoPadraoExtra = (p: Pessoa): Turno => (p.turno === "dia" ? "dia" : "noite");
-  const extraDe = (p: Pessoa): ExtraSem => extrasSem[p.id] ?? { valor: "", motivo: "", turno: turnoPadraoExtra(p) };
+  const extraDe = (p: Pessoa): ExtraSem => extrasSem[p.id] ?? { valor: "", motivo: "", turno: turnoPadraoExtra(p), desconto: "", descMotivo: "" };
   function salvarExtraDe(p: Pessoa, patch?: Partial<ExtraSem>) {
     const e = { ...extraDe(p), ...patch };
     const v = numBRtxt(e.valor);
-    setExtrasSem((o) => ({ ...o, [p.id]: { ...e, valor: v ? fmtNum(v) : "" } }));
+    const d = numBRtxt(e.desconto);
+    setExtrasSem((o) => ({ ...o, [p.id]: { ...e, valor: v ? fmtNum(v) : "", desconto: d ? fmtNum(d) : "" } }));
     start(async () => {
-      const r = await salvarExtra(segunda, p.id, v, e.motivo, e.turno);
+      const r = await salvarExtra(segunda, p.id, v, e.motivo, e.turno, d, e.descMotivo);
       if (r.erro) setErro(r.erro);
     });
   }
@@ -164,12 +172,18 @@ export function SemanaClient({
       const extraTurno: Turno = extrasSem[p.id]?.turno ?? (p.turno === "dia" ? "dia" : "noite");
       const extraDia = extraTurno === "dia" ? extra : 0;
       const extraNoite = extraTurno === "noite" ? extra : 0;
-      return { p, nDias, nNoites, diarias, diariasDia, diariasNoite, dez10, extra, extraMotivo, extraTurno, extraDia, extraNoite, total: diarias + dez10 + extra, clt, cltDia, cltNoite, rotuloVinculo };
+      // Desconto (atraso, falta…) abate do total; nunca fica negativo.
+      const descontoSem = numBRtxt(extrasSem[p.id]?.desconto ?? "");
+      const descontoMotivo = extrasSem[p.id]?.descMotivo ?? "";
+      const bruto = diarias + dez10 + extra;
+      const total = Math.max(0, bruto - descontoSem);
+      return { p, nDias, nNoites, diarias, diariasDia, diariasNoite, dez10, extra, extraMotivo, extraTurno, extraDia, extraNoite, descontoSem: Math.min(descontoSem, bruto), descontoMotivo, total, clt, cltDia, cltNoite, rotuloVinculo };
     });
     const totalPool = noitesPagas.reduce((s, n) => s + n.pool, 0);
     const totalDiarias = porPessoa.reduce((s, x) => s + x.diarias, 0);
     const totalDez = porPessoa.reduce((s, x) => s + x.dez10, 0);
     const totalExtras = porPessoa.reduce((s, x) => s + x.extra, 0);
+    const totalDescontosSem = porPessoa.reduce((s, x) => s + x.descontoSem, 0);
     // Gasto por turno: dia = diárias de dia + extras do dia; noite = diárias de noite + 10% + extras da noite.
     const turnoDia = {
       presencas: porPessoa.reduce((s, x) => s + x.nDias, 0),
@@ -182,7 +196,7 @@ export function SemanaClient({
       dez: totalDez,
       extras: porPessoa.reduce((s, x) => s + x.extraNoite, 0),
     };
-    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez, totalExtras, turnoDia, turnoNoite };
+    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez, totalExtras, totalDescontosSem, turnoDia, turnoNoite };
   }, [dias, dez, naGrade, pessoas, marcadas, segunda, extrasSem]);
 
   function toggle(p: Pessoa, d: string, turno: Turno) {
@@ -231,11 +245,11 @@ export function SemanaClient({
     const linhas: string[][] = [
       ["Semana", rotuloSemana(segunda)],
       [],
-      ["Nome", "Vínculo", "Dias", "Noites", "Valor dia", "Valor noite", "Diárias dia", "Diárias noite", "10%", "Extra", "Turno do extra", "Motivo extra", "Total"],
-      ...calc.porPessoa.map(({ p, nDias, nNoites, diariasDia, diariasNoite, dez10, extra, extraTurno, extraMotivo, total, rotuloVinculo }) => [
+      ["Nome", "Vínculo", "Dias", "Noites", "Valor dia", "Valor noite", "Diárias dia", "Diárias noite", "10%", "Extra", "Turno do extra", "Motivo extra", "Desconto", "Motivo desconto", "Total"],
+      ...calc.porPessoa.map(({ p, nDias, nNoites, diariasDia, diariasNoite, dez10, extra, extraTurno, extraMotivo, descontoSem, descontoMotivo, total, rotuloVinculo }) => [
         p.nome, rotuloVinculo, String(nDias), String(nNoites),
         fmtNum(Number(p.valor_dia) || 0), fmtNum(Number(p.valor_noite) || 0),
-        fmtNum(diariasDia), fmtNum(diariasNoite), fmtNum(dez10), fmtNum(extra), extra > 0 ? extraTurno : "", extraMotivo, fmtNum(total),
+        fmtNum(diariasDia), fmtNum(diariasNoite), fmtNum(dez10), fmtNum(extra), extra > 0 ? extraTurno : "", extraMotivo, fmtNum(descontoSem), descontoMotivo, fmtNum(total),
       ]),
       [],
       ["Turno", "Presenças", "Diárias", "10%", "Extras", "Total"],
@@ -284,6 +298,7 @@ export function SemanaClient({
             x.nNoites ? `${x.nNoites} noite${x.nNoites > 1 ? "s" : ""}` : "",
             x.dez10 > 0.005 ? `10% ${fmtNum(x.dez10)}` : "",
             x.extra > 0.005 ? `extra ${x.extraTurno === "dia" ? "dia" : "noite"} ${fmtNum(x.extra)}${x.extraMotivo ? ` ${x.extraMotivo}` : ""}` : "",
+            x.descontoSem > 0.005 ? `desconto ${fmtNum(x.descontoSem)}${x.descontoMotivo ? ` ${x.descontoMotivo}` : ""}` : "",
           ].filter(Boolean).join(", "),
           descontarFiado: descontar.has(x.p.id),
         })),
@@ -608,6 +623,7 @@ export function SemanaClient({
                 <th className="px-3 py-3 text-right">Diárias</th>
                 {turnoFiltro !== "dia" && <th className="px-3 py-3 text-right">10%</th>}
                 <th className="px-3 py-3 text-right" title="Algo que fez a mais nesta semana (conta no turno escolhido)">Extra</th>
+                {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Atraso, falta… abate do total">Desconto</th>}
                 <th className="px-4 py-3 text-right">Total a pagar</th>
                 {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Compras internas em aberto (opcional descontar)">Fiado</th>}
                 {turnoFiltro === "todos" && <th className="px-4 py-3 text-right">Em mãos</th>}
@@ -624,8 +640,8 @@ export function SemanaClient({
                   extraM: turnoFiltro === "dia" ? x.extraDia : turnoFiltro === "noite" ? x.extraNoite : x.extra,
                   presM: turnoFiltro === "dia" ? x.nDias : turnoFiltro === "noite" ? x.nNoites : x.nDias + x.nNoites,
                 }))
-                .map((x) => ({ ...x, totalM: x.diariasM + x.dezM + x.extraM }))
-                .filter((x) => x.presM > 0 || x.dezM > 0.005 || x.extraM > 0.005 || (turnoFiltro === "todos" && (pagoDe.has(x.p.id) || soExtra.has(x.p.id) || !!extrasSem[x.p.id]?.motivo)))
+                .map((x) => ({ ...x, totalM: turnoFiltro === "todos" ? x.total : x.diariasM + x.dezM + x.extraM }))
+                .filter((x) => x.presM > 0 || x.dezM > 0.005 || x.extraM > 0.005 || (turnoFiltro === "todos" && (pagoDe.has(x.p.id) || soExtra.has(x.p.id) || !!extrasSem[x.p.id]?.motivo || x.descontoSem > 0)))
                 .sort((a, b) => b.totalM - a.totalM)
                 .map(({ p, nDias, nNoites, diariasM, dezM, extraM, totalM, total, rotuloVinculo }) => (
                   <tr key={p.id} className={`bg-white dark:bg-zinc-950 ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
@@ -693,6 +709,33 @@ export function SemanaClient({
                         </div>
                       )}
                     </td>
+                    {turnoFiltro === "todos" && <td className="px-3 py-2 text-right">
+                      {pagoDe.has(p.id) ? (
+                        <span className="text-xs text-zinc-500">{extraDe(p).desconto ? `− ${extraDe(p).desconto}${extraDe(p).descMotivo ? ` · ${extraDe(p).descMotivo}` : ""}` : "—"}</span>
+                      ) : (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <input
+                            value={extraDe(p).desconto}
+                            onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { ...extraDe(p), desconto: e.target.value } }))}
+                            onBlur={() => salvarExtraDe(p)}
+                            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                            inputMode="decimal"
+                            placeholder="0,00"
+                            className={`${inputCls} w-20 text-right ${extraDe(p).desconto ? "border-red-400 text-red-700" : ""}`}
+                          />
+                          {(extraDe(p).desconto || extraDe(p).descMotivo) && (
+                            <input
+                              value={extraDe(p).descMotivo}
+                              onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { ...extraDe(p), descMotivo: e.target.value } }))}
+                              onBlur={() => salvarExtraDe(p)}
+                              onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                              placeholder="motivo (ex.: atraso)"
+                              className={`${inputCls} w-32 px-1 py-0.5 text-[11px]`}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </td>}
                     <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-zinc-100">{brl(totalM)}</td>
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-right whitespace-nowrap">
                       {pagoDe.has(p.id) ? (
@@ -723,9 +766,10 @@ export function SemanaClient({
                   <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalExtras)}</td>
-                  <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras)}</td>
+                  <td className="px-3 py-3 text-right text-red-600">{calc.totalDescontosSem > 0 ? `− ${brl(calc.totalDescontosSem)}` : ""}</td>
+                  <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - calc.totalDescontosSem)}</td>
                   <td className="px-3 py-3 text-right text-red-600">{totalDesconto > 0 ? `− ${brl(totalDesconto)}` : ""}</td>
-                  <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - totalDesconto)}</td>
+                  <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - calc.totalDescontosSem - totalDesconto)}</td>
                 </tr>
               ) : turnoFiltro === "dia" ? (
                 <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">

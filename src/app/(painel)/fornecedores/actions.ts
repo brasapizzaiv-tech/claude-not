@@ -16,6 +16,9 @@ function dados(formData: FormData) {
     email: get("email"),
     whatsapp: get("whatsapp"),
     observacoes: get("observacoes"),
+    // Padrão das notas desse fornecedor (preenche sozinho ao vincular/importar).
+    dre_categoria_id: get("dre_categoria_id"),
+    tipo_nota: (() => { const t = get("tipo_nota"); return t === "mercadoria" || t === "servico" ? t : null; })(),
   };
 }
 

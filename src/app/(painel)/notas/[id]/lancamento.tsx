@@ -87,10 +87,20 @@ export function LancamentoNota({
       router.refresh();
     });
   }
+  const [fixadoNoForn, setFixadoNoForn] = useState(false);
   function mudarCategoria(id: string) {
     setCatSel(id);
+    setFixadoNoForn(false);
     start(async () => {
       await definirCategoriaNota(notaId, id || null);
+    });
+  }
+  // "Usar sempre": grava a categoria (e o tipo) como padrão do fornecedor.
+  function fixarNoFornecedor() {
+    if (!catSel || !fornecedorId) return;
+    start(async () => {
+      await definirCategoriaNota(notaId, catSel, true);
+      setFixadoNoForn(true);
     });
   }
   function vincularForn() {
@@ -284,6 +294,16 @@ export function LancamentoNota({
             disabled={lancada}
             className={`${campo} w-full`}
           />
+          {catSel && fornecedorId && (
+            <button
+              type="button"
+              onClick={fixarNoFornecedor}
+              disabled={proc || fixadoNoForn}
+              className="mt-1 text-xs text-orange-600 hover:underline disabled:text-green-600 disabled:no-underline"
+            >
+              {fixadoNoForn ? `✓ Fixado: as próximas notas de ${fornecedorNome} já vêm com essa categoria` : `📌 Usar sempre esta categoria para ${fornecedorNome}`}
+            </button>
+          )}
         </div>
       )}
 

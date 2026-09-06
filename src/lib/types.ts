@@ -20,6 +20,8 @@ export type Fornecedor = {
   observacoes: string | null;
   ativo: boolean;
   criado_em: string;
+  dre_categoria_id?: string | null; // categoria padrão das notas desse fornecedor
+  tipo_nota?: "mercadoria" | "servico" | null;
 };
 
 export type Categoria = {
