@@ -46,6 +46,7 @@ export function CmvTabela({
   fatManual,
   dias,
   meta,
+  emAndamento = false,
 }: {
   rows: CmvRow[];
   eiId: string;
@@ -54,6 +55,7 @@ export function CmvTabela({
   fatManual: Record<string, number>;
   dias: { data: string; dow: number }[];
   meta: number;
+  emAndamento?: boolean; // sem contagem final ainda: CMV não fecha, mostra compras/faturamento até agora
 }) {
   const router = useRouter();
   const [, start] = useTransition();
@@ -92,7 +94,8 @@ export function CmvTabela({
 
   // Totais (só do que entra no CMV).
   let totalCmv = 0;
-  for (const r of rows) if (entra[r.produtoId]) totalCmv += cmvDe(r.produtoId);
+  let totalCompras = 0;
+  for (const r of rows) if (entra[r.produtoId]) { totalCmv += cmvDe(r.produtoId); totalCompras += num(compras[r.produtoId] ?? ""); }
   const manualTotal = Object.values(fatM).reduce((s, v) => s + num(v), 0);
   const faturamento = faturamentoCaixa + manualTotal;
   const cmvPct = faturamento > 0 ? totalCmv / faturamento : 0;
@@ -146,6 +149,7 @@ export function CmvTabela({
     });
   }
   function persistCompras(produtoId: string, valor: string, auto: number) {
+    if (!efId) return; // semana em andamento: a correção manual fica pra quando fechar (é chaveada pela contagem final)
     const v = valor.trim();
     // Vazio ou igual ao automático → remove a correção (volta ao automático).
     const igualAuto = Math.abs(num(v) - auto) < 0.005;
@@ -186,6 +190,19 @@ export function CmvTabela({
 
   return (
     <div>
+      {emAndamento ? (
+        <>
+          <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <b>Semana em andamento.</b> O estoque final ainda não foi contado, então o CMV desta semana só fecha quando a próxima contagem for finalizada. Enquanto isso: compras e faturamento até agora.
+          </div>
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {card("Compras até agora", moeda(totalCompras), "text-orange-600")}
+            {card("Faturamento até agora", faturamento > 0 ? moeda(faturamento) : "—", "", faturamento > 0 ? "" : "lance por dia abaixo")}
+            {card("Compras / Faturamento", faturamento > 0 ? pct(totalCompras / faturamento) : "—", faturamento <= 0 ? "" : totalCompras / faturamento <= meta ? "text-green-600" : "text-red-600", "prévia — não é o CMV")}
+            {card("Meta CMV", pct(meta))}
+          </div>
+        </>
+      ) : (
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {card("CMV Real", moeda(totalCmv))}
         {card("Faturamento", faturamento > 0 ? moeda(faturamento) : "—", "", faturamento > 0 ? "" : "sem caixa no período")}
@@ -197,6 +214,7 @@ export function CmvTabela({
           faturamento > 0 ? `${lacuna <= 0 ? "▼ dentro" : "▲ acima"} ${pct(Math.abs(lacuna))}` : "",
         )}
       </div>
+      )}
 
       {/* Faturamento diário livre (por turno) */}
       <div className="mb-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
@@ -435,17 +453,21 @@ export function CmvTabela({
                           </div>
                         </td>
                         <td className="px-3 py-1 text-right">
-                          <input
-                            inputMode="decimal"
-                            value={ef[id] ?? ""}
-                            placeholder="0"
-                            onChange={(e) => setEf((s) => ({ ...s, [id]: e.target.value }))}
-                            onBlur={(e) => persistQtd("ef", id, e.target.value)}
-                            className={inp}
-                          />
+                          {emAndamento ? (
+                            <span className="text-xs text-zinc-300" title="Ainda não contado">—</span>
+                          ) : (
+                            <input
+                              inputMode="decimal"
+                              value={ef[id] ?? ""}
+                              placeholder="0"
+                              onChange={(e) => setEf((s) => ({ ...s, [id]: e.target.value }))}
+                              onBlur={(e) => persistQtd("ef", id, e.target.value)}
+                              className={inp}
+                            />
+                          )}
                         </td>
                         <td className={`px-4 py-1.5 text-right font-medium ${dentro ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-400"}`}>
-                          {moeda(cmvDe(id))}
+                          {emAndamento ? <span className="text-xs text-zinc-300">—</span> : moeda(cmvDe(id))}
                         </td>
                         <td className="px-3 py-1.5 text-right text-zinc-400">
                           {r.nivel > 0 ? r.nivel : "—"}
@@ -474,8 +496,8 @@ export function CmvTabela({
             })}
             <tr className="bg-zinc-100 font-bold dark:bg-zinc-800">
               <td className="px-3 py-2" />
-              <td className="px-4 py-2" colSpan={4}>TOTAL CMV</td>
-              <td className="px-4 py-2 text-right text-orange-600">{moeda(totalCmv)}</td>
+              <td className="px-4 py-2" colSpan={4}>{emAndamento ? "TOTAL COMPRAS ATÉ AGORA" : "TOTAL CMV"}</td>
+              <td className="px-4 py-2 text-right text-orange-600">{moeda(emAndamento ? totalCompras : totalCmv)}</td>
               <td colSpan={3} />
             </tr>
           </tbody>

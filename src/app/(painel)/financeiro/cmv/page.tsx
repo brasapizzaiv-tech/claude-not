@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { calcFechamento, type FechamentoDados } from "@/lib/caixa";
 import { CmvTabela, type CmvRow } from "./cmv-tabela";
 
@@ -80,11 +81,28 @@ export default async function CmvPage({
   // Representante de cada virada = a MAIOR data do grupo (a lista está desc).
   const reps = clusters.map((cl) => cl[0]);
 
-  // Semana = data de início e data de fim (default: as duas viradas mais recentes).
+  // Semana = data de início e data de fim. Default: a SEMANA EM ANDAMENTO
+  // (da última virada até hoje) — a contagem de segunda é o estoque inicial da
+  // semana que começa. Quando a próxima contagem for finalizada, ela fecha.
   const validaData = (s?: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "");
-  const df = validaData(sp.df) || reps[0] || "";
-  const di = validaData(sp.di) || reps[1] || "";
+  const hoje = hojeSP();
   const meta = sp.meta ? Number(sp.meta) / 100 : 0.29;
+  let df = validaData(sp.df);
+  let di = validaData(sp.di);
+  if (!df && !di) {
+    if (reps[0] && reps[0] < hoje) { di = reps[0]; df = hoje; } // em andamento
+    else { df = reps[0] || ""; di = reps[1] || ""; }
+  } else {
+    df = df || reps[0] || "";
+    di = di || reps.find((r) => r < df) || "";
+  }
+  // Atalhos de navegação entre semanas.
+  const idxDf = reps.indexOf(df);
+  const linkSemana = (a: string, b: string) => `/financeiro/cmv?di=${a}&df=${b}&meta=${Math.round(meta * 100)}`;
+  const atalhoAtual = reps[0] && reps[0] < hoje ? linkSemana(reps[0], hoje) : null;
+  const atalhoAnterior = idxDf >= 0 && reps[idxDf + 1] ? linkSemana(reps[idxDf + 1], reps[idxDf]) // semana antes desta fechada
+    : df === hoje && reps[1] ? linkSemana(reps[1], reps[0]) : null;
+  const atalhoProxima = idxDf > 0 ? linkSemana(reps[idxDf], reps[idxDf - 1]) : idxDf === 0 && atalhoAtual ? atalhoAtual : null;
 
   if (!di || !df) {
     return (
@@ -103,6 +121,8 @@ export default async function CmvPage({
   // Todas as contagens de cada virada (janela ±TOL dias).
   const eiContagens = contagens.filter((c) => diffDias(c.data, di) <= TOL);
   const efContagens = contagens.filter((c) => diffDias(c.data, df) <= TOL);
+  // Sem contagem no fim = semana EM ANDAMENTO (mostra compras/faturamento até agora).
+  const emAndamento = efContagens.length === 0;
   const eiRepId = eiContagens[0]?.id ?? ""; // p/ editar (contagens vêm desc)
   const efRepId = efContagens[0]?.id ?? "";
   const idsContagem = [
@@ -264,6 +284,25 @@ export default async function CmvPage({
     <div className="mx-auto max-w-7xl p-6 sm:p-8">
       {cabecalho}
 
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+        {atalhoAnterior ? (
+          <Link href={atalhoAnterior} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700">← semana anterior</Link>
+        ) : (
+          <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-zinc-300 dark:border-zinc-800">← semana anterior</span>
+        )}
+        <span className={`rounded-lg px-3 py-1.5 font-semibold text-white ${emAndamento ? "bg-amber-500" : "bg-orange-500"}`}>
+          {dataBR(dEI)} → {dataBR(dEF)}{emAndamento ? " · em andamento" : " · fechada"}
+        </span>
+        {atalhoProxima ? (
+          <Link href={atalhoProxima} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700">próxima →</Link>
+        ) : (
+          <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-zinc-300 dark:border-zinc-800">próxima →</span>
+        )}
+        {atalhoAtual && df !== hoje && (
+          <Link href={atalhoAtual} className="rounded-lg border border-amber-500 px-3 py-1.5 text-amber-700 dark:text-amber-300">Semana atual (em andamento)</Link>
+        )}
+      </div>
+
       <form className="mb-2 flex flex-wrap items-end gap-2">
         <div>
           <label className="mb-1 block text-xs text-zinc-500">Início da semana</label>
@@ -313,7 +352,9 @@ export default async function CmvPage({
         </p>
         <p>
           Estoque final:{" "}
-          {efContagens.map((c) => c.descricao || dataBR(c.data)).join(" + ") || "—"}
+          {emAndamento
+            ? "ainda não contado — a semana fecha quando a próxima contagem for finalizada"
+            : efContagens.map((c) => c.descricao || dataBR(c.data)).join(" + ") || "—"}
         </p>
       </div>
 
@@ -321,6 +362,7 @@ export default async function CmvPage({
         rows={rows}
         eiId={eiRepId}
         efId={efRepId}
+        emAndamento={emAndamento}
         faturamentoCaixa={faturamento}
         fatManual={fatManual}
         dias={dias}
