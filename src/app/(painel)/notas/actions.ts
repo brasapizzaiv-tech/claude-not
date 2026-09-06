@@ -406,13 +406,15 @@ export async function lancarNota(
   // (usado nas contagens/CMV e nas próximas cotações).
   const { data: itensRef } = await supabase
     .from("nota_itens")
-    .select("produto_id, valor_unit")
+    .select("produto_id, valor_unit, fator")
     .eq("nota_id", notaId);
-  for (const i of (itensRef as { produto_id: string | null; valor_unit: number | null }[]) ?? []) {
+  for (const i of (itensRef as { produto_id: string | null; valor_unit: number | null; fator: number | null }[]) ?? []) {
     if (i.produto_id && i.valor_unit != null && Number(i.valor_unit) > 0) {
+      // Nota em caixa (fator > 1) → preço por UNIDADE do produto.
+      const fator = Number(i.fator) > 0 ? Number(i.fator) : 1;
       await supabase
         .from("produtos")
-        .update({ preco_referencia: Number(i.valor_unit) })
+        .update({ preco_referencia: Math.round((Number(i.valor_unit) / fator) * 10000) / 10000 })
         .eq("id", i.produto_id);
     }
   }
@@ -534,7 +536,44 @@ export async function vincularItemProduto(
     .from("nota_itens")
     .update({ produto_id: produtoId })
     .eq("id", itemId);
+  // Sugestão automática do fator: nota em CX/FD/PCT e produto com "fardo"
+  // cadastrado → fator = fardo (só se ainda estiver em 1).
+  if (produtoId) {
+    const [{ data: it }, { data: prod }] = await Promise.all([
+      supabase.from("nota_itens").select("unidade, fator").eq("id", itemId).maybeSingle(),
+      supabase.from("produtos").select("fardo").eq("id", produtoId).maybeSingle(),
+    ]);
+    const un = String(it?.unidade ?? "").toUpperCase().trim();
+    const fardo = Number(prod?.fardo ?? 0);
+    if (Number(it?.fator ?? 1) <= 1 && fardo > 1 && ["CX", "CXA", "FD", "FDO", "PCT", "PC", "SC", "ENG", "DZ", "PACK", "CJ"].includes(un)) {
+      await supabase.from("nota_itens").update({ fator: fardo }).eq("id", itemId);
+    }
+  }
   return { ok: true };
+}
+
+// Fator de conversão do item: quantas unidades do produto por unidade da nota.
+// Se a nota já estiver lançada, refaz o preço de referência do produto.
+export async function definirFatorItemNota(itemId: string, fator: number) {
+  await exigirAcesso("/notas");
+  const supabase = await createClient();
+  const f = Number(fator) > 0 ? Math.round(Number(fator) * 1000) / 1000 : 1;
+  const { data: it } = await supabase
+    .from("nota_itens")
+    .select("nota_id, produto_id, valor_unit, notas_fiscais(situacao)")
+    .eq("id", itemId)
+    .maybeSingle();
+  await supabase.from("nota_itens").update({ fator: f }).eq("id", itemId);
+  const nf = it?.notas_fiscais as { situacao?: string } | { situacao?: string }[] | null;
+  const situacao = Array.isArray(nf) ? nf[0]?.situacao : nf?.situacao;
+  if (it?.produto_id && situacao === "lancada" && Number(it.valor_unit) > 0) {
+    await supabase
+      .from("produtos")
+      .update({ preco_referencia: Math.round((Number(it.valor_unit) / f) * 10000) / 10000 })
+      .eq("id", it.produto_id);
+  }
+  if (it?.nota_id) revalidatePath(`/notas/${it.nota_id}`);
+  return { ok: true, fator: f };
 }
 
 // Estorna a nota lançada: remove a conta e volta para pendente (pode relançar).

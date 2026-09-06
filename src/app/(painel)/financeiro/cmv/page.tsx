@@ -183,10 +183,11 @@ export default async function CmvPage({
     if (ns.length > 0) {
       const { data: ni } = await supabase
         .from("nota_itens")
-        .select("produto_id, qtd, valor_total")
+        .select("produto_id, qtd, valor_total, fator")
         .in("nota_id", ns.map((n) => n.id));
-      for (const i of (ni as { produto_id: string | null; qtd: number; valor_total: number | null }[]) ?? [])
-        if (i.produto_id) add(i.produto_id, Number(i.valor_total ?? 0), Number(i.qtd ?? 0));
+      // fator = unidades por caixa (nota em CX, produto em UN) → quantidade real.
+      for (const i of (ni as { produto_id: string | null; qtd: number; valor_total: number | null; fator: number | null }[]) ?? [])
+        if (i.produto_id) add(i.produto_id, Number(i.valor_total ?? 0), Number(i.qtd ?? 0) * (Number(i.fator) > 0 ? Number(i.fator) : 1));
     }
     const { data: pp } = await supabase
       .from("pedidos")

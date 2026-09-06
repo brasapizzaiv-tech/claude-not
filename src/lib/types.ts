@@ -169,6 +169,7 @@ export type NotaItem = {
   valor_unit: number | null;
   valor_total: number | null;
   produto_id: string | null;
+  fator?: number; // unidades do produto por unidade da nota (caixa com 27 → 27)
 };
 
 export type DreTipo =

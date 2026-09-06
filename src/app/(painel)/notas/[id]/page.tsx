@@ -7,6 +7,7 @@ import type { NotaFiscal, NotaItem } from "@/lib/types";
 import { BotaoConciliar } from "./conciliar";
 import { ManifestarNota } from "./manifestar";
 import { ItemProduto } from "./item-produto";
+import { ItemFator } from "./item-fator";
 import { LancamentoNota } from "./lancamento";
 import { ParcelasEditor } from "./parcelas-editor";
 
@@ -182,6 +183,7 @@ export default async function NotaDetalhePage({
                   <th className="px-4 py-2">Item da nota</th>
                   <th className="px-4 py-2">Produto no sistema</th>
                   <th className="px-4 py-2 text-right">Qtd</th>
+                  <th className="px-4 py-2 text-right" title="Nota em caixa/fardo? Quantas unidades por caixa">Por un.</th>
                   <th className="px-4 py-2 text-right">Total</th>
                 </tr>
               </thead>
@@ -200,6 +202,16 @@ export default async function NotaDetalhePage({
                     </td>
                     <td className="px-4 py-2 text-right text-zinc-500">
                       {i.qtd} {i.unidade}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <ItemFator
+                        itemId={i.id}
+                        fator={Number(i.fator ?? 1)}
+                        qtd={Number(i.qtd)}
+                        unidade={i.unidade}
+                        valorTotal={i.valor_total != null ? Number(i.valor_total) : null}
+                        temProduto={!!i.produto_id}
+                      />
                     </td>
                     <td className="px-4 py-2 text-right text-zinc-800 dark:text-zinc-200">
                       {i.valor_total != null ? moeda(Number(i.valor_total)) : "—"}
