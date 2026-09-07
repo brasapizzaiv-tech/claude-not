@@ -42,10 +42,16 @@ export async function consultarPixCaixa(txid: string) {
   if (atual === "cancelado") return { ok: true as const, pago: false, cancelado: true };
   try {
     const c = await consultarCobrancaPix(txid);
+    // Guarda o que o banco respondeu (pra conferência quando algo estranho acontecer).
+    const statusBanco = `${c.status} pix=${c.temPix ? c.recebido.toFixed(2) : "-"} orig=${c.original.toFixed(2)} ${c.ambiente}`;
     if (c.pago) {
-      await supabase.from("pix_cobrancas").update({ status: "pago", pago_em: new Date().toISOString() }).eq("txid", txid);
+      await supabase
+        .from("pix_cobrancas")
+        .update({ status: "pago", pago_em: new Date().toISOString(), status_banco: statusBanco, valor_recebido: c.recebido })
+        .eq("txid", txid);
       return { ok: true as const, pago: true };
     }
+    await supabase.from("pix_cobrancas").update({ status_banco: statusBanco }).eq("txid", txid);
     return { ok: true as const, pago: false };
   } catch {
     return { ok: false as const, pago: false };

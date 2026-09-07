@@ -35,7 +35,17 @@ const BANCO: Banco =
       : "sicredi";
 
 const env = (nome: string) => process.env[`PIX_${BANCO.toUpperCase()}_${nome}`] || "";
-const AMBIENTE = env("AMBIENTE") === "producao" ? "producao" : "sandbox";
+// Ambiente: aceita "producao"/"produção"/"prod"/"production" (sem diferenciar
+// maiúsculas/acentos). Vazio ou desconhecido: no Sicoob, se tem certificado e
+// não tem token de sandbox, é produção; senão sandbox.
+function lerAmbiente(): "producao" | "sandbox" {
+  const v = env("AMBIENTE").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+  if (v.startsWith("prod")) return "producao";
+  if (v.startsWith("sand") || v.startsWith("homolog") || v.startsWith("test")) return "sandbox";
+  if (BANCO === "sicoob") return env("CERT_B64") && env("KEY_B64") && !process.env.PIX_SICOOB_TOKEN_SANDBOX ? "producao" : "sandbox";
+  return "sandbox";
+}
+const AMBIENTE = lerAmbiente();
 const CLIENT_ID = env("CLIENT_ID");
 const CLIENT_SECRET = env("CLIENT_SECRET");
 const CHAVE_PIX = env("CHAVE");
@@ -191,8 +201,19 @@ export async function consultarCobrancaPix(txid: string) {
     dispatcher: getDispatcher(),
   });
   if (!r.ok) throw new Error(`consulta HTTP ${r.status}`);
-  const j = (await r.json()) as { status?: string };
-  return { status: j.status ?? "ATIVA", pago: j.status === "CONCLUIDA" };
+  const j = (await r.json()) as {
+    status?: string;
+    valor?: { original?: string };
+    pix?: { valor?: string; horario?: string; endToEndId?: string }[];
+  };
+  // Só considera pago quando o banco lista o(s) Pix recebido(s) somando o valor
+  // da cobrança — o campo "status" sozinho não basta (sandbox/mocks devolvem
+  // CONCLUIDA sem ninguém ter pago).
+  const original = Number(j.valor?.original ?? 0);
+  const recebido = Math.round((j.pix ?? []).reduce((s, p) => s + (Number(p.valor) || 0), 0) * 100) / 100;
+  const temPix = (j.pix ?? []).length > 0;
+  const pago = temPix && (original <= 0 || recebido >= original - 0.005);
+  return { status: j.status ?? "ATIVA", pago, recebido, original, temPix, ambiente: AMBIENTE };
 }
 
 // Diagnóstico pra tela de config (sem expor valores): banco, ambiente e quais
@@ -212,7 +233,7 @@ export async function testarPix() {
   const t0 = Date.now();
   try {
     const cob = await criarCobrancaPix({ txid: gerarTxid(), valor: 0.01, expiracaoSeg: 60, descricao: "Teste Brasa" });
-    return { ok: true as const, ms: Date.now() - t0, txid: cob.txid, copiaECola: cob.copiaECola };
+    return { ok: true as const, ms: Date.now() - t0, txid: cob.txid, copiaECola: cob.copiaECola, ambiente: AMBIENTE, location: cob.location };
   } catch (e) {
     return { ok: false as const, ms: Date.now() - t0, erro: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
   }
