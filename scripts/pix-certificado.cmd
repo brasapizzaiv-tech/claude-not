@@ -6,20 +6,20 @@ echo.
 echo  Este programa transforma o certificado (.pfx) nos dois textos que a Vercel precisa
 echo  (PIX_SICOOB_CERT_B64 e PIX_SICOOB_KEY_B64). A senha fica so no seu computador.
 echo.
-set "OPENSSL=C:Program FilesGitmingw64binopenssl.exe"
-if not exist "%OPENSSL%" set "OPENSSL=C:Program FilesGitSrbinopenssl.exe"
+set "OPENSSL=C:\Program Files\Git\mingw64\bin\openssl.exe"
+if not exist "%OPENSSL%" set "OPENSSL=C:\Program Files\Git\usr\bin\openssl.exe"
 if not exist "%OPENSSL%" (
   echo  ERRO: nao achei o openssl do Git. Instale o Git for Windows e rode de novo.
   pause & exit /b 1
 )
 for /f "usebackq delims=" %%F in (`powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; $d=New-Object System.Windows.Forms.OpenFileDialog; $d.Title='Escolha o certificado (.pfx)'; $d.Filter='Certificado (*.pfx;*.p12)|*.pfx;*.p12'; if($d.ShowDialog() -eq 'OK'){$d.FileName}"`) do set "PFX=%%F"
 if "%PFX%"=="" ( echo  Nenhum arquivo escolhido. & pause & exit /b 1 )
-set "PASTA=%~dp0"
 set "SAIDA=%USERPROFILE%\Desktop\pix-sicoob"
 if not exist "%SAIDA%" mkdir "%SAIDA%"
 echo.
 echo  Arquivo: %PFX%
-echo  Digite a senha do certificado quando pedir (ela nao aparece na tela).
+echo  Digite a senha do certificado quando pedir (ela nao aparece na tela) e aperte Enter.
+echo  Vai pedir DUAS vezes (uma pro certificado, outra pra chave).
 echo.
 "%OPENSSL%" pkcs12 -legacy -in "%PFX%" -clcerts -nokeys -out "%SAIDA%\cert.pem" || goto erro
 "%OPENSSL%" pkcs12 -legacy -in "%PFX%" -nocerts -nodes -out "%SAIDA%\key.pem" || goto erro
