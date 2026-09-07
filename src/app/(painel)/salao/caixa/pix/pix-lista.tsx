@@ -13,6 +13,7 @@ export type PixLinha = {
   origem: string;
   status: string;
   descricao: string | null;
+  ordem: string; // ISO, só pra ordenar
   criadoEm: string; // já formatado (SP)
   pagoEm: string | null;
   valorDevolvido: number;

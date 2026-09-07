@@ -46,6 +46,7 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
       origem: c.origem,
       status: c.status,
       descricao: c.descricao,
+      ordem: c.pago_em ?? c.criado_em,
       criadoEm: fmt(c.criado_em)!,
       pagoEm: fmt(c.pago_em),
       valorDevolvido: Number(c.valor_devolvido ?? 0),
@@ -60,12 +61,13 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
         origem: "delivery",
         status: p.pix_status === "pago" ? "pago" : p.pix_status === "erro" ? "cancelado" : "aguardando",
         descricao: `Pedido #${p.numero}`,
+        ordem: p.pix_criado_em ?? "",
         criadoEm: fmt(p.pix_criado_em) ?? "—",
         pagoEm: null,
         valorDevolvido: 0,
         devolucoes: [],
       })),
-  ].sort((a, b) => (b.pagoEm ?? b.criadoEm).localeCompare(a.pagoEm ?? a.criadoEm));
+  ].sort((a, b) => b.ordem.localeCompare(a.ordem));
 
   const pagos = linhas.filter((l) => l.status === "pago");
   const totalPago = pagos.reduce((s, l) => s + l.valor, 0);
