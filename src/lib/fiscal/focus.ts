@@ -28,6 +28,9 @@ export type FocusItem = {
   codigo_ncm: string;
   icms_origem: string; // "0" nacional
   icms_situacao_tributaria: string; // CSOSN (Simples), ex.: "102"
+  cest?: string; // 7 dígitos, quando o item tem ST
+  pis_situacao_tributaria?: string; // ex.: "49"
+  cofins_situacao_tributaria?: string; // ex.: "49"
 };
 
 export type FocusPagamento = {

@@ -31,6 +31,11 @@ export default async function FiscalPage() {
         (você sobe lá) — aqui guardamos só o <b>token de API</b>.
       </p>
 
+      <Link href="/fiscal/perfis" className="mt-4 flex items-center justify-between rounded-2xl border-2 border-orange-300 bg-orange-50 px-4 py-3 text-sm hover:bg-orange-100 dark:border-orange-900 dark:bg-orange-950/20">
+        <span><b>🧾 Perfis fiscais</b> — NCM/CEST/CFOP/CSOSN por categoria do cardápio (como no Suitable), com exceção por item.</span>
+        <span className="font-semibold text-orange-600">Abrir →</span>
+      </Link>
+
       <form action={salvarConfigFiscal} className="mt-6 space-y-6">
         {/* Empresa */}
         <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">

@@ -139,7 +139,7 @@ export function Sidebar({
     {
       key: "config", label: "Configurações", icon: "⚙️",
       itens: [
-        ...so(has("financeiro"), { href: "/fiscal", label: "Config fiscal", icon: "🧾" }),
+        ...so(has("financeiro"), { href: "/fiscal", label: "Config fiscal", icon: "🧾" }, { href: "/fiscal/perfis", label: "Perfis fiscais", icon: "🏷️" }),
         ...so(has("impressao"), { href: "/impressao", label: "Central de impressões", icon: "🖨️" }),
         { href: "/clientes", label: "Clientes (NF-e)", icon: "🧑" },
         ...so(admin, { href: "/usuarios", label: "Usuários e permissões", icon: "🔑" }),

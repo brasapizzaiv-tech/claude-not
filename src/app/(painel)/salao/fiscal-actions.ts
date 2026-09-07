@@ -55,12 +55,31 @@ export async function emitirNfceComanda(comandaId: string, cpf?: string) {
 
   const { data: itensData } = await supabase
     .from("pdv_comanda_itens")
-    .select("descricao, qtd, preco_unit")
+    .select("descricao, qtd, preco_unit, item_id")
     .eq("comanda_id", comandaId);
 
   const NCM = cfg.ncm_buffet || "21069090";
   const CFOP = cfg.cfop_padrao || "5102";
   const CSOSN = cfg.csosn_padrao || "102";
+
+  // Perfil fiscal de cada item: o do item, senão o da categoria, senão o padrão.
+  type Perfil = { id: string; ncm: string | null; cest: string | null; cfop: string; csosn: string; origem: string; unidade: string; pis_cst: string; cofins_cst: string };
+  const itemIds = [...new Set((itensData ?? []).map((i) => i.item_id as string | null).filter(Boolean))] as string[];
+  const [{ data: pdvItens }, { data: cats }, { data: perfis }] = await Promise.all([
+    itemIds.length ? supabase.from("pdv_itens").select("id, categoria, perfil_fiscal_id").in("id", itemIds) : Promise.resolve({ data: [] as { id: string; categoria: string | null; perfil_fiscal_id: string | null }[] }),
+    supabase.from("pdv_categorias").select("nome, perfil_fiscal_id"),
+    supabase.from("perfis_fiscais").select("id, ncm, cest, cfop, csosn, origem, unidade, pis_cst, cofins_cst").eq("ativo", true),
+  ]);
+  const perfilDe = new Map(((perfis as Perfil[]) ?? []).map((p) => [p.id, p]));
+  const catPerfil = new Map(((cats as { nome: string; perfil_fiscal_id: string | null }[]) ?? []).map((c) => [c.nome, c.perfil_fiscal_id]));
+  const itemInfo = new Map(((pdvItens as { id: string; categoria: string | null; perfil_fiscal_id: string | null }[]) ?? []).map((i) => [i.id, i]));
+  const perfilDoItem = (itemId: string | null): Perfil | null => {
+    if (!itemId) return null;
+    const i = itemInfo.get(itemId);
+    if (!i) return null;
+    const pid = i.perfil_fiscal_id ?? (i.categoria ? catPerfil.get(i.categoria) : null) ?? null;
+    return pid ? perfilDe.get(pid) ?? null : null;
+  };
 
   const items: FocusItem[] = [];
   let total = 0;
@@ -90,18 +109,21 @@ export async function emitirNfceComanda(comandaId: string, cpf?: string) {
     const bruto = Math.round(qtd * preco * 100) / 100;
     n++;
     total += bruto;
+    const pf = perfilDoItem(it.item_id as string | null);
     items.push({
       numero_item: String(n),
-      codigo_produto: `ITEM${n}`,
-      descricao: (it.descricao as string) || "Item",
-      cfop: CFOP,
-      unidade_comercial: "UN",
+      codigo_produto: (it.item_id as string | null)?.slice(0, 8) ?? `ITEM${n}`,
+      descricao: ((it.descricao as string) || "Item").split("\n")[0].slice(0, 120),
+      cfop: pf?.cfop || CFOP,
+      unidade_comercial: pf?.unidade || "UN",
       quantidade_comercial: qtd.toFixed(4),
       valor_unitario_comercial: preco.toFixed(2),
       valor_bruto: bruto.toFixed(2),
-      codigo_ncm: NCM,
-      icms_origem: "0",
-      icms_situacao_tributaria: CSOSN,
+      codigo_ncm: pf?.ncm || NCM,
+      icms_origem: pf?.origem || "0",
+      icms_situacao_tributaria: pf?.csosn || CSOSN,
+      ...(pf?.cest ? { cest: pf.cest } : {}),
+      ...(pf ? { pis_situacao_tributaria: pf.pis_cst || "49", cofins_situacao_tributaria: pf.cofins_cst || "49" } : {}),
     });
   }
   total = Math.round(total * 100) / 100;

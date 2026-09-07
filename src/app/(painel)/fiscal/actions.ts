@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { emitirNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 // Salva a configuração fiscal (dados da empresa + emissor). Chave/valor.
 export async function salvarConfigFiscal(formData: FormData) {
@@ -102,4 +103,67 @@ export async function emitirNotaTeste() {
     // resumo curto dos erros de validação (se houver)
     erros: r.erros ? JSON.stringify(r.erros).slice(0, 600) : undefined,
   };
+}
+
+// ---------- Perfis fiscais ----------
+const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+
+export async function salvarPerfilFiscal(fd: FormData) {
+  await exigirAcesso("/financeiro");
+  const supabase = await createClient();
+  const id = ((fd.get("id") as string) || "").trim() || null;
+  const nome = ((fd.get("nome") as string) || "").trim();
+  if (!nome) return { ok: false, mensagem: "Nome obrigatório." };
+  const ncm = soDigitos(fd.get("ncm"));
+  if (ncm && ncm.length !== 8) return { ok: false, mensagem: "NCM tem 8 dígitos." };
+  const cest = soDigitos(fd.get("cest"));
+  if (cest && cest.length !== 7) return { ok: false, mensagem: "CEST tem 7 dígitos (ex.: 0302100)." };
+  const cfop = soDigitos(fd.get("cfop"));
+  if (cfop.length !== 4) return { ok: false, mensagem: "CFOP tem 4 dígitos." };
+  const dados = {
+    nome,
+    ncm: ncm || null,
+    cest: cest || null,
+    cfop,
+    csosn: soDigitos(fd.get("csosn")) || "102",
+    origem: soDigitos(fd.get("origem")) || "0",
+    unidade: ((fd.get("unidade") as string) || "UN").trim().toUpperCase().slice(0, 6),
+    pis_cst: soDigitos(fd.get("pis_cst")) || "49",
+    cofins_cst: soDigitos(fd.get("cofins_cst")) || "49",
+    homologado: fd.get("homologado") === "on",
+    obs: ((fd.get("obs") as string) || "").trim() || null,
+  };
+  const { error } = id
+    ? await supabase.from("perfis_fiscais").update(dados).eq("id", id)
+    : await supabase.from("perfis_fiscais").insert(dados);
+  if (error) return { ok: false, mensagem: error.message };
+  revalidatePath("/fiscal/perfis");
+  return { ok: true };
+}
+
+export async function excluirPerfilFiscal(id: string) {
+  await exigirAcesso("/financeiro");
+  const supabase = await createClient();
+  const { error } = await supabase.from("perfis_fiscais").delete().eq("id", id);
+  if (error) return { ok: false, mensagem: error.message };
+  revalidatePath("/fiscal/perfis");
+  return { ok: true };
+}
+
+export async function definirPerfilCategoria(categoriaId: string, perfilId: string | null) {
+  await exigirAcesso("/financeiro");
+  const supabase = await createClient();
+  const { error } = await supabase.from("pdv_categorias").update({ perfil_fiscal_id: perfilId }).eq("id", categoriaId);
+  if (error) return { ok: false, mensagem: error.message };
+  revalidatePath("/fiscal/perfis");
+  return { ok: true };
+}
+
+export async function definirPerfilItem(itemId: string, perfilId: string | null) {
+  await exigirAcesso("/financeiro");
+  const supabase = await createClient();
+  const { error } = await supabase.from("pdv_itens").update({ perfil_fiscal_id: perfilId }).eq("id", itemId);
+  if (error) return { ok: false, mensagem: error.message };
+  revalidatePath("/fiscal/perfis");
+  return { ok: true };
 }
