@@ -207,7 +207,12 @@ export function QuiosqueBalanca({
     } catch {
       // Sistema fora do ar (internet caiu) → fila offline do agente.
       const ok = await capturarViaAgente({ peso: liquido, tara_balanca: taraBalancaRef.current, so_kg: soKgRef.current });
-      if (!ok) voltarAguardando();
+      if (!ok) {
+        // Nem o sistema nem o agente responderam: não some com a pesagem em silêncio.
+        setErro("Sem conexão com o sistema. Chame alguém do caixa para pesar de novo.");
+        setTimeout(() => setErro(""), 8000);
+        voltarAguardando();
+      }
     }
     // O modo marmita fica ligado até a marmita ser retirada (senão a conta do
     // "retire" muda no meio) — é desligado em voltarAguardando().

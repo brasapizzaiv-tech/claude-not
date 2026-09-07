@@ -6,7 +6,7 @@ import type { Comanda } from "./receber";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const num = (s: string) => Number(String(s).replace(".", "").replace(",", ".")) || 0;
+const num = (s: string) => Number(String(s).replace(/\./g, "").replace(",", ".")) || 0;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 type Linha = {
@@ -88,7 +88,11 @@ export function DividirConta({
     const buffetSel = selLinhas.find((l) => l.tipo === "buffet");
     const buffetValor = buffetSel ? valorDe(buffetSel) : 0;
     start(async () => {
-      await pagarValores(comanda.id, itensPag, buffetValor, [{ forma: formaSel, valor: somaSel }]);
+      const r = await pagarValores(comanda.id, itensPag, buffetValor, [{ forma: formaSel, valor: somaSel }]);
+      if (!r.ok) {
+        alert(("mensagem" in r && r.mensagem) || "Não foi possível receber.");
+        return;
+      }
       // Abate o que foi pago de cada linha; remove as quitadas.
       const novas = linhas
         .map((l) => (sel.has(l.key) ? { ...l, restante: r2(l.restante - valorDe(l)) } : l))

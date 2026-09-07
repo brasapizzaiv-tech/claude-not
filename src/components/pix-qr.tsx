@@ -27,10 +27,24 @@ export function PixQr({
   const [pago, setPago] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [gerando, start] = useTransition();
+  const [falhas, setFalhas] = useState(0);
   const onPagoRef = useRef(onPago);
   useEffect(() => {
     onPagoRef.current = onPago;
   }, [onPago]);
+  // Estado atual em ref, pra limpeza ao desmontar (sem closure velha).
+  const atualRef = useRef<{ txid: string; pago: boolean } | null>(null);
+  useEffect(() => {
+    atualRef.current = cob ? { txid: cob.txid, pago } : null;
+  }, [cob, pago]);
+  // Saiu da tela (fechou a conta de outro jeito, trocou a forma): cancela a
+  // cobrança pendente pra não sobrar um QR "fantasma" pagável por 30 min.
+  useEffect(() => {
+    return () => {
+      const a = atualRef.current;
+      if (a && !a.pago) encerrarPixCaixa(a.txid, "cancelado").catch(() => {});
+    };
+  }, []);
 
   useEffect(() => {
     if (!cob) return;
@@ -53,14 +67,28 @@ export function PixQr({
           setPago(true);
           clearInterval(t);
           onPagoRef.current();
+          return;
         }
-      } catch {}
+        setFalhas(r.ok ? 0 : (f) => f + 1);
+      } catch {
+        if (vivo) setFalhas((f) => f + 1);
+      }
     }, 3000);
     return () => { vivo = false; clearInterval(t); };
   }, [cob, pago]);
 
-  // Valor mudou depois de gerar (desconto, outro item): o QR antigo não serve mais.
-  const desatualizado = !!cob && Math.abs(cob.valor - valor) > 0.005;
+  // Valor mudou depois de gerar (desconto, outro item): o QR antigo não serve
+  // mais — cancela na hora e pede pra gerar outro (senão o cliente paga o valor velho).
+  useEffect(() => {
+    if (!cob || pago || Math.abs(cob.valor - valor) <= 0.005) return;
+    const t = setTimeout(() => {
+      encerrarPixCaixa(cob.txid, "cancelado").catch(() => {});
+      setCob(null);
+      setSrc("");
+      setErro(`O valor mudou para ${brl(valor)} — o QR anterior foi cancelado. Gere outro.`);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [valor, cob, pago]);
 
   function gerar() {
     setErro(null);
@@ -99,7 +127,7 @@ export function PixQr({
         >
           {gerando ? "Gerando QR…" : `💠 Gerar QR Code Pix de ${brl(valor)}`}
         </button>
-        {erro && <p className="text-xs text-red-600">Não deu pra gerar o QR: {erro}. Receba o Pix pela chave, como antes.</p>}
+        {erro && <p className="text-xs text-amber-700 dark:text-amber-400">{erro.startsWith("O valor mudou") ? erro : `Não deu pra gerar o QR: ${erro}. Receba o Pix pela chave, como antes.`}</p>}
       </div>
     );
   }
@@ -117,8 +145,8 @@ export function PixQr({
             <img src={src} alt="QR Code Pix" className={`mx-auto ${compacto ? "h-52 w-52" : "h-64 w-64"} rounded-lg bg-white p-1`} />
           )}
           <p className="mt-1 animate-pulse text-xs text-emerald-600">⏳ Aguardando o pagamento… confere sozinho.</p>
-          {desatualizado && (
-            <p className="mt-1 text-xs font-semibold text-amber-600">⚠️ O valor mudou ({brl(valor)}). Cancele e gere o QR de novo.</p>
+          {falhas >= 4 && (
+            <p className="mt-1 text-xs font-semibold text-amber-600">⚠️ Não estou conseguindo consultar o banco. Se o cliente mostrar o comprovante, use &quot;Vi que caiu&quot;.</p>
           )}
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             <button type="button" onClick={copiar} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700">

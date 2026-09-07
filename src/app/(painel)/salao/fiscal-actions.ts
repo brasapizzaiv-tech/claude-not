@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 import { emitirNfce, cancelarNfce, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
@@ -25,6 +26,7 @@ async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
 // autorizada, devolve ela. Códigos fiscais: padrões da Config (fallback típico).
 export async function emitirNfceComanda(comandaId: string, cpf?: string) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const cpfLimpo = (cpf || "").replace(/\D/g, "");
 
   // Já autorizada? devolve.
@@ -160,6 +162,7 @@ export async function emitirNfceComanda(comandaId: string, cpf?: string) {
 // caracteres (exigência da SEFAZ).
 export async function cancelarNfceEmitida(id: string, justificativa: string) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const just = (justificativa || "").trim();
   if (just.length < 15) return { ok: false, mensagem: "A justificativa precisa ter pelo menos 15 caracteres." };
 
@@ -190,6 +193,7 @@ export async function cancelarNfceEmitida(id: string, justificativa: string) {
 // o motivo no log e apaga os itens. Só cancela itens ainda NÃO pagos.
 export async function cancelarItensComanda(itemIds: string[], motivo: string) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const just = (motivo || "").trim();
   if (just.length < 3) return { ok: false, mensagem: "Informe o motivo (mín. 3 caracteres)." };
   if (itemIds.length === 0) return { ok: false, mensagem: "Selecione ao menos um item." };

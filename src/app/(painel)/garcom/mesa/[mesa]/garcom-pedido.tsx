@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { lancarPedidoGarcomLinhas, transferirComanda } from "../../actions";
@@ -46,6 +46,9 @@ export function GarcomPedido({
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
+  // Id do lançamento atual: o mesmo carrinho reenviado (depois de falha de rede)
+  // chega ao servidor com a mesma chave e não duplica o pedido.
+  const lancIdRef = useRef("");
   const [aba, setAba] = useState<string>("Todos");
   const [busca, setBusca] = useState("");
   const [buscaOn, setBuscaOn] = useState(false);
@@ -115,33 +118,52 @@ export function GarcomPedido({
   function transferir() {
     if (!trocaComanda || !trocaMesa) return;
     start(async () => {
-      const r = await transferirComanda(trocaComanda, trocaMesa);
-      if (r.ok) {
-        setTrocaOpen(false);
-        setToast(`Comanda movida para ${trocaMesa}!`);
-        setTimeout(() => router.push(`/garcom/mesa/${encodeURIComponent(trocaMesa)}`), 900);
-      } else {
-        setToast(r.mensagem || "Não foi possível transferir.");
+      try {
+        const r = await transferirComanda(trocaComanda, trocaMesa);
+        if (r.ok) {
+          setTrocaOpen(false);
+          setToast(`Comanda movida para ${trocaMesa}!`);
+          setTimeout(() => router.push(`/garcom/mesa/${encodeURIComponent(trocaMesa)}`), 900);
+        } else {
+          setToast(r.mensagem || "Não foi possível transferir.");
+          setTimeout(() => setToast(null), 3000);
+        }
+      } catch {
+        setToast("Sem conexão. Tente de novo.");
         setTimeout(() => setToast(null), 3000);
       }
     });
   }
 
+  function novoId() {
+    try { return crypto.randomUUID(); } catch { return ""; }
+  }
+
   function lancar() {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || proc) return;
+    if (!lancIdRef.current) lancIdRef.current = novoId();
     start(async () => {
-      const r = await lancarPedidoGarcomLinhas(
-        mesa,
-        cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
-        obs,
-        comandaSel === "nova" ? undefined : comandaSel,
-      );
-      if (r.ok) {
-        setToast("Pedido realizado com sucesso!");
-        setTimeout(() => router.push("/garcom"), 900);
-      } else {
-        setToast(r.mensagem || "Não foi possível lançar.");
-        setTimeout(() => setToast(null), 3000);
+      try {
+        const r = await lancarPedidoGarcomLinhas(
+          mesa,
+          cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
+          obs,
+          comandaSel === "nova" ? undefined : comandaSel,
+          lancIdRef.current || undefined,
+        );
+        if (r.ok) {
+          lancIdRef.current = "";
+          setToast("jaLancado" in r && r.jaLancado ? "Esse pedido já tinha sido lançado ✓" : "Pedido realizado com sucesso!");
+          setTimeout(() => router.push("/garcom"), 900);
+        } else {
+          setToast(r.mensagem || "Não foi possível lançar.");
+          setTimeout(() => setToast(null), 3500);
+        }
+      } catch {
+        // Rede caiu no meio: o carrinho fica como está; ao tentar de novo vai
+        // com a mesma chave, então não duplica se o servidor já tiver gravado.
+        setToast("Sem conexão. Toque em Lançar de novo — não vai duplicar.");
+        setTimeout(() => setToast(null), 4000);
       }
     });
   }

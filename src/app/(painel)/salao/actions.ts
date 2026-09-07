@@ -4,6 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
+import { exigirAcesso } from "@/lib/permissoes-server";
+
+// Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
+// do garçom ainda estava aberta).
+async function comandaAberta(supabase: Awaited<ReturnType<typeof createClient>>, comandaId: string) {
+  const { data } = await supabase.from("pdv_comandas").select("status").eq("id", comandaId).maybeSingle();
+  return data?.status === "aberta";
+}
 
 
 // Preço de venda: promoção ativa (promo_preco > 0) substitui o preço normal.
@@ -428,6 +436,7 @@ export async function alternarMarmita(formData: FormData) {
 
 export async function excluirComanda(formData: FormData) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const id = formData.get("id") as string;
   const motivo = ((formData.get("motivo") as string) || "").trim();
   if (motivo.length < 3) return; // motivo obrigatório
@@ -489,20 +498,23 @@ export async function juntarComandas(formData: FormData) {
 
 export async function adicionarItemComanda(comandaId: string, itemId: string) {
   const supabase = await createClient();
+  if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
   const { data: item } = await supabase
     .from("pdv_itens")
     .select("nome, preco, promo_preco")
     .eq("id", itemId)
     .single();
-  if (!item) return;
-  await supabase.from("pdv_comanda_itens").insert({
+  if (!item) return { ok: false as const, mensagem: "Produto não encontrado." };
+  const { error } = await supabase.from("pdv_comanda_itens").insert({
     comanda_id: comandaId,
     item_id: itemId,
     descricao: item.nome,
     qtd: 1,
     preco_unit: precoVenda(item),
   });
+  if (error) return { ok: false as const, mensagem: "Não consegui adicionar. Tente de novo." };
   revalidatePath(`/salao/comandas/${comandaId}`);
+  return { ok: true as const };
 }
 
 // Monta uma pizza (tamanho + sabores + borda) e adiciona à comanda.
@@ -515,7 +527,8 @@ export async function adicionarPizzaComanda(
   bordaId: string | null,
 ) {
   const supabase = await createClient();
-  if (!tamanhoId || saborIds.length === 0) return;
+  if (!tamanhoId || saborIds.length === 0) return { ok: false as const, mensagem: "Escolha tamanho e sabor." };
+  if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
 
   const [{ data: tam }, { data: sabPrecos }, { data: sabores }] = await Promise.all([
     supabase.from("pdv_pizza_tamanhos").select("nome, max_sabores").eq("id", tamanhoId).single(),
@@ -526,13 +539,13 @@ export async function adicionarPizzaComanda(
       .in("sabor_id", saborIds),
     supabase.from("pdv_pizza_sabores").select("id, nome").in("id", saborIds),
   ]);
-  if (!tam) return;
+  if (!tam) return { ok: false as const, mensagem: "Tamanho não encontrado." };
 
   const ids = saborIds.slice(0, tam.max_sabores);
   const precoDe = new Map((sabPrecos ?? []).map((p) => [p.sabor_id, Number(p.preco)]));
   const nomeDe = new Map((sabores ?? []).map((s) => [s.id, s.nome]));
   const usados = ids.filter((id) => precoDe.has(id));
-  if (usados.length === 0) return;
+  if (usados.length === 0) return { ok: false as const, mensagem: "Sabor sem preço para esse tamanho." };
 
   const media =
     usados.reduce((s, id) => s + (precoDe.get(id) || 0), 0) / usados.length;
@@ -558,13 +571,15 @@ export async function adicionarPizzaComanda(
   const descricao =
     `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : "");
 
-  await supabase.from("pdv_comanda_itens").insert({
+  const { error } = await supabase.from("pdv_comanda_itens").insert({
     comanda_id: comandaId,
     descricao,
     qtd: 1,
     preco_unit: preco,
   });
+  if (error) return { ok: false as const, mensagem: "Não consegui adicionar a pizza. Tente de novo." };
   revalidatePath(`/salao/comandas/${comandaId}`);
+  return { ok: true as const };
 }
 
 // Adiciona um item com complementos (marmita) à comanda.
@@ -575,12 +590,13 @@ export async function adicionarComboComanda(
   opcaoIds: string[],
 ) {
   const supabase = await createClient();
+  if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
   const { data: item } = await supabase
     .from("pdv_itens")
     .select("nome, preco, promo_preco")
     .eq("id", itemId)
     .single();
-  if (!item) return;
+  if (!item) return { ok: false as const, mensagem: "Produto não encontrado." };
 
   const nomes: string[] = [];
   let extra = 0;
@@ -617,20 +633,42 @@ export async function adicionarComboComanda(
     ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}`
     : item.nome;
 
-  await supabase.from("pdv_comanda_itens").insert({
+  const { error } = await supabase.from("pdv_comanda_itens").insert({
     comanda_id: comandaId,
     item_id: itemId,
     descricao,
     qtd: 1,
     preco_unit: preco,
   });
+  if (error) return { ok: false as const, mensagem: "Não consegui adicionar. Tente de novo." };
   revalidatePath(`/salao/comandas/${comandaId}`);
+  return { ok: true as const };
 }
 
 export async function removerItemComanda(formData: FormData) {
   const supabase = await createClient();
+  await exigirAcesso(["/salao", "/garcom"]);
   const id = formData.get("id") as string;
   const comandaId = formData.get("comanda_id") as string;
+  const { data: it } = await supabase
+    .from("pdv_comanda_itens")
+    .select("id, descricao, qtd, preco_unit, pago, comanda_id")
+    .eq("id", id)
+    .maybeSingle();
+  // Item já pago (parcial ou total) não sai por aqui — o dinheiro já entrou.
+  if (!it || it.pago) return;
+  const { data: com } = await supabase.from("pdv_comandas").select("numero, mesa").eq("id", it.comanda_id as string).maybeSingle();
+  const { data: userData } = await supabase.auth.getUser();
+  // Fica no registro de cancelados (tela /salao/cancelados), como o cancelamento com motivo.
+  await supabase.from("pdv_itens_cancelados").insert({
+    comanda_numero: com?.numero ?? null,
+    mesa: com?.mesa ?? null,
+    descricao: (it.descricao as string) || null,
+    qtd: Number(it.qtd),
+    valor: Number(it.qtd) * Number(it.preco_unit),
+    motivo: "Removido na comanda (×)",
+    cancelado_por: userData.user?.id ?? null,
+  });
   await supabase.from("pdv_comanda_itens").delete().eq("id", id);
   revalidatePath(`/salao/comandas/${comandaId}`);
   revalidatePath(`/garcom/comanda/${comandaId}`);
@@ -721,9 +759,11 @@ export async function pagarValores(
   pagamentos: { forma: string; valor: number }[],
 ) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const cfg = await pdvCfg(supabase);
   const fator = 1 + servicoAgora(cfg) / 100;
   const caixaId = await caixaAberto(supabase);
+  if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
 
   for (const it of itensPag) {
     if (!(it.valor > 0)) continue;
@@ -788,10 +828,12 @@ export async function pagarSelecao(
   clienteId?: string | null,
 ) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   if (sel.length === 0 && extras.length === 0) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
   const fator = 1 + servicoAgora(cfg) / 100;
   const caixaId = await caixaAberto(supabase);
+  if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
 
   // Produtos avulsos inseridos no caixa: cria o item na comanda já pago.
   for (const e of extras) {
@@ -815,31 +857,38 @@ export async function pagarSelecao(
   }
 
   const numeros: number[] = [];
+  // Conta o que de fato foi quitado agora. Linha já paga (outro caixa recebeu
+  // antes, ou tela desatualizada) é pulada — senão o caixa lançaria a venda 2×.
+  let quitadosAgora = 0;
   for (const s of sel) {
     for (const itemId of s.itemIds) {
       const { data: row } = await supabase
         .from("pdv_comanda_itens")
-        .select("qtd, preco_unit")
+        .select("qtd, preco_unit, pago")
         .eq("id", itemId)
         .single();
-      if (!row) continue;
+      if (!row || row.pago) continue;
       const payable = Math.round(Number(row.qtd) * Number(row.preco_unit) * fator * 100) / 100;
       await supabase
         .from("pdv_comanda_itens")
         .update({ valor_pago: payable, pago: true })
         .eq("id", itemId);
+      quitadosAgora++;
     }
     if (s.buffet) {
       const { data: c } = await supabase
         .from("pdv_comandas")
-        .select("valor_buffet")
+        .select("valor_buffet, buffet_pago")
         .eq("id", s.comandaId)
         .single();
-      const payable = Math.round(Number(c?.valor_buffet ?? 0) * fator * 100) / 100;
-      await supabase
-        .from("pdv_comandas")
-        .update({ buffet_valor_pago: payable, buffet_pago: true })
-        .eq("id", s.comandaId);
+      if (c && !c.buffet_pago) {
+        const payable = Math.round(Number(c.valor_buffet ?? 0) * fator * 100) / 100;
+        await supabase
+          .from("pdv_comandas")
+          .update({ buffet_valor_pago: payable, buffet_pago: true })
+          .eq("id", s.comandaId);
+        quitadosAgora++;
+      }
     }
     const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", s.comandaId).single();
     if (com?.numero != null) numeros.push(com.numero);
@@ -865,6 +914,10 @@ export async function pagarSelecao(
 
   const totalPago =
     Math.round(pagamentos.reduce((a, p) => a + (p.valor > 0 ? p.valor : 0), 0) * 100) / 100;
+  if (sel.length > 0 && quitadosAgora === 0 && extras.length === 0) {
+    revalidatePath("/salao/caixa");
+    return { ok: false as const, mensagem: "Essa conta já tinha sido recebida (outro caixa?). Nada foi lançado de novo — atualize a tela." };
+  }
   const primeiraComanda = sel[0]?.comandaId ?? extras[0]?.comandaId;
   if (caixaId && primeiraComanda) {
     const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
@@ -893,9 +946,11 @@ export async function receberComandas(
   pagamentos: { forma: string; valor: number }[],
 ) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   if (comandaIds.length === 0) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
   const caixaId = await caixaAberto(supabase);
+  if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
 
   let totalGeral = 0;
   const numeros: number[] = [];
@@ -1005,6 +1060,7 @@ export async function fecharComanda(formData: FormData) {
 
 export async function reabrirComanda(formData: FormData) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const comandaId = formData.get("id") as string;
   await supabase
     .from("pdv_comandas")
@@ -1030,6 +1086,7 @@ async function caixaAberto(supabase: Awaited<ReturnType<typeof createClient>>) {
 
 export async function abrirCaixa(formData: FormData) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const jaAberto = await caixaAberto(supabase);
   if (jaAberto) redirect("/salao/caixa");
   const nome = ((formData.get("nome") as string) || "Caixa").trim();
@@ -1041,6 +1098,7 @@ export async function abrirCaixa(formData: FormData) {
 
 export async function suprimento(formData: FormData) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
   const valor = valorNum(formData.get("valor"));
   if (!caixaId || valor <= 0) return;
@@ -1056,6 +1114,7 @@ export async function suprimento(formData: FormData) {
 
 export async function sangria(formData: FormData) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
   const valor = valorNum(formData.get("valor"));
   if (!caixaId || valor <= 0) return;
@@ -1071,6 +1130,7 @@ export async function sangria(formData: FormData) {
 
 export async function fecharCaixa(formData: FormData) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const caixaId = formData.get("caixa_id") as string;
   await supabase
     .from("pdv_caixas")
@@ -1083,6 +1143,7 @@ export async function fecharCaixa(formData: FormData) {
 // resumo por forma de pagamento, e fecha o caixa.
 export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs: string) {
   const supabase = await createClient();
+  await exigirAcesso("/salao");
   const { data: caixa } = await supabase
     .from("pdv_caixas")
     .select("saldo_inicial")

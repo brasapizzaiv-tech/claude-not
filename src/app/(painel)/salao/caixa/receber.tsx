@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { pagarSelecao } from "../actions";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
@@ -68,6 +68,8 @@ export function ReceberComandas({
   const alvo = autoAbrir ? comandas.find((c) => c.id === autoAbrir) : undefined;
 
   const [proc, start] = useTransition();
+  // Evita receber 2× (clique em Pagar no mesmo instante em que o Pix cai).
+  const confirmandoRef = useRef(false);
   const [sel, setSel] = useState<Set<string>>(alvo ? new Set([alvo.id]) : new Set());
   const [busca, setBusca] = useState("");
   const [carrinho, setCarrinho] = useState<Set<string>>(new Set());
@@ -229,7 +231,13 @@ export function ReceberComandas({
   }
 
   function confirmar() {
-    if (!podeConfirmar) return;
+    if (!podeConfirmar) {
+      // Chamado pelo Pix (caiu) com a tela sem condição de fechar: avisa em vez de sumir.
+      setMsg("Pix recebido, mas a tela não está pronta pra fechar (confira valores/seleção) e clique em Pagar.");
+      return;
+    }
+    if (confirmandoRef.current) return;
+    confirmandoRef.current = true;
     // agrupa as linhas do carrinho por comanda
     const porComanda = new Map<string, { itemIds: string[]; buffet: boolean }>();
     for (const l of linhasCarrinho) {
@@ -271,7 +279,15 @@ export function ReceberComandas({
 
     setMsg(null);
     start(async () => {
-      const r = await pagarSelecao(payload, pagamentos, extrasPayload, clienteSel?.id ?? null);
+      let r: Awaited<ReturnType<typeof pagarSelecao>>;
+      try {
+        r = await pagarSelecao(payload, pagamentos, extrasPayload, clienteSel?.id ?? null);
+      } catch {
+        confirmandoRef.current = false;
+        setMsg("Sem conexão. Atualize a tela antes de tentar de novo (pode já ter recebido).");
+        return;
+      }
+      confirmandoRef.current = false;
       if (r.ok) {
         setMsg(
           `✓ Recebido ${brl(totalPagar)} — comanda(s) ${r.numeros.map((n) => `#${n}`).join(", ")}.` +
@@ -305,7 +321,7 @@ export function ReceberComandas({
         setPessoas("");
         router.refresh();
       } else {
-        setMsg("Não foi possível receber. Tente de novo.");
+        setMsg(("mensagem" in r && r.mensagem) || "Não foi possível receber. Tente de novo.");
       }
     });
   }
@@ -703,7 +719,15 @@ export function ReceberComandas({
                 )}
 
                 {pixAtivo && pixValor > 0 && (
-                  <PixQr valor={pixValor} descricao={pixDescricao} origem="caixa" onPago={confirmar} compacto />
+                  <PixQr
+                    valor={pixValor}
+                    descricao={pixDescricao}
+                    origem="caixa"
+                    // Forma única: o Pix caiu → fecha a conta. Split: só avisa; o caixa
+                    // completa as outras formas e clica em Pagar.
+                    onPago={split ? () => setMsg("✓ Pix recebido. Preencha as outras formas e clique em Pagar.") : confirmar}
+                    compacto
+                  />
                 )}
 
                 <button

@@ -11,9 +11,21 @@ export async function lancarPedidoGarcomLinhas(
   itens: LinhaPedido[],
   observacao?: string,
   comandaId?: string,
+  // Chave de idempotência gerada no celular: se a resposta se perder (Wi-Fi do
+  // salão) e o garçom tentar de novo, o mesmo pedido NÃO é lançado duas vezes.
+  lancamentoIdCliente?: string,
 ) {
   const supabase = await createClient();
   if (!mesa || !Array.isArray(itens) || itens.length === 0) return { ok: false as const, mensagem: "Carrinho vazio." };
+
+  const idCli = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lancamentoIdCliente || "") ? lancamentoIdCliente! : null;
+  if (idCli) {
+    const { data: ja } = await supabase.from("pdv_comanda_itens").select("comanda_id").eq("lancamento_id", idCli).limit(1).maybeSingle();
+    if (ja?.comanda_id) {
+      const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", ja.comanda_id as string).single();
+      return { ok: true as const, comandaId: ja.comanda_id as string, numero: com?.numero as number | undefined, jaLancado: true as const };
+    }
+  }
 
   const linhas = await resolverLinhas(supabase, itens);
   if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };
@@ -32,13 +44,15 @@ export async function lancarPedidoGarcomLinhas(
     cid = com?.id as string | undefined;
     numero = com?.numero as number | undefined;
   } else {
-    const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", cid).single();
-    numero = com?.numero as number | undefined;
+    const { data: com } = await supabase.from("pdv_comandas").select("numero, status").eq("id", cid).maybeSingle();
+    if (!com) return { ok: false as const, mensagem: "Comanda não encontrada." };
+    if (com.status !== "aberta") return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa. Abra uma nova." };
+    numero = com.numero as number | undefined;
   }
   if (!cid) return { ok: false as const, mensagem: "Não foi possível criar a comanda." };
 
   const obs = (observacao || "").trim();
-  const lancamentoId = crypto.randomUUID();
+  const lancamentoId = idCli ?? crypto.randomUUID();
   const rows = linhas.map((l, idx) => ({
     comanda_id: cid,
     item_id: l.itemId,
@@ -48,7 +62,8 @@ export async function lancarPedidoGarcomLinhas(
     criado_por: uid,
     lancamento_id: lancamentoId,
   }));
-  await supabase.from("pdv_comanda_itens").insert(rows);
+  const { error: errIns } = await supabase.from("pdv_comanda_itens").insert(rows);
+  if (errIns) return { ok: false as const, mensagem: "Não consegui gravar o pedido. Tente de novo." };
 
   const itemIds = linhas.map((l) => l.itemId).filter(Boolean) as string[];
   await enfileirarCozinha(supabase, lancamentoId, itemIds);
@@ -146,12 +161,14 @@ export async function transferirComanda(comandaId: string, novaMesa: string) {
   const cid = (comandaId || "").trim();
   const mesa = (novaMesa || "").trim();
   if (!cid || !mesa) return { ok: false as const, mensagem: "Escolha a comanda e a mesa." };
-  const { error } = await supabase
+  const { data: mov, error } = await supabase
     .from("pdv_comandas")
     .update({ mesa })
     .eq("id", cid)
-    .eq("status", "aberta");
+    .eq("status", "aberta")
+    .select("id");
   if (error) return { ok: false as const, mensagem: error.message };
+  if (!mov || mov.length === 0) return { ok: false as const, mensagem: "Essa comanda já foi fechada — não dá mais pra mover." };
   revalidatePath("/garcom");
   revalidatePath("/salao");
   return { ok: true as const };

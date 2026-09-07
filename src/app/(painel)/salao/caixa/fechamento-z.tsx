@@ -42,15 +42,22 @@ export function FechamentoZ({
   function confirmar() {
     if (!confirm("Fechar o caixa agora? Depois de fechado não entra mais venda nele.")) return;
     start(async () => {
-      const r = await fecharCaixaZ(caixaId, contado, obs);
-      if (r.ok) {
-        setFeito({ esperado: r.esperado, contado: r.contado, quebra: r.quebra });
-        setTimeout(() => {
-          try {
-            window.print();
-          } catch {}
-        }, 400);
-        router.refresh();
+      try {
+        const r = await fecharCaixaZ(caixaId, contado, obs);
+        if (r.ok) {
+          setFeito({ esperado: r.esperado, contado: r.contado, quebra: r.quebra });
+          setTimeout(() => {
+            try {
+              window.print();
+            } catch {}
+          }, 400);
+          router.refresh();
+        } else {
+          alert("Não consegui fechar o caixa — ele pode já ter sido fechado em outra tela. Atualize a página.");
+          router.refresh();
+        }
+      } catch {
+        alert("Sem conexão. Atualize a página e confira se o caixa fechou antes de tentar de novo.");
       }
     });
   }

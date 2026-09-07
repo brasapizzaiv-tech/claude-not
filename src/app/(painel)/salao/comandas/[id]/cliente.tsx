@@ -85,7 +85,12 @@ export function LancarItens({
     }
     setAddId(item.id);
     start(async () => {
-      await adicionarItemComanda(comandaId, item.id);
+      try {
+        const r = await adicionarItemComanda(comandaId, item.id);
+        if (!r.ok) alert(r.mensagem);
+      } catch {
+        alert("Sem conexão. Confira se o item entrou antes de tentar de novo.");
+      }
       router.refresh();
       setAddId("");
     });
@@ -235,7 +240,12 @@ function MontarCombo({
   function confirmar() {
     if (faltaMin) return;
     start(async () => {
-      await adicionarComboComanda(comandaId, item.id, todosIds);
+      try {
+        const r = await adicionarComboComanda(comandaId, item.id, todosIds);
+        if (!r.ok) alert(r.mensagem);
+      } catch {
+        alert("Sem conexão. Confira se o item entrou antes de tentar de novo.");
+      }
       router.refresh();
       onFechar();
     });
@@ -407,7 +417,12 @@ export function MontarPizza({
   function add() {
     if (!tamId || sel.length === 0) return;
     start(async () => {
-      await adicionarPizzaComanda(comandaId, tamId, sel, bordaId || null);
+      try {
+        const r = await adicionarPizzaComanda(comandaId, tamId, sel, bordaId || null);
+        if (!r.ok) alert(r.mensagem);
+      } catch {
+        alert("Sem conexão. Confira se a pizza entrou antes de tentar de novo.");
+      }
       setSel([]);
       setBordaId("");
       setBusca("");

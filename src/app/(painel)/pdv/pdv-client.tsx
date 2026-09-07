@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { finalizarVendaPdv } from "./actions";
 import { PixQr } from "@/components/pix-qr";
 
@@ -29,6 +29,8 @@ export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: Item
   const [recebido, setRecebido] = useState("");
   const [feito, setFeito] = useState<Feito | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // Trava contra finalizar duas vezes (toque duplo, ou o QR Pix caindo no mesmo instante do clique).
+  const finalizandoRef = useRef(false);
 
   const abas = ["Todos", ...categorias];
   const corDe = (c: string) => (c === "Todos" ? "#3b82f6" : CORES[categorias.indexOf(c) % CORES.length]);
@@ -51,16 +53,23 @@ export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: Item
   const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd }));
 
   function finalizar(pagamento: { forma: string } | null) {
-    if (cartLista.length === 0) return;
+    if (cartLista.length === 0 || finalizandoRef.current) return;
+    finalizandoRef.current = true;
     const trocoAtual = troco;
     const ehViagem = local === "viagem";
     start(async () => {
-      const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
-      if (r.ok) {
-        setFeito({ numero: r.numero ?? 0, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
-        setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro"); setLocal("aqui");
-      } else {
-        setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
+      try {
+        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
+        if (r.ok) {
+          setFeito({ numero: r.numero ?? 0, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
+          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro"); setLocal("aqui");
+        } else {
+          setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
+        }
+      } catch {
+        setErro("Sem conexão. Tente de novo."); setTimeout(() => setErro(null), 3500);
+      } finally {
+        finalizandoRef.current = false;
       }
     });
   }
@@ -179,7 +188,13 @@ export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: Item
             )}
             <div className="flex-1" />
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-            <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-50">{proc ? "Concluindo..." : "✅ Confirmar e enviar pra cozinha"}</button>
+            {forma === "Pix" && pixAtivo && total > 0 ? (
+              // Com QR na tela, a venda fecha sozinha quando o Pix cai (ou por "Vi que caiu").
+              // Este botão é só pra quem recebeu pela chave, sem QR.
+              <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-xl border border-zinc-300 py-2.5 text-sm font-semibold text-zinc-500 disabled:opacity-50 dark:border-zinc-700">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>
+            ) : (
+              <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-50">{proc ? "Concluindo..." : "✅ Confirmar e enviar pra cozinha"}</button>
+            )}
           </div>
         )}
       </div>

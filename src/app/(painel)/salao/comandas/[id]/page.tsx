@@ -36,7 +36,7 @@ export default async function ComandaPage({
       .select("id, descricao, qtd, preco_unit")
       .eq("comanda_id", id)
       .order("criado_em"),
-    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_categorias")
