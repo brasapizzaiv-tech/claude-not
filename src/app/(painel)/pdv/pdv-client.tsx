@@ -5,6 +5,7 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import { finalizarVendaPdv } from "./actions";
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
+import { NfceAutoToggle, formaEmiteAuto } from "@/components/nfce-auto-toggle";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
@@ -18,7 +19,7 @@ const FORMAS = [
 
 type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
 
-export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean }) {
+export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false } }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean } }) {
   const [proc, start] = useTransition();
   const [aba, setAba] = useState<string>("Todos");
   const [busca, setBusca] = useState("");
@@ -92,7 +93,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: Item
         )}
         {feito.pago && feito.comandaId && (
           <div className="mt-4 text-left">
-            <EmitirNotaCaixa comandas={[{ id: feito.comandaId, numero: feito.numero }]} />
+            <EmitirNotaCaixa comandas={[{ id: feito.comandaId, numero: feito.numero }]} autoIds={nfce.ligado && nfce.producao && formaEmiteAuto(feito.forma ?? "") ? [feito.comandaId] : []} />
           </div>
         )}
         <div className="mt-6 flex justify-center gap-3">
@@ -177,6 +178,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: Item
               <div className="text-sm text-zinc-500">Total a cobrar {local === "viagem" && <span className="font-bold text-amber-600">· 🥡 Viagem</span>}</div>
               <div className="text-3xl font-bold">{brl(total)}</div>
             </div>
+            <div className="mb-2 flex justify-end"><NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} compacto /></div>
             <div className="mb-3 grid grid-cols-3 gap-2">
               {FORMAS.map((f) => (
                 <button key={f.id} onClick={() => setForma(f.id)} className={`rounded-xl border py-3 text-sm font-semibold ${forma === f.id ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 dark:border-zinc-800"}`}>{f.label}</button>

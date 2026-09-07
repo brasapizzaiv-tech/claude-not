@@ -1,14 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { emitirNfceComanda } from "../fiscal-actions";
 
 // Aparece depois de receber no caixa: emite a NFC-e de cada comanda paga e abre
 // o DANFE pra impressão. CPF na nota é opcional (por comanda).
-export function EmitirNotaCaixa({ comandas }: { comandas: { id: string; numero: number }[] }) {
+export function EmitirNotaCaixa({ comandas, autoIds = [] }: { comandas: { id: string; numero: number }[]; autoIds?: string[] }) {
   const [proc, start] = useTransition();
   const [cpf, setCpf] = useState<Record<string, string>>({});
   const [res, setRes] = useState<Record<string, { ok: boolean; msg: string; url?: string | null }>>({});
+  // Nota automática (Pix/cartão): emite uma vez cada comanda indicada, sem clique.
+  const jaAuto = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const id of autoIds) {
+      if (jaAuto.current.has(id)) continue;
+      jaAuto.current.add(id);
+      emitir(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoIds]);
 
   function emitir(id: string) {
     start(async () => {
@@ -27,7 +37,7 @@ export function EmitirNotaCaixa({ comandas }: { comandas: { id: string; numero: 
 
   return (
     <div className="mt-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-      <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">🧾 Emitir NFC-e</p>
+      <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">🧾 Emitir NFC-e {autoIds.length > 0 && <span className="ml-1 text-xs font-normal text-emerald-600">(automática: Pix/cartão)</span>}</p>
       <div className="space-y-2">
         {comandas.map((c) => {
           const r = res[c.id];
@@ -51,7 +61,7 @@ export function EmitirNotaCaixa({ comandas }: { comandas: { id: string; numero: 
                   disabled={proc}
                   className="rounded-lg bg-zinc-800 px-3 py-1 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
                 >
-                  {proc ? "..." : "Emitir"}
+                  {proc ? "Emitindo…" : "Emitir"}
                 </button>
               )}
               {r && !r.ok && <span className="text-sm text-red-600">{r.msg}</span>}

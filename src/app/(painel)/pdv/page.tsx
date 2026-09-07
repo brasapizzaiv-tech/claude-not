@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PdvClient, type ItemMenu } from "./pdv-client";
 import { pixConfigurado } from "@/lib/pix";
+import { lerNfceAuto } from "../salao/fiscal-actions";
 
 export const metadata = { title: "PDV · Brasa" };
 
@@ -28,5 +29,6 @@ export default async function PdvPage() {
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
 
-  return <PdvClient itens={itens} categorias={categorias} pixAtivo={pixConfigurado()} />;
+  const nfce = await lerNfceAuto();
+  return <PdvClient itens={itens} categorias={categorias} pixAtivo={pixConfigurado()} nfce={nfce} />;
 }

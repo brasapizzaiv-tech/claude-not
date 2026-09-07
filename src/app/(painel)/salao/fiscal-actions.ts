@@ -22,6 +22,23 @@ async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
   return cfg;
 }
 
+// Interruptor da NFC-e automática (Pix/cartão). Guardado em config_fiscal.nfce_auto.
+export async function definirNfceAuto(ligado: boolean) {
+  await exigirAcesso(["/salao", "/pdv"]);
+  const supabase = await createClient();
+  await supabase.from("config_fiscal").upsert({ chave: "nfce_auto", valor: ligado ? "1" : "0" });
+  revalidatePath("/salao/caixa");
+  revalidatePath("/pdv");
+  return { ok: true as const };
+}
+
+// Estado da nota automática pra tela: ligada? e o fiscal está em produção?
+export async function lerNfceAuto() {
+  const supabase = await createClient();
+  const cfg = await cfgFiscal(supabase);
+  return { ligado: cfg.nfce_auto === "1", producao: cfg.emissor_ambiente === "producao" && !!cfg.emissor_token };
+}
+
 // Emite a NFC-e de uma comanda (itens + buffet). Idempotente: se já tem uma
 // autorizada, devolve ela. Códigos fiscais: padrões da Config (fallback típico).
 export async function emitirNfceComanda(comandaId: string, cpf?: string) {

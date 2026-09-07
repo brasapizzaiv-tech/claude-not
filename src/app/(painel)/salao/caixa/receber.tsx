@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { pagarSelecao } from "../actions";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
+import { formaEmiteAuto } from "@/components/nfce-auto-toggle";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -54,6 +55,7 @@ export function ReceberComandas({
   menu = [],
   clientes = [],
   pixAtivo = false,
+  nfceAuto = false,
 }: {
   comandas: Comanda[];
   formas: string[];
@@ -62,6 +64,7 @@ export function ReceberComandas({
   menu?: ItemMenu[];
   clientes?: ClienteMini[];
   pixAtivo?: boolean;
+  nfceAuto?: boolean;
 }) {
   const router = useRouter();
   const fator = 1 + servPercent / 100;
@@ -88,6 +91,7 @@ export function ReceberComandas({
   const [abrirCli, setAbrirCli] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [pagas, setPagas] = useState<{ id: string; numero: number }[]>([]);
+  const [autoIds, setAutoIds] = useState<string[]>([]);
   const [recibo, setRecibo] = useState<{
     itens: { numero: number; total: number }[];
     subtotal: number;
@@ -308,7 +312,10 @@ export function ReceberComandas({
             window.print();
           } catch {}
         }, 400);
-        setPagas([...totPorCom.entries()].map(([id, t]) => ({ id, numero: t.numero })));
+        const pagasAgora = [...totPorCom.entries()].map(([id, t]) => ({ id, numero: t.numero }));
+        setPagas(pagasAgora);
+        // Pix/cartão com o interruptor ligado → nota sai sozinha.
+        setAutoIds(nfceAuto && pagamentos.some((p) => formaEmiteAuto(p.forma)) ? pagasAgora.map((p) => p.id) : []);
         setCarrinho(new Set());
         setExtras([]);
         setClienteSel(null);
@@ -745,7 +752,7 @@ export function ReceberComandas({
       )}
 
       {/* Após receber: emitir NFC-e das comandas pagas */}
-      {pagas.length > 0 && <EmitirNotaCaixa comandas={pagas} />}
+      {pagas.length > 0 && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} />}
 
       {/* Cupom de recebimento (só na impressão — térmica) */}
       {recibo && (

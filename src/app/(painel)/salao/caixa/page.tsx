@@ -6,6 +6,8 @@ import { CaixaAcoes } from "./acoes";
 import { FechamentoZ } from "./fechamento-z";
 import { ReceberComandas } from "./receber";
 import { pixConfigurado } from "@/lib/pix";
+import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
+import { lerNfceAuto } from "../fiscal-actions";
 
 const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito"];
 
@@ -166,6 +168,8 @@ export default async function CaixaPage({
   });
   const servPercent = serv;
 
+  const nfce = await lerNfceAuto();
+
   // Cardápio (para "Inserir Produto") e clientes (para "Vincular Cliente").
   const [{ data: menuRows }, { data: cliRows }] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, preco, promo_preco, ativo").order("nome"),
@@ -227,6 +231,7 @@ export default async function CaixaPage({
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          <NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} />
           <Link href="/salao/caixa/pix" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
             💠 Pix recebidos
           </Link>
@@ -255,6 +260,7 @@ export default async function CaixaPage({
           menu={menu}
           clientes={clientes}
           pixAtivo={pixConfigurado()}
+          nfceAuto={nfce.ligado && nfce.producao}
         />
       </div>
 
