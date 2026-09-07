@@ -7,7 +7,7 @@ export const metadata = { title: "Perfis fiscais" };
 export default async function PerfisFiscaisPage() {
   const supabase = await createClient();
   const [{ data: perfis }, { data: cats }, { data: itens }, { data: cfg }] = await Promise.all([
-    supabase.from("perfis_fiscais").select("id, nome, ncm, cest, cfop, csosn, origem, unidade, pis_cst, cofins_cst, homologado, obs, ativo").order("nome"),
+    supabase.from("perfis_fiscais").select("id, nome, ncm, cest, cfop, csosn, origem, unidade, pis_cst, cofins_cst, homologado, obs, ativo, is_cst, is_classificacao, is_aliquota, ibs_cbs_cst, ibs_cbs_classificacao, ibs_uf_aliquota, ibs_mun_aliquota, cbs_aliquota").order("nome"),
     supabase.from("pdv_categorias").select("id, nome, perfil_fiscal_id").order("ordem"),
     supabase.from("pdv_itens").select("id, nome, categoria, perfil_fiscal_id").eq("ativo", true).order("nome"),
     supabase.from("config_fiscal").select("chave, valor").in("chave", ["ncm_buffet", "cfop_padrao", "csosn_padrao"]),

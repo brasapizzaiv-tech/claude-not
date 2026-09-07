@@ -107,6 +107,7 @@ export async function emitirNotaTeste() {
 
 // ---------- Perfis fiscais ----------
 const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+const numOuNull = (v: unknown) => { const t = String(v ?? "").trim().replace(",", "."); return t === "" ? null : (Number(t) || 0); };
 
 export async function salvarPerfilFiscal(fd: FormData) {
   await exigirAcesso("/financeiro");
@@ -132,6 +133,15 @@ export async function salvarPerfilFiscal(fd: FormData) {
     cofins_cst: soDigitos(fd.get("cofins_cst")) || "49",
     homologado: fd.get("homologado") === "on",
     obs: ((fd.get("obs") as string) || "").trim() || null,
+    // Reforma tributária (só guardados por enquanto)
+    is_cst: soDigitos(fd.get("is_cst")) || null,
+    is_classificacao: soDigitos(fd.get("is_classificacao")) || null,
+    is_aliquota: numOuNull(fd.get("is_aliquota")),
+    ibs_cbs_cst: soDigitos(fd.get("ibs_cbs_cst")) || null,
+    ibs_cbs_classificacao: soDigitos(fd.get("ibs_cbs_classificacao")) || null,
+    ibs_uf_aliquota: numOuNull(fd.get("ibs_uf_aliquota")),
+    ibs_mun_aliquota: numOuNull(fd.get("ibs_mun_aliquota")),
+    cbs_aliquota: numOuNull(fd.get("cbs_aliquota")),
   };
   const { error } = id
     ? await supabase.from("perfis_fiscais").update(dados).eq("id", id)
