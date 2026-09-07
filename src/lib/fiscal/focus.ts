@@ -85,6 +85,17 @@ function montaUrls(amb: FocusAmbiente, r: Record<string, unknown>): { urlDanfe?:
   };
 }
 
+// Baixa o PDF do DANFE (URL devolvida na emissão) autenticando com o token.
+export async function baixarDanfe(cfg: CfgFocus, urlDanfe: string): Promise<Buffer | null> {
+  try {
+    const resp = await fetch(urlDanfe, { headers: { Authorization: authHeader(cfg.token) } });
+    if (!resp.ok) return null;
+    return Buffer.from(await resp.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
 export async function emitirNfce(
   cfg: CfgFocus,
   ref: string,

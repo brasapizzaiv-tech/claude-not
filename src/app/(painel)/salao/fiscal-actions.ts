@@ -60,7 +60,7 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
     .limit(1)
     .maybeSingle();
   if (jaTem)
-    return { ok: true, jaEmitida: true, status: "autorizado", numero: jaTem.numero, chave: jaTem.chave, urlDanfe: jaTem.url_danfe, mensagem: undefined as string | undefined };
+    return { ok: true, jaEmitida: true, id: jaTem.id as string, status: "autorizado", numero: jaTem.numero, chave: jaTem.chave, urlDanfe: jaTem.url_danfe, mensagem: undefined as string | undefined };
 
   const cfg = await cfgFiscal(supabase);
   if (cfg.emissor !== "focusnfe") return { ok: false, mensagem: "Emissor não é o Focus na Config fiscal." };
@@ -188,7 +188,7 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
     },
   );
 
-  await supabase.from("nfce_emitidas").insert({
+  const { data: gravada } = await supabase.from("nfce_emitidas").insert({
     comanda_id: comandaId,
     modelo: "nfce",
     ambiente,
@@ -201,11 +201,12 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
     url_xml: r.urlXml ?? null,
     mensagem: r.mensagem ?? null,
     valor: total,
-  });
+  }).select("id").single();
 
   revalidatePath(`/salao/comandas/${comandaId}`);
   return {
     ok: r.ok,
+    id: (gravada?.id as string | undefined) ?? undefined,
     status: r.status,
     numero: r.numero,
     chave: r.chave,
@@ -213,6 +214,22 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
     mensagem: r.mensagem,
     erros: r.erros ? JSON.stringify(r.erros).slice(0, 500) : undefined,
   };
+}
+
+// Manda o cupom da NFC-e (DANFE) pra impressora marcada na Central de
+// Impressões ("Imprime o cupom da NFC-e"). Devolve quantos jobs entraram.
+export async function imprimirNfce(nfceId: string) {
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
+  const supabase = await createClient();
+  const { data: nota } = await supabase.from("nfce_emitidas").select("id, url_danfe, status").eq("id", nfceId).maybeSingle();
+  if (!nota) return { ok: false as const, mensagem: "Nota não encontrada." };
+  if (!nota.url_danfe) return { ok: false as const, mensagem: "Essa nota não tem DANFE pra imprimir." };
+  const { data: imps } = await supabase.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true);
+  const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
+  if (ids.length === 0) return { ok: false as const, mensagem: "Nenhuma impressora marcada pra NFC-e na Central de Impressões." };
+  const { error } = await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "nfce", ref_id: nfceId, impressora_id })));
+  if (error) return { ok: false as const, mensagem: error.message };
+  return { ok: true as const, total: ids.length };
 }
 
 // Cancela uma NFC-e já autorizada (dentro do prazo legal). Justificativa >= 15

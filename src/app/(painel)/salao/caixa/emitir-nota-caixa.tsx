@@ -1,29 +1,35 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { emitirNfceComanda } from "../fiscal-actions";
+import { emitirNfceComanda, imprimirNfce } from "../fiscal-actions";
 
 // Aparece depois de receber no caixa: emite a NFC-e de cada comanda paga e abre
 // o DANFE pra impressão. CPF na nota é opcional (por comanda).
 export function EmitirNotaCaixa({ comandas, autoIds = [] }: { comandas: { id: string; numero: number }[]; autoIds?: string[] }) {
   const [proc, start] = useTransition();
   const [cpf, setCpf] = useState<Record<string, string>>({});
-  const [res, setRes] = useState<Record<string, { ok: boolean; msg: string; url?: string | null }>>({});
+  const [res, setRes] = useState<Record<string, { ok: boolean; msg: string; url?: string | null; nfceId?: string; impressao?: string }>>({});
   // Nota automática (Pix/cartão): a pergunta "CPF ou CNPJ na nota?" fica em
   // destaque e o foco vai pro campo; Enter ou "Sem CPF" emite.
   const autoSet = new Set(autoIds);
   const primeiroAuto = autoIds[0];
+
+  function imprimir(id: string) {
+    const nfceId = res[id]?.nfceId;
+    if (!nfceId) return;
+    start(async () => {
+      const r = await imprimirNfce(nfceId);
+      setRes((s) => ({ ...s, [id]: { ...s[id], impressao: r.ok ? "🖨️ enviada pra impressora" : `⚠️ ${r.mensagem}` } }));
+    });
+  }
 
   function emitir(id: string, docForcado?: string) {
     start(async () => {
       const r = await emitirNfceComanda(id, docForcado ?? (cpf[id] || ""));
       setRes((s) => ({
         ...s,
-        [id]: { ok: r.ok, msg: r.ok ? `✓ NFC-e ${r.numero ?? ""} autorizada` : r.mensagem || "não autorizou", url: r.urlDanfe },
+        [id]: { ok: r.ok, msg: r.ok ? `✓ NFC-e ${r.numero ?? ""} autorizada` : r.mensagem || "não autorizou", url: r.urlDanfe, nfceId: "id" in r ? (r.id as string | undefined) : undefined },
       }));
-      if (r.ok && r.urlDanfe) {
-        try { window.open(r.urlDanfe, "_blank"); } catch {}
-      }
     });
   }
 
@@ -78,9 +84,17 @@ export function EmitirNotaCaixa({ comandas, autoIds = [] }: { comandas: { id: st
                 </button>
               )}
               {r && !r.ok && <span className="text-sm text-red-600">{r.msg}</span>}
+              {r?.ok && !r.impressao && r.nfceId && (
+                <span className="flex items-center gap-1.5 rounded-lg border border-emerald-500 bg-emerald-500/10 px-2 py-1 text-sm">
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">Imprimir nota?</span>
+                  <button onClick={() => imprimir(c.id)} disabled={proc} className="rounded-md bg-emerald-600 px-2.5 py-0.5 text-xs font-semibold text-white disabled:opacity-60">Sim</button>
+                  <button onClick={() => setRes((s) => ({ ...s, [c.id]: { ...s[c.id], impressao: "sem impressão" } }))} className="rounded-md px-2 py-0.5 text-xs text-zinc-500">Não</button>
+                </span>
+              )}
+              {r?.impressao && <span className="text-sm text-zinc-600 dark:text-zinc-300">{r.impressao}</span>}
               {r?.ok && r.url && (
                 <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-sm text-orange-600 underline">
-                  DANFE
+                  PDF
                 </a>
               )}
             </div>

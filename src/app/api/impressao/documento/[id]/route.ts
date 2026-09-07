@@ -4,6 +4,7 @@ import { gerarEtiquetaPdf, type EtiquetaConfig } from "@/lib/etiqueta-pdf";
 import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
 import { gerarMarmitaPdf } from "@/lib/marmita-pdf";
+import { baixarDanfe, type FocusAmbiente } from "@/lib/fiscal/focus";
 
 export const runtime = "nodejs";
 
@@ -102,6 +103,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       ((imp as { etiqueta_config?: EtiquetaConfig | null } | null)?.etiqueta_config) ?? null,
       { moldura: true },
     );
+  } else if (job.tipo === "nfce") {
+    // Cupom da NFC-e: o PDF do DANFE vem do Focus (ref_id = nfce_emitidas.id).
+    const { data: nota } = await admin.from("nfce_emitidas").select("url_danfe, ambiente").eq("id", job.ref_id).maybeSingle();
+    if (!nota?.url_danfe) return new Response("nota sem DANFE", { status: 404 });
+    const { data: cfgRows } = await admin.from("config_fiscal").select("chave, valor").in("chave", ["emissor_token"]);
+    const token = (cfgRows ?? []).find((r) => r.chave === "emissor_token")?.valor ?? "";
+    const b = await baixarDanfe({ token, ambiente: (nota.ambiente as FocusAmbiente) || "producao" }, nota.url_danfe as string);
+    if (!b) return new Response("nao consegui baixar o DANFE", { status: 502 });
+    pdf = b;
   } else if (job.tipo === "teste") {
     const { data: imp } = await admin.from("impressoras").select("nome, comanda_config").eq("id", job.ref_id).maybeSingle();
     const largura = ((imp?.comanda_config as { largura?: number } | null)?.largura) ?? 80;

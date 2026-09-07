@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { cancelarNfceEmitida } from "../fiscal-actions";
+import { cancelarNfceEmitida, imprimirNfce } from "../fiscal-actions";
 
 export type NotaLinha = {
   id: string;
@@ -171,8 +171,16 @@ export function NotasClient({
                   )}
                 </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
+                  {l.urlDanfe && l.status === "autorizado" && (
+                    <button
+                      onClick={() => { imprimirNfce(l.id).then((r) => alert(r.ok ? "Enviada pra impressora." : r.mensagem)).catch(() => alert("Sem conexão.")); }}
+                      className="mr-3 text-emerald-600 hover:underline"
+                    >
+                      Imprimir
+                    </button>
+                  )}
                   {l.urlDanfe && (
-                    <a href={l.urlDanfe} target="_blank" rel="noopener noreferrer" className="mr-3 text-orange-600 hover:underline">DANFE</a>
+                    <a href={l.urlDanfe} target="_blank" rel="noopener noreferrer" className="mr-3 text-orange-600 hover:underline">PDF</a>
                   )}
                   {l.urlXml && (
                     <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-3 text-zinc-500 hover:underline">XML</a>
