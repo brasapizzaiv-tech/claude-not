@@ -41,11 +41,14 @@ export async function lerNfceAuto() {
 
 // Emite a NFC-e de uma comanda (itens + buffet). Idempotente: se já tem uma
 // autorizada, devolve ela. Códigos fiscais: padrões da Config (fallback típico).
-export async function emitirNfceComanda(comandaId: string, cpf?: string) {
+// documento: CPF (11 dígitos) ou CNPJ (14) do consumidor, opcional. Se não vier
+// e a comanda tiver cliente vinculado, usa o documento e o nome dele.
+export async function emitirNfceComanda(comandaId: string, documento?: string) {
   const supabase = await createClient();
   // Caixa do salão, PDV de balcão e delivery emitem nota.
   await exigirAcesso(["/salao", "/pdv", "/delivery"]);
-  const cpfLimpo = (cpf || "").replace(/\D/g, "");
+  let docLimpo = (documento || "").replace(/\D/g, "");
+  let nomeDest: string | undefined;
 
   // Já autorizada? devolve.
   const { data: jaTem } = await supabase
@@ -66,10 +69,21 @@ export async function emitirNfceComanda(comandaId: string, cpf?: string) {
 
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .select("numero, valor_buffet, forma_pagamento")
+    .select("numero, valor_buffet, forma_pagamento, cliente_id")
     .eq("id", comandaId)
     .maybeSingle();
   if (!com) return { ok: false, mensagem: "Comanda não encontrada." };
+  if (!docLimpo && com.cliente_id) {
+    const { data: cli } = await supabase.from("clientes").select("nome, cpf_cnpj").eq("id", com.cliente_id as string).maybeSingle();
+    const d = String((cli as { cpf_cnpj?: string | null } | null)?.cpf_cnpj ?? "").replace(/\D/g, "");
+    if (d.length === 11 || d.length === 14) {
+      docLimpo = d;
+      nomeDest = ((cli as { nome?: string } | null)?.nome ?? "").trim().slice(0, 60) || undefined;
+    }
+  }
+  if (docLimpo && docLimpo.length !== 11 && docLimpo.length !== 14) {
+    return { ok: false, mensagem: "CPF tem 11 dígitos e CNPJ 14. Confira o número." };
+  }
 
   const { data: itensData } = await supabase
     .from("pdv_comanda_itens")
@@ -165,7 +179,9 @@ export async function emitirNfceComanda(comandaId: string, cpf?: string) {
       presenca_comprador: "1",
       modalidade_frete: "9",
       cnpj_emitente: cfg.cnpj ? cfg.cnpj.replace(/\D/g, "") : undefined,
-      cpf: cpfLimpo.length === 11 ? cpfLimpo : undefined,
+      ...(docLimpo.length === 11 ? { cpf_destinatario: docLimpo } : {}),
+      ...(docLimpo.length === 14 ? { cnpj_destinatario: docLimpo } : {}),
+      ...(docLimpo && nomeDest ? { nome_destinatario: nomeDest } : {}),
       serie: (cfg.nfce_serie || "").trim() || undefined,
       items,
       formas_pagamento: [{ forma_pagamento: forma, valor_pagamento: total.toFixed(2) }],
