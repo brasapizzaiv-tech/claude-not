@@ -21,8 +21,8 @@ echo.
 echo  Arquivo: %PFX%
 echo  Digite a senha do certificado quando pedir (ela nao aparece na tela).
 echo.
-"%OPENSSL%" pkcs12 -in "%PFX%" -clcerts -nokeys -out "%SAIDA%\cert.pem" || goto erro
-"%OPENSSL%" pkcs12 -in "%PFX%" -nocerts -nodes -out "%SAIDA%\key.pem" || goto erro
+"%OPENSSL%" pkcs12 -legacy -in "%PFX%" -clcerts -nokeys -out "%SAIDA%\cert.pem" || goto erro
+"%OPENSSL%" pkcs12 -legacy -in "%PFX%" -nocerts -nodes -out "%SAIDA%\key.pem" || goto erro
 "%OPENSSL%" base64 -A -in "%SAIDA%\cert.pem" -out "%SAIDA%\PIX_SICOOB_CERT_B64.txt" || goto erro
 "%OPENSSL%" base64 -A -in "%SAIDA%\key.pem" -out "%SAIDA%\PIX_SICOOB_KEY_B64.txt" || goto erro
 del "%SAIDA%\cert.pem" "%SAIDA%\key.pem"
