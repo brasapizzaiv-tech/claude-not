@@ -19,10 +19,11 @@ export function TesteNota() {
 
   return (
     <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <h2 className="mb-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Testar emissão (homologação)</h2>
+      <h2 className="mb-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Testar emissão (só em homologação)</h2>
       <p className="mb-3 text-[11px] text-zinc-400">
         Emite uma <b>NFC-e de teste</b> (sem valor fiscal) para conferir se o token, o
-        certificado (no Focus) e o CSC estão certos. Salve a configuração antes.
+        certificado (no Focus) e o CSC estão certos. Salve a configuração antes. Em produção
+        este botão não roda: o teste é uma venda real de R$ 1 no caixa.
       </p>
       <button
         type="button"

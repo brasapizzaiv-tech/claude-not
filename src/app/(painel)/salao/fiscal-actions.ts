@@ -148,6 +148,7 @@ export async function emitirNfceComanda(comandaId: string, cpf?: string) {
       modalidade_frete: "9",
       cnpj_emitente: cfg.cnpj ? cfg.cnpj.replace(/\D/g, "") : undefined,
       cpf: cpfLimpo.length === 11 ? cpfLimpo : undefined,
+      serie: (cfg.nfce_serie || "").trim() || undefined,
       items,
       formas_pagamento: [{ forma_pagamento: forma, valor_pagamento: total.toFixed(2) }],
     },

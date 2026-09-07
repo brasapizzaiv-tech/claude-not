@@ -29,6 +29,7 @@ export async function salvarConfigFiscal(formData: FormData) {
     "cfop_padrao",
     "csosn_padrao",
     "ncm_buffet",
+    "nfce_serie",
   ];
   const linhas = campos.map((chave) => ({
     chave,
@@ -50,6 +51,18 @@ export async function emitirNotaTeste() {
   if (cfg.emissor !== "focusnfe") return { ok: false, mensagem: "Emissor não é o Focus NFe na Config fiscal." };
   if (!cfg.emissor_token) return { ok: false, mensagem: "Falta o token de API na Config fiscal." };
   const ambiente = (cfg.emissor_ambiente as FocusAmbiente) || "homologacao";
+  if (ambiente === "producao") {
+    return {
+      ok: false,
+      status: undefined,
+      statusHttp: 0,
+      numero: undefined,
+      chave: undefined,
+      urlDanfe: undefined,
+      mensagem: "Em PRODUÇÃO a nota de teste não roda — seria uma nota real. Faça uma venda de R$ 1 no caixa e emita a NFC-e dela; se precisar, cancele em até 30 minutos.",
+      erros: undefined,
+    };
+  }
 
   // Horário de Brasília (UTC-3) com o fuso -03:00. Tira um minutinho pra nunca
   // ficar à frente do relógio da SEFAZ (senão rejeita "data posterior").
@@ -73,6 +86,7 @@ export async function emitirNotaTeste() {
       presenca_comprador: "1",
       modalidade_frete: "9",
       cnpj_emitente: cfg.cnpj ? cfg.cnpj.replace(/\D/g, "") : undefined,
+      serie: (cfg.nfce_serie || "").trim() || undefined,
       items: [
         {
           numero_item: "1",

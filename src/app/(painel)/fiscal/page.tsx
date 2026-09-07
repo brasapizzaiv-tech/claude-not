@@ -36,6 +36,23 @@ export default async function FiscalPage() {
         <span className="font-semibold text-orange-600">Abrir →</span>
       </Link>
 
+      {v("emissor_ambiente") === "producao" ? (
+        <div className="mt-4 rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+          🔴 <b>PRODUÇÃO ligada</b>: toda NFC-e emitida no caixa vale de verdade na SEFAZ (série {v("nfce_serie") || "padrão do Focus"}).
+        </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="font-semibold">Checklist pra ligar a produção</p>
+          <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-zinc-600 dark:text-zinc-300">
+            <li>Nota de teste em homologação <b>autorizada</b> (botão lá embaixo).</li>
+            <li>No painel do Focus: certificado A1 da empresa enviado e <b>CSC + ID do CSC de produção</b> cadastrados (aba Documentos Fiscais → NFC-e). Pode ser o mesmo CSC que o Suitable usa (ID 1).</li>
+            <li>No painel do Focus: copiar o <b>token de produção</b> (é diferente do de homologação).</li>
+            <li>Aqui: série <b>11</b> (o Suitable usa a 10 — não pode repetir), ambiente <b>Produção</b>, token de produção, e Salvar.</li>
+            <li>Fazer uma venda de R$ 1 no caixa e emitir a NFC-e dela. Conferir a nota no site da SEFAZ-RS pelo QR do cupom.</li>
+          </ol>
+        </div>
+      )}
+
       <form action={salvarConfigFiscal} className="mt-6 space-y-6">
         {/* Empresa */}
         <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
@@ -86,9 +103,14 @@ export default async function FiscalPage() {
                 <option value="producao">Produção (valendo)</option>
               </select>
             </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Série da NFC-e</label>
+              <input name="nfce_serie" defaultValue={v("nfce_serie")} placeholder="Ex.: 11" inputMode="numeric" className={campo} />
+            </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs text-zinc-500">Token de API do emissor</label>
-              <input name="emissor_token" defaultValue={v("emissor_token")} placeholder="cole aqui o token do sandbox" className={campo} />
+              <label className="mb-1 block text-xs text-zinc-500">Token de API do emissor ({v("emissor_ambiente") === "producao" ? "PRODUÇÃO" : "homologação"})</label>
+              <input name="emissor_token" defaultValue={v("emissor_token")} placeholder="token do Focus" className={campo} />
+              <p className="mt-1 text-[11px] text-zinc-400">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto.</p>
             </div>
             <Campo nome="csc" def={v("csc")} label="CSC (código do QR)" />
             <Campo nome="csc_id" def={v("csc_id")} label="ID do CSC" />
