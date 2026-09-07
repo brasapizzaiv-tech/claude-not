@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PdvClient, type ItemMenu } from "./pdv-client";
+import { pixConfigurado } from "@/lib/pix";
 
 export const metadata = { title: "PDV · Brasa" };
 
@@ -27,5 +28,5 @@ export default async function PdvPage() {
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
 
-  return <PdvClient itens={itens} categorias={categorias} />;
+  return <PdvClient itens={itens} categorias={categorias} pixAtivo={pixConfigurado()} />;
 }

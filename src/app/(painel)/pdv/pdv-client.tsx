@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { finalizarVendaPdv } from "./actions";
+import { PixQr } from "@/components/pix-qr";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
@@ -16,7 +17,7 @@ const FORMAS = [
 
 type Feito = { numero: number; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
 
-export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias: string[] }) {
+export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean }) {
   const [proc, start] = useTransition();
   const [aba, setAba] = useState<string>("Todos");
   const [busca, setBusca] = useState("");
@@ -172,6 +173,9 @@ export function PdvClient({ itens, categorias }: { itens: ItemMenu[]; categorias
                 <input value={recebido} onChange={(e) => setRecebido(e.target.value)} inputMode="decimal" placeholder="Ex.: 50" className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2.5 text-lg outline-none dark:border-zinc-700" />
                 <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
               </div>
+            )}
+            {forma === "Pix" && pixAtivo && total > 0 && (
+              <div className="mb-3"><PixQr valor={total} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma: "Pix" })} compacto /></div>
             )}
             <div className="flex-1" />
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}

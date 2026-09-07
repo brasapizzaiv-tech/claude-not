@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { pagarSelecao } from "../actions";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
+import { PixQr } from "@/components/pix-qr";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -52,6 +53,7 @@ export function ReceberComandas({
   autoAbrir,
   menu = [],
   clientes = [],
+  pixAtivo = false,
 }: {
   comandas: Comanda[];
   formas: string[];
@@ -59,6 +61,7 @@ export function ReceberComandas({
   autoAbrir?: string;
   menu?: ItemMenu[];
   clientes?: ClienteMini[];
+  pixAtivo?: boolean;
 }) {
   const router = useRouter();
   const fator = 1 + servPercent / 100;
@@ -153,6 +156,9 @@ export function ReceberComandas({
   const somaSplit = formas.reduce((s, f) => s + num(linhasPg[f] ?? ""), 0);
   const faltaSplit = Math.round((totalPagar - somaSplit) * 100) / 100;
   const troco = formaSel === "Dinheiro" && recebido ? num(recebido) - totalPagar : 0;
+  // Pix na tela: valor do QR = total (forma única) ou a parte "Pix" do split.
+  const pixValor = split ? Math.round(num(linhasPg["Pix"] ?? "") * 100) / 100 : formaSel === "Pix" ? totalPagar : 0;
+  const pixDescricao = `Brasa comanda ${selComandas.map((c) => `#${c.numero}`).join(" ")}`.slice(0, 120);
 
   const podeConfirmar =
     temAlgo &&
@@ -694,6 +700,10 @@ export function ReceberComandas({
                       </>
                     )}
                   </>
+                )}
+
+                {pixAtivo && pixValor > 0 && (
+                  <PixQr valor={pixValor} descricao={pixDescricao} origem="caixa" onPago={confirmar} compacto />
                 )}
 
                 <button

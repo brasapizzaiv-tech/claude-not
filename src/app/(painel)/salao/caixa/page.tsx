@@ -5,6 +5,7 @@ import { servicoAgora } from "../util";
 import { CaixaAcoes } from "./acoes";
 import { FechamentoZ } from "./fechamento-z";
 import { ReceberComandas } from "./receber";
+import { pixConfigurado } from "@/lib/pix";
 
 const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito"];
 
@@ -249,6 +250,7 @@ export default async function CaixaPage({
           autoAbrir={abrir}
           menu={menu}
           clientes={clientes}
+          pixAtivo={pixConfigurado()}
         />
       </div>
 
