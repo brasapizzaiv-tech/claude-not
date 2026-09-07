@@ -10,7 +10,7 @@
 //       Sicoob não usa client_secret — a identidade é o certificado + client_id.
 //   PIX_SICOOB_TOKEN_SANDBOX — token fixo que o portal mostra pro sandbox
 //       (no sandbox não tem OAuth nem certificado)
-//   PIX_SICOOB_ESCOPOS      — padrão "cob.read cob.write pix.read"
+//   PIX_SICOOB_ESCOPOS      — padrão "cob.read cob.write pix.read pix.write" (pix.write = devolução)
 //
 // SICREDI ("Guia Técnico Integração API Pix Sicredi v2.1"):
 //   PIX_SICREDI_CLIENT_ID / PIX_SICREDI_CLIENT_SECRET — credenciais geradas NO
@@ -64,7 +64,7 @@ const URL_TOKEN =
   (BANCO === "sicoob"
     ? "https://auth.sicoob.com.br/auth/realms/cooperado/protocol/openid-connect/token"
     : `${SICREDI_BASE}/oauth/token`);
-const ESCOPOS = (env("ESCOPOS") || (BANCO === "sicoob" ? "cob.read cob.write pix.read" : "cob.read cob.write")).trim();
+const ESCOPOS = (env("ESCOPOS") || (BANCO === "sicoob" ? "cob.read cob.write pix.read pix.write" : "cob.read cob.write")).trim();
 const TOKEN_SANDBOX = BANCO === "sicoob" && AMBIENTE === "sandbox" ? process.env.PIX_SICOOB_TOKEN_SANDBOX || "" : "";
 
 export function pixBanco(): Banco {
@@ -213,7 +213,8 @@ export async function consultarCobrancaPix(txid: string) {
   const recebido = Math.round((j.pix ?? []).reduce((s, p) => s + (Number(p.valor) || 0), 0) * 100) / 100;
   const temPix = (j.pix ?? []).length > 0;
   const pago = temPix && (original <= 0 || recebido >= original - 0.005);
-  return { status: j.status ?? "ATIVA", pago, recebido, original, temPix, ambiente: AMBIENTE };
+  const e2eid = (j.pix ?? []).find((p) => p.endToEndId)?.endToEndId ?? null;
+  return { status: j.status ?? "ATIVA", pago, recebido, original, temPix, e2eid, ambiente: AMBIENTE };
 }
 
 // Diagnóstico pra tela de config (sem expor valores): banco, ambiente e quais
@@ -237,4 +238,22 @@ export async function testarPix() {
   } catch (e) {
     return { ok: false as const, ms: Date.now() - t0, erro: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
   }
+}
+
+// Devolução (estorno) de um Pix recebido: PUT /pix/{e2eid}/devolucao/{id}.
+// Padrão BACEN — o banco manda o dinheiro de volta pra conta de quem pagou.
+// id: até 35 caracteres alfanuméricos, único por e2eid.
+export async function devolverPix(e2eid: string, idDevolucao: string, valor: number) {
+  const r = await ufetch(`${URL_COB}/pix/${encodeURIComponent(e2eid)}/devolucao/${idDevolucao}`, {
+    method: "PUT",
+    headers: { ...(await headersApi()), "Content-Type": "application/json" },
+    body: JSON.stringify({ valor: valor.toFixed(2) }),
+    dispatcher: getDispatcher(),
+  });
+  const j = (await r.json().catch(() => null)) as { id?: string; rtrId?: string; status?: string; detail?: string; title?: string; violacoes?: { razao?: string }[] } | null;
+  if (!r.ok) {
+    const det = j?.violacoes?.[0]?.razao || j?.detail || j?.title || "";
+    throw new Error(`devolução HTTP ${r.status}${det ? `: ${det}` : ""}`);
+  }
+  return { id: j?.id ?? idDevolucao, rtrId: j?.rtrId ?? null, status: j?.status ?? "EM_PROCESSAMENTO" };
 }

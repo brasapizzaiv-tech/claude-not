@@ -45,6 +45,7 @@ export default async function CaixaPage({
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Frente de Caixa</h1>
         <p className="mt-1 text-zinc-500">Nenhum caixa aberto. Abra um para começar a receber.</p>
+        <Link href="/salao/caixa/pix" className="mt-2 inline-block text-sm text-orange-600 hover:underline">💠 Pix recebidos / estornar</Link>
 
         <form
           action={abrirCaixa}
@@ -226,6 +227,9 @@ export default async function CaixaPage({
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          <Link href="/salao/caixa/pix" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
+            💠 Pix recebidos
+          </Link>
           <CaixaAcoes caixaId={caixa.id} />
           <FechamentoZ
             caixaId={caixa.id}
