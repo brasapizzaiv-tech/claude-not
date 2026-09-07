@@ -89,7 +89,6 @@ export function Sidebar({
       itens: [
         ...so(has("salao"), { href: "/salao/balanca", label: "Balança do buffet", icon: "⚖️" }),
         ...so(has("etiquetas"), { href: "/etiquetas", label: "Etiquetas de validade", icon: "🏷️" }),
-        ...so(has("impressao"), { href: "/impressao", label: "Central de impressões", icon: "🖨️" }),
       ],
     },
     {
@@ -141,6 +140,7 @@ export function Sidebar({
       key: "config", label: "Configurações", icon: "⚙️",
       itens: [
         ...so(has("financeiro"), { href: "/fiscal", label: "Config fiscal", icon: "🧾" }),
+        ...so(has("impressao"), { href: "/impressao", label: "Central de impressões", icon: "🖨️" }),
         { href: "/clientes", label: "Clientes (NF-e)", icon: "🧑" },
         ...so(admin, { href: "/usuarios", label: "Usuários e permissões", icon: "🔑" }),
       ],
