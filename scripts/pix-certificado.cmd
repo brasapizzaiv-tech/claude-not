@@ -6,8 +6,8 @@ echo.
 echo  Este programa transforma o certificado (.pfx) nos dois textos que a Vercel precisa
 echo  (PIX_SICOOB_CERT_B64 e PIX_SICOOB_KEY_B64). A senha fica so no seu computador.
 echo.
-set "OPENSSL=C:\Program Files\Git\usr\bin\openssl.exe"
-if not exist "%OPENSSL%" set "OPENSSL=C:\Program Files\Git\mingw64\bin\openssl.exe"
+set "OPENSSL=C:Program FilesGitmingw64binopenssl.exe"
+if not exist "%OPENSSL%" set "OPENSSL=C:Program FilesGitSrbinopenssl.exe"
 if not exist "%OPENSSL%" (
   echo  ERRO: nao achei o openssl do Git. Instale o Git for Windows e rode de novo.
   pause & exit /b 1
