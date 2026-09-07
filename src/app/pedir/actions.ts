@@ -6,7 +6,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
-import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix-sicredi";
+import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export type { LinhaPedido } from "@/lib/delivery-core";

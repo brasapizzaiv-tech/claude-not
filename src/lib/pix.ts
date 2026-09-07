@@ -1,46 +1,81 @@
-// Pix via API Pix do SICREDI (padrão BACEN; conforme "Guia Técnico Integração
-// API Pix Sicredi v2.1"). Roda só no servidor.
+// Pix via API Pix padrão BACEN. Roda só no servidor. Dois bancos suportados,
+// escolhido por PIX_BANCO = "sicoob" | "sicredi" (padrão: o que tiver client id).
 //
-// Variáveis de ambiente (Vercel):
+// SICOOB (developers.sicoob.com.br → Meus Aplicativos → API Pix):
+//   PIX_SICOOB_CLIENT_ID    — Client ID da aplicação criada no portal
+//   PIX_SICOOB_CHAVE        — chave Pix da conta da Brasa no Sicoob
+//   PIX_SICOOB_AMBIENTE     — "sandbox" (padrão) ou "producao"
+//   PIX_SICOOB_CERT_B64 / PIX_SICOOB_KEY_B64 — certificado e-CNPJ A1 (ICP-Brasil,
+//       o MESMO da nota fiscal) em PEM, base64. Produção exige mTLS com ele; o
+//       Sicoob não usa client_secret — a identidade é o certificado + client_id.
+//   PIX_SICOOB_TOKEN_SANDBOX — token fixo que o portal mostra pro sandbox
+//       (no sandbox não tem OAuth nem certificado)
+//   PIX_SICOOB_ESCOPOS      — padrão "cob.read cob.write pix.read"
+//
+// SICREDI ("Guia Técnico Integração API Pix Sicredi v2.1"):
 //   PIX_SICREDI_CLIENT_ID / PIX_SICREDI_CLIENT_SECRET — credenciais geradas NO
 //       PORTAL a partir do CERTIFICADO VALIDADO (Certificados e Credenciais →
 //       Gerar Credenciais). Credencial de app OAuth genérica não serve.
-//       Homologação: credenciais vêm pelo Internet Banking (Acesso à API Pix).
-//   PIX_SICREDI_CHAVE       — a chave Pix da conta da Brasa (CNPJ/e-mail/aleatória)
+//   PIX_SICREDI_CHAVE       — a chave Pix da conta da Brasa
 //   PIX_SICREDI_AMBIENTE    — "sandbox" (padrão, api-pix-h) ou "producao"
-//   PIX_SICREDI_CERT_B64 / PIX_SICREDI_KEY_B64 — certificado validado (.CER em
-//       PEM) e chave privada SEM SENHA (.KEY), em BASE64. mTLS é exigido nos
-//       DOIS ambientes. PIX_SICREDI_CA_B64 (opcional) — cadeia completa Sicredi.
-//   PIX_SICREDI_ESCOPOS     — padrão "cob.read cob.write" (tem que bater com o
-//       que a cooperativa liberou; pedir escopo não liberado dá 400)
+//   PIX_SICREDI_CERT_B64 / PIX_SICREDI_KEY_B64 — certificado validado pelo Sicredi
+//       e chave privada SEM SENHA, em BASE64 (mTLS nos DOIS ambientes).
+//       PIX_SICREDI_CA_B64 (opcional) — cadeia completa Sicredi.
+//   PIX_SICREDI_ESCOPOS     — padrão "cob.read cob.write"
 //   PIX_SICREDI_COB_VERSAO  — "v3" (padrão do Sicredi) ou "v2"
 //   PIX_SICREDI_URL_API / PIX_SICREDI_URL_TOKEN — só se precisar sobrescrever
 import { Agent, fetch as ufetch } from "undici";
 
-const AMBIENTE = process.env.PIX_SICREDI_AMBIENTE === "producao" ? "producao" : "sandbox";
-const URL_API =
-  process.env.PIX_SICREDI_URL_API ||
-  (AMBIENTE === "producao" ? "https://api-pix.sicredi.com.br" : "https://api-pix-h.sicredi.com.br");
-const URL_TOKEN = process.env.PIX_SICREDI_URL_TOKEN || `${URL_API}/oauth/token`;
-const CLIENT_ID = process.env.PIX_SICREDI_CLIENT_ID || "";
-const CLIENT_SECRET = process.env.PIX_SICREDI_CLIENT_SECRET || "";
-const CHAVE_PIX = process.env.PIX_SICREDI_CHAVE || "";
-const ESCOPOS = (process.env.PIX_SICREDI_ESCOPOS || "cob.read cob.write").trim();
-const COB_VERSAO = process.env.PIX_SICREDI_COB_VERSAO === "v2" ? "v2" : "v3";
+type Banco = "sicoob" | "sicredi";
+const BANCO: Banco =
+  process.env.PIX_BANCO === "sicoob" || process.env.PIX_BANCO === "sicredi"
+    ? (process.env.PIX_BANCO as Banco)
+    : process.env.PIX_SICOOB_CLIENT_ID
+      ? "sicoob"
+      : "sicredi";
 
-export function pixConfigurado() {
-  return !!(CLIENT_ID && CLIENT_SECRET && CHAVE_PIX);
+const env = (nome: string) => process.env[`PIX_${BANCO.toUpperCase()}_${nome}`] || "";
+const AMBIENTE = env("AMBIENTE") === "producao" ? "producao" : "sandbox";
+const CLIENT_ID = env("CLIENT_ID");
+const CLIENT_SECRET = env("CLIENT_SECRET");
+const CHAVE_PIX = env("CHAVE");
+
+// Endereços por banco. URL_COB já inclui o prefixo até antes de "/cob".
+const SICREDI_BASE = AMBIENTE === "producao" ? "https://api-pix.sicredi.com.br" : "https://api-pix-h.sicredi.com.br";
+const URL_COB =
+  env("URL_API") ||
+  (BANCO === "sicoob"
+    ? AMBIENTE === "producao"
+      ? "https://api.sicoob.com.br/pix/api/v2"
+      : "https://sandbox.sicoob.com.br/sicoob/sandbox/pix/api/v2"
+    : `${SICREDI_BASE}/api/${process.env.PIX_SICREDI_COB_VERSAO === "v2" ? "v2" : "v3"}`);
+const URL_TOKEN =
+  env("URL_TOKEN") ||
+  (BANCO === "sicoob"
+    ? "https://auth.sicoob.com.br/auth/realms/cooperado/protocol/openid-connect/token"
+    : `${SICREDI_BASE}/oauth/token`);
+const ESCOPOS = (env("ESCOPOS") || (BANCO === "sicoob" ? "cob.read cob.write pix.read" : "cob.read cob.write")).trim();
+const TOKEN_SANDBOX = BANCO === "sicoob" && AMBIENTE === "sandbox" ? process.env.PIX_SICOOB_TOKEN_SANDBOX || "" : "";
+
+export function pixBanco(): Banco {
+  return BANCO;
 }
 
-// mTLS (certificado validado pelo Sicredi + chave privada) — exigido em
-// homologação e produção. Sem cert/key a API responde 403.
+export function pixConfigurado() {
+  if (!CLIENT_ID || !CHAVE_PIX) return false;
+  if (BANCO === "sicoob") return !!(TOKEN_SANDBOX || (env("CERT_B64") && env("KEY_B64")));
+  return !!CLIENT_SECRET;
+}
+
+// mTLS (certificado + chave privada). Sicredi: exigido em homologação e
+// produção. Sicoob: exigido em produção (e-CNPJ A1); sandbox vai sem.
 let dispatcher: Agent | undefined;
 function getDispatcher() {
   if (dispatcher) return dispatcher;
   const b64 = (v?: string) => (v ? Buffer.from(v, "base64").toString("utf8") : undefined);
-  const cert = b64(process.env.PIX_SICREDI_CERT_B64);
-  const key = b64(process.env.PIX_SICREDI_KEY_B64);
-  const ca = b64(process.env.PIX_SICREDI_CA_B64);
+  const cert = b64(env("CERT_B64"));
+  const key = b64(env("KEY_B64"));
+  const ca = b64(env("CA_B64"));
   dispatcher = new Agent({ connect: { ...(cert && key ? { cert, key } : {}), ...(ca ? { ca } : {}) } });
   return dispatcher;
 }
@@ -49,19 +84,30 @@ function getDispatcher() {
 // em 300 s e pode bloquear o IP por excesso de pedidos de token).
 let tokenCache: { token: string; expira: number } | null = null;
 async function obterToken(): Promise<string> {
+  if (TOKEN_SANDBOX) return TOKEN_SANDBOX;
   if (tokenCache && Date.now() < tokenCache.expira) return tokenCache.token;
-  const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
+  const headers: Record<string, string> = { "Content-Type": "application/x-www-form-urlencoded" };
   const form = new URLSearchParams({ grant_type: "client_credentials", scope: ESCOPOS });
-  const r = await ufetch(`${URL_TOKEN}?grant_type=client_credentials`, {
-    method: "POST",
-    headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/x-www-form-urlencoded" },
-    body: form.toString(),
-    dispatcher: getDispatcher(),
-  });
+  let url = URL_TOKEN;
+  if (BANCO === "sicoob") {
+    // Sicoob: sem secret — client_id no corpo, identidade vem do certificado (mTLS).
+    form.set("client_id", CLIENT_ID);
+  } else {
+    headers.Authorization = `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`;
+    url = `${URL_TOKEN}?grant_type=client_credentials`;
+  }
+  const r = await ufetch(url, { method: "POST", headers, body: form.toString(), dispatcher: getDispatcher() });
   if (!r.ok) throw new Error(`token HTTP ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
   const j = (await r.json()) as { access_token: string; expires_in?: number };
   tokenCache = { token: j.access_token, expira: Date.now() + (Number(j.expires_in ?? 300) - 30) * 1000 };
   return j.access_token;
+}
+
+// Cabeçalhos de toda chamada à API (o Sicoob exige o client_id também no header).
+async function headersApi(): Promise<Record<string, string>> {
+  const h: Record<string, string> = { Authorization: `Bearer ${await obterToken()}` };
+  if (BANCO === "sicoob") h.client_id = CLIENT_ID;
+  return h;
 }
 
 // ---------- BR Code (copia-e-cola) — payload dinâmico padrão BACEN ----------
@@ -105,7 +151,7 @@ export function gerarTxid(): string {
   return t;
 }
 
-// Cria a cobrança imediata (PUT /api/v3/cob/{txid} no Sicredi) e devolve o copia-e-cola.
+// Cria a cobrança imediata (PUT .../cob/{txid}, padrão BACEN) e devolve o copia-e-cola.
 export async function criarCobrancaPix(dados: {
   txid: string;
   valor: number;
@@ -113,20 +159,19 @@ export async function criarCobrancaPix(dados: {
   expiracaoSeg?: number;
   descricao?: string;
 }) {
-  const token = await obterToken();
   // devedor só com nome não é aceito pelo padrão BACEN (exige cpf/cnpj junto);
   // o nome do cliente vai em infoAdicionais, que aparece pro pagador.
   const body = {
     calendario: { expiracao: dados.expiracaoSeg ?? 1800 },
-    // modalidadeAlteracao 0 = pagador NÃO pode mudar o valor (recomendação do Sicredi)
+    // modalidadeAlteracao 0 = pagador NÃO pode mudar o valor 
     valor: { original: dados.valor.toFixed(2), modalidadeAlteracao: 0 },
     chave: CHAVE_PIX,
     solicitacaoPagador: (dados.descricao ?? "Pedido Brasa").slice(0, 140),
     ...(dados.nomeDevedor ? { infoAdicionais: [{ nome: "Cliente", valor: dados.nomeDevedor.slice(0, 200) }] } : {}),
   };
-  const r = await ufetch(`${URL_API}/api/${COB_VERSAO}/cob/${dados.txid}`, {
+  const r = await ufetch(`${URL_COB}/cob/${dados.txid}`, {
     method: "PUT",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: { ...(await headersApi()), "Content-Type": "application/json" },
     body: JSON.stringify(body),
     dispatcher: getDispatcher(),
   });
@@ -141,9 +186,8 @@ export async function criarCobrancaPix(dados: {
 
 // Consulta a cobrança: status CONCLUIDA = pago.
 export async function consultarCobrancaPix(txid: string) {
-  const token = await obterToken();
-  const r = await ufetch(`${URL_API}/api/${COB_VERSAO}/cob/${txid}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const r = await ufetch(`${URL_COB}/cob/${txid}`, {
+    headers: await headersApi(),
     dispatcher: getDispatcher(),
   });
   if (!r.ok) throw new Error(`consulta HTTP ${r.status}`);

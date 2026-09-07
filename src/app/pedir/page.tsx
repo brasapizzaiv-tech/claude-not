@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
-import { pixConfigurado } from "@/lib/pix-sicredi";
+import { pixConfigurado } from "@/lib/pix";
 import { PedirClient } from "./pedir-client";
 
 export const metadata: Metadata = {
