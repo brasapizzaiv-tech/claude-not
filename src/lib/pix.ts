@@ -194,3 +194,26 @@ export async function consultarCobrancaPix(txid: string) {
   const j = (await r.json()) as { status?: string };
   return { status: j.status ?? "ATIVA", pago: j.status === "CONCLUIDA" };
 }
+
+// Diagnóstico pra tela de config (sem expor valores): banco, ambiente e quais
+// variáveis ainda faltam.
+export function pixDiagnostico() {
+  const nomes =
+    BANCO === "sicoob"
+      ? ["CLIENT_ID", "CHAVE", ...(AMBIENTE === "producao" ? ["CERT_B64", "KEY_B64"] : TOKEN_SANDBOX ? [] : ["TOKEN_SANDBOX"])]
+      : ["CLIENT_ID", "CLIENT_SECRET", "CHAVE", "CERT_B64", "KEY_B64"];
+  const faltando = nomes.filter((n) => !env(n)).map((n) => `PIX_${BANCO.toUpperCase()}_${n}`);
+  return { banco: BANCO, ambiente: AMBIENTE, configurado: pixConfigurado(), faltando };
+}
+
+// Teste de ponta a ponta: pede token e cria uma cobrança de R$ 0,01 que expira
+// em 1 minuto. Devolve só o resultado (nunca credenciais).
+export async function testarPix() {
+  const t0 = Date.now();
+  try {
+    const cob = await criarCobrancaPix({ txid: gerarTxid(), valor: 0.01, expiracaoSeg: 60, descricao: "Teste Brasa" });
+    return { ok: true as const, ms: Date.now() - t0, txid: cob.txid, copiaECola: cob.copiaECola };
+  } catch (e) {
+    return { ok: false as const, ms: Date.now() - t0, erro: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
+  }
+}

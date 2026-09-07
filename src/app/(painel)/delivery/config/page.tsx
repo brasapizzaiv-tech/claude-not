@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { temChaveMapa } from "@/lib/geo";
 import { salvarConfigDelivery } from "../actions";
+import { pixDiagnostico } from "@/lib/pix";
+import { PixTeste } from "./pix-teste";
 
 export const metadata = { title: "Config · Delivery" };
 
@@ -18,6 +20,7 @@ export default async function DeliveryConfigPage() {
   };
   const temChave = temChaveMapa();
   const geocodificado = c.origem_lat != null && c.origem_lng != null;
+  const pix = pixDiagnostico();
 
   return (
     <div className="mx-auto max-w-2xl p-4">
@@ -30,6 +33,8 @@ export default async function DeliveryConfigPage() {
           ? "✓ Chave do Google Maps configurada — distância precisa (por rota)."
           : "ⓘ Sem chave do Google Maps: usando um cálculo grátis aproximado (linha reta). Pra ficar preciso, adicione GOOGLE_MAPS_API_KEY no .env do servidor."}
       </div>
+
+      <PixTeste banco={pix.banco} ambiente={pix.ambiente} configurado={pix.configurado} faltando={pix.faltando} />
 
       <form action={salvarConfigDelivery} className="space-y-4">
         <div>

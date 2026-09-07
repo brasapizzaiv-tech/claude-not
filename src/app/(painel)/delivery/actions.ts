@@ -1,5 +1,6 @@
 "use server";
 
+import { exigirAcesso } from "@/lib/permissoes-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -242,4 +243,11 @@ export async function buscarClientePorTelefone(termo: string) {
     logradouro: string | null; numero: string | null; complemento: string | null;
     bairro: string | null; municipio: string | null; cep: string | null;
   }[];
+}
+
+// Botão "Testar Pix" da config: cria uma cobrança de R$ 0,01 e mostra o resultado.
+export async function testarPixDelivery() {
+  await exigirAcesso("/delivery");
+  const { testarPix } = await import("@/lib/pix");
+  return testarPix();
 }
