@@ -26,7 +26,8 @@ async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
 // autorizada, devolve ela. Códigos fiscais: padrões da Config (fallback típico).
 export async function emitirNfceComanda(comandaId: string, cpf?: string) {
   const supabase = await createClient();
-  await exigirAcesso("/salao");
+  // Caixa do salão, PDV de balcão e delivery emitem nota.
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
   const cpfLimpo = (cpf || "").replace(/\D/g, "");
 
   // Já autorizada? devolve.

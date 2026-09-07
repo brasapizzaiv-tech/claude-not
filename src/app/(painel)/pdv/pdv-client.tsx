@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { finalizarVendaPdv } from "./actions";
 import { PixQr } from "@/components/pix-qr";
+import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
@@ -15,7 +16,7 @@ const FORMAS = [
   { id: "Pix", label: "📱 Pix" },
 ];
 
-type Feito = { numero: number; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
+type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
 
 export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean }) {
   const [proc, start] = useTransition();
@@ -61,7 +62,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: Item
       try {
         const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
         if (r.ok) {
-          setFeito({ numero: r.numero ?? 0, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
+          setFeito({ numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
           setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro"); setLocal("aqui");
         } else {
           setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
@@ -88,6 +89,11 @@ export function PdvClient({ itens, categorias, pixAtivo = false }: { itens: Item
         )}
         {feito.pago && feito.semCaixa && (
           <p className="mt-3 text-sm text-amber-600">⚠️ Nenhum caixa aberto — a venda foi registrada, mas não entrou no caixa. Abra o caixa pra controlar o dinheiro.</p>
+        )}
+        {feito.pago && feito.comandaId && (
+          <div className="mt-4 text-left">
+            <EmitirNotaCaixa comandas={[{ id: feito.comandaId, numero: feito.numero }]} />
+          </div>
         )}
         <div className="mt-6 flex justify-center gap-3">
           <button onClick={() => setFeito(null)} className="rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white">Nova venda</button>
