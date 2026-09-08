@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { sessaoGarcom } from "@/lib/garcom-auth";
+import { redirect } from "next/navigation";
 import { BuscaComanda } from "./busca";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -13,6 +14,7 @@ const quando = (iso: string) =>
   });
 
 type ItRow = {
+  criado_colab_id: string | null;
   descricao: string;
   qtd: number;
   preco_unit: number;
@@ -33,13 +35,15 @@ type Grupo = {
 };
 
 export default async function GarcomPage() {
-  const supabase = await createClient();
+  const sessao = await sessaoGarcom();
+  if (!sessao) redirect("/login?next=/garcom");
+  const supabase = sessao.db;
   const [{ data: abertas }, { data: cfgRows }, { data: itRows }] = await Promise.all([
     supabase.from("pdv_comandas").select("id, numero, mesa").eq("status", "aberta").order("numero"),
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_comanda_itens")
-      .select("descricao, qtd, preco_unit, criado_em, lancamento_id, criado_por, comanda_id")
+      .select("descricao, qtd, preco_unit, criado_em, lancamento_id, criado_por, criado_colab_id, comanda_id")
       .order("criado_em", { ascending: false })
       .limit(150),
   ]);
@@ -60,16 +64,20 @@ export default async function GarcomPage() {
   const items = (itRows as ItRow[]) ?? [];
   const comIds = [...new Set(items.map((i) => i.comanda_id))];
   const userIds = [...new Set(items.map((i) => i.criado_por).filter(Boolean))] as string[];
-  const [{ data: comInfo }, { data: profs }] = await Promise.all([
+  const colabIds = [...new Set(items.map((i) => i.criado_colab_id).filter(Boolean))] as string[];
+  const [{ data: comInfo }, { data: profs }, { data: colabs }] = await Promise.all([
     comIds.length
       ? supabase.from("pdv_comandas").select("id, numero, mesa").in("id", comIds)
       : Promise.resolve({ data: [] as { id: string; numero: number; mesa: string | null }[] }),
     userIds.length
       ? supabase.from("profiles").select("id, nome").in("id", userIds)
       : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
+    colabIds.length
+      ? supabase.from("colaboradores").select("id, nome").in("id", colabIds)
+      : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
   ]);
   const comMap = new Map((comInfo ?? []).map((c) => [c.id, c]));
-  const nomeMap = new Map((profs ?? []).map((p) => [p.id, p.nome]));
+  const nomeMap = new Map([...(profs ?? []), ...(colabs ?? [])].map((p) => [p.id, p.nome]));
 
   const grupos: Grupo[] = [];
   const idx = new Map<string, Grupo>();
@@ -83,7 +91,7 @@ export default async function GarcomPage() {
         mesa: c?.mesa || "Balcão",
         numero: c?.numero ?? 0,
         quando: it.criado_em,
-        quem: it.criado_por ? nomeMap.get(it.criado_por) || "—" : "",
+        quem: it.criado_por ? nomeMap.get(it.criado_por) || "—" : it.criado_colab_id ? nomeMap.get(it.criado_colab_id) || "—" : "",
         total: 0,
         itens: [],
       };
@@ -97,7 +105,12 @@ export default async function GarcomPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 p-2 text-zinc-100">
-      <h1 className="px-1 py-2 text-xl font-bold">🧑‍🍳 Mesas</h1>
+      <div className="flex items-center justify-between px-1 py-2">
+        <h1 className="text-xl font-bold">🧑‍🍳 Mesas</h1>
+        {sessao.viaColab && sessao.token && (
+          <Link href={`/eu/${sessao.token}`} className="text-xs text-zinc-400">{sessao.nome} · voltar pro meu app</Link>
+        )}
+      </div>
       <BuscaComanda mesas={nomes} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {nomes.map((nome) => {

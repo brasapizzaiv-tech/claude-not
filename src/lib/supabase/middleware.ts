@@ -51,6 +51,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/cotar") ||
     path.startsWith("/e/") ||
     path.startsWith("/eu/") ||
+    path.startsWith("/garcom") ||
     path.startsWith("/folga/") ||
     path.startsWith("/balanca-teste") ||
     path.startsWith("/marmitas") ||

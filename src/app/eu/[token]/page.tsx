@@ -113,12 +113,13 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
   const fazEtiquetas = !!colab?.faz_etiquetas;
   const fazContas = !!colab?.faz_contas;
+  const fazGarcom = !!colab?.faz_garcom;
 
   // Contas abertas (só pra quem tem a função gerencial).
   let contasAbertas = 0;
@@ -193,6 +194,15 @@ export default async function AppColaboradorPage({
             {contasAbertas} aberta(s){contasVencidas > 0 ? ` · ${contasVencidas} vencida(s)` : ""}
           </span>
         </Link>
+      )}
+      {fazGarcom && (
+        <a
+          href={`/eu/${token}/garcom`}
+          className="mb-3 flex items-center justify-between rounded-2xl bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-800"
+        >
+          <span>🧑‍🍳 Modo garçom</span>
+          <span className="text-xs font-normal opacity-80">mesas, pedidos, conta →</span>
+        </a>
       )}
       {fazEtiquetas && contagemEtq && (
         <div className="mb-3">

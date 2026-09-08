@@ -121,11 +121,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // via (categorias) da impressora.
     const { data: itensRaw } = await admin
       .from("pdv_comanda_itens")
-      .select("descricao, qtd, preco_unit, comanda_id, criado_por, criado_em, item_id, pdv_itens(categoria)")
+      .select("descricao, qtd, preco_unit, comanda_id, criado_por, criado_colab_id, criado_em, item_id, pdv_itens(categoria)")
       .eq("lancamento_id", job.ref_id)
       .order("criado_em");
     const itens = (itensRaw as unknown as {
-      descricao: string; qtd: number; preco_unit: number | null; comanda_id: string; criado_por: string | null; criado_em: string; item_id: string | null;
+      descricao: string; qtd: number; preco_unit: number | null; comanda_id: string; criado_por: string | null; criado_colab_id: string | null; criado_em: string; item_id: string | null;
       pdv_itens: { categoria: string | null } | { categoria: string | null }[] | null;
     }[]) ?? [];
     const catDe = (it: (typeof itens)[number]) => {
@@ -147,7 +147,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       admin.from("pdv_comandas").select("numero, mesa").eq("id", primeiro.comanda_id).maybeSingle(),
       primeiro.criado_por
         ? admin.from("profiles").select("nome").eq("id", primeiro.criado_por).maybeSingle()
-        : Promise.resolve({ data: null as { nome: string } | null }),
+        : primeiro.criado_colab_id
+          ? admin.from("colaboradores").select("nome").eq("id", primeiro.criado_colab_id).maybeSingle()
+          : Promise.resolve({ data: null as { nome: string } | null }),
     ]);
     const hora = new Date(primeiro.criado_em).toLocaleTimeString("pt-BR", {
       timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit",

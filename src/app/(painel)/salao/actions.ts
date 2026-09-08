@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -497,7 +498,7 @@ export async function juntarComandas(formData: FormData) {
 }
 
 export async function adicionarItemComanda(comandaId: string, itemId: string) {
-  const supabase = await createClient();
+  const supabase = await dbGarcomOuUsuario();
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
   const { data: item } = await supabase
     .from("pdv_itens")
@@ -526,7 +527,7 @@ export async function adicionarPizzaComanda(
   saborIds: string[],
   bordaId: string | null,
 ) {
-  const supabase = await createClient();
+  const supabase = await dbGarcomOuUsuario();
   if (!tamanhoId || saborIds.length === 0) return { ok: false as const, mensagem: "Escolha tamanho e sabor." };
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
 
@@ -589,7 +590,7 @@ export async function adicionarComboComanda(
   itemId: string,
   opcaoIds: string[],
 ) {
-  const supabase = await createClient();
+  const supabase = await dbGarcomOuUsuario();
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
   const { data: item } = await supabase
     .from("pdv_itens")
@@ -646,7 +647,7 @@ export async function adicionarComboComanda(
 }
 
 export async function removerItemComanda(formData: FormData) {
-  const supabase = await createClient();
+  const supabase = await dbGarcomOuUsuario();
   await exigirAcesso(["/salao", "/garcom"]);
   const id = formData.get("id") as string;
   const comandaId = formData.get("comanda_id") as string;

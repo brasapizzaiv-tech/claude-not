@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { lancarPedidoGarcom } from "../garcom/actions";
+import { lancarPedidoGarcom } from "@/app/(garcom)/garcom/actions";
 
 type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number };
 

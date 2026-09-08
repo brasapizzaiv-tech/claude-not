@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { sessaoGarcom } from "@/lib/garcom-auth";
 
 // Faz o "Adicionar à tela de início" a partir do app do garçom instalar um
 // atalho que abre direto em /garcom (e não no site). No iPhone o atalho já usa
@@ -9,6 +11,11 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Garçom", statusBarStyle: "black-translucent" },
 };
 
-export default function GarcomLayout({ children }: { children: React.ReactNode }) {
+export default async function GarcomLayout({ children }: { children: React.ReactNode }) {
+  // Entra: usuário do sistema com permissão de garçom/salão, ou colaborador
+  // marcado como garçom vindo do app pessoal (cookie).
+  const s = await sessaoGarcom();
+  if (!s) redirect("/login?next=/garcom");
+  if (!s.podeGarcom) redirect("/dashboard");
   return children;
 }

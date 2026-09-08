@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { sessaoGarcom } from "@/lib/garcom-auth";
 import { resolverLinhas, enfileirarCozinha, type LinhaPedido } from "@/lib/delivery-core";
 
 // Lança um pedido com PIZZA/COMBO/itens (Fase C): as linhas chegam como ids e
@@ -15,7 +15,9 @@ export async function lancarPedidoGarcomLinhas(
   // salão) e o garçom tentar de novo, o mesmo pedido NÃO é lançado duas vezes.
   lancamentoIdCliente?: string,
 ) {
-  const supabase = await createClient();
+  const sessao = await sessaoGarcom();
+  if (!sessao) return { ok: false as const, mensagem: "Sem acesso. Abra o app de novo." };
+  const supabase = sessao.db;
   if (!mesa || !Array.isArray(itens) || itens.length === 0) return { ok: false as const, mensagem: "Carrinho vazio." };
 
   const idCli = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lancamentoIdCliente || "") ? lancamentoIdCliente! : null;
@@ -30,8 +32,7 @@ export async function lancarPedidoGarcomLinhas(
   const linhas = await resolverLinhas(supabase, itens);
   if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };
 
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth.user?.id ?? null;
+  const uid = sessao.uid;
 
   let cid = comandaId;
   let numero: number | undefined;
@@ -60,6 +61,7 @@ export async function lancarPedidoGarcomLinhas(
     qtd: l.qtd,
     preco_unit: l.preco,
     criado_por: uid,
+    criado_colab_id: sessao.colabId,
     lancamento_id: lancamentoId,
   }));
   const { error: errIns } = await supabase.from("pdv_comanda_itens").insert(rows);
@@ -94,7 +96,9 @@ export async function lancarPedidoGarcom(
 // Acha uma comanda pelo código lido (QR do cupom = URL com o id, ou o número
 // digitado/lido do cartão). Devolve a mesa para abrir o cardápio.
 export async function acharComanda(codigo: string) {
-  const supabase = await createClient();
+  const sessao = await sessaoGarcom();
+  if (!sessao) return { ok: false as const };
+  const supabase = sessao.db;
   const v = (codigo || "").trim();
   if (!v) return { ok: false as const };
   const uuid = v.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
@@ -138,7 +142,9 @@ export async function acharComanda(codigo: string) {
 // Abre uma nova comanda numa mesa. Se veio de um cartão lido, guarda o código
 // para achar da próxima vez. Não guarda QR/URL (id de comanda) como cartão.
 export async function abrirComanda(mesa: string, cartao?: string) {
-  const supabase = await createClient();
+  const sessao = await sessaoGarcom();
+  if (!sessao) return { ok: false as const, mensagem: "Sem acesso. Abra o app de novo." };
+  const supabase = sessao.db;
   const m = (mesa || "").trim();
   if (!m) return { ok: false as const, mensagem: "Escolha a mesa." };
   const raw = (cartao || "").trim();
@@ -157,7 +163,9 @@ export async function abrirComanda(mesa: string, cartao?: string) {
 
 // Move uma comanda aberta para outra mesa.
 export async function transferirComanda(comandaId: string, novaMesa: string) {
-  const supabase = await createClient();
+  const sessao = await sessaoGarcom();
+  if (!sessao) return { ok: false as const, mensagem: "Sem acesso. Abra o app de novo." };
+  const supabase = sessao.db;
   const cid = (comandaId || "").trim();
   const mesa = (novaMesa || "").trim();
   if (!cid || !mesa) return { ok: false as const, mensagem: "Escolha a comanda e a mesa." };

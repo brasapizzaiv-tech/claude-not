@@ -40,6 +40,7 @@ export type Colaborador = {
   faz_contagem: boolean;
   faz_etiquetas: boolean;
   faz_contas?: boolean;
+  faz_garcom?: boolean;
   // Quadro de funcionários (migration 0126)
   nascimento?: string | null;
   turno?: "dia" | "noite" | "ambos" | "proprietario";

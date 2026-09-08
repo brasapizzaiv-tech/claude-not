@@ -21,6 +21,7 @@ export async function salvarColaborador(formData: FormData) {
   const fazContagem = formData.get("faz_contagem") === "on";
   const fazEtiquetas = formData.get("faz_etiquetas") === "on";
   const fazContas = formData.get("faz_contas") === "on";
+  const fazGarcom = formData.get("faz_garcom") === "on";
   const temFolga = formData.get("tem_folga") === "on";
 
   // Quadro de funcionários (migration 0126)
@@ -55,7 +56,7 @@ export async function salvarColaborador(formData: FormData) {
   if (id) {
     const { error } = await supabase
       .from("colaboradores")
-      .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, ...quadro })
+      .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, ...quadro })
       .eq("id", id);
     if (error) return { erro: `Não salvou: ${error.message}` };
     token = (await supabase.from("colaboradores").select("token").eq("id", id).maybeSingle()).data?.token ?? null;
@@ -67,7 +68,7 @@ export async function salvarColaborador(formData: FormData) {
     token = novoToken();
     const { data, error } = await supabase
       .from("colaboradores")
-      .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, ...quadro })
+      .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, ...quadro })
       .select("id")
       .single();
     if (error) return { erro: `Não salvou: ${error.message}` };

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { LancarItens } from "../../../salao/comandas/[id]/cliente";
-import type { PizzaOpcao, ComboGrupo } from "../../../salao/comandas/[id]/cliente";
-import { removerItemComanda } from "../../../salao/actions";
+import { sessaoGarcom } from "@/lib/garcom-auth";
+import { redirect } from "next/navigation";
+import { LancarItens } from "@/app/(painel)/salao/comandas/[id]/cliente";
+import type { PizzaOpcao, ComboGrupo } from "@/app/(painel)/salao/comandas/[id]/cliente";
+import { removerItemComanda } from "@/app/(painel)/salao/actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -14,7 +15,9 @@ export default async function GarcomComandaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const sessao = await sessaoGarcom();
+  if (!sessao) redirect("/login?next=/garcom");
+  const supabase = sessao.db;
 
   const { data: comanda } = await supabase
     .from("pdv_comandas")

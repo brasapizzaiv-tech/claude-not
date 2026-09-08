@@ -3,6 +3,7 @@
 // logado em outra tela, então cada action sensível confere aqui também.
 import { createClient } from "@/lib/supabase/server";
 import { podeAcessar } from "@/lib/permissoes";
+import { colaboradorGarcom } from "@/lib/garcom-auth";
 
 // rota: uma rota ou uma lista (basta ter acesso a UMA delas).
 export async function exigirAcesso(rota: string | string[]) {
@@ -10,7 +11,12 @@ export async function exigirAcesso(rota: string | string[]) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Faça login de novo.");
+  const rotasPedidas = Array.isArray(rota) ? rota : [rota];
+  if (!user) {
+    // Garçom pelo app pessoal (sem login do sistema): só o que é do garçom.
+    if (rotasPedidas.includes("/garcom") && (await colaboradorGarcom())) return;
+    throw new Error("Faça login de novo.");
+  }
   const { data: prof } = await supabase
     .from("profiles")
     .select("papel, permissoes")

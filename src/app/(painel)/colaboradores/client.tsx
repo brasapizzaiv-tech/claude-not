@@ -162,6 +162,7 @@ function resumoQuadro(c: Colaborador): string {
   if (v) partes.push(`free R$ ${v}`);
   if (c.recebe_10) partes.push("10%");
   if (c.esporadico) partes.push("free esporádico");
+  if (c.faz_garcom) partes.push("garçom");
   return partes.join(" · ");
 }
 
@@ -454,6 +455,9 @@ function EditModal({ editando, onClose }: { editando: Row | null; onClose: () =>
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_contas" defaultChecked={editando ? editando.faz_contas : false} /> Contas a pagar (ver boletos e dar baixa) — gerencial
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="faz_garcom" defaultChecked={editando ? !!editando.faz_garcom : false} /> 🧑‍🍳 Garçom (atalho &quot;Modo garçom&quot; no app: mesas, pedidos e conta)
           </label>
 
           <label className="flex items-center gap-2 border-t border-zinc-200 pt-3 text-sm dark:border-zinc-800">
