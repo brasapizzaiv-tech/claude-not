@@ -232,8 +232,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
                 <thead className="text-left text-xs uppercase tracking-wide text-zinc-500"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   {cancelados.map((c, i) => (
-                    <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("
-")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-zinc-600 dark:text-zinc-300">{c.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(c.valor))}</td><td className="py-1 text-right text-zinc-500">{horaBR(c.cancelado_em)}</td></tr>
+                    <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("\n")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-zinc-600 dark:text-zinc-300">{c.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(c.valor))}</td><td className="py-1 text-right text-zinc-500">{horaBR(c.cancelado_em)}</td></tr>
                   ))}
                 </tbody>
               </table>
