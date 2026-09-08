@@ -48,6 +48,13 @@ export async function definirRecebeComandas(id: string, valor: boolean) {
 }
 
 // Impressora que imprime as etiquetas das marmitas do convênio (Kern).
+export async function definirRecebePizzas(id: string, valor: boolean) {
+  const supabase = await createClient();
+  await supabase.from("impressoras").update({ recebe_pizzas: valor }).eq("id", id);
+  revalidatePath("/impressao");
+  return { ok: true as const };
+}
+
 // Só uma impressora imprime o cupom da NFC-e.
 export async function definirRecebeNfce(id: string, valor: boolean) {
   const supabase = await createClient();

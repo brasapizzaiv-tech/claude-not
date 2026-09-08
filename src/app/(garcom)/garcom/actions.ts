@@ -68,7 +68,7 @@ export async function lancarPedidoGarcomLinhas(
   if (errIns) return { ok: false as const, mensagem: "Não consegui gravar o pedido. Tente de novo." };
 
   const itemIds = linhas.map((l) => l.itemId).filter(Boolean) as string[];
-  await enfileirarCozinha(supabase, lancamentoId, itemIds);
+  await enfileirarCozinha(supabase, lancamentoId, itemIds, linhas.some((l) => l.itemId === null));
 
   revalidatePath("/garcom");
   revalidatePath("/salao");

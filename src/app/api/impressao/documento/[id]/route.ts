@@ -135,11 +135,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (itens.length === 0) return new Response("comanda vazia", { status: 404 });
 
     const { data: imp } = job.impressora_id
-      ? await admin.from("impressoras").select("nome, comanda_produtos, comanda_config").eq("id", job.impressora_id).maybeSingle()
-      : { data: null as { nome: string; comanda_produtos: string[] | null; comanda_config: Record<string, unknown> | null } | null };
+      ? await admin.from("impressoras").select("nome, comanda_produtos, comanda_config, recebe_pizzas").eq("id", job.impressora_id).maybeSingle()
+      : { data: null as { nome: string; comanda_produtos: string[] | null; comanda_config: Record<string, unknown> | null; recebe_pizzas: boolean | null } | null };
     const prods = (imp?.comanda_produtos as string[] | null) ?? null;
+    const pizzas = !!(imp as { recebe_pizzas?: boolean | null } | null)?.recebe_pizzas;
     const config = (imp?.comanda_config as ComandaConfig | null) ?? null;
-    const filtrados = prods === null ? itens : itens.filter((it) => it.item_id !== null && prods.includes(it.item_id));
+    // Via por produto: item da lista OU pizza montada (item_id nulo) se a impressora recebe pizzas.
+    const filtrados = prods === null
+      ? itens
+      : itens.filter((it) => (it.item_id !== null && prods.includes(it.item_id)) || (it.item_id === null && pizzas));
     if (filtrados.length === 0) return new Response("sem itens para esta via", { status: 404 });
 
     const primeiro = itens[0];

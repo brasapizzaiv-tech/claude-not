@@ -3,11 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirRecebeMarmitas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste, imprimirTesteEtiqueta, definirRecebeNfce } from "./actions";
+  criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirRecebeMarmitas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste, imprimirTesteEtiqueta, definirRecebeNfce, definirRecebePizzas } from "./actions";
 
 export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean; agrupar: boolean; qtdCat: boolean; destObs: boolean };
 export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean; barraValidade?: boolean; categoria?: boolean; empresa?: string | null; deslocX?: number; deslocY?: number };
-export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; recebe_marmitas?: boolean; recebe_nfce?: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null; etiqueta_config: EtiquetaConfig | null };
+export type Impressora = { id: string; nome: string; ativo: boolean; impressora_windows: string | null; recebe_comandas: boolean; recebe_marmitas?: boolean; recebe_nfce?: boolean; recebe_pizzas?: boolean; comanda_produtos: string[] | null; comanda_config: ComandaConfig | null; etiqueta_config: EtiquetaConfig | null };
 export type Produto = { id: string; nome: string; categoria: string };
 
 export function CentralImpressao({
@@ -23,6 +23,15 @@ export function CentralImpressao({
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
+  // Itens do cardápio que não saem em NENHUMA impressora de cozinha (nenhuma
+  // "todos" e não estão na lista de produto de nenhuma via).
+  const semImpressora = useMemo(() => {
+    const cozinhas = impressoras.filter((i) => i.ativo && i.recebe_comandas);
+    if (cozinhas.some((i) => i.comanda_produtos === null)) return [] as Produto[];
+    const cobertos = new Set(cozinhas.flatMap((i) => i.comanda_produtos ?? []));
+    return produtos.filter((p) => !cobertos.has(p.id));
+  }, [impressoras, produtos]);
+  const temPizzaSemImpressora = !impressoras.some((i) => i.ativo && i.recebe_comandas && (i.comanda_produtos === null || i.recebe_pizzas));
   const [novo, setNovo] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editNome, setEditNome] = useState("");
@@ -46,6 +55,20 @@ export function CentralImpressao({
         Aqui ficam <b>todas as impressoras</b> (etiquetas hoje; comandas e cupons no futuro). As impressões saem por um
         <b> PC central</b> com o <b>Agente</b> instalado.
       </p>
+
+      {(semImpressora.length > 0 || temPizzaSemImpressora) && (
+        <div className="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm">
+          <p className="font-semibold text-amber-700 dark:text-amber-400">⚠️ Pedidos que não saem em nenhuma impressora de cozinha</p>
+          {temPizzaSemImpressora && <p className="mt-1">🍕 <b>Pizzas montadas</b>: nenhuma impressora está marcada &quot;Recebe as pizzas montadas&quot;.</p>}
+          {semImpressora.length > 0 && (
+            <details className="mt-1">
+              <summary className="cursor-pointer">{semImpressora.length} itens do cardápio fora de todas as vias (clique pra ver)</summary>
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">{semImpressora.map((x) => x.nome).join(" · ")}</p>
+            </details>
+          )}
+          <p className="mt-1 text-xs text-zinc-500">Se for de propósito (ex.: bebidas que o garçom pega no bar sem ticket), ignore.</p>
+        </div>
+      )}
 
       {/* Status do agente / PC responsável */}
       <div className={`mb-4 rounded-2xl border p-4 ${online ? "border-emerald-500/40 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"}`}>
@@ -127,6 +150,12 @@ export function CentralImpressao({
                   <input type="checkbox" checked={im.recebe_comandas} disabled={proc} onChange={(e) => run(() => definirRecebeComandas(im.id, e.target.checked))} />
                   🍳 Recebe comandas (cozinha/bar)
                 </label>
+                {im.recebe_comandas && (
+                  <label className="mt-1 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                    <input type="checkbox" checked={!!im.recebe_pizzas} disabled={proc} onChange={(e) => run(() => definirRecebePizzas(im.id, e.target.checked))} />
+                    🍕 Recebe as pizzas montadas (meio a meio, borda) — elas não são item do cardápio, então não entram na lista de produtos abaixo
+                  </label>
+                )}
                 {im.recebe_comandas && <ViaProdutos im={im} produtos={produtos} proc={proc} run={run} />}
                 {im.recebe_comandas && <ViaFormato im={im} proc={proc} run={run} />}
                 <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">

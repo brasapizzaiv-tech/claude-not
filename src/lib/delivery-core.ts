@@ -130,11 +130,13 @@ export async function calcularTaxaEntrega(db: Db, endereco: {
 }
 
 // Enfileira a comanda de um lançamento nas impressoras de cozinha (vias por produto).
-export async function enfileirarCozinha(db: Db, lancamentoId: string, itemIds: string[]) {
+// temPizza: o lançamento tem pizza montada (item_id nulo) → vai também pra
+// impressora marcada "recebe pizzas".
+export async function enfileirarCozinha(db: Db, lancamentoId: string, itemIds: string[], temPizza = false) {
   const { data: cozinhas } = await db
-    .from("impressoras").select("id, comanda_produtos").eq("ativo", true).eq("recebe_comandas", true);
-  const jobs = ((cozinhas as { id: string; comanda_produtos: string[] | null }[]) ?? [])
-    .filter((im) => im.comanda_produtos === null || itemIds.some((id) => im.comanda_produtos!.includes(id)))
+    .from("impressoras").select("id, comanda_produtos, recebe_pizzas").eq("ativo", true).eq("recebe_comandas", true);
+  const jobs = ((cozinhas as { id: string; comanda_produtos: string[] | null; recebe_pizzas: boolean | null }[]) ?? [])
+    .filter((im) => im.comanda_produtos === null || itemIds.some((id) => im.comanda_produtos!.includes(id)) || (temPizza && !!im.recebe_pizzas))
     .map((im) => ({ tipo: "comanda", ref_id: lancamentoId, impressora_id: im.id }));
   if (jobs.length > 0) await db.from("impressao_fila").insert(jobs);
   return jobs.length;
@@ -150,8 +152,9 @@ export async function imprimirComandaDoPedido(db: Db, pedidoId: string) {
   const lanc = (item as { lancamento_id: string | null } | null)?.lancamento_id;
   if (!lanc) return 0;
   const { data: itens } = await db.from("pdv_comanda_itens").select("item_id").eq("lancamento_id", lanc);
-  const itemIds = ((itens ?? []) as { item_id: string | null }[]).map((i) => i.item_id).filter(Boolean) as string[];
-  return enfileirarCozinha(db, lanc, itemIds);
+  const todos = (itens ?? []) as { item_id: string | null }[];
+  const itemIds = todos.map((i) => i.item_id).filter(Boolean) as string[];
+  return enfileirarCozinha(db, lanc, itemIds, todos.some((i) => i.item_id === null));
 }
 
 // Resolve as linhas do pedido (item simples / pizza / combo) com preço do
@@ -275,7 +278,7 @@ export async function criarPedidoDeliveryCore(
 
   if (opts.status === "aceito") {
     const itemIds = linhas.map((l) => l.itemId).filter(Boolean) as string[];
-    await enfileirarCozinha(db, lancamentoId, itemIds);
+    await enfileirarCozinha(db, lancamentoId, itemIds, linhas.some((l) => l.itemId === null));
   }
 
   const subtotalLinhas = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
