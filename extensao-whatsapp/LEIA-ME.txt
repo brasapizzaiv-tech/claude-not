@@ -1,0 +1,25 @@
+BRASA WHATSAPP SENDER (extensao do Chrome)
+==========================================
+
+O que faz: na tela Cotacao -> Fornecedores do sistema, envia sozinha a mensagem
+com o link da cotacao pra cada fornecedor pelo WhatsApp Web, um a um, e marca
+"Enviado" no sistema. Igual a extensao da VMarket, so que pro nosso sistema.
+
+INSTALAR (uma vez, no Chrome do PC que fica com o WhatsApp Web logado)
+1) Descompacte esta pasta em um lugar fixo, ex.: C:\brasa-whatsapp
+   (nao apague depois: o Chrome le a pasta toda vez).
+2) No Chrome, abra:  chrome://extensions
+3) Ligue o "Modo do desenvolvedor" (canto superior direito).
+4) Clique em "Carregar sem compactacao" e escolha a pasta C:\brasa-whatsapp.
+5) Clique no icone de quebra-cabeca (extensoes) e fixe o "Brasa WhatsApp Sender".
+
+USAR
+1) Abra o WhatsApp Web (web.whatsapp.com) neste Chrome e deixe logado.
+2) No sistema, abra a cotacao -> Fornecedores.
+3) Clique no icone da extensao -> "Enviar para os pendentes".
+4) Deixe o Chrome quieto: ele abre o WhatsApp, envia, fecha e passa pro proximo
+   (uns 15 a 30 segundos por fornecedor). "Parar" interrompe apos a atual.
+5) No fim, o status mostra quantas foram e quais nao foram (ex.: numero sem WhatsApp).
+
+Se o WhatsApp Web mudar o botao Enviar e a extensao parar de enviar, avise —
+e um ajuste pequeno no arquivo content-whats.js.

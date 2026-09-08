@@ -1,7 +1,7 @@
 "use client";
 
 import { siteUrl } from "@/lib/site-url";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   convidarFornecedor,
@@ -36,6 +36,17 @@ export function FornecedoresClient({
   linhas: FornecedorLinha[];
 }) {
   const router = useRouter();
+  // Extensão "Brasa WhatsApp Sender": depois de enviar pelo WhatsApp Web ela
+  // avisa a página (postMessage) pra marcar o fornecedor como enviado.
+  useEffect(() => {
+    function ouvir(ev: MessageEvent) {
+      if (ev.source !== window || ev.data?.type !== "BRASA_WHATS_ENVIADO" || !ev.data?.id) return;
+      marcarEnviado(String(ev.data.id));
+    }
+    window.addEventListener("message", ouvir);
+    return () => window.removeEventListener("message", ouvir);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Origem do site lida na hora do clique (evita setState em render).
   const origin = siteUrl();
   const [convidandoTodos, setConvidandoTodos] = useState(false);
@@ -294,8 +305,8 @@ export function FornecedoresClient({
           <div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
             <b>Como enviar:</b> clique em <b>Abrir WhatsApp do próximo</b> (ou em <b>Envio manual</b> na linha):
             abre o WhatsApp Web já com a mensagem e o link — é só apertar Enviar e voltar aqui pro próximo.
-            A extensão <b>VMarket WhatsApp Sender</b> não funciona com este sistema: ela só busca os links
-            no servidor da própria VMarket.
+            <b>Envio automático:</b> com a extensão <b>Brasa WhatsApp Sender</b> instalada neste Chrome (e o WhatsApp Web
+            logado), clique no ícone dela → <b>Enviar para os pendentes</b>. Ela manda uma a uma e marca &quot;Enviado&quot; aqui.
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
@@ -350,6 +361,9 @@ export function FornecedoresClient({
                             onClick={() => marcarEnviado(l.id)}
                             data-whatsapp="1"
                             data-telefone={`55${zap}`}
+                            data-fornecedor-id={l.id}
+                            data-fornecedor-nome={l.nome}
+                            data-enviado={enviados.has(l.id) ? "1" : "0"}
                             className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
                           >
                             Envio manual
