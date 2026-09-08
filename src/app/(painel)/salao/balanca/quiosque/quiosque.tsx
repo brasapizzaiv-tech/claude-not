@@ -9,9 +9,9 @@ import { gerarComandaBuffetKiosk, gerarComandaLivreKiosk, virarLivreKiosk, virar
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const LIMIAR = 0.05; // kg de comida para considerar "prato na balança"
+const LIMIAR = 0.02; // kg de comida para considerar "prato na balança" (50 g de comida não gerava comanda)
 const ESTAVEL_MS = 450; // peso parado por ~0,45s → fecha a comanda (rápido)
-const TOL_ESTAVEL = 0.05; // oscilação tolerada (50 g) para considerar "parado"
+const TOL_ESTAVEL = 0.02; // oscilação tolerada (20 g) para considerar "parado"
 const RESET_MS = 6000; // após mostrar a comanda, volta sozinho p/ o próximo cliente
 
 type Resultado = {
@@ -176,6 +176,13 @@ export function QuiosqueBalanca({
     // O que vai pro sistema é o peso LÍQUIDO já resolvido (marmita = leitura + tara).
     const liquido = Math.round(netDe(bruto, taraBalancaRef.current, soKgRef.current) * 1000) / 1000;
     capturaRef.current = { bruto, liquido };
+    // Com o agente no PC: ele numera, IMPRIME NA HORA e sincroniza depois — o
+    // cliente não espera a internet. Se o agente falhar, cai pro caminho pela nuvem.
+    if (agenteRef.current) {
+      const calc = valorDe(liquido, soKgRef.current);
+      const ok = await capturarViaAgente({ peso: liquido, tara_balanca: taraBalancaRef.current, so_kg: soKgRef.current, valor: calc.valor, liquido: calc.liquido, livre: calc.livre, cupom });
+      if (ok) return;
+    }
     try {
       const r = await gerarComandaBuffetKiosk(liquido, soKgRef.current, taraBalancaRef.current);
       if (r.ok) {
@@ -230,6 +237,22 @@ export function QuiosqueBalanca({
   const [impressoras, setImpressoras] = useState<{ nome: string; padrao: boolean }[]>([]);
   const [impressoraCupom, setImpressoraCupom] = useState("");
   const [msgConfig, setMsgConfig] = useState<string | null>(null);
+  const [modoImpressao, setModoImpressao] = useState<"escpos" | "pdf">("escpos");
+  async function alternarModo(m: "escpos" | "pdf") {
+    setModoImpressao(m);
+    try {
+      await fetch(`${AGENTE_URL}/config`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ impressaoModo: m }) });
+      setMsgConfig(m === "escpos" ? "✓ Impressão rápida ligada (direto na térmica)." : "✓ Impressão pelo PDF (modo antigo).");
+    } catch { setMsgConfig("Agente não respondeu."); }
+  }
+  async function testeRapido() {
+    setMsgConfig("Enviando teste rápido…");
+    try {
+      const r = await fetch(`${AGENTE_URL}/imprimir-teste`, { method: "POST", signal: AbortSignal.timeout(25000) });
+      const j = await r.json();
+      setMsgConfig(j.ok ? "✓ Teste rápido enviado — saiu na impressora?" : `Teste rápido falhou: ${j.erro}`);
+    } catch { setMsgConfig("Agente não respondeu ao teste rápido (versão antiga?)."); }
+  }
   // Diagnóstico da balança (o que o agente recebeu por último, cru).
   const [rawBal, setRawBal] = useState<{ raw: string; peso: number; tara: number; lendo: boolean; versao?: string } | null>(null);
   async function lerRaw() {
@@ -296,6 +319,7 @@ export function QuiosqueBalanca({
       const j = await r.json();
       setImpressoras(j.impressoras ?? []);
       setImpressoraCupom(j.atual ?? "");
+      if (j.modo === "escpos" || j.modo === "pdf") setModoImpressao(j.modo);
     } catch {
       setMsgConfig("Não consegui listar as impressoras (agente não respondeu).");
     }
@@ -360,7 +384,7 @@ export function QuiosqueBalanca({
 
   // Sem internet no sistema? Manda pro agente: ele cria a comanda (se ele
   // tiver conexão) ou guarda na fila offline e devolve um código local.
-  async function capturarViaAgente(payload: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean }): Promise<boolean> {
+  async function capturarViaAgente(payload: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean; valor?: number; liquido?: number; livre?: boolean; cupom?: typeof cupom }): Promise<boolean> {
     try {
       const r = await fetch(`${AGENTE_URL}/pesagem`, {
         method: "POST",
@@ -377,7 +401,7 @@ export function QuiosqueBalanca({
           : valorDe(bruto, !!payload.so_kg);
         concluir({ id: "", numero: 0, valor, liquido, peso: bruto, tara: Number(payload.tara_balanca) || 0, livre, codigoOffline: String(j.codigo || "OFF") });
       } else {
-        concluir({ id: j.id, numero: j.numero, valor: j.valor, liquido: j.liquido, peso: j.peso, tara: j.tara, livre: j.livre });
+        concluir({ id: j.id, numero: j.numero, valor: j.valor, liquido: j.liquido, peso: j.peso, tara: j.tara, livre: j.livre }, j.impresso === "agente");
       }
       return true;
     } catch {
@@ -386,10 +410,10 @@ export function QuiosqueBalanca({
   }
 
   // Fecha um resultado (livre direto ou virada de livre): mostra, imprime, agenda o reset.
-  function concluir(r: Resultado) {
+  function concluir(r: Resultado, jaImpresso = false) {
     setResultado(r);
     setEst("resultado");
-    setTimeout(() => imprimirCupom(r), 400);
+    if (!jaImpresso) setTimeout(() => imprimirCupom(r), 400);
     if (resetRef.current) clearTimeout(resetRef.current);
     if (r.peso > 0) {
       // Pesou: espera a balança zerar (prato retirado).
@@ -618,6 +642,15 @@ export function QuiosqueBalanca({
               {impressoras.length === 0 && !msgConfig && <p className="text-[#211915]/50">Procurando impressoras…</p>}
             </div>
             {msgConfig && <p className="mt-3 text-sm text-[#C78340]">{msgConfig}</p>}
+            {/* Modo de impressão: rápido (ESC/POS) ou PDF */}
+            <div className="mt-4 rounded-xl border border-[#211915]/15 p-3 text-sm">
+              <p className="mb-2 font-semibold">Como imprimir o cupom</p>
+              <div className="flex gap-2">
+                <button onClick={() => alternarModo("escpos")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "escpos" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}>⚡ Rápido (direto na térmica)</button>
+                <button onClick={() => alternarModo("pdf")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "pdf" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}>🐢 PDF (modo antigo)</button>
+              </div>
+              <p className="mt-2 text-xs text-[#211915]/60">O rápido sai em menos de 1 s. Se a impressora não entender (cupom em branco ou símbolos), volte pro PDF e me avise.</p>
+            </div>
             {/* Como a balança está sendo usada (tara) */}
             <label className="mt-4 flex items-start gap-2 rounded-xl border border-[#211915]/15 p-3 text-sm">
               <input type="checkbox" checked={balancaTarada} onChange={(e) => definirBalancaTarada(e.target.checked)} className="mt-1 h-5 w-5" />
@@ -673,6 +706,7 @@ export function QuiosqueBalanca({
             </div>
             <div className="mt-5 flex gap-3">
               <button onClick={testarImpressora} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5">🧾 Imprimir teste</button>
+              <button onClick={testeRapido} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5">⚡ Teste rápido</button>
               <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-[#C78340] py-3 text-lg font-bold">Fechar</button>
             </div>
           </div>

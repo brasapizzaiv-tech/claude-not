@@ -13,10 +13,12 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
-import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
+import { gerarCupomEscPos, gerarTesteEscPos } from "./escpos.mjs";
 
-const VERSAO = "1.1.7"; // 1.1.5: watchdog da serial; 1.1.6: bandeja não abria após religar o PC; 1.1.7: impressora escolhida fica GRAVADA (dados em ProgramData, Program Files é só leitura)
+const VERSAO = "1.2.0"; // 1.1.7: dados em ProgramData; 1.2.0: agente NUMERA e IMPRIME NA HORA (sincroniza depois), ESC/POS direto na térmica, fila de impressão com retentativa
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -33,6 +35,46 @@ const token = cfg.token || "";
 const portaHttp = Number(cfg.portaHttp) || 8543;
 const portaSerial = cfg.portaSerial || "auto"; // "COM5" ou "auto" (procura Prolific/USB-Serial)
 let impressoraCupom = String(estado.impressoraCupom ?? cfg.impressoraCupom ?? ""); // nome no Windows; "" = impressora padrão
+let impressaoModo = estado.impressaoModo === "pdf" ? "pdf" : "escpos"; // escpos = direto na térmica (rápido); pdf = caminho antigo
+// Numeração da balança (o agente numera e imprime na hora; o sistema recebe o
+// número junto com a pesagem). Reinicia a cada abertura de caixa.
+let numeroInicial = Number(estado.numeroInicial) || 200;
+const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+function salvarEstado() {
+  try { writeFileSync(estadoFile, JSON.stringify(estado, null, 2)); } catch (e) { log(`Não gravei o estado (${estadoFile}): ${e.message}`); }
+}
+function proximoNumeroBalanca() {
+  const hoje = hojeSP();
+  // Sem contato com o sistema (offline) o reinício é diário.
+  if (estado.resetDia !== hoje || !(Number(estado.proximoNumero) > 0)) {
+    estado.proximoNumero = numeroInicial;
+    estado.resetDia = hoje;
+  }
+  const n = Number(estado.proximoNumero);
+  estado.proximoNumero = n + 1;
+  salvarEstado();
+  return n;
+}
+// Chamado pelo heartbeat com o que o sistema respondeu: caixa aberto agora?
+function aplicarNumeracao(j) {
+  if (!j) return;
+  if (Number(j.numero_inicial_balanca) > 0 && Number(j.numero_inicial_balanca) !== numeroInicial) {
+    numeroInicial = Number(j.numero_inicial_balanca);
+    estado.numeroInicial = numeroInicial;
+  }
+  const ref = j.caixa_aberto_em || null;
+  if (ref && ref !== estado.caixaRef) {
+    // Caixa novo: reinicia — a não ser que já tenha reiniciado hoje (evita
+    // repetir número se a balança já rodou antes do caixa abrir).
+    estado.caixaRef = ref;
+    if (estado.resetDia !== hojeSP()) {
+      estado.proximoNumero = numeroInicial;
+      estado.resetDia = hojeSP();
+      log(`Caixa aberto no sistema: numeração da balança reiniciada em ${numeroInicial}.`);
+    }
+  }
+  salvarEstado();
+}
 const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 const logFile = path.join(dataDir, "agente.log");
 const filaFile = path.join(dataDir, "fila.json");
@@ -61,10 +103,8 @@ async function carregarImpressao() {
   return libsImpressao;
 }
 function salvarConfig() {
-  try {
-    estado = { ...estado, impressoraCupom };
-    writeFileSync(estadoFile, JSON.stringify(estado, null, 2));
-  } catch (e) { log(`Não gravei a escolha da impressora (${estadoFile}): ${e.message}`); }
+  estado = { ...estado, impressoraCupom, impressaoModo };
+  salvarEstado();
 }
 
 // ---------- impressão do cupom ----------
@@ -89,10 +129,26 @@ async function atualizarLogo() {
     if (r.ok) writeFileSync(logoFile, Buffer.from(await r.arrayBuffer()));
   } catch { /* fica com a logo antiga (ou sem) */ }
 }
-async function imprimirCupom(d) {
+// Bytes crus (ESC/POS) pro spooler do Windows, via raw-print.ps1.
+function imprimirRaw(bytes) {
+  return new Promise((resolve, reject) => {
+    const tdir = path.join(dataDir, "tmp");
+    mkdirSync(tdir, { recursive: true });
+    const file = path.join(tdir, `raw-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.bin`);
+    writeFileSync(file, bytes);
+    const args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(dir, "raw-print.ps1"), "-File", file];
+    if (impressoraCupom) args.push("-Printer", impressoraCupom);
+    execFile("powershell", args, { windowsHide: true, timeout: 20000 }, (err, out, errOut) => {
+      try { unlinkSync(file); } catch { /* fica no tmp */ }
+      if (err) return reject(new Error((String(errOut || out || err.message)).split("\n")[0].slice(0, 200)));
+      resolve();
+    });
+  });
+}
+async function imprimirCupomPdf(d) {
   const { imprimirPdf, gerarCupomPdf } = await carregarImpressao();
   const logo = existsSync(logoFile) ? readFileSync(logoFile) : null;
-  const urlComanda = d.id ? `${baseUrl}/salao/comandas/${d.id}` : null;
+  const urlComanda = d.urlComanda || (d.id ? `${baseUrl}/salao/comandas/${d.id}` : null);
   const pdf = await gerarCupomPdf({ ...d, logo, urlComanda });
   mkdirSync(tmpDir, { recursive: true });
   const file = path.join(tmpDir, `cupom-${Date.now()}.pdf`);
@@ -100,8 +156,60 @@ async function imprimirCupom(d) {
   const opts = { scale: "noscale" };
   if (impressoraCupom) opts.printer = impressoraCupom;
   await imprimirPdf(file, opts);
-  log(`Cupom ${d.codigoOffline || "#" + d.numero} impresso em "${impressoraCupom || "impressora padrão"}".`);
 }
+async function imprimirCupom(d) {
+  const t0 = Date.now();
+  if (impressaoModo === "escpos") {
+    try {
+      const logo = existsSync(logoFile) ? readFileSync(logoFile) : null;
+      const urlComanda = d.urlComanda || (d.id ? `${baseUrl}/salao/comandas/${d.id}` : null);
+      await imprimirRaw(gerarCupomEscPos({ ...d, logo, urlComanda }));
+      log(`Cupom ${d.codigoOffline || "#" + d.numero} impresso (ESC/POS, ${Date.now() - t0} ms) em "${impressoraCupom || "impressora padrão"}".`);
+      return;
+    } catch (e) {
+      log(`ESC/POS falhou (${e.message}) — tentando pelo PDF.`);
+    }
+  }
+  await imprimirCupomPdf(d);
+  log(`Cupom ${d.codigoOffline || "#" + d.numero} impresso (PDF, ${Date.now() - t0} ms) em "${impressoraCupom || "impressora padrão"}".`);
+}
+
+// Fila de impressão com retentativa: se a impressora estiver ocupada/desligada,
+// o cupom NÃO se perde — tenta de novo a cada 10 s por até 15 min.
+const filaImpFile = path.join(dataDir, "fila-impressao.json");
+let filaImp = [];
+try { if (existsSync(filaImpFile)) filaImp = JSON.parse(readFileSync(filaImpFile, "utf8")); } catch { filaImp = []; }
+const salvarFilaImp = () => { try { writeFileSync(filaImpFile, JSON.stringify(filaImp)); } catch { /* disco */ } };
+let imprimindo = false;
+async function processarImpressoes() {
+  if (imprimindo || filaImp.length === 0) return;
+  imprimindo = true;
+  try {
+    while (filaImp.length > 0) {
+      const job = filaImp[0];
+      try {
+        await imprimirCupom(job.d);
+        filaImp.shift(); salvarFilaImp();
+      } catch (e) {
+        job.tentativas = (job.tentativas || 0) + 1;
+        salvarFilaImp();
+        if (job.tentativas >= 90) {
+          log(`Cupom ${job.d.codigoOffline || "#" + job.d.numero} DESISTIDO após ${job.tentativas} tentativas (${e.message}). Reimprima pelo sistema.`);
+          filaImp.shift(); salvarFilaImp();
+          continue;
+        }
+        log(`Cupom ${job.d.codigoOffline || "#" + job.d.numero} não imprimiu (${e.message}) — tentativa ${job.tentativas}, tento de novo em 10 s.`);
+        break;
+      }
+    }
+  } finally { imprimindo = false; }
+}
+function enfileirarImpressao(d) {
+  filaImp.push({ d, tentativas: 0, ts: new Date().toISOString() });
+  salvarFilaImp();
+  processarImpressoes();
+}
+setInterval(processarImpressoes, 10000);
 
 // ---------- fila offline (persistida em disco, retry infinito) ----------
 let fila = [];
@@ -235,7 +343,7 @@ async function sincronizarFila() {
       const p = fila[0];
       try {
         const r = await criarComandaNoSistema(p);
-        log(`Fila: pesagem de ${p.ts} sincronizada → comanda #${r.numero}.`);
+        log(`Fila: pesagem de ${p.ts} sincronizada → comanda #${r.numero}${r.jaExistia ? " (já estava no sistema)" : ""}.`);
         fila.shift();
         salvarFila();
       } catch (e) {
@@ -266,12 +374,13 @@ setInterval(sincronizarFila, 15000);
 // Heartbeat: status + tamanho da fila (pro painel ALERTAR pendências).
 async function heartbeat() {
   try {
-    await fetch(`${baseUrl}/api/balanca/status`, {
+    const r = await fetch(`${baseUrl}/api/balanca/status`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ hostname: os.hostname(), fila_pendente: fila.length, versao: VERSAO }),
+      body: JSON.stringify({ hostname: os.hostname(), fila_pendente: fila.length, versao: VERSAO, proximo_numero: estado.proximoNumero ?? null }),
       signal: AbortSignal.timeout(8000),
     });
+    if (r.ok) aplicarNumeracao(await r.json().catch(() => null));
   } catch { /* offline */ }
 }
 setInterval(heartbeat, 15000);
@@ -294,6 +403,8 @@ const server = http.createServer(async (req, res) => {
       lendo: Date.now() - ultimaLeitura < 3000, // balança respondendo?
       fila: fila.length,
       versao: VERSAO,
+      proximoNumero: estado.proximoNumero ?? null,
+      impressaoModo,
     }));
   }
 
@@ -310,8 +421,31 @@ const server = http.createServer(async (req, res) => {
       let p;
       try { p = JSON.parse(corpo); } catch { res.writeHead(400, cors); return res.end(); }
       p.ts = p.ts || new Date().toISOString();
+
+      // NOVO fluxo (quiosque manda valor/líquido/livre já calculados): o agente
+      // numera, IMPRIME NA HORA e manda pro sistema em seguida (fila com retry).
+      if (p.valor != null) {
+        const id = randomUUID();
+        const numero = proximoNumeroBalanca();
+        const registro = { peso: p.peso, tara_balanca: p.tara_balanca, so_kg: p.so_kg, livre_direto: p.livre_direto, ts: p.ts, id, numero };
+        fila.push(registro); salvarFila();
+        const cupomDados = {
+          ...(p.cupom || {}),
+          id, numero,
+          peso: Number(p.peso) || 0, tara: Number(p.tara_balanca) || 0,
+          valor: Number(p.valor) || 0, liquido: Number(p.liquido) || 0,
+          livre: !!p.livre, viradaLivre: !!p.viradaLivre, antes: p.antes ?? null,
+          urlComanda: `${baseUrl}/salao/comandas/${id}`,
+        };
+        enfileirarImpressao(cupomDados);
+        res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true, id, numero, valor: cupomDados.valor, liquido: cupomDados.liquido, peso: cupomDados.peso, tara: cupomDados.tara, livre: cupomDados.livre, offline: false, impresso: "agente" }));
+        sincronizarFila();
+        return;
+      }
+
       try {
-        // Tenta na hora (online): devolve a comanda de verdade.
+        // Fluxo antigo (quiosque sem o valor): tenta na hora (online).
         const r = await criarComandaNoSistema(p);
         res.writeHead(200, { ...cors, "Content-Type": "application/json" });
         res.end(JSON.stringify({ ...r, offline: false }));
@@ -332,7 +466,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/impressoras") {
     const impressoras = await listarImpressoras();
     res.writeHead(200, { ...cors, "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ ok: true, impressoras, atual: impressoraCupom }));
+    return res.end(JSON.stringify({ ok: true, impressoras, atual: impressoraCupom, modo: impressaoModo }));
   }
 
   // Escolha da impressora do cupom (gravada no config.json).
@@ -343,8 +477,9 @@ const server = http.createServer(async (req, res) => {
       try {
         const p = JSON.parse(corpo);
         if (typeof p.impressoraCupom === "string") { impressoraCupom = p.impressoraCupom.trim(); salvarConfig(); log(`Impressora do cupom: "${impressoraCupom || "padrão"}".`); }
+        if (p.impressaoModo === "escpos" || p.impressaoModo === "pdf") { impressaoModo = p.impressaoModo; salvarConfig(); log(`Modo de impressão: ${impressaoModo}.`); }
         res.writeHead(200, { ...cors, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: true, atual: impressoraCupom }));
+        res.end(JSON.stringify({ ok: true, atual: impressoraCupom, modo: impressaoModo }));
       } catch { res.writeHead(400, cors); res.end(); }
     });
     return;
@@ -357,16 +492,25 @@ const server = http.createServer(async (req, res) => {
     req.on("end", async () => {
       let d;
       try { d = JSON.parse(corpo); } catch { res.writeHead(400, cors); return res.end(); }
-      try {
-        await imprimirCupom(d);
-        res.writeHead(200, { ...cors, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: true }));
-      } catch (e) {
-        log(`Falha ao imprimir o cupom: ${e.message}`);
-        res.writeHead(200, { ...cors, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: false, erro: e.message }));
-      }
+      // Vai pela fila: se a impressora falhar agora, tenta de novo sozinho.
+      enfileirarImpressao(d);
+      res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, fila: filaImp.length }));
     });
+    return;
+  }
+
+  // Teste da impressão rápida (ESC/POS) direto na impressora escolhida.
+  if (req.method === "POST" && req.url === "/imprimir-teste") {
+    try {
+      await imprimirRaw(gerarTesteEscPos(impressoraCupom || "impressora padrão"));
+      res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true }));
+    } catch (e) {
+      log(`Teste ESC/POS falhou: ${e.message}`);
+      res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: false, erro: e.message }));
+    }
     return;
   }
 
@@ -386,6 +530,7 @@ heartbeat();
 sincronizarFila();
 atualizarLogo();
 setInterval(atualizarLogo, 6 * 3600 * 1000);
-log(`Impressora do cupom: "${impressoraCupom || "padrão do Windows"}" (escolha na tela do quiosque, ⚙️ — fica gravada em ${estadoFile}).`);
+log(`Impressora do cupom: "${impressoraCupom || "padrão do Windows"}" · modo ${impressaoModo} · próximo nº da balança: ${estado.proximoNumero ?? numeroInicial} (escolha na tela do quiosque, ⚙️).`);
+processarImpressoes();
 // Confere logo no início se a impressão vai funcionar (só avisa no log).
 carregarImpressao().then(() => log("Impressão de cupom pronta.")).catch((e) => log(`Impressão de cupom INDISPONÍVEL: ${e.message}`));

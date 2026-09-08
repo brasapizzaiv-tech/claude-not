@@ -9,7 +9,8 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
 
-  let body: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean; ts?: string };
+  // id/numero: gerados pelo AGENTE (ele imprime o cupom antes de sincronizar).
+  let body: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean; ts?: string; id?: string; numero?: number };
   try {
     body = await req.json();
   } catch {
@@ -17,6 +18,15 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
+  const idAgente = /^[0-9a-f-]{36}$/i.test(body.id ?? "") ? (body.id as string) : null;
+  // Idempotente: a fila do agente pode reenviar a mesma pesagem.
+  if (idAgente) {
+    const { data: ja } = await admin.from("pdv_comandas").select("id, numero, valor_buffet, peso, tara, livre").eq("id", idAgente).maybeSingle();
+    if (ja) {
+      return Response.json({ ok: true, jaExistia: true, id: ja.id, numero: ja.numero, valor: Number(ja.valor_buffet), liquido: Number(ja.peso), peso: Number(ja.peso), tara: Number(ja.tara), livre: !!ja.livre });
+    }
+  }
+  const numeroAgente = Number(body.numero) > 0 ? Math.round(Number(body.numero)) : null;
   const { data: cfgRows } = await admin.from("pdv_config").select("chave, valor");
   const cfg: Record<string, string> = {};
   for (const r of (cfgRows as { chave: string; valor: string }[]) ?? []) cfg[r.chave] = r.valor;
@@ -55,6 +65,8 @@ export async function POST(req: Request) {
   const { data: com, error } = await admin
     .from("pdv_comandas")
     .insert({
+      ...(idAgente ? { id: idAgente } : {}),
+      ...(numeroAgente ? { numero: numeroAgente } : {}),
       peso,
       tara,
       valor_buffet: valor,

@@ -1144,6 +1144,9 @@ export async function abrirCaixa(formData: FormData) {
   const nome = ((formData.get("nome") as string) || "Caixa").trim();
   const saldo_inicial = valorNum(formData.get("saldo_inicial"));
   await supabase.from("pdv_caixas").insert({ nome, saldo_inicial });
+  // Numeração do salão/balcão reinicia do 1 a cada caixa (a balança reinicia
+  // sozinha pelo agente, a partir do número inicial configurado).
+  await supabase.rpc("pdv_reiniciar_numeracao");
   revalidatePath("/salao/caixa");
   redirect("/salao/caixa");
 }
