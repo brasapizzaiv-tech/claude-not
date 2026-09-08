@@ -124,6 +124,7 @@ export function Sidebar({
             { href: "/financeiro/orcamento", label: "Orçamento", icon: "🎯" },
             { href: "/financeiro/banco", label: "Conciliação bancária", icon: "🏦" },
             { href: "/financeiro/vendas", label: "Vendas", icon: "🛒" },
+            { href: "/financeiro/vendidos", label: "Produtos vendidos", icon: "🍕" },
             { href: "/financeiro/dre", label: "DRE", icon: "📈" },
           ]
         : so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "📄" }),
