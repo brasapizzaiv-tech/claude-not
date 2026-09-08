@@ -292,10 +292,10 @@ export function FornecedoresClient({
           </details>
 
           <div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
-            <b>Envio em massa (extensão VMarket):</b> deixe esta tela aberta e clique no
-            ícone da extensão <b>VMarket WhatsApp Sender</b> → <b>Enviar Mensagem</b>. Ela lê
-            os links da coluna <b>“Envio manual”</b> e dispara um a um (mantenha o WhatsApp
-            Web logado neste navegador). Ou envie manualmente clicando em cada botão.
+            <b>Como enviar:</b> clique em <b>Abrir WhatsApp do próximo</b> (ou em <b>Envio manual</b> na linha):
+            abre o WhatsApp Web já com a mensagem e o link — é só apertar Enviar e voltar aqui pro próximo.
+            A extensão <b>VMarket WhatsApp Sender</b> não funciona com este sistema: ela só busca os links
+            no servidor da própria VMarket.
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
