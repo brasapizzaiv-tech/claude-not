@@ -773,7 +773,7 @@ export function ReceberComandas({
       )}
 
       {/* Após receber: emitir NFC-e das comandas pagas */}
-      {pagas.length > 0 && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} />}
+      {pagas.length > 0 && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} juntas />}
 
       {/* Cupom de recebimento (só na impressão — térmica) */}
       {recibo && (

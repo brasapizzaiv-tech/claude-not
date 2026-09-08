@@ -44,17 +44,26 @@ export async function lerNfceAuto() {
 // documento: CPF (11 dígitos) ou CNPJ (14) do consumidor, opcional. Se não vier
 // e a comanda tiver cliente vinculado, usa o documento e o nome dele.
 export async function emitirNfceComanda(comandaId: string, documento?: string) {
+  return emitirNfceComandas([comandaId], documento);
+}
+
+// Uma NFC-e pra VÁRIAS comandas pagas juntas no caixa (itens e buffet de todas
+// numa nota só). Com uma comanda, é a emissão normal.
+export async function emitirNfceComandas(comandaIds: string[], documento?: string) {
   const supabase = await createClient();
   // Caixa do salão, PDV de balcão e delivery emitem nota.
   await exigirAcesso(["/salao", "/pdv", "/delivery"]);
+  const ids = [...new Set((comandaIds ?? []).filter(Boolean))];
+  if (ids.length === 0) return { ok: false, mensagem: "Nenhuma comanda." };
+  const comandaId = ids[0];
   let docLimpo = (documento || "").replace(/\D/g, "");
   let nomeDest: string | undefined;
 
-  // Já autorizada? devolve.
+  // Já autorizada (pra qualquer uma dessas comandas)? devolve.
   const { data: jaTem } = await supabase
     .from("nfce_emitidas")
     .select("*")
-    .eq("comanda_id", comandaId)
+    .or(`comanda_id.in.(${ids.join(",")}),comanda_ids.ov.{${ids.join(",")}}`)
     .eq("status", "autorizado")
     .order("criado_em", { ascending: false })
     .limit(1)
@@ -67,12 +76,16 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
   if (!cfg.emissor_token) return { ok: false, mensagem: "Falta o token do emissor na Config fiscal." };
   const ambiente = (cfg.emissor_ambiente as FocusAmbiente) || "homologacao";
 
-  const { data: com } = await supabase
+  const { data: comsData } = await supabase
     .from("pdv_comandas")
-    .select("numero, valor_buffet, forma_pagamento, cliente_id")
-    .eq("id", comandaId)
-    .maybeSingle();
-  if (!com) return { ok: false, mensagem: "Comanda não encontrada." };
+    .select("id, numero, valor_buffet, forma_pagamento, cliente_id")
+    .in("id", ids);
+  const coms = (comsData ?? []) as { id: string; numero: number; valor_buffet: number | null; forma_pagamento: string | null; cliente_id: string | null }[];
+  if (coms.length === 0) return { ok: false, mensagem: "Comanda não encontrada." };
+  const com = {
+    forma_pagamento: coms.find((c) => c.forma_pagamento)?.forma_pagamento ?? null,
+    cliente_id: coms.find((c) => c.cliente_id)?.cliente_id ?? null,
+  };
   if (!docLimpo && com.cliente_id) {
     const { data: cli } = await supabase.from("clientes").select("nome, cpf_cnpj").eq("id", com.cliente_id as string).maybeSingle();
     const d = String((cli as { cpf_cnpj?: string | null } | null)?.cpf_cnpj ?? "").replace(/\D/g, "");
@@ -88,7 +101,7 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
   const { data: itensData } = await supabase
     .from("pdv_comanda_itens")
     .select("descricao, qtd, preco_unit, item_id")
-    .eq("comanda_id", comandaId);
+    .in("comanda_id", ids);
 
   const NCM = cfg.ncm_buffet || "21069090";
   const CFOP = cfg.cfop_padrao || "5102";
@@ -116,14 +129,15 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
   const items: FocusItem[] = [];
   let total = 0;
   let n = 0;
-  const buffet = Number(com.valor_buffet || 0);
-  if (buffet > 0) {
+  for (const c of coms) {
+    const buffet = Number(c.valor_buffet || 0);
+    if (!(buffet > 0)) continue;
     n++;
     total += buffet;
     items.push({
       numero_item: String(n),
       codigo_produto: "BUFFET",
-      descricao: "Buffet",
+      descricao: coms.length > 1 ? `Buffet (comanda ${c.numero})` : "Buffet",
       cfop: CFOP,
       unidade_comercial: "KG",
       quantidade_comercial: "1.0000",
@@ -190,6 +204,7 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
 
   const { data: gravada } = await supabase.from("nfce_emitidas").insert({
     comanda_id: comandaId,
+    comanda_ids: ids,
     modelo: "nfce",
     ambiente,
     ref,
@@ -203,7 +218,7 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
     valor: total,
   }).select("id").single();
 
-  revalidatePath(`/salao/comandas/${comandaId}`);
+  for (const id of ids) revalidatePath(`/salao/comandas/${id}`);
   return {
     ok: r.ok,
     id: (gravada?.id as string | undefined) ?? undefined,

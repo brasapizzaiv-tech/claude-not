@@ -18,6 +18,7 @@ export type NotaLinha = {
   mensagem: string | null;
   criadoEm: string | null;
   comandaNumero: number | null;
+  comandas?: number[]; // todas as comandas da nota (quando pagas juntas)
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -153,7 +154,7 @@ export function NotasClient({
               <tr key={l.id} className="bg-white dark:bg-zinc-950">
                 <td className="px-4 py-2">
                   <div className="font-medium text-zinc-800 dark:text-zinc-100">
-                    {l.comandaNumero != null ? `Comanda nº ${l.comandaNumero}` : "—"}
+                    {(l.comandas?.length ?? 0) > 1 ? `Comandas nº ${l.comandas!.join(", ")}` : l.comandaNumero != null ? `Comanda nº ${l.comandaNumero}` : "—"}
                   </div>
                   <div className="text-xs text-zinc-400">{dataHora(l.criadoEm)}</div>
                 </td>

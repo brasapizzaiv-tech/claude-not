@@ -6,9 +6,17 @@ export default async function NotasFiscaisPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("nfce_emitidas")
-    .select("id, modelo, ambiente, status, numero, serie, chave, url_danfe, url_xml, valor, mensagem, criado_em, pdv_comandas(numero)")
+    .select("id, modelo, ambiente, status, numero, serie, chave, url_danfe, url_xml, valor, mensagem, criado_em, comanda_ids, pdv_comandas(numero)")
     .order("criado_em", { ascending: false })
     .limit(1000);
+
+  // Nota de várias comandas: busca os números de todas.
+  const todosIds = [...new Set(((data as unknown as { comanda_ids?: string[] | null }[]) ?? []).flatMap((r) => r.comanda_ids ?? []))];
+  const numeroDe = new Map<string, number>();
+  if (todosIds.length > 0) {
+    const { data: cs } = await supabase.from("pdv_comandas").select("id, numero").in("id", todosIds);
+    for (const c of (cs as { id: string; numero: number }[]) ?? []) numeroDe.set(c.id, c.numero);
+  }
 
   const linhas: NotaLinha[] = ((data as unknown as Record<string, unknown>[]) ?? []).map((r) => ({
     id: r.id as string,
@@ -24,6 +32,7 @@ export default async function NotasFiscaisPage() {
     mensagem: (r.mensagem as string) || null,
     criadoEm: (r.criado_em as string) || null,
     comandaNumero: (r.pdv_comandas as { numero?: number } | null)?.numero ?? null,
+    comandas: ((r.comanda_ids as string[] | null) ?? []).map((id) => numeroDe.get(id)).filter((n): n is number => n != null),
   }));
 
   const autorizadas = linhas.filter((l) => l.status === "autorizado");
