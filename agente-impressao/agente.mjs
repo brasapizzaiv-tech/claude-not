@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { print } = ptp;
-const VERSAO = "1.1.1"; // 1.1.0: instalador + bandeja; 1.1.1: cupom/comanda/nota ajustam à largura da impressora (etiqueta continua exata)
+const VERSAO = "1.1.2"; // 1.1.1: cupom/comanda/nota ajustam à largura; 1.1.2: sempre em retrato (não gira o cupom no rolo)
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -83,7 +83,9 @@ async function ciclo() {
         // pra caber na área imprimível da térmica (papel 80 mm imprime ~72 mm;
         // sem isso a borda esquerda sai cortada).
         const etiqueta = ["etiqueta", "marmita", "teste_etiqueta"].includes(String(job.tipo || ""));
-        await print(file, { printer: job.printer, scale: etiqueta ? "noscale" : "fit" });
+        await print(file, etiqueta
+          ? { printer: job.printer, scale: "noscale" }
+          : { printer: job.printer, scale: "fit", orientation: "portrait" });
         await fetch(`${baseUrl}/api/impressao/baixa`, {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },

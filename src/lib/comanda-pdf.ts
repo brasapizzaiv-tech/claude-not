@@ -44,6 +44,8 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   if (c.qtdCat) h += 30;
   if (d.observacao) h += 30;
   h += 46;
+  // Sempre mais alta que larga — página "deitada" faz a impressora girar a comanda.
+  h = Math.max(h, W + 20);
 
   const doc = new PDFDocument({ size: [W, h], margin: 0 });
   const chunks: Buffer[] = [];

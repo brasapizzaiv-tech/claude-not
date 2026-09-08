@@ -7,7 +7,8 @@ export async function gerarTestePdf(nome: string, largura: number): Promise<Buff
   const W = (largura || 80) * MM;
   const pad = 6;
   const contentW = W - pad * 2;
-  const doc = new PDFDocument({ size: [W, 200], margin: 0 });
+  // Sempre mais alta que larga — página "deitada" faz a impressora girar o cupom.
+  const doc = new PDFDocument({ size: [W, Math.max(200, W + 20)], margin: 0 });
   const chunks: Buffer[] = [];
   doc.on("data", (c: Buffer) => chunks.push(c));
   const fim = new Promise<Buffer>((res) => doc.on("end", () => res(Buffer.concat(chunks))));
