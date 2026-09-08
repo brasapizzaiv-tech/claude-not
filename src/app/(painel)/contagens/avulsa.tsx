@@ -1,5 +1,6 @@
 "use client";
 
+import { siteUrl } from "@/lib/site-url";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { criarContagemAvulsa } from "./actions";
@@ -52,7 +53,7 @@ export function AvulsaForm({
     );
   }
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = siteUrl();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

@@ -1,5 +1,6 @@
 "use client";
 
+import { siteUrl } from "@/lib/site-url";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
@@ -13,7 +14,7 @@ export function QRComanda({ id }: { id: string }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
     const url =
-      (typeof window !== "undefined" ? window.location.origin : "") +
+      siteUrl() +
       `/salao/comandas/${id}`;
     QRCode.toDataURL(url, { width: 200, margin: 1 }).then(setSrc).catch(() => {});
   }, [id]);

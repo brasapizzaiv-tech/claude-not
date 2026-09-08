@@ -1,5 +1,6 @@
 "use client";
 
+import { siteUrl } from "@/lib/site-url";
 import { useState } from "react";
 import Link from "next/link";
 import type { Colaborador } from "@/lib/types";
@@ -45,7 +46,7 @@ function GerarLink({ id, small }: { id: string; small?: boolean }) {
 function LinkApp({ c }: { c: Colaborador }) {
   const [copiado, setCopiado] = useState(false);
   if (!c.token) return <GerarLink id={c.id} small />;
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = siteUrl();
   const link = `${origin}/eu/${c.token}`;
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
@@ -96,7 +97,7 @@ function CardApp({ c }: { c: Colaborador }) {
         <GerarLink id={c.id} />
       </div>
     );
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = siteUrl();
   const link = `${origin}/eu/${c.token}`;
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";

@@ -1,5 +1,6 @@
 "use client";
 
+import { siteUrl } from "@/lib/site-url";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -36,7 +37,7 @@ export function FornecedoresClient({
 }) {
   const router = useRouter();
   // Origem do site lida na hora do clique (evita setState em render).
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = siteUrl();
   const [convidandoTodos, setConvidandoTodos] = useState(false);
   const [template, setTemplate] = useState<string>(() => {
     if (typeof window === "undefined") return MSG_PADRAO;
