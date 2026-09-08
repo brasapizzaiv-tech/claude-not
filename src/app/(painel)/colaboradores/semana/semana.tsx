@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, TURNOS, vinculoDoTurno } from "@/lib/equipe";
-import { criarEsporadico, excluirDezPorCento, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
+import { criarEsporadico, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
   id: string;
@@ -85,7 +85,29 @@ export function SemanaClient({
       if (r.erro) setErro(r.erro);
     });
   }
-  const pagoDe = useMemo(() => new Map(pagos.map((p) => [p.colaborador_id, p])), [pagos]);
+  // Soma por pessoa (pode ter o lançamento da semana + complementos).
+  const pagoDe = useMemo(() => {
+    const m = new Map<string, { valor: number; desconto: number; n: number }>();
+    for (const p of pagos) {
+      const a = m.get(p.colaborador_id) ?? { valor: 0, desconto: 0, n: 0 };
+      a.valor = Math.round((a.valor + Number(p.valor)) * 100) / 100;
+      a.desconto = Math.round((a.desconto + Number(p.desconto || 0)) * 100) / 100;
+      a.n++;
+      m.set(p.colaborador_id, a);
+    }
+    return m;
+  }, [pagos]);
+  // Esqueceu algo depois de lançar: lança só a diferença.
+  function lancarDiferenca(p: Pessoa, diferenca: number) {
+    const ex = extrasSem[p.id];
+    const detalhe = ex?.motivo ? `extra ${ex.motivo}` : "valor esquecido";
+    if (!window.confirm(`Lançar mais ${brl(diferenca)} pra ${p.nome} (semana ${rotuloSemana(segunda)}) no Contas a pagar${jaPago ? ", já marcado como pago" : ""}?`)) return;
+    start(async () => {
+      const r = await lancarComplementoSemana(segunda, p.id, p.nome, diferenca, detalhe, { jaPago, data: dataPag, forma: formaPag || null });
+      setMsg("erro" in r && r.erro ? r.erro : `✓ Diferença de ${brl(diferenca)} lançada pra ${p.nome}.`);
+      router.refresh();
+    });
+  }
   const [desmarcados, setDesmarcados] = useState<Set<string>>(new Set()); // quem NÃO lançar agora
   const [descontar, setDescontar] = useState<Set<string>>(new Set()); // de quem descontar o fiado (opcional)
   const [jaPago, setJaPago] = useState(false);
@@ -660,8 +682,19 @@ export function SemanaClient({
                       <div className="font-medium text-zinc-900 dark:text-zinc-100">{p.nome}</div>
                       <div className="text-[11px] text-zinc-400">
                         {rotuloVinculo}{p.funcao ? ` · ${p.funcao}` : ""}
-                        {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))})</span>}
+                        {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))}{pagoDe.get(p.id)!.n > 1 ? `, ${pagoDe.get(p.id)!.n} lançamentos` : ""})</span>}
                       </div>
+                      {pagoDe.has(p.id) && total - pagoDe.get(p.id)!.valor > 0.005 && (
+                        <button
+                          type="button"
+                          onClick={() => lancarDiferenca(p, Math.round((total - pagoDe.get(p.id)!.valor) * 100) / 100)}
+                          disabled={pending}
+                          className="mt-1 rounded-md border border-amber-500 px-2 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-400"
+                          title="Esqueceu algo? Lança só a diferença entre o total de agora e o que já foi lançado."
+                        >
+                          + Lançar diferença {brl(total - pagoDe.get(p.id)!.valor)}
+                        </button>
+                      )}
                     </td>
                     <td className="px-2 py-2 text-center whitespace-nowrap text-zinc-600 dark:text-zinc-300">
                       {turnoFiltro !== "noite" ? `${nDias}☀️` : ""}{turnoFiltro === "todos" ? " " : ""}{turnoFiltro !== "dia" ? `${nNoites}🌙` : ""}
@@ -671,8 +704,6 @@ export function SemanaClient({
                     <td className="px-3 py-2 text-right">
                       {turnoFiltro !== "todos" ? (
                         <span className={extraM > 0 ? "" : "text-zinc-300"}>{extraM > 0 ? brl(extraM) : "—"}</span>
-                      ) : pagoDe.has(p.id) ? (
-                        <span className="text-xs text-zinc-500">{extrasSem[p.id]?.valor ? `${extrasSem[p.id].turno === "dia" ? "☀️" : "🌙"} ${extrasSem[p.id].valor}${extrasSem[p.id].motivo ? ` · ${extrasSem[p.id].motivo}` : ""}` : "—"}</span>
                       ) : (
                         <div className="flex flex-col items-end gap-0.5">
                           <div className="flex items-center gap-1">
@@ -711,9 +742,7 @@ export function SemanaClient({
                       )}
                     </td>
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-right">
-                      {pagoDe.has(p.id) ? (
-                        <span className="text-xs text-zinc-500">{extraDe(p).desconto ? `− ${extraDe(p).desconto}${extraDe(p).descMotivo ? ` · ${extraDe(p).descMotivo}` : ""}` : "—"}</span>
-                      ) : (
+                      {(
                         <div className="flex flex-col items-end gap-0.5">
                           <input
                             value={extraDe(p).desconto}

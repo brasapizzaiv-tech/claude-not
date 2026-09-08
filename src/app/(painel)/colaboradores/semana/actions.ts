@@ -191,6 +191,53 @@ export async function lancarPagamentosSemana(
   return { ok: true, n, totalDesc };
 }
 
+// Esqueceu algo depois de já ter lançado a semana da pessoa (um extra, uma
+// noite): lança só a DIFERENÇA como um segundo lançamento da mesma semana.
+export async function lancarComplementoSemana(
+  segunda: string,
+  colaboradorId: string,
+  nome: string,
+  valor: number,
+  detalhe: string,
+  opts: { jaPago: boolean; data: string; forma: string | null },
+) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const v = Math.round(Number(valor) * 100) / 100;
+  if (!(v > 0)) return { erro: "Valor inválido." };
+  const { data: cat } = await supabase
+    .from("dre_categorias")
+    .select("id")
+    .ilike("nome", "%eventual%diarista%")
+    .limit(1)
+    .maybeSingle();
+  if (!cat) return { erro: 'Categoria "CMO Eventual / Diaristas" não encontrada no plano de contas.' };
+  const dataLanc = /^\d{4}-\d{2}-\d{2}$/.test(opts.data) ? opts.data : hojeSP();
+  const rotulo = rotuloSemana(segunda);
+  const { data: l, error } = await supabase
+    .from("lancamentos")
+    .insert({
+      data: dataLanc,
+      categoria_id: cat.id,
+      descricao: `Semana ${rotulo} — ${nome} (complemento: ${detalhe || "valor esquecido"})`,
+      forma_pagamento: opts.forma,
+      lancamento_em: hojeSP(),
+      valor: v,
+      origem: "manual",
+      vencimento: dataLanc,
+      pago: opts.jaPago,
+      pago_em: opts.jaPago ? dataLanc : null,
+    })
+    .select("id")
+    .single();
+  if (error) return { erro: error.message };
+  await supabase.from("semana_pagamentos").insert({ segunda, colaborador_id: colaboradorId, valor: v, lancamento_id: l.id, desconto: 0 });
+  revalidatePath("/colaboradores/semana");
+  revalidatePath("/financeiro/contas");
+  revalidatePath("/financeiro");
+  return { ok: true };
+}
+
 // Cadastro rápido de um free esporádico direto da tela da semana.
 export async function criarEsporadico(nome: string, valorDia: number | null, valorNoite: number | null) {
   await exigirAcesso("/colaboradores");
