@@ -49,6 +49,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
 
   return (
     <SemanaClient
+      key={segunda}
       segunda={segunda}
       dias={dias}
       pessoas={(colabs ?? []) as Pessoa[]}
