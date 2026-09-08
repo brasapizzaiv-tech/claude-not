@@ -296,11 +296,13 @@ export async function lancarNota(
   const dataLanc = opts?.competencia
     ? `${opts.competencia}-01`
     : ((nota.data_emissao as string) ?? hojeSP());
-  const pago = dataLanc < inicioDoMes(); // histórico entra pago
   const vencimento =
     opts?.vencimento !== undefined
       ? opts.vencimento || null
       : ((nota.vencimento as string) ?? null);
+  // Histórico (competência de mês passado) entra como já pago — MAS só se o
+  // boleto também já venceu. Nota de agosto vencendo em setembro é conta a pagar.
+  const pago = dataLanc < inicioDoMes() && (!vencimento || vencimento < hojeSP());
   const descricao = `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`;
 
   // Itens da nota (com o produto vinculado → conta do DRE).
