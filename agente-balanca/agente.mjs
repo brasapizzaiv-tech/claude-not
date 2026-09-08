@@ -16,7 +16,7 @@ import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const VERSAO = "1.1.5"; // 1.1.3: Prot F / Prot 3; 1.1.4: atalhos; 1.1.5: watchdog da serial (reabre a porta se parar de chegar peso)
+const VERSAO = "1.1.6"; // 1.1.3: Prot F / Prot 3; 1.1.4: atalhos; 1.1.5: watchdog da serial; 1.1.6: bandeja voltava a não abrir após religar o PC (pid reaproveitado)
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));

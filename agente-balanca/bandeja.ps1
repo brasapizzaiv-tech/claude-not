@@ -19,13 +19,21 @@ $log    = Join-Path $dir "agente.log"
 # Já tem uma bandeja rodando? (clicou no atalho duas vezes) Então não abre outra —
 # senão viram dois agentes brigando pela porta serial e pela porta 8543.
 $pidFile = Join-Path $dir "bandeja.pid"
+# BUG 1.1.5: depois de religar o PC, o número de processo antigo no bandeja.pid
+# podia ter sido reaproveitado pelo Windows para OUTRO programa qualquer — a
+# bandeja achava que já estava rodando e saía sem ligar o agente. Agora só
+# considera "já rodando" se o processo com aquele número for esta bandeja mesmo.
 try {
   if (Test-Path $pidFile) {
     $old = (Get-Content $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1)
-    if ($old -and ([int]$old -ne $PID) -and (Get-Process -Id ([int]$old) -ErrorAction SilentlyContinue)) { exit }
+    if ($old -and ([int]$old -ne $PID)) {
+      $p = Get-CimInstance Win32_Process -Filter ("ProcessId = " + [int]$old) -ErrorAction SilentlyContinue
+      if ($p -and $p.CommandLine -and ($p.CommandLine -like "*bandeja.ps1*")) { exit }
+    }
   }
 } catch {}
 try { Set-Content -Path $pidFile -Value $PID -Encoding ascii } catch {}
+try { Add-Content -Path $log -Value ("[" + (Get-Date -Format "dd/MM/yyyy, HH:mm:ss") + "] Bandeja iniciada (logon do Windows ou atalho).") } catch {}
 
 $global:proc = $null
 function Start-Agente {
@@ -69,6 +77,7 @@ $miRe.add_Click({
 })
 $miSair.add_Click({
   try { if ($global:proc -and -not $global:proc.HasExited) { $global:proc.Kill() } } catch {}
+  try { Remove-Item $pidFile -Force -ErrorAction SilentlyContinue } catch {}
   $icon.Visible = $false
   [System.Windows.Forms.Application]::Exit()
 })
