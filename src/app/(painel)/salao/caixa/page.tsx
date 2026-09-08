@@ -9,7 +9,7 @@ import { pixConfigurado } from "@/lib/pix";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 
-const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito"];
+const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito", "Saldo cliente"];
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -234,6 +234,9 @@ export default async function CaixaPage({
           <NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} />
           <Link href="/salao/caixa/pix" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
             💠 Pix recebidos
+          </Link>
+          <Link href="/salao/caixa/fiado" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
+            👥 Fiado de clientes
           </Link>
           <CaixaAcoes caixaId={caixa.id} />
           <FechamentoZ

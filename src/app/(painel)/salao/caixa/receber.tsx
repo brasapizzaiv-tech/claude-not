@@ -95,6 +95,7 @@ export function ReceberComandas({
   }
   const [carrinho, setCarrinho] = useState<Set<string>>(new Set());
   const [desconto, setDesconto] = useState("");
+  const [descontoPct, setDescontoPct] = useState(false); // false = R$, true = %
   const [acrescimo, setAcrescimo] = useState("");
   const [formaSel, setFormaSel] = useState("");
   const [recebido, setRecebido] = useState("");
@@ -173,13 +174,16 @@ export function ReceberComandas({
   const subtotalBruto =
     Math.round((linhasCarrinho.reduce((s, l) => s + l.valor, 0) + extraValor) * 100) / 100;
   const temAlgo = linhasCarrinho.length > 0 || extras.length > 0;
-  const desc = num(desconto);
+  // Desconto em % vira R$ sobre o subtotal (ex.: 5% no dinheiro).
+  const desc = descontoPct ? Math.round(subtotalBruto * num(desconto)) / 100 : num(desconto);
   const acr = num(acrescimo);
   const totalPagar = Math.max(0, Math.round((subtotalBruto - desc + acr) * 100) / 100);
 
   const somaSplit = formas.reduce((s, f) => s + num(linhasPg[f] ?? ""), 0);
   const faltaSplit = Math.round((totalPagar - somaSplit) * 100) / 100;
-  const troco = formaSel === "Dinheiro" && recebido ? num(recebido) - totalPagar : 0;
+  const troco = formaSel === "Dinheiro" && recebido && num(recebido) >= totalPagar ? num(recebido) - totalPagar : 0;
+  // "Saldo cliente" (fiado) precisa de cliente vinculado.
+  const usaSaldoCliente = split ? num(linhasPg["Saldo cliente"] ?? "") > 0 : formaSel === "Saldo cliente";
   // Pix na tela: valor do QR = total (forma única) ou a parte "Pix" do split.
   const pixValor = split ? Math.round(num(linhasPg["Pix"] ?? "") * 100) / 100 : formaSel === "Pix" ? totalPagar : 0;
   const pixDescricao = `Brasa comanda ${selComandas.map((c) => `#${c.numero}`).join(" ")}`.slice(0, 120);
@@ -190,7 +194,8 @@ export function ReceberComandas({
     totalPagar >= 0 &&
     (split
       ? Math.abs(faltaSplit) < 0.01
-      : !!formaSel && (formaSel !== "Dinheiro" || num(recebido) >= totalPagar - 0.01));
+      : !!formaSel) &&
+    (!usaSaldoCliente || !!clienteSel);
 
   const cliFiltrados = (() => {
     const q = buscaCli.trim().toLowerCase();
@@ -325,11 +330,6 @@ export function ReceberComandas({
           troco: troco > 0.005 ? troco : 0,
           quando: new Date().toLocaleString("pt-BR"),
         });
-        setTimeout(() => {
-          try {
-            window.print();
-          } catch {}
-        }, 400);
         const pagasAgora = [...totPorCom.entries()].map(([id, t]) => ({ id, numero: t.numero }));
         setPagas(pagasAgora);
         // Pix/cartão com o interruptor ligado → nota sai sozinha.
@@ -338,6 +338,7 @@ export function ReceberComandas({
         setExtras([]);
         setClienteSel(null);
         setDesconto("");
+        setDescontoPct(false);
         setAcrescimo("");
         setFormaSel("");
         setRecebido("");
@@ -620,14 +621,28 @@ export function ReceberComandas({
               <div className="mt-3 space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500">Desconto (R$)</label>
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="text-xs text-zinc-500">Desconto</label>
+                      <span className="flex overflow-hidden rounded-md border border-zinc-300 text-[11px] dark:border-zinc-700">
+                        <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>R$</button>
+                        <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>%</button>
+                      </span>
+                    </div>
                     <input
                       inputMode="decimal"
                       value={desconto}
                       onChange={(e) => setDesconto(e.target.value)}
-                      placeholder="0,00"
+                      placeholder={descontoPct ? "0" : "0,00"}
                       className={`${inputCls} w-full text-right`}
                     />
+                    <button
+                      type="button"
+                      onClick={() => { setDescontoPct(true); setDesconto("5"); if (!split && !formaSel) setFormaSel("Dinheiro"); }}
+                      className="mt-1 w-full rounded-md border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
+                    >
+                      💵 5% no dinheiro
+                    </button>
+                    {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-[11px] text-zinc-500">= {brl(desc)}</p>}
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-zinc-500">Acréscimo (R$)</label>
@@ -729,7 +744,7 @@ export function ReceberComandas({
                     {formaSel === "Dinheiro" && (
                       <>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-zinc-500">Recebido</span>
+                          <span className="text-xs text-zinc-500">Recebido <span className="text-zinc-400">(só pra calcular o troco)</span></span>
                           <input
                             inputMode="decimal"
                             value={recebido}
@@ -758,6 +773,10 @@ export function ReceberComandas({
                   />
                 )}
 
+                {usaSaldoCliente && !clienteSel && (
+                  <p className="text-xs text-amber-600">Saldo cliente: vincule o cliente (acima) pra conta ir pro fiado dele.</p>
+                )}
+
                 <button
                   onClick={confirmar}
                   disabled={proc || !podeConfirmar}
@@ -772,7 +791,19 @@ export function ReceberComandas({
         </div>
       )}
 
-      {/* Após receber: emitir NFC-e das comandas pagas */}
+      {/* Após receber: recibo (sem valor fiscal) e NFC-e */}
+      {recibo && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+          <span className="text-zinc-600 dark:text-zinc-300">Recebido {brl(recibo.total)}{recibo.troco > 0 ? ` · troco ${brl(recibo.troco)}` : ""}</span>
+          <button
+            type="button"
+            onClick={() => { try { window.print(); } catch {} }}
+            className="rounded-lg border border-zinc-300 px-3 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200"
+          >
+            🧾 Imprimir recibo (sem valor fiscal)
+          </button>
+        </div>
+      )}
       {pagas.length > 0 && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} juntas />}
 
       {/* Cupom de recebimento (só na impressão — térmica) */}

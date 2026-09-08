@@ -13,6 +13,7 @@ const FORMA_FOCUS: Record<string, string> = {
   "Cartão de débito": "04",
   "Cartão de debito": "04",
   "Cartão de credito": "03",
+  "Saldo cliente": "05", // crédito loja (fiado)
 };
 
 async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {

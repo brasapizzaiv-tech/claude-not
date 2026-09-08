@@ -913,6 +913,22 @@ export async function pagarSelecao(
     }
   }
 
+  // "Saldo cliente" (fiado): a parte paga assim vai pra conta do cliente.
+  const fiado = Math.round(pagamentos.filter((p) => p.forma === "Saldo cliente" && p.valor > 0).reduce((a, p) => a + p.valor, 0) * 100) / 100;
+  if (fiado > 0) {
+    if (!clienteId) return { ok: false as const, mensagem: "Pra receber como Saldo cliente, vincule o cliente antes." };
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("cliente_fiado").insert({
+      cliente_id: clienteId,
+      tipo: "debito",
+      valor: fiado,
+      descricao: `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`,
+      comanda_id: sel[0]?.comandaId ?? extras[0]?.comandaId ?? null,
+      caixa_id: caixaId,
+      criado_por: userData.user?.id ?? null,
+    });
+  }
+
   const totalPago =
     Math.round(pagamentos.reduce((a, p) => a + (p.valor > 0 ? p.valor : 0), 0) * 100) / 100;
   if (sel.length > 0 && quitadosAgora === 0 && extras.length === 0) {
@@ -938,6 +954,41 @@ export async function pagarSelecao(
   revalidatePath("/salao/caixa");
   revalidatePath("/salao");
   return { ok: true as const, numeros, total: totalPago };
+}
+
+// Cliente veio acertar o fiado: registra o pagamento e entra no caixa do dia
+// com a forma usada (a venda em si já foi contada como "Saldo cliente").
+export async function receberFiado(clienteId: string, valor: number, forma: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const v = Math.round(Number(valor) * 100) / 100;
+  if (!clienteId || !(v > 0)) return { ok: false as const, mensagem: "Valor inválido." };
+  if (!forma || forma === "Saldo cliente") return { ok: false as const, mensagem: "Escolha a forma de pagamento." };
+  const caixaId = await caixaAberto(supabase);
+  if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
+  const { data: cli } = await supabase.from("clientes").select("nome").eq("id", clienteId).maybeSingle();
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase.from("cliente_fiado").insert({
+    cliente_id: clienteId,
+    tipo: "pagamento",
+    valor: v,
+    descricao: "Acerto do fiado",
+    forma_pagamento: forma,
+    caixa_id: caixaId,
+    criado_por: userData.user?.id ?? null,
+  });
+  if (error) return { ok: false as const, mensagem: error.message };
+  await supabase.from("pdv_caixa_mov").insert({
+    caixa_id: caixaId,
+    tipo: "venda",
+    descricao: `Fiado — ${(cli as { nome?: string } | null)?.nome ?? "cliente"}`,
+    forma_pagamento: forma,
+    valor: v,
+    comanda_id: null,
+  });
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao/caixa/fiado");
+  return { ok: true as const };
 }
 
 // Frente de caixa: recebe VÁRIAS comandas de uma vez (somadas), com uma ou mais
