@@ -2,13 +2,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { agenteAutorizado } from "@/lib/impressao-agente";
 
 // Lista os documentos pendentes de impressão (fila genérica) para o agente.
+// Cada item entregue fica RESERVADO por 90 s (entregue_em): se dois agentes
+// estiverem rodando, o segundo não pega o mesmo item — acabou a impressão em
+// dobro. Se o agente cair antes de dar baixa, o item volta depois dos 90 s.
 export async function GET(req: Request) {
   if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
   const admin = createAdminClient();
+  const limite = new Date(Date.now() - 90_000).toISOString();
   const { data } = await admin
     .from("impressao_fila")
     .select("id, impressoras(nome, impressora_windows)")
     .is("impresso_em", null)
+    .or(`entregue_em.is.null,entregue_em.lt.${limite}`)
     .order("solicitado_em", { ascending: true })
     .limit(50);
 
@@ -23,5 +28,8 @@ export async function GET(req: Request) {
       url: `/api/impressao/documento/${e.id}`,
     };
   });
+  if (jobs.length > 0) {
+    await admin.from("impressao_fila").update({ entregue_em: new Date().toISOString() }).in("id", jobs.map((j) => j.id));
+  }
   return Response.json({ jobs });
 }
