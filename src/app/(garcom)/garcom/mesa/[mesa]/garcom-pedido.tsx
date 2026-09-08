@@ -292,10 +292,10 @@ export function GarcomPedido({
               </div>
             )}
           </div>
-          <div className="border-t border-zinc-800 p-3">
-            {/* Escolher a comanda */}
-            <p className="mb-1 text-xs text-zinc-400">Lançar na comanda:</p>
-            <div className="mb-2 flex flex-wrap gap-2">
+          <div className="max-h-[60vh] shrink-0 overflow-y-auto border-t border-zinc-800 p-3">
+            {/* Escolher a comanda (lista rola quando a mesa tem muitas) */}
+            <p className="mb-1 text-xs text-zinc-400">Lançar na comanda:{comandas.length > 6 ? " (" + comandas.length + " abertas — role a lista)" : ""}</p>
+            <div className="mb-2 flex max-h-24 flex-wrap gap-2 overflow-y-auto rounded-lg">
               {comandas.map((c) => (
                 <button
                   key={c.id}
