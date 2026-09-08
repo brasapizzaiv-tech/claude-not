@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { print } = ptp;
-const VERSAO = "1.1.0"; // 1.1.0: instalador + bandeja; dados em ProgramData
+const VERSAO = "1.1.1"; // 1.1.0: instalador + bandeja; 1.1.1: cupom/comanda/nota ajustam à largura da impressora (etiqueta continua exata)
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -79,7 +79,11 @@ async function ciclo() {
         const buf = Buffer.from(await pr.arrayBuffer());
         const file = path.join(tmp, `${job.id}.pdf`);
         await writeFile(file, buf);
-        await print(file, { printer: job.printer, scale: "noscale" });
+        // Etiqueta: tamanho exato (o rolo é 55×55). Cupom/comanda/nota: encolhe
+        // pra caber na área imprimível da térmica (papel 80 mm imprime ~72 mm;
+        // sem isso a borda esquerda sai cortada).
+        const etiqueta = ["etiqueta", "marmita", "teste_etiqueta"].includes(String(job.tipo || ""));
+        await print(file, { printer: job.printer, scale: etiqueta ? "noscale" : "fit" });
         await fetch(`${baseUrl}/api/impressao/baixa`, {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },

@@ -11,18 +11,19 @@ export async function GET(req: Request) {
   const limite = new Date(Date.now() - 90_000).toISOString();
   const { data } = await admin
     .from("impressao_fila")
-    .select("id, impressoras(nome, impressora_windows)")
+    .select("id, tipo, impressoras(nome, impressora_windows)")
     .is("impresso_em", null)
     .or(`entregue_em.is.null,entregue_em.lt.${limite}`)
     .order("solicitado_em", { ascending: true })
     .limit(50);
 
   type Imp = { nome: string; impressora_windows: string | null };
-  type Row = { id: string; impressoras: Imp | Imp[] | null };
+  type Row = { id: string; tipo: string; impressoras: Imp | Imp[] | null };
   const jobs = ((data as unknown as Row[]) ?? []).map((e) => {
     const imp = Array.isArray(e.impressoras) ? e.impressoras[0] : e.impressoras;
     return {
       id: e.id,
+      tipo: e.tipo,
       impressora: imp?.nome ?? null,
       printer: imp?.impressora_windows ?? null,
       url: `/api/impressao/documento/${e.id}`,
