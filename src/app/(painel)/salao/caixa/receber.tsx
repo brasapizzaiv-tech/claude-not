@@ -75,6 +75,24 @@ export function ReceberComandas({
   const confirmandoRef = useRef(false);
   const [sel, setSel] = useState<Set<string>>(alvo ? new Set([alvo.id]) : new Set());
   const [busca, setBusca] = useState("");
+  // Leitor de código de barras/QR (USB, funciona como teclado): o QR do cupom
+  // traz a URL da comanda (…/salao/comandas/{id}). Quando o texto digitado
+  // contém um id desses, a comanda entra na hora — não precisa nem de Enter.
+  function tratarLeitura(valor: string): boolean {
+    const m = valor.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if (!m) return false;
+    const id = m[0].toLowerCase();
+    const c = comandas.find((x) => x.id.toLowerCase() === id);
+    if (c) {
+      if (!sel.has(c.id)) addComanda(c.id);
+      setBusca("");
+      setMsg(null);
+    } else {
+      setBusca("");
+      setMsg("Esse cupom é de uma comanda que não está aberta (já paga ou excluída).");
+    }
+    return true;
+  }
   const [carrinho, setCarrinho] = useState<Set<string>>(new Set());
   const [desconto, setDesconto] = useState("");
   const [acrescimo, setAcrescimo] = useState("");
@@ -408,11 +426,14 @@ export function ReceberComandas({
           <div className="relative min-w-[220px] flex-1">
             <input
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              autoFocus
+              onChange={(e) => { if (!tratarLeitura(e.target.value)) setBusca(e.target.value); }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && sugestoes[0]) addComanda(sugestoes[0].id);
+                if (e.key !== "Enter") return;
+                if (tratarLeitura(busca)) return;
+                if (sugestoes[0]) addComanda(sugestoes[0].id);
               }}
-              placeholder="Digite ou escolha as comandas para pagar…"
+              placeholder="Digite o nº, a mesa, ou passe o leitor no QR do cupom…"
               className={`${inputCls} w-full`}
             />
             {busca.trim() && sugestoes.length > 0 && (
