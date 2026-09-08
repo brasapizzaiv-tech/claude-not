@@ -1,23 +1,28 @@
-// Agente de impressão da Brasa — roda no PC central.
-// Ele fica de olho na fila de etiquetas do sistema e manda cada uma para a
-// impressora certa do Windows (pelo nome). Não precisa abrir janela.
+// Agente de impressão da Brasa — roda no PC central (um só: as impressoras
+// são de rede e ficam todas instaladas no Windows desse PC).
+// Fica de olho na fila do sistema (etiquetas, comandas de cozinha, cupom da
+// NFC-e, marmitas) e manda cada job para a impressora certa, pelo nome.
 import ptp from "pdf-to-printer";
 import { writeFile, mkdir } from "node:fs/promises";
-import { readFileSync, appendFileSync, writeFileSync } from "node:fs";
+import { readFileSync, appendFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { execFile } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { print } = ptp;
+const VERSAO = "1.1.0"; // 1.1.0: instalador + bandeja; dados em ProgramData
 const dir = path.dirname(fileURLToPath(import.meta.url));
+// Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
+const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
+try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
 const cfg = JSON.parse(readFileSync(path.join(dir, "config.json"), "utf8").replace(/^﻿/, ""));
 const baseUrl = String(cfg.baseUrl || "").replace(/\/$/, "");
 const token = cfg.token || "";
 const intervalo = Number(cfg.intervaloMs) || 3000;
 const headers = { Authorization: `Bearer ${token}` };
 const tmp = path.join(os.tmpdir(), "brasa-etiquetas");
-const logFile = path.join(dir, "agente.log");
+const logFile = path.join(dataDir, "agente.log");
 
 function log(m) {
   const t = new Date().toLocaleString("pt-BR");
@@ -92,8 +97,8 @@ async function ciclo() {
   }
 }
 
-try { writeFileSync(path.join(dir, "agente.pid"), String(process.pid)); } catch { /* ok */ }
-log("Agente de impressão iniciado.");
+try { writeFileSync(path.join(dataDir, "agente.pid"), String(process.pid)); } catch { /* ok */ }
+log(`Agente de impressão v${VERSAO} no ar.`);
 log(`Servidor: ${baseUrl || "(vazio!)"}`);
 if (!token) log("ATENÇÃO: token vazio no config.json.");
 await mkdir(tmp, { recursive: true });

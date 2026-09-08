@@ -1,56 +1,18 @@
 AGENTE DE IMPRESSAO DA BRASA
 ============================
 
-O que e: um programinha que roda no PC central (onde ficam as impressoras) e
-imprime sozinho as etiquetas do sistema, mandando cada uma para a impressora
-certa. Parecido com o aplicativo do Suitable.
+O que e: um programa que roda no PC central (o do escritorio) e imprime sozinho
+o que o sistema manda: etiquetas de validade, comandas da cozinha, cupom da
+NFC-e e etiquetas das marmitas. Cada coisa vai para a impressora certa, pelo
+nome que ela tem no Windows. As impressoras de rede precisam estar instaladas
+no Windows DESTE PC.
 
---------------------------------------------------
-INSTALACAO (uma vez, no PC das impressoras)
---------------------------------------------------
+INSTALAR (ou atualizar): rode o AgenteImpressao-Setup.exe. Ele pede o endereco
+do sistema e o token, que estao em Configuracoes -> Central de Impressoes
+("ver dados do agente"). Ao terminar, aparece o icone da Brasa perto do relogio.
 
-1) Instale o Node.js
-   - Entre em https://nodejs.org e baixe a versao "LTS".
-   - Instale (Avancar, Avancar, Concluir).
+O agente liga sozinho quando o Windows entra. Se fechar em "Sair", ligue de
+novo pelo atalho "Agente de Impressao" na Area de trabalho ou no Menu Iniciar.
 
-2) Copie esta pasta (agente-impressao) para o PC das impressoras.
-   Sugestao: C:\brasa-agente
-
-3) Confira o config.json (abra com o Bloco de Notas):
-   - "baseUrl": ja vem com o endereco do sistema.
-   - "token":  cole o token que aparece no sistema em
-               Etiquetas -> Estacoes -> "Agente de impressao" (botao Copiar).
-
-4) Instale as dependencias (uma vez):
-   - Abra a pasta, clique na barra de endereco, escreva  cmd  e tecle Enter.
-   - Na janela preta, digite:   npm install     e tecle Enter. Aguarde terminar.
-
-5) No sistema, em Etiquetas -> Estacoes, coloque em cada impressora o
-   "Nome no Windows" (o nome EXATO como aparece em Dispositivos e Impressoras).
-
-6) Ligue o agente: de dois cliques em  iniciar.bat
-   - Vai abrir uma janela preta escrito "Agente de impressao da Brasa iniciado".
-   - Deixe essa janela aberta (pode minimizar).
-
---------------------------------------------------
-LIGAR SOZINHO QUANDO O PC INICIAR (recomendado)
---------------------------------------------------
-
-1) Clique com o botao direito em iniciar.bat -> "Enviar para" -> "Area de
-   trabalho (criar atalho)".
-2) Tecle Windows + R, escreva:  shell:startup   e tecle Enter.
-3) Arraste o atalho que voce criou para dentro dessa pasta que abriu.
-   Pronto: toda vez que o PC ligar, o agente sobe sozinho.
-
---------------------------------------------------
-DIA A DIA
---------------------------------------------------
-
-- Qualquer pessoa gera a etiqueta no sistema (celular, tablet, PC).
-- O agente imprime na impressora escolhida, automatico.
-- Se aparecer "sem Nome no Windows", configure o nome da impressora em
-  Etiquetas -> Estacoes.
-- Se aparecer "Token invalido", copie o token de novo do sistema para o
-  config.json.
-
-Duvidas? Chame o suporte.
+Menu do icone (botao direito): Ver log / Reiniciar agente / Sair.
+Log e dados: C:\ProgramData\AgenteImpressao\agente.log
