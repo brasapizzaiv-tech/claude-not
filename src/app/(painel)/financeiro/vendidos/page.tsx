@@ -49,12 +49,13 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
   }
 
   const comIds = [...new Set(itens.map((i) => i.comanda_id))];
-  const [{ data: comsItens }, { data: comsBuffet }, { data: cancel }, { data: pdvItens }, { data: delivs }] = await Promise.all([
+  const [{ data: comsItens }, { data: comsBuffet }, { data: cancel }, { data: pdvItens }, { data: delivs }, { data: excl }] = await Promise.all([
     comIds.length ? supabase.from("pdv_comandas").select("id, numero, mesa, status, forma_pagamento, valor_buffet, peso, aberta_em, livre").in("id", comIds) : Promise.resolve({ data: [] as ComandaRow[] }),
     supabase.from("pdv_comandas").select("id, numero, mesa, status, forma_pagamento, valor_buffet, peso, aberta_em, livre, buffet_pago").gt("valor_buffet", 0).gte("aberta_em", iniIso).lte("aberta_em", fimIso),
     supabase.from("pdv_itens_cancelados").select("descricao, qtd, valor, motivo, cancelado_em").gte("cancelado_em", iniIso).lte("cancelado_em", fimIso),
     supabase.from("pdv_itens").select("id, nome, categoria"),
     supabase.from("delivery_pedidos").select("comanda_id").gte("criado_em", iniIso).lte("criado_em", fimIso),
+    supabase.from("pdv_comandas_excluidas").select("comanda_numero, mesa, valor, motivo, excluido_em").gte("excluido_em", iniIso).lte("excluido_em", fimIso).order("excluido_em", { ascending: false }),
   ]);
   const comMap = new Map(((comsItens as ComandaRow[]) ?? []).map((c) => [c.id, c]));
   const catDe = new Map(((pdvItens as { id: string; nome: string; categoria: string | null }[]) ?? []).map((p) => [p.id, p.categoria || "Outros"]));
@@ -139,9 +140,12 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
   const linhas = [...grupos.values()].sort((a, b) => b.valor - a.valor);
   const totalValor = Math.round(crus.reduce((s, r) => s + r.valor, 0) * 100) / 100;
   const totalQtd = Math.round(crus.reduce((s, r) => s + r.qtd, 0) * 1000) / 1000;
-  const cancelados = ((cancel as { qtd: number; valor: number }[]) ?? []);
-  const cancelValor = Math.round(cancelados.reduce((s, c) => s + Number(c.valor), 0) * 100) / 100;
+  // Cancelados = itens cancelados (com motivo) + comandas excluídas inteiras.
+  const cancelados = ((cancel as { descricao: string | null; qtd: number; valor: number; motivo: string | null; cancelado_em: string }[]) ?? []);
+  const excluidas = ((excl as { comanda_numero: number | null; mesa: string | null; valor: number; motivo: string | null; excluido_em: string }[]) ?? []);
+  const cancelValor = Math.round((cancelados.reduce((s, c) => s + Number(c.valor), 0) + excluidas.reduce((s, c) => s + Number(c.valor), 0)) * 100) / 100;
   const cancelQtd = cancelados.reduce((s, c) => s + Number(c.qtd), 0);
+  const horaBR = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const link = (patch: Record<string, string | undefined>) => {
@@ -202,10 +206,41 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Valor total</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{brl(totalValor)}</p></div>
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Itens vendidos</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{totalQtd.toLocaleString("pt-BR")}</p></div>
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Buffet</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{brl(buffetValor)}</p><p className="text-xs text-zinc-500">{buffetPratos} pratos · {buffetKg.toFixed(1).replace(".", ",")} kg</p></div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-zinc-500">{cancelQtd} itens</p></div>
+        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-zinc-500">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
       </div>
 
       <VendidosClient linhas={linhas} total={totalValor} agrupar={agrupar} periodo={`${de} a ${ate}`} />
+
+      {(cancelados.length > 0 || excluidas.length > 0) && (
+        <details className="mt-6 rounded-2xl border border-red-200 dark:border-red-900">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-400">
+            ✗ Cancelados no período: {brl(cancelValor)} ({cancelados.length} {cancelados.length === 1 ? "item" : "itens"}, {excluidas.length} {excluidas.length === 1 ? "comanda excluída" : "comandas excluídas"}) — clique pra ver
+          </summary>
+          <div className="space-y-3 px-4 pb-4">
+            {excluidas.length > 0 && (
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-zinc-500"><tr><th className="py-1">Comanda excluída</th><th className="py-1">Mesa</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {excluidas.map((e, i) => (
+                    <tr key={i}><td className="py-1">nº {e.comanda_numero ?? "—"}</td><td className="py-1 text-zinc-500">{e.mesa ?? "—"}</td><td className="py-1 text-zinc-600 dark:text-zinc-300">{e.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(e.valor))}</td><td className="py-1 text-right text-zinc-500">{horaBR(e.excluido_em)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {cancelados.length > 0 && (
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-zinc-500"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {cancelados.map((c, i) => (
+                    <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("
+")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-zinc-600 dark:text-zinc-300">{c.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(c.valor))}</td><td className="py-1 text-right text-zinc-500">{horaBR(c.cancelado_em)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </details>
+      )}
     </div>
   );
 }
