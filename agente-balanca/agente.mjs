@@ -16,19 +16,27 @@ import { execFile } from "node:child_process";
 import { readFileSync, appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const VERSAO = "1.1.6"; // 1.1.3: Prot F / Prot 3; 1.1.4: atalhos; 1.1.5: watchdog da serial; 1.1.6: bandeja voltava a não abrir após religar o PC (pid reaproveitado)
+const VERSAO = "1.1.7"; // 1.1.5: watchdog da serial; 1.1.6: bandeja não abria após religar o PC; 1.1.7: impressora escolhida fica GRAVADA (dados em ProgramData, Program Files é só leitura)
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
+// Onde o agente pode ESCREVER: o instalador põe o programa em Program Files,
+// que o Windows não deixa o usuário alterar (por isso a impressora escolhida
+// "não gravava"). Log, fila, pid e a escolha da impressora vão pra ProgramData.
+const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteBalanca") : dir;
+try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
+const estadoFile = path.join(dataDir, "estado.json");
+let estado = {};
+try { estado = JSON.parse(readFileSync(estadoFile, "utf8")); } catch { /* primeira vez */ }
 const baseUrl = String(cfg.baseUrl || "").replace(/\/$/, "");
 const token = cfg.token || "";
 const portaHttp = Number(cfg.portaHttp) || 8543;
 const portaSerial = cfg.portaSerial || "auto"; // "COM5" ou "auto" (procura Prolific/USB-Serial)
-let impressoraCupom = String(cfg.impressoraCupom || ""); // nome no Windows; "" = impressora padrão
+let impressoraCupom = String(estado.impressoraCupom ?? cfg.impressoraCupom ?? ""); // nome no Windows; "" = impressora padrão
 const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-const logFile = path.join(dir, "agente.log");
-const filaFile = path.join(dir, "fila.json");
-const logoFile = path.join(dir, "logo.png");
+const logFile = path.join(dataDir, "agente.log");
+const filaFile = path.join(dataDir, "fila.json");
+const logoFile = path.join(dataDir, "logo.png");
 const tmpDir = path.join(dir, "tmp");
 
 function log(m) {
@@ -53,7 +61,10 @@ async function carregarImpressao() {
   return libsImpressao;
 }
 function salvarConfig() {
-  try { writeFileSync(cfgFile, JSON.stringify({ ...cfg, impressoraCupom }, null, 2)); } catch (e) { log(`Não gravei o config.json: ${e.message}`); }
+  try {
+    estado = { ...estado, impressoraCupom };
+    writeFileSync(estadoFile, JSON.stringify(estado, null, 2));
+  } catch (e) { log(`Não gravei a escolha da impressora (${estadoFile}): ${e.message}`); }
 }
 
 // ---------- impressão do cupom ----------
@@ -233,7 +244,7 @@ async function sincronizarFila() {
           // tira da fila e guarda em fila-erros.json — senão ela trava as de trás pra sempre.
           log(`Fila: pesagem de ${p.ts} RECUSADA pelo sistema (${e.message}) — movida para fila-erros.json.`);
           try {
-            const errosFile = path.join(dir, "fila-erros.json");
+            const errosFile = path.join(dataDir, "fila-erros.json");
             const erros = existsSync(errosFile) ? JSON.parse(readFileSync(errosFile, "utf8")) : [];
             erros.push({ ...p, erro: e.message, em: new Date().toISOString() });
             writeFileSync(errosFile, JSON.stringify(erros, null, 2));
@@ -368,13 +379,13 @@ server.listen(portaHttp, "127.0.0.1", () => {
 });
 
 // PID pra bandeja/desinstalador
-try { writeFileSync(path.join(dir, "agente.pid"), String(process.pid)); } catch { /* sem pid */ }
+try { writeFileSync(path.join(dataDir, "agente.pid"), String(process.pid)); } catch { /* sem pid */ }
 
 conectarBalanca();
 heartbeat();
 sincronizarFila();
 atualizarLogo();
 setInterval(atualizarLogo, 6 * 3600 * 1000);
-log(`Impressora do cupom: "${impressoraCupom || "padrão do Windows"}" (escolha na tela do quiosque, ⚙️).`);
+log(`Impressora do cupom: "${impressoraCupom || "padrão do Windows"}" (escolha na tela do quiosque, ⚙️ — fica gravada em ${estadoFile}).`);
 // Confere logo no início se a impressão vai funcionar (só avisa no log).
 carregarImpressao().then(() => log("Impressão de cupom pronta.")).catch((e) => log(`Impressão de cupom INDISPONÍVEL: ${e.message}`));

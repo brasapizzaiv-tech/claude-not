@@ -2,7 +2,7 @@
 ; Compile com: ISCC.exe balanca.iss  (após rodar build.ps1, que monta build\app).
 
 #define AppName "Agente da Balanca"
-#define AppVer "1.1.6"
+#define AppVer "1.1.7"
 #define AppPublisher "Brasa Sistemas"
 
 [Setup]
@@ -30,6 +30,10 @@ Name: "pt"; MessagesFile: "compiler:Languages\Portuguese.isl"
 [Files]
 Source: "build\app\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "balanca.ico"; DestDir: "{app}"; Flags: ignoreversion
+
+[Dirs]
+; Dados do agente (log, fila, impressora escolhida): todo usuário pode escrever.
+Name: "{commonappdata}\AgenteBalanca"; Permissions: users-modify
 
 [Icons]
 ; Atalho na Inicialização (Todos os usuários) -> liga o agente oculto a cada logon.
@@ -120,6 +124,10 @@ begin
   if LoadStringFromFile(ExpandConstant('{app}\bandeja.pid'), pid) then
     Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
   if LoadStringFromFile(ExpandConstant('{app}\agente.pid'), pid) then
+    Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
+  if LoadStringFromFile(ExpandConstant('{commonappdata}\AgenteBalanca\bandeja.pid'), pid) then
+    Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
+  if LoadStringFromFile(ExpandConstant('{commonappdata}\AgenteBalanca\agente.pid'), pid) then
     Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
   Sleep(700);
 end;

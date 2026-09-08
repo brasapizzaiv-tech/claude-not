@@ -14,11 +14,15 @@ Add-Type -AssemblyName System.Drawing
 
 $node   = Join-Path $dir "node.exe"
 $script = Join-Path $dir "agente.mjs"
-$log    = Join-Path $dir "agente.log"
+# Dados graváveis (log, pids, escolha da impressora) ficam em ProgramData —
+# Program Files é só leitura pro usuário comum.
+$dataDir = if ($env:ProgramData) { Join-Path $env:ProgramData "AgenteBalanca" } else { $dir }
+try { New-Item -ItemType Directory -Force -Path $dataDir | Out-Null } catch {}
+$log    = Join-Path $dataDir "agente.log"
 
 # Já tem uma bandeja rodando? (clicou no atalho duas vezes) Então não abre outra —
 # senão viram dois agentes brigando pela porta serial e pela porta 8543.
-$pidFile = Join-Path $dir "bandeja.pid"
+$pidFile = Join-Path $dataDir "bandeja.pid"
 # BUG 1.1.5: depois de religar o PC, o número de processo antigo no bandeja.pid
 # podia ter sido reaproveitado pelo Windows para OUTRO programa qualquer — a
 # bandeja achava que já estava rodando e saía sem ligar o agente. Agora só
@@ -46,7 +50,7 @@ function Start-Agente {
   $psi.UseShellExecute  = $false
   $psi.WindowStyle      = 'Hidden'
   $global:proc = [System.Diagnostics.Process]::Start($psi)
-  try { Set-Content -Path (Join-Path $dir "agente.pid") -Value $global:proc.Id -Encoding ascii } catch {}
+  try { Set-Content -Path (Join-Path $dataDir "agente.pid") -Value $global:proc.Id -Encoding ascii } catch {}
 }
 
 Start-Agente
