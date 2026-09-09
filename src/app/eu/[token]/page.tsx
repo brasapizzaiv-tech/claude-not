@@ -170,6 +170,16 @@ export default async function AppColaboradorPage({
       ultimoPag = { segunda: sp.segunda as string, emMaos: Number(sp.valor) - (Number(sp.desconto) || 0), pago: !!lanc?.pago };
     }
   }
+  // Pedidos de compra pendentes desta pessoa (botão "Pedir compra").
+  let pedidosCompra = 0;
+  if (colab?.id) {
+    const { count } = await admin
+      .from("solicitacoes_compra")
+      .select("id", { count: "exact", head: true })
+      .eq("colaborador_id", colab.id)
+      .eq("status", "pendente");
+    pedidosCompra = count ?? 0;
+  }
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const fData = (s: string) => { const [, m, d] = s.split("-"); return `${d}/${m}`; };
 
@@ -229,6 +239,15 @@ export default async function AppColaboradorPage({
           {ultimoPag
             ? `${ultimoPag.segunda.slice(8, 10)}/${ultimoPag.segunda.slice(5, 7)}: ${brl(ultimoPag.emMaos)} ${ultimoPag.pago ? "✓" : "· aguardando"}`
             : "ver semanas"}
+        </span>
+      </Link>
+      <Link
+        href={`/eu/${token}/compras`}
+        className="mb-3 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+      >
+        <span>🛠️ Pedir compra</span>
+        <span className="text-xs font-normal text-zinc-500">
+          {pedidosCompra > 0 ? `${pedidosCompra} aguardando` : "faltou algo? peça aqui"}
         </span>
       </Link>
       {compras.length > 0 && (

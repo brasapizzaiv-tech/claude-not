@@ -49,6 +49,16 @@ export default async function PainelLayout({
     reservasNovas = count ?? 0;
   }
 
+  // Pedidos de compra da equipe ainda não atendidos — numerozinho no menu.
+  let pedidosCompra = 0;
+  if (admin || permissoes.includes("solicitacoes")) {
+    const { count } = await supabase
+      .from("solicitacoes_compra")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pendente");
+    pedidosCompra = count ?? 0;
+  }
+
   return (
     <div className="flex min-h-full flex-1">
       <Sidebar
@@ -57,6 +67,7 @@ export default async function PainelLayout({
         admin={admin}
         permissoes={permissoes}
         reservasNovas={reservasNovas}
+        pedidosCompra={pedidosCompra}
       />
       <main className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950">
         {children}

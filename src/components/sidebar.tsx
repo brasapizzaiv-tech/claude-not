@@ -47,12 +47,14 @@ export function Sidebar({
   admin,
   permissoes,
   reservasNovas = 0,
+  pedidosCompra = 0,
 }: {
   nome: string;
   papel: string;
   admin: boolean;
   permissoes: string[];
   reservasNovas?: number;
+  pedidosCompra?: number;
 }) {
   const pathname = usePathname();
   const recolhido = useSyncExternalStore(subscribe, lerRecolhido, () => false);
@@ -100,6 +102,7 @@ export function Sidebar({
         ...so(has("conferencia"), { href: "/conferencia", label: "Conferência", icon: "📥" }),
         ...so(has("notas"), { href: "/notas", label: "Notas de entrada", icon: "🧾" }),
         ...so(has("fornecedores"), { href: "/fornecedores", label: "Fornecedores", icon: "🚚" }),
+        ...so(has("solicitacoes"), { href: "/solicitacoes", label: "Pedidos da equipe", icon: "🛠️", aviso: pedidosCompra || undefined }),
       ],
     },
     {
