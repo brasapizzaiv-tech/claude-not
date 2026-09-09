@@ -50,7 +50,7 @@ export async function responderVarias(ids: number[], status: "comprado" | "rejei
 }
 
 // O dono também pode anotar um pedido (ex.: alguém falou de boca).
-export async function criarSolicitacaoPainel(input: { colaboradorId: string | null; item: string; quantidade: string; motivo: string; urgente: boolean }) {
+export async function criarSolicitacaoPainel(input: { colaboradorId: string | null; tipo: "compra" | "manutencao"; item: string; quantidade: string; motivo: string; urgente: boolean }) {
   await exigirAcesso("/solicitacoes");
   const item = (input.item || "").trim().slice(0, 200);
   if (item.length < 2) return erro("Escreva o que precisa.");
@@ -63,6 +63,7 @@ export async function criarSolicitacaoPainel(input: { colaboradorId: string | nu
   const { error } = await supabase.from("solicitacoes_compra").insert({
     colaborador_id: input.colaboradorId || null,
     nome,
+    tipo: input.tipo === "manutencao" ? "manutencao" : "compra",
     item,
     quantidade: (input.quantidade || "").trim().slice(0, 60) || null,
     motivo: (input.motivo || "").trim().slice(0, 500) || null,

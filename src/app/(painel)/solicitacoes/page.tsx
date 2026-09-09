@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { SolicitacoesClient, type Pessoa, type Solic } from "./client";
 
-export const metadata = { title: "Pedidos de compra da equipe · Brasa" };
+export const metadata = { title: "Pedidos da equipe · Brasa" };
 
 export default async function SolicitacoesPage() {
   const supabase = await createClient();
   const [{ data: lista }, { data: colabs }] = await Promise.all([
     supabase
       .from("solicitacoes_compra")
-      .select("id, colaborador_id, nome, item, quantidade, motivo, urgente, status, resposta, respondido_em, criado_em")
+      .select("id, colaborador_id, nome, tipo, item, quantidade, motivo, urgente, status, resposta, respondido_em, criado_em")
       .order("criado_em", { ascending: false })
       .limit(2000),
     supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome"),

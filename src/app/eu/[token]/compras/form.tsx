@@ -7,14 +7,20 @@ import { cancelarMinhaSolicitacao, pedirCompra, type Solicitacao } from "./compr
 const fData = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
 
-const STATUS: Record<Solicitacao["status"], { rotulo: string; cor: string }> = {
-  pendente: { rotulo: "aguardando", cor: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" },
-  comprado: { rotulo: "comprado ✓", cor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200" },
-  rejeitado: { rotulo: "não vai comprar", cor: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300" },
+const COR: Record<Solicitacao["status"], string> = {
+  pendente: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  comprado: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
+  rejeitado: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
 };
+function rotulo(s: Solicitacao) {
+  if (s.status === "pendente") return "aguardando";
+  if (s.status === "comprado") return s.tipo === "manutencao" ? "feito ✓" : "comprado ✓";
+  return s.tipo === "manutencao" ? "não vai fazer" : "não vai comprar";
+}
 
 export function ComprasColab({ token, lista }: { token: string; lista: Solicitacao[] }) {
   const router = useRouter();
+  const [tipo, setTipo] = useState<"compra" | "manutencao">("compra");
   const [item, setItem] = useState("");
   const [qtd, setQtd] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -25,7 +31,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
   function enviar() {
     setMsg(null);
     start(async () => {
-      const r = await pedirCompra(token, { item, quantidade: qtd, motivo, urgente });
+      const r = await pedirCompra(token, { tipo, item, quantidade: tipo === "compra" ? qtd : "", motivo, urgente });
       if (!r.ok) { setMsg(r.mensagem); return; }
       setItem(""); setQtd(""); setMotivo(""); setUrgente(false);
       setMsg("Pedido enviado! ✓");
@@ -47,13 +53,35 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <p className="mb-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">O que está faltando?</p>
-        <input className={cx} placeholder="Ex.: concha grande, pano de prato, pilha AA" value={item} onChange={(e) => setItem(e.target.value)} maxLength={200} />
-        <input className={`${cx} mt-2`} placeholder="Quantidade (ex.: 2, 1 caixa)" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          {(["compra", "manutencao"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTipo(t)}
+              className={`rounded-xl px-3 py-2.5 text-sm font-semibold ${tipo === t ? "bg-orange-500 text-white" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"}`}
+            >
+              {t === "compra" ? "🛒 Comprar" : "🔧 Manutenção"}
+            </button>
+          ))}
+        </div>
+        <p className="mb-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          {tipo === "compra" ? "O que está faltando?" : "O que precisa de conserto?"}
+        </p>
+        <input
+          className={cx}
+          placeholder={tipo === "compra" ? "Ex.: concha grande, pano de prato, pilha AA" : "Ex.: porta do freezer não fecha, torneira pingando"}
+          value={item}
+          onChange={(e) => setItem(e.target.value)}
+          maxLength={200}
+        />
+        {tipo === "compra" && (
+          <input className={`${cx} mt-2`} placeholder="Quantidade (ex.: 2, 1 caixa)" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
+        )}
         <textarea className={`${cx} mt-2`} rows={2} placeholder="Pra quê / observação (opcional)" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
         <label className="mt-2 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="h-5 w-5 accent-orange-500" />
-          🔥 É urgente (falta pra trabalhar)
+          🔥 É urgente (atrapalha o trabalho)
         </label>
         <button
           onClick={enviar}
@@ -67,7 +95,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
 
       {pendentes.length > 0 && (
         <div>
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Aguardando compra</p>
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Aguardando</p>
           <ul className="space-y-2">
             {pendentes.map((s) => (
               <li key={s.id} className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
@@ -102,15 +130,14 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
 }
 
 function Linha({ s }: { s: Solicitacao }) {
-  const st = STATUS[s.status];
   return (
     <div>
       <div className="flex items-start justify-between gap-2">
         <span className="min-w-0 font-semibold text-zinc-900 dark:text-zinc-50">
-          {s.urgente && s.status === "pendente" ? "🔥 " : ""}{s.item}
+          {s.urgente && s.status === "pendente" ? "🔥 " : ""}{s.tipo === "manutencao" ? "🔧 " : ""}{s.item}
           {s.quantidade ? <span className="font-normal text-zinc-500"> · {s.quantidade}</span> : null}
         </span>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${st.cor}`}>{st.rotulo}</span>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${COR[s.status]}`}>{rotulo(s)}</span>
       </div>
       {s.motivo && <p className="mt-0.5 text-sm text-zinc-600 dark:text-zinc-300">{s.motivo}</p>}
       <p className="mt-0.5 text-xs text-zinc-400">pedido em {fData(s.criado_em)}{s.respondido_em ? ` · respondido ${fData(s.respondido_em)}` : ""}</p>

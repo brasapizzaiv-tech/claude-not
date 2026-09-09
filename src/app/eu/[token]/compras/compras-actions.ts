@@ -21,6 +21,7 @@ export async function colabPedidos(token: string) {
 
 export type Solicitacao = {
   id: number;
+  tipo: "compra" | "manutencao";
   item: string;
   quantidade: string | null;
   motivo: string | null;
@@ -35,7 +36,7 @@ export async function listarMinhasSolicitacoes(colabId: string): Promise<Solicit
   const admin = createAdminClient();
   const { data } = await admin
     .from("solicitacoes_compra")
-    .select("id, item, quantidade, motivo, urgente, status, resposta, respondido_em, criado_em")
+    .select("id, tipo, item, quantidade, motivo, urgente, status, resposta, respondido_em, criado_em")
     .eq("colaborador_id", colabId)
     .order("criado_em", { ascending: false })
     .limit(60);
@@ -44,16 +45,18 @@ export async function listarMinhasSolicitacoes(colabId: string): Promise<Solicit
 
 export async function pedirCompra(
   token: string,
-  input: { item: string; quantidade: string; motivo: string; urgente: boolean },
+  input: { tipo: "compra" | "manutencao"; item: string; quantidade: string; motivo: string; urgente: boolean },
 ) {
   const colab = await colabPedidos(token);
   if (!colab) return { ok: false as const, mensagem: "Entre com o PIN de novo." };
   const item = (input.item || "").trim().slice(0, 200);
   if (item.length < 2) return { ok: false as const, mensagem: "Escreva o que precisa." };
+  const tipo = input.tipo === "manutencao" ? "manutencao" : "compra";
   const admin = createAdminClient();
   const { error } = await admin.from("solicitacoes_compra").insert({
     colaborador_id: colab.id,
     nome: colab.nome,
+    tipo,
     item,
     quantidade: (input.quantidade || "").trim().slice(0, 60) || null,
     motivo: (input.motivo || "").trim().slice(0, 500) || null,

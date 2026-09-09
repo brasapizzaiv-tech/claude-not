@@ -8,6 +8,7 @@ export type Solic = {
   id: number;
   colaborador_id: string | null;
   nome: string;
+  tipo: "compra" | "manutencao";
   item: string;
   quantidade: string | null;
   motivo: string | null;
@@ -32,12 +33,15 @@ const BADGE: Record<Solic["status"], string> = {
   rejeitado: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
 };
 const ROTULO: Record<Solic["status"], string> = { pendente: "Pendente", comprado: "Comprado", rejeitado: "Rejeitado" };
+const rotulo = (s: Solic) => (s.status === "comprado" && s.tipo === "manutencao" ? "Feito" : ROTULO[s.status]);
+type Tipo = "" | "compra" | "manutencao";
 
 export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas: Pessoa[] }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>("pendente");
   const [busca, setBusca] = useState("");
   const [pessoa, setPessoa] = useState("");
+  const [tipo, setTipo] = useState<Tipo>("");
   const [soUrgentes, setSoUrgentes] = useState(false);
   const [marcadas, setMarcadas] = useState<Set<number>>(new Set());
   const [novo, setNovo] = useState(false);
@@ -56,11 +60,12 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
       lista.filter((s) => {
         if (aba !== "todas" && s.status !== aba) return false;
         if (pessoa && s.colaborador_id !== pessoa) return false;
+        if (tipo && s.tipo !== tipo) return false;
         if (soUrgentes && !s.urgente) return false;
         if (q && !norm(`${s.item} ${s.quantidade ?? ""} ${s.motivo ?? ""} ${s.nome}`).includes(q)) return false;
         return true;
       }),
-    [lista, aba, pessoa, soUrgentes, q],
+    [lista, aba, pessoa, tipo, soUrgentes, q],
   );
 
   function rodar(fn: () => Promise<{ ok: boolean; mensagem?: string }>) {
@@ -76,7 +81,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     rodar(() => responderSolicitacao(s.id, "comprado"));
   }
   function rejeitar(s: Solic) {
-    const motivo = prompt(`Rejeitar "${s.item}". Quer deixar um recado pra ${s.nome.split(" ")[0]}? (opcional)`);
+    const motivo = prompt(`${s.tipo === "manutencao" ? "Não vai fazer" : "Rejeitar"} "${s.item}". Quer deixar um recado pra ${s.nome.split(" ")[0]}? (opcional)`);
     if (motivo === null) return;
     rodar(() => responderSolicitacao(s.id, "rejeitado", motivo));
   }
@@ -111,7 +116,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
   const pendentesVisiveis = filtradas.filter((s) => s.status === "pendente");
   const abas: { k: Aba; rotulo: string; n?: number }[] = [
     { k: "pendente", rotulo: "Pendentes", n: contagem.pendente },
-    { k: "comprado", rotulo: "Compradas", n: contagem.comprado },
+    { k: "comprado", rotulo: "Compradas / feitas", n: contagem.comprado },
     { k: "rejeitado", rotulo: "Rejeitadas", n: contagem.rejeitado },
     { k: "todas", rotulo: "Todas" },
   ];
@@ -121,8 +126,8 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     <div className="p-4 md:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">🛠️ Pedidos de compra da equipe</h1>
-          <p className="text-sm text-zinc-500">O que o pessoal pediu pelo app pra repor. Marque comprado ou rejeite.</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">🛠️ Pedidos da equipe</h1>
+          <p className="text-sm text-zinc-500">Compras pra repor e manutenções que o pessoal pediu pelo app. Marque comprado/feito ou rejeite.</p>
         </div>
         <button onClick={() => setNovo((v) => !v)} className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900">
           {novo ? "Fechar" : "+ Anotar pedido"}
@@ -144,6 +149,11 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <input className={`${inp} w-64`} placeholder="Buscar item, motivo, pessoa…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <select className={inp} value={tipo} onChange={(e) => setTipo(e.target.value as Tipo)}>
+          <option value="">Compras e manutenções</option>
+          <option value="compra">🛒 Só compras</option>
+          <option value="manutencao">🔧 Só manutenções</option>
+        </select>
         <select className={inp} value={pessoa} onChange={(e) => setPessoa(e.target.value)}>
           <option value="">Todas as pessoas</option>
           {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
@@ -156,7 +166,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
       {marcadas.size > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm dark:border-orange-900 dark:bg-orange-950/30">
           <span className="font-semibold text-zinc-800 dark:text-zinc-100">{marcadas.size} selecionado(s):</span>
-          <button onClick={loteComprado} disabled={proc} className="rounded-lg bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">✓ Comprado</button>
+          <button onClick={loteComprado} disabled={proc} className="rounded-lg bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">✓ Comprado / feito</button>
           <button onClick={loteRejeitar} disabled={proc} className="rounded-lg bg-zinc-700 px-3 py-1.5 font-semibold text-white hover:bg-zinc-800 disabled:opacity-50">✕ Rejeitar</button>
           <button onClick={() => setMarcadas(new Set())} className="text-zinc-500 underline">limpar</button>
         </div>
@@ -201,7 +211,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                     </td>
                     <td className="px-3 py-2 align-top">
                       <div className="font-semibold text-zinc-900 dark:text-zinc-50">
-                        {s.urgente ? "🔥 " : ""}{s.item}
+                        {s.urgente ? "🔥 " : ""}{s.tipo === "manutencao" ? "🔧 " : "🛒 "}{s.item}
                         {s.quantidade ? <span className="font-normal text-zinc-500"> · {s.quantidade}</span> : null}
                       </div>
                       {s.motivo && <div className="text-zinc-600 dark:text-zinc-300">{s.motivo}</div>}
@@ -214,16 +224,16 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                         <span className={`ml-1 text-xs ${dias >= 7 ? "text-red-600" : "text-zinc-400"}`}>há {dias} d</span>
                       )}
                       {s.respondido_em && s.status !== "pendente" && (
-                        <div className="text-xs text-zinc-400">{ROTULO[s.status].toLowerCase()} {fData(s.respondido_em)}</div>
+                        <div className="text-xs text-zinc-400">{rotulo(s).toLowerCase()} {fData(s.respondido_em)}</div>
                       )}
                     </td>
                     <td className="px-3 py-2 align-top">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BADGE[s.status]}`}>{ROTULO[s.status]}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BADGE[s.status]}`}>{rotulo(s)}</span>
                     </td>
                     <td className="px-3 py-2 align-top text-right whitespace-nowrap">
                       {s.status === "pendente" ? (
                         <>
-                          <button onClick={() => comprado(s)} disabled={proc} className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">✓ Comprado</button>
+                          <button onClick={() => comprado(s)} disabled={proc} className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">{s.tipo === "manutencao" ? "✓ Feito" : "✓ Comprado"}</button>
                           <button onClick={() => rejeitar(s)} disabled={proc} className="ml-1 rounded-lg bg-zinc-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50">✕ Rejeitar</button>
                         </>
                       ) : (
@@ -247,6 +257,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
 
 function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => void }) {
   const [colab, setColab] = useState("");
+  const [tipoNovo, setTipoNovo] = useState<"compra" | "manutencao">("compra");
   const [item, setItem] = useState("");
   const [qtd, setQtd] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -258,7 +269,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
   function salvar() {
     setMsg(null);
     start(async () => {
-      const r = await criarSolicitacaoPainel({ colaboradorId: colab || null, item, quantidade: qtd, motivo, urgente });
+      const r = await criarSolicitacaoPainel({ colaboradorId: colab || null, tipo: tipoNovo, item, quantidade: qtd, motivo, urgente });
       if (!r.ok) { setMsg(r.mensagem ?? "Erro."); return; }
       setItem(""); setQtd(""); setMotivo(""); setUrgente(false);
       onFeito();
@@ -266,14 +277,18 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
   }
 
   return (
-    <div className="mb-4 grid gap-2 rounded-2xl border border-zinc-200 bg-white p-4 md:grid-cols-[1fr_2fr_1fr] dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="mb-4 grid gap-2 rounded-2xl border border-zinc-200 bg-white p-4 md:grid-cols-[1fr_1fr_2fr_1fr] dark:border-zinc-800 dark:bg-zinc-900">
+      <select className={inp} value={tipoNovo} onChange={(e) => setTipoNovo(e.target.value as "compra" | "manutencao")}>
+        <option value="compra">🛒 Compra</option>
+        <option value="manutencao">🔧 Manutenção</option>
+      </select>
       <select className={inp} value={colab} onChange={(e) => setColab(e.target.value)}>
         <option value="">Quem pediu (opcional)</option>
         {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
       </select>
       <input className={inp} placeholder="O que precisa" value={item} onChange={(e) => setItem(e.target.value)} maxLength={200} />
       <input className={inp} placeholder="Quantidade" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
-      <input className={`${inp} md:col-span-2`} placeholder="Pra quê / observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
+      <input className={`${inp} md:col-span-3`} placeholder="Pra quê / observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> 🔥 urgente
@@ -282,7 +297,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
           {proc ? "Salvando…" : "Salvar"}
         </button>
       </div>
-      {msg && <p className="text-sm text-red-600 md:col-span-3">{msg}</p>}
+      {msg && <p className="text-sm text-red-600 md:col-span-4">{msg}</p>}
     </div>
   );
 }
