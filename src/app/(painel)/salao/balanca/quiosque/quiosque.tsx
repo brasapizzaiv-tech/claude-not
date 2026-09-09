@@ -433,6 +433,12 @@ export function QuiosqueBalanca({
   async function livreDireto() {
     if (estadoRef.current === "processando") return;
     setEst("processando");
+    // Igual à pesagem: com o agente no PC é ELE quem numera (a partir do 200) e
+    // imprime na hora; sem agente, cai pro caminho pela nuvem.
+    if (agenteRef.current && buffetLivre > 0) {
+      const ok = await capturarViaAgente({ livre_direto: true, peso: 0, tara_balanca: 0, valor: buffetLivre, liquido: 0, livre: true, cupom });
+      if (ok) return;
+    }
     try {
       const r = await gerarComandaLivreKiosk();
       if (r.ok) concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true });

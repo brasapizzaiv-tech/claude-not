@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { gerarCupomEscPos, gerarTesteEscPos } from "./escpos.mjs";
 
-const VERSAO = "1.2.0"; // 1.1.7: dados em ProgramData; 1.2.0: agente NUMERA e IMPRIME NA HORA (sincroniza depois), ESC/POS direto na térmica, fila de impressão com retentativa
+const VERSAO = "1.2.1"; // 1.2.0: agente NUMERA e IMPRIME NA HORA, ESC/POS direto na térmica; 1.2.1: logo da Brasa sai no ESC/POS (silhueta, era laranja clara demais e saía em branco)
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));

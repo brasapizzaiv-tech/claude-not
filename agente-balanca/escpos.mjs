@@ -54,21 +54,34 @@ class Cupom {
   bytes() { return Buffer.concat(this.partes); }
 }
 
-// PNG → bitmap 1 bit com largura alvo (redimensiona por amostragem; alpha = branco).
-function pngParaBits(buf, larguraAlvo) {
+// PNG → bitmap 1 bit com largura alvo. A logo da Brasa é LARANJA (claro demais
+// pra virar preto por brilho — na térmica sairia em branco), então o desenho é
+// tratado como SILHUETA: vale a opacidade do pixel, igual ao logoPreto do PDF.
+// A redução usa média da área (o original tem 3000 px; amostrar um ponto só
+// comeria os traços finos do carimbo).
+function pngParaBits(buf, larguraAlvo, limiar = 0.42) {
   const png = PNG.sync.read(buf);
   const escala = larguraAlvo / png.width;
   const W = larguraAlvo, H = Math.max(1, Math.round(png.height * escala));
+  const passo = png.width / W, passoY = png.height / H;
   const bits = [];
   for (let y = 0; y < H; y++) {
+    const y0 = Math.floor(y * passoY), y1 = Math.max(y0 + 1, Math.floor((y + 1) * passoY));
     const row = [];
-    const sy = Math.min(png.height - 1, Math.floor(y / escala));
     for (let x = 0; x < W; x++) {
-      const sx = Math.min(png.width - 1, Math.floor(x / escala));
-      const i = (sy * png.width + sx) * 4;
-      const a = png.data[i + 3] / 255;
-      const lum = (0.299 * png.data[i] + 0.587 * png.data[i + 1] + 0.114 * png.data[i + 2]) * a + 255 * (1 - a);
-      row.push(lum < 140);
+      const x0 = Math.floor(x * passo), x1 = Math.max(x0 + 1, Math.floor((x + 1) * passo));
+      let soma = 0, n = 0;
+      for (let sy = y0; sy < y1 && sy < png.height; sy++) {
+        for (let sx = x0; sx < x1 && sx < png.width; sx++) {
+          const i = (sy * png.width + sx) * 4;
+          const a = png.data[i + 3] / 255;
+          // tinta = quanto o pixel é opaco (silhueta); pixel escuro conta cheio.
+          const lum = 0.299 * png.data[i] + 0.587 * png.data[i + 1] + 0.114 * png.data[i + 2];
+          soma += a * (lum < 110 ? 1 : 0.92);
+          n++;
+        }
+      }
+      row.push(n > 0 && soma / n >= limiar);
     }
     bits.push(row);
   }
@@ -97,7 +110,7 @@ export function gerarCupomEscPos(d) {
   const c = new Cupom().init();
   c.alinhar("c");
   if (d.logo) {
-    try { const { bits, W, H } = pngParaBits(d.logo, 200); c.raster(bits, W, H).pular(1); } catch { /* sem logo */ }
+    try { const { bits, W, H } = pngParaBits(d.logo, 256); c.raster(bits, W, H).pular(1); } catch { /* sem logo */ }
   }
   c.negrito(true).tamanho(1, 2).linha(String(d.nome || "").toUpperCase()).tamanho(1, 1).negrito(false);
   const l2 = [d.endereco, d.telefone].filter(Boolean).join(" · ");
