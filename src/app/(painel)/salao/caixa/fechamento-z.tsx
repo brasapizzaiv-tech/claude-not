@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { fecharCaixaZ } from "../actions";
+import { fecharCaixaZ, reimprimirFechamento } from "../actions";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -35,6 +35,9 @@ export function FechamentoZ({
   const [contadoStr, setContadoStr] = useState("");
   const [obs, setObs] = useState("");
   const [feito, setFeito] = useState<{ esperado: number; contado: number; quebra: number } | null>(null);
+  // Quantas impressoras receberam o cupom (0 = nenhuma marcada pra NFC-e).
+  const [impresso, setImpresso] = useState<number | null>(null);
+  const [msgImp, setMsgImp] = useState<string | null>(null);
 
   const contado = num(contadoStr);
   const quebra = Math.round((contado - esperado) * 100) / 100;
@@ -46,11 +49,10 @@ export function FechamentoZ({
         const r = await fecharCaixaZ(caixaId, contado, obs);
         if (r.ok) {
           setFeito({ esperado: r.esperado, contado: r.contado, quebra: r.quebra });
-          setTimeout(() => {
-            try {
-              window.print();
-            } catch {}
-          }, 400);
+          // O cupom vai pra fila da Central de Impressões (mesma impressora da
+          // NFC-e). Só cai na janela do navegador se não houver impressora.
+          setImpresso(r.impressoras ?? 0);
+          if (!r.impressoras) setTimeout(() => { try { window.print(); } catch {} }, 400);
           router.refresh();
         } else {
           alert("Não consegui fechar o caixa — ele pode já ter sido fechado em outra tela. Atualize a página.");
@@ -173,6 +175,44 @@ export function FechamentoZ({
                 {proc ? "Fechando..." : "Fechar e imprimir Z"}
               </button>
             </div>
+
+            {impresso !== null && (
+              <div className="mt-3 rounded-xl bg-zinc-50 p-3 text-sm dark:bg-zinc-900">
+                {impresso > 0 ? (
+                  <p className="text-emerald-700 dark:text-emerald-400">
+                    ✓ Caixa fechado. O cupom saiu na impressora da nota
+                    {impresso > 1 ? " (" + impresso + " impressoras)" : ""}.
+                  </p>
+                ) : (
+                  <p className="text-amber-600">
+                    Caixa fechado, mas nenhuma impressora está marcada pra NFC-e na Central de
+                    Impressões — abri a janela de impressão do navegador.
+                  </p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setMsgImp("Enviando…");
+                      start(async () => {
+                        const rr = await reimprimirFechamento(caixaId);
+                        setMsgImp(rr.ok ? "✓ Enviado de novo." : rr.mensagem);
+                      });
+                    }}
+                    disabled={proc}
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700"
+                  >
+                    🖨️ Imprimir de novo
+                  </button>
+                  <button
+                    onClick={() => { try { window.print(); } catch {} }}
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-700"
+                  >
+                    Imprimir pelo navegador
+                  </button>
+                  {msgImp && <span className="self-center text-xs text-zinc-500">{msgImp}</span>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

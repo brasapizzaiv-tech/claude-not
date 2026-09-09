@@ -1247,12 +1247,20 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
   const quebra = Math.round((contado - esperado) * 100) / 100;
   const totalVendas = Object.values(vendasPorForma).reduce((s, v) => s + v, 0);
 
+  // Quem fechou (sai no cupom).
+  const { data: authZ } = await supabase.auth.getUser();
+  let operador: string | null = null;
+  if (authZ.user?.id) {
+    const { data: perf } = await supabase.from("profiles").select("nome").eq("id", authZ.user.id).maybeSingle();
+    operador = (perf?.nome as string) || authZ.user.email || null;
+  }
   const resumo = {
     saldoInicial,
     vendasPorForma,
     totalVendas: Math.round(totalVendas * 100) / 100,
     suprimentos: Math.round(suprimentos * 100) / 100,
     sangrias: Math.round(sangrias * 100) / 100,
+    operador,
   };
 
   await supabase
@@ -1268,6 +1276,34 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
     })
     .eq("id", caixaId);
 
+  // Cupom do fechamento direto na impressora da NFC-e (Central de Impressões),
+  // sem abrir a janela de impressão do navegador.
+  let impressoras = 0;
+  const { data: impsZ } = await supabase.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true);
+  const idsZ = ((impsZ as { id: string }[]) ?? []).map((i) => i.id);
+  if (idsZ.length > 0) {
+    const { error: errZ } = await supabase
+      .from("impressao_fila")
+      .insert(idsZ.map((impressora_id) => ({ tipo: "fechamento", ref_id: caixaId, impressora_id })));
+    if (!errZ) impressoras = idsZ.length;
+  }
+
   revalidatePath("/salao/caixa");
-  return { ok: true as const, esperado, contado, quebra };
+  return { ok: true as const, esperado, contado, quebra, impressoras };
+}
+
+// Reimprime o cupom de um caixa já fechado (botão "imprimir de novo").
+export async function reimprimirFechamento(caixaId: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: imps } = await supabase.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true);
+  const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
+  if (ids.length === 0) {
+    return { ok: false as const, mensagem: "Nenhuma impressora marcada pra NFC-e na Central de Impressões." };
+  }
+  const { error } = await supabase
+    .from("impressao_fila")
+    .insert(ids.map((impressora_id) => ({ tipo: "fechamento", ref_id: caixaId, impressora_id })));
+  if (error) return { ok: false as const, mensagem: error.message };
+  return { ok: true as const, total: ids.length };
 }

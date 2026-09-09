@@ -4,6 +4,7 @@ import { gerarEtiquetaPdf, type EtiquetaConfig } from "@/lib/etiqueta-pdf";
 import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
 import { gerarMarmitaPdf } from "@/lib/marmita-pdf";
+import { gerarFechamentoPdf } from "@/lib/fechamento-pdf";
 import { baixarDanfe, type FocusAmbiente } from "@/lib/fiscal/focus";
 
 export const runtime = "nodejs";
@@ -112,6 +113,48 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const b = await baixarDanfe({ token, ambiente: (nota.ambiente as FocusAmbiente) || "producao" }, nota.url_danfe as string);
     if (!b) return new Response("nao consegui baixar o DANFE", { status: 502 });
     pdf = b;
+  } else if (job.tipo === "fechamento") {
+    // Cupom do fechamento de caixa (ref_id = pdv_caixas.id).
+    const [{ data: cx }, { data: imp }, { data: cfgRows }] = await Promise.all([
+      admin
+        .from("pdv_caixas")
+        .select("nome, saldo_inicial, aberto_em, fechado_em, dinheiro_contado, dinheiro_esperado, quebra, resumo, obs")
+        .eq("id", job.ref_id)
+        .maybeSingle(),
+      job.impressora_id
+        ? admin.from("impressoras").select("comanda_config").eq("id", job.impressora_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      admin.from("pdv_config").select("valor").eq("chave", "nome_restaurante").maybeSingle(),
+    ]);
+    if (!cx) return new Response("caixa nao encontrado", { status: 404 });
+    const r = (cx.resumo ?? {}) as {
+      saldoInicial?: number;
+      vendasPorForma?: Record<string, number>;
+      totalVendas?: number;
+      suprimentos?: number;
+      sangrias?: number;
+      operador?: string | null;
+    };
+    const largura = ((imp as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80;
+    pdf = await gerarFechamentoPdf(
+      {
+        nome: ((cfgRows as { valor?: string } | null)?.valor) || "Brasa",
+        caixaNome: (cx.nome as string) ?? null,
+        abertoEm: (cx.aberto_em as string) ?? null,
+        fechadoEm: (cx.fechado_em as string) ?? null,
+        operador: r.operador ?? null,
+        saldoInicial: Number(r.saldoInicial ?? cx.saldo_inicial ?? 0),
+        vendasPorForma: Object.entries(r.vendasPorForma ?? {}).map(([f, v]) => [f, Number(v)] as [string, number]),
+        totalVendas: Number(r.totalVendas ?? 0),
+        suprimentos: Number(r.suprimentos ?? 0),
+        sangrias: Number(r.sangrias ?? 0),
+        esperado: Number(cx.dinheiro_esperado ?? 0),
+        contado: Number(cx.dinheiro_contado ?? 0),
+        quebra: Number(cx.quebra ?? 0),
+        obs: (cx.obs as string) ?? null,
+      },
+      largura,
+    );
   } else if (job.tipo === "teste") {
     const { data: imp } = await admin.from("impressoras").select("nome, comanda_config").eq("id", job.ref_id).maybeSingle();
     const largura = ((imp?.comanda_config as { largura?: number } | null)?.largura) ?? 80;
