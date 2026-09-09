@@ -41,6 +41,12 @@ function desenharCorpo(doc: PDFKit.PDFDocument, fe: number, g: Geo, d: EtiquetaP
     if (extras.length) {
       doc.font("Helvetica").fontSize(6.5 * fe).text(extras.join(" · "), pad, doc.y + 2, { width: W, align: "center" });
     }
+    // Observação livre (tempero, ponto, "sem sal"...) — logo acima da validade.
+    // 7pt: numa etiqueta cheia, 8pt forçava DOIS passos de encolhimento da
+    // letra da etiqueta inteira (81%); com 7pt fica em 90%.
+    if (d.texto) {
+      doc.font("Helvetica-Oblique").fontSize(7 * fe).text(d.texto, pad, doc.y + 1.5, { width: W, align: "center" });
+    }
   }
 
   // Bloco da validade (a etiqueta livre só mostra se tiver data).

@@ -80,7 +80,7 @@ export function EtiquetaColabForm({
     lote: extras.lote || null,
     validadeOriginal: extras.validadeOriginal || null,
     sif: extras.sif || null,
-    texto: livre ? texto : null,
+    texto: texto || null,
   };
   const pronto = livre ? !!titulo.trim() : !!itemId && qtdValida(quantidade) && !!validade;
 
@@ -198,6 +198,16 @@ export function EtiquetaColabForm({
                     <option value="ml">ml</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-zinc-500">Observação (opcional)</label>
+                <input
+                  value={texto}
+                  onChange={(e) => setTexto(e.target.value.slice(0, 80))}
+                  placeholder="ex.: temperado com alho e sal"
+                  className={input}
+                />
+                <p className="mt-1 text-[11px] text-zinc-400">Sai impresso na etiqueta, logo acima da validade.</p>
               </div>
             </>
           )}

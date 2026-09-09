@@ -302,7 +302,7 @@ export function EtiquetaVisual({ d, config, qr, className }: { d: EtiquetaDados;
   // Quanto mais coisa na etiqueta, menor a letra (o PDF mede de verdade; aqui é
   // uma aproximação pra pré-visualização não estourar).
   const cheio =
-    (c.categoria && d.categoria ? 1 : 0) + (linhasExtras(d).length ? 1 : 0) + (c.barraValidade ? 1 : 0) + (c.empresa ? 1 : 0) + (d.quantidade != null ? 0.5 : 0);
+    (c.categoria && d.categoria ? 1 : 0) + (linhasExtras(d).length ? 1 : 0) + (c.barraValidade ? 1 : 0) + (c.empresa ? 1 : 0) + (d.quantidade != null ? 0.5 : 0) + (d.texto ? 1 : 0);
   const fe = Math.min(Math.max((c.escala || 100) / 100, 0.6), 1.6) * Math.max(0.74, 1 - 0.07 * cheio);
   const px = (n: number) => `${(n * fe).toFixed(1)}px`;
   const t = tipoInfo(d.tipo);
@@ -337,6 +337,9 @@ export function EtiquetaVisual({ d, config, qr, className }: { d: EtiquetaDados;
             </div>
           )}
           {extras.length > 0 && <div style={{ textAlign: "center", fontSize: px(8) }}>{extras.join("  ·  ")}</div>}
+          {d.texto && (
+            <div style={{ textAlign: "center", fontSize: px(9), fontStyle: "italic", lineHeight: 1.2, marginTop: 2 }}>{d.texto}</div>
+          )}
         </>
       )}
       {(!livre || d.validade) &&

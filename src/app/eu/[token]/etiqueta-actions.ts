@@ -80,7 +80,9 @@ export async function criarEtiquetaColab(token: string, dados: {
       lote: (dados.lote || "").trim() || null,
       validade_original: dados.validade_original || null,
       sif: (dados.sif || "").trim() || null,
-      texto: livre ? (dados.texto || "").trim().slice(0, 200) || null : null,
+      // "livre" usa o texto como corpo da etiqueta; nos outros tipos ele é a
+      // observação curta (tempero, ponto, "sem sal"...).
+      texto: (dados.texto || "").trim().slice(0, livre ? 200 : 80) || null,
       impressora_id: impressoraId,
   };
   const { data, error } = await admin
