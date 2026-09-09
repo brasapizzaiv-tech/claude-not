@@ -23,6 +23,13 @@ export async function salvarCliente(formData: FormData) {
     municipio: t("municipio"),
     uf: t("uf"),
     cod_municipio: t("cod_municipio"),
+    // Teto do fiado ("Saldo cliente" no caixa). Vazio = sem limite.
+    limite_credito: (() => {
+      const v = ((formData.get("limite_credito") as string) || "").trim();
+      if (!v) return null;
+      const n = Number(v.replace(/./g, "").replace(",", "."));
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    })(),
   };
   if (id) await supabase.from("clientes").update(payload).eq("id", id);
   else await supabase.from("clientes").insert(payload);

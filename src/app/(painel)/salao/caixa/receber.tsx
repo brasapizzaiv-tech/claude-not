@@ -6,6 +6,7 @@ import { pagarSelecao } from "../actions";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
 import { formaEmiteAuto } from "@/components/nfce-auto-toggle";
+import { PainelPagamentos, type Pagamento } from "./pagamentos";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -44,7 +45,13 @@ type Linha = {
 };
 
 export type ItemMenu = { id: string; nome: string; preco: number };
-export type ClienteMini = { id: string; nome: string; cpfCnpj: string | null };
+export type ClienteMini = {
+  id: string;
+  nome: string;
+  cpfCnpj: string | null;
+  saldoFiado?: number;       // quanto já deve
+  limiteCredito?: number | null; // teto do fiado (null = sem limite)
+};
 type Extra = { uid: string; produtoId: string; nome: string; preco: number; qtd: number };
 
 export function ReceberComandas({
@@ -97,10 +104,8 @@ export function ReceberComandas({
   const [desconto, setDesconto] = useState("");
   const [descontoPct, setDescontoPct] = useState(false); // false = R$, true = %
   const [acrescimo, setAcrescimo] = useState("");
-  const [formaSel, setFormaSel] = useState("");
-  const [recebido, setRecebido] = useState("");
-  const [split, setSplit] = useState(false);
-  const [linhasPg, setLinhasPg] = useState<Record<string, string>>({});
+  // A conta aceita vários pagamentos até "Falta pagar" zerar.
+  const [pagos, setPagos] = useState<Pagamento[]>([]);
   const [pessoas, setPessoas] = useState("");
   const [extras, setExtras] = useState<Extra[]>([]);
   const [novoProd, setNovoProd] = useState("");
@@ -179,22 +184,22 @@ export function ReceberComandas({
   const acr = num(acrescimo);
   const totalPagar = Math.max(0, Math.round((subtotalBruto - desc + acr) * 100) / 100);
 
-  const somaSplit = formas.reduce((s, f) => s + num(linhasPg[f] ?? ""), 0);
-  const faltaSplit = Math.round((totalPagar - somaSplit) * 100) / 100;
-  const troco = formaSel === "Dinheiro" && recebido && num(recebido) >= totalPagar ? num(recebido) - totalPagar : 0;
+  const somaPagos = Math.round(pagos.reduce((s, x) => s + x.valor, 0) * 100) / 100;
+  const falta = Math.round((totalPagar - somaPagos) * 100) / 100;
+  const troco = Math.round(pagos.reduce((s, x) => s + Math.max(0, (x.recebido ?? x.valor) - x.valor), 0) * 100) / 100;
   // "Saldo cliente" (fiado) precisa de cliente vinculado.
-  const usaSaldoCliente = split ? num(linhasPg["Saldo cliente"] ?? "") > 0 : formaSel === "Saldo cliente";
-  // Pix na tela: valor do QR = total (forma única) ou a parte "Pix" do split.
-  const pixValor = split ? Math.round(num(linhasPg["Pix"] ?? "") * 100) / 100 : formaSel === "Pix" ? totalPagar : 0;
+  const usaSaldoCliente = pagos.some((x) => /saldo|fiado/i.test(x.forma));
   const pixDescricao = `Brasa comanda ${selComandas.map((c) => `#${c.numero}`).join(" ")}`.slice(0, 120);
+  // Dados do fiado do cliente vinculado (saldo atual + limite de crédito).
+  const fiadoCli = clienteSel
+    ? { nome: clienteSel.nome, saldo: Number(clienteSel.saldoFiado ?? 0), limite: clienteSel.limiteCredito ?? null }
+    : null;
 
   const podeConfirmar =
     temAlgo &&
     selComandas.length > 0 &&
-    totalPagar >= 0 &&
-    (split
-      ? Math.abs(faltaSplit) < 0.01
-      : !!formaSel) &&
+    // total zerado (desconto de 100%) fecha sem pagamento nenhum
+    (totalPagar < 0.005 || Math.abs(falta) < 0.01) &&
     (!usaSaldoCliente || !!clienteSel);
 
   const cliFiltrados = (() => {
@@ -278,11 +283,9 @@ export function ReceberComandas({
       itemIds: g.itemIds,
       buffet: g.buffet,
     }));
-    const pagamentos = split
-      ? formas
-          .filter((f) => num(linhasPg[f] ?? "") > 0)
-          .map((f) => ({ forma: f, valor: Math.round(num(linhasPg[f]) * 100) / 100 }))
-      : [{ forma: formaSel, valor: totalPagar }];
+    const pagamentos = pagos
+      .filter((x) => x.valor > 0)
+      .map((x) => ({ forma: x.forma, valor: x.valor, bandeira: x.bandeira ?? null, observacao: x.observacao ?? null }));
 
     // Produtos avulsos → vão para a primeira comanda selecionada.
     const comandaExtra = selComandas[0]?.id;
@@ -340,10 +343,7 @@ export function ReceberComandas({
         setDesconto("");
         setDescontoPct(false);
         setAcrescimo("");
-        setFormaSel("");
-        setRecebido("");
-        setSplit(false);
-        setLinhasPg({});
+        setPagos([]);
         setPessoas("");
         router.refresh();
       } else {
@@ -637,7 +637,7 @@ export function ReceberComandas({
                     />
                     <button
                       type="button"
-                      onClick={() => { setDescontoPct(true); setDesconto("5"); if (!split && !formaSel) setFormaSel("Dinheiro"); }}
+                      onClick={() => { setDescontoPct(true); setDesconto("5"); }}
                       className="mt-1 w-full rounded-md border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
                     >
                       💵 5% no dinheiro
@@ -697,81 +697,22 @@ export function ReceberComandas({
                   )}
                 </div>
 
-                <label className="flex items-center gap-2 text-xs text-zinc-500">
-                  <input type="checkbox" checked={split} onChange={(e) => setSplit(e.target.checked)} />
-                  Dividir em várias formas
-                </label>
-
-                {split ? (
-                  <div className="space-y-1.5">
-                    {formas.map((f) => (
-                      <div key={f} className="flex items-center gap-2">
-                        <span className="flex-1 text-xs text-zinc-600 dark:text-zinc-300">{f}</span>
-                        <input
-                          inputMode="decimal"
-                          value={linhasPg[f] ?? ""}
-                          onChange={(e) => setLinhasPg((s) => ({ ...s, [f]: e.target.value }))}
-                          placeholder="0,00"
-                          className={`${inputCls} w-24 text-right`}
-                        />
-                      </div>
-                    ))}
-                    <p className={`text-right text-xs ${Math.abs(faltaSplit) < 0.01 ? "text-emerald-600" : "text-amber-600"}`}>
-                      {Math.abs(faltaSplit) < 0.01
-                        ? "✓ fecha o total"
-                        : faltaSplit > 0
-                          ? `falta ${brl(faltaSplit)}`
-                          : `passou ${brl(-faltaSplit)}`}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex flex-wrap gap-1.5">
-                      {formas.map((f) => (
-                        <button
-                          key={f}
-                          onClick={() => setFormaSel(f)}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                            formaSel === f
-                              ? "bg-orange-500 text-white"
-                              : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-                          }`}
-                        >
-                          {f}
-                        </button>
-                      ))}
-                    </div>
-                    {formaSel === "Dinheiro" && (
-                      <>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-zinc-500">Recebido <span className="text-zinc-400">(só pra calcular o troco)</span></span>
-                          <input
-                            inputMode="decimal"
-                            value={recebido}
-                            onChange={(e) => setRecebido(e.target.value)}
-                            placeholder={brl(totalPagar)}
-                            className={`${inputCls} w-28 text-right`}
-                          />
-                        </div>
-                        {troco > 0.005 && (
-                          <p className="text-right text-sm font-medium text-emerald-600">Troco: {brl(troco)}</p>
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
-
-                {pixAtivo && pixValor > 0 && (
-                  <PixQr
-                    valor={pixValor}
-                    descricao={pixDescricao}
-                    origem="caixa"
-                    // Forma única: o Pix caiu → fecha a conta. Split: só avisa; o caixa
-                    // completa as outras formas e clica em Pagar.
-                    onPago={split ? () => setMsg("✓ Pix recebido. Preencha as outras formas e clique em Pagar.") : confirmar}
-                    compacto
-                  />
-                )}
+                <PainelPagamentos
+                  formas={formas}
+                  total={totalPagar}
+                  pagos={pagos}
+                  onAdicionar={(x) => { setPagos((l) => [...l, x]); setMsg(null); }}
+                  onRemover={(uid) => setPagos((l) => l.filter((y) => y.uid !== uid))}
+                  ativo={temAlgo && selComandas.length > 0}
+                  fiado={fiadoCli}
+                  qrPix={
+                    pixAtivo
+                      ? (v, aoPagar) => (
+                          <PixQr valor={v} descricao={pixDescricao} origem="caixa" onPago={aoPagar} compacto />
+                        )
+                      : undefined
+                  }
+                />
 
                 {usaSaldoCliente && !clienteSel && (
                   <p className="text-xs text-amber-600">Saldo cliente: vincule o cliente (acima) pra conta ir pro fiado dele.</p>
@@ -782,7 +723,11 @@ export function ReceberComandas({
                   disabled={proc || !podeConfirmar}
                   className="w-full rounded-lg bg-emerald-600 py-3 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
-                  {proc ? "Recebendo..." : `Pagar ${brl(totalPagar)}`}
+                  {proc
+                    ? "Recebendo..."
+                    : falta > 0.005
+                      ? `Falta lançar ${brl(falta)}`
+                      : `Finalizar ${brl(totalPagar)}`}
                 </button>
                 {msg && <p className="text-center text-xs text-emerald-700 dark:text-emerald-400">{msg}</p>}
               </div>

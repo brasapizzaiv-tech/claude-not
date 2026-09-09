@@ -39,5 +39,5 @@ export function NfceAutoToggle({ ligado, producao, compacto }: { ligado: boolean
 // Forma de pagamento que dispara a nota automática.
 export function formaEmiteAuto(forma: string) {
   const f = (forma || "").toLowerCase();
-  return f.includes("pix") || f.includes("cart") || f.includes("débito") || f.includes("debito") || f.includes("crédito") || f.includes("credito");
+  return f.includes("pix") || f.includes("cart") || f.includes("débito") || f.includes("debito") || f.includes("crédito") || f.includes("credito") || f.includes("vale");
 }

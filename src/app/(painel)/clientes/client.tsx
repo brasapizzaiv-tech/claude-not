@@ -8,6 +8,7 @@ export type Cliente = {
   id: string;
   nome: string;
   cpf_cnpj: string | null;
+  limite_credito: number | null;
   ie: string | null;
   email: string | null;
   telefone: string | null;
@@ -137,6 +138,16 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                 <input name="nome" defaultValue={editando?.nome ?? ""} required className={campo} />
               </div>
               <F nome="cpf_cnpj" label="CNPJ / CPF" def={editando?.cpf_cnpj} />
+              <label className="block">
+                <span className="mb-1 block text-xs text-zinc-500">Limite de crédito (fiado)</span>
+                <input
+                  name="limite_credito"
+                  defaultValue={editando?.limite_credito != null ? String(editando.limite_credito).replace(".", ",") : ""}
+                  placeholder="vazio = sem limite"
+                  inputMode="decimal"
+                  className={campo}
+                />
+              </label>
               <F nome="ie" label="Inscrição Estadual" def={editando?.ie} />
               <F nome="email" label="E-mail" def={editando?.email} />
               <F nome="telefone" label="Telefone" def={editando?.telefone} />

@@ -9,7 +9,7 @@ import { pixConfigurado } from "@/lib/pix";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 
-const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito", "Saldo cliente"];
+const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito", "Vale refeição", "Saldo cliente"];
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -171,10 +171,17 @@ export default async function CaixaPage({
   const nfce = await lerNfceAuto();
 
   // Cardápio (para "Inserir Produto") e clientes (para "Vincular Cliente").
-  const [{ data: menuRows }, { data: cliRows }] = await Promise.all([
+  const [{ data: menuRows }, { data: cliRows }, { data: fiadoRows }] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, preco, promo_preco, ativo").order("nome"),
-    supabase.from("clientes").select("id, nome, cpf_cnpj").eq("ativo", true).order("nome"),
+    supabase.from("clientes").select("id, nome, cpf_cnpj, limite_credito").eq("ativo", true).order("nome"),
+    // Saldo do fiado por cliente (pra tela de pagamento avisar do limite).
+    supabase.from("cliente_fiado").select("cliente_id, tipo, valor"),
   ]);
+  const saldoFiado = new Map<string, number>();
+  for (const r of ((fiadoRows as { cliente_id: string; tipo: string; valor: number }[]) ?? [])) {
+    const v = Number(r.valor) * (r.tipo === "debito" ? 1 : -1);
+    saldoFiado.set(r.cliente_id, Math.round(((saldoFiado.get(r.cliente_id) ?? 0) + v) * 100) / 100);
+  }
   const menu =
     ((menuRows as { id: string; nome: string; preco: number; promo_preco: number | null; ativo: boolean | null }[]) ?? [])
       .filter((m) => m.ativo !== false)
@@ -182,10 +189,12 @@ export default async function CaixaPage({
       // senão o total na tela do caixa fica maior que o gravado na comanda.
       .map((m) => ({ id: m.id, nome: m.nome, preco: Number(m.promo_preco ?? 0) > 0 ? Number(m.promo_preco) : Number(m.preco) }));
   const clientes =
-    ((cliRows as { id: string; nome: string; cpf_cnpj: string | null }[]) ?? []).map((c) => ({
+    ((cliRows as { id: string; nome: string; cpf_cnpj: string | null; limite_credito: number | null }[]) ?? []).map((c) => ({
       id: c.id,
       nome: c.nome,
       cpfCnpj: c.cpf_cnpj,
+      saldoFiado: saldoFiado.get(c.id) ?? 0,
+      limiteCredito: c.limite_credito == null ? null : Number(c.limite_credito),
     }));
 
   const saldoInicial = Number(caixa.saldo_inicial);

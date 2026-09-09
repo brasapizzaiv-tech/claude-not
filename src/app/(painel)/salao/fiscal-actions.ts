@@ -13,6 +13,8 @@ const FORMA_FOCUS: Record<string, string> = {
   "Cartão de débito": "04",
   "Cartão de debito": "04",
   "Cartão de credito": "03",
+  "Vale refeição": "11", // vale-refeição
+  "Vale refeicao": "11",
   "Saldo cliente": "05", // crédito loja (fiado)
 };
 

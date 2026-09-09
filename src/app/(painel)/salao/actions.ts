@@ -824,7 +824,7 @@ export async function pagarValores(
 // pagamento(s) no caixa aberto.
 export async function pagarSelecao(
   sel: { comandaId: string; itemIds: string[]; buffet: boolean }[],
-  pagamentos: { forma: string; valor: number }[],
+  pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null }[],
   extras: { comandaId: string; itemId: string; qtd: number }[] = [],
   clienteId?: string | null,
 ) {
@@ -917,6 +917,22 @@ export async function pagarSelecao(
   const fiado = Math.round(pagamentos.filter((p) => p.forma === "Saldo cliente" && p.valor > 0).reduce((a, p) => a + p.valor, 0) * 100) / 100;
   if (fiado > 0) {
     if (!clienteId) return { ok: false as const, mensagem: "Pra receber como Saldo cliente, vincule o cliente antes." };
+    // Limite de crédito do cliente (vazio = sem limite).
+    const { data: cliLim } = await supabase.from("clientes").select("nome, limite_credito").eq("id", clienteId).maybeSingle();
+    const limite = cliLim?.limite_credito == null ? null : Number(cliLim.limite_credito);
+    if (limite != null && limite >= 0) {
+      const { data: mov } = await supabase.from("cliente_fiado").select("tipo, valor").eq("cliente_id", clienteId);
+      const saldo = ((mov as { tipo: string; valor: number }[]) ?? []).reduce(
+        (a, r) => a + (r.tipo === "debito" ? Number(r.valor) : -Number(r.valor)), 0);
+      const novo = Math.round((saldo + fiado) * 100) / 100;
+      if (novo > limite + 0.005) {
+        const brlS = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        return {
+          ok: false as const,
+          mensagem: `${cliLim?.nome ?? "O cliente"} passaria do limite de crédito: já deve ${brlS(saldo)}, o limite é ${brlS(limite)} e esta conta levaria a ${brlS(novo)}. Receba de outra forma ou aumente o limite no cadastro do cliente.`,
+        };
+      }
+    }
     const { data: userData } = await supabase.auth.getUser();
     await supabase.from("cliente_fiado").insert({
       cliente_id: clienteId,
@@ -947,6 +963,8 @@ export async function pagarSelecao(
         forma_pagamento: p.forma,
         valor: p.valor,
         comanda_id: primeiraComanda,
+        bandeira: (p.bandeira || "").trim().slice(0, 30) || null,
+        observacao: (p.observacao || "").trim().slice(0, 200) || null,
       });
     }
   }
