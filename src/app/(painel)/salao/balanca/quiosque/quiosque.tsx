@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { useVoz, valorFalado } from "./voz";
 import { gerarComandaBuffetKiosk, gerarComandaLivreKiosk, virarLivreKiosk, virarLivrePorNumeroKiosk } from "../../actions";
 
 const moeda = (n: number) =>
@@ -238,6 +239,40 @@ export function QuiosqueBalanca({
   const [impressoraCupom, setImpressoraCupom] = useState("");
   const [msgConfig, setMsgConfig] = useState<string | null>(null);
   const [modoImpressao, setModoImpressao] = useState<"escpos" | "pdf">("escpos");
+
+  // ---------- voz (o quiosque avisa o cliente em voz alta) ----------
+  const voz = useVoz();
+  const falouRef = useRef("");
+  // Fala o resultado UMA vez por comanda (todos os caminhos passam por aqui:
+  // pesagem pelo agente, pesagem pela nuvem, buffet livre e virada de livre).
+  useEffect(() => {
+    if (estado !== "resultado" || !resultado) return;
+    const chave = resultado.codigoOffline || resultado.id || String(resultado.numero);
+    if (falouRef.current === chave) return;
+    falouRef.current = chave;
+    const partes: string[] = [];
+    // "bufê" na fala: escrito "buffet" a voz do Windows lê em francês.
+    if (resultado.viradaLivre) partes.push("Agora é bufê livre.");
+    else if (resultado.livre) partes.push("Bufê livre.");
+    if (resultado.codigoOffline) {
+      // letra por letra, senão a voz lê "OFF-123456" de uma vez e ninguém entende
+      partes.push(`Guarde o cupom. Código ${String(resultado.codigoOffline).split("").filter((c) => c !== "-").join(" ")}.`);
+    } else if (resultado.numero > 0) {
+      partes.push(`Comanda ${resultado.numero}.`);
+    }
+    if (resultado.valor > 0) partes.push(`${valorFalado(resultado.valor)}.`);
+    partes.push(resultado.peso > 0 ? (soKgRef.current ? "Pode retirar sua marmita." : "Pode retirar seu prato.") : "Leve o cupom ao caixa.");
+    voz.falar(partes.join(" "));
+  }, [estado, resultado, voz]);
+  // Aviso de erro também é falado, UMA vez por mensagem (o hook devolve um
+  // objeto novo a cada render; sem essa trava a frase repetiria sem parar).
+  const erroFaladoRef = useRef("");
+  useEffect(() => {
+    if (!erro) { erroFaladoRef.current = ""; return; }
+    if (erroFaladoRef.current === erro) return;
+    erroFaladoRef.current = erro;
+    voz.falar(erro);
+  }, [erro, voz]);
   async function alternarModo(m: "escpos" | "pdf") {
     setModoImpressao(m);
     try {
@@ -648,6 +683,46 @@ export function QuiosqueBalanca({
               {impressoras.length === 0 && !msgConfig && <p className="text-[#211915]/50">Procurando impressoras…</p>}
             </div>
             {msgConfig && <p className="mt-3 text-sm text-[#C78340]">{msgConfig}</p>}
+            {/* Voz do quiosque */}
+            <div className="mt-4 rounded-xl border border-[#211915]/15 p-3 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold">🔊 Falar com o cliente</span>
+                <button
+                  onClick={() => voz.alternar(!voz.ligada)}
+                  disabled={!voz.suportada}
+                  className={`rounded-lg border px-3 py-2 font-semibold ${voz.ligada ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"} disabled:opacity-40`}
+                >
+                  {voz.ligada ? "Ligada" : "Desligada"}
+                </button>
+              </div>
+              {voz.suportada ? (
+                <>
+                  <p className="mt-1 text-xs text-[#211915]/60">
+                    Ao fechar a comanda o quiosque fala o número, o valor e &quot;pode retirar seu prato&quot;. Precisa de caixa de som ligada no PC.
+                  </p>
+                  {voz.vozes.length > 0 && (
+                    <select
+                      value={voz.vozNome}
+                      onChange={(e) => voz.trocarVoz(e.target.value)}
+                      className="mt-2 w-full rounded-lg border border-[#211915]/15 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="">Voz do Windows (automática)</option>
+                      {voz.vozes.map((v) => (
+                        <option key={v.nome} value={v.nome}>{v.nome} ({v.idioma})</option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    onClick={() => voz.falar("Comanda 246. 36 reais e 44 centavos. Pode retirar seu prato.", true)}
+                    className="mt-2 w-full rounded-lg border border-[#211915]/20 py-2 text-sm hover:bg-[#211915]/5"
+                  >
+                    🔊 Testar a voz
+                  </button>
+                </>
+              ) : (
+                <p className="mt-1 text-xs text-[#211915]/60">Este navegador não tem voz. Use o Chrome.</p>
+              )}
+            </div>
             {/* Modo de impressão: rápido (ESC/POS) ou PDF */}
             <div className="mt-4 rounded-xl border border-[#211915]/15 p-3 text-sm">
               <p className="mb-2 font-semibold">Como imprimir o cupom</p>
