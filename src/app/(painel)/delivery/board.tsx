@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, reimprimirDelivery } from "./actions";
 
 const MapaPedidos = dynamic(() => import("./mapa").then((m) => m.MapaPedidos), { ssr: false });
+const MapaPedidosGoogle = dynamic(() => import("./mapa-google").then((m) => m.MapaPedidosGoogle), { ssr: false });
 
 export type PedidoBoard = {
   id: string;
@@ -119,10 +120,11 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
   );
 }
 
-export function Board({ pedidos, entregadores, origemMapa }: {
+export function Board({ pedidos, entregadores, origemMapa, googleKey = null }: {
   pedidos: PedidoBoard[];
   entregadores: EntregadorOpt[];
   origemMapa: { lat: number; lng: number } | null;
+  googleKey?: string | null; // chave de navegador do Google Maps; sem ela, OpenStreetMap
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -223,7 +225,7 @@ export function Board({ pedidos, entregadores, origemMapa }: {
       </div>
 
       {visao === "mapa" ? (
-        <MapaPedidos pinos={pinos} origem={origemMapa} />
+        googleKey ? <MapaPedidosGoogle pinos={pinos} origem={origemMapa} chave={googleKey} /> : <MapaPedidos pinos={pinos} origem={origemMapa} />
       ) : visao === "kanban" ? (
         <div className="flex gap-3 overflow-x-auto pb-3">
           {KANBAN_COLS.map((col) => {

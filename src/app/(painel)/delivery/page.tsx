@@ -66,7 +66,7 @@ export default async function DeliveryPage() {
           <Link href="/delivery/config" className="hover:underline">⚙️ Config</Link>
         </div>
       </div>
-      <Board pedidos={pedidos} entregadores={(entregadores ?? []) as EntregadorOpt[]} origemMapa={origemMapa} />
+      <Board pedidos={pedidos} entregadores={(entregadores ?? []) as EntregadorOpt[]} origemMapa={origemMapa} googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null} />
     </div>
   );
 }
