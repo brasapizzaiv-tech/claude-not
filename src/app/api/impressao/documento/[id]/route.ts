@@ -5,7 +5,8 @@ import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
 import { gerarMarmitaPdf } from "@/lib/marmita-pdf";
 import { gerarFechamentoPdf } from "@/lib/fechamento-pdf";
-import { baixarDanfe, type FocusAmbiente } from "@/lib/fiscal/focus";
+import { baixarXmlNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
+import { gerarNfceCupomPdf } from "@/lib/nfce-cupom-pdf";
 
 export const runtime = "nodejs";
 
@@ -105,14 +106,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       { moldura: true },
     );
   } else if (job.tipo === "nfce") {
-    // Cupom da NFC-e: o PDF do DANFE vem do Focus (ref_id = nfce_emitidas.id).
-    const { data: nota } = await admin.from("nfce_emitidas").select("url_danfe, ambiente").eq("id", job.ref_id).maybeSingle();
-    if (!nota?.url_danfe) return new Response("nota sem DANFE", { status: 404 });
+    // Cupom da NFC-e montado por nós a partir do XML autorizado (ref_id =
+    // nfce_emitidas.id). O "DANFE" do Focus para NFC-e é uma PÁGINA HTML — o
+    // agente salvava como .pdf e a impressora não abria, e o cupom ficava preso
+    // na fila tentando pra sempre.
+    const [{ data: nota }, { data: impN }] = await Promise.all([
+      admin.from("nfce_emitidas").select("url_danfe, url_xml, ambiente").eq("id", job.ref_id).maybeSingle(),
+      job.impressora_id
+        ? admin.from("impressoras").select("comanda_config").eq("id", job.impressora_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    const origem = (nota?.url_xml as string) || (nota?.url_danfe as string) || "";
+    if (!origem) return new Response("nota sem XML", { status: 404 });
     const { data: cfgRows } = await admin.from("config_fiscal").select("chave, valor").in("chave", ["emissor_token"]);
     const token = (cfgRows ?? []).find((r) => r.chave === "emissor_token")?.valor ?? "";
-    const b = await baixarDanfe({ token, ambiente: (nota.ambiente as FocusAmbiente) || "producao" }, nota.url_danfe as string);
-    if (!b) return new Response("nao consegui baixar o DANFE", { status: 502 });
-    pdf = b;
+    const xml = await baixarXmlNfce({ token, ambiente: (nota?.ambiente as FocusAmbiente) || "producao" }, origem);
+    if (!xml) return new Response("nao consegui baixar o XML da nota", { status: 502 });
+    const largN = ((impN as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80;
+    pdf = await gerarNfceCupomPdf(xml, largN);
   } else if (job.tipo === "fechamento") {
     // Cupom do fechamento de caixa (ref_id = pdv_caixas.id).
     const [{ data: cx }, { data: imp }, { data: cfgRows }] = await Promise.all([

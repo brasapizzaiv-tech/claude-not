@@ -85,6 +85,21 @@ function montaUrls(amb: FocusAmbiente, r: Record<string, unknown>): { urlDanfe?:
   };
 }
 
+// Baixa o XML autorizado da nota. Para NFC-e o Focus devolve o "DANFE" como
+// PÁGINA HTML (pedir .pdf responde 406), então o cupom é montado por nós a
+// partir deste XML — a mesma URL sem a extensão responde text/xml.
+export async function baixarXmlNfce(cfg: CfgFocus, urlDanfeOuXml: string): Promise<string | null> {
+  const url = urlDanfeOuXml.replace(/.(html?|pdf)$/i, "");
+  try {
+    const resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) } });
+    if (!resp.ok) return null;
+    const texto = await resp.text();
+    return texto.includes("<infNFe") ? texto : null;
+  } catch {
+    return null;
+  }
+}
+
 // Baixa o PDF do DANFE (URL devolvida na emissão) autenticando com o token.
 export async function baixarDanfe(cfg: CfgFocus, urlDanfe: string): Promise<Buffer | null> {
   try {
