@@ -52,10 +52,11 @@ export async function emitirNfceComanda(comandaId: string, documento?: string) {
 
 // Uma NFC-e pra VÁRIAS comandas pagas juntas no caixa (itens e buffet de todas
 // numa nota só). Com uma comanda, é a emissão normal.
-export async function emitirNfceComandas(comandaIds: string[], documento?: string) {
-  const supabase = await createClient();
-  // Caixa do salão, PDV de balcão e delivery emitem nota.
-  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
+type ClienteSupabase = Awaited<ReturnType<typeof createClient>>;
+
+// Miolo da emissão. Recebe o cliente do banco porque roda em dois cenários:
+// pelo caixa (sessão do usuário) e pela fila automática (sem usuário logado).
+async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], documento?: string) {
   const ids = [...new Set((comandaIds ?? []).filter(Boolean))];
   if (ids.length === 0) return { ok: false, mensagem: "Nenhuma comanda." };
   const comandaId = ids[0];
@@ -234,11 +235,27 @@ export async function emitirNfceComandas(comandaIds: string[], documento?: strin
   };
 }
 
+// Emissão pedida por uma pessoa no caixa/PDV/delivery.
+export async function emitirNfceComandas(comandaIds: string[], documento?: string) {
+  const supabase = await createClient();
+  // Caixa do salão, PDV de balcão e delivery emitem nota.
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
+  return emitirNfceCore(supabase, comandaIds, documento);
+}
+
+// Emissão automática (fila de notas pendentes), sem usuário logado. Só é
+// chamada pela rota que o agente de impressão consome, já autenticada.
+export async function emitirNfceComandasAdmin(
+  admin: unknown,
+  comandaIds: string[],
+  documento?: string,
+) {
+  return emitirNfceCore(admin as ClienteSupabase, comandaIds, documento);
+}
+
 // Manda o cupom da NFC-e (DANFE) pra impressora marcada na Central de
 // Impressões ("Imprime o cupom da NFC-e"). Devolve quantos jobs entraram.
-export async function imprimirNfce(nfceId: string) {
-  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
-  const supabase = await createClient();
+async function imprimirNfceCore(supabase: ClienteSupabase, nfceId: string) {
   const { data: nota } = await supabase.from("nfce_emitidas").select("id, url_danfe, status").eq("id", nfceId).maybeSingle();
   if (!nota) return { ok: false as const, mensagem: "Nota não encontrada." };
   if (!nota.url_danfe) return { ok: false as const, mensagem: "Essa nota não tem DANFE pra imprimir." };
@@ -248,6 +265,17 @@ export async function imprimirNfce(nfceId: string) {
   const { error } = await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "nfce", ref_id: nfceId, impressora_id })));
   if (error) return { ok: false as const, mensagem: error.message };
   return { ok: true as const, total: ids.length };
+}
+
+export async function imprimirNfce(nfceId: string) {
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
+  const supabase = await createClient();
+  return imprimirNfceCore(supabase, nfceId);
+}
+
+// Impressão disparada pela fila automática (sem usuário logado).
+export async function imprimirNfceAdmin(admin: unknown, nfceId: string) {
+  return imprimirNfceCore(admin as ClienteSupabase, nfceId);
 }
 
 // Cancela uma NFC-e já autorizada (dentro do prazo legal). Justificativa >= 15

@@ -969,6 +969,41 @@ export async function pagarSelecao(
     }
   }
 
+  // Nota automática: Pix, cartão e vale entram na FILA (o caixa tem alguns
+  // minutos pra digitar o CPF ou mandar emitir na hora); o resto não gera nota
+  // sozinho. Quem emite é a rotina em src/lib/fiscal/pendentes.ts.
+  try {
+    const eletronico = pagamentos.some(
+      (p) => p.valor > 0 && /pix|cart|créd|cred|déb|deb|vale/i.test(p.forma),
+    );
+    if (eletronico) {
+      const { data: cfgN } = await supabase
+        .from("config_fiscal")
+        .select("chave, valor")
+        .in("chave", ["nfce_auto", "nfce_auto_minutos", "emissor_ambiente"]);
+      const cfgMap = Object.fromEntries(((cfgN as { chave: string; valor: string }[]) ?? []).map((r) => [r.chave, r.valor]));
+      const ligado = cfgMap.nfce_auto === "1";
+      const producao = (cfgMap.emissor_ambiente || "") === "producao";
+      if (ligado && producao) {
+        const minutos = Math.max(0, Math.min(60, Number(cfgMap.nfce_auto_minutos ?? 5) || 0));
+        const comandasNota = [...new Set([...sel.map((s) => s.comandaId), ...extras.map((e) => e.comandaId)])];
+        if (comandasNota.length > 0) {
+          await supabase.from("nfce_pendentes").insert({
+            comanda_ids: comandasNota,
+            numeros: numeros.map((n) => `#${n}`).join(", "),
+            cliente_id: clienteId ?? null,
+            valor: totalPago,
+            formas: pagamentos.filter((p) => p.valor > 0).map((p) => p.forma).join(", "),
+            caixa_id: caixaId,
+            emitir_em: new Date(Date.now() + minutos * 60_000).toISOString(),
+          });
+        }
+      }
+    }
+  } catch {
+    // Nota é acessório: se a fila falhar, o recebimento continua valendo.
+  }
+
   revalidatePath("/salao/caixa");
   revalidatePath("/salao");
   return { ok: true as const, numeros, total: totalPago };

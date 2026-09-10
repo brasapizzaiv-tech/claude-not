@@ -5,6 +5,7 @@ import { servicoAgora } from "../util";
 import { CaixaAcoes } from "./acoes";
 import { FechamentoZ } from "./fechamento-z";
 import { ReceberComandas } from "./receber";
+import { NotasPendentes, type Pendente } from "./notas-pendentes";
 import { pixConfigurado } from "@/lib/pix";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
@@ -197,6 +198,27 @@ export default async function CaixaPage({
       limiteCredito: c.limite_credito == null ? null : Number(c.limite_credito),
     }));
 
+  // Notas automáticas ainda na janela de espera (ou que deram erro).
+  const { data: pendRows } = await supabase
+    .from("nfce_pendentes")
+    .select("id, numeros, valor, formas, cpf_cnpj, status, erro, emitir_em")
+    .in("status", ["aguardando", "emitindo", "erro"])
+    .order("emitir_em", { ascending: true })
+    .limit(30);
+  const pendentes: Pendente[] = ((pendRows as {
+    id: string; numeros: string | null; valor: number | null; formas: string | null;
+    cpf_cnpj: string | null; status: string; erro: string | null; emitir_em: string;
+  }[]) ?? []).map((r) => ({
+    id: r.id,
+    numeros: r.numeros,
+    valor: Number(r.valor ?? 0),
+    formas: r.formas,
+    cpfCnpj: r.cpf_cnpj,
+    status: r.status,
+    erro: r.erro,
+    emitirEm: r.emitir_em,
+  }));
+
   const saldoInicial = Number(caixa.saldo_inicial);
   const vendasPorForma = new Map<string, number>();
   let suprimentos = 0;
@@ -261,6 +283,8 @@ export default async function CaixaPage({
           />
         </div>
       </div>
+
+      <NotasPendentes lista={pendentes} />
 
       {/* Frente: receber comandas (buscar, somar várias, pagar) */}
       <div className="mb-4">

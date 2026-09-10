@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { agenteAutorizado } from "@/lib/impressao-agente";
+import { processarNfcePendentes } from "@/lib/fiscal/pendentes";
 
 // Lista os documentos pendentes de impressão (fila genérica) para o agente.
 // Cada item entregue fica RESERVADO por 90 s (entregue_em): se dois agentes
@@ -7,6 +8,12 @@ import { agenteAutorizado } from "@/lib/impressao-agente";
 // dobro. Se o agente cair antes de dar baixa, o item volta depois dos 90 s.
 export async function GET(req: Request) {
   if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
+
+  // O agente consulta esta rota a cada 3 s — é o "relógio" do sistema. Aqui
+  // também saem as notas automáticas cujo prazo de espera venceu (ninguém
+  // precisa estar com a tela do caixa aberta).
+  try { await processarNfcePendentes(); } catch { /* nota não pode travar a impressão */ }
+
   const admin = createAdminClient();
   const limite = new Date(Date.now() - 90_000).toISOString();
   const { data } = await admin

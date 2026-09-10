@@ -116,6 +116,7 @@ export function ReceberComandas({
   const [msg, setMsg] = useState<string | null>(null);
   const [pagas, setPagas] = useState<{ id: string; numero: number }[]>([]);
   const [autoIds, setAutoIds] = useState<string[]>([]);
+  const [autoNaFila, setAutoNaFila] = useState(false);
   const [recibo, setRecibo] = useState<{
     itens: { numero: number; total: number }[];
     subtotal: number;
@@ -336,7 +337,11 @@ export function ReceberComandas({
         const pagasAgora = [...totPorCom.entries()].map(([id, t]) => ({ id, numero: t.numero }));
         setPagas(pagasAgora);
         // Pix/cartão com o interruptor ligado → nota sai sozinha.
-        setAutoIds(nfceAuto && pagamentos.some((p) => formaEmiteAuto(p.forma)) ? pagasAgora.map((p) => p.id) : []);
+        // Pix/cartão/vale com o interruptor ligado entram na FILA da nota
+        // automática (aparece no topo do caixa com o tempo pra digitar o CPF),
+        // então aqui não pedimos nada. A caixinha manual continua pro dinheiro.
+        setAutoNaFila(nfceAuto && pagamentos.some((p) => formaEmiteAuto(p.forma)));
+        setAutoIds([]);
         setCarrinho(new Set());
         setExtras([]);
         setClienteSel(null);
@@ -749,7 +754,13 @@ export function ReceberComandas({
           </button>
         </div>
       )}
-      {pagas.length > 0 && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} juntas />}
+      {pagas.length > 0 && autoNaFila && (
+        <p className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+          🧾 A nota sai sozinha em alguns minutos. Se o cliente pedir CPF, digite lá em cima, em
+          &quot;Notas saindo automaticamente&quot; — ou clique em <b>Emitir agora</b>.
+        </p>
+      )}
+      {pagas.length > 0 && !autoNaFila && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} juntas />}
 
       {/* Cupom de recebimento (só na impressão — térmica) */}
       {recibo && (
