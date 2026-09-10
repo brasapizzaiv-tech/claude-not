@@ -1,12 +1,15 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { emitirNfceComandasAdmin, imprimirNfceAdmin } from "@/app/(painel)/salao/fiscal-actions";
+import { emitirNfceComandasAdmin } from "@/app/(painel)/salao/fiscal-actions";
 
 // Fila da nota automática.
 //
 // Ao receber em Pix, cartão ou vale, a conta entra aqui em vez de emitir na
 // hora: o caixa ganha alguns minutos pra digitar o CPF, se o cliente pedir, ou
-// mandar emitir na hora. Passado o prazo, esta rotina emite sozinha (sem CPF) e
-// manda o cupom pra impressora da nota.
+// mandar emitir na hora. Passado o prazo, esta rotina emite sozinha, sem CPF.
+//
+// NÃO imprime: nem todo cliente quer o papel, e a nota vale emitida do mesmo
+// jeito. O cupom só sai quando alguém pede — "Emitir agora" no caixa, o botão
+// Imprimir na fila (logo depois de sair) ou a tela de Notas fiscais.
 //
 // Quem chama: a rota que o agente de impressão consulta a cada 3 s. Assim não
 // depende de ninguém estar com a tela do caixa aberta.
@@ -49,8 +52,6 @@ export async function processarNfcePendentes(): Promise<ResultadoFila> {
           .from("nfce_pendentes")
           .update({ status: "emitida", nfce_id: (r as { id?: string }).id ?? null, erro: null, resolvido_em: new Date().toISOString() })
           .eq("id", linha.id);
-        const nfceId = (r as { id?: string }).id;
-        if (nfceId) await imprimirNfceAdmin(admin, nfceId);
         emitidas++;
       } else {
         erros++;

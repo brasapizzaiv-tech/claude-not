@@ -65,6 +65,17 @@ export async function emitirNotaPendenteAgora(id: string, documento?: string) {
   return { ok: true as const, numero: r.numero };
 }
 
+// O cliente voltou e quer o papel: manda o cupom da nota já emitida.
+export async function imprimirNotaPendente(id: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data } = await supabase.from("nfce_pendentes").select("nfce_id").eq("id", id).maybeSingle();
+  const nfceId = (data as { nfce_id: string | null } | null)?.nfce_id;
+  if (!nfceId) return { ok: false as const, mensagem: "Esta conta ainda não virou nota." };
+  const r = await imprimirNfce(nfceId);
+  return r.ok ? { ok: true as const } : { ok: false as const, mensagem: r.mensagem };
+}
+
 // O cliente não quer nota: tira da fila.
 export async function cancelarNotaPendente(id: string) {
   await exigirAcesso("/salao");

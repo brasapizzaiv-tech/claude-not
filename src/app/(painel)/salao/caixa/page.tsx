@@ -10,6 +10,12 @@ import { pixConfigurado } from "@/lib/pix";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 
+// Instante de N minutos atrás. Fica fora do componente porque o lint não deixa
+// ler o relógio no corpo da página.
+function minutosAtras(min: number) {
+  return new Date(Date.now() - min * 60_000).toISOString();
+}
+
 const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito", "Vale refeição", "Saldo cliente"];
 
 const brl = (n: number) =>
@@ -199,15 +205,18 @@ export default async function CaixaPage({
     }));
 
   // Notas automáticas ainda na janela de espera (ou que deram erro).
+  // Aguardando/emitindo/erro + as que saíram nos últimos 15 min (pro caso de o
+  // cliente voltar e pedir o papel).
+  const recentes = minutosAtras(15);
   const { data: pendRows } = await supabase
     .from("nfce_pendentes")
-    .select("id, numeros, valor, formas, cpf_cnpj, status, erro, emitir_em")
-    .in("status", ["aguardando", "emitindo", "erro"])
+    .select("id, numeros, valor, formas, cpf_cnpj, status, erro, emitir_em, resolvido_em")
+    .or(`status.in.(aguardando,emitindo,erro),and(status.eq.emitida,resolvido_em.gte.${recentes})`)
     .order("emitir_em", { ascending: true })
     .limit(30);
   const pendentes: Pendente[] = ((pendRows as {
     id: string; numeros: string | null; valor: number | null; formas: string | null;
-    cpf_cnpj: string | null; status: string; erro: string | null; emitir_em: string;
+    cpf_cnpj: string | null; status: string; erro: string | null; emitir_em: string; resolvido_em: string | null;
   }[]) ?? []).map((r) => ({
     id: r.id,
     numeros: r.numeros,

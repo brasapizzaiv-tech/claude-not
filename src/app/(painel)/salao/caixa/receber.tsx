@@ -756,8 +756,8 @@ export function ReceberComandas({
       )}
       {pagas.length > 0 && autoNaFila && (
         <p className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-          🧾 A nota sai sozinha em alguns minutos. Se o cliente pedir CPF, digite lá em cima, em
-          &quot;Notas saindo automaticamente&quot; — ou clique em <b>Emitir agora</b>.
+          🧾 A nota sai sozinha em alguns minutos, sem imprimir. Se o cliente quiser o papel ou CPF, use lá em cima, em
+          &quot;Notas saindo automaticamente&quot; — <b>Emitir e imprimir</b>.
         </p>
       )}
       {pagas.length > 0 && !autoNaFila && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} juntas />}
