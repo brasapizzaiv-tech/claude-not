@@ -34,6 +34,11 @@ export async function GET(req: Request) {
       impressora: imp?.nome ?? null,
       printer: imp?.impressora_windows ?? null,
       url: `/api/impressao/documento/${e.id}`,
+      // Todo documento que o sistema gera já sai na medida da impressora, então
+      // imprime 1:1. Quem manda é o servidor: assim dá pra ajustar sem trocar o
+      // agente de novo (o agente antigo ignora e usa o padrão dele).
+      escala: "noscale" as const,
+      orientacao: "portrait" as const,
     };
   });
   if (jobs.length > 0) {

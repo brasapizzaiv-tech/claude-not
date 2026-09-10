@@ -246,7 +246,7 @@ function desenhar(doc: PDFKit.PDFDocument, d: NfceCupom, W: number, qrPng: Buffe
 // Gera o cupom a partir do XML autorizado da NFC-e.
 export async function gerarNfceCupomPdf(xml: string, larguraMm = 80, logoPng?: Buffer | null): Promise<Buffer> {
   const d = lerXml(xml);
-  const W = Math.min(Math.max(larguraMm || 80, 58), 110) * MM;
+  const W = Math.min(Math.max(larguraMm || 72, 44), 110) * MM;
 
   let qrPng: Buffer | null = null;
   if (d.qrCode) {

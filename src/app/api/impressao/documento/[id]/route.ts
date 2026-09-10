@@ -10,6 +10,13 @@ import { gerarNfceCupomPdf } from "@/lib/nfce-cupom-pdf";
 
 export const runtime = "nodejs";
 
+// Papel de 80 mm imprime ~72 mm; o de 58 mm imprime ~48 mm. Gerar o documento
+// já nessa medida deixa a impressão 1:1 (sem o "encolhe pra caber", que borrava
+// as letras, partia a impressão e deixava um vão em branco no topo).
+function larguraUtil(paperMm: number) {
+  return paperMm <= 60 ? 48 : 72;
+}
+
 // Logo da Brasa pro cabeçalho do cupom da nota. Buscada no próprio site (o
 // arquivo mora em public/) e guardada em memória entre as chamadas.
 let logoBuf: Buffer | null = null;
@@ -138,7 +145,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const xml = await baixarXmlNfce({ token, ambiente: (nota?.ambiente as FocusAmbiente) || "producao" }, origem);
     if (!xml) return new Response("nao consegui baixar o XML da nota", { status: 502 });
     const largN = ((impN as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80;
-    pdf = await gerarNfceCupomPdf(xml, largN, await logoDaBrasa(baseUrl));
+    pdf = await gerarNfceCupomPdf(xml, larguraUtil(largN), await logoDaBrasa(baseUrl));
   } else if (job.tipo === "fechamento") {
     // Cupom do fechamento de caixa (ref_id = pdv_caixas.id).
     const [{ data: cx }, { data: imp }, { data: cfgRows }] = await Promise.all([
@@ -161,7 +168,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       sangrias?: number;
       operador?: string | null;
     };
-    const largura = ((imp as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80;
+    const largura = larguraUtil(((imp as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80);
     pdf = await gerarFechamentoPdf(
       {
         nome: ((cfgRows as { valor?: string } | null)?.valor) || "Brasa",

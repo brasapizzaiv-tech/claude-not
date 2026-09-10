@@ -98,7 +98,7 @@ function desenhar(doc: PDFKit.PDFDocument, d: FechamentoPdfDados, W: number) {
 // na fila de impressão e o agente manda pra impressora, sem abrir a janela de
 // impressão do navegador.
 export async function gerarFechamentoPdf(d: FechamentoPdfDados, larguraMm = 80): Promise<Buffer> {
-  const W = Math.min(Math.max(larguraMm || 80, 58), 110) * MM;
+  const W = Math.min(Math.max(larguraMm || 72, 44), 110) * MM;
 
   // 1ª passada: só pra saber a altura exata.
   const medidor = new PDFDocument({ size: [W, 2000], margin: 0 });
