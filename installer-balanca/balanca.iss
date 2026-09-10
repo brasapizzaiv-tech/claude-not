@@ -2,7 +2,7 @@
 ; Compile com: ISCC.exe balanca.iss  (após rodar build.ps1, que monta build\app).
 
 #define AppName "Agente da Balanca"
-#define AppVer "1.2.1"
+#define AppVer "1.2.2"
 #define AppPublisher "Brasa Sistemas"
 
 [Setup]

@@ -14,6 +14,13 @@ const LIMIAR = 0.02; // kg de comida para considerar "prato na balança" (50 g d
 const ESTAVEL_MS = 450; // peso parado por ~0,45s → fecha a comanda (rápido)
 const TOL_ESTAVEL = 0.02; // oscilação tolerada (20 g) para considerar "parado"
 const RESET_MS = 6000; // após mostrar a comanda, volta sozinho p/ o próximo cliente
+// Cliente seguinte que põe o prato ANTES de a balança ler o zero: se o peso
+// ficar parado num valor bem diferente do que acabou de ser pesado, é outro
+// prato — libera e pesa (antes a tela travava no resultado do cliente anterior).
+const NOVO_PRATO_MS = 1200;   // parado por 1,2 s
+const NOVO_PRATO_DIF = 0.03;  // 30 g: só pra ficar acima do ruído (oscilação é 20 g)
+const MUDA_MS = 2000;         // silêncio da balança (prato fora) = libera
+const PARADA_PRATO_MS = 800;  // balança calada 0,8 s entre leituras = prato saiu
 
 type Resultado = {
   id: string;
@@ -118,8 +125,12 @@ export function QuiosqueBalanca({
   // Leitura crua e líquido no momento da captura: "retirou" = a leitura caiu
   // pelo menos o peso capturado (funciona com prato E com marmita, mesmo quando
   // a balança lê negativo por causa da tara).
-  const capturaRef = useRef<{ bruto: number; liquido: number } | null>(null);
+  const capturaRef = useRef<{ bruto: number; liquido: number; ts: number } | null>(null);
   const silencioDesde = useRef(0); // desde quando a balança parou de responder (0 = respondendo)
+  // Vimos o prato SAIR depois da pesagem? Serve pra separar "chegou o prato do
+  // próximo cliente" de "o mesmo cliente pôs mais comida no prato" — no segundo
+  // caso o prato nunca saiu, e cobrar de novo seria cobrar duas vezes.
+  const viuPratoSair = useRef(false);
   const estadoRef = useRef(estado);
   const refPeso = useRef(0);
   const estavelDesde = useRef(0);
@@ -176,7 +187,8 @@ export function QuiosqueBalanca({
     setEst("processando");
     // O que vai pro sistema é o peso LÍQUIDO já resolvido (marmita = leitura + tara).
     const liquido = Math.round(netDe(bruto, taraBalancaRef.current, soKgRef.current) * 1000) / 1000;
-    capturaRef.current = { bruto, liquido };
+    capturaRef.current = { bruto, liquido, ts: Date.now() };
+    viuPratoSair.current = false;
     // Com o agente no PC: ele numera, IMPRIME NA HORA e sincroniza depois — o
     // cliente não espera a internet. Se o agente falhar, cai pro caminho pela nuvem.
     if (agenteRef.current) {
@@ -389,6 +401,10 @@ export function QuiosqueBalanca({
           if (estadoRef.current === "conectar") setEst("aguardando");
         }
         setFilaAgente(Number(j.fila) || 0);
+          // O agente conta quanto tempo a balança ficou muda entre uma leitura e
+          // outra. Parada longa = tiraram o prato (a POP-31 cala no negativo),
+          // mesmo que o próximo cliente já tenha posto o dele.
+          if (Number(j.parada) > PARADA_PRATO_MS) viuPratoSair.current = true;
         if (j.lendo) {
           silencioDesde.current = 0;
           setDiag((d) => ({ bytes: d.bytes + 1, raw: "via agente" }));
@@ -400,8 +416,11 @@ export function QuiosqueBalanca({
           // peso fica negativo (prato tirado com tara feita). Silêncio de ~2s na
           // tela "retire" = prato saiu → libera o próximo cliente (antes travava).
           const agora = Date.now();
+          // A POP-31 cala quando o peso fica negativo: silêncio já é sinal de
+          // que tiraram o prato, mesmo antes dos 2 s que liberam a tela.
+          viuPratoSair.current = true;
           if (!silencioDesde.current) silencioDesde.current = agora;
-          else if (agora - silencioDesde.current > 2000) {
+          else if (agora - silencioDesde.current > MUDA_MS) {
             const est = estadoRef.current;
             if (est === "resultado") voltarAguardando();
             else if (est === "pesando") { refPeso.current = 0; estavelDesde.current = 0; setPesoBruto(0); setEst("aguardando"); }
@@ -536,7 +555,23 @@ export function QuiosqueBalanca({
       // o peso capturado (cobre a marmita, que a balança lê negativo com a tara).
       const cap = capturaRef.current;
       const removido = liquido <= LIMIAR || (!!cap && bruto <= cap.bruto - cap.liquido + LIMIAR);
-      if (removido) voltarAguardando(); // → próximo cliente
+      if (removido) { voltarAguardando(); return; } // → próximo cliente
+      // Pesou menos do que o prato pesado agora há pouco: alguma coisa saiu.
+      if (cap && bruto < cap.bruto - NOVO_PRATO_DIF) viuPratoSair.current = true;
+      // Ninguém viu o zero, mas a balança MEXEU depois da pesagem e parou de
+      // novo num peso diferente: é o prato do cliente seguinte, que entrou
+      // antes de a balança conseguir ler o zero. Libera e pesa.
+      //
+      // O "mexeu depois da pesagem" (estavelDesde > cap.ts) é o que separa isso
+      // de um prato parado; a diferença de peso descarta um esbarrão, que volta
+      // pro mesmo valor e geraria comanda repetida.
+      // Se o prato SAIU (parada da balança, silêncio ou leitura menor) e agora
+      // há um peso parado na balança, é o prato do próximo cliente. Sem esse
+      // sinal não libera: pode ser o mesmo cliente pondo mais comida, e aí
+      // outra comanda seria cobrar duas vezes.
+      if (viuPratoSair.current && agora - estavelDesde.current >= NOVO_PRATO_MS) {
+        voltarAguardando();
+      }
       return;
     }
     if (liquido <= LIMIAR) {
@@ -870,12 +905,20 @@ export function QuiosqueBalanca({
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
                 {resultado.livre ? " · Buffet livre" : ""}
               </p>
-              <button
-                onClick={() => imprimirCupom(resultado)}
-                className="nao-imprimir mt-6 rounded-xl border border-[#211915]/20 px-6 py-3 text-xl text-[#211915]/70 hover:bg-[#211915]/5"
-              >
-                🖨️ Imprimir de novo
-              </button>
+              <div className="nao-imprimir mt-6 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={() => voltarAguardando()}
+                  className="rounded-xl bg-[#C78340] px-8 py-3 text-xl font-bold text-white hover:brightness-110"
+                >
+                  ➡️ Próximo cliente
+                </button>
+                <button
+                  onClick={() => imprimirCupom(resultado)}
+                  className="rounded-xl border border-[#211915]/20 px-6 py-3 text-xl text-[#211915]/70 hover:bg-[#211915]/5"
+                >
+                  🖨️ Imprimir de novo
+                </button>
+              </div>
               {erroImpressao && (
                 <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira em ⚙️</p>
               )}

@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { gerarCupomEscPos, gerarTesteEscPos } from "./escpos.mjs";
 
-const VERSAO = "1.2.1"; // 1.2.0: agente NUMERA e IMPRIME NA HORA, ESC/POS direto na térmica; 1.2.1: logo da Brasa sai no ESC/POS (silhueta, era laranja clara demais e saía em branco)
+const VERSAO = "1.2.2"; // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -228,6 +228,19 @@ function numDe(m) {
 let peso = 0;
 let tara = 0;
 let ultimaLeitura = 0; // timestamp da última leitura válida
+// Maior PARADA (silêncio) da balança desde a última vez que o quiosque
+// perguntou o peso. A POP-31 cala quando o peso fica negativo, então uma parada
+// é o sinal de que tiraram o prato — mesmo que o cliente seguinte ponha o dele
+// antes de a balança conseguir mostrar o zero.
+let maiorParada = 0;
+function marcarLeitura() {
+  const agora = Date.now();
+  if (ultimaLeitura > 0) {
+    const parada = agora - ultimaLeitura;
+    if (parada > maiorParada) maiorParada = parada;
+  }
+  ultimaLeitura = agora;
+}
 let serial = null;
 let buf = "";
 
@@ -256,7 +269,7 @@ async function conectarBalanca() {
       const m = [...buf.matchAll(/PESO\s*L\s*[:=]?\s*([-−]?)\s*(\d+[.,]\d+)\s*(?:kg)?\s*([-−]?)/gi)];
       if (m.length) {
         peso = numDe(m[m.length - 1]);
-        ultimaLeitura = Date.now();
+        marcarLeitura();
       } else {
         // Protocolos curtos da POP-S (F3 na balança):
         //  "Prot F": STX + peso COM ponto e SINAL (ex.: "-0.180") — transmite negativo.
@@ -265,15 +278,15 @@ async function conectarBalanca() {
         const f = [...buf.matchAll(/\x02\s*([-+−]?)\s*(\d+[.,]\d+)/g)];
         if (f.length) {
           peso = numDe([f[f.length - 1][0], f[f.length - 1][1], f[f.length - 1][2], ""]);
-          ultimaLeitura = Date.now();
+          marcarLeitura();
         } else {
           const t3 = [...buf.matchAll(/\x02(\d{5})\r/g)];
           if (t3.length) {
             peso = parseInt(t3[t3.length - 1][1], 10) / 1000;
-            ultimaLeitura = Date.now();
+            marcarLeitura();
           } else if (/\x02NNNNN/.test(buf.slice(-40))) {
             peso = -0.001; // negativo sem valor (Prot 3): troque a balança para "Prot F" pra ter o número
-            ultimaLeitura = Date.now();
+            marcarLeitura();
           }
         }
       }
@@ -401,6 +414,8 @@ const server = http.createServer(async (req, res) => {
       peso,
       tara,
       lendo: Date.now() - ultimaLeitura < 3000, // balança respondendo?
+      // ms que a balança ficou muda desde a última consulta (zera ao ler).
+      parada: (() => { const v = maiorParada; maiorParada = 0; return v; })(),
       fila: fila.length,
       versao: VERSAO,
       proximoNumero: estado.proximoNumero ?? null,
