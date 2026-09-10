@@ -10,6 +10,21 @@ import { gerarNfceCupomPdf } from "@/lib/nfce-cupom-pdf";
 
 export const runtime = "nodejs";
 
+// Logo da Brasa pro cabeçalho do cupom da nota. Buscada no próprio site (o
+// arquivo mora em public/) e guardada em memória entre as chamadas.
+let logoBuf: Buffer | null = null;
+async function logoDaBrasa(baseUrl: string): Promise<Buffer | null> {
+  if (logoBuf) return logoBuf;
+  try {
+    const r = await fetch(`${baseUrl}/logo-brasa.png`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    logoBuf = Buffer.from(await r.arrayBuffer());
+    return logoBuf;
+  } catch {
+    return null;
+  }
+}
+
 // Gera o PDF de um item da fila (etiqueta ou comanda) para o agente imprimir.
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
@@ -123,7 +138,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const xml = await baixarXmlNfce({ token, ambiente: (nota?.ambiente as FocusAmbiente) || "producao" }, origem);
     if (!xml) return new Response("nao consegui baixar o XML da nota", { status: 502 });
     const largN = ((impN as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80;
-    pdf = await gerarNfceCupomPdf(xml, largN);
+    pdf = await gerarNfceCupomPdf(xml, largN, await logoDaBrasa(baseUrl));
   } else if (job.tipo === "fechamento") {
     // Cupom do fechamento de caixa (ref_id = pdv_caixas.id).
     const [{ data: cx }, { data: imp }, { data: cfgRows }] = await Promise.all([
