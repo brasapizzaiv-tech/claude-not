@@ -972,6 +972,7 @@ export async function pagarSelecao(
   // Nota automática: Pix, cartão e vale entram na FILA (o caixa tem alguns
   // minutos pra digitar o CPF ou mandar emitir na hora); o resto não gera nota
   // sozinho. Quem emite é a rotina em src/lib/fiscal/pendentes.ts.
+  let pendenteId: string | null = null;
   try {
     const eletronico = pagamentos.some(
       (p) => p.valor > 0 && /pix|cart|créd|cred|déb|deb|vale/i.test(p.forma),
@@ -988,7 +989,7 @@ export async function pagarSelecao(
         const minutos = Math.max(0, Math.min(60, Number(cfgMap.nfce_auto_minutos ?? 5) || 0));
         const comandasNota = [...new Set([...sel.map((s) => s.comandaId), ...extras.map((e) => e.comandaId)])];
         if (comandasNota.length > 0) {
-          await supabase.from("nfce_pendentes").insert({
+          const { data: pend } = await supabase.from("nfce_pendentes").insert({
             comanda_ids: comandasNota,
             numeros: numeros.map((n) => `#${n}`).join(", "),
             cliente_id: clienteId ?? null,
@@ -996,7 +997,8 @@ export async function pagarSelecao(
             formas: pagamentos.filter((p) => p.valor > 0).map((p) => p.forma).join(", "),
             caixa_id: caixaId,
             emitir_em: new Date(Date.now() + minutos * 60_000).toISOString(),
-          });
+          }).select("id").maybeSingle();
+          pendenteId = (pend as { id?: string } | null)?.id ?? null;
         }
       }
     }
@@ -1006,7 +1008,7 @@ export async function pagarSelecao(
 
   revalidatePath("/salao/caixa");
   revalidatePath("/salao");
-  return { ok: true as const, numeros, total: totalPago };
+  return { ok: true as const, numeros, total: totalPago, pendenteId };
 }
 
 // Cliente veio acertar o fiado: registra o pagamento e entra no caixa do dia

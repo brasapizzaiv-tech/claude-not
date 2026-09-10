@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { pagarSelecao } from "../actions";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
 import { formaEmiteAuto } from "@/components/nfce-auto-toggle";
 import { PainelPagamentos, type Pagamento } from "./pagamentos";
+import { emitirNotaPendenteAgora } from "./pendentes-actions";
+import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -117,6 +119,13 @@ export function ReceberComandas({
   const [pagas, setPagas] = useState<{ id: string; numero: number }[]>([]);
   const [autoIds, setAutoIds] = useState<string[]>([]);
   const [autoNaFila, setAutoNaFila] = useState(false);
+  // A tela do caixa tem três momentos: montar a conta, receber (tela cheia) e
+  // perguntar da nota. Separar assim tira o excesso de informação de uma tela só.
+  const [etapa, setEtapa] = useState<"conta" | "pagamento" | "nota">("conta");
+  const [pendenteId, setPendenteId] = useState<string | null>(null);
+  const [docNota, setDocNota] = useState("");
+  const [notaMsg, setNotaMsg] = useState<string | null>(null);
+  const [notaProc, setNotaProc] = useState(false);
   const [recibo, setRecibo] = useState<{
     itens: { numero: number; total: number }[];
     subtotal: number;
@@ -350,12 +359,72 @@ export function ReceberComandas({
         setAcrescimo("");
         setPagos([]);
         setPessoas("");
+        setPendenteId(("pendenteId" in r ? (r.pendenteId as string | null) : null) ?? null);
+        setDocNota("");
+        setNotaMsg(null);
+        setEtapa("nota");
         router.refresh();
       } else {
         setMsg(("mensagem" in r && r.mensagem) || "Não foi possível receber. Tente de novo.");
       }
     });
   }
+
+  // ---------- etapa da nota (logo depois de receber) ----------
+  // Pagamento eletrônico já criou a pendência (fila dos minutos): emitir aqui é
+  // "adiantar" essa pendência. Dinheiro não tem pendência — emite direto.
+  function emitirNota(documento: string) {
+    if (notaProc) return;
+    setNotaProc(true);
+    setNotaMsg("Emitindo…");
+    const doc = (documento || "").replace(/\D/g, "");
+    start(async () => {
+      try {
+        if (pendenteId) {
+          const r = await emitirNotaPendenteAgora(pendenteId, doc);
+          setNotaMsg(r.ok ? `✓ Nota ${r.numero ?? ""} emitida e enviada pra impressora.` : `⚠️ ${r.mensagem}`);
+          if (r.ok) setTimeout(fecharNota, 1800);
+        } else {
+          const r = await emitirNfceComandas(pagas.map((c) => c.id), doc);
+          if (r.ok) {
+            const nfceId = "id" in r ? (r.id as string | undefined) : undefined;
+            if (nfceId) await imprimirNfce(nfceId);
+            setNotaMsg(`✓ Nota ${r.numero ?? ""} emitida e enviada pra impressora.`);
+            setTimeout(fecharNota, 1800);
+          } else {
+            setNotaMsg(`⚠️ ${r.mensagem ?? "não autorizou"}`);
+          }
+        }
+      } catch {
+        setNotaMsg("⚠️ Sem conexão. Confira em Notas fiscais.");
+      } finally {
+        setNotaProc(false);
+      }
+    });
+  }
+  function fecharNota() {
+    setEtapa("conta");
+    setPendenteId(null);
+    setDocNota("");
+    setNotaMsg(null);
+    setNotaProc(false);
+    router.refresh();
+  }
+
+  // Enter na tela da conta abre o pagamento (fora de campos de texto, pra não
+  // atrapalhar a busca de comanda nem o leitor de QR).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Enter" || etapa !== "conta") return;
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && (alvo.tagName === "INPUT" || alvo.tagName === "TEXTAREA" || alvo.tagName === "SELECT")) return;
+      if (!temAlgo || selComandas.length === 0) return;
+      e.preventDefault();
+      setEtapa("pagamento");
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [etapa, temAlgo, selComandas.length]);
 
   const inputCls =
     "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
@@ -467,7 +536,7 @@ export function ReceberComandas({
           Busque uma comanda acima (ou use o “Pagamento rápido” no salão / leia o QR) para começar.
         </p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2">
           {/* Coluna 1 — Consumo */}
           <div className="flex min-h-[320px] flex-col rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
             <p className={titulo}>Consumo</p>
@@ -607,136 +676,233 @@ export function ReceberComandas({
             )}
 
             {temAlgo && (
-              <div className="mt-2 flex items-center justify-between border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
-                <button onClick={limparCarrinho} className="text-xs text-zinc-400 hover:text-red-600">
-                  Limpar itens
+              <>
+                <div className="mt-2 flex items-center justify-between border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
+                  <button onClick={limparCarrinho} className="text-xs text-zinc-400 hover:text-red-600">
+                    Limpar itens
+                  </button>
+                  <span className="font-bold text-zinc-900 dark:text-zinc-50">{brl(subtotalBruto)}</span>
+                </div>
+                <button
+                  onClick={() => setEtapa("pagamento")}
+                  className="mt-3 w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700"
+                >
+                  Receber {brl(subtotalBruto)} →
+                  <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
                 </button>
-                <span className="font-bold text-zinc-900 dark:text-zinc-50">{brl(subtotalBruto)}</span>
-              </div>
+              </>
             )}
           </div>
 
-          {/* Coluna 3 — Pagamento */}
-          <div className="flex min-h-[320px] flex-col rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
-            <p className={titulo}>Pagamento</p>
+        </div>
+      )}
 
-            {!temAlgo ? (
-              <p className="my-auto text-center text-sm text-zinc-400">Nenhum item para pagamento.</p>
-            ) : (
-              <div className="mt-3 space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <div className="mb-1 flex items-center justify-between">
-                      <label className="text-xs text-zinc-500">Desconto</label>
-                      <span className="flex overflow-hidden rounded-md border border-zinc-300 text-[11px] dark:border-zinc-700">
-                        <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>R$</button>
-                        <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>%</button>
-                      </span>
-                    </div>
-                    <input
-                      inputMode="decimal"
-                      value={desconto}
-                      onChange={(e) => setDesconto(e.target.value)}
-                      placeholder={descontoPct ? "0" : "0,00"}
-                      className={`${inputCls} w-full text-right`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setDescontoPct(true); setDesconto("5"); }}
-                      className="mt-1 w-full rounded-md border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
-                    >
-                      💵 5% no dinheiro
-                    </button>
-                    {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-[11px] text-zinc-500">= {brl(desc)}</p>}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-zinc-500">Acréscimo (R$)</label>
-                    <input
-                      inputMode="decimal"
-                      value={acrescimo}
-                      onChange={(e) => setAcrescimo(e.target.value)}
-                      placeholder="0,00"
-                      className={`${inputCls} w-full text-right`}
-                    />
-                  </div>
-                </div>
 
-                <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-                  <div className="flex items-center justify-between text-sm text-zinc-500">
-                    <span>Subtotal</span>
-                    <span>{brl(subtotalBruto)}</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between text-lg font-black text-zinc-900 dark:text-zinc-50">
-                    <span>Total</span>
-                    <span>{brl(totalPagar)}</span>
-                  </div>
-                </div>
-
-                {/* Dividir por pessoa (calculadora) */}
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
-                  <span>Dividir por</span>
-                  {[2, 3, 4].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setPessoas(String(n))}
-                      className={`rounded px-2 py-0.5 font-medium ${
-                        num(pessoas) === n
-                          ? "bg-orange-500 text-white"
-                          : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                  <input
-                    inputMode="numeric"
-                    value={pessoas}
-                    onChange={(e) => setPessoas(e.target.value)}
-                    placeholder="nº"
-                    className="w-12 rounded border border-zinc-300 bg-white px-1.5 py-0.5 text-center dark:border-zinc-700 dark:bg-zinc-950"
-                  />
-                  {num(pessoas) >= 2 && (
-                    <span className="font-bold text-zinc-800 dark:text-zinc-100">
-                      = {brl(Math.round((totalPagar / Math.round(num(pessoas))) * 100) / 100)}/pessoa
-                    </span>
-                  )}
-                </div>
-
-                <PainelPagamentos
-                  formas={formas}
-                  total={totalPagar}
-                  pagos={pagos}
-                  onAdicionar={(x) => { setPagos((l) => [...l, x]); setMsg(null); }}
-                  onRemover={(uid) => setPagos((l) => l.filter((y) => y.uid !== uid))}
-                  ativo={temAlgo && selComandas.length > 0}
-                  fiado={fiadoCli}
-                  qrPix={
-                    pixAtivo
-                      ? (v, aoPagar) => (
-                          <PixQr valor={v} descricao={pixDescricao} origem="caixa" onPago={aoPagar} compacto />
-                        )
-                      : undefined
-                  }
-                />
-
-                {usaSaldoCliente && !clienteSel && (
-                  <p className="text-xs text-amber-600">Saldo cliente: vincule o cliente (acima) pra conta ir pro fiado dele.</p>
-                )}
-
-                <button
-                  onClick={confirmar}
-                  disabled={proc || !podeConfirmar}
-                  className="w-full rounded-lg bg-emerald-600 py-3 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {proc
-                    ? "Recebendo..."
-                    : falta > 0.005
-                      ? `Falta lançar ${brl(falta)}`
-                      : `Finalizar ${brl(totalPagar)}`}
-                </button>
-                {msg && <p className="text-center text-xs text-emerald-700 dark:text-emerald-400">{msg}</p>}
+      {/* ---------- Tela cheia: PAGAMENTO ---------- */}
+      {etapa === "pagamento" && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl dark:bg-zinc-950">
+            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+              <div>
+                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Pagamento</p>
+                <p className="text-xs text-zinc-500">
+                  {selComandas.map((c) => `Comanda ${c.numero}`).join(" · ")}
+                  {clienteSel ? ` · ${clienteSel.nome}` : ""}
+                </p>
               </div>
+              <button
+                onClick={() => setEtapa("conta")}
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                ← Voltar
+              </button>
+            </div>
+            <div className="p-4">
+            <div className="flex min-h-[320px] flex-col rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+              <p className={titulo}>Pagamento</p>
+  
+              {!temAlgo ? (
+                <p className="my-auto text-center text-sm text-zinc-400">Nenhum item para pagamento.</p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="text-xs text-zinc-500">Desconto</label>
+                        <span className="flex overflow-hidden rounded-md border border-zinc-300 text-[11px] dark:border-zinc-700">
+                          <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>R$</button>
+                          <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>%</button>
+                        </span>
+                      </div>
+                      <input
+                        inputMode="decimal"
+                        value={desconto}
+                        onChange={(e) => setDesconto(e.target.value)}
+                        placeholder={descontoPct ? "0" : "0,00"}
+                        className={`${inputCls} w-full text-right`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { setDescontoPct(true); setDesconto("5"); }}
+                        className="mt-1 w-full rounded-md border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
+                      >
+                        💵 5% no dinheiro
+                      </button>
+                      {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-[11px] text-zinc-500">= {brl(desc)}</p>}
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-zinc-500">Acréscimo (R$)</label>
+                      <input
+                        inputMode="decimal"
+                        value={acrescimo}
+                        onChange={(e) => setAcrescimo(e.target.value)}
+                        placeholder="0,00"
+                        className={`${inputCls} w-full text-right`}
+                      />
+                    </div>
+                  </div>
+  
+                  <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+                    <div className="flex items-center justify-between text-sm text-zinc-500">
+                      <span>Subtotal</span>
+                      <span>{brl(subtotalBruto)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-lg font-black text-zinc-900 dark:text-zinc-50">
+                      <span>Total</span>
+                      <span>{brl(totalPagar)}</span>
+                    </div>
+                  </div>
+  
+                  {/* Dividir por pessoa (calculadora) */}
+                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                    <span>Dividir por</span>
+                    {[2, 3, 4].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setPessoas(String(n))}
+                        className={`rounded px-2 py-0.5 font-medium ${
+                          num(pessoas) === n
+                            ? "bg-orange-500 text-white"
+                            : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <input
+                      inputMode="numeric"
+                      value={pessoas}
+                      onChange={(e) => setPessoas(e.target.value)}
+                      placeholder="nº"
+                      className="w-12 rounded border border-zinc-300 bg-white px-1.5 py-0.5 text-center dark:border-zinc-700 dark:bg-zinc-950"
+                    />
+                    {num(pessoas) >= 2 && (
+                      <span className="font-bold text-zinc-800 dark:text-zinc-100">
+                        = {brl(Math.round((totalPagar / Math.round(num(pessoas))) * 100) / 100)}/pessoa
+                      </span>
+                    )}
+                  </div>
+  
+                  <PainelPagamentos
+                    formas={formas}
+                    total={totalPagar}
+                    pagos={pagos}
+                    onAdicionar={(x) => { setPagos((l) => [...l, x]); setMsg(null); }}
+                    onRemover={(uid) => setPagos((l) => l.filter((y) => y.uid !== uid))}
+                    ativo={temAlgo && selComandas.length > 0}
+                    fiado={fiadoCli}
+                    qrPix={
+                      pixAtivo
+                        ? (v, aoPagar) => (
+                            <PixQr valor={v} descricao={pixDescricao} origem="caixa" onPago={aoPagar} compacto />
+                          )
+                        : undefined
+                    }
+                  />
+  
+                  {usaSaldoCliente && !clienteSel && (
+                    <p className="text-xs text-amber-600">Saldo cliente: vincule o cliente (acima) pra conta ir pro fiado dele.</p>
+                  )}
+  
+                  <button
+                    onClick={confirmar}
+                    disabled={proc || !podeConfirmar}
+                    className="w-full rounded-lg bg-emerald-600 py-3 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {proc
+                      ? "Recebendo..."
+                      : falta > 0.005
+                        ? `Falta lançar ${brl(falta)}`
+                        : `Finalizar ${brl(totalPagar)}`}
+                  </button>
+                  {msg && <p className="text-center text-xs text-emerald-700 dark:text-emerald-400">{msg}</p>}
+                </div>
+              )}
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- Tela cheia: NOTA FISCAL ---------- */}
+      {etapa === "nota" && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-950">
+            <p className="text-center text-sm font-semibold uppercase tracking-wide text-emerald-600">Recebido</p>
+            <p className="mb-1 text-center text-3xl font-black text-zinc-900 dark:text-zinc-50">{brl(recibo?.total ?? 0)}</p>
+            {(recibo?.troco ?? 0) > 0.005 && (
+              <p className="mb-1 text-center text-lg font-bold text-emerald-600">Troco: {brl(recibo?.troco ?? 0)}</p>
             )}
+            <p className="mb-4 text-center text-xs text-zinc-500">
+              {pagas.map((c) => `Comanda ${c.numero}`).join(" · ")}
+            </p>
+
+            <p className="mb-2 text-center text-lg font-bold text-zinc-900 dark:text-zinc-50">O cliente quer nota fiscal?</p>
+            <input
+              autoFocus
+              value={docNota}
+              onChange={(e) => setDocNota(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && docNota.trim()) emitirNota(docNota); }}
+              inputMode="numeric"
+              placeholder="CPF ou CNPJ (se ele pedir)"
+              className={`${inputCls} mb-2 w-full text-center text-lg`}
+            />
+            <div className="grid gap-2">
+              <button
+                onClick={() => emitirNota(docNota)}
+                disabled={notaProc || !docNota.trim()}
+                className="rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700 disabled:opacity-40"
+              >
+                🧾 Sim, com CPF/CNPJ
+              </button>
+              <button
+                onClick={() => emitirNota("")}
+                disabled={notaProc}
+                className="rounded-xl border-2 border-emerald-600 py-3 text-base font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+              >
+                🧾 Sim, sem CPF
+              </button>
+              <button
+                onClick={fecharNota}
+                disabled={notaProc}
+                className="rounded-xl border border-zinc-300 py-3 text-base font-semibold text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                Não precisa
+              </button>
+            </div>
+            {notaMsg && <p className="mt-3 text-center text-sm text-zinc-700 dark:text-zinc-200">{notaMsg}</p>}
+            {autoNaFila && !notaMsg && (
+              <p className="mt-3 text-center text-xs text-zinc-400">
+                Se disser &quot;não precisa&quot;, a nota sai sozinha em alguns minutos, sem imprimir.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => { try { window.print(); } catch {} }}
+              className="mt-3 w-full text-center text-xs text-zinc-400 underline"
+            >
+              Imprimir recibo (sem valor fiscal)
+            </button>
           </div>
         </div>
       )}
