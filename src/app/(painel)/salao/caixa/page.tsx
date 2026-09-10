@@ -10,12 +10,6 @@ import { pixConfigurado } from "@/lib/pix";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 
-// Instante de N minutos atrás. Fica fora do componente porque o lint não deixa
-// ler o relógio no corpo da página.
-function minutosAtras(min: number) {
-  return new Date(Date.now() - min * 60_000).toISOString();
-}
-
 const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito", "Vale refeição", "Saldo cliente"];
 
 const brl = (n: number) =>
@@ -205,18 +199,17 @@ export default async function CaixaPage({
     }));
 
   // Notas automáticas ainda na janela de espera (ou que deram erro).
-  // Aguardando/emitindo/erro + as que saíram nos últimos 15 min (pro caso de o
-  // cliente voltar e pedir o papel).
-  const recentes = minutosAtras(15);
+  // Só o que ainda depende de alguém: assim que a nota sai, a linha some da
+  // tela (pra reimprimir depois: Salão → Notas fiscais).
   const { data: pendRows } = await supabase
     .from("nfce_pendentes")
-    .select("id, numeros, valor, formas, cpf_cnpj, status, erro, emitir_em, resolvido_em")
-    .or(`status.in.(aguardando,emitindo,erro),and(status.eq.emitida,resolvido_em.gte.${recentes})`)
+    .select("id, numeros, valor, formas, cpf_cnpj, status, erro, emitir_em")
+    .in("status", ["aguardando", "emitindo", "erro"])
     .order("emitir_em", { ascending: true })
     .limit(30);
   const pendentes: Pendente[] = ((pendRows as {
     id: string; numeros: string | null; valor: number | null; formas: string | null;
-    cpf_cnpj: string | null; status: string; erro: string | null; emitir_em: string; resolvido_em: string | null;
+    cpf_cnpj: string | null; status: string; erro: string | null; emitir_em: string;
   }[]) ?? []).map((r) => ({
     id: r.id,
     numeros: r.numeros,
@@ -249,14 +242,6 @@ export default async function CaixaPage({
     hour: "2-digit",
     minute: "2-digit",
   });
-
-  const cor = (tipo: string) =>
-    tipo === "venda"
-      ? "text-emerald-600"
-      : tipo === "suprimento"
-        ? "text-blue-600"
-        : "text-red-600";
-  const sinal = (tipo: string) => (tipo === "sangria" ? "−" : "+");
 
   return (
     <div className="mx-auto max-w-6xl p-6">
@@ -310,52 +295,18 @@ export default async function CaixaPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        {/* Movimentos */}
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-400 dark:bg-zinc-900">
-              <tr>
-                <th className="px-4 py-2 font-medium">Descrição</th>
-                <th className="px-4 py-2 font-medium">Forma</th>
-                <th className="px-4 py-2 font-medium">Hora</th>
-                <th className="px-4 py-2 text-right font-medium">Valor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              <tr className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 text-zinc-500">Saldo anterior</td>
-                <td className="px-4 py-2 text-zinc-500">Dinheiro</td>
-                <td className="px-4 py-2 text-zinc-400">{abertoHora}</td>
-                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-300">{brl(saldoInicial)}</td>
-              </tr>
-              {movs.map((m) => (
-                <tr key={m.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
-                    {m.descricao || m.tipo}
-                    <span className="ml-2 text-[10px] uppercase text-zinc-400">{m.tipo}</span>
-                  </td>
-                  <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">{m.forma_pagamento || "—"}</td>
-                  <td className="px-4 py-2 text-zinc-400">
-                    {new Date(m.criado_em).toLocaleTimeString("pt-BR", {
-                      timeZone: "America/Sao_Paulo",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                  <td className={`px-4 py-2 text-right font-medium ${cor(m.tipo)}`}>
-                    {sinal(m.tipo)} {brl(Number(m.valor))}
-                  </td>
-                </tr>
-              ))}
-              {movs.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-zinc-400">
-                    Nenhuma movimentação ainda.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* Histórico do caixa: fica numa tela à parte, pra não poluir aqui. */}
+        <div className="h-fit rounded-2xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
+          <p className="mb-2 font-semibold text-zinc-800 dark:text-zinc-100">Histórico do caixa</p>
+          <p className="mb-3 text-zinc-500">
+            Todas as entradas e saídas deste caixa: vendas, suprimentos e sangrias.
+          </p>
+          <Link
+            href="/salao/caixa/movimentos"
+            className="inline-block rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black dark:bg-zinc-700"
+          >
+            📄 Ver movimentações
+          </Link>
         </div>
 
         {/* Resumo */}
