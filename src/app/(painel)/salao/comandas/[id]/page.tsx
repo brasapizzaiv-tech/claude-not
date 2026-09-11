@@ -261,7 +261,7 @@ export default async function ComandaPage({
         O pagamento é feito no caixa. Aqui você só adiciona ou retira itens.
       </p>
 
-      {!fechada && <AcoesComanda comandaId={comanda.id} />}
+      {!fechada && <AcoesComanda comandaId={comanda.id} livre={!!comanda.livre} temBuffet={temBuffet} />}
     </div>
   );
 }

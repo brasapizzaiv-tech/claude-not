@@ -300,6 +300,19 @@ export async function virarLivreKiosk(comandaId: string) {
   };
 }
 
+// Caixa / tela da comanda: comanda pesada vira BUFFET LIVRE (o valor do dia
+// substitui o do peso). É o que faltava — sem isso o caixa pagava o valor do
+// livre e EXCLUÍA a comanda pesada, e a nota fiscal ficava sem itens.
+export async function virarLivreComanda(comandaId: string) {
+  await exigirAcesso("/salao");
+  const r = await virarLivreKiosk(comandaId);
+  if (r.ok) {
+    revalidatePath("/salao/caixa");
+    revalidatePath(`/salao/comandas/${comandaId}`);
+  }
+  return r;
+}
+
 // Mesmo que virarLivreKiosk, mas pelo NÚMERO da comanda (digitado no quiosque
 // quando o QR não lê). Pega a comanda aberta mais recente com esse número.
 export async function virarLivrePorNumeroKiosk(numero: number) {
@@ -440,7 +453,27 @@ export async function excluirComanda(formData: FormData) {
   await exigirAcesso("/salao");
   const id = formData.get("id") as string;
   const motivo = ((formData.get("motivo") as string) || "").trim();
-  if (motivo.length < 3) return; // motivo obrigatório
+  if (motivo.length < 3) return { ok: false as const, mensagem: "Informe o motivo (pelo menos 3 letras)." };
+
+  // Comanda que já teve dinheiro recebido NÃO pode ser apagada: some o que o
+  // caixa registrou, a nota fiscal fica sem itens e o dia não bate. Em 11/09
+  // quatro comandas da balança foram pagas e excluídas em menos de um minuto
+  // (a moça queria "virar livre") — o certo é o botão Buffet livre na comanda.
+  const { data: recebidos } = await supabase
+    .from("pdv_caixa_mov")
+    .select("valor, forma_pagamento")
+    .eq("comanda_id", id)
+    .eq("tipo", "venda");
+  const totalRecebido = (recebidos ?? []).reduce((s, m) => s + Number(m.valor), 0);
+  if (totalRecebido > 0.005) {
+    const formas = [...new Set((recebidos ?? []).map((m) => m.forma_pagamento).filter(Boolean))].join(", ");
+    return {
+      ok: false as const,
+      mensagem:
+        `Esta comanda já foi recebida no caixa (R$ ${totalRecebido.toFixed(2).replace(".", ",")} em ${formas || "pagamento"}) e não pode ser excluída. ` +
+        "Se o cliente virou buffet livre, use o botão Buffet livre na comanda; se o recebimento foi errado, faça o estorno pelo caixa.",
+    };
+  }
 
   // Registra no log de auditoria antes de apagar.
   const { data: com } = await supabase

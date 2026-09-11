@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pagarSelecao, fecharTef } from "../actions";
+import { pagarSelecao, fecharTef, virarLivreComanda } from "../actions";
 import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
@@ -32,6 +32,8 @@ export type Comanda = {
   buffet: number;
   buffetPago: boolean;
   buffetValorPago: number;
+  livre: boolean;   // já é buffet livre
+  pesada: boolean;  // veio da balança (tem peso)
   itens: ItemComanda[];
 };
 
@@ -241,6 +243,18 @@ export function ReceberComandas({
     setBusca("");
     setMsg(null);
   }
+  // Cliente pesou e resolveu comer à vontade: o valor do peso vira o do buffet
+  // livre do dia. Antes disso o caixa não tinha como fazer, e apagava a comanda.
+  function virarLivre(c: Comanda) {
+    if (!window.confirm(`Comanda ${c.numero}: trocar o valor do peso pelo BUFFET LIVRE do dia?`)) return;
+    start(async () => {
+      const r = await virarLivreComanda(c.id);
+      if (!r.ok) { setMsg(r.mensagem); return; }
+      setMsg(`✓ Comanda ${c.numero} agora é buffet livre (${brl(r.valor)}).`);
+      router.refresh();
+    });
+  }
+
   function removeComanda(id: string) {
     setSel((s) => {
       const n = new Set(s);
@@ -512,6 +526,16 @@ export function ReceberComandas({
             >
               Comanda {c.numero}
               {c.mesa ? ` · ${c.mesa}` : ""}
+              {c.livre && <span className="ml-1 rounded bg-orange-500 px-1.5 text-[10px] font-bold text-white">LIVRE</span>}
+              {c.pesada && !c.livre && !c.buffetPago && (
+                <button
+                  onClick={() => virarLivre(c)}
+                  title="Cliente vai comer à vontade: troca o valor do peso pelo buffet livre do dia"
+                  className="ml-1 rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-bold text-white hover:bg-orange-600"
+                >
+                  🍽️ Virar livre
+                </button>
+              )}
               <button onClick={() => removeComanda(c.id)} className="ml-1 text-emerald-600 hover:text-red-600">
                 ✕
               </button>

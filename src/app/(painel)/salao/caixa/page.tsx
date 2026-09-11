@@ -95,7 +95,7 @@ export default async function CaixaPage({
 
   const { data: comAbertas } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, mesa, valor_buffet, buffet_pago, buffet_valor_pago")
+    .select("id, numero, mesa, valor_buffet, buffet_pago, buffet_valor_pago, livre, peso")
     .eq("status", "aberta")
     .order("numero", { ascending: false });
   const abertas =
@@ -106,6 +106,8 @@ export default async function CaixaPage({
       valor_buffet: number;
       buffet_pago: boolean;
       buffet_valor_pago: number;
+      livre: boolean | null;
+      peso: number | null;
     }[]) ?? [];
 
   const fator = 1 + serv / 100;
@@ -164,6 +166,8 @@ export default async function CaixaPage({
       buffet: Number(c.valor_buffet ?? 0),
       buffetPago: !!c.buffet_pago,
       buffetValorPago: Number(c.buffet_valor_pago ?? 0),
+      livre: !!c.livre,
+      pesada: Number(c.peso ?? 0) > 0,
       itens,
     };
   });
