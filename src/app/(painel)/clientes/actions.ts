@@ -1,5 +1,7 @@
 "use server";
 
+import { numeroBR } from "@/lib/format";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,7 +29,7 @@ export async function salvarCliente(formData: FormData) {
     limite_credito: (() => {
       const v = ((formData.get("limite_credito") as string) || "").trim();
       if (!v) return null;
-      const n = Number(v.replace(/./g, "").replace(",", "."));
+      const n = numeroBR(v);
       return Number.isFinite(n) && n >= 0 ? n : null;
     })(),
   };

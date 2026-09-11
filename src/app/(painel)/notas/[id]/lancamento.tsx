@@ -12,18 +12,13 @@ import {
   definirValorBoleto,
 } from "../actions";
 import { Combobox } from "@/components/combobox";
-import { dataBR } from "@/lib/format";
+import { dataBR, numeroBR } from "@/lib/format";
 
 const campo =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const num = (s: string) => {
-  const t = s.trim();
-  if (!t) return 0;
-  return Number((t.includes(",") ? t.replace(/./g, "").replace(",", ".") : t)
-    .replace(/[^0-9.-]/g, "")) || 0;
-};
+const num = numeroBR;
 
 type Cat = { id: string; tipo: string; grupo: string; nome: string };
 type Parcela = { numero: string | null; vencimento: string | null; valor: number };

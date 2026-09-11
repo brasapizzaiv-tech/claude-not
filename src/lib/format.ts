@@ -14,3 +14,19 @@ export function moedaBR(v: number | null | undefined): string {
     currency: "BRL",
   });
 }
+
+// Número digitado em português ("1.234,56", "223,11", "223.11") → 1234.56.
+// Cuidado histórico: `replace(/./g, "")` apaga TODOS os caracteres (o ponto é
+// curinga na expressão) — era esse o bug que zerava o valor do boleto e o
+// limite de crédito sempre que alguém digitava com vírgula.
+export function numeroBR(entrada: string | number | null | undefined): number {
+  if (typeof entrada === "number") return Number.isFinite(entrada) ? entrada : 0;
+  const t = String(entrada ?? "").trim();
+  if (!t) return 0;
+  // Com vírgula: o ponto é separador de milhar e a vírgula é decimal.
+  const limpo = t.includes(",")
+    ? t.replace(/\./g, "").replace(",", ".")
+    : t;
+  const n = Number(limpo.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
