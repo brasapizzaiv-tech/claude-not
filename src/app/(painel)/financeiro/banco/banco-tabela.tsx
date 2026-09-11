@@ -16,6 +16,15 @@ import {
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// "2026-08-14..." → "2026-08" (o mês da transação, sem passar por fuso).
+const mesDe = (iso: string) => String(iso).slice(0, 7);
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const nomeMes = (m: string) => {
+  const [ano, mes] = m.split("-");
+  return `${MESES[Number(mes) - 1] ?? mes}/${String(ano).slice(2)}`;
+};
+const semAcento = (t: string) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 type TransRow = {
   id: string;
   data: string;
@@ -44,6 +53,12 @@ export function BancoTabela({
   const router = useRouter();
   const [proc, start] = useTransition();
   const [filtro, setFiltro] = useState("Todos");
+  // Extrato inteiro numa tela só não dá pra trabalhar: abre no mês mais recente
+  // e mostra só o que ainda falta conciliar (é o que o dia a dia pede).
+  const meses = [...new Set(transacoes.map((t) => mesDe(t.data)))].sort().reverse();
+  const [mes, setMes] = useState(meses[0] ?? "todos");
+  const [soFalta, setSoFalta] = useState(true);
+  const [busca, setBusca] = useState("");
   const [painel, setPainel] = useState<string | null>(null);
   const [catSel, setCatSel] = useState("");
   const [obs, setObs] = useState("");
@@ -51,12 +66,20 @@ export function BancoTabela({
   const [sel, setSel] = useState<Set<string>>(new Set());
 
   const bancos = [...new Set(transacoes.map((t) => t.banco || "Sem banco"))].sort();
-  const lista =
-    filtro === "Todos"
-      ? transacoes
-      : transacoes.filter((t) => (t.banco || "Sem banco") === filtro);
-  const aConciliar = lista.filter((t) => !t.lancamento_id).length;
-  const conciliadas = lista.length - aConciliar;
+  const q = semAcento(busca.trim());
+  // Do mês (e do banco) escolhido: é sobre isso que os contadores falam.
+  const doMes = transacoes.filter(
+    (t) => (filtro === "Todos" || (t.banco || "Sem banco") === filtro) && (mes === "todos" || mesDe(t.data) === mes),
+  );
+  const aConciliar = doMes.filter((t) => !t.lancamento_id).length;
+  const conciliadas = doMes.length - aConciliar;
+  // O que aparece na tabela (ainda passa por "só falta" e pela busca).
+  const lista = doMes.filter((t) => {
+    if (soFalta && t.lancamento_id) return false;
+    if (!q) return true;
+    const alvo = semAcento(`${t.descricao ?? ""} ${t.lancamentoLabel ?? ""} ${t.sugestaoLabel ?? ""}`);
+    return alvo.includes(q) || String(Math.abs(t.valor).toFixed(2)).includes(q.replace(",", "."));
+  });
 
   // Seleção múltipla: só transações não conciliadas que têm sugestão.
   const selecionaveis = lista.filter((t) => !t.lancamento_id && t.sugestaoId);
@@ -106,6 +129,49 @@ export function BancoTabela({
 
   return (
     <div>
+      {/* Mês do extrato (o padrão é o mais recente — a tela não abre com tudo) */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs uppercase tracking-wide text-zinc-400">Mês</span>
+        {meses.map((m) => (
+          <button
+            key={m}
+            onClick={() => { setMes(m); setSel(new Set()); }}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition ${
+              mes === m
+                ? "bg-orange-500 text-white"
+                : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            }`}
+          >
+            {nomeMes(m)}
+          </button>
+        ))}
+        <button
+          onClick={() => { setMes("todos"); setSel(new Set()); }}
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+            mes === "todos"
+              ? "bg-orange-500 text-white"
+              : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          }`}
+        >
+          Todos
+        </button>
+      </div>
+
+      {/* Busca + "só o que falta" */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar descrição ou valor…"
+          className="w-64 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        />
+        <label className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300">
+          <input type="checkbox" checked={soFalta} onChange={(e) => { setSoFalta(e.target.checked); setSel(new Set()); }} />
+          só o que falta conciliar
+        </label>
+        <span className="text-xs text-zinc-400">{lista.length} na tela</span>
+      </div>
+
       {/* Filtro por banco */}
       {bancos.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-2">

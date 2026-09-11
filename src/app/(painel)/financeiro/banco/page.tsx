@@ -16,7 +16,9 @@ export default async function BancoPage() {
         .from("transacoes_banco")
         .select("id, data, valor, descricao, banco, lancamento_id, lancamentos(descricao)")
         .order("data", { ascending: false })
-        .limit(1000),
+        // O extrato cresce ~400 linhas/mês; com 1000 as mais antigas sumiam da
+        // tela (e da conciliação) sem aviso.
+        .limit(5000),
       supabase
         .from("lancamentos")
         .select("id, data, vencimento, pago_em, valor, descricao, dre_categorias(tipo, nome), fornecedores(nome)")
