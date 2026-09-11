@@ -19,7 +19,7 @@ export default async function BancoPage() {
         .limit(1000),
       supabase
         .from("lancamentos")
-        .select("id, data, valor, descricao, dre_categorias(tipo, nome), fornecedores(nome)")
+        .select("id, data, vencimento, pago_em, valor, descricao, dre_categorias(tipo, nome), fornecedores(nome)")
         .order("data", { ascending: false })
         .limit(2000),
       supabase
@@ -42,6 +42,8 @@ export default async function BancoPage() {
   type Lanc = {
     id: string;
     data: string;
+    vencimento: string | null;
+    pago_em: string | null;
     valor: number;
     descricao: string | null;
     dre_categorias: { tipo?: string; nome?: string } | null;
@@ -52,8 +54,12 @@ export default async function BancoPage() {
   const categorias =
     (catData as { id: string; nome: string; tipo: string; grupo: string }[]) ?? [];
 
+  // Data que o banco vê: quando pagou, senão o vencimento, senão a competência.
+  // (A "data" do lançamento é a da nota — 01/08 numa nota que venceu 31/08 —
+  // e mostrar ela aqui fazia a sugestão parecer errada.)
+  const dataBanco = (l: Lanc) => l.pago_em ?? l.vencimento ?? l.data;
   const rotuloLanc = (l: Lanc) =>
-    `${l.descricao ?? l.fornecedores?.nome ?? l.dre_categorias?.nome ?? "lançamento"} · ${dataBR(l.data)} · ${moeda(Number(l.valor))}`;
+    `${l.descricao ?? l.fornecedores?.nome ?? l.dre_categorias?.nome ?? "lançamento"} · ${l.vencimento ? "venc. " : ""}${dataBR(dataBanco(l))} · ${moeda(Number(l.valor))}`;
 
   // Sugere um lançamento para cada transação não conciliada (guloso, sem repetir).
   const usados = new Set(
@@ -74,7 +80,7 @@ export default async function BancoPage() {
           Math.abs(Number(l.valor) - alvo) < 0.005 &&
           (l.dre_categorias?.tipo === "receita") === querReceita,
       )
-      .sort((a, b) => diasEntre(a.data, t.data) - diasEntre(b.data, t.data))[0];
+      .sort((a, b) => diasEntre(dataBanco(a), t.data) - diasEntre(dataBanco(b), t.data))[0];
     if (cand) {
       sugId.set(t.id, cand.id);
       usados.add(cand.id);
