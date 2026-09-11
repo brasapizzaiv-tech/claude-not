@@ -7,6 +7,24 @@ import { BancoTabela } from "./banco-tabela";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// O PostgREST devolve no máximo 1000 linhas por requisição — com quase 3000
+// lançamentos, os mais antigos nunca chegavam aqui e nunca viravam sugestão.
+// Busca em páginas até acabar.
+async function lancamentosTodos(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const tudo: unknown[] = [];
+  for (let de = 0; de < 20000; de += 1000) {
+    const { data } = await supabase
+      .from("lancamentos")
+      .select("id, data, vencimento, pago_em, valor, descricao, nota_id, dre_categorias(tipo, nome), fornecedores(nome)")
+      .order("data", { ascending: false })
+      .range(de, de + 999);
+    const pagina = (data as unknown[]) ?? [];
+    tudo.push(...pagina);
+    if (pagina.length < 1000) break;
+  }
+  return { data: tudo };
+}
+
 export default async function BancoPage() {
   const supabase = await createClient();
 
@@ -19,11 +37,7 @@ export default async function BancoPage() {
         // O extrato cresce ~400 linhas/mês; com 1000 as mais antigas sumiam da
         // tela (e da conciliação) sem aviso.
         .limit(5000),
-      supabase
-        .from("lancamentos")
-        .select("id, data, vencimento, pago_em, valor, descricao, dre_categorias(tipo, nome), fornecedores(nome)")
-        .order("data", { ascending: false })
-        .limit(2000),
+      lancamentosTodos(supabase),
       supabase
         .from("dre_categorias")
         .select("id, nome, tipo, grupo")
@@ -48,6 +62,7 @@ export default async function BancoPage() {
     pago_em: string | null;
     valor: number;
     descricao: string | null;
+    nota_id: string | null;
     dre_categorias: { tipo?: string; nome?: string } | null;
     fornecedores: { nome?: string } | null;
   };
@@ -63,10 +78,34 @@ export default async function BancoPage() {
   const rotuloLanc = (l: Lanc) =>
     `${l.descricao ?? l.fornecedores?.nome ?? l.dre_categorias?.nome ?? "lançamento"} · ${l.vencimento ? "venc. " : ""}${dataBR(dataBanco(l))} · ${moeda(Number(l.valor))}`;
 
-  // Sugere um lançamento para cada transação não conciliada (guloso, sem repetir).
-  const usados = new Set(
-    transacoes.filter((t) => t.lancamento_id).map((t) => t.lancamento_id),
-  );
+  // Um BOLETO pode ser mais de um lançamento: quando o banco cobra custas, a
+  // nota vira "NF 544773" (221,31) + "custas do boleto" (1,80) e o banco debita
+  // 223,11 de uma vez. Procurar lançamento a lançamento nunca acha esse valor —
+  // então a sugestão trabalha com o boleto somado (mesma nota + mesmo vencimento).
+  type Boleto = { ids: string[]; principal: Lanc; valor: number; quando: string; receita: boolean };
+  const grupos = new Map<string, Lanc[]>();
+  for (const l of lancs) {
+    const chave = l.nota_id ? `${l.nota_id}|${l.vencimento ?? ""}` : l.id;
+    const g = grupos.get(chave) ?? [];
+    g.push(l);
+    grupos.set(chave, g);
+  }
+  const boletos: Boleto[] = [...grupos.values()].map((g) => {
+    const principal = g.reduce((a, b) => (Math.abs(Number(b.valor)) > Math.abs(Number(a.valor)) ? b : a));
+    return {
+      ids: g.map((l) => l.id),
+      principal,
+      valor: Math.round(g.reduce((s, l) => s + Number(l.valor), 0) * 100) / 100,
+      quando: dataBanco(principal),
+      receita: principal.dre_categorias?.tipo === "receita",
+    };
+  });
+
+  // Sugere um boleto para cada transação não conciliada (guloso, sem repetir).
+  // Um boleto já conciliado em QUALQUER uma de suas partes está fora.
+  const jaLigados = new Set(transacoes.filter((t) => t.lancamento_id).map((t) => t.lancamento_id));
+  const usados = new Set<string>();
+  for (const b of boletos) if (b.ids.some((id) => jaLigados.has(id))) b.ids.forEach((id) => usados.add(id));
   const diasEntre = (a: string, b: string) =>
     Math.abs((new Date(a).getTime() - new Date(b).getTime()) / 864e5);
   const sugId = new Map<string, string>();
@@ -79,19 +118,22 @@ export default async function BancoPage() {
     if (t.lancamento_id) continue;
     const querReceita = Number(t.valor) > 0;
     const alvo = Math.abs(Number(t.valor));
-    const cand = lancs
+    const cand = boletos
       .filter(
-        (l) =>
-          !usados.has(l.id) &&
-          Math.abs(Number(l.valor) - alvo) < 0.005 &&
-          (l.dre_categorias?.tipo === "receita") === querReceita,
+        (b) =>
+          !b.ids.some((id) => usados.has(id)) &&
+          Math.abs(b.valor - alvo) < 0.005 &&
+          b.receita === querReceita,
       )
-      .sort((a, b) => diasEntre(dataBanco(a), t.data) - diasEntre(dataBanco(b), t.data))[0];
+      .sort((a, b) => diasEntre(a.quando, t.data) - diasEntre(b.quando, t.data))[0];
     if (cand) {
-      sugId.set(t.id, cand.id);
-      usados.add(cand.id);
-      sugLabel.set(t.id, rotuloLanc(cand));
-      sugDias.set(t.id, Math.round(diasEntre(dataBanco(cand), t.data)));
+      // A transação fica ligada ao lançamento principal; as partes do mesmo
+      // boleto (custas) saem da lista pra não virarem sugestão de outra coisa.
+      sugId.set(t.id, cand.principal.id);
+      cand.ids.forEach((id) => usados.add(id));
+      const partes = cand.ids.length > 1 ? ` (+ custas, ${cand.ids.length} lançamentos)` : "";
+      sugLabel.set(t.id, rotuloLanc(cand.principal).replace(moeda(Number(cand.principal.valor)), moeda(cand.valor)) + partes);
+      sugDias.set(t.id, Math.round(diasEntre(cand.quando, t.data)));
     }
   }
 
