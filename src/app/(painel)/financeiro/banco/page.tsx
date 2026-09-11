@@ -71,6 +71,10 @@ export default async function BancoPage() {
     Math.abs((new Date(a).getTime() - new Date(b).getTime()) / 864e5);
   const sugId = new Map<string, string>();
   const sugLabel = new Map<string, string>();
+  // Distância em dias entre a conta e o que saiu do banco. Fornecedor de valor
+  // fixo (Ecad, Petry, aluguel) casa com qualquer mês: acima de 10 dias a
+  // sugestão é FRACA — aparece em amarelo e fica fora do "conciliar todas".
+  const sugDias = new Map<string, number>();
   for (const t of transacoes) {
     if (t.lancamento_id) continue;
     const querReceita = Number(t.valor) > 0;
@@ -87,6 +91,7 @@ export default async function BancoPage() {
       sugId.set(t.id, cand.id);
       usados.add(cand.id);
       sugLabel.set(t.id, rotuloLanc(cand));
+      sugDias.set(t.id, Math.round(diasEntre(dataBanco(cand), t.data)));
     }
   }
 
@@ -124,6 +129,7 @@ export default async function BancoPage() {
     lancamentoLabel: t.lancamentos?.descricao ?? null,
     sugestaoId: sugId.get(t.id) ?? null,
     sugestaoLabel: sugLabel.get(t.id) ?? null,
+    sugestaoDias: sugDias.get(t.id) ?? null,
     notaSugeridaId: notaMatchId.get(t.id) ?? null,
     notaSugeridaLabel: notaMatchLabel.get(t.id) ?? null,
   }));

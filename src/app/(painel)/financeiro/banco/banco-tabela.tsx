@@ -23,6 +23,12 @@ const nomeMes = (m: string) => {
   const [ano, mes] = m.split("-");
   return `${MESES[Number(mes) - 1] ?? mes}/${String(ano).slice(2)}`;
 };
+// Até 10 dias de diferença a sugestão é confiável; acima disso é chute por
+// valor (fornecedor com boleto fixo todo mês) e precisa de conferência.
+const DIAS_CONFIAVEL = 10;
+const sugestaoForte = (t: { sugestaoId: string | null; sugestaoDias: number | null }) =>
+  !!t.sugestaoId && (t.sugestaoDias ?? 999) <= DIAS_CONFIAVEL;
+
 const semAcento = (t: string) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 type TransRow = {
@@ -35,6 +41,7 @@ type TransRow = {
   lancamentoLabel: string | null;
   sugestaoId: string | null;
   sugestaoLabel: string | null;
+  sugestaoDias: number | null; // distância em dias entre a conta e o extrato
   notaSugeridaId: string | null;
   notaSugeridaLabel: string | null;
 };
@@ -82,7 +89,8 @@ export function BancoTabela({
   });
 
   // Seleção múltipla: só transações não conciliadas que têm sugestão.
-  const selecionaveis = lista.filter((t) => !t.lancamento_id && t.sugestaoId);
+  // "Conciliar todas" só pega as sugestões confiáveis.
+  const selecionaveis = lista.filter((t) => !t.lancamento_id && sugestaoForte(t));
   const todosSel =
     selecionaveis.length > 0 && selecionaveis.every((t) => sel.has(t.id));
   function toggleSel(id: string) {
@@ -259,7 +267,7 @@ export function BancoTabela({
                 <Fragment key={t.id}>
                   <tr className="bg-white dark:bg-zinc-950">
                     <td className="px-3 py-2">
-                      {!conciliado && t.sugestaoId && (
+                      {!conciliado && sugestaoForte(t) && (
                         <input
                           type="checkbox"
                           checked={sel.has(t.id)}
@@ -289,7 +297,16 @@ export function BancoTabela({
                           ✓ {t.lancamentoLabel ?? "conciliado"}
                         </span>
                       ) : t.sugestaoLabel ? (
-                        <span className="text-zinc-500">sugestão: {t.sugestaoLabel}</span>
+                        sugestaoForte(t) ? (
+                          <span className="text-zinc-500">sugestão: {t.sugestaoLabel}</span>
+                        ) : (
+                          <span className="text-amber-600">
+                            ⚠ confira a data: {t.sugestaoLabel}
+                            <span className="block text-[11px] text-amber-600/80">
+                              {t.sugestaoDias} dias de diferença do extrato — pode ser outro mês do mesmo fornecedor
+                            </span>
+                          </span>
+                        )
                       ) : t.notaSugeridaLabel ? (
                         <span className="text-orange-600 dark:text-orange-400">
                           nota pendente: {t.notaSugeridaLabel}
@@ -309,7 +326,21 @@ export function BancoTabela({
                         </button>
                       ) : (
                         <div className="inline-flex items-center gap-2">
-                          {t.sugestaoId && (
+                          {t.sugestaoId && !sugestaoForte(t) && (
+                            <button
+                              onClick={() => {
+                                if (!window.confirm(
+                                  "Essa conta está a " + t.sugestaoDias + " dias da data do extrato. Conciliar mesmo assim?",
+                                )) return;
+                                run(() => conciliar(t.id, t.sugestaoId!));
+                              }}
+                              disabled={proc}
+                              className="rounded-lg bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
+                            >
+                              Conciliar assim mesmo
+                            </button>
+                          )}
+                          {t.sugestaoId && sugestaoForte(t) && (
                             <button
                               disabled={proc}
                               onClick={() => run(() => conciliar(t.id, t.sugestaoId!))}
