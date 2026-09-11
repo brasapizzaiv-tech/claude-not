@@ -82,7 +82,7 @@ export default async function BancoPage() {
   // nota vira "NF 544773" (221,31) + "custas do boleto" (1,80) e o banco debita
   // 223,11 de uma vez. Procurar lançamento a lançamento nunca acha esse valor —
   // então a sugestão trabalha com o boleto somado (mesma nota + mesmo vencimento).
-  type Boleto = { ids: string[]; principal: Lanc; valor: number; quando: string; receita: boolean };
+  type Boleto = { ids: string[]; principal: Lanc; valor: number; quando: string; receita: boolean; partes: string };
   const grupos = new Map<string, Lanc[]>();
   for (const l of lancs) {
     const chave = l.nota_id ? `${l.nota_id}|${l.vencimento ?? ""}` : l.id;
@@ -92,12 +92,18 @@ export default async function BancoPage() {
   }
   const boletos: Boleto[] = [...grupos.values()].map((g) => {
     const principal = g.reduce((a, b) => (Math.abs(Number(b.valor)) > Math.abs(Number(a.valor)) ? b : a));
+    // Por que o boleto tem mais de um lançamento: o banco cobrou custas, OU a
+    // nota foi dividida por categoria do DRE (laticínios + insumos, p.ex.).
+    const nomes = g.map((l) =>
+      /custas/i.test(l.descricao ?? "") ? "custas do boleto" : l.dre_categorias?.nome ?? "sem categoria",
+    );
     return {
       ids: g.map((l) => l.id),
       principal,
       valor: Math.round(g.reduce((s, l) => s + Number(l.valor), 0) * 100) / 100,
       quando: dataBanco(principal),
       receita: principal.dre_categorias?.tipo === "receita",
+      partes: g.length > 1 ? ` (${g.length} lançamentos: ${[...new Set(nomes)].join(" + ")})` : "",
     };
   });
 
@@ -131,8 +137,7 @@ export default async function BancoPage() {
       // boleto (custas) saem da lista pra não virarem sugestão de outra coisa.
       sugId.set(t.id, cand.principal.id);
       cand.ids.forEach((id) => usados.add(id));
-      const partes = cand.ids.length > 1 ? ` (+ custas, ${cand.ids.length} lançamentos)` : "";
-      sugLabel.set(t.id, rotuloLanc(cand.principal).replace(moeda(Number(cand.principal.valor)), moeda(cand.valor)) + partes);
+      sugLabel.set(t.id, rotuloLanc(cand.principal).replace(moeda(Number(cand.principal.valor)), moeda(cand.valor)) + cand.partes);
       sugDias.set(t.id, Math.round(diasEntre(cand.quando, t.data)));
     }
   }
