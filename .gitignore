@@ -65,3 +65,7 @@ installer-balanca/build/
 installer-balanca/Output/
 installer-impressao/build/
 installer-impressao/Output/
+installer-tef/build/
+installer-tef/Output/
+agente-tef/config.json
+agente-tef/node_modules/

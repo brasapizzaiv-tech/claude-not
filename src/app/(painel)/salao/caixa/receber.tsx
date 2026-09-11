@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pagarSelecao } from "../actions";
+import { pagarSelecao, fecharTef } from "../actions";
+import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
 import { formaEmiteAuto } from "@/components/nfce-auto-toggle";
@@ -295,7 +296,14 @@ export function ReceberComandas({
     }));
     const pagamentos = pagos
       .filter((x) => x.valor > 0)
-      .map((x) => ({ forma: x.forma, valor: x.valor, bandeira: x.bandeira ?? null, observacao: x.observacao ?? null }));
+      .map((x) => ({ forma: x.forma, valor: x.valor, bandeira: x.bandeira ?? null, observacao: x.observacao ?? null, tef: x.tef ?? null }));
+    const comTef = pagos.filter((x) => x.tef?.idAgente);
+    // Se a venda não gravar, o cartão NÃO pode ficar cobrado: desfaz no pinpad.
+    const desfazerTefs = async (motivo: string) => {
+      for (const x of comTef) {
+        try { await tefDesfazer(x.tef!.idAgente, motivo); } catch { /* o agente desfaz sozinho na próxima venda */ }
+      }
+    };
 
     // Produtos avulsos → vão para a primeira comanda selecionada.
     const comandaExtra = selComandas[0]?.id;
@@ -324,11 +332,22 @@ export function ReceberComandas({
         r = await pagarSelecao(payload, pagamentos, extrasPayload, clienteSel?.id ?? null);
       } catch {
         confirmandoRef.current = false;
-        setMsg("Sem conexão. Atualize a tela antes de tentar de novo (pode já ter recebido).");
+        await desfazerTefs("sem conexão ao gravar a venda");
+        setMsg(comTef.length > 0
+          ? "Sem conexão. A cobrança no cartão foi DESFEITA — passe de novo quando a conexão voltar."
+          : "Sem conexão. Atualize a tela antes de tentar de novo (pode já ter recebido).");
         return;
       }
       confirmandoRef.current = false;
+      if (!r.ok) await desfazerTefs(("mensagem" in r && r.mensagem) || "a venda não foi aceita");
       if (r.ok) {
+        // Venda gravada → confirma cada cartão no pinpad e registra no sistema.
+        const registros = ("tefRegistros" in r ? r.tefRegistros : []) as { idAgente: string; transacaoId: string }[];
+        for (const reg of registros) {
+          let confirmou = false;
+          try { confirmou = (await tefConfirmar(reg.idAgente)).ok; } catch { confirmou = false; }
+          try { await fecharTef(reg.transacaoId, confirmou, confirmou ? undefined : "o agente não confirmou (CNF)"); } catch { /* registrado depois */ }
+        }
         setMsg(
           `✓ Recebido ${brl(totalPagar)} — comanda(s) ${r.numeros.map((n) => `#${n}`).join(", ")}.` +
             (troco > 0.005 ? ` Troco: ${brl(troco)}.` : ""),
@@ -808,7 +827,11 @@ export function ReceberComandas({
                     total={totalPagar}
                     pagos={pagos}
                     onAdicionar={(x) => { setPagos((l) => [...l, x]); setMsg(null); }}
-                    onRemover={(uid) => setPagos((l) => l.filter((y) => y.uid !== uid))}
+                    onRemover={(uid) => {
+                      const x = pagos.find((y) => y.uid === uid);
+                      if (x?.tef?.idAgente) tefDesfazer(x.tef.idAgente, "pagamento removido pelo caixa").catch(() => {});
+                      setPagos((l) => l.filter((y) => y.uid !== uid));
+                    }}
                     ativo={temAlgo && selComandas.length > 0}
                     fiado={fiadoCli}
                     qrPix={

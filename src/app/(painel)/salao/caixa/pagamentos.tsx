@@ -6,6 +6,7 @@
 // botão de "auto preencher o que falta", cédulas (Shift soma), observação e,
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { tefDisponivel, tefVenda, tipoTefDaForma, type TefDados, type TefStatus } from "@/lib/tef-client";
 
 export type Pagamento = {
   uid: string;
@@ -14,11 +15,15 @@ export type Pagamento = {
   recebido?: number;    // dinheiro: o que o cliente entregou (pra calcular troco)
   bandeira?: string | null;
   observacao?: string | null;
+  tef?: TefDados | null;  // preenchido quando o cartão passou pelo pinpad (TEF)
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (s: string) => Number(String(s).replace(/\./g, "").replace(",", ".")) || 0;
 const cent = (n: number) => Math.round(n * 100) / 100;
+// Identificador local de um pagamento lançado (fora do componente: o compilador
+// do React não deixa chamar Date.now/Math.random dentro do render).
+const novoUid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 // Tecla de atalho por forma (a letra é mostrada no botão).
 export function atalhoDaForma(forma: string): string {
@@ -71,6 +76,7 @@ export function PainelPagamentos({
   const [obs, setObs] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
   const campoRef = useRef<HTMLInputElement>(null);
+
 
   const somaPagos = cent(pagos.reduce((s, p) => s + p.valor, 0));
   const falta = cent(total - somaPagos);
@@ -138,6 +144,64 @@ export function PainelPagamentos({
     return novo > fiado.limite + 0.005 ? { novo, limite: fiado.limite, saldo: fiado.saldo } : null;
   }, [forma, fiado, aplica]);
 
+  // Agente TEF neste PC? (pinpad integrado). Procura ao abrir a tela e de
+  // tempos em tempos — se o programa for ligado depois, o botão aparece sozinho.
+  const [tef, setTef] = useState<TefStatus | null>(null);
+  const [tefEtapa, setTefEtapa] = useState<"" | "enviando" | "pinpad">("");
+  useEffect(() => {
+    let vivo = true;
+    const olhar = async () => { const s = await tefDisponivel(); if (vivo) setTef(s); };
+    const t0 = setTimeout(olhar, 0);
+    const t = setInterval(olhar, 15000);
+    return () => { vivo = false; clearTimeout(t0); clearInterval(t); };
+  }, []);
+  const tefAplica = (f: string | null) => !!f && !!tef && tipoTefDaForma(f) !== null;
+
+  // Manda o valor pro pinpad; aprovado → vira pagamento já com NSU/bandeira.
+  async function passarNoCartao() {
+    if (!forma || !tef || tefEtapa) return;
+    const tipo = tipoTefDaForma(forma);
+    if (!tipo) return;
+    if (!(aplica > 0.005)) { setAviso("Informe o valor."); return; }
+    setAviso(null);
+    setTefEtapa("enviando");
+    try {
+      setTefEtapa("pinpad");
+      const r = await tefVenda({ valor: cent(aplica), tipo, parcelas: 1 });
+      if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
+      if (!r.aprovada) { setAviso(`Cartão não aprovado: ${r.mensagem || "recusado"}.`); return; }
+      const dados: TefDados = {
+        idAgente: r.idAgente || "",
+        terminal: r.terminal ?? null,
+        nsu: r.nsu ?? null,
+        nsuHost: r.nsuHost ?? null,
+        autorizacao: r.autorizacao ?? null,
+        rede: r.rede ?? null,
+        bandeira: r.bandeira ?? null,
+        produto: r.produto ?? null,
+        tipo,
+        parcelas: Number(r.parcelas) || 1,
+        panMascarado: r.panMascarado ?? null,
+        viaCliente: r.viaCliente ?? [],
+        viaLoja: r.viaLoja ?? [],
+        requerConfirmacao: !!r.requerConfirmacao,
+      };
+      onAdicionar({
+        uid: novoUid(),
+        forma,
+        valor: cent(aplica),
+        bandeira: dados.bandeira || bandeira || null,
+        observacao: obs.trim() || null,
+        tef: dados,
+      });
+      fechar();
+    } catch {
+      setAviso("O agente TEF não respondeu. Confira o ícone na bandeja.");
+    } finally {
+      setTefEtapa("");
+    }
+  }
+
   function salvar() {
     if (!forma) return;
     if (!(aplica > 0.005)) { setAviso("Informe o valor."); return; }
@@ -146,9 +210,9 @@ export function PainelPagamentos({
       setAviso(`Passa do limite: ${fiado?.nome} já deve ${brl(fiadoEstoura.saldo)} e o limite é ${brl(fiadoEstoura.limite)}.`);
       return;
     }
-    if (ehCartao(forma) && !bandeira) { setAviso("Escolha a bandeira."); return; }
+    if (ehCartao(forma) && !bandeira && !tefAplica(forma)) { setAviso("Escolha a bandeira."); return; }
     onAdicionar({
-      uid: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      uid: novoUid(),
       forma,
       valor: cent(aplica),
       recebido: ehDinheiro(forma) ? cent(entregue) : undefined,
@@ -178,6 +242,7 @@ export function PainelPagamentos({
               <span className="min-w-0 flex-1 truncate text-zinc-700 dark:text-zinc-200">
                 {p.forma}
                 {p.bandeira ? <span className="text-zinc-400"> · {p.bandeira}</span> : null}
+                {p.tef ? <span className="ml-1 rounded bg-emerald-100 px-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">TEF · NSU {p.tef.nsu ?? "—"}</span> : null}
                 {p.observacao ? <span className="block truncate text-[11px] text-zinc-400">{p.observacao}</span> : null}
               </span>
               <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">{brl(p.valor)}</span>
@@ -244,7 +309,8 @@ export function PainelPagamentos({
             inputMode="decimal"
             value={valor}
             onChange={(e) => { setValor(e.target.value); setAviso(null); }}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); salvar(); } }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (tefAplica(forma)) passarNoCartao(); else salvar(); } }}
+            disabled={!!tefEtapa}
             className={`${campo} text-center text-3xl font-black tabular-nums`}
           />
 
@@ -273,7 +339,35 @@ export function PainelPagamentos({
             </>
           )}
 
-          {ehCartao(forma) && (
+          {tefAplica(forma) && (
+            <div className="mt-3 rounded-xl border border-emerald-600/40 bg-emerald-50 p-3 dark:bg-emerald-950/30">
+              {tefEtapa ? (
+                <div className="text-center">
+                  <p className="text-base font-bold text-emerald-800 dark:text-emerald-300">
+                    {tefEtapa === "enviando" ? "Enviando pro pinpad…" : "Aguardando o cartão no pinpad…"}
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                    O cliente insere ou aproxima o cartão e digita a senha. Pra desistir, cancele no pinpad.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={passarNoCartao}
+                    className="w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700"
+                  >
+                    💳 Passar no cartão · {brl(cent(aplica))}
+                    <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
+                  </button>
+                  <p className="mt-1.5 text-center text-[11px] text-emerald-800/70 dark:text-emerald-400/70">
+                    Pinpad {tef?.terminal}{tef?.gerenciador ? "" : " · gerenciador de TEF não encontrado neste PC"}. Bandeira, NSU e autorização vêm sozinhos.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {ehCartao(forma) && !tefAplica(forma) && (
             <div className="mt-3">
               <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-400">Bandeira</p>
               <div className="flex flex-wrap gap-1.5">
@@ -337,12 +431,23 @@ export function PainelPagamentos({
             <button onClick={fechar} className={`${btn} flex-1 border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300`}>
               Voltar
             </button>
-            <button
-              onClick={salvar}
-              className={`${btn} flex-[2] border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700`}
-            >
-              ✓ Salvar {aplica > 0.005 ? brl(cent(aplica)) : ""}
-            </button>
+            {tefAplica(forma) ? (
+              <button
+                onClick={() => { if (!bandeira) setBandeira("Outra"); salvar(); }}
+                disabled={!!tefEtapa}
+                title="Usou a maquininha avulsa? Lança sem passar no pinpad."
+                className={`${btn} flex-[2] border-zinc-300 text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300`}
+              >
+                Lançar sem passar no pinpad
+              </button>
+            ) : (
+              <button
+                onClick={salvar}
+                className={`${btn} flex-[2] border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700`}
+              >
+                ✓ Salvar {aplica > 0.005 ? brl(cent(aplica)) : ""}
+              </button>
+            )}
           </div>
         </div>
       )}

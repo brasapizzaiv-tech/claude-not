@@ -822,9 +822,27 @@ export async function pagarValores(
 // comandas, com desconto/acréscimo já embutido nos pagamentos. Marca cada item
 // pago pelo valor devido (com serviço), fecha a comanda que quitou e lança o(s)
 // pagamento(s) no caixa aberto.
+// O que a maquininha (TEF) devolveu pra um pagamento em cartão.
+export type TefPagamento = {
+  idAgente: string;
+  terminal: string | null;
+  nsu: string | null;
+  nsuHost: string | null;
+  autorizacao: string | null;
+  rede: string | null;
+  bandeira: string | null;
+  produto: string | null;
+  tipo: "credito" | "debito" | "voucher";
+  parcelas: number;
+  panMascarado: string | null;
+  viaCliente: string[];
+  viaLoja: string[];
+  requerConfirmacao: boolean;
+};
+
 export async function pagarSelecao(
   sel: { comandaId: string; itemIds: string[]; buffet: boolean }[],
-  pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null }[],
+  pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null; tef?: TefPagamento | null }[],
   extras: { comandaId: string; itemId: string; qtd: number }[] = [],
   clienteId?: string | null,
 ) {
@@ -952,20 +970,61 @@ export async function pagarSelecao(
     return { ok: false as const, mensagem: "Essa conta já tinha sido recebida (outro caixa?). Nada foi lançado de novo — atualize a tela." };
   }
   const primeiraComanda = sel[0]?.comandaId ?? extras[0]?.comandaId;
+  // Pagamentos feitos no TEF: o caixa vai CONFIRMAR no pinpad com estes ids.
+  const tefRegistros: { idAgente: string; transacaoId: string }[] = [];
   if (caixaId && primeiraComanda) {
     const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
+    const { data: quem } = await supabase.auth.getUser();
     for (const p of pagamentos) {
       if (!(p.valor > 0)) continue;
-      await supabase.from("pdv_caixa_mov").insert({
-        caixa_id: caixaId,
-        tipo: "venda",
-        descricao: desc,
-        forma_pagamento: p.forma,
-        valor: p.valor,
-        comanda_id: primeiraComanda,
-        bandeira: (p.bandeira || "").trim().slice(0, 30) || null,
-        observacao: (p.observacao || "").trim().slice(0, 200) || null,
-      });
+      const t = p.tef ?? null;
+      const { data: mov } = await supabase
+        .from("pdv_caixa_mov")
+        .insert({
+          caixa_id: caixaId,
+          tipo: "venda",
+          descricao: desc,
+          forma_pagamento: p.forma,
+          valor: p.valor,
+          comanda_id: primeiraComanda,
+          bandeira: ((t?.bandeira || p.bandeira) || "").trim().slice(0, 30) || null,
+          observacao: (p.observacao || "").trim().slice(0, 200) || null,
+          tef_nsu: t?.nsu ?? null,
+          tef_autorizacao: t?.autorizacao ?? null,
+          tef_rede: t?.rede ?? null,
+          tef_terminal: t?.terminal ?? null,
+        })
+        .select("id")
+        .maybeSingle();
+      if (t) {
+        const { data: tr } = await supabase
+          .from("tef_transacoes")
+          .insert({
+            caixa_id: caixaId,
+            comanda_ids: [...new Set([...sel.map((s) => s.comandaId), ...extras.map((e) => e.comandaId)])],
+            mov_id: (mov as { id?: string } | null)?.id ?? null,
+            terminal: t.terminal,
+            tipo: t.tipo,
+            valor: p.valor,
+            parcelas: Math.max(1, Number(t.parcelas) || 1),
+            rede: t.rede,
+            bandeira: t.bandeira,
+            produto: t.produto,
+            nsu: t.nsu,
+            nsu_host: t.nsuHost,
+            autorizacao: t.autorizacao,
+            pan_mascarado: t.panMascarado,
+            status: "aprovada",
+            via_cliente: t.viaCliente ?? [],
+            via_loja: t.viaLoja ?? [],
+            id_agente: t.idAgente,
+            criado_por: quem.user?.id ?? null,
+          })
+          .select("id")
+          .maybeSingle();
+        const transacaoId = (tr as { id?: string } | null)?.id;
+        if (transacaoId) tefRegistros.push({ idAgente: t.idAgente, transacaoId });
+      }
     }
   }
 
@@ -1008,7 +1067,38 @@ export async function pagarSelecao(
 
   revalidatePath("/salao/caixa");
   revalidatePath("/salao");
-  return { ok: true as const, numeros, total: totalPago, pendenteId };
+  return { ok: true as const, numeros, total: totalPago, pendenteId, tefRegistros };
+}
+
+// Depois que o pinpad confirmou (CNF) ou desfez (NCN), o registro do TEF
+// reflete isso; confirmado → a via do cliente sai na impressora da nota.
+export async function fecharTef(transacaoId: string, confirmada: boolean, motivo?: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  await supabase
+    .from("tef_transacoes")
+    .update({ status: confirmada ? "confirmada" : "desfeita", mensagem: motivo ?? null, atualizado_em: new Date().toISOString() })
+    .eq("id", transacaoId);
+  if (confirmada) {
+    const { data: imps } = await supabase.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true);
+    const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
+    if (ids.length > 0) {
+      await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "tef", ref_id: transacaoId, impressora_id })));
+    }
+  }
+  return { ok: true as const };
+}
+
+// Reimprime a via do cliente de um cartão já passado.
+export async function reimprimirTef(transacaoId: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: imps } = await supabase.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true);
+  const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
+  if (ids.length === 0) return { ok: false as const, mensagem: "Nenhuma impressora marcada pra NFC-e na Central de Impressões." };
+  const { error } = await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "tef", ref_id: transacaoId, impressora_id })));
+  if (error) return { ok: false as const, mensagem: error.message };
+  return { ok: true as const };
 }
 
 // Cliente veio acertar o fiado: registra o pagamento e entra no caixa do dia

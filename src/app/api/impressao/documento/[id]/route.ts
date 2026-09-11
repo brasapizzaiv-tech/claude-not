@@ -5,6 +5,7 @@ import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
 import { gerarMarmitaPdf } from "@/lib/marmita-pdf";
 import { gerarFechamentoPdf } from "@/lib/fechamento-pdf";
+import { gerarComprovanteTefPdf } from "@/lib/tef-comprovante-pdf";
 import { baixarXmlNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
 import { gerarNfceCupomPdf } from "@/lib/nfce-cupom-pdf";
 
@@ -146,6 +147,23 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (!xml) return new Response("nao consegui baixar o XML da nota", { status: 502 });
     const largN = ((impN as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80;
     pdf = await gerarNfceCupomPdf(xml, larguraUtil(largN), await logoDaBrasa(baseUrl));
+  } else if (job.tipo === "tef") {
+    // Comprovante do cartão: as linhas vieram do gerenciador de TEF (via cliente).
+    const [{ data: tr }, { data: impT }] = await Promise.all([
+      admin.from("tef_transacoes").select("via_cliente, via_loja, rede, bandeira, nsu, valor, criado_em, comanda_ids").eq("id", job.ref_id).maybeSingle(),
+      job.impressora_id
+        ? admin.from("impressoras").select("comanda_config").eq("id", job.impressora_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    if (!tr) return new Response("transacao nao encontrada", { status: 404 });
+    const linhas = ((tr.via_cliente as string[] | null)?.length ? tr.via_cliente : tr.via_loja) as string[] | null;
+    if (!linhas || linhas.length === 0) return new Response("sem comprovante", { status: 404 });
+    const quando = new Date(tr.criado_em as string).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    const largT = larguraUtil(((impT as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80);
+    pdf = await gerarComprovanteTefPdf(
+      { titulo: "VIA DO CLIENTE", linhas, rodape: `NSU ${tr.nsu ?? "—"} · ${quando}` },
+      largT,
+    );
   } else if (job.tipo === "fechamento") {
     // Cupom do fechamento de caixa (ref_id = pdv_caixas.id).
     const [{ data: cx }, { data: imp }, { data: cfgRows }] = await Promise.all([

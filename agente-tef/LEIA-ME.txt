@@ -1,0 +1,18 @@
+AGENTE TEF - Brasa Sistemas
+===========================
+
+Roda em cada PC de caixa que tem pinpad. Fica na bandeja (perto do relogio).
+
+O que faz: quando o caixa clica em "Passar no cartao", este programa manda o
+valor pro gerenciador de TEF (Elgin TEF Hub) instalado no Windows, espera o
+cliente passar o cartao no pinpad e devolve o resultado (aprovado/negado, NSU,
+bandeira) pro sistema. A venda so e confirmada no cartao depois que o sistema
+grava o pagamento.
+
+Pastas do TEF: C:\Cliente\Req e C:\Cliente\Resp (configuravel em config.json).
+
+Menu da bandeja: Ver log / Status / Reiniciar / Sair.
+Log: C:\ProgramData\AgenteTEF\agente.log
+
+TESTE SEM O TEF DA ELGIN: rode "node simulador-gp.mjs" nesta pasta. Ele responde
+como se fosse o gerenciador (aprova tudo; valor terminando em ,99 nega).
