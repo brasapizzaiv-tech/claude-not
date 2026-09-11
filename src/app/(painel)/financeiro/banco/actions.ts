@@ -13,20 +13,39 @@ export async function importarOfx(texto: string, banco: string) {
   const trans = lerOfx(texto);
   if (trans.length === 0) return { ok: false, erro: "Nenhuma transação encontrada no arquivo." };
 
-  // Insere ignorando duplicadas — dedup por (banco, fitid).
+  // Repetida = mesmo código de transação (fitid) já importado deste banco OU
+  // importado antigamente sem banco. Em 11/09 o extrato de agosto entrou duas
+  // vezes (a 1ª sem escolher o banco) e 245 transações duplicaram na tela —
+  // a regra antiga só olhava (banco, fitid) e tratava "sem banco" como outro banco.
+  const bancoNome = banco.trim();
+  const fitids = [...new Set(trans.map((t) => t.fitid).filter(Boolean))];
+  const jaTem = new Set<string>();
+  for (let i = 0; i < fitids.length; i += 200) {
+    const lote = fitids.slice(i, i + 200);
+    const { data: existentes } = await supabase
+      .from("transacoes_banco")
+      .select("fitid")
+      .in("fitid", lote)
+      .or(`banco.eq.${bancoNome},banco.is.null`);
+    for (const e of (existentes as { fitid: string }[]) ?? []) jaTem.add(e.fitid);
+  }
+
   let novas = 0;
+  let repetidas = 0;
   for (const t of trans) {
+    if (t.fitid && jaTem.has(t.fitid)) { repetidas++; continue; }
     const { error } = await supabase.from("transacoes_banco").insert({
       data: t.data,
       valor: t.valor,
       descricao: t.descricao,
       fitid: t.fitid,
-      banco: banco.trim(),
+      banco: bancoNome,
     });
-    if (!error) novas++;
+    if (!error) { novas++; if (t.fitid) jaTem.add(t.fitid); }
+    else repetidas++;
   }
   revalidatePath("/financeiro/banco");
-  return { ok: true, total: trans.length, novas };
+  return { ok: true, total: trans.length, novas, repetidas };
 }
 
 // Cria um lançamento a partir da transação do banco e já concilia.

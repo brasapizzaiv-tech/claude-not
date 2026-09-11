@@ -21,7 +21,7 @@ export function UploadOfx() {
       const texto = await file.text();
       const r = await importarOfx(texto, banco);
       if (r?.ok)
-        setMsg(`✓ ${banco}: ${r.novas} nova(s) de ${r.total} transação(ões).`);
+        setMsg(`✓ ${banco}: ${r.novas} nova(s) de ${r.total} transação(ões)${r.repetidas ? ` · ${r.repetidas} já estavam importadas` : ""}.`);
       else setMsg(`❌ ${r?.erro ?? "erro"}`);
       router.refresh();
     });
