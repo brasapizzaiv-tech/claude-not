@@ -214,6 +214,15 @@ export default async function AppColaboradorPage({
           <span className="text-xs font-normal opacity-80">mesas, pedidos, conta →</span>
         </a>
       )}
+      {fazGarcom && (
+        <Link
+          href={`/eu/${token}/rodizio`}
+          className="mb-3 flex items-center justify-between rounded-2xl bg-orange-600 p-4 font-semibold text-white hover:bg-orange-700"
+        >
+          <span>🍕 Rodízio</span>
+          <span className="text-xs font-normal opacity-80">pedir pizza pra mesa →</span>
+        </Link>
+      )}
       {fazEtiquetas && contagemEtq && (
         <div className="mb-3">
           <p className="mb-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Vencimentos das etiquetas</p>

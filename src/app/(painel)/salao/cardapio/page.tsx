@@ -13,7 +13,7 @@ export default async function CardapioPage() {
     supabase.from("pdv_categorias").select("id, nome, ordem, disponivel, horarios, canal_app, canal_garcom, canal_pdv").order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem"),
-    supabase.from("pdv_pizza_sabores").select("id, nome, ativo, foto_url, descricao").eq("ativo", true).order("ordem"),
+    supabase.from("pdv_pizza_sabores").select("id, nome, ativo, foto_url, descricao, tipo, rodizio").eq("ativo", true).order("ordem"),
   ]);
   const config: Record<string, string> = {};
   for (const r of cfg ?? []) config[r.chave] = r.valor;

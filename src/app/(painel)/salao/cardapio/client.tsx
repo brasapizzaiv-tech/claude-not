@@ -30,7 +30,7 @@ type Item = {
 };
 type Categoria = { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios; canal_app: boolean; canal_garcom: boolean; canal_pdv: boolean };
 type Tam = { id: string; nome: string; max_sabores: number; fatias: number | null };
-type Sabor = { id: string; nome: string; foto_url: string | null; descricao: string | null };
+type Sabor = { id: string; nome: string; foto_url: string | null; descricao: string | null; tipo?: "salgada" | "doce" | null; rodizio?: boolean | null };
 
 // ---------- foto ----------
 function Foto({ url, tam = "h-12 w-12" }: { url: string | null; tam?: string }) {
@@ -270,6 +270,14 @@ export function CardapioClient({
                     <input type="hidden" name="id" value={s.id} />
                     <div className="w-40 truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{s.nome}</div>
                     <input name="descricao" defaultValue={s.descricao ?? ""} maxLength={300} placeholder="Descrição (ingredientes)" className={`${inputCls} min-w-40 flex-1`} />
+                    {/* Quadro do rodízio: salgada ou doce (coluna na TV) e se o sabor entra no rodízio */}
+                    <select name="tipo_sabor" defaultValue={s.tipo ?? "salgada"} className={`${inputCls} w-28`} title="Coluna no quadro do rodízio">
+                      <option value="salgada">🍕 Salgada</option>
+                      <option value="doce">🍫 Doce</option>
+                    </select>
+                    <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-300" title="Aparece na busca de sabores do rodízio">
+                      <input type="checkbox" name="rodizio" defaultChecked={s.rodizio !== false} /> rodízio
+                    </label>
                     <button className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white">Salvar</button>
                   </form>
                   <UploadFoto tipo="sabor" id={s.id} temFoto={!!s.foto_url} />

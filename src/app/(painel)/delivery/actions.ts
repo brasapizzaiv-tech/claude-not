@@ -214,7 +214,11 @@ export async function salvarDetalheCardapio(formData: FormData) {
     const delivery = formData.get("delivery") === "on";
     await supabase.from("pdv_itens").update({ descricao, delivery }).eq("id", id);
   } else {
-    await supabase.from("pdv_pizza_sabores").update({ descricao }).eq("id", id);
+    // Sabor: além da descrição, se é salgada ou doce e se entra no rodízio
+    // (o quadro da cozinha separa salgadas e doces em duas colunas).
+    const tipoSabor = formData.get("tipo_sabor") === "doce" ? "doce" : "salgada";
+    const rodizio = formData.get("rodizio") === "on";
+    await supabase.from("pdv_pizza_sabores").update({ descricao, tipo: tipoSabor, rodizio }).eq("id", id);
   }
   revalidatePath("/salao/cardapio");
 }

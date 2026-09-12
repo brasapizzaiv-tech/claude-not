@@ -63,6 +63,8 @@ export function Sidebar({
 
   // Telas de tela cheia (celular): sem menu lateral.
   if (pathname === "/garcom" || pathname.startsWith("/garcom/") || pathname.startsWith("/reservas/hoje")) return null;
+  // Tablet da cozinha e TV: tela cheia, sem menu (o relatório do rodízio mantém o menu).
+  if (pathname === "/cozinha" || pathname === "/tv" || pathname.startsWith("/tv/")) return null;
 
   const has = (key: ModuloKey) => admin || permissoes.includes(key);
   const so = <T,>(cond: boolean, ...v: T[]) => (cond ? v : []);
@@ -90,6 +92,8 @@ export function Sidebar({
       key: "cozinha", label: "Cozinha", icon: "🍳",
       itens: [
         ...so(has("salao"), { href: "/salao/balanca", label: "Balança do buffet", icon: "⚖️" }),
+        ...so(has("rodizio"), { href: "/cozinha", label: "Quadro do rodízio (tablet)", icon: "🍕" }),
+        ...so(has("rodizio"), { href: "/cozinha/relatorio", label: "Rodízio · relatório", icon: "📊" }),
         ...so(has("etiquetas"), { href: "/etiquetas", label: "Etiquetas de validade", icon: "🏷️" }),
       ],
     },
