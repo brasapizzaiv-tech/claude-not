@@ -10,7 +10,15 @@ export async function criarLancamento(formData: FormData) {
   await exigirAcesso("/financeiro");
   const supabase = await createClient();
 
-  const data = (formData.get("data") as string) || null;
+  // Competência: vem como mês (AAAA-MM) do formulário; o dia não importa pro
+  // DRE, então vale o 1º. "data" ainda é aceito por compatibilidade.
+  const competenciaMes = ((formData.get("competencia") as string) || "").trim();
+  const data = competenciaMes
+    ? `${competenciaMes}-01`
+    : (formData.get("data") as string) || null;
+  const emissao = ((formData.get("emissao") as string) || "").trim() || null;
+  const pagoEmInformado = ((formData.get("pago_em") as string) || "").trim() || null;
+  const lancadoEm = ((formData.get("lancamento_em") as string) || "").trim() || null;
   const categoria_id = (formData.get("categoria_id") as string) || null;
   const descricao = (formData.get("descricao") as string)?.trim() || null;
   const forma_pagamento =
@@ -36,14 +44,15 @@ export async function criarLancamento(formData: FormData) {
       descricao,
       forma_pagamento,
       banco,
-      lancamento_em: hoje,
+      lancamento_em: lancadoEm ?? hoje,
+      emissao,
       valor,
       origem: "manual",
       vencimento: vencimento || null,
       pago,
-      // Marcou "Já pago": a data do pagamento é a do boleto, não a competência —
-      // conta de julho paga em agosto tem competência 07 e pagamento em 08.
-      pago_em: pago ? vencimento || dataLanc : null,
+      // Marcou "Já pago": vale a data informada; sem ela, a do boleto — nunca a
+      // competência (conta de julho paga em agosto tem competência 07, baixa 08).
+      pago_em: pago ? pagoEmInformado || vencimento || dataLanc : null,
     });
   } else {
     // Parcelado = divide o total; Mensal/fixo = repete o mesmo valor.
@@ -65,7 +74,8 @@ export async function criarLancamento(formData: FormData) {
         descricao: `${descricao ?? ""} (${rot})`.trim(),
         forma_pagamento,
         banco,
-        lancamento_em: hoje,
+        lancamento_em: lancadoEm ?? hoje,
+        emissao,
         valor: v,
         origem: "manual",
         vencimento: avancar(base, i, frequencia, dias),

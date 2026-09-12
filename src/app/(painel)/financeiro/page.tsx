@@ -183,11 +183,12 @@ export default async function FinanceiroPage({
           <label className="mb-1 block text-xs text-zinc-500" title="Mês em que a despesa aconteceu — é por aqui que ela entra no DRE.">
             Competência
           </label>
+          {/* Mês e ano: o dia não importa pro DRE (a ação grava o dia 1º). */}
           <input
-            type="date"
-            name="data"
-            defaultValue={`${mes}-01`}
-            title="Mês da despesa (entra no DRE por esta data). Pagou em agosto uma conta de julho? Ponha julho aqui e a data do boleto no Vencimento."
+            type="month"
+            name="competencia"
+            defaultValue={mes}
+            title="Mês da despesa (entra no DRE por aqui). Pagou em agosto uma conta de julho? Ponha julho aqui e a data do boleto no Vencimento."
             className={inputCls}
           />
           <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">mês da despesa (vai pro DRE)</p>
@@ -216,8 +217,23 @@ export default async function FinanceiroPage({
           <input name="descricao" placeholder="opcional" className={`${inputCls} w-full`} />
         </div>
         <div>
+          <label className="mb-1 block text-xs text-zinc-500">Emissão</label>
+          <input type="date" name="emissao" title="Data da nota/recibo (opcional)" className={inputCls} />
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">da nota/recibo</p>
+        </div>
+        <div>
           <label className="mb-1 block text-xs text-zinc-500">Vencimento</label>
           <input type="date" name="vencimento" className={inputCls} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Pago em</label>
+          <input type="date" name="pago_em" title="Quando saiu do banco. Em branco com 'Já pago' marcado, vale o vencimento." className={inputCls} />
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">só se já pagou</p>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Lançado em</label>
+          <input type="date" name="lancamento_em" defaultValue={hojeSP()} title="Quando esta conta foi cadastrada no sistema" className={inputCls} />
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">cadastro (hoje)</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-zinc-500">Origem (banco)</label>

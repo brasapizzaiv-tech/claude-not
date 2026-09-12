@@ -21,6 +21,13 @@ function diaDaSemana(iso: string) {
   const [a, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(a, m - 1, d)).getUTCDay(); // 0 = domingo
 }
+// "2026-07-01" -> "jul/26" (a competência é mês, o dia não importa).
+const MESES_CURTOS = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+function mesBR(iso: string) {
+  const [ano, mes] = String(iso).split("-");
+  return `${MESES_CURTOS[Number(mes) - 1] ?? mes}/${String(ano).slice(2)}`;
+}
+
 // Segunda-feira da semana do vencimento (semana fecha segunda → domingo).
 function segundaDa(iso: string) {
   return addDias(iso, -((diaDaSemana(iso) + 6) % 7));
@@ -133,6 +140,12 @@ function Linhas({
                   {l.banco ? ` · ${l.banco}` : ""}
                   {l.forma_pagamento ? ` · ${l.forma_pagamento}` : ""}
                   {mostrarPago && l.pago_em ? ` · pago ${dataBR(l.pago_em)}` : ""}
+                </div>
+                {/* As outras datas da conta (competência, emissão, cadastro) */}
+                <div className="text-[11px] text-zinc-400/70">
+                  {l.data ? `comp. ${mesBR(l.data)}` : ""}
+                  {l.emissao ? ` · emitida ${dataBR(l.emissao)}` : ""}
+                  {l.lancamento_em ? ` · lançada ${dataBR(l.lancamento_em)}` : ""}
                 </div>
               </td>
               <td className="px-4 py-2 text-right">

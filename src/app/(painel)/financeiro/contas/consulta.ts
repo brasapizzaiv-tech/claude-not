@@ -18,8 +18,9 @@ export type LinhaConta = {
   id: string;
   ids?: string[]; // lançamentos agrupados neste boleto (nota) — para pagar juntos
   nota_id?: string | null;
-  data: string | null;
-  lancamento_em: string | null;
+  data: string | null;          // competência (mês da despesa)
+  emissao?: string | null;      // data da nota/recibo
+  lancamento_em: string | null; // quando foi cadastrada no sistema
   descricao: string | null;
   valor: number;
   vencimento: string | null;
@@ -83,7 +84,7 @@ export async function consultarContas(f: FiltroContas): Promise<LinhaConta[]> {
   let q = supabase
     .from("lancamentos")
     .select(
-      "id, nota_id, data, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, ajuste, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
+      "id, nota_id, data, emissao, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, ajuste, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
     );
 
   if (f.status === "pagas") q = q.eq("pago", true);
