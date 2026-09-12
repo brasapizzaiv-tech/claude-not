@@ -5,7 +5,8 @@
 // mesmo ("+ nova salada"); tirar da base não apaga os dias antigos.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORIAS_SALADA, criarSalada, removerSalada, salvarSaladasDia, type CategoriaSalada, type SaladaBase } from "./saladas-actions";
+import { criarSalada, removerSalada, salvarSaladasDia } from "./saladas-actions";
+import { CATEGORIAS_SALADA, type CategoriaSalada, type SaladaBase } from "./saladas-tipos";
 
 export function SaladasDoDia({ dia, base, marcadas }: { dia: string; base: SaladaBase[]; marcadas: string[] }) {
   const router = useRouter();

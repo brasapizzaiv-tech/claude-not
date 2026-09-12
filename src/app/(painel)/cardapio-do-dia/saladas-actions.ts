@@ -4,9 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
-export const CATEGORIAS_SALADA = ["Folhas", "Maioneses", "Cozidas", "Cruas", "Grãos", "Conservas", "Outros"] as const;
-export type CategoriaSalada = (typeof CATEGORIAS_SALADA)[number];
-export type SaladaBase = { id: string; nome: string; categoria: CategoriaSalada };
+import { CATEGORIAS_SALADA, type CategoriaSalada, type SaladaBase } from "./saladas-tipos";
 
 // Base de saladas (ativas) — o cadastro do dia é marcar quais entram.
 export async function listarSaladasBase(): Promise<SaladaBase[]> {
