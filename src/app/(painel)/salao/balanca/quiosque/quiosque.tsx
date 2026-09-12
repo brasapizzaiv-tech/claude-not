@@ -318,6 +318,9 @@ export function QuiosqueBalanca({
   const [numeroVirar, setNumeroVirar] = useState("");
   const [virando, setVirando] = useState(false);
   async function virarPorNumero() {
+    // Leitor QR com o campo focado digita a URL inteira aqui: pega o id dela.
+    const uuid = numeroVirar.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    if (uuid) { setNumeroVirar(""); void virarLivre(uuid[1]); return; }
     const n = Number(numeroVirar.replace(/\D/g, ""));
     if (!n || virando) return;
     setVirando(true);
@@ -521,6 +524,7 @@ export function QuiosqueBalanca({
   const qrBuf = useRef({ txt: "", ts: 0 });
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.tagName === "INPUT") return;
       const agora = Date.now();
       if (agora - qrBuf.current.ts > 120) qrBuf.current.txt = "";
       qrBuf.current.ts = agora;
@@ -836,20 +840,37 @@ export function QuiosqueBalanca({
             <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-[#211915]/80">
               Passe o <b>QR do seu cupom</b> no leitor. A comanda pesada vira <b>BUFFET LIVRE ({moeda(buffetLivre)})</b> e sai um cupom novo.
             </p>
-            <div className="my-5 text-[clamp(3rem,10vw,6rem)]">📷</div>
-            <p className="mb-2 text-sm text-[#211915]/50">Não leu? Digite o número da comanda que está no cupom:</p>
-            <div className="flex justify-center gap-2">
+            <p className="mt-4 mb-2 text-base text-[#211915]/60">Ou digite o <b>número da comanda</b> que está no cupom:</p>
+            <div className="mx-auto flex max-w-xs justify-center">
               <input
-                inputMode="numeric"
+                autoFocus
+                inputMode="none"
                 value={numeroVirar}
                 onChange={(e) => setNumeroVirar(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") virarPorNumero(); }}
                 placeholder="Nº"
-                className="w-40 rounded-2xl border-2 border-[#211915]/20 px-4 py-3 text-center text-3xl font-black outline-none focus:border-[#C78340]"
+                className="w-full rounded-2xl border-2 border-[#211915]/20 px-4 py-3 text-center text-4xl font-black tabular-nums outline-none focus:border-[#C78340]"
               />
-              <button onClick={virarPorNumero} disabled={virando || !numeroVirar.trim()} className="rounded-2xl bg-[#C78340] px-6 py-3 text-2xl font-bold text-white disabled:opacity-40">
-                {virando ? "..." : "Virar livre"}
-              </button>
+            </div>
+            {/* teclado na tela: o PC do quiosque é touch e não abre teclado sozinho */}
+            <div className="mx-auto mt-3 grid max-w-xs grid-cols-3 gap-2">
+              {["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "OK"].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={virando || (t === "OK" && !numeroVirar.replace(/\D/g, ""))}
+                  onClick={() => {
+                    if (t === "OK") { void virarPorNumero(); return; }
+                    if (t === "⌫") { setNumeroVirar((v) => v.slice(0, -1)); return; }
+                    setNumeroVirar((v) => (v.replace(/\D/g, "") + t).slice(0, 5));
+                  }}
+                  className={`rounded-2xl py-4 text-3xl font-black active:brightness-90 disabled:opacity-40 ${
+                    t === "OK" ? "bg-[#C78340] text-white" : t === "⌫" ? "bg-[#211915]/10 text-[#211915]" : "border-2 border-[#211915]/15 bg-white text-[#211915]"
+                  }`}
+                >
+                  {t === "OK" && virando ? "..." : t}
+                </button>
+              ))}
             </div>
             {erro && <p className="mt-3 text-lg text-red-600">{erro}</p>}
             <button onClick={() => setVirarAberto(false)} className="mt-6 text-lg text-[#211915]/50 underline">Cancelar</button>

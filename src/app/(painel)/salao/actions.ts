@@ -286,10 +286,11 @@ export async function virarLivreKiosk(comandaId: string) {
   const cfg = await pdvCfg(supabase);
   const { livre } = precoDoDia(cfg);
   if (!(livre > 0)) return { ok: false as const, mensagem: "Preço do buffet livre não está configurado hoje." };
-  await supabase
+  const { error } = await supabase
     .from("pdv_comandas")
     .update({ valor_buffet: livre, livre: true, so_kg: false })
     .eq("id", cid);
+  if (error) return { ok: false as const, mensagem: `Não consegui alterar a comanda: ${error.message}` };
   revalidatePath("/salao");
   return {
     ok: true as const,
