@@ -31,6 +31,17 @@ export default async function NotaDetalhePage({
     .eq("id", id)
     .maybeSingle();
   if (!notaData) notFound();
+
+  // Nota marcada como "lançada" mas SEM conta a pagar ligada: acontece quando os
+  // lançamentos foram apagados numa limpeza depois (o lancarNota marca a nota no
+  // fim e a marca fica). A tela mostrava "✓ Lançada no financeiro" e a conta não
+  // existia em lugar nenhum — foi assim que a NF 666 da Ovos da Estância ficou
+  // sem conta e o pagamento de 21/08 não tinha com o que conciliar.
+  const { count: qtdLanc } = await supabase
+    .from("lancamentos")
+    .select("id", { count: "exact", head: true })
+    .eq("nota_id", id);
+  const semConta = ((notaData as { situacao?: string }).situacao === "lancada") && (qtdLanc ?? 0) === 0;
   const nota = notaData as NotaFiscal;
 
   const { data: itensData } = await supabase
@@ -151,6 +162,7 @@ export default async function NotaDetalhePage({
         parcelas={parcelas}
         valorNota={Number(nota.valor)}
         valorBoleto={nota.valor_boleto != null ? Number(nota.valor_boleto) : null}
+        semConta={semConta}
       />
 
       <ParcelasEditor

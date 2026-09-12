@@ -39,6 +39,7 @@ export function LancamentoNota({
   parcelas,
   valorNota,
   valorBoleto,
+  semConta = false,
 }: {
   notaId: string;
   situacao: string;
@@ -55,6 +56,7 @@ export function LancamentoNota({
   parcelas: Parcela[];
   valorNota: number;
   valorBoleto: number | null;
+  semConta?: boolean; // marcada como lançada, mas sem conta a pagar ligada
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -72,7 +74,8 @@ export function LancamentoNota({
   );
   const [msgBoleto, setMsgBoleto] = useState<string | null>(null);
 
-  const lancada = situacao === "lancada";
+  // Com a marca de "lançada" mas sem conta, a tela precisa deixar lançar de novo.
+  const lancada = situacao === "lancada" && !semConta;
   const ehServico = tipo === "servico";
 
   function mudarTipo(t: string) {
@@ -412,6 +415,20 @@ export function LancamentoNota({
           {msgBoleto && (
             <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-300">{msgBoleto}</p>
           )}
+        </div>
+      )}
+
+      {/* Marcada como lançada, mas a conta não existe (apagada numa limpeza) */}
+      {semConta && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+          <p className="font-semibold text-amber-800 dark:text-amber-300">
+            ⚠ Esta nota está marcada como lançada, mas não tem conta a pagar.
+          </p>
+          <p className="mt-1 text-amber-700/90 dark:text-amber-400/90">
+            Sem a conta ela não aparece no Contas a pagar nem na conciliação do banco.
+            Confira o vencimento acima e clique em <b>Lançar no financeiro</b> — mas só
+            se o pagamento já não estiver lançado por fora, pra não duplicar.
+          </p>
         </div>
       )}
 
