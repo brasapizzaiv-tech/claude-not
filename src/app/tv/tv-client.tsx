@@ -7,14 +7,15 @@
 // relógio/tempo de espera recalculados a partir do estado atual (nada cresce).
 import { useEffect, useRef, useState } from "react";
 import { RodizioCard } from "@/components/rodizio-card";
-import { TvRelogio, type RecadoTv } from "@/components/tv-relogio";
+import { TvRelogio, type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
 import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
 const INTERVALO_MS = 3000;
 
 declare global { interface Window { __tvOk?: boolean } }
 
-export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null }) {
+export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial, aniversariantesInicial }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null; aniversariantesInicial: AniversarianteTv[] }) {
+  const [aniversariantes, setAniversariantes] = useState<AniversarianteTv[]>(aniversariantesInicial);
   const [pedidos, setPedidos] = useState<PedidoRodizio[]>(inicial);
   const [recados, setRecados] = useState<RecadoTv[]>(recadosInicial);
   const [temperatura, setTemperatura] = useState<number | null>(temperaturaInicial);
@@ -39,6 +40,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
         if (j.ok) {
           setPedidos(j.pedidos as PedidoRodizio[]);
           if (Array.isArray(j.recados)) setRecados(j.recados as RecadoTv[]);
+          if (Array.isArray(j.aniversariantes)) setAniversariantes(j.aniversariantes as AniversarianteTv[]);
           setTemperatura(typeof j.temperatura === "number" ? j.temperatura : null);
           setConectado(true);
           setUltimaOk(Date.now());
@@ -80,7 +82,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
       {fila.length === 0 ? (
         // Fora do rodízio (ou sem pedido): relógio + recados, no lugar do
         // relógio de parede que a TV substituiu.
-        <TvRelogio agora={agora} recados={recados} temperatura={temperatura} />
+        <TvRelogio agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} />
       ) : (
         <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: "20px 24px 0" }}>
           <Coluna titulo="SALGADAS" cor="#C78340" lista={salgadas} agora={agora} />

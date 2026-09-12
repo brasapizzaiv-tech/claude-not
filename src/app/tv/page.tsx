@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { RodizioCard } from "@/components/rodizio-card";
 import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
-import { agoraMs, chaveTvOk, filaTv, recadosTv, temperaturaIvoti } from "@/lib/rodizio-server";
-import { TvRelogio, type RecadoTv } from "@/components/tv-relogio";
+import { agoraMs, aniversariantesMes, chaveTvOk, filaTv, recadosTv, temperaturaIvoti } from "@/lib/rodizio-server";
+import { TvRelogio, type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
 import { TvClient } from "./tv-client";
 
 // TV da cozinha: tela cheia, sem menu. A chave da URL é conferida no servidor
@@ -42,12 +42,13 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
 
   let inicial: PedidoRodizio[] = [];
   let recados: RecadoTv[] = [];
+  let aniversariantes: AniversarianteTv[] = [];
   let falhou = false;
-  try { [inicial, recados] = await Promise.all([filaTv(), recadosTv()]); } catch { falhou = true; }
+  try { [inicial, recados, aniversariantes] = await Promise.all([filaTv(), recadosTv(), aniversariantesMes()]); } catch { falhou = true; }
   const temperatura = await temperaturaIvoti();
   const agora = agoraMs();
 
-  if (modo === "simples") return <TvSimples pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} />;
+  if (modo === "simples") return <TvSimples pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} />;
 
   // Script em JavaScript "antigo" de propósito (sem let/const/arrow): precisa
   // rodar justamente no navegador que NÃO consegue rodar o resto.
@@ -58,14 +59,14 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: fallback }} />
-      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} />
+      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} aniversariantesInicial={aniversariantes} />
     </>
   );
 }
 
 // Modo simples: a mesma tela, sem JavaScript. O tempo de espera e o relógio
 // são calculados no servidor a cada recarga.
-function TvSimples({ pedidos, agora, semRede, recados, temperatura }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null }) {
+function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversariantes }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[] }) {
   const fila = filaVisivel(pedidos, agora);
   const { salgadas, doces } = separarColunas(fila);
   const hora = new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
@@ -74,7 +75,7 @@ function TvSimples({ pedidos, agora, semRede, recados, temperatura }: { pedidos:
     <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <meta httpEquiv="refresh" content={String(SIMPLES_INTERVALO_SEG)} />
       {fila.length === 0 ? (
-        <TvRelogio agora={agora} recados={recados} temperatura={temperatura} piscar={false} />
+        <TvRelogio agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={false} />
       ) : (
         <div style={{ flex: 1, display: "flex", padding: "20px 24px 0" }}>
           <ColunaSimples titulo="SALGADAS" cor="#C78340" lista={salgadas} agora={agora} />

@@ -55,3 +55,17 @@ export async function temperaturaIvoti(): Promise<number | null> {
   }
   return climaCache.temp;
 }
+
+// Aniversariantes do mês (colaboradores ativos com data de nascimento), pra
+// tela de descanso da TV. Só nome e dia — nada de idade nem data completa.
+export type AniversarianteTv = { nome: string; dia: number; hoje: boolean };
+export async function aniversariantesMes(): Promise<AniversarianteTv[]> {
+  const admin = createAdminClient();
+  const hojeIso = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const mes = Number(hojeIso.slice(5, 7)), diaHoje = Number(hojeIso.slice(8, 10));
+  const { data } = await admin.from("colaboradores").select("nome, nascimento").eq("ativo", true).not("nascimento", "is", null);
+  return ((data as { nome: string; nascimento: string }[]) ?? [])
+    .filter((c) => Number(c.nascimento.slice(5, 7)) === mes)
+    .map((c) => ({ nome: c.nome.trim().split(/\s+/).slice(0, 2).join(" "), dia: Number(c.nascimento.slice(8, 10)), hoje: Number(c.nascimento.slice(8, 10)) === diaHoje }))
+    .sort((a, b) => a.dia - b.dia);
+}
