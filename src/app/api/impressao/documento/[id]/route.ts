@@ -8,6 +8,7 @@ import { gerarFechamentoPdf } from "@/lib/fechamento-pdf";
 import { gerarComprovanteTefPdf } from "@/lib/tef-comprovante-pdf";
 import { baixarXmlNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
 import { gerarNfceCupomPdf } from "@/lib/nfce-cupom-pdf";
+import { gerarNfceCupomEscPos } from "@/lib/nfce-cupom-escpos";
 
 export const runtime = "nodejs";
 
@@ -39,6 +40,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const admin = createAdminClient();
   const baseUrl = new URL(req.url).origin;
+  const formato = new URL(req.url).searchParams.get("formato") ?? "pdf";
 
   const { data: job } = await admin.from("impressao_fila").select("tipo, ref_id, impressora_id").eq("id", id).maybeSingle();
   if (!job) return new Response("nao encontrado", { status: 404 });
@@ -146,6 +148,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const xml = await baixarXmlNfce({ token, ambiente: (nota?.ambiente as FocusAmbiente) || "producao" }, origem);
     if (!xml) return new Response("nao consegui baixar o XML da nota", { status: 502 });
     const largN = ((impN as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80;
+    if (formato === "escpos") {
+      // Bytes crus pra térmica (agente 1.1.4+): 48 colunas no papel de 80 mm, 32 no de 58 mm.
+      const bytes = gerarNfceCupomEscPos(xml, larguraUtil(largN) <= 48 ? 32 : 48, await logoDaBrasa(baseUrl));
+      return new Response(new Uint8Array(bytes), { headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store" } });
+    }
     pdf = await gerarNfceCupomPdf(xml, larguraUtil(largN), await logoDaBrasa(baseUrl));
   } else if (job.tipo === "tef") {
     // Comprovante do cartão: as linhas vieram do gerenciador de TEF (via cliente).

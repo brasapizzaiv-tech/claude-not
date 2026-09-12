@@ -16,6 +16,7 @@ Copy-Item (Join-Path $src "agente.mjs")   $app
 Copy-Item (Join-Path $src "package.json") $app
 Copy-Item (Join-Path $src "start.vbs")    $app
 Copy-Item (Join-Path $src "bandeja.ps1")  $app
+Copy-Item (Join-Path $src "raw-print.ps1") $app
 Copy-Item (Join-Path $src "LEIA-ME.txt")  $app
 
 Write-Host "==> Copiando o Node (node.exe)..." -ForegroundColor Cyan

@@ -4,14 +4,14 @@
 // NFC-e, marmitas) e manda cada job para a impressora certa, pelo nome.
 import ptp from "pdf-to-printer";
 import { writeFile, mkdir } from "node:fs/promises";
-import { readFileSync, appendFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, appendFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { execFile } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { print } = ptp;
-const VERSAO = "1.1.3"; // 1.1.2: sempre em retrato; 1.1.3: a escala vem do servidor (documento já sai na medida da impressora, imprime 1:1)
+const VERSAO = "1.1.4"; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -47,6 +47,22 @@ function listarImpressoras() {
   });
 }
 
+// Bytes crus (ESC/POS) pro spooler do Windows, via raw-print.ps1 — a
+// impressora térmica desenha com a fonte dela, preta e nítida (o PDF passa
+// pelo driver de página e sai cinza/serrilhado).
+function imprimirRaw(printer, bytes) {
+  return new Promise((resolve, reject) => {
+    const file = path.join(tmp, `raw-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.bin`);
+    writeFileSync(file, bytes);
+    const args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(dir, "raw-print.ps1"), "-File", file, "-Printer", printer];
+    execFile("powershell", args, { windowsHide: true, timeout: 20000 }, (err, out, errOut) => {
+      try { unlinkSync(file); } catch { /* fica no tmp */ }
+      if (err) return reject(new Error((String(errOut || out || err.message)).split("\n")[0].slice(0, 200)));
+      resolve();
+    });
+  });
+}
+
 // Avisa o sistema que está online e manda a lista de impressoras deste PC.
 async function heartbeat() {
   try {
@@ -54,9 +70,17 @@ async function heartbeat() {
     await fetch(`${baseUrl}/api/impressao/heartbeat`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ hostname: os.hostname(), printers }),
+      body: JSON.stringify({ hostname: os.hostname(), printers, versao: VERSAO }),
     });
   } catch { /* silencioso */ }
+}
+
+async function darBaixa(id) {
+  await fetch(`${baseUrl}/api/impressao/baixa`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
 }
 
 let rodando = false;
@@ -72,6 +96,22 @@ async function ciclo() {
       if (!job.printer) {
         log(`Impressora "${job.impressora || "?"}" sem "Nome no Windows" — pulei. Configure em Etiquetas → Estações.`);
         continue;
+      }
+      // ESC/POS: quem decide é o servidor (campo "formato" da fila). Se a
+      // impressora recusar os bytes crus (não é térmica ESC/POS), cai pro PDF.
+      if (job.formato === "escpos") {
+        try {
+          const pr = await fetch(`${baseUrl}${job.url}?formato=escpos`, { headers });
+          if (!pr.ok) throw new Error(`servidor respondeu ${pr.status}`);
+          const bytes = Buffer.from(await pr.arrayBuffer());
+          if (bytes.length < 8) throw new Error("cupom vazio");
+          await imprimirRaw(job.printer, bytes);
+          await darBaixa(job.id);
+          log(`Impresso (ESC/POS) em "${job.printer}".`);
+          continue;
+        } catch (e) {
+          log(`ESC/POS falhou (${e.message}) — tentando pelo PDF.`);
+        }
       }
       try {
         const pr = await fetch(`${baseUrl}${job.url}`, { headers });
@@ -89,11 +129,7 @@ async function ciclo() {
         const opcoes = { printer: job.printer, scale: escala };
         if (!etiqueta) opcoes.orientation = job.orientacao === "landscape" ? "landscape" : "portrait";
         await print(file, opcoes);
-        await fetch(`${baseUrl}/api/impressao/baixa`, {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({ id: job.id }),
-        });
+        await darBaixa(job.id);
         log(`Impresso em "${job.printer}".`);
       } catch (e) {
         log(`Falha ao imprimir: ${e.message}`);

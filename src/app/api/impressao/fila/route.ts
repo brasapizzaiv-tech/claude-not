@@ -39,6 +39,10 @@ export async function GET(req: Request) {
       // agente de novo (o agente antigo ignora e usa o padrão dele).
       escala: "noscale" as const,
       orientacao: "portrait" as const,
+      // Cupom da NFC-e sai em ESC/POS (fonte da própria térmica, nítida como
+      // o cupom da balança). O agente 1.1.4+ pede "?formato=escpos" e manda os
+      // bytes crus pro spooler; o agente antigo ignora e imprime o PDF.
+      formato: e.tipo === "nfce" ? ("escpos" as const) : ("pdf" as const),
     };
   });
   if (jobs.length > 0) {

@@ -16,3 +16,7 @@ novo pelo atalho "Agente de Impressao" na Area de trabalho ou no Menu Iniciar.
 
 Menu do icone (botao direito): Ver log / Reiniciar agente / Sair.
 Log e dados: C:\ProgramData\AgenteImpressao\agente.log
+
+Desde a versao 1.1.4 o cupom da NFC-e sai em ESC/POS (bytes direto pra
+termica, como o cupom da balanca): letra preta e nitida. Se a impressora da
+nota NAO for termica ESC/POS, o agente cai sozinho pro PDF.

@@ -85,7 +85,7 @@ export function logoParaCupom(buf: Buffer, larguraAlvo = 320): Buffer | null {
   }
 }
 
-function lerXml(xml: string) {
+export function lerXml(xml: string) {
   const emit = dentro(xml, "emit");
   const ender = dentro(emit, "enderEmit");
   const ide = dentro(xml, "ide");
