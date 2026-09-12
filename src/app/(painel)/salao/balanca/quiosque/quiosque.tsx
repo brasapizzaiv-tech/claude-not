@@ -172,10 +172,11 @@ export function QuiosqueBalanca({
   const { valor: valorAtual } = calcValor(pesoBruto, soKg);
 
   // Volta pro próximo cliente: zera tudo, inclusive o modo marmita.
+  // A última pesagem (capturaRef) NÃO é esquecida aqui de propósito: enquanto a
+  // balança não zerar, o mesmo peso não pode virar comanda de novo (ver processar).
   function voltarAguardando() {
     if (resetRef.current) clearTimeout(resetRef.current);
     precisaZerar.current = false;
-    capturaRef.current = null;
     refPeso.current = 0;
     estavelDesde.current = 0;
     soKgRef.current = false;
@@ -559,7 +560,7 @@ export function QuiosqueBalanca({
       // o peso capturado (cobre a marmita, que a balança lê negativo com a tara).
       const cap = capturaRef.current;
       const removido = liquido <= LIMIAR || (!!cap && bruto <= cap.bruto - cap.liquido + LIMIAR);
-      if (removido) { voltarAguardando(); return; } // → próximo cliente
+      if (removido) { capturaRef.current = null; voltarAguardando(); return; } // → próximo cliente
       // Pesou menos do que o prato pesado agora há pouco: alguma coisa saiu.
       if (cap && bruto < cap.bruto - NOVO_PRATO_DIF) viuPratoSair.current = true;
       // Ninguém viu o zero, mas a balança MEXEU depois da pesagem e parou de
@@ -573,18 +574,30 @@ export function QuiosqueBalanca({
       // há um peso parado na balança, é o prato do próximo cliente. Sem esse
       // sinal não libera: pode ser o mesmo cliente pondo mais comida, e aí
       // outra comanda seria cobrar duas vezes.
-      if (viuPratoSair.current && agora - estavelDesde.current >= NOVO_PRATO_MS) {
+      //
+      // E mais duas condições, senão saía comanda em dobro: o peso parado tem
+      // de ser OUTRO (mais de 30 g de diferença do capturado) e a balança tem
+      // de ter mexido DEPOIS da pesagem. Um "prato saiu" falso — a balança cala
+      // um instante enquanto o cupom imprime — liberava o mesmo prato parado, e
+      // ele era pesado de novo: duas comandas iguais, números seguidos.
+      const outroPeso = !!cap && Math.abs(bruto - cap.bruto) > NOVO_PRATO_DIF;
+      const mexeuDepois = !!cap && estavelDesde.current > cap.ts;
+      if (viuPratoSair.current && outroPeso && mexeuDepois && agora - estavelDesde.current >= NOVO_PRATO_MS) {
         voltarAguardando();
       }
       return;
     }
     if (liquido <= LIMIAR) {
+      capturaRef.current = null; // zerou: a pesagem anterior acabou de verdade
       precisaZerar.current = false;
       if (est !== "aguardando") setEst("aguardando");
       return;
     }
     // Ainda é o prato da pesagem anterior (a balança não zerou): não pesa de novo.
     if (precisaZerar.current) return;
+    // Mesmo peso da última pesagem sem a balança ter zerado no meio: é o mesmo
+    // prato, seja por que caminho a tela tenha voltado. Espera zerar.
+    if (capturaRef.current && Math.abs(bruto - capturaRef.current.bruto) <= NOVO_PRATO_DIF) return;
     // Tem prato com comida.
     if (est !== "pesando") {
       setEst("pesando");
