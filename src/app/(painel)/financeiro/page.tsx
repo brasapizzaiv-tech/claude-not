@@ -180,8 +180,17 @@ export default async function FinanceiroPage({
         className="mb-6 flex flex-wrap items-end gap-2 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
       >
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Data</label>
-          <input type="date" name="data" defaultValue={`${mes}-01`} className={inputCls} />
+          <label className="mb-1 block text-xs text-zinc-500" title="Mês em que a despesa aconteceu — é por aqui que ela entra no DRE.">
+            Competência
+          </label>
+          <input
+            type="date"
+            name="data"
+            defaultValue={`${mes}-01`}
+            title="Mês da despesa (entra no DRE por esta data). Pagou em agosto uma conta de julho? Ponha julho aqui e a data do boleto no Vencimento."
+            className={inputCls}
+          />
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">mês da despesa (vai pro DRE)</p>
         </div>
         <div className="min-w-56 flex-1">
           <label className="mb-1 block text-xs text-zinc-500">Categoria</label>

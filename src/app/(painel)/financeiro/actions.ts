@@ -18,8 +18,7 @@ export async function criarLancamento(formData: FormData) {
   const banco = (formData.get("banco") as string)?.trim() || null;
   const vencimento = (formData.get("vencimento") as string) || null;
   const pago = formData.get("pago") === "on";
-  const valorRaw = (formData.get("valor") as string) || "0";
-  const valor = Number(valorRaw.replace(/\./g, "").replace(",", ".")) || 0;
+  const valor = lerValorBR((formData.get("valor") as string) || "0");
 
   if (!categoria_id || valor <= 0) return;
 
@@ -42,7 +41,9 @@ export async function criarLancamento(formData: FormData) {
       origem: "manual",
       vencimento: vencimento || null,
       pago,
-      pago_em: pago ? dataLanc : null,
+      // Marcou "Já pago": a data do pagamento é a do boleto, não a competência —
+      // conta de julho paga em agosto tem competência 07 e pagamento em 08.
+      pago_em: pago ? vencimento || dataLanc : null,
     });
   } else {
     // Parcelado = divide o total; Mensal/fixo = repete o mesmo valor.
@@ -127,7 +128,9 @@ export async function editarLancamento(
       descricao: dados.descricao?.trim() || null,
       vencimento: dados.vencimento || null,
       pago: dados.pago,
-      pago_em: dados.pago ? dados.data : null,
+      // Editou marcando "pago": a data é a do boleto (a competência pode ser
+      // de outro mês — conta de julho paga em agosto).
+      pago_em: dados.pago ? dados.vencimento || dados.data : null,
     })
     .eq("id", id)
     .eq("origem", "manual");
