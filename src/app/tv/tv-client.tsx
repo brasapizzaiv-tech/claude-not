@@ -7,15 +7,19 @@
 // relógio/tempo de espera recalculados a partir do estado atual (nada cresce).
 import { useEffect, useRef, useState } from "react";
 import { RodizioCard } from "@/components/rodizio-card";
-import { TvRelogio, type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
+import { type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
+import { TvPaginaCardapio, TvPontos, type CardapioTv } from "@/components/tv-cardapio";
+import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
 import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
 const INTERVALO_MS = 3000;
 
 declare global { interface Window { __tvOk?: boolean } }
 
-export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial, aniversariantesInicial }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null; aniversariantesInicial: AniversarianteTv[] }) {
+export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial, aniversariantesInicial, cardapioInicial, ultimaAtividadeInicial }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null; aniversariantesInicial: AniversarianteTv[]; cardapioInicial: CardapioTv; ultimaAtividadeInicial: string | null }) {
   const [aniversariantes, setAniversariantes] = useState<AniversarianteTv[]>(aniversariantesInicial);
+  const [cardapio, setCardapio] = useState<CardapioTv>(cardapioInicial);
+  const [ultimaAtividade, setUltimaAtividade] = useState<string | null>(ultimaAtividadeInicial);
   const [pedidos, setPedidos] = useState<PedidoRodizio[]>(inicial);
   const [recados, setRecados] = useState<RecadoTv[]>(recadosInicial);
   const [temperatura, setTemperatura] = useState<number | null>(temperaturaInicial);
@@ -41,6 +45,8 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
           setPedidos(j.pedidos as PedidoRodizio[]);
           if (Array.isArray(j.recados)) setRecados(j.recados as RecadoTv[]);
           if (Array.isArray(j.aniversariantes)) setAniversariantes(j.aniversariantes as AniversarianteTv[]);
+          if (j.cardapio) setCardapio(j.cardapio as CardapioTv);
+          setUltimaAtividade(typeof j.ultimaAtividade === "string" ? j.ultimaAtividade : null);
           setTemperatura(typeof j.temperatura === "number" ? j.temperatura : null);
           setConectado(true);
           setUltimaOk(Date.now());
@@ -74,15 +80,23 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   }, []);
 
   const fila = filaVisivel(pedidos, agora);
+  // A fila tem prioridade: com pedido aberto, ou até TV_SEM_PEDIDO_MIN depois da
+  // última mexida, fica na fila; senão roda as páginas de cardápio.
+  const ultimaMs = ultimaAtividade ? Date.parse(ultimaAtividade) : 0;
+  const mostrarFila = fila.length > 0 || (ultimaMs > 0 && agora - ultimaMs < TV_SEM_PEDIDO_MIN * 60000);
+  const pagina = paginaDaRotacao(agora);
   const { salgadas, doces } = separarColunas(fila);
   const semRede = !conectado || (ultimaOk > 0 && agora - ultimaOk > 20000);
 
   return (
     <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {fila.length === 0 ? (
-        // Fora do rodízio (ou sem pedido): relógio + recados, no lugar do
-        // relógio de parede que a TV substituiu.
-        <TvRelogio agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} />
+      {!mostrarFila ? (
+        // Fora do rodízio: cardápio do dia → saladas → Kern → relógio/recados.
+        <TvPaginaCardapio key={pagina} pagina={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar />
+      ) : fila.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <p style={{ fontSize: 56, fontWeight: 800, color: "#555" }}>Nenhum pedido</p>
+        </div>
       ) : (
         <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: "20px 24px 0" }}>
           <Coluna titulo="SALGADAS" cor="#C78340" lista={salgadas} agora={agora} />
@@ -92,7 +106,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
 
       {/* rodapé: relógio + conexão */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: 20, color: "#777" }}>
-        <span>Brasa · Rodízio</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio {!mostrarFila && <TvPontos pagina={pagina} />}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span
             title={semRede ? "Sem conexão" : "Conectado"}

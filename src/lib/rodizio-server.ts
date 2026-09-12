@@ -1,4 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { diaDoCardapio } from "@/lib/dia-cardapio";
+import { kernDoDia } from "@/lib/marmitas-cardapio";
+import type { CardapioTv } from "@/components/tv-cardapio";
 import { PRONTO_SOME_SEG, type PedidoRodizio } from "@/lib/rodizio";
 
 // Fila do rodízio pra TV (cliente administrativo: a TV não tem login).
@@ -68,4 +71,57 @@ export async function aniversariantesMes(): Promise<AniversarianteTv[]> {
     .filter((c) => Number(c.nascimento.slice(5, 7)) === mes)
     .map((c) => ({ nome: c.nome.trim().split(/\s+/).slice(0, 2).join(" "), dia: Number(c.nascimento.slice(8, 10)), hoje: Number(c.nascimento.slice(8, 10)) === diaHoje }))
     .sort((a, b) => a.dia - b.dia);
+}
+
+// Cardápio que a TV mostra fora da fila: buffet do dia (cardapio_dia, o mesmo
+// do site), saladas marcadas (cardapio_dia_saladas) e marmitas Kern — todos do
+// dia que VALE AGORA (diaDoCardapio: vira às 13:30, pula domingo). Guardado
+// 30 s: a TV pergunta a cada 3 s e isso não muda de segundo em segundo.
+const ORDEM_SALADAS = ["Folhas", "Maioneses", "Cozidas", "Cruas", "Grãos", "Conservas", "Outros"];
+let cardapioCache: { dia: string; em: number; valor: CardapioTv } | null = null;
+export async function cardapioTv(agora = Date.now()): Promise<CardapioTv> {
+  const dia = diaDoCardapio(agora);
+  if (cardapioCache && cardapioCache.dia === dia && agora - cardapioCache.em < 30_000) return cardapioCache.valor;
+  const admin = createAdminClient();
+  const [{ data: cd }, { data: sal }, kern] = await Promise.all([
+    admin.from("cardapio_dia").select("proteinas, carboidratos, especial, publicado").eq("data", dia).maybeSingle(),
+    admin.from("cardapio_dia_saladas").select("saladas_base(nome, categoria)").eq("data", dia),
+    kernDoDia(dia).catch(() => null),
+  ]);
+  const linhas = (t: string | null) => (t ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const c = cd as { proteinas: string | null; carboidratos: string | null; especial: string | null; publicado: boolean } | null;
+  const buffet = c ? { proteinas: linhas(c.proteinas), carboidratos: linhas(c.carboidratos), especial: linhas(c.especial), publicado: !!c.publicado } : null;
+  const grupos = new Map<string, string[]>();
+  type SalRow = { saladas_base: { nome: string; categoria: string } | { nome: string; categoria: string }[] | null };
+  for (const r of ((sal as unknown as SalRow[]) ?? [])) {
+    const s = Array.isArray(r.saladas_base) ? r.saladas_base[0] : r.saladas_base;
+    if (!s) continue;
+    if (!grupos.has(s.categoria)) grupos.set(s.categoria, []);
+    grupos.get(s.categoria)!.push(s.nome);
+  }
+  const saladas = ORDEM_SALADAS.filter((g) => grupos.has(g)).map((g) => ({ categoria: g, itens: grupos.get(g)!.sort((a, b) => a.localeCompare(b, "pt-BR")) }));
+  const valor: CardapioTv = { dia, buffet, saladas: saladas.length ? saladas : null, kern };
+  cardapioCache = { dia, em: agora, valor };
+  return valor;
+}
+
+// Última mexida no rodízio (criado/forno/pronto/cancelado): a TV só volta pro
+// cardápio depois de TV_SEM_PEDIDO_MIN sem nada aberto.
+export async function ultimaAtividadeRodizio(): Promise<string | null> {
+  const admin = createAdminClient();
+  const desde = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+  const { data } = await admin
+    .from("pedidos_rodizio")
+    .select("criado_em, forno_em, pronto_em, cancelado_em")
+    .gte("criado_em", desde)
+    .order("criado_em", { ascending: false })
+    .limit(50);
+  let max = 0;
+  for (const r of (data as Record<string, string | null>[]) ?? []) {
+    for (const k of ["criado_em", "forno_em", "pronto_em", "cancelado_em"]) {
+      const t = r[k] ? Date.parse(r[k] as string) : 0;
+      if (t > max) max = t;
+    }
+  }
+  return max ? new Date(max).toISOString() : null;
 }

@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { RodizioCard } from "@/components/rodizio-card";
 import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
-import { agoraMs, aniversariantesMes, chaveTvOk, filaTv, recadosTv, temperaturaIvoti } from "@/lib/rodizio-server";
-import { TvRelogio, type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
+import { agoraMs, aniversariantesMes, cardapioTv, chaveTvOk, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
+import { type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
+import { TvPaginaCardapio, TvPontos, type CardapioTv } from "@/components/tv-cardapio";
+import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
 import { TvClient } from "./tv-client";
 
 // TV da cozinha: tela cheia, sem menu. A chave da URL é conferida no servidor
@@ -43,12 +45,16 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
   let inicial: PedidoRodizio[] = [];
   let recados: RecadoTv[] = [];
   let aniversariantes: AniversarianteTv[] = [];
+  let cardapio: CardapioTv = { dia: "", buffet: null, saladas: null, kern: null };
+  let ultimaAtividade: string | null = null;
   let falhou = false;
-  try { [inicial, recados, aniversariantes] = await Promise.all([filaTv(), recadosTv(), aniversariantesMes()]); } catch { falhou = true; }
+  try {
+    [inicial, recados, aniversariantes, cardapio, ultimaAtividade] = await Promise.all([filaTv(), recadosTv(), aniversariantesMes(), cardapioTv(), ultimaAtividadeRodizio()]);
+  } catch { falhou = true; }
   const temperatura = await temperaturaIvoti();
   const agora = agoraMs();
 
-  if (modo === "simples") return <TvSimples pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} />;
+  if (modo === "simples") return <TvSimples pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} cardapio={cardapio} ultimaAtividade={ultimaAtividade} />;
 
   // Script em JavaScript "antigo" de propósito (sem let/const/arrow): precisa
   // rodar justamente no navegador que NÃO consegue rodar o resto.
@@ -59,23 +65,30 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: fallback }} />
-      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} aniversariantesInicial={aniversariantes} />
+      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} aniversariantesInicial={aniversariantes} cardapioInicial={cardapio} ultimaAtividadeInicial={ultimaAtividade} />
     </>
   );
 }
 
 // Modo simples: a mesma tela, sem JavaScript. O tempo de espera e o relógio
 // são calculados no servidor a cada recarga.
-function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversariantes }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[] }) {
+function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversariantes, cardapio, ultimaAtividade }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; cardapio: CardapioTv; ultimaAtividade: string | null }) {
   const fila = filaVisivel(pedidos, agora);
+  const ultimaMs = ultimaAtividade ? Date.parse(ultimaAtividade) : 0;
+  const mostrarFila = fila.length > 0 || (ultimaMs > 0 && agora - ultimaMs < TV_SEM_PEDIDO_MIN * 60000);
+  const pagina = paginaDaRotacao(agora);
   const { salgadas, doces } = separarColunas(fila);
   const hora = new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 
   return (
     <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <meta httpEquiv="refresh" content={String(SIMPLES_INTERVALO_SEG)} />
-      {fila.length === 0 ? (
-        <TvRelogio agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={false} />
+      {!mostrarFila ? (
+        <TvPaginaCardapio pagina={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={false} />
+      ) : fila.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <p style={{ fontSize: 56, fontWeight: 800, color: "#555" }}>Nenhum pedido</p>
+        </div>
       ) : (
         <div style={{ flex: 1, display: "flex", padding: "20px 24px 0" }}>
           <ColunaSimples titulo="SALGADAS" cor="#C78340" lista={salgadas} agora={agora} />
@@ -83,7 +96,7 @@ function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversarian
         </div>
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: 20, color: "#777" }}>
-        <span>Brasa · Rodízio</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio {!mostrarFila && <TvPontos pagina={pagina} />}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? "#ef4444" : "#22c55e", display: "inline-block" }} />
           {semRede && <span style={{ color: "#ef4444", fontWeight: 700 }}>SEM CONEXÃO</span>}
