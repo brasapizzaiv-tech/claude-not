@@ -15,7 +15,7 @@ async function lancamentosTodos(supabase: Awaited<ReturnType<typeof createClient
   for (let de = 0; de < 20000; de += 1000) {
     const { data } = await supabase
       .from("lancamentos")
-      .select("id, data, vencimento, pago_em, valor, descricao, nota_id, dre_categorias(tipo, nome), fornecedores(nome)")
+      .select("id, data, vencimento, pago_em, valor, descricao, nota_id, grupo_id, dre_categorias(tipo, nome), fornecedores(nome)")
       .order("data", { ascending: false })
       .range(de, de + 999);
     const pagina = (data as unknown[]) ?? [];
@@ -63,6 +63,7 @@ export default async function BancoPage() {
     valor: number;
     descricao: string | null;
     nota_id: string | null;
+    grupo_id: string | null;
     dre_categorias: { tipo?: string; nome?: string } | null;
     fornecedores: { nome?: string } | null;
   };
@@ -99,7 +100,9 @@ export default async function BancoPage() {
   type Boleto = { ids: string[]; principal: Lanc; valor: number; quando: string; receita: boolean; partes: string };
   const grupos = new Map<string, Lanc[]>();
   for (const l of lancs) {
-    const chave = l.nota_id ? `${l.nota_id}|${l.vencimento ?? ""}` : l.id;
+    // grupo_id = rateio feito na mão (fatura do cartão dividida em categorias);
+    // nota_id + vencimento = boleto da nota (pode ter custas ou mais de uma categoria).
+    const chave = l.grupo_id ?? (l.nota_id ? `${l.nota_id}|${l.vencimento ?? ""}` : l.id);
     const g = grupos.get(chave) ?? [];
     g.push(l);
     grupos.set(chave, g);

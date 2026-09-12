@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { dataBR } from "@/lib/format";
+import { dataBR, numeroBR } from "@/lib/format";
 import { Combobox } from "@/components/combobox";
 import {
   conciliar,
@@ -70,6 +70,14 @@ export function BancoTabela({
   const [catSel, setCatSel] = useState("");
   const [obs, setObs] = useState("");
   const [lancSel, setLancSel] = useState("");
+  // Rateio: um pagamento só (fatura do cartão, compra no atacado) dividido em
+  // várias categorias. Vazio = lançamento único, como antes.
+  const [partes, setPartes] = useState<{ uid: string; categoriaId: string; valor: string; descricao: string }[]>([]);
+  const novaParte = () =>
+    setPartes((l) => [...l, { uid: Math.random().toString(36).slice(2, 9), categoriaId: "", valor: "", descricao: "" }]);
+  const mudarParte = (uid: string, campo: "categoriaId" | "valor" | "descricao", v: string) =>
+    setPartes((l) => l.map((x) => (x.uid === uid ? { ...x, [campo]: v } : x)));
+  const tirarParte = (uid: string) => setPartes((l) => l.filter((x) => x.uid !== uid));
   const [sel, setSel] = useState<Set<string>>(new Set());
 
   const bancos = [...new Set(transacoes.map((t) => t.banco || "Sem banco"))].sort();
@@ -122,6 +130,7 @@ export function BancoTabela({
   }
 
   function abrir(id: string) {
+    setPartes([]);
     setPainel(painel === id ? null : id);
     setCatSel("");
     setObs("");
@@ -411,16 +420,95 @@ export function BancoTabela({
                               placeholder={`Observação (opcional) — padrão: ${t.descricao ?? "descrição do banco"}`}
                               className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
                             />
+                            {/* Rateio: fatura do cartão tem gasto de várias categorias */}
+                            {partes.length === 0 ? (
+                              <button
+                                type="button"
+                                onClick={novaParte}
+                                className="mt-2 block text-xs text-zinc-500 underline hover:text-orange-600"
+                              >
+                                ＋ dividir em várias categorias (fatura do cartão, compra grande)
+                              </button>
+                            ) : (
+                              <div className="mt-3 space-y-2 rounded-lg border border-orange-300 p-2 dark:border-orange-900">
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                                  Dividir {moeda(Math.abs(Number(t.valor)))} entre categorias
+                                </p>
+                                {partes.map((x) => (
+                                  <div key={x.uid} className="flex flex-wrap items-center gap-1.5">
+                                    <div className="min-w-[180px] flex-1">
+                                      <Combobox
+                                        options={cats.map((c) => ({ value: c.id, label: `${c.grupo} — ${c.nome}` }))}
+                                        value={x.categoriaId}
+                                        onChange={(v) => mudarParte(x.uid, "categoriaId", v)}
+                                        placeholder="Categoria..."
+                                        className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                      />
+                                    </div>
+                                    <input
+                                      value={x.descricao}
+                                      onChange={(e) => mudarParte(x.uid, "descricao", e.target.value)}
+                                      placeholder="o que é (opcional)"
+                                      className="w-32 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                    />
+                                    <input
+                                      inputMode="decimal"
+                                      value={x.valor}
+                                      onChange={(e) => mudarParte(x.uid, "valor", e.target.value)}
+                                      placeholder="0,00"
+                                      className="w-24 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                    />
+                                    <button type="button" onClick={() => tirarParte(x.uid)} className="text-zinc-400 hover:text-red-600">✕</button>
+                                  </div>
+                                ))}
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <button type="button" onClick={novaParte} className="text-xs text-zinc-500 underline hover:text-orange-600">
+                                    ＋ outra categoria
+                                  </button>
+                                  {(() => {
+                                    const soma = partes.reduce((a, x) => a + numeroBR(x.valor), 0);
+                                    const falta = Math.round((Math.abs(Number(t.valor)) - soma) * 100) / 100;
+                                    return (
+                                      <span className={`text-xs font-semibold ${Math.abs(falta) < 0.005 ? "text-emerald-600" : "text-amber-600"}`}>
+                                        {Math.abs(falta) < 0.005
+                                          ? "✓ fecha o valor"
+                                          : falta > 0
+                                            ? `falta ${moeda(falta)}`
+                                            : `passou ${moeda(-falta)}`}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                                <button type="button" onClick={() => setPartes([])} className="text-[11px] text-zinc-400 underline">
+                                  cancelar a divisão
+                                </button>
+                              </div>
+                            )}
                             <button
-                              disabled={proc || !catSel}
+                              disabled={
+                                proc ||
+                                (partes.length === 0
+                                  ? !catSel
+                                  : partes.some((x) => !x.categoriaId || numeroBR(x.valor) <= 0) ||
+                                    Math.abs(partes.reduce((a, x) => a + numeroBR(x.valor), 0) - Math.abs(Number(t.valor))) > 0.005)
+                              }
                               onClick={() =>
                                 run(() =>
-                                  gerarLancamentoDaTransacao(t.id, catSel, obs),
+                                  gerarLancamentoDaTransacao(
+                                    t.id,
+                                    catSel,
+                                    obs,
+                                    partes.length > 0
+                                      ? partes.map((x) => ({ categoriaId: x.categoriaId, valor: numeroBR(x.valor), descricao: x.descricao }))
+                                      : undefined,
+                                  ),
                                 )
                               }
                               className="mt-2 rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
                             >
-                              Gerar {moeda(Math.abs(Number(t.valor)))} e conciliar
+                              {partes.length > 0
+                                ? `Gerar ${partes.length} lançamentos e conciliar`
+                                : `Gerar ${moeda(Math.abs(Number(t.valor)))} e conciliar`}
                             </button>
                           </div>
                           {/* Procurar existente */}

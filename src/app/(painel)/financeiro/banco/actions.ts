@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lerOfx } from "@/lib/ofx";
@@ -49,10 +50,16 @@ export async function importarOfx(texto: string, banco: string) {
 }
 
 // Cria um lançamento a partir da transação do banco e já concilia.
+// Uma parte do pagamento: categoria + valor (+ descrição própria).
+export type ParteLancamento = { categoriaId: string; valor: number; descricao?: string };
+
 export async function gerarLancamentoDaTransacao(
   transacaoId: string,
   categoriaId: string,
   observacao?: string,
+  // Fatura do cartão, compra grande no atacado: um débito só que se divide em
+  // várias categorias. Quando vem preenchido, `categoriaId` é ignorado.
+  partes?: ParteLancamento[],
 ) {
   await exigirAcesso("/financeiro");
   const supabase = await createClient();
@@ -63,13 +70,47 @@ export async function gerarLancamentoDaTransacao(
     .maybeSingle();
   if (!t) return { ok: false, erro: "Transação não encontrada." };
 
+  const total = Math.round(Math.abs(Number(t.valor)) * 100) / 100;
+  const base = observacao?.trim() || (t.descricao as string) || "Lançamento do extrato";
+  const linhas = (partes ?? []).filter((x) => x.categoriaId && Number(x.valor) > 0);
+
+  if (linhas.length > 0) {
+    const soma = Math.round(linhas.reduce((acc, x) => acc + Number(x.valor), 0) * 100) / 100;
+    if (Math.abs(soma - total) > 0.005) {
+      return { ok: false, erro: `As partes somam R$ ${soma.toFixed(2)} e o pagamento é R$ ${total.toFixed(2)}.` };
+    }
+    const grupo = randomUUID();
+    const { data: criados } = await supabase
+      .from("lancamentos")
+      .insert(
+        linhas.map((x) => ({
+          data: t.data,
+          valor: Math.round(Number(x.valor) * 100) / 100,
+          descricao: x.descricao?.trim() ? `${base} — ${x.descricao.trim()}` : base,
+          categoria_id: x.categoriaId,
+          origem: "manual",
+          pago: true,
+          pago_em: t.data,
+          grupo_id: grupo,
+        })),
+      )
+      .select("id, valor");
+    const criadas = (criados as { id: string; valor: number }[]) ?? [];
+    if (criadas.length === 0) return { ok: false, erro: "Não foi possível criar os lançamentos." };
+    // A transação aponta pra maior parte; as outras ficam amarradas pelo grupo.
+    const principal = criadas.reduce((x, y) => (Number(y.valor) > Number(x.valor) ? y : x));
+    await supabase.from("transacoes_banco").update({ lancamento_id: principal.id }).eq("id", transacaoId);
+    revalidatePath("/financeiro/banco");
+    revalidatePath("/financeiro");
+    return { ok: true, partes: criadas.length };
+  }
+
   const { data: l } = await supabase
     .from("lancamentos")
     .insert({
       data: t.data,
-      valor: Math.abs(Number(t.valor)),
-      descricao:
-        observacao?.trim() || (t.descricao as string) || "Lançamento do extrato",
+      valor: total,
+      descricao: base,
       categoria_id: categoriaId || null,
       origem: "manual",
       pago: true,
