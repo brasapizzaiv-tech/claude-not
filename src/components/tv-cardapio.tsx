@@ -12,12 +12,15 @@ export type CardapioTv = {
 };
 
 const LARANJA = "#C78340";
+// Tamanhos proporcionais à ALTURA da TV: o projeto é em px de 1080p e a TV de
+// 32" (768p) mostra tudo a 71% — nada corta, nada rola.
+const vh = (n: number) => `${(n / 10.8).toFixed(2)}vh`;
 
 function Cabecalho({ titulo, dia }: { titulo: string; dia: string }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, marginBottom: 18, borderBottom: `3px solid ${LARANJA}`, paddingBottom: 10 }}>
-      <span style={{ fontSize: 40, fontWeight: 900, letterSpacing: "0.1em", color: LARANJA }}>{titulo}</span>
-      <span style={{ fontSize: 34, fontWeight: 800, color: "#ddd", letterSpacing: "0.06em" }}>{rotuloDia(dia)}</span>
+      <span style={{ fontSize: vh(40), fontWeight: 900, letterSpacing: "0.1em", color: LARANJA }}>{titulo}</span>
+      <span style={{ fontSize: vh(34), fontWeight: 800, color: "#ddd", letterSpacing: "0.06em" }}>{rotuloDia(dia)}</span>
     </div>
   );
 }
@@ -27,7 +30,7 @@ function NaoCadastrado({ titulo, dia, texto }: { titulo: string; dia: string; te
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px 0" }}>
       <Cabecalho titulo={titulo} dia={dia} />
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ fontSize: 44, fontWeight: 800, color: "#666", textAlign: "center", maxWidth: 1100 }}>
+        <p style={{ fontSize: vh(44), fontWeight: 800, color: "#666", textAlign: "center", maxWidth: 1100 }}>
           {texto ?? `Cardápio de ${rotuloDiaLongo(dia)} ainda não cadastrado`}
         </p>
       </div>
@@ -45,7 +48,7 @@ function Lista({ itens, tamanho = 38, porColuna = 7 }: { itens: string[]; tamanh
       {colunas.map((col, i) => (
         <ul key={i} style={{ flex: 1, listStyle: "none", margin: 0, padding: 0 }}>
           {col.map((it, j) => (
-            <li key={j} style={{ fontSize: tamanho, lineHeight: 1.25, fontWeight: 700, color: "#fff", padding: "4px 0", overflowWrap: "anywhere" }}>
+            <li key={j} style={{ fontSize: vh(tamanho), lineHeight: 1.25, fontWeight: 700, color: "#fff", padding: "4px 0", overflowWrap: "anywhere" }}>
               <span style={{ color: LARANJA, marginRight: 14 }}>•</span>{it}
             </li>
           ))}
@@ -59,7 +62,7 @@ function Grupo({ titulo, itens, tamanho, porColuna }: { titulo: string; itens: s
   if (itens.length === 0) return null;
   return (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.16em", color: "#888", marginBottom: 4 }}>{titulo.toUpperCase()}</div>
+      <div style={{ fontSize: vh(22), fontWeight: 900, letterSpacing: "0.16em", color: "#888", marginBottom: 4 }}>{titulo.toUpperCase()}</div>
       <Lista itens={itens} tamanho={tamanho} porColuna={porColuna} />
     </div>
   );
@@ -72,7 +75,7 @@ export function TvPaginaBuffet({ c }: { c: CardapioTv }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px 0", overflow: "hidden" }}>
       <Cabecalho titulo="CARDÁPIO DO DIA" dia={c.dia} />
-      {!c.buffet.publicado && <div style={{ fontSize: 20, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>rascunho — ainda não publicado no site</div>}
+      {!c.buffet.publicado && <div style={{ fontSize: vh(20), color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>rascunho — ainda não publicado no site</div>}
       <Grupo titulo="Proteínas" itens={c.buffet.proteinas} tamanho={tamanho} porColuna={5} />
       <Grupo titulo="Acompanhamentos" itens={c.buffet.carboidratos} tamanho={tamanho} porColuna={5} />
       <Grupo titulo="Especial do dia" itens={c.buffet.especial} tamanho={tamanho} porColuna={5} />
@@ -95,10 +98,10 @@ export function TvPaginaSaladas({ c }: { c: CardapioTv }) {
           <div key={i} style={{ flex: 1 }}>
             {col.map((g) => (
               <div key={g.categoria} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.16em", color: "#888", marginBottom: 2 }}>{g.categoria.toUpperCase()}</div>
+                <div style={{ fontSize: vh(22), fontWeight: 900, letterSpacing: "0.16em", color: "#888", marginBottom: 2 }}>{g.categoria.toUpperCase()}</div>
                 <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                   {g.itens.map((it) => (
-                    <li key={it} style={{ fontSize: tamanho, lineHeight: 1.25, fontWeight: 700, color: "#fff", padding: "3px 0" }}>
+                    <li key={it} style={{ fontSize: vh(tamanho), lineHeight: 1.25, fontWeight: 700, color: "#fff", padding: "3px 0" }}>
                       <span style={{ color: "#4ade80", marginRight: 14 }}>•</span>{it}
                     </li>
                   ))}
@@ -130,12 +133,12 @@ export function TvPaginaKern({ c }: { c: CardapioTv }) {
         {/* quantidade e horário de saída em destaque */}
         <div style={{ width: 380, display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ background: "#3a2410", borderLeft: `14px solid ${LARANJA}`, borderRadius: 16, padding: "18px 22px" }}>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.12em", color: "#ffd9a8" }}>MARMITAS PEDIDAS</div>
-            <div style={{ fontSize: 96, lineHeight: 1, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{k.quantidade}</div>
+            <div style={{ fontSize: vh(20), fontWeight: 800, letterSpacing: "0.12em", color: "#ffd9a8" }}>MARMITAS PEDIDAS</div>
+            <div style={{ fontSize: vh(96), lineHeight: 1, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{k.quantidade}</div>
           </div>
           <div style={{ background: "#0f2740", borderLeft: "14px solid #3b82f6", borderRadius: 16, padding: "18px 22px" }}>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.12em", color: "#bfdbfe" }}>SAEM ÀS</div>
-            <div style={{ fontSize: 72, lineHeight: 1, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{k.horaEntrega}</div>
+            <div style={{ fontSize: vh(20), fontWeight: 800, letterSpacing: "0.12em", color: "#bfdbfe" }}>SAEM ÀS</div>
+            <div style={{ fontSize: vh(72), lineHeight: 1, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{k.horaEntrega}</div>
           </div>
         </div>
       </div>
