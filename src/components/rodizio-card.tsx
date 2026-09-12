@@ -20,6 +20,10 @@ export function RodizioCard({
   const esperaMin = minutosDesde(p.criado_em, agora);
   const atrasado = p.status === "pendente" && esperaMin >= ESPERA_ALERTA_MIN;
   const px = (n: number) => `${Math.round(n * escala)}px`;
+  // Nome do sabor NUNCA abreviado: nome comprido só diminui a letra e quebra
+  // em quantas linhas precisar ("Bacon com Cebola Caramelizada" tem que caber).
+  const nome = p.sabor.trim();
+  const tamSabor = nome.length > 30 ? 24 : nome.length > 20 ? 28 : 34;
 
   return (
     <div
@@ -36,7 +40,7 @@ export function RodizioCard({
       }}
     >
       {/* mesa */}
-      <div style={{ textAlign: "center", minWidth: px(110) }}>
+      <div style={{ textAlign: "center", minWidth: px(96) }}>
         <div style={{ fontSize: px(14), letterSpacing: "0.15em", color: cor.texto, opacity: 0.8, fontWeight: 700 }}>MESA</div>
         <div style={{ fontSize: px(56), lineHeight: 1, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{p.mesa}</div>
       </div>
@@ -64,19 +68,15 @@ export function RodizioCard({
         </div>
         <div
           style={{
-            fontSize: px(34),
+            fontSize: px(tamSabor),
             lineHeight: 1.1,
             fontWeight: 900,
             color: "#fff",
             marginTop: px(4),
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
+            overflowWrap: "anywhere",
           }}
         >
-          {p.sabor}
+          {nome}
         </div>
         {p.observacao && (
           <div style={{ fontSize: px(20), color: "#fde68a", fontWeight: 700, marginTop: px(2) }}>⚠ {p.observacao}</div>
@@ -84,7 +84,7 @@ export function RodizioCard({
       </div>
 
       {/* tempo */}
-      <div style={{ textAlign: "right", minWidth: px(120) }}>
+      <div style={{ textAlign: "right", minWidth: px(100), flexShrink: 0 }}>
         <div
           style={{
             fontSize: px(26),
