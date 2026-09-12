@@ -94,6 +94,7 @@ export function Sidebar({
         ...so(has("salao"), { href: "/salao/balanca", label: "Balança do buffet", icon: "⚖️" }),
         ...so(has("rodizio"), { href: "/cozinha", label: "Quadro do rodízio (tablet)", icon: "🍕" }),
         ...so(has("rodizio"), { href: "/cozinha/relatorio", label: "Rodízio · relatório", icon: "📊" }),
+        ...so(has("rodizio"), { href: "/cozinha/recados", label: "Recados da TV", icon: "📺" }),
         ...so(has("etiquetas"), { href: "/etiquetas", label: "Etiquetas de validade", icon: "🏷️" }),
       ],
     },

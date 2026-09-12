@@ -23,3 +23,35 @@ export function chaveTvOk(chave: string | undefined) {
 
 // Hora atual (fora do componente por causa da regra de pureza do React).
 export const agoraMs = () => Date.now();
+
+// Recados ativos pra tela de descanso da TV (some sozinho depois da data "ate").
+export async function recadosTv(): Promise<{ id: string; texto: string }[]> {
+  const admin = createAdminClient();
+  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const { data } = await admin
+    .from("tv_recados")
+    .select("id, texto, ordem, criado_em")
+    .eq("ativo", true)
+    .or(`ate.is.null,ate.gte.${hoje}`)
+    .order("ordem")
+    .order("criado_em")
+    .limit(5);
+  return ((data as { id: string; texto: string }[]) ?? []).map((r) => ({ id: r.id, texto: r.texto }));
+}
+
+// Temperatura em Ivoti (Open-Meteo, grátis e sem chave). O relógio de parede
+// que a TV substituiu mostrava a temperatura; sem sensor, vale a da previsão.
+// Guardada 10 min; se a consulta falhar, a TV simplesmente não mostra.
+let climaCache: { temp: number | null; em: number } = { temp: null, em: 0 };
+export async function temperaturaIvoti(): Promise<number | null> {
+  if (Date.now() - climaCache.em < 10 * 60 * 1000) return climaCache.temp;
+  try {
+    const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-29.5906&longitude=-51.1606&current=temperature_2m&timezone=America%2FSao_Paulo", { signal: AbortSignal.timeout(4000), cache: "no-store" });
+    const j = (await r.json()) as { current?: { temperature_2m?: number } };
+    const t = j.current?.temperature_2m;
+    climaCache = { temp: typeof t === "number" ? t : null, em: Date.now() };
+  } catch {
+    climaCache = { temp: climaCache.temp, em: Date.now() - 8 * 60 * 1000 }; // tenta de novo em 2 min
+  }
+  return climaCache.temp;
+}

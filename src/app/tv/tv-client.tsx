@@ -7,14 +7,17 @@
 // relógio/tempo de espera recalculados a partir do estado atual (nada cresce).
 import { useEffect, useRef, useState } from "react";
 import { RodizioCard } from "@/components/rodizio-card";
+import { TvRelogio, type RecadoTv } from "@/components/tv-relogio";
 import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
 const INTERVALO_MS = 3000;
 
 declare global { interface Window { __tvOk?: boolean } }
 
-export function TvClient({ chave, inicial, agoraInicial }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number }) {
+export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null }) {
   const [pedidos, setPedidos] = useState<PedidoRodizio[]>(inicial);
+  const [recados, setRecados] = useState<RecadoTv[]>(recadosInicial);
+  const [temperatura, setTemperatura] = useState<number | null>(temperaturaInicial);
   const [agora, setAgora] = useState(agoraInicial);
   const [conectado, setConectado] = useState(true);
   const [ultimaOk, setUltimaOk] = useState<number>(0);
@@ -35,6 +38,8 @@ export function TvClient({ chave, inicial, agoraInicial }: { chave: string; inic
         if (!vivo) return;
         if (j.ok) {
           setPedidos(j.pedidos as PedidoRodizio[]);
+          if (Array.isArray(j.recados)) setRecados(j.recados as RecadoTv[]);
+          setTemperatura(typeof j.temperatura === "number" ? j.temperatura : null);
           setConectado(true);
           setUltimaOk(Date.now());
         } else {
@@ -73,9 +78,9 @@ export function TvClient({ chave, inicial, agoraInicial }: { chave: string; inic
   return (
     <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {fila.length === 0 ? (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <p style={{ fontSize: 56, fontWeight: 800, color: "#555" }}>Nenhum pedido</p>
-        </div>
+        // Fora do rodízio (ou sem pedido): relógio + recados, no lugar do
+        // relógio de parede que a TV substituiu.
+        <TvRelogio agora={agora} recados={recados} temperatura={temperatura} />
       ) : (
         <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: "20px 24px 0" }}>
           <Coluna titulo="SALGADAS" cor="#C78340" lista={salgadas} agora={agora} />
