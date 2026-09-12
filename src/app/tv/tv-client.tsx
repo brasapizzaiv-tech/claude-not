@@ -11,12 +11,17 @@ import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } fro
 
 const INTERVALO_MS = 3000;
 
-export function TvClient({ chave }: { chave: string }) {
-  const [pedidos, setPedidos] = useState<PedidoRodizio[]>([]);
-  const [agora, setAgora] = useState(() => Date.now());
+declare global { interface Window { __tvOk?: boolean } }
+
+export function TvClient({ chave, inicial, agoraInicial }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number }) {
+  const [pedidos, setPedidos] = useState<PedidoRodizio[]>(inicial);
+  const [agora, setAgora] = useState(agoraInicial);
   const [conectado, setConectado] = useState(true);
   const [ultimaOk, setUltimaOk] = useState<number>(0);
   const buscando = useRef(false);
+
+  // Avisa a página que o código ligou (senão ela pula pro modo simples).
+  useEffect(() => { window.__tvOk = true; }, []);
 
   // Busca a fila; nunca sobrepõe duas buscas.
   useEffect(() => {
@@ -88,7 +93,7 @@ export function TvClient({ chave }: { chave: string }) {
           />
           {semRede && <span style={{ color: "#ef4444", fontWeight: 700 }}>SEM CONEXÃO</span>}
           <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#aaa" }}>
-            {new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            {new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
           </span>
         </span>
       </div>
