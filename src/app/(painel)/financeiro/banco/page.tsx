@@ -75,8 +75,22 @@ export default async function BancoPage() {
   // (A "data" do lançamento é a da nota — 01/08 numa nota que venceu 31/08 —
   // e mostrar ela aqui fazia a sugestão parecer errada.)
   const dataBanco = (l: Lanc) => l.pago_em ?? l.vencimento ?? l.data;
-  const rotuloLanc = (l: Lanc) =>
-    `${l.descricao ?? l.fornecedores?.nome ?? l.dre_categorias?.nome ?? "lançamento"} · ${l.vencimento ? "venc. " : ""}${dataBR(dataBanco(l))} · ${moeda(Number(l.valor))}`;
+  // O rótulo diz de QUE data estamos falando: "venc." quando a conta tem
+  // vencimento e "pago" quando a baixa foi em outro dia. Antes escrevia
+  // "venc." mostrando a data do pagamento — confundia na hora de conferir.
+  const rotuloLanc = (l: Lanc) => {
+    const nome = l.descricao ?? l.fornecedores?.nome ?? l.dre_categorias?.nome ?? "lançamento";
+    let quando: string;
+    if (l.vencimento) {
+      quando = "venc. " + dataBR(l.vencimento);
+      if (l.pago_em && l.pago_em !== l.vencimento) quando += " · pago " + dataBR(l.pago_em);
+    } else if (l.pago_em) {
+      quando = "pago " + dataBR(l.pago_em);
+    } else {
+      quando = dataBR(l.data);
+    }
+    return nome + " · " + quando + " · " + moeda(Number(l.valor));
+  };
 
   // Um BOLETO pode ser mais de um lançamento: quando o banco cobra custas, a
   // nota vira "NF 544773" (221,31) + "custas do boleto" (1,80) e o banco debita

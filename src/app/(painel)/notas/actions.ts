@@ -303,6 +303,11 @@ export async function lancarNota(
   // Histórico (competência de mês passado) entra como já pago — MAS só se o
   // boleto também já venceu. Nota de agosto vencendo em setembro é conta a pagar.
   const pago = dataLanc < inicioDoMes() && (!vencimento || vencimento < hojeSP());
+  // Quando o sistema assume que já foi paga, a data do pagamento é o VENCIMENTO
+  // (é quando o boleto some da conta), não o 1º dia da competência. Com o 1º dia
+  // a conciliação media a distância errada: a NF 666 da Ovos venceu 21/08, foi
+  // gravada como paga em 01/08 e o débito de 21/08 aparecia a "20 dias".
+  const pagoEm = pago ? vencimento ?? dataLanc : null;
   const descricao = `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`;
 
   // Itens da nota (com o produto vinculado → conta do DRE).
@@ -376,7 +381,7 @@ export async function lancarNota(
           nota_id: notaId,
           vencimento: p.vencimento,
           pago,
-          pago_em: pago ? dataLanc : null,
+          pago_em: pago ? p.vencimento ?? pagoEm : null,
         });
       });
     }
@@ -392,7 +397,7 @@ export async function lancarNota(
         nota_id: notaId,
         vencimento,
         pago,
-        pago_em: pago ? dataLanc : null,
+        pago_em: pagoEm,
       });
     }
   }
