@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { diaDoCardapio } from "@/lib/dia-cardapio";
+import { diaDoCardapio, diaSemanaIso } from "@/lib/dia-cardapio";
 import { kernDoDia } from "@/lib/marmitas-cardapio";
 import type { CardapioTv } from "@/components/tv-cardapio";
 import { PRONTO_SOME_SEG, type PedidoRodizio } from "@/lib/rodizio";
@@ -83,19 +83,22 @@ export async function cardapioTv(agora = Date.now()): Promise<CardapioTv> {
   const dia = diaDoCardapio(agora);
   if (cardapioCache && cardapioCache.dia === dia && agora - cardapioCache.em < 30_000) return cardapioCache.valor;
   const admin = createAdminClient();
-  const [{ data: cd }, { data: sal }, kern] = await Promise.all([
+  const [{ data: cd }, { data: salDia }, { data: salSemana }, kern] = await Promise.all([
     admin.from("cardapio_dia").select("proteinas, carboidratos, especial, publicado").eq("data", dia).maybeSingle(),
-    admin.from("cardapio_dia_saladas").select("saladas_base(nome, categoria)").eq("data", dia),
+    admin.from("cardapio_dia_saladas").select("saladas_base(nome, categoria, ativo)").eq("data", dia),
+    admin.from("saladas_semana").select("saladas_base(nome, categoria, ativo)").eq("dow", diaSemanaIso(dia)),
     kernDoDia(dia).catch(() => null),
   ]);
+  // Seleção própria da data vale; senão, o padrão do dia da semana (folha da cozinha).
+  const sal = (salDia && salDia.length > 0) ? salDia : salSemana;
   const linhas = (t: string | null) => (t ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
   const c = cd as { proteinas: string | null; carboidratos: string | null; especial: string | null; publicado: boolean } | null;
   const buffet = c ? { proteinas: linhas(c.proteinas), carboidratos: linhas(c.carboidratos), especial: linhas(c.especial), publicado: !!c.publicado } : null;
   const grupos = new Map<string, string[]>();
-  type SalRow = { saladas_base: { nome: string; categoria: string } | { nome: string; categoria: string }[] | null };
+  type SalRow = { saladas_base: { nome: string; categoria: string; ativo: boolean } | { nome: string; categoria: string; ativo: boolean }[] | null };
   for (const r of ((sal as unknown as SalRow[]) ?? [])) {
     const s = Array.isArray(r.saladas_base) ? r.saladas_base[0] : r.saladas_base;
-    if (!s) continue;
+    if (!s || !s.ativo) continue;
     if (!grupos.has(s.categoria)) grupos.set(s.categoria, []);
     grupos.get(s.categoria)!.push(s.nome);
   }

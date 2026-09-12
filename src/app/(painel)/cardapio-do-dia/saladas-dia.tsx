@@ -5,12 +5,16 @@
 // mesmo ("+ nova salada"); tirar da base não apaga os dias antigos.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { criarSalada, removerSalada, salvarSaladasDia } from "./saladas-actions";
+import { criarSalada, removerSalada, salvarPadraoSemanaSaladas, salvarSaladasDia } from "./saladas-actions";
 import { CATEGORIAS_SALADA, type CategoriaSalada, type SaladaBase } from "./saladas-tipos";
 
-export function SaladasDoDia({ dia, base, marcadas }: { dia: string; base: SaladaBase[]; marcadas: string[] }) {
+const DIA_NOME = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+
+export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string; dow: number; base: SaladaBase[]; marcadas: string[]; padrao: string[] }) {
   const router = useRouter();
-  const [sel, setSel] = useState<Set<string>>(() => new Set(marcadas));
+  // Sem marcação própria do dia, a tela começa pelo padrão do dia da semana.
+  const temExcecao = marcadas.length > 0;
+  const [sel, setSel] = useState<Set<string>>(() => new Set(temExcecao ? marcadas : padrao));
   const [sujo, setSujo] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [novo, setNovo] = useState("");
@@ -31,6 +35,26 @@ export function SaladasDoDia({ dia, base, marcadas }: { dia: string; base: Salad
       if (!r.ok) { setMsg(r.mensagem); return; }
       setSujo(false);
       setMsg(`✓ ${sel.size} salada(s) marcada(s) pra ${dia.split("-").reverse().join("/")}.`);
+      router.refresh();
+    });
+  }
+  function salvarPadrao() {
+    if (!confirm(`Gravar esta seleção como o padrão de toda ${DIA_NOME[dow]}?`)) return;
+    setMsg(null);
+    start(async () => {
+      const r = await salvarPadraoSemanaSaladas(dow, [...sel]);
+      if (!r.ok) { setMsg(r.mensagem); return; }
+      setSujo(false);
+      setMsg(`✓ Padrão de ${DIA_NOME[dow]} gravado (${sel.size} saladas).`);
+      router.refresh();
+    });
+  }
+  function voltarPadrao() {
+    start(async () => {
+      await salvarSaladasDia(dia, []);
+      setSel(new Set(padrao));
+      setSujo(false);
+      setMsg(`Voltou ao padrão de ${DIA_NOME[dow]}.`);
       router.refresh();
     });
   }
@@ -62,6 +86,9 @@ export function SaladasDoDia({ dia, base, marcadas }: { dia: string; base: Salad
         </div>
         <p className="mb-4 text-sm text-zinc-500">
           Marque o que vai no buffet de saladas deste dia. Aparece na TV da cozinha. <span className="font-medium">{sel.size}</span> marcada(s).
+          {temExcecao
+            ? <> · <span className="font-medium text-amber-600">este dia tem seleção própria</span> (<button type="button" onClick={voltarPadrao} disabled={proc} className="underline">voltar ao padrão de {DIA_NOME[dow]}</button>)</>
+            : <> · seguindo o <span className="font-medium">padrão de {DIA_NOME[dow]}</span></>}
         </p>
 
         <div className="space-y-3">
@@ -114,8 +141,11 @@ export function SaladasDoDia({ dia, base, marcadas }: { dia: string; base: Salad
             Adicionar
           </button>
           <div className="flex-1" />
+          <button type="button" onClick={salvarPadrao} disabled={proc || !sujo} className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700 disabled:opacity-40 dark:text-green-400">
+            Gravar como padrão de {DIA_NOME[dow]}
+          </button>
           <button type="button" onClick={salvar} disabled={proc || !sujo} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
-            {proc ? "..." : "Salvar saladas do dia"}
+            {proc ? "..." : "Salvar só para este dia"}
           </button>
         </div>
         {msg && <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}

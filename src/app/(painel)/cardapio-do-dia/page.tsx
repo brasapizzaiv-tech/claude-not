@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { EditorCardapio, type Cardapio, type ItemCat } from "./editor";
 import { SaladasDoDia } from "./saladas-dia";
-import { listarSaladasBase, saladasDoDia } from "./saladas-actions";
+import { listarSaladasBase, padraoSemanaSaladas, saladasDoDia } from "./saladas-actions";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
 function hojeBR() {
@@ -37,7 +37,8 @@ export default async function CardapioDoDiaPage({
   ]);
   const dias = (data as Cardapio[]) ?? [];
   const itens = (cat as ItemCat[]) ?? [];
-  const [base, marcadas] = await Promise.all([listarSaladasBase(), saladasDoDia(dia)]);
+  const dowDia = new Date(dia + "T12:00:00Z").getUTCDay();
+  const [base, marcadas, padrao] = await Promise.all([listarSaladasBase(), saladasDoDia(dia), padraoSemanaSaladas(dowDia)]);
 
   return (
     <>
@@ -49,7 +50,7 @@ export default async function CardapioDoDiaPage({
         atual={dias.find((c) => c.data === dia) ?? null}
         itens={itens}
       />
-      <SaladasDoDia key={"sal-" + dia} dia={dia} base={base} marcadas={marcadas} />
+      <SaladasDoDia key={"sal-" + dia} dia={dia} dow={dowDia} base={base} marcadas={marcadas} padrao={padrao} />
     </>
   );
 }

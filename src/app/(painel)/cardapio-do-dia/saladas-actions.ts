@@ -61,3 +61,25 @@ export async function removerSalada(id: string) {
   revalidatePath("/cardapio-do-dia");
   return { ok: true as const };
 }
+
+// Padrão por dia da semana (a folha da cozinha). A data só guarda exceção.
+export async function padraoSemanaSaladas(dow: number): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("saladas_semana").select("salada_id").eq("dow", dow);
+  return ((data as { salada_id: string }[]) ?? []).map((r) => r.salada_id);
+}
+
+export async function salvarPadraoSemanaSaladas(dow: number, ids: string[]) {
+  await exigirAcesso("/cardapio-do-dia");
+  if (!(dow >= 0 && dow <= 6)) return { ok: false as const, mensagem: "Dia inválido." };
+  const supabase = await createClient();
+  const { error: e1 } = await supabase.from("saladas_semana").delete().eq("dow", dow);
+  if (e1) return { ok: false as const, mensagem: e1.message };
+  const unicos = [...new Set(ids)];
+  if (unicos.length > 0) {
+    const { error: e2 } = await supabase.from("saladas_semana").insert(unicos.map((salada_id) => ({ dow, salada_id })));
+    if (e2) return { ok: false as const, mensagem: e2.message };
+  }
+  revalidatePath("/cardapio-do-dia");
+  return { ok: true as const };
+}
