@@ -28,7 +28,7 @@ export function telefoneWa(t: string | null | undefined): string | null {
 type Resultado = { ok: true; waId: string } | { ok: false; erro: string };
 
 // Envia um modelo aprovado (categoria Utilidade) com as variáveis do corpo.
-export async function enviarTemplate(telefone: string, template: string, params: string[], pedidoId?: string | null): Promise<Resultado> {
+export async function enviarTemplate(telefone: string, template: string, params: string[], pedidoId?: string | null, idioma = "pt_BR"): Promise<Resultado> {
   const admin = createAdminClient();
   const to = telefoneWa(telefone);
   if (!to) return { ok: false, erro: "telefone inválido" };
@@ -39,7 +39,7 @@ export async function enviarTemplate(telefone: string, template: string, params:
     type: "template",
     template: {
       name: template,
-      language: { code: "pt_BR" },
+      language: { code: idioma },
       components: params.length ? [{ type: "body", parameters: params.map((p) => ({ type: "text", text: String(p).slice(0, 1000) })) }] : [],
     },
   };

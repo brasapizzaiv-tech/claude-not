@@ -3,7 +3,7 @@
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { avisarPedido } from "@/lib/whatsapp";
+import { avisarPedido, enviarTemplate, whatsappConfigurado } from "@/lib/whatsapp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
@@ -324,4 +324,13 @@ export async function registrarAcertoEntregador(formData: FormData) {
     obs: String(formData.get("obs") ?? "").trim() || null,
   }, { onConflict: "entregador_id,data" });
   revalidatePath("/delivery/entregadores/acerto");
+}
+
+// Botão "Testar envio" da config: manda o modelo hello_world (que toda conta
+// nova já tem aprovado, em inglês) pro número digitado. Não expõe token nenhum.
+export async function testarWhatsappDelivery(telefone: string) {
+  await exigirAcesso("/delivery");
+  if (!whatsappConfigurado()) return { ok: false as const, mensagem: "Faltam WHATSAPP_TOKEN e/ou WHATSAPP_PHONE_ID na Vercel (e um redeploy)." };
+  const r = await enviarTemplate(telefone, "hello_world", [], null, "en_US");
+  return r.ok ? { ok: true as const } : { ok: false as const, mensagem: r.erro };
 }
