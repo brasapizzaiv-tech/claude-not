@@ -1,0 +1,60 @@
+# Compila o APK do app do entregador na nuvem (não precisa de Android Studio no PC).
+# Roda quando algo em app-entregador/ muda, ou à mão em Actions → "Run workflow".
+# O APK fica anexado ao release "app-entregador" (link fixo pra baixar no celular).
+name: App do entregador (Android)
+
+on:
+  push:
+    branches: [main]
+    paths: ["app-entregador/**", "public/icons/entregas-512.png", ".github/workflows/app-entregador.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-entregador
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+
+      - name: Dependências
+        run: npm install --no-audit --no-fund
+
+      - name: Projeto Android (gera, aplica permissões/nome/ícone)
+        run: |
+          npx cap add android
+          npx cap sync android
+          node scripts/patch-android.mjs
+          chmod +x android/gradlew
+
+      - name: Compilar APK
+        run: cd android && ./gradlew assembleDebug --no-daemon
+
+      - name: Renomear
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk BrasaEntregas.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BrasaEntregas-apk
+          path: app-entregador/BrasaEntregas.apk
+
+      # Link fixo: https://github.com/<org>/<repo>/releases/download/app-entregador/BrasaEntregas.apk
+      - name: Publicar no release "app-entregador"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-entregador
+          name: App do entregador (Android)
+          body: "APK mais recente do app do entregador. Baixe no celular e instale (permitir 'fontes desconhecidas')."
+          files: app-entregador/BrasaEntregas.apk

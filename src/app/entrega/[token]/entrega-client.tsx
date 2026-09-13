@@ -14,6 +14,19 @@ const hhmm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const GPS_INTERVALO_MS = 15000;
 
+// Dentro do app nativo (Capacitor) existe window.Capacitor; aí o GPS vai pelo
+// plugin de segundo plano (serviço nativo, funciona com a tela apagada).
+type CapGlobal = { isNativePlatform?: () => boolean; registerPlugin: (nome: string) => unknown };
+type BgGeo = {
+  addWatcher: (opts: { backgroundMessage?: string; backgroundTitle?: string; requestPermissions?: boolean; stale?: boolean; distanceFilter?: number }, cb: (loc: { latitude: number; longitude: number; accuracy?: number } | undefined, err?: { code?: string; message?: string }) => void) => Promise<string>;
+  removeWatcher: (o: { id: string }) => Promise<void>;
+  openSettings: () => Promise<void>;
+};
+function capacitorNativo(): CapGlobal | null {
+  const c = (typeof window !== "undefined" ? (window as unknown as { Capacitor?: CapGlobal }).Capacitor : undefined) ?? null;
+  return c && typeof c.registerPlugin === "function" && c.isNativePlatform?.() ? c : null;
+}
+
 type Dados = NonNullable<Awaited<ReturnType<typeof minhasEntregas>>>;
 type Aba = "entregas" | "ganhos" | "historico" | "gps";
 
@@ -71,8 +84,32 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
     const t = setTimeout(() => { if (ligado) setGpsOn(true); }, 0);
     return () => clearTimeout(t);
   }, []);
+  const nativo = capacitorNativo() !== null;
   useEffect(() => {
     if (!gpsOn) { wake.current?.release().catch(() => {}); wake.current = null; return; }
+    // ---- app nativo: plugin de segundo plano ----
+    const cap = capacitorNativo();
+    if (cap) {
+      let watcherId: string | null = null; let vivo = true;
+      const bg = cap.registerPlugin("BackgroundGeolocation") as BgGeo;
+      bg.addWatcher(
+        { backgroundTitle: "Brasa Entregas", backgroundMessage: "Rastreando sua posição pro restaurante.", requestPermissions: true, stale: false, distanceFilter: 5 },
+        (loc, err) => {
+          if (!vivo) return;
+          if (err) { setGpsErro(err.code === "NOT_AUTHORIZED" ? "Permita a localização \"o tempo todo\" nas configurações do app." : (err.message ?? "Sem sinal de GPS agora.")); return; }
+          if (!loc) return;
+          const agora = Date.now();
+          const p = { lat: loc.latitude, lng: loc.longitude, precisao: loc.accuracy ?? null, em: agora };
+          setGps(p); setGpsErro(null);
+          if (agora - ultimoEnvio.current >= GPS_INTERVALO_MS) {
+            ultimoEnvio.current = agora;
+            registrarPosicao(token, p.lat, p.lng, p.precisao).catch(() => {});
+          }
+        },
+      ).then((id) => { if (vivo) watcherId = id; else bg.removeWatcher({ id }).catch(() => {}); }).catch((e: unknown) => setGpsErro(e instanceof Error ? e.message : "Não consegui ligar o GPS nativo."));
+      return () => { vivo = false; if (watcherId) bg.removeWatcher({ id: watcherId }).catch(() => {}); };
+    }
+    // ---- navegador: só com a tela ligada ----
     const geo = navigator.geolocation;
     if (!geo) { const t = setTimeout(() => setGpsErro("Este celular não tem GPS disponível no navegador."), 0); return () => clearTimeout(t); }
     const id = navigator.geolocation.watchPosition(
@@ -281,14 +318,18 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
         <main className="space-y-4 p-4">
           <div className="rounded-2xl bg-zinc-900 p-4">
             <div className="mb-1 text-lg font-bold">📍 Localização</div>
-            <p className="mb-3 text-sm text-zinc-400">Com o rastreamento ligado o restaurante vê onde você está no mapa. Só funciona com este app <b>aberto na tela</b> (a tela fica acesa sozinha).</p>
+            <p className="mb-3 text-sm text-zinc-400">
+              {nativo
+                ? <>Com o rastreamento ligado o restaurante vê onde você está no mapa — <b>mesmo com a tela apagada</b> (fica uma notificação fixa enquanto estiver ativo). Na primeira vez, escolha <b>“Permitir o tempo todo”</b>.</>
+                : <>Com o rastreamento ligado o restaurante vê onde você está no mapa. Pelo navegador só funciona com este app <b>aberto na tela</b> (a tela fica acesa sozinha). Instale o app Brasa Entregas pra rastrear em segundo plano.</>}
+            </p>
             <button onClick={alternarGps} className={`w-full rounded-xl py-3 text-base font-bold ${gpsOn ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-200"}`}>
               {gpsOn ? "✅ Rastreamento ATIVO — tocar pra desligar" : "Ligar rastreamento"}
             </button>
             {gpsErro && <p className="mt-2 text-sm text-rose-400">{gpsErro}</p>}
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Intervalo</div><div className="font-bold">{GPS_INTERVALO_MS / 1000} segundos</div></div>
+            <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Modo</div><div className="font-bold">{nativo ? "App (2º plano)" : "Navegador"} · {GPS_INTERVALO_MS / 1000} s</div></div>
             <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Precisão</div><div className="font-bold">{gps?.precisao != null ? `${Math.round(gps.precisao)} m` : "—"}</div></div>
             <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Latitude</div><div className="font-bold">{gps ? gps.lat.toFixed(5) : "—"}</div></div>
             <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Longitude</div><div className="font-bold">{gps ? gps.lng.toFixed(5) : "—"}</div></div>

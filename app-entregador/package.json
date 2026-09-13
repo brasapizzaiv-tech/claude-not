@@ -1,0 +1,20 @@
+{
+  "name": "brasa-app-entregador",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App nativo (Capacitor) do entregador: abre o /entrega do sistema com rastreamento em segundo plano.",
+  "scripts": {
+    "add:android": "cap add android",
+    "sync": "cap sync android",
+    "patch": "node scripts/patch-android.mjs",
+    "build:android": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.21",
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}
