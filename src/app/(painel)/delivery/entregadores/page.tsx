@@ -71,6 +71,20 @@ export default async function EntregadoresPage() {
                 </div>
               )}
 
+              {e.token && (
+                <details className="mt-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
+                  <summary className="cursor-pointer font-semibold">📡 Rastreamento em segundo plano (app Traccar Client)</summary>
+                  <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+                    <li>No celular do entregador, instale o <b>Traccar Client</b> (Play Store / App Store, gratuito).</li>
+                    <li>Em <b>Identificador do dispositivo</b>, cole: <code className="select-all">{e.token}</code></li>
+                    <li>Em <b>URL do servidor</b>, cole: <code className="select-all">{origem}/api/rastreio</code></li>
+                    <li>Frequência: <b>15</b> s · Distância: 0 · Ângulo: 0 · Precisão: alta. Ligue o serviço (chave no topo).</li>
+                    <li>No Android, em Configurações → Bateria, deixe o Traccar <b>sem restrição</b>; no iPhone, permissão de localização <b>Sempre</b>.</li>
+                  </ol>
+                  <p className="mt-1">Com isso a posição chega mesmo com a tela apagada. O botão GPS do app de entregas continua funcionando como alternativa.</p>
+                </details>
+              )}
+
               <form action={salvarValoresEntregador} className="mt-2 flex flex-wrap items-end gap-2 text-xs">
                 <input type="hidden" name="id" value={e.id} />
                 <div><label className="block text-[11px] text-zinc-500">Fixo almoço (R$)</label><input name="valor_fixo_dia" defaultValue={e.valor_fixo_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>

@@ -68,6 +68,7 @@ export async function updateSession(request: NextRequest) {
     path === "/tv" ||
     path.startsWith("/api/tv/") ||
     path.startsWith("/api/whatsapp/") ||
+    path.startsWith("/api/rastreio") ||
     path.startsWith("/api/contagem/cron");
 
   if (!user && !isPublic) {
