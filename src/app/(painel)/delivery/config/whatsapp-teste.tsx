@@ -1,13 +1,25 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { testarWhatsappDelivery } from "../actions";
+import { modelosWhatsappDelivery, testarWhatsappDelivery } from "../actions";
+
+const ESPERADOS = ["pedido_recebido", "pedido_confirmado", "pedido_saiu", "pedido_entregue"];
+const STATUS_PT: Record<string, string> = { APPROVED: "✅ aprovado", PENDING: "⏳ em análise", REJECTED: "❌ rejeitado", PAUSED: "⏸ pausado", DISABLED: "🚫 desativado" };
 
 // Testa a API oficial: manda o modelo padrão da Meta (hello_world) pro número.
 export function WhatsappTeste({ configurado }: { configurado: boolean }) {
   const [tel, setTel] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [proc, start] = useTransition();
+  const [modelos, setModelos] = useState<{ nome: string; idioma: string; categoria: string; status: string; motivo: string | null }[] | null>(null);
+  const [modelosErro, setModelosErro] = useState<string | null>(null);
+  function verModelos() {
+    setModelosErro(null);
+    start(async () => {
+      const r = await modelosWhatsappDelivery();
+      if (r.ok) setModelos(r.modelos); else setModelosErro(r.erro);
+    });
+  }
   return (
     <div className={`mb-4 rounded-xl px-4 py-3 text-sm ${configurado ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-zinc-500/10 text-zinc-600 dark:text-zinc-300"}`}>
       {configurado
@@ -30,7 +42,24 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
             {proc ? "Enviando..." : "Testar envio"}
           </button>
           {msg && <span className="text-xs">{msg}</span>}
+          <button onClick={verModelos} disabled={proc} className="rounded-lg border border-emerald-400 px-3 py-1.5 text-sm font-semibold disabled:opacity-50">Ver modelos</button>
         </div>
+      )}
+      {modelosErro && <p className="mt-2 text-xs text-rose-600">{modelosErro}</p>}
+      {modelos && (
+        <ul className="mt-2 space-y-0.5 text-xs">
+          {ESPERADOS.map((nome) => {
+            const m = modelos.find((x) => x.nome === nome);
+            return (
+              <li key={nome}>
+                <code>{nome}</code>: {m ? `${STATUS_PT[m.status] ?? m.status} · ${m.categoria.toLowerCase()} · ${m.idioma}${m.motivo ? ` · motivo: ${m.motivo}` : ""}` : "— não cadastrado"}
+              </li>
+            );
+          })}
+          {modelos.filter((m) => !ESPERADOS.includes(m.nome)).map((m) => (
+            <li key={m.nome + m.idioma} className="text-zinc-500"><code>{m.nome}</code>: {STATUS_PT[m.status] ?? m.status} · {m.categoria.toLowerCase()} · {m.idioma}</li>
+          ))}
+        </ul>
       )}
     </div>
   );

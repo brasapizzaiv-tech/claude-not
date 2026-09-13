@@ -3,7 +3,7 @@
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { avisarPedido, enviarTemplate, whatsappConfigurado } from "@/lib/whatsapp";
+import { avisarPedido, enviarTemplate, listarModelos, whatsappConfigurado } from "@/lib/whatsapp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
@@ -337,4 +337,9 @@ export async function testarWhatsappDelivery(telefone: string) {
   const r2 = await enviarTemplate(telefone, "hello_world", [], null, "en_US");
   if (r2.ok) return { ok: true as const };
   return { ok: false as const, mensagem: `${r.erro} — o modelo pedido_recebido ainda não existe/foi aprovado na Meta? Cadastre os 4 modelos e tente de novo.` };
+}
+
+export async function modelosWhatsappDelivery() {
+  await exigirAcesso("/delivery");
+  return listarModelos();
 }

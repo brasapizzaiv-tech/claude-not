@@ -132,3 +132,20 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
     if (r.ok) await admin.from("delivery_pedidos").update({ wpp_avisos: { ...avisos, [evento]: new Date().toISOString() } }).eq("id", p.id);
   } catch { /* nunca derruba o pedido por causa do aviso */ }
 }
+
+// Modelos cadastrados na conta (nome, idioma, categoria, status de aprovação).
+// Usa WHATSAPP_WABA_ID; sem ela, o ID da conta da Brasa.
+export async function listarModelos(): Promise<{ ok: true; modelos: { nome: string; idioma: string; categoria: string; status: string; motivo: string | null }[] } | { ok: false; erro: string }> {
+  if (!TOKEN) return { ok: false, erro: "WhatsApp não configurado" };
+  const waba = (process.env.WHATSAPP_WABA_ID || "1173523463104133").trim();
+  try {
+    const r = await fetch(`${API}/${waba}/message_templates?fields=name,language,category,status,rejected_reason&limit=100`, {
+      headers: { Authorization: `Bearer ${TOKEN}` }, signal: AbortSignal.timeout(10000),
+    });
+    const j = (await r.json().catch(() => ({}))) as { data?: { name: string; language: string; category: string; status: string; rejected_reason?: string }[]; error?: { message?: string } };
+    if (!r.ok) return { ok: false, erro: j.error?.message ?? `HTTP ${r.status}` };
+    return { ok: true, modelos: (j.data ?? []).map((m) => ({ nome: m.name, idioma: m.language, categoria: m.category, status: m.status, motivo: m.rejected_reason && m.rejected_reason !== "NONE" ? m.rejected_reason : null })) };
+  } catch (e) {
+    return { ok: false, erro: e instanceof Error ? e.message : "falha de rede" };
+  }
+}
