@@ -5,7 +5,7 @@
 // que é pública por natureza e deve estar restrita ao domínio do sistema e à
 // "Maps JavaScript API". Sem a chave, o board cai no OpenStreetMap (mapa.tsx).
 import { useEffect, useRef, useState } from "react";
-import type { PinoPedido } from "./mapa";
+import type { PinoPedido, BoyPino } from "./mapa";
 
 const COR: Record<string, string> = {
   pendente: "#e11d48",
@@ -32,10 +32,11 @@ function carregarGoogle(chave: string): Promise<void> {
   return carregando;
 }
 
-export function MapaPedidosGoogle({ pinos, origem, chave }: {
+export function MapaPedidosGoogle({ pinos, origem, chave, boys = [] }: {
   pinos: PinoPedido[];
   origem: { lat: number; lng: number } | null;
   chave: string;
+  boys?: BoyPino[]; // entregadores (GPS do app), últimos 20 min
 }) {
   const divRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -103,14 +104,29 @@ export function MapaPedidosGoogle({ pinos, origem, chave }: {
       });
       marcadores.push(m);
     }
-    if (pinos.length > 0) {
+    // Entregadores: 🛵 com o nome e há quanto tempo mandou a posição.
+    for (const b of boys) {
+      const min = Math.max(0, Math.round((Date.now() - new Date(b.em).getTime()) / 60000));
+      const m = new google.maps.Marker({
+        map,
+        position: { lat: b.lat, lng: b.lng },
+        title: `${b.nome} · ${min <= 1 ? "agora" : `há ${min} min`}`,
+        label: { text: "🛵", fontSize: "22px" },
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 15, fillColor: "#0ea5e9", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 },
+        zIndex: 3,
+      });
+      m.addListener("click", () => { info.setContent(`<div style="font:13px system-ui;color:#222"><b>🛵 ${esc(b.nome)}</b><br/>${min <= 1 ? "agora" : `há ${min} min`}</div>`); info.open({ map, anchor: m }); });
+      marcadores.push(m);
+    }
+    if (pinos.length > 0 || boys.length > 0) {
       const b = new google.maps.LatLngBounds();
       for (const p of pinos) b.extend({ lat: p.lat, lng: p.lng });
+      for (const y of boys) b.extend({ lat: y.lat, lng: y.lng });
       if (origem) b.extend(origem);
       map.fitBounds(b, 60);
     }
     return () => { marcadores.forEach((m) => m.setMap(null)); info.close(); };
-  }, [pinos, origem, pronto]);
+  }, [pinos, origem, pronto, boys]);
 
   return (
     <div>

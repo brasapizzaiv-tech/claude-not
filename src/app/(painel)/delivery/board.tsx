@@ -308,7 +308,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
       </div>
 
       {visao === "mapa" ? (
-        googleKey ? <MapaPedidosGoogle pinos={pinos} origem={origemMapa} chave={googleKey} /> : <MapaPedidos pinos={pinos} origem={origemMapa} boys={boys} />
+        googleKey ? <MapaPedidosGoogle pinos={pinos} origem={origemMapa} chave={googleKey} boys={boys} /> : <MapaPedidos pinos={pinos} origem={origemMapa} boys={boys} />
       ) : visao === "kanban" ? (
         <div className="flex gap-3 overflow-x-auto pb-3">
           {KANBAN_COLS.map((col) => {
