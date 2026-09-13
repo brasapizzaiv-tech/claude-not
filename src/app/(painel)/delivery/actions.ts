@@ -331,6 +331,10 @@ export async function registrarAcertoEntregador(formData: FormData) {
 export async function testarWhatsappDelivery(telefone: string) {
   await exigirAcesso("/delivery");
   if (!whatsappConfigurado()) return { ok: false as const, mensagem: "Faltam WHATSAPP_TOKEN e/ou WHATSAPP_PHONE_ID na Vercel (e um redeploy)." };
-  const r = await enviarTemplate(telefone, "hello_world", [], null, "en_US");
-  return r.ok ? { ok: true as const } : { ok: false as const, mensagem: r.erro };
+  // Usa o nosso modelo pedido_recebido (pt_BR); se ainda não foi aprovado, tenta o hello_world da Meta.
+  const r = await enviarTemplate(telefone, "pedido_recebido", ["Teste", "0", "https://www.brasarestaurante.com.br/pedir"], null, "pt_BR");
+  if (r.ok) return { ok: true as const };
+  const r2 = await enviarTemplate(telefone, "hello_world", [], null, "en_US");
+  if (r2.ok) return { ok: true as const };
+  return { ok: false as const, mensagem: `${r.erro} — o modelo pedido_recebido ainda não existe/foi aprovado na Meta? Cadastre os 4 modelos e tente de novo.` };
 }
