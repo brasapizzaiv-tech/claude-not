@@ -176,12 +176,14 @@ export async function enviarPedidoPublico(d: {
   let taxa = 0;
   let distancia: number | null = null;
   let lat: number | null = null, lng: number | null = null;
+  let areaId: string | null = null, areaNome: string | null = null;
   if (d.tipo === "entrega") {
     if (!(d.endereco?.logradouro || "").trim()) return { ok: false as const, mensagem: "Informe o endereço de entrega." };
     const calc = await calcularTaxaEntrega(admin, d.endereco ?? {});
     if (!calc.ok) return { ok: false as const, mensagem: calc.mensagem };
     if (calc.foraDeArea) return { ok: false as const, mensagem: "Esse endereço fica fora da nossa área de entrega. 😕" };
     taxa = calc.taxa; distancia = calc.distanciaKm; lat = calc.lat; lng = calc.lng;
+    areaId = calc.areaId ?? null; areaNome = calc.areaNome ?? null;
   }
 
   // Reconhece (ou cadastra) o cliente pelo telefone.
@@ -244,6 +246,7 @@ export async function enviarPedidoPublico(d: {
       observacao: d.observacao,
       itens: d.itens,
       agendadoPara,
+      areaId, areaNome,
     },
     { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo },
   );
@@ -276,7 +279,7 @@ export async function enviarPedidoPublico(d: {
     }
   }
 
-  return { ok: true as const, id: r.id, numero: r.numero, taxa, desconto: r.desconto ?? 0, total: r.total ?? 0, pix };
+  return { ok: true as const, id: r.id, numero: r.numero, taxa: r.taxa ?? taxa, desconto: r.desconto ?? 0, total: r.total ?? 0, pix };
 }
 
 // Confere se o Pix do pedido caiu (o app do cliente consulta a cada poucos

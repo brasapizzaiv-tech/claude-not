@@ -75,6 +75,7 @@ export function PedirClient({
   const [end, setEnd] = useState({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
   const [taxa, setTaxa] = useState<number | null>(null);
   const [calcMsg, setCalcMsg] = useState<string | null>(null);
+  const [promoDica, setPromoDica] = useState<string | null>(null); // "Entrega grátis hoje acima de R$ 60"
   const [calculando, setCalculando] = useState(false);
   // Quando: "agora" (dentro do horário livre) ou "agendar" (horário exato).
   const [quando, setQuando] = useState<"agora" | "agendar">(aberto ? "agora" : "agendar");
@@ -176,7 +177,14 @@ export function PedirClient({
     if (r.ok) {
       if (r.foraDeArea) { setTaxa(null); setCalcMsg("😕 Esse endereço fica fora da nossa área de entrega."); return; }
       setTaxa(r.taxa);
-      setCalcMsg(`Entrega: ${brl(r.taxa)} (${r.distanciaKm} km)`);
+      const onde = r.areaNome ? r.areaNome : r.distanciaKm != null ? `${r.distanciaKm} km` : "";
+      setCalcMsg(`Entrega: ${brl(r.taxa)}${onde ? ` (${onde})` : ""}${r.tempoMin ? ` · cerca de ${r.tempoMin} min` : ""}`);
+      // Promoção da tele que pode valer hoje nessa área (o desconto real é aplicado ao enviar).
+      const dicas = (r.promosHoje ?? []).map((pr) => {
+        const oque = pr.tipo === "gratis" ? "Entrega grátis" : pr.tipo === "percent" ? `${pr.valor}% de desconto na entrega` : `${brl(Number(pr.valor))} de desconto na entrega`;
+        return `${oque} hoje${pr.pedido_minimo != null ? ` em pedidos acima de ${brl(Number(pr.pedido_minimo))}` : ""}`;
+      });
+      setPromoDica(dicas.length ? dicas.join(" · ") : null);
     } else {
       setTaxa(null);
       setCalcMsg(r.mensagem ?? "Não consegui calcular. Confira o endereço.");
@@ -410,6 +418,7 @@ export function PedirClient({
                 {calculando ? "Calculando..." : "📍 Calcular entrega"}
               </button>
               {calcMsg && <p className="text-sm text-zinc-600 dark:text-zinc-300">{calcMsg}</p>}
+              {promoDica && <p className="text-sm font-semibold text-emerald-600">🏷️ {promoDica}</p>}
             </div>
           )}
 

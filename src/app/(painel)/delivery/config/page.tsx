@@ -30,7 +30,7 @@ export default async function DeliveryConfigPage() {
     <div className="mx-auto max-w-2xl p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
       <h1 className="mb-1 mt-2 text-xl font-bold">⚙️ Config do delivery</h1>
-      <p className="mb-4 text-sm text-zinc-500">Taxa de entrega calculada pela distância até o restaurante.</p>
+      <p className="mb-4 text-sm text-zinc-500">Taxa de entrega: por <Link href="/delivery/areas" className="font-semibold text-emerald-600">áreas desenhadas no mapa</Link> quando houver áreas cadastradas; senão, pela distância até o restaurante (abaixo).</p>
 
       <div className={`mb-4 rounded-xl px-4 py-3 text-sm ${temChave ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/10 text-amber-700 dark:text-amber-400"}`}>
         {temChave

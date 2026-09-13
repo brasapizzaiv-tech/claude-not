@@ -36,7 +36,7 @@ export function NovoPedido({
   const [tipo, setTipo] = useState<"entrega" | "retirada">("entrega");
   const [end, setEnd] = useState({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
   const [taxa, setTaxa] = useState<string>(String(cfg.taxaBase || ""));
-  const [geo, setGeo] = useState<{ km: number; lat: number; lng: number; aprox: boolean; fora: boolean } | null>(null);
+  const [geo, setGeo] = useState<{ km: number | null; lat: number; lng: number; aprox: boolean; fora: boolean; areaId: string | null; areaNome: string | null } | null>(null);
   const [calcMsg, setCalcMsg] = useState<string | null>(null);
   const [calculando, setCalculando] = useState(false);
   const [desconto, setDesconto] = useState("");
@@ -94,8 +94,8 @@ export function NovoPedido({
     setCalculando(false);
     if (r.ok) {
       setTaxa(String(r.taxa));
-      setGeo({ km: r.distanciaKm, lat: r.lat, lng: r.lng, aprox: r.aproximado, fora: r.foraDeArea });
-      setCalcMsg(`${r.distanciaKm} km${r.aproximado ? " (aprox.)" : ""}${r.foraDeArea ? " · ⚠️ fora da área!" : ""}`);
+      setGeo({ km: r.distanciaKm, lat: r.lat, lng: r.lng, aprox: r.aproximado, fora: r.foraDeArea, areaId: r.areaId ?? null, areaNome: r.areaNome ?? null });
+      setCalcMsg(`${r.areaNome ? `área ${r.areaNome}` : `${r.distanciaKm} km${r.aproximado ? " (aprox.)" : ""}`}${r.foraDeArea ? " · ⚠️ fora da área!" : ""}`);
     } else {
       setGeo(null);
       setCalcMsg(r.mensagem ?? "Não consegui calcular.");
@@ -111,6 +111,7 @@ export function NovoPedido({
         clienteId, nome, telefone, tipo,
         endereco: tipo === "entrega" ? end : undefined,
         distanciaKm: geo?.km ?? null, lat: geo?.lat ?? null, lng: geo?.lng ?? null,
+        areaId: geo?.areaId ?? null, areaNome: geo?.areaNome ?? null,
         taxaEntrega: taxaN, desconto: descN, descontoMotivo: descMotivo,
         formaPagamento: forma, trocoPara: trocoN || null,
         agendadoPara: agendar ? new Date(agendar + ":00-03:00").toISOString() : null,

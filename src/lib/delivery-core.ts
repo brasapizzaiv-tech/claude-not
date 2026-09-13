@@ -3,6 +3,7 @@
 // AQUI no servidor; o navegador só manda ids.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { geocodificar, distanciaKm, temChaveMapa } from "@/lib/geo";
+import { areaDoPonto, aplicarPromoTele, promosPossiveisHoje, type AreaEntrega, type PromoTele } from "@/lib/delivery-areas";
 
 // Aceita tanto o client do servidor (cookies/RLS) quanto o admin client.
 // Tipagem estrutural mínima pra os dois passarem.
@@ -35,6 +36,8 @@ export type DadosPedidoDelivery = {
   observacao?: string;
   itens: LinhaPedido[];
   agendadoPara?: string | null; // ISO — pedido pra um horário marcado (senão é pra agora)
+  areaId?: string | null;       // área de entrega em que o endereço caiu
+  areaNome?: string | null;
 };
 
 type Linha = { descricao: string; qtd: number; preco: number; itemId: string | null };
@@ -98,7 +101,21 @@ async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]): Promis
   return { descricao, qtd: 1, preco, itemId };
 }
 
-// Taxa de entrega pela distância (endereço → restaurante), usando a config.
+// Áreas ativas e promoções ativas (carregadas juntas; poucas linhas).
+export async function areasEPromos(db: Db) {
+  const [{ data: areas }, { data: promos }] = await Promise.all([
+    db.from("delivery_areas").select("id, nome, cor, valor, taxa_motoboy, tempo_min, poligono, ativo").eq("ativo", true).order("ordem"),
+    db.from("delivery_promocoes_tele").select("id, nome, tipo, valor, area_ids, pedido_minimo, dias, hora_ini, hora_fim, validade, ativo").eq("ativo", true),
+  ]);
+  return {
+    areas: ((areas as unknown as AreaEntrega[]) ?? []).map((a) => ({ ...a, valor: Number(a.valor) })),
+    promos: ((promos as unknown as PromoTele[]) ?? []).map((p) => ({ ...p, valor: Number(p.valor), pedido_minimo: p.pedido_minimo != null ? Number(p.pedido_minimo) : null })),
+  };
+}
+
+// Taxa de entrega: por ÁREA desenhada no mapa quando houver áreas ativas
+// (fora de todas = não entregamos); sem áreas, pela distância até o
+// restaurante (config). Devolve também a promoção que pode valer hoje.
 export async function calcularTaxaEntrega(db: Db, endereco: {
   logradouro?: string; numero?: string; bairro?: string; cidade?: string; cep?: string;
 }) {
@@ -116,6 +133,20 @@ export async function calcularTaxaEntrega(db: Db, endereco: {
   const destino = await geocodificar(partes.join(", "));
   if (!destino) return { ok: false as const, mensagem: "Não encontrei esse endereço no mapa. Confira a rua/número." };
 
+  const { areas, promos } = await areasEPromos(db);
+  if (areas.length > 0) {
+    const area = areaDoPonto(areas, destino.lat, destino.lng);
+    if (!area) {
+      return { ok: true as const, distanciaKm: null, taxa: 0, foraDeArea: true, lat: destino.lat, lng: destino.lng, aproximado: !temChaveMapa(), areaId: null, areaNome: null, tempoMin: null, promosHoje: [] as PromoTele[] };
+    }
+    return {
+      ok: true as const, distanciaKm: null, taxa: r2(area.valor), foraDeArea: false,
+      lat: destino.lat, lng: destino.lng, aproximado: !temChaveMapa(),
+      areaId: area.id, areaNome: area.nome, tempoMin: area.tempo_min,
+      promosHoje: promosPossiveisHoje(promos, area.id, Date.now()),
+    };
+  }
+
   const km = await distanciaKm({ lat: Number(c.origem_lat), lng: Number(c.origem_lng) }, destino);
   if (km == null) return { ok: false as const, mensagem: "Não consegui medir a distância." };
 
@@ -127,6 +158,8 @@ export async function calcularTaxaEntrega(db: Db, endereco: {
     foraDeArea: raio > 0 && km > raio,
     lat: destino.lat, lng: destino.lng,
     aproximado: !temChaveMapa(),
+    areaId: null, areaNome: null, tempoMin: null,
+    promosHoje: promosPossiveisHoje(promos, null, Date.now()),
   };
 }
 
@@ -226,6 +259,16 @@ export async function criarPedidoDeliveryCore(
     descontoMotivo = [descontoMotivo, `Cupom ${opts.cupom.codigo}`].filter(Boolean).join(" · ");
   }
 
+  // Promoção da tele (grátis / % / R$) — decidida AQUI, sobre o subtotal real.
+  let taxaEntrega = d.tipo === "retirada" ? 0 : r2(Number(d.taxaEntrega) || 0);
+  let taxaMotivo: string | null = null;
+  if (d.tipo === "entrega" && taxaEntrega > 0) {
+    const { promos } = await areasEPromos(db);
+    const subtotalPromo = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
+    const ap = aplicarPromoTele(taxaEntrega, promos, { areaId: d.areaId ?? null, subtotal: subtotalPromo, agora: Date.now() });
+    taxaEntrega = ap.taxa; taxaMotivo = ap.motivo;
+  }
+
   const mesa = `${d.nome.trim().split(" ")[0]} · ${d.tipo === "retirada" ? "RETIRADA" : "ENTREGA"}`;
   const { data: com } = await db
     .from("pdv_comandas")
@@ -273,7 +316,10 @@ export async function criarPedidoDeliveryCore(
       lng: d.lng ?? null,
       previsao_em: previsaoEm,
       agendado_para: d.agendadoPara ? new Date(d.agendadoPara).toISOString() : null,
-      taxa_entrega: d.tipo === "retirada" ? 0 : r2(Number(d.taxaEntrega) || 0),
+      taxa_entrega: taxaEntrega,
+      taxa_motivo: taxaMotivo,
+      area_id: d.areaId ?? null,
+      area_nome: d.areaNome ?? null,
       desconto,
       desconto_motivo: descontoMotivo,
       forma_pagamento: d.formaPagamento || null,
@@ -294,11 +340,13 @@ export async function criarPedidoDeliveryCore(
   }
 
   const subtotalLinhas = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
-  const taxaFinal = d.tipo === "retirada" ? 0 : r2(Number(d.taxaEntrega) || 0);
+  const taxaFinal = taxaEntrega;
   return {
     ok: true as const,
     id: (ped as { id: string } | null)?.id as string,
     numero: (com as { numero?: number } | null)?.numero as number | undefined,
+    taxa: taxaFinal,
+    taxaMotivo,
     desconto,
     total: r2(subtotalLinhas + taxaFinal - desconto),
   };
