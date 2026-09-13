@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import QRCode from "qrcode";
-import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico, verificarPixPedido } from "./actions";
+import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico, verificarPixPedido, dadosClientePublico } from "./actions";
 import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -69,6 +69,8 @@ export function PedirClient({
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [lembrado, setLembrado] = useState<string | null>(null); // "Endereço da última vez preenchido"
+  const foneBuscado = useRef("");
   const [tipo, setTipo] = useState<"entrega" | "retirada">("entrega");
   const [end, setEnd] = useState({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
   const [taxa, setTaxa] = useState<number | null>(null);
@@ -180,6 +182,26 @@ export function PedirClient({
       setCalcMsg(r.mensagem ?? "Não consegui calcular. Confira o endereço.");
     }
   }
+
+  // Telefone completo → busca nome e último endereço e preenche o que estiver vazio.
+  useEffect(() => {
+    const fone = telefone.replace(/\D/g, "");
+    if (fone.length < 10 || foneBuscado.current === fone) return;
+    foneBuscado.current = fone;
+    let vivo = true;
+    (async () => {
+      try {
+        const d = await dadosClientePublico(fone);
+        if (!vivo || !d) return;
+        setNome((n) => n.trim() ? n : d.nome);
+        if (d.endereco) {
+          setEnd((e) => e.logradouro.trim() ? e : d.endereco!);
+          setLembrado("📍 Preenchi com o endereço do seu último pedido — confira antes de calcular a entrega.");
+        }
+      } catch { /* sem rede */ }
+    })();
+    return () => { vivo = false; };
+  }, [telefone]);
 
   function enviar() {
     setErro(null);
@@ -373,6 +395,7 @@ export function PedirClient({
 
           {tipo === "entrega" && (
             <div className="mb-4 space-y-2">
+              {lembrado && <p className="text-xs text-emerald-600">{lembrado}</p>}
               <div className="grid grid-cols-3 gap-2">
                 <input value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
                 <input value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />

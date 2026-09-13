@@ -24,14 +24,21 @@ const CARIMBO: Record<string, string> = {
   saiu: "saiu_em", entregue: "entregue_em", cancelado: "cancelado_em",
 };
 
-export async function definirStatusDelivery(id: string, status: string) {
+// extra.tempoMin: ao ACEITAR, o tempo prometido (a previsão vira agora + tempo;
+// pedido agendado mantém o horário marcado). extra.motivo: ao CANCELAR.
+export async function definirStatusDelivery(id: string, status: string, extra?: { tempoMin?: number; motivo?: string }) {
   const supabase = await createClient();
   if (!(status in CARIMBO) && status !== "pendente") return { ok: false as const };
   const { data: ped } = await supabase.from("delivery_pedidos").select("entregador_id, comanda_id, status, agendado_para").eq("id", id).single();
   if (status === "saiu" && !ped?.entregador_id) return { ok: false as const, mensagem: "Escolha o entregador antes de despachar." };
+  if (status === "cancelado" && !(extra?.motivo || "").trim()) return { ok: false as const, mensagem: "Informe o motivo do cancelamento." };
 
   const patch: Record<string, unknown> = { status };
   if (status in CARIMBO) patch[CARIMBO[status]] = new Date().toISOString();
+  if (status === "aceito" && extra?.tempoMin && extra.tempoMin > 0 && !ped?.agendado_para) {
+    patch.previsao_em = new Date(Date.now() + Math.round(extra.tempoMin) * 60000).toISOString();
+  }
+  if (status === "cancelado") patch.cancelado_motivo = (extra?.motivo || "").trim().slice(0, 200);
   await supabase.from("delivery_pedidos").update(patch).eq("id", id);
 
   // Pedido do app: ao ACEITAR (saindo de pendente), imprime na cozinha.

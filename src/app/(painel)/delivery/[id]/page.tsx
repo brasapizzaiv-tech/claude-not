@@ -66,6 +66,7 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
       saiu_em: (p.saiu_em as string) ?? null, entregue_em: (p.entregue_em as string) ?? null,
       cancelado_em: (p.cancelado_em as string) ?? null,
     },
+    canceladoMotivo: (p.cancelado_motivo as string) ?? null,
     itens,
     historicoCliente: histCount ?? 0,
     historico,

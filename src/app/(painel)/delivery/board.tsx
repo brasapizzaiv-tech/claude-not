@@ -2,9 +2,28 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, reimprimirDelivery } from "./actions";
+import { createClient } from "@/lib/supabase/client";
+
+// Alerta sonoro de pedido novo (WebAudio, sem arquivo). O navegador só toca
+// depois de um clique na página — por isso o botão 🔔 do topo.
+let audioCtx: AudioContext | null = null;
+function tocarAlerta() {
+  try {
+    audioCtx ??= new AudioContext();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t0 = audioCtx.currentTime;
+    [0, 0.22, 0.44].forEach((dt, i) => {
+      const o = audioCtx!.createOscillator(); const g = audioCtx!.createGain();
+      o.type = "sine"; o.frequency.value = i === 2 ? 1320 : 880;
+      g.gain.setValueAtTime(0.0001, t0 + dt); g.gain.exponentialRampToValueAtTime(0.5, t0 + dt + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.18);
+      o.connect(g).connect(audioCtx!.destination); o.start(t0 + dt); o.stop(t0 + dt + 0.2);
+    });
+  } catch { /* sem áudio */ }
+}
+const TEMPOS_ACEITE = [30, 40, 50, 60, 75, 90];
 
 const MapaPedidos = dynamic(() => import("./mapa").then((m) => m.MapaPedidos), { ssr: false });
 const MapaPedidosGoogle = dynamic(() => import("./mapa-google").then((m) => m.MapaPedidosGoogle), { ssr: false });
@@ -67,11 +86,16 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
   proc: boolean;
   entregadores: EntregadorOpt[];
   atrasado: (p: PedidoBoard) => boolean;
-  avancar: (p: PedidoBoard) => void;
+  avancar: (p: PedidoBoard, extra?: { tempoMin?: number; motivo?: string }) => void;
   trocarEntregador: (p: PedidoBoard, id: string) => void;
   imprimir: (p: PedidoBoard) => void;
 }) {
   const st = ST[p.status] ?? ST.pendente;
+  const [tempo, setTempo] = useState(40);
+  function recusar() {
+    const motivo = window.prompt("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "");
+    if (motivo && motivo.trim()) avancar({ ...p, status: "__cancelar" } as PedidoBoard, { motivo: motivo.trim() });
+  }
   const total = Math.round((p.subtotal + Number(p.taxa_entrega) - Number(p.desconto)) * 100) / 100;
   return (
     <div className={`flex flex-col rounded-2xl border p-3 ${atrasado(p) ? "border-rose-400" : "border-zinc-200 dark:border-zinc-800"}`}>
@@ -109,7 +133,17 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
       </Link>
 
       <div className="mt-2 flex items-center gap-1.5 border-t border-zinc-100 pt-2 dark:border-zinc-800">
-        {st.proximo ? (
+        {p.status === "pendente" ? (
+          <>
+            {!p.agendado_para && (
+              <select value={tempo} onChange={(e) => setTempo(Number(e.target.value))} title="Tempo prometido" className="rounded-lg border border-zinc-300 bg-transparent px-1.5 py-1 text-xs dark:border-zinc-700">
+                {TEMPOS_ACEITE.map((t) => <option key={t} value={t}>{t} min</option>)}
+              </select>
+            )}
+            <button onClick={() => avancar(p, { tempoMin: p.agendado_para ? undefined : tempo })} disabled={proc} className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-bold text-white disabled:opacity-50">✓ Aceitar</button>
+            <button onClick={recusar} disabled={proc} title="Recusar com motivo" className="rounded-lg border border-rose-300 px-2 py-1 text-xs text-rose-600 dark:border-rose-800">✕</button>
+          </>
+        ) : st.proximo ? (
           <button onClick={() => avancar(p)} disabled={proc} className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-bold text-white disabled:opacity-50">→ {ST[st.proximo].label}</button>
         ) : (
           <span className="flex-1 text-center text-xs text-zinc-400">{p.status === "entregue" ? "Concluído" : "—"}</span>
@@ -146,6 +180,42 @@ export function Board({ pedidos, entregadores, origemMapa, googleKey = null }: {
   const [fOrigem, setFOrigem] = useState<string>("todos");
   const [busca, setBusca] = useState("");
   const [nowMs, setNowMs] = useState(() => new Date().getTime());
+  // Som de pedido novo (lembrado neste navegador).
+  const [som, setSom] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("delivery_som") === "1"; } catch { return false; }
+  });
+  const somRef = useRef(som);
+  useEffect(() => { somRef.current = som; }, [som]);
+  function alternarSom() {
+    const novo = !som;
+    setSom(novo);
+    try { localStorage.setItem("delivery_som", novo ? "1" : "0"); } catch { /* sem storage */ }
+    if (novo) tocarAlerta(); // o clique libera o áudio e serve de teste
+  }
+
+  // Tempo real: pedido novo → som + recarrega; qualquer mudança → recarrega.
+  // O refresh de 30 s abaixo continua como reserva se o canal cair.
+  useEffect(() => {
+    const supabase = createClient();
+    const canal = supabase
+      .channel("delivery_pedidos_board")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "delivery_pedidos" }, () => {
+        if (somRef.current) tocarAlerta();
+        router.refresh();
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "delivery_pedidos" }, () => { router.refresh(); })
+      .subscribe();
+    return () => { supabase.removeChannel(canal); };
+  }, [router]);
+
+  // Título da aba avisa quando tem pedido esperando aceite.
+  const pendentes = pedidos.filter((p) => p.status === "pendente").length;
+  useEffect(() => {
+    const antes = document.title;
+    if (pendentes > 0) document.title = `🔔 (${pendentes}) pedido${pendentes > 1 ? "s" : ""} novo${pendentes > 1 ? "s" : ""} · Delivery`;
+    return () => { document.title = antes; };
+  }, [pendentes]);
 
   function mudarVisao(v: "cards" | "kanban" | "mapa") {
     setVisao(v);
@@ -178,11 +248,12 @@ export function Board({ pedidos, entregadores, origemMapa, googleKey = null }: {
   const atrasado = (p: PedidoBoard) =>
     !!p.previsao_em && p.status !== "entregue" && p.status !== "cancelado" && nowMs > new Date(p.previsao_em).getTime();
 
-  function avancar(p: PedidoBoard) {
-    const prox = ST[p.status]?.proximo;
+  function avancar(p: PedidoBoard, extra?: { tempoMin?: number; motivo?: string }) {
+    // status "__cancelar" = recusa com motivo (vinda do card)
+    const prox = p.status === "__cancelar" ? "cancelado" : ST[p.status]?.proximo;
     if (!prox) return;
     start(async () => {
-      const r = await definirStatusDelivery(p.id, prox);
+      const r = await definirStatusDelivery(p.id, prox, extra);
       if (!r.ok && "mensagem" in r && r.mensagem) alert(r.mensagem);
       router.refresh();
     });
@@ -206,6 +277,9 @@ export function Board({ pedidos, entregadores, origemMapa, googleKey = null }: {
     <div>
       {/* Filtros */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
+        <button onClick={alternarSom} title={som ? "Som de pedido novo ligado — clique pra desligar" : "Ligar som de pedido novo"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${som ? "bg-emerald-600 text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}`}>
+          {som ? "🔔 Som ligado" : "🔕 Som"}
+        </button>
         <div className="flex gap-1 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
           {[["cards", "▦ Cards"], ["kanban", "▥ Kanban"], ["mapa", "🗺️ Mapa"]].map(([k, lbl]) => (
             <button key={k} onClick={() => mudarVisao(k as "cards" | "kanban" | "mapa")} className={`rounded-md px-3 py-1.5 text-sm font-medium ${visao === k ? "bg-white shadow dark:bg-zinc-950" : "text-zinc-500"}`}>{lbl}</button>

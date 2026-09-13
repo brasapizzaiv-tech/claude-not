@@ -20,6 +20,28 @@ export async function calcularEntregaPublico(endereco: {
   return calcularTaxaEntrega(admin, endereco);
 }
 
+// Dados de quem já pediu (pelo telefone): nome e o ÚLTIMO endereço de entrega,
+// pro cliente não digitar tudo de novo. Só devolve se o telefone bater inteiro.
+export async function dadosClientePublico(telefone: string) {
+  const fone = (telefone || "").replace(/\D/g, "");
+  if (fone.length < 10) return null;
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("delivery_pedidos")
+    .select("nome, tipo, logradouro, numero, complemento, bairro, cidade, referencia, cep")
+    .eq("telefone", fone)
+    .neq("status", "cancelado")
+    .order("criado_em", { ascending: false })
+    .limit(5);
+  const rows = (data as { nome: string; tipo: string; logradouro: string | null; numero: string | null; complemento: string | null; bairro: string | null; cidade: string | null; referencia: string | null; cep: string | null }[]) ?? [];
+  if (rows.length === 0) return null;
+  const ent = rows.find((r) => r.tipo === "entrega" && r.logradouro);
+  return {
+    nome: rows[0].nome,
+    endereco: ent ? { logradouro: ent.logradouro ?? "", numero: ent.numero ?? "", complemento: ent.complemento ?? "", bairro: ent.bairro ?? "", cidade: ent.cidade ?? "Ivoti", referencia: ent.referencia ?? "", cep: ent.cep ?? "" } : null,
+  };
+}
+
 // Últimos pedidos do cliente (pelo telefone) — mostra o mínimo: nº, data,
 // status, tipo e total, com o link de acompanhamento (id).
 export async function meusPedidos(telefone: string) {
@@ -168,6 +190,13 @@ export async function enviarPedidoPublico(d: {
     .from("clientes").select("id").ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
   if (cli?.id) {
     clienteId = cli.id as string;
+    // Guarda o endereço mais recente no cadastro do cliente (hoje 0 de 3.269 têm).
+    if (d.tipo === "entrega" && (d.endereco?.logradouro || "").trim()) {
+      await admin.from("clientes").update({
+        logradouro: d.endereco?.logradouro ?? null, numero: d.endereco?.numero ?? null, complemento: d.endereco?.complemento ?? null,
+        bairro: d.endereco?.bairro ?? null, municipio: d.endereco?.cidade ?? null, cep: d.endereco?.cep ?? null,
+      }).eq("id", clienteId);
+    }
   } else {
     const { data: novo } = await admin
       .from("clientes")

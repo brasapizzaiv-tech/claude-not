@@ -28,6 +28,7 @@ export type PedidoDetalhe = {
     criado_em: string; aceito_em: string | null; preparo_em: string | null; pronto_em: string | null;
     saiu_em: string | null; entregue_em: string | null; cancelado_em: string | null;
   };
+  canceladoMotivo: string | null;
   itens: { descricao: string; qtd: number; preco: number }[];
   historicoCliente: number;
   historico: { numero: number | null; criado_em: string; status: string; tipo: string }[];
@@ -94,14 +95,14 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
             </button>
           )}
           {!cancelado && p.status !== "entregue" && (
-            <button onClick={() => { if (confirm("Cancelar este pedido?")) act(() => definirStatusDelivery(p.id, "cancelado")); }} disabled={proc} className="rounded-xl border border-rose-300 px-3 py-2 text-sm text-rose-600 dark:border-rose-800">Cancelar</button>
+            <button onClick={() => { const m = window.prompt("Motivo do cancelamento (o cliente vai ver):", ""); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="rounded-xl border border-rose-300 px-3 py-2 text-sm text-rose-600 dark:border-rose-800">Cancelar</button>
           )}
         </div>
       </div>
 
       {/* Timeline */}
       {cancelado ? (
-        <div className="mb-4 rounded-xl bg-rose-500/10 px-4 py-3 font-semibold text-rose-600">Pedido cancelado {p.carimbos.cancelado_em ? `às ${hhmm(p.carimbos.cancelado_em)}` : ""}</div>
+        <div className="mb-4 rounded-xl bg-rose-500/10 px-4 py-3 font-semibold text-rose-600">Pedido cancelado {p.carimbos.cancelado_em ? `às ${hhmm(p.carimbos.cancelado_em)}` : ""}{p.canceladoMotivo ? <span className="block text-sm font-normal">Motivo: {p.canceladoMotivo}</span> : null}</div>
       ) : (
         <div className="mb-4 flex items-center gap-1 overflow-x-auto rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
           {ETAPAS.map((e, i) => {
