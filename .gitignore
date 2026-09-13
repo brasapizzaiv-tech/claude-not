@@ -71,6 +71,5 @@ agente-tef/config.json
 agente-tef/node_modules/
 
 # app nativo do entregador: android/ e node_modules/ são gerados no CI
-app-entregador/android/
 app-entregador/node_modules/
 app-entregador/*.apk

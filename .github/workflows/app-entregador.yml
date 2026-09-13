@@ -32,9 +32,9 @@ jobs:
       - name: Dependências
         run: npm install --no-audit --no-fund
 
-      - name: Projeto Android (gera, aplica permissões/nome/ícone)
+      - name: Projeto Android (sincroniza, aplica permissões/nome/ícone)
         run: |
-          npx cap add android
+          set -x
           npx cap sync android
           node scripts/patch-android.mjs
           chmod +x android/gradlew
