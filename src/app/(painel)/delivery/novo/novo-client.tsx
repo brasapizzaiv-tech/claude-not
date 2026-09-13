@@ -43,6 +43,7 @@ export function NovoPedido({
   const [descMotivo, setDescMotivo] = useState("");
   const [forma, setForma] = useState("Dinheiro");
   const [trocoPara, setTrocoPara] = useState("");
+  const [agendar, setAgendar] = useState(""); // "YYYY-MM-DDTHH:MM" (horário de SP) ou vazio
   const [origem, setOrigem] = useState<string>("whatsapp");
   const [obs, setObs] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -112,6 +113,7 @@ export function NovoPedido({
         distanciaKm: geo?.km ?? null, lat: geo?.lat ?? null, lng: geo?.lng ?? null,
         taxaEntrega: taxaN, desconto: descN, descontoMotivo: descMotivo,
         formaPagamento: forma, trocoPara: trocoN || null,
+        agendadoPara: agendar ? new Date(agendar + ":00-03:00").toISOString() : null,
         origem: origem as "app" | "whatsapp" | "instagram" | "telefone" | "balcao",
         observacao: obs,
         itens: cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
@@ -250,6 +252,10 @@ export function NovoPedido({
           {forma === "Dinheiro" && (
             <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
           )}
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500">📅 Agendar pra (opcional — vazio = pra agora)</label>
+            <input type="datetime-local" value={agendar} onChange={(e) => setAgendar(e.target.value)} className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {tipo === "entrega" && (
               <div>

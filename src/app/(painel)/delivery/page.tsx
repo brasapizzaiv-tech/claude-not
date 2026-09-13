@@ -11,7 +11,7 @@ export default async function DeliveryPage() {
     supabase
       .from("delivery_pedidos")
       .select(
-        "id, comanda_id, nome, telefone, tipo, logradouro, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, entregador_id, lat, lng, pdv_comandas(numero)",
+        "id, comanda_id, nome, telefone, tipo, logradouro, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, agendado_para, entregador_id, lat, lng, pdv_comandas(numero)",
       )
       .order("criado_em", { ascending: false })
       .limit(120),

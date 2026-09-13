@@ -34,6 +34,7 @@ export type DadosPedidoDelivery = {
   origem: "app" | "whatsapp" | "instagram" | "telefone" | "balcao";
   observacao?: string;
   itens: LinhaPedido[];
+  agendadoPara?: string | null; // ISO — pedido pra um horário marcado (senão é pra agora)
 };
 
 type Linha = { descricao: string; qtd: number; preco: number; itemId: string | null };
@@ -193,6 +194,8 @@ export async function criarPedidoDeliveryCore(
     // Cupom já validado (ativo/validade/usos) — o desconto é calculado AQUI,
     // sobre o subtotal real resolvido no servidor.
     cupom?: { codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null } | null;
+    // Pedido mínimo (R$, sem a taxa) — conferido sobre o subtotal REAL.
+    pedidoMinimo?: number;
   },
 ) {
   const validos = (d.itens ?? []).filter((i) => Math.round(Number((i as { qtd?: number }).qtd) || 1) > 0);
@@ -201,6 +204,12 @@ export async function criarPedidoDeliveryCore(
 
   const linhas = await resolverLinhas(db, validos);
   if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };
+  if (opts.pedidoMinimo && opts.pedidoMinimo > 0) {
+    const sub = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
+    if (sub < opts.pedidoMinimo) {
+      return { ok: false as const, mensagem: `O pedido mínimo é R$ ${opts.pedidoMinimo.toFixed(2).replace(".", ",")} (sem contar a entrega). Faltam R$ ${(opts.pedidoMinimo - sub).toFixed(2).replace(".", ",")}.` };
+    }
+  }
 
   // Desconto do cupom sobre o subtotal REAL (resolvido acima).
   let desconto = r2(Number(d.desconto) || 0);
@@ -241,7 +250,8 @@ export async function criarPedidoDeliveryCore(
 
   const { data: cfg } = await db.from("delivery_config").select("tempo_preparo_min").eq("id", 1).maybeSingle();
   const preparoMin = Number((cfg as { tempo_preparo_min?: number } | null)?.tempo_preparo_min ?? 40) || 40;
-  const previsaoEm = new Date(Date.now() + preparoMin * 60000).toISOString();
+  // Agendado: a previsão É o horário marcado.
+  const previsaoEm = d.agendadoPara ? new Date(d.agendadoPara).toISOString() : new Date(Date.now() + preparoMin * 60000).toISOString();
 
   const { data: ped } = await db
     .from("delivery_pedidos")
@@ -262,6 +272,7 @@ export async function criarPedidoDeliveryCore(
       lat: d.lat ?? null,
       lng: d.lng ?? null,
       previsao_em: previsaoEm,
+      agendado_para: d.agendadoPara ? new Date(d.agendadoPara).toISOString() : null,
       taxa_entrega: d.tipo === "retirada" ? 0 : r2(Number(d.taxaEntrega) || 0),
       desconto,
       desconto_motivo: descontoMotivo,
@@ -276,7 +287,8 @@ export async function criarPedidoDeliveryCore(
     .select("id")
     .single();
 
-  if (opts.status === "aceito") {
+  // Agendado NÃO imprime agora: a cozinha recebe quando o pedido for pra "em preparo".
+  if (opts.status === "aceito" && !d.agendadoPara) {
     const itemIds = linhas.map((l) => l.itemId).filter(Boolean) as string[];
     await enfileirarCozinha(db, lancamentoId, itemIds, linhas.some((l) => l.itemId === null));
   }

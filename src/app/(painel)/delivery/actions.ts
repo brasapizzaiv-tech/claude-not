@@ -27,7 +27,7 @@ const CARIMBO: Record<string, string> = {
 export async function definirStatusDelivery(id: string, status: string) {
   const supabase = await createClient();
   if (!(status in CARIMBO) && status !== "pendente") return { ok: false as const };
-  const { data: ped } = await supabase.from("delivery_pedidos").select("entregador_id, comanda_id, status").eq("id", id).single();
+  const { data: ped } = await supabase.from("delivery_pedidos").select("entregador_id, comanda_id, status, agendado_para").eq("id", id).single();
   if (status === "saiu" && !ped?.entregador_id) return { ok: false as const, mensagem: "Escolha o entregador antes de despachar." };
 
   const patch: Record<string, unknown> = { status };
@@ -35,7 +35,12 @@ export async function definirStatusDelivery(id: string, status: string) {
   await supabase.from("delivery_pedidos").update(patch).eq("id", id);
 
   // Pedido do app: ao ACEITAR (saindo de pendente), imprime na cozinha.
-  if (status === "aceito" && ped?.status === "pendente") {
+  // Agendado: imprime só quando vai pra "em preparo" (senão o papel fica
+  // horas na bancada e a cozinha faz cedo demais).
+  if (status === "aceito" && ped?.status === "pendente" && !ped?.agendado_para) {
+    await imprimirComandaDoPedido(supabase, id);
+  }
+  if (status === "em_preparo" && ped?.agendado_para) {
     await imprimirComandaDoPedido(supabase, id);
   }
 
@@ -113,8 +118,31 @@ export async function salvarConfigDelivery(formData: FormData) {
   const num = (k: string) => { const v = Number(String(formData.get(k) ?? "").replace(",", ".")); return Number.isFinite(v) ? v : 0; };
   const origemEndereco = String(formData.get("origem_endereco") ?? "").trim();
 
+  // Horários e agendamento → config.horarios (jsonb), por cima do que já havia no config.
+  const { data: atual } = await supabase.from("delivery_config").select("config").eq("id", 1).maybeSingle();
+  const configAtual = ((atual as { config?: Record<string, unknown> | null } | null)?.config ?? {}) as Record<string, unknown>;
+  const hhmm = (k: string, padrao: string) => { const v = String(formData.get(k) ?? "").trim(); return /^\d{2}:\d{2}$/.test(v) ? v : padrao; };
+  const turnos = [
+    { id: "almoco", nome: "Almoço", padrao: ["08:30", "11:15", "13:20"] },
+    { id: "noite", nome: "Noite", padrao: ["15:00", "18:30", "22:00"] },
+  ].map((t) => ({
+    id: t.id, nome: t.nome,
+    dias: formData.getAll(`t_${t.id}_dias`).map((v) => Number(v)).filter((d) => d >= 0 && d <= 6),
+    agendaAbre: hhmm(`t_${t.id}_agenda`, t.padrao[0]),
+    livreAbre: hhmm(`t_${t.id}_livre_abre`, t.padrao[1]),
+    livreFecha: hhmm(`t_${t.id}_livre_fecha`, t.padrao[2]),
+  }));
+  const horarios = {
+    turnos,
+    intervaloMin: Math.max(5, Math.round(num("intervalo_min")) || 15),
+    maxPorHorario: Math.max(0, Math.round(num("max_por_horario"))),
+    antecedenciaMin: Math.max(0, Math.round(num("antecedencia_min"))),
+    pedidoMinimo: Math.max(0, num("pedido_minimo")),
+  };
+
   const patch: Record<string, unknown> = {
     id: 1,
+    config: { ...configAtual, horarios },
     origem_endereco: origemEndereco || null,
     taxa_base: num("taxa_base"),
     preco_km: num("preco_km"),

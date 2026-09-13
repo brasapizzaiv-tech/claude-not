@@ -4,6 +4,8 @@ import { temChaveMapa } from "@/lib/geo";
 import { salvarConfigDelivery } from "../actions";
 import { pixDiagnostico } from "@/lib/pix";
 import { PixTeste } from "./pix-teste";
+import { HorariosConfig } from "./horarios-form";
+import { lerConfigHorarios } from "@/lib/delivery-horarios";
 
 export const metadata = { title: "Config · Delivery" };
 
@@ -11,13 +13,15 @@ export default async function DeliveryConfigPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("delivery_config")
-    .select("origem_endereco, origem_lat, origem_lng, taxa_base, preco_km, raio_max_km, tempo_preparo_min, aberto, aviso")
+    .select("origem_endereco, origem_lat, origem_lng, taxa_base, preco_km, raio_max_km, tempo_preparo_min, aberto, aviso, config")
     .eq("id", 1)
     .maybeSingle();
   const c = (data ?? {}) as {
     origem_endereco?: string; origem_lat?: number; origem_lng?: number;
     taxa_base?: number; preco_km?: number; raio_max_km?: number; tempo_preparo_min?: number; aberto?: boolean; aviso?: string | null;
+    config?: unknown;
   };
+  const horarios = lerConfigHorarios(c.config);
   const temChave = temChaveMapa();
   const geocodificado = c.origem_lat != null && c.origem_lng != null;
   const pix = pixDiagnostico();
@@ -94,9 +98,12 @@ export default async function DeliveryConfigPage() {
           <p className="mt-1 text-xs text-zinc-500">Aparece como faixa no topo do /pedir. Deixe vazio pra não mostrar.</p>
         </div>
 
+        <HorariosConfig cfg={horarios} />
+
         <label className="flex items-center gap-2">
           <input type="checkbox" name="aberto" defaultChecked={c.aberto ?? true} className="h-4 w-4" />
-          <span className="text-sm font-semibold">Delivery aberto (aceitando pedidos)</span>
+          <span className="text-sm font-semibold">Delivery ligado</span>
+          <span className="text-xs text-zinc-500">— desligue pra fechar na hora (feriado, imprevisto). Ligado, valem os horários acima.</span>
         </label>
 
         <div className="rounded-xl bg-zinc-50 p-3 text-sm dark:bg-zinc-900">

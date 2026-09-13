@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { pixConfigurado } from "@/lib/pix";
+import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { PedirClient } from "./pedir-client";
 
 export const metadata: Metadata = {
@@ -29,7 +30,7 @@ export default async function PedirPage() {
     admin.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco"),
     admin.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem"),
     admin.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem"),
-    admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso").eq("id", 1).maybeSingle(),
+    admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso, config").eq("id", 1).maybeSingle(),
     admin.from("pdv_comanda_itens").select("item_id").not("item_id", "is", null).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1000),
   ]);
 
@@ -53,6 +54,33 @@ export default async function PedirPage() {
         foto_url: i.foto_url, descricao: i.descricao,
       };
     });
+
+  // Horários: aberto pra agora? dá pra agendar? quais horários (e quais lotaram)?
+  const ligado = (cfg as { aberto?: boolean } | null)?.aberto !== false;
+  const hcfg = lerConfigHorarios((cfg as { config?: unknown } | null)?.config);
+  const estado = estadoDelivery(hcfg, agora);
+  const slots = slotsAgendamento(hcfg, agora);
+  const ocupacao = new Map<string, number>();
+  if (slots.length) {
+    const { data: ags } = await admin
+      .from("delivery_pedidos")
+      .select("agendado_para")
+      .gte("agendado_para", slots[0].iso)
+      .lte("agendado_para", slots[slots.length - 1].iso)
+      .neq("status", "cancelado");
+    for (const a of (ags as { agendado_para: string }[]) ?? []) {
+      const k = new Date(a.agendado_para).toISOString();
+      ocupacao.set(k, (ocupacao.get(k) ?? 0) + 1);
+    }
+  }
+  const horario = {
+    livre: ligado && estado.livre,
+    fechaEm: estado.fechaEm,
+    proximaAbertura: estado.proximaAbertura?.texto ?? null,
+    podeAgendar: ligado && slots.length > 0,
+    slots: slots.map((s) => ({ iso: s.iso, label: s.label, turno: s.turno, lotado: hcfg.maxPorHorario > 0 && (ocupacao.get(s.iso) ?? 0) >= hcfg.maxPorHorario })),
+    pedidoMinimo: hcfg.pedidoMinimo,
+  };
 
   // "Os mais vendidos": itens do cardápio mais lançados nos últimos 60 dias.
   const cont = new Map<string, number>();
@@ -83,7 +111,8 @@ export default async function PedirPage() {
         grupos: ((grupos as { id: string; item_id: string; nome: string; min: number; max: number; permite_repetir: boolean }[]) ?? []),
         opcoes: ((opcoes as { id: string; grupo_id: string; nome: string; preco: number }[]) ?? []).map((o) => ({ ...o, preco: Number(o.preco) })),
       }}
-      aberto={(cfg as { aberto?: boolean } | null)?.aberto !== false}
+      aberto={horario.livre}
+      horario={horario}
       tempoPreparo={Number((cfg as { tempo_preparo_min?: number } | null)?.tempo_preparo_min ?? 40)}
       aviso={((cfg as { aviso?: string | null } | null)?.aviso || "").trim() || null}
       maisVendidos={maisVendidos}

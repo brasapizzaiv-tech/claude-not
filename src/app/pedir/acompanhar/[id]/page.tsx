@@ -17,7 +17,7 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
 
   const { data: ped } = await admin
     .from("delivery_pedidos")
-    .select("nome, tipo, status, taxa_entrega, desconto, criado_em, aceito_em, preparo_em, pronto_em, saiu_em, entregue_em, cancelado_em, previsao_em, comanda_id, forma_pagamento, pdv_comandas(numero)")
+    .select("nome, tipo, status, taxa_entrega, desconto, criado_em, aceito_em, preparo_em, pronto_em, saiu_em, entregue_em, cancelado_em, previsao_em, agendado_para, comanda_id, forma_pagamento, pdv_comandas(numero)")
     .eq("id", id)
     .maybeSingle();
   if (!ped) notFound();
@@ -48,10 +48,11 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
   ];
   const idx = ETAPAS.findIndex((e) => e.key === status);
   const cancelado = status === "cancelado";
+  const agendado = p.agendado_para ? hhmm(p.agendado_para as string) : null;
   const msgAtual = cancelado
     ? "Seu pedido foi cancelado. Qualquer dúvida, fale com a gente."
-    : status === "pendente" ? "Recebemos seu pedido! O restaurante vai confirmar em instantes."
-    : status === "aceito" ? "Pedido confirmado! Já já entra no preparo."
+    : status === "pendente" ? (agendado ? `Recebemos seu pedido agendado pras ${agendado}! O restaurante vai confirmar.` : "Recebemos seu pedido! O restaurante vai confirmar em instantes.")
+    : status === "aceito" ? (agendado ? `Pedido confirmado pras ${agendado}. 📅` : "Pedido confirmado! Já já entra no preparo.")
     : status === "em_preparo" ? "Seu pedido está sendo preparado. 🔥"
     : status === "pronto" ? (retirada ? "Pronto! Pode vir retirar. 🏃" : "Pronto! Logo sai pra entrega.")
     : status === "saiu" ? "Saiu pra entrega — chega em breve! 🛵"

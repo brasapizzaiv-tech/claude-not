@@ -37,8 +37,17 @@ function FotoItem({ url, size = "h-20 w-24" }: { url?: string | null; size?: str
   return <img src={url} alt="" className={`${size} shrink-0 rounded-xl object-cover`} />;
 }
 
+export type HorarioPedir = {
+  livre: boolean;                 // pode pedir pra agora
+  fechaEm: string | null;
+  proximaAbertura: string | null; // "hoje às 18:30"
+  podeAgendar: boolean;
+  slots: { iso: string; label: string; turno: string; lotado: boolean }[];
+  pedidoMinimo: number;
+};
+
 export function PedirClient({
-  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo,
+  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo, horario,
 }: {
   itens: Item[];
   categorias: string[];
@@ -50,6 +59,7 @@ export function PedirClient({
   aviso: string | null;
   maisVendidos: string[];
   pixAtivo?: boolean;
+  horario: HorarioPedir;
 }) {
   const [proc, start] = useTransition();
   const [fase, setFase] = useState<"menu" | "checkout" | "historico">("menu");
@@ -64,6 +74,9 @@ export function PedirClient({
   const [taxa, setTaxa] = useState<number | null>(null);
   const [calcMsg, setCalcMsg] = useState<string | null>(null);
   const [calculando, setCalculando] = useState(false);
+  // Quando: "agora" (dentro do horário livre) ou "agendar" (horário exato).
+  const [quando, setQuando] = useState<"agora" | "agendar">(aberto ? "agora" : "agendar");
+  const [slot, setSlot] = useState<string>("");
   const [forma, setForma] = useState("Dinheiro");
   const [trocoPara, setTrocoPara] = useState("");
   const [obs, setObs] = useState("");
@@ -175,6 +188,9 @@ export function PedirClient({
     if (telefone.replace(/\D/g, "").length < 10) { setErro("Informe seu telefone com DDD."); return; }
     if (tipo === "entrega" && !end.logradouro.trim()) { setErro("Informe o endereço de entrega."); return; }
     if (tipo === "entrega" && taxa == null) { setErro("Toque em \"Calcular entrega\" pra confirmar a taxa."); return; }
+    if (horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo) { setErro(`Pedido mínimo é ${brl(horario.pedidoMinimo)} (sem contar a entrega).`); return; }
+    if (quando === "agendar" && !slot) { setErro("Escolha o horário do agendamento."); return; }
+    if (quando === "agora" && !aberto) { setErro("Estamos fechados agora — agende um horário."); return; }
     const trocoN = forma === "Dinheiro" ? Number(trocoPara.replace(",", ".")) || 0 : 0;
     start(async () => {
       const r = await enviarPedidoPublico({
@@ -184,6 +200,7 @@ export function PedirClient({
         observacao: obs,
         cupom: cupom?.codigo ?? null,
         itens: cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
+        agendadoPara: quando === "agendar" ? slot : null,
       });
       if (r.ok) {
         try { localStorage.setItem("pedir_tel", telefone); localStorage.setItem("pedir_nome", nome); } catch { /* sem storage */ }
@@ -328,6 +345,26 @@ export function PedirClient({
             <input value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700" />
           </div>
 
+          <h2 className="mb-2 font-bold">Pra quando?</h2>
+          <div className="mb-2 grid grid-cols-2 gap-2">
+            <button onClick={() => setQuando("agora")} disabled={!aberto} className={`rounded-xl border py-2.5 font-semibold disabled:opacity-40 ${quando === "agora" ? "text-white" : "border-zinc-300 text-zinc-500 dark:border-zinc-700"}`} style={quando === "agora" ? { background: LARANJA, borderColor: LARANJA } : {}}>⚡ Agora{aberto && horario.fechaEm ? <span className="block text-[11px] font-normal opacity-80">até {horario.fechaEm}</span> : !aberto ? <span className="block text-[11px] font-normal opacity-80">fechado</span> : null}</button>
+            <button onClick={() => setQuando("agendar")} disabled={!horario.podeAgendar} className={`rounded-xl border py-2.5 font-semibold disabled:opacity-40 ${quando === "agendar" ? "text-white" : "border-zinc-300 text-zinc-500 dark:border-zinc-700"}`} style={quando === "agendar" ? { background: LARANJA, borderColor: LARANJA } : {}}>📅 Agendar{!horario.podeAgendar ? <span className="block text-[11px] font-normal opacity-80">indisponível</span> : null}</button>
+          </div>
+          {quando === "agendar" && horario.podeAgendar && (
+            <div className="mb-4">
+              <select value={slot} onChange={(e) => setSlot(e.target.value)} className="w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none dark:border-zinc-700 dark:bg-zinc-950">
+                <option value="">Escolha o horário…</option>
+                {horario.slots.map((s) => (
+                  <option key={s.iso} value={s.iso} disabled={s.lotado}>{s.turno} · {s.label}{s.lotado ? " — lotado" : ""}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-zinc-500">Horário em que o pedido {tipo === "entrega" ? "sai pra entrega" : "fica pronto pra retirar"}.</p>
+            </div>
+          )}
+          {!aberto && !horario.podeAgendar && (
+            <p className="mb-4 rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-600">Estamos fechados{horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : ""}.</p>
+          )}
+
           <h2 className="mb-2 font-bold">Como você quer receber?</h2>
           <div className="mb-3 grid grid-cols-2 gap-2">
             <button onClick={() => setTipo("entrega")} className={`rounded-xl border py-2.5 font-semibold ${tipo === "entrega" ? "text-white" : "border-zinc-300 text-zinc-500 dark:border-zinc-700"}`} style={tipo === "entrega" ? { background: LARANJA, borderColor: LARANJA } : {}}>🛵 Entrega</button>
@@ -377,8 +414,11 @@ export function PedirClient({
             {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
             <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-            <button onClick={enviar} disabled={proc || !aberto} className="w-full rounded-2xl py-3.5 text-base font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>
-              {proc ? "Enviando..." : aberto ? "✅ Enviar pedido" : "Delivery fechado agora"}
+            {horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo && cart.length > 0 && (
+              <p className="mb-2 text-xs text-amber-600">Pedido mínimo {brl(horario.pedidoMinimo)} — faltam {brl(horario.pedidoMinimo - subtotal)}.</p>
+            )}
+            <button onClick={enviar} disabled={proc || (!aberto && !horario.podeAgendar)} className="w-full rounded-2xl py-3.5 text-base font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>
+              {proc ? "Enviando..." : !aberto && !horario.podeAgendar ? "Delivery fechado agora" : quando === "agendar" ? "📅 Agendar pedido" : "✅ Enviar pedido"}
             </button>
           </div>
         </div>
@@ -391,7 +431,11 @@ export function PedirClient({
   return (
     <Casca onMeusPedidos={() => setFase("historico")}>
       {!aberto && (
-        <div className="bg-rose-600 px-4 py-2 text-center text-sm font-bold text-white">😴 Estamos fechados agora — você pode olhar o cardápio, mas não dá pra pedir.</div>
+        <div className={`px-4 py-2 text-center text-sm font-bold text-white ${horario.podeAgendar ? "bg-sky-700" : "bg-rose-600"}`}>
+          {horario.podeAgendar
+            ? `📅 Fechado agora${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : ""}. Mas você já pode AGENDAR seu pedido!`
+            : `😴 Estamos fechados${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : " agora"}. Pode olhar o cardápio à vontade.`}
+        </div>
       )}
       {aviso && (
         <div className="px-4 py-2 text-center text-sm font-semibold text-white" style={{ background: LARANJA }}>📢 {aviso}</div>

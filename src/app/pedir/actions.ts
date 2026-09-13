@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix";
+import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export type { LinhaPedido } from "@/lib/delivery-core";
@@ -95,6 +96,7 @@ export async function enviarPedidoPublico(d: {
   observacao?: string;
   cupom?: string | null;
   itens: LinhaPedido[];
+  agendadoPara?: string | null; // ISO de um horário oferecido pelo servidor
 }) {
   const admin = createAdminClient();
 
@@ -106,9 +108,27 @@ export async function enviarPedidoPublico(d: {
   if (!Array.isArray(d.itens) || d.itens.length === 0) return { ok: false as const, mensagem: "Seu carrinho está vazio." };
   if (d.itens.length > 60) return { ok: false as const, mensagem: "Pedido muito grande — fale com a gente no WhatsApp." };
 
-  // Delivery precisa estar aberto.
-  const { data: cfg } = await admin.from("delivery_config").select("aberto").eq("id", 1).maybeSingle();
+  // Delivery ligado + dentro do horário (ou agendado num horário válido).
+  const { data: cfg } = await admin.from("delivery_config").select("aberto, config").eq("id", 1).maybeSingle();
   if (cfg && cfg.aberto === false) return { ok: false as const, mensagem: "O delivery está fechado agora. Tente mais tarde!" };
+  const hcfg = lerConfigHorarios((cfg as { config?: unknown } | null)?.config);
+  const agoraMs = Date.now();
+  let agendadoPara: string | null = null;
+  if (d.agendadoPara) {
+    const alvo = new Date(d.agendadoPara);
+    const slot = slotsAgendamento(hcfg, agoraMs).find((s) => s.ms === alvo.getTime());
+    if (!slot) return { ok: false as const, mensagem: "Esse horário não está mais disponível. Escolha outro." };
+    if (hcfg.maxPorHorario > 0) {
+      const { count } = await admin.from("delivery_pedidos").select("id", { count: "exact", head: true }).eq("agendado_para", slot.iso).neq("status", "cancelado");
+      if ((count ?? 0) >= hcfg.maxPorHorario) return { ok: false as const, mensagem: `O horário das ${slot.label} lotou. Escolha outro.` };
+    }
+    agendadoPara = slot.iso;
+  } else {
+    const estado = estadoDelivery(hcfg, agoraMs);
+    if (!estado.livre) {
+      return { ok: false as const, mensagem: estado.proximaAbertura ? `Estamos fechados agora — abrimos ${estado.proximaAbertura.texto}. Você pode agendar!` : "Estamos fechados agora." };
+    }
+  }
 
   // Confere se todos os itens ainda estão à venda no app (canal, esgotado, horário).
   const idsPedidos = [...new Set(d.itens.flatMap((i) => ("itemId" in i && i.itemId ? [i.itemId] : [])))];
@@ -194,8 +214,9 @@ export async function enviarPedidoPublico(d: {
       origem: "app",
       observacao: d.observacao,
       itens: d.itens,
+      agendadoPara,
     },
-    { status: "pendente", atendenteId: null, criadoPor: null, cupom },
+    { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo },
   );
   if (!r.ok) return r;
   if (cupomId) {

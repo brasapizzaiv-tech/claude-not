@@ -26,6 +26,7 @@ export type PedidoBoard = {
   desconto: number;
   criado_em: string;
   previsao_em: string | null;
+  agendado_para: string | null;
   entregador_id: string | null;
   entregadorNome: string | null;
   subtotal: number;
@@ -79,6 +80,11 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
         <span className="text-xs text-zinc-400">{haQuanto(p.criado_em, nowMs)}</span>
         <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${st.bg} ${st.cor}`}>{st.label}</span>
       </div>
+      {p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && (
+        <div className={`mb-2 rounded-lg px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300"}`}>
+          📅 Agendado pra {hora(p.agendado_para)}{nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? " · hora de preparar" : ""}
+        </div>
+      )}
       <Link href={`/delivery/${p.id}`} className="block">
         <div className="font-semibold leading-tight">{p.nome}</div>
         <div className="text-xs text-zinc-500">{p.telefone}</div>
@@ -247,11 +253,28 @@ export function Board({ pedidos, entregadores, origemMapa, googleKey = null }: {
         </div>
       ) : lista.length === 0 ? (
         <p className="py-16 text-center text-zinc-500">Nenhum pedido aqui.</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {lista.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
-        </div>
-      )}
+      ) : (() => {
+        // Agendados pra mais tarde ficam numa faixa própria, em ordem de horário;
+        // quando chega a 45 min do horário, o pedido desce pra lista normal.
+        const ehFuturo = (p: PedidoBoard) => !!p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && nowMs < new Date(p.agendado_para).getTime() - 45 * 60000;
+        const futuros = lista.filter(ehFuturo).sort((a, b) => new Date(a.agendado_para!).getTime() - new Date(b.agendado_para!).getTime());
+        const agora = lista.filter((p) => !ehFuturo(p));
+        return (
+          <>
+            {futuros.length > 0 && (
+              <div className="mb-4">
+                <div className="mb-2 text-sm font-bold text-sky-700 dark:text-sky-300">📅 Agendados pra mais tarde ({futuros.length})</div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {futuros.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {agora.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
