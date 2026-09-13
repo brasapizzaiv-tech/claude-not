@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { temChaveMapa } from "@/lib/geo";
 import { salvarConfigDelivery } from "../actions";
 import { pixDiagnostico } from "@/lib/pix";
+import { whatsappConfigurado } from "@/lib/whatsapp";
 import { PixTeste } from "./pix-teste";
 import { HorariosConfig } from "./horarios-form";
 import { lerConfigHorarios } from "@/lib/delivery-horarios";
@@ -39,6 +40,12 @@ export default async function DeliveryConfigPage() {
       </div>
 
       <PixTeste banco={pix.banco} ambiente={pix.ambiente} configurado={pix.configurado} faltando={pix.faltando} />
+
+      <div className={`mb-4 rounded-xl px-4 py-3 text-sm ${whatsappConfigurado() ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-zinc-500/10 text-zinc-600 dark:text-zinc-300"}`}>
+        {whatsappConfigurado()
+          ? "✓ WhatsApp oficial ligado — o cliente recebe aviso ao pedir, quando confirma, quando sai e quando entrega."
+          : "💬 WhatsApp oficial ainda não configurado: faltam WHATSAPP_TOKEN e WHATSAPP_PHONE_ID na Vercel (e os 4 modelos aprovados na Meta). Sem isso, nada é enviado."}
+      </div>
 
       <form action={salvarConfigDelivery} className="space-y-4">
         <div>

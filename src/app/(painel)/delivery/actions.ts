@@ -3,6 +3,7 @@
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { avisarPedido } from "@/lib/whatsapp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
@@ -50,6 +51,11 @@ export async function definirStatusDelivery(id: string, status: string, extra?: 
   if (status === "em_preparo" && ped?.agendado_para) {
     await imprimirComandaDoPedido(supabase, id);
   }
+
+  // WhatsApp pro cliente (só com a API configurada; nunca trava o status).
+  if (status === "aceito") await avisarPedido(id, "confirmado");
+  else if (status === "saiu") await avisarPedido(id, "saiu");
+  else if (status === "entregue") await avisarPedido(id, "entregue");
 
   // Fecha/reabre a comanda junto do ciclo.
   if (ped?.comanda_id) {

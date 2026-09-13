@@ -67,6 +67,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/balanca/") ||
     path === "/tv" ||
     path.startsWith("/api/tv/") ||
+    path.startsWith("/api/whatsapp/") ||
     path.startsWith("/api/contagem/cron");
 
   if (!user && !isPublic) {

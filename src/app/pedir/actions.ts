@@ -8,6 +8,7 @@ import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
+import { avisarPedido } from "@/lib/whatsapp";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 export type { LinhaPedido } from "@/lib/delivery-core";
@@ -251,6 +252,7 @@ export async function enviarPedidoPublico(d: {
     { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo },
   );
   if (!r.ok) return r;
+  await avisarPedido(r.id, "recebido");
   if (cupomId) {
     const { data: cAtual } = await admin.from("cupons").select("usos").eq("id", cupomId).single();
     await admin.from("cupons").update({ usos: Number((cAtual as { usos: number } | null)?.usos ?? 0) + 1 }).eq("id", cupomId);

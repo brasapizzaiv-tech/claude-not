@@ -4,6 +4,7 @@
 // identifica o boy; tudo roda no servidor com o admin client e só devolve os
 // pedidos de entrega que dizem respeito a ele.
 import { createAdminClient } from "@/lib/supabase/admin";
+import { avisarPedido } from "@/lib/whatsapp";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -157,6 +158,7 @@ export async function sairComEntregas(token: string, ids: string[]) {
     }
     if (taxaBoy == null) taxaBoy = b.valor_tele ?? 0;
     await admin.from("delivery_pedidos").update({ entregador_id: b.id, status: "saiu", saiu_em: agora, taxa_motoboy: taxaBoy }).eq("id", p.id);
+    await avisarPedido(p.id, "saiu");
     n++;
   }
   return { ok: true as const, n };
@@ -180,6 +182,7 @@ export async function marcarEntregue(token: string, id: string, recebido: { form
     ...(forma !== "Já pago" && !ped.pago ? { forma_pagamento: forma } : {}),
   }).eq("id", ped.id);
   if (ped.comanda_id) await admin.from("pdv_comandas").update({ status: "fechada", fechada_em: agora }).eq("id", ped.comanda_id);
+  await avisarPedido(ped.id, "entregue");
   return { ok: true as const };
 }
 
