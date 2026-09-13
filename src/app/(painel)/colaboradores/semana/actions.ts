@@ -9,17 +9,22 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 export type Turno = "dia" | "noite";
 
 // Marca/desmarca que a pessoa trabalhou naquele dia/turno.
+// Desmarcar também registra a folga (presencas_folgas): o "Preencher com a
+// escala fixa" não traz a pessoa de volta nesse dia. Marcar de novo apaga a folga.
 export async function marcarPresenca(colaboradorId: string, data: string, turno: Turno, marcar: boolean) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
+  const chave = { colaborador_id: colaboradorId, data, turno };
   if (marcar) {
     const { error } = await supabase
       .from("presencas")
-      .upsert({ colaborador_id: colaboradorId, data, turno }, { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
+      .upsert(chave, { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
     if (error) return { erro: error.message };
+    await supabase.from("presencas_folgas").delete().match(chave);
   } else {
-    const { error } = await supabase.from("presencas").delete().match({ colaborador_id: colaboradorId, data, turno });
+    const { error } = await supabase.from("presencas").delete().match(chave);
     if (error) return { erro: error.message };
+    await supabase.from("presencas_folgas").upsert(chave, { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
   }
   return { ok: true };
 }
@@ -76,21 +81,36 @@ export async function excluirDezPorCento(data: string) {
 }
 
 // Preenche a semana com a escala fixa de cada pessoa (dias_dia / dias_noite).
-// Só acrescenta — não apaga o que já foi marcado à mão.
+// Só acrescenta — não apaga o que já foi marcado à mão — e PULA quem foi
+// desmarcado à mão naquele dia (presencas_folgas) e quem tem folga aprovada
+// no app de folgas naquela data.
 export async function preencherEscalaFixa(segunda: string) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
-  const { data: colabs } = await supabase
-    .from("colaboradores")
-    .select("id, dias_dia, dias_noite")
-    .eq("ativo", true)
-    .eq("esporadico", false);
+  const dias = diasDaSemana(segunda);
+  const [{ data: colabs }, { data: folgasMao }, { data: folgasApp }] = await Promise.all([
+    supabase.from("colaboradores").select("id, dias_dia, dias_noite").eq("ativo", true).eq("esporadico", false),
+    supabase.from("presencas_folgas").select("colaborador_id, data, turno").gte("data", dias[0]).lte("data", dias[dias.length - 1]),
+    supabase
+      .from("folgas_pedidos")
+      .select("data, folgas_funcionarios(colaborador_id)")
+      .eq("status", "Aprovado")
+      .gte("data", dias[0])
+      .lte("data", dias[dias.length - 1]),
+  ]);
+  const pular = new Set<string>();
+  for (const f of (folgasMao ?? []) as { colaborador_id: string; data: string; turno: string }[]) pular.add(`${f.colaborador_id}|${f.data}|${f.turno}`);
+  type FolgaApp = { data: string; folgas_funcionarios: { colaborador_id: string | null } | { colaborador_id: string | null }[] | null };
+  for (const f of ((folgasApp as unknown as FolgaApp[]) ?? [])) {
+    const ff = Array.isArray(f.folgas_funcionarios) ? f.folgas_funcionarios[0] : f.folgas_funcionarios;
+    if (ff?.colaborador_id) { pular.add(`${ff.colaborador_id}|${f.data}|dia`); pular.add(`${ff.colaborador_id}|${f.data}|noite`); }
+  }
   const linhas: { colaborador_id: string; data: string; turno: Turno }[] = [];
-  for (const d of diasDaSemana(segunda)) {
+  for (const d of dias) {
     const dow = deYmd(d).getDay();
     for (const c of (colabs ?? []) as { id: string; dias_dia: number[] | null; dias_noite: number[] | null }[]) {
-      if (c.dias_dia?.includes(dow)) linhas.push({ colaborador_id: c.id, data: d, turno: "dia" });
-      if (c.dias_noite?.includes(dow)) linhas.push({ colaborador_id: c.id, data: d, turno: "noite" });
+      if (c.dias_dia?.includes(dow) && !pular.has(`${c.id}|${d}|dia`)) linhas.push({ colaborador_id: c.id, data: d, turno: "dia" });
+      if (c.dias_noite?.includes(dow) && !pular.has(`${c.id}|${d}|noite`)) linhas.push({ colaborador_id: c.id, data: d, turno: "noite" });
     }
   }
   if (linhas.length) {
