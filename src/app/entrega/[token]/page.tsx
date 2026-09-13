@@ -3,7 +3,17 @@ import { SemZoom } from "@/components/sem-zoom";
 import { minhasEntregas, sessaoEntregador } from "./entrega-actions";
 import { EntregaClient } from "./entrega-client";
 
-export const metadata: Metadata = { title: "Entregas · Brasa", robots: { index: false, follow: false } };
+// Manifest por token: o atalho na tela inicial abre em /entrega/{token}, e não no site.
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  return {
+    title: "Entregas · Brasa",
+    robots: { index: false, follow: false },
+    manifest: `/entrega/${encodeURIComponent(token)}/manifest.webmanifest`,
+    icons: { icon: "/icons/entregas-192.png", apple: "/icons/entregas-192.png" },
+    appleWebApp: { capable: true, title: "Entregas", statusBarStyle: "black-translucent" },
+  };
+}
 export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: "#09090b" };
 export const dynamic = "force-dynamic";
 
