@@ -639,7 +639,22 @@ export function SemanaClient({
           <table className="w-full min-w-[1080px] text-sm">
             <thead className="bg-zinc-50 text-left text-[11px] uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
               <tr>
-                {turnoFiltro === "todos" && <th className="px-2 py-3 text-center" title="Entra no lançamento">💸</th>}
+                {turnoFiltro === "todos" && (() => {
+                  // Marcar/desmarcar todo mundo que pode ser lançado (tem valor e ainda não foi pago).
+                  const selecionaveis = calc.porPessoa.filter((x) => x.total > 0.005 && !pagoDe.has(x.p.id)).map((x) => x.p.id);
+                  const todos = selecionaveis.length > 0 && selecionaveis.every((id) => !desmarcados.has(id));
+                  const nenhum = selecionaveis.every((id) => desmarcados.has(id));
+                  return (
+                    <th className="px-2 py-3 text-center" title={todos ? "Desmarcar todos" : "Marcar todos"}>
+                      <input
+                        type="checkbox"
+                        checked={todos}
+                        ref={(el) => { if (el) el.indeterminate = !todos && !nenhum; }}
+                        onChange={(e) => setDesmarcados(e.target.checked ? new Set() : new Set(selecionaveis))}
+                      />
+                    </th>
+                  );
+                })()}
                 <th className="px-3 py-3">Pessoa</th>
                 <th className="px-2 py-3 text-center" title="Presenças: dias ☀️ e noites 🌙">Pres.</th>
                 <th className="px-3 py-3 text-right">Diárias</th>
