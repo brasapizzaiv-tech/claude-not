@@ -25,9 +25,12 @@ const COR: Record<string, string> = {
   saiu: "#4f46e5",
 };
 
-export function MapaPedidos({ pinos, origem }: {
+export type BoyPino = { id: string; nome: string; lat: number; lng: number; em: string };
+
+export function MapaPedidos({ pinos, origem, boys = [] }: {
   pinos: PinoPedido[];
   origem: { lat: number; lng: number } | null;
+  boys?: BoyPino[];
 }) {
   const divRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -74,6 +77,20 @@ export function MapaPedidos({ pinos, origem }: {
     }
     return () => { camada.remove(); };
   }, [pinos, origem]);
+
+  // Entregadores (GPS do app): pino 🛵 com nome e há quanto tempo.
+  const boysRef = useRef<L.LayerGroup | null>(null);
+  useEffect(() => {
+    const map = mapRef.current; if (!map) return;
+    if (!boysRef.current) boysRef.current = L.layerGroup().addTo(map);
+    const g = boysRef.current; g.clearLayers();
+    for (const b of boys) {
+      const min = Math.max(0, Math.round((Date.now() - new Date(b.em).getTime()) / 60000));
+      L.marker([b.lat, b.lng], { icon: L.divIcon({ className: "", html: `<div style="font-size:26px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))">🛵</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }) })
+        .addTo(g)
+        .bindTooltip(`${b.nome} · ${min <= 1 ? "agora" : `há ${min} min`}`, { permanent: true, direction: "top", offset: [0, -12] });
+    }
+  }, [boys]);
 
   return (
     <div>

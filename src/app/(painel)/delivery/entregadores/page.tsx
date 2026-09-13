@@ -1,18 +1,34 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { criarEntregador, alternarEntregador } from "../actions";
+import { criarEntregador, alternarEntregador, salvarValoresEntregador } from "../actions";
 
 export const metadata = { title: "Entregadores · Delivery" };
+export const dynamic = "force-dynamic";
 
+const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const inp = "rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700";
+
+// Entregadores: cadastro, link pessoal do app (/entrega/{token}), valores
+// (fixo por turno + por tele) e onde está agora (GPS do app).
 export default async function EntregadoresPage() {
   const supabase = await createClient();
-  const { data } = await supabase.from("entregadores").select("id, nome, telefone, ativo").order("nome");
-  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean }[];
+  const h = await headers();
+  const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "www.brasarestaurante.com.br"}`;
+  const { data } = await supabase
+    .from("entregadores")
+    .select("id, nome, telefone, ativo, token, valor_fixo_dia, valor_fixo_noite, valor_tele, ultima_lat, ultima_lng, ultima_pos_em")
+    .order("nome");
+  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
+  const agora = Date.now();
 
   return (
-    <div className="mx-auto max-w-2xl p-4">
+    <div className="mx-auto max-w-3xl p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <h1 className="mb-4 mt-2 text-xl font-bold">🛵 Entregadores</h1>
+      <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
+        <h1 className="text-xl font-bold">🛵 Entregadores</h1>
+        <Link href="/delivery/entregadores/acerto" className="ml-auto rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-white dark:bg-zinc-700">💰 Acerto do dia</Link>
+      </div>
 
       <form action={criarEntregador} className="mb-6 flex flex-wrap gap-2">
         <input name="nome" required placeholder="Nome" className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
@@ -20,21 +36,51 @@ export default async function EntregadoresPage() {
         <button className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white">Adicionar</button>
       </form>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {lista.length === 0 && <p className="text-sm text-zinc-500">Nenhum entregador cadastrado.</p>}
-        {lista.map((e) => (
-          <div key={e.id} className={`flex items-center gap-3 rounded-xl border p-3 ${e.ativo ? "border-zinc-200 dark:border-zinc-800" : "border-zinc-200 opacity-50 dark:border-zinc-800"}`}>
-            <div className="flex-1">
-              <div className="font-medium">{e.nome}</div>
-              {e.telefone && <div className="text-xs text-zinc-500">{e.telefone}</div>}
+        {lista.map((e) => {
+          const link = e.token ? `${origem}/entrega/${e.token}` : null;
+          const posMin = e.ultima_pos_em ? Math.round((agora - new Date(e.ultima_pos_em).getTime()) / 60000) : null;
+          return (
+            <div key={e.id} className={`rounded-2xl border p-3 ${e.ativo ? "border-zinc-200 dark:border-zinc-800" : "border-zinc-200 opacity-50 dark:border-zinc-800"}`}>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-bold">{e.nome}</div>
+                  <div className="text-xs text-zinc-500">
+                    {e.telefone ?? "sem telefone"}
+                    {posMin != null && (
+                      <> · {posMin <= 3 ? <span className="text-emerald-600">🟢 online agora</span> : `📍 visto há ${posMin} min`}
+                        {e.ultima_lat != null && <> · <a href={`https://www.google.com/maps/search/?api=1&query=${e.ultima_lat},${e.ultima_lng}`} target="_blank" rel="noreferrer" className="underline">ver no mapa</a></>}
+                      </>
+                    )}
+                  </div>
+                </div>
+                <form action={alternarEntregador}>
+                  <input type="hidden" name="id" value={e.id} />
+                  <input type="hidden" name="ativo" value={e.ativo ? "1" : "0"} />
+                  <button className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">{e.ativo ? "Desativar" : "Ativar"}</button>
+                </form>
+              </div>
+
+              {link && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900">
+                  <span className="text-zinc-500">Link do app:</span>
+                  <code className="select-all break-all text-zinc-700 dark:text-zinc-300">{link}</code>
+                  <a href={`https://wa.me/${e.telefone ? "55" + e.telefone.replace(/\D/g, "") : ""}?text=${encodeURIComponent(`Seu app de entregas da Brasa: ${link}\nAbra no celular e toque em "Adicionar à tela inicial".`)}`} target="_blank" rel="noreferrer" className="ml-auto rounded-lg bg-emerald-600 px-2 py-1 font-semibold text-white">Mandar no WhatsApp</a>
+                </div>
+              )}
+
+              <form action={salvarValoresEntregador} className="mt-2 flex flex-wrap items-end gap-2 text-xs">
+                <input type="hidden" name="id" value={e.id} />
+                <div><label className="block text-[11px] text-zinc-500">Fixo almoço (R$)</label><input name="valor_fixo_dia" defaultValue={e.valor_fixo_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
+                <div><label className="block text-[11px] text-zinc-500">Fixo noite (R$)</label><input name="valor_fixo_noite" defaultValue={e.valor_fixo_noite ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
+                <div><label className="block text-[11px] text-zinc-500">Por tele (R$)</label><input name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
+                <button className="rounded-lg border border-zinc-300 px-3 py-1.5 font-semibold dark:border-zinc-700">Salvar valores</button>
+                <span className="text-zinc-400">{e.valor_tele != null ? `hoje: ${brl(Number(e.valor_tele))}/tele` : "a tele usa o valor da área"}</span>
+              </form>
             </div>
-            <form action={alternarEntregador}>
-              <input type="hidden" name="id" value={e.id} />
-              <input type="hidden" name="ativo" value={e.ativo ? "1" : "0"} />
-              <button className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">{e.ativo ? "Desativar" : "Ativar"}</button>
-            </form>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

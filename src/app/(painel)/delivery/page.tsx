@@ -15,7 +15,7 @@ export default async function DeliveryPage() {
       )
       .order("criado_em", { ascending: false })
       .limit(120),
-    supabase.from("entregadores").select("id, nome").eq("ativo", true).order("nome"),
+    supabase.from("entregadores").select("id, nome, ultima_lat, ultima_lng, ultima_pos_em").eq("ativo", true).order("nome"),
     supabase.from("delivery_config").select("origem_lat, origem_lng").eq("id", 1).maybeSingle(),
   ]);
   const cfgM = cfgMapa as { origem_lat?: number | null; origem_lng?: number | null } | null;
@@ -67,7 +67,15 @@ export default async function DeliveryPage() {
           <Link href="/delivery/config" className="hover:underline">⚙️ Config</Link>
         </div>
       </div>
-      <Board pedidos={pedidos} entregadores={(entregadores ?? []) as EntregadorOpt[]} origemMapa={origemMapa} googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null} />
+      <Board
+        pedidos={pedidos}
+        entregadores={((entregadores ?? []) as { id: string; nome: string }[]).map((e) => ({ id: e.id, nome: e.nome })) as EntregadorOpt[]}
+        boys={((entregadores ?? []) as { id: string; nome: string; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[])
+          .filter((e) => e.ultima_lat != null && e.ultima_lng != null && e.ultima_pos_em && Date.now() - new Date(e.ultima_pos_em).getTime() < 20 * 60000)
+          .map((e) => ({ id: e.id, nome: e.nome, lat: Number(e.ultima_lat), lng: Number(e.ultima_lng), em: e.ultima_pos_em as string }))}
+        origemMapa={origemMapa}
+        googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null}
+      />
     </div>
   );
 }

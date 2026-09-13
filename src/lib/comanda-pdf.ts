@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import QRCode from "qrcode";
 
 const MM = 2.834645669;
 
@@ -24,6 +25,8 @@ export type ComandaPdfDados = {
   garcom: string | null;
   observacao: string | null;
   itens: ComandaItem[];
+  qr?: string | null;      // texto do QR (pedido de entrega: "ENTREGA:<id>") — o app do motoboy lê
+  qrRotulo?: string | null;
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -43,6 +46,7 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   if (c.precos) h += 26;
   if (c.qtdCat) h += 30;
   if (d.observacao) h += 30;
+  if (d.qr) h += 100;
   h += 46;
   // Sempre mais alta que larga — página "deitada" faz a impressora girar a comanda.
   h = Math.max(h, W + 20);
@@ -121,6 +125,16 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
     y = doc.y + 4;
   }
   if (d.observacao) { doc.font("Helvetica-Bold").fontSize(11).text(`Obs.: ${d.observacao}`, pad, y, { width: contentW }); y = doc.y + 4; }
+  if (d.qr) {
+    try {
+      const png = await QRCode.toBuffer(d.qr, { type: "png", errorCorrectionLevel: "M", margin: 1, scale: 4 });
+      const lado = 80;
+      doc.image(png, pad + (contentW - lado) / 2, y, { width: lado, height: lado });
+      y += lado + 2;
+      doc.font("Helvetica").fontSize(8).fillColor("#000").text(d.qrRotulo || "Motoboy: leia este QR no app pra pegar a entrega", pad, y, { width: contentW, align: "center" });
+      y = doc.y + 4;
+    } catch { /* sem QR */ }
+  }
   doc.font("Helvetica").fontSize(8).fillColor("#444").text("Brasa · impresso automaticamente", pad, y, { width: contentW, align: "center" });
 
   doc.end();

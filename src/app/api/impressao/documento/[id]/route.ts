@@ -248,6 +248,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (filtrados.length === 0) return new Response("sem itens para esta via", { status: 404 });
 
     const primeiro = itens[0];
+    // Pedido de delivery (entrega): QR com o id do pedido pro app do motoboy.
+    const { data: dp } = await admin.from("delivery_pedidos").select("id, tipo, pdv_comandas(numero)").eq("comanda_id", primeiro.comanda_id).maybeSingle();
+    const entrega = dp && (dp as { tipo: string }).tipo === "entrega" ? (dp as { id: string }) : null;
     const [{ data: com }, { data: prof }] = await Promise.all([
       admin.from("pdv_comandas").select("numero, mesa").eq("id", primeiro.comanda_id).maybeSingle(),
       primeiro.criado_por
@@ -268,6 +271,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         garcom: (prof?.nome as string) ?? null,
         observacao: null,
         itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: i.preco_unit != null ? Number(i.preco_unit) : undefined, categoria: catDe(i) })),
+        qr: entrega ? `ENTREGA:${entrega.id}` : null,
+        qrRotulo: entrega ? `ENTREGA #${(com?.numero as number) ?? ""} — motoboy: leia no app pra pegar` : null,
       },
       config,
     );

@@ -99,7 +99,9 @@ export async function criarEntregador(formData: FormData) {
   const nome = ((formData.get("nome") as string) || "").trim();
   const telefone = ((formData.get("telefone") as string) || "").trim();
   if (!nome) return;
-  await supabase.from("entregadores").insert({ nome, telefone: telefone || null });
+  // Link pessoal do app do entregador (/entrega/{token}).
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, "0")).join("");
+  await supabase.from("entregadores").insert({ nome, telefone: telefone || null, token });
   revalidatePath("/delivery/entregadores");
 }
 
@@ -289,4 +291,31 @@ export async function testarPixDelivery() {
   await exigirAcesso("/delivery");
   const { testarPix } = await import("@/lib/pix");
   return testarPix();
+}
+
+// Valores do entregador: fixo por turno e por tele (a área pode ter a dela).
+export async function salvarValoresEntregador(formData: FormData) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const num = (k: string) => { const t = String(formData.get(k) ?? "").trim().replace(",", "."); if (!t) return null; const v = Number(t); return Number.isFinite(v) ? Math.max(0, v) : null; };
+  await supabase.from("entregadores").update({ valor_fixo_dia: num("valor_fixo_dia"), valor_fixo_noite: num("valor_fixo_noite"), valor_tele: num("valor_tele") }).eq("id", id);
+  revalidatePath("/delivery/entregadores");
+}
+
+// Acerto do dia de um entregador (fixo + teles); aparece em "Meus ganhos" no app.
+export async function registrarAcertoEntregador(formData: FormData) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const num = (k: string) => { const v = Number(String(formData.get(k) ?? "").replace(",", ".")); return Number.isFinite(v) ? Math.max(0, v) : 0; };
+  const entregador_id = String(formData.get("entregador_id") ?? "");
+  const data = String(formData.get("data") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !entregador_id) return;
+  const fixo = num("fixo"), teles_valor = num("teles_valor"), teles_qtd = Math.round(num("teles_qtd"));
+  await supabase.from("entregador_acertos").upsert({
+    entregador_id, data, fixo, teles_qtd, teles_valor, total: Math.round((fixo + teles_valor) * 100) / 100,
+    recebido_dinheiro: num("recebido_dinheiro"), recebido_cartao: num("recebido_cartao"), recebido_pix: num("recebido_pix"),
+    obs: String(formData.get("obs") ?? "").trim() || null,
+  }, { onConflict: "entregador_id,data" });
+  revalidatePath("/delivery/entregadores/acerto");
 }

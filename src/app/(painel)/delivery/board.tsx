@@ -160,9 +160,12 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
   );
 }
 
-export function Board({ pedidos, entregadores, origemMapa, googleKey = null }: {
+export type BoyNoMapa = { id: string; nome: string; lat: number; lng: number; em: string };
+
+export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey = null }: {
   pedidos: PedidoBoard[];
   entregadores: EntregadorOpt[];
+  boys?: BoyNoMapa[]; // posição dos entregadores (GPS do app), últimos 20 min
   origemMapa: { lat: number; lng: number } | null;
   googleKey?: string | null; // chave de navegador do Google Maps; sem ela, OpenStreetMap
 }) {
@@ -305,7 +308,7 @@ export function Board({ pedidos, entregadores, origemMapa, googleKey = null }: {
       </div>
 
       {visao === "mapa" ? (
-        googleKey ? <MapaPedidosGoogle pinos={pinos} origem={origemMapa} chave={googleKey} /> : <MapaPedidos pinos={pinos} origem={origemMapa} />
+        googleKey ? <MapaPedidosGoogle pinos={pinos} origem={origemMapa} chave={googleKey} /> : <MapaPedidos pinos={pinos} origem={origemMapa} boys={boys} />
       ) : visao === "kanban" ? (
         <div className="flex gap-3 overflow-x-auto pb-3">
           {KANBAN_COLS.map((col) => {
