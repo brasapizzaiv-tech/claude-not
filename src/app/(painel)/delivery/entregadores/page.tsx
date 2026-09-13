@@ -67,7 +67,7 @@ export default async function EntregadoresPage() {
                 <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900">
                   <span className="text-zinc-500">Link do app:</span>
                   <code className="select-all break-all text-zinc-700 dark:text-zinc-300">{link}</code>
-                  <a href={`https://wa.me/${e.telefone ? "55" + e.telefone.replace(/\D/g, "") : ""}?text=${encodeURIComponent(`Seu app de entregas da Brasa: ${link}\nAbra no celular e toque em "Adicionar à tela inicial".`)}`} target="_blank" rel="noreferrer" className="ml-auto rounded-lg bg-emerald-600 px-2 py-1 font-semibold text-white">Mandar no WhatsApp</a>
+                  <a href={`https://web.whatsapp.com/send?phone=${e.telefone ? "55" + e.telefone.replace(/\D/g, "") : ""}&text=${encodeURIComponent(`Seu app de entregas da Brasa: ${link}\nAbra no celular e toque em "Adicionar à tela inicial".`)}`} target="_blank" rel="noreferrer" className="ml-auto rounded-lg bg-emerald-600 px-2 py-1 font-semibold text-white">Mandar no WhatsApp</a>
                 </div>
               )}
 

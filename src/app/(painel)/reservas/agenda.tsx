@@ -298,7 +298,7 @@ function CartaoReserva({
   const tag =
     "rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] text-zinc-500 dark:border-zinc-700";
   const zap = (chave: string) =>
-    `https://wa.me/${foneWhats(r.telefone)}?text=${encodeURIComponent(
+    `https://web.whatsapp.com/send?phone=${foneWhats(r.telefone)}&text=${encodeURIComponent(
       montarMsg(mensagens["msg_" + chave] ?? "", r),
     )}`;
 

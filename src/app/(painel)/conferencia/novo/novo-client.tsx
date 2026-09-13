@@ -72,7 +72,7 @@ export function NovoPedidoClient({
     const msg =
       `Olá! Pedido do Restaurante Brasa:\n\n${linhas.join("\n")}\n\n` +
       `Data prevista: ${data.split("-").reverse().join("/")}\nObrigado!`;
-    window.open(`https://wa.me/${zapFull}?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://web.whatsapp.com/send?phone=${zapFull}&text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   function criar() {
