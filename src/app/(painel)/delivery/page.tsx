@@ -4,7 +4,11 @@ import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 
 export const metadata = { title: "Delivery · Brasa" };
 
+// (fora do componente por causa da regra de pureza do React)
+const agoraMs = () => Date.now();
+
 export default async function DeliveryPage() {
+  const agora = agoraMs();
   const supabase = await createClient();
 
   const [{ data: pedidosRaw }, { data: entregadores }, { data: cfgMapa }] = await Promise.all([
@@ -71,7 +75,7 @@ export default async function DeliveryPage() {
         pedidos={pedidos}
         entregadores={((entregadores ?? []) as { id: string; nome: string }[]).map((e) => ({ id: e.id, nome: e.nome })) as EntregadorOpt[]}
         boys={((entregadores ?? []) as { id: string; nome: string; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[])
-          .filter((e) => e.ultima_lat != null && e.ultima_lng != null && e.ultima_pos_em && Date.now() - new Date(e.ultima_pos_em).getTime() < 20 * 60000)
+          .filter((e) => e.ultima_lat != null && e.ultima_lng != null && e.ultima_pos_em && agora - new Date(e.ultima_pos_em).getTime() < 20 * 60000)
           .map((e) => ({ id: e.id, nome: e.nome, lat: Number(e.ultima_lat), lng: Number(e.ultima_lng), em: e.ultima_pos_em as string }))}
         origemMapa={origemMapa}
         googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null}

@@ -7,6 +7,7 @@ export const metadata = { title: "Entregadores · Delivery" };
 export const dynamic = "force-dynamic";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
 const inp = "rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700";
 
 // Entregadores: cadastro, link pessoal do app (/entrega/{token}), valores
@@ -20,7 +21,7 @@ export default async function EntregadoresPage() {
     .select("id, nome, telefone, ativo, token, valor_fixo_dia, valor_fixo_noite, valor_tele, ultima_lat, ultima_lng, ultima_pos_em")
     .order("nome");
   const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
-  const agora = Date.now();
+  const agora = agoraMs();
 
   return (
     <div className="mx-auto max-w-3xl p-4">
