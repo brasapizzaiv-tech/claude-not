@@ -28,8 +28,9 @@ type ItemCotacao = { produto_id: string; qtd: number };
 // Gera (e mantém em sincronia) os pedidos dos itens EXCLUSIVOS da cotação —
 // produtos com 1 único fornecedor, que não precisam de comparação. Assim já dá
 // para enviar o pedido a esses fornecedores sem esperar as respostas dos outros.
-// Só gera para fornecedores "exclusivos puros" (que não competem em nenhum item
-// não-exclusivo desta cotação), para não conflitar com o "Gerar pedidos" depois.
+// Gera pra TODO fornecedor que tenha item exclusivo — mesmo que ele também
+// dispute outros itens na comparação: os itens disputados entram no MESMO
+// pedido depois, pelo "Gerar pedidos" (que completa em vez de pular).
 export async function gerarPedidosExclusivos(cotacaoId: string) {
   const supabase = await createClient();
   const { data: cot } = await supabase
@@ -60,23 +61,18 @@ export async function gerarPedidosExclusivos(cotacaoId: string) {
     sups.set(v.produto_id as string, arr);
   }
 
-  // Itens exclusivos (1 fornecedor) agrupados por fornecedor; e fornecedores que
-  // também competem em algum item não-exclusivo (esses ficam para a comparação).
+  // Itens exclusivos (1 fornecedor) agrupados por fornecedor.
   const exclDoForn = new Map<string, { produto_id: string; qtd: number }[]>();
-  const fornMisto = new Set<string>();
   for (const [pid, fs] of sups) {
     if (fs.length === 1) {
       const arr = exclDoForn.get(fs[0]) ?? [];
       arr.push({ produto_id: pid, qtd: qtdDe.get(pid) ?? 0 });
       exclDoForn.set(fs[0], arr);
-    } else if (fs.length > 1) {
-      for (const f of fs) fornMisto.add(f);
     }
   }
 
   let gerados = 0;
   for (const [forn, exItens] of exclDoForn) {
-    if (fornMisto.has(forn)) continue; // também compete em item não-exclusivo
     const validos = exItens.filter((i) => i.qtd > 0);
     if (validos.length === 0) continue;
 
@@ -98,8 +94,9 @@ export async function gerarPedidosExclusivos(cotacaoId: string) {
     }
     if (!pedidoId) continue;
 
-    // Sincroniza os itens do pedido com as quantidades atuais.
-    await supabase.from("pedido_itens").delete().eq("pedido_id", pedidoId);
+    // Sincroniza SÓ os itens exclusivos com as quantidades atuais (o que o
+    // fornecedor ganhou na comparação, se já foi adiantado, fica como está).
+    await supabase.from("pedido_itens").delete().eq("pedido_id", pedidoId).in("produto_id", validos.map((i) => i.produto_id));
     await supabase.from("pedido_itens").insert(
       validos.map((i) => ({
         pedido_id: pedidoId,
@@ -298,31 +295,41 @@ export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
     porForn.set(e.fornecedor_id, arr);
   }
 
-  // Fornecedores que já tiveram pedido adiantado — não gera de novo.
+  // Fornecedores que já têm pedido nesta cotação (exclusivos gerados antes ou
+  // pedido adiantado): COMPLETA o pedido com os itens que ainda não estão nele,
+  // em vez de pular o fornecedor — era isso que deixava item de fora.
   const { data: jaTem } = await supabase
     .from("pedidos")
-    .select("fornecedor_id")
+    .select("id, fornecedor_id, pedido_itens(produto_id)")
     .eq("cotacao_id", cotacaoId);
-  const comPedido = new Set((jaTem ?? []).map((p) => p.fornecedor_id as string));
+  const pedidoDe = new Map<string, { id: string; produtos: Set<string> }>();
+  for (const p of (jaTem as unknown as { id: string; fornecedor_id: string; pedido_itens: { produto_id: string }[] | null }[]) ?? []) {
+    pedidoDe.set(p.fornecedor_id, { id: p.id, produtos: new Set((p.pedido_itens ?? []).map((x) => x.produto_id)) });
+  }
 
   for (const [fornId, itens] of porForn) {
-    if (comPedido.has(fornId)) continue; // já foi adiantado
-    const { data: ped } = await supabase
-      .from("pedidos")
-      .insert({ cotacao_id: cotacaoId, fornecedor_id: fornId })
-      .select("id")
-      .single();
-    if (ped) {
-      await supabase.from("pedido_itens").insert(
-        itens.map((i) => ({
-          pedido_id: ped.id,
-          produto_id: i.produto_id,
-          qtd: i.qtd,
-          preco_unit: i.preco_unit,
-          marca: i.marca ?? null,
-        })),
-      );
+    const existente = pedidoDe.get(fornId);
+    let pedidoId = existente?.id;
+    if (!pedidoId) {
+      const { data: ped } = await supabase
+        .from("pedidos")
+        .insert({ cotacao_id: cotacaoId, fornecedor_id: fornId })
+        .select("id")
+        .single();
+      pedidoId = (ped as { id: string } | null)?.id;
     }
+    if (!pedidoId) continue;
+    const novos = itens.filter((i) => !existente?.produtos.has(i.produto_id));
+    if (novos.length === 0) continue;
+    await supabase.from("pedido_itens").insert(
+      novos.map((i) => ({
+        pedido_id: pedidoId,
+        produto_id: i.produto_id,
+        qtd: i.qtd,
+        preco_unit: i.preco_unit,
+        marca: i.marca ?? null,
+      })),
+    );
   }
 
   // Trava a cotação: pedidos gerados, não pode regenerar por cima.
@@ -350,27 +357,34 @@ export async function adiantarPedidoFornecedor(
     .maybeSingle();
   if (cot?.pedidos_gerados_em) return { ok: false as const, travada: true as const };
 
-  // Já existe pedido desse fornecedor nesta cotação?
-  const { data: existe } = await supabase
-    .from("pedidos")
-    .select("id")
-    .eq("cotacao_id", cotacaoId)
-    .eq("fornecedor_id", fornecedorId)
-    .maybeSingle();
-  if (existe) return { ok: false as const, jaGerado: true as const };
-
   const itens = escolhas.filter((e) => e.fornecedor_id === fornecedorId && e.qtd > 0);
   if (itens.length === 0) return { ok: false as const, semItens: true as const };
 
-  const { data: ped } = await supabase
+  // Já existe pedido desse fornecedor (itens exclusivos gerados antes)? Completa
+  // com o que foi escolhido na comparação e ainda não está nele.
+  const { data: existe } = await supabase
     .from("pedidos")
-    .insert({ cotacao_id: cotacaoId, fornecedor_id: fornecedorId })
-    .select("id")
-    .single();
-  if (ped) {
+    .select("id, pedido_itens(produto_id)")
+    .eq("cotacao_id", cotacaoId)
+    .eq("fornecedor_id", fornecedorId)
+    .maybeSingle();
+  const ex = existe as { id: string; pedido_itens: { produto_id: string }[] | null } | null;
+  let pedidoId = ex?.id;
+  const jaTem = new Set((ex?.pedido_itens ?? []).map((x) => x.produto_id));
+  const novos = itens.filter((i) => !jaTem.has(i.produto_id));
+  if (pedidoId && novos.length === 0) return { ok: false as const, jaGerado: true as const };
+  if (!pedidoId) {
+    const { data: ped } = await supabase
+      .from("pedidos")
+      .insert({ cotacao_id: cotacaoId, fornecedor_id: fornecedorId })
+      .select("id")
+      .single();
+    pedidoId = (ped as { id: string } | null)?.id;
+  }
+  if (pedidoId) {
     await supabase.from("pedido_itens").insert(
-      itens.map((i) => ({
-        pedido_id: ped.id,
+      novos.map((i) => ({
+        pedido_id: pedidoId,
         produto_id: i.produto_id,
         qtd: i.qtd,
         preco_unit: i.preco_unit,
