@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.0"; // 0.9: primeira versão, testada contra o simulador (aguardando homologação Elgin)
+const VERSAO = "0.9.1"; // 0.9.1: IntPos.Sts opcional (os exemplos oficiais da Elgin não o escrevem); descarta eco de CNF/NCN
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -29,7 +29,7 @@ const portaHttp = Number(cfg.portaHttp) || 8544;
 const pastaBase = cfg.pastaTef || "C:\\Cliente";
 const pastaReq = cfg.pastaReq || path.join(pastaBase, "Req");
 const pastaResp = cfg.pastaResp || path.join(pastaBase, "Resp");
-const terminal = String(cfg.terminal || os.hostname()).slice(0, 8);
+const terminal = String(cfg.terminal || os.hostname()).slice(0, 16); // ID de terminal da Elgin tem 10 dígitos
 const timeoutVendaMs = Number(cfg.timeoutVendaMs) || 120000; // o cliente pode demorar pra achar o cartão
 const timeoutStsMs = Number(cfg.timeoutStsMs) || 15000;      // o gerenciador tem que acusar recebimento rápido
 
@@ -99,14 +99,29 @@ async function executar(conteudoReq, { esperaResp = true, timeoutMs = timeoutVen
   etapa = "enviando";
   gravarReq(conteudoReq);
   etapa = "aguardando_sts";
-  const sts = await esperarArquivo(arqSts, timeoutStsMs);
-  if (!sts) {
+  // O IntPos.Sts ("recebi") é OPCIONAL: os exemplos oficiais da Elgin (GP
+  // passivo) não escrevem esse arquivo — vão direto na resposta. Então o que
+  // encerra a espera é o Sts OU a própria resposta OU o gerenciador ter
+  // consumido o IntPos.001 da pasta Req (sinal de que está processando).
+  const t0 = Date.now();
+  let viuSinal = false;
+  while (Date.now() - t0 < timeoutStsMs) {
+    if (existsSync(arqSts) || existsSync(arqResp) || !existsSync(arqReq)) { viuSinal = true; break; }
+    await dormir(150);
+  }
+  if (!viuSinal) {
     apagar(arqReq);
     etapa = "livre";
     throw new Error("O TEF não respondeu (o gerenciador está aberto neste PC?).");
   }
-  apagar(arqSts);
-  if (!esperaResp) { etapa = "livre"; return null; }
+  if (existsSync(arqSts)) { await esperarArquivo(arqSts, 3000); apagar(arqSts); }
+  if (!esperaResp) {
+    // CNF/NCN: alguns gerenciadores respondem um IntPos.001 de eco — descarta.
+    const eco = await esperarArquivo(arqResp, 3000);
+    if (eco) apagar(arqResp);
+    etapa = "livre";
+    return null;
+  }
   etapa = "no_pinpad";
   const resp = await esperarArquivo(arqResp, timeoutMs);
   if (!resp) {

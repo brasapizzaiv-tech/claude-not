@@ -42,7 +42,8 @@ async function responder(campos) {
   const op = campos[CHAVES.OPERACAO];
   const id = campos[CHAVES.ID] || "0";
   // 1) acusa recebimento
-  gravar(arqSts, montar([[CHAVES.OPERACAO, op], [CHAVES.ID, id]]));
+  // SEM_STS=1 imita o GP da Elgin, que não escreve o IntPos.Sts.
+  if (!process.env.SEM_STS) gravar(arqSts, montar([[CHAVES.OPERACAO, op], [CHAVES.ID, id]]));
   log(`recebi ${op} #${id}`);
 
   if (op === "CNF" || op === "NCN") { log(op === "CNF" ? "venda CONFIRMADA" : "venda DESFEITA"); return; }

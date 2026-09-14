@@ -2,7 +2,7 @@
 ; Compile com: ISCC.exe tef.iss  (após rodar build.ps1, que monta build\app).
 
 #define AppName "Agente TEF"
-#define AppVer "0.9.0"
+#define AppVer "0.9.1"
 #define AppPublisher "Brasa Sistemas"
 
 [Setup]
