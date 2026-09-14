@@ -176,9 +176,22 @@ export default async function CaixaPage({
   const nfce = await lerNfceAuto();
 
   // Cardápio (para "Inserir Produto") e clientes (para "Vincular Cliente").
+  // Clientes em blocos de 1000: o PostgREST corta em 1000 e já são 3.000+ —
+  // sem isso, cliente depois do 1000º em ordem alfabética não aparecia no
+  // "Vincular Cliente".
+  const todosClientes = async () => {
+    const out: { id: string; nome: string; cpf_cnpj: string | null; limite_credito: number | null }[] = [];
+    for (let de = 0; ; de += 1000) {
+      const { data } = await supabase.from("clientes").select("id, nome, cpf_cnpj, limite_credito").eq("ativo", true).order("nome").order("id").range(de, de + 999);
+      const lote = (data as typeof out) ?? [];
+      out.push(...lote);
+      if (lote.length < 1000) break;
+    }
+    return { data: out };
+  };
   const [{ data: menuRows }, { data: cliRows }, { data: fiadoRows }] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, preco, promo_preco, ativo").order("nome"),
-    supabase.from("clientes").select("id, nome, cpf_cnpj, limite_credito").eq("ativo", true).order("nome"),
+    todosClientes(),
     // Saldo do fiado por cliente (pra tela de pagamento avisar do limite).
     supabase.from("cliente_fiado").select("cliente_id, tipo, valor"),
   ]);
