@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { salvarCliente, excluirCliente } from "./actions";
 
@@ -48,6 +49,20 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<Cliente | null>(null);
   const [aberto, setAberto] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [salvando, start] = useTransition();
+  const router = useRouter();
+  // Fecha a janela só depois de salvar de verdade (antes ela ficava aberta e
+  // parecia que não tinha salvado — e o cliente era cadastrado em dobro).
+  function enviar(fd: FormData) {
+    setErro(null);
+    start(async () => {
+      const r = await salvarCliente(fd);
+      if (!r || !r.ok) { setErro(r?.mensagem ?? "Não consegui salvar."); return; }
+      setAberto(false); setEditando(null);
+      router.refresh();
+    });
+  }
 
   const q = busca.trim().toLowerCase();
   const filtrados = q
@@ -122,7 +137,7 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <form
-            action={salvarCliente}
+            action={enviar}
             className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 dark:bg-zinc-950"
           >
             <div className="mb-3 flex items-center justify-between">
@@ -169,10 +184,11 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
               <button type="button" onClick={() => setAberto(false)} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">
                 Cancelar
               </button>
-              <button className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600">
-                Salvar
+              <button disabled={salvando} className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+                {salvando ? "Salvando..." : "Salvar"}
               </button>
             </div>
+            {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
           </form>
         </div>
       )}

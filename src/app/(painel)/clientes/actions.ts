@@ -9,7 +9,7 @@ export async function salvarCliente(formData: FormData) {
   const supabase = await createClient();
   const id = (formData.get("id") as string) || null;
   const nome = ((formData.get("nome") as string) || "").trim();
-  if (!nome) return;
+  if (!nome) return { ok: false as const, mensagem: "Informe o nome." };
   const t = (c: string) => ((formData.get(c) as string) || "").trim() || null;
   const payload = {
     nome,
@@ -33,9 +33,12 @@ export async function salvarCliente(formData: FormData) {
       return Number.isFinite(n) && n >= 0 ? n : null;
     })(),
   };
-  if (id) await supabase.from("clientes").update(payload).eq("id", id);
-  else await supabase.from("clientes").insert(payload);
+  const { error } = id
+    ? await supabase.from("clientes").update(payload).eq("id", id)
+    : await supabase.from("clientes").insert(payload);
   revalidatePath("/clientes");
+  if (error) return { ok: false as const, mensagem: error.message };
+  return { ok: true as const };
 }
 
 export async function excluirCliente(formData: FormData) {
