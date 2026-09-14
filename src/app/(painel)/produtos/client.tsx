@@ -12,7 +12,39 @@ import {
   vincularSemFornecedorNaFeira,
   marcarExclusivo,
   marcarExclusivosEmLote,
+  salvarIdealFardo,
 } from "./actions";
+
+// Campo numérico editável na própria lista: salva ao sair do campo ou no Enter,
+// mostra ✓ rapidinho. Tab pula pro próximo produto (ordem natural da tabela).
+function CampoInline({ id, campo, valor, placeholder }: { id: string; campo: "estoque_ideal" | "fardo"; valor: number; placeholder?: string }) {
+  const [txt, setTxt] = useState(valor > 0 ? String(valor).replace(".", ",") : "");
+  const [estado, setEstado] = useState<"" | "salvando" | "ok" | "erro">("");
+  async function salvar() {
+    const n = Number(txt.replace(",", ".")) || 0;
+    if (n === valor || (n === 0 && !(valor > 0))) { setTxt(n > 0 ? String(n).replace(".", ",") : ""); return; }
+    setEstado("salvando");
+    const r = await salvarIdealFardo(id, campo, n);
+    setEstado(r.ok ? "ok" : "erro");
+    setTimeout(() => setEstado(""), 1500);
+  }
+  return (
+    <span className="relative inline-block">
+      <input
+        value={txt}
+        onChange={(e) => setTxt(e.target.value)}
+        onBlur={salvar}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+        onFocus={(e) => e.target.select()}
+        inputMode="decimal"
+        placeholder={placeholder ?? "—"}
+        className={`w-16 rounded-md border bg-transparent px-2 py-1 text-right text-sm outline-none focus:border-orange-500 ${estado === "erro" ? "border-red-500" : estado === "ok" ? "border-emerald-500" : "border-zinc-200 dark:border-zinc-700"}`}
+      />
+      {estado === "ok" && <span className="absolute -right-4 top-1 text-xs text-emerald-500">✓</span>}
+      {estado === "salvando" && <span className="absolute -right-4 top-1 text-xs text-zinc-400">…</span>}
+    </span>
+  );
+}
 
 type Fornecedor = { id: string; nome: string };
 
@@ -276,7 +308,8 @@ export function ProdutosClient({
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Un.</th>
-                <th className="px-4 py-3 text-right">Ideal</th>
+                <th className="px-4 py-3 text-right" title="Estoque ideal — edite direto aqui (Enter ou Tab salva)">Ideal</th>
+                <th className="px-4 py-3 text-right" title="Unidades por fardo — edite direto aqui">Fardo</th>
                 <th className="px-4 py-3">Fornecedores</th>
                 <th className="px-4 py-3 text-center whitespace-nowrap" title="Exclusivo (1 fornecedor)">
                   🔒 Excl.
@@ -324,12 +357,11 @@ export function ProdutosClient({
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {p.unidade}
                   </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
-                    {p.estoque_ideal > 0 ? (
-                      p.estoque_ideal
-                    ) : (
-                      <span className="text-zinc-300 dark:text-zinc-600">—</span>
-                    )}
+                  <td className="px-2 py-2 text-right">
+                    <CampoInline key={`i-${p.id}-${p.estoque_ideal}`} id={p.id} campo="estoque_ideal" valor={Number(p.estoque_ideal) || 0} />
+                  </td>
+                  <td className="px-2 py-2 text-right">
+                    <CampoInline key={`f-${p.id}-${p.fardo}`} id={p.id} campo="fardo" valor={Number(p.fardo) || 0} />
                   </td>
                   <td className="px-4 py-3">
                     {(() => {

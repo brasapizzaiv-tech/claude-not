@@ -204,3 +204,14 @@ export async function vincularSemFornecedorNaFeira() {
   revalidatePath("/produtos");
   return { ok: true, total: semForn.length };
 }
+
+// Estoque ideal e fardo editados direto na lista (sem abrir o produto).
+export async function salvarIdealFardo(produtoId: string, campo: "estoque_ideal" | "fardo", valor: number) {
+  const supabase = await createClient();
+  if (!["estoque_ideal", "fardo"].includes(campo)) return { ok: false as const, mensagem: "Campo inválido." };
+  const v = Number.isFinite(valor) ? Math.max(0, valor) : 0;
+  const { error } = await supabase.from("produtos").update({ [campo]: v }).eq("id", produtoId);
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath("/produtos");
+  return { ok: true as const };
+}
