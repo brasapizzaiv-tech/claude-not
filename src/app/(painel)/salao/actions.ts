@@ -1468,3 +1468,39 @@ export async function reimprimirFechamento(caixaId: string) {
   if (error) return { ok: false as const, mensagem: error.message };
   return { ok: true as const, total: ids.length };
 }
+
+// Caixa: tira um item da comanda ali mesmo, depois de ler o cupom, pedindo o
+// motivo (mesmo esquema da exclusão de comanda). Item já pago (inteiro ou
+// parcial) não sai — o dinheiro já entrou. Fica no registro de cancelados.
+export async function removerItemCaixa(itemId: string, motivo: string) {
+  const supabase = await createClient();
+  await exigirAcesso("/salao");
+  const mot = (motivo || "").trim();
+  if (mot.length < 3) return { ok: false as const, mensagem: "Informe o motivo (pelo menos 3 letras)." };
+  const { data: it } = await supabase
+    .from("pdv_comanda_itens")
+    .select("id, descricao, qtd, preco_unit, pago, valor_pago, comanda_id")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!it) return { ok: false as const, mensagem: "Esse item já não está mais na comanda." };
+  if (it.pago || Number(it.valor_pago ?? 0) > 0.005) {
+    return { ok: false as const, mensagem: "Esse item já foi recebido (inteiro ou em parte) e não pode ser excluído. Se o recebimento foi errado, faça o estorno pelo caixa." };
+  }
+  const { data: com } = await supabase.from("pdv_comandas").select("numero, mesa").eq("id", it.comanda_id as string).maybeSingle();
+  const { data: userData } = await supabase.auth.getUser();
+  await supabase.from("pdv_itens_cancelados").insert({
+    comanda_numero: com?.numero ?? null,
+    mesa: com?.mesa ?? null,
+    descricao: (it.descricao as string) || null,
+    qtd: Number(it.qtd),
+    valor: Number(it.qtd) * Number(it.preco_unit),
+    motivo: `Excluído no caixa: ${mot}`,
+    cancelado_por: userData.user?.id ?? null,
+  });
+  const { error } = await supabase.from("pdv_comanda_itens").delete().eq("id", itemId);
+  if (error) return { ok: false as const, mensagem: "Não consegui excluir. Tente de novo." };
+  revalidatePath("/salao/caixa");
+  revalidatePath(`/salao/comandas/${it.comanda_id}`);
+  revalidatePath(`/garcom/comanda/${it.comanda_id}`);
+  return { ok: true as const };
+}

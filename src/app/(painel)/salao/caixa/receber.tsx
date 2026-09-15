@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pagarSelecao, fecharTef, virarLivreComanda } from "../actions";
+import { pagarSelecao, fecharTef, virarLivreComanda, removerItemCaixa } from "../actions";
 import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
@@ -106,6 +106,23 @@ export function ReceberComandas({
     return true;
   }
   const [carrinho, setCarrinho] = useState<Set<string>>(new Set());
+  // Excluir um item da comanda direto do caixa (pede o motivo, como na
+  // exclusão de comanda). Some da lista na hora; o servidor confirma no refresh.
+  const [excluidos, setExcluidos] = useState<Set<string>>(new Set());
+  function excluirItem(l: Linha) {
+    if (!l.itemId) return;
+    const motivo = window.prompt(`Motivo da exclusão de "${l.nome}" (obrigatório):`, "");
+    if (motivo == null) return;
+    if (motivo.trim().length < 3) { window.alert("Informe o motivo (pelo menos 3 caracteres)."); return; }
+    const itemId = l.itemId;
+    start(async () => {
+      const r = await removerItemCaixa(itemId, motivo.trim());
+      if (!r.ok) { window.alert(r.mensagem); return; }
+      setExcluidos((prev) => new Set(prev).add(itemId));
+      setCarrinho((prev) => { const n = new Set(prev); n.delete(l.key); return n; });
+      router.refresh();
+    });
+  }
   const [desconto, setDesconto] = useState("");
   const [descontoPct, setDescontoPct] = useState(false); // false = R$, true = %
   const [acrescimo, setAcrescimo] = useState("");
@@ -169,6 +186,7 @@ export function ReceberComandas({
         });
       }
       for (const i of c.itens) {
+        if (excluidos.has(i.id)) continue;
         const rem = Math.round((i.qtd * i.preco * fator - i.valorPago) * 100) / 100;
         if (rem > 0.005) {
           out.push({
@@ -185,7 +203,7 @@ export function ReceberComandas({
       }
     }
     return out;
-  }, [selComandas, fator]);
+  }, [selComandas, fator, excluidos]);
 
   const linhasCarrinho = linhas.filter((l) => carrinho.has(l.key));
   const extraValor = Math.round(extras.reduce((s, e) => s + e.preco * e.qtd * fator, 0) * 100) / 100;
@@ -612,6 +630,16 @@ export function ReceberComandas({
                       >
                         +
                       </button>
+                      {l.tipo === "item" && (
+                        <button
+                          onClick={() => excluirItem(l)}
+                          disabled={noCarrinho || proc}
+                          title="Excluir este item da comanda (pede o motivo)"
+                          className="rounded-md px-1.5 text-red-500 hover:bg-red-50 disabled:opacity-30 dark:hover:bg-red-950/40"
+                        >
+                          🗑️
+                        </button>
+                      )}
                     </div>
                   );
                 })
