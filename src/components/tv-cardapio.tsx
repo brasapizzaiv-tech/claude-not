@@ -1,6 +1,9 @@
-// Páginas de cardápio da TV da cozinha (buffet do dia, saladas, marmitas Kern)
-// e a rotação entre elas. Sem hooks: desenhadas no servidor (modo simples) e
-// no navegador (modo normal) do mesmo jeito.
+// Páginas de cardápio da TV da cozinha e a rotação entre elas. Sem hooks:
+// desenhadas no servidor (modo simples) e no navegador (modo normal) do mesmo jeito.
+//
+// Uma página só de cardápio: buffet + saladas lado a lado, e as marmitas Kern
+// embutidas — o prato do buffet que também vai na marmita ganha o selo "M";
+// o que a marmita tem de diferente do buffet aparece no quadro "Extra marmitas".
 import { rotuloDia, rotuloDiaLongo, TV_PAGINAS } from "@/lib/dia-cardapio";
 import { TvRelogio, type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
 
@@ -16,11 +19,25 @@ const LARANJA = "#C78340";
 // 32" (768p) mostra tudo a 71% — nada corta, nada rola.
 const vh = (n: number) => `${(n / 10.8).toFixed(2)}vh`;
 
+// "Arroz Branco " ≈ "arroz branco": sem acento, sem caixa, sem espaço sobrando.
+function chave(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+// O mesmo prato escrito um pouco diferente nos dois cadastros ("Frango grelhado"
+// × "Frango grelhado ao molho") conta como igual quando um contém o outro.
+function mesmoPrato(a: string, b: string) {
+  const x = chave(a), y = chave(b);
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const menor = x.length < y.length ? x : y;
+  return menor.length >= 6 && (x.includes(y) || y.includes(x));
+}
+
 function Cabecalho({ titulo, dia }: { titulo: string; dia: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, marginBottom: 18, borderBottom: `3px solid ${LARANJA}`, paddingBottom: 10 }}>
-      <span style={{ fontSize: vh(40), fontWeight: 900, letterSpacing: "0.1em", color: LARANJA }}>{titulo}</span>
-      <span style={{ fontSize: vh(34), fontWeight: 800, color: "#ddd", letterSpacing: "0.06em" }}>{rotuloDia(dia)}</span>
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, marginBottom: 14, borderBottom: `3px solid ${LARANJA}`, paddingBottom: 8 }}>
+      <span style={{ fontSize: vh(38), fontWeight: 900, letterSpacing: "0.1em", color: LARANJA }}>{titulo}</span>
+      <span style={{ fontSize: vh(32), fontWeight: 800, color: "#ddd", letterSpacing: "0.06em" }}>{rotuloDia(dia)}</span>
     </div>
   );
 }
@@ -38,18 +55,36 @@ function NaoCadastrado({ titulo, dia, texto }: { titulo: string; dia: string; te
   );
 }
 
+// Selo "M" ao lado do prato que também vai na marmita (desenhado em CSS, não em
+// emoji: a TV antiga não tem fonte de emoji).
+function SeloMarmita({ tamanho }: { tamanho: number }) {
+  return (
+    <span
+      title="vai na marmita"
+      style={{
+        display: "inline-block", verticalAlign: "middle", marginLeft: 12, minWidth: vh(tamanho * 0.9), height: vh(tamanho * 0.9), lineHeight: vh(tamanho * 0.9),
+        borderRadius: 6, background: LARANJA, color: "#211915", fontSize: vh(tamanho * 0.55), fontWeight: 900, textAlign: "center", padding: "0 5px", letterSpacing: "0.02em",
+      }}
+    >
+      M
+    </span>
+  );
+}
+
+type ItemTv = { nome: string; marmita: boolean };
+
 // Lista grande; passando de `porColuna` itens, divide em duas colunas em vez de rolar.
-function Lista({ itens, tamanho = 38, porColuna = 7 }: { itens: string[]; tamanho?: number; porColuna?: number }) {
+function Lista({ itens, tamanho = 32, porColuna = 6, cor = LARANJA }: { itens: ItemTv[]; tamanho?: number; porColuna?: number; cor?: string }) {
   const duas = itens.length > porColuna;
   const meio = Math.ceil(itens.length / 2);
   const colunas = duas ? [itens.slice(0, meio), itens.slice(meio)] : [itens];
   return (
-    <div style={{ display: "flex", gap: 40 }}>
+    <div style={{ display: "flex", gap: 32 }}>
       {colunas.map((col, i) => (
         <ul key={i} style={{ flex: 1, listStyle: "none", margin: 0, padding: 0 }}>
           {col.map((it, j) => (
-            <li key={j} style={{ fontSize: vh(tamanho), lineHeight: 1.25, fontWeight: 700, color: "#fff", padding: "4px 0", overflowWrap: "anywhere" }}>
-              <span style={{ color: LARANJA, marginRight: 14 }}>•</span>{it}
+            <li key={j} style={{ fontSize: vh(tamanho), lineHeight: 1.22, fontWeight: 700, color: "#fff", padding: "3px 0", overflowWrap: "anywhere" }}>
+              <span style={{ color: cor, marginRight: 12 }}>•</span>{it.nome}{it.marmita && <SeloMarmita tamanho={tamanho} />}
             </li>
           ))}
         </ul>
@@ -58,87 +93,130 @@ function Lista({ itens, tamanho = 38, porColuna = 7 }: { itens: string[]; tamanh
   );
 }
 
-function Grupo({ titulo, itens, tamanho, porColuna }: { titulo: string; itens: string[]; tamanho?: number; porColuna?: number }) {
+function Grupo({ titulo, itens, tamanho, porColuna, cor }: { titulo: string; itens: ItemTv[]; tamanho?: number; porColuna?: number; cor?: string }) {
   if (itens.length === 0) return null;
   return (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: vh(22), fontWeight: 900, letterSpacing: "0.16em", color: "#888", marginBottom: 4 }}>{titulo.toUpperCase()}</div>
-      <Lista itens={itens} tamanho={tamanho} porColuna={porColuna} />
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: vh(20), fontWeight: 900, letterSpacing: "0.16em", color: "#888", marginBottom: 2 }}>{titulo.toUpperCase()}</div>
+      <Lista itens={itens} tamanho={tamanho} porColuna={porColuna} cor={cor} />
     </div>
   );
 }
 
-export function TvPaginaBuffet({ c }: { c: CardapioTv }) {
-  if (!c.buffet) return <NaoCadastrado titulo="CARDÁPIO DO DIA" dia={c.dia} />;
-  const total = c.buffet.proteinas.length + c.buffet.carboidratos.length + c.buffet.especial.length;
-  const tamanho = total > 14 ? 30 : total > 10 ? 34 : 38;
+// Cruza o cardápio da marmita com o buffet e as saladas: o que bate ganha o
+// selo; o que sobra é "extra" da marmita.
+function cruzarKern(c: CardapioTv) {
+  const k = c.kern && !c.kern.bloqueado ? c.kern : null;
+  const daMarmita = k ? [...k.pratos, ...k.proteinas] : [];
+  const usados = new Set<number>();
+  const marcar = (nome: string) => {
+    const i = daMarmita.findIndex((m, idx) => !usados.has(idx) && mesmoPrato(m, nome));
+    if (i >= 0) usados.add(i);
+    return i >= 0;
+  };
+  const b = c.buffet;
+  const buffet = b
+    ? {
+        proteinas: b.proteinas.map((n) => ({ nome: n, marmita: marcar(n) })),
+        carboidratos: b.carboidratos.map((n) => ({ nome: n, marmita: marcar(n) })),
+        especial: b.especial.map((n) => ({ nome: n, marmita: marcar(n) })),
+      }
+    : null;
+  let saladaMarmita = k?.salada?.trim() || "";
+  const saladas = (c.saladas ?? []).map((g) => ({
+    categoria: g.categoria,
+    itens: g.itens.map((n) => {
+      const bate = !!saladaMarmita && mesmoPrato(saladaMarmita, n);
+      if (bate) saladaMarmita = "";
+      return { nome: n, marmita: bate };
+    }),
+  }));
+  const extras = daMarmita.filter((_, idx) => !usados.has(idx));
+  if (saladaMarmita) extras.push(`Salada: ${saladaMarmita}`);
+  return { buffet, saladas, extras, kern: k, temMarmita: !!k && daMarmita.length > 0 };
+}
+
+// A página única do cardápio: buffet à esquerda (2/3), saladas + extra marmitas à direita.
+export function TvPaginaDia({ c }: { c: CardapioTv }) {
+  if (!c.buffet && (!c.saladas || c.saladas.length === 0)) return <NaoCadastrado titulo="CARDÁPIO DO DIA" dia={c.dia} />;
+  const x = cruzarKern(c);
+  const totalBuffet = c.buffet ? c.buffet.proteinas.length + c.buffet.carboidratos.length + c.buffet.especial.length : 0;
+  const tamBuffet = totalBuffet > 16 ? 28 : totalBuffet > 12 ? 31 : 34;
+  const totalSal = x.saladas.reduce((s, g) => s + g.itens.length, 0);
+  const tamSal = totalSal > 14 ? 23 : totalSal > 9 ? 26 : 29;
+  const kernNome = (c.kern?.nomeConvenio || "Kern").toUpperCase();
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px 0", overflow: "hidden" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 32px 0", overflow: "hidden" }}>
       <Cabecalho titulo="CARDÁPIO DO DIA" dia={c.dia} />
-      {!c.buffet.publicado && <div style={{ fontSize: vh(20), color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>rascunho — ainda não publicado no site</div>}
-      <Grupo titulo="Proteínas" itens={c.buffet.proteinas} tamanho={tamanho} porColuna={5} />
-      <Grupo titulo="Acompanhamentos" itens={c.buffet.carboidratos} tamanho={tamanho} porColuna={5} />
-      <Grupo titulo="Especial do dia" itens={c.buffet.especial} tamanho={tamanho} porColuna={5} />
-    </div>
-  );
-}
-
-export function TvPaginaSaladas({ c }: { c: CardapioTv }) {
-  if (!c.saladas || c.saladas.length === 0) return <NaoCadastrado titulo="SALADAS DO DIA" dia={c.dia} texto={`Saladas de ${rotuloDiaLongo(c.dia)} ainda não marcadas`} />;
-  const total = c.saladas.reduce((s, g) => s + g.itens.length, 0);
-  const tamanho = total > 18 ? 26 : total > 12 ? 30 : 34;
-  // Categorias em duas colunas (só as que têm itens já vêm filtradas do servidor).
-  const meio = Math.ceil(c.saladas.length / 2);
-  const cols = c.saladas.length > 3 ? [c.saladas.slice(0, meio), c.saladas.slice(meio)] : [c.saladas];
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px 0", overflow: "hidden" }}>
-      <Cabecalho titulo="SALADAS DO DIA" dia={c.dia} />
-      <div style={{ display: "flex", gap: 48 }}>
-        {cols.map((col, i) => (
-          <div key={i} style={{ flex: 1 }}>
-            {col.map((g) => (
-              <div key={g.categoria} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: vh(22), fontWeight: 900, letterSpacing: "0.16em", color: "#888", marginBottom: 2 }}>{g.categoria.toUpperCase()}</div>
+      {c.buffet && !c.buffet.publicado && <div style={{ fontSize: vh(18), color: "#f59e0b", fontWeight: 700, marginBottom: 6 }}>rascunho — ainda não publicado no site</div>}
+      <div style={{ flex: 1, display: "flex", gap: 40, minHeight: 0 }}>
+        {/* Buffet */}
+        <div style={{ flex: 3, minWidth: 0 }}>
+          {x.buffet ? (
+            <>
+              <Grupo titulo="Proteínas" itens={x.buffet.proteinas} tamanho={tamBuffet} porColuna={6} />
+              <Grupo titulo="Acompanhamentos" itens={x.buffet.carboidratos} tamanho={tamBuffet} porColuna={6} />
+              <Grupo titulo="Especial do dia" itens={x.buffet.especial} tamanho={tamBuffet} porColuna={6} />
+            </>
+          ) : (
+            <p style={{ fontSize: vh(30), fontWeight: 800, color: "#666" }}>Buffet de {rotuloDiaLongo(c.dia)} ainda não cadastrado</p>
+          )}
+        </div>
+        {/* Saladas + marmitas */}
+        <div style={{ flex: 2, minWidth: 0, display: "flex", flexDirection: "column", borderLeft: "2px solid #333", paddingLeft: 32 }}>
+          <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div style={{ fontSize: vh(20), fontWeight: 900, letterSpacing: "0.16em", color: "#4ade80", marginBottom: 4 }}>SALADAS</div>
+            {x.saladas.length === 0 ? (
+              <p style={{ fontSize: vh(24), fontWeight: 700, color: "#666", margin: 0 }}>ainda não marcadas</p>
+            ) : (
+              x.saladas.map((g) => (
+                <div key={g.categoria} style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: vh(16), fontWeight: 900, letterSpacing: "0.14em", color: "#777" }}>{g.categoria.toUpperCase()}</div>
+                  {/* muitas saladas → nomes na mesma linha, separados por ponto */}
+                  {totalSal > 12 ? (
+                    <div style={{ fontSize: vh(tamSal), lineHeight: 1.3, fontWeight: 700, color: "#fff" }}>
+                      {g.itens.map((it, i) => (
+                        <span key={i}>{i > 0 && <span style={{ color: "#4ade80", margin: "0 10px" }}>·</span>}{it.nome}{it.marmita && <SeloMarmita tamanho={tamSal} />}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <Lista itens={g.itens} tamanho={tamSal} porColuna={99} cor="#4ade80" />
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+          {/* Extra marmitas */}
+          <div style={{ marginTop: 10, marginBottom: 12, background: "#3a2410", borderLeft: `12px solid ${LARANJA}`, borderRadius: 14, padding: "12px 18px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+              <span style={{ fontSize: vh(20), fontWeight: 900, letterSpacing: "0.12em", color: "#ffd9a8" }}>MARMITAS {kernNome}</span>
+              {x.kern && x.temMarmita && (
+                <span style={{ fontSize: vh(24), fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                  {x.kern.quantidade} un · saem {x.kern.horaEntrega}
+                </span>
+              )}
+            </div>
+            {x.temMarmita && (
+              <div style={{ fontSize: vh(15), fontWeight: 700, color: "#c9a97e", marginTop: 2 }}><SeloMarmita tamanho={15} /> = prato do buffet que também vai na marmita</div>
+            )}
+            {c.kern?.bloqueado ? (
+              <div style={{ fontSize: vh(24), fontWeight: 700, color: "#ddd", marginTop: 4 }}>Sem marmita hoje — {c.kern.bloqueado}</div>
+            ) : !x.temMarmita ? (
+              <div style={{ fontSize: vh(22), fontWeight: 700, color: "#999", marginTop: 4 }}>Cardápio da marmita ainda não cadastrado</div>
+            ) : x.extras.length === 0 ? (
+              <div style={{ fontSize: vh(22), fontWeight: 700, color: "#ddd", marginTop: 4 }}>Vai o mesmo do buffet (pratos com <SeloMarmita tamanho={22} />)</div>
+            ) : (
+              <>
+                <div style={{ fontSize: vh(16), fontWeight: 900, letterSpacing: "0.14em", color: "#ffd9a8", marginTop: 6 }}>EXTRA — SÓ NA MARMITA</div>
                 <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                  {g.itens.map((it) => (
-                    <li key={it} style={{ fontSize: vh(tamanho), lineHeight: 1.25, fontWeight: 700, color: "#fff", padding: "3px 0" }}>
-                      <span style={{ color: "#4ade80", marginRight: 14 }}>•</span>{it}
+                  {x.extras.map((e, i) => (
+                    <li key={i} style={{ fontSize: vh(26), lineHeight: 1.22, fontWeight: 800, color: "#fff", padding: "2px 0" }}>
+                      <span style={{ color: LARANJA, marginRight: 12 }}>+</span>{e}
                     </li>
                   ))}
                 </ul>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export function TvPaginaKern({ c }: { c: CardapioTv }) {
-  const k = c.kern;
-  const titulo = `MARMITAS ${(k?.nomeConvenio || "KERN").toUpperCase()}`;
-  if (!k) return <NaoCadastrado titulo={titulo} dia={c.dia} />;
-  if (k.bloqueado) return <NaoCadastrado titulo={titulo} dia={c.dia} texto={`Sem marmita em ${rotuloDiaLongo(c.dia)} — ${k.bloqueado}`} />;
-  if (k.pratos.length === 0 && k.proteinas.length === 0) return <NaoCadastrado titulo={titulo} dia={c.dia} texto={`Cardápio ${k.nomeConvenio} de ${rotuloDiaLongo(c.dia)} ainda não cadastrado`} />;
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px 0", overflow: "hidden" }}>
-      <Cabecalho titulo={titulo} dia={c.dia} />
-      <div style={{ display: "flex", gap: 40 }}>
-        <div style={{ flex: 1 }}>
-          <Grupo titulo="Pratos" itens={k.pratos} tamanho={34} porColuna={99} />
-          <Grupo titulo="Proteínas" itens={k.proteinas} tamanho={34} porColuna={99} />
-          {k.salada && <Grupo titulo="Salada" itens={[k.salada]} tamanho={34} porColuna={99} />}
-        </div>
-        {/* quantidade e horário de saída em destaque */}
-        <div style={{ width: 380, display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ background: "#3a2410", borderLeft: `14px solid ${LARANJA}`, borderRadius: 16, padding: "18px 22px" }}>
-            <div style={{ fontSize: vh(20), fontWeight: 800, letterSpacing: "0.12em", color: "#ffd9a8" }}>MARMITAS PEDIDAS</div>
-            <div style={{ fontSize: vh(96), lineHeight: 1, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{k.quantidade}</div>
-          </div>
-          <div style={{ background: "#0f2740", borderLeft: "14px solid #3b82f6", borderRadius: 16, padding: "18px 22px" }}>
-            <div style={{ fontSize: vh(20), fontWeight: 800, letterSpacing: "0.12em", color: "#bfdbfe" }}>SAEM ÀS</div>
-            <div style={{ fontSize: vh(72), lineHeight: 1, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{k.horaEntrega}</div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -146,7 +224,7 @@ export function TvPaginaKern({ c }: { c: CardapioTv }) {
   );
 }
 
-// Três pontinhos (ou quatro) no rodapé: em qual página está.
+// Pontinhos no rodapé: em qual página está.
 export function TvPontos({ pagina }: { pagina: number }) {
   return (
     <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
@@ -163,13 +241,11 @@ export function TvPaginaCardapio({
 }: {
   pagina: number; cardapio: CardapioTv; agora: number; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; piscar: boolean;
 }) {
-  const qual = TV_PAGINAS[pagina] ?? "buffet";
+  const qual = TV_PAGINAS[pagina] ?? "cardapio";
   return (
     <div key={qual} style={{ flex: 1, display: "flex", flexDirection: "column", animation: "tvFade 0.6s ease-out" }}>
       <style>{`@keyframes tvFade { from { opacity: 0 } to { opacity: 1 } }`}</style>
-      {qual === "buffet" && <TvPaginaBuffet c={cardapio} />}
-      {qual === "saladas" && <TvPaginaSaladas c={cardapio} />}
-      {qual === "kern" && <TvPaginaKern c={cardapio} />}
+      {qual === "cardapio" && <TvPaginaDia c={cardapio} />}
       {qual === "relogio" && <TvRelogio agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={piscar} />}
     </div>
   );

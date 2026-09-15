@@ -91,7 +91,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   return (
     <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {!mostrarFila ? (
-        // Fora do rodízio: cardápio do dia → saladas → Kern → relógio/recados.
+        // Fora do rodízio: cardápio do dia (buffet + saladas + marmitas) → relógio/recados.
         <TvPaginaCardapio key={pagina} pagina={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar />
       ) : fila.length === 0 ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>

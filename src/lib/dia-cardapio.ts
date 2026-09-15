@@ -12,7 +12,7 @@ export const VIRADA_HORA = 13;      // hora da virada pro cardápio do dia segui
 export const VIRADA_MINUTO = 30;
 export const TV_ROTACAO_SEG = 20;   // cada página do cardápio fica este tempo na TV
 export const TV_SEM_PEDIDO_MIN = 3; // sem pedido aberto por este tempo → TV volta ao cardápio
-export const TV_PAGINAS = ["buffet", "saladas", "kern", "relogio"] as const;
+export const TV_PAGINAS = ["cardapio", "relogio"] as const; // cardápio (buffet + saladas + marmitas numa página só) e relógio
 export type TvPagina = (typeof TV_PAGINAS)[number];
 
 const DIAS_CURTO = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
