@@ -7,9 +7,8 @@
 // relógio/tempo de espera recalculados a partir do estado atual (nada cresce).
 import { useEffect, useRef, useState } from "react";
 import { RodizioCard } from "@/components/rodizio-card";
-import { type AniversarianteTv, type RecadoTv } from "@/components/tv-relogio";
-import { TvPaginaCardapio, TvPontos, type CardapioTv } from "@/components/tv-cardapio";
-import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
+import { TvPaginaCardapio, type AniversarianteTv, type CardapioTv, type RecadoTv } from "@/components/tv-cardapio";
+import { TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
 import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
 const INTERVALO_MS = 3000;
@@ -84,15 +83,14 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   // última mexida, fica na fila; senão roda as páginas de cardápio.
   const ultimaMs = ultimaAtividade ? Date.parse(ultimaAtividade) : 0;
   const mostrarFila = fila.length > 0 || (ultimaMs > 0 && agora - ultimaMs < TV_SEM_PEDIDO_MIN * 60000);
-  const pagina = paginaDaRotacao(agora);
   const { salgadas, doces } = separarColunas(fila);
   const semRede = !conectado || (ultimaOk > 0 && agora - ultimaOk > 20000);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ height: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {!mostrarFila ? (
-        // Fora do rodízio: cardápio do dia (buffet + saladas + marmitas) → relógio/recados.
-        <TvPaginaCardapio key={pagina} pagina={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar />
+        // Fora do rodízio: tela única — cardápio do dia + hora + saladas + marmitas + aniversários/recados.
+        <TvPaginaCardapio cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar />
       ) : fila.length === 0 ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <p style={{ fontSize: 56, fontWeight: 800, color: "#555" }}>Nenhum pedido</p>
@@ -106,7 +104,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
 
       {/* rodapé: relógio + conexão */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: 20, color: "#777" }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio {!mostrarFila && <TvPontos pagina={pagina} />}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span
             title={semRede ? "Sem conexão" : "Conectado"}
