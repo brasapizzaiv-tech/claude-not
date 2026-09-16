@@ -57,10 +57,20 @@ type Cfg = {
     // segunda-feira (YYYY-MM-DD) → id da semana que vale a partir dali
     programacao?: Record<string, string>;
   };
+  // Exceção por data (marmitas_dia_excecao): a cozinha trocou o cardápio SÓ
+  // desse dia, sem mexer na rotação. Gravada pelo painel/app da equipe.
+  excecoes: Record<string, { pratos: string[]; proteinas: string[]; salada: string }>;
 };
 
 async function getCfg(db: Db): Promise<Cfg> {
-  const { data } = await db.from("mkt_config").select("chave, valor");
+  const [{ data }, { data: excRows }] = await Promise.all([
+    db.from("mkt_config").select("chave, valor"),
+    db.from("marmitas_dia_excecao").select("data, pratos, proteinas, salada").gte("data", addDias(agoraBR().data, -2)),
+  ]);
+  const excecoes: Cfg["excecoes"] = {};
+  for (const e of (excRows as { data: string; pratos: unknown; proteinas: unknown; salada: string | null }[]) ?? []) {
+    excecoes[e.data] = { pratos: limpaLista(e.pratos, 0), proteinas: limpaLista(e.proteinas, 0), salada: String(e.salada ?? "").trim() };
+  }
   const m: Record<string, string> = {};
   for (const row of data || []) m[row.chave] = row.valor;
   const cardapios = parseObj<Cfg["cardapios"]>(m.cardapios, { semanas: semanasVazias(), ativo: null });
@@ -78,6 +88,7 @@ async function getCfg(db: Db): Promise<Cfg> {
       .filter((b) => b && typeof b.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.data))
       .map((b) => ({ data: b.data as string, motivo: String(b.motivo || "").trim() })),
     cardapios,
+    excecoes,
   };
 }
 function bloqueado(cfg: Cfg, data: string) {
@@ -127,6 +138,8 @@ function semanaPara(cfg: Cfg, data: string) {
   return semanas[(((idx + dif) % n) + n) % n];
 }
 function resolveCardapioHoje(cfg: Cfg, data: string) {
+  const exc = cfg.excecoes[data];
+  if (exc) return { pratos: exc.pratos, proteinas: exc.proteinas, salada: exc.salada };
   const sem = semanaPara(cfg, data);
   const dia = sem && sem.dias ? sem.dias[diaSemana(data)] : null;
   return dia ? { pratos: dia.pratos || [], proteinas: dia.proteinas || [], salada: dia.salada || "" } : { pratos: [], proteinas: [], salada: "" };

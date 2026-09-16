@@ -8,20 +8,17 @@ import {
   apagarItem,
   criarItens,
   despublicarCardapio,
+  publicarCardapio,
   salvarCardapio,
   type Grupo,
 } from "./actions";
+import { PRECOS_SUGERIDOS, statusCardapio, type CardapioDia, type ItemCatalogo } from "@/lib/cardapio-dia-core";
 
-export type Cardapio = {
-  data: string;
-  proteinas: string | null;
-  carboidratos: string | null;
-  especial: string | null;
-  preco_livre: number | null;
-  preco_kg: number | null;
-  publicado: boolean;
-};
-export type ItemCat = { id: string; grupo: string; nome: string; usos: number };
+export type Cardapio = CardapioDia;
+export type ItemCat = ItemCatalogo;
+
+const quando = (ts: string | null) =>
+  ts ? new Date(ts).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
 
 const SEMANA = [
   "domingo",
@@ -32,15 +29,7 @@ const SEMANA = [
   "sexta-feira",
   "sábado",
 ];
-// Preços do buffet por dia da semana (os mesmos da tabela de valores do site).
-const PRECOS: Record<number, { livre: number; kg: number }> = {
-  1: { livre: 40.9, kg: 94.9 },
-  2: { livre: 40.9, kg: 94.9 },
-  3: { livre: 40.9, kg: 94.9 },
-  4: { livre: 40.9, kg: 94.9 },
-  5: { livre: 45.9, kg: 99.9 },
-  6: { livre: 67.9, kg: 149.9 },
-};
+const PRECOS = PRECOS_SUGERIDOS;
 const BLOCOS: { grupo: Grupo; titulo: string }[] = [
   { grupo: "proteinas", titulo: "Proteínas" },
   { grupo: "carboidratos", titulo: "Carboidratos" },
@@ -135,13 +124,24 @@ export function EditorCardapio({
       setMsg(
         r.ok
           ? publicar
-            ? "✓ Publicado — já está no site."
-            : "✓ Salvo como rascunho (não aparece no site)."
+            ? "✓ Publicado — já está no site e na TV."
+            : atual?.publicado
+              ? "✓ Salvo. O site continua com a versão publicada até você apertar Publicar."
+              : "✓ Salvo como rascunho (não aparece no site)."
           : (r.erro ?? "Não salvou."),
       );
       router.refresh();
     });
   }
+  function publicarSo() {
+    setMsg(null);
+    start(async () => {
+      const r = await publicarCardapio(dia);
+      setMsg(r.ok ? "✓ Publicado — já está no site e na TV." : (r.erro ?? "Não publicou."));
+      router.refresh();
+    });
+  }
+  const status = statusCardapio(atual);
 
   // Copia o cardápio de um dia já preenchido (mesmo dia da semana primeiro).
   function copiarDe(origem: Cardapio) {
@@ -195,15 +195,21 @@ export function EditorCardapio({
               {SEMANA[dow]}
               {dia === hoje ? " · hoje" : ""}
             </span>
-            {atual?.publicado ? (
+            {status === "publicado" && (
               <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-                no ar
+                no ar{atual?.publicado_por ? ` · ${atual.publicado_por} ${quando(atual.publicado_em)}` : ""}
               </span>
-            ) : atual ? (
+            )}
+            {status === "alterado" && (
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                no ar · com alterações não publicadas ({atual?.alterado_por ?? "?"} {quando(atual?.alterado_em ?? null)})
+              </span>
+            )}
+            {status === "rascunho" && (
               <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800">
-                rascunho
+                rascunho{atual?.alterado_por ? ` · ${atual.alterado_por} ${quando(atual.alterado_em)}` : ""}
               </span>
-            ) : null}
+            )}
           </div>
 
           {domingo && (
@@ -279,12 +285,17 @@ export function EditorCardapio({
                 {proc
                   ? "Salvando..."
                   : atual?.publicado
-                    ? "Salvar e manter no ar"
+                    ? "Salvar e publicar"
                     : "Publicar no site"}
               </button>
               <button disabled={proc} onClick={() => salvar(false)} className={btn}>
-                Salvar rascunho
+                {atual?.publicado ? "Salvar sem publicar" : "Salvar rascunho"}
               </button>
+              {status === "alterado" && (
+                <button disabled={proc} onClick={publicarSo} className="rounded-lg border border-amber-500 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">
+                  Publicar o que está salvo
+                </button>
+              )}
               {atual?.publicado && (
                 <button
                   disabled={proc}

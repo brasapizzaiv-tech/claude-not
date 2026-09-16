@@ -164,6 +164,7 @@ function resumoQuadro(c: Colaborador): string {
   if (c.recebe_10) partes.push("10%");
   if (c.esporadico) partes.push("free esporádico");
   if (c.faz_garcom) partes.push("garçom");
+  if (c.faz_cardapio) partes.push("cardápio");
   return partes.join(" · ");
 }
 
@@ -256,7 +257,7 @@ export function ColaboradoresClient({ rows }: { rows: Row[] }) {
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
                     {c.folga ? <div style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}>🌴 {resumoFolga(c.folga)}</div> : <span className="text-zinc-400">sem folga</span>}
-                    <div className="text-zinc-400">{[c.faz_contagem ? "📦 contagem" : "", c.faz_etiquetas ? "🏷️ etiquetas" : "", c.faz_contas ? "💰 contas" : ""].filter(Boolean).join(" · ")}</div>
+                    <div className="text-zinc-400">{[c.faz_contagem ? "📦 contagem" : "", c.faz_etiquetas ? "🏷️ etiquetas" : "", c.faz_contas ? "💰 contas" : "", c.faz_cardapio ? "🍽️ cardápio" : ""].filter(Boolean).join(" · ")}</div>
                   </td>
                   <td className="px-4 py-3"><LinkApp c={c} /></td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -459,6 +460,9 @@ function EditModal({ editando, onClose }: { editando: Row | null; onClose: () =>
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_garcom" defaultChecked={editando ? !!editando.faz_garcom : false} /> 🧑‍🍳 Garçom (atalho &quot;Modo garçom&quot; no app: mesas, pedidos e conta)
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> 🍽️ Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
           </label>
 
           <label className="flex items-center gap-2 border-t border-zinc-200 pt-3 text-sm dark:border-zinc-800">

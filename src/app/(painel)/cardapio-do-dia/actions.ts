@@ -1,118 +1,80 @@
 "use server";
 
+// Ações do painel — só conferem o acesso e chamam a regra compartilhada em
+// src/lib/cardapio-dia-core.ts (a mesma que o app da equipe usa).
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { exigirAcesso } from "@/lib/permissoes-server";
+import * as core from "@/lib/cardapio-dia-core";
+import { salvarExcecaoMarmita } from "@/lib/marmitas-cardapio";
 
-export type DadosCardapio = {
-  proteinas: string;
-  carboidratos: string;
-  especial: string;
-  preco_livre: number | null;
-  preco_kg: number | null;
-};
+export type { DadosCardapio, Grupo } from "@/lib/cardapio-dia-core";
 
-const GRUPOS = ["proteinas", "carboidratos", "especial"] as const;
-export type Grupo = (typeof GRUPOS)[number];
-
-const linhas = (t: string) =>
-  t
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-
-// Salva o cardápio de um dia. publicado = true já solta no site.
-// Todo item usado entra (ou sobe) no catálogo, então a busca vai ficando
-// melhor sozinha conforme vocês publicam os dias.
-export async function salvarCardapio(
-  data: string,
-  d: DadosCardapio,
-  publicado: boolean,
-) {
+async function sessao() {
+  await exigirAcesso("/cardapio-do-dia");
   const supabase = await createClient();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data))
-    return { ok: false, erro: "Dia inválido." };
-
-  const { error } = await supabase.from("cardapio_dia").upsert(
-    {
-      data,
-      proteinas: d.proteinas.trim() || null,
-      carboidratos: d.carboidratos.trim() || null,
-      especial: d.especial.trim() || null,
-      preco_livre: d.preco_livre,
-      preco_kg: d.preco_kg,
-      publicado,
-      atualizado_em: new Date().toISOString(),
-    },
-    { onConflict: "data" },
-  );
-  if (error) return { ok: false, erro: "Não consegui salvar." };
-
-  await contarUsos(
-    { proteinas: linhas(d.proteinas), carboidratos: linhas(d.carboidratos), especial: linhas(d.especial) },
-  );
-
-  revalidatePath("/cardapio-do-dia");
-  return { ok: true };
-}
-
-// Garante o item no catálogo e soma 1 no contador de usos.
-async function contarUsos(porGrupo: Record<Grupo, string[]>) {
-  const supabase = await createClient();
-  const { data } = await supabase.from("cardapio_itens").select("id, grupo, nome, usos");
-  const atuais = (data as { id: string; grupo: string; nome: string; usos: number }[]) ?? [];
-
-  for (const grupo of GRUPOS) {
-    for (const nome of porGrupo[grupo]) {
-      const achado = atuais.find((i) => i.grupo === grupo && i.nome === nome);
-      if (achado) {
-        await supabase
-          .from("cardapio_itens")
-          .update({ usos: achado.usos + 1, ativo: true })
-          .eq("id", achado.id);
-      } else {
-        await supabase.from("cardapio_itens").insert({ grupo, nome, usos: 1 });
-      }
-    }
+  const { data: { user } } = await supabase.auth.getUser();
+  let nome = user?.email ?? "painel";
+  if (user) {
+    const { data: prof } = await supabase.from("profiles").select("nome").eq("id", user.id).maybeSingle();
+    if (prof?.nome) nome = prof.nome as string;
   }
+  const db = supabase as unknown as core.Db;
+  const ator: core.Ator = { nome, userId: user?.id ?? null };
+  return { db, ator };
+}
+const atualizar = () => revalidatePath("/cardapio-do-dia");
+
+// Salva; com publicar=true também publica (botão "Publicar no site").
+export async function salvarCardapio(data: string, d: core.DadosCardapio, publicar: boolean) {
+  const { db, ator } = await sessao();
+  const r = publicar ? await core.salvarEPublicarCardapioDia(db, data, d, ator) : await core.salvarCardapioDia(db, data, d, ator);
+  atualizar();
+  return r.ok ? { ok: true as const } : { ok: false as const, erro: r.mensagem };
 }
 
-// Cadastra itens no catálogo (um por linha) sem mexer em nenhum dia.
-export async function criarItens(grupo: Grupo, texto: string) {
-  const supabase = await createClient();
-  const nomes = [...new Set(linhas(texto))];
-  if (nomes.length === 0) return { ok: false, erro: "Nada para cadastrar." };
-
-  const { error } = await supabase
-    .from("cardapio_itens")
-    .upsert(
-      nomes.map((nome) => ({ grupo, nome })),
-      { onConflict: "grupo,nome", ignoreDuplicates: true },
-    );
-  if (error) return { ok: false, erro: "Não consegui cadastrar." };
-
-  revalidatePath("/cardapio-do-dia");
-  return { ok: true, total: nomes.length };
+export async function publicarCardapio(data: string) {
+  const { db, ator } = await sessao();
+  const r = await core.publicarCardapioDia(db, data, ator);
+  atualizar();
+  return r.ok ? { ok: true as const } : { ok: false as const, erro: r.mensagem };
 }
 
-// Tira o item da busca (não mexe nos cardápios já publicados).
+export async function criarItens(grupo: core.Grupo, texto: string) {
+  const { db } = await sessao();
+  const r = await core.criarItensCatalogo(db, grupo, texto);
+  atualizar();
+  return r.ok ? { ok: true as const, total: r.total } : { ok: false as const, erro: r.mensagem };
+}
+
 export async function apagarItem(id: string) {
-  const supabase = await createClient();
-  await supabase.from("cardapio_itens").delete().eq("id", id);
-  revalidatePath("/cardapio-do-dia");
-  return { ok: true };
+  const { db } = await sessao();
+  await core.apagarItemCatalogo(db, id);
+  atualizar();
+  return { ok: true as const };
 }
 
-// Tira do ar sem apagar o que foi escrito.
 export async function despublicarCardapio(data: string) {
-  const supabase = await createClient();
-  await supabase.from("cardapio_dia").update({ publicado: false }).eq("data", data);
-  revalidatePath("/cardapio-do-dia");
-  return { ok: true };
+  const { db, ator } = await sessao();
+  await core.despublicarCardapioDia(db, data, ator);
+  atualizar();
+  return { ok: true as const };
 }
 
 export async function apagarCardapio(data: string) {
-  const supabase = await createClient();
-  await supabase.from("cardapio_dia").delete().eq("data", data);
-  revalidatePath("/cardapio-do-dia");
-  return { ok: true };
+  const { db, ator } = await sessao();
+  await core.apagarCardapioDia(db, data, ator);
+  atualizar();
+  return { ok: true as const };
+}
+
+// Marmitas Kern: exceção só deste dia (regra e trava de janela no core).
+export async function salvarMarmitaDia(data: string, dados: { pratos: string[]; proteinas: string[]; salada: string }) {
+  const { db, ator } = await sessao();
+  const r = await salvarExcecaoMarmita(data, dados, ator.nome);
+  if (r.ok) {
+    await core.registrarPublicacao(db, data, "marmita", ator, r.removida ? "voltou pra rotação" : `${dados.pratos.length} prato(s)`);
+  }
+  atualizar();
+  return r;
 }

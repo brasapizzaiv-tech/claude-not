@@ -6,6 +6,11 @@ import { addDiasIso, diaSemanaIso } from "@/lib/dia-cardapio";
 // segunda-feira). A regra de "qual semana vale" é a mesma de
 // src/app/api/marmitas/[[...rota]]/route.ts (semanaPara), copiada aqui porque
 // rota não se importa de fora.
+//
+// EXCEÇÃO POR DATA (marmitas_dia_excecao): a cozinha pode trocar o cardápio de
+// UM dia sem mexer na rotação. Vale pro app do convênio e pra TV. Só pode ser
+// gravada enquanto a janela de pedidos daquele dia ainda não abriu — depois
+// disso os pedidos já feitos ficariam com itens fora do cardápio.
 
 export type KernDia = {
   data: string;
@@ -16,7 +21,11 @@ export type KernDia = {
   horaEntrega: string;    // "11:00"
   nomeConvenio: string;
   bloqueado: string | null; // motivo (feriado) quando não tem marmita
+  excecao: boolean;       // este dia tem cardápio próprio (fora da rotação)
+  rotacao: { pratos: string[]; proteinas: string[]; salada: string; semana: string | null }; // o que a rotação daria
 };
+
+export type ExcecaoMarmita = { pratos: string[]; proteinas: string[]; salada: string; por_nome: string | null; atualizado_em: string };
 
 type Semana = { id: string; nome: string; dias: Record<string, { pratos?: string[]; proteinas?: string[]; salada?: string }> };
 type Cardapios = { semanas: Semana[]; ativo: string | null; programacao?: Record<string, string> };
@@ -29,6 +38,11 @@ function segundaDe(iso: string) {
 }
 function hojeSP() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+function agoraSP() {
+  const f = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", hour12: false, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date());
+  const g = (t: string) => f.find((p) => p.type === t)?.value ?? "00";
+  return { data: `${g("year")}-${g("month")}-${g("day")}`, hora: `${g("hour").replace("24", "00")}:${g("minute")}` };
 }
 function semanaPara(c: Cardapios, iso: string): Semana | null {
   const semanas = Array.isArray(c.semanas) ? c.semanas : [];
@@ -46,32 +60,99 @@ function semanaPara(c: Cardapios, iso: string): Semana | null {
   return semanas[(((idx + dif) % n) + n) % n];
 }
 
-export async function kernDoDia(iso: string): Promise<KernDia> {
-  const admin = createAdminClient();
-  const [{ data: cfgRows }, { count }] = await Promise.all([
-    admin.from("mkt_config").select("chave, valor").in("chave", ["cardapios", "horaEntrega", "nomeConvenio", "bloqueios"]),
-    admin.from("mkt_pedidos").select("id", { count: "exact", head: true }).eq("data", iso),
-  ]);
+const lista = (v: unknown) => (Array.isArray(v) ? v : []).map(String).map((s) => s.trim()).filter(Boolean);
+
+type CfgKern = { cardapios: Cardapios; bloqueios: { data: string; motivo: string }[]; horaAbertura: string; horaLimite: string; horaEntrega: string; nomeConvenio: string };
+
+async function lerCfgKern(admin: ReturnType<typeof createAdminClient>): Promise<CfgKern> {
+  const { data: cfgRows } = await admin.from("mkt_config").select("chave, valor").in("chave", ["cardapios", "horaEntrega", "horaAbertura", "horaLimite", "nomeConvenio", "bloqueios"]);
   const m: Record<string, string> = {};
   for (const r of (cfgRows as { chave: string; valor: string }[]) ?? []) m[r.chave] = r.valor;
   let cardapios: Cardapios = { semanas: [], ativo: null };
   try { cardapios = JSON.parse(m.cardapios || "{}") as Cardapios; } catch { /* sem cadastro */ }
-  let bloqueado: string | null = null;
+  let bloqueios: { data: string; motivo: string }[] = [];
   try {
     const b = JSON.parse(m.bloqueios || "[]") as { data?: string; motivo?: string }[];
-    const hit = Array.isArray(b) ? b.find((x) => x?.data === iso) : null;
-    if (hit) bloqueado = String(hit.motivo || "sem marmita");
+    bloqueios = (Array.isArray(b) ? b : []).filter((x) => x && typeof x.data === "string").map((x) => ({ data: x.data as string, motivo: String(x.motivo || "sem marmita") }));
   } catch { /* sem bloqueios */ }
-  const sem = semanaPara(cardapios, iso);
+  return { cardapios, bloqueios, horaAbertura: m.horaAbertura || "14:00", horaLimite: m.horaLimite || "08:30", horaEntrega: m.horaEntrega || "11:00", nomeConvenio: m.nomeConvenio || "Kern" };
+}
+
+export async function lerExcecaoMarmita(admin: ReturnType<typeof createAdminClient>, iso: string): Promise<ExcecaoMarmita | null> {
+  const { data } = await admin.from("marmitas_dia_excecao").select("pratos, proteinas, salada, por_nome, atualizado_em").eq("data", iso).maybeSingle();
+  if (!data) return null;
+  const r = data as { pratos: unknown; proteinas: unknown; salada: string; por_nome: string | null; atualizado_em: string };
+  return { pratos: lista(r.pratos), proteinas: lista(r.proteinas), salada: String(r.salada ?? "").trim(), por_nome: r.por_nome, atualizado_em: r.atualizado_em };
+}
+
+export async function kernDoDia(iso: string): Promise<KernDia> {
+  const admin = createAdminClient();
+  const [cfg, { count }, exc] = await Promise.all([
+    lerCfgKern(admin),
+    admin.from("mkt_pedidos").select("id", { count: "exact", head: true }).eq("data", iso),
+    lerExcecaoMarmita(admin, iso),
+  ]);
+  const hit = cfg.bloqueios.find((x) => x.data === iso);
+  const sem = semanaPara(cfg.cardapios, iso);
   const dia = sem?.dias?.[CHAVE_DIA[diaSemanaIso(iso)]];
+  const rotacao = { pratos: lista(dia?.pratos), proteinas: lista(dia?.proteinas), salada: String(dia?.salada ?? "").trim(), semana: sem?.nome ?? null };
+  const vale = exc ?? rotacao;
   return {
     data: iso,
-    pratos: (dia?.pratos ?? []).map(String).filter(Boolean),
-    proteinas: (dia?.proteinas ?? []).map(String).filter(Boolean),
-    salada: String(dia?.salada ?? "").trim(),
+    pratos: vale.pratos,
+    proteinas: vale.proteinas,
+    salada: vale.salada,
     quantidade: count ?? 0,
-    horaEntrega: m.horaEntrega || "11:00",
-    nomeConvenio: m.nomeConvenio || "Kern",
-    bloqueado,
+    horaEntrega: cfg.horaEntrega,
+    nomeConvenio: cfg.nomeConvenio,
+    bloqueado: hit ? hit.motivo : null,
+    excecao: !!exc,
+    rotacao,
   };
+}
+
+// Quando abre a janela de pedidos pro dia de entrega D: às `horaAbertura` do
+// último dia de entrega antes de D (sábado pra segunda; véspera do feriado).
+// Mesma regra de janelaPedido() na rota do app das marmitas.
+export function aberturaPedidosMarmita(cfg: { horaAbertura: string; bloqueios: { data: string }[] }, iso: string) {
+  const semEntrega = (d: string) => diaSemanaIso(d) === 0 || cfg.bloqueios.some((b) => b.data === d);
+  let vespera = addDiasIso(iso, -1);
+  for (let i = 0; i < 30 && semEntrega(vespera); i++) vespera = addDiasIso(vespera, -1);
+  return { data: vespera, hora: cfg.horaAbertura };
+}
+
+// Pode trocar o cardápio da marmita deste dia? Só ANTES da janela de pedidos
+// abrir — e nunca com pedido já feito.
+export async function podeEditarMarmita(iso: string): Promise<{ ok: true; abreEm: { data: string; hora: string } } | { ok: false; motivo: string; abreEm: { data: string; hora: string } }> {
+  const admin = createAdminClient();
+  const [cfg, { count }] = await Promise.all([
+    lerCfgKern(admin),
+    admin.from("mkt_pedidos").select("id", { count: "exact", head: true }).eq("data", iso),
+  ]);
+  const abreEm = aberturaPedidosMarmita(cfg, iso);
+  const ag = agoraSP();
+  const jaAbriu = ag.data > abreEm.data || (ag.data === abreEm.data && ag.hora >= abreEm.hora);
+  if ((count ?? 0) > 0) return { ok: false, motivo: `Já tem ${count} pedido(s) pra esse dia — o cardápio não pode mais mudar.`, abreEm };
+  if (jaAbriu) return { ok: false, motivo: `Os pedidos desse dia já abriram (${abreEm.data.split("-").reverse().slice(0, 2).join("/")} às ${abreEm.hora}) — o cardápio não pode mais mudar.`, abreEm };
+  return { ok: true, abreEm };
+}
+
+// Grava a exceção do dia (lista vazia nas duas = volta pra rotação).
+export async function salvarExcecaoMarmita(iso: string, dados: { pratos: string[]; proteinas: string[]; salada: string }, porNome: string) {
+  const pode = await podeEditarMarmita(iso);
+  if (!pode.ok) return { ok: false as const, mensagem: pode.motivo };
+  const admin = createAdminClient();
+  const pratos = lista(dados.pratos).slice(0, 12);
+  const proteinas = lista(dados.proteinas);
+  const salada = String(dados.salada ?? "").trim().slice(0, 80);
+  if (pratos.length === 0 && proteinas.length === 0) {
+    const { error } = await admin.from("marmitas_dia_excecao").delete().eq("data", iso);
+    if (error) return { ok: false as const, mensagem: error.message };
+    return { ok: true as const, removida: true as const };
+  }
+  const { error } = await admin
+    .from("marmitas_dia_excecao")
+    .upsert({ data: iso, pratos, proteinas, salada, por_nome: porNome || null, atualizado_em: new Date().toISOString() }, { onConflict: "empresa_id,data" });
+  if (error) return { ok: false as const, mensagem: error.message };
+  return { ok: true as const, removida: false as const };
 }

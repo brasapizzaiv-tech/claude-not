@@ -758,6 +758,9 @@ footer{padding:54px 0 70px}
       '<a class="btn btn-cheio" href="https://wa.me/'+ZAP+'?text='+
       encodeURIComponent("Olá! Qual é o cardápio de hoje no Brasa?")+'" target="_blank" rel="noopener">Perguntar no WhatsApp</a></div>';
 
+    /* Busca ao abrir, de novo a cada 60 s e quando a aba volta a aparecer:
+       a cozinha publica pelo app e o site já mostra, sem recarregar. */
+    function carregar(){
     fetch("/api/cardapio").then(function(r){return r.json();}).then(function(c){
       if(!c.tem||!c.hoje){ alvo.innerHTML=semCardapio; return; }
       sub.textContent=SEMANA[new Date(c.data+"T12:00:00").getDay()]+" · buffet do almoço";
@@ -771,7 +774,11 @@ footer{padding:54px 0 70px}
         "</div>";
       }
       alvo.innerHTML='<div class="quadro-cardapio"><div class="grupos">'+grupos+"</div>"+precos+"</div>";
-    }).catch(function(){ alvo.innerHTML=semCardapio; });
+    }).catch(function(){ if(!alvo.innerHTML) alvo.innerHTML=semCardapio; });
+    }
+    carregar();
+    setInterval(carregar,60000);
+    document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible") carregar(); });
   })();
 
   /* ---- formulário de reserva ---- */

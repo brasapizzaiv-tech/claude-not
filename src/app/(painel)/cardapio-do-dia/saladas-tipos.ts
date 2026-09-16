@@ -1,5 +1,4 @@
 // Tipos e constantes das saladas (fora do arquivo "use server", que só pode
-// exportar funções assíncronas).
-export const CATEGORIAS_SALADA = ["Folhas", "Maioneses", "Cozidas", "Cruas", "Grãos", "Conservas", "Outros"] as const;
-export type CategoriaSalada = (typeof CATEGORIAS_SALADA)[number];
-export type SaladaBase = { id: string; nome: string; categoria: CategoriaSalada };
+// exportar funções assíncronas). A fonte é a regra compartilhada.
+export { CATEGORIAS_SALADA } from "@/lib/cardapio-dia-core";
+export type { CategoriaSalada, SaladaBase } from "@/lib/cardapio-dia-core";

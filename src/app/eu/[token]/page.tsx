@@ -113,13 +113,14 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
   const fazEtiquetas = !!colab?.faz_etiquetas;
   const fazContas = !!colab?.faz_contas;
   const fazGarcom = !!colab?.faz_garcom;
+  const fazCardapio = !!colab?.faz_cardapio;
 
   // Contas abertas (só pra quem tem a função gerencial).
   let contasAbertas = 0;
@@ -213,6 +214,15 @@ export default async function AppColaboradorPage({
           <span>🧑‍🍳 Modo garçom</span>
           <span className="text-xs font-normal opacity-80">mesas, pedidos, conta →</span>
         </a>
+      )}
+      {fazCardapio && (
+        <Link
+          href={`/eu/${token}/cardapio`}
+          className="mb-3 flex items-center justify-between rounded-2xl bg-green-700 p-4 font-semibold text-white hover:bg-green-800"
+        >
+          <span>🍽️ Cardápio do dia</span>
+          <span className="text-xs font-normal opacity-80">buffet, saladas, marmitas →</span>
+        </Link>
       )}
       {fazGarcom && (
         <Link
