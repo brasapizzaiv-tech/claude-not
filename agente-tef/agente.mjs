@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.1"; // 0.9.1: IntPos.Sts opcional (os exemplos oficiais da Elgin não o escrevem); descarta eco de CNF/NCN
+const VERSAO = "0.9.2"; // 0.9.2: guarda a última resposta crua do gerenciador (ultima-resposta.txt) e loga os códigos quando a venda não aprova
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -34,6 +34,7 @@ const timeoutVendaMs = Number(cfg.timeoutVendaMs) || 120000; // o cliente pode d
 const timeoutStsMs = Number(cfg.timeoutStsMs) || 15000;      // o gerenciador tem que acusar recebimento rápido
 
 const logFile = path.join(dataDir, "agente.log");
+const ultimaRespFile = path.join(dataDir, "ultima-resposta.txt"); // cópia crua do último IntPos.001 de resposta (pra diagnóstico)
 const estadoFile = path.join(dataDir, "estado.json");
 function log(m) {
   const linha = `[${new Date().toLocaleString("pt-BR")}] ${m}`;
@@ -130,6 +131,7 @@ async function executar(conteudoReq, { esperaResp = true, timeoutMs = timeoutVen
     throw new Error("Tempo esgotado esperando o cartão.");
   }
   apagar(arqResp);
+  try { writeFileSync(ultimaRespFile, resp, "latin1"); } catch { /* ok */ }
   return interpretar(resp);
 }
 
@@ -148,6 +150,7 @@ async function venda(p) {
     etapa = "livre";
   }
   log(`Venda #${id}: ${r.aprovada ? "APROVADA" : "NEGADA"} · NSU ${r.nsu ?? "-"} · aut ${r.autorizacao ?? "-"} · ${r.rede ?? ""} ${r.bandeira ?? ""} · ${r.mensagem}`);
+  if (!r.aprovada) log(`Venda #${id}: detalhe · status "${r.status}" · código ${r.codigo ?? "-"} · retorno ${r.retorno ?? "-"} · requerConf ${r.requerConfirmacao} · resposta crua em ${ultimaRespFile}`);
   return { ...r, idAgente: id, terminal };
 }
 

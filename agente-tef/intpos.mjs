@@ -126,6 +126,7 @@ export function interpretar(texto) {
     status,
     mensagem: c[CHAVES.MSG_OPERACAO] || c[CHAVES.TEXTO_OPERADOR] || "",
     codigo: codOp ?? null,
+    retorno: retorno ?? null,
     nsu: c[CHAVES.NSU] || null,
     nsuHost: c[CHAVES.NSU_HOST] || null,
     autorizacao: c[CHAVES.AUTORIZACAO] || null,
