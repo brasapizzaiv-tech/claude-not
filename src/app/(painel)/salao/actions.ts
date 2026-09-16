@@ -1123,6 +1123,77 @@ export async function fecharTef(transacaoId: string, confirmada: boolean, motivo
   return { ok: true as const };
 }
 
+// Cancelamento de uma venda no cartão (CNC já aprovado pelo pinpad): marca a
+// transação original como cancelada, grava o estorno no caixa aberto (venda
+// negativa na mesma forma, pra o fechamento e o Z baterem) e imprime a via.
+export async function registrarCancelamentoTef(
+  transacaoId: string,
+  r: { nsu: string | null; autorizacao: string | null; rede: string | null; bandeira: string | null; viaCliente: string[]; viaLoja: string[]; idAgente: string | null; terminal: string | null },
+) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: orig } = await supabase
+    .from("tef_transacoes")
+    .select("id, tipo, valor, parcelas, rede, bandeira, nsu, status, mov_id, comanda_ids, caixa_id, hostname")
+    .eq("id", transacaoId)
+    .maybeSingle();
+  if (!orig) return { ok: false as const, mensagem: "Transação não encontrada." };
+  if (orig.status !== "confirmada") return { ok: false as const, mensagem: "Só dá pra cancelar uma venda aprovada e confirmada." };
+  const caixaId = await caixaAberto(supabase);
+  if (!caixaId) return { ok: false as const, mensagem: "Não tem caixa aberto pra lançar o estorno." };
+  const { data: userData } = await supabase.auth.getUser();
+  const agora = new Date().toISOString();
+
+  // Forma de pagamento da venda original (pra o estorno cair na mesma).
+  let forma = "Cartão";
+  if (orig.mov_id) {
+    const { data: mov } = await supabase.from("pdv_caixa_mov").select("forma_pagamento").eq("id", orig.mov_id as string).maybeSingle();
+    forma = (mov?.forma_pagamento as string | null) || forma;
+  } else {
+    forma = orig.tipo === "debito" ? "Cartão de débito" : orig.tipo === "voucher" ? "Vale refeição" : "Cartão de crédito";
+  }
+  const { data: estorno } = await supabase
+    .from("pdv_caixa_mov")
+    .insert({
+      caixa_id: caixaId,
+      tipo: "venda",
+      descricao: `Cancelamento cartão NSU ${orig.nsu ?? "-"}`,
+      forma_pagamento: forma,
+      valor: -Number(orig.valor),
+      tef_nsu: r.nsu, tef_autorizacao: r.autorizacao, tef_rede: r.rede ?? orig.rede, tef_terminal: r.terminal,
+    })
+    .select("id")
+    .single();
+
+  const { data: nova } = await supabase
+    .from("tef_transacoes")
+    .insert({
+      caixa_id: caixaId,
+      comanda_ids: orig.comanda_ids,
+      mov_id: (estorno as { id?: string } | null)?.id ?? null,
+      terminal: r.terminal, hostname: orig.hostname,
+      tipo: orig.tipo, valor: orig.valor, parcelas: orig.parcelas,
+      rede: r.rede ?? orig.rede, bandeira: r.bandeira ?? orig.bandeira,
+      nsu: r.nsu, autorizacao: r.autorizacao,
+      status: "cancelada",
+      mensagem: `Cancelamento da venda NSU ${orig.nsu ?? "-"}`,
+      via_cliente: r.viaCliente, via_loja: r.viaLoja, id_agente: r.idAgente,
+      criado_por: userData.user?.id ?? null,
+    })
+    .select("id")
+    .single();
+  await supabase
+    .from("tef_transacoes")
+    .update({ status: "cancelada", mensagem: `Cancelada em ${agora.slice(0, 16).replace("T", " ")} (NSU do cancelamento ${r.nsu ?? "-"})`, atualizado_em: agora })
+    .eq("id", transacaoId);
+
+  const novaId = (nova as { id?: string } | null)?.id;
+  if (novaId && r.viaCliente.length > 0) await reimprimirTef(novaId);
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao/caixa/tef");
+  return { ok: true as const };
+}
+
 // Reimprime a via do cliente de um cartão já passado.
 export async function reimprimirTef(transacaoId: string) {
   await exigirAcesso("/salao");

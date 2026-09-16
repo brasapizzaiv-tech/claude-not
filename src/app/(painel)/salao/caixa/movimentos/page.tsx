@@ -23,7 +23,7 @@ const cor = (tipo: string) =>
     : tipo === "suprimento"
       ? "text-blue-600"
       : "text-emerald-600";
-const sinal = (tipo: string) => (tipo === "sangria" ? "−" : "+");
+const sinal = (tipo: string, valor = 0) => (tipo === "sangria" || valor < 0 ? "−" : "+");
 const hora = (iso: string) =>
   new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
@@ -96,7 +96,7 @@ export default async function MovimentosCaixaPage() {
                 <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">{m.forma_pagamento || "—"}</td>
                 <td className="px-4 py-2 text-zinc-400">{hora(m.criado_em)}</td>
                 <td className={`px-4 py-2 text-right font-medium ${cor(m.tipo)}`}>
-                  {sinal(m.tipo)} {brl(Number(m.valor))}
+                  {sinal(m.tipo, Number(m.valor))} {brl(Math.abs(Number(m.valor)))}
                 </td>
               </tr>
             ))}

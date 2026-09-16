@@ -324,6 +324,12 @@ export default async function CaixaPage({
           >
             📄 Ver movimentações
           </Link>
+          <Link
+            href="/salao/caixa/tef"
+            className="ml-2 inline-block rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          >
+            💳 Cartões (TEF)
+          </Link>
         </div>
 
         {/* Resumo */}

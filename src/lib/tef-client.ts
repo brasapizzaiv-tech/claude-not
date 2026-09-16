@@ -92,6 +92,11 @@ export function tefDesfazer(idAgente: string, motivo: string) {
 export function tefCancelar(p: { nsu: string; valor: number; data: string }) {
   return chamar<TefVenda>("/cancelar", p, 150000);
 }
+// Menu administrativo do gerenciador (reimpressão pela Elgin, testes, etc.);
+// a interação toda acontece na janela da Elgin, aqui só esperamos terminar.
+export function tefAdm() {
+  return chamar<TefVenda>("/adm", {}, 300000);
+}
 
 // Traduz a forma de pagamento do caixa pro tipo que o TEF entende.
 export function tipoTefDaForma(forma: string): "credito" | "debito" | "voucher" | null {
