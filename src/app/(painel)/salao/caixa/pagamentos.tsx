@@ -75,6 +75,7 @@ export function PainelPagamentos({
   const [bandeira, setBandeira] = useState("");
   const [obs, setObs] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
+  const [parcelas, setParcelas] = useState(1); // só no crédito com pinpad; volta a 1 ao fechar
   const campoRef = useRef<HTMLInputElement>(null);
 
 
@@ -149,7 +150,6 @@ export function PainelPagamentos({
   // tempos em tempos — se o programa for ligado depois, o botão aparece sozinho.
   const [tef, setTef] = useState<TefStatus | null>(null);
   const [tefEtapa, setTefEtapa] = useState<"" | "enviando" | "pinpad">("");
-  const [parcelas, setParcelas] = useState(1); // só no crédito; volta a 1 ao fechar
   useEffect(() => {
     let vivo = true;
     const olhar = async () => { const s = await tefDisponivel(); if (vivo) setTef(s); };
