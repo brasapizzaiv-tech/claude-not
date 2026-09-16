@@ -97,6 +97,7 @@ export function PainelPagamentos({
     setBandeira("");
     setObs("");
     setAviso(null);
+    setParcelas(1);
   }
 
   // Foco no valor assim que o passo abre (o caixa já digita por cima).
@@ -148,6 +149,7 @@ export function PainelPagamentos({
   // tempos em tempos — se o programa for ligado depois, o botão aparece sozinho.
   const [tef, setTef] = useState<TefStatus | null>(null);
   const [tefEtapa, setTefEtapa] = useState<"" | "enviando" | "pinpad">("");
+  const [parcelas, setParcelas] = useState(1); // só no crédito; volta a 1 ao fechar
   useEffect(() => {
     let vivo = true;
     const olhar = async () => { const s = await tefDisponivel(); if (vivo) setTef(s); };
@@ -167,7 +169,7 @@ export function PainelPagamentos({
     setTefEtapa("enviando");
     try {
       setTefEtapa("pinpad");
-      const r = await tefVenda({ valor: cent(aplica), tipo, parcelas: 1 });
+      const r = await tefVenda({ valor: cent(aplica), tipo, parcelas: tipo === "credito" ? parcelas : 1 });
       if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
       if (!r.aprovada) { setAviso(`Cartão não aprovado: ${r.mensagem || "recusado"}.`); return; }
       const dados: TefDados = {
@@ -180,7 +182,7 @@ export function PainelPagamentos({
         bandeira: r.bandeira ?? null,
         produto: r.produto ?? null,
         tipo,
-        parcelas: Number(r.parcelas) || 1,
+        parcelas: Number(r.parcelas) || (tipo === "credito" ? parcelas : 1),
         panMascarado: r.panMascarado ?? null,
         viaCliente: r.viaCliente ?? [],
         viaLoja: r.viaLoja ?? [],
@@ -352,11 +354,26 @@ export function PainelPagamentos({
                 </div>
               ) : (
                 <>
+                  {tipoTefDaForma(forma) === "credito" && (
+                    <div className="mb-2 flex items-center gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-emerald-800/80 dark:text-emerald-300/80">Parcelas</label>
+                      <select
+                        value={parcelas}
+                        onChange={(e) => setParcelas(Number(e.target.value))}
+                        className="rounded-lg border border-emerald-600/40 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                          <option key={n} value={n}>{n === 1 ? "à vista" : `${n}x de ${brl(cent(aplica / n))}`}</option>
+                        ))}
+                      </select>
+                      {parcelas > 1 && <span className="text-[11px] text-emerald-800/70 dark:text-emerald-400/70">parcelado pela loja (sem juros)</span>}
+                    </div>
+                  )}
                   <button
                     onClick={passarNoCartao}
                     className="w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700"
                   >
-                    💳 Passar no cartão · {brl(cent(aplica))}
+                    💳 Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && tipoTefDaForma(forma) === "credito" ? ` em ${parcelas}x` : ""}
                     <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
                   </button>
                   <p className="mt-1.5 text-center text-[11px] text-emerald-800/70 dark:text-emerald-400/70">
