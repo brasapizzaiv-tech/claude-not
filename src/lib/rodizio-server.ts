@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { diaDoCardapio, diaSemanaIso } from "@/lib/dia-cardapio";
+import { diaDoCardapio } from "@/lib/dia-cardapio";
 import { kernDoDia } from "@/lib/marmitas-cardapio";
-import type { CardapioTv } from "@/components/tv-cardapio";
+import { montarCardapioDia, type CardapioTv, type Db } from "@/lib/cardapio-dia-core";
 import { PRONTO_SOME_SEG, type PedidoRodizio } from "@/lib/rodizio";
 
 // Fila do rodízio pra TV (cliente administrativo: a TV não tem login).
@@ -73,37 +73,15 @@ export async function aniversariantesMes(): Promise<AniversarianteTv[]> {
     .sort((a, b) => a.dia - b.dia);
 }
 
-// Cardápio que a TV mostra fora da fila: buffet do dia (cardapio_dia, o mesmo
-// do site), saladas marcadas (cardapio_dia_saladas) e marmitas Kern — todos do
-// dia que VALE AGORA (diaDoCardapio: vira às 13:30, pula domingo). Guardado
-// 30 s: a TV pergunta a cada 3 s e isso não muda de segundo em segundo.
-const ORDEM_SALADAS = ["Folhas", "Maioneses", "Cozidas", "Cruas", "Grãos", "Conservas", "Outros"];
+// Cardápio que a TV mostra fora da fila — montado pela regra compartilhada
+// (src/lib/cardapio-dia-core.ts: buffet + saladas + marmitas Kern) pro dia que
+// VALE AGORA (diaDoCardapio: vira às 13:30, pula domingo). Guardado 30 s: a TV
+// pergunta a cada 3 s e isso não muda de segundo em segundo.
 let cardapioCache: { dia: string; em: number; valor: CardapioTv } | null = null;
 export async function cardapioTv(agora = Date.now()): Promise<CardapioTv> {
   const dia = diaDoCardapio(agora);
   if (cardapioCache && cardapioCache.dia === dia && agora - cardapioCache.em < 30_000) return cardapioCache.valor;
-  const admin = createAdminClient();
-  const [{ data: cd }, { data: salDia }, { data: salSemana }, kern] = await Promise.all([
-    admin.from("cardapio_dia").select("proteinas, carboidratos, especial, publicado").eq("data", dia).maybeSingle(),
-    admin.from("cardapio_dia_saladas").select("saladas_base(nome, categoria, ativo)").eq("data", dia),
-    admin.from("saladas_semana").select("saladas_base(nome, categoria, ativo)").eq("dow", diaSemanaIso(dia)),
-    kernDoDia(dia).catch(() => null),
-  ]);
-  // Seleção própria da data vale; senão, o padrão do dia da semana (folha da cozinha).
-  const sal = (salDia && salDia.length > 0) ? salDia : salSemana;
-  const linhas = (t: string | null) => (t ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
-  const c = cd as { proteinas: string | null; carboidratos: string | null; especial: string | null; publicado: boolean } | null;
-  const buffet = c ? { proteinas: linhas(c.proteinas), carboidratos: linhas(c.carboidratos), especial: linhas(c.especial), publicado: !!c.publicado } : null;
-  const grupos = new Map<string, string[]>();
-  type SalRow = { saladas_base: { nome: string; categoria: string; ativo: boolean } | { nome: string; categoria: string; ativo: boolean }[] | null };
-  for (const r of ((sal as unknown as SalRow[]) ?? [])) {
-    const s = Array.isArray(r.saladas_base) ? r.saladas_base[0] : r.saladas_base;
-    if (!s || !s.ativo) continue;
-    if (!grupos.has(s.categoria)) grupos.set(s.categoria, []);
-    grupos.get(s.categoria)!.push(s.nome);
-  }
-  const saladas = ORDEM_SALADAS.filter((g) => grupos.has(g)).map((g) => ({ categoria: g, itens: grupos.get(g)!.sort((a, b) => a.localeCompare(b, "pt-BR")) }));
-  const valor: CardapioTv = { dia, buffet, saladas: saladas.length ? saladas : null, kern };
+  const valor = await montarCardapioDia(createAdminClient() as Db, dia, await kernDoDia(dia).catch(() => null));
   cardapioCache = { dia, em: agora, valor };
   return valor;
 }

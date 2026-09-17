@@ -35,7 +35,7 @@ export default async function CardapioColabPage({
   const dia = /^\d{4}-\d{2}-\d{2}$/.test(diaParam) ? diaParam : diaDoCardapio();
   const db = createAdminClient() as core.Db;
   const dow = diaSemanaIso(dia);
-  const [cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita] = await Promise.all([
+  const [cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat] = await Promise.all([
     core.lerCardapioDia(db, dia),
     core.listarCatalogo(db),
     core.listarSaladasBase(db),
@@ -44,6 +44,7 @@ export default async function CardapioColabPage({
     core.historicoPublicacoes(db, { data: dia, limite: 12 }),
     kernDoDia(dia).catch(() => null),
     podeEditarMarmita(dia).catch(() => ({ ok: false as const, motivo: "Não consegui ler o cadastro das marmitas.", abreEm: { data: dia, hora: "" } })),
+    core.estatisticasPratos(db, dia),
   ]);
 
   return (
@@ -64,6 +65,7 @@ export default async function CardapioColabPage({
         historico={historico}
         kern={kern}
         podeMarmita={podeMarmita}
+        estat={estat}
       />
     </div>
   );

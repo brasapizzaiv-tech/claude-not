@@ -5,6 +5,8 @@
 //    (a permissão foi conferida antes, pelo token + PIN + faz_cardapio).
 // Sem "use server" aqui de propósito: é biblioteca, não ação.
 import type { createAdminClient } from "@/lib/supabase/admin";
+import { addDiasIso, diaSemanaIso } from "@/lib/dia-cardapio";
+import type { KernDia } from "@/lib/marmitas-cardapio";
 
 export type Db = ReturnType<typeof createAdminClient>;
 export type Ator = { nome: string; userId?: string | null; colabId?: string | null };
@@ -48,8 +50,12 @@ export const PRECOS_SUGERIDOS: Record<number, { livre: number; kg: number }> = {
   6: { livre: 67.9, kg: 149.9 },
 };
 
+// A cozinha escrevia "Frango assado M" pra marcar marmita. Marmita agora é
+// bloco próprio na TV, então o "M" no fim do nome sai antes de gravar.
+export const limparNomePrato = (s: string) => s.replace(/\s+M$/, "").replace(/\s+/g, " ").trim();
 export const linhas = (t: string | null | undefined) =>
-  (t ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+  (t ?? "").split("\n").map((l) => limparNomePrato(l)).filter(Boolean);
+export const chaveNome = (s: string) => limparNomePrato(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 export const diaValido = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 // Rascunho → Publicado → "Publicado com alterações não publicadas" (alguém
@@ -88,9 +94,9 @@ export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, 
   const { error } = await db.from("cardapio_dia").upsert(
     {
       data,
-      proteinas: d.proteinas.trim() || null,
-      carboidratos: d.carboidratos.trim() || null,
-      especial: d.especial.trim() || null,
+      proteinas: linhas(d.proteinas).join("\n") || null,
+      carboidratos: linhas(d.carboidratos).join("\n") || null,
+      especial: linhas(d.especial).join("\n") || null,
       preco_livre: d.preco_livre,
       preco_kg: d.preco_kg,
       publicado: atual?.publicado ?? false,
@@ -101,7 +107,8 @@ export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, 
     { onConflict: "data" },
   );
   if (error) return { ok: false as const, mensagem: "Não consegui salvar." };
-  await contarUsos(db, { proteinas: linhas(d.proteinas), carboidratos: linhas(d.carboidratos), especial: linhas(d.especial) });
+  // Garante os itens no catálogo (pra busca); os USOS só contam na publicação.
+  await garantirNoCatalogo(db, { proteinas: linhas(d.proteinas), carboidratos: linhas(d.carboidratos), especial: linhas(d.especial) });
   await registrarPublicacao(db, data, "salvo", ator);
   return { ok: true as const };
 }
@@ -119,6 +126,7 @@ export async function publicarCardapioDia(db: Db, data: string, ator: Ator) {
     .update({ publicado: true, publicado_em: agora, publicado_por: ator.nome || null, atualizado_em: agora })
     .eq("data", data);
   if (error) return { ok: false as const, mensagem: "Não consegui publicar." };
+  await recalcularUsos(db);
   await registrarPublicacao(db, data, "publicado", ator);
   return { ok: true as const };
 }
@@ -148,17 +156,58 @@ export async function listarCatalogo(db: Db): Promise<ItemCatalogo[]> {
   return (data as ItemCatalogo[]) ?? [];
 }
 
-// Garante o item no catálogo e soma 1 no contador de usos.
-async function contarUsos(db: Db, porGrupo: Record<Grupo, string[]>) {
-  const { data } = await db.from("cardapio_itens").select("id, grupo, nome, usos");
-  const atuais = (data as { id: string; grupo: string; nome: string; usos: number }[]) ?? [];
+// Garante o item no catálogo (sem mexer nos usos). Grafia diferente só em
+// acento/maiúscula conta como o mesmo item.
+async function garantirNoCatalogo(db: Db, porGrupo: Record<Grupo, string[]>) {
+  const { data } = await db.from("cardapio_itens").select("id, grupo, nome, ativo");
+  const atuais = (data as { id: string; grupo: string; nome: string; ativo: boolean }[]) ?? [];
   for (const grupo of GRUPOS) {
     for (const nome of porGrupo[grupo]) {
-      const achado = atuais.find((i) => i.grupo === grupo && i.nome === nome);
-      if (achado) await db.from("cardapio_itens").update({ usos: achado.usos + 1, ativo: true }).eq("id", achado.id);
-      else await db.from("cardapio_itens").insert({ grupo, nome, usos: 1 });
+      const achado = atuais.find((i) => i.grupo === grupo && chaveNome(i.nome) === chaveNome(nome));
+      if (achado) { if (!achado.ativo) await db.from("cardapio_itens").update({ ativo: true }).eq("id", achado.id); }
+      else await db.from("cardapio_itens").insert({ grupo, nome, usos: 0 });
     }
   }
+}
+
+// Usos = em quantos dias PUBLICADOS o prato entrou. Recalculado do zero a cada
+// publicação (são poucas linhas), então nunca infla com salvamentos repetidos.
+export async function recalcularUsos(db: Db) {
+  const [{ data: dias }, { data: itens }] = await Promise.all([
+    db.from("cardapio_dia").select("proteinas, carboidratos, especial").eq("publicado", true),
+    db.from("cardapio_itens").select("id, grupo, nome, usos"),
+  ]);
+  const cont = new Map<string, number>();
+  for (const d of (dias as { proteinas: string | null; carboidratos: string | null; especial: string | null }[]) ?? []) {
+    for (const grupo of GRUPOS) for (const nome of new Set(linhas(d[grupo]).map(chaveNome))) {
+      const k = grupo + "|" + nome; cont.set(k, (cont.get(k) ?? 0) + 1);
+    }
+  }
+  for (const i of (itens as { id: string; grupo: string; nome: string; usos: number }[]) ?? []) {
+    const novo = cont.get(i.grupo + "|" + chaveNome(i.nome)) ?? 0;
+    if (novo !== Number(i.usos)) await db.from("cardapio_itens").update({ usos: novo }).eq("id", i.id);
+  }
+}
+
+// Estatística de uso pra busca do app: vezes na semana e no mês (dias
+// publicados) e a última data, contadas a partir do dia que está sendo editado.
+export type EstatPrato = { semana: number; mes: number; ultimo: string | null; recente: boolean };
+export async function estatisticasPratos(db: Db, dia: string): Promise<Record<string, EstatPrato>> {
+  const de = addDiasIso(dia, -31);
+  const { data } = await db.from("cardapio_dia").select("data, proteinas, carboidratos, especial").eq("publicado", true).gte("data", de).lt("data", dia).order("data");
+  const out: Record<string, EstatPrato> = {};
+  const semanaDe = addDiasIso(dia, -7), recenteDe = addDiasIso(dia, -2);
+  for (const d of (data as { data: string; proteinas: string | null; carboidratos: string | null; especial: string | null }[]) ?? []) {
+    for (const grupo of GRUPOS) for (const nome of new Set(linhas(d[grupo]).map(chaveNome))) {
+      const k = grupo + "|" + nome;
+      const e = out[k] ?? (out[k] = { semana: 0, mes: 0, ultimo: null, recente: false });
+      e.mes++;
+      if (d.data >= semanaDe) e.semana++;
+      if (d.data >= recenteDe) e.recente = true;
+      if (!e.ultimo || d.data > e.ultimo) e.ultimo = d.data;
+    }
+  }
+  return out;
 }
 
 export async function criarItensCatalogo(db: Db, grupo: Grupo, texto: string) {
@@ -166,7 +215,7 @@ export async function criarItensCatalogo(db: Db, grupo: Grupo, texto: string) {
   if (nomes.length === 0) return { ok: false as const, mensagem: "Nada para cadastrar." };
   const { error } = await db
     .from("cardapio_itens")
-    .upsert(nomes.map((nome) => ({ grupo, nome })), { onConflict: "grupo,nome", ignoreDuplicates: true });
+    .upsert(nomes.map((nome) => ({ grupo, nome, usos: 0 })), { onConflict: "grupo,nome", ignoreDuplicates: true });
   if (error) return { ok: false as const, mensagem: "Não consegui cadastrar." };
   return { ok: true as const, total: nomes.length };
 }
@@ -233,6 +282,40 @@ export async function removerSalada(db: Db, id: string) {
   const { error } = await db.from("saladas_base").update({ ativo: false }).eq("id", id);
   if (error) return { ok: false as const, mensagem: error.message };
   return { ok: true as const };
+}
+
+// ---------- Cardápio montado pra TV (e pra quem mais quiser o dia inteiro) ----------
+export type CardapioTv = {
+  dia: string;                    // YYYY-MM-DD do cardápio que vale agora
+  buffet: { proteinas: string[]; carboidratos: string[]; especial: string[]; publicado: boolean } | null;
+  saladas: { categoria: string; itens: string[] }[] | null;
+  kern: KernDia | null;
+};
+const ORDEM_SALADAS = [...CATEGORIAS_SALADA];
+
+// Buffet do dia (cardapio_dia), saladas (seleção da data ou, sem ela, o padrão
+// do dia da semana) e marmitas Kern — tudo do mesmo dia.
+// (a marmita vem por parâmetro: este arquivo é importado também pelo navegador
+// e não pode puxar o cliente admin do banco.)
+export async function montarCardapioDia(db: Db, dia: string, kern: KernDia | null): Promise<CardapioTv> {
+  const [{ data: cd }, { data: salDia }, { data: salSemana }] = await Promise.all([
+    db.from("cardapio_dia").select("proteinas, carboidratos, especial, publicado").eq("data", dia).maybeSingle(),
+    db.from("cardapio_dia_saladas").select("saladas_base(nome, categoria, ativo)").eq("data", dia),
+    db.from("saladas_semana").select("saladas_base(nome, categoria, ativo)").eq("dow", diaSemanaIso(dia)),
+  ]);
+  const sal = (salDia && salDia.length > 0) ? salDia : salSemana;
+  const c = cd as { proteinas: string | null; carboidratos: string | null; especial: string | null; publicado: boolean } | null;
+  const buffet = c ? { proteinas: linhas(c.proteinas), carboidratos: linhas(c.carboidratos), especial: linhas(c.especial), publicado: !!c.publicado } : null;
+  const grupos = new Map<string, string[]>();
+  type SalRow = { saladas_base: { nome: string; categoria: string; ativo: boolean } | { nome: string; categoria: string; ativo: boolean }[] | null };
+  for (const r of ((sal as unknown as SalRow[]) ?? [])) {
+    const s = Array.isArray(r.saladas_base) ? r.saladas_base[0] : r.saladas_base;
+    if (!s || !s.ativo) continue;
+    if (!grupos.has(s.categoria)) grupos.set(s.categoria, []);
+    grupos.get(s.categoria)!.push(s.nome);
+  }
+  const saladas = ORDEM_SALADAS.filter((g) => grupos.has(g)).map((g) => ({ categoria: g, itens: grupos.get(g)!.sort((a, b) => a.localeCompare(b, "pt-BR")) }));
+  return { dia, buffet, saladas: saladas.length ? saladas : null, kern };
 }
 
 // ---------- Histórico ----------

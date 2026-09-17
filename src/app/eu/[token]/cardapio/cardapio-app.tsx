@@ -6,8 +6,8 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addDiasIso, diaSemanaIso, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import {
-  CATEGORIAS_SALADA, GRUPOS, PRECOS_SUGERIDOS, linhas, statusCardapio,
-  type CardapioDia, type Grupo, type ItemCatalogo, type Publicacao, type SaladaBase,
+  CATEGORIAS_SALADA, GRUPOS, PRECOS_SUGERIDOS, chaveNome, limparNomePrato, linhas, statusCardapio,
+  type CardapioDia, type EstatPrato, type Grupo, type ItemCatalogo, type Publicacao, type SaladaBase,
 } from "@/lib/cardapio-dia-core";
 import type { KernDia } from "@/lib/marmitas-cardapio";
 import { MarmitaDiaForm, type PodeMarmita } from "@/components/marmita-dia-form";
@@ -18,15 +18,22 @@ const TITULO: Record<Grupo, string> = { proteinas: "Proteínas", carboidratos: "
 const DIA_NOME = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 type Aba = "buffet" | "saladas" | "marmitas";
 
+const DIA_CURTO = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+// "seg 15/09" pra última vez que o prato entrou.
+const diaCurto = (iso: string) => {
+  const [a, m, d] = iso.split("-").map(Number);
+  return `${DIA_CURTO[new Date(Date.UTC(a, m - 1, d)).getUTCDay()]} ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`;
+};
 const quando = (ts: string | null) =>
   ts ? new Date(ts).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
-const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const norm = chaveNome;
 
 export function CardapioApp({
-  token, dia, cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita,
+  token, dia, cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat,
 }: {
   token: string; dia: string; cardapio: CardapioDia | null; itens: ItemCatalogo[]; base: SaladaBase[];
   marcadas: string[]; padrao: string[]; historico: Publicacao[]; kern: KernDia | null; podeMarmita: PodeMarmita;
+  estat: Record<string, EstatPrato>;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -47,7 +54,7 @@ export function CardapioApp({
     preco_livre: cardapio?.preco_livre ?? sugerido?.livre ?? null, preco_kg: cardapio?.preco_kg ?? sugerido?.kg ?? null,
   });
   function addItem(g: Grupo, nome: string) {
-    const n = nome.trim();
+    const n = limparNomePrato(nome);
     if (!n || sel[g].some((x) => norm(x) === norm(n))) return;
     setSel((s) => ({ ...s, [g]: [...s[g], n] }));
     setBusca((b) => ({ ...b, [g]: "" }));
@@ -57,15 +64,19 @@ export function CardapioApp({
     setSel((s) => ({ ...s, [g]: s[g].filter((_, j) => j !== i) }));
     setSujoBuffet(true);
   }
+  // Sugestões: antes de digitar, os mais usados do grupo; digitando, filtra.
+  // Cada uma traz vezes na semana/mês e a última data (dias publicados).
+  const estatDe = (g: Grupo, nome: string): EstatPrato | undefined => estat[g + "|" + norm(nome)];
   function sugestoes(g: Grupo) {
     const q = norm(busca[g].trim());
-    if (!q) return [];
     const ja = new Set(sel[g].map(norm));
     return itens
-      .filter((i) => i.grupo === g && !ja.has(norm(i.nome)) && norm(i.nome).includes(q))
-      .sort((a, b) => b.usos - a.usos)
-      .slice(0, 6);
+      .filter((i) => i.grupo === g && !ja.has(norm(i.nome)) && (!q || norm(i.nome).includes(q)))
+      .sort((a, b) => b.usos - a.usos || a.nome.localeCompare(b.nome, "pt-BR"))
+      .slice(0, 8);
   }
+  const rotuloEstat = (e: EstatPrato | undefined) =>
+    !e ? "nunca publicado" : `${e.semana}× na semana · ${e.mes}× no mês · último: ${e.ultimo ? diaCurto(e.ultimo) : "—"}`;
   function salvarBuffet(publicar: boolean) {
     if (publicar && !confirm(`Publicar o cardápio de ${rotuloDiaLongo(dia)}? Site e TV passam a mostrar.`)) return;
     setMsg(null);
@@ -175,12 +186,25 @@ export function CardapioApp({
                 <button type="button" onClick={() => addItem(g, busca[g])} disabled={!busca[g].trim()} className="h-12 shrink-0 rounded-xl bg-zinc-900 px-5 text-base font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-zinc-900">Add</button>
               </div>
               {sugestoes(g).length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {sugestoes(g).map((s) => (
-                    <button key={s.id} type="button" onClick={() => addItem(g, s.nome)} className="rounded-full border border-orange-300 bg-orange-50 px-3 py-2 text-base text-orange-900 dark:border-orange-700 dark:bg-orange-950 dark:text-orange-100">
-                      + {s.nome}
-                    </button>
-                  ))}
+                <div className="mt-2 space-y-1.5">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-400">
+                    {busca[g].trim() ? "encontrados" : "mais usados"} · <span className="text-amber-600">amarelo</span> = entrou nos últimos 2 dias
+                  </p>
+                  {sugestoes(g).map((s) => {
+                    const e = estatDe(g, s.nome);
+                    const recente = !!e?.recente;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => addItem(g, s.nome)}
+                        className={`flex w-full flex-col items-start gap-0.5 rounded-xl border px-3 py-2 text-left ${recente ? "border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-950/40" : "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"}`}
+                      >
+                        <span className={`text-base font-medium ${recente ? "text-amber-900 dark:text-amber-100" : "text-orange-900 dark:text-orange-100"}`}>+ {s.nome}</span>
+                        <span className={`text-xs leading-tight ${recente ? "text-amber-700 dark:text-amber-300" : "text-zinc-500"}`}>{rotuloEstat(e)}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
