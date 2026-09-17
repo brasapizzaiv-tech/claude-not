@@ -15,6 +15,7 @@ type Mov = {
   forma_pagamento: string | null;
   valor: number;
   criado_em: string;
+  comanda_id: string | null;
 };
 
 const cor = (tipo: string) =>
@@ -41,7 +42,7 @@ export default async function MovimentosCaixaPage() {
 
   const { data: movRows } = await supabase
     .from("pdv_caixa_mov")
-    .select("id, tipo, descricao, forma_pagamento, valor, criado_em")
+    .select("id, tipo, descricao, forma_pagamento, valor, criado_em, comanda_id")
     .eq("caixa_id", caixa.id)
     .order("criado_em", { ascending: false });
   const movs = (movRows as Mov[]) ?? [];
@@ -92,6 +93,11 @@ export default async function MovimentosCaixaPage() {
                 <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
                   {m.descricao || m.tipo}
                   <span className="ml-2 text-[10px] uppercase text-zinc-400">{m.tipo}</span>
+                  {m.comanda_id && (
+                    <Link href={`/salao/comandas/${m.comanda_id}`} className="ml-2 text-xs text-orange-600 hover:underline" title="Ver os itens dessa comanda">
+                      ver comanda
+                    </Link>
+                  )}
                 </td>
                 <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">{m.forma_pagamento || "—"}</td>
                 <td className="px-4 py-2 text-zinc-400">{hora(m.criado_em)}</td>

@@ -1540,6 +1540,43 @@ export async function reimprimirFechamento(caixaId: string) {
   return { ok: true as const, total: ids.length };
 }
 
+// Caixa: divide UM item em N partes iguais (viram N linhas na comanda, cada
+// uma com qtd/N e o mesmo preço) — assim duas pessoas pagam metade cada uma
+// pelo fluxo normal do caixa. Só item ainda não pago (nem em parte).
+export async function dividirItemCaixa(itemId: string, partes: number) {
+  const supabase = await createClient();
+  await exigirAcesso("/salao");
+  const n = Math.floor(Number(partes));
+  if (!(n >= 2 && n <= 10)) return { ok: false as const, mensagem: "Divida em 2 a 10 partes." };
+  const { data: it } = await supabase
+    .from("pdv_comanda_itens")
+    .select("id, comanda_id, item_id, descricao, qtd, preco_unit, pago, valor_pago, lancamento_id, criado_por, criado_colab_id")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!it) return { ok: false as const, mensagem: "Esse item já não está mais na comanda." };
+  if (it.pago || Number(it.valor_pago ?? 0) > 0.005) return { ok: false as const, mensagem: "Esse item já foi recebido (inteiro ou em parte) e não pode ser dividido." };
+  const qtdParte = Math.round((Number(it.qtd) / n) * 1000) / 1000;
+  const base = String(it.descricao).replace(/\s*\(\d+\/\d+\)$/, "");
+  const { error: e1 } = await supabase
+    .from("pdv_comanda_itens")
+    .update({ qtd: qtdParte, descricao: `${base} (1/${n})` })
+    .eq("id", itemId);
+  if (e1) return { ok: false as const, mensagem: e1.message };
+  const copias = [];
+  for (let i = 2; i <= n; i++) {
+    copias.push({
+      comanda_id: it.comanda_id, item_id: it.item_id, descricao: `${base} (${i}/${n})`, qtd: qtdParte, preco_unit: it.preco_unit,
+      lancamento_id: it.lancamento_id, criado_por: it.criado_por, criado_colab_id: it.criado_colab_id, pago: false, valor_pago: 0,
+    });
+  }
+  const { error: e2 } = await supabase.from("pdv_comanda_itens").insert(copias);
+  if (e2) return { ok: false as const, mensagem: e2.message };
+  revalidatePath("/salao/caixa");
+  revalidatePath(`/salao/comandas/${it.comanda_id}`);
+  revalidatePath(`/garcom/comanda/${it.comanda_id}`);
+  return { ok: true as const };
+}
+
 // Caixa: tira um item da comanda ali mesmo, depois de ler o cupom, pedindo o
 // motivo (mesmo esquema da exclusão de comanda). Item já pago (inteiro ou
 // parcial) não sai — o dinheiro já entrou. Fica no registro de cancelados.

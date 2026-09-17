@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pagarSelecao, fecharTef, virarLivreComanda, removerItemCaixa } from "../actions";
+import { pagarSelecao, fecharTef, virarLivreComanda, removerItemCaixa, dividirItemCaixa } from "../actions";
 import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
@@ -109,6 +109,21 @@ export function ReceberComandas({
   // Excluir um item da comanda direto do caixa (pede o motivo, como na
   // exclusão de comanda). Some da lista na hora; o servidor confirma no refresh.
   const [excluidos, setExcluidos] = useState<Set<string>>(new Set());
+  // Dividir um item em partes (duas pessoas pagam metade cada): vira N linhas.
+  function dividirItem(l: Linha) {
+    if (!l.itemId) return;
+    const resp = window.prompt(`Dividir "${l.nome}" em quantas partes?`, "2");
+    if (resp == null) return;
+    const partes = Number(resp);
+    if (!(partes >= 2 && partes <= 10)) { window.alert("Digite um número de 2 a 10."); return; }
+    const itemId = l.itemId;
+    start(async () => {
+      const r = await dividirItemCaixa(itemId, partes);
+      if (!r.ok) { window.alert(r.mensagem); return; }
+      setCarrinho((prev) => { const n = new Set(prev); n.delete(l.key); return n; });
+      router.refresh();
+    });
+  }
   function excluirItem(l: Linha) {
     if (!l.itemId) return;
     const motivo = window.prompt(`Motivo da exclusão de "${l.nome}" (obrigatório):`, "");
@@ -630,6 +645,16 @@ export function ReceberComandas({
                       >
                         +
                       </button>
+                      {l.tipo === "item" && (
+                        <button
+                          onClick={() => dividirItem(l)}
+                          disabled={noCarrinho || proc}
+                          title="Dividir este item em partes (cada pessoa paga a sua)"
+                          className="rounded-md px-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-30 dark:hover:bg-blue-950/40"
+                        >
+                          ÷
+                        </button>
+                      )}
                       {l.tipo === "item" && (
                         <button
                           onClick={() => excluirItem(l)}
