@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { ligarNotaAoPedido, recalcularDoItemNota, type Db as DbConf } from "@/lib/conferencia-core";
 import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
 import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
@@ -573,6 +574,7 @@ export async function vincularItemProduto(
     .from("nota_itens")
     .update({ produto_id: produtoId })
     .eq("id", itemId);
+  await recalcularDoItemNota(supabase as unknown as DbConf, itemId);
   // Sugestão automática do fator: nota em CX/FD/PCT e produto com "fardo"
   // cadastrado → fator = fardo (só se ainda estiver em 1).
   if (produtoId) {
@@ -609,6 +611,7 @@ export async function definirFatorItemNota(itemId: string, fator: number) {
       .update({ preco_referencia: Math.round((Number(it.valor_unit) / f) * 10000) / 10000 })
       .eq("id", it.produto_id);
   }
+  await recalcularDoItemNota(supabase as unknown as DbConf, itemId);
   if (it?.nota_id) revalidatePath(`/notas/${it.nota_id}`);
   return { ok: true, fator: f };
 }
@@ -645,24 +648,12 @@ export async function cancelarNota(notaId: string) {
 export async function vincularPedido(notaId: string, pedidoId: string | null) {
   await exigirAcesso("/notas");
   const supabase = await createClient();
-  await supabase
-    .from("notas_fiscais")
-    .update({
-      pedido_id: pedidoId,
-      status: pedidoId ? "conciliada" : "importada",
-    })
-    .eq("id", notaId);
-
-  if (pedidoId) {
-    // Remove a conta provisória gerada pela conferência do pedido (evita duplicar).
-    await supabase
-      .from("lancamentos")
-      .delete()
-      .eq("pedido_id", pedidoId)
-      .eq("origem", "pedido");
-  }
+  // Regra compartilhada com a tela de conferência (src/lib/conferencia-core.ts):
+  // liga/desliga, tira a conta provisória do pedido e recalcula as divergências.
+  await ligarNotaAoPedido(supabase as unknown as DbConf, notaId, pedidoId);
   revalidatePath(`/notas/${notaId}`);
   revalidatePath("/financeiro/contas");
+  revalidatePath("/conferencia");
 }
 
 export async function excluirNota(formData: FormData) {

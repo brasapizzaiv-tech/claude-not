@@ -2,6 +2,8 @@
 
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { recalcularDivergencias } from "@/lib/conferencia-core";
 
 const soDigitos = (s: string) => (s || "").replace(/\D/g, "").slice(0, 4);
 
@@ -46,6 +48,9 @@ export async function conferirPedidoColab(
     p_itens: itens,
     p_marcar: marcar,
   });
+  // Divergências (recebido ≠ pedido, nota etc.) ficam gravadas no pedido pra
+  // lista e relatório do painel. Só com a permissão já conferida pela RPC.
+  if (data?.ok) { try { await recalcularDivergencias(createAdminClient(), pedidoId); } catch { /* sem bloquear a conferência */ } }
   return { ok: !!data?.ok };
 }
 

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { exigirAcesso } from "@/lib/permissoes-server";
+import { ligarNotaAoPedido, recalcularDivergencias, type Db as DbConf } from "@/lib/conferencia-core";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 type ItemConf = {
@@ -132,10 +134,30 @@ export async function salvarConferencia(
     revalidatePath("/produtos");
   }
 
+  await recalcularDivergencias(supabase as unknown as DbConf, pedidoId);
   revalidatePath(`/conferencia/${pedidoId}`);
   revalidatePath("/conferencia");
   revalidatePath("/financeiro");
   return { ok: true };
+}
+
+// Liga a nota do fornecedor ao pedido direto da tela de conferência (mesma
+// regra da tela da nota). notaId = null desliga.
+export async function ligarNotaConferencia(pedidoId: string, notaId: string | null) {
+  await exigirAcesso("/conferencia");
+  const supabase = await createClient();
+  const db = supabase as unknown as DbConf;
+  if (!notaId) {
+    const { data: nota } = await supabase.from("notas_fiscais").select("id").eq("pedido_id", pedidoId).maybeSingle();
+    if (nota?.id) await ligarNotaAoPedido(db, nota.id as string, null);
+  } else {
+    const r = await ligarNotaAoPedido(db, notaId, pedidoId);
+    if (!r.ok) return r;
+  }
+  revalidatePath(`/conferencia/${pedidoId}`);
+  revalidatePath("/conferencia");
+  revalidatePath("/notas");
+  return { ok: true as const };
 }
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
