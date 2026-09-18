@@ -842,6 +842,7 @@ export async function pagarValores(
         forma_pagamento: p.forma,
         valor: p.valor,
         comanda_id: comandaId,
+        comanda_ids: [comandaId],
       });
     }
   }
@@ -1004,6 +1005,9 @@ export async function pagarSelecao(
     return { ok: false as const, mensagem: "Essa conta já tinha sido recebida (outro caixa?). Nada foi lançado de novo — atualize a tela." };
   }
   const primeiraComanda = sel[0]?.comandaId ?? extras[0]?.comandaId;
+  // Todas as comandas quitadas neste recebimento: o link "ver comanda" das
+  // Movimentações abre uma por uma (antes só a primeira era guardada).
+  const comandasDaVenda = [...new Set([...sel.map((s) => s.comandaId), ...extras.map((e) => e.comandaId)])];
   // Pagamentos feitos no TEF: o caixa vai CONFIRMAR no pinpad com estes ids.
   const tefRegistros: { idAgente: string; transacaoId: string }[] = [];
   if (caixaId && primeiraComanda) {
@@ -1021,6 +1025,7 @@ export async function pagarSelecao(
           forma_pagamento: p.forma,
           valor: p.valor,
           comanda_id: primeiraComanda,
+          comanda_ids: comandasDaVenda,
           bandeira: ((t?.bandeira || p.bandeira) || "").trim().slice(0, 30) || null,
           observacao: (p.observacao || "").trim().slice(0, 200) || null,
           tef_nsu: t?.nsu ?? null,

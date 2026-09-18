@@ -16,6 +16,7 @@ type Mov = {
   valor: number;
   criado_em: string;
   comanda_id: string | null;
+  comanda_ids: string[] | null;
 };
 
 const cor = (tipo: string) =>
@@ -25,6 +26,9 @@ const cor = (tipo: string) =>
       ? "text-blue-600"
       : "text-emerald-600";
 const sinal = (tipo: string, valor = 0) => (tipo === "sangria" || valor < 0 ? "−" : "+");
+// Uma venda pode quitar várias comandas: mostra um link por comanda, com o
+// número. Movimento antigo (antes da 0180) cai no id único.
+const comandasDo = (m: Mov) => (m.comanda_ids?.length ? m.comanda_ids : m.comanda_id ? [m.comanda_id] : []);
 const hora = (iso: string) =>
   new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
@@ -42,10 +46,20 @@ export default async function MovimentosCaixaPage() {
 
   const { data: movRows } = await supabase
     .from("pdv_caixa_mov")
-    .select("id, tipo, descricao, forma_pagamento, valor, criado_em, comanda_id")
+    .select("id, tipo, descricao, forma_pagamento, valor, criado_em, comanda_id, comanda_ids")
     .eq("caixa_id", caixa.id)
     .order("criado_em", { ascending: false });
   const movs = (movRows as Mov[]) ?? [];
+
+  // Número de cada comanda ligada aos movimentos: o rótulo do link é o número
+  // real da comanda, não a posição na descrição (movimento antigo pode ter a
+  // ordem diferente).
+  const idsComandas = [...new Set(movs.flatMap(comandasDo))];
+  const numeroPorId = new Map<string, number>();
+  if (idsComandas.length > 0) {
+    const { data: comRows } = await supabase.from("pdv_comandas").select("id, numero").in("id", idsComandas);
+    for (const c of ((comRows as { id: string; numero: number }[]) ?? [])) numeroPorId.set(c.id, c.numero);
+  }
 
   const saldoInicial = Number(caixa.saldo_inicial);
   const abertoHora = hora(caixa.aberto_em as string);
@@ -93,11 +107,19 @@ export default async function MovimentosCaixaPage() {
                 <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
                   {m.descricao || m.tipo}
                   <span className="ml-2 text-[10px] uppercase text-zinc-400">{m.tipo}</span>
-                  {m.comanda_id && (
-                    <Link href={`/salao/comandas/${m.comanda_id}`} className="ml-2 text-xs text-orange-600 hover:underline" title="Ver os itens dessa comanda">
-                      ver comanda
+                  {comandasDo(m)
+                    .slice()
+                    .sort((a, b) => (numeroPorId.get(b) ?? 0) - (numeroPorId.get(a) ?? 0))
+                    .map((id) => (
+                    <Link
+                      key={id}
+                      href={`/salao/comandas/${id}`}
+                      className="ml-2 text-xs text-orange-600 hover:underline"
+                      title="Ver os itens dessa comanda"
+                    >
+                      {numeroPorId.has(id) ? `ver #${numeroPorId.get(id)}` : "ver comanda"}
                     </Link>
-                  )}
+                  ))}
                 </td>
                 <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">{m.forma_pagamento || "—"}</td>
                 <td className="px-4 py-2 text-zinc-400">{hora(m.criado_em)}</td>
