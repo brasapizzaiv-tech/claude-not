@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { RodizioCard } from "@/components/rodizio-card";
 import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
-import { agoraMs, aniversariantesMes, cardapioTv, chaveTvOk, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
-import { TvPaginaCardapio, type AniversarianteTv, type CardapioTv, type RecadoTv } from "@/components/tv-cardapio";
-import { TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
+import { agoraMs, aniversariantesMes, apontamentosTv, cardapioTv, chaveTvOk, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
+import { TvPaginaCardapio, TvPontos, totalPaginasTv, type AniversarianteTv, type CardapioTv, type RecadoTv } from "@/components/tv-cardapio";
+import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
+import type { ApontamentoTv } from "@/lib/checklists-core";
 import { TvClient } from "./tv-client";
 
 // TV da cozinha: tela cheia, sem menu. A chave da URL é conferida no servidor
@@ -46,14 +47,15 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
   let aniversariantes: AniversarianteTv[] = [];
   let cardapio: CardapioTv = { dia: "", buffet: null, saladas: null, kern: null };
   let ultimaAtividade: string | null = null;
+  let apontamentos: ApontamentoTv[] = [];
   let falhou = false;
   try {
-    [inicial, recados, aniversariantes, cardapio, ultimaAtividade] = await Promise.all([filaTv(), recadosTv(), aniversariantesMes(), cardapioTv(), ultimaAtividadeRodizio()]);
+    [inicial, recados, aniversariantes, cardapio, ultimaAtividade, apontamentos] = await Promise.all([filaTv(), recadosTv(), aniversariantesMes(), cardapioTv(), ultimaAtividadeRodizio(), apontamentosTv()]);
   } catch { falhou = true; }
   const temperatura = await temperaturaIvoti();
   const agora = agoraMs();
 
-  if (modo === "simples") return <TvSimples pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} cardapio={cardapio} ultimaAtividade={ultimaAtividade} />;
+  if (modo === "simples") return <TvSimples pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} cardapio={cardapio} ultimaAtividade={ultimaAtividade} apontamentos={apontamentos} />;
 
   // Script em JavaScript "antigo" de propósito (sem let/const/arrow): precisa
   // rodar justamente no navegador que NÃO consegue rodar o resto.
@@ -64,25 +66,27 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: fallback }} />
-      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} aniversariantesInicial={aniversariantes} cardapioInicial={cardapio} ultimaAtividadeInicial={ultimaAtividade} />
+      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} aniversariantesInicial={aniversariantes} cardapioInicial={cardapio} ultimaAtividadeInicial={ultimaAtividade} apontamentosInicial={apontamentos} />
     </>
   );
 }
 
 // Modo simples: a mesma tela, sem JavaScript. O tempo de espera e o relógio
 // são calculados no servidor a cada recarga.
-function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversariantes, cardapio, ultimaAtividade }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; cardapio: CardapioTv; ultimaAtividade: string | null }) {
+function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; cardapio: CardapioTv; ultimaAtividade: string | null; apontamentos: ApontamentoTv[] }) {
   const fila = filaVisivel(pedidos, agora);
   const ultimaMs = ultimaAtividade ? Date.parse(ultimaAtividade) : 0;
   const mostrarFila = fila.length > 0 || (ultimaMs > 0 && agora - ultimaMs < TV_SEM_PEDIDO_MIN * 60000);
   const { salgadas, doces } = separarColunas(fila);
+  const totalPaginas = totalPaginasTv(apontamentos);
+  const pagina = paginaDaRotacao(agora, totalPaginas);
   const hora = new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 
   return (
     <div style={{ height: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <meta httpEquiv="refresh" content={String(SIMPLES_INTERVALO_SEG)} />
       {!mostrarFila ? (
-        <TvPaginaCardapio cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={false} />
+        <TvPaginaCardapio cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={false} apontamentos={apontamentos} pagina={pagina} />
       ) : fila.length === 0 ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <p style={{ fontSize: 56, fontWeight: 800, color: "#555" }}>Nenhum pedido</p>
@@ -94,7 +98,7 @@ function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversarian
         </div>
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: 20, color: "#777" }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio {!mostrarFila && <TvPontos pagina={pagina} total={totalPaginas} />}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? "#ef4444" : "#22c55e", display: "inline-block" }} />
           {semRede && <span style={{ color: "#ef4444", fontWeight: 700 }}>SEM CONEXÃO</span>}

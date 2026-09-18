@@ -4,12 +4,13 @@ import { ColaboradoresClient, type FolgaPerfil, type Row } from "./client";
 
 export default async function ColaboradoresPage() {
   const supabase = await createClient();
-  const [{ data: colabs }, { data: folgas }] = await Promise.all([
+  const [{ data: colabs }, { data: folgas }, { data: setoresCk }] = await Promise.all([
     supabase.from("colaboradores").select("*").order("nome"),
     supabase
       .from("folgas_funcionarios")
       .select("id, colaborador_id, grupo, vinculo, funcao, dias, grupo2, dias2, gerente, ativo")
       .eq("ativo", true),
+    supabase.from("checklist_setores").select("id, nome, cor").eq("ativo", true).order("ordem").order("nome"),
   ]);
 
   const folgaPorColab = new Map<string, FolgaPerfil>();
@@ -22,5 +23,5 @@ export default async function ColaboradoresPage() {
     folga: folgaPorColab.get(c.id) ?? null,
   }));
 
-  return <ColaboradoresClient rows={rows} />;
+  return <ColaboradoresClient rows={rows} setoresChecklist={(setoresCk as { id: string; nome: string; cor: string | null }[]) ?? []} />;
 }

@@ -24,6 +24,7 @@ export type ModuloKey =
   | "pdv"
   | "delivery"
   | "solicitacoes"
+  | "checklists"
   | "rodizio";
 
 export const MODULOS: {
@@ -59,6 +60,7 @@ export const MODULOS: {
   { key: "pdv", label: "PDV (balcão)", icon: "🧾", rotas: ["/pdv"] },
   { key: "delivery", label: "Delivery", icon: "🛵", rotas: ["/delivery"] },
   { key: "solicitacoes", label: "Pedidos da equipe (compras e manutenção)", icon: "🛠️", rotas: ["/solicitacoes"] },
+  { key: "checklists", label: "Checklists de rotina", icon: "✅", rotas: ["/checklists"] },
   { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "🍕", rotas: ["/cozinha"] },
 ];
 

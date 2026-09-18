@@ -57,6 +57,6 @@ export function rotuloDiaLongo(iso: string): string {
 
 // Índice da página da rotação da TV neste instante (deriva do relógio: as
 // telas em modo simples e normal mostram a mesma página sem timer extra).
-export function paginaDaRotacao(agora: number, total = TV_PAGINAS.length): number {
+export function paginaDaRotacao(agora: number, total: number = TV_PAGINAS.length): number {
   return Math.floor(agora / (TV_ROTACAO_SEG * 1000)) % total;
 }

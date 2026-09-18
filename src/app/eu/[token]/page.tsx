@@ -113,7 +113,7 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio, checklist_setores").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
@@ -121,6 +121,7 @@ export default async function AppColaboradorPage({
   const fazContas = !!colab?.faz_contas;
   const fazGarcom = !!colab?.faz_garcom;
   const fazCardapio = !!colab?.faz_cardapio;
+  const fazChecklist = ((colab?.checklist_setores as string[] | null) ?? []).length > 0;
 
   // Contas abertas (só pra quem tem a função gerencial).
   let contasAbertas = 0;
@@ -214,6 +215,15 @@ export default async function AppColaboradorPage({
           <span>🧑‍🍳 Modo garçom</span>
           <span className="text-xs font-normal opacity-80">mesas, pedidos, conta →</span>
         </a>
+      )}
+      {fazChecklist && (
+        <Link
+          href={`/eu/${token}/checklist`}
+          className="mb-3 flex items-center justify-between rounded-2xl bg-emerald-700 p-4 font-semibold text-white hover:bg-emerald-800"
+        >
+          <span>✅ Checklists</span>
+          <span className="text-xs font-normal opacity-80">abertura e fechamento →</span>
+        </Link>
       )}
       {fazCardapio && (
         <Link

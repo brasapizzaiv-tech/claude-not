@@ -8,6 +8,7 @@
 // src/lib/cardapio-dia-core.ts (montarCardapioDia).
 import { rotuloDia, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import type { CardapioTv } from "@/lib/cardapio-dia-core";
+import { APONTAMENTOS_NA_TELA, APONTAMENTOS_POR_PAGINA, tituloApontamentos, type ApontamentoTv } from "@/lib/checklists-core";
 
 export type { CardapioTv } from "@/lib/cardapio-dia-core";
 export type RecadoTv = { id: string; texto: string };
@@ -16,6 +17,7 @@ export type AniversarianteTv = { nome: string; dia: number; hoje: boolean };
 const LARANJA = "#C78340";
 const AMBAR = "#ffb84d";   // marmitas
 const VERDE = "#4ade80";   // saladas
+const VERMELHO = "#f87171"; // pontos de atenção
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 // Tamanhos proporcionais à ALTURA da TV: o projeto é em px de 1080p e a TV de
 // 32" (768p) mostra tudo a 71% — nada corta, nada rola.
@@ -95,20 +97,23 @@ function Subtitulo({ texto }: { texto: string }) {
 
 // Aniversariantes do mês (quem faz hoje ganha destaque) e recados, compactos,
 // no espaço que sobra embaixo do buffet.
-function Avisos({ aniversariantes, recados, mes }: { aniversariantes: AniversarianteTv[]; recados: RecadoTv[]; mes: number }) {
+// compacto = tem bloco de pontos de atenção na tela: os aniversariantes do mês
+// saem (fica só quem faz hoje) e só um recado aparece, pra tudo caber.
+function Avisos({ aniversariantes, recados, mes, compacto = false }: { aniversariantes: AniversarianteTv[]; recados: RecadoTv[]; mes: number; compacto?: boolean }) {
   if (aniversariantes.length === 0 && recados.length === 0) return null;
   const hoje = aniversariantes.filter((a) => a.hoje);
-  const outros = aniversariantes.filter((a) => !a.hoje);
+  const outros = compacto ? [] : aniversariantes.filter((a) => !a.hoje);
+  if (compacto && hoje.length === 0 && recados.length === 0) return null;
   return (
     <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-      {recados.slice(0, 3).map((r) => (
+      {recados.slice(0, compacto ? 1 : 3).map((r) => (
         <div key={r.id} style={{ background: "#3a2410", borderLeft: `12px solid ${LARANJA}`, borderRadius: 14, padding: "8px 16px", fontSize: vh(recados.length > 1 ? 22 : 26), lineHeight: 1.2, fontWeight: 800, color: "#fff", overflowWrap: "anywhere" }}>
           {r.texto}
         </div>
       ))}
-      {aniversariantes.length > 0 && (
+      {(compacto ? hoje.length > 0 : aniversariantes.length > 0) && (
         <div>
-          <div style={{ fontSize: vh(16), fontWeight: 900, letterSpacing: "0.16em", color: "#777" }}>ANIVERSARIANTES DE {MESES[mes - 1].toUpperCase()}</div>
+          {!compacto && <div style={{ fontSize: vh(16), fontWeight: 900, letterSpacing: "0.16em", color: "#777" }}>ANIVERSARIANTES DE {MESES[mes - 1].toUpperCase()}</div>}
           {hoje.length > 0 && (
             <div style={{ marginTop: 4, background: LARANJA, borderRadius: 12, padding: "6px 16px", fontSize: vh(28), fontWeight: 900, color: "#fff" }}>
               HOJE: {hoje.map((a) => a.nome).join(", ")} — parabéns!
@@ -129,13 +134,76 @@ function Avisos({ aniversariantes, recados, mes }: { aniversariantes: Aniversari
   );
 }
 
+// Pontos de atenção (apontamentos da revisão): itens numerados, setor em
+// destaque. Até APONTAMENTOS_NA_TELA cabem dentro da tela do cardápio; acima
+// disso o bloco vira página própria na rotação (nunca espremer nem rolar).
+function Apontamentos({ itens, tamanho, titulo, cheio = false }: { itens: ApontamentoTv[]; tamanho: number; titulo: string; cheio?: boolean }) {
+  return (
+    <div style={{ border: `3px solid ${VERMELHO}`, borderRadius: 16, background: "#2a1212", padding: cheio ? "18px 28px 22px" : "10px 18px 12px", ...(cheio ? { flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 0 } : {}) }}>
+      <div style={{ fontSize: vh(cheio ? 34 : 26), fontWeight: 900, letterSpacing: "0.12em", color: VERMELHO, marginBottom: cheio ? 14 : 6 }}>{titulo}</div>
+      <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
+        {itens.map((a, i) => (
+          <li key={a.id} style={{ display: "flex", alignItems: "baseline", gap: 12, fontSize: vh(tamanho), lineHeight: 1.22, fontWeight: 700, color: "#fff", padding: cheio ? "6px 0" : "3px 0", overflowWrap: "anywhere" }}>
+            <span style={{ minWidth: "1.4em", textAlign: "right", color: VERMELHO, fontWeight: 900, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{i + 1}</span>
+            <span>
+              {a.setor && <span style={{ color: "#ffd9a8", fontWeight: 900, letterSpacing: "0.08em", marginRight: 10 }}>{a.setor.toUpperCase()}</span>}
+              {a.texto}
+              {a.pessoa && <span style={{ color: "#bbb", fontWeight: 700 }}> — {a.pessoa}</span>}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+// Quantas páginas a TV tem agora: 1 (cardápio) + as de apontamentos, quando
+// eles não couberem dentro da tela.
+export function totalPaginasTv(apontamentos: ApontamentoTv[] = []): number {
+  if (apontamentos.length <= APONTAMENTOS_NA_TELA) return 1;
+  return 1 + Math.ceil(apontamentos.length / APONTAMENTOS_POR_PAGINA);
+}
+
+// Pontinhos do rodapé (só quando há mais de uma página).
+export function TvPontos({ pagina, total }: { pagina: number; total: number }) {
+  if (total <= 1) return null;
+  return (
+    <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <span key={i} style={{ width: i === pagina ? 14 : 10, height: i === pagina ? 14 : 10, borderRadius: 7, background: i === pagina ? LARANJA : "#444", display: "inline-block" }} />
+      ))}
+    </span>
+  );
+}
+
 // A tela inteira: cabeçalho com hora; CARDÁPIO DO DIA + avisos à esquerda (3/5);
 // MARMITAS em cima e SALADAS embaixo à direita (2/5).
 export function TvPaginaCardapio({
-  cardapio: c, agora, recados, temperatura, aniversariantes, piscar,
+  cardapio: c, agora, recados, temperatura, aniversariantes, piscar, apontamentos = [], pagina = 0,
 }: {
   cardapio: CardapioTv; agora: number; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; piscar: boolean;
+  apontamentos?: ApontamentoTv[]; pagina?: number;
 }) {
+  const totalPaginas = totalPaginasTv(apontamentos);
+  const naTela = apontamentos.length > 0 && apontamentos.length <= APONTAMENTOS_NA_TELA ? apontamentos : [];
+  // Página 1+ da rotação: só os pontos de atenção, grandes.
+  if (pagina > 0 && totalPaginas > 1) {
+    const ini = (pagina - 1) * APONTAMENTOS_POR_PAGINA;
+    const desta = apontamentos.slice(ini, ini + APONTAMENTOS_POR_PAGINA);
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "12px 28px 0", overflow: "hidden" }}>
+        <Cabecalho dia={c.dia} agora={agora} temperatura={temperatura} piscar={piscar} />
+        <div style={{ flex: 1, minHeight: 0, paddingBottom: 12, display: "flex", flexDirection: "column" }}>
+          <Apontamentos
+            cheio
+            itens={desta}
+            tamanho={desta.length > 6 ? 38 : desta.length > 4 ? 44 : 50}
+            titulo={`${tituloApontamentos(apontamentos)}${totalPaginas > 2 ? ` (${pagina}/${totalPaginas - 1})` : ""}`}
+          />
+        </div>
+      </div>
+    );
+  }
   const b = c.buffet;
   const totalBuffet = b ? b.proteinas.length + b.carboidratos.length + b.especial.length : 0;
   const tamBuffet = totalBuffet > 18 ? 26 : totalBuffet > 14 ? 28 : totalBuffet > 10 ? 31 : 34;
@@ -187,7 +255,14 @@ export function TvPaginaCardapio({
             ) : (
               <p style={{ fontSize: vh(30), fontWeight: 800, color: "#666", margin: "12px 0" }}>Cardápio de {rotuloDiaLongo(c.dia)} ainda não cadastrado</p>
             )}
-            <Avisos aniversariantes={aniversariantes} recados={recados} mes={mes} />
+            <div style={{ marginTop: "auto" }}>
+              <Avisos aniversariantes={aniversariantes} recados={recados} mes={mes} compacto={naTela.length > 0} />
+              {naTela.length > 0 && (
+                <div style={{ paddingTop: 8 }}>
+                  <Apontamentos itens={naTela} tamanho={naTela.length > 2 ? 24 : 28} titulo={tituloApontamentos(naTela)} />
+                </div>
+              )}
+            </div>
           </div>
         </Bloco>
 

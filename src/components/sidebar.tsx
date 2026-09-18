@@ -119,6 +119,11 @@ export function Sidebar({
         ),
         ...so(has("folgas"), { href: "/folgas", label: "Folgas", icon: "🌴" }),
         ...so(has("retiradas"), { href: "/retiradas", label: "Compras internas", icon: "🛒" }),
+        ...so(has("checklists"),
+          { href: "/checklists", label: "Checklists de hoje", icon: "✅" },
+          { href: "/checklists/revisao", label: "Revisar checklists", icon: "🔎" },
+          { href: "/checklists/modelos", label: "Modelos de checklist", icon: "📝" },
+        ),
       ],
     },
     {

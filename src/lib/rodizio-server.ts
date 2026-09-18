@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { diaDoCardapio } from "@/lib/dia-cardapio";
 import { kernDoDia } from "@/lib/marmitas-cardapio";
 import { montarCardapioDia, type CardapioTv, type Db } from "@/lib/cardapio-dia-core";
+import { apontamentosTv as apontamentosDaRevisao, type ApontamentoTv } from "@/lib/checklists-core";
 import { PRONTO_SOME_SEG, type PedidoRodizio } from "@/lib/rodizio";
 
 // Fila do rodízio pra TV (cliente administrativo: a TV não tem login).
@@ -84,6 +85,16 @@ export async function cardapioTv(agora = Date.now()): Promise<CardapioTv> {
   const valor = await montarCardapioDia(createAdminClient() as Db, dia, await kernDoDia(dia).catch(() => null));
   cardapioCache = { dia, em: agora, valor };
   return valor;
+}
+
+// Pontos de atenção da revisão dos checklists que estão valendo agora (dentro
+// do prazo e não resolvidos). Mesmo caminho dos recados: some sozinho no prazo.
+export async function apontamentosTv(): Promise<ApontamentoTv[]> {
+  try {
+    return await apontamentosDaRevisao(createAdminClient() as unknown as Parameters<typeof apontamentosDaRevisao>[0]);
+  } catch {
+    return [];
+  }
 }
 
 // Última mexida no rodízio (criado/forno/pronto/cancelado): a TV só volta pro

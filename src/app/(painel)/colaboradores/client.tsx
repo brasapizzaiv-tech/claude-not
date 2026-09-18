@@ -166,6 +166,7 @@ function resumoQuadro(c: Colaborador): string {
   if (c.esporadico) partes.push("free esporádico");
   if (c.faz_garcom) partes.push("garçom");
   if (c.faz_cardapio) partes.push("cardápio");
+  if (((c.checklist_setores as string[] | null) ?? []).length > 0) partes.push("checklists");
   return partes.join(" · ");
 }
 
@@ -210,7 +211,9 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
   );
 }
 
-export function ColaboradoresClient({ rows }: { rows: Row[] }) {
+export type SetorChecklist = { id: string; nome: string; cor: string | null };
+
+export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row[]; setoresChecklist?: SetorChecklist[] }) {
   const [editando, setEditando] = useState<Row | null>(null);
   const [aberto, setAberto] = useState(false);
   const [verLinks, setVerLinks] = useState(false);
@@ -345,13 +348,13 @@ export function ColaboradoresClient({ rows }: { rows: Row[] }) {
         </div>
       )}
 
-      {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} />}
+      {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} setoresChecklist={setoresChecklist} />}
       {desligando && <DesligarModal c={desligando} onClose={() => setDesligando(null)} />}
     </div>
   );
 }
 
-function EditModal({ editando, onClose }: { editando: Row | null; onClose: () => void }) {
+function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row | null; onClose: () => void; setoresChecklist?: SetorChecklist[] }) {
   const f = editando?.folga ?? null;
   const [temFolga, setTemFolga] = useState(!!f);
   const [grupo2, setGrupo2] = useState<string>(f?.grupo2 ?? "");
@@ -531,6 +534,25 @@ function EditModal({ editando, onClose }: { editando: Row | null; onClose: () =>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> 🍽️ Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
           </label>
+          {setoresChecklist.length > 0 && (
+            <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+              <p className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200">✅ Checklists — setores que esta pessoa executa</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {setoresChecklist.map((s) => (
+                  <label key={s.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="checklist_setor"
+                      value={s.id}
+                      defaultChecked={((editando?.checklist_setores as string[] | null) ?? []).includes(s.id)}
+                    />
+                    <span style={{ color: s.cor ?? undefined }}>{s.nome}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-zinc-400">Sem nenhum marcado, a pessoa não vê o módulo no app.</p>
+            </div>
+          )}
 
           <label className="flex items-center gap-2 border-t border-zinc-200 pt-3 text-sm dark:border-zinc-800">
             <input type="checkbox" name="tem_folga" checked={temFolga} onChange={(e) => setTemFolga(e.target.checked)} /> Entra na escala de folgas
