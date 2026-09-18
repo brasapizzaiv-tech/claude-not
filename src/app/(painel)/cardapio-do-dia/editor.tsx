@@ -379,8 +379,8 @@ export function EditorCardapio({
 
           {/* Prévia igual à do site */}
           <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-            <div className="bg-[#211915] p-5 text-[#E8DED5]">
-              <p className="text-center text-[11px] uppercase tracking-[.2em] text-[#C78340]">
+            <div className="bg-marca-escuro p-5 text-marca-sobre-escuro">
+              <p className="text-center text-[11px] uppercase tracking-[.2em] text-orange-500">
                 Cardápio
               </p>
               <p className="mb-4 text-center text-lg font-bold uppercase text-white">
@@ -389,7 +389,7 @@ export function EditorCardapio({
               {BLOCOS.map((b) =>
                 sel[b.grupo].length > 0 ? (
                   <div key={b.grupo} className="mb-3">
-                    <span className="inline-block bg-[#C78340] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#211915]">
+                    <span className="inline-block bg-orange-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-marca-escuro">
                       {b.titulo}
                     </span>
                     <ul className="mt-1.5 space-y-0.5 text-sm">
@@ -401,11 +401,11 @@ export function EditorCardapio({
                 ) : null,
               )}
               <div className="mt-4 flex justify-center gap-3">
-                <span className="rounded-lg bg-[#C78340] px-4 py-1.5 text-center text-[#211915]">
+                <span className="rounded-lg bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
                   <b className="block text-[10px] uppercase tracking-wider">Livre</b>
                   <b className="text-sm">{moeda(numero(precos.livre))}</b>
                 </span>
-                <span className="rounded-lg bg-[#C78340] px-4 py-1.5 text-center text-[#211915]">
+                <span className="rounded-lg bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
                   <b className="block text-[10px] uppercase tracking-wider">KG</b>
                   <b className="text-sm">{moeda(numero(precos.kg))}</b>
                 </span>

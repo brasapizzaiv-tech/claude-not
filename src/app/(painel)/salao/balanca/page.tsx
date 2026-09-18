@@ -35,7 +35,7 @@ export default async function BalancaPage() {
         </div>
         <Link
           href="/salao/balanca/quiosque"
-          className="rounded-xl bg-[#C78340] px-5 py-3 text-sm font-bold text-white hover:brightness-110"
+          className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white hover:brightness-110"
         >
           🖥️ Modo quiosque (autoatendimento)
         </Link>

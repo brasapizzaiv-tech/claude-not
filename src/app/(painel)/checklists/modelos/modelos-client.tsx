@@ -15,6 +15,9 @@ import {
 
 const inputCls = "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 const btnSec = "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900";
+// Valor literal porque <input type="color"> não aceita variável de CSS.
+// Etapa 3: passa a vir da cor da empresa.
+const COR_PRIMARIA = "#c78340";
 const chip = (on: boolean) =>
   `rounded-full border px-3 py-1 text-xs font-medium ${on ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`;
 
@@ -150,7 +153,8 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
 
 function NovoSetor({ onSalvar, proc }: { onSalvar: (nome: string, cor: string) => void; proc: boolean }) {
   const [nome, setNome] = useState("");
-  const [cor, setCor] = useState("#C78340");
+  // Sugestão inicial no seletor de cor: a primária da marca.
+  const [cor, setCor] = useState(COR_PRIMARIA);
   return (
     <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
       <div>

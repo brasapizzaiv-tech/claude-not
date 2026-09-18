@@ -1,12 +1,35 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =====================================================================
+   TOKENS DO SISTEMA
+   Lugar único das cores, tipografia e formas do painel. Quem escreve tela
+   usa as classes do Tailwind (bg-orange-500, text-zinc-500, rounded-lg) —
+   elas já apontam pra cá.
 
-  /* Cor oficial da marca Brasa (#C78340) no lugar do laranja padrão do
-     Tailwind. Remapeia a escala inteira, então todos os `orange-*` do sistema
-     passam a usar o tom da marca de uma vez. */
+   Como está organizado:
+   1. Marca        — as cores da empresa (na Etapa 3 vêm da tabela `empresas`)
+   2. Escalas      — orange-* e zinc-* remapeados pros tons da marca
+   3. Semânticos   — fundo, superfície, borda, texto, sucesso, alerta, erro…
+   4. Tipografia   — famílias
+   5. Modo escuro  — só o que muda
+
+   Formas (raio, espaçamento, sombra) continuam nas classes do Tailwind, que
+   já são o padrão do projeto: rounded-lg em botões e campos, rounded-2xl em
+   cartões, shadow-sm/lg em modais. Não criamos variáveis paralelas pra isso
+   porque seriam um segundo sistema sem ninguém usando.
+   ===================================================================== */
+
+:root {
+  /* ---------- 1. Marca ---------- */
+  /* Brasa: laranja #C78340 e grafite #211915. Na Etapa 3 estes três valores
+     passam a vir do cadastro da empresa; o resto do arquivo não muda. */
+  --marca-primaria: #c78340;
+  --marca-escuro: #211915;   /* fundo escuro da marca (cardápio, cupons, site) */
+  --marca-sobre-escuro: #e8ded5; /* texto por cima do grafite */
+
+  /* ---------- 2. Escalas derivadas da marca ---------- */
+  /* Remapeia o laranja padrão do Tailwind pro tom da marca: todos os
+     `orange-*` do sistema mudam de uma vez. orange-500 = --marca-primaria. */
   --color-orange-50: #fbf5ee;
   --color-orange-100: #f6e9da;
   --color-orange-200: #ebceac;
@@ -18,30 +41,86 @@
   --color-orange-800: #6a4320;
   --color-orange-900: #4b2f18;
   --color-orange-950: #2a1a0d;
+
+  /* ---------- 3. Semânticos (tema claro) ---------- */
+  --fundo: #ffffff;           /* fundo da página */
+  --superficie: #ffffff;      /* cartões, barras, modais */
+  --superficie-suave: #fafafa;/* faixas e cabeçalhos de tabela (zinc-50) */
+  --borda: #e4e4e7;           /* zinc-200 */
+  --borda-forte: #d4d4d8;     /* zinc-300 — contorno de campo e botão */
+  --texto: #18181b;           /* zinc-900 */
+  --texto-suave: #71717a;     /* zinc-500 — legendas e apoio */
+  --texto-fraco: #a1a1aa;     /* zinc-400 — vazio e desabilitado */
+
+  --primaria: var(--marca-primaria);
+  --sucesso: #059669;         /* emerald-600 */
+  --alerta: #f59e0b;          /* amber-500 */
+  --erro: #dc2626;            /* red-600 */
+  --info: #0284c7;            /* sky-600 */
+
+  /* Compatibilidade: nomes antigos usados pelo body. */
+  --background: var(--fundo);
+  --foreground: var(--texto);
 }
 
+/* ---------- 5. Modo escuro ----------
+   Hoje segue o sistema operacional. Na Etapa 2 isto passa a responder também
+   à escolha do usuário; por enquanto o comportamento é exatamente o de antes. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Grafite da marca como fundo, com superfícies e bordas em tons quentes
+       derivados dele — combinam com o laranja. */
+    --color-zinc-950: #211915; /* fundo principal / linhas */
+    --color-zinc-900: #2b211b; /* superfícies (sidebar, cabeçalhos, cartões) */
+    --color-zinc-800: #3d2f26; /* bordas e hover — mais visíveis */
+    --color-zinc-700: #4d3b2f; /* bordas de inputs/botões */
+
+    --fundo: var(--marca-escuro);
+    --superficie: #2b211b;
+    --superficie-suave: #2b211b;
+    --borda: #3d2f26;
+    --borda-forte: #4d3b2f;
+    --texto: #ececec;
+    --texto-suave: #a1a1aa;    /* zinc-400 */
+    --texto-fraco: #71717a;    /* zinc-500 */
+
+    --sucesso: #10b981;        /* emerald-500 — mais visível no escuro */
+    --alerta: #fbbf24;         /* amber-400 */
+    --erro: #f87171;           /* red-400 */
+    --info: #38bdf8;           /* sky-400 */
+  }
+}
+
+/* ---------- 4. Tipografia + exposição dos tokens como classes ----------
+   `@theme inline` publica os tokens pro Tailwind: dá pra escrever
+   bg-superficie, text-texto-suave, border-borda, bg-marca-escuro. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--fundo);
+  --color-foreground: var(--texto);
+
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-superficie-suave: var(--superficie-suave);
+  --color-borda: var(--borda);
+  --color-borda-forte: var(--borda-forte);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-texto-fraco: var(--texto-fraco);
+  --color-primaria: var(--primaria);
+  --color-sucesso: var(--sucesso);
+  --color-alerta: var(--alerta);
+  --color-erro: var(--erro);
+  --color-info: var(--info);
+  --color-marca-escuro: var(--marca-escuro);
+  --color-marca-sobre-escuro: var(--marca-sobre-escuro);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #211915;
-    --foreground: #ececec;
-    /* Grafite oficial da marca Brasa (#211915) como fundo, com superfícies e
-       bordas em tons quentes derivados dele — combinam com o laranja. */
-    --color-zinc-950: #211915; /* fundo principal / linhas */
-    --color-zinc-900: #2b211b; /* superfícies (sidebar, cabeçalhos, cards) */
-    --color-zinc-800: #3d2f26; /* bordas e hover — mais visíveis */
-    --color-zinc-700: #4d3b2f; /* bordas de inputs/botões */
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+  /* Geist (carregada em layout.tsx) com as de sistema como reserva. */
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
