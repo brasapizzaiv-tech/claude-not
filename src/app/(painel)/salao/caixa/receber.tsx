@@ -7,7 +7,7 @@ import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
 import { formaEmiteAuto } from "@/components/nfce-auto-toggle";
-import { PainelPagamentos, type Pagamento } from "./pagamentos";
+import { PainelPagamentos, type ColabMini, type Pagamento } from "./pagamentos";
 import { emitirNotaPendenteAgora } from "./pendentes-actions";
 import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
 
@@ -68,6 +68,7 @@ export function ReceberComandas({
   clientes = [],
   pixAtivo = false,
   nfceAuto = false,
+  colaboradores = [],
 }: {
   comandas: Comanda[];
   formas: string[];
@@ -77,6 +78,7 @@ export function ReceberComandas({
   clientes?: ClienteMini[];
   pixAtivo?: boolean;
   nfceAuto?: boolean;
+  colaboradores?: ColabMini[];
 }) {
   const router = useRouter();
   const fator = 1 + servPercent / 100;
@@ -919,6 +921,7 @@ export function ReceberComandas({
                     }}
                     ativo={temAlgo && selComandas.length > 0}
                     fiado={fiadoCli}
+                    colaboradores={colaboradores}
                     qrPix={
                       pixAtivo
                         ? (v, aoPagar) => (

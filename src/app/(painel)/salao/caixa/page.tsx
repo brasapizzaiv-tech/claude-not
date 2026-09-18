@@ -10,7 +10,7 @@ import { pixConfigurado } from "@/lib/pix";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 
-const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito", "Vale refeição", "Saldo cliente"];
+const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito", "Vale refeição", "Saldo cliente", "Compra da equipe"];
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -238,6 +238,21 @@ export default async function CaixaPage({
     emitirEm: r.emitir_em,
   }));
 
+  // Funcionários ativos + quanto cada um já deve em Compras internas (pra
+  // forma "Compra da equipe" mostrar o saldo na hora de escolher a pessoa).
+  const [{ data: colabRows }, { data: retRows }] = await Promise.all([
+    supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome"),
+    supabase.from("retiradas").select("colaborador_id, valor").eq("status", "aberto"),
+  ]);
+  const abertoPorColab = new Map<string, number>();
+  for (const r of ((retRows as { colaborador_id: string | null; valor: number }[]) ?? [])) {
+    if (!r.colaborador_id) continue;
+    abertoPorColab.set(r.colaborador_id, Math.round(((abertoPorColab.get(r.colaborador_id) ?? 0) + Number(r.valor)) * 100) / 100);
+  }
+  const colaboradores = ((colabRows as { id: string; nome: string }[]) ?? []).map((c) => ({
+    id: c.id, nome: c.nome, aberto: abertoPorColab.get(c.id) ?? 0,
+  }));
+
   const saldoInicial = Number(caixa.saldo_inicial);
   const vendasPorForma = new Map<string, number>();
   let suprimentos = 0;
@@ -308,6 +323,7 @@ export default async function CaixaPage({
           clientes={clientes}
           pixAtivo={pixConfigurado()}
           nfceAuto={nfce.ligado && nfce.producao}
+          colaboradores={colaboradores}
         />
       </div>
 

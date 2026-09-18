@@ -16,7 +16,11 @@ export type Pagamento = {
   bandeira?: string | null;
   observacao?: string | null;
   tef?: TefDados | null;  // preenchido quando o cartão passou pelo pinpad (TEF)
+  // "Compra da equipe": vai pra conta do funcionário em Compras internas.
+  colaboradorId?: string | null;
+  colaboradorNome?: string | null;
 };
+export type ColabMini = { id: string; nome: string; aberto: number };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (s: string) => Number(String(s).replace(/\./g, "").replace(",", ".")) || 0;
@@ -34,11 +38,15 @@ export function atalhoDaForma(forma: string): string {
   if (f.includes("déb") || f.includes("deb")) return "B";
   if (f.includes("vale") || f.includes("refei")) return "R";
   if (f.includes("saldo") || f.includes("fiado")) return "F";
+  // "E" de equipe: a primeira letra seria "C" e bateria com Cartão de crédito.
+  if (f.includes("equipe") || f.includes("funcion")) return "E";
   return forma.trim().charAt(0).toUpperCase();
 }
 const ehCartao = (f: string) => /cart|créd|cred|déb|deb/i.test(f);
 const ehDinheiro = (f: string) => /dinheiro/i.test(f);
-const ehFiado = (f: string) => /saldo|fiado/i.test(f);
+const ehFiado = (f: string) => /saldo cliente|fiado/i.test(f);
+// Consumo de funcionário: entra em Compras internas (o "fiado" da equipe).
+export const ehEquipe = (f: string) => /compra da equipe|funcion/i.test(f);
 const ehPix = (f: string) => /pix/i.test(f);
 
 const ICONE: Record<string, string> = { A: "💵", P: "◈", C: "💳", B: "💳", R: "🍽️", F: "🧾" };
@@ -60,6 +68,7 @@ export function PainelPagamentos({
   ativo,
   fiado,
   qrPix,
+  colaboradores = [],
 }: {
   formas: string[];
   total: number;
@@ -69,11 +78,14 @@ export function PainelPagamentos({
   ativo: boolean; // a tela está pronta pra receber (tem itens)
   fiado?: { nome: string; saldo: number; limite: number | null } | null;
   qrPix?: (valor: number, aoPagar: () => void) => React.ReactNode;
+  colaboradores?: ColabMini[];
 }) {
   const [forma, setForma] = useState<string | null>(null); // forma sendo lançada
   const [valor, setValor] = useState("");
   const [bandeira, setBandeira] = useState("");
   const [obs, setObs] = useState("");
+  const [colabId, setColabId] = useState("");
+  const [buscaColab, setBuscaColab] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
   const [parcelas, setParcelas] = useState(1); // só no crédito com pinpad; volta a 1 ao fechar
   const campoRef = useRef<HTMLInputElement>(null);
@@ -99,6 +111,8 @@ export function PainelPagamentos({
     setObs("");
     setAviso(null);
     setParcelas(1);
+    setColabId("");
+    setBuscaColab("");
   }
 
   // Foco no valor assim que o passo abre (o caixa já digita por cima).
@@ -208,6 +222,7 @@ export function PainelPagamentos({
     if (!forma) return;
     if (!(aplica > 0.005)) { setAviso("Informe o valor."); return; }
     if (ehFiado(forma) && !fiado) { setAviso("Vincule o cliente antes de usar o Saldo cliente."); return; }
+    if (ehEquipe(forma) && !colabId) { setAviso("Escolha o funcionário."); return; }
     if (fiadoEstoura) {
       setAviso(`Passa do limite: ${fiado?.nome} já deve ${brl(fiadoEstoura.saldo)} e o limite é ${brl(fiadoEstoura.limite)}.`);
       return;
@@ -220,6 +235,8 @@ export function PainelPagamentos({
       recebido: ehDinheiro(forma) ? cent(entregue) : undefined,
       bandeira: bandeira || null,
       observacao: obs.trim() || null,
+      colaboradorId: ehEquipe(forma) ? colabId : null,
+      colaboradorNome: ehEquipe(forma) ? (colaboradores.find((c) => c.id === colabId)?.nome ?? null) : null,
     });
     fechar();
   }
@@ -423,6 +440,43 @@ export function PainelPagamentos({
                 </>
               ) : (
                 <p className="text-amber-600">Vincule o cliente lá em cima pra usar o Saldo cliente.</p>
+              )}
+            </div>
+          )}
+
+          {ehEquipe(forma) && (
+            <div className="mt-3 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+              <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-400">Funcionário</p>
+              {colaboradores.length === 0 ? (
+                <p className="text-xs text-amber-600">Nenhum funcionário ativo cadastrado.</p>
+              ) : (
+                <>
+                  <input
+                    value={buscaColab}
+                    onChange={(e) => setBuscaColab(e.target.value)}
+                    placeholder="Buscar pelo nome…"
+                    className="mb-1.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                  />
+                  <div className="max-h-36 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                    {colaboradores
+                      .filter((c) => !buscaColab.trim() || c.nome.toLowerCase().includes(buscaColab.trim().toLowerCase()))
+                      .slice(0, 40)
+                      .map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setColabId(c.id === colabId ? "" : c.id)}
+                          className={`flex w-full items-center justify-between px-2 py-1.5 text-left text-sm ${c.id === colabId ? "bg-orange-500 text-white" : "hover:bg-zinc-50 dark:hover:bg-zinc-800"}`}
+                        >
+                          <span>{c.nome}</span>
+                          <span className={`text-xs ${c.id === colabId ? "text-white/80" : "text-zinc-400"}`}>
+                            {c.aberto > 0 ? `já deve ${brl(c.aberto)}` : "em dia"}
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                  <p className="mt-1 text-[11px] text-zinc-500">Vai pra conta da pessoa em Compras internas, pra descontar depois.</p>
+                </>
               )}
             </div>
           )}

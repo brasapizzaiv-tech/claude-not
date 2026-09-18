@@ -877,7 +877,7 @@ export type TefPagamento = {
 
 export async function pagarSelecao(
   sel: { comandaId: string; itemIds: string[]; buffet: boolean }[],
-  pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null; tef?: TefPagamento | null }[],
+  pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null; tef?: TefPagamento | null; colaboradorId?: string | null; colaboradorNome?: string | null }[],
   extras: { comandaId: string; itemId: string; qtd: number }[] = [],
   clienteId?: string | null,
 ) {
@@ -964,6 +964,32 @@ export async function pagarSelecao(
     if (todas.length > 0) {
       await supabase.from("pdv_comandas").update({ cliente_id: clienteId }).in("id", todas);
     }
+  }
+
+  // "Compra da equipe": o consumo do funcionário vai pra conta dele em
+  // Compras internas (/retiradas), pra descontar depois — igual ao que o caixa
+  // lançaria à mão, só que já ligado às comandas.
+  const daEquipe = pagamentos.filter((p) => /compra da equipe|funcion/i.test(p.forma) && p.valor > 0);
+  if (daEquipe.length > 0) {
+    const semPessoa = daEquipe.find((p) => !p.colaboradorId);
+    if (semPessoa) return { ok: false as const, mensagem: "Escolha o funcionário pra lançar a compra da equipe." };
+    const { data: userEq } = await supabase.auth.getUser();
+    const hojeBR = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+    for (const p of daEquipe) {
+      const { data: colab } = await supabase.from("colaboradores").select("nome, ativo").eq("id", p.colaboradorId!).maybeSingle();
+      if (!colab || !colab.ativo) return { ok: false as const, mensagem: "Funcionário não encontrado (ou desligado)." };
+      await supabase.from("retiradas").insert({
+        colaborador_id: p.colaboradorId,
+        nome: colab.nome as string,
+        item: `Consumo · comandas ${numeros.map((n) => `#${n}`).join(", ")}`,
+        valor: p.valor,
+        data: hojeBR,
+        status: "aberto",
+        observacao: (p.observacao || "").trim().slice(0, 200) || null,
+        criado_por: userEq.user?.id ?? null,
+      });
+    }
+    revalidatePath("/retiradas");
   }
 
   // "Saldo cliente" (fiado): a parte paga assim vai pra conta do cliente.
