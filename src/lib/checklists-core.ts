@@ -27,9 +27,22 @@ export const ROTULO_TIPO: Record<TipoItem, string> = {
 };
 export const DIAS_CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
+// Agrupa os itens pelas seções da folha ("ANTES DE COMEÇAR", "PREPARO"…),
+// mantendo a ordem. Item sem seção cai num grupo sem título.
+export function porSecao<T extends { secao?: string | null }>(itens: T[]): { secao: string | null; itens: T[] }[] {
+  const out: { secao: string | null; itens: T[] }[] = [];
+  for (const i of itens) {
+    const s = i.secao?.trim() || null;
+    const ultimo = out[out.length - 1];
+    if (ultimo && ultimo.secao === s) ultimo.itens.push(i);
+    else out.push({ secao: s, itens: [i] });
+  }
+  return out;
+}
+
 export type Setor = { id: string; nome: string; cor: string | null; ordem: number; ativo: boolean };
 export type ModeloItem = {
-  id: string; modelo_id: string; texto: string; instrucao: string | null;
+  id: string; modelo_id: string; texto: string; instrucao: string | null; secao: string | null;
   tipo: TipoItem; exige_foto: boolean; obrigatorio: boolean; ordem: number; ativo: boolean;
 };
 export type Modelo = {
@@ -93,7 +106,7 @@ export async function listarItens(db: Db, modeloIds: string[]): Promise<ModeloIt
   if (modeloIds.length === 0) return [];
   const { data } = await db
     .from("checklist_modelo_itens")
-    .select("id, modelo_id, texto, instrucao, tipo, exige_foto, obrigatorio, ordem, ativo")
+    .select("id, modelo_id, texto, instrucao, secao, tipo, exige_foto, obrigatorio, ordem, ativo")
     .in("modelo_id", modeloIds)
     .eq("ativo", true)
     .order("ordem");

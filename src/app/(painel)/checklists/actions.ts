@@ -113,7 +113,7 @@ export async function excluirModelo(id: string) {
 
 // ---------- Itens do modelo ----------
 export async function salvarItemModelo(input: {
-  id?: string; modelo_id: string; texto: string; instrucao: string | null;
+  id?: string; modelo_id: string; texto: string; instrucao: string | null; secao?: string | null;
   tipo: core.TipoItem; exige_foto: boolean; obrigatorio: boolean;
 }) {
   const { db } = await sessao();
@@ -121,6 +121,7 @@ export async function salvarItemModelo(input: {
   if (texto.length < 2) return { ok: false as const, mensagem: "Escreva o item." };
   const linha = {
     texto, instrucao: (input.instrucao || "").trim() || null,
+    secao: (input.secao || "").trim().toUpperCase() || null,
     tipo: core.TIPOS_ITEM.includes(input.tipo) ? input.tipo : "feito",
     exige_foto: !!input.exige_foto, obrigatorio: !!input.obrigatorio,
   };

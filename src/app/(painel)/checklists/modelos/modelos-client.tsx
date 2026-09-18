@@ -213,6 +213,7 @@ function ItensDoModelo({
               <span className="cursor-grab select-none pt-0.5 text-zinc-300 dark:text-zinc-600" title="Arraste para reordenar">⠿</span>
               <span className="w-5 pt-0.5 text-right text-xs text-zinc-400">{n + 1}</span>
               <span className="flex-1">
+                {i.secao && <span className="mr-1.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:bg-zinc-800">{i.secao}</span>}
                 <span className="text-zinc-800 dark:text-zinc-100">{i.texto}</span>
                 <span className="ml-2 text-[11px] text-zinc-400">{ROTULO_TIPO[i.tipo]}</span>
                 {i.obrigatorio && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-950 dark:text-red-300">obrigatório</span>}
@@ -312,10 +313,11 @@ function ItemModal({
   item, onClose, onSalvar, proc,
 }: {
   item: ModeloItem | null; onClose: () => void;
-  onSalvar: (input: { id?: string; texto: string; instrucao: string | null; tipo: TipoItem; exige_foto: boolean; obrigatorio: boolean }) => void;
+  onSalvar: (input: { id?: string; texto: string; instrucao: string | null; secao: string | null; tipo: TipoItem; exige_foto: boolean; obrigatorio: boolean }) => void;
   proc: boolean;
 }) {
   const [texto, setTexto] = useState(item?.texto ?? "");
+  const [secao, setSecao] = useState(item?.secao ?? "");
   const [instrucao, setInstrucao] = useState(item?.instrucao ?? "");
   const [tipo, setTipo] = useState<TipoItem>(item?.tipo ?? "feito");
   const [foto, setFoto] = useState(item?.exige_foto ?? false);
@@ -326,6 +328,8 @@ function ItemModal({
         <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-zinc-50">{item ? "Editar item" : "Novo item"}</h2>
         <label className="mb-1 block text-xs text-zinc-500">Item</label>
         <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Ex.: Conferir banheiros" className={`${inputCls} w-full`} autoFocus />
+        <label className="mt-3 mb-1 block text-xs text-zinc-500">Bloco (opcional — agrupa os itens, ex.: PREPARO)</label>
+        <input value={secao} onChange={(e) => setSecao(e.target.value)} placeholder="Ex.: ANTES DE COMEÇAR" className={`${inputCls} w-full`} />
         <label className="mt-3 mb-1 block text-xs text-zinc-500">Instrução (opcional, aparece abaixo do item)</label>
         <input value={instrucao} onChange={(e) => setInstrucao(e.target.value)} placeholder="Ex.: conferir papel e sabonete" className={`${inputCls} w-full`} />
         <label className="mt-3 mb-1 block text-xs text-zinc-500">Tipo</label>
@@ -341,7 +345,7 @@ function ItemModal({
         <div className="mt-5 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">Cancelar</button>
           <button
-            onClick={() => onSalvar({ id: item?.id, texto, instrucao: instrucao || null, tipo, exige_foto: foto, obrigatorio: obrig })}
+            onClick={() => onSalvar({ id: item?.id, texto, instrucao: instrucao || null, secao: secao || null, tipo, exige_foto: foto, obrigatorio: obrig })}
             disabled={proc || texto.trim().length < 2}
             className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >

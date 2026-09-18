@@ -1,6 +1,6 @@
 // Uma lista executada, item a item, com as fotos. Sem hooks: usada no
 // acompanhamento de hoje, no histórico e (dentro do cliente) na revisão.
-import { ROTULO_TIPO, itemRespondido, type ModeloItem, type Resposta } from "@/lib/checklists-core";
+import { ROTULO_TIPO, itemRespondido, porSecao, type ModeloItem, type Resposta } from "@/lib/checklists-core";
 
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 const numero = (n: number) => Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 3 });
@@ -16,7 +16,12 @@ export function ChecklistItensVista({
   const porItem = new Map(respostas.map((r) => [r.item_id, r]));
   return (
     <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-      {itens.map((i, n) => {
+      {porSecao(itens).flatMap((grupo, gi) => [
+        ...(grupo.secao
+          ? [<li key={`s${gi}`} className="pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">{grupo.secao}</li>]
+          : []),
+        ...grupo.itens.map((i) => {
+        const n = itens.indexOf(i);
         const r = porItem.get(i.id);
         const ok = itemRespondido(i, r);
         return (
@@ -48,7 +53,8 @@ export function ChecklistItensVista({
             {acao?.(i, r)}
           </li>
         );
-      })}
+        }),
+      ])}
     </ul>
   );
 }

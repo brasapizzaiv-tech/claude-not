@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ROTULO_MOMENTO, itemRespondido, type Execucao, type Modelo, type ModeloItem,
+  ROTULO_MOMENTO, itemRespondido, porSecao, type Execucao, type Modelo, type ModeloItem,
   type Momento, type Resposta, type Situacao,
 } from "@/lib/checklists-core";
 import { abrirListaApp, concluirListaApp, enviarFotoApp, salvarRespostaApp } from "./actions";
@@ -281,7 +281,13 @@ function ExecutarLista({
       {concluida && <Aviso tipo="msg">Lista concluída. As marcações ficam travadas.</Aviso>}
 
       <div className="space-y-2">
-        {lista.itens.map((i, n) => {
+        {porSecao(lista.itens).map((grupo, gi) => (
+          <div key={gi} className="space-y-2">
+            {grupo.secao && (
+              <p className="mt-3 text-xs font-bold uppercase tracking-wider text-orange-600">{grupo.secao}</p>
+            )}
+            {grupo.itens.map((i) => {
+          const n = lista.itens.indexOf(i);
           const r = resp[i.id] ?? {};
           const ok = itensOk.includes(i);
           const travado = concluida || proc;
@@ -356,7 +362,9 @@ function ExecutarLista({
               </div>
             </div>
           );
-        })}
+            })}
+          </div>
+        ))}
       </div>
 
       {!concluida && (
