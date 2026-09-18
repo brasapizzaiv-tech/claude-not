@@ -331,10 +331,9 @@ export default async function CaixaPage({
       <details className="mt-2 rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4">
           <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">📊 Resumo do caixa</span>
-          <span className="text-sm text-zinc-500">
-            💵 <b className="text-zinc-900 dark:text-zinc-50">{brl(dinheiroEmCaixa)}</b> em dinheiro · recebido {brl(totalVendas)}
-            <span className="ml-2 text-xs text-zinc-400">ver detalhes</span>
-          </span>
+          {/* Sem valores à mostra: a tela do caixa é virada pro cliente na hora
+              do Pix, e o movimento do dia não é da conta de quem está pagando. */}
+          <span className="text-xs text-zinc-400">toque para ver os valores</span>
         </summary>
         <div className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-800">
           <div className="space-y-1 text-sm">
