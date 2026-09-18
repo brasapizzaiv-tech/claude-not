@@ -131,6 +131,7 @@ export function CardapioClient({
   sabores: Sabor[];
 }) {
   const [editando, setEditando] = useState<Item | null>(null);
+  const [buscaSabor, setBuscaSabor] = useState("");
   const [horariosCat, setHorariosCat] = useState<Categoria | null>(null);
   const setAdic = new Set(comAdicionais);
 
@@ -245,7 +246,7 @@ export function CardapioClient({
       {tamanhos.length > 0 && (
         <details className="rounded-2xl border border-zinc-200 dark:border-zinc-800" open={false}>
           <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-            🍕 Pizzas — tamanhos, sabores, fotos e descrições
+            🍕 Pizzas — tamanhos e sabores <span className="font-normal text-zinc-400">({sabores.length} sabores)</span>
           </summary>
           <div className="space-y-4 border-t border-zinc-100 p-4 dark:border-zinc-800">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -261,28 +262,65 @@ export function CardapioClient({
                 </form>
               ))}
             </div>
-            <div className="space-y-2">
-              {sabores.map((s) => (
-                <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 p-2.5 dark:border-zinc-800">
-                  <Foto url={s.foto_url} />
-                  <form action={salvarDetalheCardapio} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                    <input type="hidden" name="tipo" value="sabor" />
-                    <input type="hidden" name="id" value={s.id} />
-                    <div className="w-40 truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{s.nome}</div>
-                    <input name="descricao" defaultValue={s.descricao ?? ""} maxLength={300} placeholder="Descrição (ingredientes)" className={`${inputCls} min-w-40 flex-1`} />
-                    {/* Quadro do rodízio: salgada ou doce (coluna na TV) e se o sabor entra no rodízio */}
-                    <select name="tipo_sabor" defaultValue={s.tipo ?? "salgada"} className={`${inputCls} w-28`} title="Coluna no quadro do rodízio">
-                      <option value="salgada">🍕 Salgada</option>
-                      <option value="doce">🍫 Doce</option>
-                    </select>
-                    <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-300" title="Aparece na busca de sabores do rodízio">
-                      <input type="checkbox" name="rodizio" defaultChecked={s.rodizio !== false} /> rodízio
-                    </label>
-                    <button className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white">Salvar</button>
-                  </form>
-                  <UploadFoto tipo="sabor" id={s.id} temFoto={!!s.foto_url} />
-                </div>
-              ))}
+            {/* Sabores: o nome vem inteiro (antes era cortado numa coluna fixa)
+                e a descrição ocupa a linha de baixo, que é onde se escreve mais. */}
+            <div>
+              <input
+                value={buscaSabor}
+                onChange={(e) => setBuscaSabor(e.target.value)}
+                placeholder="Buscar sabor…"
+                className={`${inputCls} mb-2 w-full sm:w-72`}
+              />
+              <div className="space-y-2">
+                {sabores
+                  .filter((s) => !buscaSabor.trim() || s.nome.toLowerCase().includes(buscaSabor.trim().toLowerCase()))
+                  .map((s) => (
+                    <form
+                      key={s.id}
+                      action={salvarDetalheCardapio}
+                      className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800"
+                    >
+                      <input type="hidden" name="tipo" value="sabor" />
+                      <input type="hidden" name="id" value={s.id} />
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Foto url={s.foto_url} />
+                        <div className="min-w-48 flex-1 text-base font-semibold leading-snug text-zinc-900 dark:text-zinc-100">
+                          {s.nome}
+                        </div>
+                        {/* Quadro do rodízio: salgada ou doce (coluna na TV) e se o sabor entra no rodízio */}
+                        <select
+                          name="tipo_sabor"
+                          defaultValue={s.tipo ?? "salgada"}
+                          className={`${inputCls} w-36`}
+                          title="Coluna no quadro do rodízio"
+                        >
+                          <option value="salgada">🍕 Salgada</option>
+                          <option value="doce">🍫 Doce</option>
+                        </select>
+                        <label
+                          className="flex items-center gap-1.5 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-300"
+                          title="Aparece na busca de sabores do rodízio"
+                        >
+                          <input type="checkbox" name="rodizio" defaultChecked={s.rodizio !== false} /> rodízio
+                        </label>
+                        <UploadFoto tipo="sabor" id={s.id} temFoto={!!s.foto_url} />
+                        <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                          Salvar
+                        </button>
+                      </div>
+                      <input
+                        name="descricao"
+                        defaultValue={s.descricao ?? ""}
+                        maxLength={300}
+                        placeholder="Descrição (ingredientes) — aparece no app do cliente"
+                        className={`${inputCls} mt-2 w-full`}
+                      />
+                    </form>
+                  ))}
+                {sabores.filter((s) => !buscaSabor.trim() || s.nome.toLowerCase().includes(buscaSabor.trim().toLowerCase())).length === 0 && (
+                  <p className="py-6 text-center text-sm text-zinc-400">Nenhum sabor com esse nome.</p>
+                )}
+              </div>
             </div>
           </div>
         </details>
