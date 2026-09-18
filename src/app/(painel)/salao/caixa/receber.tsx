@@ -581,8 +581,16 @@ export function ReceberComandas({
               onChange={(e) => { if (!tratarLeitura(e.target.value)) setBusca(e.target.value); }}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
-                if (tratarLeitura(busca)) return;
-                if (sugestoes[0]) addComanda(sugestoes[0].id);
+                e.preventDefault();
+                const q = busca.trim();
+                // Campo vazio: Enter não faz nada (antes puxava a próxima comanda
+                // aberta da lista a cada Enter repetido).
+                if (!q) return;
+                if (tratarLeitura(q)) return;
+                // Número exato tem preferência sobre "começa com" (12 ≠ 120).
+                const exata = sugestoes.find((c) => String(c.numero) === q);
+                const alvo = exata ?? sugestoes[0];
+                if (alvo) addComanda(alvo.id);
               }}
               placeholder="Digite o nº, a mesa, ou passe o leitor no QR do cupom…"
               className={`${inputCls} w-full`}
