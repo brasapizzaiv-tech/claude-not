@@ -51,15 +51,6 @@ export default async function MovimentosCaixaPage() {
     .order("criado_em", { ascending: false });
   const movs = (movRows as Mov[]) ?? [];
 
-  // Número de cada comanda ligada aos movimentos: o rótulo do link é o número
-  // real da comanda, não a posição na descrição (movimento antigo pode ter a
-  // ordem diferente).
-  const idsComandas = [...new Set(movs.flatMap(comandasDo))];
-  const numeroPorId = new Map<string, number>();
-  if (idsComandas.length > 0) {
-    const { data: comRows } = await supabase.from("pdv_comandas").select("id, numero").in("id", idsComandas);
-    for (const c of ((comRows as { id: string; numero: number }[]) ?? [])) numeroPorId.set(c.id, c.numero);
-  }
 
   const saldoInicial = Number(caixa.saldo_inicial);
   const abertoHora = hora(caixa.aberto_em as string);
@@ -107,19 +98,20 @@ export default async function MovimentosCaixaPage() {
                 <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
                   {m.descricao || m.tipo}
                   <span className="ml-2 text-[10px] uppercase text-zinc-400">{m.tipo}</span>
-                  {comandasDo(m)
-                    .slice()
-                    .sort((a, b) => (numeroPorId.get(b) ?? 0) - (numeroPorId.get(a) ?? 0))
-                    .map((id) => (
+                  {m.tipo === "venda" && (
                     <Link
-                      key={id}
-                      href={`/salao/comandas/${id}`}
-                      className="ml-2 text-xs text-orange-600 hover:underline"
-                      title="Ver os itens dessa comanda"
+                      href={`/salao/caixa/movimentos/${m.id}`}
+                      className="ml-2 text-xs font-medium text-orange-600 hover:underline"
+                      title="Ver como foi pago e o que tinha em cada comanda"
                     >
-                      {numeroPorId.has(id) ? `ver #${numeroPorId.get(id)}` : "ver comanda"}
+                      ver pagamento
                     </Link>
-                  ))}
+                  )}
+                  {comandasDo(m).length > 0 && (
+                    <span className="ml-2 text-[11px] text-zinc-400">
+                      {comandasDo(m).length} comanda{comandasDo(m).length === 1 ? "" : "s"}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">{m.forma_pagamento || "—"}</td>
                 <td className="px-4 py-2 text-zinc-400">{hora(m.criado_em)}</td>
