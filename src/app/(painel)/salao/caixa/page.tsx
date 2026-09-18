@@ -311,31 +311,32 @@ export default async function CaixaPage({
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        {/* Histórico do caixa: fica numa tela à parte, pra não poluir aqui. */}
-        <div className="h-fit rounded-2xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
-          <p className="mb-2 font-semibold text-zinc-800 dark:text-zinc-100">Histórico do caixa</p>
-          <p className="mb-3 text-zinc-500">
-            Todas as entradas e saídas deste caixa: vendas, suprimentos e sangrias.
-          </p>
-          <Link
-            href="/salao/caixa/movimentos"
-            className="inline-block rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black dark:bg-zinc-700"
-          >
-            📄 Ver movimentações
-          </Link>
-          <Link
-            href="/salao/caixa/tef"
-            className="ml-2 inline-block rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
-          >
-            💳 Cartões (TEF)
-          </Link>
-        </div>
+      {/* Atalhos e resumo: o resumo fica fechado pra tela do caixa respirar;
+          o número que interessa (dinheiro em caixa) aparece no próprio botão. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href="/salao/caixa/movimentos"
+          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+        >
+          📄 Movimentações
+        </Link>
+        <Link
+          href="/salao/caixa/tef"
+          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+        >
+          💳 Cartões (TEF)
+        </Link>
+      </div>
 
-        {/* Resumo */}
-        <div className="h-fit space-y-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Resumo</p>
-
+      <details className="mt-2 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4">
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">📊 Resumo do caixa</span>
+          <span className="text-sm text-zinc-500">
+            💵 <b className="text-zinc-900 dark:text-zinc-50">{brl(dinheiroEmCaixa)}</b> em dinheiro · recebido {brl(totalVendas)}
+            <span className="ml-2 text-xs text-zinc-400">ver detalhes</span>
+          </span>
+        </summary>
+        <div className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-800">
           <div className="space-y-1 text-sm">
             <div className="flex justify-between text-zinc-500">
               <span>Saldo anterior</span>
@@ -356,7 +357,6 @@ export default async function CaixaPage({
               <span>− {brl(sangrias)}</span>
             </div>
           </div>
-
           <div className="space-y-1 border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
             <div className="flex justify-between font-medium text-zinc-900 dark:text-zinc-100">
               <span>Total recebido</span>
@@ -368,7 +368,8 @@ export default async function CaixaPage({
             </div>
           </div>
         </div>
-      </div>
+      </details>
+
     </div>
   );
 }
