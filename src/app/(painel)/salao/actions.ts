@@ -875,6 +875,44 @@ export type TefPagamento = {
   requerConfirmacao: boolean;
 };
 
+// "Vincular Cliente" do caixa: busca no servidor, poucas linhas por vez.
+// Antes a tela baixava TODOS os clientes (3.2 mil) a cada carregamento e a
+// cada atualização depois de receber — o caixa ficava travado esperando.
+export async function buscarClientesCaixa(termo: string) {
+  await exigirAcesso("/salao");
+  const q = (termo || "").trim();
+  if (q.length < 2) return [];
+  const supabase = await createClient();
+  const soDigitos = q.replace(/\D/g, "");
+  let busca = supabase
+    .from("clientes")
+    .select("id, nome, cpf_cnpj, limite_credito")
+    .eq("ativo", true);
+  busca = soDigitos.length >= 3
+    ? busca.or(`nome.ilike.%${q}%,cpf_cnpj.ilike.%${soDigitos}%`)
+    : busca.ilike("nome", `%${q}%`);
+  const { data } = await busca.order("nome").limit(12);
+  const achados = (data as { id: string; nome: string; cpf_cnpj: string | null; limite_credito: number | null }[]) ?? [];
+  if (achados.length === 0) return [];
+  // Saldo em aberto só dos que apareceram (pra avisar do limite no pagamento).
+  const { data: mov } = await supabase
+    .from("cliente_fiado")
+    .select("cliente_id, tipo, valor")
+    .in("cliente_id", achados.map((c) => c.id));
+  const saldo = new Map<string, number>();
+  for (const r of ((mov as { cliente_id: string; tipo: string; valor: number }[]) ?? [])) {
+    const v = Number(r.valor) * (r.tipo === "debito" ? 1 : -1);
+    saldo.set(r.cliente_id, Math.round(((saldo.get(r.cliente_id) ?? 0) + v) * 100) / 100);
+  }
+  return achados.map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    cpfCnpj: c.cpf_cnpj,
+    saldoFiado: saldo.get(c.id) ?? 0,
+    limiteCredito: c.limite_credito == null ? null : Number(c.limite_credito),
+  }));
+}
+
 export async function pagarSelecao(
   sel: { comandaId: string; itemIds: string[]; buffet: boolean }[],
   pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null; tef?: TefPagamento | null; colaboradorId?: string | null; colaboradorNome?: string | null }[],

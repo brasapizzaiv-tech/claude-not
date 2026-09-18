@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pagarSelecao, fecharTef, virarLivreComanda, removerItemCaixa, dividirItemCaixa } from "../actions";
+import { pagarSelecao, fecharTef, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
 import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
@@ -65,7 +65,6 @@ export function ReceberComandas({
   servPercent,
   autoAbrir,
   menu = [],
-  clientes = [],
   pixAtivo = false,
   nfceAuto = false,
   colaboradores = [],
@@ -75,7 +74,6 @@ export function ReceberComandas({
   servPercent: number;
   autoAbrir?: string;
   menu?: ItemMenu[];
-  clientes?: ClienteMini[];
   pixAtivo?: boolean;
   nfceAuto?: boolean;
   colaboradores?: ColabMini[];
@@ -250,12 +248,33 @@ export function ReceberComandas({
     (totalPagar < 0.005 || Math.abs(falta) < 0.01) &&
     (!usaSaldoCliente || !!clienteSel);
 
-  const cliFiltrados = (() => {
-    const q = buscaCli.trim().toLowerCase();
-    return clientes
-      .filter((c) => !q || c.nome.toLowerCase().includes(q) || (c.cpfCnpj ?? "").includes(q))
-      .slice(0, 8);
-  })();
+  // Busca no servidor enquanto digita (espera 300 ms pra não chamar a cada
+  // tecla). A lista inteira não vem mais junto com a página.
+  const [cliFiltrados, setCliFiltrados] = useState<ClienteMini[]>([]);
+  const [buscandoCli, setBuscandoCli] = useState(false);
+  useEffect(() => {
+    const q = buscaCli.trim();
+    let vivo = true;
+    // setTimeout(0) no começo: o lint proíbe mexer no estado direto no corpo
+    // do effect (renderização em cascata).
+    const limpar = setTimeout(() => {
+      if (!vivo) return;
+      if (q.length < 2) { setCliFiltrados([]); setBuscandoCli(false); }
+      else setBuscandoCli(true);
+    }, 0);
+    if (q.length < 2) return () => { vivo = false; clearTimeout(limpar); };
+    const t = setTimeout(async () => {
+      try {
+        const r = await buscarClientesCaixa(q);
+        if (vivo) setCliFiltrados(r as ClienteMini[]);
+      } catch {
+        if (vivo) setCliFiltrados([]);
+      } finally {
+        if (vivo) setBuscandoCli(false);
+      }
+    }, 300);
+    return () => { vivo = false; clearTimeout(t); clearTimeout(limpar); };
+  }, [buscaCli]);
 
   function addExtra() {
     const p = menu.find((m) => m.id === novoProd);
@@ -546,7 +565,9 @@ export function ReceberComandas({
                     </button>
                   ))}
                   {cliFiltrados.length === 0 && (
-                    <p className="px-2 py-3 text-center text-xs text-zinc-400">Nenhum cliente.</p>
+                    <p className="px-2 py-3 text-center text-xs text-zinc-400">
+                      {buscaCli.trim().length < 2 ? "Digite ao menos 2 letras." : buscandoCli ? "Buscando…" : "Nenhum cliente."}
+                    </p>
                   )}
                 </div>
               </div>

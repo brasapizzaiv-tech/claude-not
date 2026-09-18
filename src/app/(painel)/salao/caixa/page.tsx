@@ -175,45 +175,21 @@ export default async function CaixaPage({
 
   const nfce = await lerNfceAuto();
 
-  // Cardápio (para "Inserir Produto") e clientes (para "Vincular Cliente").
+  // Cardápio do "Inserir Produto" (o cliente é buscado no servidor ao digitar).
   // Clientes em blocos de 1000: o PostgREST corta em 1000 e já são 3.000+ —
   // sem isso, cliente depois do 1000º em ordem alfabética não aparecia no
   // "Vincular Cliente".
-  const todosClientes = async () => {
-    const out: { id: string; nome: string; cpf_cnpj: string | null; limite_credito: number | null }[] = [];
-    for (let de = 0; ; de += 1000) {
-      const { data } = await supabase.from("clientes").select("id, nome, cpf_cnpj, limite_credito").eq("ativo", true).order("nome").order("id").range(de, de + 999);
-      const lote = (data as typeof out) ?? [];
-      out.push(...lote);
-      if (lote.length < 1000) break;
-    }
-    return { data: out };
-  };
-  const [{ data: menuRows }, { data: cliRows }, { data: fiadoRows }] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, preco, promo_preco, ativo").order("nome"),
-    todosClientes(),
-    // Saldo do fiado por cliente (pra tela de pagamento avisar do limite).
-    supabase.from("cliente_fiado").select("cliente_id, tipo, valor"),
-  ]);
-  const saldoFiado = new Map<string, number>();
-  for (const r of ((fiadoRows as { cliente_id: string; tipo: string; valor: number }[]) ?? [])) {
-    const v = Number(r.valor) * (r.tipo === "debito" ? 1 : -1);
-    saldoFiado.set(r.cliente_id, Math.round(((saldoFiado.get(r.cliente_id) ?? 0) + v) * 100) / 100);
-  }
+  // O "Vincular Cliente" agora busca no servidor conforme digita
+  // (buscarClientesCaixa): a tela não baixa mais os 3.2 mil clientes a cada
+  // carregamento — era isso que travava o caixa depois de cada recebimento.
+  const { data: menuRows } = await supabase
+    .from("pdv_itens").select("id, nome, preco, promo_preco, ativo").order("nome");
   const menu =
     ((menuRows as { id: string; nome: string; preco: number; promo_preco: number | null; ativo: boolean | null }[]) ?? [])
       .filter((m) => m.ativo !== false)
       // Mesmo preço que o servidor cobra (promoção ativa substitui o normal) —
       // senão o total na tela do caixa fica maior que o gravado na comanda.
       .map((m) => ({ id: m.id, nome: m.nome, preco: Number(m.promo_preco ?? 0) > 0 ? Number(m.promo_preco) : Number(m.preco) }));
-  const clientes =
-    ((cliRows as { id: string; nome: string; cpf_cnpj: string | null; limite_credito: number | null }[]) ?? []).map((c) => ({
-      id: c.id,
-      nome: c.nome,
-      cpfCnpj: c.cpf_cnpj,
-      saldoFiado: saldoFiado.get(c.id) ?? 0,
-      limiteCredito: c.limite_credito == null ? null : Number(c.limite_credito),
-    }));
 
   // Notas automáticas ainda na janela de espera (ou que deram erro).
   // Só o que ainda depende de alguém: assim que a nota sai, a linha some da
@@ -320,7 +296,6 @@ export default async function CaixaPage({
           servPercent={servPercent}
           autoAbrir={abrir}
           menu={menu}
-          clientes={clientes}
           pixAtivo={pixConfigurado()}
           nfceAuto={nfce.ligado && nfce.producao}
           colaboradores={colaboradores}
