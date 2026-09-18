@@ -5,7 +5,7 @@ import { ColaboradoresClient, type FolgaPerfil, type Row } from "./client";
 export default async function ColaboradoresPage() {
   const supabase = await createClient();
   const [{ data: colabs }, { data: folgas }] = await Promise.all([
-    supabase.from("colaboradores").select("*").eq("ativo", true).order("nome"),
+    supabase.from("colaboradores").select("*").order("nome"),
     supabase
       .from("folgas_funcionarios")
       .select("id, colaborador_id, grupo, vinculo, funcao, dias, grupo2, dias2, gerente, ativo")

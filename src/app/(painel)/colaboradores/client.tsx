@@ -1,14 +1,15 @@
 "use client";
 
 import { siteUrl } from "@/lib/site-url";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import type { Colaborador } from "@/lib/types";
 import { GRUPOS, GRUPO_KEYS, DIAS, type GrupoKey } from "@/lib/folgas";
 import { TURNOS, aniversarioBR, vinculoDoTurno } from "@/lib/equipe";
 import {
   salvarColaborador,
-  excluirColaborador,
+  desligarColaborador,
+  reativarColaborador,
   zerarPinColaborador,
   gerarTokenColaborador,
 } from "./actions";
@@ -168,17 +169,63 @@ function resumoQuadro(c: Colaborador): string {
   return partes.join(" · ");
 }
 
+const dataBRcurta = (iso: string | null | undefined) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "");
+
+// Desligar com motivo (obrigatório) e data.
+function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
+  const [motivo, setMotivo] = useState("");
+  const [data, setData] = useState(() => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10));
+  const [msg, setMsg] = useState<string | null>(null);
+  const [proc, start] = useTransition();
+  const inputCls = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-950">
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Desligar {c.nome}</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          A pessoa sai das listas e perde o acesso ao app na hora (o link e o PIN são apagados). O histórico de pagamentos, folgas e compras fica guardado. Dá pra reativar depois.
+        </p>
+        <label className="mt-4 mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Data do desligamento</label>
+        <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputCls} />
+        <label className="mt-3 mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Motivo (obrigatório)</label>
+        <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Ex.: pediu demissão / dispensado / parou de vir…" className={inputCls} autoFocus />
+        {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">Cancelar</button>
+          <button
+            type="button"
+            disabled={proc || motivo.trim().length < 3}
+            onClick={() => start(async () => {
+              const r = await desligarColaborador(c.id, motivo, data);
+              if (!r.ok) { setMsg(r.mensagem); return; }
+              onClose();
+            })}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {proc ? "Desligando…" : "Desligar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ColaboradoresClient({ rows }: { rows: Row[] }) {
   const [editando, setEditando] = useState<Row | null>(null);
   const [aberto, setAberto] = useState(false);
   const [verLinks, setVerLinks] = useState(false);
   const [busca, setBusca] = useState("");
+  const [aba, setAba] = useState<"ativos" | "desligados">("ativos");
+  const [desligando, setDesligando] = useState<Row | null>(null);
 
+  const ativos = rows.filter((c) => c.ativo);
+  const desligados = rows.filter((c) => !c.ativo).sort((a, b) => ((b.desligado_em ?? "") > (a.desligado_em ?? "") ? 1 : -1));
   const mesAtual = new Date().getMonth() + 1;
-  const aniversariantes = rows
+  const aniversariantes = ativos
     .filter((c) => c.nascimento && Number(c.nascimento.split("-")[1]) === mesAtual)
     .sort((a, b) => (a.nascimento! > b.nascimento! ? 1 : -1));
-  const visiveis = busca ? rows.filter((c) => c.nome.toLowerCase().includes(busca.toLowerCase())) : rows;
+  const base = aba === "ativos" ? ativos : desligados;
+  const visiveis = busca ? base.filter((c) => c.nome.toLowerCase().includes(busca.toLowerCase())) : base;
 
   return (
     <div className="mx-auto max-w-4xl p-8">
@@ -186,7 +233,12 @@ export function ColaboradoresClient({ rows }: { rows: Row[] }) {
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Colaboradores</h1>
           <p className="mt-1 text-zinc-500">
-            A equipe. {rows.length} cadastrado{rows.length === 1 ? "" : "s"}.
+            A equipe. {ativos.length} ativo{ativos.length === 1 ? "" : "s"}
+            {desligados.length > 0 && (
+              <> · <button type="button" onClick={() => setAba(aba === "ativos" ? "desligados" : "ativos")} className="text-zinc-500 underline hover:text-orange-600">
+                {aba === "ativos" ? `ver ${desligados.length} desligado${desligados.length === 1 ? "" : "s"}` : "voltar aos ativos"}
+              </button></>
+            )}.
             {" "}<Link href="/colaboradores/semana" className="text-orange-600 hover:underline">🗓️ Semana e 10%</Link>
           </p>
         </div>
@@ -259,18 +311,32 @@ export function ColaboradoresClient({ rows }: { rows: Row[] }) {
                     {c.folga ? <div style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}>🌴 {resumoFolga(c.folga)}</div> : <span className="text-zinc-400">sem folga</span>}
                     <div className="text-zinc-400">{[c.faz_contagem ? "📦 contagem" : "", c.faz_etiquetas ? "🏷️ etiquetas" : "", c.faz_contas ? "💰 contas" : "", c.faz_cardapio ? "🍽️ cardápio" : ""].filter(Boolean).join(" · ")}</div>
                   </td>
-                  <td className="px-4 py-3"><LinkApp c={c} /></td>
+                  <td className="px-4 py-3">
+                    {c.ativo ? <LinkApp c={c} /> : (
+                      <div className="text-xs text-zinc-500">
+                        <div className="font-semibold text-red-600">Desligado em {dataBRcurta(c.desligado_em)}</div>
+                        <div>{c.desligado_motivo}</div>
+                        <div className="text-zinc-400">sem acesso ao app</div>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <button
-                      onClick={() => { setEditando(c); setAberto(true); }}
-                      className="mr-3 text-orange-600 hover:underline"
-                    >
-                      Editar
-                    </button>
-                    <form action={excluirColaborador} className="inline">
-                      <input type="hidden" name="id" value={c.id} />
-                      <button type="submit" className="text-zinc-400 hover:text-red-600">Remover</button>
-                    </form>
+                    {c.ativo ? (
+                      <>
+                        <button
+                          onClick={() => { setEditando(c); setAberto(true); }}
+                          className="mr-3 text-orange-600 hover:underline"
+                        >
+                          Editar
+                        </button>
+                        <button type="button" onClick={() => setDesligando(c)} className="text-zinc-400 hover:text-red-600">Desligar</button>
+                      </>
+                    ) : (
+                      <form action={reativarColaborador} className="inline">
+                        <input type="hidden" name="id" value={c.id} />
+                        <button type="submit" className="text-emerald-600 hover:underline">Reativar</button>
+                      </form>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -280,6 +346,7 @@ export function ColaboradoresClient({ rows }: { rows: Row[] }) {
       )}
 
       {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} />}
+      {desligando && <DesligarModal c={desligando} onClose={() => setDesligando(null)} />}
     </div>
   );
 }

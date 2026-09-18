@@ -42,6 +42,8 @@ export type Colaborador = {
   faz_contas?: boolean;
   faz_garcom?: boolean;
   faz_cardapio?: boolean;
+  desligado_em?: string | null;
+  desligado_motivo?: string | null;
   // Quadro de funcionários (migration 0126)
   nascimento?: string | null;
   turno?: "dia" | "noite" | "ambos" | "proprietario";

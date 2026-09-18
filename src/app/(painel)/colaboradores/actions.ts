@@ -132,12 +132,33 @@ export async function zerarPinColaborador(formData: FormData) {
   revalidatePath("/colaboradores");
 }
 
-export async function excluirColaborador(formData: FormData) {
+// Desligar (demitido, pediu a conta, parou de trabalhar): fica no cadastro com
+// data e motivo, sai das listas e PERDE O ACESSO AO APP na hora — o link
+// pessoal (token) e o PIN são apagados, então nenhum atalho salvo no celular
+// abre mais (o app e todas as telas conferem token + ativo no servidor).
+export async function desligarColaborador(id: string, motivo: string, data: string) {
   await exigirAcesso("/colaboradores");
+  const mot = (motivo || "").trim();
+  if (mot.length < 3) return { ok: false as const, mensagem: "Escreva o motivo do desligamento." };
+  const dt = /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
   const supabase = await createClient();
-  const id = formData.get("id") as string;
-  await supabase.from("colaboradores").update({ ativo: false }).eq("id", id);
+  const { error } = await supabase
+    .from("colaboradores")
+    .update({ ativo: false, desligado_em: dt, desligado_motivo: mot, token: null, pin: null })
+    .eq("id", id);
+  if (error) return { ok: false as const, mensagem: error.message };
   await supabase.from("folgas_funcionarios").update({ ativo: false }).eq("colaborador_id", id);
   revalidatePath("/colaboradores");
   revalidatePath("/folgas");
+  return { ok: true as const };
+}
+
+// Voltou a trabalhar: reativa o cadastro. O link do app é gerado de novo
+// ("Gerar link") e a pessoa cria um PIN novo.
+export async function reativarColaborador(formData: FormData) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  await supabase.from("colaboradores").update({ ativo: true, desligado_em: null, desligado_motivo: null }).eq("id", id);
+  revalidatePath("/colaboradores");
 }
