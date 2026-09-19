@@ -18,7 +18,7 @@ export default async function DeliveryConfigPage() {
   const { data } = await supabase
     .from("delivery_config")
     .select("origem_endereco, origem_lat, origem_lng, taxa_base, preco_km, raio_max_km, tempo_preparo_min, aberto, aviso, config")
-    .eq("id", 1)
+    
     .maybeSingle();
   const c = (data ?? {}) as {
     origem_endereco?: string; origem_lat?: number; origem_lng?: number;

@@ -21,7 +21,7 @@ export default async function NovoPedidoPage() {
     supabase.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco"),
     supabase.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem"),
     supabase.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem"),
-    supabase.from("delivery_config").select("taxa_base, preco_km, tempo_preparo_min").eq("id", 1).maybeSingle(),
+    supabase.from("delivery_config").select("taxa_base, preco_km, tempo_preparo_min").maybeSingle(),
   ]);
 
   // Categoria desligada pro canal App também some aqui (mesmo cardápio do app).

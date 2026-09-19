@@ -134,7 +134,7 @@ export async function salvarConfigDelivery(formData: FormData) {
   const origemEndereco = String(formData.get("origem_endereco") ?? "").trim();
 
   // Horários e agendamento → config.horarios (jsonb), por cima do que já havia no config.
-  const { data: atual } = await supabase.from("delivery_config").select("config").eq("id", 1).maybeSingle();
+  const { data: atual } = await supabase.from("delivery_config").select("config").maybeSingle();
   const configAtual = ((atual as { config?: Record<string, unknown> | null } | null)?.config ?? {}) as Record<string, unknown>;
   const hhmm = (k: string, padrao: string) => { const v = String(formData.get(k) ?? "").trim(); return /^\d{2}:\d{2}$/.test(v) ? v : padrao; };
   const turnos = [

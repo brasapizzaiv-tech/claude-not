@@ -21,7 +21,7 @@ export default async function DeliveryPage() {
       .order("criado_em", { ascending: false })
       .limit(120),
     supabase.from("entregadores").select("id, nome, ultima_lat, ultima_lng, ultima_pos_em").eq("ativo", true).order("nome"),
-    supabase.from("delivery_config").select("origem_lat, origem_lng").eq("id", 1).maybeSingle(),
+    supabase.from("delivery_config").select("origem_lat, origem_lng").maybeSingle(),
   ]);
   const cfgM = cfgMapa as { origem_lat?: number | null; origem_lng?: number | null } | null;
   const origemMapa = cfgM?.origem_lat != null && cfgM?.origem_lng != null

@@ -85,10 +85,10 @@ export async function meusPedidos(telefone: string) {
 
 // Valida um cupom e devolve os dados pra prévia do desconto no carrinho.
 type CupomRow = { id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; validade: string | null; max_usos: number | null; usos: number; ativo: boolean };
-async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, codigo: string) {
+async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, codigo: string, empresaId: string) {
   const cod = (codigo || "").trim().toUpperCase();
   if (!cod) return { ok: false as const, mensagem: "Digite o código do cupom." };
-  const { data } = await admin.from("cupons").select("*").ilike("codigo", cod).maybeSingle();
+  const { data } = await admin.from("cupons").select("*").eq("empresa_id", empresaId).ilike("codigo", cod).maybeSingle();
   const c = data as CupomRow | null;
   if (!c || !c.ativo) return { ok: false as const, mensagem: "Cupom não encontrado ou desativado." };
   if (c.validade && c.validade < hojeSP()) return { ok: false as const, mensagem: "Esse cupom venceu." };
@@ -98,7 +98,9 @@ async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, co
 
 export async function validarCupomPublico(codigo: string) {
   const admin = createAdminClient();
-  const r = await buscarCupomValido(admin, codigo);
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, mensagem: "Não consegui identificar o restaurante." };
+  const r = await buscarCupomValido(admin, codigo, empresaId);
   if (!r.ok) return r;
   const c = r.cupom;
   return {
@@ -128,7 +130,7 @@ export async function enviarPedidoPublico(d: {
   // do banco — quem pede pelo cardápio não tem login. Então a empresa é
   // descoberta uma vez, no começo, e entra escrita em cada consulta.
   const empresaId = await empresaAtualId();
-  if (!empresaId) return { ok: false as const, erro: "Não consegui identificar o restaurante." };
+  if (!empresaId) return { ok: false as const, mensagem: "Não consegui identificar o restaurante." };
 
   // Validações básicas.
   const nome = (d.nome || "").trim();
@@ -139,7 +141,7 @@ export async function enviarPedidoPublico(d: {
   if (d.itens.length > 60) return { ok: false as const, mensagem: "Pedido muito grande — fale com a gente no WhatsApp." };
 
   // Delivery ligado + dentro do horário (ou agendado num horário válido).
-  const { data: cfg } = await admin.from("delivery_config").select("aberto, config").eq("id", 1).maybeSingle();
+  const { data: cfg } = await admin.from("delivery_config").select("aberto, config").eq("empresa_id", empresaId).maybeSingle();
   if (cfg && cfg.aberto === false) return { ok: false as const, mensagem: "O delivery está fechado agora. Tente mais tarde!" };
   const hcfg = lerConfigHorarios((cfg as { config?: unknown } | null)?.config);
   const agoraMs = Date.now();
@@ -235,7 +237,7 @@ export async function enviarPedidoPublico(d: {
   let cupom: { codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null } | null = null;
   let cupomId: string | null = null;
   if ((d.cupom || "").trim()) {
-    const rc = await buscarCupomValido(admin, d.cupom!);
+    const rc = await buscarCupomValido(admin, d.cupom!, empresaId);
     if (!rc.ok) return { ok: false as const, mensagem: rc.mensagem };
     cupom = { codigo: rc.cupom.codigo, tipo: rc.cupom.tipo, valor: Number(rc.cupom.valor), minimo: rc.cupom.minimo != null ? Number(rc.cupom.minimo) : null };
     cupomId = rc.cupom.id;
@@ -261,7 +263,7 @@ export async function enviarPedidoPublico(d: {
       agendadoPara,
       areaId, areaNome,
     },
-    { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo },
+    { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo, empresaId },
   );
   if (!r.ok) return r;
   await avisarPedido(r.id, "recebido");

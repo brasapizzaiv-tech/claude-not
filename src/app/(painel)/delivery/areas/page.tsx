@@ -15,7 +15,7 @@ export default async function AreasPage() {
   const [{ data: areas }, { data: promos }, { data: cfg }] = await Promise.all([
     supabase.from("delivery_areas").select("id, nome, cor, valor, taxa_motoboy, tempo_min, poligono, ativo, ordem").order("ordem").order("criado_em"),
     supabase.from("delivery_promocoes_tele").select("id, nome, tipo, valor, area_ids, pedido_minimo, dias, hora_ini, hora_fim, validade, ativo").order("criado_em"),
-    supabase.from("delivery_config").select("origem_lat, origem_lng").eq("id", 1).maybeSingle(),
+    supabase.from("delivery_config").select("origem_lat, origem_lng").maybeSingle(),
   ]);
   const c = cfg as { origem_lat?: number | null; origem_lng?: number | null } | null;
   const origem = c?.origem_lat != null && c?.origem_lng != null ? { lat: Number(c.origem_lat), lng: Number(c.origem_lng) } : null;

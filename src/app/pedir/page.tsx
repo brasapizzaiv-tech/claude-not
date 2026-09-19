@@ -44,7 +44,7 @@ export default async function PedirPage() {
     admin.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco").eq("empresa_id", empresaId),
     admin.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
-    admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso, config").eq("id", 1).maybeSingle(),
+    admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso, config").eq("empresa_id", empresaId).maybeSingle(),
     admin.from("pdv_comanda_itens").select("item_id").not("item_id", "is", null).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1000).eq("empresa_id", empresaId),
   ]);
 

@@ -229,8 +229,13 @@ export async function criarPedidoDeliveryCore(
     cupom?: { codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null } | null;
     // Pedido mínimo (R$, sem a taxa) — conferido sobre o subtotal REAL.
     pedidoMinimo?: number;
+    // De qual restaurante é este pedido. Obrigatório quando quem chama usa a
+    // chave administrativa (o cardápio público), porque aí as regras do banco
+    // não filtram nada. Do painel pode vir vazio: o banco já filtra.
+    empresaId?: string | null;
   },
 ) {
+  const empresaId = opts.empresaId ?? null;
   const validos = (d.itens ?? []).filter((i) => Math.round(Number((i as { qtd?: number }).qtd) || 1) > 0);
   if (validos.length === 0) return { ok: false as const, mensagem: "Pedido sem itens." };
   if (!d.nome.trim()) return { ok: false as const, mensagem: "Informe o nome do cliente." };
@@ -291,7 +296,12 @@ export async function criarPedidoDeliveryCore(
   }));
   await db.from("pdv_comanda_itens").insert(rows);
 
-  const { data: cfg } = await db.from("delivery_config").select("tempo_preparo_min").eq("id", 1).maybeSingle();
+  // Painel e cardápio público chamam este mesmo núcleo. Quando vem do
+  // cardápio, o acesso é com a chave administrativa e não passa pelas regras
+  // do banco — então a empresa entra escrita. Quando vem do painel, o banco
+  // já filtra e o mesmo filtro só confirma.
+  const cfgQuery = db.from("delivery_config").select("tempo_preparo_min");
+  const { data: cfg } = await (empresaId ? cfgQuery.eq("empresa_id", empresaId) : cfgQuery).maybeSingle();
   const preparoMin = Number((cfg as { tempo_preparo_min?: number } | null)?.tempo_preparo_min ?? 40) || 40;
   // Agendado: a previsão É o horário marcado.
   const previsaoEm = d.agendadoPara ? new Date(d.agendadoPara).toISOString() : new Date(Date.now() + preparoMin * 60000).toISOString();
