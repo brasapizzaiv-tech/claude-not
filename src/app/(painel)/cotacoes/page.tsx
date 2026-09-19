@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { createClient } from "@/lib/supabase/server";
 import type { Cotacao, Contagem } from "@/lib/types";
 import { dataBR } from "@/lib/format";
@@ -43,9 +44,9 @@ export default async function CotacoesPage() {
               </option>
             ))}
           </select>
-          <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-medium text-fundo transition hover:opacity-90">
+          <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-medium text-fundo transition hover:opacity-90">
             + Nova cotação
-          </button>
+          </Enviar>
         </form>
       </div>
 
@@ -102,12 +103,11 @@ export default async function CotacoesPage() {
                     </Link>
                     <form action={excluirCotacao} className="inline">
                       <input type="hidden" name="id" value={c.id} />
-                      <button
-                        type="submit"
+                      <Enviar
                         className="text-texto-fraco transition hover:text-erro"
                       >
                         Remover
-                      </button>
+                      </Enviar>
                     </form>
                   </td>
                 </tr>

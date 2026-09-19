@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -35,7 +36,7 @@ export default async function EntregadoresPage() {
       <form action={criarEntregador} className="mb-6 flex flex-wrap gap-2">
         <input name="nome" required placeholder="Nome" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
         <input name="telefone" placeholder="Telefone (opcional)" className="w-44 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
-        <button className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo">Adicionar</button>
+        <Enviar className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo">Adicionar</Enviar>
       </form>
 
       <div className="space-y-3">
@@ -60,7 +61,7 @@ export default async function EntregadoresPage() {
                 <form action={alternarEntregador}>
                   <input type="hidden" name="id" value={e.id} />
                   <input type="hidden" name="ativo" value={e.ativo ? "1" : "0"} />
-                  <button className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm">{e.ativo ? "Desativar" : "Ativar"}</button>
+                  <Enviar className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm">{e.ativo ? "Desativar" : "Ativar"}</Enviar>
                 </form>
               </div>
 
@@ -91,7 +92,7 @@ export default async function EntregadoresPage() {
                 <div><label className="block text-mini text-texto-suave">Fixo almoço (R$)</label><input name="valor_fixo_dia" defaultValue={e.valor_fixo_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Fixo noite (R$)</label><input name="valor_fixo_noite" defaultValue={e.valor_fixo_noite ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Por tele (R$)</label><input name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
-                <button className="rounded-controle border border-borda-forte px-3 py-1.5 font-semibold">Salvar valores</button>
+                <Enviar className="rounded-controle border border-borda-forte px-3 py-1.5 font-semibold">Salvar valores</Enviar>
                 <span className="text-texto-fraco">{e.valor_tele != null ? `hoje: ${brl(Number(e.valor_tele))}/tele` : "a tele usa o valor da área"}</span>
               </form>
             </div>

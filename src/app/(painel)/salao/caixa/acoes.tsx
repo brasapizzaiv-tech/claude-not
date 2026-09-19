@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { Enviar } from "@/components/enviar";
 
 // Entradas e saídas de dinheiro do caixa num botão só: suprimento (reforço de
 // troco) e sangria (retirada) eram dois blocos abertos lado a lado e ocupavam
@@ -70,11 +71,11 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
                 <button type="button" onClick={() => setAberto(false)} className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
                   Cancelar
                 </button>
-                <button
+                <Enviar
                   className="min-h-11 rounded-controle bg-texto px-5 text-sm font-semibold text-fundo transition hover:opacity-90"
                 >
                   {entrada ? "Lançar entrada" : "Lançar saída"}
-                </button>
+                </Enviar>
               </div>
             </form>
           </div>

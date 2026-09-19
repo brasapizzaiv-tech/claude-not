@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
 import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
@@ -299,9 +300,9 @@ export default async function FinanceiroPage({
           <input type="checkbox" name="pago" defaultChecked />
           Já pago
         </label>
-        <button className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
+        <Enviar className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
           Lançar
-        </button>
+        </Enviar>
       </form>
 
       {/* Lista */}

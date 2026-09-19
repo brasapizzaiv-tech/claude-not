@@ -4,6 +4,7 @@
 // Cada compra vira um lançamento próprio, na sua categoria — a fatura inteira
 // fica amarrada como um pagamento só pra conciliação do banco.
 import { useMemo, useState, useTransition } from "react";
+import { Enviar } from "@/components/enviar";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { lerFatura, lancarFatura, type CompraRevisada } from "./actions";
@@ -122,13 +123,12 @@ export function FaturaClient({
               required
               className="text-sm text-texto-suave file:mr-3 file:rounded-controle file:border-0 file:bg-orange-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-orange-600"
             />
-            <button
-              type="submit"
+            <Enviar
               disabled={proc}
               className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
             >
               {proc ? "Lendo..." : "Ler fatura"}
-            </button>
+            </Enviar>
           </div>
           <p className="mt-2 text-xs text-texto-fraco">
             Fatura escaneada (foto) não dá pra ler — precisa ser o arquivo do banco.

@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { BotaoAcao } from "@/components/enviar";
 
 import { siteUrl } from "@/lib/site-url";
 import { useState, useEffect } from "react";
@@ -204,19 +205,19 @@ export function FornecedoresClient({
                   </td>
                   <td className="px-4 py-2 text-right">
                     {l.convidado ? (
-                      <button
-                        onClick={() => remover(l.id)}
+                      <BotaoAcao
+                        aoClicar={() => remover(l.id)}
                         className="text-xs text-texto-fraco hover:text-red-600"
                       >
                         Remover
-                      </button>
+                      </BotaoAcao>
                     ) : (
-                      <button
-                        onClick={() => convidar(l.id)}
+                      <BotaoAcao
+                        aoClicar={() => convidar(l.id)}
                         className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
                       >
                         Convidar
-                      </button>
+                      </BotaoAcao>
                     )}
                   </td>
                 </tr>
@@ -376,12 +377,12 @@ export function FornecedoresClient({
                           >
                             Copiar link
                           </button>
-                          <button
-                            onClick={() => remover(l.id)}
+                          <BotaoAcao
+                            aoClicar={() => remover(l.id)}
                             className="rounded-controle border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
                           >
                             Retirar
-                          </button>
+                          </BotaoAcao>
                         </div>
                       </td>
                     </tr>

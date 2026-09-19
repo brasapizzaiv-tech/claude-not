@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { abrirCaixa } from "../actions";
@@ -72,9 +73,9 @@ export default async function CaixaPage({
               className="min-h-11 w-40 rounded-controle border border-current/30 bg-transparent px-3 font-numero text-sm "
             />
           </div>
-          <button className="min-h-11 rounded-controle bg-painel-foco-texto px-5 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90">
+          <Enviar className="min-h-11 rounded-controle bg-painel-foco-texto px-5 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90">
             Abrir caixa
-          </button>
+          </Enviar>
         </form>
       </div>
     );

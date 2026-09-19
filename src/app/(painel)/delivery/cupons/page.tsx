@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { criarCupom, alternarCupom, excluirCupom } from "../actions";
@@ -53,7 +54,7 @@ export default async function CuponsPage() {
           <label className="mb-1 block text-xs text-texto-suave">Limite de usos</label>
           <input name="max_usos" inputMode="numeric" placeholder="—" className={`${inputCls} w-20`} />
         </div>
-        <button className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo">+ Criar cupom</button>
+        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo">+ Criar cupom</Enviar>
       </form>
 
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
@@ -88,11 +89,11 @@ export default async function CuponsPage() {
                     <form action={alternarCupom} className="inline">
                       <input type="hidden" name="id" value={c.id} />
                       <input type="hidden" name="ativo" value={c.ativo ? "0" : "1"} />
-                      <button className="mr-3 text-xs text-texto-fraco hover:text-orange-600">{c.ativo ? "desativar" : "reativar"}</button>
+                      <Enviar className="mr-3 text-xs text-texto-fraco hover:text-orange-600">{c.ativo ? "desativar" : "reativar"}</Enviar>
                     </form>
                     <form action={excluirCupom} className="inline">
                       <input type="hidden" name="id" value={c.id} />
-                      <button className="text-xs text-texto-fraco hover:text-red-600">excluir</button>
+                      <Enviar className="text-xs text-texto-fraco hover:text-red-600">excluir</Enviar>
                     </form>
                   </td>
                 </tr>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { Enviar } from "@/components/enviar";
 import { confirmar } from "@/components/dialogo";
 
 import { useRef, useState, useTransition } from "react";
@@ -69,7 +70,7 @@ function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: string;
         <form action={removerFotoCardapio} className="inline">
           <input type="hidden" name="tipo" value={tipo} />
           <input type="hidden" name="id" value={id} />
-          <button className="rounded-controle border border-borda-forte px-1.5 py-1 text-xs text-rose-500" title="Remover foto">✕</button>
+          <Enviar className="rounded-controle border border-borda-forte px-1.5 py-1 text-xs text-rose-500" title="Remover foto">✕</Enviar>
         </form>
       )}
       {msg && <span className="text-xs text-rose-500">{msg}</span>}
@@ -154,9 +155,9 @@ export function CardapioClient({
           <label className="mb-1 block text-xs text-texto-suave">Nova categoria</label>
           <input name="nome" required placeholder="Ex.: Bebidas" className={inputCls} />
         </div>
-        <button className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
           + Adicionar categoria
-        </button>
+        </Enviar>
       </form>
 
       {/* Editor completo do item */}
@@ -208,7 +209,7 @@ export function CardapioClient({
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="disponivel" defaultChecked={editando.disponivel} className="h-4 w-4" /> <Icone nome="certo" tamanho={14} /> Disponível (desmarque se esgotou)</label>
             </div>
             <div className="flex gap-2">
-              <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">Salvar</button>
+              <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">Salvar</Enviar>
               <button type="button" onClick={() => setEditando(null)} className="rounded-controle px-3 py-2 text-sm text-texto-suave hover:bg-superficie-suave">Cancelar</button>
             </div>
           </form>
@@ -218,7 +219,7 @@ export function CardapioClient({
             <input type="hidden" name="id" value={editando.id} />
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-texto-fraco"><Icone nome="relogio" tamanho={13} /> Disponibilidade deste produto no app</p>
             <HorariosEditor inicial={editando.horarios} />
-            <button className="mt-2 rounded-controle bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-white dark:bg-zinc-700">Salvar horários</button>
+            <Enviar className="mt-2 rounded-controle bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-white dark:bg-zinc-700">Salvar horários</Enviar>
           </form>
         </div>
       )}
@@ -234,7 +235,7 @@ export function CardapioClient({
             <input type="hidden" name="tipo" value="categoria" />
             <input type="hidden" name="id" value={horariosCat.id} />
             <HorariosEditor inicial={horariosCat.horarios} />
-            <button className="mt-2 rounded-controle bg-sky-600 px-4 py-2 text-sm font-semibold text-white">Salvar horários</button>
+            <Enviar className="mt-2 rounded-controle bg-sky-600 px-4 py-2 text-sm font-semibold text-white">Salvar horários</Enviar>
           </form>
         </div>
       )}
@@ -260,7 +261,7 @@ export function CardapioClient({
                   <div className="mb-2 text-xs text-texto-suave">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}</div>
                   <div className="flex items-center gap-1.5">
                     <input name="fatias" defaultValue={t.fatias ?? ""} inputMode="numeric" placeholder="Fatias" className={`${inputCls} w-20`} />
-                    <button className="rounded-controle bg-texto px-2.5 py-1.5 text-xs font-semibold text-fundo">Ok</button>
+                    <Enviar className="rounded-controle bg-texto px-2.5 py-1.5 text-xs font-semibold text-fundo">Ok</Enviar>
                   </div>
                 </form>
               ))}
@@ -307,9 +308,9 @@ export function CardapioClient({
                           <input type="checkbox" name="rodizio" defaultChecked={s.rodizio !== false} /> rodízio
                         </label>
                         <UploadFoto tipo="sabor" id={s.id} temFoto={!!s.foto_url} />
-                        <button className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+                        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
                           Salvar
-                        </button>
+                        </Enviar>
                       </div>
                       <input
                         name="descricao"
@@ -383,12 +384,12 @@ function CategoriaCard({
           <form action={moverCategoria}>
             <input type="hidden" name="id" value={cat.id} />
             <input type="hidden" name="dir" value="cima" />
-            <button disabled={primeira} className="text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label="Subir">▲</button>
+            <Enviar disabled={primeira} className="text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label="Subir">▲</Enviar>
           </form>
           <form action={moverCategoria}>
             <input type="hidden" name="id" value={cat.id} />
             <input type="hidden" name="dir" value="baixo" />
-            <button disabled={ultima} className="text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label="Descer">▼</button>
+            <Enviar disabled={ultima} className="text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label="Descer">▼</Enviar>
           </form>
         </div>
 
@@ -413,7 +414,7 @@ function CategoriaCard({
           <form action={toggleCategoria}>
             <input type="hidden" name="id" value={cat.id} />
             <input type="hidden" name="disponivel" value={cat.disponivel ? "0" : "1"} />
-            <button
+            <Enviar
               className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${
                 cat.disponivel
                   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
@@ -421,7 +422,7 @@ function CategoriaCard({
               }`}
             >
               {cat.disponivel ? "✓ Disponível" : "✕ Indisponível"}
-            </button>
+            </Enviar>
           </form>
           <form
             action={excluirCategoria}
@@ -430,7 +431,7 @@ function CategoriaCard({
             }}
           >
             <input type="hidden" name="id" value={cat.id} />
-            <button className="text-zinc-300 hover:text-red-600 dark:text-zinc-600" aria-label="Excluir categoria"><Icone nome="lixeira" tamanho={15} /></button>
+            <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600" aria-label="Excluir categoria"><Icone nome="lixeira" tamanho={15} /></Enviar>
           </form>
         </div>
       </div>
@@ -445,7 +446,7 @@ function CategoriaCard({
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_app" defaultChecked={cat.canal_app} className="h-4 w-4" /> <Icone nome="celular" tamanho={14} /> App</label>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_garcom" defaultChecked={cat.canal_garcom} className="h-4 w-4" /> <Icone nome="garcom" tamanho={14} /> Garçom</label>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_pdv" defaultChecked={cat.canal_pdv} className="h-4 w-4" /> <Icone nome="cupom" tamanho={14} /> PDV</label>
-          <button className="rounded-controle bg-texto px-3 py-1.5 text-xs font-semibold text-fundo">Salvar</button>
+          <Enviar className="rounded-controle bg-texto px-3 py-1.5 text-xs font-semibold text-fundo">Salvar</Enviar>
         </form>
       )}
 
@@ -457,9 +458,9 @@ function CategoriaCard({
           <input name="nome" required placeholder="Novo produto..." className={`${inputCls} w-full`} />
         </div>
         <input name="preco" inputMode="decimal" placeholder="0,00" className={`${inputCls} w-24`} />
-        <button className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+        <Enviar className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
           + Produto
-        </button>
+        </Enviar>
       </form>
     </div>
   );
@@ -499,7 +500,7 @@ function ItensTabela({
                   <form action={toggleDisponivelItem} className="inline">
                     <input type="hidden" name="id" value={i.id} />
                     <input type="hidden" name="disponivel" value={i.disponivel ? "0" : "1"} />
-                    <button
+                    <Enviar
                       className={`rounded-controle px-2 py-0.5 text-mini font-semibold ${
                         i.disponivel
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
@@ -508,16 +509,16 @@ function ItensTabela({
                       title="Disponível/indisponível em todos os canais (ex.: esgotou)"
                     >
                       {i.disponivel ? "✓ Disponível" : "✕ Indisponível"}
-                    </button>
+                    </Enviar>
                   </form>
                 </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   <form action={toggleItem} className="inline">
                     <input type="hidden" name="id" value={i.id} />
                     <input type="hidden" name="ativo" value={i.ativo ? "0" : "1"} />
-                    <button className="mr-3 text-texto-fraco hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
+                    <Enviar className="mr-3 text-texto-fraco hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
                       {i.ativo ? "Ocultar" : "Mostrar"}
-                    </button>
+                    </Enviar>
                   </form>
                   {comAdicionais.has(i.id) && (
                     <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-3 text-emerald-600 hover:underline">
@@ -531,7 +532,7 @@ function ItensTabela({
                     onSubmit={async (e) => { if (!await confirmar(`Remover "${i.nome}"?`)) e.preventDefault(); }}
                   >
                     <input type="hidden" name="id" value={i.id} />
-                    <button className="text-texto-fraco hover:text-red-600">Remover</button>
+                    <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
                   </form>
                 </td>
               </tr>
@@ -720,9 +721,9 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
             className={`${inputCls} w-full`}
           />
         </div>
-        <button className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
+        <Enviar className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
           Salvar configurações
-        </button>
+        </Enviar>
       </form>
     </details>
   );

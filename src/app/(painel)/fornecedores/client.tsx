@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Enviar } from "@/components/enviar";
 import type { Fornecedor } from "@/lib/types";
 import { salvarFornecedor, excluirFornecedor } from "./actions";
 
@@ -112,12 +113,11 @@ export function FornecedoresClient({
                     </button>
                     <form action={excluirFornecedor} className="inline">
                       <input type="hidden" name="id" value={f.id} />
-                      <button
-                        type="submit"
+                      <Enviar
                         className="text-texto-fraco hover:text-red-600"
                       >
                         Remover
-                      </button>
+                      </Enviar>
                     </form>
                   </td>
                 </tr>
@@ -276,12 +276,11 @@ export function FornecedoresClient({
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
+                <Enviar
                   className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
                 >
                   Salvar
-                </button>
+                </Enviar>
               </div>
             </form>
           </div>

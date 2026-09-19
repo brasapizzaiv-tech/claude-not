@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Enviar } from "@/components/enviar";
 import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
@@ -264,9 +265,9 @@ function AgendamentoForm({
       )}
 
       <div className="flex gap-2">
-        <button className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
           {editar ? "Salvar alterações" : "Salvar"}
-        </button>
+        </Enviar>
         <button type="button" onClick={onClose} className="rounded-controle px-3 py-2 text-sm text-texto-suave hover:bg-superficie-suave">
           Cancelar
         </button>

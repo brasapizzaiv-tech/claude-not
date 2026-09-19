@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { Enviar } from "@/components/enviar";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -405,12 +406,11 @@ export function ProdutosClient({
                     </button>
                     <form action={excluirProduto} className="inline">
                       <input type="hidden" name="id" value={p.id} />
-                      <button
-                        type="submit"
+                      <Enviar
                         className="text-texto-fraco hover:text-red-600"
                       >
                         Remover
-                      </button>
+                      </Enviar>
                     </form>
                   </td>
                 </tr>
@@ -637,12 +637,11 @@ export function ProdutosClient({
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
+                <Enviar
                   className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
                 >
                   Salvar
-                </button>
+                </Enviar>
               </div>
             </form>
           </div>

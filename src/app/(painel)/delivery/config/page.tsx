@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { temChaveMapa } from "@/lib/geo";
@@ -115,7 +116,7 @@ export default async function DeliveryConfigPage() {
           <b>Exemplo:</b> taxa base R$ 4,00 + R$ 1,50/km. Um endereço a 2 km fica <b>R$ 7,00</b>.
         </div>
 
-        <button className="rounded-cartao bg-texto px-5 py-2.5 font-semibold text-fundo">Salvar</button>
+        <Enviar className="rounded-cartao bg-texto px-5 py-2.5 font-semibold text-fundo">Salvar</Enviar>
       </form>
     </div>
   );

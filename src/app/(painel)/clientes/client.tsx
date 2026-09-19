@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Enviar } from "@/components/enviar";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { salvarCliente, excluirCliente } from "./actions";
@@ -120,7 +121,7 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                   </button>
                   <form action={excluirCliente} className="inline">
                     <input type="hidden" name="id" value={c.id} />
-                    <button className="text-texto-fraco hover:text-red-600">Remover</button>
+                    <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
                   </form>
                 </td>
               </tr>
@@ -184,9 +185,9 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
               <button type="button" onClick={() => setAberto(false)} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">
                 Cancelar
               </button>
-              <button disabled={salvando} className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+              <Enviar disabled={salvando} className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
                 {salvando ? "Salvando..." : "Salvar"}
-              </button>
+              </Enviar>
             </div>
             {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
           </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Enviar } from "@/components/enviar";
 import { toggleOpcaoComplemento, editarPrecoOpcao } from "../../../actions";
 
 type Opcao = { id: string; nome: string; preco: number; ativo: boolean };
@@ -79,13 +80,13 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
                     defaultValue={o.preco ? String(o.preco).replace(".", ",") : "0"}
                     className="w-16 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right text-xs dark:text-zinc-100"
                   />
-                  <button className="rounded px-2 py-1 text-xs text-texto-fraco hover:text-orange-600">ok</button>
+                  <Enviar className="rounded px-2 py-1 text-xs text-texto-fraco hover:text-orange-600">ok</Enviar>
                 </form>
                 <form action={toggleOpcaoComplemento}>
                   <input type="hidden" name="id" value={o.id} />
                   <input type="hidden" name="item_id" value={itemId} />
                   <input type="hidden" name="ativo" value={o.ativo ? "0" : "1"} />
-                  <button
+                  <Enviar
                     className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${
                       o.ativo
                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
@@ -93,7 +94,7 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
                     }`}
                   >
                     {o.ativo ? "Ativo" : "Ativar"}
-                  </button>
+                  </Enviar>
                 </form>
               </div>
             ))}

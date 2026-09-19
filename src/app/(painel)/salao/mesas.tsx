@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { Enviar } from "@/components/enviar";
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -214,9 +215,9 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
         <form action={criarComandaMesa} className="mt-auto">
           <input type="hidden" name="mesa" value={mesa.nome} />
           <input type="hidden" name="destino" value={destino} />
-          <button className="min-h-11 w-full rounded-controle bg-superficie-suave px-2 text-xs font-semibold text-texto transition hover:bg-borda">
+          <Enviar className="min-h-11 w-full rounded-controle bg-superficie-suave px-2 text-xs font-semibold text-texto transition hover:bg-borda">
             + Comanda
-          </button>
+          </Enviar>
         </form>
       )}
     </div>

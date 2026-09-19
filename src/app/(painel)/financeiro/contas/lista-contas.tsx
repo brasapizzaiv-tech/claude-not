@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { Enviar } from "@/components/enviar";
 import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
@@ -84,12 +85,12 @@ function ValorConta({ l }: { l: LinhaConta }) {
         defaultValue={Number(l.valor).toFixed(2).replace(".", ",")}
         className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
       />
-      <button
+      <Enviar
         className="rounded-controle bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600"
         title="Salvar o valor do boleto"
       >
         ✓
-      </button>
+      </Enviar>
       <button
         type="button"
         onClick={() => setEditando(false)}
@@ -188,7 +189,7 @@ function Linhas({
                   >
                     {l.pago ? "Paga" : l.vencimento && l.vencimento < hojeBR ? "Vencida" : "Em aberto"}
                   </span>
-                  <button
+                  <Enviar
                     className={`min-h-11 rounded-controle px-3 text-xs font-medium transition ${
                       l.pago
                         ? "border border-borda-forte text-texto-suave hover:bg-superficie-suave"
@@ -196,7 +197,7 @@ function Linhas({
                     }`}
                   >
                     {l.pago ? "Reabrir" : "Pagar"}
-                  </button>
+                  </Enviar>
                 </form>
               </td>
             </tr>

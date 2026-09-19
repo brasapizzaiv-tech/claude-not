@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { Enviar } from "@/components/enviar";
 import { avisar } from "@/components/dialogo";
 
 import { siteUrl } from "@/lib/site-url";
@@ -34,7 +35,7 @@ function GerarLink({ id, small }: { id: string; small?: boolean }) {
   return (
     <form action={gerarTokenColaborador} className="inline">
       <input type="hidden" name="id" value={id} />
-      <button
+      <Enviar
         className={
           small
             ? "rounded border border-orange-500 px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
@@ -42,7 +43,7 @@ function GerarLink({ id, small }: { id: string; small?: boolean }) {
         }
       >
         Gerar link
-      </button>
+      </Enviar>
     </form>
   );
 }
@@ -85,7 +86,7 @@ function LinkApp({ c }: { c: Colaborador }) {
       {c.pin && (
         <form action={zerarPinColaborador} className="inline">
           <input type="hidden" name="id" value={c.id} />
-          <button className="text-texto-fraco hover:text-red-600">zerar PIN</button>
+          <Enviar className="text-texto-fraco hover:text-red-600">zerar PIN</Enviar>
         </form>
       )}
     </div>
@@ -349,7 +350,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
                     ) : (
                       <form action={reativarColaborador} className="inline">
                         <input type="hidden" name="id" value={c.id} />
-                        <button type="submit" className="text-emerald-600 hover:underline">Reativar</button>
+                        <Enviar className="text-emerald-600 hover:underline">Reativar</Enviar>
                       </form>
                     )}
                   </td>
@@ -610,9 +611,9 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             <button type="button" onClick={onClose} className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave dark:text-texto-fraco">
               Cancelar
             </button>
-            <button type="submit" className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+            <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
               Salvar
-            </button>
+            </Enviar>
           </div>
         </form>
       </div>

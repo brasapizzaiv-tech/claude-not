@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { criarComandaBuffet } from "../actions";
@@ -89,9 +90,9 @@ export default async function BalancaPage() {
             className="w-28 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           />
         </div>
-        <button className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
+        <Enviar className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
           Gerar comanda
-        </button>
+        </Enviar>
       </form>
 
     </div>

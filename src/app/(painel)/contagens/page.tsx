@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import type { Contagem } from "@/lib/types";
@@ -43,9 +44,9 @@ export default async function ContagensPage() {
             <Icone nome="relogio" tamanho={15} className="mr-1.5" /> Agendamentos
           </Link>
           <form action={criarContagem}>
-            <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+            <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
               + Nova contagem
-            </button>
+            </Enviar>
           </form>
         </div>
       </div>
@@ -102,12 +103,11 @@ export default async function ContagensPage() {
                     </Link>
                     <form action={excluirContagem} className="inline">
                       <input type="hidden" name="id" value={c.id} />
-                      <button
-                        type="submit"
+                      <Enviar
                         className="text-texto-fraco hover:text-red-600"
                       >
                         Remover
-                      </button>
+                      </Enviar>
                     </form>
                   </td>
                 </tr>

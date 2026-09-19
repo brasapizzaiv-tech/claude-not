@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { registrarAcertoEntregador } from "../../actions";
@@ -98,7 +99,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
                   <label className="text-xs text-texto-suave">Fixo (R$)</label>
                   <input name="fixo" defaultValue={fixo} inputMode="decimal" className="w-24 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
                   <input name="obs" placeholder="obs (opcional)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
-                  <button className="rounded-controle bg-texto px-4 py-1.5 text-sm font-semibold text-fundo">Registrar acerto</button>
+                  <Enviar className="rounded-controle bg-texto px-4 py-1.5 text-sm font-semibold text-fundo">Registrar acerto</Enviar>
                 </form>
               )}
             </div>

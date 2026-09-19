@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
@@ -213,9 +214,9 @@ export default async function ComandaPage({
                     <form action={removerItemComanda} className="inline">
                       <input type="hidden" name="id" value={i.id} />
                       <input type="hidden" name="comanda_id" value={comanda.id} />
-                      <button className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">
+                      <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">
                         ×
-                      </button>
+                      </Enviar>
                     </form>
                   )}
                 </td>

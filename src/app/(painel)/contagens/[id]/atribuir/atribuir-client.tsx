@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { confirmar } from "@/components/dialogo";
+import { BotaoAcao } from "@/components/enviar";
+import { Icone } from "@/components/icone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Contagem, Colaborador } from "@/lib/types";
@@ -34,10 +36,18 @@ export function AtribuirClient({
   }, []);
 
   const [todosPara, setTodosPara] = useState("");
+  // Qual linha está indo pro servidor. Guarda a categoria, e não um sim/não,
+  // pra rodinha aparecer só na linha que a pessoa mexeu.
+  const [salvando, setSalvando] = useState<string | null>(null);
 
   async function atribuir(categoriaId: string, colaboradorId: string) {
-    await salvarAtribuicao(contagem.id, categoriaId, colaboradorId || null);
-    router.refresh();
+    setSalvando(categoriaId);
+    try {
+      await salvarAtribuicao(contagem.id, categoriaId, colaboradorId || null);
+      router.refresh();
+    } finally {
+      setSalvando(null);
+    }
   }
 
   async function darTudo() {
@@ -112,13 +122,13 @@ export function AtribuirClient({
               </option>
             ))}
           </select>
-          <button
-            onClick={darTudo}
+          <BotaoAcao
+            aoClicar={darTudo}
             disabled={!todosPara}
             className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
           >
             Atribuir tudo
-          </button>
+          </BotaoAcao>
         </div>
       )}
 
@@ -140,10 +150,11 @@ export function AtribuirClient({
                 </td>
                 <td className="px-4 py-2 text-texto-suave">{c.qtdProdutos}</td>
                 <td className="px-4 py-2">
+                  <span className="inline-flex items-center gap-2">
                   <select
                     value={c.colaboradorId ?? ""}
                     onChange={(e) => atribuir(c.id, e.target.value)}
-                    disabled={colaboradores.length === 0}
+                    disabled={colaboradores.length === 0 || salvando === c.id}
                     className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                   >
                     <option value="">— ninguém —</option>
@@ -153,6 +164,10 @@ export function AtribuirClient({
                       </option>
                     ))}
                   </select>
+                  {salvando === c.id && (
+                    <Icone nome="esperando" tamanho={14} className="animate-spin text-texto-fraco" titulo="Salvando" />
+                  )}
+                  </span>
                 </td>
               </tr>
             ))}

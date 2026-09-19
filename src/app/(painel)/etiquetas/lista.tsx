@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { Enviar } from "@/components/enviar";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -193,7 +194,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                     <EtiquetaBaixa id={r.id} status={r.status} />
                     <form action={excluirEtiqueta} className="ml-2 inline">
                       <input type="hidden" name="id" value={r.id} />
-                      <button className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">×</button>
+                      <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">×</Enviar>
                     </form>
                   </td>
                 </tr>

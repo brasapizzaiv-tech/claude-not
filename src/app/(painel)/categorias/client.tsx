@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Enviar } from "@/components/enviar";
+import { Icone } from "@/components/icone";
 import { confirmar } from "@/components/dialogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,9 +44,18 @@ export function CategoriasClient({
     return m;
   }, [dreCategorias]);
 
+  // Qual linha está indo pro servidor. Guarda a categoria, e não um sim/não,
+  // pra rodinha aparecer só na linha que a pessoa mexeu.
+  const [salvando, setSalvando] = useState<string | null>(null);
+
   async function mapear(categoriaId: string, dreId: string) {
-    await mapearCategoriaDre(categoriaId, dreId || null);
-    router.refresh();
+    setSalvando(categoriaId);
+    try {
+      await mapearCategoriaDre(categoriaId, dreId || null);
+      router.refresh();
+    } finally {
+      setSalvando(null);
+    }
   }
 
   return (
@@ -97,10 +108,12 @@ export function CategoriasClient({
                   </Link>
                 </td>
                 <td className="px-4 py-3">
+                  <span className="inline-flex items-center gap-2">
                   <select
                     value={c.dreCategoriaId ?? ""}
                     onChange={(e) => mapear(c.id, e.target.value)}
-                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                    disabled={salvando === c.id}
+                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 disabled:opacity-60 dark:border-borda-forte dark:bg-zinc-950"
                   >
                     <option value="">— não lançar —</option>
                     {[...porGrupo.entries()].map(([grupo, ds]) => (
@@ -113,6 +126,10 @@ export function CategoriasClient({
                       </optgroup>
                     ))}
                   </select>
+                  {salvando === c.id && (
+                    <Icone nome="esperando" tamanho={14} className="animate-spin text-texto-fraco" titulo="Salvando" />
+                  )}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
                   <button
@@ -139,12 +156,11 @@ export function CategoriasClient({
                     }}
                   >
                     <input type="hidden" name="id" value={c.id} />
-                    <button
-                      type="submit"
+                    <Enviar
                       className="text-texto-fraco hover:text-red-600"
                     >
                       Remover
-                    </button>
+                    </Enviar>
                   </form>
                 </td>
               </tr>
@@ -187,12 +203,11 @@ export function CategoriasClient({
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
+                <Enviar
                   className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
                 >
                   Salvar
-                </button>
+                </Enviar>
               </div>
             </form>
           </div>

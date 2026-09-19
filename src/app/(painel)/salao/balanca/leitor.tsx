@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { Enviar } from "@/components/enviar";
 /* eslint-disable @typescript-eslint/no-explicit-any -- WebSerial não tem tipos no TS padrão */
 
 import { useRef, useState } from "react";
@@ -258,9 +259,9 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
             className="w-24 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm dark:text-zinc-100"
           />
         </div>
-        <button className="rounded-controle bg-texto px-5 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+        <Enviar className="rounded-controle bg-texto px-5 py-2 text-sm font-semibold text-fundo hover:opacity-90">
           Gerar comanda
-        </button>
+        </Enviar>
       </form>
       <p className="text-mini text-texto-fraco">
         Dica: o campo do peso já vem preenchido com a leitura; se precisar, dá pra corrigir na mão antes de gerar.

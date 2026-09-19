@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { salvarConfigFiscal } from "./actions";
@@ -131,9 +132,9 @@ export default async function FiscalPage() {
           </p>
         </section>
 
-        <button className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
+        <Enviar className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
           Salvar configuração fiscal
-        </button>
+        </Enviar>
       </form>
 
       <div className="mt-6">

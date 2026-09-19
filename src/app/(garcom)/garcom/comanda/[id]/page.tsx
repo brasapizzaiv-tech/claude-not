@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Enviar } from "@/components/enviar";
 import { notFound } from "next/navigation";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { redirect } from "next/navigation";
@@ -166,7 +167,7 @@ export default async function GarcomComandaPage({
                       <form action={removerItemComanda} className="inline">
                         <input type="hidden" name="id" value={i.id} />
                         <input type="hidden" name="comanda_id" value={comanda.id} />
-                        <button className="text-texto-suave hover:text-red-600 dark:text-texto-fraco">×</button>
+                        <Enviar className="text-texto-suave hover:text-red-600 dark:text-texto-fraco">×</Enviar>
                       </form>
                     )}
                   </td>
