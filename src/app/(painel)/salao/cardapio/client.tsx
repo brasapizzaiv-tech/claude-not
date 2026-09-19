@@ -23,7 +23,7 @@ import { resumoHorarios, disponivelAgora, type Horarios } from "@/lib/disponibil
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const inputCls =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 type Item = {
   id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; ativo: boolean;
@@ -36,9 +36,9 @@ type Sabor = { id: string; nome: string; foto_url: string | null; descricao: str
 
 // ---------- foto ----------
 function Foto({ url, tam = "h-12 w-12" }: { url: string | null; tam?: string }) {
-  if (!url) return <div className={`flex ${tam} shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400 dark:bg-zinc-800`}><Icone nome="salao" tamanho={18} /></div>;
+  if (!url) return <div className={`flex ${tam} shrink-0 items-center justify-center rounded-controle bg-superficie-suave text-texto-fraco `}><Icone nome="salao" tamanho={18} /></div>;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className={`${tam} shrink-0 rounded-lg object-cover`} />;
+  return <img src={url} alt="" className={`${tam} shrink-0 rounded-controle object-cover`} />;
 }
 
 function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: string; temFoto: boolean }) {
@@ -61,14 +61,14 @@ function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: string;
           });
         }}
       />
-      <button type="button" onClick={() => ref.current?.click()} disabled={proc} className="rounded-lg border border-zinc-300 px-2 py-1 text-xs disabled:opacity-50 dark:border-zinc-700">
+      <button type="button" onClick={() => ref.current?.click()} disabled={proc} className="rounded-controle border border-borda-forte px-2 py-1 text-xs disabled:opacity-50">
         {proc ? "Enviando..." : <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={13} /> {temFoto ? "Trocar foto" : "Foto"}</span>}
       </button>
       {temFoto && !proc && (
         <form action={removerFotoCardapio} className="inline">
           <input type="hidden" name="tipo" value={tipo} />
           <input type="hidden" name="id" value={id} />
-          <button className="rounded-lg border border-zinc-300 px-1.5 py-1 text-xs text-rose-500 dark:border-zinc-700" title="Remover foto">✕</button>
+          <button className="rounded-controle border border-borda-forte px-1.5 py-1 text-xs text-rose-500" title="Remover foto">✕</button>
         </form>
       )}
       {msg && <span className="text-xs text-rose-500">{msg}</span>}
@@ -96,16 +96,16 @@ function HorariosEditor({ inicial }: { inicial: Horarios }) {
         <input type="radio" checked={modo === "especifico"} onChange={() => setModo("especifico")} /> Dias e horários específicos (no app do cliente)
       </label>
       {modo === "especifico" && (
-        <div className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900">
+        <div className="rounded-cartao bg-superficie-suave p-3">
           <div className="mb-2 flex gap-1.5">
             {DIAS.map((d, i) => (
-              <button key={i} type="button" onClick={() => toggleDia(i)} className={`h-8 w-8 rounded-full text-xs font-bold ${dias.includes(i) ? "bg-emerald-600 text-white" : "bg-zinc-200 text-zinc-500 dark:bg-zinc-800"}`}>{d}</button>
+              <button key={i} type="button" onClick={() => toggleDia(i)} className={`h-8 w-8 rounded-full text-xs font-bold ${dias.includes(i) ? "bg-texto text-fundo" : "bg-zinc-200 text-texto-suave dark:bg-zinc-800"}`}>{d}</button>
             ))}
-            <span className="self-center text-xs text-zinc-400">{dias.length === 0 ? "todos os dias" : ""}</span>
+            <span className="self-center text-xs text-texto-fraco">{dias.length === 0 ? "todos os dias" : ""}</span>
           </div>
           {turnos.map((t, i) => (
             <div key={i} className="mb-1.5 flex items-center gap-2 text-sm">
-              <span className="text-xs text-zinc-500">{i + 1}º turno</span>
+              <span className="text-xs text-texto-suave">{i + 1}º turno</span>
               <input type="time" value={t.ini} onChange={(e) => setTurnos((c) => c.map((x, j) => (j === i ? { ...x, ini: e.target.value } : x)))} className={inputCls} />
               <span>até</span>
               <input type="time" value={t.fim} onChange={(e) => setTurnos((c) => c.map((x, j) => (j === i ? { ...x, fim: e.target.value } : x)))} className={inputCls} />
@@ -150,22 +150,22 @@ export function CardapioClient({
 
       <form action={adicionarCategoria} className="flex flex-wrap items-end gap-2">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Nova categoria</label>
+          <label className="mb-1 block text-xs text-texto-suave">Nova categoria</label>
           <input name="nome" required placeholder="Ex.: Bebidas" className={inputCls} />
         </div>
-        <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+        <button className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
           + Adicionar categoria
         </button>
       </form>
 
       {/* Editor completo do item */}
       {editando && (
-        <div className="rounded-2xl border border-orange-300 bg-orange-50 p-4 dark:border-orange-500/40 dark:bg-orange-950/20">
+        <div className="rounded-cartao border border-orange-300 bg-orange-50 p-4 dark:border-orange-500/40 dark:bg-orange-950/20">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="font-bold text-zinc-900 dark:text-zinc-100">Editar produto</h3>
+            <h3 className="font-bold text-texto">Editar produto</h3>
             <div className="flex items-center gap-2">
               <UploadFoto tipo="item" id={editando.id} temFoto={!!editando.foto_url} />
-              <button onClick={() => setEditando(null)} className="text-zinc-400">✕</button>
+              <button onClick={() => setEditando(null)} className="text-texto-fraco">✕</button>
             </div>
           </div>
           <form
@@ -178,28 +178,28 @@ export function CardapioClient({
             <div className="flex flex-wrap items-end gap-3">
               <Foto url={editando.foto_url} tam="h-16 w-16" />
               <div className="min-w-40 flex-1">
-                <label className="mb-1 block text-xs text-zinc-500">Item</label>
+                <label className="mb-1 block text-xs text-texto-suave">Item</label>
                 <input name="nome" required defaultValue={editando.nome} className={`${inputCls} w-full`} />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Categoria</label>
+                <label className="mb-1 block text-xs text-texto-suave">Categoria</label>
                 <input name="categoria" list="cats" defaultValue={editando.categoria ?? ""} className={inputCls} />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Preço</label>
+                <label className="mb-1 block text-xs text-texto-suave">Preço</label>
                 <input name="preco" inputMode="decimal" defaultValue={String(editando.preco).replace(".", ",")} className={`${inputCls} w-28`} />
               </div>
               <div>
-                <label className="mb-1 flex items-center gap-1.5 text-xs text-zinc-500"><Icone nome="fogo" tamanho={13} /> Promoção (R$)</label>
+                <label className="mb-1 flex items-center gap-1.5 text-xs text-texto-suave"><Icone nome="fogo" tamanho={13} /> Promoção (R$)</label>
                 <input name="promo_preco" inputMode="decimal" defaultValue={editando.promo_preco != null ? String(editando.promo_preco).replace(".", ",") : ""} placeholder="vazio = sem" className={`${inputCls} w-28`} />
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Descrição (aparece no app do cliente)</label>
+              <label className="mb-1 block text-xs text-texto-suave">Descrição (aparece no app do cliente)</label>
               <input name="descricao" maxLength={400} defaultValue={editando.descricao ?? ""} placeholder="Ex.: Costela desfiada com molho de requeijão..." className={`${inputCls} w-full`} />
             </div>
-            <div className="flex flex-wrap items-center gap-4 rounded-xl bg-white/60 p-3 dark:bg-zinc-900/40">
-              <span className="text-xs font-semibold uppercase text-zinc-400">Canais:</span>
+            <div className="flex flex-wrap items-center gap-4 rounded-cartao bg-white/60 p-3 dark:bg-zinc-900/40">
+              <span className="text-xs font-semibold text-texto-fraco">Canais:</span>
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_app" defaultChecked={editando.delivery} className="h-4 w-4" /> <Icone nome="celular" tamanho={14} /> App</label>
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_garcom" defaultChecked={editando.canal_garcom} className="h-4 w-4" /> <Icone nome="garcom" tamanho={14} /> Garçom</label>
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_pdv" defaultChecked={editando.canal_pdv} className="h-4 w-4" /> <Icone nome="cupom" tamanho={14} /> PDV</label>
@@ -207,33 +207,33 @@ export function CardapioClient({
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="disponivel" defaultChecked={editando.disponivel} className="h-4 w-4" /> <Icone nome="certo" tamanho={14} /> Disponível (desmarque se esgotou)</label>
             </div>
             <div className="flex gap-2">
-              <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">Salvar</button>
-              <button type="button" onClick={() => setEditando(null)} className="rounded-lg px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">Cancelar</button>
+              <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">Salvar</button>
+              <button type="button" onClick={() => setEditando(null)} className="rounded-controle px-3 py-2 text-sm text-texto-suave hover:bg-superficie-suave">Cancelar</button>
             </div>
           </form>
           {/* Horários do item */}
           <form action={async (fd) => { await salvarHorarios(fd); setEditando(null); }} className="mt-3 border-t border-orange-200 pt-3 dark:border-orange-500/30">
             <input type="hidden" name="tipo" value="item" />
             <input type="hidden" name="id" value={editando.id} />
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-zinc-400"><Icone nome="relogio" tamanho={13} /> Disponibilidade deste produto no app</p>
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-texto-fraco"><Icone nome="relogio" tamanho={13} /> Disponibilidade deste produto no app</p>
             <HorariosEditor inicial={editando.horarios} />
-            <button className="mt-2 rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-white dark:bg-zinc-700">Salvar horários</button>
+            <button className="mt-2 rounded-controle bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-white dark:bg-zinc-700">Salvar horários</button>
           </form>
         </div>
       )}
 
       {/* Horários da categoria */}
       {horariosCat && (
-        <div className="rounded-2xl border border-sky-300 bg-sky-50 p-4 dark:border-sky-500/40 dark:bg-sky-950/20">
+        <div className="rounded-cartao border border-sky-300 bg-sky-50 p-4 dark:border-sky-500/40 dark:bg-sky-950/20">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="flex items-center gap-1.5 font-bold text-zinc-900 dark:text-zinc-100"><Icone nome="relogio" tamanho={15} /> Disponibilidade da categoria &quot;{horariosCat.nome}&quot; no app</h3>
-            <button onClick={() => setHorariosCat(null)} className="text-zinc-400">✕</button>
+            <h3 className="flex items-center gap-1.5 font-bold text-texto"><Icone nome="relogio" tamanho={15} /> Disponibilidade da categoria &quot;{horariosCat.nome}&quot; no app</h3>
+            <button onClick={() => setHorariosCat(null)} className="text-texto-fraco">✕</button>
           </div>
           <form action={async (fd) => { await salvarHorarios(fd); setHorariosCat(null); }}>
             <input type="hidden" name="tipo" value="categoria" />
             <input type="hidden" name="id" value={horariosCat.id} />
             <HorariosEditor inicial={horariosCat.horarios} />
-            <button className="mt-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white">Salvar horários</button>
+            <button className="mt-2 rounded-controle bg-sky-600 px-4 py-2 text-sm font-semibold text-white">Salvar horários</button>
           </form>
         </div>
       )}
@@ -246,20 +246,20 @@ export function CardapioClient({
 
       {/* Pizzas (tamanhos + sabores) */}
       {tamanhos.length > 0 && (
-        <details className="rounded-2xl border border-zinc-200 dark:border-zinc-800" open={false}>
-          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-            <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Pizzas — tamanhos e sabores <span className="font-normal text-zinc-400">({sabores.length} sabores)</span>
+        <details className="rounded-cartao bg-painel-cartao" open={false}>
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-texto-suave">
+            <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Pizzas — tamanhos e sabores <span className="font-normal text-texto-fraco">({sabores.length} sabores)</span>
           </summary>
-          <div className="space-y-4 border-t border-zinc-100 p-4 dark:border-zinc-800">
+          <div className="space-y-4 border-t border-borda p-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {tamanhos.map((t) => (
-                <form key={t.id} action={salvarFatias} className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <form key={t.id} action={salvarFatias} className="rounded-cartao border border-borda p-3">
                   <input type="hidden" name="id" value={t.id} />
-                  <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t.nome}</div>
-                  <div className="mb-2 text-xs text-zinc-500">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}</div>
+                  <div className="text-sm font-semibold text-texto">{t.nome}</div>
+                  <div className="mb-2 text-xs text-texto-suave">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}</div>
                   <div className="flex items-center gap-1.5">
                     <input name="fatias" defaultValue={t.fatias ?? ""} inputMode="numeric" placeholder="Fatias" className={`${inputCls} w-20`} />
-                    <button className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white">Ok</button>
+                    <button className="rounded-controle bg-texto px-2.5 py-1.5 text-xs font-semibold text-fundo">Ok</button>
                   </div>
                 </form>
               ))}
@@ -280,13 +280,13 @@ export function CardapioClient({
                     <form
                       key={s.id}
                       action={salvarDetalheCardapio}
-                      className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800"
+                      className="rounded-cartao border border-borda p-3"
                     >
                       <input type="hidden" name="tipo" value="sabor" />
                       <input type="hidden" name="id" value={s.id} />
                       <div className="flex flex-wrap items-center gap-3">
                         <Foto url={s.foto_url} />
-                        <div className="min-w-48 flex-1 text-base font-semibold leading-snug text-zinc-900 dark:text-zinc-100">
+                        <div className="min-w-48 flex-1 text-base font-semibold leading-snug text-texto">
                           {s.nome}
                         </div>
                         {/* Quadro do rodízio: salgada ou doce (coluna na TV) e se o sabor entra no rodízio */}
@@ -300,13 +300,13 @@ export function CardapioClient({
                           <option value="doce">Doce</option>
                         </select>
                         <label
-                          className="flex items-center gap-1.5 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-300"
+                          className="flex items-center gap-1.5 whitespace-nowrap text-sm text-texto-suave"
                           title="Aparece na busca de sabores do rodízio"
                         >
                           <input type="checkbox" name="rodizio" defaultChecked={s.rodizio !== false} /> rodízio
                         </label>
                         <UploadFoto tipo="sabor" id={s.id} temFoto={!!s.foto_url} />
-                        <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                        <button className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
                           Salvar
                         </button>
                       </div>
@@ -320,7 +320,7 @@ export function CardapioClient({
                     </form>
                   ))}
                 {sabores.filter((s) => !buscaSabor.trim() || s.nome.toLowerCase().includes(buscaSabor.trim().toLowerCase())).length === 0 && (
-                  <p className="py-6 text-center text-sm text-zinc-400">Nenhum sabor com esse nome.</p>
+                  <p className="py-6 text-center text-sm text-texto-fraco">Nenhum sabor com esse nome.</p>
                 )}
               </div>
             </div>
@@ -344,14 +344,14 @@ export function CardapioClient({
         ))}
 
         {extras.map((nome) => (
-          <div key={nome} className="rounded-2xl border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
-            <p className="mb-2 text-xs font-semibold uppercase text-zinc-400">{nome} (sem categoria cadastrada)</p>
+          <div key={nome} className="rounded-cartao bg-painel-cartao p-4">
+            <p className="mb-2 text-xs font-semibold text-texto-fraco">{nome} (sem categoria cadastrada)</p>
             <ItensTabela itens={grupos.get(nome) ?? []} onEditar={setEditando} comAdicionais={setAdic} />
           </div>
         ))}
 
         {categorias.length === 0 && extras.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+          <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
             Nenhuma categoria ainda. Crie uma acima.
           </div>
         )}
@@ -376,35 +376,35 @@ function CategoriaCard({
   const [canaisAberto, setCanaisAberto] = useState(false);
   const nCanais = [cat.canal_app, cat.canal_garcom, cat.canal_pdv].filter(Boolean).length;
   return (
-    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="rounded-cartao border border-borda p-4">
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <div className="flex flex-col">
           <form action={moverCategoria}>
             <input type="hidden" name="id" value={cat.id} />
             <input type="hidden" name="dir" value="cima" />
-            <button disabled={primeira} className="text-zinc-400 hover:text-orange-600 disabled:opacity-30" aria-label="Subir">▲</button>
+            <button disabled={primeira} className="text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label="Subir">▲</button>
           </form>
           <form action={moverCategoria}>
             <input type="hidden" name="id" value={cat.id} />
             <input type="hidden" name="dir" value="baixo" />
-            <button disabled={ultima} className="text-zinc-400 hover:text-orange-600 disabled:opacity-30" aria-label="Descer">▼</button>
+            <button disabled={ultima} className="text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label="Descer">▼</button>
           </form>
         </div>
 
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{cat.nome}</h2>
-        <span className="text-xs text-zinc-400">({itens.length})</span>
+        <h2 className="text-lg font-bold text-texto">{cat.nome}</h2>
+        <span className="text-xs text-texto-fraco">({itens.length})</span>
 
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setCanaisAberto((v) => !v)}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold ${nCanais === 3 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" : nCanais === 0 ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"}`}
+            className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${nCanais === 3 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" : nCanais === 0 ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"}`}
             title="Em quais canais essa categoria aparece"
           >
             Ativa em {nCanais} {nCanais === 1 ? "canal" : "canais"} ▾
           </button>
           <button
             onClick={() => onHorarios(cat)}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold ${resumo ? (foraAgora ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" : "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400") : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}`}
+            className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${resumo ? (foraAgora ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" : "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400") : "bg-superficie-suave text-texto-suave "}`}
             title="Dias e horários em que aparece no app do cliente"
           >
             <Icone nome="relogio" tamanho={13} className="mr-1" /> {resumo ?? "Sempre"}{foraAgora ? " · fora do horário agora" : ""}
@@ -413,7 +413,7 @@ function CategoriaCard({
             <input type="hidden" name="id" value={cat.id} />
             <input type="hidden" name="disponivel" value={cat.disponivel ? "0" : "1"} />
             <button
-              className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+              className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${
                 cat.disponivel
                   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
                   : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
@@ -437,14 +437,14 @@ function CategoriaCard({
       {canaisAberto && (
         <form
           action={async (fd) => { await salvarCanaisCategoria(fd); setCanaisAberto(false); }}
-          className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900"
+          className="mb-3 flex flex-wrap items-center gap-4 rounded-cartao border border-borda bg-superficie-suave p-3 dark:border-borda-forte"
         >
           <input type="hidden" name="id" value={cat.id} />
-          <span className="text-xs font-semibold uppercase text-zinc-400">Onde essa categoria aparece:</span>
+          <span className="text-xs font-semibold text-texto-fraco">Onde essa categoria aparece:</span>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_app" defaultChecked={cat.canal_app} className="h-4 w-4" /> <Icone nome="celular" tamanho={14} /> App</label>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_garcom" defaultChecked={cat.canal_garcom} className="h-4 w-4" /> <Icone nome="garcom" tamanho={14} /> Garçom</label>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_pdv" defaultChecked={cat.canal_pdv} className="h-4 w-4" /> <Icone nome="cupom" tamanho={14} /> PDV</label>
-          <button className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">Salvar</button>
+          <button className="rounded-controle bg-texto px-3 py-1.5 text-xs font-semibold text-fundo">Salvar</button>
         </form>
       )}
 
@@ -456,7 +456,7 @@ function CategoriaCard({
           <input name="nome" required placeholder="Novo produto..." className={`${inputCls} w-full`} />
         </div>
         <input name="preco" inputMode="decimal" placeholder="0,00" className={`${inputCls} w-24`} />
-        <button className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+        <button className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
           + Produto
         </button>
       </form>
@@ -472,26 +472,26 @@ function ItensTabela({
   comAdicionais: Set<string>;
 }) {
   if (itens.length === 0)
-    return <p className="text-sm text-zinc-400">Nenhum produto nesta categoria.</p>;
+    return <p className="text-sm text-texto-fraco">Nenhum produto nesta categoria.</p>;
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <div className="overflow-hidden rounded-cartao bg-painel-cartao">
       <table className="w-full text-sm">
-        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        <tbody className="divide-y divide-borda">
           {itens.map((i) => {
             const canaisOff = [!i.delivery && "APP", !i.canal_garcom && "Garçom", !i.canal_pdv && "PDV"].filter(Boolean) as string[];
             const temHorario = resumoHorarios(i.horarios);
             return (
-              <tr key={i.id} className={`bg-white dark:bg-zinc-950 ${i.ativo ? "" : "opacity-50"}`}>
+              <tr key={i.id} className={`bg-painel-cartao ${i.ativo ? "" : "opacity-50"}`}>
                 <td className="w-14 py-1.5 pl-3"><Foto url={i.foto_url} tam="h-10 w-10" /></td>
-                <td className="px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                <td className="px-2 py-2 font-medium text-texto">
                   {i.nome}
-                  {!i.ativo && <span className="ml-2 text-[10px] uppercase text-red-500">oculto</span>}
-                  {canaisOff.length > 0 && <span className="ml-2 text-[10px] text-zinc-400">sem: {canaisOff.join(", ")}</span>}
+                  {!i.ativo && <span className="ml-2 text-[10px] text-red-500">oculto</span>}
+                  {canaisOff.length > 0 && <span className="ml-2 text-[10px] text-texto-fraco">sem: {canaisOff.join(", ")}</span>}
                   {temHorario && <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-sky-500"><Icone nome="relogio" tamanho={11} /> {temHorario}</span>}
                 </td>
-                <td className="px-2 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                <td className="px-2 py-2 text-right text-texto-suave">
                   {i.promo_preco != null && Number(i.promo_preco) > 0 ? (
-                    <><span className="mr-1 text-xs text-zinc-400 line-through">{moeda(Number(i.preco))}</span><span className="font-semibold text-orange-600">{moeda(Number(i.promo_preco))}</span></>
+                    <><span className="mr-1 text-xs text-texto-fraco line-through">{moeda(Number(i.preco))}</span><span className="font-semibold text-orange-600">{moeda(Number(i.promo_preco))}</span></>
                   ) : moeda(Number(i.preco))}
                 </td>
                 <td className="px-2 py-2 text-right">
@@ -499,7 +499,7 @@ function ItensTabela({
                     <input type="hidden" name="id" value={i.id} />
                     <input type="hidden" name="disponivel" value={i.disponivel ? "0" : "1"} />
                     <button
-                      className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+                      className={`rounded-controle px-2 py-0.5 text-[11px] font-semibold ${
                         i.disponivel
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
                           : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
@@ -514,7 +514,7 @@ function ItensTabela({
                   <form action={toggleItem} className="inline">
                     <input type="hidden" name="id" value={i.id} />
                     <input type="hidden" name="ativo" value={i.ativo ? "0" : "1"} />
-                    <button className="mr-3 text-zinc-400 hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
+                    <button className="mr-3 text-texto-fraco hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
                       {i.ativo ? "Ocultar" : "Mostrar"}
                     </button>
                   </form>
@@ -530,7 +530,7 @@ function ItensTabela({
                     onSubmit={(e) => { if (!confirm(`Remover "${i.nome}"?`)) e.preventDefault(); }}
                   >
                     <input type="hidden" name="id" value={i.id} />
-                    <button className="text-zinc-400 hover:text-red-600">Remover</button>
+                    <button className="text-texto-fraco hover:text-red-600">Remover</button>
                   </form>
                 </td>
               </tr>
@@ -545,14 +545,14 @@ function ItensTabela({
 function ConfigForm({ config }: { config: Record<string, string> }) {
   const precoKg = Number(config.preco_kg || 0);
   return (
-    <details className="rounded-2xl border border-zinc-200 dark:border-zinc-800">
-      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+    <details className="rounded-cartao bg-painel-cartao">
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-texto-suave">
         <Icone nome="ajustes" tamanho={15} className="mr-1.5" /> Configurações do buffet / serviço / cupom
       </summary>
-      <form action={salvarConfigPdv} className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-800">
+      <form action={salvarConfigPdv} className="space-y-3 border-t border-borda p-4">
         <div className="flex flex-wrap items-end gap-4">
           <div className="min-w-56 flex-1">
-            <label className="mb-1 block text-xs text-zinc-500">Nome do restaurante (no cupom)</label>
+            <label className="mb-1 block text-xs text-texto-suave">Nome do restaurante (no cupom)</label>
             <input
               name="nome_restaurante"
               defaultValue={config.nome_restaurante ?? ""}
@@ -561,7 +561,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Qtd. de mesas</label>
+            <label className="mb-1 block text-xs text-texto-suave">Qtd. de mesas</label>
             <input
               name="qtd_mesas"
               inputMode="numeric"
@@ -571,7 +571,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Tara padrão (kg)</label>
+            <label className="mb-1 block text-xs text-texto-suave">Tara padrão (kg)</label>
             <input
               name="tara_padrao"
               inputMode="decimal"
@@ -585,7 +585,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Preço por kg</label>
+            <label className="mb-1 block text-xs text-texto-suave">Preço por kg</label>
             <input
               name="preco_kg"
               inputMode="decimal"
@@ -595,7 +595,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Buffet livre (teto R$)</label>
+            <label className="mb-1 block text-xs text-texto-suave">Buffet livre (teto R$)</label>
             <input
               name="buffet_livre"
               inputMode="decimal"
@@ -605,19 +605,19 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
               placeholder="0,00"
               className={`${inputCls} w-28`}
             />
-            <p className="mt-1 text-[11px] text-zinc-400">acima disso, cobra fixo (0 = desligado)</p>
+            <p className="mt-1 text-[11px] text-texto-fraco">acima disso, cobra fixo (0 = desligado)</p>
           </div>
         </div>
 
         {/* Preços por dia da semana (vazio = usa o geral acima) */}
-        <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          <p className="mb-2 text-xs font-medium text-zinc-500">
+        <div className="border-t border-borda pt-3">
+          <p className="mb-2 text-xs font-medium text-texto-suave">
             Preços por dia da semana (deixe vazio para usar o preço geral acima)
           </p>
           <div className="overflow-x-auto">
             <table className="text-sm">
               <thead>
-                <tr className="text-xs text-zinc-400">
+                <tr className="text-xs text-texto-fraco">
                   <th className="px-2 py-1 text-left">Dia</th>
                   <th className="px-2 py-1">Livre (teto R$)</th>
                   <th className="px-2 py-1">Por kg (R$)</th>
@@ -633,7 +633,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
                   [6, "Sábado"],
                 ].map(([d, nome]) => (
                     <tr key={d}>
-                      <td className="px-2 py-0.5 text-zinc-600 dark:text-zinc-300">{nome}</td>
+                      <td className="px-2 py-0.5 text-texto-suave">{nome}</td>
                       <td className="px-2 py-0.5">
                         <input
                           name={`buffet_livre_${d}`}
@@ -668,9 +668,9 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+        <div className="flex flex-wrap items-end gap-4 border-t border-borda pt-3">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Serviço (%)</label>
+            <label className="mb-1 block text-xs text-texto-suave">Serviço (%)</label>
             <input
               name="servico_percent"
               inputMode="decimal"
@@ -678,7 +678,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
               className={`${inputCls} w-20`}
             />
           </div>
-          <label className="flex items-center gap-2 pb-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <label className="flex items-center gap-2 pb-2 text-sm text-texto-suave">
             <input
               type="checkbox"
               name="servico_so_noite"
@@ -696,8 +696,8 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
             />
           </div>
         </div>
-        <div className="space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          <p className="text-xs font-medium text-zinc-500">Dados no cupom (opcionais)</p>
+        <div className="space-y-3 border-t border-borda pt-3">
+          <p className="text-xs font-medium text-texto-suave">Dados no cupom (opcionais)</p>
           <div className="flex flex-wrap gap-3">
             <input
               name="cupom_endereco"
@@ -719,7 +719,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
             className={`${inputCls} w-full`}
           />
         </div>
-        <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
+        <button className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
           Salvar configurações
         </button>
       </form>

@@ -10,7 +10,7 @@ import {
 import type { EtiquetaConfig, EtiquetaDados, TipoEtiqueta } from "@/lib/etiqueta-tipos";
 
 const input =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 export type Imp = { id: string; nome: string; etiqueta_config: EtiquetaConfig | null };
 
@@ -118,29 +118,29 @@ export function EtiquetaForm({
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-50">Nova etiqueta</h2>
+    <div className="rounded-cartao border border-borda p-5">
+      <h2 className="mb-4 font-semibold text-texto">Nova etiqueta</h2>
       <div className="grid gap-5 md:grid-cols-[1fr_auto]">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-zinc-500">Tipo</label>
+            <label className="mb-1 block text-xs text-texto-suave">Tipo</label>
             <TipoSelector value={tipo} onChange={mudarTipo} />
           </div>
 
           {livre ? (
             <>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-zinc-500">Título</label>
+                <label className="mb-1 block text-xs text-texto-suave">Título</label>
                 <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Reservado — evento sábado" className={input} />
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-zinc-500">Texto (opcional)</label>
+                <label className="mb-1 block text-xs text-texto-suave">Texto (opcional)</label>
                 <textarea rows={3} value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 200))} placeholder="Até 200 caracteres" className={input} />
               </div>
             </>
           ) : (
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs text-zinc-500">Item</label>
+              <label className="mb-1 block text-xs text-texto-suave">Item</label>
               <SeletorItem
                 itens={itens}
                 categorias={categorias}
@@ -162,7 +162,7 @@ export function EtiquetaForm({
           {!livre && (
             <>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Conservação</label>
+                <label className="mb-1 block text-xs text-texto-suave">Conservação</label>
                 <select
                   value={conservacao}
                   onChange={(e) => { setConservacao(e.target.value); recalc(itemId, e.target.value); }}
@@ -175,17 +175,17 @@ export function EtiquetaForm({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">Quantidade *</label>
+                  <label className="mb-1 block text-xs text-texto-suave">Quantidade *</label>
                   <input
                     inputMode="decimal"
                     value={quantidade}
                     onChange={(e) => setQuantidade(e.target.value)}
                     placeholder="ex.: 1,5"
-                    className={`${input} ${quantidade && !qtdValida(quantidade) ? "border-red-400" : ""}`}
+                    className={`${input}  ${quantidade && !qtdValida(quantidade) ? "border-red-400" : ""}`}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">Unidade</label>
+                  <label className="mb-1 block text-xs text-texto-suave">Unidade</label>
                   <select value={unidade} onChange={(e) => setUnidade(e.target.value)} className={input}>
                     <option value="un">und</option>
                     <option value="kg">kg</option>
@@ -196,26 +196,26 @@ export function EtiquetaForm({
                 </div>
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-zinc-500">Observação (opcional)</label>
+                <label className="mb-1 block text-xs text-texto-suave">Observação (opcional)</label>
                 <input
                   value={texto}
                   onChange={(e) => setTexto(e.target.value.slice(0, 80))}
                   placeholder="ex.: temperado com alho e sal"
                   className={input}
                 />
-                <p className="mt-1 text-[11px] text-zinc-400">Sai impresso na etiqueta, logo acima da validade.</p>
+                <p className="mt-1 text-[11px] text-texto-fraco">Sai impresso na etiqueta, logo acima da validade.</p>
               </div>
             </>
           )}
 
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Responsável (usuário logado)</label>
-            <div className={`${input} cursor-not-allowed bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300`} title="Sempre quem está logado">
+            <label className="mb-1 block text-xs text-texto-suave">Responsável (usuário logado)</label>
+            <div className={`${input} cursor-not-allowed bg-superficie-suave text-texto-suave `} title="Sempre quem está logado">
               🔒 {colaborador || "—"}
             </div>
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-zinc-500">{tipo === "descongelamento" ? "Usar até *" : livre ? "Válido até (opcional)" : "Validade *"}</label>
+            <label className="mb-1 block text-xs text-texto-suave">{tipo === "descongelamento" ? "Usar até *" : livre ? "Válido até (opcional)" : "Validade *"}</label>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
               <ValidadePresets value={validade} onChange={setValidade} />
               <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={input} />
@@ -233,7 +233,7 @@ export function EtiquetaForm({
 
           {impressoras.length > 1 && (
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs text-zinc-500">Imprimir na</label>
+              <label className="mb-1 block text-xs text-texto-suave">Imprimir na</label>
               <select value={impressoraId} onChange={(e) => setImpressoraId(e.target.value)} className={input}>
                 {impressoras.map((i) => (
                   <option key={i.id} value={i.id}>{i.nome}</option>
@@ -244,21 +244,21 @@ export function EtiquetaForm({
         </div>
 
         <div className="flex flex-col items-center gap-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Pré-visualização</p>
+          <p className="text-[11px] font-semibold text-texto-fraco">Pré-visualização</p>
           <PreviewEtiqueta d={preview} config={config} />
           <Copias value={copias} onChange={setCopias} />
         </div>
       </div>
-      {erro && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{erro}</p>}
+      {erro && <p className="mt-3 rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{erro}</p>}
       <button
         onClick={gerar}
         disabled={gerando || !pronto}
-        className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+        className="mt-4 min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
       >
         {gerando ? "Gerando..." : copias > 1 ? `Gerar e imprimir ${copias}×` : "Gerar etiqueta"}
       </button>
       {!pronto && !livre && itemId && (
-        <p className="mt-2 text-xs text-zinc-500">Falta: {[!qtdValida(quantidade) && "quantidade", !validade && "validade"].filter(Boolean).join(" e ")}.</p>
+        <p className="mt-2 text-xs text-texto-suave">Falta: {[!qtdValida(quantidade) && "quantidade", !validade && "validade"].filter(Boolean).join(" e ")}.</p>
       )}
     </div>
   );

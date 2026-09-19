@@ -149,15 +149,15 @@ export function BancoTabela({
     <div>
       {/* Mês do extrato (o padrão é o mais recente — a tela não abre com tudo) */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs uppercase tracking-wide text-zinc-400">Mês</span>
+        <span className="text-xs text-texto-fraco">Mês</span>
         {meses.map((m) => (
           <button
             key={m}
             onClick={() => { setMes(m); setSel(new Set()); }}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition ${
+            className={`rounded-controle px-3 py-1.5 text-sm font-medium capitalize transition ${
               mes === m
                 ? "bg-orange-500 text-white"
-                : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
             }`}
           >
             {nomeMes(m)}
@@ -165,10 +165,10 @@ export function BancoTabela({
         ))}
         <button
           onClick={() => { setMes("todos"); setSel(new Set()); }}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+          className={`rounded-controle px-3 py-1.5 text-sm font-medium transition ${
             mes === "todos"
               ? "bg-orange-500 text-white"
-              : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
           }`}
         >
           Todos
@@ -181,13 +181,13 @@ export function BancoTabela({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar descrição ou valor…"
-          className="w-64 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="w-64 rounded-controle border border-borda-forte bg-white px-3 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
         />
-        <label className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" checked={soFalta} onChange={(e) => { setSoFalta(e.target.checked); setSel(new Set()); }} />
           só o que falta conciliar
         </label>
-        <span className="text-xs text-zinc-400">{lista.length} na tela</span>
+        <span className="text-xs text-texto-fraco">{lista.length} na tela</span>
       </div>
 
       {/* Filtro por banco */}
@@ -197,10 +197,10 @@ export function BancoTabela({
             <button
               key={b}
               onClick={() => setFiltro(b)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              className={`rounded-controle px-3 py-1.5 text-sm font-medium transition ${
                 filtro === b
                   ? "bg-orange-500 text-white"
-                  : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                  : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
               }`}
             >
               {b}
@@ -210,20 +210,20 @@ export function BancoTabela({
       )}
 
       {sel.size > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-green-300 bg-green-50 px-4 py-2.5 dark:border-green-900 dark:bg-green-950/30">
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-cartao border border-green-300 bg-green-50 px-4 py-2.5 dark:border-green-900 dark:bg-green-950/30">
+          <span className="text-sm font-medium text-texto-suave">
             {sel.size} selecionada(s)
           </span>
           <button
             onClick={conciliarSelecionadas}
             disabled={proc}
-            className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+            className="rounded-controle bg-texto px-4 py-1.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
           >
             {proc ? "Conciliando..." : "Conciliar selecionadas"}
           </button>
           <button
             onClick={() => setSel(new Set())}
-            className="text-xs text-zinc-500 hover:text-zinc-700"
+            className="text-xs text-texto-suave hover:text-texto-suave"
           >
             limpar
           </button>
@@ -231,19 +231,19 @@ export function BancoTabela({
       )}
 
       <div className="mb-6 grid grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Conciliadas</p>
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Conciliadas</p>
           <p className="mt-1 text-xl font-bold text-green-600">{conciliadas}</p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">A conciliar</p>
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">A conciliar</p>
           <p className="mt-1 text-xl font-bold text-amber-600">{aConciliar}</p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr>
               <th className="w-8 px-3 py-3">
                 {selecionaveis.length > 0 && (
@@ -262,7 +262,7 @@ export function BancoTabela({
               <th className="px-4 py-3 text-right"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {lista.map((t) => {
               const conciliado = !!t.lancamento_id;
               const entrada = Number(t.valor) > 0;
@@ -275,7 +275,7 @@ export function BancoTabela({
               );
               return (
                 <Fragment key={t.id}>
-                  <tr className="bg-white dark:bg-zinc-950">
+                  <tr className="">
                     <td className="px-3 py-2">
                       {!conciliado && sugestaoForte(t) && (
                         <input
@@ -285,10 +285,10 @@ export function BancoTabela({
                         />
                       )}
                     </td>
-                    <td className="px-4 py-2 text-zinc-500">{dataBR(t.data)}</td>
-                    <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
+                    <td className="px-4 py-2 text-texto-suave">{dataBR(t.data)}</td>
+                    <td className="px-4 py-2 text-texto">
                       {t.banco && (
-                        <span className="mr-2 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800">
+                        <span className="mr-2 rounded bg-superficie-suave px-1.5 py-0.5 text-[10px] font-medium text-texto-suave">
                           {t.banco}
                         </span>
                       )}
@@ -308,7 +308,7 @@ export function BancoTabela({
                         </span>
                       ) : t.sugestaoLabel ? (
                         sugestaoForte(t) ? (
-                          <span className="text-zinc-500">sugestão: {t.sugestaoLabel}</span>
+                          <span className="text-texto-suave">sugestão: {t.sugestaoLabel}</span>
                         ) : (
                           <span className="text-amber-600">
                             <Icone nome="alerta" tamanho={12} className="mr-1" /> confira a data: {t.sugestaoLabel}
@@ -322,7 +322,7 @@ export function BancoTabela({
                           nota pendente: {t.notaSugeridaLabel}
                         </span>
                       ) : (
-                        <span className="text-zinc-400">—</span>
+                        <span className="text-texto-fraco">—</span>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-2 text-right">
@@ -330,7 +330,7 @@ export function BancoTabela({
                         <button
                           disabled={proc}
                           onClick={() => run(() => desconciliar(t.id))}
-                          className="text-xs text-zinc-400 hover:text-red-600 disabled:opacity-60"
+                          className="text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
                         >
                           Desfazer
                         </button>
@@ -345,7 +345,7 @@ export function BancoTabela({
                                 run(() => conciliar(t.id, t.sugestaoId!));
                               }}
                               disabled={proc}
-                              className="rounded-lg bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
+                              className="rounded-controle bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
                             >
                               Conciliar assim mesmo
                             </button>
@@ -354,7 +354,7 @@ export function BancoTabela({
                             <button
                               disabled={proc}
                               onClick={() => run(() => conciliar(t.id, t.sugestaoId!))}
-                              className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
+                              className="rounded-controle bg-texto px-3 py-1.5 text-xs font-medium text-fundo hover:opacity-90 disabled:opacity-60"
                             >
                               Conciliar
                             </button>
@@ -366,17 +366,17 @@ export function BancoTabela({
                                 run(() => lancarNotaEConciliar(t.id, t.notaSugeridaId!))
                               }
                               title={t.notaSugeridaLabel ?? ""}
-                              className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+                              className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-60"
                             >
                               Lançar nota e conciliar
                             </button>
                           )}
                           <button
                             onClick={() => abrir(t.id)}
-                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
+                            className={`rounded-controle border px-2.5 py-1.5 text-xs font-medium transition ${
                               aberto
                                 ? "border-orange-500 text-orange-600"
-                                : "border-zinc-300 text-zinc-500 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                                : "border-borda-forte text-texto-suave hover:bg-superficie-suave  "
                             }`}
                           >
                             Lançar ▾
@@ -401,8 +401,8 @@ export function BancoTabela({
                       <td colSpan={6} className="px-4 py-3">
                         <div className="grid gap-4 sm:grid-cols-2">
                           {/* Gerar novo */}
-                          <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-                            <p className="mb-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                          <div className="rounded-cartao border border-borda p-3">
+                            <p className="mb-2 text-xs font-semibold text-texto-suave">
                               Criar lançamento novo ({entrada ? "receita" : "despesa"})
                             </p>
                             <Combobox
@@ -413,26 +413,26 @@ export function BancoTabela({
                               value={catSel}
                               onChange={setCatSel}
                               placeholder="Buscar categoria..."
-                              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
                             />
                             <input
                               value={obs}
                               onChange={(e) => setObs(e.target.value)}
                               placeholder={`Observação (opcional) — padrão: ${t.descricao ?? "descrição do banco"}`}
-                              className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                              className="mt-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
                             />
                             {/* Rateio: fatura do cartão tem gasto de várias categorias */}
                             {partes.length === 0 ? (
                               <button
                                 type="button"
                                 onClick={novaParte}
-                                className="mt-2 block text-xs text-zinc-500 underline hover:text-orange-600"
+                                className="mt-2 block text-xs text-texto-suave underline hover:text-orange-600"
                               >
                                 ＋ dividir em várias categorias (fatura do cartão, compra grande)
                               </button>
                             ) : (
-                              <div className="mt-3 space-y-2 rounded-lg border border-orange-300 p-2 dark:border-orange-900">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                              <div className="mt-3 space-y-2 rounded-controle border border-orange-300 p-2 dark:border-orange-900">
+                                <p className="text-[11px] font-semibold text-texto-suave">
                                   Dividir {moeda(Math.abs(Number(t.valor)))} entre categorias
                                 </p>
                                 {partes.map((x) => (
@@ -443,27 +443,27 @@ export function BancoTabela({
                                         value={x.categoriaId}
                                         onChange={(v) => mudarParte(x.uid, "categoriaId", v)}
                                         placeholder="Categoria..."
-                                        className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                        className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                       />
                                     </div>
                                     <input
                                       value={x.descricao}
                                       onChange={(e) => mudarParte(x.uid, "descricao", e.target.value)}
                                       placeholder="o que é (opcional)"
-                                      className="w-32 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                      className="w-32 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                     />
                                     <input
                                       inputMode="decimal"
                                       value={x.valor}
                                       onChange={(e) => mudarParte(x.uid, "valor", e.target.value)}
                                       placeholder="0,00"
-                                      className="w-24 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                      className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                     />
-                                    <button type="button" onClick={() => tirarParte(x.uid)} className="text-zinc-400 hover:text-red-600">✕</button>
+                                    <button type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-red-600">✕</button>
                                   </div>
                                 ))}
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <button type="button" onClick={novaParte} className="text-xs text-zinc-500 underline hover:text-orange-600">
+                                  <button type="button" onClick={novaParte} className="text-xs text-texto-suave underline hover:text-orange-600">
                                     ＋ outra categoria
                                   </button>
                                   {(() => {
@@ -480,7 +480,7 @@ export function BancoTabela({
                                     );
                                   })()}
                                 </div>
-                                <button type="button" onClick={() => setPartes([])} className="text-[11px] text-zinc-400 underline">
+                                <button type="button" onClick={() => setPartes([])} className="text-[11px] text-texto-fraco underline">
                                   cancelar a divisão
                                 </button>
                               </div>
@@ -505,7 +505,7 @@ export function BancoTabela({
                                   ),
                                 )
                               }
-                              className="mt-2 rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+                              className="mt-2 rounded-controle bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
                             >
                               {partes.length > 0
                                 ? `Gerar ${partes.length} lançamentos e conciliar`
@@ -513,8 +513,8 @@ export function BancoTabela({
                             </button>
                           </div>
                           {/* Procurar existente */}
-                          <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-                            <p className="mb-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                          <div className="rounded-cartao border border-borda p-3">
+                            <p className="mb-2 text-xs font-semibold text-texto-suave">
                               Vincular a um lançamento existente
                             </p>
                             <Combobox
@@ -522,12 +522,12 @@ export function BancoTabela({
                               value={lancSel}
                               onChange={setLancSel}
                               placeholder="Buscar lançamento..."
-                              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
                             />
                             <button
                               disabled={proc || !lancSel}
                               onClick={() => run(() => conciliar(t.id, lancSel))}
-                              className="mt-2 rounded-lg bg-zinc-800 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+                              className="mt-2 rounded-controle bg-zinc-800 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
                             >
                               Vincular
                             </button>

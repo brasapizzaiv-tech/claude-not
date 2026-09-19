@@ -25,7 +25,7 @@ export function UploadFaturamento() {
 
   return (
     <div>
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-controle bg-texto px-4 py-2 text-sm font-medium text-fundo hover:opacity-90">
         {processando ? "Importando..." : "Importar faturamento (planilha)"}
         <input
           type="file"
@@ -35,7 +35,7 @@ export function UploadFaturamento() {
           onChange={(e) => escolher(e.target.files?.[0] ?? null)}
         />
       </label>
-      {msg && <p className="mt-2 text-xs text-zinc-500">{msg}</p>}
+      {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }
@@ -59,7 +59,7 @@ export function UploadVendas() {
 
   return (
     <div>
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
         {processando ? "Importando..." : "Atualizar (importar relatório)"}
         <input
           type="file"
@@ -69,7 +69,7 @@ export function UploadVendas() {
           onChange={(e) => escolher(e.target.files?.[0] ?? null)}
         />
       </label>
-      {msg && <p className="mt-2 text-xs text-zinc-500">{msg}</p>}
+      {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }

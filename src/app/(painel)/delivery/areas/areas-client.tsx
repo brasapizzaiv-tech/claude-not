@@ -15,7 +15,7 @@ import { alternarArea, alternarPromoTele, excluirArea, excluirPromoTele, salvarA
 const CORES = ["#C78340", "#2563eb", "#059669", "#e11d48", "#7c3aed", "#d97706", "#0891b2", "#db2777", "#65a30d", "#78716c"];
 const DIAS = [["1", "Seg"], ["2", "Ter"], ["3", "Qua"], ["4", "Qui"], ["5", "Sex"], ["6", "Sáb"], ["0", "Dom"]] as const;
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const inp = "rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700";
+const inp = "rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm outline-none ";
 
 type Rascunho = { id: string | null; nome: string; cor: string; valor: string; taxaMotoboy: string; tempoMin: string; pontos: [number, number][] };
 const vazio = (cor: string): Rascunho => ({ id: null, nome: "", cor, valor: "", taxaMotoboy: "", tempoMin: "", pontos: [] });
@@ -119,43 +119,43 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
     <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
       <div className="space-y-4">
         {/* área em edição */}
-        <div className="rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
-          <div className="mb-2 text-sm font-bold">{rasc.id ? "Editando área" : "Nova área"} <span className="font-normal text-zinc-500">— clique no mapa pra marcar os cantos ({rasc.pontos.length} ponto{rasc.pontos.length === 1 ? "" : "s"})</span></div>
+        <div className="rounded-cartao border border-borda p-3">
+          <div className="mb-2 text-sm font-bold">{rasc.id ? "Editando área" : "Nova área"} <span className="font-normal text-texto-suave">— clique no mapa pra marcar os cantos ({rasc.pontos.length} ponto{rasc.pontos.length === 1 ? "" : "s"})</span></div>
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <input value={rasc.nome} onChange={(e) => setRasc({ ...rasc, nome: e.target.value })} placeholder="Nome (ex.: Ivoti Central)" className={inp} />
-            <input type="color" value={rasc.cor} onChange={(e) => setRasc({ ...rasc, cor: e.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-zinc-300 dark:border-zinc-700" title="Cor no mapa" />
+            <input type="color" value={rasc.cor} onChange={(e) => setRasc({ ...rasc, cor: e.target.value })} className="h-9 w-12 cursor-pointer rounded-controle border border-borda-forte" title="Cor no mapa" />
           </div>
           <div className="mt-2 grid grid-cols-3 gap-2">
-            <div><label className="text-[11px] text-zinc-500">Taxa cliente (R$)</label><input value={rasc.valor} onChange={(e) => setRasc({ ...rasc, valor: e.target.value })} inputMode="decimal" placeholder="6,00" className={`${inp} w-full`} /></div>
-            <div><label className="text-[11px] text-zinc-500">Motoboy (R$)</label><input value={rasc.taxaMotoboy} onChange={(e) => setRasc({ ...rasc, taxaMotoboy: e.target.value })} inputMode="decimal" placeholder="opcional" className={`${inp} w-full`} /></div>
-            <div><label className="text-[11px] text-zinc-500">Tempo (min)</label><input value={rasc.tempoMin} onChange={(e) => setRasc({ ...rasc, tempoMin: e.target.value })} inputMode="numeric" placeholder="opcional" className={`${inp} w-full`} /></div>
+            <div><label className="text-[11px] text-texto-suave">Taxa cliente (R$)</label><input value={rasc.valor} onChange={(e) => setRasc({ ...rasc, valor: e.target.value })} inputMode="decimal" placeholder="6,00" className={`${inp} w-full`} /></div>
+            <div><label className="text-[11px] text-texto-suave">Motoboy (R$)</label><input value={rasc.taxaMotoboy} onChange={(e) => setRasc({ ...rasc, taxaMotoboy: e.target.value })} inputMode="decimal" placeholder="opcional" className={`${inp} w-full`} /></div>
+            <div><label className="text-[11px] text-texto-suave">Tempo (min)</label><input value={rasc.tempoMin} onChange={(e) => setRasc({ ...rasc, tempoMin: e.target.value })} inputMode="numeric" placeholder="opcional" className={`${inp} w-full`} /></div>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button onClick={salvar} disabled={proc || rasc.pontos.length < 3 || rasc.nome.trim().length < 2} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40">{rasc.id ? "Salvar alterações" : "Salvar área"}</button>
-            <button onClick={() => setRasc({ ...rasc, pontos: rasc.pontos.slice(0, -1) })} disabled={rasc.pontos.length === 0} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm disabled:opacity-40 dark:border-zinc-700">↶ Desfazer ponto</button>
-            <button onClick={() => setRasc(vazio(rasc.cor))} className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 underline">limpar</button>
+            <button onClick={salvar} disabled={proc || rasc.pontos.length < 3 || rasc.nome.trim().length < 2} className="rounded-controle bg-texto px-3 py-1.5 text-sm font-semibold text-fundo disabled:opacity-40">{rasc.id ? "Salvar alterações" : "Salvar área"}</button>
+            <button onClick={() => setRasc({ ...rasc, pontos: rasc.pontos.slice(0, -1) })} disabled={rasc.pontos.length === 0} className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm disabled:opacity-40">↶ Desfazer ponto</button>
+            <button onClick={() => setRasc(vazio(rasc.cor))} className="rounded-controle px-3 py-1.5 text-sm text-texto-suave underline">limpar</button>
           </div>
-          {msg && <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}
+          {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
         </div>
 
         {/* lista */}
-        <div className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-          {areasIniciais.length === 0 && <p className="p-4 text-center text-sm text-zinc-400">Nenhuma área ainda — a taxa segue por km.</p>}
+        <div className="divide-y divide-zinc-100 rounded-cartao border border-borda dark:divide-zinc-800">
+          {areasIniciais.length === 0 && <p className="p-4 text-center text-sm text-texto-fraco">Nenhuma área ainda — a taxa segue por km.</p>}
           {areasIniciais.map((a) => (
             <div key={a.id} className={`flex items-center gap-2 p-2.5 ${a.ativo ? "" : "opacity-50"}`}>
               <span className="h-6 w-1.5 rounded" style={{ background: a.cor }} />
               <button onClick={() => editar(a)} className="min-w-0 flex-1 text-left">
                 <div className="truncate text-sm font-medium">{a.nome}</div>
-                <div className="text-[11px] text-zinc-500">{brl(Number(a.valor))}{a.taxa_motoboy != null ? ` · boy ${brl(Number(a.taxa_motoboy))}` : ""}{a.tempo_min ? ` · ${a.tempo_min} min` : ""}{a.ativo ? "" : " · desligada"}</div>
+                <div className="text-[11px] text-texto-suave">{brl(Number(a.valor))}{a.taxa_motoboy != null ? ` · boy ${brl(Number(a.taxa_motoboy))}` : ""}{a.tempo_min ? ` · ${a.tempo_min} min` : ""}{a.ativo ? "" : " · desligada"}</div>
               </button>
-              <button onClick={() => rodar(() => alternarArea(a.id, !a.ativo))} disabled={proc} className="rounded-lg border border-zinc-300 px-2 py-1 text-[11px] dark:border-zinc-700">{a.ativo ? "Desligar" : "Ligar"}</button>
-              <button onClick={() => { if (confirm(`Apagar a área "${a.nome}"?`)) rodar(() => excluirArea(a.id)); }} disabled={proc} className="px-1 text-zinc-400 hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
+              <button onClick={() => rodar(() => alternarArea(a.id, !a.ativo))} disabled={proc} className="rounded-controle border border-borda-forte px-2 py-1 text-[11px]">{a.ativo ? "Desligar" : "Ligar"}</button>
+              <button onClick={() => { if (confirm(`Apagar a área "${a.nome}"?`)) rodar(() => excluirArea(a.id)); }} disabled={proc} className="px-1 text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
             </div>
           ))}
         </div>
 
         {/* promoções */}
-        <div className="rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+        <div className="rounded-cartao border border-borda p-3">
           <div className="mb-2 flex items-center gap-1.5 text-sm font-bold"><Icone nome="etiqueta" tamanho={14} /> Promoções da tele</div>
           <div className="space-y-2">
             <input value={pNome} onChange={(e) => setPNome(e.target.value)} placeholder="Nome (ex.: Quarta tele grátis)" className={`${inp} w-full`} />
@@ -168,48 +168,48 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
               {pTipo !== "gratis" && <input value={pValor} onChange={(e) => setPValor(e.target.value)} inputMode="decimal" placeholder={pTipo === "percent" ? "%" : "R$"} className={`${inp} w-24`} />}
             </div>
             <div>
-              <div className="text-[11px] text-zinc-500">Áreas (nenhuma marcada = todas)</div>
+              <div className="text-[11px] text-texto-suave">Áreas (nenhuma marcada = todas)</div>
               <div className="flex flex-wrap gap-1.5">
                 {areasIniciais.map((a) => (
-                  <button key={a.id} type="button" onClick={() => setPAreas((s) => { const n = new Set(s); if (n.has(a.id)) n.delete(a.id); else n.add(a.id); return n; })} className={`rounded-full border px-2 py-0.5 text-xs ${pAreas.has(a.id) ? "border-emerald-600 bg-emerald-600 text-white" : "border-zinc-300 dark:border-zinc-700"}`}>{a.nome}</button>
+                  <button key={a.id} type="button" onClick={() => setPAreas((s) => { const n = new Set(s); if (n.has(a.id)) n.delete(a.id); else n.add(a.id); return n; })} className={`rounded-full border px-2 py-0.5 text-xs ${pAreas.has(a.id) ? "border-emerald-600 bg-texto text-fundo" : "border-borda-forte"}`}>{a.nome}</button>
                 ))}
               </div>
             </div>
             <div>
-              <div className="text-[11px] text-zinc-500">Dias (nenhum = todos)</div>
+              <div className="text-[11px] text-texto-suave">Dias (nenhum = todos)</div>
               <div className="flex flex-wrap gap-1.5">
                 {DIAS.map(([v, l]) => (
-                  <button key={v} type="button" onClick={() => setPDias((s) => { const n = new Set(s); const d = Number(v); if (n.has(d)) n.delete(d); else n.add(d); return n; })} className={`rounded-full border px-2 py-0.5 text-xs ${pDias.has(Number(v)) ? "border-emerald-600 bg-emerald-600 text-white" : "border-zinc-300 dark:border-zinc-700"}`}>{l}</button>
+                  <button key={v} type="button" onClick={() => setPDias((s) => { const n = new Set(s); const d = Number(v); if (n.has(d)) n.delete(d); else n.add(d); return n; })} className={`rounded-full border px-2 py-0.5 text-xs ${pDias.has(Number(v)) ? "border-emerald-600 bg-texto text-fundo" : "border-borda-forte"}`}>{l}</button>
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-[11px] text-zinc-500">Pedido mínimo (R$)</label><input value={pMin} onChange={(e) => setPMin(e.target.value)} inputMode="decimal" placeholder="qualquer" className={`${inp} w-full`} /></div>
-              <div><label className="text-[11px] text-zinc-500">Válida até</label><input type="date" value={pVal} onChange={(e) => setPVal(e.target.value)} className={`${inp} w-full`} /></div>
-              <div><label className="text-[11px] text-zinc-500">Das (opcional)</label><input type="time" value={pIni} onChange={(e) => setPIni(e.target.value)} className={`${inp} w-full`} /></div>
-              <div><label className="text-[11px] text-zinc-500">Até</label><input type="time" value={pFim} onChange={(e) => setPFim(e.target.value)} className={`${inp} w-full`} /></div>
+              <div><label className="text-[11px] text-texto-suave">Pedido mínimo (R$)</label><input value={pMin} onChange={(e) => setPMin(e.target.value)} inputMode="decimal" placeholder="qualquer" className={`${inp} w-full`} /></div>
+              <div><label className="text-[11px] text-texto-suave">Válida até</label><input type="date" value={pVal} onChange={(e) => setPVal(e.target.value)} className={`${inp} w-full`} /></div>
+              <div><label className="text-[11px] text-texto-suave">Das (opcional)</label><input type="time" value={pIni} onChange={(e) => setPIni(e.target.value)} className={`${inp} w-full`} /></div>
+              <div><label className="text-[11px] text-texto-suave">Até</label><input type="time" value={pFim} onChange={(e) => setPFim(e.target.value)} className={`${inp} w-full`} /></div>
             </div>
             <div className="flex gap-2">
-              <button onClick={salvarPromo} disabled={proc || pNome.trim().length < 2} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40">{pId ? "Salvar" : "Criar promoção"}</button>
-              {pId && <button onClick={limparPromo} className="text-sm text-zinc-500 underline">cancelar</button>}
+              <button onClick={salvarPromo} disabled={proc || pNome.trim().length < 2} className="rounded-controle bg-texto px-3 py-1.5 text-sm font-semibold text-fundo disabled:opacity-40">{pId ? "Salvar" : "Criar promoção"}</button>
+              {pId && <button onClick={limparPromo} className="text-sm text-texto-suave underline">cancelar</button>}
             </div>
           </div>
-          <div className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">
+          <div className="mt-3 divide-y divide-borda">
             {promosIniciais.map((p) => (
               <div key={p.id} className={`flex items-center gap-2 py-2 ${p.ativo ? "" : "opacity-50"}`}>
                 <button onClick={() => editarPromo(p)} className="min-w-0 flex-1 text-left">
                   <div className="text-sm font-medium">{p.nome}{p.ativo ? "" : " (desligada)"}</div>
-                  <div className="text-[11px] text-zinc-500">{descPromo(p)}</div>
+                  <div className="text-[11px] text-texto-suave">{descPromo(p)}</div>
                 </button>
-                <button onClick={() => rodar(() => alternarPromoTele(p.id, !p.ativo))} disabled={proc} className="rounded-lg border border-zinc-300 px-2 py-1 text-[11px] dark:border-zinc-700">{p.ativo ? "Desligar" : "Ligar"}</button>
-                <button onClick={() => { if (confirm(`Apagar "${p.nome}"?`)) rodar(() => excluirPromoTele(p.id)); }} disabled={proc} className="px-1 text-zinc-400 hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
+                <button onClick={() => rodar(() => alternarPromoTele(p.id, !p.ativo))} disabled={proc} className="rounded-controle border border-borda-forte px-2 py-1 text-[11px]">{p.ativo ? "Desligar" : "Ligar"}</button>
+                <button onClick={() => { if (confirm(`Apagar "${p.nome}"?`)) rodar(() => excluirPromoTele(p.id)); }} disabled={proc} className="px-1 text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div ref={divRef} className="h-[70vh] min-h-[480px] w-full overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800" />
+      <div ref={divRef} className="h-[70vh] min-h-[480px] w-full overflow-hidden rounded-cartao bg-painel-cartao" />
     </div>
   );
 }

@@ -59,16 +59,16 @@ export function OrcamentoClient({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
         >
           {salvando ? "Salvando..." : "Salvar orçamento"}
         </button>
         {msg && <span className="text-sm text-green-600">{msg}</span>}
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr>
               <th className="px-4 py-3">Categoria</th>
               <th className="px-4 py-3 text-right">Orçado</th>
@@ -76,13 +76,13 @@ export function OrcamentoClient({
               <th className="px-4 py-3 text-right">Diferença</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {[...porGrupo.entries()].map(([grupo, ls]) => (
               <Fragment key={grupo}>
                 <tr>
                   <td
                     colSpan={4}
-                    className="bg-zinc-100 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900"
+                    className="bg-superficie-suave px-4 py-1.5 text-xs font-semibold text-texto-suave"
                   >
                     {grupo}
                   </td>
@@ -97,9 +97,9 @@ export function OrcamentoClient({
                   return (
                     <tr
                       key={l.id}
-                      className={`bg-white dark:bg-zinc-950 ${temDado ? "" : "opacity-60"}`}
+                      className={`bg-painel-cartao ${temDado ? "" : "opacity-60"}`}
                     >
-                      <td className="px-4 py-1.5 text-zinc-800 dark:text-zinc-200">
+                      <td className="px-4 py-1.5 text-texto">
                         {l.nome}
                       </td>
                       <td className="px-4 py-1.5 text-right">
@@ -110,16 +110,16 @@ export function OrcamentoClient({
                           onChange={(e) =>
                             setValores((s) => ({ ...s, [l.id]: e.target.value }))
                           }
-                          className="w-24 rounded-md border border-zinc-300 bg-white px-2 py-1 text-right text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                          className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                         />
                       </td>
-                      <td className="px-4 py-1.5 text-right text-zinc-600 dark:text-zinc-400">
+                      <td className="px-4 py-1.5 text-right text-texto-suave">
                         {l.realizado > 0 ? moeda(l.realizado) : "—"}
                       </td>
                       <td
                         className={`px-4 py-1.5 text-right ${
                           !temDado || orc === 0
-                            ? "text-zinc-400"
+                            ? "text-texto-fraco"
                             : bom
                               ? "text-green-600"
                               : "text-red-600"

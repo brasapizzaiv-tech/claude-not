@@ -7,7 +7,7 @@ export const metadata = { title: "Histórico de checklists · Brasa" };
 export const dynamic = "force-dynamic";
 
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
-const inputCls = "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+const inputCls = "rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto   ";
 
 export default async function HistoricoChecklistsPage({
   searchParams,
@@ -64,35 +64,35 @@ export default async function HistoricoChecklistsPage({
   }
   const resumo = [...porSetor.values()].sort((a, b) => a.nome.localeCompare(b.nome));
   const maisPendentes = [...pendentePorItem.values()].sort((a, b) => b.n - a.n).slice(0, 10);
-  const card = "rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800";
+  const card = "rounded-cartao border border-borda p-4 ";
 
   return (
     <div className="mx-auto max-w-5xl p-8">
-      <Link href="/checklists" className="text-sm text-zinc-500 hover:text-orange-600">← Checklists de hoje</Link>
+      <Link href="/checklists" className="text-sm text-texto-suave hover:text-orange-600">← Checklists de hoje</Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="caderno" tamanho={20} className="mr-2" /> Histórico de checklists</h1>
-          <p className="mt-1 text-zinc-500">Quem fez, quando, e o que mais fica pendente.</p>
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="caderno" tamanho={20} className="mr-2" /> Histórico de checklists</h1>
+          <p className="mt-1 text-texto-suave">Quem fez, quando, e o que mais fica pendente.</p>
         </div>
         <form className="flex flex-wrap items-end gap-2">
-          <div><label className="mb-1 block text-xs text-zinc-500">De</label><input type="date" name="de" defaultValue={de} className={inputCls} /></div>
-          <div><label className="mb-1 block text-xs text-zinc-500">Até</label><input type="date" name="ate" defaultValue={ate} className={inputCls} /></div>
+          <div><label className="mb-1 block text-xs text-texto-suave">De</label><input type="date" name="de" defaultValue={de} className={inputCls} /></div>
+          <div><label className="mb-1 block text-xs text-texto-suave">Até</label><input type="date" name="ate" defaultValue={ate} className={inputCls} /></div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Setor</label>
+            <label className="mb-1 block text-xs text-texto-suave">Setor</label>
             <select name="setor" defaultValue={sp.setor ?? ""} className={inputCls}>
               <option value="">todos</option>
               {setores.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
           </div>
-          <div><label className="mb-1 block text-xs text-zinc-500">Pessoa</label><input name="pessoa" defaultValue={sp.pessoa ?? ""} placeholder="nome" className={`${inputCls} w-28`} /></div>
-          <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">Filtrar</button>
+          <div><label className="mb-1 block text-xs text-texto-suave">Pessoa</label><input name="pessoa" defaultValue={sp.pessoa ?? ""} placeholder="nome" className={`${inputCls} w-28`} /></div>
+          <button className="rounded-controle bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">Filtrar</button>
         </form>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
         <div className={card}>
           <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">Conclusão por setor</p>
-          {resumo.length === 0 ? <p className="text-sm text-zinc-400">Nada no período.</p> : (
+          {resumo.length === 0 ? <p className="text-sm text-texto-fraco">Nada no período.</p> : (
             <ul className="space-y-1.5 text-sm">
               {resumo.map((r) => {
                 const pct = r.listas === 0 ? 0 : Math.round((r.concluidas / r.listas) * 100);
@@ -100,10 +100,10 @@ export default async function HistoricoChecklistsPage({
                 return (
                   <li key={r.nome} className="flex items-center gap-2">
                     <span className="w-20 shrink-0 font-medium" style={{ color: r.cor ?? undefined }}>{r.nome}</span>
-                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-superficie-suave">
                       <span className="block h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
                     </span>
-                    <span className="w-32 shrink-0 text-right text-xs text-zinc-500">{pct}% das listas · {pctItens}% dos itens</span>
+                    <span className="w-32 shrink-0 text-right text-xs text-texto-suave">{pct}% das listas · {pctItens}% dos itens</span>
                   </li>
                 );
               })}
@@ -112,13 +112,13 @@ export default async function HistoricoChecklistsPage({
         </div>
         <div className={card}>
           <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">Itens que mais ficam pendentes</p>
-          {maisPendentes.length === 0 ? <p className="text-sm text-zinc-400">Nenhum pendente.</p> : (
+          {maisPendentes.length === 0 ? <p className="text-sm text-texto-fraco">Nenhum pendente.</p> : (
             <ol className="space-y-1 text-sm">
               {maisPendentes.map((p, i) => (
                 <li key={i} className="flex items-baseline gap-2">
                   <span className="w-6 text-right font-bold text-red-600">{p.n}×</span>
                   <span className="text-zinc-800 dark:text-zinc-100">{p.texto}</span>
-                  <span className="text-xs text-zinc-400">{p.setor}</span>
+                  <span className="text-xs text-texto-fraco">{p.setor}</span>
                 </li>
               ))}
             </ol>
@@ -126,26 +126,26 @@ export default async function HistoricoChecklistsPage({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr><th className="px-4 py-2">Dia</th><th className="px-4 py-2">Lista</th><th className="px-4 py-2">Quem</th><th className="px-4 py-2 text-right">Itens</th><th className="px-4 py-2">Situação</th></tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {execs.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-zinc-400">Nenhuma execução no período.</td></tr>}
+          <tbody className="divide-y divide-borda">
+            {execs.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-texto-fraco">Nenhuma execução no período.</td></tr>}
             {execs.map((e) => {
               const m = porModelo.get(e.modelo_id);
               const meus = itens.filter((i) => i.modelo_id === e.modelo_id);
               const sit = core.situacao(meus, respostas.filter((r) => r.execucao_id === e.id), e);
               const s = setores.find((x) => x.id === m?.setor_id);
               return (
-                <tr key={e.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-4 py-2 tabular-nums text-zinc-500">{core.dataCurta(e.data)}</td>
+                <tr key={e.id} className="">
+                  <td className="px-4 py-2 tabular-nums text-texto-suave">{core.dataCurta(e.data)}</td>
                   <td className="px-4 py-2">
-                    <Link href={`/checklists?dia=${e.data}&ver=${e.modelo_id}`} className="font-medium text-zinc-900 hover:text-orange-600 hover:underline dark:text-zinc-100">{m?.nome ?? "—"}</Link>
+                    <Link href={`/checklists?dia=${e.data}&ver=${e.modelo_id}`} className="font-medium text-texto hover:text-orange-600 hover:underline">{m?.nome ?? "—"}</Link>
                     <span className="ml-2 text-xs" style={{ color: s?.cor ?? undefined }}>{s?.nome}</span>
                   </td>
-                  <td className="px-4 py-2 text-xs text-zinc-500">
+                  <td className="px-4 py-2 text-xs text-texto-suave">
                     {e.iniciado_nome ?? "—"} {hora(e.iniciado_em)}
                     {e.concluido_em && <span className="block">✓ {e.concluido_nome ?? "—"} {hora(e.concluido_em)}</span>}
                   </td>

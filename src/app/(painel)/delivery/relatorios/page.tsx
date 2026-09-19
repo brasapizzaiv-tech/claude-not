@@ -9,13 +9,13 @@ const ORIGEM: Record<string, string> = { app: "App", whatsapp: "WhatsApp", insta
 
 function Tabela({ titulo, linhas }: { titulo: string; linhas: { k: string; qtd: number; valor: number }[] }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="rounded-cartao border border-borda p-4">
       <h2 className="mb-2 font-bold">{titulo}</h2>
-      {linhas.length === 0 ? <p className="text-sm text-zinc-400">Sem dados.</p> : (
+      {linhas.length === 0 ? <p className="text-sm text-texto-fraco">Sem dados.</p> : (
         <div className="space-y-1">
           {linhas.map((l, i) => (
             <div key={i} className="flex items-center justify-between text-sm">
-              <span>{l.k} <span className="text-xs text-zinc-400">({l.qtd})</span></span>
+              <span>{l.k} <span className="text-xs text-texto-fraco">({l.qtd})</span></span>
               <span className="font-medium">{l.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
             </div>
           ))}
@@ -88,7 +88,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="grafico" tamanho={19} /> Relatórios do delivery</h1>
         <div className="ml-auto flex gap-1">
           {[[1, "Hoje"], [7, "7 dias"], [30, "30 dias"]].map(([d, lbl]) => (
-            <Link key={d} href={`/delivery/relatorios?dias=${d}`} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${nDias === d ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800"}`}>{lbl}</Link>
+            <Link key={d} href={`/delivery/relatorios?dias=${d}`} className={`rounded-controle px-3 py-1.5 text-sm font-medium ${nDias === d ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-superficie-suave text-texto-suave "}`}>{lbl}</Link>
           ))}
         </div>
       </div>
@@ -100,10 +100,10 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
           { t: "Ticket médio", v: brl(ticket) },
           { t: "A receber", v: String(aReceber), sub: `${cancelados} cancelado(s)` },
         ].map((c, i) => (
-          <div key={i} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <div className="text-xs text-zinc-500">{c.t}</div>
+          <div key={i} className="rounded-cartao border border-borda p-4">
+            <div className="text-xs text-texto-suave">{c.t}</div>
             <div className="text-2xl font-bold">{c.v}</div>
-            {c.sub && <div className="text-xs text-zinc-400">{c.sub}</div>}
+            {c.sub && <div className="text-xs text-texto-fraco">{c.sub}</div>}
           </div>
         ))}
       </div>

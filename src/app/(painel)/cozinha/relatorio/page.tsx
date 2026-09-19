@@ -48,23 +48,23 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
   const mediaMin = nMin ? somaMin / nMin : null;
   const doces = validas.filter((l) => l.tipo === "doce").reduce((s, l) => s + l.quantidade, 0);
 
-  const inputCls = "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/cozinha" className="text-sm text-zinc-500 hover:text-orange-600">← Tablet da cozinha</Link>
-      <h1 className="mt-2 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="pizza" tamanho={20} className="mr-2" /> Rodízio · relatório</h1>
+      <Link href="/cozinha" className="text-sm text-texto-suave hover:text-orange-600">← Tablet da cozinha</Link>
+      <h1 className="mt-2 mb-3 text-2xl font-bold text-texto"><Icone nome="pizza" tamanho={20} className="mr-2" /> Rodízio · relatório</h1>
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">De</label>
+          <label className="mb-1 block text-xs text-texto-suave">De</label>
           <input type="date" name="de" defaultValue={de} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Até</label>
+          <label className="mb-1 block text-xs text-texto-suave">Até</label>
           <input type="date" name="ate" defaultValue={ate} className={inputCls} />
         </div>
-        <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-700">Ver</button>
+        <button className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-700">Ver</button>
       </form>
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -74,34 +74,34 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
           ["Tempo médio até pronto", mediaMin != null ? `${mediaMin.toFixed(1)} min` : "—"],
           ["Cancelados", String(cancelados)],
         ].map(([r, v]) => (
-          <div key={r} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <p className="text-xs text-zinc-500">{r}</p>
-            <p className="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-50">{v}</p>
+          <div key={r} className="rounded-cartao border border-borda p-4">
+            <p className="text-xs text-texto-suave">{r}</p>
+            <p className="mt-1 text-2xl font-black text-texto">{v}</p>
           </div>
         ))}
       </div>
-      <p className="mb-4 text-xs text-zinc-400">Período {brT(de)} a {brT(ate)} · {linhas.length} pedidos lançados</p>
+      <p className="mb-4 text-xs text-texto-fraco">Período {brT(de)} a {brT(ate)} · {linhas.length} pedidos lançados</p>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <p className="border-b border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-800">Sabores mais pedidos</p>
+        <div className="rounded-cartao bg-painel-cartao">
+          <p className="border-b border-borda px-4 py-2 text-sm font-semibold">Sabores mais pedidos</p>
           <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {topSabores.map(([s, n]) => (
                 <tr key={s}><td className="px-4 py-1.5">{s}</td><td className="px-4 py-1.5 text-right font-semibold tabular-nums">{n}</td></tr>
               ))}
-              {topSabores.length === 0 && <tr><td className="px-4 py-6 text-center text-zinc-400">Nada no período.</td></tr>}
+              {topSabores.length === 0 && <tr><td className="px-4 py-6 text-center text-texto-fraco">Nada no período.</td></tr>}
             </tbody>
           </table>
         </div>
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <p className="border-b border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-800">Pedidos por mesa</p>
+        <div className="rounded-cartao bg-painel-cartao">
+          <p className="border-b border-borda px-4 py-2 text-sm font-semibold">Pedidos por mesa</p>
           <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {topMesas.map(([m, n]) => (
                 <tr key={m}><td className="px-4 py-1.5">Mesa {m}</td><td className="px-4 py-1.5 text-right font-semibold tabular-nums">{n}</td></tr>
               ))}
-              {topMesas.length === 0 && <tr><td className="px-4 py-6 text-center text-zinc-400">Nada no período.</td></tr>}
+              {topMesas.length === 0 && <tr><td className="px-4 py-6 text-center text-texto-fraco">Nada no período.</td></tr>}
             </tbody>
           </table>
         </div>

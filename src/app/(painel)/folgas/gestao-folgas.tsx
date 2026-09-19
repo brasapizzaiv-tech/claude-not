@@ -74,11 +74,11 @@ export function GestaoFolgas({
     <div className="mx-auto max-w-4xl p-3 sm:p-5">
       <div className="mb-4">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="folga" tamanho={19} /> Folgas</h1>
-        <p className="text-xs text-zinc-500">Cadastro da equipe e escala agora em <b>Cadastros → Colaboradores</b>.</p>
+        <p className="text-xs text-texto-suave">Cadastro da equipe e escala agora em <b>Cadastros → Colaboradores</b>.</p>
       </div>
 
       {aviso && (
-        <div className={`mb-3 rounded-lg border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300" : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-300"}`}>
+        <div className={`mb-3 rounded-controle border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300" : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-300"}`}>
           {aviso.txt}
         </div>
       )}
@@ -88,7 +88,7 @@ export function GestaoFolgas({
           <button
             key={k}
             onClick={() => { setAba(k); setAviso(null); }}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${aba === k ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}
+            className={`rounded-controle px-3 py-2 text-sm font-medium ${aba === k ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "border border-borda-forte text-texto-suave  "}`}
           >
             {r}
           </button>
@@ -115,7 +115,7 @@ type Ctx = {
   setAviso: (a: { ok: boolean; txt: string } | null) => void;
 };
 
-const card = "rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900";
+const card = "rounded-cartao border border-borda bg-painel-cartao p-4  ";
 
 // ======================= ABA PEDIDOS =======================
 function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIso, proc, run }: Ctx) {
@@ -130,14 +130,14 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
     <div className="space-y-3">
       <button
         onClick={() => setLancar((v) => !v)}
-        className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-bold text-white"
+        className="rounded-controle bg-amber-500 px-3 py-2 text-sm font-bold text-white"
       >
         {lancar ? "Fechar" : "+ Lançar folga direto"}
       </button>
 
       {lancar && <FormLancar equipe={equipe} pedidos={pedidos} byId={byId} limites={limites} ajustes={ajustes} proc={proc} run={run} onDone={() => setLancar(false)} />}
 
-      {!pend.length && <div className={card}><p className="text-sm text-zinc-500">Nada esperando decisão.</p></div>}
+      {!pend.length && <div className={card}><p className="text-sm text-texto-suave">Nada esperando decisão.</p></div>}
 
       {pend.map((p) => {
         const f = byId.get(p.funcionario_id);
@@ -155,10 +155,10 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
         const atras = difDias(hojeIso, p.data) < DIAS_ANTECEDENCIA;
         const doisTurnos = gruposDe(f).length > 1;
         return (
-          <div key={p.id} className={`${card} ${estoura ? "border-red-500/50" : ""}`}>
+          <div key={p.id} className={`${card}  ${estoura ? "border-red-500/50" : ""}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="font-bold">{f.nome} <span className="font-normal text-zinc-400">· {f.vinculo}</span></div>
+                <div className="font-bold">{f.nome} <span className="font-normal text-texto-fraco">· {f.vinculo}</span></div>
                 <div className="text-xs" style={{ color: GRUPOS[f.grupo].cor }}>
                   {gruposDe(f).map((g) => GRUPOS[g].nome).join(" + ")}{f.funcao ? ` · ${f.funcao}` : ""}
                 </div>
@@ -167,8 +167,8 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                   {p.grupo_alvo && doisTurnos ? ` · turno ${TURNO[p.grupo_alvo] || ""}` : ""}
                   {!p.grupo_alvo && doisTurnos ? <span className="text-amber-500"> · dia inteiro</span> : ""}
                 </div>
-                {p.motivo && <p className="mt-1 text-sm text-zinc-500">{p.motivo}</p>}
-                <p className={`mt-1 text-xs ${estoura ? "text-red-500" : "text-zinc-500"}`}>
+                {p.motivo && <p className="mt-1 text-sm text-texto-suave">{p.motivo}</p>}
+                <p className={`mt-1 text-xs ${estoura ? "text-red-500" : "text-texto-suave"}`}>
                   {lim === null ? "Grupo sem operação nesse dia" : `${aprov} de ${lim} já aprovada(s) em ${GRUPOS[gApertado].nome.toLowerCase()}`}
                   {estoura ? " · aprovar aqui passa do limite" : ""}
                 </p>
@@ -181,13 +181,13 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                   <button
                     disabled={proc}
                     onClick={() => run(() => decidirPedido(p.id, true))}
-                    className={`rounded-lg px-3 py-1.5 text-sm font-bold text-white ${estoura ? "bg-red-600" : "bg-emerald-600"}`}
+                    className={`rounded-controle px-3 py-1.5 text-sm font-bold text-white ${estoura ? "bg-red-600" : "bg-emerald-600"}`}
                   >
                     {estoura ? "Aprovar mesmo assim" : "Aprovar"}
                   </button>
                   <button
                     onClick={() => { setNegando(negando === p.id ? null : p.id); setMotivoNeg(""); }}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-600"
+                    className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm font-medium"
                   >
                     Negar
                   </button>
@@ -195,18 +195,18 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
               </div>
             </div>
             {negando === p.id && (
-              <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+              <div className="mt-3 flex flex-wrap gap-2 border-t border-borda pt-3">
                 <input
                   autoFocus
                   value={motivoNeg}
                   onChange={(e) => setMotivoNeg(e.target.value)}
                   placeholder="Motivo da negativa — a pessoa vai ler isso"
-                  className="min-w-[200px] flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700"
+                  className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm outline-none"
                 />
                 <button
                   disabled={proc}
                   onClick={() => run(() => decidirPedido(p.id, false, motivoNeg), undefined)}
-                  className="rounded-lg bg-red-600 px-3 py-2 text-sm font-bold text-white"
+                  className="rounded-controle bg-red-600 px-3 py-2 text-sm font-bold text-white"
                 >
                   Confirmar negativa
                 </button>
@@ -229,7 +229,7 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                 <li key={p.id} className="flex items-center justify-between gap-2">
                   <span className="min-w-0">
                     {f.nome} · {fmtData(p.data)}{" "}
-                    <span className="text-zinc-400">{p.motivo_negativa || "sem motivo registrado"}</span>
+                    <span className="text-texto-fraco">{p.motivo_negativa || "sem motivo registrado"}</span>
                   </span>
                   <button onClick={() => run(() => reabrirPedido(p.id))} className="shrink-0 text-xs text-blue-500 underline">reabrir</button>
                 </li>
@@ -268,8 +268,8 @@ function CalendarioAprovadas({ pedidos, byId, bloqueios, hojeIso, proc, run }: {
     const doDia = aprovadas.filter((p) => p.data === data);
     const trav = bloqueios[data];
     celulas.push(
-      <div key={data} className="min-h-[64px] rounded-lg border border-zinc-200 p-1 dark:border-zinc-800">
-        <div className="flex items-center justify-between text-xs font-semibold text-zinc-500">
+      <div key={data} className="min-h-[64px] rounded-controle border border-borda p-1">
+        <div className="flex items-center justify-between text-xs font-semibold text-texto-suave">
           {d}{trav && <span className="h-2 w-2 rounded-full bg-red-500" title={trav} />}
         </div>
         <div className="mt-0.5 flex flex-col gap-0.5">
@@ -298,17 +298,17 @@ function CalendarioAprovadas({ pedidos, byId, bloqueios, hojeIso, proc, run }: {
   return (
     <div className={card}>
       <h2 className="font-bold">Folgas aprovadas</h2>
-      <p className="text-sm text-zinc-500">Quem está de folga em cada dia. Toque num nome para excluir.</p>
+      <p className="text-sm text-texto-suave">Quem está de folga em cada dia. Toque num nome para excluir.</p>
       <div className="mt-3 flex items-center justify-between">
-        <button onClick={() => navega(-1)} className="text-sm text-zinc-500">‹ Anterior</button>
+        <button onClick={() => navega(-1)} className="text-sm text-texto-suave">‹ Anterior</button>
         <h3 className="font-bold">{MESES[mes]} {ano}</h3>
-        <button onClick={() => navega(1)} className="text-sm text-zinc-500">Próximo ›</button>
+        <button onClick={() => navega(1)} className="text-sm text-texto-suave">Próximo ›</button>
       </div>
-      <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-zinc-400">
+      <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-texto-fraco">
         {DIAS.map((d) => <div key={d}>{d}</div>)}
       </div>
       <div className="mt-1 grid grid-cols-7 gap-1">{celulas}</div>
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-zinc-500">
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-texto-suave">
         {GRUPO_KEYS.map((g) => (
           <span key={g} className="flex items-center gap-1">
             <i className="h-2 w-2 rounded-full" style={{ background: GRUPOS[g].cor }} />{GRUPOS[g].nome}
@@ -347,9 +347,9 @@ function FormLancar({ equipe, pedidos, byId, limites, ajustes, proc, run, onDone
   return (
     <div className={`${card} border-amber-500/40`}>
       <h2 className="font-bold">Lançar folga direto</h2>
-      <p className="text-sm text-zinc-500">Para quando a pessoa pede pessoalmente ou no WhatsApp. Entra já aprovada.</p>
+      <p className="text-sm text-texto-suave">Para quando a pessoa pede pessoalmente ou no WhatsApp. Entra já aprovada.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <select value={pid} onChange={(e) => { setPid(e.target.value); setTurno(""); }} className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700">
+        <select value={pid} onChange={(e) => { setPid(e.target.value); setTurno(""); }} className="rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm">
           <option value="">Escolha a pessoa</option>
           {GRUPO_KEYS.map((g) => (
             <optgroup key={g} label={GRUPOS[g].nome}>
@@ -359,23 +359,23 @@ function FormLancar({ equipe, pedidos, byId, limites, ajustes, proc, run, onDone
             </optgroup>
           ))}
         </select>
-        <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
+        <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
       </div>
       {grupos.length > 1 && (
         <div className="mt-2 flex flex-wrap gap-2">
-          <button onClick={() => setTurno("")} className={`rounded-lg px-3 py-1.5 text-sm ${turno === "" ? "bg-blue-600 text-white" : "border border-zinc-300 dark:border-zinc-700"}`}>Dia inteiro</button>
+          <button onClick={() => setTurno("")} className={`rounded-controle px-3 py-1.5 text-sm ${turno === "" ? "bg-blue-600 text-white" : "border border-borda-forte"}`}>Dia inteiro</button>
           {grupos.map((g) => (
-            <button key={g} onClick={() => setTurno(g)} className={`rounded-lg px-3 py-1.5 text-sm ${turno === g ? "bg-blue-600 text-white" : "border border-zinc-300 dark:border-zinc-700"}`}>
+            <button key={g} onClick={() => setTurno(g)} className={`rounded-controle px-3 py-1.5 text-sm ${turno === g ? "bg-blue-600 text-white" : "border border-borda-forte"}`}>
               {GRUPOS[g].nome} ({TURNO[g]})
             </button>
           ))}
         </div>
       )}
-      <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo ou observação" className="mt-2 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
-      {info && <p className="mt-2 text-xs text-zinc-500">{info}</p>}
+      <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo ou observação" className="mt-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+      {info && <p className="mt-2 text-xs text-texto-suave">{info}</p>}
       <div className="mt-3 flex gap-2">
-        <button disabled={proc || !pid || !data} onClick={salvar} className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">Lançar folga aprovada</button>
-        <button onClick={onDone} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">Cancelar</button>
+        <button disabled={proc || !pid || !data} onClick={salvar} className="rounded-controle bg-zinc-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">Lançar folga aprovada</button>
+        <button onClick={onDone} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">Cancelar</button>
       </div>
     </div>
   );
@@ -419,12 +419,12 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
       <button
         key={data}
         onClick={() => setSel(data)}
-        className={`flex min-h-[58px] flex-col rounded-lg border p-1 text-left ${sel === data ? "border-blue-500 ring-1 ring-blue-500" : "border-zinc-200 dark:border-zinc-800"}`}
+        className={`flex min-h-[58px] flex-col rounded-controle border p-1 text-left ${sel === data ? "border-blue-500 ring-1 ring-blue-500" : "border-borda"}`}
       >
         <span className="flex items-center justify-between text-sm font-semibold">
           {d}<span className={`h-2.5 w-2.5 rounded-full ${cor}`} />
         </span>
-        <span className="mt-0.5 text-[10px] leading-tight text-zinc-500">{rot.join(" · ")}</span>
+        <span className="mt-0.5 text-[10px] leading-tight text-texto-suave">{rot.join(" · ")}</span>
       </button>,
     );
   }
@@ -435,36 +435,36 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
     <div className="space-y-3">
       <div className={card}>
         <div className="mb-2 flex items-center justify-between">
-          <button onClick={() => navega(-1)} className="text-sm text-zinc-500">‹ Anterior</button>
+          <button onClick={() => navega(-1)} className="text-sm text-texto-suave">‹ Anterior</button>
           <h3 className="font-bold">{MESES[mes]} {ano}</h3>
-          <button onClick={() => navega(1)} className="text-sm text-zinc-500">Próximo ›</button>
+          <button onClick={() => navega(1)} className="text-sm text-texto-suave">Próximo ›</button>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-zinc-400">
+        <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-texto-fraco">
           {DIAS.map((d) => <div key={d}>{d}</div>)}
         </div>
         <div className="mt-1 grid grid-cols-7 gap-1">{celulas}</div>
-        <p className="mt-2 text-xs text-zinc-500">Só aparecem os grupos com 1 vaga ou menos. Toque no dia para ver o detalhe.</p>
+        <p className="mt-2 text-xs text-texto-suave">Só aparecem os grupos com 1 vaga ou menos. Toque no dia para ver o detalhe.</p>
       </div>
 
       {sel && (
         <div className={`${card} border-blue-500/30`}>
           <div className="flex items-center justify-between">
             <h2 className="font-bold">{DIAS[dow(sel)]}, {fmtData(sel)}</h2>
-            <button onClick={() => setSel(null)} className="text-sm text-zinc-500">fechar</button>
+            <button onClick={() => setSel(null)} className="text-sm text-texto-suave">fechar</button>
           </div>
           <div className="mt-2 space-y-1.5">
             {GRUPO_KEYS.map((g) => {
               const lim = limiteDe(sel, g, limites, ajustes);
               if (lim === null || lim === undefined)
-                return <div key={g} className="flex justify-between text-sm text-zinc-400"><span>{GRUPOS[g].nome}</span><span>Sem operação</span></div>;
+                return <div key={g} className="flex justify-between text-sm text-texto-fraco"><span>{GRUPOS[g].nome}</span><span>Sem operação</span></div>;
               const usadas = contar(pedidos, sel, g, true, byId);
               return (
                 <div key={g} className="flex items-center justify-between text-sm">
                   <span style={{ color: GRUPOS[g].cor }} className="font-semibold">{GRUPOS[g].nome}</span>
                   <span className="flex items-center gap-2">
-                    <button disabled={proc || lim <= 0} onClick={() => run(() => definirAjuste(sel, g, lim - 1))} className="h-7 w-7 rounded border border-zinc-300 dark:border-zinc-600">−</button>
+                    <button disabled={proc || lim <= 0} onClick={() => run(() => definirAjuste(sel, g, lim - 1))} className="h-7 w-7 rounded border border-borda-forte">−</button>
                     <b className="min-w-[52px] text-center">{usadas}/{lim}</b>
-                    <button disabled={proc} onClick={() => run(() => definirAjuste(sel, g, lim + 1))} className="h-7 w-7 rounded border border-zinc-300 dark:border-zinc-600">+</button>
+                    <button disabled={proc} onClick={() => run(() => definirAjuste(sel, g, lim + 1))} className="h-7 w-7 rounded border border-borda-forte">+</button>
                   </span>
                 </div>
               );
@@ -475,8 +475,8 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
           )}
 
           {doDia.length > 0 && (
-            <div className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
-              <p className="mb-1 text-xs font-semibold text-zinc-400">De folga nesse dia:</p>
+            <div className="mt-3 border-t border-borda pt-2">
+              <p className="mb-1 text-xs font-semibold text-texto-fraco">De folga nesse dia:</p>
               <div className="flex flex-wrap gap-1">
                 {doDia.map((p) => {
                   const f = byId.get(p.funcionario_id);
@@ -498,19 +498,19 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
             </div>
           )}
 
-          <div className="mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+          <div className="mt-3 border-t border-borda pt-3">
             {bloqueios[sel] ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm text-red-500">Data travada: {bloqueios[sel]}</span>
-                <button disabled={proc} onClick={() => run(() => destravarData(sel))} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-600">Destravar</button>
+                <button disabled={proc} onClick={() => run(() => destravarData(sel))} className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm">Destravar</button>
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <input value={motivoTrava} onChange={(e) => setMotivoTrava(e.target.value)} placeholder="Motivo da trava (ex.: Kerb, evento)" className="min-w-[200px] flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
-                <button disabled={proc} onClick={() => run(() => travarData(sel, motivoTrava))} className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">Travar data</button>
+                <input value={motivoTrava} onChange={(e) => setMotivoTrava(e.target.value)} placeholder="Motivo da trava (ex.: Kerb, evento)" className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                <button disabled={proc} onClick={() => run(() => travarData(sel, motivoTrava))} className="rounded-controle bg-zinc-900 px-3 py-2 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">Travar data</button>
               </div>
             )}
-            <p className="mt-2 text-xs text-zinc-500">Travar só impede o pedido pelo app — você continua podendo lançar folga direto.</p>
+            <p className="mt-2 text-xs text-texto-suave">Travar só impede o pedido pelo app — você continua podendo lançar folga direto.</p>
           </div>
         </div>
       )}
@@ -541,13 +541,13 @@ function AbaLimites({ limites, proc, run }: { limites: Limites; proc: boolean; r
   return (
     <div className={card}>
       <h2 className="font-bold">Limite padrão de folgas</h2>
-      <p className="text-sm text-zinc-500">Quantas pessoas de cada grupo podem folgar em cada dia da semana. Vale de hoje em diante. Ajustes de um dia específico ficam na aba Calendário.</p>
+      <p className="text-sm text-texto-suave">Quantas pessoas de cada grupo podem folgar em cada dia da semana. Vale de hoje em diante. Ajustes de um dia específico ficam na aba Calendário.</p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-sm">
           <tbody>
             <tr>
               <th />
-              {DIAS.map((d) => <th key={d} className="p-1.5 text-xs font-semibold text-zinc-400">{d}</th>)}
+              {DIAS.map((d) => <th key={d} className="p-1.5 text-xs font-semibold text-texto-fraco">{d}</th>)}
             </tr>
             {GRUPO_KEYS.map((g) => (
               <tr key={g}>
@@ -559,7 +559,7 @@ function AbaLimites({ limites, proc, run }: { limites: Limites; proc: boolean; r
                       value={vals[`${g}|${d}`]}
                       onChange={(e) => setVals((o) => ({ ...o, [`${g}|${d}`]: e.target.value }))}
                       placeholder="—"
-                      className="w-full min-w-[52px] rounded border border-zinc-300 bg-transparent px-1 py-2 text-center dark:border-zinc-700"
+                      className="w-full min-w-[52px] rounded border border-borda-forte bg-transparent px-1 py-2 text-center"
                     />
                   </td>
                 ))}
@@ -568,8 +568,8 @@ function AbaLimites({ limites, proc, run }: { limites: Limites; proc: boolean; r
           </tbody>
         </table>
       </div>
-      <button disabled={proc} onClick={salvar} className="mt-3 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">Salvar limites padrão</button>
-      <p className="mt-2 text-xs text-zinc-500"><b>Em branco</b> = o grupo não trabalha nesse dia (nem aparece pra quem é do grupo). <b>Zero</b> = trabalha, mas sem vaga de folga (a pessoa vê &quot;Sem vaga&quot; e ainda pode pedir).</p>
+      <button disabled={proc} onClick={salvar} className="mt-3 rounded-controle bg-zinc-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">Salvar limites padrão</button>
+      <p className="mt-2 text-xs text-texto-suave"><b>Em branco</b> = o grupo não trabalha nesse dia (nem aparece pra quem é do grupo). <b>Zero</b> = trabalha, mas sem vaga de folga (a pessoa vê &quot;Sem vaga&quot; e ainda pode pedir).</p>
     </div>
   );
 }

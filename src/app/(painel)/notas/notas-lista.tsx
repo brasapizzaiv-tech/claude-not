@@ -74,7 +74,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
       </div>
 
       {filtradas.length === 0 ? (
-        <div className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-suave ">
+        <div className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-suave">
           Nenhuma nota encontrada para <b>{busca}</b>.
         </div>
       ) : (

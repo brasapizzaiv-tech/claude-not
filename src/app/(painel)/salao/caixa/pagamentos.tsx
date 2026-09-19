@@ -250,8 +250,8 @@ export function PainelPagamentos({
     campoRef.current?.focus();
   }
 
-  const btn = "rounded-xl border px-3 py-2 text-sm font-semibold transition";
-  const campo = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  const btn = "rounded-cartao border px-3 py-2 text-sm font-semibold transition";
+  const campo = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
   return (
     <div className="space-y-3">
@@ -259,28 +259,28 @@ export function PainelPagamentos({
       {pagos.length > 0 && (
         <ul className="space-y-1">
           {pagos.map((p) => (
-            <li key={p.uid} className="flex items-center gap-2 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-sm dark:bg-zinc-900">
-              <span className="min-w-0 flex-1 truncate text-zinc-700 dark:text-zinc-200">
+            <li key={p.uid} className="flex items-center gap-2 rounded-controle bg-superficie-suave px-2.5 py-1.5 text-sm">
+              <span className="min-w-0 flex-1 truncate text-texto-suave">
                 {p.forma}
-                {p.bandeira ? <span className="text-zinc-400"> · {p.bandeira}</span> : null}
+                {p.bandeira ? <span className="text-texto-fraco"> · {p.bandeira}</span> : null}
                 {p.tef ? <span className="ml-1 rounded bg-emerald-100 px-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">TEF · NSU {p.tef.nsu ?? "—"}</span> : null}
-                {p.observacao ? <span className="block truncate text-[11px] text-zinc-400">{p.observacao}</span> : null}
+                {p.observacao ? <span className="block truncate text-[11px] text-texto-fraco">{p.observacao}</span> : null}
               </span>
-              <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">{brl(p.valor)}</span>
-              <button onClick={() => onRemover(p.uid)} title="Tirar este pagamento" className="text-zinc-400 hover:text-red-600">✕</button>
+              <span className="font-semibold tabular-nums text-texto">{brl(p.valor)}</span>
+              <button onClick={() => onRemover(p.uid)} title="Tirar este pagamento" className="text-texto-fraco hover:text-red-600">✕</button>
             </li>
           ))}
         </ul>
       )}
 
       {/* ---------- total pago / falta pagar ---------- */}
-      <div className="grid grid-cols-2 gap-2 rounded-xl border border-zinc-200 p-2.5 dark:border-zinc-800">
+      <div className="grid grid-cols-2 gap-2 rounded-cartao border border-borda p-2.5">
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-zinc-400">Total pago</p>
-          <p className="text-xl font-black tabular-nums text-zinc-900 dark:text-zinc-50">{brl(somaPagos)}</p>
+          <p className="text-[11px] text-texto-fraco">Total pago</p>
+          <p className="text-xl font-black tabular-nums text-texto">{brl(somaPagos)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[11px] uppercase tracking-wide text-zinc-400">{falta > 0.005 ? "Falta pagar" : "Fechou"}</p>
+          <p className="text-[11px] text-texto-fraco">{falta > 0.005 ? "Falta pagar" : "Fechou"}</p>
           <p className={`text-xl font-black tabular-nums ${falta > 0.005 ? "text-amber-600" : "text-emerald-600"}`}>
             {falta > 0.005 ? brl(falta) : "✓"}
           </p>
@@ -294,7 +294,7 @@ export function PainelPagamentos({
       {!forma ? (
         falta > 0.005 && (
           <div>
-            <p className="mb-1.5 text-[11px] uppercase tracking-wide text-zinc-400">Adicionar pagamento</p>
+            <p className="mb-1.5 text-[11px] text-texto-fraco">Adicionar pagamento</p>
             <div className="grid grid-cols-2 gap-2">
               {formas.map((f) => {
                 const k = atalhoDaForma(f);
@@ -303,28 +303,28 @@ export function PainelPagamentos({
                     key={f}
                     onClick={() => abrir(f)}
                     disabled={!ativo}
-                    className={`${btn} flex items-center gap-2 border-zinc-300 text-left text-zinc-700 hover:border-orange-500 hover:bg-orange-500/5 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200`}
+                    className={`${btn} flex items-center gap-2 border-borda-forte text-left text-texto-suave hover:border-orange-500 hover:bg-orange-500/5 disabled:opacity-40 dark:border-borda-forte`}
                   >
                     <span className="flex h-4 items-center">{ICONE[k] ? <Icone nome={ICONE[k]} tamanho={15} /> : "•"}</span>
                     <span className="min-w-0 flex-1 truncate">
-                      <span className="rounded bg-zinc-200 px-1 text-[11px] font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">{k}</span>{" "}
+                      <span className="rounded bg-zinc-200 px-1 text-[11px] font-bold text-texto-suave dark:bg-zinc-700">{k}</span>{" "}
                       {f}
                     </span>
                   </button>
                 );
               })}
             </div>
-            <p className="mt-1.5 text-[11px] text-zinc-400">Aperte a letra do atalho pra lançar direto.</p>
+            <p className="mt-1.5 text-[11px] text-texto-fraco">Aperte a letra do atalho pra lançar direto.</p>
           </div>
         )
       ) : (
         /* ---------- passo da forma escolhida ---------- */
-        <div className="rounded-xl border-2 border-orange-500 p-3">
+        <div className="rounded-cartao border-2 border-orange-500 p-3">
           <div className="mb-2 flex items-center justify-between">
-            <p className="flex items-center gap-1.5 font-bold text-zinc-900 dark:text-zinc-50">
+            <p className="flex items-center gap-1.5 font-bold text-texto">
               {ICONE[atalhoDaForma(forma)] && <Icone nome={ICONE[atalhoDaForma(forma)]} tamanho={16} />} {forma}
             </p>
-            <button onClick={fechar} className="text-xs text-zinc-400 hover:text-zinc-600">Esc · voltar</button>
+            <button onClick={fechar} className="text-xs text-texto-fraco hover:text-texto-suave">Esc · voltar</button>
           </div>
 
           <input
@@ -339,9 +339,9 @@ export function PainelPagamentos({
 
           <button
             onClick={() => cedula(falta, false)}
-            className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-700 hover:border-orange-500 dark:border-zinc-700 dark:text-zinc-200"
+            className="mt-2 w-full rounded-controle border border-borda-forte px-3 py-2 text-sm text-texto-suave hover:border-orange-500"
           >
-            <b>{brl(falta)}</b> <span className="text-zinc-400">(faltando)</span>
+            <b>{brl(falta)}</b> <span className="text-texto-fraco">(faltando)</span>
           </button>
 
           {ehDinheiro(forma) && (
@@ -351,19 +351,19 @@ export function PainelPagamentos({
                   <button
                     key={c}
                     onClick={(e) => cedula(c, e.shiftKey)}
-                    className="rounded-lg border border-zinc-300 py-2 text-sm font-semibold tabular-nums text-zinc-700 hover:border-orange-500 dark:border-zinc-700 dark:text-zinc-200"
+                    className="rounded-controle border border-borda-forte py-2 text-sm font-semibold tabular-nums text-texto-suave hover:border-orange-500 dark:border-borda-forte"
                   >
                     {brl(c)}
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-zinc-400">Clique para preencher. Segure Shift para somar.</p>
+              <p className="mt-1 text-[11px] text-texto-fraco">Clique para preencher. Segure Shift para somar.</p>
               {troco > 0.005 && <p className="mt-1 text-right text-sm font-bold text-emerald-600">Troco: {brl(troco)}</p>}
             </>
           )}
 
           {tefAplica(forma) && (
-            <div className="mt-3 rounded-xl border border-emerald-600/40 bg-emerald-50 p-3 dark:bg-emerald-950/30">
+            <div className="mt-3 rounded-cartao border border-emerald-600/40 bg-emerald-50 p-3 dark:bg-emerald-950/30">
               {tefEtapa ? (
                 <div className="text-center">
                   <p className="text-base font-bold text-emerald-800 dark:text-emerald-300">
@@ -377,11 +377,11 @@ export function PainelPagamentos({
                 <>
                   {tipoTefDaForma(forma) === "credito" && (
                     <div className="mb-2 flex items-center gap-2">
-                      <label className="text-xs font-semibold uppercase tracking-wide text-emerald-800/80 dark:text-emerald-300/80">Parcelas</label>
+                      <label className="text-xs font-semibold text-emerald-800/80 dark:text-emerald-300/80">Parcelas</label>
                       <select
                         value={parcelas}
                         onChange={(e) => setParcelas(Number(e.target.value))}
-                        className="rounded-lg border border-emerald-600/40 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
+                        className="rounded-controle border border-emerald-600/40 bg-painel-cartao px-2 py-1.5 text-sm text-texto"
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
                           <option key={n} value={n}>{n === 1 ? "à vista" : `${n}x de ${brl(cent(aplica / n))}`}</option>
@@ -392,7 +392,7 @@ export function PainelPagamentos({
                   )}
                   <button
                     onClick={passarNoCartao}
-                    className="w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700"
+                    className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
                   >
                     <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && tipoTefDaForma(forma) === "credito" ? ` em ${parcelas}x` : ""}
                     <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
@@ -407,36 +407,36 @@ export function PainelPagamentos({
 
           {ehCartao(forma) && !tefAplica(forma) && (
             <div className="mt-3">
-              <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-400">Bandeira</p>
+              <p className="mb-1 text-[11px] text-texto-fraco">Bandeira</p>
               <div className="flex flex-wrap gap-1.5">
                 {BANDEIRAS.map((b) => (
                   <button
                     key={b.nome}
                     onClick={() => { setBandeira(b.nome); setAviso(null); }}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
+                    className={`rounded-controle px-2.5 py-1.5 text-xs font-semibold ${
                       bandeira === b.nome
                         ? "bg-orange-500 text-white"
-                        : "border border-zinc-300 text-zinc-600 hover:border-orange-500 dark:border-zinc-700 dark:text-zinc-300"
+                        : "border border-borda-forte text-texto-suave hover:border-orange-500  "
                     }`}
                   >
                     <span className="mr-1 opacity-60">{b.tecla}</span>{b.nome}
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-zinc-400">Número da autorização e NSU vão vir sozinhos quando a maquininha for integrada.</p>
+              <p className="mt-1 text-[11px] text-texto-fraco">Número da autorização e NSU vão vir sozinhos quando a maquininha for integrada.</p>
             </div>
           )}
 
           {ehFiado(forma) && (
-            <div className="mt-3 rounded-lg bg-zinc-50 p-2 text-xs dark:bg-zinc-900">
+            <div className="mt-3 rounded-controle bg-superficie-suave p-2 text-xs">
               {fiado ? (
                 <>
-                  <p className="text-zinc-600 dark:text-zinc-300">
+                  <p className="text-texto-suave">
                     <b>{fiado.nome}</b> · já deve {brl(fiado.saldo)}
                     {fiado.limite != null ? ` · limite ${brl(fiado.limite)}` : " · sem limite"}
                   </p>
                   {fiado.limite != null && (
-                    <p className={fiadoEstoura ? "mt-0.5 font-semibold text-red-600" : "mt-0.5 text-zinc-500"}>
+                    <p className={fiadoEstoura ? "mt-0.5 font-semibold text-red-600" : "mt-0.5 text-texto-suave"}>
                       Com esta conta ficaria {brl(cent(fiado.saldo + aplica))}
                       {fiadoEstoura ? " — passa do limite." : "."}
                     </p>
@@ -449,8 +449,8 @@ export function PainelPagamentos({
           )}
 
           {ehEquipe(forma) && (
-            <div className="mt-3 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-              <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-400">Funcionário</p>
+            <div className="mt-3 rounded-controle bg-superficie-suave p-2">
+              <p className="mb-1 text-[11px] text-texto-fraco">Funcionário</p>
               {colaboradores.length === 0 ? (
                 <p className="text-xs text-amber-600">Nenhum funcionário ativo cadastrado.</p>
               ) : (
@@ -459,9 +459,9 @@ export function PainelPagamentos({
                     value={buscaColab}
                     onChange={(e) => setBuscaColab(e.target.value)}
                     placeholder="Buscar pelo nome…"
-                    className="mb-1.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="mb-1.5 w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                   />
-                  <div className="max-h-36 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                  <div className="max-h-36 overflow-y-auto rounded-controle border border-borda dark:border-borda-forte">
                     {colaboradores
                       .filter((c) => !buscaColab.trim() || c.nome.toLowerCase().includes(buscaColab.trim().toLowerCase()))
                       .slice(0, 40)
@@ -470,16 +470,16 @@ export function PainelPagamentos({
                           key={c.id}
                           type="button"
                           onClick={() => setColabId(c.id === colabId ? "" : c.id)}
-                          className={`flex w-full items-center justify-between px-2 py-1.5 text-left text-sm ${c.id === colabId ? "bg-orange-500 text-white" : "hover:bg-zinc-50 dark:hover:bg-zinc-800"}`}
+                          className={`flex w-full items-center justify-between px-2 py-1.5 text-left text-sm ${c.id === colabId ? "bg-orange-500 text-white" : "hover:bg-superficie-suave "}`}
                         >
                           <span>{c.nome}</span>
-                          <span className={`text-xs ${c.id === colabId ? "text-white/80" : "text-zinc-400"}`}>
+                          <span className={`text-xs ${c.id === colabId ? "text-white/80" : "text-texto-fraco"}`}>
                             {c.aberto > 0 ? `já deve ${brl(c.aberto)}` : "em dia"}
                           </span>
                         </button>
                       ))}
                   </div>
-                  <p className="mt-1 text-[11px] text-zinc-500">Vai pra conta da pessoa em Compras internas, pra descontar depois.</p>
+                  <p className="mt-1 text-[11px] text-texto-suave">Vai pra conta da pessoa em Compras internas, pra descontar depois.</p>
                 </>
               )}
             </div>
@@ -489,7 +489,7 @@ export function PainelPagamentos({
             <div className="mt-3">{qrPix(cent(aplica), salvar)}</div>
           )}
 
-          <label className="mt-3 block text-[11px] uppercase tracking-wide text-zinc-400">
+          <label className="mt-3 block text-[11px] text-texto-fraco">
             Observação
             <input
               value={obs}
@@ -503,7 +503,7 @@ export function PainelPagamentos({
           {aviso && <p className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
 
           <div className="mt-3 flex gap-2">
-            <button onClick={fechar} className={`${btn} flex-1 border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300`}>
+            <button onClick={fechar} className={`${btn} flex-1 border-borda-forte text-texto-suave `}>
               Voltar
             </button>
             {tefAplica(forma) ? (
@@ -511,14 +511,14 @@ export function PainelPagamentos({
                 onClick={() => { if (!bandeira) setBandeira("Outra"); salvar(); }}
                 disabled={!!tefEtapa}
                 title="Usou a maquininha avulsa? Lança sem passar no pinpad."
-                className={`${btn} flex-[2] border-zinc-300 text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300`}
+                className={`${btn} flex-[2] border-borda-forte text-texto-suave disabled:opacity-40 `}
               >
                 Lançar sem passar no pinpad
               </button>
             ) : (
               <button
                 onClick={salvar}
-                className={`${btn} flex-[2] border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700`}
+                className={`${btn} flex-[2] border-emerald-600 bg-texto text-fundo hover:opacity-90`}
               >
                 ✓ Salvar {aplica > 0.005 ? brl(cent(aplica)) : ""}
               </button>

@@ -65,20 +65,20 @@ export default async function OrcamentoPage({
     <div className="mx-auto max-w-4xl p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Orçamento × Real
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             Defina a meta de cada categoria e compare com o realizado.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/financeiro/orcamento?mes=${desloca(mes, -1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">‹</Link>
-          <span className="min-w-40 text-center text-sm font-medium capitalize text-zinc-700 dark:text-zinc-300">
+          <Link href={`/financeiro/orcamento?mes=${desloca(mes, -1)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">‹</Link>
+          <span className="min-w-40 text-center text-sm font-medium capitalize text-texto-suave">
             {rotuloMes(mes)}
           </span>
-          <Link href={`/financeiro/orcamento?mes=${desloca(mes, 1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">›</Link>
-          <Link href={`/financeiro?mes=${mes}`} className="ml-2 rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+          <Link href={`/financeiro/orcamento?mes=${desloca(mes, 1)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">›</Link>
+          <Link href={`/financeiro?mes=${mes}`} className="ml-2 rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
             Financeiro
           </Link>
         </div>

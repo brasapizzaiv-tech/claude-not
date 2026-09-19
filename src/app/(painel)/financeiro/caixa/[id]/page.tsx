@@ -79,27 +79,27 @@ export default async function FechamentoRelatorio({
         <div>
           <Link
             href="/financeiro/caixa"
-            className="text-sm text-zinc-500 hover:text-orange-600"
+            className="text-sm text-texto-suave hover:text-orange-600"
           >
             ← Fechamentos
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="mt-1 text-2xl font-bold text-texto">
             Caixa de {dataBR(r.data)}
           </h1>
           {r.observacao && (
-            <p className="mt-1 text-sm text-zinc-500">{r.observacao}</p>
+            <p className="mt-1 text-sm text-texto-suave">{r.observacao}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
           <Link
             href={`/financeiro/caixa/novo?id=${r.id}`}
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Editar
           </Link>
           <form action={excluirFechamento}>
             <input type="hidden" name="id" value={r.id} />
-            <button className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-500 hover:border-red-400 hover:text-red-600 dark:border-zinc-700">
+            <button className="rounded-controle border border-borda-forte px-4 py-2 text-sm text-texto-suave hover:border-red-400 hover:text-red-600 dark:border-borda-forte">
               Excluir
             </button>
           </form>
@@ -108,11 +108,11 @@ export default async function FechamentoRelatorio({
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">
         {/* Detalhes do caixa */}
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="mb-1 font-semibold text-zinc-900 dark:text-zinc-50">
+        <div className="rounded-cartao border border-borda p-4">
+          <h2 className="mb-1 font-semibold text-texto">
             Detalhes do caixa
           </h2>
-          <p className="mb-3 text-xs text-zinc-500">
+          <p className="mb-3 text-xs text-texto-suave">
             Fechamento do caixa nesse dia.
           </p>
           <div className="space-y-1.5">
@@ -121,20 +121,20 @@ export default async function FechamentoRelatorio({
               return (
                 <div
                   key={letra}
-                  className={`flex items-center gap-2 rounded-lg px-2 py-2 ${
+                  className={`flex items-center gap-2 rounded-controle px-2 py-2 ${
                     destaque
-                      ? "bg-zinc-100 dark:bg-zinc-900"
-                      : "border-b border-zinc-100 dark:border-zinc-800/60"
+                      ? "bg-superficie-suave"
+                      : "border-b border-borda /60"
                   }`}
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-bold text-texto-suave dark:bg-zinc-700">
                     {letra}
                   </span>
                   <span
                     className={`flex-1 text-sm ${
                       destaque
-                        ? "font-semibold text-zinc-900 dark:text-zinc-50"
-                        : "text-zinc-600 dark:text-zinc-300"
+                        ? "font-semibold text-texto"
+                        : "text-texto-suave"
                     }`}
                   >
                     {label}
@@ -143,8 +143,8 @@ export default async function FechamentoRelatorio({
                   <span
                     className={`w-28 text-right text-sm font-semibold ${
                       destaque
-                        ? "text-zinc-900 dark:text-zinc-50"
-                        : "text-zinc-700 dark:text-zinc-200"
+                        ? "text-texto"
+                        : "text-texto-suave"
                     }`}
                   >
                     {moeda(valor)}
@@ -158,33 +158,33 @@ export default async function FechamentoRelatorio({
         {/* Estatísticas + por forma */}
         <div>
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-              <p className="text-xs text-zinc-500">Ticket médio</p>
-              <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">
+            <div className="rounded-cartao border border-borda p-4">
+              <p className="text-xs text-texto-suave">Ticket médio</p>
+              <p className="mt-1 text-lg font-bold text-texto">
                 {moeda(c.ticket_medio)}
               </p>
             </div>
-            <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-              <p className="text-xs text-zinc-500">Pedidos pagos</p>
-              <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">
+            <div className="rounded-cartao border border-borda p-4">
+              <p className="text-xs text-texto-suave">Pedidos pagos</p>
+              <p className="mt-1 text-lg font-bold text-texto">
                 {subPedidos}
               </p>
-              <p className="text-xs text-zinc-400">{moeda(subTotal)}</p>
+              <p className="text-xs text-texto-fraco">{moeda(subTotal)}</p>
             </div>
-            <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-              <p className="text-xs text-zinc-500">Total pedidos</p>
+            <div className="rounded-cartao border border-borda p-4">
+              <p className="text-xs text-texto-suave">Total pedidos</p>
               <p className="mt-1 text-lg font-bold text-orange-600">
                 {moeda(c.total_pedidos)}
               </p>
             </div>
           </div>
 
-          <h2 className="mb-2 font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="mb-2 font-semibold text-texto">
             Por forma de pagamento
           </h2>
-          <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
             <table className="w-full min-w-[460px] text-sm">
-              <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-400 dark:bg-zinc-900">
+              <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
                 <tr>
                   <th className="px-4 py-2">Forma de pag.</th>
                   <th className="px-4 py-2 text-right">Pedidos</th>
@@ -193,29 +193,29 @@ export default async function FechamentoRelatorio({
                   <th className="px-4 py-2 text-right">Saldo final</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              <tbody className="divide-y divide-borda">
                 {formasCalc.map((f) => (
-                  <tr key={f.forma} className="bg-white dark:bg-zinc-950">
-                    <td className="px-4 py-2 font-medium text-zinc-800 dark:text-zinc-200">
+                  <tr key={f.forma} className="">
+                    <td className="px-4 py-2 font-medium text-texto">
                       {f.forma}
                     </td>
-                    <td className="px-4 py-2 text-right text-zinc-500">{f.pedidos}</td>
-                    <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                    <td className="px-4 py-2 text-right text-texto-suave">{f.pedidos}</td>
+                    <td className="px-4 py-2 text-right text-texto-suave">
                       {moeda(f.valor)}
                     </td>
-                    <td className="px-4 py-2 text-right text-zinc-500">
+                    <td className="px-4 py-2 text-right text-texto-suave">
                       {f.outros ? (
                         <span className="text-green-600">+ {moeda(f.outros)}</span>
                       ) : (
                         moeda(0)
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right font-medium text-zinc-800 dark:text-zinc-200">
+                    <td className="px-4 py-2 text-right font-medium text-texto">
                       {moeda(f.saldo)}
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
+                <tr className="bg-superficie-suave font-semibold">
                   <td className="px-4 py-2">Subtotal</td>
                   <td className="px-4 py-2 text-right">{subPedidos}</td>
                   <td className="px-4 py-2 text-right">{moeda(subTotal)}</td>
@@ -223,7 +223,7 @@ export default async function FechamentoRelatorio({
                   <td className="px-4 py-2 text-right">{moeda(subSaldo)}</td>
                 </tr>
                 {r.quebra !== 0 && (
-                  <tr className="bg-white text-red-600 dark:bg-zinc-950">
+                  <tr className="bg-painel-cartao text-red-600">
                     <td className="px-4 py-2">Quebra</td>
                     <td className="px-4 py-2 text-right">–</td>
                     <td className="px-4 py-2 text-right">–</td>
@@ -231,7 +231,7 @@ export default async function FechamentoRelatorio({
                     <td className="px-4 py-2 text-right">{moeda(-r.quebra)}</td>
                   </tr>
                 )}
-                <tr className="bg-zinc-100 font-bold dark:bg-zinc-800">
+                <tr className="bg-superficie-suave font-bold">
                   <td className="px-4 py-2">Total</td>
                   <td className="px-4 py-2 text-right">{subPedidos}</td>
                   <td className="px-4 py-2 text-right">{moeda(subTotal)}</td>

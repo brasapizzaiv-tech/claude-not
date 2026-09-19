@@ -32,7 +32,7 @@ type DezLinha = { data: string; valor: string; pagar_em: string };
 const chave = (id: string, data: string, turno: Turno) => `${id}|${data}|${turno}`;
 
 const inputCls =
-  "rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 function numBRtxt(s: string) {
   const t = s.trim();
@@ -341,50 +341,50 @@ export function SemanaClient({
     <div className="mx-auto max-w-7xl p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Semana e 10%</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Semana e 10%</h1>
+          <p className="mt-1 text-sm text-texto-suave">
             Marque quem trabalhou em cada dia (dia ou noite). O 10% de cada noite é dividido por quem trabalhou naquela noite e entra no acerto da semana seguinte.
             {" "}<Link href="/colaboradores" className="text-orange-600 hover:underline">Cadastro da equipe</Link>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/colaboradores/semana?s=${somarDias(segunda, -7)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">← anterior</Link>
-          <span className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white">{rotuloSemana(segunda)}</span>
-          <Link href={`/colaboradores/semana?s=${somarDias(segunda, 7)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">próxima →</Link>
+          <Link href={`/colaboradores/semana?s=${somarDias(segunda, -7)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">← anterior</Link>
+          <span className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-white">{rotuloSemana(segunda)}</span>
+          <Link href={`/colaboradores/semana?s=${somarDias(segunda, 7)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">próxima →</Link>
         </div>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-        <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
+        <div className="flex overflow-hidden rounded-controle border border-borda-forte">
           <button onClick={() => setModo("grade")} className={`px-3 py-1.5 ${modo === "grade" ? "bg-orange-500 text-white" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="horario" tamanho={14} /> Grade</span></button>
           <button onClick={() => setModo("resumo")} className={`px-3 py-1.5 ${modo === "resumo" ? "bg-orange-500 text-white" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Resumo pra pagar</span></button>
         </div>
         <button
           onClick={() => start(async () => { const r = await preencherEscalaFixa(segunda); if (r.erro) setErro(r.erro); else router.refresh(); })}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave"
           title="Marca os dias fixos de cada pessoa (não apaga o que já foi marcado)"
         >
           <Icone nome="brilho" tamanho={15} className="mr-1.5" /> Preencher com a escala fixa
         </button>
-        <button onClick={() => setAddAberto((v) => !v)} className="rounded-lg border border-orange-500 px-3 py-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+        <button onClick={() => setAddAberto((v) => !v)} className="rounded-controle border border-orange-500 px-3 py-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
           + Free esporádico
         </button>
-        <button onClick={baixarCsv} className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
+        <button onClick={baixarCsv} className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave">
           <Icone nome="baixar" tamanho={15} className="mr-1.5" /> Planilha (CSV)
         </button>
-        <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700" title="Filtrar por turno">
+        <div className="flex overflow-hidden rounded-controle border border-borda-forte" title="Filtrar por turno">
           {([["todos", "Todos"], ["dia", "Dia"], ["noite", "Noite"]] as const).map(([k, rot]) => (
             <button key={k} onClick={() => setTurnoFiltro(k)} className={`px-3 py-1.5 ${turnoFiltro === k ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : ""}`}>
               {rot}
             </button>
           ))}
         </div>
-        {pending && <span className="text-xs text-zinc-400">salvando…</span>}
+        {pending && <span className="text-xs text-texto-fraco">salvando…</span>}
         {erro && <span className="text-xs text-red-600">{erro}</span>}
       </div>
 
       {addAberto && (
-        <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-950/20">
+        <div className="mb-4 rounded-cartao border border-orange-200 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-950/20">
           <p className="mb-2 text-sm font-medium">Trazer alguém pra esta semana</p>
           {foraDaGrade.length > 0 && (
             <div className="mb-3">
@@ -402,7 +402,7 @@ export function SemanaClient({
                     <button
                       key={p.id}
                       onClick={() => { setExtras((s) => new Set(s).add(p.id)); setAddAberto(false); }}
-                      className="rounded-full border border-zinc-300 bg-white px-3 py-1 text-sm hover:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950"
+                      className="rounded-full border border-borda-forte bg-painel-cartao px-3 py-1 text-sm hover:border-orange-500"
                     >
                       {p.nome}{p.esporadico ? " · free" : ""}
                     </button>
@@ -410,7 +410,7 @@ export function SemanaClient({
               </div>
             </div>
           )}
-          <p className="mb-1 text-xs font-bold uppercase text-zinc-400">Ou cadastrar um free novo</p>
+          <p className="mb-1 text-xs font-bold text-texto-fraco">Ou cadastrar um free novo</p>
           <div className="flex flex-wrap items-center gap-2">
             <input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Nome" className={`${inputCls} w-48`} />
             <input value={novoDia} onChange={(e) => setNovoDia(e.target.value)} placeholder="R$ dia" inputMode="decimal" className={`${inputCls} w-24`} />
@@ -425,7 +425,7 @@ export function SemanaClient({
                   router.refresh();
                 })
               }
-              className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600"
+              className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600"
             >
               Cadastrar e trazer
             </button>
@@ -435,27 +435,27 @@ export function SemanaClient({
 
       {/* 10% da noite: painel separado. Cada noite tem a data em que foi gerada e a
           semana em que é paga (padrão: a seguinte). A divisão usa quem trabalhou NAQUELA noite. */}
-      <div className="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+      <div className="mb-4 rounded-cartao border border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="flex items-center gap-1.5 font-semibold"><Icone nome="noite" tamanho={15} /> 10% da noite</p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-texto-suave">
               Digite o arrecadado de cada noite. Entra no acerto desta semana ({rotuloSemana(segunda)}) o que está marcado como <b>paga nesta semana</b> — normalmente as noites da semana passada.
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <input type="date" value={novaNoite} onChange={(e) => setNovaNoite(e.target.value)} className={inputCls} />
-            <button onClick={addNoite} disabled={!novaNoite} className="rounded-lg bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700 disabled:opacity-40">
+            <button onClick={addNoite} disabled={!novaNoite} className="rounded-controle bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700 disabled:opacity-40">
               + Adicionar noite
             </button>
           </div>
         </div>
         {dez.length === 0 ? (
-          <p className="text-sm text-zinc-500">Nenhuma noite lançada. Adicione a data da noite e digite o valor.</p>
+          <p className="text-sm text-texto-suave">Nenhuma noite lançada. Adicione a data da noite e digite o valor.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-zinc-500">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
                 <tr>
                   <th className="px-2 py-1">Noite</th>
                   <th className="px-2 py-1 text-right">10% arrecadado</th>
@@ -470,10 +470,10 @@ export function SemanaClient({
                   const e = dez[i];
                   const opcoesPagar = Array.from(new Set([somarDias(segundaDe(n.data), 7), segunda, somarDias(segunda, 7), n.pagar_em])).sort();
                   return (
-                    <tr key={n.data} className={n.nestaSemana ? "bg-white dark:bg-zinc-950" : "opacity-70"}>
+                    <tr key={n.data} className={n.nestaSemana ? "bg-painel-cartao " : "opacity-70"}>
                       <td className="px-2 py-1 font-medium whitespace-nowrap">
                         {rotuloDia(n.data)}
-                        {(n.data < dias[0] || n.data > dias[6]) && <span className="ml-1 text-[10px] text-zinc-400">(outra semana)</span>}
+                        {(n.data < dias[0] || n.data > dias[6]) && <span className="ml-1 text-[10px] text-texto-fraco">(outra semana)</span>}
                       </td>
                       <td className="px-2 py-1 text-right">
                         <input
@@ -490,7 +490,7 @@ export function SemanaClient({
                         <select
                           value={e.pagar_em}
                           onChange={(ev) => salvarDez(n.data, e.valor, ev.target.value)}
-                          className={`${inputCls} ${n.nestaSemana ? "border-indigo-400 font-medium" : ""}`}
+                          className={`${inputCls}  ${n.nestaSemana ? "border-indigo-400 font-medium" : ""}`}
                         >
                           {opcoesPagar.map((s) => (
                             <option key={s} value={s}>
@@ -504,7 +504,7 @@ export function SemanaClient({
                       </td>
                       <td className="px-2 py-1 text-right font-semibold">{n.presentes > 0 ? brl(n.unit) : "—"}</td>
                       <td className="px-2 py-1 text-right">
-                        <button onClick={() => removerNoite(n.data)} className="text-zinc-400 hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
+                        <button onClick={() => removerNoite(n.data)} className="text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
                       </td>
                     </tr>
                   );
@@ -512,7 +512,7 @@ export function SemanaClient({
                 <tr className="border-t border-indigo-200 font-semibold dark:border-indigo-900">
                   <td className="px-2 py-1" colSpan={1}>Entra nesta semana</td>
                   <td className="px-2 py-1 text-right">{brl(calc.totalPool)}</td>
-                  <td className="px-2 py-1 text-xs font-normal text-zinc-500" colSpan={4}>
+                  <td className="px-2 py-1 text-xs font-normal text-texto-suave" colSpan={4}>
                     {calc.noitesPagas.length} noite{calc.noitesPagas.length === 1 ? "" : "s"} · quem trabalhou nelas recebe no acerto desta semana, mesmo sem trabalhar agora
                   </td>
                 </tr>
@@ -523,26 +523,26 @@ export function SemanaClient({
       </div>
 
       {modo === "grade" ? (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="bg-superficie-suave text-xs text-texto-suave">
               <tr>
-                <th className="sticky left-0 z-10 bg-zinc-50 px-3 py-2 text-left dark:bg-zinc-900">Pessoa</th>
+                <th className="sticky left-0 z-10 bg-superficie-suave px-3 py-2 text-left">Pessoa</th>
                 {dias.map((d) => (
                   <th key={d} className={`px-1 py-2 text-center ${ehHoje(d) ? "text-orange-600" : ""}`}>{rotuloDia(d)}</th>
                 ))}
                 <th className="px-3 py-2 text-right">Semana</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {calc.porPessoa.filter((x) => cabeNoFiltro(x.p)).map(({ p, nDias, nNoites, total, clt, cltDia, cltNoite }) => (
-                <tr key={p.id} className="bg-white dark:bg-zinc-950">
-                  <td className="sticky left-0 z-10 bg-white px-3 py-1.5 dark:bg-zinc-950">
-                    <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                <tr key={p.id} className="">
+                  <td className="sticky left-0 z-10 bg-painel-cartao px-3 py-1.5">
+                    <div className="font-medium text-texto">
                       {p.nome}
                       {p.esporadico && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">free</span>}
                     </div>
-                    <div className="text-[11px] text-zinc-400">
+                    <div className="text-[11px] text-texto-fraco">
                       {clt
                         ? "CLT"
                         : [
@@ -563,14 +563,14 @@ export function SemanaClient({
                           <button
                             onClick={() => toggle(p, d, "dia")}
                             title="Trabalhou de dia"
-                            className={`h-8 w-8 rounded-md border text-base ${kd ? "border-yellow-500 bg-yellow-400 text-zinc-900" : "border-zinc-200 text-zinc-300 hover:border-yellow-400 dark:border-zinc-800"} ${mostraDia ? "" : "opacity-30"}`}
+                            className={`h-8 w-8 rounded-controle border text-base ${kd ? "border-yellow-500 bg-yellow-400 text-texto" : "border-borda text-zinc-300 hover:border-yellow-400 "}  ${mostraDia ? "" : "opacity-30"}`}
                           >
                             <Icone nome="dia" tamanho={17} titulo="Trabalhou de dia" />
                           </button>
                           <button
                             onClick={() => toggle(p, d, "noite")}
                             title="Trabalhou de noite"
-                            className={`h-8 w-8 rounded-md border text-base ${kn ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 text-zinc-300 hover:border-indigo-400 dark:border-zinc-800"} ${mostraNoite ? "" : "opacity-30"}`}
+                            className={`h-8 w-8 rounded-controle border text-base ${kn ? "border-indigo-600 bg-indigo-600 text-white" : "border-borda text-zinc-300 hover:border-indigo-400 "}  ${mostraNoite ? "" : "opacity-30"}`}
                           >
                             <Icone nome="noite" tamanho={17} titulo="Trabalhou de noite" />
                           </button>
@@ -579,11 +579,11 @@ export function SemanaClient({
                     );
                   })}
                   <td className="px-3 py-1.5 text-right">
-                    <div className="flex items-center justify-end gap-2 text-xs text-zinc-500">
+                    <div className="flex items-center justify-end gap-2 text-xs text-texto-suave">
                       <span className="inline-flex items-center gap-1">{nDias} <Icone nome="dia" tamanho={12} /></span>
                       <span className="inline-flex items-center gap-1">{nNoites} <Icone nome="noite" tamanho={12} /></span>
                     </div>
-                    <div className="font-semibold text-zinc-900 dark:text-zinc-100">{brl(total)}</div>
+                    <div className="font-semibold text-texto">{brl(total)}</div>
                   </td>
                 </tr>
               ))}
@@ -591,28 +591,28 @@ export function SemanaClient({
           </table>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           {/* Gasto por turno da semana */}
-          <div className="grid gap-3 border-b border-zinc-200 bg-zinc-50 p-3 sm:grid-cols-3 dark:border-zinc-800 dark:bg-zinc-900">
-            <div className={`rounded-xl border bg-white p-3 dark:bg-zinc-950 ${turnoFiltro === "dia" ? "border-yellow-500" : "border-zinc-200 dark:border-zinc-800"}`}>
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-zinc-500"><Icone nome="dia" tamanho={13} /> Dia</div>
+          <div className="grid gap-3 border-b border-borda bg-superficie-suave p-3 sm:grid-cols-3">
+            <div className={`rounded-cartao border bg-painel-cartao p-3 ${turnoFiltro === "dia" ? "border-yellow-500" : "border-borda"}`}>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-texto-suave"><Icone nome="dia" tamanho={13} /> Dia</div>
               <div className="text-lg font-semibold">{brl(calc.turnoDia.diarias + calc.turnoDia.extras)}</div>
-              <div className="text-xs text-zinc-500">{calc.turnoDia.presencas} presença{calc.turnoDia.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoDia.diarias)}{calc.turnoDia.extras > 0 ? ` + extras ${brl(calc.turnoDia.extras)}` : ""} (CLT não entra)</div>
+              <div className="text-xs text-texto-suave">{calc.turnoDia.presencas} presença{calc.turnoDia.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoDia.diarias)}{calc.turnoDia.extras > 0 ? ` + extras ${brl(calc.turnoDia.extras)}` : ""} (CLT não entra)</div>
             </div>
-            <div className={`rounded-xl border bg-white p-3 dark:bg-zinc-950 ${turnoFiltro === "noite" ? "border-indigo-500" : "border-zinc-200 dark:border-zinc-800"}`}>
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-zinc-500"><Icone nome="noite" tamanho={13} /> Noite</div>
+            <div className={`rounded-cartao border bg-painel-cartao p-3 ${turnoFiltro === "noite" ? "border-indigo-500" : "border-borda"}`}>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-texto-suave"><Icone nome="noite" tamanho={13} /> Noite</div>
               <div className="text-lg font-semibold">{brl(calc.turnoNoite.diarias + calc.turnoNoite.dez + calc.turnoNoite.extras)}</div>
-              <div className="text-xs text-zinc-500">{calc.turnoNoite.presencas} presença{calc.turnoNoite.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoNoite.diarias)} + 10% {brl(calc.turnoNoite.dez)}{calc.turnoNoite.extras > 0 ? ` + extras ${brl(calc.turnoNoite.extras)}` : ""}</div>
+              <div className="text-xs text-texto-suave">{calc.turnoNoite.presencas} presença{calc.turnoNoite.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoNoite.diarias)} + 10% {brl(calc.turnoNoite.dez)}{calc.turnoNoite.extras > 0 ? ` + extras ${brl(calc.turnoNoite.extras)}` : ""}</div>
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="text-xs font-bold uppercase text-zinc-500">Semana</div>
+            <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+              <div className="text-xs font-bold text-texto-suave">Semana</div>
               <div className="text-lg font-semibold">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras)}</div>
-              <div className="text-xs text-zinc-500">diárias {brl(calc.totalDiarias)} + 10% {brl(calc.totalDez)}{calc.totalExtras > 0 ? ` + extras ${brl(calc.totalExtras)}` : ""}</div>
+              <div className="text-xs text-texto-suave">diárias {brl(calc.totalDiarias)} + 10% {brl(calc.totalDez)}{calc.totalExtras > 0 ? ` + extras ${brl(calc.totalExtras)}` : ""}</div>
             </div>
           </div>
           {turnoFiltro === "todos" && (
-            <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800">
-              <span className="text-zinc-500">Dar um extra pra alguém que não está na lista (ex.: carteira assinada que fez algo a mais — não conta como dia):</span>
+            <div className="flex flex-wrap items-center gap-2 border-b border-borda px-4 py-2 text-sm">
+              <span className="text-texto-suave">Dar um extra pra alguém que não está na lista (ex.: carteira assinada que fez algo a mais — não conta como dia):</span>
               <select
                 value={escolhendoExtra}
                 onChange={(e) => {
@@ -641,7 +641,7 @@ export function SemanaClient({
           )}
           <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] text-sm">
-            <thead className="bg-zinc-50 text-left text-[11px] uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="bg-superficie-suave text-left text-[11px] text-texto-suave">
               <tr>
                 {turnoFiltro === "todos" && (() => {
                   // Marcar/desmarcar todo mundo que pode ser lançado (tem valor e ainda não foi pago).
@@ -670,7 +670,7 @@ export function SemanaClient({
                 {turnoFiltro === "todos" && <th className="px-4 py-3 text-right">Em mãos</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {calc.porPessoa
                 .filter((x) => cabeNoFiltro(x.p))
                 .map((x) => ({
@@ -685,7 +685,7 @@ export function SemanaClient({
                 .filter((x) => x.presM > 0 || x.dezM > 0.005 || x.extraM > 0.005 || (turnoFiltro === "todos" && (pagoDe.has(x.p.id) || soExtra.has(x.p.id) || !!extrasSem[x.p.id]?.motivo || x.descontoSem > 0)))
                 .sort((a, b) => b.totalM - a.totalM)
                 .map(({ p, nDias, nNoites, diariasM, dezM, extraM, totalM, total, rotuloVinculo }) => (
-                  <tr key={p.id} className={`bg-white dark:bg-zinc-950 ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
+                  <tr key={p.id} className={`bg-painel-cartao ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-center">
                       {pagoDe.has(p.id) ? (
                         <span className="text-xs text-green-600" title={`Lançado: ${brl(Number(pagoDe.get(p.id)!.valor))}`}>✓</span>
@@ -698,8 +698,8 @@ export function SemanaClient({
                       ) : null}
                     </td>}
                     <td className="px-4 py-2">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100">{p.nome}</div>
-                      <div className="text-[11px] text-zinc-400">
+                      <div className="font-medium text-texto">{p.nome}</div>
+                      <div className="text-[11px] text-texto-fraco">
                         {rotuloVinculo}{p.funcao ? ` · ${p.funcao}` : ""}
                         {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))}{pagoDe.get(p.id)!.n > 1 ? `, ${pagoDe.get(p.id)!.n} lançamentos` : ""})</span>}
                       </div>
@@ -708,14 +708,14 @@ export function SemanaClient({
                           type="button"
                           onClick={() => lancarDiferenca(p, Math.round((total - pagoDe.get(p.id)!.valor) * 100) / 100)}
                           disabled={pending}
-                          className="mt-1 rounded-md border border-amber-500 px-2 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-400"
+                          className="mt-1 rounded-controle border border-amber-500 px-2 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-400"
                           title="Esqueceu algo? Lança só a diferença entre o total de agora e o que já foi lançado."
                         >
                           + Lançar diferença {brl(total - pagoDe.get(p.id)!.valor)}
                         </button>
                       )}
                     </td>
-                    <td className="px-2 py-2 text-center whitespace-nowrap text-zinc-600 dark:text-zinc-300">
+                    <td className="px-2 py-2 text-center whitespace-nowrap text-texto-suave">
                       <span className="inline-flex items-center justify-center gap-2">
                           {turnoFiltro !== "noite" && <span className="inline-flex items-center gap-1">{nDias} <Icone nome="dia" tamanho={12} /></span>}
                           {turnoFiltro !== "dia" && <span className="inline-flex items-center gap-1">{nNoites} <Icone nome="noite" tamanho={12} /></span>}
@@ -788,10 +788,10 @@ export function SemanaClient({
                         </div>
                       )}
                     </td>}
-                    <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-zinc-100">{brl(totalM)}</td>
+                    <td className="px-4 py-2 text-right font-semibold text-texto">{brl(totalM)}</td>
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-right whitespace-nowrap">
                       {pagoDe.has(p.id) ? (
-                        Number(pagoDe.get(p.id)!.desconto) > 0 ? <span className="text-xs text-zinc-500">− {brl(Number(pagoDe.get(p.id)!.desconto))}</span> : <span className="text-zinc-300">—</span>
+                        Number(pagoDe.get(p.id)!.desconto) > 0 ? <span className="text-xs text-texto-suave">− {brl(Number(pagoDe.get(p.id)!.desconto))}</span> : <span className="text-zinc-300">—</span>
                       ) : (fiadoPor[p.id]?.valor ?? 0) > 0.005 ? (
                         <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-red-600" title={`${fiadoPor[p.id].n} compra(s) em aberto — marque pra descontar no acerto`}>
                           <input
@@ -813,7 +813,7 @@ export function SemanaClient({
                   </tr>
                 ))}
               {turnoFiltro === "todos" ? (
-                <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
+                <tr className="bg-superficie-suave font-semibold">
                   <td className="px-4 py-3" colSpan={3}>Total da semana</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
@@ -824,14 +824,14 @@ export function SemanaClient({
                   <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - calc.totalDescontosSem - totalDesconto)}</td>
                 </tr>
               ) : turnoFiltro === "dia" ? (
-                <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
+                <tr className="bg-superficie-suave font-semibold">
                   <td className="px-4 py-3" colSpan={2}><span className="inline-flex items-center gap-1.5">Total do turno <Icone nome="dia" tamanho={13} /> Dia</span></td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoDia.diarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoDia.extras)}</td>
                   <td className="px-4 py-3 text-right">{brl(calc.turnoDia.diarias + calc.turnoDia.extras)}</td>
                 </tr>
               ) : (
-                <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
+                <tr className="bg-superficie-suave font-semibold">
                   <td className="px-4 py-3" colSpan={2}><span className="inline-flex items-center gap-1.5">Total do turno <Icone nome="noite" tamanho={13} /> Noite</span></td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoNoite.diarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoNoite.dez)}</td>
@@ -842,7 +842,7 @@ export function SemanaClient({
             </tbody>
           </table>
           </div>
-          <div className="border-t border-zinc-200 p-3 text-xs text-zinc-500 dark:border-zinc-800">
+          <div className="border-t border-borda p-3 text-xs text-texto-suave">
             10% que entra neste acerto: <b>{brl(calc.totalPool)}</b> ({calc.noitesPagas.map((n) => rotuloDia(n.data)).join(", ") || "nenhuma noite"})
             {Math.abs(calc.totalPool - calc.totalDez) > 0.01 && (
               <span className="ml-2 text-amber-600">— {brl(calc.totalPool - calc.totalDez)} sem ninguém marcado pra receber.</span>
@@ -850,7 +850,7 @@ export function SemanaClient({
           </div>
 
           {/* Pagar → Contas a pagar (CMO Eventual / Diaristas) */}
-          {turnoFiltro === "todos" && <div className="flex flex-wrap items-center gap-3 border-t border-zinc-200 bg-orange-50/60 p-3 text-sm dark:border-zinc-800 dark:bg-orange-950/20">
+          {turnoFiltro === "todos" && <div className="flex flex-wrap items-center gap-3 border-t border-borda bg-orange-50/60 p-3 text-sm dark:bg-orange-950/20">
             <label className="flex items-center gap-1">
               Data
               <input type="date" value={dataPag} onChange={(e) => setDataPag(e.target.value)} className={inputCls} />
@@ -867,16 +867,16 @@ export function SemanaClient({
             <button
               onClick={lancar}
               disabled={pending || aLancar.length === 0}
-              className="rounded-lg bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600 disabled:opacity-40"
+              className="rounded-controle bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600 disabled:opacity-40"
             >
               <Icone nome="dinheiro" tamanho={16} className="mr-1.5" /> Lançar {aLancar.length} pagamento{aLancar.length === 1 ? "" : "s"} · {brl(totalALancar)} no Contas a pagar
             </button>
-            <span className="text-xs text-zinc-500">categoria: CMO Eventual / Diaristas · a conta entra com o valor cheio; o fiado só abate o que sai em mãos</span>
+            <span className="text-xs text-texto-suave">categoria: CMO Eventual / Diaristas · a conta entra com o valor cheio; o fiado só abate o que sai em mãos</span>
             {comFiado.length > 0 && (
               <button
                 type="button"
                 onClick={() => setDescontar((s) => (s.size >= comFiado.length ? new Set() : new Set(comFiado.map((x) => x.p.id))))}
-                className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                className="rounded-controle border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
               >
                 {descontar.size >= comFiado.length ? "não descontar fiado de ninguém" : `descontar fiado de todos (${comFiado.length})`}
               </button>

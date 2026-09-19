@@ -24,12 +24,12 @@ export default async function TefPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/salao/caixa" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">
         ← Voltar ao caixa
       </Link>
       <div className="mt-2 mb-4">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="cartao" tamanho={20} className="mr-2" /> Cartões (TEF)</h1>
-        <p className="text-sm text-zinc-500">
+        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="cartao" tamanho={20} className="mr-2" /> Cartões (TEF)</h1>
+        <p className="text-sm text-texto-suave">
           Últimos 7 dias de cartões passados no pinpad. Aqui você reimprime a via do cliente, cancela uma venda (o pinpad pede o cartão de novo) e abre o menu administrativo da Elgin.
         </p>
       </div>

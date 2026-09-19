@@ -24,19 +24,19 @@ export default async function BalancaPage() {
 
   return (
     <div className="mx-auto max-w-lg p-6">
-      <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
         ← Salão
       </Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="balanca" tamanho={20} /> Balança / Buffet</h1>
-          <p className="mt-1 text-zinc-500">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-texto"><Icone nome="balanca" tamanho={20} /> Balança / Buffet</h1>
+          <p className="mt-1 text-texto-suave">
             Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido no Cardápio"}.
           </p>
         </div>
         <Link
           href="/salao/balanca/quiosque"
-          className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white hover:brightness-110"
+          className="rounded-cartao bg-orange-500 px-5 py-3 text-sm font-bold text-white hover:brightness-110"
         >
           <Icone nome="tela" tamanho={15} className="mr-1.5" /> Modo quiosque (autoatendimento)
         </Link>
@@ -44,12 +44,12 @@ export default async function BalancaPage() {
 
       {/* Agente da balança: status + ALERTA de fila offline (nunca em silêncio) */}
       {filaPendente > 0 && (
-        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+        <div className="mt-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
           <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {filaPendente} pesagem(ns) na fila offline do agente — sincronizam sozinhas quando a internet do PC da balança voltar.
         </div>
       )}
       {ag?.visto_em && (
-        <p className="mt-3 text-xs text-zinc-400">
+        <p className="mt-3 text-xs text-texto-fraco">
           Agente da balança:{" "}
           <span className="inline-flex items-center gap-1.5">
             <span className={`h-2 w-2 rounded-full ${agenteOnline ? "bg-emerald-500" : "bg-red-500"}`} />
@@ -63,33 +63,33 @@ export default async function BalancaPage() {
         <BalancaLeitor taraPadrao={taraPadrao} />
       </div>
 
-      <p className="mt-6 mb-2 text-xs font-medium uppercase text-zinc-400">Ou digitar na mão</p>
+      <p className="mt-6 mb-2 text-xs font-medium text-texto-fraco">Ou digitar na mão</p>
       <form
         action={criarComandaBuffet}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+        className="flex flex-wrap items-end gap-3 rounded-cartao border border-borda p-5"
       >
         <input type="hidden" name="mesa" value="Balança" />
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Peso do prato (kg)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Peso do prato (kg)</label>
           <input
             name="peso"
             inputMode="decimal"
             autoFocus
             placeholder="0,000"
-            className="w-36 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-lg text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="w-36 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Tara (kg)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Tara (kg)</label>
           <input
             name="tara"
             inputMode="decimal"
             defaultValue={taraPadrao ? String(taraPadrao).replace(".", ",") : ""}
             placeholder="0,000"
-            className="w-28 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-lg text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="w-28 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           />
         </div>
-        <button className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
+        <button className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
           Gerar comanda
         </button>
       </form>

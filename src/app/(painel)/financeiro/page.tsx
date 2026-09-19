@@ -81,16 +81,16 @@ export default async function FinanceiroPage({
   }
 
   const inputCls =
-    "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
   return (
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Financeiro
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             Lançamentos de receitas e despesas. Pedidos conferidos entram
             sozinhos como CMV.
           </p>
@@ -98,52 +98,52 @@ export default async function FinanceiroPage({
         <div className="flex items-center gap-2">
           <Link
             href={`/financeiro?mes=${desloca(mes, -1)}`}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+            className="rounded-controle border border-borda-forte px-3 py-2 text-sm"
           >
             ‹
           </Link>
-          <span className="min-w-40 text-center text-sm font-medium capitalize text-zinc-700 dark:text-zinc-300">
+          <span className="min-w-40 text-center text-sm font-medium capitalize text-texto-suave">
             {rotuloMes(mes)}
           </span>
           <Link
             href={`/financeiro?mes=${desloca(mes, 1)}`}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+            className="rounded-controle border border-borda-forte px-3 py-2 text-sm"
           >
             ›
           </Link>
           <Link
             href="/financeiro/contas"
-            className="ml-2 rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="ml-2 rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Contas a pagar
           </Link>
           <Link
             href={`/financeiro/orcamento?mes=${mes}`}
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Orçamento
           </Link>
           <Link
             href="/financeiro/banco"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Banco
           </Link>
           <Link
             href="/financeiro/vendas"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Vendas
           </Link>
           <Link
             href="/financeiro/vendidos"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Produtos vendidos
           </Link>
           <Link
             href={`/financeiro/dre?mes=${mes}`}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
           >
             Ver DRE →
           </Link>
@@ -152,18 +152,18 @@ export default async function FinanceiroPage({
 
       {/* Resumo */}
       <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Receitas</p>
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Receitas</p>
           <p className="mt-1 text-xl font-bold text-green-600">
             {moeda(receitas)}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Despesas</p>
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Despesas</p>
           <p className="mt-1 text-xl font-bold text-red-600">{moeda(saidas)}</p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Resultado</p>
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Resultado</p>
           <p
             className={`mt-1 text-xl font-bold ${
               resultado >= 0 ? "text-green-600" : "text-red-600"
@@ -177,10 +177,10 @@ export default async function FinanceiroPage({
       {/* Novo lançamento */}
       <form
         action={criarLancamento}
-        className="mb-6 flex flex-wrap items-end gap-2 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+        className="mb-6 flex flex-wrap items-end gap-2 rounded-cartao border border-borda p-4"
       >
         <div>
-          <label className="mb-1 block text-xs text-zinc-500" title="Mês em que a despesa aconteceu — é por aqui que ela entra no DRE.">
+          <label className="mb-1 block text-xs text-texto-suave" title="Mês em que a despesa aconteceu — é por aqui que ela entra no DRE.">
             Competência
           </label>
           {/* Mês e ano: o dia não importa pro DRE (a ação grava o dia 1º). */}
@@ -191,10 +191,10 @@ export default async function FinanceiroPage({
             title="Mês da despesa (entra no DRE por aqui). Pagou em agosto uma conta de julho? Ponha julho aqui e a data do boleto no Vencimento."
             className={inputCls}
           />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">mês da despesa (vai pro DRE)</p>
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">mês da despesa (vai pro DRE)</p>
         </div>
         <div className="min-w-56 flex-1">
-          <label className="mb-1 block text-xs text-zinc-500">Categoria</label>
+          <label className="mb-1 block text-xs text-texto-suave">Categoria</label>
           <select name="categoria_id" required className={`${inputCls} w-full`}>
             <option value="">Escolha...</option>
             {[...porGrupo.entries()].map(([grupo, cs]) => (
@@ -209,34 +209,34 @@ export default async function FinanceiroPage({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Valor (R$)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Valor (R$)</label>
           <input name="valor" inputMode="decimal" placeholder="0,00" className={`${inputCls} w-28`} />
         </div>
         <div className="min-w-32 flex-1">
-          <label className="mb-1 block text-xs text-zinc-500">Descrição</label>
+          <label className="mb-1 block text-xs text-texto-suave">Descrição</label>
           <input name="descricao" placeholder="opcional" className={`${inputCls} w-full`} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Emissão</label>
+          <label className="mb-1 block text-xs text-texto-suave">Emissão</label>
           <input type="date" name="emissao" title="Data da nota/recibo (opcional)" className={inputCls} />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">da nota/recibo</p>
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">da nota/recibo</p>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Vencimento</label>
+          <label className="mb-1 block text-xs text-texto-suave">Vencimento</label>
           <input type="date" name="vencimento" className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Pago em</label>
+          <label className="mb-1 block text-xs text-texto-suave">Pago em</label>
           <input type="date" name="pago_em" title="Quando saiu do banco. Em branco com 'Já pago' marcado, vale o vencimento." className={inputCls} />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">só se já pagou</p>
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">só se já pagou</p>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Lançado em</label>
+          <label className="mb-1 block text-xs text-texto-suave">Lançado em</label>
           <input type="date" name="lancamento_em" defaultValue={hojeSP()} title="Quando esta conta foi cadastrada no sistema" className={inputCls} />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">cadastro (hoje)</p>
+          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">cadastro (hoje)</p>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Origem (banco)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Origem (banco)</label>
           <select name="banco" defaultValue="" className={inputCls}>
             <option value="">—</option>
             {BANCOS.map((b) => (
@@ -247,7 +247,7 @@ export default async function FinanceiroPage({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Tipo pagto.</label>
+          <label className="mb-1 block text-xs text-texto-suave">Tipo pagto.</label>
           <select name="forma_pagamento" defaultValue="" className={inputCls}>
             <option value="">—</option>
             {TIPOS_PAGAMENTO.map((t) => (
@@ -258,7 +258,7 @@ export default async function FinanceiroPage({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Repetir</label>
+          <label className="mb-1 block text-xs text-texto-suave">Repetir</label>
           <select name="repeticao" defaultValue="nenhuma" className={inputCls}>
             <option value="nenhuma">Não</option>
             <option value="parcelado">Parcelado</option>
@@ -266,7 +266,7 @@ export default async function FinanceiroPage({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Vezes</label>
+          <label className="mb-1 block text-xs text-texto-suave">Vezes</label>
           <input
             name="vezes"
             type="number"
@@ -277,7 +277,7 @@ export default async function FinanceiroPage({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Frequência</label>
+          <label className="mb-1 block text-xs text-texto-suave">Frequência</label>
           <select name="frequencia" defaultValue="mensal" className={inputCls}>
             <option value="semanal">Semanal</option>
             <option value="quinzenal">Quinzenal</option>
@@ -286,7 +286,7 @@ export default async function FinanceiroPage({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Dias</label>
+          <label className="mb-1 block text-xs text-texto-suave">Dias</label>
           <input
             name="dias"
             type="number"
@@ -295,18 +295,18 @@ export default async function FinanceiroPage({
             className={`${inputCls} w-16`}
           />
         </div>
-        <label className="flex items-center gap-1.5 pb-2 text-xs text-zinc-600 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5 pb-2 text-xs text-texto-suave">
           <input type="checkbox" name="pago" defaultChecked />
           Já pago
         </label>
-        <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
+        <button className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
           Lançar
         </button>
       </form>
 
       {/* Lista */}
       {lancamentos.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum lançamento neste mês.
         </div>
       ) : (

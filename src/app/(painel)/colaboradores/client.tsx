@@ -37,7 +37,7 @@ function GerarLink({ id, small }: { id: string; small?: boolean }) {
         className={
           small
             ? "rounded border border-orange-500 px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-            : "w-full rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600"
+            : "w-full rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600"
         }
       >
         Gerar link
@@ -64,7 +64,7 @@ function LinkApp({ c }: { c: Colaborador }) {
           setCopiado(true);
           setTimeout(() => setCopiado(false), 1500);
         }}
-        className="rounded border border-zinc-300 px-2 py-1 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        className="rounded border border-borda-forte px-2 py-1 text-texto-suave hover:bg-superficie-suave"
       >
         {copiado ? "Copiado!" : "Copiar link"}
       </button>
@@ -78,13 +78,13 @@ function LinkApp({ c }: { c: Colaborador }) {
           Enviar no WhatsApp
         </a>
       )}
-      <span className={c.pin ? "text-zinc-400" : "text-amber-600"}>
+      <span className={c.pin ? "text-texto-fraco" : "text-amber-600"}>
         {c.pin ? "PIN definido" : "sem PIN"}
       </span>
       {c.pin && (
         <form action={zerarPinColaborador} className="inline">
           <input type="hidden" name="id" value={c.id} />
-          <button className="text-zinc-400 hover:text-red-600">zerar PIN</button>
+          <button className="text-texto-fraco hover:text-red-600">zerar PIN</button>
         </form>
       )}
     </div>
@@ -95,8 +95,8 @@ function CardApp({ c }: { c: Colaborador }) {
   const [copiado, setCopiado] = useState(false);
   if (!c.token)
     return (
-      <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-        <div className="mb-2 truncate font-medium text-zinc-900 dark:text-zinc-100">{c.nome}</div>
+      <div className="rounded-cartao border border-borda p-3">
+        <div className="mb-2 truncate font-medium text-texto">{c.nome}</div>
         <GerarLink id={c.id} />
       </div>
     );
@@ -108,10 +108,10 @@ function CardApp({ c }: { c: Colaborador }) {
     `Oi ${c.nome}! Esse é o seu app da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}`,
   );
   return (
-    <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+    <div className="rounded-cartao border border-borda p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="truncate font-medium text-zinc-900 dark:text-zinc-100">{c.nome}</span>
-        <span className={`text-xs ${c.pin ? "text-zinc-400" : "text-amber-600"}`}>{c.pin ? "PIN ok" : "sem PIN"}</span>
+        <span className="truncate font-medium text-texto">{c.nome}</span>
+        <span className={`text-xs ${c.pin ? "text-texto-fraco" : "text-amber-600"}`}>{c.pin ? "PIN ok" : "sem PIN"}</span>
       </div>
       <div className="flex gap-2">
         <button
@@ -120,7 +120,7 @@ function CardApp({ c }: { c: Colaborador }) {
             setCopiado(true);
             setTimeout(() => setCopiado(false), 1500);
           }}
-          className="flex-1 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          className="flex-1 rounded-controle border border-borda-forte px-3 py-1.5 text-sm text-texto-suave hover:bg-superficie-suave"
         >
           {copiado ? "Copiado!" : "Copiar link"}
         </button>
@@ -129,7 +129,7 @@ function CardApp({ c }: { c: Colaborador }) {
             href={`https://web.whatsapp.com/send?phone=${zapNum}&text=${msg}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 rounded-lg bg-green-600 px-3 py-1.5 text-center text-sm font-medium text-white hover:bg-green-700"
+            className="flex-1 rounded-controle bg-texto px-3 py-1.5 text-center text-sm font-medium text-fundo hover:opacity-90"
           >
             WhatsApp
           </a>
@@ -140,7 +140,7 @@ function CardApp({ c }: { c: Colaborador }) {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 function resumoFolga(f: FolgaPerfil | null): string {
   if (!f) return "";
@@ -180,21 +180,21 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
   const [data, setData] = useState(() => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10));
   const [msg, setMsg] = useState<string | null>(null);
   const [proc, start] = useTransition();
-  const inputCls = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  const inputCls = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-950">
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Desligar {c.nome}</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+      <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
+        <h2 className="text-lg font-bold text-texto">Desligar {c.nome}</h2>
+        <p className="mt-1 text-sm text-texto-suave">
           A pessoa sai das listas e perde o acesso ao app na hora (o link e o PIN são apagados). O histórico de pagamentos, folgas e compras fica guardado. Dá pra reativar depois.
         </p>
-        <label className="mt-4 mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Data do desligamento</label>
+        <label className="mt-4 mb-1 block text-xs font-medium text-texto-suave">Data do desligamento</label>
         <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputCls} />
-        <label className="mt-3 mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Motivo (obrigatório)</label>
+        <label className="mt-3 mb-1 block text-xs font-medium text-texto-suave">Motivo (obrigatório)</label>
         <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Ex.: pediu demissão / dispensado / parou de vir…" className={inputCls} autoFocus />
         {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
         <div className="mt-4 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">Cancelar</button>
+          <button type="button" onClick={onClose} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">Cancelar</button>
           <button
             type="button"
             disabled={proc || motivo.trim().length < 3}
@@ -203,7 +203,7 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
               if (!r.ok) { setMsg(r.mensagem); return; }
               onClose();
             })}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+            className="rounded-controle bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
           >
             {proc ? "Desligando…" : "Desligar"}
           </button>
@@ -236,11 +236,11 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
     <div className="mx-auto max-w-4xl p-8">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Colaboradores</h1>
-          <p className="mt-1 text-zinc-500">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Colaboradores</h1>
+          <p className="mt-1 text-texto-suave">
             A equipe. {ativos.length} ativo{ativos.length === 1 ? "" : "s"}
             {desligados.length > 0 && (
-              <> · <button type="button" onClick={() => setAba(aba === "ativos" ? "desligados" : "ativos")} className="text-zinc-500 underline hover:text-orange-600">
+              <> · <button type="button" onClick={() => setAba(aba === "ativos" ? "desligados" : "ativos")} className="text-texto-suave underline hover:text-orange-600">
                 {aba === "ativos" ? `ver ${desligados.length} desligado${desligados.length === 1 ? "" : "s"}` : "voltar aos ativos"}
               </button></>
             )}.
@@ -252,17 +252,17 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar…"
-            className="w-36 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="w-36 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm"
           />
           <button
             onClick={() => setVerLinks((v) => !v)}
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             <span className="inline-flex items-center gap-1.5"><Icone nome="celular" tamanho={14} /> Enviar app</span>
           </button>
           <button
             onClick={() => { setEditando(null); setAberto(true); }}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
           >
             + Adicionar
           </button>
@@ -270,8 +270,8 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
       </div>
 
       {verLinks && (
-        <div className="mb-6 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-          <p className="mb-4 text-sm text-zinc-500">
+        <div className="mb-6 rounded-cartao border border-borda p-5">
+          <p className="mb-4 text-sm text-texto-suave">
             Envie o <b>app pessoal</b> (um link só por pessoa). Ela abre, cria um PIN e adiciona à tela do celular.
             Aparecem lá as contagens e/ou folgas dela.
           </p>
@@ -282,20 +282,20 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
       )}
 
       {aniversariantes.length > 0 && (
-        <div className="mb-6 rounded-2xl border border-pink-200 bg-pink-50/60 p-4 text-sm dark:border-pink-900 dark:bg-pink-950/20">
+        <div className="mb-6 rounded-cartao border border-pink-200 bg-pink-50/60 p-4 text-sm dark:border-pink-900 dark:bg-pink-950/20">
           <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="bolo" tamanho={14} /> Aniversariantes do mês:</span>{" "}
           {aniversariantes.map((c) => `${c.nome} (${aniversarioBR(c.nascimento)})`).join(" · ")}
         </div>
       )}
 
       {rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum colaborador ainda.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Folga / Contagem</th>
@@ -303,22 +303,22 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {visiveis.map((c) => (
-                <tr key={c.id} className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900">
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                <tr key={c.id} className="transition hover:bg-superficie-suave">
+                  <td className="px-4 py-3 font-medium text-texto">
                     {c.nome}
                     {c.nascimento && (
                       <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-pink-600">
                         <Icone nome="bolo" tamanho={12} /> {aniversarioBR(c.nascimento)}
                       </span>
                     )}
-                    {c.whatsapp && <div className="text-xs font-normal text-zinc-400">{c.whatsapp}</div>}
-                    <div className="text-xs font-normal text-zinc-500">{resumoQuadro(c)}</div>
+                    {c.whatsapp && <div className="text-xs font-normal text-texto-fraco">{c.whatsapp}</div>}
+                    <div className="text-xs font-normal text-texto-suave">{resumoQuadro(c)}</div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                    {c.folga ? <div className="flex items-center gap-1.5" style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}><Icone nome="folga" tamanho={13} /> {resumoFolga(c.folga)}</div> : <span className="text-zinc-400">sem folga</span>}
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-zinc-400">
+                  <td className="px-4 py-3 text-xs text-texto-suave">
+                    {c.folga ? <div className="flex items-center gap-1.5" style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}><Icone nome="folga" tamanho={13} /> {resumoFolga(c.folga)}</div> : <span className="text-texto-fraco">sem folga</span>}
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-texto-fraco">
                         {c.faz_contagem && <span className="inline-flex items-center gap-1"><Icone nome="pacote" tamanho={12} /> contagem</span>}
                         {c.faz_etiquetas && <span className="inline-flex items-center gap-1"><Icone nome="etiqueta" tamanho={12} /> etiquetas</span>}
                         {c.faz_contas && <span className="inline-flex items-center gap-1"><Icone nome="dinheiro" tamanho={12} /> contas</span>}
@@ -327,10 +327,10 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
                   </td>
                   <td className="px-4 py-3">
                     {c.ativo ? <LinkApp c={c} /> : (
-                      <div className="text-xs text-zinc-500">
+                      <div className="text-xs text-texto-suave">
                         <div className="font-semibold text-red-600">Desligado em {dataBRcurta(c.desligado_em)}</div>
                         <div>{c.desligado_motivo}</div>
-                        <div className="text-zinc-400">sem acesso ao app</div>
+                        <div className="text-texto-fraco">sem acesso ao app</div>
                       </div>
                     )}
                   </td>
@@ -343,7 +343,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
                         >
                           Editar
                         </button>
-                        <button type="button" onClick={() => setDesligando(c)} className="text-zinc-400 hover:text-red-600">Desligar</button>
+                        <button type="button" onClick={() => setDesligando(c)} className="text-texto-fraco hover:text-red-600">Desligar</button>
                       </>
                     ) : (
                       <form action={reativarColaborador} className="inline">
@@ -374,11 +374,11 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
   const [maisDados, setMaisDados] = useState(false);
 
   const diaBtn = (name: string, n: number, checked: boolean) => (
-    <label key={n} className="flex cursor-pointer items-center gap-1 rounded-lg border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700">
+    <label key={n} className="flex cursor-pointer items-center gap-1 rounded-controle border border-borda-forte px-2 py-1 text-sm">
       <input type="checkbox" name={name} value={n} defaultChecked={checked} /> {DIAS[n]}
     </label>
   );
-  const lbl = "mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400";
+  const lbl = "mb-1 block text-xs font-medium text-texto-suave";
   const [vincNoite, setVincNoite] = useState<string>(editando?.vinculo_noite ?? editando?.vinculo ?? "freelance");
   const temDia = turno === "dia" || turno === "ambos";
   const temNoite = turno === "noite" || turno === "ambos";
@@ -388,8 +388,8 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
-        <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-cartao bg-painel-cartao p-6">
+        <h2 className="mb-4 text-lg font-semibold text-texto">
           {editando ? "Editar pessoa" : "Nova pessoa"}
         </h2>
         <form
@@ -403,22 +403,22 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
           {editando && <input type="hidden" name="id" value={editando.id} />}
           <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
             <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome *</label>
+              <label className="mb-1 block text-sm font-medium text-texto-suave">Nome *</label>
               <input name="nome" required autoFocus defaultValue={editando?.nome ?? ""} className={inputCls} />
             </div>
             <div>
-              <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"><Icone nome="bolo" tamanho={14} /> Aniversário</label>
+              <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-texto-suave"><Icone nome="bolo" tamanho={14} /> Aniversário</label>
               <input name="nascimento" placeholder="dd/mm" defaultValue={aniversarioBR(editando?.nascimento)} className={inputCls} />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">WhatsApp</label>
+            <label className="mb-1 block text-sm font-medium text-texto-suave">WhatsApp</label>
             <input name="whatsapp" placeholder="(51) 99999-9999" defaultValue={editando?.whatsapp ?? ""} className={inputCls} />
           </div>
 
           {/* Quadro / pagamento */}
-          <div className="space-y-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-            <p className="text-xs font-bold uppercase text-zinc-400">Turno e pagamento</p>
+          <div className="space-y-3 rounded-cartao border border-borda p-3">
+            <p className="text-xs font-bold text-texto-fraco">Turno e pagamento</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
                 <label className={lbl}>Turno</label>
@@ -474,7 +474,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               <label className="flex items-center gap-2">
                 <input type="checkbox" name="recebe_10" defaultChecked={editando ? !!editando.recebe_10 : temNoite} /> Recebe o 10% da noite
               </label>
-              <label className="flex items-center gap-1 text-xs text-zinc-500" title="1 = parte igual. 0,5 = meia parte. 2 = parte dupla.">
+              <label className="flex items-center gap-1 text-xs text-texto-suave" title="1 = parte igual. 0,5 = meia parte. 2 = parte dupla.">
                 peso <input name="peso_10" inputMode="decimal" defaultValue={fmtR(editando?.peso_10 ?? 1) || "1"} className={`${inputCls} w-14 px-2 py-1`} />
               </label>
               <label className="flex items-center gap-2">
@@ -529,7 +529,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             </div>
           </div>
 
-          <p className="pt-1 text-xs font-bold uppercase text-zinc-400">App pessoal</p>
+          <p className="pt-1 text-xs font-bold text-texto-fraco">App pessoal</p>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_contagem" defaultChecked={editando ? editando.faz_contagem : false} /> Faz contagem de estoque
           </label>
@@ -546,8 +546,8 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> <Icone nome="salao" tamanho={14} /> Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
           </label>
           {setoresChecklist.length > 0 && (
-            <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-              <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200"><Icone nome="checklist" tamanho={14} /> Checklists — setores que esta pessoa executa</p>
+            <div className="rounded-cartao border border-borda p-3">
+              <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-texto-suave"><Icone nome="checklist" tamanho={14} /> Checklists — setores que esta pessoa executa</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                 {setoresChecklist.map((s) => (
                   <label key={s.id} className="flex items-center gap-2 text-sm">
@@ -561,16 +561,16 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
                   </label>
                 ))}
               </div>
-              <p className="mt-1 text-xs text-zinc-400">Sem nenhum marcado, a pessoa não vê o módulo no app.</p>
+              <p className="mt-1 text-xs text-texto-fraco">Sem nenhum marcado, a pessoa não vê o módulo no app.</p>
             </div>
           )}
 
-          <label className="flex items-center gap-2 border-t border-zinc-200 pt-3 text-sm dark:border-zinc-800">
+          <label className="flex items-center gap-2 border-t border-borda pt-3 text-sm">
             <input type="checkbox" name="tem_folga" checked={temFolga} onChange={(e) => setTemFolga(e.target.checked)} /> Entra na escala de folgas
           </label>
 
           {temFolga && (
-            <div className="space-y-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+            <div className="space-y-3 rounded-cartao border border-borda p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <select name="grupo" defaultValue={f?.grupo ?? "almoco"} className={inputCls}>
                   {GRUPO_KEYS.map((g) => <option key={g} value={g}>{GRUPOS[g].nome}</option>)}
@@ -582,13 +582,13 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               </div>
               <input name="funcao" placeholder="Função (ex.: Garçom, Forno)" defaultValue={f?.funcao ?? ""} className={inputCls} />
               <div>
-                <p className="mb-1 text-xs font-bold uppercase text-zinc-400">Dias fixos</p>
+                <p className="mb-1 text-xs font-bold text-texto-fraco">Dias fixos</p>
                 <div className="flex flex-wrap gap-1.5">
                   {[1, 2, 3, 4, 5, 6].map((n) => diaBtn("dias", n, !!f?.dias?.includes(n)))}
                 </div>
               </div>
               <div>
-                <p className="mb-1 text-xs font-bold uppercase text-zinc-400">2º turno (opcional)</p>
+                <p className="mb-1 text-xs font-bold text-texto-fraco">2º turno (opcional)</p>
                 <select name="grupo2" value={grupo2} onChange={(e) => setGrupo2(e.target.value)} className={inputCls}>
                   <option value="">Não trabalha em outro grupo</option>
                   {GRUPO_KEYS.map((g) => <option key={g} value={g}>{GRUPOS[g].nome}</option>)}
@@ -606,10 +606,10 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
           )}
 
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
+            <button type="button" onClick={onClose} className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave dark:text-texto-fraco">
               Cancelar
             </button>
-            <button type="submit" className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+            <button type="submit" className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
               Salvar
             </button>
           </div>

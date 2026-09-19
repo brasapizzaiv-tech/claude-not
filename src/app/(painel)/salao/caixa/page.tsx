@@ -44,11 +44,11 @@ export default async function CaixaPage({
   if (!caixa) {
     return (
       <div className="mx-auto max-w-lg p-6">
-        <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
+        <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
           ← Salão
         </Link>
         <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Frente de Caixa</h1>
-        <p className="mt-1 text-zinc-500">Nenhum caixa aberto. Abra um para começar a receber.</p>
+        <p className="mt-1 text-texto-suave">Nenhum caixa aberto. Abra um para começar a receber.</p>
         <Link href="/salao/caixa/pix" className="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:underline"><Icone nome="rapido" tamanho={14} /> Pix recebidos / estornar</Link>
 
         <form
@@ -56,7 +56,7 @@ export default async function CaixaPage({
           className="mt-6 space-y-4 rounded-cartao bg-painel-foco-fundo p-5 text-painel-foco-texto"
         >
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Nome / turno</label>
+            <label className="mb-1 block text-xs text-texto-suave">Nome / turno</label>
             <input
               name="nome"
               defaultValue="Noite"
@@ -64,7 +64,7 @@ export default async function CaixaPage({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Troco inicial / saldo anterior (R$)</label>
+            <label className="mb-1 block text-xs text-texto-suave">Troco inicial / saldo anterior (R$)</label>
             <input
               name="saldo_inicial"
               inputMode="decimal"
@@ -256,11 +256,11 @@ export default async function CaixaPage({
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
+          <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
             ← Salão
           </Link>
           <h1 className="mt-1 font-numero text-2xl font-semibold tracking-apertada text-texto">Frente de Caixa</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-texto-suave">
             {caixa.nome} · <span className="font-medium text-emerald-600">Aberto</span> às {abertoHora}
           </p>
         </div>
@@ -325,16 +325,16 @@ export default async function CaixaPage({
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-texto"><Icone nome="grafico" tamanho={15} /> Resumo do caixa</span>
           {/* Sem valores à mostra: a tela do caixa é virada pro cliente na hora
               do Pix, e o movimento do dia não é da conta de quem está pagando. */}
-          <span className="text-xs text-zinc-400">toque para ver os valores</span>
+          <span className="text-xs text-texto-fraco">toque para ver os valores</span>
         </summary>
-        <div className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-800">
+        <div className="space-y-3 border-t border-borda p-4">
           <div className="space-y-1 text-sm">
-            <div className="flex justify-between text-zinc-500">
+            <div className="flex justify-between text-texto-suave">
               <span>Saldo anterior</span>
               <span>{brl(saldoInicial)}</span>
             </div>
             {[...vendasPorForma.entries()].map(([forma, v]) => (
-              <div key={forma} className="flex justify-between text-zinc-700 dark:text-zinc-300">
+              <div key={forma} className="flex justify-between text-texto-suave">
                 <span>Vendas · {forma}</span>
                 <span>{brl(v)}</span>
               </div>
@@ -348,7 +348,7 @@ export default async function CaixaPage({
               <span>− {brl(sangrias)}</span>
             </div>
           </div>
-          <div className="space-y-1 border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
+          <div className="space-y-1 border-t border-borda pt-2 text-sm">
             <div className="flex justify-between font-medium text-texto">
               <span>Total recebido</span>
               <span>{brl(totalVendas)}</span>

@@ -70,21 +70,21 @@ export function AtribuirClient({
     <div className="mx-auto max-w-4xl p-8">
       <Link
         href={`/contagens/${contagem.id}`}
-        className="text-sm text-zinc-500 hover:text-orange-600"
+        className="text-sm text-texto-suave hover:text-orange-600"
       >
         ← Voltar para a contagem
       </Link>
 
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
         Dividir contagem por categoria
       </h1>
-      <p className="mt-1 text-zinc-500">
+      <p className="mt-1 text-texto-suave">
         Atribua cada categoria a um colaborador e envie o link para ele
         preencher pelo celular.
       </p>
 
       {colaboradores.length === 0 && (
-        <div className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <div className="mt-4 rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
           Você ainda não tem colaboradores.{" "}
           <Link href="/colaboradores" className="font-medium underline">
             Cadastre um colaborador
@@ -95,14 +95,14 @@ export function AtribuirClient({
 
       {/* Atalho: contagem inteira para um colaborador */}
       {colaboradores.length > 0 && (
-        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-cartao border border-borda bg-superficie-suave p-4">
+          <span className="text-sm font-medium text-texto-suave">
             Dar a contagem inteira a um colaborador:
           </span>
           <select
             value={todosPara}
             onChange={(e) => setTodosPara(e.target.value)}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           >
             <option value="">escolha...</option>
             {colaboradores.map((col) => (
@@ -114,7 +114,7 @@ export function AtribuirClient({
           <button
             onClick={darTudo}
             disabled={!todosPara}
-            className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
           >
             Atribuir tudo
           </button>
@@ -122,28 +122,28 @@ export function AtribuirClient({
       )}
 
       {/* Atribuição por categoria */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr>
               <th className="px-4 py-3">Categoria</th>
               <th className="px-4 py-3">Produtos</th>
               <th className="px-4 py-3">Responsável</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {categorias.map((c) => (
-              <tr key={c.id} className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+              <tr key={c.id} className="">
+                <td className="px-4 py-2 font-medium text-texto">
                   {c.nome}
                 </td>
-                <td className="px-4 py-2 text-zinc-500">{c.qtdProdutos}</td>
+                <td className="px-4 py-2 text-texto-suave">{c.qtdProdutos}</td>
                 <td className="px-4 py-2">
                   <select
                     value={c.colaboradorId ?? ""}
                     onChange={(e) => atribuir(c.id, e.target.value)}
                     disabled={colaboradores.length === 0}
-                    className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                   >
                     <option value="">— ninguém —</option>
                     {colaboradores.map((col) => (
@@ -160,7 +160,7 @@ export function AtribuirClient({
       </div>
 
       {semAtribuir > 0 && (
-        <p className="mt-2 text-xs text-zinc-400">
+        <p className="mt-2 text-xs text-texto-fraco">
           {semAtribuir} categoria(s) ainda sem responsável.
         </p>
       )}
@@ -168,7 +168,7 @@ export function AtribuirClient({
       {/* Links por colaborador */}
       {porColaborador.size > 0 && (
         <div className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="mb-3 text-lg font-semibold text-texto">
             Links para enviar
           </h2>
           <div className="space-y-3">
@@ -189,13 +189,13 @@ export function AtribuirClient({
               return (
                 <div
                   key={colabId}
-                  className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+                  className="rounded-cartao border border-borda p-4"
                 >
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    <span className="font-medium text-texto">
                       {colab?.nome}
                     </span>
-                    <span className="text-xs text-zinc-400">
+                    <span className="text-xs text-texto-fraco">
                       {cats.length} categoria(s):{" "}
                       {cats.map((c) => c.nome).join(", ")}
                     </span>
@@ -205,11 +205,11 @@ export function AtribuirClient({
                       readOnly
                       value={url}
                       onFocus={(e) => e.currentTarget.select()}
-                      className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
+                      className="min-w-0 flex-1 rounded-controle border border-borda-forte bg-superficie-suave px-3 py-2 text-sm text-texto-suave dark:text-texto-fraco"
                     />
                     <button
                       onClick={() => navigator.clipboard.writeText(url)}
-                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      className="rounded-controle border border-borda-forte px-3 py-2 text-sm font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
                     >
                       Copiar
                     </button>
@@ -217,7 +217,7 @@ export function AtribuirClient({
                       href={waHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
+                      className="rounded-controle bg-texto px-3 py-2 text-sm font-medium text-fundo hover:opacity-90"
                     >
                       WhatsApp
                     </a>

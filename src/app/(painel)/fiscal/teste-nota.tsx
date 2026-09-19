@@ -18,9 +18,9 @@ export function TesteNota() {
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <h2 className="mb-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Testar emissão (só em homologação)</h2>
-      <p className="mb-3 text-[11px] text-zinc-400">
+    <section className="rounded-cartao border border-borda p-4">
+      <h2 className="mb-1 text-sm font-semibold text-texto">Testar emissão (só em homologação)</h2>
+      <p className="mb-3 text-[11px] text-texto-fraco">
         Emite uma <b>NFC-e de teste</b> (sem valor fiscal) para conferir se o token, o
         certificado (no Focus) e o CSC estão certos. Salve a configuração antes. Em produção
         este botão não roda: o teste é uma venda real de R$ 1 no caixa.
@@ -29,14 +29,14 @@ export function TesteNota() {
         type="button"
         onClick={testar}
         disabled={proc}
-        className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
+        className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
       >
         {proc ? "Emitindo..." : "Emitir nota de teste"}
       </button>
 
       {res && (
         <div
-          className={`mt-3 rounded-xl p-3 text-sm ${
+          className={`mt-3 rounded-cartao p-3 text-sm ${
             res.ok
               ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
               : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-200"

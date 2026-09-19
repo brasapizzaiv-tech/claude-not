@@ -16,7 +16,7 @@ export function PedidoAcoes({
     <div className="flex flex-wrap items-center gap-2">
       <button
         onClick={() => navigator.clipboard.writeText(texto)}
-        className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        className="rounded-controle border border-borda-forte px-3 py-2 text-sm font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
       >
         Copiar
       </button>
@@ -24,7 +24,7 @@ export function PedidoAcoes({
         href={waHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
+        className="rounded-controle bg-texto px-3 py-2 text-sm font-medium text-fundo hover:opacity-90"
       >
         Enviar no WhatsApp
       </a>

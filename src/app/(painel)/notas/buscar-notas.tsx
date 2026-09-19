@@ -32,13 +32,13 @@ export function BuscarNotas({ bloqueadoAte }: { bloqueadoAte: string | null }) {
   }
 
   return (
-    <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900 dark:bg-blue-950/20">
+    <div className="rounded-cartao border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900 dark:bg-blue-950/20">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          <p className="text-sm font-medium text-texto">
             <Icone nome="atualizar" tamanho={15} className="mr-1.5" /> Buscar notas na SEFAZ
           </p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-texto-suave">
             A SEFAZ libera 1 busca por hora.
             {bloqueado ? ` Próxima liberada às ${hora}.` : " Disponível agora."}
           </p>
@@ -46,12 +46,12 @@ export function BuscarNotas({ bloqueadoAte }: { bloqueadoAte: string | null }) {
         <button
           onClick={buscar}
           disabled={p}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          className="rounded-controle bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {p ? "Buscando..." : "Buscar notas"}
         </button>
       </div>
-      {msg && <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}
+      {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }

@@ -166,14 +166,14 @@ export function FornecedoresClient({
       {/* Fornecedores disponíveis */}
       <div>
         <div className="mb-2 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          <h2 className="text-sm font-semibold text-texto-suave">
             Fornecedores que atendem estes itens
           </h2>
           {naoConvidados.length > 0 && (
             <button
               onClick={convidarTodos}
               disabled={convidandoTodos}
-              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+              className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
             >
               {convidandoTodos
                 ? "Convidando..."
@@ -181,39 +181,39 @@ export function FornecedoresClient({
             </button>
           )}
         </div>
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Fornecedor</th>
                 <th className="px-4 py-3 text-right">Fornece</th>
                 <th className="px-4 py-3 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {linhas.map((l) => (
-                <tr key={l.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                <tr key={l.id} className="">
+                  <td className="px-4 py-2 font-medium text-texto">
                     {l.nome}
                     {!l.whatsapp && (
                       <span className="ml-2 text-[10px] text-amber-500">sem WhatsApp</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-right text-zinc-500">
+                  <td className="px-4 py-2 text-right text-texto-suave">
                     {l.cobertura} de {totalItens}
                   </td>
                   <td className="px-4 py-2 text-right">
                     {l.convidado ? (
                       <button
                         onClick={() => remover(l.id)}
-                        className="text-xs text-zinc-400 hover:text-red-600"
+                        className="text-xs text-texto-fraco hover:text-red-600"
                       >
                         Remover
                       </button>
                     ) : (
                       <button
                         onClick={() => convidar(l.id)}
-                        className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
                       >
                         Convidar
                       </button>
@@ -229,26 +229,26 @@ export function FornecedoresClient({
       {convidados.length > 0 && (
         <div>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            <h2 className="text-lg font-semibold text-texto">
               Enviar os links ({enviadosCount}/{convidados.length} enviados)
             </h2>
             <div className="flex items-center gap-2">
               {proximo ? (
                 <button
                   onClick={() => abrirWhats(proximo)}
-                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                  className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90"
                 >
                   <Icone nome="zap" tamanho={15} className="mr-1.5" /> Abrir WhatsApp do próximo ({convidados.length - enviadosCount} faltam)
                 </button>
               ) : (
-                <span className="rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                <span className="rounded-controle bg-green-100 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
                   ✓ Todos abertos
                 </span>
               )}
               {enviadosCount > 0 && (
                 <button
                   onClick={resetarEnviados}
-                  className="text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  className="text-xs text-texto-fraco hover:text-texto-suave dark:hover:text-zinc-200"
                 >
                   Zerar
                 </button>
@@ -258,17 +258,17 @@ export function FornecedoresClient({
 
           {/* Link único: um vendedor que representa várias empresas */}
           {convidados.length > 1 && (
-            <details className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
-              <summary className="cursor-pointer px-4 py-2 text-sm text-zinc-500">
+            <details className="mb-3 rounded-cartao bg-painel-cartao">
+              <summary className="cursor-pointer px-4 py-2 text-sm text-texto-suave">
                 <Icone nome="copiar" tamanho={14} className="mr-1.5" /> Link único (um vendedor com várias empresas)
               </summary>
-              <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
-                <p className="mb-2 text-xs text-zinc-500">
+              <div className="border-t border-borda p-3">
+                <p className="mb-2 text-xs text-texto-suave">
                   Marque as empresas do mesmo vendedor. Ele recebe UM link e escolhe pra qual empresa vai passar cada preço.
                 </p>
                 <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1">
                   {convidados.map((l) => (
-                    <label key={l.id} className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+                    <label key={l.id} className="flex items-center gap-1.5 text-sm text-texto-suave">
                       <input type="checkbox" checked={selUnico.has(l.id)} onChange={() => toggleUnico(l.id)} className="h-4 w-4" />
                       {l.nome}
                     </label>
@@ -277,7 +277,7 @@ export function FornecedoresClient({
                 <button
                   onClick={copiarLinkUnico}
                   disabled={selUnico.size < 2}
-                  className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                  className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {copiadoUnico ? "✓ Link copiado!" : `Copiar link único (${selUnico.size} empresas)`}
                 </button>
@@ -286,34 +286,34 @@ export function FornecedoresClient({
           )}
 
           {/* Mensagem configurável */}
-          <details className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <summary className="cursor-pointer px-4 py-2 text-sm text-zinc-500">
+          <details className="mb-3 rounded-cartao bg-painel-cartao">
+            <summary className="cursor-pointer px-4 py-2 text-sm text-texto-suave">
               <Icone nome="editar" tamanho={14} className="mr-1.5" /> Editar a mensagem enviada
             </summary>
-            <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
+            <div className="border-t border-borda p-3">
               <textarea
                 rows={3}
                 value={template}
                 onChange={(e) => salvarTemplate(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
               />
-              <p className="mt-1 text-[11px] text-zinc-400">
+              <p className="mt-1 text-[11px] text-texto-fraco">
                 Use <b>{"{link}"}</b> (o link), <b>{"{itens}"}</b> (qtd de itens),{" "}
                 <b>{"{nome}"}</b> (nome do fornecedor) e <b>{"{empresa}"}</b> (nossa empresa). A mensagem fica salva.
               </p>
             </div>
           </details>
 
-          <div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
+          <div className="mb-3 rounded-cartao bg-blue-50 p-3 text-xs text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
             <b>Como enviar:</b> clique em <b>Abrir WhatsApp do próximo</b> (ou em <b>Envio manual</b> na linha):
             abre o WhatsApp Web já com a mensagem e o link — é só apertar Enviar e voltar aqui pro próximo.
             <b>Envio automático:</b> com a extensão <b>Brasa WhatsApp Sender</b> instalada neste Chrome (e o WhatsApp Web
             logado), clique no ícone dela → <b>Enviar para os pendentes</b>. Ela manda uma a uma e marca &quot;Enviado&quot; aqui.
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
                 <tr>
                   <th className="px-4 py-3">Fornecedor</th>
                   <th className="px-4 py-3">Contato</th>
@@ -322,7 +322,7 @@ export function FornecedoresClient({
                   <th className="px-4 py-3 text-right">Envio manual</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              <tbody className="divide-y divide-borda">
                 {convidados.map((l) => {
                   const foi = enviados.has(l.id);
                   const url = l.token ? `${origin}/cotar/${l.token}` : "";
@@ -330,15 +330,15 @@ export function FornecedoresClient({
                   return (
                     <tr
                       key={l.id}
-                      className={foi ? "bg-green-50/50 dark:bg-green-950/15" : "bg-white dark:bg-zinc-950"}
+                      className={foi ? "bg-green-50/50 dark:bg-green-950/15" : "bg-painel-cartao "}
                     >
-                      <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                      <td className="px-4 py-2 font-medium text-texto">
                         {l.nome}
                       </td>
-                      <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">
+                      <td className="px-4 py-2 text-texto-suave">
                         {l.contato || "—"}
                       </td>
-                      <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">
+                      <td className="px-4 py-2 text-texto-suave">
                         {zap ? (
                           zap
                         ) : (
@@ -366,19 +366,19 @@ export function FornecedoresClient({
                             data-fornecedor-id={l.id}
                             data-fornecedor-nome={l.nome}
                             data-enviado={enviados.has(l.id) ? "1" : "0"}
-                            className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                            className="rounded-controle bg-texto px-3 py-1.5 text-xs font-semibold text-fundo hover:opacity-90"
                           >
                             Envio manual
                           </a>
                           <button
                             onClick={() => navigator.clipboard.writeText(url)}
-                            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                            className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
                           >
                             Copiar link
                           </button>
                           <button
                             onClick={() => remover(l.id)}
-                            className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
+                            className="rounded-controle border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
                           >
                             Retirar
                           </button>

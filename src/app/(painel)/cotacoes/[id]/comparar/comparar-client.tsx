@@ -412,7 +412,7 @@ export function CompararClient({
   return (
     <div className="mt-6">
       {travada && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-green-300 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-cartao border border-green-300 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30">
           <p className="text-sm font-medium text-green-800 dark:text-green-300">
             <Icone nome="cadeado" tamanho={15} className="mr-1.5" /> Esta cotação já gerou pedidos e está travada — os pedidos e
             conferências ficam salvos e não podem ser sobrescritos.
@@ -420,14 +420,14 @@ export function CompararClient({
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/cotacoes/${cotacaoId}/pedidos`}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+              className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90"
             >
               Ver pedidos →
             </Link>
             <button
               onClick={() => startSave(async () => { await novaCotacaoDosFaltantes(cotacaoId); })}
               disabled={salvando}
-              className="rounded-lg border border-green-500 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-60 dark:text-green-300 dark:hover:bg-green-900/40"
+              className="rounded-controle border border-green-500 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-60 dark:text-green-300 dark:hover:bg-green-900/40"
             >
               Nova cotação com os itens que faltam
             </button>
@@ -436,17 +436,17 @@ export function CompararClient({
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-texto-suave">
           {itensEscolhidos} de {produtos.length} itens escolhidos ·{" "}
           <b className="text-green-600">{conf.size} conferidos</b>
           {exclusivos.length > 0 ? ` · ${exclusivos.length} exclusivos (direto)` : ""} · total{" "}
-          <b className="text-zinc-900 dark:text-zinc-100">{moeda(totalGeral)}</b>
+          <b className="text-texto">{moeda(totalGeral)}</b>
         </p>
         {!travada && (
           <button
             onClick={gerar}
             disabled={salvando || (itensEscolhidos === 0 && exclusivos.length === 0)}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
           >
             {salvando ? "Gerando..." : "Gerar pedidos →"}
           </button>
@@ -454,8 +454,8 @@ export function CompararClient({
       </div>
 
       {fornecedores.some((f) => f.promocaoTexto || f.promocaoFoto) && (
-        <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <div className="mb-4 rounded-cartao border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
+          <h2 className="text-sm font-semibold text-texto">
             <Icone nome="presente" tamanho={16} className="mr-1.5" /> Ofertas dos fornecedores
           </h2>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -464,7 +464,7 @@ export function CompararClient({
               .map((f) => (
                 <div
                   key={f.id}
-                  className="flex gap-3 rounded-lg border border-violet-200 bg-white p-2 dark:border-violet-900 dark:bg-zinc-900"
+                  className="flex gap-3 rounded-controle border border-violet-200 bg-painel-cartao p-2 dark:border-violet-900"
                 >
                   {f.promocaoFoto && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -472,14 +472,14 @@ export function CompararClient({
                       src={f.promocaoFoto}
                       alt="oferta"
                       onClick={() => setFotoAberta(f.promocaoFoto)}
-                      className="h-14 w-14 cursor-pointer rounded-lg object-cover"
+                      className="h-14 w-14 cursor-pointer rounded-controle object-cover"
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    <p className="text-sm font-medium text-texto">
                       {f.nome}
                     </p>
-                    <p className="text-xs text-zinc-500">{f.promocaoTexto}</p>
+                    <p className="text-xs text-texto-suave">{f.promocaoTexto}</p>
                   </div>
                 </div>
               ))}
@@ -488,17 +488,17 @@ export function CompararClient({
       )}
 
       {produtos.length > 0 && (
-      <div className="max-h-[75vh] overflow-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="max-h-[75vh] overflow-auto rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="text-left text-xs text-zinc-500">
+          <thead className="text-left text-xs text-texto-suave">
             <tr>
-              <th className="sticky left-0 top-0 z-30 bg-zinc-100 px-3 py-3 text-left dark:bg-zinc-800">
+              <th className="sticky left-0 top-0 z-30 bg-superficie-suave px-3 py-3 text-left">
                 Produto
               </th>
-              <th className="sticky top-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800">
+              <th className="sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right">
                 Qtd
               </th>
-              <th className="sticky top-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800">
+              <th className="sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right">
                 Última compra
               </th>
               {fornecedores.map((f, i) => {
@@ -515,9 +515,9 @@ export function CompararClient({
                 return (
                   <th
                     key={f.id}
-                    className={`sticky top-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800 ${respondeu ? "" : "opacity-60"}`}
+                    className={`sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right ${respondeu ? "" : "opacity-60"}`}
                   >
-                    <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                    <div className="font-semibold text-texto-suave">
                       {respondeu && (
                         <span className="mr-1 rounded bg-green-100 px-1 text-[10px] font-bold text-green-700 dark:bg-green-950 dark:text-green-300">
                           {i + 1}º
@@ -525,7 +525,7 @@ export function CompararClient({
                       )}
                       {f.nome}
                     </div>
-                    <div className="text-[10px] font-normal text-zinc-400">
+                    <div className="text-[10px] font-normal text-texto-fraco">
                       {respondeu ? `respondeu ${hora}` : "não respondeu"}
                       {f.prazo_entrega ? ` · entrega ${dataBR(f.prazo_entrega)}` : ""}
                       {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
@@ -542,7 +542,7 @@ export function CompararClient({
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Enviar este pedido pelo WhatsApp"
-                            className="rounded bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-700"
+                            className="rounded bg-texto px-2 py-0.5 text-[10px] font-semibold text-fundo hover:opacity-90"
                           >
                             <Icone nome="mandar" tamanho={13} className="mr-1" /> Enviar
                           </a>
@@ -565,13 +565,13 @@ export function CompararClient({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {[...porCategoria.entries()].map(([cat, itensCat], ci) => (
               <Fragment key={cat}>
                 <tr>
                   <td
                     colSpan={3 + fornecedores.length}
-                    className={`sticky left-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${CAT_CORES[ci % CAT_CORES.length].band}`}
+                    className={`sticky left-0 px-3 py-1.5 text-xs font-semibold  ${CAT_CORES[ci % CAT_CORES.length].band}`}
                   >
                     {cat}
                   </td>
@@ -590,7 +590,7 @@ export function CompararClient({
                     className={`group transition-colors ${rowBg} hover:bg-orange-100 dark:hover:bg-orange-950/40`}
                   >
                     <td
-                      className={`sticky left-0 z-10 px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100 ${rowBg} group-hover:bg-orange-100 dark:group-hover:bg-orange-950/40`}
+                      className={`sticky left-0 z-10 px-3 py-2 font-medium text-texto ${rowBg} group-hover:bg-orange-100 dark:group-hover:bg-orange-950/40`}
                     >
                       <button
                         type="button"
@@ -598,14 +598,14 @@ export function CompararClient({
                         title={conferido ? "Conferido — clique para desmarcar" : "Marcar como conferido"}
                         className={`mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs align-middle ${
                           conferido
-                            ? "border-green-600 bg-green-600 text-white"
+                            ? "border-green-600 bg-texto text-fundo"
                             : "border-zinc-400 text-transparent hover:border-green-500 dark:border-zinc-500"
                         }`}
                       >
                         ✓
                       </button>
                       {p.nome}
-                      <span className="ml-1 text-xs text-zinc-400">
+                      <span className="ml-1 text-xs text-texto-fraco">
                         {p.unidade}
                       </span>
                     </td>
@@ -616,7 +616,7 @@ export function CompararClient({
                         step="any"
                         value={qtds[p.produto_id] ?? 0}
                         onChange={(e) => setQtd(p.produto_id, Number(e.target.value) || 0)}
-                        className="w-16 rounded border border-zinc-300 bg-white px-1.5 py-1 text-right text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                        className="w-16 rounded border border-borda-forte bg-painel-cartao px-1.5 py-1 text-right text-sm text-texto"
                       />
                       <button
                         type="button"
@@ -624,7 +624,7 @@ export function CompararClient({
                         className={`mt-0.5 block w-full text-[10px] ${
                           dividindo.has(p.produto_id)
                             ? "font-medium text-orange-600"
-                            : "text-zinc-400 hover:text-orange-600"
+                            : "text-texto-fraco hover:text-orange-600"
                         }`}
                       >
                         {dividindo.has(p.produto_id) ? <span className="inline-flex items-center gap-1"><Icone nome="cortar" tamanho={12} /> dividido</span> : "dividir"}
@@ -633,13 +633,13 @@ export function CompararClient({
                     <td className="px-3 py-2 text-right align-top text-[11px] leading-tight">
                       {ultimaCompra[p.produto_id] ? (
                         <>
-                          <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                          <div className="font-semibold text-texto-suave">
                             {ultimaCompra[p.produto_id].preco != null
                               ? moeda(ultimaCompra[p.produto_id].preco as number)
                               : "—"}
                           </div>
-                          <div className="text-zinc-400">{ultimaCompra[p.produto_id].forn}</div>
-                          <div className="text-zinc-400">{ultimaCompra[p.produto_id].data}</div>
+                          <div className="text-texto-fraco">{ultimaCompra[p.produto_id].forn}</div>
+                          <div className="text-texto-fraco">{ultimaCompra[p.produto_id].data}</div>
                         </>
                       ) : (
                         <span className="text-zinc-300 dark:text-zinc-700">—</span>
@@ -675,7 +675,7 @@ export function CompararClient({
                         <td key={f.id} className="px-2 py-1 text-right align-top">
                           {dividido ? (
                             <div className="flex items-center justify-end gap-1">
-                              <span className="text-[10px] text-zinc-400">{moeda(cel.preco)}</span>
+                              <span className="text-[10px] text-texto-fraco">{moeda(cel.preco)}</span>
                               <input
                                 type="number"
                                 min={0}
@@ -688,7 +688,7 @@ export function CompararClient({
                                 className={`w-14 rounded border px-1 py-0.5 text-right text-sm ${
                                   (divisao[p.produto_id]?.[f.id] ?? 0) > 0
                                     ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-200"
-                                    : "border-zinc-300 dark:border-zinc-700 dark:bg-zinc-950"
+                                    : "border-borda-forte dark:bg-zinc-950"
                                 }`}
                               />
                             </div>
@@ -696,12 +696,12 @@ export function CompararClient({
                             <div className="space-y-0.5">
                               <button
                                 onClick={() => escolherOferta(p.produto_id, f.id, "main")}
-                                className={`w-full rounded-md px-2 py-1 text-right text-sm transition ${
+                                className={`w-full rounded-controle px-2 py-1 text-right text-sm transition ${
                                   escolhido && ofSel === "main"
                                     ? "bg-orange-500 font-semibold text-white"
                                     : melhor
                                       ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
-                                      : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                      : "text-texto-suave hover:bg-superficie-suave  "
                                 }`}
                                 title={cel.obs ?? ""}
                               >
@@ -712,7 +712,7 @@ export function CompararClient({
                                   key={ex.id}
                                   onClick={() => escolherOferta(p.produto_id, f.id, ex.id)}
                                   title={ex.obs ?? ""}
-                                  className={`flex w-full items-center justify-between gap-1 rounded-md px-2 py-1 text-[11px] transition ${
+                                  className={`flex w-full items-center justify-between gap-1 rounded-controle px-2 py-1 text-[11px] transition ${
                                     escolhido && ofSel === ex.id
                                       ? "bg-sky-500 font-semibold text-white"
                                       : "bg-sky-50 text-sky-800 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300"
@@ -734,7 +734,7 @@ export function CompararClient({
                             </div>
                           )}
                           {(cel.emb || cel.tam || cel.obs) && (
-                            <div className="mt-0.5 text-right text-[10px] leading-tight text-zinc-400">
+                            <div className="mt-0.5 text-right text-[10px] leading-tight text-texto-fraco">
                               {[cel.emb, cel.tam, cel.obs].filter(Boolean).join(" · ")}
                             </div>
                           )}
@@ -757,9 +757,9 @@ export function CompararClient({
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-zinc-200 font-semibold dark:border-zinc-700">
+            <tr className="border-t-2 border-borda font-semibold dark:border-borda-forte">
               <td
-                className="sticky bottom-0 left-0 z-30 bg-zinc-100 px-3 py-3 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                className="sticky bottom-0 left-0 z-30 bg-superficie-suave px-3 py-3 text-texto-suave"
                 colSpan={3}
               >
                 Total escolhido
@@ -773,10 +773,10 @@ export function CompararClient({
                 return (
                   <td
                     key={f.id}
-                    className={`sticky bottom-0 z-20 bg-zinc-100 px-3 py-3 text-right dark:bg-zinc-800 ${
+                    className={`sticky bottom-0 z-20 bg-superficie-suave px-3 py-3 text-right ${
                       abaixoMin
                         ? "text-amber-600"
-                        : "text-zinc-900 dark:text-zinc-100"
+                        : "text-texto"
                     }`}
                     title={abaixoMin ? "Abaixo do pedido mínimo" : ""}
                   >
@@ -793,34 +793,34 @@ export function CompararClient({
 
       {/* Pedido direto: itens com fornecedor exclusivo (sem cotação) */}
       {exclusivos.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+        <div className="mt-4 rounded-cartao border border-indigo-200 bg-indigo-50/50 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
           <div className="mb-2 flex items-center gap-2">
             <Icone nome="cupom" tamanho={18} />
-            <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
+            <h2 className="font-semibold text-texto">
               Pedido direto — fornecedor exclusivo
             </h2>
             <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
               {exclusivos.length} {exclusivos.length === 1 ? "item" : "itens"}
             </span>
           </div>
-          <p className="mb-3 text-xs text-zinc-500">
+          <p className="mb-3 text-xs text-texto-suave">
             Esses produtos têm só um fornecedor — não vão pra cotação. Entram
             direto no pedido dele (sem preço; você confirma na entrega/nota).
           </p>
           <div className="space-y-3">
             {[...exclusivosPorForn.entries()].map(([forn, itens]) => (
-              <div key={forn} className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
-                <p className="mb-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+              <div key={forn} className="rounded-cartao border border-borda bg-painel-cartao p-3">
+                <p className="mb-1 text-sm font-semibold text-texto">
                   {forn}
-                  <span className="ml-2 text-xs font-normal text-zinc-400">
+                  <span className="ml-2 text-xs font-normal text-texto-fraco">
                     {itens.length} {itens.length === 1 ? "item" : "itens"}
                   </span>
                 </p>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-texto-suave">
                   {itens.map((e) => (
                     <span key={e.produto_id}>
                       {e.nome}{" "}
-                      <span className="text-xs text-zinc-400">
+                      <span className="text-xs text-texto-fraco">
                         ({e.qtd} {e.unidade})
                       </span>
                     </span>
@@ -832,7 +832,7 @@ export function CompararClient({
         </div>
       )}
 
-      <p className="mt-2 text-xs text-zinc-400">
+      <p className="mt-2 text-xs text-texto-fraco">
         Clique num preço para escolher o fornecedor daquele item (verde = mais
         barato). Clique no <b>✓</b> ao lado do nome para marcar o que já{" "}
         <b>conferiu / vai pedir</b> (fica verde e é lembrado neste navegador). Edite a{" "}
@@ -850,7 +850,7 @@ export function CompararClient({
           <img
             src={fotoAberta}
             alt="Foto do produto"
-            className="max-h-[90vh] max-w-full rounded-lg object-contain"
+            className="max-h-[90vh] max-w-full rounded-controle object-contain"
           />
           <button
             type="button"

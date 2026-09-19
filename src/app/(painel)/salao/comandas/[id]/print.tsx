@@ -8,7 +8,7 @@ export function ImprimirComanda() {
     <>
       <button
         onClick={() => window.print()}
-        className="nao-imprimir rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        className="nao-imprimir rounded-controle border border-borda-forte px-4 py-2 text-sm font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
       >
         <Icone nome="imprimir" tamanho={15} className="mr-1.5" /> Imprimir comanda (80mm)
       </button>

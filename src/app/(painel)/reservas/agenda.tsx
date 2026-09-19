@@ -60,11 +60,11 @@ const OCASIOES = ["Só uma reserva", "Aniversário", "Outra data especial"];
 const SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
-const rotulo = "mb-1 block text-xs text-zinc-500";
-const cartao = "rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+const rotulo = "mb-1 block text-xs text-texto-suave";
+const cartao = "rounded-cartao border border-borda p-4 ";
 const btn =
-  "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900";
+  "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";
 
 function addDias(iso: string, n: number) {
   const [a, m, d] = iso.split("-").map(Number);
@@ -137,15 +137,15 @@ export function AgendaReservas({
   return (
     <div className="mx-auto max-w-6xl p-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Reservas</h1>
+        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Reservas</h1>
         <a
           href="/reservas/hoje"
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+          className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90"
         >
           <Icone nome="celular" tamanho={15} className="mr-1.5" /> Ver no celular
         </a>
       </div>
-      <p className="mt-1 text-zinc-500">
+      <p className="mt-1 text-texto-suave">
         As reservas do site caem aqui. Confirme, remarque, feche datas e lance a
         reserva de quem ligar.
       </p>
@@ -169,10 +169,10 @@ export function AgendaReservas({
             hoje
           </button>
         )}
-        <span className="ml-auto text-sm text-zinc-500">
+        <span className="ml-auto text-sm text-texto-suave">
           {diaSemana(dia)}, {dataBR(dia)} ·{" "}
-          <b className="text-zinc-800 dark:text-zinc-200">{ativas.length}</b> reservas ·{" "}
-          <b className="text-zinc-800 dark:text-zinc-200">{pessoasDia}</b> pessoas
+          <b className="text-texto">{ativas.length}</b> reservas ·{" "}
+          <b className="text-texto">{pessoasDia}</b> pessoas
           {aguardando > 0 && (
             <span className="ml-1 font-semibold text-amber-600">
               · {aguardando} aguardando
@@ -185,7 +185,7 @@ export function AgendaReservas({
         <div className="space-y-5">
           {/* Lotação do dia */}
           <div className={cartao}>
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+            <h2 className="mb-3 text-sm font-semibold text-texto">
               Como está o dia
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -200,17 +200,17 @@ export function AgendaReservas({
                   pct >= 95 ? "bg-red-500" : pct >= 70 ? "bg-amber-500" : "bg-green-500";
                 return (
                   <div key={t}>
-                    <div className="flex justify-between text-xs text-zinc-500">
-                      <span className="font-medium text-zinc-700 dark:text-zinc-300">{t}</span>
+                    <div className="flex justify-between text-xs text-texto-suave">
+                      <span className="font-medium text-texto-suave">{t}</span>
                       <span>
                         {pes} de {lim[t].max_pessoas} lugares · {doTurno.length}/
                         {lim[t].max_reservas} reservas
                       </span>
                     </div>
-                    <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                    <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-superficie-suave">
                       <div className={`h-full ${cor}`} style={{ width: `${pct}%` }} />
                     </div>
-                    <p className="mt-1 text-[11px] text-zinc-400">
+                    <p className="mt-1 text-[11px] text-texto-fraco">
                       {pct >= 100
                         ? "Lotado — o site não aceita mais reservas neste turno."
                         : `Restam ${lim[t].max_pessoas - pes} lugares.`}
@@ -223,7 +223,7 @@ export function AgendaReservas({
 
           {/* Reservas do dia */}
           {reservas.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-500 dark:border-zinc-700">
+            <div className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-suave">
               Nenhuma reserva para este dia.
             </div>
           ) : (
@@ -298,16 +298,16 @@ function CartaoReserva({
           ? "border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/20"
           : "border-l-4 border-l-orange-500";
   const tag =
-    "rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] text-zinc-500 dark:border-zinc-700";
+    "rounded-full border border-borda px-2 py-0.5 text-[11px] text-texto-suave dark:border-borda-forte";
   const zap = (chave: string) =>
     `https://web.whatsapp.com/send?phone=${foneWhats(r.telefone)}&text=${encodeURIComponent(
       montarMsg(mensagens["msg_" + chave] ?? "", r),
     )}`;
 
   return (
-    <div className={`${cartao} ${borda}`}>
+    <div className={`${cartao}  ${borda}`}>
       <div className="flex flex-wrap items-baseline gap-2">
-        <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        <span className="text-base font-semibold text-texto">
           {r.nome}
         </span>
         <span className={tag}>
@@ -352,7 +352,7 @@ function CartaoReserva({
         )}
       </div>
 
-      <p className="mt-1.5 text-xs text-zinc-500">
+      <p className="mt-1.5 text-xs text-texto-suave">
         {r.adultos ?? r.pessoas} adultos
         {r.criancas ? ` e ${r.criancas} crianças` : ""} · {r.telefone} ·{" "}
         {r.lugar ?? "Tanto faz"} ·{" "}
@@ -360,7 +360,7 @@ function CartaoReserva({
         {r.nascimento ? ` · nasc. ${dataBR(r.nascimento)}` : ""}
       </p>
       {r.observacao && (
-        <p className="mt-1.5 text-sm text-zinc-700 dark:text-zinc-300">{r.observacao}</p>
+        <p className="mt-1.5 text-sm text-texto-suave">{r.observacao}</p>
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -368,7 +368,7 @@ function CartaoReserva({
           <button
             disabled={proc}
             onClick={() => acao(() => definirStatus(r.id, "confirmada"))}
-            className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
+            className="rounded-controle bg-texto px-3 py-1.5 text-xs font-medium text-fundo hover:opacity-90 disabled:opacity-60"
           >
             Confirmar
           </button>
@@ -409,7 +409,7 @@ function CartaoReserva({
             if (confirm(`Apagar de vez a reserva de ${r.nome}?`))
               acao(() => apagarReserva(r.id));
           }}
-          className="rounded-lg px-3 py-1.5 text-xs text-zinc-400 hover:text-red-600"
+          className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"
         >
           Apagar
         </button>
@@ -545,7 +545,7 @@ function FormReserva({
               status: d.status,
             })
           }
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
         >
           Salvar alterações
         </button>
@@ -585,7 +585,7 @@ function NovaReserva({
 
   return (
     <div className={cartao}>
-      <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+      <h2 className="mb-3 text-sm font-semibold text-texto">
         Lançar reserva (quem ligou)
       </h2>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -675,11 +675,11 @@ function NovaReserva({
             if (r.ok) setD({ ...vazio, data: d.data });
           });
         }}
-        className="mt-3 w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+        className="mt-3 w-full rounded-controle bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
       >
         {proc ? "Salvando..." : "Salvar reserva"}
       </button>
-      {msg && <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}
+      {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }
@@ -704,10 +704,10 @@ function Bloqueios({
 
   return (
     <div className={cartao}>
-      <h2 className="mb-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+      <h2 className="mb-1 text-sm font-semibold text-texto">
         Fechar datas
       </h2>
-      <p className="mb-3 text-xs text-zinc-500">
+      <p className="mb-3 text-xs text-texto-suave">
         Data fechada some do site: quem tentar reservar recebe o aviso na hora.
       </p>
       <div className="flex flex-wrap gap-2">
@@ -731,7 +731,7 @@ function Bloqueios({
               setMotivo("");
             })
           }
-          className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+          className="rounded-controle bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
         >
           Fechar
         </button>
@@ -739,12 +739,12 @@ function Bloqueios({
 
       <div className="mt-3 space-y-2">
         {bloqueios.length === 0 ? (
-          <p className="text-xs text-zinc-400">Nenhuma data fechada.</p>
+          <p className="text-xs text-texto-fraco">Nenhuma data fechada.</p>
         ) : (
           bloqueios.map((b) => (
             <div
               key={b.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-800"
+              className="flex items-center justify-between gap-2 rounded-controle border border-borda px-3 py-2 text-xs"
             >
               <button onClick={() => irPara(b.data)} className="text-left hover:text-orange-600">
                 <b>{dataBR(b.data)}</b> · {b.turno}
@@ -753,7 +753,7 @@ function Bloqueios({
               <button
                 disabled={proc}
                 onClick={() => acao(() => liberarBloqueio(b.id))}
-                className="text-zinc-400 hover:text-green-600"
+                className="text-texto-fraco hover:text-green-600"
               >
                 liberar
               </button>
@@ -787,7 +787,7 @@ function ProximosDias({
 
   return (
     <div className={cartao}>
-      <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+      <h2 className="mb-3 text-sm font-semibold text-texto">
         Próximos 15 dias
       </h2>
       <div className="space-y-2">
@@ -798,9 +798,9 @@ function ProximosDias({
             <button
               key={d}
               onClick={() => irPara(d)}
-              className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="flex w-full items-center gap-3 rounded-controle px-2 py-1.5 text-left text-xs hover:bg-superficie-suave"
             >
-              <span className="w-28 shrink-0 text-zinc-600 dark:text-zinc-300">
+              <span className="w-28 shrink-0 text-texto-suave">
                 {diaSemana(d).slice(0, 3)}, {dataBR(d).slice(0, 5)}
               </span>
               <span className="flex flex-1 gap-2">
@@ -814,14 +814,14 @@ function ProximosDias({
                     pct >= 95 ? "bg-red-500" : pct >= 70 ? "bg-amber-500" : "bg-green-500";
                   return (
                     <span key={t} className="flex-1">
-                      <span className="block h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                      <span className="block h-1.5 overflow-hidden rounded-full bg-superficie-suave">
                         <span className={`block h-full ${cor}`} style={{ width: `${pct}%` }} />
                       </span>
                     </span>
                   );
                 })}
               </span>
-              <span className="w-20 shrink-0 text-right text-zinc-400">
+              <span className="w-20 shrink-0 text-right text-texto-fraco">
                 {total ? `${total} pessoas` : "—"}
               </span>
             </button>
@@ -856,14 +856,14 @@ function Ajustes({
 
   return (
     <details className={cartao}>
-      <summary className="cursor-pointer text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+      <summary className="cursor-pointer text-sm font-semibold text-texto">
         Ajustes: lotação e mensagens
       </summary>
 
       <div className="mt-3 space-y-4">
         {TURNOS.map((t) => (
           <div key={t}>
-            <h3 className="mb-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">{t}</h3>
+            <h3 className="mb-1 text-xs font-medium text-texto-suave">{t}</h3>
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <label className={rotulo}>Máx. reservas</label>
@@ -880,13 +880,13 @@ function Ajustes({
             </div>
           </div>
         ))}
-        <p className="text-[11px] text-zinc-400">
+        <p className="text-[11px] text-texto-fraco">
           Grupo grande: a partir desse número a reserva do site entra como
           “aguardando”, para vocês confirmarem as mesas antes.
         </p>
 
-        <div className="space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">
+        <div className="space-y-2 border-t border-borda pt-3">
+          <p className="text-xs text-texto-suave">
             Mensagens do WhatsApp. Use {"{nome}"}, {"{data}"}, {"{turno}"} e{" "}
             {"{pessoas}"} — trocamos pelos dados da reserva.
           </p>
@@ -921,11 +921,11 @@ function Ajustes({
               setMsg("✓ Salvo.");
             });
           }}
-          className="w-full rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+          className="w-full rounded-controle bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
         >
           Salvar ajustes
         </button>
-        {msg && <p className="text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}
+        {msg && <p className="text-xs text-texto-suave">{msg}</p>}
       </div>
     </details>
   );

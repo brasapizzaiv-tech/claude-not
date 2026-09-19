@@ -27,10 +27,10 @@ export default async function ContagensPage() {
     <div className="mx-auto max-w-4xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Contagem de estoque
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             Conte o estoque e gere a sugestão do que pedir.
           </p>
         </div>
@@ -38,12 +38,12 @@ export default async function ContagensPage() {
           <AvulsaForm categorias={categorias} colaboradores={colaboradores} />
           <Link
             href="/contagens/agendamentos"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             <Icone nome="relogio" tamanho={15} className="mr-1.5" /> Agendamentos
           </Link>
           <form action={criarContagem}>
-            <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600">
+            <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
               + Nova contagem
             </button>
           </form>
@@ -51,13 +51,13 @@ export default async function ContagensPage() {
       </div>
 
       {contagens.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhuma contagem ainda. Clique em <b>+ Nova contagem</b> para começar.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Descrição</th>
                 <th className="px-4 py-3">Data</th>
@@ -65,13 +65,13 @@ export default async function ContagensPage() {
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {contagens.map((c) => (
                 <tr
                   key={c.id}
-                  className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+                  className="transition hover:bg-superficie-suave"
                 >
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                  <td className="px-4 py-3 font-medium text-texto">
                     <Link
                       href={`/contagens/${c.id}`}
                       className="hover:text-orange-600 hover:underline"
@@ -79,7 +79,7 @@ export default async function ContagensPage() {
                       {c.descricao}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                  <td className="px-4 py-3 text-texto-suave">
                     {dataBR(c.data)}
                   </td>
                   <td className="px-4 py-3">
@@ -104,7 +104,7 @@ export default async function ContagensPage() {
                       <input type="hidden" name="id" value={c.id} />
                       <button
                         type="submit"
-                        className="text-zinc-400 hover:text-red-600"
+                        className="text-texto-fraco hover:text-red-600"
                       >
                         Remover
                       </button>

@@ -43,47 +43,47 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <label className="flex items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={soAbertos} onChange={(e) => setSoAbertos(e.target.checked)} /> só com saldo em aberto
         </label>
         {msg && <p className="text-sm text-emerald-700 dark:text-emerald-400">{msg}</p>}
       </div>
       {lista.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">Nenhum cliente com fiado.</p>
+        <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">Nenhum cliente com fiado.</p>
       ) : (
         <div className="space-y-2">
           {lista.map((c) => (
-            <div key={c.id} className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+            <div key={c.id} className="rounded-cartao border border-borda bg-painel-cartao p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-100">{c.nome}</p>
-                  {c.telefone && <p className="text-xs text-zinc-500">{c.telefone}</p>}
+                  <p className="font-semibold text-texto">{c.nome}</p>
+                  {c.telefone && <p className="text-xs text-texto-suave">{c.telefone}</p>}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-lg font-bold ${c.saldo > 0.005 ? "text-red-600" : "text-emerald-600"}`}>{brl(c.saldo)}</span>
                   {c.saldo > 0.005 && aberto !== c.id && (
-                    <button onClick={() => { setAberto(c.id); setValor(c.saldo.toFixed(2).replace(".", ",")); setMsg(null); }} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white">
+                    <button onClick={() => { setAberto(c.id); setValor(c.saldo.toFixed(2).replace(".", ",")); setMsg(null); }} className="rounded-controle bg-texto px-3 py-1.5 text-sm font-semibold text-fundo">
                       Receber
                     </button>
                   )}
-                  <button onClick={() => setAberto(aberto === c.id ? null : c.id)} className="text-sm text-zinc-500 underline">{aberto === c.id ? "fechar" : "histórico"}</button>
+                  <button onClick={() => setAberto(aberto === c.id ? null : c.id)} className="text-sm text-texto-suave underline">{aberto === c.id ? "fechar" : "histórico"}</button>
                 </div>
               </div>
               {aberto === c.id && (
-                <div className="mt-3 space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                <div className="mt-3 space-y-2 border-t border-borda pt-3">
                   {c.saldo > 0.005 && (
-                    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-emerald-500/10 p-2">
+                    <div className="flex flex-wrap items-center gap-2 rounded-controle bg-emerald-500/10 p-2">
                       <span className="text-sm font-medium">Receber</span>
-                      <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" className="w-28 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950" />
-                      <select value={forma} onChange={(e) => setForma(e.target.value)} className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950">
+                      <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" className="w-28 rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-right text-sm" />
+                      <select value={forma} onChange={(e) => setForma(e.target.value)} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-sm">
                         {formas.map((f) => <option key={f}>{f}</option>)}
                       </select>
-                      <button onClick={() => receber(c)} disabled={pend} className="rounded-lg bg-emerald-600 px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">{pend ? "…" : "Confirmar"}</button>
+                      <button onClick={() => receber(c)} disabled={pend} className="rounded-controle bg-texto px-3 py-1 text-sm font-semibold text-fundo disabled:opacity-50">{pend ? "…" : "Confirmar"}</button>
                     </div>
                   )}
                   <ul className="space-y-0.5 text-sm">
                     {c.lancamentos.map((l) => (
-                      <li key={l.id} className="flex justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+                      <li key={l.id} className="flex justify-between gap-2 text-texto-suave">
                         <span>{l.quando} · <Icone nome={l.tipo === "debito" ? "cupom" : "dinheiro"} tamanho={12} className="mr-1" />{l.descricao ?? (l.tipo === "debito" ? "Venda fiada" : "Pagamento")}{l.forma ? ` (${l.forma})` : ""}</span>
                         <span className={l.tipo === "debito" ? "text-red-600" : "text-emerald-600"}>{l.tipo === "debito" ? "+" : "−"} {brl(l.valor)}</span>
                       </li>

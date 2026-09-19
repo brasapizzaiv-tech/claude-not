@@ -8,7 +8,7 @@ import { useState } from "react";
 import { suprimento, sangria } from "../actions";
 
 const inputCls =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 export function CaixaAcoes({ caixaId }: { caixaId: string }) {
   const [aberto, setAberto] = useState(false);
@@ -26,17 +26,17 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
 
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-950">
+          <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Movimentar caixa</h2>
-              <button onClick={() => setAberto(false)} className="text-zinc-400 hover:text-zinc-700">✕</button>
+              <h2 className="text-lg font-bold text-texto">Movimentar caixa</h2>
+              <button onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">✕</button>
             </div>
 
             <div className="mb-4 flex gap-2">
               <button
                 type="button"
                 onClick={() => setTipo("suprimento")}
-                className={`flex-1 rounded-xl border-2 px-3 py-3 text-sm font-semibold ${entrada ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "border-zinc-300 text-zinc-500 dark:border-zinc-700"}`}
+                className={`flex-1 rounded-cartao border-2 px-3 py-3 text-sm font-semibold ${entrada ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "border-borda-forte text-texto-suave "}`}
               >
                 + Entrada
                 <span className="block text-[11px] font-normal">suprimento / troco</span>
@@ -44,7 +44,7 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
               <button
                 type="button"
                 onClick={() => setTipo("sangria")}
-                className={`flex-1 rounded-xl border-2 px-3 py-3 text-sm font-semibold ${!entrada ? "border-red-500 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "border-zinc-300 text-zinc-500 dark:border-zinc-700"}`}
+                className={`flex-1 rounded-cartao border-2 px-3 py-3 text-sm font-semibold ${!entrada ? "border-red-500 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "border-borda-forte text-texto-suave "}`}
               >
                 − Saída
                 <span className="block text-[11px] font-normal">sangria / pagamento</span>
@@ -55,11 +55,11 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
             <form key={tipo} action={entrada ? suprimento : sangria} onSubmit={() => setAberto(false)} className="space-y-3">
               <input type="hidden" name="caixa_id" value={caixaId} />
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Valor (R$)</label>
+                <label className="mb-1 block text-xs text-texto-suave">Valor (R$)</label>
                 <input name="valor" inputMode="decimal" placeholder="0,00" autoFocus className={`${inputCls} w-full text-lg`} />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Motivo</label>
+                <label className="mb-1 block text-xs text-texto-suave">Motivo</label>
                 <input
                   name="descricao"
                   placeholder={entrada ? "Reforço de troco" : "Retirada / pagamento"}

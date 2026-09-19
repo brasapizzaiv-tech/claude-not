@@ -46,18 +46,18 @@ export function VendidosClient({ linhas, total, agrupar, periodo }: { linhas: Li
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={`Buscar ${ROTULO[agrupar].toLowerCase()}…`} className="w-64 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
-        <div className="flex items-center gap-3 text-sm text-zinc-500">
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={`Buscar ${ROTULO[agrupar].toLowerCase()}…`} className="w-64 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-1.5 text-sm" />
+        <div className="flex items-center gap-3 text-sm text-texto-suave">
           <span>{lista.length} {lista.length === 1 ? "registro" : "registros"}</span>
-          <button onClick={exportar} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200"><Icone nome="baixar" tamanho={14} className="mr-1.5" /> Exportar (planilha)</button>
+          <button onClick={exportar} className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"><Icone nome="baixar" tamanho={14} className="mr-1.5" /> Exportar (planilha)</button>
         </div>
       </div>
       {lista.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">Nada vendido nesse período com esses filtros.</p>
+        <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">Nada vendido nesse período com esses filtros.</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 {th("nome", ROTULO[agrupar])}
                 {agrupar === "produto" && <th className="px-3 py-2">Categoria</th>}
@@ -66,26 +66,26 @@ export function VendidosClient({ linhas, total, agrupar, periodo }: { linhas: Li
                 <th className="px-3 py-2 text-right">% do total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {lista.map((l) => {
                 const pct = total > 0 ? (l.valor / total) * 100 : 0;
                 return (
-                  <tr key={l.nome} className="bg-white dark:bg-zinc-950">
-                    <td className="px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">{l.nome}</td>
-                    {agrupar === "produto" && <td className="px-3 py-2 text-zinc-500">{l.categoria}</td>}
+                  <tr key={l.nome} className="">
+                    <td className="px-3 py-2 font-medium text-texto">{l.nome}</td>
+                    {agrupar === "produto" && <td className="px-3 py-2 text-texto-suave">{l.categoria}</td>}
                     <td className="px-3 py-2 text-right">{l.qtd.toLocaleString("pt-BR")}</td>
                     <td className="px-3 py-2 text-right font-medium">{brl(l.valor)}{l.pagos < l.valor - 0.005 && <span className="ml-1 text-[11px] text-amber-600" title="parte ainda em aberto">({brl(l.pagos)} pago)</span>}</td>
                     <td className="px-3 py-2 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <div className="h-1.5 w-16 overflow-hidden rounded bg-zinc-100 dark:bg-zinc-800"><div className="h-full bg-orange-400" style={{ width: `${Math.min(100, pct)}%` }} /></div>
-                        <span className="w-12 text-zinc-500">{pct.toFixed(1).replace(".", ",")}%</span>
+                        <div className="h-1.5 w-16 overflow-hidden rounded bg-superficie-suave"><div className="h-full bg-orange-400" style={{ width: `${Math.min(100, pct)}%` }} /></div>
+                        <span className="w-12 text-texto-suave">{pct.toFixed(1).replace(".", ",")}%</span>
                       </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot className="bg-zinc-50 text-sm font-semibold dark:bg-zinc-900">
+            <tfoot className="bg-superficie-suave text-sm font-semibold">
               <tr>
                 <td className="px-3 py-2" colSpan={agrupar === "produto" ? 2 : 1}>Total</td>
                 <td className="px-3 py-2 text-right">{lista.reduce((s, l) => s + l.qtd, 0).toLocaleString("pt-BR")}</td>

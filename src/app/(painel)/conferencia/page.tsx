@@ -71,7 +71,7 @@ export default async function ConferenciaPage() {
           </Link>
           <Link
             href="/conferencia/novo"
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
           >
             + Pedido manual
           </Link>
@@ -79,7 +79,7 @@ export default async function ConferenciaPage() {
       </div>
 
       {pedidos.length === 0 ? (
-        <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave ">
+        <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum pedido ainda. Gere pedidos numa cotação para conferir aqui.
         </div>
       ) : (

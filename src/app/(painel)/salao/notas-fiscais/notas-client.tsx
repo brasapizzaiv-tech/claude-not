@@ -30,16 +30,16 @@ const dataHora = (iso: string | null) =>
 
 function Card({ titulo, valor, cor }: { titulo: string; valor: string; cor?: string }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <p className="text-xs text-zinc-500">{titulo}</p>
-      <p className={`mt-1 text-2xl font-bold ${cor ?? "text-zinc-900 dark:text-zinc-50"}`}>{valor}</p>
+    <div className="rounded-cartao border border-borda p-4">
+      <p className="text-xs text-texto-suave">{titulo}</p>
+      <p className={`mt-1 text-2xl font-bold ${cor ?? "text-texto"}`}>{valor}</p>
     </div>
   );
 }
 
 function badge(status: string) {
   if (status === "autorizado") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300";
-  if (status === "cancelado") return "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300";
+  if (status === "cancelado") return "bg-zinc-200 text-texto-suave dark:bg-zinc-800 ";
   return "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300";
 }
 const rotulo = (s: string) => (s === "autorizado" ? "Sucesso" : s === "cancelado" ? "Cancelada" : "Erro");
@@ -104,7 +104,7 @@ export function NotasClient({
     a.click();
   }
 
-  const sel = "rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  const sel = "rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
   return (
     <div className="mt-4">
@@ -133,14 +133,14 @@ export function NotasClient({
           <option value="nfce">NFC-e</option>
           <option value="nfe">NF-e</option>
         </select>
-        <button onClick={baixarCsv} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
+        <button onClick={baixarCsv} className="rounded-controle bg-texto px-3 py-1.5 text-sm font-medium text-fundo hover:opacity-90">
           <Icone nome="baixar" tamanho={14} className="mr-1.5" /> XLS
         </button>
       </div>
 
-      <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="mt-3 overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-400 dark:bg-zinc-900">
+          <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
             <tr>
               <th className="px-4 py-2 font-medium">Lançamento</th>
               <th className="px-4 py-2 font-medium">Nota</th>
@@ -150,20 +150,20 @@ export function NotasClient({
               <th className="px-4 py-2 font-medium"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {filtradas.map((l) => (
-              <tr key={l.id} className="bg-white dark:bg-zinc-950">
+              <tr key={l.id} className="">
                 <td className="px-4 py-2">
                   <div className="font-medium text-zinc-800 dark:text-zinc-100">
                     {(l.comandas?.length ?? 0) > 1 ? `Comandas nº ${l.comandas!.join(", ")}` : l.comandaNumero != null ? `Comanda nº ${l.comandaNumero}` : "—"}
                   </div>
-                  <div className="text-xs text-zinc-400">{dataHora(l.criadoEm)}</div>
+                  <div className="text-xs text-texto-fraco">{dataHora(l.criadoEm)}</div>
                 </td>
-                <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300">
-                  {l.numero ? `Nº ${l.numero}${l.serie ? ` · Série ${l.serie}` : ""}` : <span className="text-zinc-400">—</span>}
+                <td className="px-4 py-2 text-texto-suave">
+                  {l.numero ? `Nº ${l.numero}${l.serie ? ` · Série ${l.serie}` : ""}` : <span className="text-texto-fraco">—</span>}
                 </td>
-                <td className="px-4 py-2 uppercase text-zinc-500">{l.modelo}</td>
-                <td className="px-4 py-2 text-right font-medium text-zinc-800 dark:text-zinc-200">
+                <td className="px-4 py-2 text-texto-suave">{l.modelo}</td>
+                <td className="px-4 py-2 text-right font-medium text-texto">
                   {l.valor != null ? brl(l.valor) : "—"}
                 </td>
                 <td className="px-4 py-2">
@@ -185,7 +185,7 @@ export function NotasClient({
                     <a href={l.urlDanfe} target="_blank" rel="noopener noreferrer" className="mr-3 text-orange-600 hover:underline">PDF</a>
                   )}
                   {l.urlXml && (
-                    <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-3 text-zinc-500 hover:underline">XML</a>
+                    <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-3 text-texto-suave hover:underline">XML</a>
                   )}
                   {l.status === "autorizado" && (
                     <button onClick={() => cancelar(l.id)} disabled={proc} className="text-red-500 hover:underline disabled:opacity-50">
@@ -197,14 +197,14 @@ export function NotasClient({
             ))}
             {filtradas.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">Nenhuma nota.</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-texto-fraco">Nenhuma nota.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
       {linhas.length >= 1000 && (
-        <p className="mt-2 text-xs text-zinc-400">Mostrando as 1000 notas mais recentes.</p>
+        <p className="mt-2 text-xs text-texto-fraco">Mostrando as 1000 notas mais recentes.</p>
       )}
     </div>
   );

@@ -27,7 +27,7 @@ export type Retirada = {
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const fmtData = (s: string) => { const [a, m, d] = s.split("-"); return `${d}/${m}/${a}`; };
-const card = "rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900";
+const card = "rounded-cartao border border-borda bg-painel-cartao p-4  ";
 
 export function RetiradasClient({
   pessoas, produtos, retiradas, hojeIso,
@@ -69,19 +69,19 @@ export function RetiradasClient({
     <div className="mx-auto max-w-4xl p-3 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="compras" tamanho={19} /> Compras internas</h1>
-        <button onClick={() => setNovo(true)} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600">
+        <button onClick={() => setNovo(true)} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600">
           + Nova compra
         </button>
       </div>
 
-      {aviso && <div className="mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600">{aviso}</div>}
+      {aviso && <div className="mb-3 rounded-controle border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600">{aviso}</div>}
 
       <div className="mb-4 flex gap-2">
         {([["resumo", "Resumo"], ["lancamentos", "Lançamentos"], ["produtos", "Produtos e preços"]] as const).map(([k, label]) => (
           <button
             key={k}
             onClick={() => setAba(k)}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${aba === k ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}
+            className={`rounded-controle px-3 py-2 text-sm font-medium ${aba === k ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "border border-borda-forte text-texto-suave  "}`}
           >
             {label}
           </button>
@@ -93,22 +93,22 @@ export function RetiradasClient({
       {aba === "lancamentos" && (
         <div className={card}>
           <div className="mb-2 flex items-center justify-between">
-            <button onClick={() => navega(-1)} className="text-sm text-zinc-500">‹ Anterior</button>
+            <button onClick={() => navega(-1)} className="text-sm text-texto-suave">‹ Anterior</button>
             <h2 className="font-bold">{MESES[mes]} {ano}</h2>
-            <button onClick={() => navega(1)} className="text-sm text-zinc-500">Próximo ›</button>
+            <button onClick={() => navega(1)} className="text-sm text-texto-suave">Próximo ›</button>
           </div>
           {doMes.length === 0 ? (
-            <p className="py-4 text-center text-sm text-zinc-500">Nenhuma compra nesse mês.</p>
+            <p className="py-4 text-center text-sm text-texto-suave">Nenhuma compra nesse mês.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tbody className="divide-y divide-borda">
                   {doMes.map((r) => (
                     <tr key={r.id}>
-                      <td className="py-2 pr-2 whitespace-nowrap text-zinc-500">{fmtData(r.data)}</td>
+                      <td className="py-2 pr-2 whitespace-nowrap text-texto-suave">{fmtData(r.data)}</td>
                       <td className="py-2 pr-2">
                         <div className="font-medium">{r.nome}</div>
-                        <div className="text-xs text-zinc-500">{r.item}{r.peso ? ` · ${r.peso} kg` : ""}{r.observacao ? ` · ${r.observacao}` : ""}</div>
+                        <div className="text-xs text-texto-suave">{r.item}{r.peso ? ` · ${r.peso} kg` : ""}{r.observacao ? ` · ${r.observacao}` : ""}</div>
                         {r.status === "pago" && (r.data_pagamento || r.obs_pagamento) && (
                           <div className="text-xs text-emerald-600">pago{r.data_pagamento ? ` ${fmtData(r.data_pagamento)}` : ""}{r.obs_pagamento ? ` · ${r.obs_pagamento}` : ""}</div>
                         )}
@@ -133,7 +133,7 @@ export function RetiradasClient({
                         <button
                           disabled={proc}
                           onClick={() => { if (window.confirm("Excluir este lançamento?")) run(() => excluirRetirada(r.id)); }}
-                          className="text-xs text-zinc-400 hover:text-red-600"
+                          className="text-xs text-texto-fraco hover:text-red-600"
                         >
                           excluir
                         </button>
@@ -142,7 +142,7 @@ export function RetiradasClient({
                   ))}
                 </tbody>
               </table>
-              <div className="mt-2 flex justify-between border-t border-zinc-200 pt-2 text-sm font-semibold dark:border-zinc-800">
+              <div className="mt-2 flex justify-between border-t border-borda pt-2 text-sm font-semibold">
                 <span>Total do mês</span>
                 <span>{brl(doMes.reduce((s, r) => s + Number(r.valor), 0))}</span>
               </div>
@@ -167,7 +167,7 @@ export function RetiradasClient({
   );
 }
 
-const inputCls = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+const inputCls = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto outline-none   ";
 
 function NovaCompra({
   pessoas, produtos, hojeIso, proc, onClose, onSalvar,
@@ -195,7 +195,7 @@ function NovaCompra({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-cartao bg-painel-cartao p-6">
         <h2 className="mb-4 text-lg font-semibold">Nova compra</h2>
         <div className="space-y-3">
           <select value={colaboradorId} onChange={(e) => setColab(e.target.value)} className={inputCls}>
@@ -216,7 +216,7 @@ function NovaCompra({
           </div>
           <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (opcional)" className={inputCls} />
           <div className="flex justify-end gap-2 pt-1">
-            <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400">Cancelar</button>
+            <button onClick={onClose} className="rounded-controle px-4 py-2 text-sm text-texto-suave">Cancelar</button>
             <button
               disabled={proc || !colaboradorId || !item.trim()}
               onClick={() => onSalvar({
@@ -224,7 +224,7 @@ function NovaCompra({
                 item, valor: Number(String(valor).replace(",", ".")) || 0,
                 peso: peso ? Number(String(peso).replace(",", ".")) : null, data, observacao: obs,
               })}
-              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
             >
               Lançar
             </button>
@@ -276,7 +276,7 @@ function ResumoTab({ retiradas, proc, run }: {
         <h2 className="mb-2 font-bold">Por funcionário</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-zinc-400">
+            <thead className="text-left text-xs text-texto-fraco">
               <tr>
                 <th className="py-1 pr-2">Nome</th>
                 <th className="py-1 pr-2 text-right">Comprado</th>
@@ -285,13 +285,13 @@ function ResumoTab({ retiradas, proc, run }: {
                 <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {porPessoa.map((p) => (
                 <tr key={p.colaboradorId ?? p.nome}>
                   <td className="py-2 pr-2">{p.nome}</td>
                   <td className="py-2 pr-2 text-right">{brl(p.comprado)}</td>
                   <td className="py-2 pr-2 text-right text-emerald-600">{brl(p.pago)}</td>
-                  <td className={`py-2 pr-2 text-right font-semibold ${p.aberto > 0 ? "text-red-500" : "text-zinc-400"}`}>{brl(p.aberto)}</td>
+                  <td className={`py-2 pr-2 text-right font-semibold ${p.aberto > 0 ? "text-red-500" : "text-texto-fraco"}`}>{brl(p.aberto)}</td>
                   <td className="py-2 text-right">
                     {p.aberto > 0 && p.colaboradorId && (
                       <button
@@ -301,7 +301,7 @@ function ResumoTab({ retiradas, proc, run }: {
                           if (obs === null) return;
                           run(() => quitarColaborador(p.colaboradorId!, obs));
                         }}
-                        className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white"
+                        className="rounded-controle bg-texto px-2.5 py-1 text-xs font-medium text-fundo"
                       >
                         Quitar
                       </button>
@@ -311,7 +311,7 @@ function ResumoTab({ retiradas, proc, run }: {
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-zinc-200 font-bold dark:border-zinc-700">
+              <tr className="border-t-2 border-borda font-bold dark:border-borda-forte">
                 <td className="py-2 pr-2">Total</td>
                 <td className="py-2 pr-2 text-right">{brl(totais.comprado)}</td>
                 <td className="py-2 pr-2 text-right text-emerald-600">{brl(totais.pago)}</td>
@@ -326,21 +326,21 @@ function ResumoTab({ retiradas, proc, run }: {
       <div className={card}>
         <h2 className="mb-2 font-bold">Por mês</h2>
         <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase text-zinc-400">
+          <thead className="text-left text-xs text-texto-fraco">
             <tr>
               <th className="py-1 pr-2">Mês</th>
               <th className="py-1 pr-2 text-right">Comprado</th>
               <th className="py-1 pr-2 text-right">Em aberto</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {porMes.length === 0 ? (
-              <tr><td colSpan={3} className="py-3 text-center text-zinc-500">Sem lançamentos.</td></tr>
+              <tr><td colSpan={3} className="py-3 text-center text-texto-suave">Sem lançamentos.</td></tr>
             ) : porMes.map(([mm, v]) => (
               <tr key={mm}>
                 <td className="py-2 pr-2">{mesLabel(mm)}</td>
                 <td className="py-2 pr-2 text-right">{brl(v.comprado)}</td>
-                <td className={`py-2 pr-2 text-right ${v.aberto > 0 ? "text-red-500" : "text-zinc-400"}`}>{brl(v.aberto)}</td>
+                <td className={`py-2 pr-2 text-right ${v.aberto > 0 ? "text-red-500" : "text-texto-fraco"}`}>{brl(v.aberto)}</td>
               </tr>
             ))}
           </tbody>
@@ -360,16 +360,16 @@ function ProdutosTab({ produtos, proc, run }: {
     <div className={card}>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-bold">Produtos e preços</h2>
-        <button onClick={() => setEdit("novo")} className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white">+ Produto</button>
+        <button onClick={() => setEdit("novo")} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white">+ Produto</button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {produtos.map((p) => (
               <tr key={p.id} className={p.ativo ? "" : "opacity-50"}>
                 <td className="py-2 pr-2">
                   <div className="font-medium">{p.nome}</div>
-                  <div className="text-xs text-zinc-500">{p.categoria ?? ""}{p.ativo ? "" : " · inativo"}</div>
+                  <div className="text-xs text-texto-suave">{p.categoria ?? ""}{p.ativo ? "" : " · inativo"}</div>
                 </td>
                 <td className="py-2 pr-2 text-right whitespace-nowrap font-medium">{brl(p.preco)}</td>
                 <td className="py-2 text-right">
@@ -400,7 +400,7 @@ function ProdutoModal({ alvo, proc, run, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+      <div className="w-full max-w-sm rounded-cartao bg-painel-cartao p-6">
         <h2 className="mb-4 text-lg font-semibold">{novo ? "Novo produto" : "Editar produto"}</h2>
         <div className="space-y-3">
           <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" className={inputCls} />
@@ -408,11 +408,11 @@ function ProdutoModal({ alvo, proc, run, onClose }: {
           <input value={preco} onChange={(e) => setPreco(e.target.value)} inputMode="decimal" placeholder="Preço (R$)" className={inputCls} />
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} /> Ativo</label>
           <div className="flex justify-end gap-2 pt-1">
-            <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400">Cancelar</button>
+            <button onClick={onClose} className="rounded-controle px-4 py-2 text-sm text-texto-suave">Cancelar</button>
             <button
               disabled={proc || !nome.trim()}
               onClick={() => { run(() => salvarProduto({ id: novo ? null : (p as Produto).id, nome, categoria, preco: Number(String(preco).replace(",", ".")) || 0, ativo })); onClose(); }}
-              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
             >
               Salvar
             </button>

@@ -46,19 +46,19 @@ export default async function PedidosPage({
     <div className="mx-auto max-w-3xl p-8">
       <Link
         href={`/cotacoes/${cotacao.id}/comparar`}
-        className="text-sm text-zinc-500 hover:text-orange-600"
+        className="text-sm text-texto-suave hover:text-orange-600"
       >
         ← Voltar para a comparação
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
         Pedidos
       </h1>
-      <p className="mt-1 text-zinc-500">
+      <p className="mt-1 text-texto-suave">
         Um pedido por fornecedor. Revise e envie pelo WhatsApp.
       </p>
 
       {pedidos.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum pedido gerado ainda.{" "}
           <Link
             href={`/cotacoes/${cotacao.id}/comparar`}
@@ -90,30 +90,30 @@ export default async function PedidosPage({
             return (
               <div
                 key={ped.id}
-                className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+                className="rounded-cartao border border-borda p-5"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <h2 className="font-semibold text-texto">
                     {nome}
                   </h2>
-                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  <span className="text-sm font-semibold text-texto">
                     {moeda(total)}
                   </span>
                 </div>
                 <table className="w-full text-sm">
-                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  <tbody className="divide-y divide-borda">
                     {itens.map((i, idx) => (
                       <tr key={idx}>
-                        <td className="py-1.5 text-zinc-800 dark:text-zinc-200">
+                        <td className="py-1.5 text-texto">
                           {i.produtos?.nome}
                         </td>
-                        <td className="py-1.5 text-right text-zinc-500">
+                        <td className="py-1.5 text-right text-texto-suave">
                           {i.qtd} {i.produtos?.unidade}
                         </td>
-                        <td className="py-1.5 text-right text-zinc-500">
+                        <td className="py-1.5 text-right text-texto-suave">
                           {i.preco_unit != null ? moeda(i.preco_unit) : "—"}
                         </td>
-                        <td className="py-1.5 text-right text-zinc-800 dark:text-zinc-200">
+                        <td className="py-1.5 text-right text-texto">
                           {i.preco_unit != null
                             ? moeda(i.preco_unit * i.qtd)
                             : "—"}

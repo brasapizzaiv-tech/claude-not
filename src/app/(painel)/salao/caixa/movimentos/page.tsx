@@ -65,26 +65,26 @@ export default async function MovimentosCaixaPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/salao/caixa" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">
         ← Voltar ao caixa
       </Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Movimentações do caixa</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Movimentações do caixa</h1>
+          <p className="text-sm text-texto-suave">
             Caixa <b>{caixa.nome}</b>, aberto às {abertoHora} · {movs.length} lançamento(s)
           </p>
         </div>
         <div className="flex flex-wrap gap-4 text-sm">
-          <span className="text-zinc-500">Vendas <b className="text-emerald-600">{brl(vendas)}</b></span>
-          <span className="text-zinc-500">Suprimentos <b className="text-blue-600">{brl(suprimentos)}</b></span>
-          <span className="text-zinc-500">Sangrias <b className="text-red-600">{brl(sangrias)}</b></span>
+          <span className="text-texto-suave">Vendas <b className="text-emerald-600">{brl(vendas)}</b></span>
+          <span className="text-texto-suave">Suprimentos <b className="text-blue-600">{brl(suprimentos)}</b></span>
+          <span className="text-texto-suave">Sangrias <b className="text-red-600">{brl(sangrias)}</b></span>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-400 dark:bg-zinc-900">
+          <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
             <tr>
               <th className="px-4 py-2 font-medium">Descrição</th>
               <th className="px-4 py-2 font-medium">Forma</th>
@@ -92,12 +92,12 @@ export default async function MovimentosCaixaPage() {
               <th className="px-4 py-2 text-right font-medium">Valor</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {movs.map((m) => (
-              <tr key={m.id} className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">
+              <tr key={m.id} className="">
+                <td className="px-4 py-2 text-texto">
                   {m.descricao || m.tipo}
-                  <span className="ml-2 text-[10px] uppercase text-zinc-400">{m.tipo}</span>
+                  <span className="ml-2 text-[10px] text-texto-fraco">{m.tipo}</span>
                   {m.tipo === "venda" && (
                     <Link
                       href={`/salao/caixa/movimentos/${m.id}`}
@@ -108,27 +108,27 @@ export default async function MovimentosCaixaPage() {
                     </Link>
                   )}
                   {comandasDo(m).length > 0 && (
-                    <span className="ml-2 text-[11px] text-zinc-400">
+                    <span className="ml-2 text-[11px] text-texto-fraco">
                       {comandasDo(m).length} comanda{comandasDo(m).length === 1 ? "" : "s"}
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">{m.forma_pagamento || "—"}</td>
-                <td className="px-4 py-2 text-zinc-400">{hora(m.criado_em)}</td>
+                <td className="px-4 py-2 text-texto-suave">{m.forma_pagamento || "—"}</td>
+                <td className="px-4 py-2 text-texto-fraco">{hora(m.criado_em)}</td>
                 <td className={`px-4 py-2 text-right font-medium ${cor(m.tipo)}`}>
                   {sinal(m.tipo, Number(m.valor))} {brl(Math.abs(Number(m.valor)))}
                 </td>
               </tr>
             ))}
-            <tr className="bg-white dark:bg-zinc-950">
-              <td className="px-4 py-2 text-zinc-500">Saldo anterior</td>
-              <td className="px-4 py-2 text-zinc-500">Dinheiro</td>
-              <td className="px-4 py-2 text-zinc-400">{abertoHora}</td>
-              <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-300">{brl(saldoInicial)}</td>
+            <tr className="">
+              <td className="px-4 py-2 text-texto-suave">Saldo anterior</td>
+              <td className="px-4 py-2 text-texto-suave">Dinheiro</td>
+              <td className="px-4 py-2 text-texto-fraco">{abertoHora}</td>
+              <td className="px-4 py-2 text-right text-texto-suave">{brl(saldoInicial)}</td>
             </tr>
             {movs.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-zinc-400">
+                <td colSpan={4} className="px-4 py-8 text-center text-texto-fraco">
                   Nenhuma movimentação ainda.
                 </td>
               </tr>

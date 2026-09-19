@@ -58,7 +58,7 @@ export function EmitirNotaCaixa({
   if (comandas.length === 0) return null;
 
   return (
-    <div className="mt-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+    <div className="mt-3 rounded-cartao border border-borda p-3">
       <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100"><Icone nome="cupom" tamanho={14} className="mr-1.5" /> {autoIds.length > 0 ? "CPF ou CNPJ na nota?" : "Emitir NFC-e"} {autoIds.length > 0 && <span className="ml-1 text-xs font-normal text-emerald-600">(nota automática: Pix/cartão)</span>}</p>
       <div className="space-y-2">
         {grupos.map((g) => {
@@ -66,7 +66,7 @@ export function EmitirNotaCaixa({
           const auto = ehAuto(g);
           return (
             <div key={g.key} className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-zinc-600 dark:text-zinc-300">{g.rotulo}</span>
+              <span className="text-sm text-texto-suave">{g.rotulo}</span>
               {!r?.ok && (
                 <input
                   autoFocus={g.key === primeiroAuto}
@@ -75,7 +75,7 @@ export function EmitirNotaCaixa({
                   onKeyDown={(e) => { if (e.key === "Enter" && !proc) emitir(g); }}
                   inputMode="numeric"
                   placeholder="CPF ou CNPJ (opcional)"
-                  className={`w-44 rounded-lg border bg-white px-2 py-1 text-sm dark:bg-zinc-950 ${auto ? "border-emerald-500 ring-2 ring-emerald-200 dark:ring-emerald-900" : "border-zinc-300 dark:border-zinc-700"}`}
+                  className={`w-44 rounded-controle border bg-painel-cartao px-2 py-1 text-sm ${auto ? "border-emerald-500 ring-2 ring-emerald-200 dark:ring-emerald-900" : "border-borda-forte"}`}
                 />
               )}
               {r?.ok ? (
@@ -85,14 +85,14 @@ export function EmitirNotaCaixa({
                   <button
                     onClick={() => { setCpf((s) => ({ ...s, [g.key]: "" })); emitir(g, ""); }}
                     disabled={proc}
-                    className="rounded-lg border border-zinc-300 px-3 py-1 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-200"
+                    className="rounded-controle border border-borda-forte px-3 py-1 text-sm font-semibold text-texto-suave hover:bg-superficie-suave disabled:opacity-60 dark:border-borda-forte"
                   >
                     {proc ? "Emitindo…" : "Sem CPF"}
                   </button>
                   <button
                     onClick={() => emitir(g)}
                     disabled={proc || !(cpf[g.key] ?? "").trim()}
-                    className="rounded-lg bg-emerald-600 px-3 py-1 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    className="rounded-controle bg-texto px-3 py-1 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
                   >
                     {proc ? "Emitindo…" : "Com CPF/CNPJ"}
                   </button>
@@ -101,20 +101,20 @@ export function EmitirNotaCaixa({
                 <button
                   onClick={() => emitir(g)}
                   disabled={proc}
-                  className="rounded-lg bg-zinc-800 px-3 py-1 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
+                  className="rounded-controle bg-zinc-800 px-3 py-1 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
                 >
                   {proc ? "Emitindo…" : "Emitir"}
                 </button>
               )}
               {r && !r.ok && <span className="text-sm text-red-600">{r.msg}</span>}
               {r?.ok && !r.impressao && r.nfceId && (
-                <span className="flex items-center gap-1.5 rounded-lg border border-emerald-500 bg-emerald-500/10 px-2 py-1 text-sm">
+                <span className="flex items-center gap-1.5 rounded-controle border border-emerald-500 bg-emerald-500/10 px-2 py-1 text-sm">
                   <span className="font-semibold text-emerald-700 dark:text-emerald-400">Imprimir nota?</span>
-                  <button onClick={() => imprimir(g.key)} disabled={proc} className="rounded-md bg-emerald-600 px-2.5 py-0.5 text-xs font-semibold text-white disabled:opacity-60">Sim</button>
-                  <button onClick={() => setRes((s) => ({ ...s, [g.key]: { ...s[g.key], impressao: "sem impressão" } }))} className="rounded-md px-2 py-0.5 text-xs text-zinc-500">Não</button>
+                  <button onClick={() => imprimir(g.key)} disabled={proc} className="rounded-controle bg-texto px-2.5 py-0.5 text-xs font-semibold text-fundo disabled:opacity-60">Sim</button>
+                  <button onClick={() => setRes((s) => ({ ...s, [g.key]: { ...s[g.key], impressao: "sem impressão" } }))} className="rounded-controle px-2 py-0.5 text-xs text-texto-suave">Não</button>
                 </span>
               )}
-              {r?.impressao && <span className="text-sm text-zinc-600 dark:text-zinc-300">{r.impressao}</span>}
+              {r?.impressao && <span className="text-sm text-texto-suave">{r.impressao}</span>}
               {r?.ok && r.url && (
                 <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-sm text-orange-600 underline">
                   PDF

@@ -35,11 +35,11 @@ function EditorPermissoes({
         Acesso total (dono) — enxerga e edita tudo
       </label>
       {!dono && (
-        <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+        <div className="grid grid-cols-2 gap-1.5 rounded-cartao border border-borda p-3">
           {MODULOS.map((m) => (
             <label
               key={m.key}
-              className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300"
+              className="flex items-center gap-2 text-sm text-texto-suave"
             >
               <input
                 type="checkbox"
@@ -100,7 +100,7 @@ export function NovoUsuario() {
     return (
       <button
         onClick={() => setAberto(true)}
-        className="mb-6 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+        className="mb-6 rounded-cartao bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
       >
         + Novo usuário
       </button>
@@ -108,8 +108,8 @@ export function NovoUsuario() {
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+    <div className="mb-6 rounded-cartao border border-borda bg-painel-cartao p-5">
+      <h2 className="mb-4 text-lg font-semibold text-texto">
         Novo usuário
       </h2>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -117,21 +117,21 @@ export function NovoUsuario() {
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="Nome"
-          className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="rounded-cartao border border-borda-forte px-3 py-2 text-sm dark:bg-zinc-950"
         />
         <input
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="E-mail (login)"
           type="email"
-          className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="rounded-cartao border border-borda-forte px-3 py-2 text-sm dark:bg-zinc-950"
         />
         <input
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           placeholder="Senha (mín. 6)"
           type="text"
-          className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="rounded-cartao border border-borda-forte px-3 py-2 text-sm dark:bg-zinc-950"
         />
       </div>
       <div className="mt-4">
@@ -147,13 +147,13 @@ export function NovoUsuario() {
         <button
           onClick={salvar}
           disabled={p}
-          className="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+          className="rounded-cartao bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
         >
           {p ? "Criando..." : "Criar usuário"}
         </button>
         <button
           onClick={() => setAberto(false)}
-          className="rounded-xl px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="rounded-cartao px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave"
         >
           Cancelar
         </button>
@@ -231,25 +231,25 @@ export function UsuarioLinha({
           .join(", ");
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-cartao border border-borda bg-painel-cartao p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-medium text-zinc-900 dark:text-zinc-100">
+          <p className="font-medium text-texto">
             {usuario.nome}{" "}
             {usuario.dono && (
               <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
                 DONO
               </span>
             )}
-            {souEu && <span className="ml-1 text-xs text-zinc-400">(você)</span>}
+            {souEu && <span className="ml-1 text-xs text-texto-fraco">(você)</span>}
           </p>
-          <p className="text-sm text-zinc-500">{usuario.email}</p>
-          <p className="mt-0.5 text-xs text-zinc-400">{resumoAcesso}</p>
+          <p className="text-sm text-texto-suave">{usuario.email}</p>
+          <p className="mt-0.5 text-xs text-texto-fraco">{resumoAcesso}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setEditando((v) => !v)}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
           >
             {editando ? "Fechar" : "Editar acesso"}
           </button>
@@ -257,7 +257,7 @@ export function UsuarioLinha({
             <button
               onClick={excluir}
               disabled={p}
-              className="rounded-lg px-3 py-1.5 text-xs text-zinc-400 hover:text-red-600 disabled:opacity-60"
+              className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
             >
               Excluir
             </button>
@@ -266,7 +266,7 @@ export function UsuarioLinha({
       </div>
 
       {editando && (
-        <div className="mt-4 space-y-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+        <div className="mt-4 space-y-4 border-t border-borda pt-4">
           <EditorPermissoes
             dono={dono}
             setDono={setDono}
@@ -276,13 +276,13 @@ export function UsuarioLinha({
           <button
             onClick={salvarAcesso}
             disabled={p}
-            className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+            className="rounded-controle bg-texto px-3 py-1.5 text-xs font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
           >
             Salvar acesso
           </button>
 
-          <div className="border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            <p className="mb-2 text-xs font-medium text-zinc-500">
+          <div className="border-t border-borda pt-4">
+            <p className="mb-2 text-xs font-medium text-texto-suave">
               Trocar senha
             </p>
             <div className="flex gap-2">
@@ -291,12 +291,12 @@ export function UsuarioLinha({
                 onChange={(e) => setNovaSenha(e.target.value)}
                 placeholder="Nova senha (mín. 6)"
                 type="text"
-                className="flex-1 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="flex-1 rounded-controle border border-borda-forte px-3 py-1.5 text-sm dark:bg-zinc-900"
               />
               <button
                 onClick={salvarSenha}
                 disabled={p}
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium hover:bg-superficie-suave disabled:opacity-60 dark:border-borda-forte"
               >
                 Salvar senha
               </button>
@@ -305,7 +305,7 @@ export function UsuarioLinha({
         </div>
       )}
 
-      {msg && <p className="mt-3 text-xs text-zinc-500">{msg}</p>}
+      {msg && <p className="mt-3 text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }

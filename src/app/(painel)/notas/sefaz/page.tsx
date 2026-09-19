@@ -28,20 +28,20 @@ export default async function SefazPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-8">
-      <Link href="/notas" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/notas" className="text-sm text-texto-suave hover:text-orange-600">
         ← Voltar para notas
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
         SEFAZ automático
       </h1>
-      <p className="mt-1 mb-6 text-zinc-500">
+      <p className="mt-1 mb-6 text-texto-suave">
         Baixa as notas fiscais direto da SEFAZ com seu certificado A1.
         {status.atualizado_em
           ? ` Atualizado em ${dataBR(status.atualizado_em)}.`
           : ""}
       </p>
 
-      <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+      <div className="mb-6 rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
         <Icone nome="cadeado" tamanho={14} className="mr-1.5" /> Seu certificado e a senha ficam guardados no servidor só para
         conectar na SEFAZ. Ninguém além do sistema acessa. Use apenas em um
         equipamento de sua confiança.

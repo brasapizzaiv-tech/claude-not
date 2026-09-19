@@ -36,9 +36,9 @@ const STATUS: Record<string, { rotulo: string; cls: string }> = {
   confirmada: { rotulo: "aprovada", cls: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" },
   aprovada: { rotulo: "aprovada (sem confirmar)", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" },
   cancelada: { rotulo: "cancelada", cls: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
-  desfeita: { rotulo: "desfeita", cls: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800" },
-  negada: { rotulo: "negada", cls: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800" },
-  erro: { rotulo: "erro", cls: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800" },
+  desfeita: { rotulo: "desfeita", cls: "bg-superficie-suave text-texto-suave " },
+  negada: { rotulo: "negada", cls: "bg-superficie-suave text-texto-suave " },
+  erro: { rotulo: "erro", cls: "bg-superficie-suave text-texto-suave " },
 };
 
 export function TefLista({ linhas }: { linhas: TefLinha[] }) {
@@ -102,21 +102,21 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
     });
   }
 
-  const btn = "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900";
+  const btn = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave disabled:opacity-40 dark:border-borda-forte  ";
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${agente ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}`}>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${agente ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" : "bg-superficie-suave text-texto-suave "}`}>
           {agente ? `Agente TEF ${agente.versao} · ${agente.terminal}${agente.gerenciador ? " · gerenciador OK" : " · gerenciador não encontrado"}` : "Agente TEF não encontrado neste PC"}
         </span>
         <button onClick={adm} disabled={proc || !agente} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="ajustes" tamanho={14} /> Menu administrativo (Elgin)</span></button>
       </div>
-      {msg && <p className="mb-3 rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{msg}</p>}
+      {msg && <p className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
 
-      <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500 dark:bg-zinc-900">
+          <thead className="bg-superficie-suave text-left text-xs text-texto-suave">
             <tr>
               <th className="px-3 py-2">Quando</th>
               <th className="px-3 py-2">Cartão</th>
@@ -126,32 +126,32 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {linhas.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-8 text-center text-zinc-400">Nenhum cartão passado no pinpad nos últimos 7 dias.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-texto-fraco">Nenhum cartão passado no pinpad nos últimos 7 dias.</td></tr>
             )}
             {linhas.map((l) => {
-              const st = STATUS[l.status] ?? { rotulo: l.status, cls: "bg-zinc-100 text-zinc-500" };
+              const st = STATUS[l.status] ?? { rotulo: l.status, cls: "bg-superficie-suave text-texto-suave" };
               const podeCancelar = l.status === "confirmada" && !!l.nsu;
               const podeImprimir = l.status === "confirmada" || l.status === "cancelada";
               return (
                 <tr key={l.id} className="text-zinc-800 dark:text-zinc-100">
-                  <td className="px-3 py-2 tabular-nums text-zinc-500">{quando(l.criado_em)}</td>
+                  <td className="px-3 py-2 tabular-nums text-texto-suave">{quando(l.criado_em)}</td>
                   <td className="px-3 py-2">
-                    <div className="font-medium">{l.bandeira ?? "—"} <span className="text-xs text-zinc-400">{l.tipo}{l.parcelas > 1 ? ` ${l.parcelas}x` : ""}</span></div>
-                    <div className="text-xs text-zinc-400">{l.rede ?? ""}{l.pan_mascarado ? ` · ${l.pan_mascarado}` : ""}</div>
+                    <div className="font-medium">{l.bandeira ?? "—"} <span className="text-xs text-texto-fraco">{l.tipo}{l.parcelas > 1 ? ` ${l.parcelas}x` : ""}</span></div>
+                    <div className="text-xs text-texto-fraco">{l.rede ?? ""}{l.pan_mascarado ? ` · ${l.pan_mascarado}` : ""}</div>
                   </td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums">{brl(l.valor)}</td>
-                  <td className="px-3 py-2 tabular-nums text-zinc-500">{l.nsu ?? "—"}{l.autorizacao ? ` / ${l.autorizacao}` : ""}</td>
+                  <td className="px-3 py-2 tabular-nums text-texto-suave">{l.nsu ?? "—"}{l.autorizacao ? ` / ${l.autorizacao}` : ""}</td>
                   <td className="px-3 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>{st.rotulo}</span>
-                    {l.mensagem && <div className="mt-0.5 max-w-[260px] truncate text-[11px] text-zinc-400" title={l.mensagem}>{l.mensagem}</div>}
+                    {l.mensagem && <div className="mt-0.5 max-w-[260px] truncate text-[11px] text-texto-fraco" title={l.mensagem}>{l.mensagem}</div>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1.5">
                       {podeImprimir && <button onClick={() => reimprimir(l)} disabled={proc} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>}
                       {podeCancelar && (
-                        <button onClick={() => cancelar(l)} disabled={proc || !agente} className="rounded-lg border border-red-400 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:hover:bg-red-950">
+                        <button onClick={() => cancelar(l)} disabled={proc || !agente} className="rounded-controle border border-red-400 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:hover:bg-red-950">
                           {ocupadoId === l.id ? "No pinpad…" : <span className="inline-flex items-center gap-1.5"><Icone nome="fechar" tamanho={13} /> Cancelar</span>}
                         </button>
                       )}

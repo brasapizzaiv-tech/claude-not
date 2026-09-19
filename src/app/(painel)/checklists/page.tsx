@@ -37,35 +37,35 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
     pendentes: linhas.filter((l) => !l.s.iniciada).length,
   };
   const aberta = sp.ver ? linhas.find((l) => l.modelo.id === sp.ver) : null;
-  const card = "rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800";
+  const card = "rounded-cartao border border-borda p-4 ";
 
   return (
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>
-          <p className="mt-1 text-zinc-500">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>
+          <p className="mt-1 text-texto-suave">
             {dia === hoje ? "Hoje" : core.dataCurta(dia)} · o que cada setor já fez.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/checklists?dia=${core.addDiasIso(dia, -1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">← dia anterior</Link>
-          {dia !== hoje && <Link href="/checklists" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">hoje</Link>}
-          <Link href="/checklists/revisao" className="rounded-lg border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300"><Icone nome="buscar" tamanho={14} className="mr-1.5" /> Revisar e apontar</Link>
-          <Link href="/checklists/historico" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">Histórico</Link>
-          <Link href="/checklists/modelos" className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600">Modelos</Link>
+          <Link href={`/checklists?dia=${core.addDiasIso(dia, -1)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">← dia anterior</Link>
+          {dia !== hoje && <Link href="/checklists" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">hoje</Link>}
+          <Link href="/checklists/revisao" className="rounded-controle border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300"><Icone nome="buscar" tamanho={14} className="mr-1.5" /> Revisar e apontar</Link>
+          <Link href="/checklists/historico" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">Histórico</Link>
+          <Link href="/checklists/modelos" className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600">Modelos</Link>
         </div>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
-        <div className={card}><p className="text-xs text-zinc-500">Listas do dia</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{totais.listas}</p></div>
-        <div className={card}><p className="text-xs text-zinc-500">Concluídas</p><p className="text-2xl font-bold text-emerald-600">{totais.concluidas}</p></div>
-        <div className={card}><p className="text-xs text-zinc-500">Em andamento</p><p className="text-2xl font-bold text-amber-600">{totais.andamento}</p></div>
-        <div className={card}><p className="text-xs text-zinc-500">Não iniciadas</p><p className="text-2xl font-bold text-zinc-400">{totais.pendentes}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Listas do dia</p><p className="text-2xl font-bold text-texto">{totais.listas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Concluídas</p><p className="text-2xl font-bold text-emerald-600">{totais.concluidas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Em andamento</p><p className="text-2xl font-bold text-amber-600">{totais.andamento}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Não iniciadas</p><p className="text-2xl font-bold text-texto-fraco">{totais.pendentes}</p></div>
       </div>
 
       {linhas.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <p className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhuma lista vale neste dia. Cadastre em <Link href="/checklists/modelos" className="text-orange-600 underline">Modelos</Link>.
         </p>
       )}
@@ -75,7 +75,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
         if (doSetor.length === 0) return null;
         return (
           <div key={s.id} className="mb-5">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide" style={{ color: s.cor ?? undefined }}>{s.nome}</p>
+            <p className="mb-2 text-xs font-bold" style={{ color: s.cor ?? undefined }}>{s.nome}</p>
             <div className="grid gap-2 sm:grid-cols-3">
               {core.MOMENTOS.map((mom) => {
                 const doMomento = doSetor.filter((l) => l.modelo.momento === mom);
@@ -84,13 +84,13 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
                   <Link
                     key={l.modelo.id}
                     href={`/checklists?dia=${dia}&ver=${l.modelo.id}`}
-                    className={`rounded-2xl border p-3 ${l.s.concluida ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30" : l.s.iniciada ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20" : "border-dashed border-zinc-300 dark:border-zinc-700"}`}
+                    className={`rounded-cartao border p-3 ${l.s.concluida ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30" : l.s.iniciada ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20" : "border-dashed border-borda-forte"}`}
                   >
-                    <p className="text-[11px] uppercase tracking-wide text-zinc-400">{core.ROTULO_MOMENTO[mom]}</p>
-                    <p className="font-semibold text-zinc-900 dark:text-zinc-50">{l.modelo.nome}</p>
+                    <p className="text-[11px] text-texto-fraco">{core.ROTULO_MOMENTO[mom]}</p>
+                    <p className="font-semibold text-texto">{l.modelo.nome}</p>
                     <p className="mt-1 text-sm">
-                      <b className={l.s.concluida ? "text-emerald-600" : l.s.iniciada ? "text-amber-600" : "text-zinc-400"}>{l.s.feitos}/{l.s.total}</b>
-                      <span className="ml-2 text-xs text-zinc-500">
+                      <b className={l.s.concluida ? "text-emerald-600" : l.s.iniciada ? "text-amber-600" : "text-texto-fraco"}>{l.s.feitos}/{l.s.total}</b>
+                      <span className="ml-2 text-xs text-texto-suave">
                         {l.s.concluida && l.exec?.concluido_em ? `✓ ${l.exec.concluido_nome ?? ""} ${hora(l.exec.concluido_em)}` : l.s.iniciada && l.exec ? `${l.exec.iniciado_nome ?? ""} desde ${hora(l.exec.iniciado_em)}` : "não iniciada"}
                       </span>
                     </p>
@@ -103,18 +103,18 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
       })}
 
       {aberta && (
-        <div className="mt-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mt-6 rounded-cartao border border-borda p-4">
           <div className="mb-2 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{aberta.modelo.nome}</h2>
-              <p className="text-sm text-zinc-500">
+              <h2 className="text-lg font-bold text-texto">{aberta.modelo.nome}</h2>
+              <p className="text-sm text-texto-suave">
                 {core.ROTULO_MOMENTO[aberta.modelo.momento]} ·{" "}
                 {aberta.exec
                   ? `${aberta.exec.iniciado_nome ?? "?"} começou ${hora(aberta.exec.iniciado_em)}${aberta.exec.concluido_em ? ` · concluída ${hora(aberta.exec.concluido_em)} por ${aberta.exec.concluido_nome ?? "?"}` : ""}`
                   : "não iniciada"}
               </p>
             </div>
-            <Link href={`/checklists?dia=${dia}`} className="text-sm text-zinc-400 hover:text-zinc-700">fechar</Link>
+            <Link href={`/checklists?dia=${dia}`} className="text-sm text-texto-fraco hover:text-texto-suave">fechar</Link>
           </div>
           <ChecklistItensVista itens={aberta.itens} respostas={aberta.resp} />
         </div>

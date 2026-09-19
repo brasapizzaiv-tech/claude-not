@@ -286,20 +286,20 @@ export default async function CompararPage({
     <div className="mx-auto w-full max-w-[1800px] p-4 sm:p-6">
       <Link
         href={`/cotacoes/${cotacao.id}`}
-        className="text-sm text-zinc-500 hover:text-orange-600"
+        className="text-sm text-texto-suave hover:text-orange-600"
       >
         ← Voltar para a cotação
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
         Comparar preços
       </h1>
-      <p className="mt-1 text-zinc-500">
+      <p className="mt-1 text-texto-suave">
         Veja o preço de cada fornecedor, escolha de quem comprar e gere os
         pedidos. O <b>mais barato</b> de cada item vem marcado em verde.
       </p>
 
       {comparados.length === 0 && exclusivos.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Ainda não há itens para comparar.{" "}
           <Link
             href={`/cotacoes/${cotacao.id}/fornecedores`}

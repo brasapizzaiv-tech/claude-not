@@ -13,13 +13,13 @@ import {
   reordenarItens, salvarItemModelo, salvarModelo, salvarSetor,
 } from "../actions";
 
-const inputCls = "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
-const btnSec = "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900";
+const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+const btnSec = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";
 // Valor literal porque <input type="color"> não aceita variável de CSS.
 // Etapa 3: passa a vir da cor da empresa.
 const COR_PRIMARIA = "#c78340";
 const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1 text-xs font-medium ${on ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`;
+  `rounded-full border px-3 py-1 text-xs font-medium ${on ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`;
 
 export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; modelos: Modelo[]; itens: ModeloItem[] }) {
   const router = useRouter();
@@ -43,25 +43,25 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
 
   return (
     <div className="space-y-6">
-      {msg && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{msg}</p>}
+      {msg && <p className="rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{msg}</p>}
 
       {/* Setores */}
-      <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="rounded-cartao border border-borda p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Setores</p>
-          <button onClick={() => setVerSetores((v) => !v)} className="text-xs text-zinc-500 underline">
+          <button onClick={() => setVerSetores((v) => !v)} className="text-xs text-texto-suave underline">
             {verSetores ? "fechar" : "editar setores"}
           </button>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {setores.map((s) => (
-            <span key={s.id} className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${s.ativo ? "text-zinc-800 dark:text-zinc-100" : "text-zinc-400 line-through"}`} style={{ background: (s.cor ?? "#888") + "22", border: `2px solid ${s.cor ?? "#888"}` }}>
+            <span key={s.id} className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${s.ativo ? "text-zinc-800 dark:text-zinc-100" : "text-texto-fraco line-through"}`} style={{ background: (s.cor ?? "#888") + "22", border: `2px solid ${s.cor ?? "#888"}` }}>
               {s.nome}
               {verSetores && (
                 <>
-                  <button onClick={() => agir(() => moverSetor(s.id, -1))} disabled={proc} className="text-xs text-zinc-400 hover:text-zinc-700">↑</button>
-                  <button onClick={() => agir(() => moverSetor(s.id, 1))} disabled={proc} className="text-xs text-zinc-400 hover:text-zinc-700">↓</button>
-                  <button onClick={() => agir(() => alternarSetor(s.id, !s.ativo))} disabled={proc} className="text-xs text-zinc-400 hover:text-orange-600">
+                  <button onClick={() => agir(() => moverSetor(s.id, -1))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto-suave">↑</button>
+                  <button onClick={() => agir(() => moverSetor(s.id, 1))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto-suave">↓</button>
+                  <button onClick={() => agir(() => alternarSetor(s.id, !s.ativo))} disabled={proc} className="text-xs text-texto-fraco hover:text-orange-600">
                     {s.ativo ? "desativar" : "ativar"}
                   </button>
                 </>
@@ -75,7 +75,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
       {/* Listas por setor */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Listas</p>
-        <button onClick={() => setEditando("novo")} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
+        <button onClick={() => setEditando("novo")} className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
           + Nova lista
         </button>
       </div>
@@ -85,24 +85,24 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
         if (doSetor.length === 0) return null;
         return (
           <div key={s.id}>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide" style={{ color: s.cor ?? "#888" }}>{s.nome}</p>
+            <p className="mb-2 text-xs font-bold" style={{ color: s.cor ?? "#888" }}>{s.nome}</p>
             <div className="space-y-2">
               {MOMENTOS.flatMap((mom) => doSetor.filter((m) => m.momento === mom)).map((m) => {
                 const lista = itensDe(m.id);
                 const obrig = lista.filter((i) => i.obrigatorio).length;
                 const fotos = lista.filter((i) => i.exige_foto).length;
                 return (
-                  <div key={m.id} className={`rounded-2xl border p-4 ${m.ativo ? "border-zinc-200 dark:border-zinc-800" : "border-dashed border-zinc-300 opacity-60 dark:border-zinc-700"}`}>
+                  <div key={m.id} className={`rounded-cartao border p-4 ${m.ativo ? "border-borda" : "border-dashed border-borda-forte opacity-60 "}`}>
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                        <p className="font-semibold text-texto">
                           {m.nome}
-                          <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                          <span className="ml-2 rounded-full bg-superficie-suave px-2 py-0.5 text-[11px] font-medium text-texto-suave">
                             {ROTULO_MOMENTO[m.momento]}
                           </span>
-                          {!m.ativo && <span className="ml-2 text-xs text-zinc-400">inativa</span>}
+                          {!m.ativo && <span className="ml-2 text-xs text-texto-fraco">inativa</span>}
                         </p>
-                        <p className="mt-0.5 text-xs text-zinc-500">
+                        <p className="mt-0.5 text-xs text-texto-suave">
                           {lista.length} item(ns) · {obrig} obrigatório(s) · {fotos} com foto ·{" "}
                           {m.dias.length === 0 && m.servicos.length === 0
                             ? "todo dia"
@@ -123,7 +123,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
                         <button
                           onClick={() => { if (confirm(`Apagar a lista "${m.nome}"?`)) agir(() => excluirModelo(m.id)); }}
                           disabled={proc}
-                          className="rounded-lg px-3 py-1.5 text-xs text-zinc-400 hover:text-red-600"
+                          className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"
                         >
                           Apagar
                         </button>
@@ -156,19 +156,19 @@ function NovoSetor({ onSalvar, proc }: { onSalvar: (nome: string, cor: string) =
   // Sugestão inicial no seletor de cor: a primária da marca.
   const [cor, setCor] = useState(COR_PRIMARIA);
   return (
-    <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+    <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-borda pt-3">
       <div>
-        <label className="mb-1 block text-xs text-zinc-500">Novo setor</label>
+        <label className="mb-1 block text-xs text-texto-suave">Novo setor</label>
         <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Forno" className={`${inputCls} w-40`} />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-zinc-500">Cor</label>
-        <input type="color" value={cor} onChange={(e) => setCor(e.target.value)} className="h-9 w-14 rounded border border-zinc-300 dark:border-zinc-700" />
+        <label className="mb-1 block text-xs text-texto-suave">Cor</label>
+        <input type="color" value={cor} onChange={(e) => setCor(e.target.value)} className="h-9 w-14 rounded border border-borda-forte" />
       </div>
       <button
         onClick={() => { if (nome.trim().length >= 2) { onSalvar(nome, cor); setNome(""); } }}
         disabled={proc || nome.trim().length < 2}
-        className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-semibold disabled:opacity-40 dark:border-zinc-700"
+        className="rounded-controle border border-borda-forte px-3 py-2 text-sm font-semibold disabled:opacity-40"
       >
         Adicionar
       </button>
@@ -201,7 +201,7 @@ function ItensDoModelo({
   }
 
   return (
-    <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+    <div className="mt-3 border-t border-borda pt-3">
       <ul className="space-y-1">
         {atual.map((id, n) => {
           const i = porId.get(id)!;
@@ -212,17 +212,17 @@ function ItensDoModelo({
               onDragStart={() => setArrastando(id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => soltar(id)}
-              className={`flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm ${arrastando === id ? "opacity-40" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}
+              className={`flex items-start gap-2 rounded-controle px-2 py-1.5 text-sm ${arrastando === id ? "opacity-40" : "hover:bg-superficie-suave "}`}
             >
               <span className="cursor-grab select-none pt-0.5 text-zinc-300 dark:text-zinc-600" title="Arraste para reordenar">⠿</span>
-              <span className="w-5 pt-0.5 text-right text-xs text-zinc-400">{n + 1}</span>
+              <span className="w-5 pt-0.5 text-right text-xs text-texto-fraco">{n + 1}</span>
               <span className="flex-1">
-                {i.secao && <span className="mr-1.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:bg-zinc-800">{i.secao}</span>}
+                {i.secao && <span className="mr-1.5 rounded bg-superficie-suave px-1.5 py-0.5 text-[10px] font-bold text-texto-suave">{i.secao}</span>}
                 <span className="text-zinc-800 dark:text-zinc-100">{i.texto}</span>
-                <span className="ml-2 text-[11px] text-zinc-400">{ROTULO_TIPO[i.tipo]}</span>
+                <span className="ml-2 text-[11px] text-texto-fraco">{ROTULO_TIPO[i.tipo]}</span>
                 {i.obrigatorio && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-950 dark:text-red-300">obrigatório</span>}
                 {i.exige_foto && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">foto</span>}
-                {i.instrucao && <span className="block text-xs text-zinc-400">{i.instrucao}</span>}
+                {i.instrucao && <span className="block text-xs text-texto-fraco">{i.instrucao}</span>}
               </span>
               <button onClick={() => setEditItem(i)} className="text-xs text-orange-600 hover:underline">editar</button>
               <button
@@ -235,7 +235,7 @@ function ItensDoModelo({
             </li>
           );
         })}
-        {atual.length === 0 && <li className="px-2 py-3 text-sm text-zinc-400">Nenhum item ainda.</li>}
+        {atual.length === 0 && <li className="px-2 py-3 text-sm text-texto-fraco">Nenhum item ainda.</li>}
       </ul>
       <button onClick={() => setEditItem("novo")} className="mt-2 text-sm font-medium text-orange-600 hover:underline">+ adicionar item</button>
       {editItem && (
@@ -267,25 +267,25 @@ function ModeloModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-950">
-        <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-zinc-50">{modelo ? "Editar lista" : "Nova lista"}</h2>
-        <label className="mb-1 block text-xs text-zinc-500">Nome</label>
+      <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
+        <h2 className="mb-3 text-lg font-bold text-texto">{modelo ? "Editar lista" : "Nova lista"}</h2>
+        <label className="mb-1 block text-xs text-texto-suave">Nome</label>
         <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Fechamento do salão" className={`${inputCls} w-full`} autoFocus />
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Setor</label>
+            <label className="mb-1 block text-xs text-texto-suave">Setor</label>
             <select value={setorId} onChange={(e) => setSetorId(e.target.value)} className={`${inputCls} w-full`}>
               {setores.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Momento</label>
+            <label className="mb-1 block text-xs text-texto-suave">Momento</label>
             <select value={momento} onChange={(e) => setMomento(e.target.value as Momento)} className={`${inputCls} w-full`}>
               {MOMENTOS.map((m) => <option key={m} value={m}>{ROTULO_MOMENTO[m]}</option>)}
             </select>
           </div>
         </div>
-        <p className="mt-4 text-xs text-zinc-500">Quando vale (sem marcar nada, vale todo dia)</p>
+        <p className="mt-4 text-xs text-texto-suave">Quando vale (sem marcar nada, vale todo dia)</p>
         <div className="mt-1 flex flex-wrap gap-1.5">
           {DIAS_CURTO.map((d, n) => (
             <button key={n} type="button" onClick={() => alternar(dias, n, setDias)} className={chip(dias.includes(n))}>{d}</button>
@@ -299,11 +299,11 @@ function ModeloModal({
           ))}
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">Cancelar</button>
+          <button onClick={onClose} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">Cancelar</button>
           <button
             onClick={() => onSalvar({ id: modelo?.id, nome, setor_id: setorId, momento, dias, servicos })}
             disabled={proc || nome.trim().length < 2 || !setorId}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             Salvar
           </button>
@@ -328,30 +328,30 @@ function ItemModal({
   const [obrig, setObrig] = useState(item?.obrigatorio ?? false);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-950">
-        <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-zinc-50">{item ? "Editar item" : "Novo item"}</h2>
-        <label className="mb-1 block text-xs text-zinc-500">Item</label>
+      <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
+        <h2 className="mb-3 text-lg font-bold text-texto">{item ? "Editar item" : "Novo item"}</h2>
+        <label className="mb-1 block text-xs text-texto-suave">Item</label>
         <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Ex.: Conferir banheiros" className={`${inputCls} w-full`} autoFocus />
-        <label className="mt-3 mb-1 block text-xs text-zinc-500">Bloco (opcional — agrupa os itens, ex.: PREPARO)</label>
+        <label className="mt-3 mb-1 block text-xs text-texto-suave">Bloco (opcional — agrupa os itens, ex.: PREPARO)</label>
         <input value={secao} onChange={(e) => setSecao(e.target.value)} placeholder="Ex.: ANTES DE COMEÇAR" className={`${inputCls} w-full`} />
-        <label className="mt-3 mb-1 block text-xs text-zinc-500">Instrução (opcional, aparece abaixo do item)</label>
+        <label className="mt-3 mb-1 block text-xs text-texto-suave">Instrução (opcional, aparece abaixo do item)</label>
         <input value={instrucao} onChange={(e) => setInstrucao(e.target.value)} placeholder="Ex.: conferir papel e sabonete" className={`${inputCls} w-full`} />
-        <label className="mt-3 mb-1 block text-xs text-zinc-500">Tipo</label>
+        <label className="mt-3 mb-1 block text-xs text-texto-suave">Tipo</label>
         <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoItem)} className={`${inputCls} w-full`}>
           {TIPOS_ITEM.map((t) => <option key={t} value={t}>{ROTULO_TIPO[t]}</option>)}
         </select>
-        <label className="mt-3 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+        <label className="mt-3 flex items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={foto} onChange={(e) => setFoto(e.target.checked)} /> Exigir foto
         </label>
-        <label className="mt-1.5 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+        <label className="mt-1.5 flex items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={obrig} onChange={(e) => setObrig(e.target.checked)} /> Obrigatório (precisa ser preenchido pra concluir)
         </label>
         <div className="mt-5 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">Cancelar</button>
+          <button onClick={onClose} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">Cancelar</button>
           <button
             onClick={() => onSalvar({ id: item?.id, texto, instrucao: instrucao || null, secao: secao || null, tipo, exige_foto: foto, obrigatorio: obrig })}
             disabled={proc || texto.trim().length < 2}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             Salvar
           </button>

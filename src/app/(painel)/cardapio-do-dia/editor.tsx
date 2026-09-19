@@ -37,10 +37,10 @@ const BLOCOS: { grupo: Grupo; titulo: string }[] = [
 ];
 
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 const rotulo = "mb-1 block text-xs font-medium text-orange-600";
 const btn =
-  "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900";
+  "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";
 
 function addDias(iso: string, n: number) {
   const [a, m, d] = iso.split("-").map(Number);
@@ -164,12 +164,12 @@ export function EditorCardapio({
 
   return (
     <div className="mx-auto max-w-6xl p-8">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+      <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
         Cardápio do dia
       </h1>
-      <p className="mt-1 text-zinc-500">
+      <p className="mt-1 text-texto-suave">
         Clique nos pratos para montar o dia. O que você publicar aparece em{" "}
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+        <span className="font-medium text-texto-suave">
           brasarestaurante.com.br/cardapio
         </span>
         .
@@ -191,7 +191,7 @@ export function EditorCardapio({
             <button onClick={() => irPara(addDias(dia, 1))} className={btn}>
               →
             </button>
-            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+            <span className="text-sm font-semibold text-texto">
               {SEMANA[dow]}
               {dia === hoje ? " · hoje" : ""}
             </span>
@@ -206,21 +206,21 @@ export function EditorCardapio({
               </span>
             )}
             {status === "rascunho" && (
-              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800">
+              <span className="rounded-full bg-superficie-suave px-2.5 py-0.5 text-[11px] font-medium text-texto-suave">
                 rascunho{atual?.alterado_por ? ` · ${atual.alterado_por} ${quando(atual.alterado_em)}` : ""}
               </span>
             )}
           </div>
 
           {domingo && (
-            <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            <p className="mb-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
               Domingo a casa não abre — normalmente não precisa de cardápio.
             </p>
           )}
 
           {/* Atalhos de cópia */}
           {vazio && (mesmoDiaSemana || preenchidos[0]) && (
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-texto-suave">
               <span>Começar a partir de:</span>
               {mesmoDiaSemana && (
                 <button onClick={() => copiarDe(mesmoDiaSemana)} className={btn}>
@@ -250,7 +250,7 @@ export function EditorCardapio({
           </div>
 
           {/* Preços e ações */}
-          <div className="mt-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="mt-4 rounded-cartao border border-borda p-4">
             <div className="flex flex-wrap gap-3">
               <div>
                 <label className={rotulo}>LIVRE (R$)</label>
@@ -270,17 +270,17 @@ export function EditorCardapio({
                   className={`${campo} w-28 text-right`}
                 />
               </div>
-              <p className="self-end pb-2 text-[11px] text-zinc-400">
+              <p className="self-end pb-2 text-[11px] text-texto-fraco">
                 Sugeridos pelo dia da semana ({moeda(sugerido?.livre ?? null)} e{" "}
                 {moeda(sugerido?.kg ?? null)}).
               </p>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-borda pt-3">
               <button
                 disabled={proc}
                 onClick={() => salvar(true)}
-                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                className="rounded-controle bg-texto px-5 py-2.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
               >
                 {proc
                   ? "Salvando..."
@@ -292,7 +292,7 @@ export function EditorCardapio({
                 {atual?.publicado ? "Salvar sem publicar" : "Salvar rascunho"}
               </button>
               {status === "alterado" && (
-                <button disabled={proc} onClick={publicarSo} className="rounded-lg border border-amber-500 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">
+                <button disabled={proc} onClick={publicarSo} className="rounded-controle border border-amber-500 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">
                   Publicar o que está salvo
                 </button>
               )}
@@ -323,22 +323,22 @@ export function EditorCardapio({
                         router.refresh();
                       });
                   }}
-                  className="rounded-lg px-3 py-1.5 text-xs text-zinc-400 hover:text-red-600"
+                  className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"
                 >
                   Apagar
                 </button>
               )}
             </div>
             {msg && (
-              <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>
+              <p className="mt-2 text-xs text-texto-suave">{msg}</p>
             )}
           </div>
         </div>
 
         {/* Coluna da direita */}
         <div className="space-y-5">
-          <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+          <div className="rounded-cartao border border-borda p-4">
+            <h2 className="mb-3 text-sm font-semibold text-texto">
               Próximos dias
             </h2>
             <div className="space-y-1">
@@ -350,13 +350,13 @@ export function EditorCardapio({
                     <button
                       key={v}
                       onClick={() => irPara(v)}
-                      className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${
+                      className={`flex w-full items-center justify-between gap-2 rounded-controle px-2 py-1.5 text-left text-xs ${
                         v === dia
                           ? "bg-orange-50 dark:bg-orange-950/30"
-                          : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                          : "hover:bg-superficie-suave "
                       }`}
                     >
-                      <span className="text-zinc-600 dark:text-zinc-300">
+                      <span className="text-texto-suave">
                         {SEMANA[diaSemanaN(v)].slice(0, 3)}, {dataBR(v).slice(0, 5)}
                         {v === hoje ? " · hoje" : ""}
                       </span>
@@ -365,7 +365,7 @@ export function EditorCardapio({
                           c?.publicado
                             ? "font-medium text-green-600"
                             : c
-                              ? "text-zinc-400"
+                              ? "text-texto-fraco"
                               : "text-zinc-300 dark:text-zinc-600"
                         }
                       >
@@ -378,18 +378,18 @@ export function EditorCardapio({
           </div>
 
           {/* Prévia igual à do site */}
-          <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-hidden rounded-cartao bg-painel-cartao">
             <div className="bg-marca-escuro p-5 text-marca-sobre-escuro">
-              <p className="text-center text-[11px] uppercase tracking-[.2em] text-orange-500">
+              <p className="text-center text-[11px] tracking-[.2em] text-orange-500">
                 Cardápio
               </p>
-              <p className="mb-4 text-center text-lg font-bold uppercase text-white">
+              <p className="mb-4 text-center text-lg font-bold text-white">
                 {SEMANA[dow]}
               </p>
               {BLOCOS.map((b) =>
                 sel[b.grupo].length > 0 ? (
                   <div key={b.grupo} className="mb-3">
-                    <span className="inline-block bg-orange-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-marca-escuro">
+                    <span className="inline-block bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-marca-escuro">
                       {b.titulo}
                     </span>
                     <ul className="mt-1.5 space-y-0.5 text-sm">
@@ -401,17 +401,17 @@ export function EditorCardapio({
                 ) : null,
               )}
               <div className="mt-4 flex justify-center gap-3">
-                <span className="rounded-lg bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
-                  <b className="block text-[10px] uppercase tracking-wider">Livre</b>
+                <span className="rounded-controle bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
+                  <b className="block text-[10px]">Livre</b>
                   <b className="text-sm">{moeda(numero(precos.livre))}</b>
                 </span>
-                <span className="rounded-lg bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
-                  <b className="block text-[10px] uppercase tracking-wider">KG</b>
+                <span className="rounded-controle bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
+                  <b className="block text-[10px]">KG</b>
                   <b className="text-sm">{moeda(numero(precos.kg))}</b>
                 </span>
               </div>
             </div>
-            <p className="bg-zinc-50 px-3 py-2 text-[11px] text-zinc-400 dark:bg-zinc-900">
+            <p className="bg-superficie-suave px-3 py-2 text-[11px] text-texto-fraco">
               Prévia de como fica no site.
             </p>
           </div>
@@ -470,12 +470,12 @@ function BlocoItens({
     !escolhidos.some((e) => norm(e) === norm(busca.trim()));
 
   return (
-    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="rounded-cartao border border-borda p-4">
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="inline-block bg-orange-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">
+        <span className="inline-block bg-orange-500 px-2 py-0.5 text-[11px] font-bold text-white">
           {titulo}
         </span>
-        <span className="text-[11px] text-zinc-400">
+        <span className="text-[11px] text-texto-fraco">
           {escolhidos.length} no cardápio · {catalogo.length} no catálogo
         </span>
       </div>
@@ -486,7 +486,7 @@ function BlocoItens({
           {escolhidos.map((nome, i) => (
             <li
               key={nome}
-              className="flex items-center gap-2 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-sm text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+              className="flex items-center gap-2 rounded-controle bg-superficie-suave px-2.5 py-1.5 text-sm text-zinc-800 dark:text-zinc-200"
             >
               <span className="flex-1">{nome}</span>
               <button
@@ -544,16 +544,16 @@ function BlocoItens({
             key={i.id}
             onClick={() => add(i.nome)}
             title={i.usos > 0 ? `usado ${i.usos}x` : "ainda não usado"}
-            className="rounded-full border border-zinc-200 px-2.5 py-1 text-xs text-zinc-600 hover:border-orange-400 hover:text-orange-600 dark:border-zinc-700 dark:text-zinc-300"
+            className="rounded-full border border-borda px-2.5 py-1 text-xs text-texto-suave hover:border-orange-400 hover:text-orange-600 dark:border-borda-forte"
           >
             {i.nome}
           </button>
         ))}
         {sugestoes.length === 0 && !novoItem && (
-          <span className="text-xs text-zinc-400">Tudo já está no cardápio de hoje.</span>
+          <span className="text-xs text-texto-fraco">Tudo já está no cardápio de hoje.</span>
         )}
       </div>
-      <p className="mt-2 text-[11px] text-zinc-400">
+      <p className="mt-2 text-[11px] text-texto-fraco">
         {busca
           ? "Enter põe o primeiro da lista."
           : `Mostrando os mais usados de ${grupo === "especial" ? "especial do dia" : titulo.toLowerCase()} — digite para buscar o resto.`}
@@ -579,8 +579,8 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
   }, [itens, grupo, busca]);
 
   return (
-    <details className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <summary className="cursor-pointer text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+    <details className="rounded-cartao border border-borda p-4">
+      <summary className="cursor-pointer text-sm font-semibold text-texto">
         Catálogo de pratos ({itens.length})
       </summary>
 
@@ -590,10 +590,10 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
             <button
               key={b.grupo}
               onClick={() => setGrupo(b.grupo)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+              className={`rounded-controle px-3 py-1.5 text-xs font-medium ${
                 grupo === b.grupo
                   ? "bg-orange-500 text-white"
-                  : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                  : "border border-borda-forte text-texto-suave  "
               }`}
             >
               {b.titulo}
@@ -620,11 +620,11 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
                 router.refresh();
               })
             }
-            className="mt-2 rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+            className="mt-2 rounded-controle bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
           >
             Cadastrar
           </button>
-          {msg && <p className="mt-1 text-[11px] text-zinc-500">{msg}</p>}
+          {msg && <p className="mt-1 text-[11px] text-texto-suave">{msg}</p>}
         </div>
 
         <input
@@ -637,12 +637,12 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
           {lista.map((i) => (
             <div
               key={i.id}
-              className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              className="flex items-center justify-between gap-2 rounded-controle px-2 py-1 text-xs text-texto-suave hover:bg-superficie-suave"
             >
               <span>
                 {i.nome}
                 {i.usos > 0 && (
-                  <span className="ml-1 text-zinc-400">· {i.usos}x</span>
+                  <span className="ml-1 text-texto-fraco">· {i.usos}x</span>
                 )}
               </span>
               <button
@@ -660,10 +660,10 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
             </div>
           ))}
           {lista.length === 0 && (
-            <p className="text-xs text-zinc-400">Nada encontrado nesse grupo.</p>
+            <p className="text-xs text-texto-fraco">Nada encontrado nesse grupo.</p>
           )}
         </div>
-        <p className="text-[11px] text-zinc-400">
+        <p className="text-[11px] text-texto-fraco">
           Tirar do catálogo não mexe nos cardápios já publicados. Para mudar um
           prato de grupo, apague aqui e cadastre no grupo certo.
         </p>

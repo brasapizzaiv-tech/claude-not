@@ -87,28 +87,28 @@ export default async function CotacaoFornecedoresPage({
     <div className="mx-auto max-w-4xl p-8">
       <Link
         href={`/cotacoes/${cotacao.id}`}
-        className="text-sm text-zinc-500 hover:text-orange-600"
+        className="text-sm text-texto-suave hover:text-orange-600"
       >
         ← Voltar para a cotação
       </Link>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
           Escolher fornecedores
         </h1>
         <Link
           href={`/cotacoes/${cotacao.id}/comparar`}
-          className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+          className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
         >
           Comparar preços →
         </Link>
       </div>
-      <p className="mt-1 text-zinc-500">
+      <p className="mt-1 text-texto-suave">
         Convide os fornecedores e envie o link para cada um preencher os preços.
       </p>
 
       {produtoIds.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum item para cotar ainda.{" "}
           <Link
             href={`/cotacoes/${cotacao.id}`}

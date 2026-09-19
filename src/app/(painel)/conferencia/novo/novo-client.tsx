@@ -11,7 +11,7 @@ type Prod = { id: string; nome: string; unidade: string; preco_referencia: numbe
 type Item = { produto_id: string; nome: string; unidade: string; qtd: string; preco: string };
 
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 const num = (s: string) => Number(String(s).replace(",", ".")) || 0;
 
 type Forn = { id: string; nome: string; whatsapp: string | null };
@@ -92,20 +92,20 @@ export function NovoPedidoClient({
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <Link href="/conferencia" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/conferencia" className="text-sm text-texto-suave hover:text-orange-600">
         ← Conferência
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
         Novo pedido manual
       </h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <p className="mt-1 text-sm text-texto-suave">
         Para compras feitas direto, sem passar por cotação. Depois de criar, você confere
         (podendo ajustar quantidades e valores).
       </p>
 
       <div className="mt-5 flex flex-wrap gap-3">
         <div className="min-w-56 flex-1">
-          <label className="mb-1 block text-xs text-zinc-500">Fornecedor</label>
+          <label className="mb-1 block text-xs text-texto-suave">Fornecedor</label>
           <Combobox
             options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))}
             value={fornecedorId}
@@ -115,7 +115,7 @@ export function NovoPedidoClient({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Data</label>
+          <label className="mb-1 block text-xs text-texto-suave">Data</label>
           <input
             type="date"
             value={data}
@@ -127,7 +127,7 @@ export function NovoPedidoClient({
 
       {/* Buscar e adicionar produtos */}
       <div className="mt-4">
-        <label className="mb-1 block text-xs text-zinc-500">Adicionar produto</label>
+        <label className="mb-1 block text-xs text-texto-suave">Adicionar produto</label>
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -135,15 +135,15 @@ export function NovoPedidoClient({
           className={`${campo} w-full`}
         />
         {encontrados.length > 0 && (
-          <div className="mt-1 max-h-52 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <div className="mt-1 max-h-52 overflow-y-auto rounded-controle border border-borda">
             {encontrados.map((p) => (
               <button
                 key={p.id}
                 onClick={() => adicionar(p)}
                 className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-orange-50 dark:hover:bg-orange-950/30"
               >
-                <span className="text-zinc-800 dark:text-zinc-200">{p.nome}</span>
-                <span className="text-xs text-zinc-400">{p.unidade}</span>
+                <span className="text-texto">{p.nome}</span>
+                <span className="text-xs text-texto-fraco">{p.unidade}</span>
               </button>
             ))}
           </div>
@@ -152,9 +152,9 @@ export function NovoPedidoClient({
 
       {/* Itens do pedido */}
       {itens.length > 0 && (
-        <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="mt-4 overflow-hidden rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-400 dark:bg-zinc-900">
+            <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
               <tr>
                 <th className="px-3 py-2">Produto</th>
                 <th className="px-3 py-2 text-right">Qtd</th>
@@ -163,18 +163,18 @@ export function NovoPedidoClient({
                 <th className="px-3 py-2"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {itens.map((i, idx) => (
-                <tr key={i.produto_id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-3 py-2 text-zinc-800 dark:text-zinc-200">
-                    {i.nome} <span className="text-xs text-zinc-400">{i.unidade}</span>
+                <tr key={i.produto_id} className="">
+                  <td className="px-3 py-2 text-texto">
+                    {i.nome} <span className="text-xs text-texto-fraco">{i.unidade}</span>
                   </td>
                   <td className="px-2 py-1 text-right">
                     <input
                       inputMode="decimal"
                       value={i.qtd}
                       onChange={(e) => alterar(idx, "qtd", e.target.value)}
-                      className="w-16 rounded border border-zinc-300 bg-white px-2 py-1 text-right dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                      className="w-16 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
                     />
                   </td>
                   <td className="px-2 py-1 text-right">
@@ -183,10 +183,10 @@ export function NovoPedidoClient({
                       value={i.preco}
                       placeholder="—"
                       onChange={(e) => alterar(idx, "preco", e.target.value)}
-                      className="w-20 rounded border border-zinc-300 bg-white px-2 py-1 text-right dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                      className="w-20 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
                     />
                   </td>
-                  <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-300">
+                  <td className="px-3 py-2 text-right text-texto-suave">
                     {(num(i.qtd) * num(i.preco)).toLocaleString("pt-BR", {
                       style: "currency",
                       currency: "BRL",
@@ -202,7 +202,7 @@ export function NovoPedidoClient({
                   </td>
                 </tr>
               ))}
-              <tr className="bg-zinc-50 dark:bg-zinc-900">
+              <tr className="bg-superficie-suave">
                 <td className="px-3 py-2 font-semibold" colSpan={3}>
                   Total
                 </td>
@@ -220,7 +220,7 @@ export function NovoPedidoClient({
         <button
           onClick={criar}
           disabled={salvando || !fornecedorId || itens.length === 0}
-          className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
         >
           {salvando ? "Criando..." : "Criar pedido e conferir →"}
         </button>
@@ -234,7 +234,7 @@ export function NovoPedidoClient({
                 ? "Este fornecedor não tem WhatsApp cadastrado"
                 : "Enviar o pedido no WhatsApp do fornecedor"
           }
-          className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+          className="rounded-controle bg-texto px-5 py-2.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-50"
         >
           <Icone nome="zap" tamanho={15} className="mr-1.5" /> Enviar no WhatsApp
         </button>

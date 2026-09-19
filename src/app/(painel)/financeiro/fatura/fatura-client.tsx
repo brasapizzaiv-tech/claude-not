@@ -37,7 +37,7 @@ export function FaturaClient({
   const [ignoradas, setIgnoradas] = useState(0);
 
   const input =
-    "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
   function enviar(formData: FormData) {
     setErro(null);
@@ -108,9 +108,9 @@ export function FaturaClient({
     <div className="space-y-4">
       {/* ---------- upload ---------- */}
       {!compras && (
-        <form action={enviar} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="mb-1 font-semibold text-zinc-900 dark:text-zinc-50">Fatura do cartão de crédito</p>
-          <p className="mb-3 text-sm text-zinc-500">
+        <form action={enviar} className="rounded-cartao border border-borda p-4">
+          <p className="mb-1 font-semibold text-texto">Fatura do cartão de crédito</p>
+          <p className="mb-3 text-sm text-texto-suave">
             Baixe a fatura no aplicativo do banco (PDF ou CSV) e solte aqui. O sistema lista cada compra
             pra você conferir a categoria — depois lança tudo de uma vez.
           </p>
@@ -120,29 +120,29 @@ export function FaturaClient({
               name="arquivo"
               accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain"
               required
-              className="text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-orange-600 dark:text-zinc-300"
+              className="text-sm text-texto-suave file:mr-3 file:rounded-controle file:border-0 file:bg-orange-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-orange-600"
             />
             <button
               type="submit"
               disabled={proc}
-              className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
+              className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
             >
               {proc ? "Lendo..." : "Ler fatura"}
             </button>
           </div>
-          <p className="mt-2 text-xs text-zinc-400">
+          <p className="mt-2 text-xs text-texto-fraco">
             Fatura escaneada (foto) não dá pra ler — precisa ser o arquivo do banco.
           </p>
         </form>
       )}
 
       {erro && (
-        <p className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+        <p className="rounded-cartao border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
           {erro}
         </p>
       )}
       {feito && (
-        <p className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+        <p className="rounded-cartao border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
           {feito}
         </p>
       )}
@@ -150,18 +150,18 @@ export function FaturaClient({
       {/* ---------- conferência ---------- */}
       {compras && (
         <>
-          <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="flex flex-wrap items-end gap-3 rounded-cartao border border-borda p-4">
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Competência</label>
+              <label className="mb-1 block text-xs text-texto-suave">Competência</label>
               <input type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className={input} />
-              <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-zinc-400">mês da fatura (vai pro DRE)</p>
+              <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">mês da fatura (vai pro DRE)</p>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Vencimento</label>
+              <label className="mb-1 block text-xs text-texto-suave">Vencimento</label>
               <input type="date" value={vencimento} onChange={(e) => setVencimento(e.target.value)} className={input} />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Banco</label>
+              <label className="mb-1 block text-xs text-texto-suave">Banco</label>
               <select value={banco} onChange={(e) => setBanco(e.target.value)} className={input}>
                 <option value="">—</option>
                 {bancos.map((b) => (
@@ -169,12 +169,12 @@ export function FaturaClient({
                 ))}
               </select>
             </div>
-            <label className="flex items-center gap-1.5 pb-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <label className="flex items-center gap-1.5 pb-2 text-sm text-texto-suave">
               <input type="checkbox" checked={pago} onChange={(e) => setPago(e.target.checked)} /> já paguei
             </label>
             {transacoes.length > 0 && (
               <div className="min-w-64 flex-1">
-                <label className="mb-1 block text-xs text-zinc-500">Conciliar com o débito da fatura</label>
+                <label className="mb-1 block text-xs text-texto-suave">Conciliar com o débito da fatura</label>
                 <select value={transacaoId} onChange={(e) => setTransacaoId(e.target.value)} className={`${input} w-full`}>
                   <option value="">— não conciliar agora</option>
                   {transacoes.map((t) => (
@@ -187,9 +187,9 @@ export function FaturaClient({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 rounded-xl bg-zinc-50 px-4 py-2.5 text-sm dark:bg-zinc-900">
+          <div className="flex flex-wrap items-center gap-4 rounded-cartao bg-superficie-suave px-4 py-2.5 text-sm">
             <span className="font-semibold text-zinc-800 dark:text-zinc-100">{compras.length} compras</span>
-            <span className="text-zinc-500">soma <b className="text-zinc-800 dark:text-zinc-100">{brl(total)}</b></span>
+            <span className="text-texto-suave">soma <b className="text-zinc-800 dark:text-zinc-100">{brl(total)}</b></span>
             {totalImpresso != null && (
               <span className={Math.abs(totalImpresso - total) < 0.01 ? "text-emerald-600" : "text-amber-600"}>
                 {Math.abs(totalImpresso - total) < 0.01
@@ -201,9 +201,9 @@ export function FaturaClient({
             {semCategoria > 0 && <span className="text-amber-600">{semCategoria} sem categoria</span>}
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
                 <tr>
                   <th className="px-3 py-2">Data</th>
                   <th className="px-3 py-2">Compra</th>
@@ -212,13 +212,13 @@ export function FaturaClient({
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              <tbody className="divide-y divide-borda">
                 {compras.map((c) => (
                   <tr key={c.uid} className={c.categoriaId ? "" : "bg-amber-50/50 dark:bg-amber-950/10"}>
-                    <td className="whitespace-nowrap px-3 py-2 text-zinc-500">{c.data ? dataBR(c.data) : c.dataTexto}</td>
-                    <td className="px-3 py-2 text-zinc-800 dark:text-zinc-200">
+                    <td className="whitespace-nowrap px-3 py-2 text-texto-suave">{c.data ? dataBR(c.data) : c.dataTexto}</td>
+                    <td className="px-3 py-2 text-texto">
                       {c.descricao}
-                      {c.parcela && <span className="ml-1 rounded bg-zinc-200 px-1 text-[10px] text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">{c.parcela}</span>}
+                      {c.parcela && <span className="ml-1 rounded bg-zinc-200 px-1 text-[10px] text-texto-suave dark:bg-zinc-700">{c.parcela}</span>}
                       {c.sugerida && <span className="ml-1 text-[10px] text-emerald-600">já classificada antes</span>}
                     </td>
                     <td className="px-3 py-2">
@@ -229,7 +229,7 @@ export function FaturaClient({
                             value={c.categoriaId ?? ""}
                             onChange={(v) => mudarCategoria(c.uid, v)}
                             placeholder="Escolher..."
-                            className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                            className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                           />
                         </div>
                         {c.categoriaId && (
@@ -237,14 +237,14 @@ export function FaturaClient({
                             type="button"
                             onClick={() => aplicarIguais(c.uid)}
                             title="Usar esta categoria em todas as compras deste estabelecimento"
-                            className="text-[11px] text-zinc-400 underline hover:text-orange-600"
+                            className="text-[11px] text-texto-fraco underline hover:text-orange-600"
                           >
                             iguais
                           </button>
                         )}
                       </div>
                     </td>
-                    <td className={`whitespace-nowrap px-3 py-2 text-right font-medium ${c.valor < 0 ? "text-emerald-600" : "text-zinc-900 dark:text-zinc-100"}`}>
+                    <td className={`whitespace-nowrap px-3 py-2 text-right font-medium ${c.valor < 0 ? "text-emerald-600" : "text-texto"}`}>
                       {brl(c.valor)}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -261,11 +261,11 @@ export function FaturaClient({
               onClick={lancar}
               disabled={proc || semCategoria > 0 || !competencia}
               title={semCategoria > 0 ? "Escolha a categoria das compras em amarelo" : ""}
-              className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="rounded-cartao bg-texto px-5 py-2.5 text-sm font-bold text-fundo hover:opacity-90 disabled:opacity-50"
             >
               {proc ? "Lançando..." : `Lançar ${compras.length} compras (${brl(total)})`}
             </button>
-            <button onClick={() => { setCompras(null); setErro(null); }} className="text-sm text-zinc-500 underline">
+            <button onClick={() => { setCompras(null); setErro(null); }} className="text-sm text-texto-suave underline">
               cancelar
             </button>
           </div>

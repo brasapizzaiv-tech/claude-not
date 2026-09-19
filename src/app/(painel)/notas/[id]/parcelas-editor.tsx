@@ -20,7 +20,7 @@ function addMeses(iso: string, m: number) {
 }
 
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function ParcelasEditor({
   notaId,
@@ -94,12 +94,12 @@ export function ParcelasEditor({
   }
 
   return (
-    <div className="mt-4 rounded-2xl border border-violet-200 dark:border-violet-900">
+    <div className="mt-4 rounded-cartao border border-violet-200 dark:border-violet-900">
       <button
         onClick={() => setAberto((v) => !v)}
         className="flex w-full items-center justify-between px-4 py-3 text-left"
       >
-        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+        <span className="text-sm font-semibold text-texto">
           <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Parcelamento manual
           {parcelas.length > 1 && (
             <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
@@ -107,13 +107,13 @@ export function ParcelasEditor({
             </span>
           )}
         </span>
-        <span className="text-xs text-zinc-400">{aberto ? "fechar ▲" : "abrir ▼"}</span>
+        <span className="text-xs text-texto-fraco">{aberto ? "fechar ▲" : "abrir ▼"}</span>
       </button>
 
       {aberto && (
         <div className="border-t border-violet-100 p-4 dark:border-violet-900/60">
           {lancada && (
-            <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            <p className="mb-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
               Esta nota já está <b>lançada</b>. Para o parcelamento valer, salve as
               parcelas aqui, depois <b>estorne</b> e <b>lance de novo</b> (o
               parcelado já vem marcado).
@@ -121,9 +121,9 @@ export function ParcelasEditor({
           )}
 
           {/* Gerador rápido */}
-          <div className="mb-3 flex flex-wrap items-end gap-2 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900/50">
+          <div className="mb-3 flex flex-wrap items-end gap-2 rounded-cartao bg-superficie-suave p-3 /50">
             <div>
-              <label className="mb-1 block text-[11px] text-zinc-500">Dividir em</label>
+              <label className="mb-1 block text-[11px] text-texto-suave">Dividir em</label>
               <input
                 inputMode="numeric"
                 value={nGerar}
@@ -131,12 +131,12 @@ export function ParcelasEditor({
                 className={`${campo} w-16 text-center`}
               />
             </div>
-            <span className="pb-2 text-xs text-zinc-500">
+            <span className="pb-2 text-xs text-texto-suave">
               vezes de {moeda(valorNota)}, começando no 1º vencimento (mensal)
             </span>
             <button
               onClick={gerar}
-              className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700"
+              className="rounded-controle bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700"
             >
               Gerar
             </button>
@@ -146,7 +146,7 @@ export function ParcelasEditor({
           <div className="space-y-2">
             {linhas.map((l, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="w-6 text-xs text-zinc-400">{i + 1}º</span>
+                <span className="w-6 text-xs text-texto-fraco">{i + 1}º</span>
                 <input
                   type="date"
                   value={l.vencimento}
@@ -178,8 +178,8 @@ export function ParcelasEditor({
             + adicionar parcela
           </button>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-            <span className={`text-xs ${Math.abs(dif) < 0.01 ? "text-zinc-500" : "text-red-600"}`}>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-borda pt-3">
+            <span className={`text-xs ${Math.abs(dif) < 0.01 ? "text-texto-suave" : "text-red-600"}`}>
               Soma das parcelas: <b>{moeda(total)}</b>
               {Math.abs(dif) >= 0.01 && (
                 <> — {dif > 0 ? "acima" : "abaixo"} do total da nota em {moeda(Math.abs(dif))}</>
@@ -188,12 +188,12 @@ export function ParcelasEditor({
             <button
               onClick={salvar}
               disabled={proc}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+              className="rounded-controle bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
             >
               {proc ? "Salvando..." : "Salvar parcelamento"}
             </button>
           </div>
-          {msg && <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}
+          {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
         </div>
       )}
     </div>

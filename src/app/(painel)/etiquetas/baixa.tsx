@@ -31,14 +31,14 @@ export function EtiquetaBaixa({
         <button
           onClick={() => baixa("usada")}
           disabled={p}
-          className="mr-2 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
+          className="mr-2 rounded-controle bg-texto px-3 py-1.5 text-xs font-medium text-fundo hover:opacity-90 disabled:opacity-60"
         >
           Dar baixa
         </button>
         <button
           onClick={() => baixa("descartada")}
           disabled={p}
-          className="mr-2 text-xs text-zinc-400 hover:text-red-600"
+          className="mr-2 text-xs text-texto-fraco hover:text-red-600"
         >
           Descartar
         </button>
@@ -49,7 +49,7 @@ export function EtiquetaBaixa({
     <button
       onClick={reativar}
       disabled={p}
-      className="mr-2 text-xs text-zinc-400 hover:text-orange-600 disabled:opacity-60"
+      className="mr-2 text-xs text-texto-fraco hover:text-orange-600 disabled:opacity-60"
     >
       Reativar
     </button>

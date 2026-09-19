@@ -29,9 +29,9 @@ export function ItemProduto({
       }
       placeholder="— buscar produto —"
       disabled={salvando}
-      className={`w-full rounded-md border px-2 py-1 text-xs outline-none focus:border-orange-500 dark:bg-zinc-950 ${
+      className={`w-full rounded-controle border px-2 py-1 text-xs outline-none focus:border-orange-500 dark:bg-zinc-950 ${
         produtoId
-          ? "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+          ? "border-borda-forte text-texto-suave  "
           : "border-amber-400 text-amber-600"
       }`}
     />

@@ -50,7 +50,7 @@ export default async function CotacoesPage() {
       </div>
 
       {cotacoes.length === 0 ? (
-        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave ">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhuma cotação ainda. Escolha uma contagem (ou nenhuma) e clique em{" "}
           <b>+ Nova cotação</b>.
         </div>

@@ -135,7 +135,7 @@ export function Scanner() {
   return (
     <div className="mx-auto max-w-md p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-xl font-bold text-texto">
           Leitor de etiquetas
         </h1>
         <Link href="/etiquetas" className="text-sm text-orange-600 hover:underline">
@@ -147,20 +147,20 @@ export function Scanner() {
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setModo("usada")}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
+          className={`flex-1 rounded-cartao py-2.5 text-sm font-semibold ${
             modo === "usada"
-              ? "bg-green-600 text-white"
-              : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              ? "bg-texto text-fundo"
+              : "border border-borda-forte text-texto-suave  "
           }`}
         >
           Dar baixa (usada)
         </button>
         <button
           onClick={() => setModo("descartada")}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
+          className={`flex-1 rounded-cartao py-2.5 text-sm font-semibold ${
             modo === "descartada"
               ? "bg-red-600 text-white"
-              : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              : "border border-borda-forte text-texto-suave  "
           }`}
         >
           Descartar
@@ -168,7 +168,7 @@ export function Scanner() {
       </div>
 
       {/* Câmera */}
-      <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-black dark:border-zinc-800">
+      <div className="relative overflow-hidden rounded-cartao border border-borda bg-black">
         <video
           ref={videoRef}
           playsInline
@@ -179,29 +179,29 @@ export function Scanner() {
           <div className="absolute inset-0 flex items-center justify-center">
             <button
               onClick={ligar}
-              className="rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600"
+              className="rounded-cartao bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600"
             >
               Ligar câmera
             </button>
           </div>
         )}
         {ligado && (
-          <div className="pointer-events-none absolute inset-8 rounded-2xl border-2 border-white/70" />
+          <div className="pointer-events-none absolute inset-8 rounded-cartao border-2 border-white/70" />
         )}
       </div>
 
       {erro && (
-        <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p className="mt-3 rounded-cartao bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
           {erro}
         </p>
       )}
 
       {ligado && (
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-zinc-500">
+          <span className="text-sm text-texto-suave">
             {contagem} baixa(s) nesta sessão
           </span>
-          <button onClick={desligar} className="text-sm text-zinc-400 hover:text-red-600">
+          <button onClick={desligar} className="text-sm text-texto-fraco hover:text-red-600">
             Desligar câmera
           </button>
         </div>
@@ -210,7 +210,7 @@ export function Scanner() {
       {/* Última leitura */}
       {ultima && (
         <div
-          className={`mt-4 rounded-2xl p-4 ${
+          className={`mt-4 rounded-cartao p-4 ${
             ultima.ok
               ? "bg-green-50 dark:bg-green-950"
               : "bg-red-50 dark:bg-red-950"
@@ -221,10 +221,10 @@ export function Scanner() {
               <p className="text-sm font-semibold text-green-700 dark:text-green-300">
                 ✓ Baixa registrada · #{ultima.numero}
               </p>
-              <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              <p className="mt-1 text-lg font-bold text-texto">
                 {ultima.produto}
               </p>
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-texto-suave">
                 {ultima.status === "descartada" ? "Descartada" : "Usada"}
                 {ultima.validade ? ` · validade ${dataBR(ultima.validade)}` : ""}
               </p>
@@ -239,7 +239,7 @@ export function Scanner() {
         </div>
       )}
 
-      <p className="mt-4 text-center text-xs text-zinc-400">
+      <p className="mt-4 text-center text-xs text-texto-fraco">
         Aponte a câmera para o QR Code da etiqueta. A baixa é automática.
       </p>
     </div>

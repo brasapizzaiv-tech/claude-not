@@ -5,12 +5,12 @@ import { salvarConfigFiscal } from "./actions";
 import { TesteNota } from "./teste-nota";
 
 const campo =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 function Campo({ nome, label, def, ph }: { nome: string; label: string; def: string; ph?: string }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-zinc-500">{label}</label>
+      <label className="mb-1 block text-xs text-texto-suave">{label}</label>
       <input name={nome} defaultValue={def} placeholder={ph} className={campo} />
     </div>
   );
@@ -25,26 +25,26 @@ export default async function FiscalPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-orange-600">← Início</Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Configuração fiscal (NF-e / NFC-e)</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <Link href="/dashboard" className="text-sm text-texto-suave hover:text-orange-600">← Início</Link>
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Configuração fiscal (NF-e / NFC-e)</h1>
+      <p className="mt-1 text-sm text-texto-suave">
         Dados da empresa e do emissor. O <b>certificado digital</b> fica no painel do emissor
         (você sobe lá) — aqui guardamos só o <b>token de API</b>.
       </p>
 
-      <Link href="/fiscal/perfis" className="mt-4 flex items-center justify-between rounded-2xl border-2 border-orange-300 bg-orange-50 px-4 py-3 text-sm hover:bg-orange-100 dark:border-orange-900 dark:bg-orange-950/20">
+      <Link href="/fiscal/perfis" className="mt-4 flex items-center justify-between rounded-cartao border-2 border-orange-300 bg-orange-50 px-4 py-3 text-sm hover:bg-orange-100 dark:border-orange-900 dark:bg-orange-950/20">
         <span><b><Icone nome="cupom" tamanho={14} className="mr-1.5" /> Perfis fiscais</b> — NCM/CEST/CFOP/CSOSN por categoria do cardápio (como no Suitable), com exceção por item.</span>
         <span className="font-semibold text-orange-600">Abrir →</span>
       </Link>
 
       {v("emissor_ambiente") === "producao" ? (
-        <div className="mt-4 rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+        <div className="mt-4 rounded-cartao border-2 border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
           <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full bg-red-500 align-middle" /> <b>PRODUÇÃO ligada</b>: toda NFC-e emitida no caixa vale de verdade na SEFAZ (série {v("nfce_serie") || "padrão do Focus"}).
         </div>
       ) : (
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mt-4 rounded-cartao border border-borda bg-superficie-suave px-4 py-3 text-sm">
           <p className="font-semibold">Checklist pra ligar a produção</p>
-          <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-zinc-600 dark:text-zinc-300">
+          <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-texto-suave">
             <li>Nota de teste em homologação <b>autorizada</b> (botão lá embaixo).</li>
             <li>No painel do Focus: certificado A1 da empresa enviado e <b>CSC + ID do CSC de produção</b> cadastrados (aba Documentos Fiscais → NFC-e). Pode ser o mesmo CSC que o Suitable usa (ID 1).</li>
             <li>No painel do Focus: copiar o <b>token de produção</b> (é diferente do de homologação).</li>
@@ -56,15 +56,15 @@ export default async function FiscalPage() {
 
       <form action={salvarConfigFiscal} className="mt-6 space-y-6">
         {/* Empresa */}
-        <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Empresa</h2>
+        <section className="rounded-cartao border border-borda p-4">
+          <h2 className="mb-3 text-sm font-semibold text-texto">Empresa</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Campo nome="razao_social" def={v("razao_social")} label="Razão social" />
             <Campo nome="nome_fantasia" def={v("nome_fantasia")} label="Nome fantasia" />
             <Campo nome="cnpj" def={v("cnpj")} label="CNPJ" ph="00.000.000/0000-00" />
             <Campo nome="ie" def={v("ie")} label="Inscrição Estadual" />
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Regime (CRT)</label>
+              <label className="mb-1 block text-xs text-texto-suave">Regime (CRT)</label>
               <select name="crt" defaultValue={v("crt") || "1"} className={campo}>
                 <option value="1">1 — Simples Nacional</option>
                 <option value="2">2 — Simples (excesso sublimite)</option>
@@ -75,7 +75,7 @@ export default async function FiscalPage() {
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Campo nome="cep" def={v("cep")} label="CEP" />
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs text-zinc-500">Logradouro</label>
+              <label className="mb-1 block text-xs text-texto-suave">Logradouro</label>
               <input name="logradouro" defaultValue={v("logradouro")} className={campo} />
             </div>
             <Campo nome="numero" def={v("numero")} label="Número" />
@@ -87,31 +87,31 @@ export default async function FiscalPage() {
         </section>
 
         {/* Emissor */}
-        <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Emissor (API)</h2>
+        <section className="rounded-cartao border border-borda p-4">
+          <h2 className="mb-3 text-sm font-semibold text-texto">Emissor (API)</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Emissor</label>
+              <label className="mb-1 block text-xs text-texto-suave">Emissor</label>
               <select name="emissor" defaultValue={v("emissor") || "focusnfe"} className={campo}>
                 <option value="focusnfe">Focus NFe</option>
                 <option value="plugnotas">PlugNotas</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Ambiente</label>
+              <label className="mb-1 block text-xs text-texto-suave">Ambiente</label>
               <select name="emissor_ambiente" defaultValue={v("emissor_ambiente") || "homologacao"} className={campo}>
                 <option value="homologacao">Homologação (teste)</option>
                 <option value="producao">Produção (valendo)</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Série da NFC-e</label>
+              <label className="mb-1 block text-xs text-texto-suave">Série da NFC-e</label>
               <input name="nfce_serie" defaultValue={v("nfce_serie")} placeholder="Ex.: 11" inputMode="numeric" className={campo} />
             </div>
             <div className="sm:col-span-3">
-              <label className="mb-1 block text-xs text-zinc-500">Token de API do emissor ({v("emissor_ambiente") === "producao" ? "PRODUÇÃO" : "homologação"})</label>
+              <label className="mb-1 block text-xs text-texto-suave">Token de API do emissor ({v("emissor_ambiente") === "producao" ? "PRODUÇÃO" : "homologação"})</label>
               <input name="emissor_token" defaultValue={v("emissor_token")} placeholder="token do Focus" className={campo} />
-              <p className="mt-1 text-[11px] text-zinc-400">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto.</p>
+              <p className="mt-1 text-[11px] text-texto-fraco">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto.</p>
             </div>
             <Campo nome="csc" def={v("csc")} label="CSC (código do QR)" />
             <Campo nome="csc_id" def={v("csc_id")} label="ID do CSC" />
@@ -119,19 +119,19 @@ export default async function FiscalPage() {
         </section>
 
         {/* Padrões fiscais (para o buffet, que não tem item) */}
-        <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Padrões (buffet / serviço)</h2>
+        <section className="rounded-cartao border border-borda p-4">
+          <h2 className="mb-3 text-sm font-semibold text-texto">Padrões (buffet / serviço)</h2>
           <div className="grid grid-cols-3 gap-3">
             <Campo nome="ncm_buffet" def={v("ncm_buffet")} label="NCM do buffet" ph="Ex.: 21069090" />
             <Campo nome="cfop_padrao" def={v("cfop_padrao")} label="CFOP padrão" ph="Ex.: 5102" />
             <Campo nome="csosn_padrao" def={v("csosn_padrao")} label="CSOSN padrão" ph="Ex.: 102" />
           </div>
-          <p className="mt-2 text-[11px] text-zinc-400">
+          <p className="mt-2 text-[11px] text-texto-fraco">
             Usados quando um produto não tiver os campos fiscais próprios (ex.: o buffet). O contador informa os valores certos.
           </p>
         </section>
 
-        <button className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
+        <button className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
           Salvar configuração fiscal
         </button>
       </form>

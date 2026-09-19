@@ -208,10 +208,10 @@ export default async function BancoPage() {
     <div className="mx-auto max-w-4xl p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Conciliação bancária
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             Importe o extrato (OFX) de cada banco e case as transações com os
             lançamentos.
           </p>
@@ -219,7 +219,7 @@ export default async function BancoPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/financeiro"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Financeiro
           </Link>
@@ -228,7 +228,7 @@ export default async function BancoPage() {
       </div>
 
       {transacoes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhuma transação ainda. Escolha o <b>banco</b> e clique em{" "}
           <b>Importar extrato (OFX)</b>.
         </div>

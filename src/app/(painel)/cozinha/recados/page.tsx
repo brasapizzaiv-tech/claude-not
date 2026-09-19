@@ -12,9 +12,9 @@ export default async function RecadosTvPage() {
   const recados = await listarRecadosTv();
   return (
     <div className="p-4 md:p-6">
-      <Link href="/cozinha" className="text-sm text-zinc-500 hover:text-orange-600">← Tablet da cozinha</Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="tv" tamanho={20} className="mr-2" /> Recados da TV</h1>
-      <p className="mb-4 mt-1 text-sm text-zinc-500">
+      <Link href="/cozinha" className="text-sm text-texto-suave hover:text-orange-600">← Tablet da cozinha</Link>
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="tv" tamanho={20} className="mr-2" /> Recados da TV</h1>
+      <p className="mb-4 mt-1 text-sm text-texto-suave">
         Quando não tem pedido do rodízio, a TV da cozinha mostra o relógio, a data e estes recados (até 5 ativos). Um recado com data “até” some sozinho depois dela.
       </p>
       <RecadosClient inicial={recados} />

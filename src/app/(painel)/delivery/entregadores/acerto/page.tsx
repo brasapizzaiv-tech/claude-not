@@ -47,35 +47,35 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="dinheiro" tamanho={19} /> Acerto dos entregadores</h1>
         <form className="ml-auto flex items-center gap-2">
-          <Link href={`?data=${addDias(data, -1)}`} className="rounded-lg border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700">‹</Link>
-          <input type="date" name="data" defaultValue={data} className="rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
-          <button className="rounded-lg bg-zinc-800 px-3 py-1 text-sm text-white">Ver</button>
-          <Link href={`?data=${addDias(data, 1)}`} className="rounded-lg border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700">›</Link>
+          <Link href={`?data=${addDias(data, -1)}`} className="rounded-controle border border-borda-forte px-2 py-1 text-sm">‹</Link>
+          <input type="date" name="data" defaultValue={data} className="rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
+          <button className="rounded-controle bg-zinc-800 px-3 py-1 text-sm text-white">Ver</button>
+          <Link href={`?data=${addDias(data, 1)}`} className="rounded-controle border border-borda-forte px-2 py-1 text-sm">›</Link>
         </form>
       </div>
-      <p className="mb-4 text-xs text-zinc-500">Fixo = valor do turno (almoço se entregou antes das 15h, noite se depois) + teles = soma do valor por entrega (da área, ou o valor do entregador). “Recebido” é o que ele trouxe da rua — confira com o caixa antes de acertar.</p>
+      <p className="mb-4 text-xs text-texto-suave">Fixo = valor do turno (almoço se entregou antes das 15h, noite se depois) + teles = soma do valor por entrega (da área, ou o valor do entregador). “Recebido” é o que ele trouxe da rua — confira com o caixa antes de acertar.</p>
 
-      {linhas.length === 0 && <p className="py-10 text-center text-zinc-500">Nenhuma entrega concluída nesse dia.</p>}
+      {linhas.length === 0 && <p className="py-10 text-center text-texto-suave">Nenhuma entrega concluída nesse dia.</p>}
       <div className="space-y-3">
         {linhas.map(({ b, meus, teles, fixo, fezDia, fezNoite, total, rec, feito }) => (
-          <div key={b.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div key={b.id} className="rounded-cartao border border-borda p-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="text-lg font-bold">{b.nome}</div>
-              <span className="text-xs text-zinc-500">{fezDia && <span className="mr-1.5 inline-flex items-center gap-1"><Icone nome="dia" tamanho={12} /> almoço</span>}
+              <span className="text-xs text-texto-suave">{fezDia && <span className="mr-1.5 inline-flex items-center gap-1"><Icone nome="dia" tamanho={12} /> almoço</span>}
                 {fezNoite && <span className="inline-flex items-center gap-1"><Icone nome="noite" tamanho={12} /> noite</span>}</span>
               <div className="ml-auto text-right">
-                <div className="text-xs text-zinc-500">a pagar</div>
+                <div className="text-xs text-texto-suave">a pagar</div>
                 <div className="text-xl font-bold text-emerald-600">{brl(total)}</div>
               </div>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 text-sm md:grid-cols-5">
-              <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900"><div className="text-[11px] text-zinc-500">Entregas</div><div className="font-semibold">{meus.length}</div></div>
-              <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900"><div className="text-[11px] text-zinc-500">Teles</div><div className="font-semibold">{brl(teles)}</div></div>
-              <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900"><div className="text-[11px] text-zinc-500">Fixo</div><div className="font-semibold">{brl(fixo)}</div></div>
-              <div className="rounded-lg bg-amber-50 p-2 dark:bg-amber-950/30"><div className="text-[11px] text-zinc-500">Trouxe em dinheiro</div><div className="font-semibold">{brl(rec.Dinheiro)}</div></div>
-              <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900"><div className="text-[11px] text-zinc-500">Cartão / Pix</div><div className="font-semibold">{brl(rec.Cartão)} / {brl(rec.Pix)}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Entregas</div><div className="font-semibold">{meus.length}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Teles</div><div className="font-semibold">{brl(teles)}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Fixo</div><div className="font-semibold">{brl(fixo)}</div></div>
+              <div className="rounded-controle bg-amber-50 p-2 dark:bg-amber-950/30"><div className="text-[11px] text-texto-suave">Trouxe em dinheiro</div><div className="font-semibold">{brl(rec.Dinheiro)}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Cartão / Pix</div><div className="font-semibold">{brl(rec.Cartão)} / {brl(rec.Pix)}</div></div>
             </div>
-            <details className="mt-2 text-xs text-zinc-500">
+            <details className="mt-2 text-xs text-texto-suave">
               <summary className="cursor-pointer">ver as {meus.length} entregas</summary>
               <ul className="mt-1 space-y-0.5">
                 {meus.map((p) => { const c = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas; return (
@@ -95,10 +95,10 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
                   <input type="hidden" name="recebido_dinheiro" value={rec.Dinheiro} />
                   <input type="hidden" name="recebido_cartao" value={rec.Cartão} />
                   <input type="hidden" name="recebido_pix" value={rec.Pix} />
-                  <label className="text-xs text-zinc-500">Fixo (R$)</label>
-                  <input name="fixo" defaultValue={fixo} inputMode="decimal" className="w-24 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
-                  <input name="obs" placeholder="obs (opcional)" className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
-                  <button className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white">Registrar acerto</button>
+                  <label className="text-xs text-texto-suave">Fixo (R$)</label>
+                  <input name="fixo" defaultValue={fixo} inputMode="decimal" className="w-24 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
+                  <input name="obs" placeholder="obs (opcional)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
+                  <button className="rounded-controle bg-texto px-4 py-1.5 text-sm font-semibold text-fundo">Registrar acerto</button>
                 </form>
               )}
             </div>

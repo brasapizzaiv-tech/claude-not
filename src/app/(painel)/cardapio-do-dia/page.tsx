@@ -51,14 +51,14 @@ export default async function CardapioDoDiaPage({
 
       <div className="mx-auto max-w-6xl px-8 pb-10">
         <div className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-            <h2 className="mb-1 text-lg font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="marmita" tamanho={17} className="mr-1.5" /> Marmitas {kern?.nomeConvenio ?? "Kern"} · {dia.split("-").reverse().slice(0, 2).join("/")}</h2>
-            <p className="mb-3 text-sm text-zinc-500">A rotação de 4 semanas fica no app do convênio. Aqui você troca só este dia, enquanto os pedidos dele ainda não abriram.</p>
+          <div className="rounded-cartao border border-borda p-5">
+            <h2 className="mb-1 text-lg font-bold text-texto"><Icone nome="marmita" tamanho={17} className="mr-1.5" /> Marmitas {kern?.nomeConvenio ?? "Kern"} · {dia.split("-").reverse().slice(0, 2).join("/")}</h2>
+            <p className="mb-3 text-sm text-texto-suave">A rotação de 4 semanas fica no app do convênio. Aqui você troca só este dia, enquanto os pedidos dele ainda não abriram.</p>
             <MarmitaDiaForm key={"kern-" + dia} dia={dia} kern={kern} pode={podeMarmita} salvar={salvarMarmitaDia} />
           </div>
-          <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-            <h2 className="mb-1 text-lg font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="relogio" tamanho={17} className="mr-1.5" /> Histórico de publicações</h2>
-            <p className="mb-3 text-sm text-zinc-500">Quem salvou, publicou ou tirou do ar — pelo painel ou pelo app da equipe.</p>
+          <div className="rounded-cartao border border-borda p-5">
+            <h2 className="mb-1 text-lg font-bold text-texto"><Icone nome="relogio" tamanho={17} className="mr-1.5" /> Histórico de publicações</h2>
+            <p className="mb-3 text-sm text-texto-suave">Quem salvou, publicou ou tirou do ar — pelo painel ou pelo app da equipe.</p>
             <CardapioHistorico itens={historico} />
           </div>
         </div>

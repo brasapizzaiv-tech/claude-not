@@ -17,7 +17,7 @@ import { Combobox } from "@/components/combobox";
 import { dataBR, numeroBR } from "@/lib/format";
 
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = numeroBR;
@@ -157,23 +157,23 @@ export function LancamentoNota({
   }
 
   const btnTipo = (ativo: boolean) =>
-    `rounded-lg px-4 py-2 text-sm font-medium ${
+    `rounded-controle px-4 py-2 text-sm font-medium ${
       ativo
         ? "bg-orange-500 text-white"
-        : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
     }`;
 
   const faltaCategoria = ehServico && !catSel;
 
   return (
-    <div className="mt-4 space-y-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+    <div className="mt-4 space-y-4 rounded-cartao border border-borda p-4">
+      <h2 className="text-sm font-semibold text-texto">
         Lançar no financeiro
       </h2>
 
       {/* Tipo da nota */}
       <div>
-        <label className="mb-1 block text-xs text-zinc-500">Tipo da nota</label>
+        <label className="mb-1 block text-xs text-texto-suave">Tipo da nota</label>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -193,7 +193,7 @@ export function LancamentoNota({
           </button>
         </div>
         {ehServico && (
-          <p className="mt-1 text-[11px] text-zinc-400">
+          <p className="mt-1 text-[11px] text-texto-fraco">
             Nota de serviço: lança o valor total na categoria de despesa
             escolhida (sem CMV por produto).
           </p>
@@ -202,22 +202,22 @@ export function LancamentoNota({
 
       {/* Fornecedor */}
       <div>
-        <label className="mb-1 block text-xs text-zinc-500">Fornecedor</label>
+        <label className="mb-1 block text-xs text-texto-suave">Fornecedor</label>
         {fornecedorId && !trocando ? (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-lg bg-green-100 px-3 py-1.5 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+            <span className="rounded-controle bg-green-100 px-3 py-1.5 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
               ✓ {fornecedorNome}
             </span>
             <button
               onClick={() => setTrocando(true)}
-              className="text-xs text-zinc-400 hover:text-orange-600"
+              className="text-xs text-texto-fraco hover:text-orange-600"
             >
               trocar
             </button>
           </div>
         ) : modoNovo ? (
           <div className="flex flex-wrap items-center gap-2">
-            <p className="w-full text-xs text-zinc-500">
+            <p className="w-full text-xs text-texto-suave">
               Novo fornecedor com o CNPJ da nota ({emitCnpj || "sem CNPJ"}):
             </p>
             <input
@@ -229,13 +229,13 @@ export function LancamentoNota({
             <button
               onClick={cadastrarForn}
               disabled={proc || !novoNome.trim()}
-              className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60"
+              className="rounded-controle bg-texto px-3 py-2 text-sm font-medium text-fundo hover:opacity-90 disabled:opacity-60"
             >
               Cadastrar e vincular
             </button>
             <button
               onClick={() => setModoNovo(false)}
-              className="text-xs text-zinc-400 hover:text-zinc-600"
+              className="text-xs text-texto-fraco hover:text-texto-suave"
             >
               cancelar
             </button>
@@ -243,7 +243,7 @@ export function LancamentoNota({
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             {!fornecedorId && (
-              <p className="w-full rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+              <p className="w-full rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                 Não reconheci o fornecedor pelo CNPJ ({emitCnpj || "?"}). Escolha
                 abaixo, ou cadastre um novo.
               </p>
@@ -260,7 +260,7 @@ export function LancamentoNota({
             <button
               onClick={vincularForn}
               disabled={proc}
-              className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+              className="rounded-controle bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
             >
               Vincular
             </button>
@@ -269,7 +269,7 @@ export function LancamentoNota({
                 setNovoNome(emitNome ?? "");
                 setModoNovo(true);
               }}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              className="rounded-controle border border-borda-forte px-3 py-2 text-sm font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
             >
               <Icone nome="novo" tamanho={14} className="mr-1" /> Cadastrar novo
             </button>
@@ -280,7 +280,7 @@ export function LancamentoNota({
       {/* Categoria da despesa (só serviço) */}
       {ehServico && (
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">
+          <label className="mb-1 block text-xs text-texto-suave">
             Categoria da despesa (DRE)
           </label>
           <Combobox
@@ -309,8 +309,8 @@ export function LancamentoNota({
 
       {/* Parcelamento (duplicatas do XML) */}
       {temParcelas && (
-        <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3 dark:border-violet-900 dark:bg-violet-950/20">
-          <label className="flex items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        <div className="rounded-cartao border border-violet-200 bg-violet-50/50 p-3 dark:border-violet-900 dark:bg-violet-950/20">
+          <label className="flex items-center gap-2 text-sm font-medium text-texto">
             <input
               type="checkbox"
               checked={parcelar}
@@ -323,14 +323,14 @@ export function LancamentoNota({
             {parcelas.map((p, i) => (
               <span
                 key={i}
-                className="rounded-lg border border-violet-200 bg-white px-2.5 py-1 text-xs text-zinc-600 dark:border-violet-900 dark:bg-zinc-900 dark:text-zinc-300"
+                className="rounded-controle border border-violet-200 bg-painel-cartao px-2.5 py-1 text-xs text-texto-suave dark:border-violet-900"
               >
                 {p.numero ?? i + 1}: {p.vencimento ? dataBR(p.vencimento) : "—"} ·{" "}
                 {moeda(Number(p.valor))}
               </span>
             ))}
           </div>
-          <p className="mt-1 text-[11px] text-zinc-400">
+          <p className="mt-1 text-[11px] text-texto-fraco">
             Parcelas lidas do XML da nota. Desmarque para lançar como uma conta
             única no vencimento abaixo.
           </p>
@@ -340,7 +340,7 @@ export function LancamentoNota({
       {/* Vencimento + Competência */}
       <div className="flex flex-wrap gap-3">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">
+          <label className="mb-1 block text-xs text-texto-suave">
             Vencimento do boleto
             {parcelar && temParcelas ? " (usando as parcelas acima)" : ""}
           </label>
@@ -353,7 +353,7 @@ export function LancamentoNota({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Competência (mês)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Competência (mês)</label>
           <input
             type="month"
             value={comp}
@@ -366,8 +366,8 @@ export function LancamentoNota({
 
       {/* Valor cobrado no boleto (custas/juros do banco) */}
       {!(parcelar && temParcelas) && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
-          <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="rounded-cartao border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+          <label className="mb-1 block text-xs font-medium text-texto-suave">
             Valor do boleto (com custas/juros)
           </label>
           <div className="flex flex-wrap items-center gap-2">
@@ -382,7 +382,7 @@ export function LancamentoNota({
               type="button"
               onClick={salvarBoleto}
               disabled={proc}
-              className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+              className="rounded-controle bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-60"
             >
               Salvar valor do boleto
             </button>
@@ -397,13 +397,13 @@ export function LancamentoNota({
                     router.refresh();
                   });
                 }}
-                className="text-xs text-zinc-400 hover:text-orange-600"
+                className="text-xs text-texto-fraco hover:text-orange-600"
               >
                 usar o valor da nota
               </button>
             )}
           </div>
-          <p className="mt-1 text-[11px] text-zinc-500">
+          <p className="mt-1 text-[11px] text-texto-suave">
             Nota: {moeda(valorNota)}
             {num(boleto) > 0 && Math.abs(num(boleto) - valorNota) >= 0.01 && (
               <>
@@ -415,14 +415,14 @@ export function LancamentoNota({
             )}
           </p>
           {msgBoleto && (
-            <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-300">{msgBoleto}</p>
+            <p className="mt-1 text-[11px] text-texto-suave">{msgBoleto}</p>
           )}
         </div>
       )}
 
       {/* Marcada como lançada, mas a conta não existe (apagada numa limpeza) */}
       {semConta && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+        <div className="rounded-cartao border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
           <p className="font-semibold text-amber-800 dark:text-amber-300">
             <Icone nome="alerta" tamanho={15} className="mr-1.5" /> Esta nota está marcada como lançada, mas não tem conta a pagar.
           </p>
@@ -435,14 +435,14 @@ export function LancamentoNota({
       )}
 
       {/* Ação */}
-      <div className="flex items-center gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+      <div className="flex items-center gap-3 border-t border-borda pt-3">
         {lancada ? (
           <>
             <span className="text-sm font-medium text-green-600">✓ Lançada no financeiro</span>
             <button
               onClick={estornar}
               disabled={proc}
-              className="text-sm text-zinc-400 hover:text-amber-600 disabled:opacity-60"
+              className="text-sm text-texto-fraco hover:text-amber-600 disabled:opacity-60"
             >
               Estornar
             </button>
@@ -451,7 +451,7 @@ export function LancamentoNota({
           <button
             onClick={lancar}
             disabled={proc || !fornecedorId || faltaCategoria}
-            className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+            className="rounded-controle bg-texto px-5 py-2.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
             title={
               !fornecedorId
                 ? "Vincule o fornecedor primeiro"
@@ -465,7 +465,7 @@ export function LancamentoNota({
         )}
       </div>
       {!ehServico && (
-        <p className="text-[11px] text-zinc-400">
+        <p className="text-[11px] text-texto-fraco">
           Dica: vincule cada item ao produto certo (abaixo) para o CMV cair na
           categoria do DRE. Sem vínculo, vai tudo para “Compras”.
         </p>

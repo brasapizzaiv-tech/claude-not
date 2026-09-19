@@ -81,10 +81,10 @@ function ValorConta({ l }: { l: LinhaConta }) {
         autoFocus
         inputMode="decimal"
         defaultValue={Number(l.valor).toFixed(2).replace(".", ",")}
-        className="w-24 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-right text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
       />
       <button
-        className="rounded-lg bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600"
+        className="rounded-controle bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600"
         title="Salvar o valor do boleto"
       >
         ✓
@@ -92,7 +92,7 @@ function ValorConta({ l }: { l: LinhaConta }) {
       <button
         type="button"
         onClick={() => setEditando(false)}
-        className="text-xs text-zinc-400 hover:text-zinc-600"
+        className="text-xs text-texto-fraco hover:text-texto-suave"
       >
         ✕
       </button>
@@ -319,12 +319,12 @@ export function ListaContasView({
         {busca && (
           <button
             onClick={() => setBusca("")}
-            className="text-xs text-zinc-400 hover:text-orange-600"
+            className="text-xs text-texto-fraco hover:text-orange-600"
           >
             limpar
           </button>
         )}
-        <span className="ml-auto text-xs text-zinc-400">
+        <span className="ml-auto text-xs text-texto-fraco">
           {filtradas.length} de {linhas.length}
         </span>
       </div>
@@ -337,10 +337,10 @@ export function ListaContasView({
           {marcadas.size > 0 && (
             <>
               <button onClick={() => setMarcadas(new Set(filtradas.filter((l) => !l.pago).map((l) => l.id)))} className="text-xs text-texto-suave underline hover:text-texto">todas da busca</button>
-              <button onClick={() => setMarcadas(new Set())} className="text-xs text-zinc-500 underline">limpar</button>
-              <label className="ml-auto flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+              <button onClick={() => setMarcadas(new Set())} className="text-xs text-texto-suave underline">limpar</button>
+              <label className="ml-auto flex items-center gap-1.5 text-xs text-texto-suave">
                 pago em
-                <input type="date" value={dataLote} onChange={(e) => setDataLote(e.target.value)} className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-700 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200" />
+                <input type="date" value={dataLote} onChange={(e) => setDataLote(e.target.value)} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-xs text-texto-suave outline-none" />
               </label>
               <button
                 onClick={pagarSelecionadas}
@@ -356,7 +356,7 @@ export function ListaContasView({
       )}
 
       {filtradas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-suave">
           {busca ? (
             <>
               Nenhuma conta encontrada para <b>{busca}</b>.
@@ -383,8 +383,8 @@ export function ListaContasView({
             const rot = rotuloSemana(sem.inicio);
             return (
               <section key={sem.inicio}>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-1.5 dark:border-zinc-800">
-                  <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-borda pb-1.5">
+                  <h2 className="text-sm font-semibold text-texto">
                     Semana {curto(sem.inicio)} a {curto(sem.fim)}
                     {rot && (
                       <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
@@ -392,7 +392,7 @@ export function ListaContasView({
                       </span>
                     )}
                   </h2>
-                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                  <span className="text-sm font-semibold text-texto-suave">
                     {moeda(sem.total)}
                   </span>
                 </div>
@@ -402,7 +402,7 @@ export function ListaContasView({
                     return (
                       <div key={d.iso}>
                         <div className="mb-1 flex items-center justify-between">
-                          <h3 className="text-xs font-medium text-zinc-500">
+                          <h3 className="text-xs font-medium text-texto-suave">
                             {DIAS[diaDaSemana(d.iso)]} {curto(d.iso)}
                             {rd && (
                               <span className="ml-1.5 font-semibold text-orange-600">
@@ -410,7 +410,7 @@ export function ListaContasView({
                               </span>
                             )}
                           </h3>
-                          <span className="text-xs font-medium text-zinc-500">
+                          <span className="text-xs font-medium text-texto-suave">
                             {moeda(d.total)}
                           </span>
                         </div>
@@ -426,8 +426,8 @@ export function ListaContasView({
           {grupos.semVenc.length > 0 && (
             <section>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-zinc-400">Sem vencimento</h2>
-                <span className="text-sm font-medium text-zinc-500">
+                <h2 className="text-sm font-semibold text-texto-fraco">Sem vencimento</h2>
+                <span className="text-sm font-medium text-texto-suave">
                   {moeda(grupos.totalSemVenc)}
                 </span>
               </div>

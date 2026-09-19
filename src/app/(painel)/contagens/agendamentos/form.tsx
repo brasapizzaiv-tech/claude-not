@@ -12,7 +12,7 @@ import {
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 const inputCls =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 type Item = { id: string; nome: string };
 export type Ag = {
@@ -61,7 +61,7 @@ export function AgendamentosClient({
       {form === null ? (
         <button
           onClick={() => setForm("novo")}
-          className="mb-6 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+          className="mb-6 rounded-cartao bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
         >
           + Novo agendamento
         </button>
@@ -75,7 +75,7 @@ export function AgendamentosClient({
       )}
 
       {ags.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum agendamento ainda. Crie o primeiro acima.
         </div>
       ) : (
@@ -83,19 +83,19 @@ export function AgendamentosClient({
           {ags.map((a) => (
             <div
               key={a.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-cartao border border-borda bg-painel-cartao p-4"
             >
               <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                <p className="font-medium text-texto">
                   {a.nome}
                   {!a.ativo && (
-                    <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800">
+                    <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] text-texto-suave dark:bg-zinc-800">
                       pausado
                     </span>
                   )}
                 </p>
-                <p className="text-sm text-zinc-500">{quando(a)}</p>
-                <p className="text-xs text-zinc-400">
+                <p className="text-sm text-texto-suave">{quando(a)}</p>
+                <p className="text-xs text-texto-fraco">
                   {a.modo === "personalizado"
                     ? `Personalizado · ${(a.divisao ?? []).length} seção(ões)`
                     : a.modo === "todos"
@@ -107,7 +107,7 @@ export function AgendamentosClient({
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setForm(a)}
-                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                  className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
                 >
                   Editar
                 </button>
@@ -119,10 +119,10 @@ export function AgendamentosClient({
                     fd.set("ativo", (!a.ativo).toString());
                     acao(() => alternarAgendamento(fd));
                   }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-60 ${
+                  className={`rounded-controle px-3 py-1.5 text-xs font-medium disabled:opacity-60 ${
                     a.ativo
-                      ? "border border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                      : "bg-green-600 text-white hover:bg-green-700"
+                      ? "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
+                      : "bg-texto text-fundo hover:opacity-90"
                   }`}
                 >
                   {a.ativo ? "Pausar" : "Ativar"}
@@ -135,7 +135,7 @@ export function AgendamentosClient({
                     fd.set("id", a.id);
                     acao(() => excluirAgendamento(fd));
                   }}
-                  className="text-xs text-zinc-400 hover:text-red-600 disabled:opacity-60"
+                  className="text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
                 >
                   Excluir
                 </button>
@@ -184,15 +184,15 @@ function AgendamentoForm({
         await salvarAgendamento(fd);
         onClose();
       }}
-      className="mb-6 space-y-4 rounded-2xl border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-900/50 dark:bg-orange-950/20"
+      className="mb-6 space-y-4 rounded-cartao border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-900/50 dark:bg-orange-950/20"
     >
       {editar && <input type="hidden" name="id" value={editar.id} />}
-      <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+      <p className="text-sm font-semibold text-texto-suave">
         {editar ? "Editar agendamento" : "Novo agendamento"}
       </p>
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-40 flex-1">
-          <label className="mb-1 block text-xs text-zinc-500">Nome</label>
+          <label className="mb-1 block text-xs text-texto-suave">Nome</label>
           <input
             name="nome"
             required
@@ -202,7 +202,7 @@ function AgendamentoForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Frequência</label>
+          <label className="mb-1 block text-xs text-texto-suave">Frequência</label>
           <select name="frequencia" value={freq} onChange={(e) => setFreq(e.target.value)} className={inputCls}>
             <option value="diario">Diária</option>
             <option value="semanal">Semanal</option>
@@ -211,7 +211,7 @@ function AgendamentoForm({
         </div>
         {freq !== "diario" && (
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Dia da semana</label>
+            <label className="mb-1 block text-xs text-texto-suave">Dia da semana</label>
             <select name="dia_semana" defaultValue={String(editar?.dia_semana ?? 1)} className={inputCls}>
               {DIAS.map((d, i) => (
                 <option key={i} value={i}>{d}</option>
@@ -220,11 +220,11 @@ function AgendamentoForm({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Horário</label>
+          <label className="mb-1 block text-xs text-texto-suave">Horário</label>
           <input type="time" name="horario" defaultValue={horario} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Divisão</label>
+          <label className="mb-1 block text-xs text-texto-suave">Divisão</label>
           <select name="modo" value={modo} onChange={(e) => setModo(e.target.value)} className={inputCls}>
             <option value="repetir_ultima">Repetir última divisão</option>
             <option value="todos">Dividir entre todos (rodízio)</option>
@@ -234,8 +234,8 @@ function AgendamentoForm({
       </div>
 
       {modo === "personalizado" && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          <p className="mb-3 text-sm text-zinc-500">
+        <div className="rounded-cartao border border-borda bg-painel-cartao p-4">
+          <p className="mb-3 text-sm text-texto-suave">
             Escolha quem conta cada seção. Deixe em <b>— não contar —</b> as que
             não entram.
           </p>
@@ -243,7 +243,7 @@ function AgendamentoForm({
           <div className="grid gap-2 sm:grid-cols-2">
             {categorias.map((c) => (
               <div key={c.id} className="flex items-center gap-2">
-                <span className="flex-1 truncate text-sm text-zinc-700 dark:text-zinc-300">
+                <span className="flex-1 truncate text-sm text-texto-suave">
                   {c.nome}
                 </span>
                 <select
@@ -263,10 +263,10 @@ function AgendamentoForm({
       )}
 
       <div className="flex gap-2">
-        <button className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+        <button className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
           {editar ? "Salvar alterações" : "Salvar"}
         </button>
-        <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+        <button type="button" onClick={onClose} className="rounded-controle px-3 py-2 text-sm text-texto-suave hover:bg-superficie-suave">
           Cancelar
         </button>
       </div>

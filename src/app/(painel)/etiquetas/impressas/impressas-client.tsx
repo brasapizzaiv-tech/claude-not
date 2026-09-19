@@ -20,7 +20,7 @@ export type EtImp = {
 };
 
 const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 const horaSP = (iso: string) => Number(new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).slice(0, 2));
 const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -64,29 +64,29 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
   const grupos = [...porProduto.entries()].sort((a, b) => b[1].n - a[1].n);
 
   const tab = (v: string, lab: string, ativo: boolean) => (
-    <Link key={v} href={`/etiquetas/impressas?p=${v}`} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${ativo ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>
+    <Link key={v} href={`/etiquetas/impressas?p=${v}`} className={`rounded-controle px-3 py-1.5 text-sm font-medium ${ativo ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>
       {lab}
     </Link>
   );
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="rounded-cartao border border-borda p-4">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {tab("ontem", "Ontem", periodo === "ontem")}
           {tab("hoje", "Hoje", periodo === "hoje")}
           {tab("7d", "7 dias", periodo === "7d")}
           {tab("30d", "30 dias", periodo === "30d")}
-          <span className="text-xs text-zinc-400">{ini === fim ? dataBR(ini) : `${dataBR(ini)} a ${dataBR(fim)}`}</span>
+          <span className="text-xs text-texto-fraco">{ini === fim ? dataBR(ini) : `${dataBR(ini)} a ${dataBR(fim)}`}</span>
           <span className="ml-auto text-lg font-bold text-orange-600">{lista.length} etiquetas</span>
         </div>
         {/* Gráfico por hora */}
         <div className="flex h-36 items-end gap-1">
           {porHora.map((n, h) => (
             <div key={h} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${h}h: ${n}`}>
-              {n > 0 && <span className="text-[10px] text-zinc-500">{n}</span>}
+              {n > 0 && <span className="text-[10px] text-texto-suave">{n}</span>}
               <div className="w-full rounded-t bg-orange-400" style={{ height: `${(n / max) * 100}%`, minHeight: n > 0 ? 3 : 0 }} />
-              <span className="text-[9px] text-zinc-400">{h}</span>
+              <span className="text-[9px] text-texto-fraco">{h}</span>
             </div>
           ))}
         </div>
@@ -96,7 +96,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
               <button
                 key={nome}
                 onClick={() => setUsuario(usuario === nome ? "" : nome)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${usuario === nome ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"}`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${usuario === nome ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`}
               >
                 {nome} · {n}
               </button>
@@ -106,9 +106,9 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
+        <div className="flex overflow-hidden rounded-controle border border-borda-forte">
           {(["lista", "agrupado"] as const).map((v) => (
-            <button key={v} onClick={() => setVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-white" : "text-zinc-600 dark:text-zinc-300"}`}>
+            <button key={v} onClick={() => setVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-white" : "text-texto-suave"}`}>
               {v === "lista" ? "☰ Lista" : "▤ Agrupado por produto"}
             </button>
           ))}
@@ -131,49 +131,49 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
       </div>
 
       {lista.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">Nenhuma etiqueta no período.</div>
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">Nenhuma etiqueta no período.</div>
       ) : visao === "agrupado" ? (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr><th className="px-3 py-3">Produto</th><th className="px-3 py-3">Categoria</th><th className="px-3 py-3 text-right">Etiquetas</th><th className="px-3 py-3">Última</th></tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {grupos.map(([nome, g]) => (
-                <tr key={nome} className="bg-white dark:bg-zinc-950">
-                  <td className="px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">{nome}</td>
-                  <td className="px-3 py-2 text-zinc-500">{g.cat ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-semibold text-zinc-800 dark:text-zinc-200">{g.n}</td>
-                  <td className="px-3 py-2 text-xs text-zinc-500">{fmt(g.ultimo)}</td>
+                <tr key={nome} className="">
+                  <td className="px-3 py-2 font-medium text-texto">{nome}</td>
+                  <td className="px-3 py-2 text-texto-suave">{g.cat ?? "—"}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-texto">{g.n}</td>
+                  <td className="px-3 py-2 text-xs text-texto-suave">{fmt(g.ultimo)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-3 py-3">Nº</th><th className="px-3 py-3">Produto</th><th className="px-3 py-3">Categoria</th><th className="px-3 py-3">Pessoa</th>
                 <th className="px-3 py-3">Impressão</th><th className="px-3 py-3">Validade</th><th className="px-3 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {lista.map((r) => (
-                <tr key={r.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-3 py-2 font-mono text-zinc-500">#{r.numero}</td>
+                <tr key={r.id} className="">
+                  <td className="px-3 py-2 font-mono text-texto-suave">#{r.numero}</td>
                   <td className="px-3 py-2">
-                    <Link href={`/etiquetas/${r.id}`} className="font-medium text-zinc-900 hover:text-orange-600 dark:text-zinc-100">{r.produto_nome}</Link>
-                    {r.tipo && r.tipo !== "manipulacao" && <span className="ml-2 text-[10px] uppercase text-zinc-400">{tipoInfo(r.tipo).titulo}</span>}
-                    {r.quantidade != null && <span className="ml-2 text-xs text-zinc-400">{r.quantidade} {r.unidade ?? ""}</span>}
+                    <Link href={`/etiquetas/${r.id}`} className="font-medium text-texto hover:text-orange-600">{r.produto_nome}</Link>
+                    {r.tipo && r.tipo !== "manipulacao" && <span className="ml-2 text-[10px] text-texto-fraco">{tipoInfo(r.tipo).titulo}</span>}
+                    {r.quantidade != null && <span className="ml-2 text-xs text-texto-fraco">{r.quantidade} {r.unidade ?? ""}</span>}
                   </td>
-                  <td className="px-3 py-2 text-zinc-500">{r.categoria_nome ?? "—"}</td>
-                  <td className="px-3 py-2 text-zinc-500">{r.colaborador_nome ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs text-zinc-500">{fmt(r.criado_em)}</td>
+                  <td className="px-3 py-2 text-texto-suave">{r.categoria_nome ?? "—"}</td>
+                  <td className="px-3 py-2 text-texto-suave">{r.colaborador_nome ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-texto-suave">{fmt(r.criado_em)}</td>
                   <td className="px-3 py-2">{r.validade ? dataBR(r.validade) : "—"}</td>
                   <td className="px-3 py-2">
-                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${r.status === "ativa" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"}`}>
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold  ${r.status === "ativa" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-superficie-suave text-texto-suave  "}`}>
                       {r.status === "ativa" ? "em estoque" : r.status}
                     </span>
                   </td>

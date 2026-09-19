@@ -50,29 +50,29 @@ export function LancamentosTabela({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por descrição, categoria ou fornecedor..."
-          className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="w-full max-w-md min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
         />
         {busca && (
           <button
             onClick={() => setBusca("")}
-            className="text-xs text-zinc-400 hover:text-orange-600"
+            className="text-xs text-texto-fraco hover:text-orange-600"
           >
             limpar
           </button>
         )}
-        <span className="ml-auto text-xs text-zinc-400">
+        <span className="ml-auto text-xs text-texto-fraco">
           {filtradas.length} de {lancamentos.length}
         </span>
       </div>
 
       {filtradas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-suave">
           Nenhum lançamento encontrado para <b>{busca}</b>.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Categoria</th>
@@ -81,7 +81,7 @@ export function LancamentosTabela({
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {filtradas.map((l) => (
                 <LancamentoLinha key={l.id} l={l} categorias={categorias} />
               ))}

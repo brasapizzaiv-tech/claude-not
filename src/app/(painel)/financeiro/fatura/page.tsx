@@ -41,11 +41,11 @@ export default async function FaturaPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/financeiro" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/financeiro" className="text-sm text-texto-suave hover:text-orange-600">
         ← Voltar ao financeiro
       </Link>
-      <h1 className="mt-2 mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="cartao" tamanho={20} className="mr-2" /> Fatura do cartão</h1>
-      <p className="mb-4 text-sm text-zinc-500">
+      <h1 className="mt-2 mb-1 text-2xl font-bold text-texto"><Icone nome="cartao" tamanho={20} className="mr-2" /> Fatura do cartão</h1>
+      <p className="mb-4 text-sm text-texto-suave">
         Cada compra da fatura vira um lançamento na sua categoria — assim o DRE mostra onde o dinheiro foi,
         em vez de uma linha só de &quot;cartão de crédito&quot;.
       </p>

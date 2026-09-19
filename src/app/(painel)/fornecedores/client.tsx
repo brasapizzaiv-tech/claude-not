@@ -5,7 +5,7 @@ import type { Fornecedor } from "@/lib/types";
 import { salvarFornecedor, excluirFornecedor } from "./actions";
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function FornecedoresClient({
   fornecedores,
@@ -38,31 +38,31 @@ export function FornecedoresClient({
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Fornecedores
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             {fornecedores.length}{" "}
             {fornecedores.length === 1 ? "cadastrado" : "cadastrados"}
           </p>
         </div>
         <button
           onClick={abrirNovo}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
         >
           + Adicionar
         </button>
       </div>
 
       {fornecedores.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum fornecedor ainda. Clique em <b>+ Adicionar</b> para cadastrar o
           primeiro.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Contato</th>
@@ -71,16 +71,16 @@ export function FornecedoresClient({
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {fornecedores.map((f) => (
                 <tr
                   key={f.id}
-                  className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+                  className="transition hover:bg-superficie-suave"
                 >
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                  <td className="px-4 py-3 font-medium text-texto">
                     {f.nome}
                     {f.cnpj && (
-                      <span className="block text-xs font-normal text-zinc-400">
+                      <span className="block text-xs font-normal text-texto-fraco">
                         {f.cnpj}
                       </span>
                     )}
@@ -94,13 +94,13 @@ export function FornecedoresClient({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                  <td className="px-4 py-3 text-texto-suave">
                     {f.contato ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                  <td className="px-4 py-3 text-texto-suave">
                     {f.telefone ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                  <td className="px-4 py-3 text-texto-suave">
                     {f.whatsapp ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -114,7 +114,7 @@ export function FornecedoresClient({
                       <input type="hidden" name="id" value={f.id} />
                       <button
                         type="submit"
-                        className="text-zinc-400 hover:text-red-600"
+                        className="text-texto-fraco hover:text-red-600"
                       >
                         Remover
                       </button>
@@ -129,8 +129,8 @@ export function FornecedoresClient({
 
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
-            <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-6">
+            <h2 className="mb-4 text-lg font-semibold text-texto">
               {editando ? "Editar fornecedor" : "Novo fornecedor"}
             </h2>
             <form
@@ -144,7 +144,7 @@ export function FornecedoresClient({
                 <input type="hidden" name="id" value={editando.id} />
               )}
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-texto-suave">
                   Nome *
                 </label>
                 <input
@@ -156,7 +156,7 @@ export function FornecedoresClient({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <label className="mb-1 block text-sm font-medium text-texto-suave">
                     CNPJ
                   </label>
                   <input
@@ -166,7 +166,7 @@ export function FornecedoresClient({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <label className="mb-1 block text-sm font-medium text-texto-suave">
                     Contato
                   </label>
                   <input
@@ -176,7 +176,7 @@ export function FornecedoresClient({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <label className="mb-1 block text-sm font-medium text-texto-suave">
                     Telefone
                   </label>
                   <input
@@ -186,7 +186,7 @@ export function FornecedoresClient({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <label className="mb-1 block text-sm font-medium text-texto-suave">
                     WhatsApp
                   </label>
                   <input
@@ -197,7 +197,7 @@ export function FornecedoresClient({
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-texto-suave">
                   E-mail
                 </label>
                 <input
@@ -208,7 +208,7 @@ export function FornecedoresClient({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-texto-suave">
                   Observações
                 </label>
                 <textarea
@@ -220,17 +220,17 @@ export function FornecedoresClient({
               </div>
 
               {/* Categorias de produto que ele fornece → cotação já sugere/envia pra ele */}
-              <div className="rounded-xl border border-orange-200 bg-orange-50/40 p-3 dark:border-orange-900 dark:bg-orange-950/10">
-                <p className="mb-1 text-xs font-bold uppercase text-zinc-400">O que este fornecedor vende (categorias de produto)</p>
-                <p className="mb-2 text-[11px] text-zinc-500">
+              <div className="rounded-cartao border border-orange-200 bg-orange-50/40 p-3 dark:border-orange-900 dark:bg-orange-950/10">
+                <p className="mb-1 text-xs font-bold text-texto-fraco">O que este fornecedor vende (categorias de produto)</p>
+                <p className="mb-2 text-[11px] text-texto-suave">
                   Ao salvar, ele fica vinculado a todos os produtos dessas categorias — a cotação já sugere ele e manda os itens. Produto novo na categoria entra sozinho.
                 </p>
                 {categoriasProduto.length === 0 ? (
-                  <p className="text-xs text-zinc-400">Nenhuma categoria de produto cadastrada.</p>
+                  <p className="text-xs text-texto-fraco">Nenhuma categoria de produto cadastrada.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {categoriasProduto.map((c) => (
-                      <label key={c.id} className="flex cursor-pointer items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950">
+                      <label key={c.id} className="flex cursor-pointer items-center gap-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-sm">
                         <input type="checkbox" name="categoria_ids" value={c.id} defaultChecked={(editando?.categoria_ids ?? []).includes(c.id)} />
                         {c.nome}
                       </label>
@@ -240,11 +240,11 @@ export function FornecedoresClient({
               </div>
 
               {/* Padrão das notas: já vem preenchido ao vincular/importar uma nota dele */}
-              <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-                <p className="mb-2 text-xs font-bold uppercase text-zinc-400">Padrão das notas deste fornecedor</p>
+              <div className="rounded-cartao border border-borda p-3">
+                <p className="mb-2 text-xs font-bold text-texto-fraco">Padrão das notas deste fornecedor</p>
                 <div className="grid gap-2 sm:grid-cols-[1fr_11rem]">
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500">Categoria da despesa (DRE)</label>
+                    <label className="mb-1 block text-xs text-texto-suave">Categoria da despesa (DRE)</label>
                     <select name="dre_categoria_id" defaultValue={editando?.dre_categoria_id ?? ""} className={inputCls}>
                       <option value="">— nenhuma (escolher em cada nota) —</option>
                       {grupos.map((g) => (
@@ -257,7 +257,7 @@ export function FornecedoresClient({
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500">Tipo de nota</label>
+                    <label className="mb-1 block text-xs text-texto-suave">Tipo de nota</label>
                     <select name="tipo_nota" defaultValue={editando?.tipo_nota ?? ""} className={inputCls}>
                       <option value="">— como vier —</option>
                       <option value="mercadoria">Mercadoria</option>
@@ -265,20 +265,20 @@ export function FornecedoresClient({
                     </select>
                   </div>
                 </div>
-                <p className="mt-1 text-[11px] text-zinc-400">Ex.: conta de luz → Serviço + Energia elétrica. Na nota, dá pra trocar se precisar.</p>
+                <p className="mt-1 text-[11px] text-texto-fraco">Ex.: conta de luz → Serviço + Energia elétrica. Na nota, dá pra trocar se precisar.</p>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setAberto(false)}
-                  className="rounded-lg px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave dark:text-texto-fraco"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+                  className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
                 >
                   Salvar
                 </button>

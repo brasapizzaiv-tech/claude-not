@@ -27,19 +27,19 @@ export function ApontamentosClient({
     start(async () => { await fn(); router.refresh(); });
   }
   const abaCls = (a: Aba) =>
-    `rounded-lg px-4 py-2 text-sm font-semibold ${aba === a ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`;
+    `rounded-controle px-4 py-2 text-sm font-semibold ${aba === a ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900" : "border border-borda-forte text-texto-suave  "}`;
 
   return (
     <div>
       {maisRepetidos.length > 0 && (
-        <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+        <div className="mb-5 rounded-cartao border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">O que mais se repete</p>
           <ul className="mt-1.5 space-y-1 text-sm">
             {maisRepetidos.map((r, i) => (
               <li key={i} className="flex items-baseline gap-2">
                 <span className="w-7 text-right font-bold text-amber-700 dark:text-amber-300">{r.n}×</span>
                 <span className="text-zinc-800 dark:text-zinc-100">{r.texto}</span>
-                {r.setor && <span className="text-xs text-zinc-500">{r.setor}</span>}
+                {r.setor && <span className="text-xs text-texto-suave">{r.setor}</span>}
               </li>
             ))}
           </ul>
@@ -53,15 +53,15 @@ export function ApontamentosClient({
       </div>
 
       {lista.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-400 dark:border-zinc-700">Nada por aqui.</p>
+        <p className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-fraco">Nada por aqui.</p>
       ) : (
-        <ul className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <ul className="divide-y divide-zinc-100 rounded-cartao border border-borda dark:divide-zinc-800">
           {lista.map((a) => (
             <li key={a.id} className="flex flex-wrap items-start gap-2 p-3 text-sm">
-              <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold uppercase dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
+              <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
               <div className="min-w-0 flex-1">
-                <p className="text-zinc-900 dark:text-zinc-100">{a.texto}</p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-texto">{a.texto}</p>
+                <p className="text-xs text-texto-suave">
                   do dia {dataCurta(a.data_ref)}
                   {a.item_texto ? ` · item "${a.item_texto}"` : " · avulso"}
                   {a.ate ? ` · prazo ${dataCurta(a.ate)}` : ""}
@@ -70,13 +70,13 @@ export function ApontamentosClient({
                 </p>
               </div>
               {!a.resolvido_em && (
-                <button onClick={() => agir(() => resolverApontamentoPainel(a.id))} disabled={proc} className="rounded-lg border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">✓ Resolvido</button>
+                <button onClick={() => agir(() => resolverApontamentoPainel(a.id))} disabled={proc} className="rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">✓ Resolvido</button>
               )}
               {a.resolvido_em && (
-                <button onClick={() => agir(() => resolverApontamentoPainel(a.id, true))} disabled={proc} className="text-xs text-zinc-400 hover:text-amber-600">reabrir</button>
+                <button onClick={() => agir(() => resolverApontamentoPainel(a.id, true))} disabled={proc} className="text-xs text-texto-fraco hover:text-amber-600">reabrir</button>
               )}
               {a.na_tv && (
-                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id))} disabled={proc} className="text-xs text-zinc-400 hover:text-red-600">tirar da TV</button>
+                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">tirar da TV</button>
               )}
               <button
                 onClick={() => { if (confirm("Apagar este apontamento?")) agir(() => excluirApontamentoPainel(a.id)); }}

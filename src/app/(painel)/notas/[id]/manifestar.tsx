@@ -32,30 +32,30 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 className="font-semibold text-zinc-900 dark:text-zinc-50">
+    <div className="mt-6 rounded-cartao border border-borda p-5">
+      <h2 className="font-semibold text-texto">
         Baixar nota completa
       </h2>
-      <p className="mb-3 mt-1 text-sm text-zinc-500">
+      <p className="mb-3 mt-1 text-sm text-texto-suave">
         Esta nota veio em resumo (sem itens). Manifestar a “Ciência da Operação”
         na SEFAZ libera o XML completo com todos os itens.
       </p>
       <button
         onClick={manifestar}
         disabled={processando}
-        className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+        className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
       >
         {processando ? "Manifestando e baixando..." : "Manifestar e baixar completa"}
       </button>
       {msg && (
-        <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">{msg}</p>
+        <p className="mt-3 text-sm text-texto-suave">{msg}</p>
       )}
       {diag && (
         <details className="mt-2">
-          <summary className="cursor-pointer text-xs text-zinc-400">
+          <summary className="cursor-pointer text-xs text-texto-fraco">
             detalhe técnico (me mande isto para eu corrigir)
           </summary>
-          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-900 p-2 text-[10px] text-green-400">
+          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-controle bg-zinc-900 p-2 text-[10px] text-green-400">
             {diag}
           </pre>
         </details>

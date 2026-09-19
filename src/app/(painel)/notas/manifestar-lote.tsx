@@ -64,13 +64,13 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900 dark:bg-blue-950/20">
+    <div className="mb-6 rounded-cartao border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900 dark:bg-blue-950/20">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          <p className="text-sm font-medium text-texto">
             <Icone nome="documento" tamanho={15} className="mr-1.5" /> Manifestar em lote
           </p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-texto-suave">
             {notas.length} nota(s) em resumo — marque e manifeste várias de uma vez.
           </p>
         </div>
@@ -79,13 +79,13 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
             onClick={completar}
             disabled={proc}
             title="Puxa da SEFAZ o XML completo (com os itens) das notas já manifestadas"
-            className="rounded-lg border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:text-blue-300 dark:hover:bg-blue-950"
+            className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:text-blue-300 dark:hover:bg-blue-950"
           >
             {proc ? "Buscando..." : "Buscar itens agora"}
           </button>
           <button
             onClick={() => setAberto((v) => !v)}
-            className="rounded-lg border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-950"
+            className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-950"
           >
             {aberto ? "Fechar" : "Selecionar notas"}
           </button>
@@ -95,7 +95,7 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
       {aberto && (
         <div className="mt-3">
           <div className="mb-2 flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+            <label className="flex items-center gap-2 text-sm text-texto-suave">
               <input type="checkbox" checked={todos} onChange={toggleTodos} />
               Selecionar todas
             </label>
@@ -103,27 +103,27 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
               <button
                 onClick={manifestar}
                 disabled={proc}
-                className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                className="rounded-controle bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
               >
                 {proc ? "Manifestando..." : `Manifestar ${sel.size} selecionada(s)`}
               </button>
             )}
           </div>
-          <div className="max-h-72 overflow-y-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="max-h-72 overflow-y-auto rounded-controle border border-borda bg-painel-cartao">
             {notas.map((n) => (
               <label
                 key={n.id}
-                className="flex items-center gap-3 border-b border-zinc-100 px-3 py-2 text-sm last:border-0 hover:bg-zinc-50 dark:border-zinc-800/60 dark:hover:bg-zinc-900"
+                className="flex items-center gap-3 border-b border-borda px-3 py-2 text-sm last:border-0 hover:bg-superficie-suave /60"
               >
                 <input
                   type="checkbox"
                   checked={sel.has(n.id)}
                   onChange={() => toggle(n.id)}
                 />
-                <span className="flex-1 text-zinc-800 dark:text-zinc-200">
+                <span className="flex-1 text-texto">
                   {n.emit_nome ?? "—"}
                 </span>
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs text-texto-fraco">
                   NF {n.numero ?? "—"} ·{" "}
                   {n.data_emissao ? dataBR(n.data_emissao) : "—"}
                 </span>
@@ -133,7 +133,7 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
         </div>
       )}
 
-      {msg && <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}
+      {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }

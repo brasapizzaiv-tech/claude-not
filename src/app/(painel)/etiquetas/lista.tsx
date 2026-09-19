@@ -28,7 +28,7 @@ export type EtLinha = {
 };
 
 const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 function fmtHora(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -77,11 +77,11 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
   }
 
   const corValidade = (v: string | null) =>
-    !v ? "text-zinc-400" : v < hoje ? "text-red-600 font-semibold" : v <= somarDias(hoje, 2) ? "text-amber-600 font-medium" : "text-green-600";
+    !v ? "text-texto-fraco" : v < hoje ? "text-red-600 font-semibold" : v <= somarDias(hoje, 2) ? "text-amber-600 font-medium" : "text-green-600";
 
   const badgeTipo = (t: string | null) =>
     t && t !== "manipulacao" ? (
-      <span className="ml-2 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+      <span className="ml-2 rounded bg-superficie-suave px-1.5 py-0.5 text-[10px] font-semibold text-texto-suave">
         {tipoInfo(t).icone} {tipoInfo(t).titulo}
       </span>
     ) : null;
@@ -103,9 +103,9 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
+        <div className="flex overflow-hidden rounded-controle border border-borda-forte">
           {(["lista", "kanban"] as const).map((v) => (
-            <button key={v} onClick={() => mudarVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-white" : "text-zinc-600 dark:text-zinc-300"}`}>
+            <button key={v} onClick={() => mudarVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-white" : "text-texto-suave"}`}>
               {v === "lista" ? "☰ Lista" : "▦ Kanban"}
             </button>
           ))}
@@ -115,14 +115,14 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
           <option value="">Todas as categorias</option>
           {cats.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
-        <span className="text-sm text-zinc-500">{lista.length} / {rows.length}</span>
-        <button onClick={exportar} disabled={lista.length === 0} className="ml-auto rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900">
+        <span className="text-sm text-texto-suave">{lista.length} / {rows.length}</span>
+        <button onClick={exportar} disabled={lista.length === 0} className="ml-auto rounded-controle border border-borda-forte px-3 py-1.5 text-sm font-medium text-texto-suave hover:bg-superficie-suave disabled:opacity-40 dark:border-borda-forte">
           <Icone nome="baixar" tamanho={14} className="mr-1.5" /> Exportar CSV
         </button>
       </div>
 
       {lista.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           {historico ? "Nenhuma etiqueta baixada." : "Nenhuma etiqueta aqui."}
         </div>
       ) : visao === "kanban" ? (
@@ -130,15 +130,15 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
           {colunas.map((c) => {
             const its = lista.filter(c.f);
             return (
-              <div key={c.key} className={`rounded-2xl border-t-4 bg-zinc-50 p-2 dark:bg-zinc-900 ${c.cor}`}>
-                <div className="mb-2 flex items-center justify-between px-1 text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-                  {c.titulo} <span className="rounded-full bg-white px-2 text-xs text-zinc-500 dark:bg-zinc-800">{its.length}</span>
+              <div key={c.key} className={`rounded-cartao border-t-4 bg-superficie-suave p-2 ${c.cor}`}>
+                <div className="mb-2 flex items-center justify-between px-1 text-sm font-semibold text-texto-suave">
+                  {c.titulo} <span className="rounded-full bg-white px-2 text-xs text-texto-suave dark:bg-zinc-800">{its.length}</span>
                 </div>
                 <div className="space-y-2">
                   {its.map((r) => (
-                    <div key={r.id} className="rounded-xl border border-zinc-200 bg-white p-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100">{r.produto_nome}{badgeTipo(r.tipo)}</div>
-                      <div className="text-xs text-zinc-400">
+                    <div key={r.id} className="rounded-cartao border border-borda bg-painel-cartao p-2.5 text-sm">
+                      <div className="font-medium text-texto">{r.produto_nome}{badgeTipo(r.tipo)}</div>
+                      <div className="text-xs text-texto-fraco">
                         #{r.numero}{r.categoria_nome ? ` · ${r.categoria_nome}` : ""}{r.conservacao ? ` · ${r.conservacao}` : ""}
                         {r.quantidade != null ? ` · ${r.quantidade} ${r.unidade ?? ""}` : ""}
                       </div>
@@ -149,16 +149,16 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                       </div>
                     </div>
                   ))}
-                  {its.length === 0 && <p className="px-1 text-xs text-zinc-400">—</p>}
+                  {its.length === 0 && <p className="px-1 text-xs text-texto-fraco">—</p>}
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-3 py-3">Nº</th>
                 <th className="px-3 py-3">Produto</th>
@@ -170,24 +170,24 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                 <th className="px-3 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {lista.map((r) => (
-                <tr key={r.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-3 py-2 font-mono text-zinc-500">#{r.numero}</td>
+                <tr key={r.id} className="">
+                  <td className="px-3 py-2 font-mono text-texto-suave">#{r.numero}</td>
                   <td className="px-3 py-2">
-                    <div className="font-medium text-zinc-900 dark:text-zinc-100">{r.produto_nome}{badgeTipo(r.tipo)}</div>
-                    <div className="text-xs text-zinc-400">
+                    <div className="font-medium text-texto">{r.produto_nome}{badgeTipo(r.tipo)}</div>
+                    <div className="text-xs text-texto-fraco">
                       {r.conservacao ?? ""}{r.conservacao && r.quantidade != null ? " · " : ""}{r.quantidade != null ? `${r.quantidade} ${r.unidade ?? ""}` : ""}
                       {r.lote ? ` · lote ${r.lote}` : ""}
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-zinc-500">{r.categoria_nome ?? "—"}</td>
-                  <td className="px-3 py-2 text-zinc-500">{r.colaborador_nome ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs text-zinc-500">{fmtHora(r.manipulado_em)}</td>
+                  <td className="px-3 py-2 text-texto-suave">{r.categoria_nome ?? "—"}</td>
+                  <td className="px-3 py-2 text-texto-suave">{r.colaborador_nome ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-texto-suave">{fmtHora(r.manipulado_em)}</td>
                   <td className={`px-3 py-2 ${corValidade(r.validade)}`}>
                     {r.validade ? dataBR(r.validade) : "—"}{!historico && r.validade && r.validade < hoje && <Icone nome="alerta" tamanho={12} className="ml-1 text-red-600" titulo="Vencida" />}
                   </td>
-                  <td className="px-3 py-2 text-xs text-zinc-500">{historico ? `${r.status}${r.baixa_em ? " · " + fmtHora(r.baixa_em) : ""}` : ""}</td>
+                  <td className="px-3 py-2 text-xs text-texto-suave">{historico ? `${r.status}${r.baixa_em ? " · " + fmtHora(r.baixa_em) : ""}` : ""}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <Link href={`/etiquetas/${r.id}`} className="mr-3 text-orange-600 hover:underline">Imprimir</Link>
                     <EtiquetaBaixa id={r.id} status={r.status} />

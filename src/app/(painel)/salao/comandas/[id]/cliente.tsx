@@ -101,13 +101,13 @@ export function LancarItens({
   const mostrarPizza = temPizza && !q && aba === PIZZAS;
 
   return (
-    <div className="rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+    <div className="rounded-cartao border border-borda p-3">
       {/* Busca */}
       <input
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Buscar produto pelo nome..."
-        className="mb-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        className="mb-3 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
       />
 
       {/* Abas */}
@@ -120,7 +120,7 @@ export function LancarItens({
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 aba === c
                   ? "bg-orange-500 text-white"
-                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  : "bg-superficie-suave text-texto-suave hover:bg-zinc-200   dark:hover:bg-zinc-700"
               }`}
             >
               {c}
@@ -132,7 +132,7 @@ export function LancarItens({
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 aba === PIZZAS
                   ? "bg-orange-500 text-white"
-                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  : "bg-superficie-suave text-texto-suave hover:bg-zinc-200   dark:hover:bg-zinc-700"
               }`}
             >
               {PIZZAS}
@@ -156,19 +156,19 @@ export function LancarItens({
               key={i.id}
               onClick={() => add(i)}
               disabled={p && addId === i.id}
-              className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-2.5 text-left hover:border-orange-300 hover:bg-orange-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-orange-500/50 dark:hover:bg-orange-950/30"
+              className="flex flex-col justify-between rounded-cartao border border-borda bg-white p-2.5 text-left hover:border-orange-300 hover:bg-orange-50 disabled:opacity-50 dark:border-borda-forte dark:bg-zinc-950 dark:hover:border-orange-500/50 dark:hover:bg-orange-950/30"
             >
-              <span className="text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">
+              <span className="text-sm font-medium leading-tight text-texto">
                 {i.nome}
                 {complementos[i.id]?.length ? (
-                  <span className="ml-1 text-[10px] text-zinc-400">montar ›</span>
+                  <span className="ml-1 text-[10px] text-texto-fraco">montar ›</span>
                 ) : null}
               </span>
               <span className="mt-1 text-xs font-semibold text-orange-600">{brl(Number(i.preco))}</span>
             </button>
           ))}
           {visiveis.length === 0 && (
-            <p className="col-span-full py-6 text-center text-sm text-zinc-400">
+            <p className="col-span-full py-6 text-center text-sm text-texto-fraco">
               Nenhum produto {q ? "encontrado" : "nesta categoria"}.
             </p>
           )}
@@ -255,13 +255,13 @@ function MontarCombo({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white sm:rounded-2xl dark:bg-zinc-950">
-        <div className="flex items-center justify-between border-b border-zinc-100 p-4 dark:border-zinc-800">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-painel-cartao sm:rounded-cartao">
+        <div className="flex items-center justify-between border-b border-borda p-4">
           <div>
-            <p className="font-bold text-zinc-900 dark:text-zinc-100">{item.nome}</p>
-            <p className="text-xs text-zinc-500">Base {brl(Number(item.preco))}</p>
+            <p className="font-bold text-texto">{item.nome}</p>
+            <p className="text-xs text-texto-suave">Base {brl(Number(item.preco))}</p>
           </div>
-          <button onClick={onFechar} className="text-2xl leading-none text-zinc-400 hover:text-zinc-700">
+          <button onClick={onFechar} className="text-2xl leading-none text-texto-fraco hover:text-texto-suave">
             ×
           </button>
         </div>
@@ -273,8 +273,8 @@ function MontarCombo({
             return (
               <div key={g.id}>
                 <div className="mb-1 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{g.nome}</p>
-                  <span className={`text-[11px] ${okMin ? "text-zinc-400" : "text-red-500"}`}>
+                  <p className="text-sm font-semibold text-texto">{g.nome}</p>
+                  <span className={`text-[11px] ${okMin ? "text-texto-fraco" : "text-red-500"}`}>
                     {g.min > 0 ? `escolha ${g.min}` : "opcional"}
                     {g.max > 1 ? ` até ${g.max}` : ""} · {escolhidas}
                   </span>
@@ -287,25 +287,25 @@ function MontarCombo({
                       return (
                         <div
                           key={o.id}
-                          className={`flex items-center justify-between rounded-lg border px-2 py-1 text-xs ${
+                          className={`flex items-center justify-between rounded-controle border px-2 py-1 text-xs ${
                             n > 0
                               ? "border-orange-500 bg-orange-50 dark:bg-orange-500/15"
-                              : "border-zinc-200 dark:border-zinc-700"
+                              : "border-borda dark:border-borda-forte"
                           }`}
                         >
-                          <span className="min-w-0 flex-1 truncate text-zinc-700 dark:text-zinc-300">
+                          <span className="min-w-0 flex-1 truncate text-texto-suave">
                             {o.nome}
-                            {o.preco > 0 && <span className="ml-1 text-zinc-400">+{brl(o.preco)}</span>}
+                            {o.preco > 0 && <span className="ml-1 text-texto-fraco">+{brl(o.preco)}</span>}
                           </span>
                           <span className="ml-1 flex items-center gap-1">
                             <button
                               onClick={() => dec(g, o.id)}
                               disabled={n === 0}
-                              className="h-6 w-6 rounded bg-zinc-100 text-zinc-600 disabled:opacity-30 dark:bg-zinc-800 dark:text-zinc-300"
+                              className="h-6 w-6 rounded bg-superficie-suave text-texto-suave disabled:opacity-30"
                             >
                               −
                             </button>
-                            <span className="w-4 text-center font-medium text-zinc-800 dark:text-zinc-200">{n}</span>
+                            <span className="w-4 text-center font-medium text-texto">{n}</span>
                             <button
                               onClick={() => inc(g, o.id)}
                               disabled={cheio}
@@ -322,17 +322,17 @@ function MontarCombo({
                       <button
                         key={o.id}
                         onClick={() => toggle(g, o.id)}
-                        className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-xs ${
+                        className={`flex items-center justify-between rounded-controle border px-2.5 py-1.5 text-left text-xs ${
                           on
                             ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
-                            : "border-zinc-200 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                            : "border-borda text-texto-suave dark:border-borda-forte "
                         }`}
                       >
                         <span>
                           {on ? "✓ " : ""}
                           {o.nome}
                         </span>
-                        {o.preco > 0 && <span className="ml-1 text-zinc-400">+{brl(o.preco)}</span>}
+                        {o.preco > 0 && <span className="ml-1 text-texto-fraco">+{brl(o.preco)}</span>}
                       </button>
                     );
                   })}
@@ -342,12 +342,12 @@ function MontarCombo({
           })}
         </div>
 
-        <div className="flex items-center justify-between border-t border-zinc-100 p-4 dark:border-zinc-800">
-          <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{brl(total)}</span>
+        <div className="flex items-center justify-between border-t border-borda p-4">
+          <span className="text-lg font-bold text-texto">{brl(total)}</span>
           <button
             onClick={confirmar}
             disabled={p || faltaMin}
-            className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
           >
             {faltaMin ? "Escolha as opções" : "Adicionar"}
           </button>
@@ -433,23 +433,23 @@ export function MontarPizza({
   }
 
   return (
-    <details className="rounded-2xl border border-zinc-200 dark:border-zinc-800">
-      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+    <details className="rounded-cartao bg-painel-cartao">
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-texto">
         <Icone nome="pizza" tamanho={15} className="mr-1.5" /> Montar pizza
       </summary>
-      <div className="space-y-4 border-t border-zinc-100 p-4 dark:border-zinc-800">
+      <div className="space-y-4 border-t border-borda p-4">
         {/* Tamanho */}
         <div>
-          <p className="mb-1 text-xs font-medium uppercase text-zinc-400">Tamanho</p>
+          <p className="mb-1 text-xs font-medium text-texto-fraco">Tamanho</p>
           <div className="flex flex-wrap gap-2">
             {tamanhos.map((t) => (
               <button
                 key={t.id}
                 onClick={() => trocarTamanho(t.id, t.max)}
-                className={`rounded-lg border px-3 py-1.5 text-sm ${
+                className={`rounded-controle border px-3 py-1.5 text-sm ${
                   t.id === tamId
                     ? "border-orange-500 bg-orange-500 text-white"
-                    : "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                    : "border-borda-forte text-texto-suave  "
                 }`}
               >
                 {t.nome}
@@ -464,17 +464,17 @@ export function MontarPizza({
         {/* Sabores */}
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <p className="text-xs font-medium uppercase text-zinc-400">
+            <p className="text-xs font-medium text-texto-fraco">
               Sabores ({sel.length}/{max})
             </p>
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="buscar sabor..."
-              className="w-40 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="w-40 rounded-controle border border-borda-forte bg-white px-2 py-1 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
             />
           </div>
-          <div className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-zinc-100 p-1 dark:border-zinc-800">
+          <div className="max-h-60 space-y-1 overflow-y-auto rounded-controle border border-borda p-1">
             {filtrados.map((s) => {
               const on = sel.includes(s.id);
               const bloqueado = !on && sel.length >= max;
@@ -483,35 +483,35 @@ export function MontarPizza({
                   key={s.id}
                   onClick={() => toggle(s.id)}
                   disabled={bloqueado}
-                  className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm ${
+                  className={`flex w-full items-center justify-between rounded-controle px-2 py-1.5 text-left text-sm ${
                     on
                       ? "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
                       : bloqueado
                         ? "text-zinc-300 dark:text-zinc-600"
-                        : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                        : "text-texto-suave hover:bg-superficie-suave  "
                   }`}
                 >
                   <span>
                     {on ? "✓ " : ""}
                     {s.nome}
                   </span>
-                  <span className="text-xs text-zinc-400">{brl(s.precos[tamId] ?? 0)}</span>
+                  <span className="text-xs text-texto-fraco">{brl(s.precos[tamId] ?? 0)}</span>
                 </button>
               );
             })}
             {filtrados.length === 0 && (
-              <p className="px-2 py-2 text-xs text-zinc-400">Nenhum sabor encontrado.</p>
+              <p className="px-2 py-2 text-xs text-texto-fraco">Nenhum sabor encontrado.</p>
             )}
           </div>
         </div>
 
         {/* Borda */}
         <div>
-          <p className="mb-1 text-xs font-medium uppercase text-zinc-400">Borda (opcional)</p>
+          <p className="mb-1 text-xs font-medium text-texto-fraco">Borda (opcional)</p>
           <select
             value={bordaId}
             onChange={(e) => setBordaId(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
           >
             <option value="">Sem borda</option>
             {bordas
@@ -525,12 +525,12 @@ export function MontarPizza({
         </div>
 
         {/* Preço + adicionar */}
-        <div className="flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{brl(preco)}</span>
+        <div className="flex items-center justify-between border-t border-borda pt-3">
+          <span className="text-lg font-bold text-texto">{brl(preco)}</span>
           <button
             onClick={add}
             disabled={p || !tamId || sel.length === 0}
-            className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
           >
             Adicionar pizza
           </button>

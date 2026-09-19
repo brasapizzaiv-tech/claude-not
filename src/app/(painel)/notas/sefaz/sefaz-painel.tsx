@@ -29,7 +29,7 @@ const UFS: { sigla: string; cuf: number }[] = [
 ];
 
 const input =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 export function SefazPainel({
   status,
@@ -138,11 +138,11 @@ export function SefazPainel({
   return (
     <div className="space-y-6">
       {/* Certificado */}
-      <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="mb-1 font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="rounded-cartao border border-borda p-5">
+        <h2 className="mb-1 font-semibold text-texto">
           Certificado A1
         </h2>
-        <p className="mb-4 text-sm text-zinc-500">
+        <p className="mb-4 text-sm text-texto-suave">
           {status.temCert
             ? `Certificado carregado: ${status.cert_nome ?? "sim"}. Para trocar, escolha outro arquivo.`
             : "Suba o arquivo .pfx do seu certificado e digite a senha. Fica guardado só no servidor."}
@@ -150,7 +150,7 @@ export function SefazPainel({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">
+            <label className="mb-1 block text-xs text-texto-suave">
               Arquivo do certificado (.pfx)
             </label>
             <input
@@ -161,7 +161,7 @@ export function SefazPainel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">
+            <label className="mb-1 block text-xs text-texto-suave">
               Senha do certificado
             </label>
             <input
@@ -173,7 +173,7 @@ export function SefazPainel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">
+            <label className="mb-1 block text-xs text-texto-suave">
               CNPJ da empresa
             </label>
             <input
@@ -184,7 +184,7 @@ export function SefazPainel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Estado (UF)</label>
+            <label className="mb-1 block text-xs text-texto-suave">Estado (UF)</label>
             <select
               value={cuf}
               onChange={(e) => setCuf(Number(e.target.value))}
@@ -203,7 +203,7 @@ export function SefazPainel({
           <button
             onClick={salvar}
             disabled={salvando}
-            className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+            className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
           >
             {salvando ? "Salvando..." : "Salvar configuração"}
           </button>
@@ -212,11 +212,11 @@ export function SefazPainel({
       </div>
 
       {/* Buscar */}
-      <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="mb-1 font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="rounded-cartao border border-borda p-5">
+        <h2 className="mb-1 font-semibold text-texto">
           Buscar notas na SEFAZ
         </h2>
-        <p className="mb-4 text-sm text-zinc-500">
+        <p className="mb-4 text-sm text-texto-suave">
           Puxa as notas emitidas contra o seu CNPJ desde a última busca.
           {status.ult_nsu && status.ult_nsu !== "000000000000000"
             ? ` (última posição: ${status.ult_nsu})`
@@ -225,7 +225,7 @@ export function SefazPainel({
         <button
           onClick={buscar}
           disabled={buscando || !status.temCert || travado}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
         >
           {buscando
             ? "Buscando na SEFAZ..."
@@ -234,25 +234,25 @@ export function SefazPainel({
               : "Buscar notas agora"}
         </button>
         {travado && (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
             A SEFAZ permite ~1 busca por hora. A próxima fica liberada às{" "}
             <b>{horaBR(bloqueadoAte!)}</b>. Guardamos onde parou — ao liberar, a
             busca continua de onde estava.
           </p>
         )}
         {resultado && (
-          <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="mt-3 text-sm text-texto-suave">
             {resultado}
           </p>
         )}
-        <p className="mt-3 text-xs text-zinc-400">
+        <p className="mt-3 text-xs text-texto-fraco">
           Dica: a SEFAZ limita consultas (cerca de 1 por hora). O botão trava
           sozinho após cada busca para evitar o “consumo indevido”. A busca
           também roda sozinha 1x por dia, de madrugada.
         </p>
 
-        <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-          <p className="mb-1 text-xs font-medium text-zinc-500">Faltam notas? Reprocessar:</p>
+        <div className="mt-4 border-t border-borda pt-4">
+          <p className="mb-1 text-xs font-medium text-texto-suave">Faltam notas? Reprocessar:</p>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => reprocessar(15)}
@@ -264,12 +264,12 @@ export function SefazPainel({
             <button
               onClick={() => reprocessar()}
               disabled={buscando || !status.temCert || travado}
-              className="text-xs font-medium text-zinc-500 underline hover:text-orange-600 disabled:opacity-60"
+              className="text-xs font-medium text-texto-suave underline hover:text-orange-600 disabled:opacity-60"
             >
               Desde o início (~90 dias)
             </button>
           </div>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="mt-1 text-xs text-texto-fraco">
             O de 15 dias começa do NSU de ~15 dias atrás (mais rápido). Na
             primeira vez pode cair para o completo, até o sistema guardar os NSU.
           </p>

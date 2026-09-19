@@ -96,8 +96,8 @@ export function MapaPedidos({ pinos, origem, boys = [] }: {
 
   return (
     <div>
-      <div ref={divRef} className="h-[70vh] w-full overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800" />
-      <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
+      <div ref={divRef} className="h-[70vh] w-full overflow-hidden rounded-cartao bg-painel-cartao" />
+      <div className="mt-2 flex flex-wrap gap-3 text-xs text-texto-suave">
         {Object.entries({ pendente: "Pendente", aceito: "Aceito", em_preparo: "Em preparo", pronto: "Pronto", saiu: "Saiu" }).map(([k, lbl]) => (
           <span key={k} className="flex items-center gap-1">
             <span className="inline-block h-3 w-3 rounded-full" style={{ background: COR[k] }} /> {lbl}

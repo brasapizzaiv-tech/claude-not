@@ -32,7 +32,7 @@ const diasAtras = (iso: string) => Math.floor((Date.now() - new Date(iso).getTim
 const BADGE: Record<Solic["status"], string> = {
   pendente: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
   comprado: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
-  rejeitado: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+  rejeitado: "bg-zinc-200 text-texto-suave dark:bg-zinc-800 ",
 };
 const ROTULO: Record<Solic["status"], string> = { pendente: "Pendente", comprado: "Comprado", rejeitado: "Rejeitado" };
 const rotulo = (s: Solic) => (s.status === "comprado" && s.tipo === "manutencao" ? "Feito" : ROTULO[s.status]);
@@ -122,18 +122,18 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     { k: "rejeitado", rotulo: "Rejeitadas", n: contagem.rejeitado },
     { k: "todas", rotulo: "Todas" },
   ];
-  const inp = "rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
+  const inp = "rounded-cartao border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
 
   return (
     <div className="p-4 md:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-texto">
             <Icone nome="ferramenta" tamanho={22} className="text-orange-600 dark:text-orange-400" /> Pedidos da equipe
           </h1>
-          <p className="text-sm text-zinc-500">Compras pra repor e manutenções que o pessoal pediu pelo app. Marque comprado/feito ou rejeite.</p>
+          <p className="text-sm text-texto-suave">Compras pra repor e manutenções que o pessoal pediu pelo app. Marque comprado/feito ou rejeite.</p>
         </div>
-        <button onClick={() => setNovo((v) => !v)} className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900">
+        <button onClick={() => setNovo((v) => !v)} className="rounded-cartao bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900">
           {novo ? "Fechar" : "+ Anotar pedido"}
         </button>
       </div>
@@ -145,7 +145,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           <button
             key={a.k}
             onClick={() => { setAba(a.k); setMarcadas(new Set()); }}
-            className={`rounded-full px-3 py-1.5 text-sm font-semibold ${aba === a.k ? "bg-orange-500 text-white" : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200"}`}
+            className={`rounded-full px-3 py-1.5 text-sm font-semibold ${aba === a.k ? "bg-orange-500 text-white" : "bg-superficie-suave text-texto-suave hover:bg-zinc-200  "}`}
           >
             {a.rotulo}{a.n != null ? ` (${a.n})` : ""}
           </button>
@@ -162,29 +162,29 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           <option value="">Todas as pessoas</option>
           {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
         </select>
-        <label className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" checked={soUrgentes} onChange={(e) => setSoUrgentes(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> só urgentes
         </label>
       </div>
 
       {marcadas.size > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm dark:border-orange-900 dark:bg-orange-950/30">
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-cartao border border-orange-200 bg-orange-50 p-3 text-sm dark:border-orange-900 dark:bg-orange-950/30">
           <span className="font-semibold text-zinc-800 dark:text-zinc-100">{marcadas.size} selecionado(s):</span>
-          <button onClick={loteComprado} disabled={proc} className="rounded-lg bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">✓ Comprado / feito</button>
-          <button onClick={loteRejeitar} disabled={proc} className="rounded-lg bg-zinc-700 px-3 py-1.5 font-semibold text-white hover:bg-zinc-800 disabled:opacity-50">✕ Rejeitar</button>
-          <button onClick={() => setMarcadas(new Set())} className="text-zinc-500 underline">limpar</button>
+          <button onClick={loteComprado} disabled={proc} className="rounded-controle bg-texto px-3 py-1.5 font-semibold text-fundo hover:opacity-90 disabled:opacity-50">✓ Comprado / feito</button>
+          <button onClick={loteRejeitar} disabled={proc} className="rounded-controle bg-zinc-700 px-3 py-1.5 font-semibold text-white hover:bg-zinc-800 disabled:opacity-50">✕ Rejeitar</button>
+          <button onClick={() => setMarcadas(new Set())} className="text-texto-suave underline">limpar</button>
         </div>
       )}
       {msg && <p className="mb-3 text-sm text-red-600">{msg}</p>}
 
       {filtradas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-10 text-center text-sm text-texto-suave">
           {aba === "pendente" ? "Nenhum pedido pendente." : "Nada por aqui."}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="overflow-x-auto rounded-cartao border border-borda bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/60">
+            <thead className="bg-superficie-suave text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="w-8 px-3 py-2">
                   {pendentesVisiveis.length > 0 && (
@@ -203,7 +203,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                 <th className="px-3 py-2 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {filtradas.map((s) => {
                 const dias = diasAtras(s.criado_em);
                 return (
@@ -214,27 +214,27 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                       )}
                     </td>
                     <td className="px-3 py-2 align-top">
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-50">
+                      <div className="font-semibold text-texto">
                         {s.urgente && <Icone nome="fogo" tamanho={14} className="mr-1 text-red-600 dark:text-red-400" />}
-                        <Icone nome={s.tipo === "manutencao" ? "ferramenta" : "compras"} tamanho={14} className="mr-1.5 text-zinc-500" />
+                        <Icone nome={s.tipo === "manutencao" ? "ferramenta" : "compras"} tamanho={14} className="mr-1.5 text-texto-suave" />
                         {s.item}
-                        {s.quantidade ? <span className="font-normal text-zinc-500"> · {s.quantidade}</span> : null}
+                        {s.quantidade ? <span className="font-normal text-texto-suave"> · {s.quantidade}</span> : null}
                       </div>
-                      {s.motivo && <div className="text-zinc-600 dark:text-zinc-300">{s.motivo}</div>}
+                      {s.motivo && <div className="text-texto-suave">{s.motivo}</div>}
                       {s.resposta && (
-                        <div className="mt-0.5 flex items-start gap-1.5 text-xs text-zinc-500">
+                        <div className="mt-0.5 flex items-start gap-1.5 text-xs text-texto-suave">
                           <Icone nome="conversa" tamanho={13} className="mt-0.5" /> {s.resposta}
                         </div>
                       )}
                     </td>
-                    <td className="px-3 py-2 align-top text-zinc-700 dark:text-zinc-200">{s.nome}</td>
-                    <td className="px-3 py-2 align-top whitespace-nowrap text-zinc-600 dark:text-zinc-300">
+                    <td className="px-3 py-2 align-top text-texto-suave">{s.nome}</td>
+                    <td className="px-3 py-2 align-top whitespace-nowrap text-texto-suave">
                       {fData(s.criado_em)}
                       {s.status === "pendente" && dias >= 1 && (
-                        <span className={`ml-1 text-xs ${dias >= 7 ? "text-red-600" : "text-zinc-400"}`}>há {dias} d</span>
+                        <span className={`ml-1 text-xs ${dias >= 7 ? "text-red-600" : "text-texto-fraco"}`}>há {dias} d</span>
                       )}
                       {s.respondido_em && s.status !== "pendente" && (
-                        <div className="text-xs text-zinc-400">{rotulo(s).toLowerCase()} {fData(s.respondido_em)}</div>
+                        <div className="text-xs text-texto-fraco">{rotulo(s).toLowerCase()} {fData(s.respondido_em)}</div>
                       )}
                     </td>
                     <td className="px-3 py-2 align-top">
@@ -243,13 +243,13 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                     <td className="px-3 py-2 align-top text-right whitespace-nowrap">
                       {s.status === "pendente" ? (
                         <>
-                          <button onClick={() => comprado(s)} disabled={proc} className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">{s.tipo === "manutencao" ? "✓ Feito" : "✓ Comprado"}</button>
-                          <button onClick={() => rejeitar(s)} disabled={proc} className="ml-1 rounded-lg bg-zinc-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50">✕ Rejeitar</button>
+                          <button onClick={() => comprado(s)} disabled={proc} className="rounded-controle bg-texto px-2.5 py-1 text-xs font-semibold text-fundo hover:opacity-90 disabled:opacity-50">{s.tipo === "manutencao" ? "✓ Feito" : "✓ Comprado"}</button>
+                          <button onClick={() => rejeitar(s)} disabled={proc} className="ml-1 rounded-controle bg-zinc-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50">✕ Rejeitar</button>
                         </>
                       ) : (
                         <>
-                          <button onClick={() => recado(s)} disabled={proc} className="text-xs text-zinc-500 underline">recado</button>
-                          <button onClick={() => reabrir(s)} disabled={proc} className="ml-2 text-xs text-zinc-500 underline">reabrir</button>
+                          <button onClick={() => recado(s)} disabled={proc} className="text-xs text-texto-suave underline">recado</button>
+                          <button onClick={() => reabrir(s)} disabled={proc} className="ml-2 text-xs text-texto-suave underline">reabrir</button>
                         </>
                       )}
                       <button onClick={() => excluir(s)} disabled={proc} className="ml-2 text-xs text-red-500 underline">apagar</button>
@@ -274,7 +274,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
   const [urgente, setUrgente] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [proc, start] = useTransition();
-  const inp = "rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
+  const inp = "rounded-cartao border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
 
   function salvar() {
     setMsg(null);
@@ -287,7 +287,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
   }
 
   return (
-    <div className="mb-4 grid gap-2 rounded-2xl border border-zinc-200 bg-white p-4 md:grid-cols-[1fr_1fr_2fr_1fr] dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="mb-4 grid gap-2 rounded-cartao border border-borda bg-painel-cartao p-4 md:grid-cols-[1fr_1fr_2fr_1fr]">
       <select className={inp} value={tipoNovo} onChange={(e) => setTipoNovo(e.target.value as "compra" | "manutencao")}>
         <option value="compra">Compra</option>
         <option value="manutencao">Manutenção</option>
@@ -300,10 +300,10 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
       <input className={inp} placeholder="Quantidade" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
       <input className={`${inp} md:col-span-3`} placeholder="Pra quê / observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> urgente
         </label>
-        <button onClick={salvar} disabled={proc || item.trim().length < 2} className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+        <button onClick={salvar} disabled={proc || item.trim().length < 2} className="rounded-cartao bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
           {proc ? "Salvando…" : "Salvar"}
         </button>
       </div>

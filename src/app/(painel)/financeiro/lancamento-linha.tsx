@@ -8,7 +8,7 @@ import { editarLancamento, excluirLancamento } from "./actions";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const inputCls =
-  "rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export type LancRow = {
   id: string;
@@ -68,11 +68,11 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
         <td colSpan={5} className="px-4 py-3">
           <div className="flex flex-wrap items-end gap-2">
             <div>
-              <label className="mb-1 block text-[11px] text-zinc-500">Data</label>
+              <label className="mb-1 block text-[11px] text-texto-suave">Data</label>
               <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputCls} />
             </div>
             <div className="min-w-52 flex-1">
-              <label className="mb-1 block text-[11px] text-zinc-500">Categoria</label>
+              <label className="mb-1 block text-[11px] text-texto-suave">Categoria</label>
               <select value={cat} onChange={(e) => setCat(e.target.value)} className={`${inputCls} w-full`}>
                 <option value="">Escolha...</option>
                 {[...porGrupo.entries()].map(([g, cs]) => (
@@ -87,24 +87,24 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] text-zinc-500">Valor</label>
+              <label className="mb-1 block text-[11px] text-texto-suave">Valor</label>
               <input inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} className={`${inputCls} w-24 text-right`} />
             </div>
             <div className="min-w-40 flex-1">
-              <label className="mb-1 block text-[11px] text-zinc-500">Descrição</label>
+              <label className="mb-1 block text-[11px] text-texto-suave">Descrição</label>
               <input value={desc} onChange={(e) => setDesc(e.target.value)} className={`${inputCls} w-full`} />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] text-zinc-500">Vencimento</label>
+              <label className="mb-1 block text-[11px] text-texto-suave">Vencimento</label>
               <input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} className={inputCls} />
             </div>
-            <label className="flex items-center gap-1.5 pb-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+            <label className="flex items-center gap-1.5 pb-1.5 text-xs text-texto-suave">
               <input type="checkbox" checked={pago} onChange={(e) => setPago(e.target.checked)} /> Pago
             </label>
-            <button onClick={salvar} disabled={proc} className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60">
+            <button onClick={salvar} disabled={proc} className="rounded-controle bg-texto px-4 py-1.5 text-sm font-medium text-fundo hover:opacity-90 disabled:opacity-60">
               {proc ? "Salvando..." : "Salvar"}
             </button>
-            <button onClick={() => setEditando(false)} className="px-2 py-1.5 text-sm text-zinc-500 hover:text-zinc-700">
+            <button onClick={() => setEditando(false)} className="px-2 py-1.5 text-sm text-texto-suave hover:text-texto-suave">
               Cancelar
             </button>
           </div>
@@ -114,10 +114,10 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
   }
 
   return (
-    <tr className="bg-white dark:bg-zinc-950">
-      <td className="px-4 py-2 text-zinc-500">{dataBR(l.data)}</td>
-      <td className="px-4 py-2 text-zinc-800 dark:text-zinc-200">{l.categoria_nome ?? "—"}</td>
-      <td className="px-4 py-2 text-zinc-500">
+    <tr className="">
+      <td className="px-4 py-2 text-texto-suave">{dataBR(l.data)}</td>
+      <td className="px-4 py-2 text-texto">{l.categoria_nome ?? "—"}</td>
+      <td className="px-4 py-2 text-texto-suave">
         {l.descricao ?? l.fornecedor_nome ?? ""}
         {l.origem !== "manual" && (
           <span className="ml-2 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] text-orange-700 dark:bg-orange-950 dark:text-orange-300">
@@ -132,7 +132,7 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
       <td className="whitespace-nowrap px-4 py-2 text-right">
         {manual ? (
           <>
-            <button onClick={() => setEditando(true)} className="text-zinc-400 hover:text-orange-600">
+            <button onClick={() => setEditando(true)} className="text-texto-fraco hover:text-orange-600">
               Editar
             </button>
             <button
@@ -145,7 +145,7 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
                 })
               }
               disabled={proc}
-              className="ml-3 text-zinc-400 hover:text-red-600 disabled:opacity-60"
+              className="ml-3 text-texto-fraco hover:text-red-600 disabled:opacity-60"
             >
               Remover
             </button>

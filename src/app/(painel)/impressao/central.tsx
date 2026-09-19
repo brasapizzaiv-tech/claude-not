@@ -50,40 +50,40 @@ export function CentralImpressao({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">🖨️ Central de Impressões</h1>
-      <p className="mb-5 text-sm text-zinc-500">
+      <h1 className="mb-1 text-2xl font-bold text-texto">🖨️ Central de Impressões</h1>
+      <p className="mb-5 text-sm text-texto-suave">
         Aqui ficam <b>todas as impressoras</b> (etiquetas hoje; comandas e cupons no futuro). As impressões saem por um
         <b> PC central</b> com o <b>Agente</b> instalado.
       </p>
 
       {(semImpressora.length > 0 || temPizzaSemImpressora) && (
-        <div className="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm">
+        <div className="mb-4 rounded-cartao border border-amber-500/40 bg-amber-500/5 p-4 text-sm">
           <p className="font-semibold text-amber-700 dark:text-amber-400">⚠️ Pedidos que não saem em nenhuma impressora de cozinha</p>
           {temPizzaSemImpressora && <p className="mt-1">🍕 <b>Pizzas montadas</b>: nenhuma impressora está marcada &quot;Recebe as pizzas montadas&quot;.</p>}
           {semImpressora.length > 0 && (
             <details className="mt-1">
               <summary className="cursor-pointer">{semImpressora.length} itens do cardápio fora de todas as vias (clique pra ver)</summary>
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">{semImpressora.map((x) => x.nome).join(" · ")}</p>
+              <p className="mt-1 text-xs text-texto-suave">{semImpressora.map((x) => x.nome).join(" · ")}</p>
             </details>
           )}
-          <p className="mt-1 text-xs text-zinc-500">Se for de propósito (ex.: bebidas que o garçom pega no bar sem ticket), ignore.</p>
+          <p className="mt-1 text-xs text-texto-suave">Se for de propósito (ex.: bebidas que o garçom pega no bar sem ticket), ignore.</p>
         </div>
       )}
 
       {/* Status do agente / PC responsável */}
-      <div className={`mb-4 rounded-2xl border p-4 ${online ? "border-emerald-500/40 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"}`}>
+      <div className={`mb-4 rounded-cartao border p-4 ${online ? "border-emerald-500/40 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className={`inline-block h-2.5 w-2.5 rounded-full ${online ? "bg-emerald-500" : "bg-amber-500"}`} />
-            <span className="font-bold text-zinc-900 dark:text-zinc-50">
+            <span className="font-bold text-texto">
               {online ? "Agente conectado" : "Agente não conectado"}
             </span>
           </div>
-          <span className="text-sm text-zinc-500">
+          <span className="text-sm text-texto-suave">
             {hostname ? `PC: ${hostname}` : "Nenhum PC vinculado ainda"}
           </span>
         </div>
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-texto-suave">
           {online
             ? `Recebendo as impressões normalmente.${vistoTxt ? ` Último sinal: ${vistoTxt}.` : ""}`
             : "Instale o Agente no PC responsável (ou verifique se ele está aberto). Enquanto isso, nada será impresso."}
@@ -92,12 +92,12 @@ export function CentralImpressao({
           {verConfig ? "esconder" : "ver"} dados do agente (endereço/token)
         </button>
         {verConfig && (
-          <div className="mt-2 space-y-2 rounded-lg bg-zinc-100 p-3 text-sm dark:bg-zinc-800">
-            <div className="flex flex-wrap items-center gap-2"><span className="w-20 shrink-0 text-zinc-400">Endereço:</span><code className="rounded bg-white px-2 py-0.5 dark:bg-zinc-900">{baseUrl}</code></div>
+          <div className="mt-2 space-y-2 rounded-controle bg-superficie-suave p-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2"><span className="w-20 shrink-0 text-texto-fraco">Endereço:</span><code className="rounded bg-painel-cartao px-2 py-0.5">{baseUrl}</code></div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="w-20 shrink-0 text-zinc-400">Token:</span>
-              <code className="min-w-0 flex-1 truncate rounded bg-white px-2 py-0.5 dark:bg-zinc-900">{token}</code>
-              <button onClick={() => { navigator.clipboard?.writeText(token); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }} className="rounded border border-zinc-300 px-2 py-0.5 text-xs dark:border-zinc-700">{copiado ? "Copiado!" : "Copiar"}</button>
+              <span className="w-20 shrink-0 text-texto-fraco">Token:</span>
+              <code className="min-w-0 flex-1 truncate rounded bg-painel-cartao px-2 py-0.5">{token}</code>
+              <button onClick={() => { navigator.clipboard?.writeText(token); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }} className="rounded border border-borda-forte px-2 py-0.5 text-xs">{copiado ? "Copiado!" : "Copiar"}</button>
             </div>
           </div>
         )}
@@ -105,11 +105,11 @@ export function CentralImpressao({
 
       {/* Impressoras detectadas ainda não cadastradas */}
       {online && detectadasNovas.length > 0 && (
-        <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/5 p-3">
-          <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">Impressoras detectadas no PC (ainda não usadas):</p>
+        <div className="mb-4 rounded-cartao border border-blue-500/30 bg-blue-500/5 p-3">
+          <p className="mb-2 text-sm font-medium text-texto-suave">Impressoras detectadas no PC (ainda não usadas):</p>
           <div className="flex flex-wrap gap-2">
             {detectadasNovas.map((p) => (
-              <button key={p} disabled={proc} onClick={() => run(() => criarImpressoraDetectada(p))} className="rounded-lg border border-blue-400 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-500/10">
+              <button key={p} disabled={proc} onClick={() => run(() => criarImpressoraDetectada(p))} className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-500/10">
                 + {p}
               </button>
             ))}
@@ -118,51 +118,51 @@ export function CentralImpressao({
       )}
 
       {/* Impressoras cadastradas */}
-      <h2 className="mb-2 font-bold text-zinc-900 dark:text-zinc-50">Impressoras</h2>
+      <h2 className="mb-2 font-bold text-texto">Impressoras</h2>
       <div className="space-y-2">
-        {impressoras.length === 0 && <p className="text-sm text-zinc-500">Nenhuma impressora ainda. Adicione uma detectada acima, ou manualmente abaixo.</p>}
+        {impressoras.length === 0 && <p className="text-sm text-texto-suave">Nenhuma impressora ainda. Adicione uma detectada acima, ou manualmente abaixo.</p>}
         {impressoras.map((im) => (
-          <div key={im.id} className={`rounded-xl border p-3 dark:border-zinc-800 ${im.ativo ? "border-zinc-200" : "border-zinc-200 opacity-60"}`}>
+          <div key={im.id} className={`rounded-cartao border p-3 dark:border-borda ${im.ativo ? "border-borda" : "border-borda opacity-60"}`}>
             {editId === im.id ? (
               <div className="flex flex-wrap items-center gap-2">
-                <input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
-                <button disabled={proc} onClick={() => { run(() => renomearImpressora(im.id, editNome)); setEditId(null); }} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-medium text-white">Salvar</button>
-                <button onClick={() => setEditId(null)} className="rounded-lg px-3 py-2 text-sm text-zinc-500">Cancelar</button>
+                <input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                <button disabled={proc} onClick={() => { run(() => renomearImpressora(im.id, editNome)); setEditId(null); }} className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-medium text-white">Salvar</button>
+                <button onClick={() => setEditId(null)} className="rounded-controle px-3 py-2 text-sm text-texto-suave">Cancelar</button>
               </div>
             ) : (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="font-semibold text-zinc-900 dark:text-zinc-100">🖨️ {im.nome}{im.ativo ? "" : " (inativa)"}</div>
+                  <div className="font-semibold text-texto">🖨️ {im.nome}{im.ativo ? "" : " (inativa)"}</div>
                   <div className="flex items-center gap-2">
                     <button
                       disabled={proc}
                       onClick={() => { run(() => imprimirTeste(im.id)); setMsg(`Teste enviado para "${im.nome}". Deve sair na impressora.`); setTimeout(() => setMsg(null), 4000); }}
-                      className="rounded-lg border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      className="rounded-controle border border-borda-forte px-2 py-1 text-xs font-medium text-texto-suave hover:bg-superficie-suave"
                     >
                       🖨️ testar
                     </button>
                     <button onClick={() => { setEditId(im.id); setEditNome(im.nome); }} className="text-sm text-orange-600 hover:underline">renomear</button>
-                    <button onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-zinc-400 hover:text-zinc-600">{im.ativo ? "desativar" : "reativar"}</button>
+                    <button onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-texto-fraco hover:text-texto-suave">{im.ativo ? "desativar" : "reativar"}</button>
                   </div>
                 </div>
                 <WinField im={im} printersPc={printersPc} proc={proc} run={run} />
-                <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                <label className="mt-2 flex items-center gap-2 text-sm text-texto-suave">
                   <input type="checkbox" checked={im.recebe_comandas} disabled={proc} onChange={(e) => run(() => definirRecebeComandas(im.id, e.target.checked))} />
                   🍳 Recebe comandas (cozinha/bar)
                 </label>
                 {im.recebe_comandas && (
-                  <label className="mt-1 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  <label className="mt-1 flex items-center gap-2 text-sm text-texto-suave">
                     <input type="checkbox" checked={!!im.recebe_pizzas} disabled={proc} onChange={(e) => run(() => definirRecebePizzas(im.id, e.target.checked))} />
                     🍕 Recebe as pizzas montadas (meio a meio, borda) — elas não são item do cardápio, então não entram na lista de produtos abaixo
                   </label>
                 )}
                 {im.recebe_comandas && <ViaProdutos im={im} produtos={produtos} proc={proc} run={run} />}
                 {im.recebe_comandas && <ViaFormato im={im} proc={proc} run={run} />}
-                <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                <label className="mt-2 flex items-center gap-2 text-sm text-texto-suave">
                   <input type="checkbox" checked={!!im.recebe_marmitas} disabled={proc} onChange={(e) => run(() => definirRecebeMarmitas(im.id, e.target.checked))} />
                   🍱 Etiquetas das marmitas (convênio Kern) — usa o Formato da etiqueta abaixo
                 </label>
-                <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                <label className="mt-2 flex items-center gap-2 text-sm text-texto-suave">
                   <input type="checkbox" checked={!!im.recebe_nfce} disabled={proc} onChange={(e) => run(() => definirRecebeNfce(im.id, e.target.checked))} />
                   🧾 Imprime o cupom da NFC-e (DANFE, 80 mm) — o caixa pergunta &quot;Imprimir nota?&quot; e sai aqui
                 </label>
@@ -173,15 +173,15 @@ export function CentralImpressao({
         ))}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
-        <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
-        <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+      <div className="mt-5 flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao p-3">
+        <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+        <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           + Adicionar impressora
         </button>
       </div>
 
       {msg && (
-        <div className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-md rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg">
+        <div className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-md rounded-cartao bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white">
           {msg}
         </div>
       )}
@@ -207,19 +207,19 @@ function EtiquetaFormato({ im, proc, run }: {
     setC(novo);
     run(async () => { await definirEtiquetaConfig(im.id, novo); setSalvo(true); setTimeout(() => setSalvo(false), 2000); });
   }
-  const campo = "w-16 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700";
+  const campo = "w-16 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm ";
 
   if (!aberto) {
     return (
-      <button onClick={() => setAberto(true)} className="mt-2 text-xs font-medium text-zinc-500 hover:text-orange-600">
+      <button onClick={() => setAberto(true)} className="mt-2 text-xs font-medium text-texto-suave hover:text-orange-600">
         🏷️ Formato da etiqueta {im.etiqueta_config ? `(${c.largura}×${c.altura}mm)` : "(padrão 55×55mm)"} ▸
       </button>
     );
   }
   return (
-    <div className="mt-2 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/40">
-      <button onClick={() => setAberto(false)} className="mb-1.5 text-xs text-zinc-500">🏷️ Formato da etiqueta ▾</button>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+    <div className="mt-2 rounded-controle bg-superficie-suave p-2">
+      <button onClick={() => setAberto(false)} className="mb-1.5 text-xs text-texto-suave">🏷️ Formato da etiqueta ▾</button>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-texto-suave">
         <label className="flex items-center gap-1.5">Largura
           <input defaultValue={c.largura} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, largura: num(e.target.value, 25, 120, 55) })} className={campo} /> mm
         </label>
@@ -231,20 +231,20 @@ function EtiquetaFormato({ im, proc, run }: {
         </label>
         <label className="flex items-center gap-1.5">Letra:
           {[["Pequena", 85], ["Normal", 100], ["Grande", 115]].map(([lbl, v]) => (
-            <button key={v} disabled={proc} onClick={() => salvar({ ...c, escala: v as number })} className={`rounded-lg px-2.5 py-1 text-xs font-medium ${c.escala === v ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>{lbl}</button>
+            <button key={v} disabled={proc} onClick={() => salvar({ ...c, escala: v as number })} className={`rounded-controle px-2.5 py-1 text-xs font-medium ${c.escala === v ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>{lbl}</button>
           ))}
         </label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.qr} disabled={proc} onChange={(e) => salvar({ ...c, qr: e.target.checked })} /> QR code</label>
         {salvo && <span className="text-xs font-semibold text-emerald-600">✓ salvo</span>}
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-texto-suave">
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={!!c.barraValidade} disabled={proc} onChange={(e) => salvar({ ...c, barraValidade: e.target.checked })} /> VALIDADE em barra preta</label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={!!c.categoria} disabled={proc} onChange={(e) => salvar({ ...c, categoria: e.target.checked })} /> Mostrar categoria</label>
         <label className="flex items-center gap-1.5">Rodapé (empresa/CNPJ):
-          <input defaultValue={c.empresa ?? ""} placeholder="Brasa Pizzaria · 47.261.660/0001-90" disabled={proc} onBlur={(e) => salvar({ ...c, empresa: e.target.value.trim() || null })} className="w-72 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
+          <input defaultValue={c.empresa ?? ""} placeholder="Brasa Pizzaria · 47.261.660/0001-90" disabled={proc} onBlur={(e) => salvar({ ...c, empresa: e.target.value.trim() || null })} className="w-72 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
         </label>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-texto-suave">
         <span className="font-medium">Calibração:</span>
         <label className="flex items-center gap-1.5">↕ vertical
           <input defaultValue={c.deslocY ?? 0} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, deslocY: Math.max(-15, Math.min(15, Number(String(e.target.value).replace(",", ".")) || 0)) })} className={campo} /> mm
@@ -255,12 +255,12 @@ function EtiquetaFormato({ im, proc, run }: {
         <button
           disabled={proc}
           onClick={() => { setSalvo(false); run(async () => { await imprimirTesteEtiqueta(im.id); setSalvo(true); setTimeout(() => setSalvo(false), 2500); }); }}
-          className="rounded-lg border border-orange-400 px-2.5 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+          className="rounded-controle border border-orange-400 px-2.5 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30"
         >
           🏷️ Imprimir etiqueta de teste
         </button>
       </div>
-      <p className="mt-1 text-[11px] text-zinc-400">
+      <p className="mt-1 text-[11px] text-texto-fraco">
         Vale pras etiquetas impressas nesta impressora (todos os tipos). A Elgin L42 usa 55×55mm. A pré-visualização nos formulários já segue essas opções.
         <b> Calibração:</b> a etiqueta de teste sai com uma moldura na borda — se a moldura sair pra baixo, use vertical <b>negativo</b> (ex.: −5 sobe 5 mm); pra direita, horizontal negativo.
       </p>
@@ -274,16 +274,16 @@ function ViaFormato({ im, proc, run }: {
   const def: ComandaConfig = { largura: 80, precos: false, garcom: true, hora: true, agrupar: false, qtdCat: false, destObs: false };
   const [c, setC] = useState<ComandaConfig>({ ...def, ...(im.comanda_config ?? {}) });
   function salvar(novo: ComandaConfig) { setC(novo); run(() => definirComandaConfig(im.id, novo)); }
-  const wbtn = (mm: number) => `rounded-lg px-3 py-1 text-sm font-medium ${c.largura === mm ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`;
+  const wbtn = (mm: number) => `rounded-controle px-3 py-1 text-sm font-medium ${c.largura === mm ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`;
   return (
-    <div className="mt-2 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/40">
-      <div className="mb-1.5 text-xs text-zinc-500">Formato da impressão:</div>
+    <div className="mt-2 rounded-controle bg-superficie-suave p-2">
+      <div className="mb-1.5 text-xs text-texto-suave">Formato da impressão:</div>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-zinc-500">Largura:</span>
+        <span className="text-xs text-texto-suave">Largura:</span>
         <button disabled={proc} onClick={() => salvar({ ...c, largura: 58 })} className={wbtn(58)}>58mm</button>
         <button disabled={proc} onClick={() => salvar({ ...c, largura: 80 })} className={wbtn(80)}>80mm</button>
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-texto-suave">
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.precos} disabled={proc} onChange={(e) => salvar({ ...c, precos: e.target.checked })} /> Mostrar preços</label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.garcom} disabled={proc} onChange={(e) => salvar({ ...c, garcom: e.target.checked })} /> Mostrar garçom</label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.hora} disabled={proc} onChange={(e) => salvar({ ...c, hora: e.target.checked })} /> Mostrar hora</label>
@@ -323,12 +323,12 @@ function ViaProdutos({ im, produtos, proc, run }: {
   const toggleAberta = (cat: string) => setAbertas((a) => { const n = new Set(a); if (n.has(cat)) n.delete(cat); else n.add(cat); return n; });
 
   return (
-    <div className="mt-2 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/40">
+    <div className="mt-2 rounded-controle bg-superficie-suave p-2">
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-xs text-zinc-500">Imprime {sel.size === allIds.length ? "todos os produtos" : `${sel.size} de ${allIds.length} produtos`}:</span>
+        <span className="text-xs text-texto-suave">Imprime {sel.size === allIds.length ? "todos os produtos" : `${sel.size} de ${allIds.length} produtos`}:</span>
         <span className="flex gap-2 text-xs">
           <button disabled={proc} onClick={() => salvar(new Set(allIds))} className="text-blue-500 hover:underline">todos</button>
-          <button disabled={proc} onClick={() => salvar(new Set())} className="text-zinc-400 hover:underline">nenhum</button>
+          <button disabled={proc} onClick={() => salvar(new Set())} className="text-texto-fraco hover:underline">nenhum</button>
         </span>
       </div>
       <div className="space-y-1">
@@ -338,9 +338,9 @@ function ViaProdutos({ im, produtos, proc, run }: {
           const alguns = marcados > 0 && !todos;
           const aberta = abertas.has(cat);
           return (
-            <div key={cat} className="rounded-md border border-zinc-200 dark:border-zinc-700">
+            <div key={cat} className="rounded-controle border border-borda dark:border-borda-forte">
               <div className="flex items-center gap-2 px-2 py-1.5">
-                <button onClick={() => toggleAberta(cat)} className="text-zinc-400">{aberta ? "▾" : "▸"}</button>
+                <button onClick={() => toggleAberta(cat)} className="text-texto-fraco">{aberta ? "▾" : "▸"}</button>
                 <input
                   type="checkbox"
                   ref={(el) => { if (el) el.indeterminate = alguns; }}
@@ -349,12 +349,12 @@ function ViaProdutos({ im, produtos, proc, run }: {
                   onChange={() => toggleCat(prods, !todos)}
                 />
                 <span className="flex-1 text-sm font-medium">{cat}</span>
-                <span className="text-xs text-zinc-400">{marcados}/{prods.length}</span>
+                <span className="text-xs text-texto-fraco">{marcados}/{prods.length}</span>
               </div>
               {aberta && (
-                <div className="space-y-0.5 border-t border-zinc-200 px-3 py-1.5 dark:border-zinc-700">
+                <div className="space-y-0.5 border-t border-borda px-3 py-1.5 dark:border-borda-forte">
                   {prods.map((p) => (
-                    <label key={p.id} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                    <label key={p.id} className="flex items-center gap-2 text-sm text-texto-suave">
                       <input type="checkbox" checked={sel.has(p.id)} disabled={proc} onChange={() => toggleProd(p.id)} />
                       {p.nome}
                     </label>
@@ -380,12 +380,12 @@ function WinField({ im, printersPc, proc, run }: {
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      <span className="text-xs text-zinc-400">Impressora no PC:</span>
+      <span className="text-xs text-texto-fraco">Impressora no PC:</span>
       {temLista ? (
         <select
           value={naLista || val === "" ? val : "__outro__"}
           onChange={(e) => setVal(e.target.value === "__outro__" ? " " : e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700"
+          className="min-w-0 flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm"
         >
           <option value="">(escolher)</option>
           {printersPc.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -397,11 +397,11 @@ function WinField({ im, printersPc, proc, run }: {
           value={val}
           onChange={(e) => setVal(e.target.value)}
           placeholder="ex.: ELGIN L42PRO FULL"
-          className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700"
+          className="min-w-0 flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm"
         />
       )}
       {mudou && (
-        <button disabled={proc} onClick={() => run(() => definirImpressoraWindows(im.id, val))} className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white">Salvar</button>
+        <button disabled={proc} onClick={() => run(() => definirImpressoraWindows(im.id, val))} className="rounded-controle bg-texto px-3 py-1 text-xs font-medium text-fundo">Salvar</button>
       )}
     </div>
   );

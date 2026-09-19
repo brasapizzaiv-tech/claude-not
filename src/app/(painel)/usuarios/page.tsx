@@ -50,10 +50,10 @@ export default async function UsuariosPage() {
   return (
     <div className="mx-auto max-w-2xl p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
           Usuários
         </h1>
-        <p className="mt-1 text-zinc-500">
+        <p className="mt-1 text-texto-suave">
           Crie logins para os funcionários e escolha o que cada um pode acessar.
         </p>
       </div>

@@ -24,7 +24,7 @@ export type Cliente = {
 };
 
 const campo =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 function F({
   nome,
@@ -39,7 +39,7 @@ function F({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-zinc-500">{label}</label>
+      <label className="mb-1 block text-xs text-texto-suave">{label}</label>
       <input name={nome} defaultValue={def ?? ""} placeholder={ph} className={campo} />
     </div>
   );
@@ -73,18 +73,18 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-orange-600">← Início</Link>
+      <Link href="/dashboard" className="text-sm text-texto-suave hover:text-orange-600">← Início</Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Clientes</h1>
-          <p className="mt-1 text-sm text-zinc-500">Para emitir NF-e com o cliente (CNPJ/CPF).</p>
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Clientes</h1>
+          <p className="mt-1 text-sm text-texto-suave">Para emitir NF-e com o cliente (CNPJ/CPF).</p>
         </div>
         <button
           onClick={() => {
             setEditando(null);
             setAberto(true);
           }}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
         >
           + Novo cliente
         </button>
@@ -97,14 +97,14 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
         className={`${campo} mt-4 max-w-md`}
       />
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="mt-4 overflow-hidden rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {filtrados.map((c) => (
-              <tr key={c.id} className="bg-white dark:bg-zinc-950">
+              <tr key={c.id} className="">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-zinc-900 dark:text-zinc-100">{c.nome}</div>
-                  <div className="text-xs text-zinc-400">
+                  <div className="font-medium text-texto">{c.nome}</div>
+                  <div className="text-xs text-texto-fraco">
                     {[c.cpf_cnpj, c.municipio, c.uf].filter(Boolean).join(" · ")}
                   </div>
                 </td>
@@ -120,14 +120,14 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                   </button>
                   <form action={excluirCliente} className="inline">
                     <input type="hidden" name="id" value={c.id} />
-                    <button className="text-zinc-400 hover:text-red-600">Remover</button>
+                    <button className="text-texto-fraco hover:text-red-600">Remover</button>
                   </form>
                 </td>
               </tr>
             ))}
             {filtrados.length === 0 && (
               <tr>
-                <td className="px-4 py-8 text-center text-zinc-400">Nenhum cliente.</td>
+                <td className="px-4 py-8 text-center text-texto-fraco">Nenhum cliente.</td>
               </tr>
             )}
           </tbody>
@@ -138,23 +138,23 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <form
             action={enviar}
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 dark:bg-zinc-950"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-cartao bg-painel-cartao p-5"
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              <h2 className="text-lg font-bold text-texto">
                 {editando ? "Editar cliente" : "Novo cliente"}
               </h2>
-              <button type="button" onClick={() => setAberto(false)} className="text-zinc-400 hover:text-zinc-700">✕</button>
+              <button type="button" onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">✕</button>
             </div>
             {editando && <input type="hidden" name="id" value={editando.id} />}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-zinc-500">Nome / razão social *</label>
+                <label className="mb-1 block text-xs text-texto-suave">Nome / razão social *</label>
                 <input name="nome" defaultValue={editando?.nome ?? ""} required className={campo} />
               </div>
               <F nome="cpf_cnpj" label="CNPJ / CPF" def={editando?.cpf_cnpj} />
               <label className="block">
-                <span className="mb-1 block text-xs text-zinc-500">Limite de crédito (fiado)</span>
+                <span className="mb-1 block text-xs text-texto-suave">Limite de crédito (fiado)</span>
                 <input
                   name="limite_credito"
                   defaultValue={editando?.limite_credito != null ? String(editando.limite_credito).replace(".", ",") : ""}
@@ -170,7 +170,7 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <F nome="cep" label="CEP" def={editando?.cep} />
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-zinc-500">Logradouro</label>
+                <label className="mb-1 block text-xs text-texto-suave">Logradouro</label>
                 <input name="logradouro" defaultValue={editando?.logradouro ?? ""} className={campo} />
               </div>
               <F nome="numero" label="Número" def={editando?.numero} />
@@ -181,10 +181,10 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
               <F nome="cod_municipio" label="Cód. IBGE" def={editando?.cod_municipio} />
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setAberto(false)} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">
+              <button type="button" onClick={() => setAberto(false)} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">
                 Cancelar
               </button>
-              <button disabled={salvando} className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+              <button disabled={salvando} className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
                 {salvando ? "Salvando..." : "Salvar"}
               </button>
             </div>

@@ -38,16 +38,16 @@ export default async function CmvPage({
   const cabecalho = (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
           CMV Real / Consumo
         </h1>
-        <p className="mt-1 text-zinc-500">
+        <p className="mt-1 text-texto-suave">
           Consumo da semana = Estoque inicial + Compras − Estoque final.
         </p>
       </div>
       <Link
         href="/financeiro"
-        className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+        className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
       >
         Financeiro
       </Link>
@@ -58,7 +58,7 @@ export default async function CmvPage({
     return (
       <div className="mx-auto max-w-7xl p-6 sm:p-8">
         {cabecalho}
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           É preciso ter pelo menos <b>duas contagens finalizadas</b> (uma vira o
           estoque inicial, a outra o final). Finalize as contagens em Compras →
           Contagem de estoque.
@@ -104,7 +104,7 @@ export default async function CmvPage({
     return (
       <div className="mx-auto max-w-7xl p-6 sm:p-8">
         {cabecalho}
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           É preciso ter pelo menos <b>duas viradas de contagem</b> (uma vira o
           estoque inicial, a outra o final).
         </div>
@@ -280,44 +280,44 @@ export default async function CmvPage({
       {cabecalho}
 
       <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-        <Link href={atalhoAnterior} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700">← semana anterior</Link>
-        <span className={`rounded-lg px-3 py-1.5 font-semibold text-white ${emAndamento ? "bg-amber-500" : "bg-orange-500"}`}>
+        <Link href={atalhoAnterior} className="rounded-controle border border-borda-forte px-3 py-1.5">← semana anterior</Link>
+        <span className={`rounded-controle px-3 py-1.5 font-semibold text-white ${emAndamento ? "bg-amber-500" : "bg-orange-500"}`}>
           seg {dataBR(dEI)} → dom {dataBR(dEF)}{emAndamento ? " · em andamento" : " · fechada"}
         </span>
         {atalhoProxima ? (
-          <Link href={atalhoProxima} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700">próxima →</Link>
+          <Link href={atalhoProxima} className="rounded-controle border border-borda-forte px-3 py-1.5">próxima →</Link>
         ) : (
-          <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-zinc-300 dark:border-zinc-800">próxima →</span>
+          <span className="rounded-controle border border-borda px-3 py-1.5 text-zinc-300">próxima →</span>
         )}
         {atalhoAtual && (
-          <Link href={atalhoAtual} className="rounded-lg border border-amber-500 px-3 py-1.5 text-amber-700 dark:text-amber-300">Semana atual</Link>
+          <Link href={atalhoAtual} className="rounded-controle border border-amber-500 px-3 py-1.5 text-amber-700 dark:text-amber-300">Semana atual</Link>
         )}
       </div>
 
       <form className="mb-2 flex flex-wrap items-end gap-2">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Semana de (qualquer dia — vai pra segunda)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Semana de (qualquer dia — vai pra segunda)</label>
           <input
             type="date"
             name="di"
             defaultValue={di}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Meta CMV (%)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Meta CMV (%)</label>
           <input
             name="meta"
             defaultValue={String(meta * 100)}
             inputMode="decimal"
-            className="w-20 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="w-20 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
           />
         </div>
-        <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+        <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
           Ver
         </button>
       </form>
-      <div className="mb-5 space-y-0.5 text-xs text-zinc-500">
+      <div className="mb-5 space-y-0.5 text-xs text-texto-suave">
         <p>
           Período: <b>{dataBR(dEI)} → {dataBR(dEF)}</b>
         </p>

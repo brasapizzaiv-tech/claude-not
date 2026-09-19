@@ -24,8 +24,8 @@ type SetorMini = { id: string; nome: string; cor: string | null };
 
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 const quando = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-const inputCls = "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
-const btnSec = "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900";
+const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+const btnSec = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";
 
 // Prazos rápidos + data escolhida.
 const PRAZOS = [
@@ -69,14 +69,14 @@ export function RevisaoClient({
   }
   const prazoEscolhido = () => (prazoData ? prazoData : addDiasIso(hoje, prazoDias));
 
-  const card = "rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800";
+  const card = "rounded-cartao border border-borda p-4 ";
 
   return (
     <div>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="buscar" tamanho={20} /> Revisar checklists</h1>
-          <p className="mt-1 text-zinc-500">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-texto"><Icone nome="buscar" tamanho={20} /> Revisar checklists</h1>
+          <p className="mt-1 text-texto-suave">
             {dia === addDiasIso(hoje, -1) ? "Ontem" : dia === hoje ? "Hoje" : ""} {dataCurta(dia)} · veja o que ficou e aponte as correções.
           </p>
         </div>
@@ -86,32 +86,32 @@ export function RevisaoClient({
         </div>
       </div>
 
-      {msg && <p className="mb-3 rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{msg}</p>}
+      {msg && <p className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-4">
-        <div className={card}><p className="text-xs text-zinc-500">Listas do dia</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resumo.listas}</p></div>
-        <div className={card}><p className="text-xs text-zinc-500">Concluídas</p><p className="text-2xl font-bold text-emerald-600">{resumo.concluidas}</p></div>
-        <div className={card}><p className="text-xs text-zinc-500">Não iniciadas</p><p className="text-2xl font-bold text-red-600">{resumo.naoIniciadas}</p></div>
-        <div className={card}><p className="text-xs text-zinc-500">Itens pendentes</p><p className="text-2xl font-bold text-amber-600">{resumo.itensPendentes}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Listas do dia</p><p className="text-2xl font-bold text-texto">{resumo.listas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Concluídas</p><p className="text-2xl font-bold text-emerald-600">{resumo.concluidas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Não iniciadas</p><p className="text-2xl font-bold text-red-600">{resumo.naoIniciadas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Itens pendentes</p><p className="text-2xl font-bold text-amber-600">{resumo.itensPendentes}</p></div>
       </div>
 
       {/* Listas do dia */}
       <div className="space-y-2">
         {listas.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-400 dark:border-zinc-700">Nenhuma lista valia neste dia.</p>
+          <p className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-fraco">Nenhuma lista valia neste dia.</p>
         )}
         {listas.map((l) => {
           const abertaAgora = aberta === l.modelo.id;
           return (
-            <div key={l.modelo.id} className={`rounded-2xl border p-4 ${l.situacao.concluida ? "border-zinc-200 dark:border-zinc-800" : "border-amber-300 dark:border-amber-900"}`}>
+            <div key={l.modelo.id} className={`rounded-cartao border p-4 ${l.situacao.concluida ? "border-borda" : "border-amber-300 dark:border-amber-900"}`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="font-semibold text-texto">
                     {l.modelo.nome}
                     <span className="ml-2 text-xs font-normal" style={{ color: l.cor ?? undefined }}>{l.setor}</span>
-                    <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{ROTULO_MOMENTO[l.modelo.momento]}</span>
+                    <span className="ml-2 rounded-full bg-superficie-suave px-2 py-0.5 text-[11px] font-medium text-texto-suave">{ROTULO_MOMENTO[l.modelo.momento]}</span>
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-500">
+                  <p className="mt-0.5 text-xs text-texto-suave">
                     {l.execucao
                       ? <>{l.execucao.iniciado_nome ?? "?"} começou {hora(l.execucao.iniciado_em)}
                           {l.execucao.concluido_em ? ` · concluída ${hora(l.execucao.concluido_em)} por ${l.execucao.concluido_nome ?? "?"}` : " · não concluída"}</>
@@ -121,13 +121,13 @@ export function RevisaoClient({
                 </div>
                 <div className="flex gap-1.5">
                   <button onClick={() => setAberta(abertaAgora ? null : l.modelo.id)} className={btnSec}>{abertaAgora ? "fechar" : "ver itens"}</button>
-                  <button onClick={() => setApontando({ lista: l, item: null })} className="rounded-lg border border-amber-500 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">
+                  <button onClick={() => setApontando({ lista: l, item: null })} className="rounded-controle border border-amber-500 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">
                     Apontar correção
                   </button>
                 </div>
               </div>
               {abertaAgora && (
-                <div className="mt-3 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+                <div className="mt-3 border-t border-borda pt-2">
                   <ChecklistItensVista
                     itens={l.itens}
                     respostas={l.respostas}
@@ -135,7 +135,7 @@ export function RevisaoClient({
                       <button
                         key={item.id}
                         onClick={() => setApontando({ lista: l, item })}
-                        className="shrink-0 rounded-lg border border-amber-400 px-2 py-1 text-[11px] font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-300"
+                        className="shrink-0 rounded-controle border border-amber-400 px-2 py-1 text-[11px] font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-300"
                       >
                         Apontar
                       </button>
@@ -157,26 +157,26 @@ export function RevisaoClient({
 
       {/* Apontamentos do dia ainda não publicados */}
       {naoPublicados.length > 0 && (
-        <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+        <div className="mt-5 rounded-cartao border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{naoPublicados.length} apontamento(s) deste dia ainda fora da TV</p>
           <ul className="mt-2 space-y-1 text-sm">
             {naoPublicados.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold uppercase dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
+                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
                 <span className="flex-1 text-zinc-800 dark:text-zinc-100">{a.texto}</span>
-                <button onClick={() => agir(() => excluirApontamentoPainel(a.id))} disabled={proc} className="text-xs text-zinc-400 hover:text-red-600">apagar</button>
+                <button onClick={() => agir(() => excluirApontamentoPainel(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">apagar</button>
               </li>
             ))}
           </ul>
           <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-amber-200 pt-3 dark:border-amber-900">
             <div>
-              <label className="mb-1 block text-xs text-zinc-500">Fica na TV por</label>
+              <label className="mb-1 block text-xs text-texto-suave">Fica na TV por</label>
               <div className="flex flex-wrap gap-1.5">
                 {PRAZOS.map((p) => (
                   <button
                     key={p.rotulo}
                     onClick={() => { setPrazoDias(p.dias); setPrazoData(""); }}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium ${!prazoData && prazoDias === p.dias ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${!prazoData && prazoDias === p.dias ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`}
                   >
                     {p.rotulo}
                   </button>
@@ -188,7 +188,7 @@ export function RevisaoClient({
             <button
               onClick={() => agir(() => publicarNaTv(naoPublicados.map((a) => a.id), prazoEscolhido()), `Publicado na TV até ${dataCurta(prazoEscolhido())}.`)}
               disabled={proc}
-              className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-50"
+              className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-50"
             >
               <Icone nome="tv" tamanho={15} className="mr-1.5" /> Publicar na TV ({naoPublicados.length}) até {dataCurta(prazoEscolhido())}
             </button>
@@ -197,31 +197,31 @@ export function RevisaoClient({
       )}
 
       {/* O que está na TV agora */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mt-6 rounded-cartao border border-borda p-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"><span className="inline-flex items-center gap-1.5"><Icone nome="tv" tamanho={14} /> Na TV agora ({naTv.length})</span></p>
-          <a href="/checklists/apontamentos" className="text-xs text-zinc-500 underline">histórico de apontamentos</a>
+          <a href="/checklists/apontamentos" className="text-xs text-texto-suave underline">histórico de apontamentos</a>
         </div>
         {naTv.length === 0 ? (
-          <p className="text-sm text-zinc-400">Nenhum apontamento na TV. Ela segue mostrando só o cardápio.</p>
+          <p className="text-sm text-texto-fraco">Nenhum apontamento na TV. Ela segue mostrando só o cardápio.</p>
         ) : (
           <ul className="divide-y divide-zinc-100 text-sm dark:divide-zinc-800">
             {naTv.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-2 py-2">
-                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold uppercase dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
+                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
                 <span className="flex-1 text-zinc-800 dark:text-zinc-100">
                   {a.texto}
-                  {a.mostrar_nome && a.pessoa_nome && <span className="ml-1 text-xs text-zinc-500">({a.pessoa_nome})</span>}
+                  {a.mostrar_nome && a.pessoa_nome && <span className="ml-1 text-xs text-texto-suave">({a.pessoa_nome})</span>}
                 </span>
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs text-texto-fraco">
                   de {dataCurta(a.data_ref)} · {a.ate ? `até ${dataCurta(a.ate)}` : "sem prazo"}
                   {a.publicado_por ? ` · ${a.publicado_por}` : ""}
                   {a.publicado_em ? ` ${quando(a.publicado_em)}` : ""}
                 </span>
-                <button onClick={() => agir(() => resolverApontamentoPainel(a.id), "Marcado como resolvido — saiu da TV.")} disabled={proc} className="rounded-lg border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                <button onClick={() => agir(() => resolverApontamentoPainel(a.id), "Marcado como resolvido — saiu da TV.")} disabled={proc} className="rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
                   ✓ Resolvido
                 </button>
-                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id), "Tirado da TV.")} disabled={proc} className="text-xs text-zinc-400 hover:text-red-600">tirar da TV</button>
+                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id), "Tirado da TV.")} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">tirar da TV</button>
               </li>
             ))}
           </ul>
@@ -266,12 +266,12 @@ function ApontarModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-950">
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Apontar correção</h2>
-        <p className="mt-0.5 text-sm text-zinc-500">
-          {item ? <>Item: <b className="text-zinc-700 dark:text-zinc-200">{item.texto}</b> · {lista.modelo.nome}</> : "Apontamento do dia (não ligado a um item)"}
+      <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
+        <h2 className="text-lg font-bold text-texto">Apontar correção</h2>
+        <p className="mt-0.5 text-sm text-texto-suave">
+          {item ? <>Item: <b className="text-texto-suave">{item.texto}</b> · {lista.modelo.nome}</> : "Apontamento do dia (não ligado a um item)"}
         </p>
-        <label className="mt-4 mb-1 block text-xs text-zinc-500">O que precisa ser corrigido</label>
+        <label className="mt-4 mb-1 block text-xs text-texto-suave">O que precisa ser corrigido</label>
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -282,21 +282,21 @@ function ApontarModal({
         />
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Setor</label>
+            <label className="mb-1 block text-xs text-texto-suave">Setor</label>
             <select value={setorId} onChange={(e) => setSetorId(e.target.value)} className={`${inputCls} w-full`}>
               <option value="">geral (sem setor)</option>
               {setores.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Prazo na TV</label>
+            <label className="mb-1 block text-xs text-texto-suave">Prazo na TV</label>
             <div className="flex flex-wrap gap-1.5">
               {PRAZOS.map((p) => (
                 <button
                   key={p.rotulo}
                   type="button"
                   onClick={() => { setPrazo(p.dias); setPrazoData(""); }}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-medium ${!prazoData && prazo === p.dias ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium ${!prazoData && prazo === p.dias ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`}
                 >
                   {p.rotulo}
                 </button>
@@ -305,18 +305,18 @@ function ApontarModal({
             <input type="date" value={prazoData} min={hoje} onChange={(e) => setPrazoData(e.target.value)} className={`${inputCls} mt-1.5 w-full`} />
           </div>
         </div>
-        <label className="mt-3 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+        <label className="mt-3 flex items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={naTv} onChange={(e) => setNaTv(e.target.checked)} />
-          Publicar na TV da cozinha {naTv && <span className="text-xs text-zinc-500">(até {dataCurta(ate)})</span>}
+          Publicar na TV da cozinha {naTv && <span className="text-xs text-texto-suave">(até {dataCurta(ate)})</span>}
         </label>
         {pessoa && (
-          <label className="mt-1.5 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+          <label className="mt-1.5 flex items-center gap-2 text-sm text-texto-suave">
             <input type="checkbox" checked={mostrarNome} onChange={(e) => setMostrarNome(e.target.checked)} />
-            Mostrar o nome na TV <span className="text-xs text-zinc-500">({pessoa})</span>
+            Mostrar o nome na TV <span className="text-xs text-texto-suave">({pessoa})</span>
           </label>
         )}
         <div className="mt-5 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">Cancelar</button>
+          <button onClick={onClose} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">Cancelar</button>
           <button
             onClick={() => onSalvar({
               data_ref: dia, texto, setor_id: setorId || null,
@@ -324,7 +324,7 @@ function ApontarModal({
               pessoa_nome: pessoa, na_tv: naTv, ate: naTv ? ate : null, mostrar_nome: mostrarNome,
             })}
             disabled={proc || texto.trim().length < 3}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {naTv ? "Apontar e publicar" : "Apontar"}
           </button>

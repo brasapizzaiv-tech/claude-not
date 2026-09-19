@@ -28,9 +28,9 @@ function Linha({
     <div
       className={`flex items-center justify-between px-4 py-1.5 ${
         bold
-          ? "border-y border-zinc-200 bg-zinc-50 font-semibold text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+          ? "border-y border-borda bg-superficie-suave font-semibold text-texto   "
           : ""
-      } ${ind ? "pl-8 text-sm text-zinc-500" : "text-zinc-700 dark:text-zinc-300"}`}
+      }  ${ind ? "pl-8 text-sm text-texto-suave" : "text-texto-suave"}`}
     >
       <span>{label}</span>
       <span className="flex gap-4">
@@ -38,7 +38,7 @@ function Linha({
           {neg ? "- " : ""}
           {moeda(valor)}
         </span>
-        <span className="w-14 text-right text-xs text-zinc-400">{pct(valor)}</span>
+        <span className="w-14 text-right text-xs text-texto-fraco">{pct(valor)}</span>
       </span>
     </div>
   );
@@ -186,34 +186,34 @@ export default async function DrePage({
     <div className="mx-auto max-w-3xl p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             DRE — {rotuloMes(mes)}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-texto-suave">
             % sobre a receita bruta. Valores lançados no mês.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/financeiro/dre?mes=${desloca(mes, -1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">‹</Link>
-          <Link href={`/financeiro/dre?mes=${desloca(mes, 1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">›</Link>
+          <Link href={`/financeiro/dre?mes=${desloca(mes, -1)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">‹</Link>
+          <Link href={`/financeiro/dre?mes=${desloca(mes, 1)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">›</Link>
           <Link
             href={`/financeiro/dre?mes=${mes}${mostrarTodas ? "" : "&todas=1"}`}
-            className={`ml-2 rounded-lg border px-3 py-2 text-sm font-medium ${
+            className={`ml-2 rounded-controle border px-3 py-2 text-sm font-medium ${
               mostrarTodas
                 ? "border-orange-500 bg-orange-500 text-white"
-                : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                : "border-borda-forte text-texto-suave hover:bg-superficie-suave   "
             }`}
             title="Inclui as categorias sem valor no mês"
           >
             {mostrarTodas ? "✓ Todas as categorias" : "Mostrar todas"}
           </Link>
-          <Link href={`/financeiro?mes=${mes}`} className="ml-1 rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
+          <Link href={`/financeiro?mes=${mes}`} className="ml-1 rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
             Lançamentos
           </Link>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <Linha pct={pct} label="Receita Bruta de Vendas" valor={receitaBruta} bold />
         {cats("receita").map((c) => (
           <Linha pct={pct} key={c.nome} label={c.nome} valor={c.total} ind />
@@ -247,16 +247,16 @@ export default async function DrePage({
           { l: "CMO", v: pct(cmo) },
           { l: "Prime Cost (CMV+CMO)", v: pct(cmv + cmo) },
         ].map((i) => (
-          <div key={i.l} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <p className="text-xs text-zinc-500">{i.l}</p>
-            <p className="mt-1 text-xl font-bold text-zinc-900 dark:text-zinc-50">{i.v}</p>
+          <div key={i.l} className="rounded-cartao border border-borda p-4">
+            <p className="text-xs text-texto-suave">{i.l}</p>
+            <p className="mt-1 text-xl font-bold text-texto">{i.v}</p>
           </div>
         ))}
       </div>
 
       {naoOper !== 0 && (
-        <div className="mt-6 rounded-2xl border border-zinc-200 p-4 text-sm dark:border-zinc-800">
-          <div className="flex justify-between text-zinc-500">
+        <div className="mt-6 rounded-cartao border border-borda p-4 text-sm">
+          <div className="flex justify-between text-texto-suave">
             <span>Não operacional (investimentos, sócios, empréstimos)</span>
             <span>{moeda(naoOper)}</span>
           </div>

@@ -33,7 +33,7 @@ export function ItemFator({
 
   return (
     <div className="flex flex-col items-end gap-0.5">
-      <label className="flex items-center gap-1 text-xs text-zinc-500" title="Quantas unidades do produto tem em cada unidade da nota (ex.: caixa com 27 → 27)">
+      <label className="flex items-center gap-1 text-xs text-texto-suave" title="Quantas unidades do produto tem em cada unidade da nota (ex.: caixa com 27 → 27)">
         ×
         <input
           value={txt}
@@ -44,7 +44,7 @@ export function ItemFator({
           placeholder="1"
           disabled={salvando}
           className={`w-14 rounded border px-1.5 py-0.5 text-right text-xs outline-none focus:border-orange-500 dark:bg-zinc-950 ${
-            f !== 1 ? "border-orange-400 bg-orange-50/60 dark:border-orange-700 dark:bg-orange-950/20" : "border-zinc-300 dark:border-zinc-700"
+            f !== 1 ? "border-orange-400 bg-orange-50/60 dark:border-orange-700 dark:bg-orange-950/20" : "border-borda-forte"
           }`}
         />
         <span>un</span>

@@ -73,19 +73,19 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
 
   const chip = (on: boolean) =>
     `rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-      on ? "border-green-600 bg-green-600 text-white" : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+      on ? "border-green-600 bg-texto text-fundo" : "border-borda-forte bg-painel-cartao text-texto-suave hover:border-zinc-400   "
     }`;
 
   return (
     <div className="mx-auto max-w-6xl px-8 pb-10">
-      <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <div className="rounded-cartao border border-borda p-5">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="salada" tamanho={17} className="mr-1.5" /> Saladas do dia</h2>
-          <button onClick={() => setGerenciar((g) => !g)} className="text-xs text-zinc-500 underline">
+          <h2 className="text-lg font-bold text-texto"><Icone nome="salada" tamanho={17} className="mr-1.5" /> Saladas do dia</h2>
+          <button onClick={() => setGerenciar((g) => !g)} className="text-xs text-texto-suave underline">
             {gerenciar ? "fechar edição da base" : "editar a base (tirar saladas)"}
           </button>
         </div>
-        <p className="mb-4 text-sm text-zinc-500">
+        <p className="mb-4 text-sm text-texto-suave">
           Marque o que vai no buffet de saladas deste dia. Aparece na TV da cozinha. <span className="font-medium">{sel.size}</span> marcada(s).
           {temExcecao
             ? <> · <span className="font-medium text-amber-600">este dia tem seleção própria</span> (<button type="button" onClick={voltarPadrao} disabled={proc} className="underline">voltar ao padrão de {DIA_NOME[dow]}</button>)</>
@@ -95,7 +95,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
         <div className="space-y-3">
           {porCategoria.map((g) => (
             <div key={g.categoria}>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">{g.categoria}</p>
+              <p className="mb-1.5 text-[11px] font-semibold text-texto-fraco">{g.categoria}</p>
               <div className="flex flex-wrap gap-1.5">
                 {g.itens.map((s) => (
                   <span key={s.id} className="inline-flex items-center gap-1">
@@ -108,7 +108,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
                         title="Tirar da base"
                         disabled={proc}
                         onClick={() => { if (confirm(`Tirar "${s.nome}" da base de saladas?`)) start(async () => { await removerSalada(s.id); router.refresh(); }); }}
-                        className="text-xs text-zinc-400 hover:text-red-600"
+                        className="text-xs text-texto-fraco hover:text-red-600"
                       >
                         ✕
                       </button>
@@ -118,38 +118,38 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
               </div>
             </div>
           ))}
-          {porCategoria.length === 0 && <p className="text-sm text-zinc-400">A base está vazia — cadastre a primeira salada abaixo.</p>}
+          {porCategoria.length === 0 && <p className="text-sm text-texto-fraco">A base está vazia — cadastre a primeira salada abaixo.</p>}
         </div>
 
-        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-borda pt-4">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">+ nova salada</label>
+            <label className="mb-1 block text-xs text-texto-suave">+ nova salada</label>
             <input
               value={novo}
               onChange={(e) => setNovo(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); adicionar(); } }}
               placeholder="Ex.: Mix de folhas"
-              className="w-56 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="w-56 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Categoria</label>
-            <select value={cat} onChange={(e) => setCat(e.target.value as CategoriaSalada)} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100">
+            <label className="mb-1 block text-xs text-texto-suave">Categoria</label>
+            <select value={cat} onChange={(e) => setCat(e.target.value as CategoriaSalada)} className="rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto">
               {CATEGORIAS_SALADA.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <button type="button" onClick={adicionar} disabled={proc || novo.trim().length < 2} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-semibold disabled:opacity-40 dark:border-zinc-700">
+          <button type="button" onClick={adicionar} disabled={proc || novo.trim().length < 2} className="rounded-controle border border-borda-forte px-3 py-2 text-sm font-semibold disabled:opacity-40">
             Adicionar
           </button>
           <div className="flex-1" />
-          <button type="button" onClick={salvarPadrao} disabled={proc || !sujo} className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700 disabled:opacity-40 dark:text-green-400">
+          <button type="button" onClick={salvarPadrao} disabled={proc || !sujo} className="rounded-controle border border-green-600 px-3 py-2 text-sm font-semibold text-green-700 disabled:opacity-40 dark:text-green-400">
             Gravar como padrão de {DIA_NOME[dow]}
           </button>
-          <button type="button" onClick={salvar} disabled={proc || !sujo} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
+          <button type="button" onClick={salvar} disabled={proc || !sujo} className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo disabled:opacity-40">
             {proc ? "..." : "Salvar só para este dia"}
           </button>
         </div>
-        {msg && <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">{msg}</p>}
+        {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
       </div>
     </div>
   );

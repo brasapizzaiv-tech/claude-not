@@ -8,7 +8,7 @@ import { salvarFechamento, type EntradaFechamento } from "./actions";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
 type MoneyKey =
   | "venda_bruta"
@@ -59,7 +59,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
   function money(label: string, k: MoneyKey, sinal?: "+" | "−") {
     return (
       <label className="block">
-        <span className="mb-1 block text-xs text-zinc-500">
+        <span className="mb-1 block text-xs text-texto-suave">
           {sinal && <span className="mr-1 font-bold">{sinal}</span>}
           {label}
         </span>
@@ -75,9 +75,9 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
   }
 
   const linhaCalc = (label: string, valor: number, cor = "") => (
-    <div className="flex items-center justify-between rounded-lg bg-zinc-100 px-3 py-2 dark:bg-zinc-900">
-      <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{label}</span>
-      <span className={`text-sm font-bold ${cor || "text-zinc-900 dark:text-zinc-50"}`}>
+    <div className="flex items-center justify-between rounded-controle bg-superficie-suave px-3 py-2">
+      <span className="text-sm font-medium text-texto-suave">{label}</span>
+      <span className={`text-sm font-bold ${cor || "text-texto"}`}>
         {moeda(valor)}
       </span>
     </div>
@@ -85,16 +85,16 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
 
   return (
     <div className="mx-auto max-w-3xl p-6 sm:p-8">
-      <Link href="/financeiro/caixa" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/financeiro/caixa" className="text-sm text-texto-suave hover:text-orange-600">
         ← Fechamentos de caixa
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
         {inicial.id ? "Editar fechamento" : "Novo fechamento de caixa"}
       </h1>
 
       <div className="mt-5 flex flex-wrap items-end gap-3">
         <label className="block">
-          <span className="mb-1 block text-xs text-zinc-500">Data</span>
+          <span className="mb-1 block text-xs text-texto-suave">Data</span>
           <input
             type="date"
             value={f.data}
@@ -103,7 +103,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
           />
         </label>
         <label className="block flex-1">
-          <span className="mb-1 block text-xs text-zinc-500">Observação</span>
+          <span className="mb-1 block text-xs text-texto-suave">Observação</span>
           <input
             value={f.observacao}
             onChange={(e) => set("observacao", e.target.value)}
@@ -114,10 +114,10 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
       </div>
 
       {/* Detalhes do caixa */}
-      <h2 className="mt-6 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+      <h2 className="mt-6 mb-2 text-sm font-semibold text-texto-suave">
         Detalhes do caixa
       </h2>
-      <div className="space-y-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="space-y-3 rounded-cartao border border-borda p-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {money("Venda bruta", "venda_bruta", "+")}
           {money("Acréscimos", "acrescimos", "+")}
@@ -145,22 +145,22 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
       </div>
 
       {/* Formas de pagamento */}
-      <h2 className="mt-6 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+      <h2 className="mt-6 mb-2 text-sm font-semibold text-texto-suave">
         Por forma de pagamento
       </h2>
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-400 dark:bg-zinc-900">
+          <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
             <tr>
               <th className="px-4 py-2">Forma</th>
               <th className="px-4 py-2 text-right">Pedidos</th>
               <th className="px-4 py-2 text-right">Valor (R$)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {f.formas.map((x) => (
-              <tr key={x.forma} className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 font-medium text-zinc-800 dark:text-zinc-200">
+              <tr key={x.forma} className="">
+                <td className="px-4 py-2 font-medium text-texto">
                   {x.forma}
                 </td>
                 <td className="px-2 py-1 text-right">
@@ -169,7 +169,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
                     value={x.pedidos}
                     onChange={(e) => setForma(x.forma, "pedidos", e.target.value)}
                     placeholder="0"
-                    className="w-20 rounded border border-zinc-300 bg-white px-2 py-1 text-right dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="w-20 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
                   />
                 </td>
                 <td className="px-2 py-1 text-right">
@@ -178,12 +178,12 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
                     value={x.valor}
                     onChange={(e) => setForma(x.forma, "valor", e.target.value)}
                     placeholder="0,00"
-                    className="w-28 rounded border border-zinc-300 bg-white px-2 py-1 text-right dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="w-28 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
                   />
                 </td>
               </tr>
             ))}
-            <tr className="bg-zinc-50 dark:bg-zinc-900">
+            <tr className="bg-superficie-suave">
               <td className="px-4 py-2 font-semibold">Total</td>
               <td className="px-4 py-2 text-right font-semibold">{c.pedidos_total}</td>
               <td className="px-4 py-2 text-right font-semibold">{moeda(c.formas_total)}</td>
@@ -192,7 +192,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         </table>
       </div>
       {Math.abs(difFormas) > 0.01 && (
-        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
           A soma das formas ({moeda(c.formas_total)}) está {moeda(Math.abs(difFormas))}{" "}
           {difFormas > 0 ? "acima" : "abaixo"} do Total pedidos ({moeda(c.total_pedidos)}).
           Confira os valores.
@@ -203,11 +203,11 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         <button
           onClick={() => start(async () => { await salvarFechamento(f); })}
           disabled={proc || !f.data}
-          className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
         >
           {proc ? "Salvando..." : "Salvar fechamento"}
         </button>
-        <Link href="/financeiro/caixa" className="text-sm text-zinc-500 hover:text-zinc-700">
+        <Link href="/financeiro/caixa" className="text-sm text-texto-suave hover:text-texto-suave">
           Cancelar
         </Link>
       </div>

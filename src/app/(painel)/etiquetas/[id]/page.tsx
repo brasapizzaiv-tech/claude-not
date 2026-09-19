@@ -28,11 +28,11 @@ export default async function EtiquetaPage({
     <div className="mx-auto max-w-2xl p-8">
       <Link
         href="/etiquetas"
-        className="text-sm text-zinc-500 hover:text-orange-600 print:hidden"
+        className="text-sm text-texto-suave hover:text-orange-600 print:hidden"
       >
         ← Voltar para etiquetas
       </Link>
-      <h1 className="mt-2 mb-6 text-2xl font-bold text-zinc-900 dark:text-zinc-50 print:hidden">
+      <h1 className="mt-2 mb-6 text-2xl font-bold text-texto print:hidden">
         Etiqueta #{data.numero}
       </h1>
       <EtiquetaImpressao

@@ -110,7 +110,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
       <div className="mb-2 flex items-center gap-2">
         <span className="font-bold">#{p.numero ?? "—"}</span>
         <span className="text-xs text-texto-fraco">{haQuanto(p.criado_em, nowMs)}</span>
-        <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${st.bg} ${st.cor}`}>{st.label}</span>
+        <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${st.bg}  ${st.cor}`}>{st.label}</span>
       </div>
       {p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && (
         <div className={`mb-2 rounded-controle px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300"}`}>

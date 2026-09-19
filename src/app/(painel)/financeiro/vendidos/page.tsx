@@ -164,9 +164,9 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="mx-auto max-w-6xl p-6">
-      <Link href="/financeiro" className="text-sm text-zinc-500 hover:text-orange-600">← Financeiro</Link>
-      <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="compras" tamanho={20} /> Produtos vendidos</h1>
-      <p className="mb-4 mt-1 text-sm text-zinc-500">Tudo que saiu no salão, balcão, balança e delivery, pelo que foi lançado nas comandas. Noite começa às {VIRADA_NOITE}h.</p>
+      <Link href="/financeiro" className="text-sm text-texto-suave hover:text-orange-600">← Financeiro</Link>
+      <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-texto"><Icone nome="compras" tamanho={20} /> Produtos vendidos</h1>
+      <p className="mb-4 mt-1 text-sm text-texto-suave">Tudo que saiu no salão, balcão, balança e delivery, pelo que foi lançado nas comandas. Noite começa às {VIRADA_NOITE}h.</p>
 
       {/* Período e filtros (links: sem JS) */}
       <form className="mb-3 flex flex-wrap items-end gap-2" method="get">
@@ -174,66 +174,66 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
         {soPagos && <input type="hidden" name="pagos" value="1" />}
         <input type="hidden" name="turno" value={turno} />
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">De</label>
-          <input type="date" name="de" defaultValue={de} className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
+          <label className="mb-1 block text-xs text-texto-suave">De</label>
+          <input type="date" name="de" defaultValue={de} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Até</label>
-          <input type="date" name="ate" defaultValue={ate} className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
+          <label className="mb-1 block text-xs text-texto-suave">Até</label>
+          <input type="date" name="ate" defaultValue={ate} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm" />
         </div>
-        <button className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white">Aplicar</button>
+        <button className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white">Aplicar</button>
         <div className="ml-1 flex flex-wrap gap-1">
           {atalhos.map((a) => (
-            <Link key={a.r} href={link({ de: a.de, ate: a.ate })} className={`rounded-lg px-2.5 py-1.5 text-xs ${de === a.de && ate === a.ate ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>{a.r}</Link>
+            <Link key={a.r} href={link({ de: a.de, ate: a.ate })} className={`rounded-controle px-2.5 py-1.5 text-xs ${de === a.de && ate === a.ate ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>{a.r}</Link>
           ))}
         </div>
       </form>
       <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs">
-        <span className="text-zinc-500">Turno:</span>
+        <span className="text-texto-suave">Turno:</span>
         {[["todos", "Todos"], ["dia", "Dia"], ["noite", "Noite"]].map(([v, r]) => (
-          <Link key={v} href={link({ turno: v })} className={`rounded-lg px-2.5 py-1 ${turno === v ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>{r}</Link>
+          <Link key={v} href={link({ turno: v })} className={`rounded-controle px-2.5 py-1 ${turno === v ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : "border border-borda-forte text-texto-suave  "}`}>{r}</Link>
         ))}
-        <span className="ml-3 text-zinc-500">Agrupar por:</span>
+        <span className="ml-3 text-texto-suave">Agrupar por:</span>
         {([["produto", "Produto"], ["categoria", "Categoria"], ["turno", "Turno"], ["forma", "Forma de pagamento"], ["garcom", "Garçom"], ["origem", "Origem"]] as [Agrupar, string][]).map(([v, r]) => (
-          <Link key={v} href={link({ agrupar: v })} className={`rounded-lg px-2.5 py-1 ${agrupar === v ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>{r}</Link>
+          <Link key={v} href={link({ agrupar: v })} className={`rounded-controle px-2.5 py-1 ${agrupar === v ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : "border border-borda-forte text-texto-suave  "}`}>{r}</Link>
         ))}
-        <Link href={link({ pagos: soPagos ? undefined : "1" })} className={`ml-3 rounded-lg px-2.5 py-1 ${soPagos ? "bg-emerald-600 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>
+        <Link href={link({ pagos: soPagos ? undefined : "1" })} className={`ml-3 rounded-controle px-2.5 py-1 ${soPagos ? "bg-texto text-fundo" : "border border-borda-forte text-texto-suave  "}`}>
           {soPagos ? "✓ só pagos" : "só pagos"}
         </Link>
       </div>
 
       {/* Cards */}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Valor total</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{brl(totalValor)}</p></div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Itens vendidos</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{totalQtd.toLocaleString("pt-BR")}</p></div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Buffet</p><p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{brl(buffetValor)}</p><p className="text-xs text-zinc-500">{buffetPratos} pratos · {buffetKg.toFixed(1).replace(".", ",")} kg</p></div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"><p className="text-xs text-zinc-500">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-zinc-500">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
+        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Valor total</p><p className="text-2xl font-bold text-texto">{brl(totalValor)}</p></div>
+        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Itens vendidos</p><p className="text-2xl font-bold text-texto">{totalQtd.toLocaleString("pt-BR")}</p></div>
+        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Buffet</p><p className="text-2xl font-bold text-texto">{brl(buffetValor)}</p><p className="text-xs text-texto-suave">{buffetPratos} pratos · {buffetKg.toFixed(1).replace(".", ",")} kg</p></div>
+        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-texto-suave">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
       </div>
 
       <VendidosClient linhas={linhas} total={totalValor} agrupar={agrupar} periodo={`${de} a ${ate}`} />
 
       {(cancelados.length > 0 || excluidas.length > 0) && (
-        <details className="mt-6 rounded-2xl border border-red-200 dark:border-red-900">
+        <details className="mt-6 rounded-cartao border border-red-200 dark:border-red-900">
           <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-400">
             ✗ Cancelados no período: {brl(cancelValor)} ({cancelados.length} {cancelados.length === 1 ? "item" : "itens"}, {excluidas.length} {excluidas.length === 1 ? "comanda excluída" : "comandas excluídas"}) — clique pra ver
           </summary>
           <div className="space-y-3 px-4 pb-4">
             {excluidas.length > 0 && (
               <table className="w-full text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-zinc-500"><tr><th className="py-1">Comanda excluída</th><th className="py-1">Mesa</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <thead className="text-left text-xs font-medium text-texto-fraco"><tr><th className="py-1">Comanda excluída</th><th className="py-1">Mesa</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
+                <tbody className="divide-y divide-borda">
                   {excluidas.map((e, i) => (
-                    <tr key={i}><td className="py-1">nº {e.comanda_numero ?? "—"}</td><td className="py-1 text-zinc-500">{e.mesa ?? "—"}</td><td className="py-1 text-zinc-600 dark:text-zinc-300">{e.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(e.valor))}</td><td className="py-1 text-right text-zinc-500">{horaBR(e.excluido_em)}</td></tr>
+                    <tr key={i}><td className="py-1">nº {e.comanda_numero ?? "—"}</td><td className="py-1 text-texto-suave">{e.mesa ?? "—"}</td><td className="py-1 text-texto-suave">{e.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(e.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(e.excluido_em)}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
             {cancelados.length > 0 && (
               <table className="w-full text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-zinc-500"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <thead className="text-left text-xs font-medium text-texto-fraco"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
+                <tbody className="divide-y divide-borda">
                   {cancelados.map((c, i) => (
-                    <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("\n")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-zinc-600 dark:text-zinc-300">{c.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(c.valor))}</td><td className="py-1 text-right text-zinc-500">{horaBR(c.cancelado_em)}</td></tr>
+                    <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("\n")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-texto-suave">{c.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(c.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(c.cancelado_em)}</td></tr>
                   ))}
                 </tbody>
               </table>

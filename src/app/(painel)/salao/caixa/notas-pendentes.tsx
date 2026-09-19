@@ -64,14 +64,14 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
   }
 
   const campo =
-    "w-40 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+    "w-40 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
   const aviso = (id: string) =>
     msg[id] ? (
       <span className={msg[id] === "✓" ? "text-xs text-emerald-600" : "text-xs text-red-600"}>{msg[id]}</span>
     ) : null;
 
   return (
-    <div className="mb-3 rounded-2xl border border-emerald-300 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+    <div className="mb-3 rounded-cartao border border-emerald-300 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
       <p className="mb-2 text-sm font-bold text-emerald-800 dark:text-emerald-300">
         <Icone nome="cupom" tamanho={15} className="mr-1.5" /> Notas saindo automaticamente
         <span className="ml-2 text-xs font-normal text-emerald-700/70 dark:text-emerald-400/70">
@@ -83,21 +83,21 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
           const vencido = new Date(p.emitirEm).getTime() <= agora;
           const comErro = p.status === "erro";
           return (
-            <li key={p.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-2.5 dark:bg-zinc-900">
+            <li key={p.id} className="flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao p-2.5">
               <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{p.numeros || "Comanda"}</span>
-              <span className="text-sm text-zinc-500">{brl(p.valor)}</span>
-              {p.formas && <span className="text-xs text-zinc-400">{p.formas}</span>}
+              <span className="text-sm text-texto-suave">{brl(p.valor)}</span>
+              {p.formas && <span className="text-xs text-texto-fraco">{p.formas}</span>}
 
               {comErro ? (
-                <span className="rounded-lg bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300">
+                <span className="rounded-controle bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300">
                   não autorizou{p.erro ? `: ${p.erro}` : ""}
                 </span>
               ) : (
                 <span
                   className={
                     vencido
-                      ? "rounded-lg bg-zinc-200 px-2 py-0.5 text-xs font-bold tabular-nums text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                      : "rounded-lg bg-amber-100 px-2 py-0.5 text-xs font-bold tabular-nums text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                      ? "rounded-controle bg-zinc-200 px-2 py-0.5 text-xs font-bold tabular-nums text-texto-suave dark:bg-zinc-800 "
+                      : "rounded-controle bg-amber-100 px-2 py-0.5 text-xs font-bold tabular-nums text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
                   }
                 >
                   {vencido ? "emitindo…" : `sai em ${faltam(p.emitirEm, agora)}`}
@@ -122,7 +122,7 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
                 onClick={() => agir(p.id, () => emitirNotaPendenteAgora(p.id, (cpf[p.id] ?? "").trim()))}
                 disabled={proc}
                 title="Emite a nota e já manda o cupom pra impressora"
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                className="rounded-controle bg-texto px-3 py-1.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-50"
               >
                 Emitir e imprimir
               </button>
@@ -132,7 +132,7 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
                   agir(p.id, () => cancelarNotaPendente(p.id));
                 }}
                 disabled={proc}
-                className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs text-zinc-500 dark:border-zinc-700"
+                className="rounded-controle border border-borda-forte px-2.5 py-1.5 text-xs text-texto-suave"
               >
                 Sem nota
               </button>

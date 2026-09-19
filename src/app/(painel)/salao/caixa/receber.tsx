@@ -515,15 +515,15 @@ export function ReceberComandas({
   }, [etapa, temAlgo, selComandas.length]);
 
   const inputCls =
-    "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
   const titulo = "text-center text-base font-bold text-zinc-800 dark:text-zinc-100";
 
   return (
     <div>
       {/* Topo: comandas selecionadas + busca para adicionar mais + cliente */}
-      <div className="mb-3 rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+      <div className="mb-3 rounded-cartao border border-borda p-3">
         <div className="mb-1 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Comandas</p>
+          <p className="text-xs font-semibold text-texto-fraco">Comandas</p>
           <div className="relative">
             {clienteSel ? (
               <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/20 dark:text-blue-200">
@@ -536,19 +536,19 @@ export function ReceberComandas({
             ) : (
               <button
                 onClick={() => setAbrirCli((v) => !v)}
-                className="rounded-lg border border-blue-400 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                className="rounded-controle border border-blue-400 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"
               >
                 <span className="inline-flex items-center gap-1.5"><Icone nome="pessoa" tamanho={14} /> Vincular Cliente</span>
               </button>
             )}
             {abrirCli && !clienteSel && (
-              <div className="absolute right-0 z-30 mt-1 w-72 rounded-xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="absolute right-0 z-30 mt-1 w-72 rounded-cartao border border-borda bg-painel-cartao p-2 dark:border-borda-forte">
                 <input
                   autoFocus
                   value={buscaCli}
                   onChange={(e) => setBuscaCli(e.target.value)}
                   placeholder="Buscar cliente por nome ou CNPJ/CPF…"
-                  className="mb-1 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                  className="mb-1 w-full rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm"
                 />
                 <div className="max-h-56 overflow-y-auto">
                   {cliFiltrados.map((c) => (
@@ -559,14 +559,14 @@ export function ReceberComandas({
                         setAbrirCli(false);
                         setBuscaCli("");
                       }}
-                      className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      className="block w-full rounded-controle px-2 py-1.5 text-left text-sm hover:bg-superficie-suave"
                     >
                       <span className="font-medium text-zinc-800 dark:text-zinc-100">{c.nome}</span>
-                      {c.cpfCnpj && <span className="ml-1 text-xs text-zinc-400">{c.cpfCnpj}</span>}
+                      {c.cpfCnpj && <span className="ml-1 text-xs text-texto-fraco">{c.cpfCnpj}</span>}
                     </button>
                   ))}
                   {cliFiltrados.length === 0 && (
-                    <p className="px-2 py-3 text-center text-xs text-zinc-400">
+                    <p className="px-2 py-3 text-center text-xs text-texto-fraco">
                       {buscaCli.trim().length < 2 ? "Digite ao menos 2 letras." : buscandoCli ? "Buscando…" : "Nenhum cliente."}
                     </p>
                   )}
@@ -620,17 +620,17 @@ export function ReceberComandas({
               className={`${inputCls} w-full`}
             />
             {busca.trim() && sugestoes.length > 0 && (
-              <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-controle border border-borda bg-painel-cartao dark:border-borda-forte">
                 {sugestoes.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => addComanda(c.id)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-superficie-suave"
                   >
                     <span className="font-medium text-zinc-800 dark:text-zinc-100">
                       Comanda {c.numero} {c.mesa ? `· ${c.mesa}` : ""}
                     </span>
-                    <span className="text-zinc-500">{brl(c.restante)}</span>
+                    <span className="text-texto-suave">{brl(c.restante)}</span>
                   </button>
                 ))}
               </div>
@@ -640,40 +640,40 @@ export function ReceberComandas({
       </div>
 
       {selComandas.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-400 dark:border-zinc-700">
+        <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-fraco">
           Busque uma comanda acima (ou use o “Pagamento rápido” no salão / leia o QR) para começar.
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Coluna 1 — Consumo */}
-          <div className="flex min-h-[320px] flex-col rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+          <div className="flex min-h-[320px] flex-col rounded-cartao border border-borda p-3">
             <p className={titulo}>Consumo</p>
             <div className="mt-3 flex-1 space-y-1">
               {linhas.length === 0 ? (
-                <p className="py-8 text-center text-sm text-zinc-400">Nada a pagar nessas comandas.</p>
+                <p className="py-8 text-center text-sm text-texto-fraco">Nada a pagar nessas comandas.</p>
               ) : (
                 linhas.map((l) => {
                   const noCarrinho = carrinho.has(l.key);
                   return (
                     <div
                       key={l.key}
-                      className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
-                        noCarrinho ? "opacity-40" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                      className={`flex items-center gap-2 rounded-controle px-2 py-1.5 text-sm ${
+                        noCarrinho ? "opacity-40" : "hover:bg-superficie-suave "
                       }`}
                     >
                       <span className={`flex-1 truncate ${noCarrinho ? "line-through" : ""} text-zinc-800 dark:text-zinc-100`}>
                         {l.tipo === "item" && l.qtd > 1 ? `${l.qtd}× ` : ""}
                         {l.nome}
-                        <span className="ml-1 text-[11px] text-zinc-400">#{l.numero}</span>
+                        <span className="ml-1 text-[11px] text-texto-fraco">#{l.numero}</span>
                       </span>
-                      <span className={`${noCarrinho ? "line-through" : ""} text-zinc-600 dark:text-zinc-300`}>
+                      <span className={`${noCarrinho ? "line-through" : ""} text-texto-suave`}>
                         {brl(l.valor)}
                       </span>
                       <button
                         onClick={() => mover(l.key)}
                         disabled={noCarrinho}
                         title="Adicionar ao pagamento"
-                        className="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-30"
+                        className="rounded-controle bg-texto px-2 py-0.5 text-xs font-bold text-fundo hover:opacity-90 disabled:opacity-30"
                       >
                         +
                       </button>
@@ -682,7 +682,7 @@ export function ReceberComandas({
                           onClick={() => dividirItem(l)}
                           disabled={noCarrinho || proc}
                           title="Dividir este item em partes (cada pessoa paga a sua)"
-                          className="rounded-md px-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-30 dark:hover:bg-blue-950/40"
+                          className="rounded-controle px-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-30 dark:hover:bg-blue-950/40"
                         >
                           ÷
                         </button>
@@ -692,7 +692,7 @@ export function ReceberComandas({
                           onClick={() => excluirItem(l)}
                           disabled={noCarrinho || proc}
                           title="Excluir este item da comanda (pede o motivo)"
-                          className="rounded-md px-1.5 text-red-500 hover:bg-red-50 disabled:opacity-30 dark:hover:bg-red-950/40"
+                          className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 disabled:opacity-30 dark:hover:bg-red-950/40"
                         >
                           <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                         </button>
@@ -702,16 +702,16 @@ export function ReceberComandas({
                 })
               )}
             </div>
-            <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+            <div className="mt-3 border-t border-borda pt-3">
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-zinc-500">Subtotal (falta)</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-50">
+                <span className="text-texto-suave">Subtotal (falta)</span>
+                <span className="font-bold text-texto">
                   {brl(Math.round(linhas.reduce((s, l) => s + l.valor, 0) * 100) / 100)}
                 </span>
               </div>
               <button
                 onClick={pagarTudo}
-                className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                className="w-full rounded-controle bg-texto py-2 text-sm font-semibold text-fundo hover:opacity-90"
               >
                 Pagar tudo
               </button>
@@ -719,34 +719,34 @@ export function ReceberComandas({
           </div>
 
           {/* Coluna 2 — Resumo de Pagamento */}
-          <div className="flex min-h-[320px] flex-col rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+          <div className="flex min-h-[320px] flex-col rounded-cartao border border-borda p-3">
             <p className={titulo}>Resumo de Pagamento</p>
             <div className="mt-3 flex-1 space-y-1">
               {!temAlgo ? (
-                <p className="py-8 text-center text-sm text-zinc-400">
+                <p className="py-8 text-center text-sm text-texto-fraco">
                   Toque no “+” dos itens (ou em “Pagar tudo”) para trazer aqui o que vai receber.
                 </p>
               ) : (
                 <>
                   {linhasCarrinho.map((l) => (
-                    <div key={l.key} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm">
+                    <div key={l.key} className="flex items-center gap-2 rounded-controle px-2 py-1.5 text-sm">
                       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">
                         {l.tipo === "item" && l.qtd > 1 ? `${l.qtd}× ` : ""}
                         {l.nome}
-                        <span className="ml-1 text-[11px] text-zinc-400">#{l.numero}</span>
+                        <span className="ml-1 text-[11px] text-texto-fraco">#{l.numero}</span>
                       </span>
-                      <span className="text-zinc-600 dark:text-zinc-300">{brl(l.valor)}</span>
+                      <span className="text-texto-suave">{brl(l.valor)}</span>
                       <button
                         onClick={() => tirar(l.key)}
                         title="Remover"
-                        className="rounded-md px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
                         <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                       </button>
                     </div>
                   ))}
                   {extras.map((e) => (
-                    <div key={e.uid} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm">
+                    <div key={e.uid} className="flex items-center gap-2 rounded-controle px-2 py-1.5 text-sm">
                       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">
                         {e.qtd > 1 ? `${e.qtd}× ` : ""}
                         {e.nome}
@@ -754,11 +754,11 @@ export function ReceberComandas({
                           avulso
                         </span>
                       </span>
-                      <span className="text-zinc-600 dark:text-zinc-300">{brl(e.preco * e.qtd * fator)}</span>
+                      <span className="text-texto-suave">{brl(e.preco * e.qtd * fator)}</span>
                       <button
                         onClick={() => tirarExtra(e.uid)}
                         title="Remover"
-                        className="rounded-md px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
                         <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                       </button>
@@ -770,9 +770,9 @@ export function ReceberComandas({
 
             {/* Inserir Produto avulso */}
             {menu.length > 0 && (
-              <div className="mt-2 flex items-end gap-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+              <div className="mt-2 flex items-end gap-2 border-t border-borda pt-2">
                 <div className="min-w-0 flex-1">
-                  <label className="mb-1 block text-[11px] text-zinc-500">Inserir produto</label>
+                  <label className="mb-1 block text-[11px] text-texto-suave">Inserir produto</label>
                   <select
                     value={novoProd}
                     onChange={(e) => setNovoProd(e.target.value)}
@@ -796,7 +796,7 @@ export function ReceberComandas({
                 <button
                   onClick={addExtra}
                   disabled={!novoProd}
-                  className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-40"
+                  className="rounded-controle bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-40"
                 >
                   +
                 </button>
@@ -805,15 +805,15 @@ export function ReceberComandas({
 
             {temAlgo && (
               <>
-                <div className="mt-2 flex items-center justify-between border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
-                  <button onClick={limparCarrinho} className="text-xs text-zinc-400 hover:text-red-600">
+                <div className="mt-2 flex items-center justify-between border-t border-borda pt-2 text-sm">
+                  <button onClick={limparCarrinho} className="text-xs text-texto-fraco hover:text-red-600">
                     Limpar itens
                   </button>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-50">{brl(subtotalBruto)}</span>
+                  <span className="font-bold text-texto">{brl(subtotalBruto)}</span>
                 </div>
                 <button
                   onClick={() => setEtapa("pagamento")}
-                  className="mt-3 w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700"
+                  className="mt-3 w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
                 >
                   Receber {brl(subtotalBruto)} →
                   <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
@@ -829,37 +829,37 @@ export function ReceberComandas({
       {/* ---------- Tela cheia: PAGAMENTO ---------- */}
       {etapa === "pagamento" && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
-          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl dark:bg-zinc-950">
-            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="w-full max-w-3xl rounded-cartao bg-painel-cartao">
+            <div className="flex items-center justify-between border-b border-borda px-4 py-3">
               <div>
-                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Pagamento</p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-lg font-bold text-texto">Pagamento</p>
+                <p className="text-xs text-texto-suave">
                   {selComandas.map((c) => `Comanda ${c.numero}`).join(" · ")}
                   {clienteSel ? ` · ${clienteSel.nome}` : ""}
                 </p>
               </div>
               <button
                 onClick={() => setEtapa("conta")}
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm text-texto-suave"
               >
                 ← Voltar
               </button>
             </div>
             <div className="p-4">
-            <div className="flex min-h-[320px] flex-col rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+            <div className="flex min-h-[320px] flex-col rounded-cartao border border-borda p-3">
               <p className={titulo}>Pagamento</p>
   
               {!temAlgo ? (
-                <p className="my-auto text-center text-sm text-zinc-400">Nenhum item para pagamento.</p>
+                <p className="my-auto text-center text-sm text-texto-fraco">Nenhum item para pagamento.</p>
               ) : (
                 <div className="mt-3 space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <div className="mb-1 flex items-center justify-between">
-                        <label className="text-xs text-zinc-500">Desconto</label>
-                        <span className="flex overflow-hidden rounded-md border border-zinc-300 text-[11px] dark:border-zinc-700">
-                          <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>R$</button>
-                          <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-white" : "text-zinc-500"}`}>%</button>
+                        <label className="text-xs text-texto-suave">Desconto</label>
+                        <span className="flex overflow-hidden rounded-controle border border-borda-forte text-[11px]">
+                          <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-white" : "text-texto-suave"}`}>R$</button>
+                          <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-white" : "text-texto-suave"}`}>%</button>
                         </span>
                       </div>
                       <input
@@ -872,14 +872,14 @@ export function ReceberComandas({
                       <button
                         type="button"
                         onClick={() => { setDescontoPct(true); setDesconto("5"); }}
-                        className="mt-1 w-full rounded-md border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
+                        className="mt-1 w-full rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
                       >
                         <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> 5% no dinheiro</span>
                       </button>
-                      {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-[11px] text-zinc-500">= {brl(desc)}</p>}
+                      {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-[11px] text-texto-suave">= {brl(desc)}</p>}
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-zinc-500">Acréscimo (R$)</label>
+                      <label className="mb-1 block text-xs text-texto-suave">Acréscimo (R$)</label>
                       <input
                         inputMode="decimal"
                         value={acrescimo}
@@ -890,19 +890,19 @@ export function ReceberComandas({
                     </div>
                   </div>
   
-                  <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
-                    <div className="flex items-center justify-between text-sm text-zinc-500">
+                  <div className="rounded-controle bg-superficie-suave p-2">
+                    <div className="flex items-center justify-between text-sm text-texto-suave">
                       <span>Subtotal</span>
                       <span>{brl(subtotalBruto)}</span>
                     </div>
-                    <div className="mt-1 flex items-center justify-between text-lg font-black text-zinc-900 dark:text-zinc-50">
+                    <div className="mt-1 flex items-center justify-between text-lg font-black text-texto">
                       <span>Total</span>
                       <span>{brl(totalPagar)}</span>
                     </div>
                   </div>
   
                   {/* Dividir por pessoa (calculadora) */}
-                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <div className="flex items-center gap-2 text-xs text-texto-suave">
                     <span>Dividir por</span>
                     {[2, 3, 4].map((n) => (
                       <button
@@ -911,7 +911,7 @@ export function ReceberComandas({
                         className={`rounded px-2 py-0.5 font-medium ${
                           num(pessoas) === n
                             ? "bg-orange-500 text-white"
-                            : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                            : "border border-borda-forte text-texto-suave  "
                         }`}
                       >
                         {n}
@@ -922,7 +922,7 @@ export function ReceberComandas({
                       value={pessoas}
                       onChange={(e) => setPessoas(e.target.value)}
                       placeholder="nº"
-                      className="w-12 rounded border border-zinc-300 bg-white px-1.5 py-0.5 text-center dark:border-zinc-700 dark:bg-zinc-950"
+                      className="w-12 rounded border border-borda-forte bg-painel-cartao px-1.5 py-0.5 text-center"
                     />
                     {num(pessoas) >= 2 && (
                       <span className="font-bold text-zinc-800 dark:text-zinc-100">
@@ -960,7 +960,7 @@ export function ReceberComandas({
                   <button
                     onClick={confirmar}
                     disabled={proc || !podeConfirmar}
-                    className="w-full rounded-lg bg-emerald-600 py-3 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                    className="w-full rounded-controle bg-texto py-3 text-base font-semibold text-fundo hover:opacity-90 disabled:opacity-50"
                   >
                     {proc
                       ? "Recebendo..."
@@ -980,17 +980,17 @@ export function ReceberComandas({
       {/* ---------- Tela cheia: NOTA FISCAL ---------- */}
       {etapa === "nota" && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-950">
-            <p className="text-center text-sm font-semibold uppercase tracking-wide text-emerald-600">Recebido</p>
-            <p className="mb-1 text-center text-3xl font-black text-zinc-900 dark:text-zinc-50">{brl(recibo?.total ?? 0)}</p>
+          <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
+            <p className="text-center text-sm font-semibold text-emerald-600">Recebido</p>
+            <p className="mb-1 text-center text-3xl font-black text-texto">{brl(recibo?.total ?? 0)}</p>
             {(recibo?.troco ?? 0) > 0.005 && (
               <p className="mb-1 text-center text-lg font-bold text-emerald-600">Troco: {brl(recibo?.troco ?? 0)}</p>
             )}
-            <p className="mb-4 text-center text-xs text-zinc-500">
+            <p className="mb-4 text-center text-xs text-texto-suave">
               {pagas.map((c) => `Comanda ${c.numero}`).join(" · ")}
             </p>
 
-            <p className="mb-2 text-center text-lg font-bold text-zinc-900 dark:text-zinc-50">O cliente quer nota fiscal?</p>
+            <p className="mb-2 text-center text-lg font-bold text-texto">O cliente quer nota fiscal?</p>
             <input
               autoFocus
               value={docNota}
@@ -1004,35 +1004,35 @@ export function ReceberComandas({
               <button
                 onClick={() => emitirNota(docNota)}
                 disabled={notaProc || !docNota.trim()}
-                className="rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700 disabled:opacity-40"
+                className="rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90 disabled:opacity-40"
               >
                 <span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Sim, com CPF/CNPJ</span>
               </button>
               <button
                 onClick={() => emitirNota("")}
                 disabled={notaProc}
-                className="rounded-xl border-2 border-emerald-600 py-3 text-base font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                className="rounded-cartao border-2 border-emerald-600 py-3 text-base font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
               >
                 <span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Sim, sem CPF</span>
               </button>
               <button
                 onClick={fecharNota}
                 disabled={notaProc}
-                className="rounded-xl border border-zinc-300 py-3 text-base font-semibold text-zinc-600 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300"
+                className="rounded-cartao border border-borda-forte py-3 text-base font-semibold text-texto-suave disabled:opacity-40 dark:border-borda-forte"
               >
                 Não precisa
               </button>
             </div>
-            {notaMsg && <p className="mt-3 text-center text-sm text-zinc-700 dark:text-zinc-200">{notaMsg}</p>}
+            {notaMsg && <p className="mt-3 text-center text-sm text-texto-suave">{notaMsg}</p>}
             {autoNaFila && !notaMsg && (
-              <p className="mt-3 text-center text-xs text-zinc-400">
+              <p className="mt-3 text-center text-xs text-texto-fraco">
                 Se disser &quot;não precisa&quot;, a nota sai sozinha em alguns minutos, sem imprimir.
               </p>
             )}
             <button
               type="button"
               onClick={() => { try { window.print(); } catch {} }}
-              className="mt-3 w-full text-center text-xs text-zinc-400 underline"
+              className="mt-3 w-full text-center text-xs text-texto-fraco underline"
             >
               Imprimir recibo (sem valor fiscal)
             </button>
@@ -1042,19 +1042,19 @@ export function ReceberComandas({
 
       {/* Após receber: recibo (sem valor fiscal) e NFC-e */}
       {recibo && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
-          <span className="text-zinc-600 dark:text-zinc-300">Recebido {brl(recibo.total)}{recibo.troco > 0 ? ` · troco ${brl(recibo.troco)}` : ""}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-cartao border border-borda p-3 text-sm">
+          <span className="text-texto-suave">Recebido {brl(recibo.total)}{recibo.troco > 0 ? ` · troco ${brl(recibo.troco)}` : ""}</span>
           <button
             type="button"
             onClick={() => { try { window.print(); } catch {} }}
-            className="rounded-lg border border-zinc-300 px-3 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200"
+            className="rounded-controle border border-borda-forte px-3 py-1 text-sm font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
           >
             <span className="inline-flex items-center gap-1.5"><Icone nome="cupom" tamanho={15} /> Imprimir recibo (sem valor fiscal)</span>
           </button>
         </div>
       )}
       {pagas.length > 0 && autoNaFila && (
-        <p className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+        <p className="mt-3 rounded-cartao border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
           <Icone nome="cupom" tamanho={14} className="mr-1.5" /> A nota sai sozinha em alguns minutos, sem imprimir. Se o cliente quiser o papel ou CPF, use lá em cima, em
           &quot;Notas saindo automaticamente&quot; — <b>Emitir e imprimir</b>.
         </p>

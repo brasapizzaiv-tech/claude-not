@@ -161,22 +161,22 @@ export default async function ComandaPage({
 
   return (
     <div className="mx-auto max-w-xl p-6">
-      <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
+      <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
         ← Salão
       </Link>
 
       {/* Cabeçalho simples da comanda */}
-      <div className="mt-3 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="mt-3 flex items-center justify-between rounded-cartao border border-borda bg-painel-cartao p-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-zinc-400">
+          <p className="text-xs text-texto-fraco">
             Comanda {comanda.mesa ? `· ${comanda.mesa}` : ""} {fechada ? "· fechada" : ""}
           </p>
-          <p className="text-3xl font-black text-zinc-900 dark:text-zinc-50">#{comanda.numero}</p>
+          <p className="text-3xl font-black text-texto">#{comanda.numero}</p>
         </div>
         {temBuffet && (
           <div className="text-right">
-            <p className="text-[11px] uppercase text-zinc-400">Buffet</p>
-            <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+            <p className="text-[11px] text-texto-fraco">Buffet</p>
+            <p className="text-lg font-bold text-texto">
               {moeda(Number(comanda.valor_buffet))}
             </p>
             {comanda.livre && <p className="text-[11px] font-semibold text-orange-600">BUFFET LIVRE</p>}
@@ -185,27 +185,27 @@ export default async function ComandaPage({
       </div>
 
       {/* Itens */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {temBuffet && (
-              <tr className="bg-white dark:bg-zinc-950">
-                <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+              <tr className="">
+                <td className="px-4 py-2 font-medium text-texto">
                   Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">
+                <td className="px-4 py-2 text-right text-texto-suave">
                   {moeda(Number(comanda.valor_buffet))}
                 </td>
                 <td className="px-4 py-2" />
               </tr>
             )}
             {lista.map((i) => (
-              <tr key={i.id} className="bg-white dark:bg-zinc-950">
-                <td className="whitespace-pre-line px-4 py-2 text-zinc-800 dark:text-zinc-200">
+              <tr key={i.id} className="">
+                <td className="whitespace-pre-line px-4 py-2 text-texto">
                   {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
                   {i.descricao}
                 </td>
-                <td className="px-4 py-2 text-right align-top text-zinc-700 dark:text-zinc-300">
+                <td className="px-4 py-2 text-right align-top text-texto-suave">
                   {moeda(Number(i.qtd) * Number(i.preco_unit))}
                 </td>
                 <td className="px-4 py-2 text-right">
@@ -240,24 +240,24 @@ export default async function ComandaPage({
       )}
 
       {/* Totais */}
-      <div className="mt-6 space-y-1 rounded-2xl border border-zinc-200 p-4 text-sm dark:border-zinc-800">
-        <div className="flex justify-between text-zinc-500">
+      <div className="mt-6 space-y-1 rounded-cartao border border-borda p-4 text-sm">
+        <div className="flex justify-between text-texto-suave">
           <span>Subtotal</span>
           <span>{moeda(subtotal)}</span>
         </div>
         {servico > 0 && (
-          <div className="flex justify-between text-zinc-500">
+          <div className="flex justify-between text-texto-suave">
             <span>Serviço ({Math.round(perc)}%)</span>
             <span>{moeda(servico)}</span>
           </div>
         )}
-        <div className="flex justify-between border-t border-zinc-100 pt-1 text-lg font-bold text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
+        <div className="flex justify-between border-t border-borda pt-1 text-lg font-bold text-texto">
           <span>Total</span>
           <span>{moeda(total)}</span>
         </div>
       </div>
 
-      <p className="mt-3 text-center text-xs text-zinc-400">
+      <p className="mt-3 text-center text-xs text-texto-fraco">
         O pagamento é feito no caixa. Aqui você só adiciona ou retira itens.
       </p>
 

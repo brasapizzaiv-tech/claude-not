@@ -18,7 +18,7 @@ export type CategoriaComContagem = {
 };
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function CategoriasClient({
   categorias,
@@ -50,10 +50,10 @@ export function CategoriasClient({
     <div className="mx-auto max-w-3xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Categorias
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             {categorias.length} seções de produtos
           </p>
         </div>
@@ -62,15 +62,15 @@ export function CategoriasClient({
             setEditando(null);
             setAberto(true);
           }}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
         >
           + Adicionar
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr>
               <th className="px-4 py-3">Categoria</th>
               <th className="px-4 py-3">Produtos</th>
@@ -78,13 +78,13 @@ export function CategoriasClient({
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {categorias.map((c) => (
               <tr
                 key={c.id}
-                className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+                className="transition hover:bg-superficie-suave"
               >
-                <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                <td className="px-4 py-3 font-medium text-texto">
                   {c.nome}
                 </td>
                 <td className="px-4 py-3">
@@ -99,7 +99,7 @@ export function CategoriasClient({
                   <select
                     value={c.dreCategoriaId ?? ""}
                     onChange={(e) => mapear(c.id, e.target.value)}
-                    className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                   >
                     <option value="">— não lançar —</option>
                     {[...porGrupo.entries()].map(([grupo, ds]) => (
@@ -140,7 +140,7 @@ export function CategoriasClient({
                     <input type="hidden" name="id" value={c.id} />
                     <button
                       type="submit"
-                      className="text-zinc-400 hover:text-red-600"
+                      className="text-texto-fraco hover:text-red-600"
                     >
                       Remover
                     </button>
@@ -154,8 +154,8 @@ export function CategoriasClient({
 
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
-            <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <div className="w-full max-w-sm rounded-cartao bg-painel-cartao p-6">
+            <h2 className="mb-4 text-lg font-semibold text-texto">
               {editando ? "Editar categoria" : "Nova categoria"}
             </h2>
             <form
@@ -167,7 +167,7 @@ export function CategoriasClient({
             >
               {editando && <input type="hidden" name="id" value={editando.id} />}
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-texto-suave">
                   Nome *
                 </label>
                 <input
@@ -182,13 +182,13 @@ export function CategoriasClient({
                 <button
                   type="button"
                   onClick={() => setAberto(false)}
-                  className="rounded-lg px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave dark:text-texto-fraco"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+                  className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
                 >
                   Salvar
                 </button>

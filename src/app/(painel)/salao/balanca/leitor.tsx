@@ -126,23 +126,23 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
   }
 
   const selCls =
-    "rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+    "rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm text-texto   ";
 
   return (
-    <div className="space-y-4 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
+    <div className="space-y-4 rounded-cartao border border-borda p-5">
       <div className="flex items-center justify-between">
-        <p className="font-semibold text-zinc-800 dark:text-zinc-200"><Icone nome="balanca" tamanho={15} className="mr-1.5" /> Balança (leitura automática)</p>
+        <p className="font-semibold text-texto"><Icone nome="balanca" tamanho={15} className="mr-1.5" /> Balança (leitura automática)</p>
         {conectado ? (
           <button
             onClick={desconectar}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+            className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm text-texto-suave"
           >
             Desconectar
           </button>
         ) : (
           <button
             onClick={conectar}
-            className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-orange-600"
+            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-orange-600"
           >
             Conectar balança
           </button>
@@ -150,49 +150,49 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       </div>
 
       {erro && (
-        <p className="rounded-lg bg-red-50 p-2 text-xs text-red-600 dark:bg-red-950/30">{erro}</p>
+        <p className="rounded-controle bg-red-50 p-2 text-xs text-red-600 dark:bg-red-950/30">{erro}</p>
       )}
 
       {/* Peso lido */}
-      <div className="rounded-xl bg-zinc-50 p-4 text-center dark:bg-zinc-900">
-        <p className="text-[11px] uppercase text-zinc-400">Peso lido</p>
-        <p className="text-4xl font-black text-zinc-900 dark:text-zinc-50">
+      <div className="rounded-cartao bg-superficie-suave p-4 text-center">
+        <p className="text-[11px] text-texto-fraco">Peso lido</p>
+        <p className="text-4xl font-black text-texto">
           {peso == null ? "—" : peso.toFixed(3)} <span className="text-lg">kg</span>
         </p>
       </div>
 
       {/* Ajustes de leitura */}
       <details className="text-sm">
-        <summary className="cursor-pointer text-zinc-500">Ajustes da porta / interpretação</summary>
+        <summary className="cursor-pointer text-texto-suave">Ajustes da porta / interpretação</summary>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <label className="text-xs text-zinc-500">Velocidade</label>
+          <label className="text-xs text-texto-suave">Velocidade</label>
           <select value={baud} onChange={(e) => setBaud(Number(e.target.value))} className={selCls} disabled={conectado}>
             {[1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200].map((b) => (
               <option key={b} value={b}>{b}</option>
             ))}
           </select>
-          <label className="text-xs text-zinc-500">Dados</label>
+          <label className="text-xs text-texto-suave">Dados</label>
           <select value={dataBits} onChange={(e) => setDataBits(Number(e.target.value))} className={selCls} disabled={conectado}>
             <option value={8}>8</option>
             <option value={7}>7</option>
           </select>
-          <label className="text-xs text-zinc-500">Parada</label>
+          <label className="text-xs text-texto-suave">Parada</label>
           <select value={stopBits} onChange={(e) => setStopBits(Number(e.target.value))} className={selCls} disabled={conectado}>
             <option value={1}>1</option>
             <option value={2}>2</option>
           </select>
-          <label className="text-xs text-zinc-500">Paridade</label>
+          <label className="text-xs text-texto-suave">Paridade</label>
           <select value={parity} onChange={(e) => setParity(e.target.value as any)} className={selCls} disabled={conectado}>
             <option value="none">nenhuma</option>
             <option value="even">par</option>
             <option value="odd">ímpar</option>
           </select>
-          <label className="text-xs text-zinc-500">Unidade</label>
+          <label className="text-xs text-texto-suave">Unidade</label>
           <select value={unidade} onChange={(e) => setUnidade(e.target.value as any)} className={selCls}>
             <option value="kg">kg</option>
             <option value="g">gramas</option>
           </select>
-          <label className="text-xs text-zinc-500">Casas (nº sem vírgula)</label>
+          <label className="text-xs text-texto-suave">Casas (nº sem vírgula)</label>
           <select value={casas} onChange={(e) => setCasas(Number(e.target.value))} className={selCls}>
             {[0, 1, 2, 3].map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -205,26 +205,26 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       {conectado && (
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <p className="text-[11px] uppercase text-zinc-400">Dado bruto da balança</p>
+            <p className="text-[11px] text-texto-fraco">Dado bruto da balança</p>
             <p className={`text-[11px] font-medium ${bytes > 0 ? "text-green-600" : "text-amber-600"}`}>
               {bytes} bytes recebidos
             </p>
           </div>
-          <pre className="max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-900 p-2 text-[11px] text-green-400">
+          <pre className="max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-controle bg-zinc-900 p-2 text-[11px] text-green-400">
             {raw || "aguardando dados... (coloque um prato na balança)"}
           </pre>
 
           {bytes === 0 && (
-            <div className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700 dark:bg-amber-950/30">
+            <div className="mt-2 rounded-controle bg-amber-50 p-2 text-xs text-amber-700 dark:bg-amber-950/30">
               <p className="mb-2 font-medium">
                 Conectou, mas a balança não está enviando. Tente “cutucar” (a POP-31 às vezes só manda o peso quando recebe um comando):
               </p>
               <div className="flex flex-wrap gap-1.5">
-                <button onClick={() => enviar([0x05], "ENQ")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar ENQ</button>
-                <button onClick={() => enviar([0x0d], "CR")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar Enter</button>
-                <button onClick={() => enviar([0x50, 0x0d], "P")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar P</button>
-                <button onClick={() => enviar([0x57, 0x0d], "W")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar W</button>
-                <button onClick={() => enviar([0x11], "DC1")} className="rounded bg-white px-2 py-1 font-medium text-amber-800 dark:bg-zinc-900 dark:text-amber-300">Enviar DC1</button>
+                <button onClick={() => enviar([0x05], "ENQ")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar ENQ</button>
+                <button onClick={() => enviar([0x0d], "CR")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar Enter</button>
+                <button onClick={() => enviar([0x50, 0x0d], "P")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar P</button>
+                <button onClick={() => enviar([0x57, 0x0d], "W")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar W</button>
+                <button onClick={() => enviar([0x11], "DC1")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar DC1</button>
               </div>
               <p className="mt-2">
                 Se nada mudar em nenhum, provavelmente a balança está com a **transmissão contínua desligada** (config da própria balança) ou a **velocidade** está diferente — tente 4800 ou 2400 nos ajustes (desconecte e reconecte).
@@ -235,34 +235,34 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       )}
 
       {/* Gerar comanda com o peso lido */}
-      <form action={criarComandaBuffet} className="flex flex-wrap items-end gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+      <form action={criarComandaBuffet} className="flex flex-wrap items-end gap-2 border-t border-borda pt-3">
         <input type="hidden" name="mesa" value="Balança" />
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Peso (kg)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Peso (kg)</label>
           <input
             key={peso ?? "vazio"}
             name="peso"
             inputMode="decimal"
             defaultValue={peso != null ? peso.toFixed(3).replace(".", ",") : ""}
             placeholder="0,000"
-            className="w-28 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="w-28 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm dark:text-zinc-100"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Tara (kg)</label>
+          <label className="mb-1 block text-xs text-texto-suave">Tara (kg)</label>
           <input
             name="tara"
             inputMode="decimal"
             defaultValue={taraPadrao ? String(taraPadrao).replace(".", ",") : ""}
             placeholder="0,000"
-            className="w-24 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="w-24 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm dark:text-zinc-100"
           />
         </div>
-        <button className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+        <button className="rounded-controle bg-texto px-5 py-2 text-sm font-semibold text-fundo hover:opacity-90">
           Gerar comanda
         </button>
       </form>
-      <p className="text-[11px] text-zinc-400">
+      <p className="text-[11px] text-texto-fraco">
         Dica: o campo do peso já vem preenchido com a leitura; se precisar, dá pra corrigir na mão antes de gerar.
       </p>
     </div>

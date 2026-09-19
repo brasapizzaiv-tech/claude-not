@@ -95,7 +95,7 @@ export default async function NotasPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/notas/sefaz"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             SEFAZ automático
           </Link>
@@ -110,7 +110,7 @@ export default async function NotasPage() {
       <ManifestarLote notas={resumoParaManifestar} />
 
       {notas.length === 0 ? (
-        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave ">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhuma nota ainda. Clique em <b>+ Importar XML</b> e escolha os
           arquivos <b>.xml</b> das notas.
         </div>

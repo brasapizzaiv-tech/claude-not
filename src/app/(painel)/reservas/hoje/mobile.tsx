@@ -58,22 +58,22 @@ export function ReservasHoje({
   return (
     <div className="mx-auto max-w-md px-3 pb-16">
       {/* Cabeçalho fixo */}
-      <div className="sticky top-0 z-10 -mx-3 border-b border-zinc-200 bg-white/95 px-3 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-        <h1 className="text-center text-lg font-bold text-zinc-900 dark:text-zinc-50">Reservas</h1>
+      <div className="sticky top-0 z-10 -mx-3 border-b border-borda bg-white/95 px-3 py-3 backdrop-blur dark:bg-zinc-950/95">
+        <h1 className="text-center text-lg font-bold text-texto">Reservas</h1>
         <div className="mt-2 flex items-center justify-between">
-          <button onClick={() => irDia(addDias(dia, -1))} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700"><Icone nome="voltar" tamanho={16} titulo="Dia anterior" /></button>
+          <button onClick={() => irDia(addDias(dia, -1))} className="rounded-controle border border-borda-forte px-3 py-1.5"><Icone nome="voltar" tamanho={16} titulo="Dia anterior" /></button>
           <div className="text-center">
             <div className="text-sm font-semibold capitalize text-zinc-800 dark:text-zinc-100">{diaSemana(dia)}</div>
-            <div className="text-xs text-zinc-500">{dataBR(dia)}{dia === hoje ? " · hoje" : ""}</div>
+            <div className="text-xs text-texto-suave">{dataBR(dia)}{dia === hoje ? " · hoje" : ""}</div>
           </div>
-          <button onClick={() => irDia(addDias(dia, 1))} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700"><Icone nome="seguir" tamanho={16} titulo="Próximo dia" /></button>
+          <button onClick={() => irDia(addDias(dia, 1))} className="rounded-controle border border-borda-forte px-3 py-1.5"><Icone nome="seguir" tamanho={16} titulo="Próximo dia" /></button>
         </div>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-lg bg-zinc-100 py-1.5 dark:bg-zinc-900"><div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{reservas.length}</div><div className="text-[10px] uppercase text-zinc-400">reservas</div></div>
-          <div className="rounded-lg bg-zinc-100 py-1.5 dark:bg-zinc-900"><div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{totalPessoas}</div><div className="text-[10px] uppercase text-zinc-400">pessoas</div></div>
-          <div className="rounded-lg bg-emerald-100 py-1.5 dark:bg-emerald-950/40"><div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{chegaram}</div><div className="text-[10px] uppercase text-emerald-600/70">chegaram</div></div>
+          <div className="rounded-controle bg-superficie-suave py-1.5"><div className="text-lg font-bold text-texto">{reservas.length}</div><div className="text-[10px] text-texto-fraco">reservas</div></div>
+          <div className="rounded-controle bg-superficie-suave py-1.5"><div className="text-lg font-bold text-texto">{totalPessoas}</div><div className="text-[10px] text-texto-fraco">pessoas</div></div>
+          <div className="rounded-controle bg-emerald-100 py-1.5 dark:bg-emerald-950/40"><div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{chegaram}</div><div className="text-[10px] text-emerald-600/70">chegaram</div></div>
         </div>
-        <label className="mt-2 flex items-center justify-center gap-2 text-sm text-zinc-500">
+        <label className="mt-2 flex items-center justify-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={soFaltam} onChange={(e) => setSoFaltam(e.target.checked)} />
           Mostrar só quem ainda não chegou
         </label>
@@ -82,24 +82,24 @@ export function ReservasHoje({
       {/* Lista */}
       <div className="mt-3 space-y-2">
         {lista.length === 0 && (
-          <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-400 dark:border-zinc-700">Nenhuma reserva.</div>
+          <div className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-fraco">Nenhuma reserva.</div>
         )}
         {lista.map((r) => {
           return (
             <div
               key={r.id}
-              className={`rounded-2xl border p-3 ${
+              className={`rounded-cartao border p-3 ${
                 r.chegou_em
                   ? "border-emerald-300 bg-emerald-50 dark:border-emerald-500/40 dark:bg-emerald-500/10"
-                  : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+                  : "border-borda bg-painel-cartao  "
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="truncate text-base font-bold text-zinc-900 dark:text-zinc-50">
+                  <div className="truncate text-base font-bold text-texto">
                     {r.ocasiao && r.ocasiao !== "Só uma reserva" && <Icone nome="bolo" tamanho={13} className="mr-1 text-pink-600" />}{r.nome}
                   </div>
-                  <div className="text-xs text-zinc-500">
+                  <div className="text-xs text-texto-suave">
                     {r.pessoas} {r.pessoas === 1 ? "pessoa" : "pessoas"}
                     {r.criancas ? ` (${r.adultos ?? r.pessoas} ad. + ${r.criancas} cri.)` : ""} · {r.turno}
                   </div>
@@ -107,7 +107,7 @@ export function ReservasHoje({
                 </div>
                 <div className="shrink-0 text-right">
                   {r.chegou_em ? (
-                    <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white">✓ chegou</span>
+                    <span className="rounded-full bg-texto px-2 py-0.5 text-[11px] font-bold text-fundo">✓ chegou</span>
                   ) : (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">aguardando</span>
                   )}
@@ -116,7 +116,7 @@ export function ReservasHoje({
 
               {/* Mesa */}
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs text-zinc-400">Mesa:</span>
+                <span className="text-xs text-texto-fraco">Mesa:</span>
                 {editMesa === r.id ? (
                   <input
                     autoFocus
@@ -124,10 +124,10 @@ export function ReservasHoje({
                     onBlur={(e) => { setEditMesa(null); if ((e.target.value || "") !== (r.mesa ?? "")) acao(() => atribuirMesa(r.id, e.target.value)); }}
                     onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                     placeholder="ex.: 12"
-                    className="w-20 rounded-lg border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                    className="w-20 rounded-controle border border-borda-forte px-2 py-1 text-sm dark:bg-zinc-950"
                   />
                 ) : (
-                  <button onClick={() => setEditMesa(r.id)} className="rounded-lg border border-zinc-300 px-3 py-1 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-200">
+                  <button onClick={() => setEditMesa(r.id)} className="rounded-controle border border-borda-forte px-3 py-1 text-sm font-medium text-texto-suave">
                     {r.mesa ? `Mesa ${r.mesa}` : "definir"}
                   </button>
                 )}
@@ -137,10 +137,10 @@ export function ReservasHoje({
               <button
                 onClick={() => acao(() => marcarChegou(r.id, !r.chegou_em))}
                 disabled={proc}
-                className={`mt-2 w-full rounded-xl py-3 text-base font-bold disabled:opacity-60 ${
+                className={`mt-2 w-full rounded-cartao py-3 text-base font-bold disabled:opacity-60 ${
                   r.chegou_em
-                    ? "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    ? "border border-borda-forte text-texto-suave  "
+                    : "bg-texto text-fundo hover:opacity-90"
                 }`}
               >
                 {r.chegou_em ? "Desmarcar chegada" : "✓ Chegou"}

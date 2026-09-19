@@ -33,11 +33,11 @@ export function EtiquetaImpressao({ d, config }: { d: EtiquetaDados; config: Eti
       <div className="mt-4 print:hidden">
         <button
           onClick={() => window.print()}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
         >
           Imprimir etiqueta
         </button>
-        <p className="mt-2 text-xs text-zinc-400">
+        <p className="mt-2 text-xs text-texto-fraco">
           Etiqueta {w}×{h}mm. Na janela de impressão, escolha a impressora de etiquetas e o papel {w}×{h}mm.
           (Pelo agente de impressão ela já saiu sozinha ao gerar.)
         </p>

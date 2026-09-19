@@ -65,13 +65,13 @@ export default async function CanceladosPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">← Salão</Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Cancelados / excluídos</h1>
-      <p className="mt-1 text-sm text-zinc-500">Auditoria: comandas excluídas e itens cancelados, com o motivo, quem fez e quando.</p>
+      <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">← Salão</Link>
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Cancelados / excluídos</h1>
+      <p className="mt-1 text-sm text-texto-suave">Auditoria: comandas excluídas e itens cancelados, com o motivo, quem fez e quando.</p>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="mt-4 overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-400 dark:bg-zinc-900">
+          <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
             <tr>
               <th className="px-4 py-2 font-medium">O quê</th>
               <th className="px-4 py-2 font-medium">Motivo</th>
@@ -79,23 +79,23 @@ export default async function CanceladosPage() {
               <th className="px-4 py-2 font-medium">Quem · quando</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {lista.map((l, idx) => (
-              <tr key={idx} className="bg-white dark:bg-zinc-950">
+              <tr key={idx} className="">
                 <td className="px-4 py-2">
                   <div className="font-medium text-zinc-800 dark:text-zinc-100">{l.descricao}</div>
-                  <div className="text-[11px] uppercase text-zinc-400">{l.tipo}</div>
+                  <div className="text-[11px] text-texto-fraco">{l.tipo}</div>
                 </td>
-                <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300">{l.motivo}</td>
-                <td className="px-4 py-2 text-right text-zinc-700 dark:text-zinc-300">{brl(l.valor)}</td>
-                <td className="px-4 py-2 text-xs text-zinc-500">
+                <td className="px-4 py-2 text-texto-suave">{l.motivo}</td>
+                <td className="px-4 py-2 text-right text-texto-suave">{brl(l.valor)}</td>
+                <td className="px-4 py-2 text-xs text-texto-suave">
                   {l.quem ? `${l.quem} · ` : ""}{dataHora(l.quando)}
                 </td>
               </tr>
             ))}
             {lista.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-zinc-400">Nenhum cancelamento registrado.</td>
+                <td colSpan={4} className="px-4 py-8 text-center text-texto-fraco">Nenhum cancelamento registrado.</td>
               </tr>
             )}
           </tbody>

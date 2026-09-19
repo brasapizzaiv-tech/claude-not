@@ -16,7 +16,7 @@ const moeda = (n: number) =>
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const num = (s: string) => Number(String(s).replace(",", ".")) || 0;
 const inp =
-  "w-20 rounded border border-zinc-300 bg-white px-2 py-1 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-20 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right text-sm   dark:text-zinc-100";
 
 export type CmvRow = {
   produtoId: string;
@@ -182,10 +182,10 @@ export function CmvTabela({
   }
 
   const card = (titulo: string, valor: string, cor?: string, sub?: string) => (
-    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <p className="text-xs text-zinc-500">{titulo}</p>
-      <p className={`mt-1 text-xl font-bold ${cor || "text-zinc-900 dark:text-zinc-50"}`}>{valor}</p>
-      {sub ? <p className="text-xs text-zinc-400">{sub}</p> : null}
+    <div className="rounded-cartao border border-borda p-4">
+      <p className="text-xs text-texto-suave">{titulo}</p>
+      <p className={`mt-1 text-xl font-bold ${cor || "text-texto"}`}>{valor}</p>
+      {sub ? <p className="text-xs text-texto-fraco">{sub}</p> : null}
     </div>
   );
 
@@ -193,7 +193,7 @@ export function CmvTabela({
     <div>
       {emAndamento ? (
         <>
-          <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <div className="mb-3 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
             <b>Semana em andamento.</b> O estoque final ainda não foi contado, então o CMV desta semana só fecha quando a próxima contagem for finalizada. Enquanto isso: compras e faturamento até agora.
           </div>
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -218,21 +218,21 @@ export function CmvTabela({
       )}
 
       {/* Faturamento diário livre (por turno) */}
-      <div className="mb-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mb-6 rounded-cartao border border-borda p-4">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+          <h2 className="text-sm font-semibold text-texto">
             Faturamento da semana
             {faturamentoCaixa > 0 && (
-              <span className="ml-1 text-xs font-normal text-zinc-400">
+              <span className="ml-1 text-xs font-normal text-texto-fraco">
                 (+ caixa {moeda(faturamentoCaixa)})
               </span>
             )}
           </h2>
-          <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+          <span className="text-sm font-bold text-texto">
             {moeda(faturamento)}
           </span>
         </div>
-        <p className="mb-3 text-xs text-zinc-500">
+        <p className="mb-3 text-xs text-texto-suave">
           Lance à mão por dia enquanto não usa o caixa. Almoço (seg–sáb) e noite (sex e sáb).
         </p>
         <div className="flex flex-wrap gap-2">
@@ -242,15 +242,15 @@ export function CmvTabela({
             if (!temDia && !temNoite) return null;
             const [, m, dd] = d.data.split("-");
             const campoFat =
-              "mt-0.5 block w-24 rounded border border-zinc-300 bg-white px-2 py-1 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+              "mt-0.5 block w-24 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right text-sm   dark:text-zinc-100";
             return (
-              <div key={d.data} className="rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
-                <p className="mb-1 text-[11px] font-semibold text-zinc-500">
+              <div key={d.data} className="rounded-controle border border-borda p-2">
+                <p className="mb-1 text-[11px] font-semibold text-texto-suave">
                   {DIAS_SEM[d.dow]} {dd}/{m}
                 </p>
                 <div className="flex gap-2">
                   {temDia && (
-                    <label className="text-[10px] text-zinc-400">
+                    <label className="text-[10px] text-texto-fraco">
                       almoço
                       <input
                         inputMode="decimal"
@@ -263,7 +263,7 @@ export function CmvTabela({
                     </label>
                   )}
                   {temNoite && (
-                    <label className="text-[10px] text-zinc-400">
+                    <label className="text-[10px] text-texto-fraco">
                       noite
                       <input
                         inputMode="decimal"
@@ -283,7 +283,7 @@ export function CmvTabela({
       </div>
 
       {aumentos.length > 0 && (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
+        <div className="mb-6 rounded-cartao border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
           <h2 className="mb-2 text-sm font-semibold text-red-700 dark:text-red-300">
             <Icone nome="subindo" tamanho={15} className="mr-1.5" /> Maiores aumentos de preço na semana
           </h2>
@@ -291,13 +291,13 @@ export function CmvTabela({
             {aumentos.map((r) => (
               <div
                 key={r.produtoId}
-                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs dark:border-red-900/60 dark:bg-zinc-900"
+                className="rounded-controle border border-red-200 bg-painel-cartao px-3 py-1.5 text-xs dark:border-red-900/60"
               >
                 <span className="font-semibold text-zinc-800 dark:text-zinc-100">{r.nome}</span>{" "}
                 <span className="font-bold text-red-600">
                   ▲ {((r.variacao ?? 0) * 100).toFixed(0)}% (+{moeda(r.precoCompra - r.precoAnterior)})
                 </span>
-                <span className="ml-1 text-zinc-400">
+                <span className="ml-1 text-texto-fraco">
                   {moeda(r.precoAnterior)} → {moeda(r.precoCompra)}
                 </span>
               </div>
@@ -306,7 +306,7 @@ export function CmvTabela({
         </div>
       )}
 
-      <p className="mb-2 text-xs text-zinc-500">
+      <p className="mb-2 text-xs text-texto-suave">
         Dá pra <b>editar as contagens</b> (estoque inicial e final) e o valor de{" "}
         <b>Compras</b> direto aqui — útil pra corrigir quando uma compra cai fora
         da captura automática. Campo de Compras em laranja = valor corrigido à
@@ -319,21 +319,21 @@ export function CmvTabela({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto..."
-          className="w-full max-w-xs rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="w-full max-w-xs min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
         />
         {busca && (
           <button
             onClick={() => setBusca("")}
-            className="text-xs text-zinc-400 hover:text-orange-600"
+            className="text-xs text-texto-fraco hover:text-orange-600"
           >
             limpar
           </button>
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[900px] text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr>
               <th className="px-3 py-3">CMV?</th>
               <th className="px-4 py-3">Produto</th>
@@ -346,7 +346,7 @@ export function CmvTabela({
               <th className="px-3 py-3">Decisão</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {grupos.map((g) => {
               const ids = allIdsByCat.get(g.categoriaId ?? "__none") ?? g.rows.map((r) => r.produtoId);
               const todosEntra = ids.every((id) => entra[id]);
@@ -355,7 +355,7 @@ export function CmvTabela({
                 .reduce((s, r) => s + cmvDe(r.produtoId), 0);
               return (
                 <Fragment key={g.categoriaId ?? "__none"}>
-                  <tr className="bg-zinc-50/70 dark:bg-zinc-900/60">
+                  <tr className="bg-superficie-suave/70">
                     <td className="px-3 py-1.5">
                       <input
                         type="checkbox"
@@ -364,10 +364,10 @@ export function CmvTabela({
                         title="Categoria inteira entra no CMV"
                       />
                     </td>
-                    <td className="px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-zinc-500" colSpan={4}>
+                    <td className="px-4 py-1.5 text-xs font-bold text-texto-suave" colSpan={4}>
                       {g.nome}
                     </td>
-                    <td className="px-4 py-1.5 text-right text-xs font-bold text-zinc-500">
+                    <td className="px-4 py-1.5 text-right text-xs font-bold text-texto-suave">
                       {moeda(subCmv)}
                     </td>
                     <td colSpan={3} />
@@ -383,7 +383,7 @@ export function CmvTabela({
                     return (
                       <tr
                         key={id}
-                        className={dentro ? "bg-white dark:bg-zinc-950" : "bg-zinc-50/40 dark:bg-zinc-900/30"}
+                        className={dentro ? "bg-painel-cartao " : "bg-superficie-suave/40 dark:bg-zinc-900/30"}
                       >
                         <td className="px-3 py-1.5">
                           <input
@@ -392,8 +392,8 @@ export function CmvTabela({
                             onChange={(e) => toggleProduto(id, e.target.checked)}
                           />
                         </td>
-                        <td className={`px-4 py-1.5 ${dentro ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-400"}`}>
-                          {r.nome} <span className="text-xs text-zinc-400">{r.unidade}</span>
+                        <td className={`px-4 py-1.5 ${dentro ? "text-texto" : "text-texto-fraco"}`}>
+                          {r.nome} <span className="text-xs text-texto-fraco">{r.unidade}</span>
                         </td>
                         <td className="px-3 py-1 text-right">
                           <input
@@ -416,10 +416,10 @@ export function CmvTabela({
                             className={`w-24 rounded border px-2 py-1 text-right text-sm dark:bg-zinc-950 dark:text-zinc-100 ${
                               comprasManualNow
                                 ? "border-orange-400 bg-orange-50/60 dark:border-orange-700 dark:bg-orange-950/20"
-                                : "border-zinc-300 bg-white dark:border-zinc-700"
+                                : "border-borda-forte bg-white "
                             }`}
                           />
-                          <div className="mt-0.5 text-[10px] leading-tight text-zinc-400">
+                          <div className="mt-0.5 text-[10px] leading-tight text-texto-fraco">
                             {r.precoCompra > 0 && (
                               <div>
                                 un {moeda(r.precoCompra)}
@@ -430,7 +430,7 @@ export function CmvTabela({
                                         ? "text-red-500"
                                         : r.variacao < -0.001
                                           ? "text-green-600"
-                                          : "text-zinc-400"
+                                          : "text-texto-fraco"
                                     }`}
                                     title="variação de preço vs semana anterior"
                                   >
@@ -467,13 +467,13 @@ export function CmvTabela({
                             />
                           )}
                         </td>
-                        <td className={`px-4 py-1.5 text-right font-medium ${dentro ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-400"}`}>
+                        <td className={`px-4 py-1.5 text-right font-medium ${dentro ? "text-texto" : "text-texto-fraco"}`}>
                           {emAndamento ? <span className="text-xs text-zinc-300">—</span> : moeda(cmvDe(id))}
                         </td>
-                        <td className="px-3 py-1.5 text-right text-zinc-400">
+                        <td className="px-3 py-1.5 text-right text-texto-fraco">
                           {r.nivel > 0 ? r.nivel : "—"}
                         </td>
-                        <td className={`px-3 py-1.5 text-right ${comprar ? "font-medium text-orange-600" : "text-zinc-400"}`}>
+                        <td className={`px-3 py-1.5 text-right ${comprar ? "font-medium text-orange-600" : "text-texto-fraco"}`}>
                           {r.nivel > 0 ? necessidade : "—"}
                         </td>
                         <td className="px-3 py-1.5">
@@ -495,7 +495,7 @@ export function CmvTabela({
                 </Fragment>
               );
             })}
-            <tr className="bg-zinc-100 font-bold dark:bg-zinc-800">
+            <tr className="bg-superficie-suave font-bold">
               <td className="px-3 py-2" />
               <td className="px-4 py-2" colSpan={4}>{emAndamento ? "TOTAL COMPRAS ATÉ AGORA" : "TOTAL CMV"}</td>
               <td className="px-4 py-2 text-right text-orange-600">{moeda(emAndamento ? totalCompras : totalCmv)}</td>
@@ -506,29 +506,29 @@ export function CmvTabela({
       </div>
 
       {inativos.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="mt-6 rounded-cartao bg-painel-cartao">
           <button
             onClick={() => setInativosAberto((v) => !v)}
             className="flex w-full items-center justify-between px-4 py-3 text-left"
           >
-            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+            <span className="text-sm font-semibold text-texto-suave">
               Produtos fora do CMV (inativos) · {inativos.length}
             </span>
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-texto-fraco">
               {inativosAberto ? "ocultar ▲" : "mostrar ▼"}
             </span>
           </button>
           {inativosAberto && (
-            <div className="flex flex-wrap gap-2 border-t border-zinc-100 p-4 dark:border-zinc-800">
+            <div className="flex flex-wrap gap-2 border-t border-borda p-4">
               {inativos.map((r) => (
                 <button
                   key={r.produtoId}
                   onClick={() => toggleProduto(r.produtoId, true)}
                   title="Trazer de volta para o CMV"
-                  className="group inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                  className="group inline-flex items-center gap-1.5 rounded-controle border border-borda-forte bg-white px-3 py-1.5 text-xs text-texto-suave hover:border-orange-500 hover:text-orange-600 dark:border-borda-forte dark:bg-zinc-900"
                 >
                   <span className="font-medium">{r.nome}</span>
-                  <span className="text-zinc-400 group-hover:text-orange-500">+ voltar</span>
+                  <span className="text-texto-fraco group-hover:text-orange-500">+ voltar</span>
                 </button>
               ))}
             </div>
@@ -538,7 +538,7 @@ export function CmvTabela({
 
       <button
         onClick={() => router.refresh()}
-        className="mt-4 text-xs text-zinc-400 hover:text-orange-600"
+        className="mt-4 text-xs text-texto-fraco hover:text-orange-600"
       >
         recarregar
       </button>

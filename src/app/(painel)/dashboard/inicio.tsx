@@ -179,11 +179,11 @@ export function Inicio({ d }: { d: DadosInicio }) {
                           ? `Mesa ${m.numero} — pediu a conta${m.contaPor ? ` (marcou: ${m.contaPor})` : ""}`
                           : `Mesa ${m.numero} — livre`;
                     return m.comandaId ? (
-                      <Link key={m.numero} href={`/salao/comandas/${m.comandaId}`} title={titulo} aria-label={titulo} className={`${base} ${cor}`}>
+                      <Link key={m.numero} href={`/salao/comandas/${m.comandaId}`} title={titulo} aria-label={titulo} className={`${base}  ${cor}`}>
                         {m.numero}
                       </Link>
                     ) : (
-                      <Link key={m.numero} href={`/salao/mesa/${m.numero}`} title={titulo} aria-label={titulo} className={`${base} ${cor}`}>
+                      <Link key={m.numero} href={`/salao/mesa/${m.numero}`} title={titulo} aria-label={titulo} className={`${base}  ${cor}`}>
                         {m.numero}
                       </Link>
                     );

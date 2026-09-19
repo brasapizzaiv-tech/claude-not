@@ -32,7 +32,7 @@ export function UploadOfx() {
       <select
         value={banco}
         onChange={(e) => setBanco(e.target.value)}
-        className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
       >
         {BANCOS.map((b) => (
           <option key={b} value={b}>
@@ -40,7 +40,7 @@ export function UploadOfx() {
           </option>
         ))}
       </select>
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+      <label className="inline-flex cursor-pointer items-center gap-2 min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
         {processando ? "Importando..." : "+ Importar extrato (OFX)"}
         <input
           type="file"
@@ -53,7 +53,7 @@ export function UploadOfx() {
           }}
         />
       </label>
-      {msg && <p className="w-full text-xs text-zinc-500">{msg}</p>}
+      {msg && <p className="w-full text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }

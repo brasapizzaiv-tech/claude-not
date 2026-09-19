@@ -21,13 +21,13 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
     });
   }
   return (
-    <div className={`mb-4 rounded-xl px-4 py-3 text-sm ${configurado ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-zinc-500/10 text-zinc-600 dark:text-zinc-300"}`}>
+    <div className={`mb-4 rounded-cartao px-4 py-3 text-sm ${configurado ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-zinc-500/10 text-texto-suave"}`}>
       {configurado
         ? "✓ WhatsApp oficial ligado — o cliente recebe aviso ao pedir, quando confirma, quando sai e quando entrega."
         : "💬 WhatsApp oficial ainda não configurado: faltam WHATSAPP_TOKEN e WHATSAPP_PHONE_ID na Vercel (e os 4 modelos aprovados na Meta). Sem isso, nada é enviado."}
       {configurado && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" placeholder="Seu celular com DDD" className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none dark:border-emerald-800 dark:bg-zinc-950 dark:text-zinc-100" />
+          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" placeholder="Seu celular com DDD" className="rounded-controle border border-emerald-300 bg-white px-3 py-1.5 text-sm text-texto outline-none dark:border-emerald-800 dark:bg-zinc-950" />
           <button
             onClick={() => {
               setMsg(null);
@@ -37,12 +37,12 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
               });
             }}
             disabled={proc || tel.replace(/\D/g, "").length < 10}
-            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-controle bg-texto px-3 py-1.5 text-sm font-semibold text-fundo disabled:opacity-50"
           >
             {proc ? "Enviando..." : "Testar envio"}
           </button>
           {msg && <span className="text-xs">{msg}</span>}
-          <button onClick={verModelos} disabled={proc} className="rounded-lg border border-emerald-400 px-3 py-1.5 text-sm font-semibold disabled:opacity-50">Ver modelos</button>
+          <button onClick={verModelos} disabled={proc} className="rounded-controle border border-emerald-400 px-3 py-1.5 text-sm font-semibold disabled:opacity-50">Ver modelos</button>
         </div>
       )}
       {modelosErro && <p className="mt-2 text-xs text-rose-600">{modelosErro}</p>}
@@ -57,7 +57,7 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
             );
           })}
           {modelos.filter((m) => !ESPERADOS.includes(m.nome)).map((m) => (
-            <li key={m.nome + m.idioma} className="text-zinc-500"><code>{m.nome}</code>: {STATUS_PT[m.status] ?? m.status} · {m.categoria.toLowerCase()} · {m.idioma}</li>
+            <li key={m.nome + m.idioma} className="text-texto-suave"><code>{m.nome}</code>: {STATUS_PT[m.status] ?? m.status} · {m.categoria.toLowerCase()} · {m.idioma}</li>
           ))}
         </ul>
       )}

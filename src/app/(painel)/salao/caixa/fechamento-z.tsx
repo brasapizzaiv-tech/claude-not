@@ -67,35 +67,35 @@ export function FechamentoZ({
   }
 
   const inputCls =
-    "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
   const agora = new Date().toLocaleString("pt-BR");
 
   return (
     <>
       <button
         onClick={() => setAberto(true)}
-        className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600"
+        className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600"
       >
         <Icone nome="cadeado" tamanho={15} className="mr-1.5" /> Fechar caixa (Z)
       </button>
 
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 dark:bg-zinc-950">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-cartao bg-painel-cartao p-5">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Fechamento Z</h2>
-              <button onClick={() => setAberto(false)} className="text-zinc-400 hover:text-zinc-700">
+              <h2 className="text-lg font-bold text-texto">Fechamento Z</h2>
+              <button onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">
                 ✕
               </button>
             </div>
 
-            <div className="space-y-1 rounded-xl bg-zinc-50 p-3 text-sm dark:bg-zinc-900">
-              <div className="flex justify-between text-zinc-500">
+            <div className="space-y-1 rounded-cartao bg-superficie-suave p-3 text-sm">
+              <div className="flex justify-between text-texto-suave">
                 <span>Saldo inicial (troco)</span>
                 <span>{brl(saldoInicial)}</span>
               </div>
               {vendasPorForma.map(([f, v]) => (
-                <div key={f} className="flex justify-between text-zinc-700 dark:text-zinc-300">
+                <div key={f} className="flex justify-between text-texto-suave">
                   <span>Vendas · {f}</span>
                   <span>{brl(v)}</span>
                 </div>
@@ -108,19 +108,19 @@ export function FechamentoZ({
                 <span>Sangrias</span>
                 <span>− {brl(sangrias)}</span>
               </div>
-              <div className="mt-1 flex justify-between border-t border-zinc-200 pt-1 font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+              <div className="mt-1 flex justify-between border-t border-borda pt-1 font-medium text-texto dark:border-borda-forte">
                 <span>Total de vendas</span>
                 <span>{brl(totalVendas)}</span>
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
-              <span className="font-medium text-zinc-700 dark:text-zinc-200"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Dinheiro esperado na gaveta</span></span>
-              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{brl(esperado)}</span>
+            <div className="mt-3 flex items-center justify-between rounded-cartao border border-borda p-3 text-sm">
+              <span className="font-medium text-texto-suave"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Dinheiro esperado na gaveta</span></span>
+              <span className="text-lg font-bold text-texto">{brl(esperado)}</span>
             </div>
 
             <div className="mt-3">
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <label className="mb-1 block text-sm font-medium text-texto-suave">
                 Dinheiro contado (R$)
               </label>
               <input
@@ -135,7 +135,7 @@ export function FechamentoZ({
 
             {contadoStr.trim() !== "" && (
               <div
-                className={`mt-2 rounded-xl p-3 text-center text-sm font-bold ${
+                className={`mt-2 rounded-cartao p-3 text-center text-sm font-bold ${
                   Math.abs(quebra) < 0.01
                     ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                     : quebra > 0
@@ -152,7 +152,7 @@ export function FechamentoZ({
             )}
 
             <div className="mt-3">
-              <label className="mb-1 block text-xs text-zinc-500">Observação (opcional)</label>
+              <label className="mb-1 block text-xs text-texto-suave">Observação (opcional)</label>
               <textarea
                 value={obs}
                 onChange={(e) => setObs(e.target.value)}
@@ -165,21 +165,21 @@ export function FechamentoZ({
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setAberto(false)}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
+                className="rounded-controle border border-borda-forte px-4 py-2 text-sm"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmar}
                 disabled={proc || contadoStr.trim() === ""}
-                className="rounded-lg bg-zinc-800 px-5 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50 dark:bg-zinc-700"
+                className="rounded-controle bg-zinc-800 px-5 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50 dark:bg-zinc-700"
               >
                 {proc ? "Fechando..." : "Fechar e imprimir Z"}
               </button>
             </div>
 
             {impresso !== null && (
-              <div className="mt-3 rounded-xl bg-zinc-50 p-3 text-sm dark:bg-zinc-900">
+              <div className="mt-3 rounded-cartao bg-superficie-suave p-3 text-sm">
                 {impresso > 0 ? (
                   <p className="text-emerald-700 dark:text-emerald-400">
                     ✓ Caixa fechado. O cupom saiu na impressora da nota
@@ -201,17 +201,17 @@ export function FechamentoZ({
                       });
                     }}
                     disabled={proc}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700"
+                    className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs"
                   >
                     <Icone nome="imprimir" tamanho={15} className="mr-1.5" /> Imprimir de novo
                   </button>
                   <button
                     onClick={() => { try { window.print(); } catch {} }}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-700"
+                    className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs text-texto-suave"
                   >
                     Imprimir pelo navegador
                   </button>
-                  {msgImp && <span className="self-center text-xs text-zinc-500">{msgImp}</span>}
+                  {msgImp && <span className="self-center text-xs text-texto-suave">{msgImp}</span>}
                 </div>
               </div>
             )}

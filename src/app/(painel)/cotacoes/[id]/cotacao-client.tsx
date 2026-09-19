@@ -26,9 +26,9 @@ export type LinhaProduto = {
 };
 
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 const numInput =
-  "w-24 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function CotacaoClient({
   cotacao,
@@ -137,17 +137,17 @@ export function CotacaoClient({
     <div className="mx-auto max-w-5xl p-8">
       <Link
         href="/cotacoes"
-        className="text-sm text-zinc-500 hover:text-orange-600"
+        className="text-sm text-texto-suave hover:text-orange-600"
       >
         ← Voltar para cotações
       </Link>
 
       <div className="mt-2 mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             {cotacao.descricao}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-texto-suave">
             {dataBR(cotacao.data)} ·{" "}
             {fechada ? "Fechada" : "Aberta"} ·{" "}
             {temContagem
@@ -161,14 +161,14 @@ export function CotacaoClient({
               <button
                 onClick={usarSugestao}
                 disabled={salvando}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="rounded-controle border border-borda-forte px-4 py-2 text-sm font-medium text-texto-suave hover:bg-superficie-suave disabled:opacity-60 dark:border-borda-forte"
               >
                 Preencher com a sugestão
               </button>
               <button
                 onClick={salvar}
                 disabled={salvando}
-                className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+                className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
               >
                 {salvando ? "Salvando..." : "Salvar"}
               </button>
@@ -176,7 +176,7 @@ export function CotacaoClient({
                 onClick={desfazer}
                 disabled={salvando}
                 title="Volta as quantidades como estavam antes do último salvamento"
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="rounded-controle border border-borda-forte px-4 py-2 text-sm font-medium text-texto-suave hover:bg-superficie-suave disabled:opacity-60 dark:border-borda-forte"
               >
                 <Icone nome="desfazer" tamanho={14} className="mr-1.5" /> Desfazer salvamento
               </button>
@@ -184,7 +184,7 @@ export function CotacaoClient({
                 onClick={gerarExclusivos}
                 disabled={salvando}
                 title="Gera o pedido dos itens exclusivos (1 fornecedor) para você já enviar"
-                className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-950"
+                className="rounded-controle border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-950"
               >
                 <Icone nome="rapido" tamanho={14} className="mr-1.5" /> Gerar pedidos exclusivos
               </button>
@@ -192,26 +192,26 @@ export function CotacaoClient({
           )}
           <Link
             href={`/cotacoes/${cotacao.id}/fornecedores`}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
           >
             Fornecedores →
           </Link>
           <Link
             href={`/cotacoes/${cotacao.id}/comparar`}
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Comparar preços →
           </Link>
           <Link
             href={`/cotacoes/${cotacao.id}/pedidos`}
-            className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+            className="rounded-controle border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
           >
             Ver pedidos →
           </Link>
           <button
             onClick={alternarStatus}
             disabled={salvando}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-controle border border-borda-forte px-4 py-2 text-sm font-medium text-texto-suave hover:bg-superficie-suave disabled:opacity-60 dark:border-borda-forte"
           >
             {fechada ? "Reabrir" : "Fechar"}
           </button>
@@ -219,7 +219,7 @@ export function CotacaoClient({
       </div>
 
       {msg && (
-        <div className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+        <div className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
           {msg}
         </div>
       )}
@@ -246,9 +246,9 @@ export function CotacaoClient({
       </div>
 
       <form ref={formRef}>
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Un.</th>
@@ -258,7 +258,7 @@ export function CotacaoClient({
                 <th className="px-4 py-3 text-right">A cotar</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {[...porCategoria.entries()].map(([cat, itensCat]) => {
                 const algumVisivel = itensCat.some(visivel);
                 return (
@@ -266,7 +266,7 @@ export function CotacaoClient({
                     <tr className={algumVisivel ? "" : "hidden"}>
                       <td
                         colSpan={6}
-                        className="bg-zinc-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900"
+                        className="bg-superficie-suave px-4 py-2 text-xs font-semibold text-texto-suave"
                       >
                         {cat} ({itensCat.length})
                       </td>
@@ -274,24 +274,24 @@ export function CotacaoClient({
                     {itensCat.map((l) => (
                       <tr
                         key={l.id}
-                        className={`bg-white dark:bg-zinc-950 ${
+                        className={`bg-painel-cartao ${
                           visivel(l) ? "" : "hidden"
                         }`}
                       >
-                        <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                        <td className="px-4 py-2 font-medium text-texto">
                           {l.nome}
                         </td>
-                        <td className="px-4 py-2 text-zinc-500">{l.unidade}</td>
-                        <td className="px-4 py-2 text-right text-zinc-400">
+                        <td className="px-4 py-2 text-texto-suave">{l.unidade}</td>
+                        <td className="px-4 py-2 text-right text-texto-fraco">
                           {temContagem ? l.contado : "—"}
                         </td>
-                        <td className="px-4 py-2 text-right text-zinc-400">
+                        <td className="px-4 py-2 text-right text-texto-fraco">
                           {l.ideal > 0 ? l.ideal : "—"}
                         </td>
-                        <td className="px-4 py-2 text-right font-medium text-zinc-500">
+                        <td className="px-4 py-2 text-right font-medium text-texto-suave">
                           {l.sugestao > 0 ? l.sugestao : "—"}
                           {l.fardo > 1 && l.sugestao > 0 && (
-                            <span className="ml-1 block text-[10px] font-normal text-zinc-400">
+                            <span className="ml-1 block text-[10px] font-normal text-texto-fraco">
                               {l.sugestao / l.fardo} fardo{l.sugestao / l.fardo === 1 ? "" : "s"} de {l.fardo}
                             </span>
                           )}

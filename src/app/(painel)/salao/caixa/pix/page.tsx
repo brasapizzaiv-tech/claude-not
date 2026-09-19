@@ -77,18 +77,18 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
 
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <Link href="/salao/caixa" className="text-sm text-zinc-500 hover:text-orange-600">← Caixa</Link>
+      <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">← Caixa</Link>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="rapido" tamanho={20} className="mr-2" /> Pix recebidos</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="rapido" tamanho={20} className="mr-2" /> Pix recebidos</h1>
+          <p className="mt-1 text-sm text-texto-suave">
             Cobranças com QR na tela (caixa, balcão e app). Banco: {diag.banco === "sicoob" ? "Sicoob" : "Sicredi"}
             {diag.ambiente !== "producao" && <span className="ml-2 rounded bg-amber-100 px-1.5 text-xs text-amber-700">SANDBOX</span>}
           </p>
         </div>
         <div className="flex gap-1 text-sm">
           {[1, 7, 30].map((d) => (
-            <Link key={d} href={`/salao/caixa/pix?dias=${d}`} className={`rounded-lg px-3 py-1.5 ${dias === d ? "bg-orange-500 text-white" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>
+            <Link key={d} href={`/salao/caixa/pix?dias=${d}`} className={`rounded-controle px-3 py-1.5 ${dias === d ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>
               {d === 1 ? "Hoje" : `${d} dias`}
             </Link>
           ))}
@@ -96,21 +96,21 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
       </div>
 
       <div className="my-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Pagos</p>
+        <div className="rounded-cartao border border-borda p-3">
+          <p className="text-xs text-texto-suave">Pagos</p>
           <p className="text-xl font-bold">{pagos.length}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Recebido</p>
+        <div className="rounded-cartao border border-borda p-3">
+          <p className="text-xs text-texto-suave">Recebido</p>
           <p className="text-xl font-bold text-emerald-600">{totalPago.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Devolvido</p>
+        <div className="rounded-cartao border border-borda p-3">
+          <p className="text-xs text-texto-suave">Devolvido</p>
           <p className="text-xl font-bold text-amber-600">{totalDev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
         </div>
       </div>
 
-      <p className="mb-2 text-xs text-zinc-500">
+      <p className="mb-2 text-xs text-texto-suave">
         <b>Estornar</b> devolve o dinheiro pela API do banco direto pra conta de quem pagou (todo ou parte, até 90 dias). O estorno <b>não</b> reabre a comanda nem mexe no caixa: se precisar, ajuste a conta à parte.
       </p>
       <PixLista linhas={linhas} />

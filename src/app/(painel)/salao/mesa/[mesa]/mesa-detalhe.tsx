@@ -137,9 +137,9 @@ export function MesaDetalhe({
         {l.quitado ? "Pago" : l.pago > 0.005 ? "Parcial" : "Pendente"}
       </span>
       <div className="w-28 shrink-0 text-right">
-        <div className="text-zinc-700 dark:text-zinc-300">{brl(l.payable)}</div>
+        <div className="text-texto-suave">{brl(l.payable)}</div>
         {l.pago > 0.005 && !l.quitado && (
-          <div className="text-[10px] text-zinc-400">pago {brl(l.pago)} · falta {brl(l.pendente)}</div>
+          <div className="text-[10px] text-texto-fraco">pago {brl(l.pago)} · falta {brl(l.pendente)}</div>
         )}
       </div>
     </div>
@@ -149,12 +149,12 @@ export function MesaDetalhe({
     <div className="mx-auto max-w-2xl p-4">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Detalhes da mesa · {mesa}</h1>
-          <p className="text-sm text-zinc-500">Comandas, itens e o que está pago/pendente da mesa.</p>
+          <h1 className="text-xl font-bold text-texto">Detalhes da mesa · {mesa}</h1>
+          <p className="text-sm text-texto-suave">Comandas, itens e o que está pago/pendente da mesa.</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/salao/cancelados" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"><Icone nome="documento" tamanho={14} className="mr-1.5" /> Cancelados</Link>
-          <Link href="/salao" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700">Fechar</Link>
+          <Link href="/salao/cancelados" className="rounded-controle border border-borda-forte px-3 py-2 text-sm font-medium text-texto-suave"><Icone nome="documento" tamanho={14} className="mr-1.5" /> Cancelados</Link>
+          <Link href="/salao" className="rounded-controle border border-borda-forte px-4 py-2 text-sm font-medium">Fechar</Link>
         </div>
       </div>
 
@@ -164,15 +164,15 @@ export function MesaDetalhe({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto ou nº da comanda..."
-          className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="min-w-48 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm"
         />
-        <div className="flex rounded-lg border border-zinc-300 p-0.5 dark:border-zinc-700">
+        <div className="flex rounded-controle border border-borda-forte p-0.5">
           {(["produtos", "comandas"] as const).map((a) => (
-            <button key={a} onClick={() => setAba(a)} className={`rounded-md px-3 py-1 text-sm font-medium capitalize ${aba === a ? "bg-emerald-600 text-white" : "text-zinc-600 dark:text-zinc-300"}`}>{a}</button>
+            <button key={a} onClick={() => setAba(a)} className={`rounded-controle px-3 py-1 text-sm font-medium capitalize ${aba === a ? "bg-texto text-fundo" : "text-texto-suave"}`}>{a}</button>
           ))}
         </div>
       </div>
-      <label className="mt-2 flex items-center gap-2 text-sm text-zinc-500">
+      <label className="mt-2 flex items-center gap-2 text-sm text-texto-suave">
         <input type="checkbox" checked={ocultarPagos} onChange={(e) => setOcultarPagos(e.target.checked)} />
         Pagos: não mostrar
       </label>
@@ -181,17 +181,17 @@ export function MesaDetalhe({
       {selecionaveis.length > 0 && (
         <div className="mt-2 flex gap-3 text-sm">
           <button onClick={marcarTodos} className="font-medium text-emerald-600 hover:underline">Marcar/Desmarcar todos</button>
-          {sel.size > 0 && <span className="text-zinc-400">{sel.size} selecionado(s)</span>}
+          {sel.size > 0 && <span className="text-texto-fraco">{sel.size} selecionado(s)</span>}
         </div>
       )}
 
       {/* Conteúdo */}
-      <div className="mt-3 rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+      <div className="mt-3 rounded-cartao border border-borda p-3">
         {todasLinhas.length === 0 ? (
-          <p className="py-8 text-center text-sm text-zinc-400">Nenhuma comanda aberta nesta mesa.</p>
+          <p className="py-8 text-center text-sm text-texto-fraco">Nenhuma comanda aberta nesta mesa.</p>
         ) : aba === "produtos" ? (
-          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {linhasVis.length === 0 ? <p className="py-6 text-center text-sm text-zinc-400">Nada com esse filtro.</p> : linhasVis.map(linhaUI)}
+          <div className="divide-y divide-borda">
+            {linhasVis.length === 0 ? <p className="py-6 text-center text-sm text-texto-fraco">Nada com esse filtro.</p> : linhasVis.map(linhaUI)}
           </div>
         ) : (
           <div className="space-y-4">
@@ -200,10 +200,10 @@ export function MesaDetalhe({
               if (vis.length === 0) return null;
               return (
                 <div key={g.comanda.id}>
-                  <p className="mb-1 text-xs font-semibold text-zinc-500">
+                  <p className="mb-1 text-xs font-semibold text-texto-suave">
                     Comanda {g.comanda.numero}{g.comanda.abertaEm ? ` · feita às ${hora(g.comanda.abertaEm)}` : ""}
                   </p>
-                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800">{vis.map(linhaUI)}</div>
+                  <div className="divide-y divide-borda">{vis.map(linhaUI)}</div>
                 </div>
               );
             })}
@@ -211,10 +211,10 @@ export function MesaDetalhe({
         )}
 
         {/* Totais */}
-        <div className="mt-3 space-y-1 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
-          <div className="flex justify-between text-zinc-500"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
+        <div className="mt-3 space-y-1 border-t border-borda pt-3 text-sm">
+          <div className="flex justify-between text-texto-suave"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
           <div className="flex justify-between text-emerald-600"><span>Total pago</span><span>{brl(totalPago)}</span></div>
-          <div className="flex justify-between text-lg font-bold text-zinc-900 dark:text-zinc-50"><span>Total pendente</span><span>{brl(totalPendente)}</span></div>
+          <div className="flex justify-between text-lg font-bold text-texto"><span>Total pendente</span><span>{brl(totalPendente)}</span></div>
         </div>
       </div>
 
@@ -225,11 +225,11 @@ export function MesaDetalhe({
         <button
           onClick={cancelar}
           disabled={proc || sel.size === 0}
-          className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+          className="rounded-controle bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
         >
           {proc ? "Cancelando..." : "✕ Cancelar produtos"}
         </button>
-        <Link href="/salao/caixa" className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+        <Link href="/salao/caixa" className="rounded-controle bg-texto px-4 py-2.5 text-sm font-semibold text-fundo hover:opacity-90">
           Ir ao caixa
         </Link>
       </div>

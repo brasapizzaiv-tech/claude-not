@@ -69,16 +69,16 @@ export default async function VendasPage({
   const dias = [...porDia.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
 
   const inputCls =
-    "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
 
   return (
     <div className="mx-auto max-w-4xl p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Notas emitidas × Faturamento
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             Valor das notas de venda (NFC-e) no período vs. o faturamento da
             planilha (almoço + noite). Não mexe no Financeiro/DRE.
           </p>
@@ -86,7 +86,7 @@ export default async function VendasPage({
         <div className="flex items-center gap-2">
           <Link
             href="/financeiro"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
             Financeiro
           </Link>
@@ -98,43 +98,43 @@ export default async function VendasPage({
       {/* Filtro por período */}
       <form className="mb-6 flex flex-wrap items-end gap-2">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">De</label>
+          <label className="mb-1 block text-xs text-texto-suave">De</label>
           <input type="date" name="de" defaultValue={de} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Até</label>
+          <label className="mb-1 block text-xs text-texto-suave">Até</label>
           <input type="date" name="ate" defaultValue={ate} className={inputCls} />
         </div>
-        <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+        <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
           Filtrar
         </button>
       </form>
 
       {/* Resumo */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Notas emitidas</p>
-          <p className="mt-1 text-xl font-bold text-zinc-900 dark:text-zinc-50">
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Notas emitidas</p>
+          <p className="mt-1 text-xl font-bold text-texto">
             {totalNotas}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Valor emitido</p>
-          <p className="mt-1 text-xl font-bold text-zinc-900 dark:text-zinc-50">
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Valor emitido</p>
+          <p className="mt-1 text-xl font-bold text-texto">
             {moeda(totalEmitido)}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Faturamento (planilha)</p>
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Faturamento (planilha)</p>
           <p className="mt-1 text-xl font-bold text-green-600">
             {moeda(faturamentoLancado)}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Diferença</p>
+        <div className="rounded-cartao border border-borda p-4">
+          <p className="text-xs text-texto-suave">Diferença</p>
           <p
             className={`mt-1 text-xl font-bold ${
-              Math.abs(diferenca) < 0.01 ? "text-zinc-500" : "text-amber-600"
+              Math.abs(diferenca) < 0.01 ? "text-texto-suave" : "text-amber-600"
             }`}
           >
             {moeda(diferenca)}
@@ -142,7 +142,7 @@ export default async function VendasPage({
         </div>
       </div>
       {faturamentoLancado === 0 && (
-        <p className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p className="mb-6 rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
           Sem faturamento importado neste período. Use o botão{" "}
           <b>Importar faturamento (planilha)</b> acima — os valores ficam só
           nesta comparação, sem mexer no Financeiro/DRE.
@@ -150,9 +150,9 @@ export default async function VendasPage({
       )}
 
       {/* Por dia */}
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+          <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr>
               <th className="px-4 py-3">Dia</th>
               <th className="px-4 py-3 text-right">Notas</th>
@@ -161,23 +161,23 @@ export default async function VendasPage({
               <th className="px-4 py-3 text-right">Diferença</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-borda">
             {dias.map(([dia, g]) => {
               const fat = fatDe.get(dia);
               const dif = fat != null ? fat - g.valor : null;
               return (
-                <tr key={dia} className="bg-white dark:bg-zinc-950">
-                  <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300">
+                <tr key={dia} className="">
+                  <td className="px-4 py-2 text-texto-suave">
                     {dataBR(dia)}
                   </td>
-                  <td className="px-4 py-2 text-right text-zinc-500">{g.n}</td>
-                  <td className="px-4 py-2 text-right font-medium text-zinc-800 dark:text-zinc-200">
+                  <td className="px-4 py-2 text-right text-texto-suave">{g.n}</td>
+                  <td className="px-4 py-2 text-right font-medium text-texto">
                     {moeda(g.valor)}
                   </td>
                   <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
                     {fat != null ? moeda(fat) : "—"}
                   </td>
-                  <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-zinc-400" : Math.abs(dif) < 0.01 ? "text-zinc-400" : "text-amber-600"}`}>
+                  <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-texto-fraco" : Math.abs(dif) < 0.01 ? "text-texto-fraco" : "text-amber-600"}`}>
                     {dif != null ? moeda(dif) : "—"}
                   </td>
                 </tr>

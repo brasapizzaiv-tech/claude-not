@@ -18,9 +18,9 @@ export default async function PerfisFiscaisPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <Link href="/fiscal" className="text-sm text-zinc-500 hover:text-orange-600">← Config fiscal</Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="cupom" tamanho={20} className="mr-2" /> Perfis fiscais</h1>
-      <p className="mb-6 mt-1 text-sm text-zinc-500">
+      <Link href="/fiscal" className="text-sm text-texto-suave hover:text-orange-600">← Config fiscal</Link>
+      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="cupom" tamanho={20} className="mr-2" /> Perfis fiscais</h1>
+      <p className="mb-6 mt-1 text-sm text-texto-suave">
         Em vez de preencher NCM/CFOP/CSOSN produto por produto: crie um perfil e aplique na categoria inteira do cardápio. A NFC-e usa o perfil de cada item.
       </p>
       <PerfisClient
