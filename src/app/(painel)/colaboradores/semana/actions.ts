@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
@@ -36,9 +37,13 @@ export async function salvarDezPorCento(data: string, valor: number, pagarEm?: s
   const supabase = await createClient();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
   const pagar_em = pagarEm && /^\d{4}-\d{2}-\d{2}$/.test(pagarEm) ? segundaDe(pagarEm) : somarDias(segundaDe(data), 7);
+  const empresaId = await empresaAtualId();
   const { error } = await supabase
     .from("dez_por_cento_noites")
-    .upsert({ data, valor: Math.max(0, valor || 0), pagar_em }, { onConflict: "data" });
+    .upsert(
+      { empresa_id: empresaId, data, valor: Math.max(0, valor || 0), pagar_em },
+      { onConflict: "empresa_id,data" },
+    );
   if (error) return { erro: error.message };
   return { ok: true, pagar_em };
 }

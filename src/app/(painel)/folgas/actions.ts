@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
@@ -140,9 +141,13 @@ export async function gerarLink(id: number) {
 export async function salvarLimites(rows: { grupo: string; dia_semana: number; limite: number | null }[]) {
   await exigirAcesso("/folgas");
   const supabase = await createClient();
+  const empresaId = await empresaAtualId();
   const { error } = await supabase
     .from("folgas_limites")
-    .upsert(rows, { onConflict: "grupo,dia_semana" });
+    .upsert(
+      rows.map((r) => ({ ...r, empresa_id: empresaId })),
+      { onConflict: "empresa_id,grupo,dia_semana" },
+    );
   return error ? erro(error.message) : ok();
 }
 
@@ -151,9 +156,13 @@ export async function definirAjuste(data: string, grupo: string, limite: number)
   await exigirAcesso("/folgas");
   const supabase = await createClient();
   if (limite < 0) return erro("Limite inválido.");
+  const empresaId = await empresaAtualId();
   const { error } = await supabase
     .from("folgas_ajustes")
-    .upsert({ data, grupo, limite }, { onConflict: "data,grupo" });
+    .upsert(
+      { empresa_id: empresaId, data, grupo, limite },
+      { onConflict: "empresa_id,data,grupo" },
+    );
   return error ? erro(error.message) : ok();
 }
 
@@ -170,9 +179,13 @@ export async function travarData(data: string, motivo: string) {
   const supabase = await createClient();
   const m = motivo?.trim();
   if (!m) return erro("Informe o motivo da trava.");
+  const empresaId = await empresaAtualId();
   const { error } = await supabase
     .from("folgas_bloqueios")
-    .upsert({ data, motivo: m }, { onConflict: "data" });
+    .upsert(
+      { empresa_id: empresaId, data, motivo: m },
+      { onConflict: "empresa_id,data" },
+    );
   return error ? erro(error.message) : ok();
 }
 
