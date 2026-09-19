@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
@@ -44,7 +45,14 @@ export async function salvarConfigPdv(formData: FormData) {
     if (kg !== null) linhas.push({ chave: `preco_kg_${d}`, valor: kg ? String(valorNum(kg)) : "" });
     if (lv !== null) linhas.push({ chave: `buffet_livre_${d}`, valor: lv ? String(valorNum(lv)) : "" });
   }
-  await supabase.from("pdv_config").upsert(linhas);
+  // A chave desta tabela virou o par empresa + nome (migration 0192).
+  const empresaIdCfg = await empresaAtualId();
+  await supabase
+    .from("pdv_config")
+    .upsert(
+      linhas.map((l) => ({ ...l, empresa_id: empresaIdCfg })),
+      { onConflict: "empresa_id,chave" },
+    );
   revalidatePath("/salao/cardapio");
 }
 

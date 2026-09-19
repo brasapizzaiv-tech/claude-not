@@ -124,6 +124,12 @@ export async function enviarPedidoPublico(d: {
 }) {
   const admin = createAdminClient();
 
+  // Tudo aqui roda com a chave administrativa, que passa por cima das regras
+  // do banco — quem pede pelo cardápio não tem login. Então a empresa é
+  // descoberta uma vez, no começo, e entra escrita em cada consulta.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, erro: "Não consegui identificar o restaurante." };
+
   // Validações básicas.
   const nome = (d.nome || "").trim();
   const fone = (d.telefone || "").replace(/\D/g, "");
@@ -159,8 +165,8 @@ export async function enviarPedidoPublico(d: {
   if (idsPedidos.length) {
     const agora = new Date().getTime();
     const [{ data: its }, { data: cats }] = await Promise.all([
-      admin.from("pdv_itens").select("id, nome, ativo, delivery, disponivel, horarios, categoria").in("id", idsPedidos),
-      admin.from("pdv_categorias").select("nome, horarios, canal_app"),
+      admin.from("pdv_itens").select("id, nome, ativo, delivery, disponivel, horarios, categoria").in("id", idsPedidos).eq("empresa_id", empresaId),
+      admin.from("pdv_categorias").select("nome, horarios, canal_app").eq("empresa_id", empresaId),
     ]);
     const catRows = ((cats ?? []) as { nome: string; horarios: Horarios; canal_app: boolean }[]);
     const catH = new Map(catRows.map((c) => [c.nome, c.horarios]));
@@ -188,15 +194,9 @@ export async function enviarPedidoPublico(d: {
     areaId = calc.areaId ?? null; areaNome = calc.areaNome ?? null;
   }
 
-  // Reconhece (ou cadastra) o cliente pelo telefone.
-  //
-  // Esta busca roda com a chave administrativa, que passa por cima das regras
-  // do banco — o cardápio do cliente não tem login. Então o filtro por empresa
-  // é escrito aqui à mão: sem ele, o telefone digitado no cardápio de um
-  // restaurante acharia o cadastro de cliente de outro.
-  const empresaId = await empresaAtualId();
-  if (!empresaId) return { ok: false as const, erro: "Não consegui identificar o restaurante." };
-
+  // Reconhece (ou cadastra) o cliente pelo telefone — dentro da empresa, senão
+  // um telefone digitado no cardápio de um restaurante acharia o cadastro de
+  // cliente de outro.
   let clienteId: string | null = null;
   const { data: cli } = await admin
     .from("clientes").select("id")

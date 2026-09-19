@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { pixConfigurado } from "@/lib/pix";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
@@ -14,24 +15,37 @@ export const dynamic = "force-dynamic";
 export default async function PedirPage() {
   const admin = createAdminClient();
 
+  // O cardápio é montado com a chave administrativa (o cliente não faz
+  // login), que passa por cima das regras do banco. Sem o filtro por empresa
+  // em cada consulta, ele mostraria os itens de todos os restaurantes
+  // misturados. A empresa vem do endereço da página.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-painel-fundo p-6 text-center">
+        <p className="text-texto-suave">Não consegui identificar o restaurante deste endereço.</p>
+      </div>
+    );
+  }
+
   const desde = new Date(new Date().getTime() - 60 * 86400000).toISOString();
   const [
     { data: itensRows }, { data: catRows }, { data: gruposItem },
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg }, { data: vendidos },
   ] = await Promise.all([
-    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, descricao, horarios").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
-    admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app").eq("disponivel", true).order("ordem"),
-    admin.from("pdv_item_grupos").select("item_id"),
-    admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem"),
-    admin.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao").eq("ativo", true).order("ordem"),
-    admin.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco"),
-    admin.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem"),
-    admin.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco"),
-    admin.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem"),
-    admin.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem"),
+    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, descricao, horarios").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome").eq("empresa_id", empresaId),
+    admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app").eq("disponivel", true).order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_item_grupos").select("item_id").eq("empresa_id", empresaId),
+    admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco").eq("empresa_id", empresaId),
+    admin.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco").eq("empresa_id", empresaId),
+    admin.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso, config").eq("id", 1).maybeSingle(),
-    admin.from("pdv_comanda_itens").select("item_id").not("item_id", "is", null).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1000),
+    admin.from("pdv_comanda_itens").select("item_id").not("item_id", "is", null).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1000).eq("empresa_id", empresaId),
   ]);
 
   // Horários de disponibilidade (categoria e item) — só o que está no horário
