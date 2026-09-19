@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useEffect, useRef, useState, useTransition } from "react";
 import QRCode from "qrcode";
 import { gerarPixCaixa, consultarPixCaixa, encerrarPixCaixa } from "@/app/(painel)/salao/pix-actions";
@@ -125,7 +127,7 @@ export function PixQr({
           disabled={gerando || !(valor > 0)}
           className="w-full rounded-lg border-2 border-emerald-500 bg-emerald-500/10 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-400"
         >
-          {gerando ? "Gerando QR…" : `💠 Gerar QR Code Pix de ${brl(valor)}`}
+          {gerando ? "Gerando QR…" : <span className="inline-flex items-center justify-center gap-2"><Icone nome="rapido" tamanho={16} /> Gerar QR Code Pix de {brl(valor)}</span>}
         </button>
         {erro && <p className="text-xs text-amber-700 dark:text-amber-400">{erro.startsWith("O valor mudou") ? erro : `Não deu pra gerar o QR: ${erro}. Receba o Pix pela chave, como antes.`}</p>}
       </div>
@@ -135,7 +137,7 @@ export function PixQr({
   return (
     <div className="rounded-xl border border-emerald-300 bg-white p-3 text-center dark:border-emerald-800 dark:bg-zinc-950">
       {pago ? (
-        <p className="py-4 text-lg font-bold text-emerald-600">✅ Pix recebido!</p>
+        <p className="flex items-center justify-center gap-2 py-4 text-lg font-bold text-emerald-600"><Icone nome="certo" tamanho={20} /> Pix recebido!</p>
       ) : (
         <>
           <p className="text-xs text-zinc-500">Mostre o QR pro cliente</p>
@@ -144,9 +146,9 @@ export function PixQr({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={src} alt="QR Code Pix" className={`mx-auto ${compacto ? "h-52 w-52" : "h-64 w-64"} rounded-lg bg-white p-1`} />
           )}
-          <p className="mt-1 animate-pulse text-xs text-emerald-600">⏳ Aguardando o pagamento… confere sozinho.</p>
+          <p className="mt-1 flex animate-pulse items-center justify-center gap-1.5 text-xs text-emerald-600"><Icone nome="ampulheta" tamanho={13} /> Aguardando o pagamento… confere sozinho.</p>
           {falhas >= 4 && (
-            <p className="mt-1 text-xs font-semibold text-amber-600">⚠️ Não estou conseguindo consultar o banco. Se o cliente mostrar o comprovante, use &quot;Vi que caiu&quot;.</p>
+            <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold text-amber-600"><Icone nome="alerta" tamanho={13} className="mt-0.5" /> Não estou conseguindo consultar o banco. Se o cliente mostrar o comprovante, use &quot;Vi que caiu&quot;.</p>
           )}
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             <button type="button" onClick={copiar} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700">

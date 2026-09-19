@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -35,7 +36,7 @@ export function BuscarNotas({ bloqueadoAte }: { bloqueadoAte: string | null }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            🔄 Buscar notas na SEFAZ
+            <Icone nome="atualizar" tamanho={15} className="mr-1.5" /> Buscar notas na SEFAZ
           </p>
           <p className="text-xs text-zinc-500">
             A SEFAZ libera 1 busca por hora.

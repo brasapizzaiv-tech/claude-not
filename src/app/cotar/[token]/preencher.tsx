@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dataBR } from "@/lib/format";
@@ -378,7 +380,7 @@ export function CotarPreencher({
         )}
         {erro && (
           <div className="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950 dark:text-red-300">
-            ⚠️ {erro}
+            <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {erro}
           </div>
         )}
 
@@ -390,7 +392,7 @@ export function CotarPreencher({
 
         {!fechada && jaEnviadoEm && !msg && (
           <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300">
-            ✅ Você já enviou esta cotação
+            <Icone nome="certo" tamanho={16} className="mr-1.5" /> Você já enviou esta cotação
             {jaEnviadoEm !== "sim"
               ? ` em ${new Date(jaEnviadoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
               : ""}
@@ -425,7 +427,7 @@ export function CotarPreencher({
                       onClick={() => naoTrabalho(p.produto_id, p.nome)}
                       className="shrink-0 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-red-800 dark:hover:bg-red-950"
                     >
-                      🚫 Não trabalho
+                      <Icone nome="proibido" tamanho={13} className="mr-1" /> Não trabalho
                     </button>
                   )}
                 </div>
@@ -503,7 +505,7 @@ export function CotarPreencher({
                 {p.tem_st && !emFalta && (
                   <div className="mt-2 rounded-lg border border-violet-200 bg-violet-50/50 p-2.5 dark:border-violet-900 dark:bg-violet-950/20">
                     <p className="text-xs font-semibold text-violet-800 dark:text-violet-300">
-                      ⚠️ Este item tem ICMS-ST
+                      <Icone nome="alerta" tamanho={13} className="mr-1" /> Este item tem ICMS-ST
                     </p>
                     <label className="mt-1.5 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
                       <input
@@ -655,7 +657,7 @@ export function CotarPreencher({
                         ? "Enviando foto..."
                         : fotos[p.produto_id]
                           ? "Trocar foto"
-                          : "📷 Adicionar foto"}
+                          : <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={13} /> Adicionar foto</span>}
                       <input
                         type="file"
                         accept="image/*"
@@ -688,7 +690,7 @@ export function CotarPreencher({
               <input
                 value={buscaOutros}
                 onChange={(e) => setBuscaOutros(e.target.value)}
-                placeholder="🔎 Buscar item..."
+                placeholder="Buscar item..."
                 className={`${campo} mt-3 w-full`}
               />
               <div className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -725,7 +727,7 @@ export function CotarPreencher({
           {!fechada && (
             <div className="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                🎁 Tem alguma promoção ou oferta?
+                <Icone nome="presente" tamanho={15} className="mr-1.5" /> Tem alguma promoção ou oferta?
               </h2>
               <p className="mt-1 text-xs text-zinc-500">
                 Se quiser oferecer algo além da lista (um combo, um item em
@@ -755,7 +757,7 @@ export function CotarPreencher({
                     ? "Enviando foto..."
                     : dados.promocao_foto
                       ? "Trocar foto"
-                      : "📷 Adicionar foto da oferta"}
+                      : <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={13} /> Adicionar foto da oferta</span>}
                   <input
                     type="file"
                     accept="image/*"

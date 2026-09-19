@@ -102,7 +102,7 @@ export function SefazPainel({
       const r = await buscarNotasSefaz();
       if (r?.bloqueado_ate) setBloqueadoAte(r.bloqueado_ate);
       if (r?.erro) {
-        setResultado(`❌ ${r.erro}`);
+        setResultado(r.erro);
       } else {
         const partes = [
           `${r?.importadas ?? 0} nota(s) completa(s)`,
@@ -126,7 +126,7 @@ export function SefazPainel({
       setResultado("Reprocessando...");
       const r = await reprocessarSefaz(dias);
       if (r?.bloqueado_ate) setBloqueadoAte(r.bloqueado_ate);
-      if (r?.erro) setResultado(`❌ ${r.erro}`);
+      if (r?.erro) setResultado(r.erro);
       else
         setResultado(
           `✓ Reprocessado${dias ? ` (${dias} dias)` : ""}: ${r?.importadas ?? 0} nota(s) · ${r?.resumos ?? 0} resumo(s)${r?.falhas ? ` · ${r.falhas} falha(s)` : ""}.`,
@@ -230,7 +230,7 @@ export function SefazPainel({
           {buscando
             ? "Buscando na SEFAZ..."
             : travado
-              ? `🔒 Liberado às ${horaBR(bloqueadoAte!)}`
+              ? `Liberado às ${horaBR(bloqueadoAte!)}`
               : "Buscar notas agora"}
         </button>
         {travado && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 
@@ -70,7 +71,7 @@ export default async function HistoricoChecklistsPage({
       <Link href="/checklists" className="text-sm text-zinc-500 hover:text-orange-600">← Checklists de hoje</Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">📚 Histórico de checklists</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="caderno" tamanho={20} className="mr-2" /> Histórico de checklists</h1>
           <p className="mt-1 text-zinc-500">Quem fez, quando, e o que mais fica pendente.</p>
         </div>
         <form className="flex flex-wrap items-end gap-2">
@@ -111,7 +112,7 @@ export default async function HistoricoChecklistsPage({
         </div>
         <div className={card}>
           <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">Itens que mais ficam pendentes</p>
-          {maisPendentes.length === 0 ? <p className="text-sm text-zinc-400">Nenhum pendente. 🎉</p> : (
+          {maisPendentes.length === 0 ? <p className="text-sm text-zinc-400">Nenhum pendente.</p> : (
             <ol className="space-y-1 text-sm">
               {maisPendentes.map((p, i) => (
                 <li key={i} className="flex items-baseline gap-2">

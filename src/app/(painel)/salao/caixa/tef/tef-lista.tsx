@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { tefAdm, tefCancelar, tefDisponivel, type TefStatus } from "@/lib/tef-client";
@@ -108,7 +110,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${agente ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}`}>
           {agente ? `Agente TEF ${agente.versao} · ${agente.terminal}${agente.gerenciador ? " · gerenciador OK" : " · gerenciador não encontrado"}` : "Agente TEF não encontrado neste PC"}
         </span>
-        <button onClick={adm} disabled={proc || !agente} className={btn}>⚙️ Menu administrativo (Elgin)</button>
+        <button onClick={adm} disabled={proc || !agente} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="ajustes" tamanho={14} /> Menu administrativo (Elgin)</span></button>
       </div>
       {msg && <p className="mb-3 rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{msg}</p>}
 
@@ -147,10 +149,10 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1.5">
-                      {podeImprimir && <button onClick={() => reimprimir(l)} disabled={proc} className={btn}>🖨️ Reimprimir</button>}
+                      {podeImprimir && <button onClick={() => reimprimir(l)} disabled={proc} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>}
                       {podeCancelar && (
                         <button onClick={() => cancelar(l)} disabled={proc || !agente} className="rounded-lg border border-red-400 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:hover:bg-red-950">
-                          {ocupadoId === l.id ? "No pinpad…" : "✖ Cancelar"}
+                          {ocupadoId === l.id ? "No pinpad…" : <span className="inline-flex items-center gap-1.5"><Icone nome="fechar" tamanho={13} /> Cancelar</span>}
                         </button>
                       )}
                     </div>

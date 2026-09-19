@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { redirect } from "next/navigation";
 import { BuscaComanda } from "./busca";
@@ -106,7 +107,7 @@ export default async function GarcomPage() {
   return (
     <div className="min-h-screen bg-zinc-950 p-2 text-zinc-100">
       <div className="flex items-center justify-between px-1 py-2">
-        <h1 className="text-xl font-bold">🧑‍🍳 Mesas</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="garcom" tamanho={19} /> Mesas</h1>
         {sessao.viaColab && sessao.token && (
           <Link href={`/eu/${sessao.token}`} className="text-xs text-zinc-400">{sessao.nome} · voltar pro meu app</Link>
         )}
@@ -138,7 +139,7 @@ export default async function GarcomPage() {
       </div>
 
       {/* Histórico geral de lançamentos, em ordem (mais recentes primeiro) */}
-      <h2 className="px-1 pb-2 pt-5 text-lg font-bold">🧾 Últimos lançamentos</h2>
+      <h2 className="flex items-center gap-2 px-1 pb-2 pt-5 text-lg font-bold"><Icone nome="cupom" tamanho={17} /> Últimos lançamentos</h2>
       {historico.length === 0 ? (
         <p className="px-1 pb-6 text-sm text-zinc-500">Nenhum lançamento ainda.</p>
       ) : (

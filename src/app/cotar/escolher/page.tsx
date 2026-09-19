@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Escolha a empresa · Cotação" };
@@ -65,9 +66,9 @@ export default async function EscolherEmpresaPage({
                   href={`/cotar/${l.token}`}
                   className="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 font-semibold text-zinc-900 hover:border-orange-400 hover:bg-orange-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-orange-950"
                 >
-                  <span>🏢 {l.empresa}</span>
+                  <span className="inline-flex items-center gap-1.5"><Icone nome="empresa" tamanho={14} /> {l.empresa}</span>
                   <span className={`text-xs font-medium ${l.respondido ? "text-green-600" : "text-zinc-400"}`}>
-                    {l.fechada ? "fechada" : l.respondido ? "✅ enviada" : "pendente →"}
+                    {l.fechada ? "fechada" : l.respondido ? <span className="inline-flex items-center gap-1"><Icone nome="certo" tamanho={13} /> enviada</span> : "pendente"}
                   </span>
                 </Link>
               ))}

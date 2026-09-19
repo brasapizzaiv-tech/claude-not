@@ -1,5 +1,6 @@
 "use client";
 
+
 // Peças de montagem de pedido compartilhadas entre o painel do delivery
 // (/delivery/novo) e o app público do cliente (/pedir): modal de pizza
 // (tamanho, meio a meio, borda) e modal de complementos/combos.
@@ -54,14 +55,14 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, comObs }: {
     const o = obs.trim();
     onAdd({
       uid: novoUid(),
-      descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : "") + (o ? `\n📝 ${o}` : ""),
+      descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : "") + (o ? `\nObs: ${o}` : ""),
       preco, qtd: 1,
       payload: { kind: "pizza", tamanhoId: tamId, saborIds: usados, bordaId: bordaId || null, qtd: 1, obs: o || undefined },
     });
   }
 
   return (
-    <Overlay onClose={onClose} titulo="🍕 Montar pizza">
+    <Overlay onClose={onClose} titulo="Montar pizza">
       <div className="mb-3">
         <div className="mb-1 text-xs font-semibold text-zinc-500">Tamanho</div>
         <div className="flex flex-wrap gap-2">
@@ -104,7 +105,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, comObs }: {
         </div>
       )}
       {comObs && (
-        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="📝 Observação (ex.: sem cebola)" className="mb-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mb-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
       )}
       <div className="flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>
@@ -149,7 +150,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
     const base = nomes.length ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}` : item.nome;
     onAdd({
       uid: novoUid(),
-      descricao: base + (o ? `\n📝 ${o}` : ""),
+      descricao: base + (o ? `\nObs: ${o}` : ""),
       preco, qtd: 1,
       payload: { kind: "combo", itemId: item.id, opcaoIds: escolhidas, qtd: 1, obs: o || undefined },
     });
@@ -175,7 +176,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
         ))}
       </div>
       {comObs && (
-        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="📝 Observação (ex.: sem cebola)" className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
       )}
       <div className="mt-3 flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>

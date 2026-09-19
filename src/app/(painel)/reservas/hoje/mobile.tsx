@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
@@ -59,12 +61,12 @@ export function ReservasHoje({
       <div className="sticky top-0 z-10 -mx-3 border-b border-zinc-200 bg-white/95 px-3 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
         <h1 className="text-center text-lg font-bold text-zinc-900 dark:text-zinc-50">Reservas</h1>
         <div className="mt-2 flex items-center justify-between">
-          <button onClick={() => irDia(addDias(dia, -1))} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">◀</button>
+          <button onClick={() => irDia(addDias(dia, -1))} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700"><Icone nome="voltar" tamanho={16} titulo="Dia anterior" /></button>
           <div className="text-center">
             <div className="text-sm font-semibold capitalize text-zinc-800 dark:text-zinc-100">{diaSemana(dia)}</div>
             <div className="text-xs text-zinc-500">{dataBR(dia)}{dia === hoje ? " · hoje" : ""}</div>
           </div>
-          <button onClick={() => irDia(addDias(dia, 1))} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">▶</button>
+          <button onClick={() => irDia(addDias(dia, 1))} className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-700"><Icone nome="seguir" tamanho={16} titulo="Próximo dia" /></button>
         </div>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
           <div className="rounded-lg bg-zinc-100 py-1.5 dark:bg-zinc-900"><div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{reservas.length}</div><div className="text-[10px] uppercase text-zinc-400">reservas</div></div>
@@ -95,13 +97,13 @@ export function ReservasHoje({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="truncate text-base font-bold text-zinc-900 dark:text-zinc-50">
-                    {r.ocasiao && r.ocasiao !== "Só uma reserva" ? "🎂 " : ""}{r.nome}
+                    {r.ocasiao && r.ocasiao !== "Só uma reserva" && <Icone nome="bolo" tamanho={13} className="mr-1 text-pink-600" />}{r.nome}
                   </div>
                   <div className="text-xs text-zinc-500">
                     {r.pessoas} {r.pessoas === 1 ? "pessoa" : "pessoas"}
                     {r.criancas ? ` (${r.adultos ?? r.pessoas} ad. + ${r.criancas} cri.)` : ""} · {r.turno}
                   </div>
-                  {r.observacao && <div className="mt-0.5 text-xs text-amber-600">📝 {r.observacao}</div>}
+                  {r.observacao && <div className="mt-0.5 flex items-start gap-1.5 text-xs text-amber-600"><Icone nome="editar" tamanho={12} className="mt-0.5" /> {r.observacao}</div>}
                 </div>
                 <div className="shrink-0 text-right">
                   {r.chegou_em ? (

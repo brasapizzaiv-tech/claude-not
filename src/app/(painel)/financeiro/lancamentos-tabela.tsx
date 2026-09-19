@@ -49,7 +49,7 @@ export function LancamentosTabela({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Buscar por descrição, categoria ou fornecedor..."
+          placeholder="Buscar por descrição, categoria ou fornecedor..."
           className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         />
         {busca && (

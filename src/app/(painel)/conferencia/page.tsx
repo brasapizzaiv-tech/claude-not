@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { ExcluirPedido } from "./excluir";
@@ -66,7 +67,7 @@ export default async function ConferenciaPage() {
             href="/conferencia/divergencias"
             className={`rounded-lg border px-4 py-2 text-sm font-semibold ${comProblemaMes > 0 ? "border-amber-500 text-amber-700 hover:bg-amber-50 dark:text-amber-300" : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300"}`}
           >
-            ⚠ Divergências{comProblemaMes > 0 ? ` (${comProblemaMes} este mês)` : ""}
+            <Icone nome="alerta" tamanho={14} className="mr-1.5" /> Divergências{comProblemaMes > 0 ? ` (${comProblemaMes} este mês)` : ""}
           </Link>
           <Link
             href="/conferencia/novo"
@@ -150,7 +151,7 @@ export default async function ConferenciaPage() {
                           : (p.conf_colab_em || p.status === "conferido") && <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800">sem nota</span>}
                         {p.divergencias_n > 0 && (
                           <Link href={`/conferencia/${p.id}`} className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${(p.divergencias as ResumoDivergencias)?.gravidade === "grave" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
-                            ⚠ {p.divergencias_n} divergência{p.divergencias_n === 1 ? "" : "s"}
+                            <Icone nome="alerta" tamanho={12} className="mr-1" /> {p.divergencias_n} divergência{p.divergencias_n === 1 ? "" : "s"}
                             {((p.divergencias as ResumoDivergencias)?.valor_a_mais ?? 0) > 0 ? ` · ${moedaCurta((p.divergencias as ResumoDivergencias).valor_a_mais)} a mais` : ""}
                           </Link>
                         )}

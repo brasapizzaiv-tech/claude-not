@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { contarFaixas, ehData, faixaDe, faixaDias, faixaValida, hojeSP } from "@/lib/etiqueta-vencimentos";
 import { PainelVencimentos, FaixaDias, type ItemEtq, type CatEtq } from "@/components/etiqueta-ui";
@@ -72,16 +73,16 @@ export default async function EtiquetasPage({
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
           <Link href="/etiquetas/impressas" className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900">
-            📈 Impressas
+            <Icone nome="subindo" tamanho={15} className="mr-1.5" /> Impressas
           </Link>
           <Link href="/etiquetas/itens" className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900">
-            📋 Itens e categorias
+            <Icone nome="lista" tamanho={15} className="mr-1.5" /> Itens e categorias
           </Link>
           <Link href="/impressao" className="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900">
-            🖨️ Impressoras
+            <Icone nome="imprimir" tamanho={15} className="mr-1.5" /> Impressoras
           </Link>
           <Link href="/etiquetas/scanner" className="rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900">
-            📷 Modo Leitor
+            <Icone nome="camera" tamanho={15} className="mr-1.5" /> Modo Leitor
           </Link>
         </div>
       </div>

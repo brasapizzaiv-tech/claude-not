@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import type { AreaEntrega, PromoTele } from "@/lib/delivery-areas";
 import { AreasClient } from "./areas-client";
@@ -22,7 +23,7 @@ export default async function AreasPage() {
   return (
     <div className="p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <h1 className="mb-1 mt-2 text-xl font-bold">🗺️ Áreas de entrega e promoções da tele</h1>
+      <h1 className="mb-1 mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="mapa" tamanho={19} /> Áreas de entrega e promoções da tele</h1>
       <p className="mb-4 text-sm text-zinc-500">
         Desenhe cada área no mapa e defina o valor da entrega. O cliente cai na área onde o endereço dele está; fora de todas = não entregamos.
         Sem nenhuma área ativa, vale o cálculo por km da Config.

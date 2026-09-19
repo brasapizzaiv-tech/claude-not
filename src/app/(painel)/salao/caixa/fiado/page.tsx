@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { FiadoClient, type ClienteFiado } from "./fiado-client";
 
@@ -37,7 +38,7 @@ export default async function FiadoPage() {
   return (
     <div className="mx-auto max-w-4xl p-6">
       <Link href="/salao/caixa" className="text-sm text-zinc-500 hover:text-orange-600">← Caixa</Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">👥 Fiado de clientes</h1>
+      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="equipe" tamanho={20} className="mr-2" /> Fiado de clientes</h1>
       <p className="mb-4 mt-1 text-sm text-zinc-500">
         Contas recebidas como &quot;Saldo cliente&quot; no caixa. Quando o cliente pagar, clique em Receber: entra no caixa do dia com a forma usada.
         Em aberto: <b className="text-zinc-800 dark:text-zinc-100">{totalAberto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</b>

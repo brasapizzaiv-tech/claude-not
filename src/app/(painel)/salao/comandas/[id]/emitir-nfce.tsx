@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { emitirNfceComanda } from "../../fiscal-actions";
@@ -51,7 +52,7 @@ export function EmitirNfce({
             disabled={proc}
             className="w-full rounded-lg bg-zinc-800 py-2.5 text-sm font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-zinc-700"
           >
-            {proc ? "Emitindo NFC-e..." : "🧾 Emitir NFC-e"}
+            {proc ? "Emitindo NFC-e..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="cupom" tamanho={14} /> Emitir NFC-e</span>}
           </button>
           {res && !res.ok && (
             <div className="mt-2 rounded-xl bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-200">

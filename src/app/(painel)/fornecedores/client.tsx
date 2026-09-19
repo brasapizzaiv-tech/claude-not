@@ -260,8 +260,8 @@ export function FornecedoresClient({
                     <label className="mb-1 block text-xs text-zinc-500">Tipo de nota</label>
                     <select name="tipo_nota" defaultValue={editando?.tipo_nota ?? ""} className={inputCls}>
                       <option value="">— como vier —</option>
-                      <option value="mercadoria">🛒 Mercadoria</option>
-                      <option value="servico">🧾 Serviço</option>
+                      <option value="mercadoria">Mercadoria</option>
+                      <option value="servico">Serviço</option>
                     </select>
                   </div>
                 </div>

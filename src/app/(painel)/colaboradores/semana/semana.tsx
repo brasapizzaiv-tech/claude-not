@@ -5,7 +5,7 @@ import { Icone } from "@/components/icone";
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, TURNOS, vinculoDoTurno } from "@/lib/equipe";
+import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
 import { criarEsporadico, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
@@ -543,7 +543,6 @@ export function SemanaClient({
                       {p.esporadico && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">free</span>}
                     </div>
                     <div className="text-[11px] text-zinc-400">
-                      {TURNOS[p.turno]?.icone}{" "}
                       {clt
                         ? "CLT"
                         : [

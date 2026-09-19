@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { siteUrl } from "@/lib/site-url";
 import { useState, useTransition } from "react";
@@ -48,7 +49,7 @@ export function AvulsaForm({
         onClick={() => setAberto(true)}
         className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
       >
-        ⚡ Contagem avulsa
+        <Icone nome="rapido" tamanho={15} className="mr-1.5" /> Contagem avulsa
       </button>
     );
   }

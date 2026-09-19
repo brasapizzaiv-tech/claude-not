@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -35,7 +36,7 @@ export function ListaVencimentos({ token, lista, hoje }: { token: string; lista:
   if (lista.length === 0) {
     return (
       <p className="mt-4 rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">
-        Nada nessa faixa 🎉
+        Nada nessa faixa.
       </p>
     );
   }
@@ -71,7 +72,7 @@ export function ListaVencimentos({ token, lista, hoje }: { token: string; lista:
             ) : (
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <button onClick={() => baixa(e.id, "usada")} disabled={proc} className="rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white disabled:opacity-50">✓ Usada</button>
-                <button onClick={() => baixa(e.id, "descartada")} disabled={proc} className="rounded-lg bg-zinc-700 py-2 text-sm font-semibold text-white disabled:opacity-50">🗑 Descartada</button>
+                <button onClick={() => baixa(e.id, "descartada")} disabled={proc} className="rounded-lg bg-zinc-700 py-2 text-sm font-semibold text-white disabled:opacity-50"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lixeira" tamanho={13} /> Descartada</span></button>
               </div>
             )}
           </div>

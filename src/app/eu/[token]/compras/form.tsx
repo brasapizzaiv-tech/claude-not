@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cancelarMinhaSolicitacao, pedirCompra, type Solicitacao } from "./compras-actions";
@@ -61,7 +63,9 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
               onClick={() => setTipo(t)}
               className={`rounded-xl px-3 py-2.5 text-sm font-semibold ${tipo === t ? "bg-orange-500 text-white" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"}`}
             >
-              {t === "compra" ? "🛒 Comprar" : "🔧 Manutenção"}
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Icone nome={t === "compra" ? "compras" : "ferramenta"} tamanho={14} /> {t === "compra" ? "Comprar" : "Manutenção"}
+              </span>
             </button>
           ))}
         </div>
@@ -81,7 +85,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
         <textarea className={`${cx} mt-2`} rows={2} placeholder="Pra quê / observação (opcional)" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
         <label className="mt-2 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="h-5 w-5 accent-orange-500" />
-          🔥 É urgente (atrapalha o trabalho)
+          <Icone nome="fogo" tamanho={14} className="mr-1" /> É urgente (atrapalha o trabalho)
         </label>
         <button
           onClick={enviar}
@@ -123,7 +127,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
       )}
 
       {lista.length === 0 && (
-        <p className="text-center text-sm text-zinc-500">Você ainda não pediu nada. Quando faltar algo, é só escrever aqui em cima. 🛠️</p>
+        <p className="text-center text-sm text-zinc-500">Você ainda não pediu nada. Quando faltar algo, é só escrever aqui em cima.</p>
       )}
     </div>
   );
@@ -134,14 +138,16 @@ function Linha({ s }: { s: Solicitacao }) {
     <div>
       <div className="flex items-start justify-between gap-2">
         <span className="min-w-0 font-semibold text-zinc-900 dark:text-zinc-50">
-          {s.urgente && s.status === "pendente" ? "🔥 " : ""}{s.tipo === "manutencao" ? "🔧 " : ""}{s.item}
+          {s.urgente && s.status === "pendente" && <Icone nome="fogo" tamanho={13} className="mr-1 text-red-600" />}
+          {s.tipo === "manutencao" && <Icone nome="ferramenta" tamanho={13} className="mr-1 text-zinc-500" />}
+          {s.item}
           {s.quantidade ? <span className="font-normal text-zinc-500"> · {s.quantidade}</span> : null}
         </span>
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${COR[s.status]}`}>{rotulo(s)}</span>
       </div>
       {s.motivo && <p className="mt-0.5 text-sm text-zinc-600 dark:text-zinc-300">{s.motivo}</p>}
       <p className="mt-0.5 text-xs text-zinc-400">pedido em {fData(s.criado_em)}{s.respondido_em ? ` · respondido ${fData(s.respondido_em)}` : ""}</p>
-      {s.resposta && <p className="mt-1 rounded-xl bg-zinc-50 px-2 py-1 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">💬 {s.resposta}</p>}
+      {s.resposta && <p className="mt-1 rounded-xl bg-zinc-50 px-2 py-1 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"><span className="inline-flex items-start gap-1.5"><Icone nome="conversa" tamanho={13} className="mt-0.5" /> {s.resposta}</span></p>}
     </div>
   );
 }

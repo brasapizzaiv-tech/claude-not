@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 import { ChecklistItensVista } from "@/components/checklist-itens-vista";
@@ -42,7 +43,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">✅ Checklists de hoje</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>
           <p className="mt-1 text-zinc-500">
             {dia === hoje ? "Hoje" : core.dataCurta(dia)} · o que cada setor já fez.
           </p>
@@ -50,7 +51,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/checklists?dia=${core.addDiasIso(dia, -1)}`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">← dia anterior</Link>
           {dia !== hoje && <Link href="/checklists" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">hoje</Link>}
-          <Link href="/checklists/revisao" className="rounded-lg border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">🔎 Revisar e apontar</Link>
+          <Link href="/checklists/revisao" className="rounded-lg border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300"><Icone nome="buscar" tamanho={14} className="mr-1.5" /> Revisar e apontar</Link>
           <Link href="/checklists/historico" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">Histórico</Link>
           <Link href="/checklists/modelos" className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600">Modelos</Link>
         </div>

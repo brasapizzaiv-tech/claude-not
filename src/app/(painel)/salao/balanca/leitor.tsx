@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 /* eslint-disable @typescript-eslint/no-explicit-any -- WebSerial não tem tipos no TS padrão */
 
 import { useRef, useState } from "react";
@@ -130,7 +131,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
   return (
     <div className="space-y-4 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
       <div className="flex items-center justify-between">
-        <p className="font-semibold text-zinc-800 dark:text-zinc-200">⚖️ Balança (leitura automática)</p>
+        <p className="font-semibold text-zinc-800 dark:text-zinc-200"><Icone nome="balanca" tamanho={15} className="mr-1.5" /> Balança (leitura automática)</p>
         {conectado ? (
           <button
             onClick={desconectar}

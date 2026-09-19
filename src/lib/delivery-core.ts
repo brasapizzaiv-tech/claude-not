@@ -198,7 +198,7 @@ export async function resolverLinhas(db: Db, itens: LinhaPedido[]): Promise<Linh
   for (const it of itens) {
     const q = Math.max(1, Math.round(Number((it as { qtd?: number }).qtd) || 1));
     const obsItem = ((it as { obs?: string }).obs || "").trim().slice(0, 200);
-    const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\n📝 ${obsItem}` } : l);
+    const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\nObs: ${obsItem}` } : l);
     if (it.kind === "item") {
       const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", it.itemId).single();
       if (!prod) continue;
@@ -283,7 +283,7 @@ export async function criarPedidoDeliveryCore(
   const rows = linhas.map((l, idx) => ({
     comanda_id: comandaId,
     item_id: l.itemId,
-    descricao: l.descricao + (idx === 0 && obs ? `\n📝 ${obs}` : ""),
+    descricao: l.descricao + (idx === 0 && obs ? `\nObs: ${obs}` : ""),
     qtd: l.qtd,
     preco_unit: l.preco,
     criado_por: opts.criadoPor,

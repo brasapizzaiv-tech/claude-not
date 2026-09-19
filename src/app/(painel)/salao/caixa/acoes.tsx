@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Entradas e saídas de dinheiro do caixa num botão só: suprimento (reforço de
 // troco) e sangria (retirada) eram dois blocos abertos lado a lado e ocupavam
@@ -20,7 +21,7 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
         onClick={() => setAberto(true)}
         className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
       >
-        💸 Movimentar caixa
+        <Icone nome="dinheiro" tamanho={15} className="mr-1.5" /> Movimentar caixa
       </button>
 
       {aberto && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { temChaveMapa } from "@/lib/geo";
 import { salvarConfigDelivery } from "../actions";
@@ -31,7 +32,7 @@ export default async function DeliveryConfigPage() {
   return (
     <div className="mx-auto max-w-2xl p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <h1 className="mb-1 mt-2 text-xl font-bold">⚙️ Config do delivery</h1>
+      <h1 className="mb-1 mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="ajustes" tamanho={19} /> Config do delivery</h1>
       <p className="mb-4 text-sm text-zinc-500">Taxa de entrega: por <Link href="/delivery/areas" className="font-semibold text-emerald-600">áreas desenhadas no mapa</Link> quando houver áreas cadastradas; senão, pela distância até o restaurante (abaixo).</p>
 
       <div className={`mb-4 rounded-xl px-4 py-3 text-sm ${temChave ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/10 text-amber-700 dark:text-amber-400"}`}>
@@ -49,7 +50,7 @@ export default async function DeliveryConfigPage() {
           <label className="text-sm font-semibold">Endereço do restaurante</label>
           <input name="origem_endereco" defaultValue={c.origem_endereco ?? ""} placeholder="Rua, número, bairro, Ivoti - RS" className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
           <p className="mt-1 text-xs text-zinc-500">
-            {geocodificado ? "📍 Localizado no mapa — confira abaixo se o pino está no lugar certo." : "Ao salvar, o sistema localiza o endereço no mapa (ponto de partida das entregas)."}
+            {geocodificado ? "Localizado no mapa — confira abaixo se o pino está no lugar certo." : "Ao salvar, o sistema localiza o endereço no mapa (ponto de partida das entregas)."}
           </p>
           {geocodificado && (
             <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">

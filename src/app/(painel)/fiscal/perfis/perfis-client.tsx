@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -141,7 +142,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
           ))}
         </div>
         {semPerfil > 0 && (
-          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">⚠️ {semPerfil} {semPerfil === 1 ? "item ainda cai" : "itens ainda caem"} no padrão da config (categoria sem perfil).</p>
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400"><Icone nome="alerta" tamanho={13} className="mr-1" /> {semPerfil} {semPerfil === 1 ? "item ainda cai" : "itens ainda caem"} no padrão da config (categoria sem perfil).</p>
         )}
       </section>
 

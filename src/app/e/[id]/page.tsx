@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { Icone } from "@/components/icone";
 import { dataBR } from "@/lib/format";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { BaixaPublica } from "./baixa-publica";
@@ -67,7 +68,9 @@ export default async function EtiquetaPublicaPage({
           <p className="text-xl font-bold">
             {validade ? dataBR(validade) : "—"}
           </p>
-          <p className="text-sm">{vencida ? "⚠ VENCIDA" : "✓ dentro da validade"}</p>
+          <p className="text-sm">{vencida
+              ? <span className="inline-flex items-center gap-1.5"><Icone nome="alerta" tamanho={14} /> VENCIDA</span>
+              : <span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={14} /> dentro da validade</span>}</p>
         </div>
 
         <div className="mt-4 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">

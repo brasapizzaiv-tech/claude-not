@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
 import { consultarContas, agruparContas, type FiltroContas } from "./consulta";
@@ -70,7 +71,7 @@ export default async function ContasPagarPage({
             href={`/financeiro/contas/export?${querystring}`}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
           >
-            ⬇ Baixar relatório (Excel)
+            <Icone nome="baixar" tamanho={14} className="mr-1.5" /> Baixar relatório (Excel)
           </a>
           <Link
             href="/financeiro"

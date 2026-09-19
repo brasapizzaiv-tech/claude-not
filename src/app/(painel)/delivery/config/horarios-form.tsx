@@ -1,4 +1,5 @@
 import type { ConfigHorarios } from "@/lib/delivery-horarios";
+import { Icone } from "@/components/icone";
 
 // Seção "Horários e agendamento" do formulário de config do delivery
 // (campos simples; quem lê é salvarConfigDelivery).
@@ -12,7 +13,7 @@ export function HorariosConfig({ cfg }: { cfg: ConfigHorarios }) {
   ];
   return (
     <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <h2 className="font-bold">🕐 Horários e agendamento</h2>
+      <h2 className="flex items-center gap-1.5 font-bold"><Icone nome="relogio" tamanho={16} /> Horários e agendamento</h2>
       <p className="mb-3 text-xs text-zinc-500">
         Pedidos <b>pra agora</b> só dentro da janela “livre”. O <b>agendamento</b> abre mais cedo: o cliente escolhe um horário exato dentro da janela livre do mesmo dia.
       </p>

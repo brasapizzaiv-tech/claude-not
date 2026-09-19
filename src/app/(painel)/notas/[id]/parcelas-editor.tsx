@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -99,7 +100,7 @@ export function ParcelasEditor({
         className="flex w-full items-center justify-between px-4 py-3 text-left"
       >
         <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-          💳 Parcelamento manual
+          <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Parcelamento manual
           {parcelas.length > 1 && (
             <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
               {parcelas.length}x salvo

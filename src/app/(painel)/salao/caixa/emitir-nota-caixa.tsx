@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
@@ -36,7 +37,7 @@ export function EmitirNotaCaixa({
     if (!nfceId) return;
     start(async () => {
       const r = await imprimirNfce(nfceId);
-      setRes((s) => ({ ...s, [key]: { ...s[key], impressao: r.ok ? "🖨️ enviada pra impressora" : `⚠️ ${r.mensagem}` } }));
+      setRes((s) => ({ ...s, [key]: { ...s[key], impressao: r.ok ? "enviada pra impressora" : r.mensagem } }));
     });
   }
 
@@ -58,7 +59,7 @@ export function EmitirNotaCaixa({
 
   return (
     <div className="mt-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-      <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">🧾 {autoIds.length > 0 ? "CPF ou CNPJ na nota?" : "Emitir NFC-e"} {autoIds.length > 0 && <span className="ml-1 text-xs font-normal text-emerald-600">(nota automática: Pix/cartão)</span>}</p>
+      <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100"><Icone nome="cupom" tamanho={14} className="mr-1.5" /> {autoIds.length > 0 ? "CPF ou CNPJ na nota?" : "Emitir NFC-e"} {autoIds.length > 0 && <span className="ml-1 text-xs font-normal text-emerald-600">(nota automática: Pix/cartão)</span>}</p>
       <div className="space-y-2">
         {grupos.map((g) => {
           const r = res[g.key];

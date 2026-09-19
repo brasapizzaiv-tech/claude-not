@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -76,7 +77,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
           title="Ler QR / código de barras"
           className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 text-xl"
         >
-          📷
+          <Icone nome="camera" tamanho={20} titulo="Ler código" />
         </button>
       </div>
       {erro && <p className="mb-2 px-1 text-sm text-red-400">{erro}</p>}

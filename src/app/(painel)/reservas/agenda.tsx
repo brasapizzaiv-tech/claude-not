@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
@@ -140,7 +142,7 @@ export function AgendaReservas({
           href="/reservas/hoje"
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
         >
-          📱 Ver no celular
+          <Icone nome="celular" tamanho={15} className="mr-1.5" /> Ver no celular
         </a>
       </div>
       <p className="mt-1 text-zinc-500">
@@ -382,15 +384,15 @@ function CartaoReserva({
           Editar
         </button>
         <a href={zap("confirmacao")} target="_blank" rel="noopener" className={btn}>
-          💬 Confirmar
+          <Icone nome="zap" tamanho={14} className="mr-1" /> Confirmar
         </a>
         {r.status === "aguardando" && (
           <a href={zap("aguardando")} target="_blank" rel="noopener" className={btn}>
-            💬 Aguardar
+            <Icone nome="zap" tamanho={14} className="mr-1" /> Aguardar
           </a>
         )}
         <a href={zap("sem_mesa")} target="_blank" rel="noopener" className={btn}>
-          💬 Sem mesa
+          <Icone nome="zap" tamanho={14} className="mr-1" /> Sem mesa
         </a>
         {r.status !== "cancelada" && (
           <button

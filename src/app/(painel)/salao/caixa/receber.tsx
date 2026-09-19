@@ -470,7 +470,7 @@ export function ReceberComandas({
       try {
         if (pendenteId) {
           const r = await emitirNotaPendenteAgora(pendenteId, doc);
-          setNotaMsg(r.ok ? `✓ Nota ${r.numero ?? ""} emitida e enviada pra impressora.` : `⚠️ ${r.mensagem}`);
+          setNotaMsg(r.ok ? `Nota ${r.numero ?? ""} emitida e enviada pra impressora.` : r.mensagem);
           if (r.ok) setTimeout(fecharNota, 1800);
         } else {
           const r = await emitirNfceComandas(pagas.map((c) => c.id), doc);
@@ -480,11 +480,11 @@ export function ReceberComandas({
             setNotaMsg(`✓ Nota ${r.numero ?? ""} emitida e enviada pra impressora.`);
             setTimeout(fecharNota, 1800);
           } else {
-            setNotaMsg(`⚠️ ${r.mensagem ?? "não autorizou"}`);
+            setNotaMsg(r.mensagem ?? "não autorizou");
           }
         }
       } catch {
-        setNotaMsg("⚠️ Sem conexão. Confira em Notas fiscais.");
+        setNotaMsg("Sem conexão. Confira em Notas fiscais.");
       } finally {
         setNotaProc(false);
       }
@@ -1055,7 +1055,7 @@ export function ReceberComandas({
       )}
       {pagas.length > 0 && autoNaFila && (
         <p className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-          🧾 A nota sai sozinha em alguns minutos, sem imprimir. Se o cliente quiser o papel ou CPF, use lá em cima, em
+          <Icone nome="cupom" tamanho={14} className="mr-1.5" /> A nota sai sozinha em alguns minutos, sem imprimir. Se o cliente quiser o papel ou CPF, use lá em cima, em
           &quot;Notas saindo automaticamente&quot; — <b>Emitir e imprimir</b>.
         </p>
       )}

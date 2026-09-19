@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { siteUrl } from "@/lib/site-url";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -35,7 +36,7 @@ export type ComboGrupo = {
   opcoes: ComboOpcao[];
 };
 
-const PIZZAS = "🍕 Pizzas";
+const PIZZAS = "Pizzas";
 
 // Lançador de itens estilo PDV: abas por categoria + busca + grade de cards.
 // Tocar num card adiciona o item na comanda na hora.
@@ -434,7 +435,7 @@ export function MontarPizza({
   return (
     <details className="rounded-2xl border border-zinc-200 dark:border-zinc-800">
       <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-        🍕 Montar pizza
+        <Icone nome="pizza" tamanho={15} className="mr-1.5" /> Montar pizza
       </summary>
       <div className="space-y-4 border-t border-zinc-100 p-4 dark:border-zinc-800">
         {/* Tamanho */}

@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -177,7 +179,7 @@ export function GarcomPedido({
           <span className="text-lg font-bold">{mesa}</span>
         </div>
         <div className="flex items-center gap-4 text-sm font-medium text-blue-400">
-          <button onClick={() => setContaOpen(true)}>🧾 Conta</button>
+          <button onClick={() => setContaOpen(true)} className="inline-flex items-center gap-1.5"><Icone nome="cupom" tamanho={14} /> Conta</button>
           <button onClick={() => { setTrocaComanda(comandas[0]?.id ?? ""); setTrocaMesa(""); setTrocaOpen(true); }}>⇄ Trocar mesa</button>
         </div>
       </div>
@@ -212,12 +214,12 @@ export function GarcomPedido({
                     className={`flex items-center justify-between rounded-lg border p-3 ${q > 0 ? "border-blue-500 bg-blue-500/10" : "border-zinc-800 bg-zinc-900"}`}
                   >
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{i.nome}{temCompl ? " ⚙️" : ""}</div>
+                      <div className="truncate font-medium">{i.nome}{temCompl && <Icone nome="ajustes" tamanho={12} className="ml-1 text-zinc-400" />}</div>
                       <div className="text-sm text-emerald-400">{i.preco > 0 ? brl(i.preco) : "Preço variável"}</div>
                     </div>
                     {q > 0 && (
                       <div className="flex items-center gap-3 rounded-lg border border-blue-500 px-2 py-1">
-                        <button onClick={(e) => { e.stopPropagation(); tiraUm(i.id); }} className="text-lg">{q === 1 ? "🗑️" : "−"}</button>
+                        <button onClick={(e) => { e.stopPropagation(); tiraUm(i.id); }} className="text-lg">{q === 1 ? <Icone nome="lixeira" tamanho={16} titulo="Tirar" /> : "−"}</button>
                         <span className="w-5 text-center font-bold">{q}</span>
                         <button onClick={(e) => { e.stopPropagation(); add(i); }} className="text-lg text-blue-400">+</button>
                       </div>
@@ -236,7 +238,7 @@ export function GarcomPedido({
               onClick={() => setPzOpen(true)}
               className="mb-1.5 w-full rounded-md bg-orange-500 px-2 py-3 text-xs font-bold text-white"
             >
-              🍕 Montar pizza
+              <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Montar pizza
             </button>
           )}
           {abas.map((c) => (
@@ -254,13 +256,13 @@ export function GarcomPedido({
 
       {/* Rodapé */}
       <div className="flex items-center gap-3 border-t border-zinc-800 p-3">
-        <button onClick={() => { setBuscaOn((v) => !v); if (buscaOn) setBusca(""); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-700 text-lg">🔎</button>
+        <button onClick={() => { setBuscaOn((v) => !v); if (buscaOn) setBusca(""); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-700"><Icone nome="buscar" tamanho={19} titulo="Buscar" /></button>
         <button
           onClick={() => setCartOpen(true)}
           disabled={cartCount === 0}
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-base font-bold ${cartCount > 0 ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-500"}`}
         >
-          🛒 Carrinho{cartCount > 0 ? ` (${cartCount})` : ""}
+          <Icone nome="compras" tamanho={16} className="mr-1.5" /> Carrinho{cartCount > 0 ? ` (${cartCount})` : ""}
         </button>
       </div>
 
@@ -283,7 +285,7 @@ export function GarcomPedido({
                       <div className="mt-0.5 text-sm text-emerald-400">{brl(l.preco * l.qtd)}</div>
                     </div>
                     <div className="ml-2 flex items-center gap-3 rounded-lg border border-zinc-700 px-2 py-1">
-                      <button onClick={() => setQtdLinha(l.uid, l.qtd - 1)} className="text-lg">{l.qtd === 1 ? "🗑️" : "−"}</button>
+                      <button onClick={() => setQtdLinha(l.uid, l.qtd - 1)} className="text-lg">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={16} titulo="Tirar" /> : "−"}</button>
                       <span className="w-5 text-center font-bold">{l.qtd}</span>
                       <button onClick={() => setQtdLinha(l.uid, l.qtd + 1)} className="text-lg text-blue-400">+</button>
                     </div>
@@ -449,7 +451,7 @@ export function GarcomPedido({
       {toast && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
           <div className="rounded-2xl bg-zinc-800 px-8 py-6 text-center">
-            <div className="mb-2 text-4xl">✅</div>
+            <div className="mb-2 flex justify-center"><Icone nome="certo" tamanho={42} className="text-emerald-500" /></div>
             <p className="font-semibold">{toast}</p>
           </div>
         </div>

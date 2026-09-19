@@ -57,7 +57,7 @@ export async function lancarPedidoGarcomLinhas(
   const rows = linhas.map((l, idx) => ({
     comanda_id: cid,
     item_id: l.itemId,
-    descricao: l.descricao + (idx === 0 && obs ? `\n📝 ${obs}` : ""),
+    descricao: l.descricao + (idx === 0 && obs ? `\nObs: ${obs}` : ""),
     qtd: l.qtd,
     preco_unit: l.preco,
     criado_por: uid,

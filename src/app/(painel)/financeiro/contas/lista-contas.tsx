@@ -290,7 +290,7 @@ export function ListaContasView({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Buscar conta por descrição, fornecedor ou categoria..."
+          placeholder="Buscar conta por descrição, fornecedor ou categoria..."
           className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         />
         {busca && (
@@ -309,7 +309,7 @@ export function ListaContasView({
       {aberto && (
         <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-green-300 bg-green-50 px-3 py-2 text-sm shadow-sm dark:border-green-900 dark:bg-green-950/40">
           <span className="font-semibold text-green-800 dark:text-green-200">
-            {marcadas.size === 0 ? "Marque as contas pagas na caixinha ☑ e dê baixa em lote" : `${marcadas.size} selecionada(s) · ${moeda(totalSel)}`}
+            {marcadas.size === 0 ? "Marque as contas pagas na caixinha e dê baixa em lote" : `${marcadas.size} selecionada(s) · ${moeda(totalSel)}`}
           </span>
           {marcadas.size > 0 && (
             <>

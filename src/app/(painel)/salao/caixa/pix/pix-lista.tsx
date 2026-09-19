@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { estornarPix } from "../../pix-actions";
@@ -45,14 +47,14 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
       try {
         const r = await estornarPix(l.txid, v, motivo.trim());
         if (r.ok) {
-          setMsg(`✅ Devolução enviada (${r.status}). O dinheiro volta pra conta de quem pagou.`);
+          setMsg(`Devolução enviada (${r.status}). O dinheiro volta pra conta de quem pagou.`);
           setAberto(null);
           router.refresh();
         } else {
-          setMsg(`❌ ${r.erro}`);
+          setMsg(r.erro);
         }
       } catch {
-        setMsg("❌ Sem conexão. Atualize a página e veja se a devolução saiu antes de tentar de novo.");
+        setMsg("Sem conexão. Atualize a página e veja se a devolução saiu antes de tentar de novo.");
       }
     });
   }
@@ -89,7 +91,7 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
                   <td className="px-3 py-2">
                     {l.status === "pago" ? (
                       l.valorDevolvido > 0 ? (
-                        <span className="text-amber-600">↩ devolvido {brl(l.valorDevolvido)}</span>
+                        <span className="inline-flex items-center gap-1 text-amber-600"><Icone nome="desfazer" tamanho={12} /> devolvido {brl(l.valorDevolvido)}</span>
                       ) : (
                         <span className="text-emerald-600">✓ pago</span>
                       )

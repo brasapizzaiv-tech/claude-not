@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { siteUrl } from "@/lib/site-url";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -236,7 +238,7 @@ export function FornecedoresClient({
                   onClick={() => abrirWhats(proximo)}
                   className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
                 >
-                  📲 Abrir WhatsApp do próximo ({convidados.length - enviadosCount} faltam)
+                  <Icone nome="zap" tamanho={15} className="mr-1.5" /> Abrir WhatsApp do próximo ({convidados.length - enviadosCount} faltam)
                 </button>
               ) : (
                 <span className="rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
@@ -258,7 +260,7 @@ export function FornecedoresClient({
           {convidados.length > 1 && (
             <details className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
               <summary className="cursor-pointer px-4 py-2 text-sm text-zinc-500">
-                🔗 Link único (um vendedor com várias empresas)
+                <Icone nome="copiar" tamanho={14} className="mr-1.5" /> Link único (um vendedor com várias empresas)
               </summary>
               <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
                 <p className="mb-2 text-xs text-zinc-500">
@@ -286,7 +288,7 @@ export function FornecedoresClient({
           {/* Mensagem configurável */}
           <details className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
             <summary className="cursor-pointer px-4 py-2 text-sm text-zinc-500">
-              ✏️ Editar a mensagem enviada
+              <Icone nome="editar" tamanho={14} className="mr-1.5" /> Editar a mensagem enviada
             </summary>
             <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
               <textarea

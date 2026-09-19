@@ -83,12 +83,12 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
       <input
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
-        placeholder="🔍 Fornecedor, descrição ou categoria"
+        placeholder="Fornecedor, descrição ou categoria"
         className="mb-3 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
       />
 
       {contas.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">Nenhuma conta aberta 🎉</p>
+        <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">Nenhuma conta aberta.</p>
       ) : filtradas.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">Nada encontrado.</p>
       ) : (

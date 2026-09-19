@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { pixDiagnostico } from "@/lib/pix";
 import { PixLista, type PixLinha } from "./pix-lista";
@@ -79,7 +80,7 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
       <Link href="/salao/caixa" className="text-sm text-zinc-500 hover:text-orange-600">← Caixa</Link>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">💠 Pix recebidos</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="rapido" tamanho={20} className="mr-2" /> Pix recebidos</h1>
           <p className="mt-1 text-sm text-zinc-500">
             Cobranças com QR na tela (caixa, balcão e app). Banco: {diag.banco === "sicoob" ? "Sicoob" : "Sicredi"}
             {diag.ambiente !== "producao" && <span className="ml-2 rounded bg-amber-100 px-1.5 text-xs text-amber-700">SANDBOX</span>}

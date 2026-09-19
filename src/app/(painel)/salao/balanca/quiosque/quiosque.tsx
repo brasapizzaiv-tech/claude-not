@@ -1,4 +1,6 @@
 "use client";
+
+import { Icone } from "@/components/icone";
 /* eslint-disable @typescript-eslint/no-explicit-any -- WebSerial não tem tipos no TS padrão */
 
 import { useEffect, useRef, useState } from "react";
@@ -69,7 +71,7 @@ export function QuiosqueBalanca({
   const [diag, setDiag] = useState<{ bytes: number; raw: string }>({ bytes: 0, raw: "" });
   const [taraBalanca, setTaraBalanca] = useState(0); // tara feita NA balança (campo TARA)
   const taraBalancaRef = useRef(0);
-  // "A balança está tarada com o prato?" — lembrado neste PC (⚙️). Necessário
+  // "A balança está tarada com o prato?" — lembrado neste PC, no botão de ajustes. Necessário
   // quando o protocolo não manda o valor da tara (Prot F): a tara vale a padrão.
   const [balancaTarada, setBalancaTarada] = useState(false);
   const balancaTaradaRef = useRef(false);
@@ -148,7 +150,7 @@ export function QuiosqueBalanca({
   //  B) Balança SEM tara: PESO L é o bruto → prato desconta a tara padrão do
   //     sistema; marmita (sem prato) cobra o bruto inteiro. Nunca fica negativo.
   //  Protocolos curtos (Prot F) mandam o peso com sinal mas SEM o valor da tara:
-  //  aí a chave "balança tarada com o prato" (⚙️) diz que a tara é a tara padrão.
+  //  aí a chave "balança tarada com o prato", nos ajustes, diz que a tara é a tara padrão.
   const netDe = (leitura: number, taraBal: number, marmita: boolean) => {
     const tarada = taraBal > 0.001 || balancaTaradaRef.current;
     const tara = taraBal > 0.001 ? taraBal : taraEmUso();
@@ -699,7 +701,7 @@ export function QuiosqueBalanca({
         </div>
         <div className="flex items-center gap-6">
           {agente && (
-            <button onClick={abrirConfig} className="text-3xl text-[#211915]/40 hover:text-[#211915]/80" title="Impressora do cupom">⚙️</button>
+            <button onClick={abrirConfig} className="text-[#211915]/40 hover:text-[#211915]/80"><Icone nome="ajustes" tamanho={30} titulo="Impressora do cupom" /></button>
           )}
           <Link
             href="/salao/balanca"
@@ -714,7 +716,7 @@ export function QuiosqueBalanca({
       {configAberta && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-6" onClick={() => setConfigAberta(false)}>
           <div className="w-full max-w-xl rounded-3xl bg-white p-6 text-[#211915] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="mb-1 text-2xl font-bold">🖨️ Impressora do cupom</h2>
+            <h2 className="mb-1 flex items-center gap-2 text-2xl font-bold"><Icone nome="imprimir" tamanho={22} /> Impressora do cupom</h2>
             <p className="mb-4 text-sm text-[#211915]/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
             <div className="max-h-72 space-y-2 overflow-y-auto">
               <button
@@ -738,7 +740,7 @@ export function QuiosqueBalanca({
             {/* Voz do quiosque */}
             <div className="mt-4 rounded-xl border border-[#211915]/15 p-3 text-sm">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold">🔊 Falar com o cliente</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="som" tamanho={16} /> Falar com o cliente</span>
                 <button
                   onClick={() => voz.alternar(!voz.ligada)}
                   disabled={!voz.suportada}
@@ -768,7 +770,7 @@ export function QuiosqueBalanca({
                     onClick={() => voz.falar("Comanda 246. 36 reais e 44 centavos. Pode retirar seu prato.", true)}
                     className="mt-2 w-full rounded-lg border border-[#211915]/20 py-2 text-sm hover:bg-[#211915]/5"
                   >
-                    🔊 Testar a voz
+                    <Icone nome="som" tamanho={15} className="mr-1.5" /> Testar a voz
                   </button>
                 </>
               ) : (
@@ -779,8 +781,8 @@ export function QuiosqueBalanca({
             <div className="mt-4 rounded-xl border border-[#211915]/15 p-3 text-sm">
               <p className="mb-2 font-semibold">Como imprimir o cupom</p>
               <div className="flex gap-2">
-                <button onClick={() => alternarModo("escpos")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "escpos" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}>⚡ Rápido (direto na térmica)</button>
-                <button onClick={() => alternarModo("pdf")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "pdf" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}>🐢 PDF (modo antigo)</button>
+                <button onClick={() => alternarModo("escpos")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "escpos" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="rapido" tamanho={14} /> Rápido (direto na térmica)</span></button>
+                <button onClick={() => alternarModo("pdf")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "pdf" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lento" tamanho={14} /> PDF (modo antigo)</span></button>
               </div>
               <p className="mt-2 text-xs text-[#211915]/60">O rápido sai em menos de 1 s. Se a impressora não entender (cupom em branco ou símbolos), volte pro PDF e me avise.</p>
             </div>
@@ -823,7 +825,7 @@ export function QuiosqueBalanca({
             {/* Diagnóstico da balança: leitura crua que chegou no agente */}
             <div className="mt-4 rounded-xl border border-[#211915]/15 bg-[#f6efe6] p-3 text-xs">
               <div className="mb-1 flex items-center justify-between">
-                <span className="font-semibold">⚖️ Balança (o que o agente recebeu por último)</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="balanca" tamanho={16} /> Balança (o que o agente recebeu por último)</span>
                 <button onClick={lerRaw} className="rounded-md border border-[#211915]/20 px-2 py-0.5">atualizar</button>
               </div>
               {rawBal ? (
@@ -838,8 +840,8 @@ export function QuiosqueBalanca({
               )}
             </div>
             <div className="mt-5 flex gap-3">
-              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5">🧾 Imprimir teste</button>
-              <button onClick={testeRapido} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5">⚡ Teste rápido</button>
+              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Imprimir teste</span></button>
+              <button onClick={testeRapido} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="rapido" tamanho={18} /> Teste rápido</span></button>
               <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-[#C78340] py-3 text-lg font-bold">Fechar</button>
             </div>
           </div>
@@ -849,7 +851,7 @@ export function QuiosqueBalanca({
       {virarAberto && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6" onClick={() => setVirarAberto(false)}>
           <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-[#211915] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-[#C78340]">🔄 Virar buffet livre</h2>
+            <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-[#C78340]"><span className="inline-flex items-center justify-center gap-3"><Icone nome="atualizar" tamanho={28} /> Virar buffet livre</span></h2>
             <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-[#211915]/80">
               Passe o <b>QR do seu cupom</b> no leitor. A comanda pesada vira <b>BUFFET LIVRE ({moeda(buffetLivre)})</b> e sai um cupom novo.
             </p>
@@ -928,7 +930,7 @@ export function QuiosqueBalanca({
               )}
               {resultado.peso > 0 ? (
                 <div className="mx-auto max-w-3xl rounded-3xl border-4 border-amber-400 bg-amber-100 px-8 py-4">
-                  <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-amber-700">⬆ {soKg ? "RETIRE SUA MARMITA" : "RETIRE O PRATO"}</p>
+                  <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-amber-700"><span className="inline-flex items-center justify-center gap-3"><Icone nome="subir" tamanho={40} /> {soKg ? "RETIRE SUA MARMITA" : "RETIRE O PRATO"}</span></p>
                   <p className="mt-1 text-[clamp(0.9rem,2.5vw,1.5rem)] text-[#211915]/70">Pegue seu cupom · a próxima pesagem começa quando a balança zerar</p>
                 </div>
               ) : (
@@ -944,17 +946,17 @@ export function QuiosqueBalanca({
                   onClick={() => voltarAguardando()}
                   className="rounded-xl bg-[#C78340] px-8 py-3 text-xl font-bold text-white hover:brightness-110"
                 >
-                  ➡️ Próximo cliente
+                  <Icone nome="avancar" tamanho={24} className="mr-2" /> Próximo cliente
                 </button>
                 <button
                   onClick={() => imprimirCupom(resultado)}
                   className="rounded-xl border border-[#211915]/20 px-6 py-3 text-xl text-[#211915]/70 hover:bg-[#211915]/5"
                 >
-                  🖨️ Imprimir de novo
+                  <Icone nome="imprimir" tamanho={22} className="mr-2" /> Imprimir de novo
                 </button>
               </div>
               {erroImpressao && (
-                <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira em ⚙️</p>
+                <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira nos ajustes.</p>
               )}
             </div>
           ) : (
@@ -985,7 +987,7 @@ export function QuiosqueBalanca({
                     onClick={livreDireto}
                     className="min-w-[16rem] flex-1 rounded-3xl bg-[#C78340] px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-white shadow-lg active:brightness-90"
                   >
-                    🍽️ QUERO O BUFFET LIVRE
+                    <Icone nome="salao" tamanho={30} className="mr-3" /> QUERO O BUFFET LIVRE
                     <span className="block text-[clamp(1.1rem,2.8vw,2.2rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>
                   </button>
                 )}
@@ -994,7 +996,7 @@ export function QuiosqueBalanca({
                     onClick={() => { setVirarAberto(true); setNumeroVirar(""); }}
                     className="min-w-[16rem] flex-1 rounded-3xl border-4 border-[#C78340] bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-[#C78340] shadow-md active:brightness-95"
                   >
-                    🔄 JÁ PESEI, QUERO VIRAR LIVRE
+                    <Icone nome="atualizar" tamanho={26} className="mr-3" /> JÁ PESEI, QUERO VIRAR LIVRE
                     <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium text-[#211915]/50">passe o cupom no leitor</span>
                   </button>
                 )}
@@ -1004,7 +1006,7 @@ export function QuiosqueBalanca({
                     soKg ? "bg-yellow-400 text-black" : "border-4 border-[#211915]/15 bg-white text-[#211915]/70 hover:bg-[#211915]/5"
                   }`}
                 >
-                  🍱 {soKg ? "MARMITA — ativa" : "É MARMITA?"}
+                  <Icone nome="marmita" tamanho={26} className="mr-2.5" /> {soKg ? "MARMITA — ativa" : "É MARMITA?"}
                   <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium opacity-70">{soKg ? "cobra só por kg nesta pesagem" : "cobra só por kg"}</span>
                 </button>
               </div>
@@ -1049,7 +1051,7 @@ export function QuiosqueBalanca({
 
       {filaAgente > 0 && (
         <div className="px-4 py-1 text-center text-[12px] font-bold text-amber-700">
-          ⚠️ {filaAgente} pesagem(ns) na fila offline — sincronizam sozinhas quando a internet voltar.
+          <Icone nome="alerta" tamanho={16} className="mr-1.5" /> {filaAgente} pesagem(ns) na fila offline — sincronizam sozinhas quando a internet voltar.
         </div>
       )}
       {agente && (

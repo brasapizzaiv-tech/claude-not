@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useState, useTransition } from "react";
 import { criarEtiquetaColab, criarItemEtiquetaColab } from "../etiqueta-actions";
 import {
@@ -105,8 +107,8 @@ export function EtiquetaColabForm({
       if (r.ok) {
         setToast(
           copias > 1
-            ? `${copias} etiquetas (nº ${r.numeros[0]} a ${r.numeros[r.numeros.length - 1]}) saindo na impressora 🖨️`
-            : `Etiqueta nº ${r.numero} gerada! Saindo na impressora 🖨️`,
+            ? `${copias} etiquetas (nº ${r.numeros[0]} a ${r.numeros[r.numeros.length - 1]}) saindo na impressora.`
+            : `Etiqueta nº ${r.numero} gerada! Saindo na impressora.`,
         );
         setItemId(""); setTitulo(""); setTexto(""); setQuantidade(""); setValidade(""); setExtras(EXTRAS_VAZIO); setCopias(1);
         setTimeout(() => setToast(null), 2500);
@@ -165,7 +167,7 @@ export function EtiquetaColabForm({
               <div>
                 <label className="mb-1 block text-xs text-zinc-500">Conservação</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {[["resfriado", "🧊 Resfriado"], ["congelado", "❄️ Congelado"], ["ambiente", "🌡️ Ambiente"]].map(([v, lab]) => (
+                  {[["resfriado", "Resfriado"], ["congelado", "Congelado"], ["ambiente", "Ambiente"]].map(([v, lab]) => (
                     <button
                       key={v}
                       type="button"
@@ -234,7 +236,7 @@ export function EtiquetaColabForm({
             disabled={proc || !pronto}
             className="w-full rounded-xl bg-orange-500 py-3 text-base font-bold text-white disabled:opacity-50"
           >
-            {proc ? "Gerando..." : copias > 1 ? `🖨️ Imprimir ${copias} etiquetas` : "🖨️ Imprimir etiqueta"}
+            {proc ? "Gerando..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="imprimir" tamanho={16} /> {copias > 1 ? `Imprimir ${copias} etiquetas` : "Imprimir etiqueta"}</span>}
           </button>
           {!pronto && !livre && (
             <p className="text-center text-xs text-zinc-500">Falta: {[!qtdValida(quantidade) && "quantidade", !validade && "validade"].filter(Boolean).join(" e ")}.</p>

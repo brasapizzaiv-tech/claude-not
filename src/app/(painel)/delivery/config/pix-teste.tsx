@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { testarPixDelivery } from "../actions";
@@ -32,12 +33,12 @@ export function PixTeste({ banco, ambiente, configurado, faltando }: { banco: st
             <div className={`mt-2 rounded-lg p-2 text-xs ${res.ok ? "bg-emerald-600/10" : "bg-red-500/10 text-red-700 dark:text-red-400"}`}>
               {res.ok ? (
                 <>
-                  <p>✅ Funcionou em {res.ms} ms. Cobrança criada (expira em 1 min, não precisa pagar). Ambiente: <b>{res.ambiente === "producao" ? "PRODUÇÃO" : "SANDBOX (teste — não recebe dinheiro de verdade)"}</b>.</p>
+                  <p><Icone nome="certo" tamanho={14} className="mr-1.5 text-emerald-600" /> Funcionou em {res.ms} ms. Cobrança criada (expira em 1 min, não precisa pagar). Ambiente: <b>{res.ambiente === "producao" ? "PRODUÇÃO" : "SANDBOX (teste — não recebe dinheiro de verdade)"}</b>.</p>
                   <p className="mt-1 break-all text-[10px] text-zinc-500">location: {res.location}</p>
                   <p className="mt-1 break-all font-mono text-[10px] text-zinc-500">{res.copiaECola}</p>
                 </>
               ) : (
-                <p>❌ Falhou em {res.ms} ms: {res.erro}</p>
+                <p><Icone nome="errado" tamanho={14} className="mr-1.5 text-red-600" /> Falhou em {res.ms} ms: {res.erro}</p>
               )}
             </div>
           )}

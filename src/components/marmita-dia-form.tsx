@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Marmitas Kern de UM dia: mostra o que a rotação manda e deixa a cozinha
 // trocar só esse dia (exceção). Usado no painel e no app da equipe — a ação
@@ -91,7 +92,7 @@ export function MarmitaDiaForm({
 
       {!pode.ok && !kern.bloqueado && (
         <p className={`${txt} rounded-xl bg-amber-50 px-3 py-2 text-amber-800 dark:bg-amber-950 dark:text-amber-200`}>
-          🔒 {pode.motivo}
+          <Icone nome="cadeado" tamanho={14} className="mr-1.5" /> {pode.motivo}
         </p>
       )}
       {pode.ok && !kern.bloqueado && (

@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -67,7 +68,7 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            📄 Manifestar em lote
+            <Icone nome="documento" tamanho={15} className="mr-1.5" /> Manifestar em lote
           </p>
           <p className="text-xs text-zinc-500">
             {notas.length} nota(s) em resumo — marque e manifeste várias de uma vez.

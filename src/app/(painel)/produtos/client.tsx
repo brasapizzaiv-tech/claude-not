@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -312,7 +313,7 @@ export function ProdutosClient({
                 <th className="px-4 py-3 text-right" title="Unidades por fardo — edite direto aqui">Fardo</th>
                 <th className="px-4 py-3">Fornecedores</th>
                 <th className="px-4 py-3 text-center whitespace-nowrap" title="Exclusivo (1 fornecedor)">
-                  🔒 Excl.
+                  <Icone nome="cadeado" tamanho={12} className="mr-1" /> Excl.
                   <button
                     type="button"
                     onClick={marcarTodosExclusivos}
@@ -772,7 +773,7 @@ function FornecedoresModal({
               onChange={(e) => alternarExclusivo(e.target.checked)}
             />
             <span className="text-zinc-700 dark:text-zinc-200">
-              🔒 Fornecedor exclusivo <span className="text-zinc-400">(só 1 — vai só pra ele na cotação)</span>
+              <Icone nome="cadeado" tamanho={14} className="mr-1.5" /> Fornecedor exclusivo <span className="text-zinc-400">(só 1 — vai só pra ele na cotação)</span>
             </span>
           </label>
           <input

@@ -154,10 +154,10 @@ export function PedirClient({
     setCupomProc(false);
     if (r.ok) {
       setCupom({ codigo: r.codigo, tipo: r.tipo, valor: r.valor, minimo: r.minimo });
-      setCupomMsg(`✅ Cupom ${r.codigo}: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `R$ ${r.valor.toFixed(2).replace(".", ",")} de desconto`}${r.minimo != null ? ` (pedido mínimo R$ ${r.minimo.toFixed(2).replace(".", ",")})` : ""}`);
+      setCupomMsg(`Cupom ${r.codigo}: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `R$ ${r.valor.toFixed(2).replace(".", ",")} de desconto`}${r.minimo != null ? ` (pedido mínimo R$ ${r.minimo.toFixed(2).replace(".", ",")})` : ""}`);
     } else {
       setCupom(null);
-      setCupomMsg(`❌ ${r.mensagem}`);
+      setCupomMsg(r.mensagem);
     }
   }
 
@@ -177,7 +177,7 @@ export function PedirClient({
     const r = await calcularEntregaPublico({ logradouro: end.logradouro, numero: end.numero, bairro: end.bairro, cidade: end.cidade, cep: end.cep });
     setCalculando(false);
     if (r.ok) {
-      if (r.foraDeArea) { setTaxa(null); setCalcMsg("😕 Esse endereço fica fora da nossa área de entrega."); return; }
+      if (r.foraDeArea) { setTaxa(null); setCalcMsg("Esse endereço fica fora da nossa área de entrega."); return; }
       setTaxa(r.taxa);
       const onde = r.areaNome ? r.areaNome : r.distanciaKm != null ? `${r.distanciaKm} km` : "";
       setCalcMsg(`Entrega: ${brl(r.taxa)}${onde ? ` (${onde})` : ""}${r.tempoMin ? ` · cerca de ${r.tempoMin} min` : ""}`);
@@ -206,7 +206,7 @@ export function PedirClient({
         setNome((n) => n.trim() ? n : d.nome);
         if (d.endereco) {
           setEnd((e) => e.logradouro.trim() ? e : d.endereco!);
-          setLembrado("📍 Preenchi com o endereço do seu último pedido — confira antes de calcular a entrega.");
+          setLembrado("Preenchi com o endereço do seu último pedido — confira antes de calcular a entrega.");
         }
       } catch { /* sem rede */ }
     })();
@@ -473,8 +473,8 @@ export function PedirClient({
       {!aberto && (
         <div className={`px-4 py-2 text-center text-sm font-bold text-white ${horario.podeAgendar ? "bg-sky-700" : "bg-rose-600"}`}>
           {horario.podeAgendar
-            ? `📅 Fechado agora${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : ""}. Mas você já pode AGENDAR seu pedido!`
-            : `😴 Estamos fechados${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : " agora"}. Pode olhar o cardápio à vontade.`}
+            ? `Fechado agora${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : ""}. Mas você já pode AGENDAR seu pedido!`
+            : `Estamos fechados${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : " agora"}. Pode olhar o cardápio à vontade.`}
         </div>
       )}
       {aviso && (

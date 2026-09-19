@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { agruparContas, type LinhaConta } from "@/app/(painel)/financeiro/contas/consulta";
 import { colabContas } from "./contas-actions";
@@ -54,7 +55,7 @@ export default async function ContasColabPage({ params }: { params: Promise<{ to
   return (
     <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-4 pb-32 dark:bg-zinc-950">
       <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
-      <h1 className="mt-2 mb-1 text-xl font-bold text-zinc-900 dark:text-zinc-50">💰 Contas a pagar</h1>
+      <h1 className="mt-2 mb-1 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="dinheiro" tamanho={18} className="mr-2" /> Contas a pagar</h1>
       <p className="mb-4 text-sm text-zinc-500">Olá, {colab.nome.split(" ")[0]} — marque as que foram pagas e dê baixa.</p>
       <ContasColab token={token} contas={contas} hoje={hoje} />
     </div>

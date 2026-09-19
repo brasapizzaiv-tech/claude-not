@@ -20,7 +20,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
     start(async () => {
       const r = await manifestarEBaixar(notaId);
       setDiag(r?.completa ? null : (r?.diag ?? null));
-      if (r?.erro) setMsg(`❌ ${r.erro}`);
+      if (r?.erro) setMsg(r.erro);
       else if (r?.completa)
         setMsg("✓ Nota completa baixada! Role para ver os itens e lançar.");
       else

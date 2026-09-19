@@ -155,7 +155,7 @@ const fmtR = (v: number | null | undefined) =>
 
 function resumoQuadro(c: Colaborador): string {
   const partes: string[] = [];
-  if (c.turno) partes.push(`${TURNOS[c.turno].icone} ${TURNOS[c.turno].nome}`);
+  if (c.turno) partes.push(TURNOS[c.turno].nome);
   const cltDia = vinculoDoTurno(c, "dia") === "clt";
   const cltNoite = vinculoDoTurno(c, "noite") === "clt";
   if (cltDia || cltNoite) partes.push(c.salario_base ? `CLT R$ ${fmtR(c.salario_base)}` : "CLT");

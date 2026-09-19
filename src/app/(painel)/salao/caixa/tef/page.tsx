@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { TefLista, type TefLinha } from "./tef-lista";
 
@@ -27,7 +28,7 @@ export default async function TefPage() {
         ← Voltar ao caixa
       </Link>
       <div className="mt-2 mb-4">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">💳 Cartões (TEF)</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="cartao" tamanho={20} className="mr-2" /> Cartões (TEF)</h1>
         <p className="text-sm text-zinc-500">
           Últimos 7 dias de cartões passados no pinpad. Aqui você reimprime a via do cliente, cancela uma venda (o pinpad pede o cartão de novo) e abre o menu administrativo da Elgin.
         </p>

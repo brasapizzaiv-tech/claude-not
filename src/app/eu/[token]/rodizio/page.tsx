@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { colabRodizio, saboresRodizio } from "./rodizio-actions";
 import { RodizioForm } from "./form";
 
@@ -25,7 +26,7 @@ export default async function RodizioColabPage({ params }: { params: Promise<{ t
         <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
         <span className="text-xs text-zinc-400">{colab.nome.split(" ")[0]}</span>
       </div>
-      <h1 className="mt-2 mb-3 text-xl font-bold text-zinc-900 dark:text-zinc-50">🍕 Rodízio · pedir sabor</h1>
+      <h1 className="mt-2 mb-3 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="pizza" tamanho={18} className="mr-2" /> Rodízio · pedir sabor</h1>
       <RodizioForm token={token} sabores={sabores} />
     </div>
   );

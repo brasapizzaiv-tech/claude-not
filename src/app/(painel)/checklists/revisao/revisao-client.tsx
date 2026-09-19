@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 // Revisão do dia: vê lista a lista com as fotos, aponta o que precisa ser
 // corrigido e publica na TV da cozinha com prazo.
 import { useMemo, useState, useTransition } from "react";
@@ -73,7 +75,7 @@ export function RevisaoClient({
     <div>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">🔎 Revisar checklists</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="buscar" tamanho={20} /> Revisar checklists</h1>
           <p className="mt-1 text-zinc-500">
             {dia === addDiasIso(hoje, -1) ? "Ontem" : dia === hoje ? "Hoje" : ""} {dataCurta(dia)} · veja o que ficou e aponte as correções.
           </p>
@@ -188,7 +190,7 @@ export function RevisaoClient({
               disabled={proc}
               className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-50"
             >
-              📺 Publicar na TV ({naoPublicados.length}) até {dataCurta(prazoEscolhido())}
+              <Icone nome="tv" tamanho={15} className="mr-1.5" /> Publicar na TV ({naoPublicados.length}) até {dataCurta(prazoEscolhido())}
             </button>
           </div>
         </div>
@@ -197,7 +199,7 @@ export function RevisaoClient({
       {/* O que está na TV agora */}
       <div className="mt-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">📺 Na TV agora ({naTv.length})</p>
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"><span className="inline-flex items-center gap-1.5"><Icone nome="tv" tamanho={14} /> Na TV agora ({naTv.length})</span></p>
           <a href="/checklists/apontamentos" className="text-xs text-zinc-500 underline">histórico de apontamentos</a>
         </div>
         {naTv.length === 0 ? (

@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 // Aba Rodízio do app do garçom: mesa, sabor (busca), fração, quantidade,
 // observação, enviar. Depois de enviar limpa o pedido mas MANTÉM a mesa — o
 // mesmo garçom costuma lançar mais de um pedido da mesma mesa.
@@ -93,7 +95,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-400">Sabor</label>
         {sabor ? (
           <div className="flex items-center justify-between rounded-xl bg-orange-500 px-3 py-3 text-white">
-            <span className="font-bold">{sabor.tipo === "doce" ? "🍫" : "🍕"} {sabor.nome}</span>
+            <span className="inline-flex items-center gap-1.5 font-bold"><Icone nome={sabor.tipo === "doce" ? "bolo" : "pizza"} tamanho={14} /> {sabor.nome}</span>
             <button type="button" onClick={() => { setSabor(null); setTimeout(() => buscaRef.current?.focus(), 30); }} className="text-sm underline">trocar</button>
           </div>
         ) : (
@@ -107,7 +109,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
             />
             <div className="mt-2 grid grid-cols-2 gap-2">
               <div>
-                <p className="mb-1 text-[11px] font-semibold uppercase text-zinc-400">🍕 Salgadas</p>
+                <p className="mb-1 text-[11px] font-semibold uppercase text-zinc-400"><span className="inline-flex items-center gap-1"><Icone nome="pizza" tamanho={12} /> Salgadas</span></p>
                 <div className="space-y-1">
                   {filtrados.salgadas.map((s) => (
                     <button key={s.id} type="button" onClick={() => setSabor(s)} className="block w-full rounded-lg bg-zinc-100 px-2 py-2 text-left text-sm font-medium text-zinc-800 active:bg-orange-100 dark:bg-zinc-800 dark:text-zinc-100">
@@ -118,7 +120,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
                 </div>
               </div>
               <div>
-                <p className="mb-1 text-[11px] font-semibold uppercase text-zinc-400">🍫 Doces</p>
+                <p className="mb-1 text-[11px] font-semibold uppercase text-zinc-400"><span className="inline-flex items-center gap-1"><Icone nome="bolo" tamanho={12} /> Doces</span></p>
                 <div className="space-y-1">
                   {filtrados.doces.map((s) => (
                     <button key={s.id} type="button" onClick={() => setSabor(s)} className="block w-full rounded-lg bg-zinc-100 px-2 py-2 text-left text-sm font-medium text-zinc-800 active:bg-orange-100 dark:bg-zinc-800 dark:text-zinc-100">

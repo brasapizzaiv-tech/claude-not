@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState } from "react";
 
@@ -111,7 +112,7 @@ export function EstoqueInput({
               : "border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
           }`}
         >
-          🧮
+          <Icone nome="calculadora" tamanho={16} titulo="Somar" />
         </button>
         {caixas.length > 1 && (
           <span className="ml-auto text-sm text-zinc-500">

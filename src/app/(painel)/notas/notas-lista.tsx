@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -56,7 +57,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Buscar por fornecedor ou número da nota..."
+          placeholder="Buscar por fornecedor ou número da nota..."
           className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         />
         {busca && (
@@ -130,7 +131,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                           className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300"
                           title="Manifestada — a busca automática vai trazer os itens em alguns minutos."
                         >
-                          ⏳ aguardando itens
+                          <Icone nome="ampulheta" tamanho={12} className="mr-1" /> aguardando itens
                         </span>
                       )}
                     </div>

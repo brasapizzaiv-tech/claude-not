@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { criarComandaBuffet } from "../actions";
 import { BalancaLeitor } from "./leitor";
@@ -28,7 +29,7 @@ export default async function BalancaPage() {
       </Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">⚖️ Balança / Buffet</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="balanca" tamanho={20} /> Balança / Buffet</h1>
           <p className="mt-1 text-zinc-500">
             Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido no Cardápio"}.
           </p>
@@ -37,19 +38,23 @@ export default async function BalancaPage() {
           href="/salao/balanca/quiosque"
           className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white hover:brightness-110"
         >
-          🖥️ Modo quiosque (autoatendimento)
+          <Icone nome="tela" tamanho={15} className="mr-1.5" /> Modo quiosque (autoatendimento)
         </Link>
       </div>
 
       {/* Agente da balança: status + ALERTA de fila offline (nunca em silêncio) */}
       {filaPendente > 0 && (
         <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
-          ⚠️ {filaPendente} pesagem(ns) na fila offline do agente — sincronizam sozinhas quando a internet do PC da balança voltar.
+          <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {filaPendente} pesagem(ns) na fila offline do agente — sincronizam sozinhas quando a internet do PC da balança voltar.
         </div>
       )}
       {ag?.visto_em && (
         <p className="mt-3 text-xs text-zinc-400">
-          Agente da balança: {agenteOnline ? "🟢 online" : "🔴 sem sinal"}
+          Agente da balança:{" "}
+          <span className="inline-flex items-center gap-1.5">
+            <span className={`h-2 w-2 rounded-full ${agenteOnline ? "bg-emerald-500" : "bg-red-500"}`} />
+            {agenteOnline ? "online" : "sem sinal"}
+          </span>
           {ag.hostname ? ` · PC ${ag.hostname}` : ""} · visto {new Date(ag.visto_em).toLocaleString("pt-BR")}
         </p>
       )}

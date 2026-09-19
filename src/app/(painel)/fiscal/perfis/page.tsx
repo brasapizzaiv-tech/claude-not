@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { PerfisClient, type Perfil, type Categoria, type ItemCard } from "./perfis-client";
 
@@ -18,7 +19,7 @@ export default async function PerfisFiscaisPage() {
   return (
     <div className="mx-auto max-w-5xl p-6">
       <Link href="/fiscal" className="text-sm text-zinc-500 hover:text-orange-600">← Config fiscal</Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">🧾 Perfis fiscais</h1>
+      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="cupom" tamanho={20} className="mr-2" /> Perfis fiscais</h1>
       <p className="mb-6 mt-1 text-sm text-zinc-500">
         Em vez de preencher NCM/CFOP/CSOSN produto por produto: crie um perfil e aplique na categoria inteira do cardápio. A NFC-e usa o perfil de cada item.
       </p>

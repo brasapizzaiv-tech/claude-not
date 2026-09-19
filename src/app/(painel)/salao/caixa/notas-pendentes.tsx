@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Fila da nota automática, sempre visível no caixa.
 //
@@ -72,7 +73,7 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
   return (
     <div className="mb-3 rounded-2xl border border-emerald-300 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
       <p className="mb-2 text-sm font-bold text-emerald-800 dark:text-emerald-300">
-        🧾 Notas saindo automaticamente
+        <Icone nome="cupom" tamanho={15} className="mr-1.5" /> Notas saindo automaticamente
         <span className="ml-2 text-xs font-normal text-emerald-700/70 dark:text-emerald-400/70">
           a nota sai sozinha; o papel só imprime se o cliente pedir
         </span>

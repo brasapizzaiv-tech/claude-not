@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 // Editor de áreas de entrega (Leaflet + OpenStreetMap, sem chave): clica no
 // mapa pra ir marcando os cantos da área; salva com nome, cor e valor. Embaixo,
 // as promoções da taxa (grátis / % / R$) por área, dia, horário e mínimo.
@@ -147,14 +149,14 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
                 <div className="text-[11px] text-zinc-500">{brl(Number(a.valor))}{a.taxa_motoboy != null ? ` · boy ${brl(Number(a.taxa_motoboy))}` : ""}{a.tempo_min ? ` · ${a.tempo_min} min` : ""}{a.ativo ? "" : " · desligada"}</div>
               </button>
               <button onClick={() => rodar(() => alternarArea(a.id, !a.ativo))} disabled={proc} className="rounded-lg border border-zinc-300 px-2 py-1 text-[11px] dark:border-zinc-700">{a.ativo ? "Desligar" : "Ligar"}</button>
-              <button onClick={() => { if (confirm(`Apagar a área "${a.nome}"?`)) rodar(() => excluirArea(a.id)); }} disabled={proc} className="px-1 text-zinc-400 hover:text-red-600" title="Apagar">🗑️</button>
+              <button onClick={() => { if (confirm(`Apagar a área "${a.nome}"?`)) rodar(() => excluirArea(a.id)); }} disabled={proc} className="px-1 text-zinc-400 hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
             </div>
           ))}
         </div>
 
         {/* promoções */}
         <div className="rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
-          <div className="mb-2 text-sm font-bold">🏷️ Promoções da tele</div>
+          <div className="mb-2 flex items-center gap-1.5 text-sm font-bold"><Icone nome="etiqueta" tamanho={14} /> Promoções da tele</div>
           <div className="space-y-2">
             <input value={pNome} onChange={(e) => setPNome(e.target.value)} placeholder="Nome (ex.: Quarta tele grátis)" className={`${inp} w-full`} />
             <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -200,7 +202,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
                   <div className="text-[11px] text-zinc-500">{descPromo(p)}</div>
                 </button>
                 <button onClick={() => rodar(() => alternarPromoTele(p.id, !p.ativo))} disabled={proc} className="rounded-lg border border-zinc-300 px-2 py-1 text-[11px] dark:border-zinc-700">{p.ativo ? "Desligar" : "Ligar"}</button>
-                <button onClick={() => { if (confirm(`Apagar "${p.nome}"?`)) rodar(() => excluirPromoTele(p.id)); }} disabled={proc} className="px-1 text-zinc-400 hover:text-red-600">🗑️</button>
+                <button onClick={() => { if (confirm(`Apagar "${p.nome}"?`)) rodar(() => excluirPromoTele(p.id)); }} disabled={proc} className="px-1 text-zinc-400 hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
               </div>
             ))}
           </div>

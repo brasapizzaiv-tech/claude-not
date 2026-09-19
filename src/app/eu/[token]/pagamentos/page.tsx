@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brl, rotuloSemana, segundaDe, somarDias, ymd } from "@/lib/equipe";
@@ -68,14 +69,14 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
   return (
     <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-4 pb-24 dark:bg-zinc-950">
       <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
-      <h1 className="mt-2 mb-1 text-xl font-bold text-zinc-900 dark:text-zinc-50">💵 Meus pagamentos</h1>
+      <h1 className="mt-2 mb-1 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="dinheiro" tamanho={18} className="mr-2" /> Meus pagamentos</h1>
       <p className="mb-4 text-sm text-zinc-500">Olá, {String(colab.nome).split(" ")[0]} — aqui está o seu acerto de cada semana.</p>
 
       {!semanaAtualLancada && (
         <div className="mb-3 rounded-2xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
           <div className="font-semibold text-zinc-900 dark:text-zinc-50">Semana atual · {rotuloSemana(estaSegunda)}</div>
           <div className="mt-1 text-zinc-600 dark:text-zinc-300">
-            Marcado até agora: <b>{dias}</b> ☀️ dia{dias === 1 ? "" : "s"} · <b>{noites}</b> 🌙 noite{noites === 1 ? "" : "s"}
+            Marcado até agora: <b>{dias}</b> dia{dias === 1 ? "" : "s"} · <b>{noites}</b> noite{noites === 1 ? "" : "s"}
             {extra && Number(extra.valor) > 0 && <> · extra <b>{brl(Number(extra.valor))}</b>{extra.motivo ? ` (${extra.motivo})` : ""}</>}
           </div>
           <div className="mt-1 text-xs text-zinc-400">O valor aparece aqui quando a semana for fechada. Se algum dia estiver faltando, avise a gerência.</div>

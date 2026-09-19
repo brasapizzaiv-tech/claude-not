@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Checklists no celular, na correria: letra grande, alvo de toque generoso,
 // salva a cada marcação e guarda o que não subiu quando a internet cai.
@@ -115,7 +116,7 @@ export function ChecklistApp({
 
   return (
     <div>
-      <h1 className="mt-2 text-xl font-bold text-zinc-900 dark:text-zinc-50">✅ Checklists</h1>
+      <h1 className="mt-2 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="checklist" tamanho={18} className="mr-2" /> Checklists</h1>
       <p className="mb-3 text-sm text-zinc-500">{dia === new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) ? "Hoje" : dia.split("-").reverse().join("/")}</p>
 
       {!online && <Aviso tipo="off">Sem internet. O que você marcar fica guardado e sobe sozinho quando voltar.</Aviso>}
@@ -345,7 +346,7 @@ function ExecutarLista({
                         <img src={r.foto_url} alt="foto do item" className="h-16 w-16 rounded-lg object-cover" />
                       )}
                       <label className={`inline-flex h-12 items-center rounded-xl px-4 text-base font-semibold ${travado ? "bg-zinc-200 text-zinc-400 dark:bg-zinc-800" : "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"}`}>
-                        {subindo === i.id ? "Enviando…" : r.foto_url ? "Trocar foto" : "📷 Tirar foto"}
+                        {subindo === i.id ? "Enviando…" : r.foto_url ? "Trocar foto" : <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={13} /> Tirar foto</span>}
                         <input
                           type="file"
                           accept="image/*"

@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -77,7 +78,7 @@ export function MesasGrid({
       {admin && (
         <div className="mb-4">
           <div className="flex items-center gap-2 rounded-2xl border-2 border-emerald-500/60 bg-emerald-50 px-4 py-3 focus-within:border-emerald-600 dark:bg-emerald-500/10">
-            <span className="text-2xl">💳</span>
+            <Icone nome="cartao" tamanho={22} />
             <input
               ref={pgtoRef}
               value={pgto}
@@ -189,7 +190,7 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
           href="/salao/balanca"
           className="mt-auto rounded-lg bg-orange-500 px-2 py-1.5 text-center text-xs font-semibold text-white hover:bg-orange-600"
         >
-          ⚖️ Pesar
+          <Icone nome="balanca" tamanho={15} className="mr-1.5" /> Pesar
         </Link>
       ) : (
         <form action={criarComandaMesa} className="mt-auto">

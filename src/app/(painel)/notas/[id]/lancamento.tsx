@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -179,7 +181,7 @@ export function LancamentoNota({
             disabled={proc || lancada}
             className={btnTipo(!ehServico)}
           >
-            🛒 Mercadoria
+            <Icone nome="compras" tamanho={15} className="mr-1.5" /> Mercadoria
           </button>
           <button
             type="button"
@@ -187,7 +189,7 @@ export function LancamentoNota({
             disabled={proc || lancada}
             className={btnTipo(ehServico)}
           >
-            🧾 Serviço
+            <Icone nome="cupom" tamanho={15} className="mr-1.5" /> Serviço
           </button>
         </div>
         {ehServico && (
@@ -269,7 +271,7 @@ export function LancamentoNota({
               }}
               className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
             >
-              ➕ Cadastrar novo
+              <Icone nome="novo" tamanho={14} className="mr-1" /> Cadastrar novo
             </button>
           </div>
         )}
@@ -299,7 +301,7 @@ export function LancamentoNota({
               disabled={proc || fixadoNoForn}
               className="mt-1 text-xs text-orange-600 hover:underline disabled:text-green-600 disabled:no-underline"
             >
-              {fixadoNoForn ? `✓ Fixado: as próximas notas de ${fornecedorNome} já vêm com essa categoria` : `📌 Usar sempre esta categoria para ${fornecedorNome}`}
+              {fixadoNoForn ? `Fixado: as próximas notas de ${fornecedorNome} já vêm com essa categoria` : `Usar sempre esta categoria para ${fornecedorNome}`}
             </button>
           )}
         </div>
@@ -422,7 +424,7 @@ export function LancamentoNota({
       {semConta && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
           <p className="font-semibold text-amber-800 dark:text-amber-300">
-            ⚠ Esta nota está marcada como lançada, mas não tem conta a pagar.
+            <Icone nome="alerta" tamanho={15} className="mr-1.5" /> Esta nota está marcada como lançada, mas não tem conta a pagar.
           </p>
           <p className="mt-1 text-amber-700/90 dark:text-amber-400/90">
             Sem a conta ela não aparece no Contas a pagar nem na conciliação do banco.

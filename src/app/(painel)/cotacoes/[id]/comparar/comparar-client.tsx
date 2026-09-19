@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { Fragment, useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -412,7 +414,7 @@ export function CompararClient({
       {travada && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-green-300 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30">
           <p className="text-sm font-medium text-green-800 dark:text-green-300">
-            🔒 Esta cotação já gerou pedidos e está travada — os pedidos e
+            <Icone nome="cadeado" tamanho={15} className="mr-1.5" /> Esta cotação já gerou pedidos e está travada — os pedidos e
             conferências ficam salvos e não podem ser sobrescritos.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -454,7 +456,7 @@ export function CompararClient({
       {fornecedores.some((f) => f.promocaoTexto || f.promocaoFoto) && (
         <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            🎁 Ofertas dos fornecedores
+            <Icone nome="presente" tamanho={16} className="mr-1.5" /> Ofertas dos fornecedores
           </h2>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {fornecedores
@@ -542,7 +544,7 @@ export function CompararClient({
                             title="Enviar este pedido pelo WhatsApp"
                             className="rounded bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-700"
                           >
-                            📤 Enviar
+                            <Icone nome="mandar" tamanho={13} className="mr-1" /> Enviar
                           </a>
                         </>
                       ) : (
@@ -553,7 +555,7 @@ export function CompararClient({
                             title="Gerar só o pedido deste fornecedor agora (sem esperar os outros)"
                             className="rounded bg-orange-500 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
                           >
-                            {adiantando === f.id ? "..." : "⚡ Adiantar"}
+                            {adiantando === f.id ? "..." : <span className="inline-flex items-center gap-1"><Icone nome="rapido" tamanho={13} /> Adiantar</span>}
                           </button>
                         )
                       )}
@@ -625,7 +627,7 @@ export function CompararClient({
                             : "text-zinc-400 hover:text-orange-600"
                         }`}
                       >
-                        {dividindo.has(p.produto_id) ? "✂️ dividido" : "dividir"}
+                        {dividindo.has(p.produto_id) ? <span className="inline-flex items-center gap-1"><Icone nome="cortar" tamanho={12} /> dividido</span> : "dividir"}
                       </button>
                     </td>
                     <td className="px-3 py-2 text-right align-top text-[11px] leading-tight">
@@ -742,7 +744,7 @@ export function CompararClient({
                               onClick={() => setFotoAberta(cel.foto)}
                               className="mt-0.5 text-[10px] font-medium text-orange-600 hover:underline"
                             >
-                              📷 ver foto
+                              <Icone nome="camera" tamanho={12} className="mr-1" /> ver foto
                             </button>
                           )}
                         </td>
@@ -779,7 +781,7 @@ export function CompararClient({
                     title={abaixoMin ? "Abaixo do pedido mínimo" : ""}
                   >
                     {total > 0 ? moeda(total) : "—"}
-                    {abaixoMin ? " ⚠" : ""}
+                    {abaixoMin && <Icone nome="alerta" tamanho={12} className="ml-1 text-amber-600" titulo="Abaixo do mínimo" />}
                   </td>
                 );
               })}
@@ -793,7 +795,7 @@ export function CompararClient({
       {exclusivos.length > 0 && (
         <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-lg">🧾</span>
+            <Icone nome="cupom" tamanho={18} />
             <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
               Pedido direto — fornecedor exclusivo
             </h2>
@@ -836,7 +838,7 @@ export function CompararClient({
         <b>conferiu / vai pedir</b> (fica verde e é lembrado neste navegador). Edite a{" "}
         <b>quantidade</b> na coluna Qtd; use <b>dividir</b> para pedir o mesmo item de{" "}
         mais de um fornecedor (aí você digita quanto de cada). A coluna <b>Última compra</b>{" "}
-        mostra de quem e por quanto foi o último pedido. ⚠ = abaixo do mínimo. 📷 = foto.
+        mostra de quem e por quanto foi o último pedido. O triângulo de atenção marca o que está abaixo do mínimo, e a câmera marca quem mandou foto.
       </p>
 
       {fotoAberta && (

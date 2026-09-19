@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { dataBR } from "@/lib/format";
@@ -108,14 +110,14 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
             </button>
           ))}
         </div>
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔍 Nº, produto, lote ou responsável" className={`${input} w-64`} />
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nº, produto, lote ou responsável" className={`${input} w-64`} />
         <select value={cat} onChange={(e) => setCat(e.target.value)} className={input}>
           <option value="">Todas as categorias</option>
           {cats.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <span className="text-sm text-zinc-500">{lista.length} / {rows.length}</span>
         <button onClick={exportar} disabled={lista.length === 0} className="ml-auto rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900">
-          ⬇ Exportar CSV
+          <Icone nome="baixar" tamanho={14} className="mr-1.5" /> Exportar CSV
         </button>
       </div>
 
@@ -183,7 +185,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                   <td className="px-3 py-2 text-zinc-500">{r.colaborador_nome ?? "—"}</td>
                   <td className="px-3 py-2 text-xs text-zinc-500">{fmtHora(r.manipulado_em)}</td>
                   <td className={`px-3 py-2 ${corValidade(r.validade)}`}>
-                    {r.validade ? dataBR(r.validade) : "—"}{!historico && r.validade && r.validade < hoje ? " ⚠" : ""}
+                    {r.validade ? dataBR(r.validade) : "—"}{!historico && r.validade && r.validade < hoje && <Icone nome="alerta" tamanho={12} className="ml-1 text-red-600" titulo="Vencida" />}
                   </td>
                   <td className="px-3 py-2 text-xs text-zinc-500">{historico ? `${r.status}${r.baixa_em ? " · " + fmtHora(r.baixa_em) : ""}` : ""}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">

@@ -53,11 +53,11 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
   const msgAtual = cancelado
     ? `Seu pedido foi cancelado${p.cancelado_motivo ? ` — ${p.cancelado_motivo}` : ""}. Qualquer dúvida, fale com a gente.`
     : status === "pendente" ? (agendado ? `Recebemos seu pedido agendado pras ${agendado}! O restaurante vai confirmar.` : "Recebemos seu pedido! O restaurante vai confirmar em instantes.")
-    : status === "aceito" ? (agendado ? `Pedido confirmado pras ${agendado}. 📅` : "Pedido confirmado! Já já entra no preparo.")
-    : status === "em_preparo" ? "Seu pedido está sendo preparado. 🔥"
-    : status === "pronto" ? (retirada ? "Pronto! Pode vir retirar. 🏃" : "Pronto! Logo sai pra entrega.")
-    : status === "saiu" ? "Saiu pra entrega — chega em breve! 🛵"
-    : "Pedido entregue. Bom apetite! 😋";
+    : status === "aceito" ? (agendado ? `Pedido confirmado pras ${agendado}.` : "Pedido confirmado! Já já entra no preparo.")
+    : status === "em_preparo" ? "Seu pedido está sendo preparado."
+    : status === "pronto" ? (retirada ? "Pronto! Pode vir retirar." : "Pronto! Logo sai pra entrega.")
+    : status === "saiu" ? "Saiu pra entrega — chega em breve!"
+    : "Pedido entregue. Bom apetite!";
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
@@ -111,7 +111,7 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-zinc-400">Esta página atualiza sozinha. 🔄</p>
+        <p className="mt-6 text-center text-xs text-zinc-400">Esta página atualiza sozinha.</p>
       </main>
     </div>
   );

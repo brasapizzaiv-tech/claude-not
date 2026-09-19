@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -284,7 +285,7 @@ export function CmvTabela({
       {aumentos.length > 0 && (
         <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
           <h2 className="mb-2 text-sm font-semibold text-red-700 dark:text-red-300">
-            📈 Maiores aumentos de preço na semana
+            <Icone nome="subindo" tamanho={15} className="mr-1.5" /> Maiores aumentos de preço na semana
           </h2>
           <div className="flex flex-wrap gap-2">
             {aumentos.map((r) => (
@@ -317,7 +318,7 @@ export function CmvTabela({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Buscar produto..."
+          placeholder="Buscar produto..."
           className="w-full max-w-xs rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         />
         {busca && (

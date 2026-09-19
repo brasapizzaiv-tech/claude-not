@@ -93,7 +93,7 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
       <input
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
-        placeholder="🔎 Buscar por nome ou CNPJ/CPF..."
+        placeholder="Buscar por nome ou CNPJ/CPF..."
         className={`${campo} mt-4 max-w-md`}
       />
 

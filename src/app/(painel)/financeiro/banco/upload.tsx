@@ -14,7 +14,7 @@ export function UploadOfx() {
   function escolher(file: File | null) {
     if (!file) return;
     if (!banco) {
-      setMsg("❌ Escolha o banco primeiro.");
+      setMsg("Escolha o banco primeiro.");
       return;
     }
     start(async () => {
@@ -22,7 +22,7 @@ export function UploadOfx() {
       const r = await importarOfx(texto, banco);
       if (r?.ok)
         setMsg(`✓ ${banco}: ${r.novas} nova(s) de ${r.total} transação(ões)${r.repetidas ? ` · ${r.repetidas} já estavam importadas` : ""}.`);
-      else setMsg(`❌ ${r?.erro ?? "erro"}`);
+      else setMsg(r?.erro ?? "erro");
       router.refresh();
     });
   }

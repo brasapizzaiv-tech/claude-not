@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
@@ -52,7 +53,7 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
   return (
     <div className="p-4 md:p-6">
       <Link href="/cozinha" className="text-sm text-zinc-500 hover:text-orange-600">← Tablet da cozinha</Link>
-      <h1 className="mt-2 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-50">🍕 Rodízio · relatório</h1>
+      <h1 className="mt-2 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="pizza" tamanho={20} className="mr-2" /> Rodízio · relatório</h1>
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         <div>

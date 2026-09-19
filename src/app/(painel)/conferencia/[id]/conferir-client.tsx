@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -200,7 +201,7 @@ export function ConferirClient({
       <div className="mb-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">🧾 Nota fiscal do fornecedor</p>
+            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"><Icone nome="cupom" tamanho={14} className="mr-1.5" /> Nota fiscal do fornecedor</p>
             {nota ? (
               <p className="text-sm text-zinc-500">
                 Nota <b className="text-zinc-800 dark:text-zinc-100">{nota.numero ?? "s/nº"}</b>
@@ -240,7 +241,7 @@ export function ConferirClient({
       {divergencias.n > 0 && (
         <div className={`mb-4 rounded-2xl border p-4 ${divergencias.gravidade === "grave" ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"}`}>
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-            ⚠ {divergencias.n} divergência{divergencias.n === 1 ? "" : "s"}
+            <Icone nome="alerta" tamanho={14} className="mr-1.5" /> {divergencias.n} divergência{divergencias.n === 1 ? "" : "s"}
             {divergencias.valor_a_mais > 0 && <span className="ml-2 text-red-700 dark:text-red-300">· {moeda(divergencias.valor_a_mais)} cobrados a mais</span>}
           </p>
           <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">

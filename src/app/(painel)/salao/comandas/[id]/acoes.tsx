@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -45,7 +46,7 @@ export function AcoesComanda({ comandaId, livre, temBuffet }: { comandaId: strin
           disabled={p}
           className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
         >
-          🍽️ Virar buffet livre
+          <Icone nome="salao" tamanho={15} className="mr-1.5" /> Virar buffet livre
         </button>
       )}
       <button
@@ -53,7 +54,7 @@ export function AcoesComanda({ comandaId, livre, temBuffet }: { comandaId: strin
         disabled={p}
         className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:hover:bg-red-950/40"
       >
-        {p ? "Aguarde..." : "🗑️ Excluir comanda"}
+        {p ? "Aguarde..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lixeira" tamanho={14} /> Excluir comanda</span>}
       </button>
     </div>
   );

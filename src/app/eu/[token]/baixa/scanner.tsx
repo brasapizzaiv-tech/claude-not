@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { consultarEtiquetaColab, consultarEtiquetaPorNumeroColab, darBaixaLoteColab } from "../etiqueta-actions";
@@ -213,10 +215,10 @@ export function BaixaScanner({ token }: { token: string }) {
         </div>
         <div className="absolute right-2 top-2 flex gap-1.5">
           {torchOk && (
-            <button onClick={alternarTorch} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${torch ? "bg-amber-400 text-black" : "bg-black/60"}`}>🔦</button>
+            <button onClick={alternarTorch} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${torch ? "bg-amber-400 text-black" : "bg-black/60"}`}><Icone nome="lanterna" tamanho={14} titulo="Lanterna" /></button>
           )}
           {devs.length > 1 && (
-            <button onClick={trocarCamera} className="rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold">🔄 câmera</button>
+            <button onClick={trocarCamera} className="rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold"><span className="inline-flex items-center gap-1"><Icone nome="trocarcamera" tamanho={13} /> câmera</span></button>
           )}
         </div>
         {flash && (
@@ -234,9 +236,9 @@ export function BaixaScanner({ token }: { token: string }) {
           disabled={lendoFoto}
           className="flex-1 rounded-lg bg-zinc-800 py-2 text-sm font-semibold disabled:opacity-50"
         >
-          {lendoFoto ? "Lendo a foto…" : "📸 Tirar foto do QR"}
+          {lendoFoto ? "Lendo a foto…" : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="camera" tamanho={14} /> Tirar foto do QR</span>}
         </button>
-        <button onClick={() => setManual((v) => !v)} className="flex-1 rounded-lg bg-zinc-800 py-2 text-sm font-semibold">⌨️ Digitar o nº</button>
+        <button onClick={() => setManual((v) => !v)} className="flex-1 rounded-lg bg-zinc-800 py-2 text-sm font-semibold"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="teclado" tamanho={14} /> Digitar o nº</span></button>
         <input ref={fotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => lerFoto(e.target.files?.[0])} />
       </div>
       {manual && (
@@ -283,7 +285,7 @@ export function BaixaScanner({ token }: { token: string }) {
       {feito && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="rounded-2xl bg-zinc-800 px-8 py-6 text-center">
-            <div className="mb-2 text-4xl">✅</div>
+            <div className="mb-2 flex justify-center"><Icone nome="certo" tamanho={42} className="text-emerald-500" /></div>
             <p className="font-semibold">{feito}</p>
           </div>
         </div>

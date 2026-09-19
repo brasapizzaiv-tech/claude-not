@@ -1,11 +1,11 @@
 // Helpers do quadro de funcionários / semana de trabalho / 10% da noite.
 import type { Colaborador } from "./types";
 
-export const TURNOS: Record<NonNullable<Colaborador["turno"]>, { nome: string; icone: string }> = {
-  dia: { nome: "Dia", icone: "☀️" },
-  noite: { nome: "Noite", icone: "🌙" },
-  ambos: { nome: "Dia e noite", icone: "☀️🌙" },
-  proprietario: { nome: "Proprietário", icone: "👑" },
+export const TURNOS: Record<NonNullable<Colaborador["turno"]>, { nome: string }> = {
+  dia: { nome: "Dia" },
+  noite: { nome: "Noite" },
+  ambos: { nome: "Dia e noite" },
+  proprietario: { nome: "Proprietário" },
 };
 
 // Vínculo de cada turno. Quem é "dia e noite" pode ter carteira de dia e free de noite.

@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -177,7 +178,7 @@ export function CotacaoClient({
                 title="Volta as quantidades como estavam antes do último salvamento"
                 className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
-                ↩︎ Desfazer salvamento
+                <Icone nome="desfazer" tamanho={14} className="mr-1.5" /> Desfazer salvamento
               </button>
               <button
                 onClick={gerarExclusivos}
@@ -185,7 +186,7 @@ export function CotacaoClient({
                 title="Gera o pedido dos itens exclusivos (1 fornecedor) para você já enviar"
                 className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-950"
               >
-                ⚡ Gerar pedidos exclusivos
+                <Icone nome="rapido" tamanho={14} className="mr-1.5" /> Gerar pedidos exclusivos
               </button>
             </>
           )}

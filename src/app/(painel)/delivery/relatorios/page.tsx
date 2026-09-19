@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Relatórios · Delivery" };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const ORIGEM: Record<string, string> = { app: "📱 App", whatsapp: "🟢 WhatsApp", instagram: "📸 Instagram", telefone: "📞 Telefone", balcao: "🏪 Balcão" };
+const ORIGEM: Record<string, string> = { app: "App", whatsapp: "WhatsApp", instagram: "Instagram", telefone: "Telefone", balcao: "Balcão" };
 
 function Tabela({ titulo, linhas }: { titulo: string; linhas: { k: string; qtd: number; valor: number }[] }) {
   return (
@@ -84,7 +85,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     <div className="p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold">📊 Relatórios do delivery</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="grafico" tamanho={19} /> Relatórios do delivery</h1>
         <div className="ml-auto flex gap-1">
           {[[1, "Hoje"], [7, "7 dias"], [30, "30 dias"]].map(([d, lbl]) => (
             <Link key={d} href={`/delivery/relatorios?dias=${d}`} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${nDias === d ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800"}`}>{lbl}</Link>

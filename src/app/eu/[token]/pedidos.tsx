@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Icone } from "@/components/icone";
 import {
   conferirPedidoColab,
   adicionarItemColab,
@@ -67,7 +68,7 @@ export function PedidosColab({
   return (
     <div className="mt-5">
       <div className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-        📦 Pedidos
+        <Icone nome="pacote" tamanho={16} className="mr-1.5" /> Pedidos
       </div>
       <div className="mb-3 flex gap-2">
         <button onClick={() => setAba("pendentes")} className={tab(aba === "pendentes")}>
@@ -90,7 +91,7 @@ export function PedidosColab({
       {lista.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">
           {aba === "pendentes"
-            ? "Nenhum pedido para conferir 🎉"
+            ? "Nenhum pedido para conferir"
             : aba === "antigos"
               ? "Nenhum pedido antigo."
               : "Nenhum pedido conferido ainda."}
@@ -194,7 +195,7 @@ function PedidoCard({
           <span className="ml-2 text-xs text-zinc-400">{dataBR(pedido.data)}</span>
           {pedido.prazo_entrega && (
             <span className="mt-0.5 block text-xs font-medium text-orange-600 dark:text-orange-400">
-              🚚 entrega prevista: {dataBR(pedido.prazo_entrega)}
+              <Icone nome="caminhao" tamanho={13} className="mr-1" /> entrega prevista: {dataBR(pedido.prazo_entrega)}
             </span>
           )}
         </span>

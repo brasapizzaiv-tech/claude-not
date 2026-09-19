@@ -10,7 +10,7 @@ import { definirStatusDelivery, definirEntregador, reimprimirDelivery } from "./
 import { createClient } from "@/lib/supabase/client";
 
 // Alerta sonoro de pedido novo (WebAudio, sem arquivo). O navegador só toca
-// depois de um clique na página — por isso o botão 🔔 do topo.
+// depois de um clique na página — por isso o botão de som no topo.
 let audioCtx: AudioContext | null = null;
 function tocarAlerta() {
   try {

@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -152,7 +153,7 @@ export function MesaDetalhe({
           <p className="text-sm text-zinc-500">Comandas, itens e o que está pago/pendente da mesa.</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/salao/cancelados" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">🗒️ Cancelados</Link>
+          <Link href="/salao/cancelados" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"><Icone nome="documento" tamanho={14} className="mr-1.5" /> Cancelados</Link>
           <Link href="/salao" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700">Fechar</Link>
         </div>
       </div>
@@ -162,7 +163,7 @@ export function MesaDetalhe({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Buscar produto ou nº da comanda..."
+          placeholder="Buscar produto ou nº da comanda..."
           className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
         />
         <div className="flex rounded-lg border border-zinc-300 p-0.5 dark:border-zinc-700">

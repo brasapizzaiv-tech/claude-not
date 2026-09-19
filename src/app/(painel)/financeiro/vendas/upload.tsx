@@ -18,7 +18,7 @@ export function UploadFaturamento() {
       const r = await importarFaturamentoPlanilha(fd);
       if (r?.ok)
         setMsg(`✓ ${r.dias} dia(s) importado(s), total ${r.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.`);
-      else setMsg(`❌ ${r?.erro ?? "erro"}`);
+      else setMsg(r?.erro ?? "erro");
       router.refresh();
     });
   }
@@ -52,7 +52,7 @@ export function UploadVendas() {
       const r = await importarNotasEmitidas(texto);
       if (r?.ok)
         setMsg(`✓ ${r.novas} nova(s) e ${r.atualizadas ?? 0} atualizada(s), de ${r.total} no arquivo.`);
-      else setMsg(`❌ ${r?.erro ?? "erro"}`);
+      else setMsg(r?.erro ?? "erro");
       router.refresh();
     });
   }

@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Saladas do dia: marca na base quais entram no buffet de saladas de um dia.
 // Aparece na TV da cozinha (página "Saladas do dia"). A base cresce aqui
@@ -79,7 +80,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
     <div className="mx-auto max-w-6xl px-8 pb-10">
       <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">🥗 Saladas do dia</h2>
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="salada" tamanho={17} className="mr-1.5" /> Saladas do dia</h2>
           <button onClick={() => setGerenciar((g) => !g)} className="text-xs text-zinc-500 underline">
             {gerenciar ? "fechar edição da base" : "editar a base (tirar saladas)"}
           </button>

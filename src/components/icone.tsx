@@ -1,8 +1,8 @@
 import {
-  AlarmClock, Ban, Banknote, Bell, BellOff, BellRing, Bike, BookOpen, Building2, Cake, Calculator, CalendarClock, CalendarDays,
+  AlarmClock, ArrowRight, ArrowUp, Ban, Banknote, Bell, BellOff, BellRing, Bike, BookOpen, Building2, Cake, Calculator, CalendarClock, CalendarDays,
   Camera, ChartColumn, ChartLine, Check, ChefHat, ChevronRight, CircleAlert, CircleCheck,
   CircleDollarSign, CircleHelp, CircleX, ClipboardCheck, ClipboardList, Clock, Coins, CookingPot,
-  Copy, CreditCard, Crown, CupSoda, DoorOpen, Download, Eye, EyeOff, FileText, Flame, Gift, Globe,
+  ChevronLeft, Copy, CreditCard, Flashlight, Keyboard, Pin, Turtle, SwitchCamera, Crown, CupSoda, DoorOpen, Download, Eye, EyeOff, FileText, Flame, Gift, Globe,
   Columns3, Hourglass, House, IdCard, Inbox, LayoutGrid, KeyRound, Landmark, Laptop, ListChecks, Lock, LogOut, Map,
   MapPin, Megaphone, MessageSquare, Monitor, Moon, Package, PartyPopper, Pencil, Percent, Phone,
   PiggyBank, Pizza, Plus, Printer, Receipt, RefreshCw, RotateCcw, Salad, Scale, Scissors, Search,
@@ -121,6 +121,14 @@ const MAPA = {
   ver: Eye,
   esconder: EyeOff,
   seguir: ChevronRight,
+  voltar: ChevronLeft,
+  subir: ArrowUp,
+  avancar: ArrowRight,
+  fixar: Pin,
+  lanterna: Flashlight,
+  teclado: Keyboard,
+  trocarcamera: SwitchCamera,
+  lento: Turtle,
 
   // Avisos e conversa
   sino: Bell,

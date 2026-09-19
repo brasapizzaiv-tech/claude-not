@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Botão de impressão + CSS para a impressora térmica 80mm (Elgin i8).
 // Ao imprimir, isola o cupom (.comanda-cupom) e usa página de 80mm.
@@ -9,7 +10,7 @@ export function ImprimirComanda() {
         onClick={() => window.print()}
         className="nao-imprimir rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
       >
-        🖨️ Imprimir comanda (80mm)
+        <Icone nome="imprimir" tamanho={15} className="mr-1.5" /> Imprimir comanda (80mm)
       </button>
       <style>{`
         @media print {

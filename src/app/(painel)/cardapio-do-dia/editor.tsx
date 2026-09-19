@@ -630,7 +630,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Procurar no catálogo..."
+          placeholder="Procurar no catálogo..."
           className={`${campo} w-full`}
         />
         <div className="max-h-72 space-y-1 overflow-y-auto">

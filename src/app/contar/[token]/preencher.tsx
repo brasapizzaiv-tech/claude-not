@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import type { Produto } from "@/lib/types";
 import { EstoqueInput, calcular } from "@/components/estoque-input";
@@ -74,7 +76,7 @@ export function PreencherClient({
             const antigo = draft as Record<string, string[]>;
             setValores((atual) => ({ ...atual, ...antigo }));
           }
-          setMsg("📝 Recuperei o que você já tinha digitado neste aparelho.");
+          setMsg("Recuperei o que você já tinha digitado neste aparelho.");
         }
       } catch { /* sem storage */ }
     }, 0);
@@ -118,7 +120,7 @@ export function PreencherClient({
     }
     return (
       <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-        ⚠️ {explicacao(r, totalDe(id))}
+        <Icone nome="alerta" tamanho={13} className="mr-1" /> {explicacao(r, totalDe(id))}
         <div className="mt-1.5 flex gap-2">
           <button
             type="button"
@@ -228,7 +230,7 @@ export function PreencherClient({
       const r = await salvarContagemPublica(token, payload);
       if (r.ok) {
         try { localStorage.removeItem(chaveRascunho); } catch { /* sem storage */ }
-        setMsg(`✅ Contagem enviada! ${r.gravados} de ${todosItens.length} itens gravados. Obrigado, ${colaborador}.`);
+        setMsg(`Contagem enviada! ${r.gravados} de ${todosItens.length} itens gravados. Obrigado, ${colaborador}.`);
       } else {
         setMsg(r.erro ?? "Não foi possível salvar. Tente de novo — o que você digitou está guardado neste aparelho.");
       }
@@ -253,7 +255,7 @@ export function PreencherClient({
         )}
         {erroEnvio && (
           <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
-            ⚠️ {erroEnvio}
+            <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {erroEnvio}
           </div>
         )}
 
@@ -273,7 +275,7 @@ export function PreencherClient({
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="🔎 Buscar item..."
+              placeholder="Buscar item..."
               className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
             {gruposFiltrados.length === 0 && (
@@ -329,7 +331,7 @@ export function PreencherClient({
               {extras.length > 0 && (
                 <div>
                   <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-500">
-                    ➕ Adicionados por você ({extras.length})
+                    <Icone nome="novo" tamanho={14} className="mr-1" /> Adicionados por você ({extras.length})
                   </h2>
                   <div className="space-y-2">
                     {extras.map((p) => {
@@ -366,7 +368,7 @@ export function PreencherClient({
               <div className="rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
                 {!addAberto ? (
                   <button onClick={() => setAddAberto(true)} className="w-full text-sm font-semibold text-orange-600">
-                    ➕ Tem um item no estoque que não está na lista? Adicionar
+                    <Icone nome="novo" tamanho={14} className="mr-1" /> Tem um item no estoque que não está na lista? Adicionar
                   </button>
                 ) : (
                   <div>

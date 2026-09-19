@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { criarCupom, alternarCupom, excluirCupom } from "../actions";
 import { dataBR } from "@/lib/format";
@@ -21,7 +22,7 @@ export default async function CuponsPage() {
   return (
     <div className="mx-auto max-w-3xl p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <h1 className="mb-1 mt-2 text-xl font-bold">🎟️ Cupons de desconto</h1>
+      <h1 className="mb-1 mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="etiqueta" tamanho={19} /> Cupons de desconto</h1>
       <p className="mb-5 text-sm text-zinc-500">O cliente digita o código no carrinho do app (/pedir) e o desconto entra no pedido.</p>
 
       <form action={criarCupom} className="mb-6 flex flex-wrap items-end gap-2 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">

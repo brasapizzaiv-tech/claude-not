@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -235,7 +236,7 @@ export function NovoPedidoClient({
           }
           className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
         >
-          📱 Enviar no WhatsApp
+          <Icone nome="zap" tamanho={15} className="mr-1.5" /> Enviar no WhatsApp
         </button>
       </div>
       {fornecedorId && !zapFull && (

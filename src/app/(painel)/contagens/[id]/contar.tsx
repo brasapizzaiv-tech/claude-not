@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -370,7 +371,7 @@ export function ContarClient({
                             {refs.get(p.id) && !finalizada && (
                               precisaConferir(p.id) ? (
                                 <div className="mt-1 max-w-md text-right text-[11px] text-amber-700 dark:text-amber-300">
-                                  ⚠️ {explicacao(refs.get(p.id)!, valores[p.id] ?? 0)}{" "}
+                                  <Icone nome="alerta" tamanho={12} className="mr-1" /> {explicacao(refs.get(p.id)!, valores[p.id] ?? 0)}{" "}
                                   <button type="button" onClick={() => setConfirmados((s) => new Set(s).add(p.id))} className="ml-1 rounded bg-amber-600 px-1.5 py-0.5 font-semibold text-white">
                                     contei de novo, está certo
                                   </button>
@@ -398,7 +399,7 @@ export function ContarClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 dark:bg-zinc-950">
             <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-              ⚠️ {avisoSusp.nomes.length} {avisoSusp.nomes.length === 1 ? "item" : "itens"} com número maior do que podia ter
+              <Icone nome="alerta" tamanho={14} className="mr-1.5" /> {avisoSusp.nomes.length} {avisoSusp.nomes.length === 1 ? "item" : "itens"} com número maior do que podia ter
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
               Na última contagem tinha menos, e o que chegou depois não fecha com o número digitado. Pode ser erro de digitação ou entrada que não foi conferida no sistema. Conte de novo antes de seguir.

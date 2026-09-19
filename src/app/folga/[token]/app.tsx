@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -139,7 +140,7 @@ export function FolgaApp({
   return (
     <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-3 dark:bg-zinc-950">
       <div className="mb-3 flex items-center gap-3 px-1 pt-2">
-        <span className="text-2xl">🌴</span>
+        <Icone nome="folga" tamanho={22} />
         <div>
           <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Olá, {eu.nome.split(" ")[0]}</h1>
           <p className="text-xs text-zinc-500">{grupos.map((g) => GRUPOS[g].nome).join(" + ")}</p>

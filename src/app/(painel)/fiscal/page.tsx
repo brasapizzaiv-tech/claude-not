@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { salvarConfigFiscal } from "./actions";
 import { TesteNota } from "./teste-nota";
@@ -32,13 +33,13 @@ export default async function FiscalPage() {
       </p>
 
       <Link href="/fiscal/perfis" className="mt-4 flex items-center justify-between rounded-2xl border-2 border-orange-300 bg-orange-50 px-4 py-3 text-sm hover:bg-orange-100 dark:border-orange-900 dark:bg-orange-950/20">
-        <span><b>🧾 Perfis fiscais</b> — NCM/CEST/CFOP/CSOSN por categoria do cardápio (como no Suitable), com exceção por item.</span>
+        <span><b><Icone nome="cupom" tamanho={14} className="mr-1.5" /> Perfis fiscais</b> — NCM/CEST/CFOP/CSOSN por categoria do cardápio (como no Suitable), com exceção por item.</span>
         <span className="font-semibold text-orange-600">Abrir →</span>
       </Link>
 
       {v("emissor_ambiente") === "producao" ? (
         <div className="mt-4 rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
-          🔴 <b>PRODUÇÃO ligada</b>: toda NFC-e emitida no caixa vale de verdade na SEFAZ (série {v("nfce_serie") || "padrão do Focus"}).
+          <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full bg-red-500 align-middle" /> <b>PRODUÇÃO ligada</b>: toda NFC-e emitida no caixa vale de verdade na SEFAZ (série {v("nfce_serie") || "padrão do Focus"}).
         </div>
       ) : (
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">

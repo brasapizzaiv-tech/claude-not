@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { BANCOS } from "@/lib/financeiro";
 import { FaturaClient } from "./fatura-client";
@@ -43,7 +44,7 @@ export default async function FaturaPage() {
       <Link href="/financeiro" className="text-sm text-zinc-500 hover:text-orange-600">
         ← Voltar ao financeiro
       </Link>
-      <h1 className="mt-2 mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">💳 Fatura do cartão</h1>
+      <h1 className="mt-2 mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="cartao" tamanho={20} className="mr-2" /> Fatura do cartão</h1>
       <p className="mb-4 text-sm text-zinc-500">
         Cada compra da fatura vira um lançamento na sua categoria — assim o DRE mostra onde o dinheiro foi,
         em vez de uma linha só de &quot;cartão de crédito&quot;.

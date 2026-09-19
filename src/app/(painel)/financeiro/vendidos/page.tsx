@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { hojeSP, somarDias } from "@/lib/etiqueta-vencimentos";
 import { VendidosClient, type Linha, type Agrupar } from "./vendidos-client";
@@ -93,9 +94,9 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
     const valor = Math.round(Number(it.qtd) * Number(it.preco_unit ?? 0) * 100) / 100;
     const nome = (it.item_id && nomeItemDe.get(it.item_id)) || (it.descricao || "Item").split("\n")[0].trim();
     crus.push({
-      produto: it.item_id ? nome : `🍕 ${nome}`.slice(0, 80),
+      produto: it.item_id ? nome : nome.slice(0, 80),
       categoria: it.item_id ? catDe.get(it.item_id) ?? "Outros" : "Pizzas",
-      turno: t === "dia" ? "☀️ Dia" : "🌙 Noite",
+      turno: t === "dia" ? "Dia" : "Noite",
       forma: c?.forma_pagamento || (it.pago ? "(não informada)" : "(em aberto)"),
       garcom: (it.criado_por && nomeDe.get(it.criado_por)) || (it.criado_colab_id && nomeDe.get(it.criado_colab_id)) || "—",
       origem: origemDe(c),
@@ -117,7 +118,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
     crus.push({
       produto: c.livre ? "Buffet livre" : "Buffet a kg",
       categoria: "Buffet",
-      turno: t === "dia" ? "☀️ Dia" : "🌙 Noite",
+      turno: t === "dia" ? "Dia" : "Noite",
       forma: c.forma_pagamento || (c.buffet_pago ? "(não informada)" : "(em aberto)"),
       garcom: "Balança",
       origem: origemDe(c),
@@ -164,7 +165,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
   return (
     <div className="mx-auto max-w-6xl p-6">
       <Link href="/financeiro" className="text-sm text-zinc-500 hover:text-orange-600">← Financeiro</Link>
-      <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">🛒 Produtos vendidos</h1>
+      <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="compras" tamanho={20} /> Produtos vendidos</h1>
       <p className="mb-4 mt-1 text-sm text-zinc-500">Tudo que saiu no salão, balcão, balança e delivery, pelo que foi lançado nas comandas. Noite começa às {VIRADA_NOITE}h.</p>
 
       {/* Período e filtros (links: sem JS) */}
@@ -189,7 +190,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
       </form>
       <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs">
         <span className="text-zinc-500">Turno:</span>
-        {[["todos", "Todos"], ["dia", "☀️ Dia"], ["noite", "🌙 Noite"]].map(([v, r]) => (
+        {[["todos", "Todos"], ["dia", "Dia"], ["noite", "Noite"]].map(([v, r]) => (
           <Link key={v} href={link({ turno: v })} className={`rounded-lg px-2.5 py-1 ${turno === v ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : "border border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"}`}>{r}</Link>
         ))}
         <span className="ml-3 text-zinc-500">Agrupar por:</span>

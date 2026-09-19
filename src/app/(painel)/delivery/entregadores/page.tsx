@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { criarEntregador, alternarEntregador, salvarValoresEntregador } from "../actions";
@@ -27,8 +28,8 @@ export default async function EntregadoresPage() {
     <div className="mx-auto max-w-3xl p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold">🛵 Entregadores</h1>
-        <Link href="/delivery/entregadores/acerto" className="ml-auto rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-white dark:bg-zinc-700">💰 Acerto do dia</Link>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="entrega" tamanho={19} /> Entregadores</h1>
+        <Link href="/delivery/entregadores/acerto" className="ml-auto rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-white dark:bg-zinc-700"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Acerto do dia</span></Link>
       </div>
 
       <form action={criarEntregador} className="mb-6 flex flex-wrap gap-2">
@@ -50,7 +51,7 @@ export default async function EntregadoresPage() {
                   <div className="text-xs text-zinc-500">
                     {e.telefone ?? "sem telefone"}
                     {posMin != null && (
-                      <> · {posMin <= 3 ? <span className="text-emerald-600">🟢 online agora</span> : `📍 visto há ${posMin} min`}
+                      <> · {posMin <= 3 ? <span className="inline-flex items-center gap-1.5 text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" /> online agora</span> : `visto há ${posMin} min`}
                         {e.ultima_lat != null && <> · <a href={`https://www.google.com/maps/search/?api=1&query=${e.ultima_lat},${e.ultima_lng}`} target="_blank" rel="noreferrer" className="underline">ver no mapa</a></>}
                       </>
                     )}
@@ -73,7 +74,7 @@ export default async function EntregadoresPage() {
 
               {e.token && (
                 <details className="mt-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
-                  <summary className="cursor-pointer font-semibold">📡 Rastreamento em segundo plano (app Traccar Client)</summary>
+                  <summary className="cursor-pointer font-semibold">Rastreamento em segundo plano (app Traccar Client)</summary>
                   <ol className="mt-1 list-decimal space-y-0.5 pl-4">
                     <li>No celular do entregador, instale o <b>Traccar Client</b> (Play Store / App Store, gratuito).</li>
                     <li>Em <b>Identificador do dispositivo</b>, cole: <code className="select-all">{e.token}</code></li>

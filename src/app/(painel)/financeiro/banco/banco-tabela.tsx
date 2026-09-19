@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -310,7 +311,7 @@ export function BancoTabela({
                           <span className="text-zinc-500">sugestão: {t.sugestaoLabel}</span>
                         ) : (
                           <span className="text-amber-600">
-                            ⚠ confira a data: {t.sugestaoLabel}
+                            <Icone nome="alerta" tamanho={12} className="mr-1" /> confira a data: {t.sugestaoLabel}
                             <span className="block text-[11px] text-amber-600/80">
                               {t.sugestaoDias} dias de diferença do extrato — pode ser outro mês do mesmo fornecedor
                             </span>

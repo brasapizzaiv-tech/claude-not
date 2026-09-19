@@ -1,5 +1,7 @@
 "use client";
 
+import { pinoUrl } from "@/lib/mapa-icones";
+
 // Mapa dos pedidos ativos no GOOGLE MAPS (visual que o Rafael conhece: rua,
 // satélite, Street View). Usa a chave de NAVEGADOR (GOOGLE_MAPS_BROWSER_KEY),
 // que é pública por natureza e deve estar restrita ao domínio do sistema e à
@@ -77,11 +79,14 @@ export function MapaPedidosGoogle({ pinos, origem, chave, boys = [] }: {
         map,
         position: origem,
         title: "Brasa · ponto de partida",
-        label: { text: "🍕", fontSize: "20px" },
-        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 16, fillColor: "#fff", fillOpacity: 1, strokeColor: "#C78340", strokeWeight: 3 },
+        icon: {
+          url: pinoUrl("restaurante", 22),
+          scaledSize: new google.maps.Size(22, 22),
+          anchor: new google.maps.Point(11, 11),
+        },
         zIndex: 1,
       });
-      m.addListener("click", () => { info.setContent("<b>🍕 Brasa</b><br/>Ponto de partida"); info.open({ map, anchor: m }); });
+      m.addListener("click", () => { info.setContent("<b>Brasa</b><br/>Ponto de partida"); info.open({ map, anchor: m }); });
       marcadores.push(m);
     }
     for (const p of pinos) {
@@ -104,18 +109,21 @@ export function MapaPedidosGoogle({ pinos, origem, chave, boys = [] }: {
       });
       marcadores.push(m);
     }
-    // Entregadores: 🛵 com o nome e há quanto tempo mandou a posição.
+    // Entregadores: pino de bicicleta com o nome e há quanto tempo mandou a posição.
     for (const b of boys) {
       const min = Math.max(0, Math.round((Date.now() - new Date(b.em).getTime()) / 60000));
       const m = new google.maps.Marker({
         map,
         position: { lat: b.lat, lng: b.lng },
         title: `${b.nome} · ${min <= 1 ? "agora" : `há ${min} min`}`,
-        label: { text: "🛵", fontSize: "22px" },
-        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 15, fillColor: "#0ea5e9", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 },
+        icon: {
+          url: pinoUrl("entregador", 20),
+          scaledSize: new google.maps.Size(20, 20),
+          anchor: new google.maps.Point(10, 10),
+        },
         zIndex: 3,
       });
-      m.addListener("click", () => { info.setContent(`<div style="font:13px system-ui;color:#222"><b>🛵 ${esc(b.nome)}</b><br/>${min <= 1 ? "agora" : `há ${min} min`}</div>`); info.open({ map, anchor: m }); });
+      m.addListener("click", () => { info.setContent(`<div style="font:13px system-ui;color:#222"><b>${esc(b.nome)}</b><br/>${min <= 1 ? "agora" : `há ${min} min`}</div>`); info.open({ map, anchor: m }); });
       marcadores.push(m);
     }
     if (pinos.length > 0 || boys.length > 0) {

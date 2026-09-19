@@ -44,7 +44,7 @@ export default function BalancaTeste() {
       addLog(`✓ Conectado a ${baud} bps, 8-2-N. Pese um prato na balança...`);
       lerLoop(port);
     } catch (e) {
-      addLog("❌ " + (e instanceof Error ? e.message : String(e)));
+      addLog("Erro: " + (e instanceof Error ? e.message : String(e)));
     }
   }
 

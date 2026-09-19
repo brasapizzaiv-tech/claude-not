@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contarFaixas, faixaDe, faixaValida, hojeSP } from "@/lib/etiqueta-vencimentos";
 import { PainelVencimentos } from "@/components/etiqueta-ui";
@@ -47,7 +48,7 @@ export default async function VencimentosColabPage({
   return (
     <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-4 dark:bg-zinc-950">
       <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
-      <h1 className="mt-2 mb-3 text-xl font-bold text-zinc-900 dark:text-zinc-50">📅 Painel de vencimentos</h1>
+      <h1 className="mt-2 mb-3 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="agenda" tamanho={18} className="mr-2" /> Painel de vencimentos</h1>
       <PainelVencimentos contagem={contagem} base={base} ativo={faixa} />
       <ListaVencimentos token={token} lista={lista} hoje={hoje} />
     </div>

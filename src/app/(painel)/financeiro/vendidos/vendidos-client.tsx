@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState } from "react";
 
@@ -48,7 +49,7 @@ export function VendidosClient({ linhas, total, agrupar, periodo }: { linhas: Li
         <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={`Buscar ${ROTULO[agrupar].toLowerCase()}…`} className="w-64 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
         <div className="flex items-center gap-3 text-sm text-zinc-500">
           <span>{lista.length} {lista.length === 1 ? "registro" : "registros"}</span>
-          <button onClick={exportar} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200">⬇ Exportar (planilha)</button>
+          <button onClick={exportar} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200"><Icone nome="baixar" tamanho={14} className="mr-1.5" /> Exportar (planilha)</button>
         </div>
       </div>
       {lista.length === 0 ? (

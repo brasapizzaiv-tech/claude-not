@@ -1,5 +1,7 @@
 "use client";
 
+import { pinoHtml } from "@/lib/mapa-icones";
+
 // Mapa dos pedidos ativos (Leaflet + OpenStreetMap — grátis, sem chave).
 // Pinos coloridos por status; clique abre o pedido.
 import { useEffect, useRef } from "react";
@@ -55,9 +57,9 @@ export function MapaPedidos({ pinos, origem, boys = [] }: {
 
     if (origem) {
       L.marker([origem.lat, origem.lng], {
-        icon: L.divIcon({ html: "🍕", className: "", iconSize: [28, 28], iconAnchor: [14, 14] }),
+        icon: L.divIcon({ html: pinoHtml("restaurante"), className: "", iconSize: [28, 28], iconAnchor: [14, 14] }),
         title: "Restaurante",
-      }).addTo(camada).bindPopup("<b>🍕 Brasa</b><br/>Ponto de partida");
+      }).addTo(camada).bindPopup("<b>Brasa</b><br/>Ponto de partida");
     }
     for (const p of pinos) {
       const cor = COR[p.status] ?? "#71717a";
@@ -78,7 +80,7 @@ export function MapaPedidos({ pinos, origem, boys = [] }: {
     return () => { camada.remove(); };
   }, [pinos, origem]);
 
-  // Entregadores (GPS do app): pino 🛵 com nome e há quanto tempo.
+  // Entregadores (GPS do app): pino de bicicleta com nome e há quanto tempo.
   const boysRef = useRef<L.LayerGroup | null>(null);
   useEffect(() => {
     const map = mapRef.current; if (!map) return;
@@ -86,7 +88,7 @@ export function MapaPedidos({ pinos, origem, boys = [] }: {
     const g = boysRef.current; g.clearLayers();
     for (const b of boys) {
       const min = Math.max(0, Math.round((Date.now() - new Date(b.em).getTime()) / 60000));
-      L.marker([b.lat, b.lng], { icon: L.divIcon({ className: "", html: `<div style="font-size:26px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))">🛵</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }) })
+      L.marker([b.lat, b.lng], { icon: L.divIcon({ className: "", html: pinoHtml("entregador"), iconSize: [28, 28], iconAnchor: [14, 14] }) })
         .addTo(g)
         .bindTooltip(`${b.nome} · ${min <= 1 ? "agora" : `há ${min} min`}`, { permanent: true, direction: "top", offset: [0, -12] });
     }

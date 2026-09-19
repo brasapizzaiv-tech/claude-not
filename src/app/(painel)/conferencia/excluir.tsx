@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { excluirPedido } from "./actions";
 
@@ -21,7 +22,7 @@ export function ExcluirPedido({ id, nome }: { id: string; nome: string }) {
         title="Apagar pedido"
         className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
       >
-        🗑
+        <Icone nome="lixeira" tamanho={15} titulo="Excluir" />
       </button>
     </form>
   );

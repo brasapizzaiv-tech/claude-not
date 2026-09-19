@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Card de um pedido do rodízio — o mesmo desenho na TV (só leitura) e no
 // tablet da cozinha (com botões). Feito pra ser lido de longe: mesa e sabor
@@ -79,7 +80,7 @@ export function RodizioCard({
           {nome}
         </div>
         {p.observacao && (
-          <div style={{ fontSize: px(20), color: "#fde68a", fontWeight: 700, marginTop: px(2) }}>⚠ {p.observacao}</div>
+          <div style={{ fontSize: px(20), color: "#fde68a", fontWeight: 700, marginTop: px(2) }}><Icone nome="alerta" tamanho={18} className="mr-1.5" /> {p.observacao}</div>
         )}
       </div>
 

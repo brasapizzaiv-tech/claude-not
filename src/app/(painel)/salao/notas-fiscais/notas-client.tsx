@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -118,7 +119,7 @@ export function NotasClient({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔎 Buscar por comanda, nº da nota, chave..."
+          placeholder="Buscar por comanda, nº da nota, chave..."
           className={`${sel} min-w-56 flex-1`}
         />
         <select value={fStatus} onChange={(e) => setFStatus(e.target.value)} className={sel}>
@@ -133,7 +134,7 @@ export function NotasClient({
           <option value="nfe">NF-e</option>
         </select>
         <button onClick={baixarCsv} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
-          ⬇ XLS
+          <Icone nome="baixar" tamanho={14} className="mr-1.5" /> XLS
         </button>
       </div>
 

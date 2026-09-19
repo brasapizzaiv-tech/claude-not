@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { registrarAcertoEntregador } from "../../actions";
 
@@ -44,7 +45,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
     <div className="mx-auto max-w-4xl p-4">
       <Link href="/delivery/entregadores" className="text-sm text-emerald-600">← Entregadores</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold">💰 Acerto dos entregadores</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="dinheiro" tamanho={19} /> Acerto dos entregadores</h1>
         <form className="ml-auto flex items-center gap-2">
           <Link href={`?data=${addDias(data, -1)}`} className="rounded-lg border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700">‹</Link>
           <input type="date" name="data" defaultValue={data} className="rounded-lg border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
@@ -60,7 +61,8 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
           <div key={b.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
             <div className="flex flex-wrap items-center gap-3">
               <div className="text-lg font-bold">{b.nome}</div>
-              <span className="text-xs text-zinc-500">{fezDia ? "☀️ almoço " : ""}{fezNoite ? "🌙 noite" : ""}</span>
+              <span className="text-xs text-zinc-500">{fezDia && <span className="mr-1.5 inline-flex items-center gap-1"><Icone nome="dia" tamanho={12} /> almoço</span>}
+                {fezNoite && <span className="inline-flex items-center gap-1"><Icone nome="noite" tamanho={12} /> noite</span>}</span>
               <div className="ml-auto text-right">
                 <div className="text-xs text-zinc-500">a pagar</div>
                 <div className="text-xl font-bold text-emerald-600">{brl(total)}</div>

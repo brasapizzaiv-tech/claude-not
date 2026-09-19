@@ -90,7 +90,7 @@ async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, co
   const { data } = await admin.from("cupons").select("*").ilike("codigo", cod).maybeSingle();
   const c = data as CupomRow | null;
   if (!c || !c.ativo) return { ok: false as const, mensagem: "Cupom não encontrado ou desativado." };
-  if (c.validade && c.validade < hojeSP()) return { ok: false as const, mensagem: "Esse cupom venceu. 😕" };
+  if (c.validade && c.validade < hojeSP()) return { ok: false as const, mensagem: "Esse cupom venceu." };
   if (c.max_usos != null && c.usos >= c.max_usos) return { ok: false as const, mensagem: "Esse cupom esgotou." };
   return { ok: true as const, cupom: c };
 }
@@ -182,7 +182,7 @@ export async function enviarPedidoPublico(d: {
     if (!(d.endereco?.logradouro || "").trim()) return { ok: false as const, mensagem: "Informe o endereço de entrega." };
     const calc = await calcularTaxaEntrega(admin, d.endereco ?? {});
     if (!calc.ok) return { ok: false as const, mensagem: calc.mensagem };
-    if (calc.foraDeArea) return { ok: false as const, mensagem: "Esse endereço fica fora da nossa área de entrega. 😕" };
+    if (calc.foraDeArea) return { ok: false as const, mensagem: "Esse endereço fica fora da nossa área de entrega." };
     taxa = calc.taxa; distancia = calc.distanciaKm; lat = calc.lat; lng = calc.lng;
     areaId = calc.areaId ?? null; areaNome = calc.areaNome ?? null;
   }

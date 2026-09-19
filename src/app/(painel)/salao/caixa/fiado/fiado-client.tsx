@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -83,7 +84,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
                   <ul className="space-y-0.5 text-sm">
                     {c.lancamentos.map((l) => (
                       <li key={l.id} className="flex justify-between gap-2 text-zinc-600 dark:text-zinc-300">
-                        <span>{l.quando} · {l.tipo === "debito" ? "🧾 " : "💵 "}{l.descricao ?? (l.tipo === "debito" ? "Venda fiada" : "Pagamento")}{l.forma ? ` (${l.forma})` : ""}</span>
+                        <span>{l.quando} · <Icone nome={l.tipo === "debito" ? "cupom" : "dinheiro"} tamanho={12} className="mr-1" />{l.descricao ?? (l.tipo === "debito" ? "Venda fiada" : "Pagamento")}{l.forma ? ` (${l.forma})` : ""}</span>
                         <span className={l.tipo === "debito" ? "text-red-600" : "text-emerald-600"}>{l.tipo === "debito" ? "+" : "−"} {brl(l.valor)}</span>
                       </li>
                     ))}

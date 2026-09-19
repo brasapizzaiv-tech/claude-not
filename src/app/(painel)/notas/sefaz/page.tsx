@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { SefazPainel } from "./sefaz-painel";
@@ -41,7 +42,7 @@ export default async function SefazPage() {
       </p>
 
       <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-        🔒 Seu certificado e a senha ficam guardados no servidor só para
+        <Icone nome="cadeado" tamanho={14} className="mr-1.5" /> Seu certificado e a senha ficam guardados no servidor só para
         conectar na SEFAZ. Ninguém além do sistema acessa. Use apenas em um
         equipamento de sua confiança.
       </div>

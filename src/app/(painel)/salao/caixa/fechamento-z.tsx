@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { fecharCaixaZ, reimprimirFechamento } from "../actions";
@@ -74,7 +76,7 @@ export function FechamentoZ({
         onClick={() => setAberto(true)}
         className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600"
       >
-        🔒 Fechar caixa (Z)
+        <Icone nome="cadeado" tamanho={15} className="mr-1.5" /> Fechar caixa (Z)
       </button>
 
       {aberto && (
@@ -113,7 +115,7 @@ export function FechamentoZ({
             </div>
 
             <div className="mt-3 flex items-center justify-between rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
-              <span className="font-medium text-zinc-700 dark:text-zinc-200">💵 Dinheiro esperado na gaveta</span>
+              <span className="font-medium text-zinc-700 dark:text-zinc-200"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Dinheiro esperado na gaveta</span></span>
               <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{brl(esperado)}</span>
             </div>
 
@@ -201,7 +203,7 @@ export function FechamentoZ({
                     disabled={proc}
                     className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700"
                   >
-                    🖨️ Imprimir de novo
+                    <Icone nome="imprimir" tamanho={15} className="mr-1.5" /> Imprimir de novo
                   </button>
                   <button
                     onClick={() => { try { window.print(); } catch {} }}

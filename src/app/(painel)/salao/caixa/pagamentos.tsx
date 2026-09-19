@@ -7,6 +7,7 @@
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { tefDisponivel, tefVenda, tipoTefDaForma, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { Icone, type NomeIcone } from "@/components/icone";
 
 export type Pagamento = {
   uid: string;
@@ -49,7 +50,8 @@ const ehFiado = (f: string) => /saldo cliente|fiado/i.test(f);
 export const ehEquipe = (f: string) => /compra da equipe|funcion/i.test(f);
 const ehPix = (f: string) => /pix/i.test(f);
 
-const ICONE: Record<string, string> = { A: "💵", P: "◈", C: "💳", B: "💳", R: "🍽️", F: "🧾" };
+// Desenho de cada forma de pagamento, pela tecla de atalho.
+const ICONE: Record<string, NomeIcone> = { A: "dinheiro", P: "rapido", C: "cartao", B: "cartao", R: "salao", F: "cupom" };
 const CEDULAS = [2, 5, 10, 20, 50, 100];
 const BANDEIRAS: { tecla: string; nome: string }[] = [
   { tecla: "V", nome: "Visa" },
@@ -303,7 +305,7 @@ export function PainelPagamentos({
                     disabled={!ativo}
                     className={`${btn} flex items-center gap-2 border-zinc-300 text-left text-zinc-700 hover:border-orange-500 hover:bg-orange-500/5 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200`}
                   >
-                    <span className="text-base">{ICONE[k] ?? "•"}</span>
+                    <span className="flex h-4 items-center">{ICONE[k] ? <Icone nome={ICONE[k]} tamanho={15} /> : "•"}</span>
                     <span className="min-w-0 flex-1 truncate">
                       <span className="rounded bg-zinc-200 px-1 text-[11px] font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">{k}</span>{" "}
                       {f}
@@ -319,7 +321,9 @@ export function PainelPagamentos({
         /* ---------- passo da forma escolhida ---------- */
         <div className="rounded-xl border-2 border-orange-500 p-3">
           <div className="mb-2 flex items-center justify-between">
-            <p className="font-bold text-zinc-900 dark:text-zinc-50">{ICONE[atalhoDaForma(forma)] ?? "•"} {forma}</p>
+            <p className="flex items-center gap-1.5 font-bold text-zinc-900 dark:text-zinc-50">
+              {ICONE[atalhoDaForma(forma)] && <Icone nome={ICONE[atalhoDaForma(forma)]} tamanho={16} />} {forma}
+            </p>
             <button onClick={fechar} className="text-xs text-zinc-400 hover:text-zinc-600">Esc · voltar</button>
           </div>
 
@@ -390,7 +394,7 @@ export function PainelPagamentos({
                     onClick={passarNoCartao}
                     className="w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700"
                   >
-                    💳 Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && tipoTefDaForma(forma) === "credito" ? ` em ${parcelas}x` : ""}
+                    <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && tipoTefDaForma(forma) === "credito" ? ` em ${parcelas}x` : ""}
                     <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
                   </button>
                   <p className="mt-1.5 text-center text-[11px] text-emerald-800/70 dark:text-emerald-400/70">

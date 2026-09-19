@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -72,7 +73,7 @@ export function GestaoFolgas({
   return (
     <div className="mx-auto max-w-4xl p-3 sm:p-5">
       <div className="mb-4">
-        <h1 className="text-xl font-bold">🌴 Folgas</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="folga" tamanho={19} /> Folgas</h1>
         <p className="text-xs text-zinc-500">Cadastro da equipe e escala agora em <b>Cadastros → Colaboradores</b>.</p>
       </div>
 
@@ -136,7 +137,7 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
 
       {lancar && <FormLancar equipe={equipe} pedidos={pedidos} byId={byId} limites={limites} ajustes={ajustes} proc={proc} run={run} onDone={() => setLancar(false)} />}
 
-      {!pend.length && <div className={card}><p className="text-sm text-zinc-500">Nada esperando decisão. ✅</p></div>}
+      {!pend.length && <div className={card}><p className="text-sm text-zinc-500">Nada esperando decisão.</p></div>}
 
       {pend.map((p) => {
         const f = byId.get(p.funcionario_id);

@@ -69,7 +69,7 @@ export default async function AppColaboradorPage({
   const temPin = status.tem_pin as boolean;
   const saudacao = (
     <h1 className="mb-4 text-center text-xl font-bold text-zinc-900 dark:text-zinc-50">
-      Olá, {nome} 👋
+      Olá, {nome}
     </h1>
   );
 
@@ -310,7 +310,7 @@ export default async function AppColaboradorPage({
         <>
           {contagens.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-              Nenhuma contagem agora. 🍕
+              Nenhuma contagem agora.
               <br />
               Volte no dia da contagem.
             </div>

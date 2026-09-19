@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 import { ApontamentosClient } from "./apontamentos-client";
@@ -32,7 +33,7 @@ export default async function ApontamentosPage() {
     <div className="mx-auto max-w-4xl p-8">
       <Link href="/checklists/revisao" className="text-sm text-zinc-500 hover:text-orange-600">← Revisar checklists</Link>
       <div className="mt-2 mb-4">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">📌 Apontamentos</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="fixar" tamanho={20} className="mr-2" /> Apontamentos</h1>
         <p className="mt-1 text-zinc-500">O que está na TV, o que já foi resolvido e o que ficou pelo caminho.</p>
       </div>
       <ApontamentosClient apontamentos={todos} hoje={hoje} maisRepetidos={maisRepetidos} />

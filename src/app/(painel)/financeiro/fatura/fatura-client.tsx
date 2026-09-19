@@ -194,7 +194,7 @@ export function FaturaClient({
               <span className={Math.abs(totalImpresso - total) < 0.01 ? "text-emerald-600" : "text-amber-600"}>
                 {Math.abs(totalImpresso - total) < 0.01
                   ? "✓ bate com o total da fatura"
-                  : `⚠ a fatura diz ${brl(totalImpresso)} — diferença de ${brl(Math.abs(totalImpresso - total))}`}
+                  : `a fatura diz ${brl(totalImpresso)} — diferença de ${brl(Math.abs(totalImpresso - total))}`}
               </span>
             )}
             {ignoradas > 0 && <span className="text-amber-600">{ignoradas} linha(s) não entendidas</span>}

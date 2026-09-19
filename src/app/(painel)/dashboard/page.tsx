@@ -155,7 +155,7 @@ export default async function DashboardPage() {
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            {primeiroNome ? `Olá, ${primeiroNome} 👋` : "Início"}
+            {primeiroNome ? `Olá, ${primeiroNome}` : "Início"}
           </h1>
           <p className="mt-0.5 text-sm text-zinc-500">Resumo de {mesNome}</p>
         </div>
@@ -195,7 +195,7 @@ export default async function DashboardPage() {
                 icon="documento"
                 titulo="Contas a pagar"
                 valor={moedaBR(r.contas_aberto)}
-                rodape={r.contas_aberto > 0 ? "em aberto" : "nada em aberto 🎉"}
+                rodape={r.contas_aberto > 0 ? "em aberto" : "nada em aberto"}
                 cor={r.contas_vencidas > 0 ? "red" : "zinc"}
                 pct={pctDesp}
                 pctLabel="despesas"
@@ -300,7 +300,7 @@ export default async function DashboardPage() {
               Precisa de atenção
             </h2>
             {alertas.length === 0 ? (
-              <p className="text-sm text-zinc-400">Tudo em dia por aqui 🎉</p>
+              <p className="text-sm text-zinc-400">Tudo em dia por aqui.</p>
             ) : (
               <div className="space-y-2">
                 {alertas.map((a, i) => (

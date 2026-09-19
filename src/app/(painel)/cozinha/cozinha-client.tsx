@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "@/components/icone";
 
 // Tablet da cozinha: a mesma fila da TV, com botão grande de ação por card.
 // Realtime do Supabase (usuário logado) + busca a cada 10 s como reserva.
@@ -69,7 +70,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
           disabled={proc}
           style={{ minHeight: 72, minWidth: 150, borderRadius: 14, background: "#3b82f6", color: "#fff", fontSize: 22, fontWeight: 900, border: 0, padding: "0 18px" }}
         >
-          🔥 No forno
+          <Icone nome="fogo" tamanho={16} className="mr-1.5" /> No forno
         </button>
       );
     }
@@ -105,7 +106,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
   return (
     <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", padding: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.08em", color: "#C78340" }}>🍕 RODÍZIO · COZINHA</span>
+        <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.08em", color: "#C78340" }}><Icone nome="pizza" tamanho={22} className="mr-2" /> RODÍZIO · COZINHA</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 16, color: "#888" }}>
           <span style={{ width: 12, height: 12, borderRadius: 6, background: realtime ? "#22c55e" : "#f59e0b", display: "inline-block" }} />
           {realtime ? "ao vivo" : "atualizando a cada 10 s"}
