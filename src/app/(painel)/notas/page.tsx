@@ -84,10 +84,10 @@ export default async function NotasPage() {
     <div className="mx-auto max-w-6xl p-4 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Notas Fiscais
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             Importe o XML da NF-e. Ela vira conta a pagar e pode ser cruzada com
             o pedido.
           </p>
@@ -110,7 +110,7 @@ export default async function NotasPage() {
       <ManifestarLote notas={resumoParaManifestar} />
 
       {notas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave ">
           Nenhuma nota ainda. Clique em <b>+ Importar XML</b> e escolha os
           arquivos <b>.xml</b> das notas.
         </div>

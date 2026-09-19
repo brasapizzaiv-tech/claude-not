@@ -64,8 +64,8 @@ const ST: Record<string, { label: string; cor: string; bg: string; proximo?: str
   em_preparo: { label: "Em preparo", cor: "text-amber-600", bg: "bg-amber-500/10", proximo: "pronto" },
   pronto: { label: "Pronto", cor: "text-emerald-600", bg: "bg-emerald-500/10", proximo: "saiu" },
   saiu: { label: "Saiu p/ entrega", cor: "text-indigo-600", bg: "bg-indigo-500/10", proximo: "entregue" },
-  entregue: { label: "Entregue", cor: "text-zinc-500", bg: "bg-zinc-500/10" },
-  cancelado: { label: "Cancelado", cor: "text-zinc-400", bg: "bg-zinc-500/10" },
+  entregue: { label: "Entregue", cor: "text-texto-suave", bg: "bg-superficie-suave" },
+  cancelado: { label: "Cancelado", cor: "text-texto-fraco", bg: "bg-superficie-suave" },
 };
 const ORIGEM: Record<string, { label: string; icone: NomeIcone }> = {
   app: { label: "App", icone: "celular" },
@@ -106,21 +106,21 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
   }
   const total = Math.round((p.subtotal + Number(p.taxa_entrega) - Number(p.desconto)) * 100) / 100;
   return (
-    <div className={`flex flex-col rounded-2xl border p-3 ${atrasado(p) ? "border-rose-400" : "border-zinc-200 dark:border-zinc-800"}`}>
+    <div className={`flex flex-col rounded-cartao bg-painel-cartao p-3 ${atrasado(p) ? "ring-2 ring-erro" : ""}`}>
       <div className="mb-2 flex items-center gap-2">
         <span className="font-bold">#{p.numero ?? "—"}</span>
-        <span className="text-xs text-zinc-400">{haQuanto(p.criado_em, nowMs)}</span>
+        <span className="text-xs text-texto-fraco">{haQuanto(p.criado_em, nowMs)}</span>
         <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${st.bg} ${st.cor}`}>{st.label}</span>
       </div>
       {p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && (
-        <div className={`mb-2 rounded-lg px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300"}`}>
+        <div className={`mb-2 rounded-controle px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300"}`}>
           <Icone nome="agenda" tamanho={13} className="mr-1" /> Agendado pra {hora(p.agendado_para)}{nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? " · hora de preparar" : ""}
         </div>
       )}
       <Link href={`/delivery/${p.id}`} className="block">
         <div className="font-semibold leading-tight">{p.nome}</div>
-        <div className="text-xs text-zinc-500">{p.telefone}</div>
-        <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
+        <div className="font-numero text-xs text-texto-suave">{p.telefone}</div>
+        <div className="mt-1 flex items-center gap-2 text-xs text-texto-suave">
           <span className="inline-flex items-center gap-1">
             {ORIGEM[p.origem] ? <><Icone nome={ORIGEM[p.origem].icone} tamanho={12} /> {ORIGEM[p.origem].label}</> : p.origem}
           </span>
@@ -130,43 +130,43 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
         </div>
         <div className="mt-1.5 text-sm">
           {p.tipo === "retirada" ? (
-            <span className="inline-flex items-center gap-1 font-medium text-zinc-600 dark:text-zinc-300"><Icone nome="loja" tamanho={13} /> Retirada no balcão</span>
+            <span className="inline-flex items-center gap-1 font-medium text-texto-suave"><Icone nome="loja" tamanho={13} /> Retirada no balcão</span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-300"><Icone nome="entrega" tamanho={13} /> {[p.bairro, p.logradouro].filter(Boolean).join(" · ") || "Endereço no detalhe"}</span>
+            <span className="inline-flex items-center gap-1 text-texto-suave"><Icone nome="entrega" tamanho={13} /> {[p.bairro, p.logradouro].filter(Boolean).join(" · ") || "Endereço no detalhe"}</span>
           )}
         </div>
         <div className="mt-1.5 flex items-center justify-between">
-          <span className="text-xs text-zinc-400">{hora(p.criado_em)}</span>
-          <span className="font-bold">{brl(total)}</span>
+          <span className="font-numero text-xs text-texto-fraco">{hora(p.criado_em)}</span>
+          <span className="font-numero font-semibold tracking-apertada text-texto">{brl(total)}</span>
         </div>
         {atrasado(p) && (
             <div className="mt-1 flex items-center gap-1 text-xs font-bold text-rose-600"><Icone nome="atraso" tamanho={13} /> Atrasado</div>
           )}
       </Link>
 
-      <div className="mt-2 flex items-center gap-1.5 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+      <div className="mt-2 flex items-center gap-1.5 border-t border-borda pt-2">
         {p.status === "pendente" ? (
           <>
             {!p.agendado_para && (
-              <select value={tempo} onChange={(e) => setTempo(Number(e.target.value))} title="Tempo prometido" className="rounded-lg border border-zinc-300 bg-transparent px-1.5 py-1 text-xs dark:border-zinc-700">
+              <select value={tempo} onChange={(e) => setTempo(Number(e.target.value))} title="Tempo prometido" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-1.5 text-xs text-texto">
                 {TEMPOS_ACEITE.map((t) => <option key={t} value={t}>{t} min</option>)}
               </select>
             )}
-            <button onClick={() => avancar(p, { tempoMin: p.agendado_para ? undefined : tempo })} disabled={proc} className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-bold text-white disabled:opacity-50">✓ Aceitar</button>
-            <button onClick={recusar} disabled={proc} title="Recusar com motivo" className="rounded-lg border border-rose-300 px-2 py-1 text-xs text-rose-600 dark:border-rose-800">✕</button>
+            <button onClick={() => avancar(p, { tempoMin: p.agendado_para ? undefined : tempo })} disabled={proc} className="min-h-11 flex-1 rounded-controle bg-texto text-xs font-bold text-fundo transition hover:opacity-90 disabled:opacity-50">Aceitar</button>
+            <button onClick={recusar} disabled={proc} title="Recusar com motivo" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-2 text-xs text-erro"><Icone nome="fechar" tamanho={13} titulo="Recusar" /></button>
           </>
         ) : st.proximo ? (
-          <button onClick={() => avancar(p)} disabled={proc} className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-bold text-white disabled:opacity-50">→ {ST[st.proximo].label}</button>
+          <button onClick={() => avancar(p)} disabled={proc} className="min-h-11 flex-1 rounded-controle bg-texto text-xs font-bold text-fundo transition hover:opacity-90 disabled:opacity-50">{ST[st.proximo].label}</button>
         ) : (
-          <span className="flex-1 text-center text-xs text-zinc-400">{p.status === "entregue" ? "Concluído" : "—"}</span>
+          <span className="flex-1 text-center text-xs text-texto-fraco">{p.status === "entregue" ? "Concluído" : "—"}</span>
         )}
         {p.tipo === "entrega" && (
-          <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} className="max-w-[7rem] rounded-lg border border-zinc-300 bg-transparent px-1.5 py-1 text-xs dark:border-zinc-700">
+          <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} className="min-h-11 max-w-[7rem] rounded-controle border border-borda-forte bg-transparent px-1.5 text-xs text-texto">
             <option value="">Motoboy</option>
             {entregadores.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
           </select>
         )}
-        <button onClick={() => imprimir(p)} disabled={proc} title="Reimprimir" className="rounded-lg border border-zinc-300 px-2 py-1 dark:border-zinc-700"><Icone nome="imprimir" tamanho={14} titulo="Reimprimir" /></button>
+        <button onClick={() => imprimir(p)} disabled={proc} title="Reimprimir" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-2 text-texto-suave transition hover:bg-superficie-suave"><Icone nome="imprimir" tamanho={14} titulo="Reimprimir" /></button>
       </div>
     </div>
   );
@@ -292,14 +292,14 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     <div>
       {/* Filtros */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button onClick={alternarSom} title={som ? "Som de pedido novo ligado — clique pra desligar" : "Ligar som de pedido novo"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${som ? "bg-emerald-600 text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}`}>
+        <button onClick={alternarSom} title={som ? "Som de pedido novo ligado — clique pra desligar" : "Ligar som de pedido novo"} className={`min-h-11 rounded-controle px-3 text-sm font-semibold transition ${som ? "bg-texto text-fundo" : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}>
           {som
             ? <span className="inline-flex items-center gap-1.5"><Icone nome="campainha" tamanho={14} /> Som ligado</span>
             : <span className="inline-flex items-center gap-1.5"><Icone nome="mudo" tamanho={14} /> Som</span>}
         </button>
-        <div className="flex gap-1 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
+        <div className="flex gap-1 rounded-controle bg-superficie-suave p-0.5">
           {([["cards", "Cards", "cards"], ["kanban", "Kanban", "colunas"], ["mapa", "Mapa", "mapa"]] as [string, string, NomeIcone][]).map(([k, lbl, ico]) => (
-            <button key={k} onClick={() => mudarVisao(k as "cards" | "kanban" | "mapa")} className={`rounded-md px-3 py-1.5 text-sm font-medium ${visao === k ? "bg-white shadow dark:bg-zinc-950" : "text-zinc-500"}`}>
+            <button key={k} onClick={() => mudarVisao(k as "cards" | "kanban" | "mapa")} className={`min-h-11 rounded-controle px-3 text-sm font-medium transition ${visao === k ? "bg-painel-cartao text-texto" : "text-texto-suave"}`}>
               <span className="inline-flex items-center gap-1.5"><Icone nome={ico} tamanho={14} /> {lbl}</span>
             </button>
           ))}
@@ -307,20 +307,20 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
         {visao === "cards" && (
           <div className="flex flex-wrap gap-1">
             {[["ativos", `Ativos (${contagem("ativos")})`], ["pendente", "Pendentes"], ["em_preparo", "Em preparo"], ["pronto", "Prontos"], ["saiu", "Saíram"], ["entregue", "Entregues"], ["todos", "Todos"]].map(([k, lbl]) => (
-              <button key={k} onClick={() => setFStatus(k)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${fStatus === k ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"}`}>{lbl}</button>
+              <button key={k} onClick={() => setFStatus(k)} className={`min-h-11 rounded-controle px-3 text-sm font-medium transition ${fStatus === k ? "bg-texto text-fundo" : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}>{lbl}</button>
             ))}
           </div>
         )}
-        <select value={fTipo} onChange={(e) => setFTipo(e.target.value)} className="rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm dark:border-zinc-700">
+        <select value={fTipo} onChange={(e) => setFTipo(e.target.value)} className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-2 text-sm text-texto">
           <option value="todos">Entrega e retirada</option>
           <option value="entrega">Só entrega</option>
           <option value="retirada">Só retirada</option>
         </select>
-        <select value={fOrigem} onChange={(e) => setFOrigem(e.target.value)} className="rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm dark:border-zinc-700">
+        <select value={fOrigem} onChange={(e) => setFOrigem(e.target.value)} className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-2 text-sm text-texto">
           <option value="todos">Todas as origens</option>
           {Object.entries(ORIGEM).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nº / nome / telefone" className="ml-auto w-56 rounded-lg border border-zinc-300 bg-transparent px-3 py-1.5 text-sm outline-none dark:border-zinc-700" />
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nº / nome / telefone" className="ml-auto min-h-11 w-56 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria" />
       </div>
 
       {visao === "mapa" ? (
@@ -332,20 +332,20 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
             const st = ST[col];
             return (
               <div key={col} className="w-72 shrink-0">
-                <div className={`mb-2 flex items-center justify-between rounded-lg px-3 py-2 ${st.bg}`}>
+                <div className={`mb-2 flex items-center justify-between rounded-controle px-3 py-2 ${st.bg}`}>
                   <span className={`text-sm font-bold ${st.cor}`}>{st.label}</span>
                   <span className={`text-xs font-bold ${st.cor}`}>{doCol.length}</span>
                 </div>
                 <div className="space-y-2">
                   {doCol.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
-                  {doCol.length === 0 && <p className="rounded-xl border border-dashed border-zinc-200 py-6 text-center text-xs text-zinc-400 dark:border-zinc-800">vazio</p>}
+                  {doCol.length === 0 && <p className="rounded-cartao bg-painel-cartao py-6 text-center text-xs text-texto-fraco">vazio</p>}
                 </div>
               </div>
             );
           })}
         </div>
       ) : lista.length === 0 ? (
-        <p className="py-16 text-center text-zinc-500">Nenhum pedido aqui.</p>
+        <p className="py-16 text-center text-sm text-texto-fraco">Nenhum pedido aqui.</p>
       ) : (() => {
         // Agendados pra mais tarde ficam numa faixa própria, em ordem de horário;
         // quando chega a 45 min do horário, o pedido desce pra lista normal.

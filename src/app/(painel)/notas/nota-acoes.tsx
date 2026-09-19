@@ -34,14 +34,14 @@ export function NotaAcoes({
         <>
           <Link
             href={`/notas/${notaId}`}
-            className="whitespace-nowrap rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+            className="flex min-h-11 items-center whitespace-nowrap rounded-controle bg-texto px-3 text-xs font-medium text-fundo transition hover:opacity-90"
           >
-            Revisar e lançar →
+            Revisar e lançar
           </Link>
           <button
             onClick={cancelar}
             disabled={processando}
-            className="text-xs text-zinc-400 hover:text-red-600"
+            className="text-xs text-texto-fraco transition hover:text-erro"
           >
             Cancelar
           </button>
@@ -51,13 +51,13 @@ export function NotaAcoes({
         <button
           onClick={estornar}
           disabled={processando}
-          className="text-xs text-zinc-400 hover:text-amber-600"
+          className="text-xs text-texto-fraco transition hover:text-alerta"
         >
           Estornar
         </button>
       )}
       {situacao === "cancelada" && (
-        <span className="text-xs text-zinc-400">cancelada</span>
+        <span className="text-xs text-texto-fraco">cancelada</span>
       )}
     </div>
   );

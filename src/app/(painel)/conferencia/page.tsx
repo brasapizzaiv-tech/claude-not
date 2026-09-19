@@ -15,7 +15,7 @@ const moeda = (n: number) =>
 
 const badge: Record<string, string> = {
   rascunho:
-    "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+    "bg-superficie-suave text-texto-suave",
   enviado:
     "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
   recebido:
@@ -55,17 +55,17 @@ export default async function ConferenciaPage() {
     <div className="mx-auto max-w-4xl p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Conferência
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-1 text-texto-suave">
             Confira a mercadoria que chegou contra o pedido.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/conferencia/divergencias"
-            className={`rounded-lg border px-4 py-2 text-sm font-semibold ${comProblemaMes > 0 ? "border-amber-500 text-amber-700 hover:bg-amber-50 dark:text-amber-300" : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300"}`}
+            className={`flex min-h-11 items-center rounded-controle border px-4 text-sm font-semibold transition ${comProblemaMes > 0 ? "border-alerta text-alerta hover:bg-superficie-suave" : "border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}
           >
             <Icone nome="alerta" tamanho={14} className="mr-1.5" /> Divergências{comProblemaMes > 0 ? ` (${comProblemaMes} este mês)` : ""}
           </Link>
@@ -79,13 +79,13 @@ export default async function ConferenciaPage() {
       </div>
 
       {pedidos.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave ">
           Nenhum pedido ainda. Gere pedidos numa cotação para conferir aqui.
         </div>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Fornecedor</th>
                 <th className="px-4 py-3">Cotação</th>
@@ -96,7 +96,7 @@ export default async function ConferenciaPage() {
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {pedidos.map((p) => {
                 const total = (p.pedido_itens ?? []).reduce(
                   (s, i) => s + (i.preco_unit ?? 0) * i.qtd,
@@ -105,9 +105,9 @@ export default async function ConferenciaPage() {
                 return (
                   <tr
                     key={p.id}
-                    className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+                    className="transition hover:bg-superficie-suave"
                   >
-                    <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                    <td className="px-4 py-3 font-medium text-texto">
                       <Link
                         href={`/conferencia/${p.id}`}
                         className="hover:text-orange-600 hover:underline"
@@ -115,17 +115,17 @@ export default async function ConferenciaPage() {
                         {p.fornecedores?.nome ?? "—"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-zinc-500">
+                    <td className="px-4 py-3 text-texto-suave">
                       {p.cotacoes?.descricao ?? (
                         <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                           Compra direta
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-zinc-500">
+                    <td className="px-4 py-3 text-texto-suave">
                       {dataBR(p.data)}
                     </td>
-                    <td className="px-4 py-3 text-right text-zinc-700 dark:text-zinc-300">
+                    <td className="px-4 py-3 text-right text-texto-suave">
                       {moeda(total)}
                     </td>
                     <td className="px-4 py-3">
@@ -139,16 +139,16 @@ export default async function ConferenciaPage() {
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {p.conf_colab_em ? (
-                        <div className="text-zinc-500">✓ {p.conf_colab_por ?? "equipe"} · {quandoCurto(p.conf_colab_em)}</div>
+                        <div className="text-texto-suave">✓ {p.conf_colab_por ?? "equipe"} · {quandoCurto(p.conf_colab_em)}</div>
                       ) : p.status === "conferido" ? (
-                        <div className="text-zinc-500">✓ painel</div>
+                        <div className="text-texto-suave">✓ painel</div>
                       ) : (
-                        <div className="text-zinc-400">aguardando</div>
+                        <div className="text-texto-fraco">aguardando</div>
                       )}
                       <div className="mt-0.5 flex flex-wrap gap-1">
                         {(p.notas_fiscais?.length ?? 0) > 0
                           ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">nota ligada</span>
-                          : (p.conf_colab_em || p.status === "conferido") && <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800">sem nota</span>}
+                          : (p.conf_colab_em || p.status === "conferido") && <span className="rounded-controle bg-superficie-suave px-1.5 py-0.5 text-[10px] text-texto-suave">sem nota</span>}
                         {p.divergencias_n > 0 && (
                           <Link href={`/conferencia/${p.id}`} className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${(p.divergencias as ResumoDivergencias)?.gravidade === "grave" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
                             <Icone nome="alerta" tamanho={12} className="mr-1" /> {p.divergencias_n} divergência{p.divergencias_n === 1 ? "" : "s"}

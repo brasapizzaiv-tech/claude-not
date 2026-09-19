@@ -24,7 +24,7 @@ export type NotaLinha = {
 const badge: Record<string, string> = {
   pendente: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
   lancada: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
-  cancelada: "bg-zinc-200 text-zinc-500 line-through dark:bg-zinc-800",
+  cancelada: "bg-superficie-suave text-texto-fraco line-through",
 };
 const rotulo: Record<string, string> = {
   pendente: "pendente",
@@ -58,29 +58,29 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por fornecedor ou número da nota..."
-          className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="w-full max-w-md min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
         />
         {busca && (
           <button
             onClick={() => setBusca("")}
-            className="text-xs text-zinc-400 hover:text-orange-600"
+            className="text-xs text-texto-fraco hover:text-orange-600"
           >
             limpar
           </button>
         )}
-        <span className="ml-auto text-xs text-zinc-400">
+        <span className="ml-auto text-xs text-texto-fraco">
           {filtradas.length} de {notas.length}
         </span>
       </div>
 
       {filtradas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-suave ">
           Nenhuma nota encontrada para <b>{busca}</b>.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Fornecedor</th>
                 <th className="px-4 py-3">Nº</th>
@@ -91,36 +91,36 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-borda">
               {filtradas.map((n) => (
-                <tr key={n.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                <tr key={n.id}>
+                  <td className="px-4 py-3 font-medium text-texto">
                     <Link href={`/notas/${n.id}`} className="hover:text-orange-600 hover:underline">
                       {n.emit_nome ?? "—"}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-zinc-500">{n.numero}</td>
-                  <td className="px-4 py-3 text-zinc-500">
+                  <td className="px-4 py-3 text-texto-suave">{n.numero}</td>
+                  <td className="px-4 py-3 text-texto-suave">
                     {n.data_emissao ? dataBR(n.data_emissao) : "—"}
                   </td>
-                  <td className="px-4 py-3 text-zinc-500">
+                  <td className="px-4 py-3 text-texto-suave">
                     {n.vencimento ? dataBR(n.vencimento) : "—"}
                     {n.parcelas > 1 && (
                       <span
-                        className="ml-1 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300"
+                        className="ml-1 rounded-controle bg-superficie-suave px-1.5 py-0.5 font-numero text-[10px] font-medium text-texto-suave"
                         title={`Nota parcelada em ${n.parcelas}x`}
                       >
                         {n.parcelas}x
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium text-zinc-800 dark:text-zinc-200">
+                  <td className="px-4 py-3 text-right font-numero font-medium tracking-apertada text-texto">
                     {moeda(Number(n.valor))}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-1">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        className={`rounded-controle px-2 py-0.5 text-xs font-medium ${
                           badge[n.situacao] ?? badge.pendente
                         }`}
                       >
@@ -128,7 +128,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                       </span>
                       {n.aguardando && (
                         <span
-                          className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                          className="rounded-controle bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300"
                           title="Manifestada — a busca automática vai trazer os itens em alguns minutos."
                         >
                           <Icone nome="ampulheta" tamanho={12} className="mr-1" /> aguardando itens
