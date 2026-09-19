@@ -234,3 +234,17 @@ body {
     color: #000000;
   }
 }
+
+/* Quem pediu menos animação no aparelho (Windows, Android e iPhone têm esse
+   ajuste, e muita gente liga por enjoo ou tontura) recebe tudo parado. Os
+   blocos cinzas de carregamento continuam aparecendo, só não piscam. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

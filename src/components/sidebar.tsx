@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { type ModuloKey } from "@/lib/permissoes";
 import { TEMA_PADRAO, type Tema } from "@/lib/tema";
@@ -41,6 +41,20 @@ function lerAbertosRaw() {
 function gravarAbertos(v: Record<string, boolean>) {
   try { localStorage.setItem(K_ABERTOS, JSON.stringify(v)); } catch {}
   ouvintes.forEach((f) => f());
+}
+
+// Rodinha que aparece no item do menu que a pessoa acabou de clicar, enquanto
+// a tela vem. Só funciona dentro de um <Link>. Sem isto, clicar numa tela
+// pesada parece não ter feito nada e a pessoa clica de novo.
+function Rodinha() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      aria-hidden
+      className="ml-auto h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white"
+    />
+  );
 }
 
 export function Sidebar({
@@ -221,6 +235,7 @@ export function Sidebar({
         >
           <span className="text-lg">🏠</span>
           {!recolhido && <span>Início</span>}
+          <Rodinha />
         </Link>
 
         {grupos.map((g) => {
@@ -275,7 +290,10 @@ export function Sidebar({
                     return it.external ? (
                       <a key={it.href} href={it.href} className={cls} title={it.label}>{inner}</a>
                     ) : (
-                      <Link key={it.href} href={it.href} className={cls} title={it.label} onClick={() => setMobileAberto(false)}>{inner}</Link>
+                      <Link key={it.href} href={it.href} className={cls} title={it.label} onClick={() => setMobileAberto(false)}>
+                        {inner}
+                        <Rodinha />
+                      </Link>
                     );
                   })}
                 </div>
