@@ -1,3 +1,5 @@
+import type { NomeIcone } from "@/components/icone";
+
 // Fonte única dos módulos do sistema e do controle de acesso.
 // Usado pelo menu (sidebar), pela página de Usuários e pelo bloqueio de rotas
 // no middleware. Sem imports de servidor para poder rodar no Edge.
@@ -27,41 +29,44 @@ export type ModuloKey =
   | "checklists"
   | "rodizio";
 
+// `icon` é o NOME do ícone, não o desenho: quem desenha é o <Icone> em
+// src/components/icone.tsx. Fica como texto porque este arquivo também roda no
+// middleware, onde não existe React.
 export const MODULOS: {
   key: ModuloKey;
   label: string;
-  icon: string;
+  icon: NomeIcone;
   rotas: string[];
 }[] = [
-  { key: "fornecedores", label: "Fornecedores", icon: "🚚", rotas: ["/fornecedores"] },
-  { key: "produtos", label: "Produtos e Categorias", icon: "📦", rotas: ["/produtos", "/categorias"] },
-  { key: "colaboradores", label: "Colaboradores", icon: "👤", rotas: ["/colaboradores"] },
-  { key: "contagem", label: "Contagem de estoque", icon: "📋", rotas: ["/contagens"] },
-  { key: "cotacoes", label: "Cotações", icon: "💰", rotas: ["/cotacoes"] },
-  { key: "conferencia", label: "Conferência", icon: "📥", rotas: ["/conferencia"] },
-  { key: "notas", label: "Notas Fiscais", icon: "🧾", rotas: ["/notas"] },
+  { key: "fornecedores", label: "Fornecedores", icon: "caminhao", rotas: ["/fornecedores"] },
+  { key: "produtos", label: "Produtos e Categorias", icon: "pacote", rotas: ["/produtos", "/categorias"] },
+  { key: "colaboradores", label: "Colaboradores", icon: "pessoa", rotas: ["/colaboradores"] },
+  { key: "contagem", label: "Contagem de estoque", icon: "lista", rotas: ["/contagens"] },
+  { key: "cotacoes", label: "Cotações", icon: "moedas", rotas: ["/cotacoes"] },
+  { key: "conferencia", label: "Conferência", icon: "entrada", rotas: ["/conferencia"] },
+  { key: "notas", label: "Notas Fiscais", icon: "cupom", rotas: ["/notas"] },
   // Contas a pagar sozinha (dar baixa nos boletos) — vem ANTES de "financeiro"
   // para /financeiro/contas ser controlada por esta permissão (mais específica).
-  { key: "contas", label: "Contas a pagar (só baixa de boletos)", icon: "📄", rotas: ["/financeiro/contas"] },
-  { key: "financeiro", label: "Financeiro (completo)", icon: "📊", rotas: ["/financeiro"] },
-  { key: "etiquetas", label: "Etiquetas", icon: "🏷️", rotas: ["/etiquetas"] },
+  { key: "contas", label: "Contas a pagar (só baixa de boletos)", icon: "documento", rotas: ["/financeiro/contas"] },
+  { key: "financeiro", label: "Financeiro (completo)", icon: "grafico", rotas: ["/financeiro"] },
+  { key: "etiquetas", label: "Etiquetas", icon: "etiqueta", rotas: ["/etiquetas"] },
   // Garçom: só o app do garçom (/garcom). Vem ANTES de "salao" para que /garcom
   // seja controlado por esta permissão (mais específica).
-  { key: "garcom", label: "Garçom (app do celular)", icon: "🧑‍🍳", rotas: ["/garcom"] },
-  { key: "salao", label: "Salão / PDV", icon: "🍕", rotas: ["/salao"] },
+  { key: "garcom", label: "Garçom (app do celular)", icon: "cozinha", rotas: ["/garcom"] },
+  { key: "salao", label: "Salão / PDV", icon: "pizza", rotas: ["/salao"] },
   // Recepção: só a tela de celular das reservas. Vem ANTES de "reservas" para
   // que /reservas/hoje seja controlada por esta permissão (mais específica).
-  { key: "recepcao", label: "Recepção (reservas no celular)", icon: "📱", rotas: ["/reservas/hoje"] },
-  { key: "reservas", label: "Reservas", icon: "📅", rotas: ["/reservas"] },
-  { key: "cardapio_dia", label: "Cardápio do dia (site)", icon: "🍽️", rotas: ["/cardapio-do-dia"] },
-  { key: "folgas", label: "Folgas (gestão)", icon: "🌴", rotas: ["/folgas"] },
-  { key: "retiradas", label: "Compras internas", icon: "🛒", rotas: ["/retiradas"] },
-  { key: "impressao", label: "Central de Impressões", icon: "🖨️", rotas: ["/impressao"] },
-  { key: "pdv", label: "PDV (balcão)", icon: "🧾", rotas: ["/pdv"] },
-  { key: "delivery", label: "Delivery", icon: "🛵", rotas: ["/delivery"] },
-  { key: "solicitacoes", label: "Pedidos da equipe (compras e manutenção)", icon: "🛠️", rotas: ["/solicitacoes"] },
-  { key: "checklists", label: "Checklists de rotina", icon: "✅", rotas: ["/checklists"] },
-  { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "🍕", rotas: ["/cozinha"] },
+  { key: "recepcao", label: "Recepção (reservas no celular)", icon: "celular", rotas: ["/reservas/hoje"] },
+  { key: "reservas", label: "Reservas", icon: "agenda", rotas: ["/reservas"] },
+  { key: "cardapio_dia", label: "Cardápio do dia (site)", icon: "salao", rotas: ["/cardapio-do-dia"] },
+  { key: "folgas", label: "Folgas (gestão)", icon: "folga", rotas: ["/folgas"] },
+  { key: "retiradas", label: "Compras internas", icon: "compras", rotas: ["/retiradas"] },
+  { key: "impressao", label: "Central de Impressões", icon: "imprimir", rotas: ["/impressao"] },
+  { key: "pdv", label: "PDV (balcão)", icon: "cupom", rotas: ["/pdv"] },
+  { key: "delivery", label: "Delivery", icon: "entrega", rotas: ["/delivery"] },
+  { key: "solicitacoes", label: "Pedidos da equipe (compras e manutenção)", icon: "ferramenta", rotas: ["/solicitacoes"] },
+  { key: "checklists", label: "Checklists de rotina", icon: "checklist", rotas: ["/checklists"] },
+  { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "pizza", rotas: ["/cozinha"] },
 ];
 
 // Qual módulo "controla" a rota. "usuarios" é só do dono. null = rota livre

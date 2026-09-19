@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Icone, type NomeIcone } from "@/components/icone";
 import { moedaBR } from "@/lib/format";
 
 type Resumo = {
@@ -119,32 +120,35 @@ export default async function DashboardPage() {
   const despAnt = meses[4]?.desp ?? 0;
   const pctDesp = despAnt > 0 ? Math.round((despAtual / despAnt - 1) * 100) : null;
 
-  const atalhos = [
-    { perm: "cotacoes", href: "/cotacoes", icon: "💰", label: "Cotações", cor: "green" },
-    { perm: "contagem", href: "/contagens", icon: "📋", label: "Contagem", cor: "blue" },
-    { perm: "conferencia", href: "/conferencia", icon: "📥", label: "Conferência", cor: "cyan" },
-    { perm: "notas", href: "/notas", icon: "🧾", label: "Notas", cor: "violet" },
-    { perm: "financeiro", href: "/financeiro", icon: "📊", label: "Financeiro", cor: "indigo" },
-    { perm: "salao", href: "/salao", icon: "🍕", label: "Salão", cor: "orange" },
-    { perm: "etiquetas", href: "/etiquetas", icon: "🏷️", label: "Etiquetas", cor: "rose" },
-    { perm: "produtos", href: "/produtos", icon: "📦", label: "Produtos", cor: "teal" },
-    { perm: "fornecedores", href: "/fornecedores", icon: "🚚", label: "Fornecedores", cor: "amber" },
-  ].filter((a) => pode(a.perm));
+  // Anotado aqui (e não depois do .filter) pra o TypeScript conferir o nome de
+  // cada ícone: nome errado vira erro na hora de compilar.
+  const todosAtalhos: { perm: string; href: string; icon: NomeIcone; label: string; cor: string }[] = [
+    { perm: "cotacoes", href: "/cotacoes", icon: "moedas", label: "Cotações", cor: "green" },
+    { perm: "contagem", href: "/contagens", icon: "lista", label: "Contagem", cor: "blue" },
+    { perm: "conferencia", href: "/conferencia", icon: "entrada", label: "Conferência", cor: "cyan" },
+    { perm: "notas", href: "/notas", icon: "cupom", label: "Notas", cor: "violet" },
+    { perm: "financeiro", href: "/financeiro", icon: "grafico", label: "Financeiro", cor: "indigo" },
+    { perm: "salao", href: "/salao", icon: "pizza", label: "Salão", cor: "orange" },
+    { perm: "etiquetas", href: "/etiquetas", icon: "etiqueta", label: "Etiquetas", cor: "rose" },
+    { perm: "produtos", href: "/produtos", icon: "pacote", label: "Produtos", cor: "teal" },
+    { perm: "fornecedores", href: "/fornecedores", icon: "caminhao", label: "Fornecedores", cor: "amber" },
+  ];
+  const atalhos = todosAtalhos.filter((a) => pode(a.perm));
 
   const alertas = [
     pode("financeiro") && r.contas_vencidas > 0
-      ? { icon: "🔴", txt: `${moedaBR(r.contas_vencidas)} em contas vencidas`, href: "/financeiro/contas" }
+      ? { icon: "alerta" as NomeIcone, txt: `${moedaBR(r.contas_vencidas)} em contas vencidas`, href: "/financeiro/contas" }
       : null,
     pode("financeiro") && r.contas_vencer7 > 0
-      ? { icon: "🟠", txt: `${moedaBR(r.contas_vencer7)} vencem em 7 dias`, href: "/financeiro/contas" }
+      ? { icon: "aviso" as NomeIcone, txt: `${moedaBR(r.contas_vencer7)} vencem em 7 dias`, href: "/financeiro/contas" }
       : null,
     pode("etiquetas") && r.etiquetas_vencidas > 0
-      ? { icon: "🏷️", txt: `${r.etiquetas_vencidas} etiqueta(s) vencida(s)`, href: "/etiquetas" }
+      ? { icon: "etiqueta" as NomeIcone, txt: `${r.etiquetas_vencidas} etiqueta(s) vencida(s)`, href: "/etiquetas" }
       : null,
     pode("contagem") && !r.estoque_tem_contagem
-      ? { icon: "📦", txt: "Nenhuma contagem finalizada ainda", href: "/contagens" }
+      ? { icon: "pacote" as NomeIcone, txt: "Nenhuma contagem finalizada ainda", href: "/contagens" }
       : null,
-  ].filter(Boolean) as { icon: string; txt: string; href: string }[];
+  ].filter(Boolean) as { icon: NomeIcone; txt: string; href: string }[];
 
   return (
     <div className="mx-auto max-w-7xl p-4 sm:p-8">
@@ -171,7 +175,7 @@ export default async function DashboardPage() {
                 className="relative overflow-hidden rounded-3xl bg-orange-500 p-5 text-white transition hover:bg-orange-600"
               >
                 <div className="flex items-center gap-2 text-sm font-medium text-orange-100">
-                  <span className="text-lg">💵</span> Faturamento
+                  <Icone nome="dinheiro" tamanho={19} className="text-emerald-600 dark:text-emerald-400" /> Faturamento
                 </div>
                 <p className="mt-3 text-2xl font-black">{moedaBR(r.faturamento_mes)}</p>
                 <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-100">
@@ -188,7 +192,7 @@ export default async function DashboardPage() {
             {pode("financeiro") && (
               <Destaque
                 href="/financeiro/contas"
-                icon="📄"
+                icon="documento"
                 titulo="Contas a pagar"
                 valor={moedaBR(r.contas_aberto)}
                 rodape={r.contas_aberto > 0 ? "em aberto" : "nada em aberto 🎉"}
@@ -200,7 +204,7 @@ export default async function DashboardPage() {
             {pode("contagem") && (
               <Destaque
                 href="/contagens"
-                icon="📦"
+                icon="pacote"
                 titulo="Valor em estoque"
                 valor={r.estoque_tem_contagem ? moedaBR(r.estoque_valor) : "—"}
                 rodape={r.estoque_tem_contagem ? "última contagem" : "finalize uma contagem"}
@@ -276,7 +280,7 @@ export default async function DashboardPage() {
                     className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-3 text-center transition hover:border-orange-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
                   >
                     <span className={`flex h-11 w-11 items-center justify-center rounded-xl text-xl ${CORES[a.cor]}`}>
-                      {a.icon}
+                      <Icone nome={a.icon} tamanho={22} />
                     </span>
                     <span className="text-[11px] font-medium leading-tight text-zinc-600 dark:text-zinc-300">
                       {a.label}
@@ -305,7 +309,7 @@ export default async function DashboardPage() {
                     href={a.href}
                     className="flex items-center gap-2 rounded-xl bg-zinc-50 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:bg-zinc-800/60 dark:text-zinc-200 dark:hover:bg-zinc-800"
                   >
-                    <span>{a.icon}</span>
+                    <Icone nome={a.icon} tamanho={17} />
                     <span className="flex-1">{a.txt}</span>
                     <span className="text-zinc-300">›</span>
                   </Link>
@@ -319,28 +323,28 @@ export default async function DashboardPage() {
             <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Números</h2>
             <div className="space-y-1">
               {pode("financeiro") && (
-                <MiniStat href="/financeiro/vendas" icon="🧾" cor="violet" titulo="Notas no mês" valor={String(r.notas_mes ?? 0)} />
+                <MiniStat href="/financeiro/vendas" icon="cupom" cor="violet" titulo="Notas no mês" valor={String(r.notas_mes ?? 0)} />
               )}
               {pode("financeiro") && (
-                <MiniStat href="/financeiro" icon="📉" cor="indigo" titulo="Despesas no mês" valor={moedaBR(r.despesas_mes)} />
+                <MiniStat href="/financeiro" icon="descendo" cor="indigo" titulo="Despesas no mês" valor={moedaBR(r.despesas_mes)} />
               )}
               {pode("etiquetas") && (
                 <MiniStat
                   href="/etiquetas"
-                  icon="🏷️"
+                  icon="etiqueta"
                   cor="rose"
                   titulo="Etiquetas a vencer"
                   valor={String((r.etiquetas_vencidas ?? 0) + (r.etiquetas_vencendo ?? 0))}
                 />
               )}
               {pode("fornecedores") && (
-                <MiniStat href="/fornecedores" icon="🚚" cor="amber" titulo="Fornecedores" valor={String(r.fornecedores ?? 0)} />
+                <MiniStat href="/fornecedores" icon="caminhao" cor="amber" titulo="Fornecedores" valor={String(r.fornecedores ?? 0)} />
               )}
               {pode("produtos") && (
-                <MiniStat href="/produtos" icon="📦" cor="teal" titulo="Produtos" valor={String(r.produtos ?? 0)} />
+                <MiniStat href="/produtos" icon="pacote" cor="teal" titulo="Produtos" valor={String(r.produtos ?? 0)} />
               )}
               {pode("colaboradores") && (
-                <MiniStat href="/colaboradores" icon="👤" cor="blue" titulo="Colaboradores" valor={String(r.colaboradores ?? 0)} />
+                <MiniStat href="/colaboradores" icon="pessoa" cor="blue" titulo="Colaboradores" valor={String(r.colaboradores ?? 0)} />
               )}
             </div>
           </div>
@@ -361,7 +365,7 @@ function Destaque({
   pctLabel,
 }: {
   href: string;
-  icon: string;
+  icon: NomeIcone;
   titulo: string;
   valor: string;
   rodape: string;
@@ -381,7 +385,7 @@ function Destaque({
       className="rounded-3xl border border-zinc-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
     >
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-500">
-        <span className="text-lg">{icon}</span>
+        <Icone nome={icon} tamanho={19} />
         {titulo}
       </div>
       <p className={`mt-3 text-2xl font-black ${valorCor}`}>{valor}</p>
@@ -411,7 +415,7 @@ function MiniStat({
   cor,
 }: {
   href: string;
-  icon: string;
+  icon: NomeIcone;
   titulo: string;
   valor: string;
   cor: string;
@@ -422,7 +426,7 @@ function MiniStat({
       className="flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
     >
       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base ${CORES[cor]}`}>
-        {icon}
+        <Icone nome={icon} tamanho={17} />
       </span>
       <span className="flex-1 truncate text-sm text-zinc-500">{titulo}</span>
       <span className="font-bold text-zinc-900 dark:text-zinc-50">{valor}</span>

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MODULOS } from "@/lib/permissoes";
+import { Icone } from "@/components/icone";
 import {
   criarUsuario,
   atualizarPermissoes,
@@ -47,7 +48,7 @@ function EditorPermissoes({
                 className="h-4 w-4"
               />
               <span>
-                {m.icon} {m.label}
+                <Icone nome={m.icon} tamanho={16} /> {m.label}
               </span>
             </label>
           ))}

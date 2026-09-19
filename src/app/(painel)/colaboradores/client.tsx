@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { siteUrl } from "@/lib/site-url";
 import { useState, useTransition } from "react";
 import Link from "next/link";
@@ -242,7 +244,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
                 {aba === "ativos" ? `ver ${desligados.length} desligado${desligados.length === 1 ? "" : "s"}` : "voltar aos ativos"}
               </button></>
             )}.
-            {" "}<Link href="/colaboradores/semana" className="text-orange-600 hover:underline">🗓️ Semana e 10%</Link>
+            {" "}<Link href="/colaboradores/semana" className="inline-flex items-center gap-1.5 text-orange-600 hover:underline"><Icone nome="horario" tamanho={14} /> Semana e 10%</Link>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -256,7 +258,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
             onClick={() => setVerLinks((v) => !v)}
             className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >
-            📲 Enviar app
+            <span className="inline-flex items-center gap-1.5"><Icone nome="celular" tamanho={14} /> Enviar app</span>
           </button>
           <button
             onClick={() => { setEditando(null); setAberto(true); }}
@@ -281,7 +283,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
 
       {aniversariantes.length > 0 && (
         <div className="mb-6 rounded-2xl border border-pink-200 bg-pink-50/60 p-4 text-sm dark:border-pink-900 dark:bg-pink-950/20">
-          <span className="font-semibold">🎂 Aniversariantes do mês:</span>{" "}
+          <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="bolo" tamanho={14} /> Aniversariantes do mês:</span>{" "}
           {aniversariantes.map((c) => `${c.nome} (${aniversarioBR(c.nascimento)})`).join(" · ")}
         </div>
       )}
@@ -306,13 +308,22 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
                 <tr key={c.id} className="bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900">
                   <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
                     {c.nome}
-                    {c.nascimento && <span className="ml-2 text-xs font-normal text-pink-600">🎂 {aniversarioBR(c.nascimento)}</span>}
+                    {c.nascimento && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-pink-600">
+                        <Icone nome="bolo" tamanho={12} /> {aniversarioBR(c.nascimento)}
+                      </span>
+                    )}
                     {c.whatsapp && <div className="text-xs font-normal text-zinc-400">{c.whatsapp}</div>}
                     <div className="text-xs font-normal text-zinc-500">{resumoQuadro(c)}</div>
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                    {c.folga ? <div style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}>🌴 {resumoFolga(c.folga)}</div> : <span className="text-zinc-400">sem folga</span>}
-                    <div className="text-zinc-400">{[c.faz_contagem ? "📦 contagem" : "", c.faz_etiquetas ? "🏷️ etiquetas" : "", c.faz_contas ? "💰 contas" : "", c.faz_cardapio ? "🍽️ cardápio" : ""].filter(Boolean).join(" · ")}</div>
+                    {c.folga ? <div className="flex items-center gap-1.5" style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}><Icone nome="folga" tamanho={13} /> {resumoFolga(c.folga)}</div> : <span className="text-zinc-400">sem folga</span>}
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-zinc-400">
+                        {c.faz_contagem && <span className="inline-flex items-center gap-1"><Icone nome="pacote" tamanho={12} /> contagem</span>}
+                        {c.faz_etiquetas && <span className="inline-flex items-center gap-1"><Icone nome="etiqueta" tamanho={12} /> etiquetas</span>}
+                        {c.faz_contas && <span className="inline-flex items-center gap-1"><Icone nome="dinheiro" tamanho={12} /> contas</span>}
+                        {c.faz_cardapio && <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> cardápio</span>}
+                      </div>
                   </td>
                   <td className="px-4 py-3">
                     {c.ativo ? <LinkApp c={c} /> : (
@@ -396,7 +407,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               <input name="nome" required autoFocus defaultValue={editando?.nome ?? ""} className={inputCls} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">🎂 Aniversário</label>
+              <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"><Icone nome="bolo" tamanho={14} /> Aniversário</label>
               <input name="nascimento" placeholder="dd/mm" defaultValue={aniversarioBR(editando?.nascimento)} className={inputCls} />
             </div>
           </div>
@@ -412,14 +423,14 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               <div>
                 <label className={lbl}>Turno</label>
                 <select name="turno" value={turno} onChange={(e) => setTurno(e.target.value)} className={inputCls}>
-                  <option value="dia">☀️ Dia</option>
-                  <option value="noite">🌙 Noite</option>
-                  <option value="ambos">☀️🌙 Dia e noite</option>
-                  <option value="proprietario">👑 Proprietário</option>
+                  <option value="dia">Dia</option>
+                  <option value="noite">Noite</option>
+                  <option value="ambos">Dia e noite</option>
+                  <option value="proprietario">Proprietário</option>
                 </select>
               </div>
               <div>
-                <label className={lbl}>{turno === "ambos" ? "☀️ Vínculo de DIA" : "Vínculo"}</label>
+                <label className={`${lbl} flex items-center gap-1.5`}>{turno === "ambos" ? <><Icone nome="dia" tamanho={13} /> Vínculo de DIA</> : "Vínculo"}</label>
                 <select name="vinc" value={vinc} onChange={(e) => setVinc(e.target.value)} className={inputCls}>
                   <option value="freelance">Freelance (por dia)</option>
                   <option value="clt">Carteira assinada (salário)</option>
@@ -427,7 +438,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               </div>
               {turno === "ambos" && (
                 <div>
-                  <label className={lbl}>🌙 Vínculo de NOITE</label>
+                  <label className={`${lbl} flex items-center gap-1.5`}><Icone nome="noite" tamanho={13} /> Vínculo de NOITE</label>
                   <select name="vinc_noite" value={vincNoite} onChange={(e) => setVincNoite(e.target.value)} className={inputCls}>
                     <option value="freelance">Freelance (por noite)</option>
                     <option value="clt">Carteira assinada (salário)</option>
@@ -444,13 +455,13 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               )}
               {temDia && !cltDia && (
                 <div>
-                  <label className={lbl}>☀️ Valor do dia (R$)</label>
+                  <label className={`${lbl} flex items-center gap-1.5`}><Icone nome="dia" tamanho={13} /> Valor do dia (R$)</label>
                   <input name="valor_dia" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_dia)} className={inputCls} />
                 </div>
               )}
               {temNoite && !cltNoite && (
                 <div>
-                  <label className={lbl}>🌙 Valor da noite (R$)</label>
+                  <label className={`${lbl} flex items-center gap-1.5`}><Icone nome="noite" tamanho={13} /> Valor da noite (R$)</label>
                   <input name="valor_noite" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_noite)} className={inputCls} />
                 </div>
               )}
@@ -474,13 +485,13 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               <div className="grid gap-2 sm:grid-cols-2">
                 {temDia && (
                   <div>
-                    <p className={lbl}>☀️ Dias fixos de DIA</p>
+                    <p className={`${lbl} flex items-center gap-1.5`}><Icone nome="dia" tamanho={13} /> Dias fixos de DIA</p>
                     <div className="flex flex-wrap gap-1">{[1, 2, 3, 4, 5, 6, 0].map((n) => diaBtn("dias_dia", n, !!editando?.dias_dia?.includes(n)))}</div>
                   </div>
                 )}
                 {temNoite && (
                   <div>
-                    <p className={lbl}>🌙 Noites fixas</p>
+                    <p className={`${lbl} flex items-center gap-1.5`}><Icone nome="noite" tamanho={13} /> Noites fixas</p>
                     <div className="flex flex-wrap gap-1">{[1, 2, 3, 4, 5, 6, 0].map((n) => diaBtn("dias_noite", n, !!editando?.dias_noite?.includes(n)))}</div>
                   </div>
                 )}
@@ -529,14 +540,14 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             <input type="checkbox" name="faz_contas" defaultChecked={editando ? editando.faz_contas : false} /> Contas a pagar (ver boletos e dar baixa) — gerencial
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_garcom" defaultChecked={editando ? !!editando.faz_garcom : false} /> 🧑‍🍳 Garçom (atalho &quot;Modo garçom&quot; no app: mesas, pedidos e conta)
+            <input type="checkbox" name="faz_garcom" defaultChecked={editando ? !!editando.faz_garcom : false} /> <Icone nome="garcom" tamanho={14} /> Garçom (atalho &quot;Modo garçom&quot; no app: mesas, pedidos e conta)
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> 🍽️ Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
+            <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> <Icone nome="salao" tamanho={14} /> Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
           </label>
           {setoresChecklist.length > 0 && (
             <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-              <p className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200">✅ Checklists — setores que esta pessoa executa</p>
+              <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200"><Icone nome="checklist" tamanho={14} /> Checklists — setores que esta pessoa executa</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                 {setoresChecklist.map((s) => (
                   <label key={s.id} className="flex items-center gap-2 text-sm">

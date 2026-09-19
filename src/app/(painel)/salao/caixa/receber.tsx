@@ -8,6 +8,7 @@ import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
 import { formaEmiteAuto } from "@/components/nfce-auto-toggle";
 import { PainelPagamentos, type ColabMini, type Pagamento } from "./pagamentos";
+import { Icone } from "@/components/icone";
 import { emitirNotaPendenteAgora } from "./pendentes-actions";
 import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
 
@@ -526,7 +527,7 @@ export function ReceberComandas({
           <div className="relative">
             {clienteSel ? (
               <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/20 dark:text-blue-200">
-                🧑 {clienteSel.nome}
+                <Icone nome="pessoa" tamanho={14} /> {clienteSel.nome}
                 {clienteSel.cpfCnpj ? ` · ${clienteSel.cpfCnpj}` : ""}
                 <button onClick={() => setClienteSel(null)} className="ml-1 text-blue-600 hover:text-red-600">
                   ✕
@@ -537,7 +538,7 @@ export function ReceberComandas({
                 onClick={() => setAbrirCli((v) => !v)}
                 className="rounded-lg border border-blue-400 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"
               >
-                🧑 Vincular Cliente
+                <span className="inline-flex items-center gap-1.5"><Icone nome="pessoa" tamanho={14} /> Vincular Cliente</span>
               </button>
             )}
             {abrirCli && !clienteSel && (
@@ -589,7 +590,7 @@ export function ReceberComandas({
                   title="Cliente vai comer à vontade: troca o valor do peso pelo buffet livre do dia"
                   className="ml-1 rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-bold text-white hover:bg-orange-600"
                 >
-                  🍽️ Virar livre
+                  <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> Virar livre</span>
                 </button>
               )}
               <button onClick={() => removeComanda(c.id)} className="ml-1 text-emerald-600 hover:text-red-600">
@@ -693,7 +694,7 @@ export function ReceberComandas({
                           title="Excluir este item da comanda (pede o motivo)"
                           className="rounded-md px-1.5 text-red-500 hover:bg-red-50 disabled:opacity-30 dark:hover:bg-red-950/40"
                         >
-                          🗑️
+                          <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                         </button>
                       )}
                     </div>
@@ -740,7 +741,7 @@ export function ReceberComandas({
                         title="Remover"
                         className="rounded-md px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
-                        🗑️
+                        <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                       </button>
                     </div>
                   ))}
@@ -759,7 +760,7 @@ export function ReceberComandas({
                         title="Remover"
                         className="rounded-md px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
-                        🗑️
+                        <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                       </button>
                     </div>
                   ))}
@@ -873,7 +874,7 @@ export function ReceberComandas({
                         onClick={() => { setDescontoPct(true); setDesconto("5"); }}
                         className="mt-1 w-full rounded-md border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
                       >
-                        💵 5% no dinheiro
+                        <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> 5% no dinheiro</span>
                       </button>
                       {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-[11px] text-zinc-500">= {brl(desc)}</p>}
                     </div>
@@ -1005,14 +1006,14 @@ export function ReceberComandas({
                 disabled={notaProc || !docNota.trim()}
                 className="rounded-xl bg-emerald-600 py-3 text-base font-bold text-white hover:bg-emerald-700 disabled:opacity-40"
               >
-                🧾 Sim, com CPF/CNPJ
+                <span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Sim, com CPF/CNPJ</span>
               </button>
               <button
                 onClick={() => emitirNota("")}
                 disabled={notaProc}
                 className="rounded-xl border-2 border-emerald-600 py-3 text-base font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
               >
-                🧾 Sim, sem CPF
+                <span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Sim, sem CPF</span>
               </button>
               <button
                 onClick={fecharNota}
@@ -1048,7 +1049,7 @@ export function ReceberComandas({
             onClick={() => { try { window.print(); } catch {} }}
             className="rounded-lg border border-zinc-300 px-3 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200"
           >
-            🧾 Imprimir recibo (sem valor fiscal)
+            <span className="inline-flex items-center gap-1.5"><Icone nome="cupom" tamanho={15} /> Imprimir recibo (sem valor fiscal)</span>
           </button>
         </div>
       )}

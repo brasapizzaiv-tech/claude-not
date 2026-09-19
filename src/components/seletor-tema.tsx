@@ -3,6 +3,7 @@
 import { useLayoutEffect, useState } from "react";
 import { salvarTema } from "@/app/(painel)/tema-actions";
 import { COOKIE_TEMA, TEMAS, type Tema } from "@/lib/tema";
+import { Icone } from "@/components/icone";
 
 // Botãozinho no pé do menu pra escolher se o painel fica claro ou escuro.
 // Ao escolher, a tela muda na hora e a preferência vai pro perfil da pessoa,
@@ -67,9 +68,9 @@ export function SeletorTema({ inicial, recolhido = false }: { inicial: Tema; rec
         title={`Aparência: ${atual.label}`}
         aria-label={`Aparência: ${atual.label}. Tocar pra mudar.`}
         aria-expanded={aberto}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-base text-white/90 hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/90 hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
       >
-        {atual.icone}
+        <Icone nome={atual.icone} tamanho={18} />
       </button>
 
       {aberto && (
@@ -98,12 +99,12 @@ export function SeletorTema({ inicial, recolhido = false }: { inicial: Tema; rec
                   t.valor === tema ? "bg-orange-50 dark:bg-zinc-800" : ""
                 }`}
               >
-                <span className="text-base leading-none">{t.icone}</span>
+                <Icone nome={t.icone} tamanho={17} className="mt-0.5 text-zinc-500 dark:text-zinc-400" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">{t.label}</span>
                   <span className="block text-xs text-zinc-500 dark:text-zinc-400">{t.ajuda}</span>
                 </span>
-                {t.valor === tema && <span className="text-sm text-orange-600 dark:text-orange-400">✓</span>}
+                {t.valor === tema && <Icone nome="ok" tamanho={16} className="mt-0.5 text-orange-600 dark:text-orange-400" />}
               </button>
             ))}
           </div>

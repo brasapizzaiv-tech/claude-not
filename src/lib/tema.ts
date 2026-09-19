@@ -7,14 +7,16 @@
 //
 // Sem imports de servidor — roda dos dois lados.
 
+import type { NomeIcone } from "@/components/icone";
+
 export type Tema = "claro" | "escuro" | "sistema";
 
 export const TEMA_PADRAO: Tema = "sistema";
 
-export const TEMAS: { valor: Tema; label: string; icone: string; ajuda: string }[] = [
-  { valor: "claro", label: "Claro", icone: "☀️", ajuda: "Fundo branco o dia todo." },
-  { valor: "escuro", label: "Escuro", icone: "🌙", ajuda: "Fundo grafite, cansa menos à noite." },
-  { valor: "sistema", label: "Do aparelho", icone: "💻", ajuda: "Acompanha o ajuste do celular ou do computador." },
+export const TEMAS: { valor: Tema; label: string; icone: NomeIcone; ajuda: string }[] = [
+  { valor: "claro", label: "Claro", icone: "claro", ajuda: "Fundo branco o dia todo." },
+  { valor: "escuro", label: "Escuro", icone: "escuro", ajuda: "Fundo grafite, cansa menos à noite." },
+  { valor: "sistema", label: "Do aparelho", icone: "aparelho", ajuda: "Acompanha o ajuste do celular ou do computador." },
 ];
 
 export const COOKIE_TEMA = "tema";

@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { type ModuloKey } from "@/lib/permissoes";
+import { Icone, type NomeIcone } from "@/components/icone";
 import { TEMA_PADRAO, type Tema } from "@/lib/tema";
 import { SeletorTema } from "@/components/seletor-tema";
 
@@ -11,8 +12,8 @@ import { SeletorTema } from "@/components/seletor-tema";
 // clicar (funciona no toque). Dá pra recolher em ícones (lembra a escolha).
 // No celular vira um botão ☰ no topo que abre o menu por cima da tela.
 
-type Item = { href: string; label: string; icon: string; external?: boolean; aviso?: number };
-type Grupo = { key: string; label: string; icon: string; itens: Item[]; aviso?: number };
+type Item = { href: string; label: string; icon: NomeIcone; external?: boolean; aviso?: number };
+type Grupo = { key: string; label: string; icon: NomeIcone; itens: Item[]; aviso?: number };
 
 const LARANJA = "#C78340";
 const K_RECOLHIDO = "sidebar_recolhido";
@@ -85,100 +86,105 @@ export function Sidebar({
   if (pathname === "/cozinha" || pathname === "/tv" || pathname.startsWith("/tv/")) return null;
 
   const has = (key: ModuloKey) => admin || permissoes.includes(key);
-  const so = <T,>(cond: boolean, ...v: T[]) => (cond ? v : []);
+  // "só aparece se a pessoa tem a permissão". Tipado como Item (e não genérico)
+  // pra o TypeScript conferir o nome do ícone de cada linha do menu.
+  const so = (cond: boolean, ...v: Item[]) => (cond ? v : []);
 
   // ---------- Grupos (só com o que o usuário pode ver) ----------
-  const grupos: Grupo[] = [
+  // Anotado aqui em cima (e não depois do .filter) pra o TypeScript conferir os
+  // nomes dos ícones um por um: nome errado vira erro na hora de compilar.
+  const todosGrupos: Grupo[] = [
     {
-      key: "operacao", label: "Operação", icon: "🍕",
+      key: "operacao", label: "Operação", icon: "pizza",
       itens: [
         ...so(has("salao"),
-          { href: "/salao", label: "Mesas e comandas", icon: "🍕" },
-          { href: "/salao/caixa", label: "Caixa", icon: "💰" },
+          { href: "/salao", label: "Mesas e comandas", icon: "pizza" },
+          { href: "/salao/caixa", label: "Caixa", icon: "dinheiro" },
         ),
-        ...so(has("garcom") || has("salao"), { href: "/garcom", label: "Garçom (celular)", icon: "🧑‍🍳" }),
-        ...so(has("pdv"), { href: "/pdv", label: "PDV balcão", icon: "🧾" }),
-        ...so(has("delivery"), { href: "/delivery", label: "Delivery", icon: "🛵" }),
+        ...so(has("garcom") || has("salao"), { href: "/garcom", label: "Garçom (celular)", icon: "cozinha" }),
+        ...so(has("pdv"), { href: "/pdv", label: "PDV balcão", icon: "cupom" }),
+        ...so(has("delivery"), { href: "/delivery", label: "Delivery", icon: "entrega" }),
         ...so(has("salao"),
-          { href: "/salao/cardapio", label: "Cardápio e config", icon: "📖" },
-          { href: "/salao/notas-fiscais", label: "Notas fiscais (NFC-e)", icon: "🧾" },
-          { href: "/salao/cancelados", label: "Cancelados", icon: "🗒️" },
+          { href: "/salao/cardapio", label: "Cardápio e config", icon: "caderno" },
+          { href: "/salao/notas-fiscais", label: "Notas fiscais (NFC-e)", icon: "cupom" },
+          { href: "/salao/cancelados", label: "Cancelados", icon: "documento" },
         ),
       ],
     },
     {
-      key: "cozinha", label: "Cozinha", icon: "🍳",
+      key: "cozinha", label: "Cozinha", icon: "panela",
       itens: [
-        ...so(has("salao"), { href: "/salao/balanca", label: "Balança do buffet", icon: "⚖️" }),
-        ...so(has("rodizio"), { href: "/cozinha", label: "Quadro do rodízio (tablet)", icon: "🍕" }),
-        ...so(has("rodizio"), { href: "/cozinha/relatorio", label: "Rodízio · relatório", icon: "📊" }),
-        ...so(has("rodizio"), { href: "/cozinha/recados", label: "Recados da TV", icon: "📺" }),
-        ...so(has("etiquetas"), { href: "/etiquetas", label: "Etiquetas de validade", icon: "🏷️" }),
+        ...so(has("salao"), { href: "/salao/balanca", label: "Balança do buffet", icon: "balanca" }),
+        ...so(has("rodizio"), { href: "/cozinha", label: "Quadro do rodízio (tablet)", icon: "pizza" }),
+        ...so(has("rodizio"), { href: "/cozinha/relatorio", label: "Rodízio · relatório", icon: "grafico" }),
+        ...so(has("rodizio"), { href: "/cozinha/recados", label: "Recados da TV", icon: "tv" }),
+        ...so(has("etiquetas"), { href: "/etiquetas", label: "Etiquetas de validade", icon: "etiqueta" }),
       ],
     },
     {
-      key: "estoque", label: "Estoque e compras", icon: "📦",
+      key: "estoque", label: "Estoque e compras", icon: "pacote",
       itens: [
-        ...so(has("produtos"), { href: "/produtos", label: "Produtos", icon: "📦" }),
-        ...so(has("contagem"), { href: "/contagens", label: "Contagem de estoque", icon: "📋" }),
-        ...so(has("cotacoes"), { href: "/cotacoes", label: "Cotações", icon: "💰" }),
-        ...so(has("conferencia"), { href: "/conferencia", label: "Conferência", icon: "📥" }),
-        ...so(has("notas"), { href: "/notas", label: "Notas de entrada", icon: "🧾" }),
-        ...so(has("fornecedores"), { href: "/fornecedores", label: "Fornecedores", icon: "🚚" }),
-        ...so(has("solicitacoes"), { href: "/solicitacoes", label: "Pedidos da equipe", icon: "🛠️", aviso: pedidosCompra || undefined }),
+        ...so(has("produtos"), { href: "/produtos", label: "Produtos", icon: "pacote" }),
+        ...so(has("contagem"), { href: "/contagens", label: "Contagem de estoque", icon: "lista" }),
+        ...so(has("cotacoes"), { href: "/cotacoes", label: "Cotações", icon: "moedas" }),
+        ...so(has("conferencia"), { href: "/conferencia", label: "Conferência", icon: "entrada" }),
+        ...so(has("notas"), { href: "/notas", label: "Notas de entrada", icon: "cupom" }),
+        ...so(has("fornecedores"), { href: "/fornecedores", label: "Fornecedores", icon: "caminhao" }),
+        ...so(has("solicitacoes"), { href: "/solicitacoes", label: "Pedidos da equipe", icon: "ferramenta", aviso: pedidosCompra || undefined }),
       ],
     },
     {
-      key: "equipe", label: "Equipe", icon: "👥",
+      key: "equipe", label: "Equipe", icon: "equipe",
       itens: [
         ...so(has("colaboradores"),
-          { href: "/colaboradores", label: "Colaboradores", icon: "👤" },
-          { href: "/colaboradores/semana", label: "Semana e 10%", icon: "🗓️" },
+          { href: "/colaboradores", label: "Colaboradores", icon: "pessoa" },
+          { href: "/colaboradores/semana", label: "Semana e 10%", icon: "horario" },
         ),
-        ...so(has("folgas"), { href: "/folgas", label: "Folgas", icon: "🌴" }),
-        ...so(has("retiradas"), { href: "/retiradas", label: "Compras internas", icon: "🛒" }),
+        ...so(has("folgas"), { href: "/folgas", label: "Folgas", icon: "folga" }),
+        ...so(has("retiradas"), { href: "/retiradas", label: "Compras internas", icon: "compras" }),
         ...so(has("checklists"),
-          { href: "/checklists", label: "Checklists de hoje", icon: "✅" },
-          { href: "/checklists/revisao", label: "Revisar checklists", icon: "🔎" },
-          { href: "/checklists/modelos", label: "Modelos de checklist", icon: "📝" },
+          { href: "/checklists", label: "Checklists de hoje", icon: "checklist" },
+          { href: "/checklists/revisao", label: "Revisar checklists", icon: "buscar" },
+          { href: "/checklists/modelos", label: "Modelos de checklist", icon: "editar" },
         ),
       ],
     },
     {
-      key: "financeiro", label: "Financeiro", icon: "📊",
+      key: "financeiro", label: "Financeiro", icon: "grafico",
       itens: has("financeiro")
         ? [
-            { href: "/financeiro", label: "Movimentações", icon: "💵" },
-            { href: "/financeiro/caixa", label: "Fechamento de caixa", icon: "🧮" },
-            { href: "/financeiro/cmv", label: "CMV / Consumo", icon: "📉" },
-            { href: "/financeiro/contas", label: "Contas a pagar", icon: "📄" },
-            { href: "/financeiro/orcamento", label: "Orçamento", icon: "🎯" },
-            { href: "/financeiro/banco", label: "Conciliação bancária", icon: "🏦" },
-            { href: "/financeiro/fatura", label: "Fatura do cartão", icon: "💳" },
-            { href: "/financeiro/vendas", label: "Vendas", icon: "🛒" },
-            { href: "/financeiro/vendidos", label: "Produtos vendidos", icon: "🍕" },
-            { href: "/financeiro/dre", label: "DRE", icon: "📈" },
+            { href: "/financeiro", label: "Movimentações", icon: "dinheiro" },
+            { href: "/financeiro/caixa", label: "Fechamento de caixa", icon: "calculadora" },
+            { href: "/financeiro/cmv", label: "CMV / Consumo", icon: "descendo" },
+            { href: "/financeiro/contas", label: "Contas a pagar", icon: "documento" },
+            { href: "/financeiro/orcamento", label: "Orçamento", icon: "alvo" },
+            { href: "/financeiro/banco", label: "Conciliação bancária", icon: "banco" },
+            { href: "/financeiro/fatura", label: "Fatura do cartão", icon: "cartao" },
+            { href: "/financeiro/vendas", label: "Vendas", icon: "compras" },
+            { href: "/financeiro/vendidos", label: "Produtos vendidos", icon: "pizza" },
+            { href: "/financeiro/dre", label: "DRE", icon: "subindo" },
           ]
-        : so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "📄" }),
+        : so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "documento" }),
     },
     {
-      key: "site", label: "Site e apps", icon: "🌐", aviso: reservasNovas || undefined,
+      key: "site", label: "Site e apps", icon: "internet", aviso: reservasNovas || undefined,
       itens: [
-        ...so(has("reservas"), { href: "/reservas", label: "Reservas", icon: "📅", aviso: reservasNovas || undefined }),
-        ...so(has("cardapio_dia"), { href: "/cardapio-do-dia", label: "Cardápio do dia", icon: "🍽️" }),
-        { href: "/marmitas", label: "Marmitas (convênio)", icon: "🍱", external: true },
+        ...so(has("reservas"), { href: "/reservas", label: "Reservas", icon: "agenda", aviso: reservasNovas || undefined }),
+        ...so(has("cardapio_dia"), { href: "/cardapio-do-dia", label: "Cardápio do dia", icon: "salao" }),
+        { href: "/marmitas", label: "Marmitas (convênio)", icon: "marmita", external: true },
       ],
     },
     {
-      key: "config", label: "Configurações", icon: "⚙️",
+      key: "config", label: "Configurações", icon: "ajustes",
       itens: [
-        ...so(has("financeiro"), { href: "/fiscal", label: "Config fiscal", icon: "🧾" }, { href: "/fiscal/perfis", label: "Perfis fiscais", icon: "🏷️" }),
-        ...so(has("impressao"), { href: "/impressao", label: "Central de impressões", icon: "🖨️" }),
-        { href: "/clientes", label: "Clientes (NF-e)", icon: "🧑" },
-        ...so(admin, { href: "/usuarios", label: "Usuários e permissões", icon: "🔑" }),
+        ...so(has("financeiro"), { href: "/fiscal", label: "Config fiscal", icon: "cupom" }, { href: "/fiscal/perfis", label: "Perfis fiscais", icon: "etiqueta" }),
+        ...so(has("impressao"), { href: "/impressao", label: "Central de impressões", icon: "imprimir" }),
+        { href: "/clientes", label: "Clientes (NF-e)", icon: "cracha" },
+        ...so(admin, { href: "/usuarios", label: "Usuários e permissões", icon: "chave" }),
       ],
     },
-  ].filter((g) => g.itens.length > 0);
+  ];
+  const grupos = todosGrupos.filter((g) => g.itens.length > 0);
 
   // Item ativo = o de href mais específico que casa com a página atual.
   const todosItens = grupos.flatMap((g) => g.itens.map((i) => ({ ...i, grupo: g.key })));
@@ -233,7 +239,7 @@ export function Sidebar({
           title="Início"
           className={linha(pathname === "/dashboard", recolhido)}
         >
-          <span className="text-lg">🏠</span>
+          <Icone nome="inicio" tamanho={20} />
           {!recolhido && <span>Início</span>}
           <Rodinha />
         </Link>
@@ -252,7 +258,7 @@ export function Sidebar({
                   ativoG ? "bg-white text-[#C78340] shadow" : "text-white/90 hover:bg-white/15"
                 }`}
               >
-                {g.icon}
+                <Icone nome={g.icon} tamanho={20} titulo={g.label} />
                 {!!g.aviso && <Badge n={g.aviso} />}
               </button>
             );
@@ -266,12 +272,12 @@ export function Sidebar({
                   ativoG && !abertoG ? "bg-white/20 text-white" : "text-white hover:bg-white/15"
                 }`}
               >
-                <span className="relative text-lg">
-                  {g.icon}
+                <span className="relative flex h-5 w-5 items-center justify-center">
+                  <Icone nome={g.icon} tamanho={19} />
                   {!!g.aviso && !abertoG && <Badge n={g.aviso} />}
                 </span>
                 <span className="flex-1">{g.label}</span>
-                <span className={`text-xs text-white/70 transition-transform ${abertoG ? "rotate-90" : ""}`}>▶</span>
+                <Icone nome="seguir" tamanho={15} className={`text-white/70 transition-transform ${abertoG ? "rotate-90" : ""}`} />
               </button>
               {abertoG && (
                 <div className="mt-0.5 mb-1 space-y-0.5 border-l border-white/25 pl-2 ml-4">
@@ -280,8 +286,8 @@ export function Sidebar({
                     const cls = linha(ehAtivo, false);
                     const inner = (
                       <>
-                        <span className="relative text-base">
-                          {it.icon}
+                        <span className="relative flex h-5 w-5 items-center justify-center">
+                          <Icone nome={it.icon} tamanho={17} />
                           {!!it.aviso && <Badge n={it.aviso} />}
                         </span>
                         <span className="truncate">{it.label}</span>
@@ -326,8 +332,8 @@ export function Sidebar({
         )}
         <SeletorTema inicial={tema} recolhido={recolhido} />
         <form action="/auth/signout" method="post">
-          <button title="Sair" className="flex h-8 w-8 items-center justify-center rounded-lg text-lg text-white/90 hover:bg-white/15">
-            🚪
+          <button title="Sair" aria-label="Sair" className="flex h-8 w-8 items-center justify-center rounded-lg text-white/90 hover:bg-white/15">
+            <Icone nome="sair" tamanho={18} />
           </button>
         </form>
       </div>

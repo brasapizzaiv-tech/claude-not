@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone, type NomeIcone } from "@/components/icone";
+
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { finalizarVendaPdv } from "./actions";
@@ -12,9 +14,9 @@ export type ItemMenu = { id: string; nome: string; categoria: string; preco: num
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const CORES = ["#6366f1", "#10b981", "#ec4899", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e", "#84cc16", "#8b5cf6"];
 const FORMAS = [
-  { id: "Dinheiro", label: "💵 Dinheiro" },
-  { id: "Cartão", label: "💳 Cartão" },
-  { id: "Pix", label: "📱 Pix" },
+  { id: "Dinheiro", label: "Dinheiro", icone: "dinheiro" as NomeIcone },
+  { id: "Cartão", label: "Cartão", icone: "cartao" as NomeIcone },
+  { id: "Pix", label: "Pix", icone: "celular" as NomeIcone },
 ];
 
 type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
@@ -79,9 +81,15 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   if (feito) {
     return (
       <div className="mx-auto max-w-md p-10 text-center">
-        <div className="mb-3 text-5xl">{feito.pago ? "✅" : "🍳"}</div>
+        <div className="mb-3 flex justify-center">
+              <Icone
+                nome={feito.pago ? "certo" : "panela"}
+                tamanho={52}
+                className={feito.pago ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}
+              />
+            </div>
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Venda nº {feito.numero} {feito.pago ? "paga!" : "enviada!"}</h1>
-        {feito.viagem && <div className="mt-2 inline-block rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-amber-600">🥡 Viagem</div>}
+        {feito.viagem && <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-amber-600"><Icone nome="viagem" tamanho={14} /> Viagem</div>}
         <p className="mt-1 text-zinc-500">
           {feito.pago ? <>Pagou em <b>{feito.forma}</b> e o pedido foi pra cozinha.</> : "O pedido foi pra cozinha. Receba o pagamento no caixa."}
         </p>
@@ -89,7 +97,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
           <div className="mt-4 rounded-xl bg-amber-500/10 px-4 py-3 text-xl font-bold text-amber-600">Troco: {brl(feito.troco!)}</div>
         )}
         {feito.pago && feito.semCaixa && (
-          <p className="mt-3 text-sm text-amber-600">⚠️ Nenhum caixa aberto — a venda foi registrada, mas não entrou no caixa. Abra o caixa pra controlar o dinheiro.</p>
+          <p className="mt-3 flex items-start gap-1.5 text-sm text-amber-600"><Icone nome="alerta" tamanho={15} className="mt-0.5" /> Nenhum caixa aberto — a venda foi registrada, mas não entrou no caixa. Abra o caixa pra controlar o dinheiro.</p>
         )}
         {feito.pago && feito.comandaId && (
           <div className="mt-4 text-left">
@@ -109,7 +117,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
       {/* Cardápio */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2 border-b border-zinc-200 p-3 dark:border-zinc-800">
-          <h1 className="text-lg font-bold">🧾 PDV — Balcão</h1>
+          <h1 className="flex items-center gap-2 text-lg font-bold"><Icone nome="cupom" tamanho={18} /> PDV — Balcão</h1>
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="ml-auto w-64 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
         </div>
         <div className="flex flex-wrap gap-1.5 border-b border-zinc-200 p-2 dark:border-zinc-800">
@@ -134,7 +142,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
       {/* Carrinho / Pagamento */}
       <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <div className="border-b border-zinc-200 p-3 font-bold dark:border-zinc-800">
-          {fase === "pagar" ? <button onClick={() => setFase("menu")} className="text-emerald-600">← Voltar</button> : <>🛒 Pedido {cartCount > 0 ? `(${cartCount})` : ""}</>}
+          {fase === "pagar" ? <button onClick={() => setFase("menu")} className="text-emerald-600">← Voltar</button> : <span className="inline-flex items-center gap-1.5"><Icone nome="compras" tamanho={14} /> Pedido {cartCount > 0 ? `(${cartCount})` : ""}</span>}
         </div>
 
         {fase === "menu" ? (
@@ -151,7 +159,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                         <div className="text-xs text-emerald-600">{brl(x.item.preco * x.qtd)}</div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setQtd(x.item.id, x.qtd - 1)} className="h-7 w-7 rounded border border-zinc-300 dark:border-zinc-600">{x.qtd === 1 ? "🗑️" : "−"}</button>
+                        <button onClick={() => setQtd(x.item.id, x.qtd - 1)} className="h-7 w-7 rounded border border-zinc-300 dark:border-zinc-600">{x.qtd === 1 ? <Icone nome="lixeira" tamanho={14} titulo="Tirar do pedido" /> : "−"}</button>
                         <span className="w-5 text-center font-bold">{x.qtd}</span>
                         <button onClick={() => setQtd(x.item.id, x.qtd + 1)} className="h-7 w-7 rounded border border-zinc-300 text-emerald-600 dark:border-zinc-600">+</button>
                       </div>
@@ -162,26 +170,30 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             </div>
             <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
               <div className="mb-2 grid grid-cols-2 gap-2">
-                <button onClick={() => setLocal("aqui")} className={`rounded-lg border py-2 text-sm font-semibold ${local === "aqui" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}>🍽️ Comer aqui</button>
-                <button onClick={() => setLocal("viagem")} className={`rounded-lg border py-2 text-sm font-semibold ${local === "viagem" ? "border-amber-500 bg-amber-500/10 text-amber-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}>🥡 Viagem</button>
+                <button onClick={() => setLocal("aqui")} className={`rounded-lg border py-2 text-sm font-semibold ${local === "aqui" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="salao" tamanho={14} /> Comer aqui</span></button>
+                <button onClick={() => setLocal("viagem")} className={`rounded-lg border py-2 text-sm font-semibold ${local === "viagem" ? "border-amber-500 bg-amber-500/10 text-amber-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="viagem" tamanho={14} /> Viagem</span></button>
               </div>
               <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
               <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
               {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-              <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="mb-2 w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50">💰 Cobrar e finalizar</button>
-              <button onClick={() => finalizar(null)} disabled={proc || cartLista.length === 0} className="w-full rounded-xl border border-zinc-300 py-2.5 text-sm font-semibold disabled:opacity-50 dark:border-zinc-700">{proc ? "Enviando..." : "🍳 Só enviar pra cozinha (pago no caixa)"}</button>
+              <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="mb-2 w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50"><span className="inline-flex items-center justify-center gap-2"><Icone nome="dinheiro" tamanho={18} /> Cobrar e finalizar</span></button>
+              <button onClick={() => finalizar(null)} disabled={proc || cartLista.length === 0} className="w-full rounded-xl border border-zinc-300 py-2.5 text-sm font-semibold disabled:opacity-50 dark:border-zinc-700">{proc ? "Enviando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="panela" tamanho={14} /> Só enviar pra cozinha (pago no caixa)</span>}</button>
             </div>
           </>
         ) : (
           <div className="flex flex-1 flex-col p-3">
             <div className="mb-3 rounded-xl bg-zinc-100 p-3 text-center dark:bg-zinc-800">
-              <div className="text-sm text-zinc-500">Total a cobrar {local === "viagem" && <span className="font-bold text-amber-600">· 🥡 Viagem</span>}</div>
+              <div className="text-sm text-zinc-500">Total a cobrar {local === "viagem" && <span className="inline-flex items-center gap-1 font-bold text-amber-600">· <Icone nome="viagem" tamanho={13} /> Viagem</span>}</div>
               <div className="text-3xl font-bold">{brl(total)}</div>
             </div>
             <div className="mb-2 flex justify-end"><NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} compacto /></div>
             <div className="mb-3 grid grid-cols-3 gap-2">
               {FORMAS.map((f) => (
-                <button key={f.id} onClick={() => setForma(f.id)} className={`rounded-xl border py-3 text-sm font-semibold ${forma === f.id ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 dark:border-zinc-800"}`}>{f.label}</button>
+                <button key={f.id} onClick={() => setForma(f.id)} className={`rounded-xl border py-3 text-sm font-semibold ${forma === f.id ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 dark:border-zinc-800"}`}>
+                  <span className="inline-flex items-center justify-center gap-1.5">
+                    <Icone nome={f.icone} tamanho={16} /> {f.label}
+                  </span>
+                </button>
               ))}
             </div>
             {forma === "Dinheiro" && (
@@ -201,7 +213,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               // Este botão é só pra quem recebeu pela chave, sem QR.
               <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-xl border border-zinc-300 py-2.5 text-sm font-semibold text-zinc-500 disabled:opacity-50 dark:border-zinc-700">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>
             ) : (
-              <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-50">{proc ? "Concluindo..." : "✅ Confirmar e enviar pra cozinha"}</button>
+              <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-50">{proc ? "Concluindo..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={18} /> Confirmar e enviar pra cozinha</span>}</button>
             )}
           </div>
         )}

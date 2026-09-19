@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { criarSolicitacaoPainel, excluirSolicitacao, responderSolicitacao, responderVarias } from "./actions";
@@ -126,7 +128,9 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     <div className="p-4 md:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">🛠️ Pedidos da equipe</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+            <Icone nome="ferramenta" tamanho={22} className="text-orange-600 dark:text-orange-400" /> Pedidos da equipe
+          </h1>
           <p className="text-sm text-zinc-500">Compras pra repor e manutenções que o pessoal pediu pelo app. Marque comprado/feito ou rejeite.</p>
         </div>
         <button onClick={() => setNovo((v) => !v)} className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900">
@@ -151,15 +155,15 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
         <input className={`${inp} w-64`} placeholder="Buscar item, motivo, pessoa…" value={busca} onChange={(e) => setBusca(e.target.value)} />
         <select className={inp} value={tipo} onChange={(e) => setTipo(e.target.value as Tipo)}>
           <option value="">Compras e manutenções</option>
-          <option value="compra">🛒 Só compras</option>
-          <option value="manutencao">🔧 Só manutenções</option>
+          <option value="compra">Só compras</option>
+          <option value="manutencao">Só manutenções</option>
         </select>
         <select className={inp} value={pessoa} onChange={(e) => setPessoa(e.target.value)}>
           <option value="">Todas as pessoas</option>
           {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
         </select>
         <label className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
-          <input type="checkbox" checked={soUrgentes} onChange={(e) => setSoUrgentes(e.target.checked)} className="accent-orange-500" /> 🔥 só urgentes
+          <input type="checkbox" checked={soUrgentes} onChange={(e) => setSoUrgentes(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> só urgentes
         </label>
       </div>
 
@@ -211,11 +215,17 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                     </td>
                     <td className="px-3 py-2 align-top">
                       <div className="font-semibold text-zinc-900 dark:text-zinc-50">
-                        {s.urgente ? "🔥 " : ""}{s.tipo === "manutencao" ? "🔧 " : "🛒 "}{s.item}
+                        {s.urgente && <Icone nome="fogo" tamanho={14} className="mr-1 text-red-600 dark:text-red-400" />}
+                        <Icone nome={s.tipo === "manutencao" ? "ferramenta" : "compras"} tamanho={14} className="mr-1.5 text-zinc-500" />
+                        {s.item}
                         {s.quantidade ? <span className="font-normal text-zinc-500"> · {s.quantidade}</span> : null}
                       </div>
                       {s.motivo && <div className="text-zinc-600 dark:text-zinc-300">{s.motivo}</div>}
-                      {s.resposta && <div className="mt-0.5 text-xs text-zinc-500">💬 {s.resposta}</div>}
+                      {s.resposta && (
+                        <div className="mt-0.5 flex items-start gap-1.5 text-xs text-zinc-500">
+                          <Icone nome="conversa" tamanho={13} className="mt-0.5" /> {s.resposta}
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-2 align-top text-zinc-700 dark:text-zinc-200">{s.nome}</td>
                     <td className="px-3 py-2 align-top whitespace-nowrap text-zinc-600 dark:text-zinc-300">
@@ -279,8 +289,8 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
   return (
     <div className="mb-4 grid gap-2 rounded-2xl border border-zinc-200 bg-white p-4 md:grid-cols-[1fr_1fr_2fr_1fr] dark:border-zinc-800 dark:bg-zinc-900">
       <select className={inp} value={tipoNovo} onChange={(e) => setTipoNovo(e.target.value as "compra" | "manutencao")}>
-        <option value="compra">🛒 Compra</option>
-        <option value="manutencao">🔧 Manutenção</option>
+        <option value="compra">Compra</option>
+        <option value="manutencao">Manutenção</option>
       </select>
       <select className={inp} value={colab} onChange={(e) => setColab(e.target.value)}>
         <option value="">Quem pediu (opcional)</option>
@@ -291,7 +301,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
       <input className={`${inp} md:col-span-3`} placeholder="Pra quê / observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
-          <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> 🔥 urgente
+          <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> urgente
         </label>
         <button onClick={salvar} disabled={proc || item.trim().length < 2} className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
           {proc ? "Salvando…" : "Salvar"}
