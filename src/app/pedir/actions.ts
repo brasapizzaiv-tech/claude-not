@@ -4,6 +4,7 @@
 // servidor (padrão dos apps por token). TODO preço/taxa é recalculado aqui —
 // nada do que vem do navegador é confiado.
 import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix";
@@ -188,9 +189,19 @@ export async function enviarPedidoPublico(d: {
   }
 
   // Reconhece (ou cadastra) o cliente pelo telefone.
+  //
+  // Esta busca roda com a chave administrativa, que passa por cima das regras
+  // do banco — o cardápio do cliente não tem login. Então o filtro por empresa
+  // é escrito aqui à mão: sem ele, o telefone digitado no cardápio de um
+  // restaurante acharia o cadastro de cliente de outro.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, erro: "Não consegui identificar o restaurante." };
+
   let clienteId: string | null = null;
   const { data: cli } = await admin
-    .from("clientes").select("id").ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
+    .from("clientes").select("id")
+    .eq("empresa_id", empresaId)
+    .ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
   if (cli?.id) {
     clienteId = cli.id as string;
     // Guarda o endereço mais recente no cadastro do cliente (hoje 0 de 3.269 têm).
@@ -204,6 +215,7 @@ export async function enviarPedidoPublico(d: {
     const { data: novo } = await admin
       .from("clientes")
       .insert({
+        empresa_id: empresaId,
         nome,
         telefone: fone,
         logradouro: d.endereco?.logradouro ?? null,

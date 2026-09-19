@@ -1,0 +1,11 @@
+-- Conserto da 0190: a unicidade antiga do extrato bancário não saiu.
+--
+-- Eu escrevi `drop constraint if exists transacoes_banco_banco_fitid_key`,
+-- chutando o nome no padrão do Postgres. O nome real é
+-- `uq_transacoes_banco_banco_fitid`, e não é restrição: é um índice único
+-- solto. O comando não deu erro e não fez nada — o mesmo tipo de silêncio da
+-- 0188. Desta vez peguei porque conferi o estado do banco depois.
+--
+-- Sem isto, dois restaurantes que usam o mesmo banco não poderiam importar
+-- extratos com o mesmo número de transação.
+drop index if exists public.uq_transacoes_banco_banco_fitid;
