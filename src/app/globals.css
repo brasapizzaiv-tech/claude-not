@@ -47,18 +47,32 @@
 
   /* ---------- 2. Escalas derivadas da marca ---------- */
   /* Remapeia o laranja padrão do Tailwind pro tom da marca: todos os
-     `orange-*` do sistema mudam de uma vez. orange-500 = --marca-primaria. */
-  --color-orange-50: #fbf5ee;
-  --color-orange-100: #f6e9da;
-  --color-orange-200: #ebceac;
-  --color-orange-300: #dfb27d;
-  --color-orange-400: #d59b58;
-  --color-orange-500: #c78340;
-  --color-orange-600: #b06f30;
-  --color-orange-700: #8d5827;
-  --color-orange-800: #6a4320;
-  --color-orange-900: #4b2f18;
-  --color-orange-950: #2a1a0d;
+     `orange-*` do sistema mudam de uma vez. orange-500 = --marca-primaria.
+
+     A escala inteira é CALCULADA a partir da primária, misturando com branco
+     pros tons claros e com preto pros escuros. Antes os onze valores estavam
+     escritos à mão; agora trocar a primária redesenha os onze sozinho, que é
+     o que faz a cor ser da empresa e não do código (Etapa 3).
+
+     Confirmado que reproduz a paleta antiga da Brasa: a maior diferença entre
+     o valor derivado e o antigo é de 4% num canal, que não se vê. */
+  --color-orange-500: var(--marca-primaria);
+  --color-orange-50:  color-mix(in srgb, var(--marca-primaria) 10%, white);
+  --color-orange-100: color-mix(in srgb, var(--marca-primaria) 22%, white);
+  --color-orange-200: color-mix(in srgb, var(--marca-primaria) 44%, white);
+  --color-orange-300: color-mix(in srgb, var(--marca-primaria) 64%, white);
+  --color-orange-400: color-mix(in srgb, var(--marca-primaria) 82%, white);
+  --color-orange-600: color-mix(in srgb, var(--marca-primaria) 88%, black);
+  --color-orange-700: color-mix(in srgb, var(--marca-primaria) 72%, black);
+  --color-orange-800: color-mix(in srgb, var(--marca-primaria) 54%, black);
+  --color-orange-900: color-mix(in srgb, var(--marca-primaria) 38%, black);
+  --color-orange-950: color-mix(in srgb, var(--marca-primaria) 21%, black);
+
+  /* A cor do texto POR CIMA da primária. Não dá pra decidir isto em CSS (é
+     preciso medir o brilho da cor), então quem calcula é o servidor, em
+     src/lib/marca.ts. Se a empresa escolher um tom claro, isto vira escuro
+     sozinho e o botão continua legível. Este valor aqui é a reserva. */
+  --marca-sobre-primaria: #ffffff;
 
   /* ---------- 2b. As cores de estado ----------
      Vêm da cozinha em vez do verde, vermelho e amarelo de fábrica, que
@@ -260,6 +274,7 @@
   --color-info: var(--info);
   --color-marca-escuro: var(--marca-escuro);
   --color-marca-sobre-escuro: var(--marca-sobre-escuro);
+  --color-marca-sobre-primaria: var(--marca-sobre-primaria);
 
   --color-painel-fundo: var(--painel-fundo);
   --color-painel-cartao: var(--painel-cartao);

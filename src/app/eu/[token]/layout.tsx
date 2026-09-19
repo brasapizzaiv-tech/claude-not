@@ -1,5 +1,6 @@
 import type { Viewport } from "next";
 import { SemZoom } from "@/components/sem-zoom";
+import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 
 // App da equipe (celular): sem zoom na página em nenhuma tela.
 export const viewport: Viewport = {
@@ -12,6 +13,7 @@ export const viewport: Viewport = {
 export default function EuLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <CoresDaEmpresa />
       <SemZoom />
       {children}
     </>

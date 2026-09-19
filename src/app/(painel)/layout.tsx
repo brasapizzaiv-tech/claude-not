@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
+import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
@@ -65,6 +66,7 @@ export default async function PainelLayout({
 
   return (
     <div className="flex min-h-full flex-1">
+      <CoresDaEmpresa />
       <Sidebar
         nome={profile?.nome ?? user.email ?? "Usuário"}
         papel={admin ? "dono" : "funcionário"}

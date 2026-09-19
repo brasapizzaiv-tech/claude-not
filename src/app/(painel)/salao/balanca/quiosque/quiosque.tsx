@@ -684,28 +684,28 @@ export function QuiosqueBalanca({
     estado === "resultado"
       ? "bg-green-500 text-white"
       : estado === "pesando" || estado === "processando"
-        ? "bg-[#C78340] text-white"
-        : "bg-[#211915] text-white shadow-md";
+        ? "bg-orange-500 text-white"
+        : "bg-marca-escuro text-white shadow-md";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#f6efe6] text-[#211915]">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[color-mix(in_srgb,var(--marca-primaria)_8%,white)] text-marca-escuro">
       {/* topo */}
       <div className="flex shrink-0 items-center justify-between px-8 py-[clamp(0.5rem,2vh,1.25rem)]">
         <div className="flex items-center gap-[clamp(0.75rem,2vw,1.5rem)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-brasa.png" alt="Brasa" className="h-[clamp(5rem,20vh,14rem)] w-auto" />
           <div>
-            <p className="text-[clamp(1.4rem,4vw,3rem)] font-black leading-tight text-[#211915]">{cupom.nome || "Brasa Pizzaria e Restaurante"}</p>
-            <p className="text-[clamp(0.8rem,1.8vw,1.2rem)] text-[#211915]/50">Autoatendimento · pese o prato e pegue seu cupom</p>
+            <p className="text-[clamp(1.4rem,4vw,3rem)] font-black leading-tight text-marca-escuro">{cupom.nome || "Brasa Pizzaria e Restaurante"}</p>
+            <p className="text-[clamp(0.8rem,1.8vw,1.2rem)] text-marca-escuro/50">Autoatendimento · pese o prato e pegue seu cupom</p>
           </div>
         </div>
         <div className="flex items-center gap-6">
           {agente && (
-            <button onClick={abrirConfig} className="text-[#211915]/40 hover:text-[#211915]/80"><Icone nome="ajustes" tamanho={30} titulo="Impressora do cupom" /></button>
+            <button onClick={abrirConfig} className="text-marca-escuro/40 hover:text-marca-escuro/80"><Icone nome="ajustes" tamanho={30} titulo="Impressora do cupom" /></button>
           )}
           <Link
             href="/salao/balanca"
-            className="text-4xl text-[#211915]/40 hover:text-[#211915]/80"
+            className="text-4xl text-marca-escuro/40 hover:text-marca-escuro/80"
             title="Sair do modo quiosque"
           >
             ✕
@@ -715,13 +715,13 @@ export function QuiosqueBalanca({
 
       {configAberta && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-6" onClick={() => setConfigAberta(false)}>
-          <div className="w-full max-w-xl rounded-3xl bg-white p-6 text-[#211915] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-xl rounded-3xl bg-white p-6 text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-1 flex items-center gap-2 text-2xl font-bold"><Icone nome="imprimir" tamanho={22} /> Impressora do cupom</h2>
-            <p className="mb-4 text-sm text-[#211915]/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
+            <p className="mb-4 text-sm text-marca-escuro/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
             <div className="max-h-72 space-y-2 overflow-y-auto">
               <button
                 onClick={() => escolherImpressora("")}
-                className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === "" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15 hover:bg-[#211915]/5"}`}
+                className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === "" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15 hover:bg-marca-escuro/5"}`}
               >
                 Padrão do Windows
               </button>
@@ -729,36 +729,36 @@ export function QuiosqueBalanca({
                 <button
                   key={p.nome}
                   onClick={() => escolherImpressora(p.nome)}
-                  className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === p.nome ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15 hover:bg-[#211915]/5"}`}
+                  className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === p.nome ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15 hover:bg-marca-escuro/5"}`}
                 >
-                  {p.nome}{p.padrao ? <span className="ml-2 text-xs text-[#211915]/50">(padrão)</span> : null}
+                  {p.nome}{p.padrao ? <span className="ml-2 text-xs text-marca-escuro/50">(padrão)</span> : null}
                 </button>
               ))}
-              {impressoras.length === 0 && !msgConfig && <p className="text-[#211915]/50">Procurando impressoras…</p>}
+              {impressoras.length === 0 && !msgConfig && <p className="text-marca-escuro/50">Procurando impressoras…</p>}
             </div>
-            {msgConfig && <p className="mt-3 text-sm text-[#C78340]">{msgConfig}</p>}
+            {msgConfig && <p className="mt-3 text-sm text-orange-500">{msgConfig}</p>}
             {/* Voz do quiosque */}
-            <div className="mt-4 rounded-xl border border-[#211915]/15 p-3 text-sm">
+            <div className="mt-4 rounded-xl border border-marca-escuro/15 p-3 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="som" tamanho={16} /> Falar com o cliente</span>
                 <button
                   onClick={() => voz.alternar(!voz.ligada)}
                   disabled={!voz.suportada}
-                  className={`rounded-lg border px-3 py-2 font-semibold ${voz.ligada ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"} disabled:opacity-40`}
+                  className={`rounded-lg border px-3 py-2 font-semibold ${voz.ligada ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"} disabled:opacity-40`}
                 >
                   {voz.ligada ? "Ligada" : "Desligada"}
                 </button>
               </div>
               {voz.suportada ? (
                 <>
-                  <p className="mt-1 text-xs text-[#211915]/60">
+                  <p className="mt-1 text-xs text-marca-escuro/60">
                     Ao fechar a comanda o quiosque fala o número, o valor e &quot;pode retirar seu prato&quot;. Precisa de caixa de som ligada no PC.
                   </p>
                   {voz.vozes.length > 0 && (
                     <select
                       value={voz.vozNome}
                       onChange={(e) => voz.trocarVoz(e.target.value)}
-                      className="mt-2 w-full rounded-lg border border-[#211915]/15 bg-white px-3 py-2 text-sm"
+                      className="mt-2 w-full rounded-lg border border-marca-escuro/15 bg-white px-3 py-2 text-sm"
                     >
                       <option value="">Voz do Windows (automática)</option>
                       {voz.vozes.map((v) => (
@@ -768,81 +768,81 @@ export function QuiosqueBalanca({
                   )}
                   <button
                     onClick={() => voz.falar("Comanda 246. 36 reais e 44 centavos. Pode retirar seu prato.", true)}
-                    className="mt-2 w-full rounded-lg border border-[#211915]/20 py-2 text-sm hover:bg-[#211915]/5"
+                    className="mt-2 w-full rounded-lg border border-marca-escuro/20 py-2 text-sm hover:bg-marca-escuro/5"
                   >
                     <Icone nome="som" tamanho={15} className="mr-1.5" /> Testar a voz
                   </button>
                 </>
               ) : (
-                <p className="mt-1 text-xs text-[#211915]/60">Este navegador não tem voz. Use o Chrome.</p>
+                <p className="mt-1 text-xs text-marca-escuro/60">Este navegador não tem voz. Use o Chrome.</p>
               )}
             </div>
             {/* Modo de impressão: rápido (ESC/POS) ou PDF */}
-            <div className="mt-4 rounded-xl border border-[#211915]/15 p-3 text-sm">
+            <div className="mt-4 rounded-xl border border-marca-escuro/15 p-3 text-sm">
               <p className="mb-2 font-semibold">Como imprimir o cupom</p>
               <div className="flex gap-2">
-                <button onClick={() => alternarModo("escpos")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "escpos" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="rapido" tamanho={14} /> Rápido (direto na térmica)</span></button>
-                <button onClick={() => alternarModo("pdf")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "pdf" ? "border-[#C78340] bg-[#C78340]/30" : "border-[#211915]/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lento" tamanho={14} /> PDF (modo antigo)</span></button>
+                <button onClick={() => alternarModo("escpos")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "escpos" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="rapido" tamanho={14} /> Rápido (direto na térmica)</span></button>
+                <button onClick={() => alternarModo("pdf")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "pdf" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lento" tamanho={14} /> PDF (modo antigo)</span></button>
               </div>
-              <p className="mt-2 text-xs text-[#211915]/60">O rápido sai em menos de 1 s. Se a impressora não entender (cupom em branco ou símbolos), volte pro PDF e me avise.</p>
+              <p className="mt-2 text-xs text-marca-escuro/60">O rápido sai em menos de 1 s. Se a impressora não entender (cupom em branco ou símbolos), volte pro PDF e me avise.</p>
             </div>
             {/* Como a balança está sendo usada (tara) */}
-            <label className="mt-4 flex items-start gap-2 rounded-xl border border-[#211915]/15 p-3 text-sm">
+            <label className="mt-4 flex items-start gap-2 rounded-xl border border-marca-escuro/15 p-3 text-sm">
               <input type="checkbox" checked={balancaTarada} onChange={(e) => definirBalancaTarada(e.target.checked)} className="mt-1 h-5 w-5" />
               <span>
                 <b>A balança está tarada com o prato</b> (apertaram T com o prato em cima).
-                <span className="block text-xs text-[#211915]/60">
+                <span className="block text-xs text-marca-escuro/60">
                   Marcado: o peso que ela manda já é líquido e a marmita = leitura + tara do prato.
                   Desmarcado: o prato desconta a tara do prato e a marmita cobra o peso inteiro.
                 </span>
               </span>
             </label>
             {/* Tara do prato: aprendida da balança vazia (leitura negativa = −tara) */}
-            <div className="mt-2 rounded-xl border border-[#211915]/15 p-3 text-sm">
+            <div className="mt-2 rounded-xl border border-marca-escuro/15 p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span>
                   Tara do prato em uso: <b>{(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg</b>
-                  <span className="ml-1 text-xs text-[#211915]/50">{taraPrato ? "(aprendida da balança)" : "(tara padrão do sistema)"}</span>
+                  <span className="ml-1 text-xs text-marca-escuro/50">{taraPrato ? "(aprendida da balança)" : "(tara padrão do sistema)"}</span>
                 </span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => definirTaraPrato(Math.round(-pesoBruto * 1000) / 1000)}
                     disabled={!(pesoBruto < -0.02)}
                     title="Com a balança tarada e VAZIA, a leitura negativa é exatamente o peso do prato"
-                    className="rounded-lg bg-[#211915] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
+                    className="rounded-lg bg-marca-escuro px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
                   >
                     Balança vazia agora → usar {pesoBruto < -0.02 ? (-pesoBruto).toFixed(3).replace(".", ",") : "…"} kg
                   </button>
                   {taraPrato && (
-                    <button onClick={() => definirTaraPrato(null)} className="rounded-lg border border-[#211915]/20 px-3 py-1.5 text-xs">
+                    <button onClick={() => definirTaraPrato(null)} className="rounded-lg border border-marca-escuro/20 px-3 py-1.5 text-xs">
                       voltar à padrão
                     </button>
                   )}
                 </div>
               </div>
-              <p className="mt-1 text-xs text-[#211915]/50">Leitura agora: {pesoBruto.toFixed(3).replace(".", ",")} kg. Tire tudo da balança (tarada) e clique no botão.</p>
+              <p className="mt-1 text-xs text-marca-escuro/50">Leitura agora: {pesoBruto.toFixed(3).replace(".", ",")} kg. Tire tudo da balança (tarada) e clique no botão.</p>
             </div>
             {/* Diagnóstico da balança: leitura crua que chegou no agente */}
-            <div className="mt-4 rounded-xl border border-[#211915]/15 bg-[#f6efe6] p-3 text-xs">
+            <div className="mt-4 rounded-xl border border-marca-escuro/15 bg-[color-mix(in_srgb,var(--marca-primaria)_8%,white)] p-3 text-xs">
               <div className="mb-1 flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="balanca" tamanho={16} /> Balança (o que o agente recebeu por último)</span>
-                <button onClick={lerRaw} className="rounded-md border border-[#211915]/20 px-2 py-0.5">atualizar</button>
+                <button onClick={lerRaw} className="rounded-md border border-marca-escuro/20 px-2 py-0.5">atualizar</button>
               </div>
               {rawBal ? (
                 <>
-                  <div className="text-[#211915]/70">
+                  <div className="text-marca-escuro/70">
                     peso lido: <b>{rawBal.peso.toFixed(3).replace(".", ",")}</b> · tara: <b>{rawBal.tara.toFixed(3).replace(".", ",")}</b> · {rawBal.lendo ? "respondendo ✓" : "sem resposta"}{rawBal.versao ? ` · agente ${rawBal.versao}` : ""}
                   </div>
-                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-white p-2 font-mono text-[10px] text-[#211915]/80">{rawBal.raw || "(nada recebido ainda)"}</pre>
+                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-white p-2 font-mono text-[10px] text-marca-escuro/80">{rawBal.raw || "(nada recebido ainda)"}</pre>
                 </>
               ) : (
-                <p className="text-[#211915]/50">Agente sem a função de diagnóstico (versão antiga) ou não respondeu.</p>
+                <p className="text-marca-escuro/50">Agente sem a função de diagnóstico (versão antiga) ou não respondeu.</p>
               )}
             </div>
             <div className="mt-5 flex gap-3">
-              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Imprimir teste</span></button>
-              <button onClick={testeRapido} className="flex-1 rounded-xl border border-[#211915]/20 py-3 text-lg hover:bg-[#211915]/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="rapido" tamanho={18} /> Teste rápido</span></button>
-              <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-[#C78340] py-3 text-lg font-bold">Fechar</button>
+              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-marca-escuro/20 py-3 text-lg hover:bg-marca-escuro/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Imprimir teste</span></button>
+              <button onClick={testeRapido} className="flex-1 rounded-xl border border-marca-escuro/20 py-3 text-lg hover:bg-marca-escuro/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="rapido" tamanho={18} /> Teste rápido</span></button>
+              <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-orange-500 py-3 text-lg font-bold">Fechar</button>
             </div>
           </div>
         </div>
@@ -850,12 +850,12 @@ export function QuiosqueBalanca({
 
       {virarAberto && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6" onClick={() => setVirarAberto(false)}>
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-[#211915] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-[#C78340]"><span className="inline-flex items-center justify-center gap-3"><Icone nome="atualizar" tamanho={28} /> Virar buffet livre</span></h2>
-            <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-[#211915]/80">
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-orange-500"><span className="inline-flex items-center justify-center gap-3"><Icone nome="atualizar" tamanho={28} /> Virar buffet livre</span></h2>
+            <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-marca-escuro/80">
               Passe o <b>QR do seu cupom</b> no leitor. A comanda pesada vira <b>BUFFET LIVRE ({moeda(buffetLivre)})</b> e sai um cupom novo.
             </p>
-            <p className="mt-4 mb-2 text-base text-[#211915]/60">Ou digite o <b>número da comanda</b> que está no cupom:</p>
+            <p className="mt-4 mb-2 text-base text-marca-escuro/60">Ou digite o <b>número da comanda</b> que está no cupom:</p>
             <div className="mx-auto flex max-w-xs justify-center">
               <input
                 autoFocus
@@ -864,7 +864,7 @@ export function QuiosqueBalanca({
                 onChange={(e) => setNumeroVirar(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") virarPorNumero(); }}
                 placeholder="Nº"
-                className="w-full rounded-2xl border-2 border-[#211915]/20 px-4 py-3 text-center text-4xl font-black tabular-nums outline-none focus:border-[#C78340]"
+                className="w-full rounded-2xl border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums outline-none focus:border-orange-500"
               />
             </div>
             {/* teclado na tela: o PC do quiosque é touch e não abre teclado sozinho */}
@@ -880,7 +880,7 @@ export function QuiosqueBalanca({
                     setNumeroVirar((v) => (v.replace(/\D/g, "") + t).slice(0, 5));
                   }}
                   className={`rounded-2xl py-4 text-3xl font-black active:brightness-90 disabled:opacity-40 ${
-                    t === "OK" ? "bg-[#C78340] text-white" : t === "⌫" ? "bg-[#211915]/10 text-[#211915]" : "border-2 border-[#211915]/15 bg-white text-[#211915]"
+                    t === "OK" ? "bg-orange-500 text-white" : t === "⌫" ? "bg-marca-escuro/10 text-marca-escuro" : "border-2 border-marca-escuro/15 bg-white text-marca-escuro"
                   }`}
                 >
                   {t === "OK" && virando ? "..." : t}
@@ -888,23 +888,23 @@ export function QuiosqueBalanca({
               ))}
             </div>
             {erro && <p className="mt-3 text-lg text-red-600">{erro}</p>}
-            <button onClick={() => setVirarAberto(false)} className="mt-6 text-lg text-[#211915]/50 underline">Cancelar</button>
+            <button onClick={() => setVirarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
           </div>
         </div>
       )}
 
       {estado === "conectar" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
-          <p className="max-w-2xl text-[clamp(1.25rem,4vw,2.5rem)] font-medium text-[#211915]/80">
+          <p className="max-w-2xl text-[clamp(1.25rem,4vw,2.5rem)] font-medium text-marca-escuro/80">
             Modo balança / autoatendimento
           </p>
           <button
             onClick={conectar}
-            className="rounded-3xl bg-[#C78340] px-[clamp(2rem,7vw,4rem)] py-[clamp(1rem,3vh,2rem)] text-[clamp(1.25rem,4vw,2.5rem)] font-bold text-white shadow-lg hover:brightness-110"
+            className="rounded-3xl bg-orange-500 px-[clamp(2rem,7vw,4rem)] py-[clamp(1rem,3vh,2rem)] text-[clamp(1.25rem,4vw,2.5rem)] font-bold text-white shadow-lg hover:brightness-110"
           >
             Conectar balança
           </button>
-          <p className="text-[clamp(0.8rem,2vw,1.25rem)] text-[#211915]/40">
+          <p className="text-[clamp(0.8rem,2vw,1.25rem)] text-marca-escuro/40">
             Clique uma vez e escolha a porta da balança na lista
             (<b>Prolific</b> ou <b>USB-Serial</b>) — pode ser COM3, COM5, COM7... Depois deixe rodando.
           </p>
@@ -931,26 +931,26 @@ export function QuiosqueBalanca({
               {resultado.peso > 0 ? (
                 <div className="mx-auto max-w-3xl rounded-3xl border-4 border-amber-400 bg-amber-100 px-8 py-4">
                   <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-amber-700"><span className="inline-flex items-center justify-center gap-3"><Icone nome="subir" tamanho={40} /> {soKg ? "RETIRE SUA MARMITA" : "RETIRE O PRATO"}</span></p>
-                  <p className="mt-1 text-[clamp(0.9rem,2.5vw,1.5rem)] text-[#211915]/70">Pegue seu cupom · a próxima pesagem começa quando a balança zerar</p>
+                  <p className="mt-1 text-[clamp(0.9rem,2.5vw,1.5rem)] text-marca-escuro/70">Pegue seu cupom · a próxima pesagem começa quando a balança zerar</p>
                 </div>
               ) : (
-                <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-[#211915]/80">Pegue seu cupom · bom apetite!</p>
+                <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-marca-escuro/80">Pegue seu cupom · bom apetite!</p>
               )}
               <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-green-600">{moeda(resultado.valor)}</p>
-              <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-[#211915]/50">
+              <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-marca-escuro/50">
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
                 {resultado.livre ? " · Buffet livre" : ""}
               </p>
               <div className="nao-imprimir mt-6 flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={() => voltarAguardando()}
-                  className="rounded-xl bg-[#C78340] px-8 py-3 text-xl font-bold text-white hover:brightness-110"
+                  className="rounded-xl bg-orange-500 px-8 py-3 text-xl font-bold text-white hover:brightness-110"
                 >
                   <Icone nome="avancar" tamanho={24} className="mr-2" /> Próximo cliente
                 </button>
                 <button
                   onClick={() => imprimirCupom(resultado)}
-                  className="rounded-xl border border-[#211915]/20 px-6 py-3 text-xl text-[#211915]/70 hover:bg-[#211915]/5"
+                  className="rounded-xl border border-marca-escuro/20 px-6 py-3 text-xl text-marca-escuro/70 hover:bg-marca-escuro/5"
                 >
                   <Icone nome="imprimir" tamanho={22} className="mr-2" /> Imprimir de novo
                 </button>
@@ -969,13 +969,13 @@ export function QuiosqueBalanca({
                     : "Coloque o prato na balança"}
               </div>
               {estado === "aguardando" && (
-                <div className="mb-4 animate-bounce text-[clamp(2rem,6vw,4rem)] text-[#211915]/40">⌄</div>
+                <div className="mb-4 animate-bounce text-[clamp(2rem,6vw,4rem)] text-marca-escuro/40">⌄</div>
               )}
               {/* peso grande */}
-              <div className="rounded-[2rem] border-4 border-[#C78340]/40 bg-white shadow-xl px-[clamp(2rem,10vw,8rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-center">
+              <div className="rounded-[2rem] border-4 border-orange-500/40 bg-white shadow-xl px-[clamp(2rem,10vw,8rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-center">
                 <p className="text-[clamp(4rem,19vw,13rem)] font-black leading-none tabular-nums">
                   {liq.toFixed(3).replace(".", ",")}
-                  <span className="ml-3 text-[clamp(1.5rem,5vw,3.5rem)] font-light text-[#211915]/50">kg</span>
+                  <span className="ml-3 text-[clamp(1.5rem,5vw,3.5rem)] font-light text-marca-escuro/50">kg</span>
                 </p>
               </div>
 
@@ -985,7 +985,7 @@ export function QuiosqueBalanca({
                 {buffetLivre > 0 && liq <= LIMIAR && (
                   <button
                     onClick={livreDireto}
-                    className="min-w-[16rem] flex-1 rounded-3xl bg-[#C78340] px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-white shadow-lg active:brightness-90"
+                    className="min-w-[16rem] flex-1 rounded-3xl bg-orange-500 px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-white shadow-lg active:brightness-90"
                   >
                     <Icone nome="salao" tamanho={30} className="mr-3" /> QUERO O BUFFET LIVRE
                     <span className="block text-[clamp(1.1rem,2.8vw,2.2rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>
@@ -994,16 +994,16 @@ export function QuiosqueBalanca({
                 {buffetLivre > 0 && liq <= LIMIAR && (
                   <button
                     onClick={() => { setVirarAberto(true); setNumeroVirar(""); }}
-                    className="min-w-[16rem] flex-1 rounded-3xl border-4 border-[#C78340] bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-[#C78340] shadow-md active:brightness-95"
+                    className="min-w-[16rem] flex-1 rounded-3xl border-4 border-orange-500 bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-orange-500 shadow-md active:brightness-95"
                   >
                     <Icone nome="atualizar" tamanho={26} className="mr-3" /> JÁ PESEI, QUERO VIRAR LIVRE
-                    <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium text-[#211915]/50">passe o cupom no leitor</span>
+                    <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium text-marca-escuro/50">passe o cupom no leitor</span>
                   </button>
                 )}
                 <button
                   onClick={toggleSoKg}
                   className={`min-w-[14rem] flex-1 rounded-3xl px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight shadow-md transition ${
-                    soKg ? "bg-yellow-400 text-black" : "border-4 border-[#211915]/15 bg-white text-[#211915]/70 hover:bg-[#211915]/5"
+                    soKg ? "bg-yellow-400 text-black" : "border-4 border-marca-escuro/15 bg-white text-marca-escuro/70 hover:bg-marca-escuro/5"
                   }`}
                 >
                   <Icone nome="marmita" tamanho={26} className="mr-2.5" /> {soKg ? "MARMITA — ativa" : "É MARMITA?"}
@@ -1012,17 +1012,17 @@ export function QuiosqueBalanca({
               </div>
               {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
               {taraBalanca > 0.001 ? (
-                <p className="mt-2 text-sm text-[#211915]/40">
+                <p className="mt-2 text-sm text-marca-escuro/40">
                   Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg
                   {soKg ? " · marmita: leitura + tara" : " (peso já líquido)"}
                 </p>
               ) : balancaTarada ? (
-                <p className="mt-2 text-sm text-[#211915]/40">
+                <p className="mt-2 text-sm text-marca-escuro/40">
                   Balança tarada com o prato ({(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg)
                   {soKg ? " · marmita: leitura + tara" : " · peso já líquido"}
                 </p>
               ) : (taraPrato ?? taraPadrao) > 0 ? (
-                <p className="mt-2 text-sm text-[#211915]/40">
+                <p className="mt-2 text-sm text-marca-escuro/40">
                   {soKg ? "Marmita: cobra o peso inteiro (sem descontar prato)" : `Prato: desconta ${(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg`}
                 </p>
               ) : null}
@@ -1062,17 +1062,17 @@ export function QuiosqueBalanca({
       <div className="grid shrink-0 grid-cols-3 items-center gap-2 border-t border-white/10 bg-black/30 px-4 py-[clamp(0.4rem,1.6vh,1.25rem)] text-center">
         <div>
           <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-white">{buffetLivre > 0 ? moeda(buffetLivre) : "—"}</p>
-          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-[#211915]/40">Valor livre (à vontade)</p>
+          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-marca-escuro/40">Valor livre (à vontade)</p>
         </div>
         <div>
-          <p className="text-[clamp(2rem,8vw,5.5rem)] font-black leading-none text-[#C78340]">
+          <p className="text-[clamp(2rem,8vw,5.5rem)] font-black leading-none text-orange-500">
             {moeda(estado === "resultado" && resultado ? resultado.valor : valorAtual)}
           </p>
-          <p className="mt-1 text-[clamp(0.7rem,1.6vw,1.1rem)] uppercase tracking-wide text-[#211915]/50">Valor a pagar</p>
+          <p className="mt-1 text-[clamp(0.7rem,1.6vw,1.1rem)] uppercase tracking-wide text-marca-escuro/50">Valor a pagar</p>
         </div>
         <div>
-          <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-[#211915]">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
-          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-[#211915]/40">Valor por kg</p>
+          <p className="text-[clamp(1.25rem,4.5vw,3rem)] font-black text-marca-escuro">{precoKg > 0 ? moeda(precoKg) : "—"}</p>
+          <p className="mt-1 text-[clamp(0.6rem,1.4vw,1rem)] uppercase tracking-wide text-marca-escuro/40">Valor por kg</p>
         </div>
       </div>
 

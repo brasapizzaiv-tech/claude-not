@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 
 const CHAVE = "entrega_token";
-const LARANJA = "#C78340";
+const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
 
 export function EntradaEntrega() {
   const [valor, setValor] = useState("");

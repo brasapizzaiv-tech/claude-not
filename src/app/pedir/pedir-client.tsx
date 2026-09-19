@@ -10,8 +10,8 @@ import {
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
 } from "@/components/delivery-pedido-ui";
 
-const LARANJA = "#C78340";
-const ESCURO = "#211915";
+const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
+const ESCURO = "var(--marca-escuro)"; // vem do cadastro da empresa
 const FORMAS_BASE = [
   { id: "Dinheiro", label: "Dinheiro", icone: "dinheiro" as NomeIcone },
   { id: "Pix", label: "Pix na entrega", icone: "celular" as NomeIcone },
@@ -487,7 +487,7 @@ export function PedirClient({
         {!busca && (
           <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
             {pizza.tamanhos.length > 0 && (
-              <button onClick={() => setAba("__pizzas__")} className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-bold ${aba === "__pizzas__" ? "text-white" : ""}`} style={aba === "__pizzas__" ? { background: LARANJA } : { color: LARANJA, background: "rgba(199,131,64,0.12)" }}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pizza" tamanho={14} /> Pizzas</span></button>
+              <button onClick={() => setAba("__pizzas__")} className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-bold ${aba === "__pizzas__" ? "text-white" : ""}`} style={aba === "__pizzas__" ? { background: LARANJA } : { color: LARANJA, background: "color-mix(in srgb, var(--marca-primaria) 12%, transparent)" }}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pizza" tamanho={14} /> Pizzas</span></button>
             )}
             {categorias.map((c) => (
               <button key={c} onClick={() => setAba(c)} className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium ${aba === c ? "text-white" : "bg-superficie-suave text-texto-suave  "}`} style={aba === c ? { background: ESCURO } : {}}>{c}</button>
@@ -503,7 +503,7 @@ export function PedirClient({
           <div className="flex gap-2 overflow-x-auto p-3">
             {destaque.map((i) => (
               <button key={i.id} onClick={() => clicarItem(i)} className="w-40 shrink-0 overflow-hidden rounded-cartao border border-borda text-left">
-                {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "rgba(199,131,64,0.1)" }}><Icone nome="salao" tamanho={28} className="text-orange-500/70" /></div>}
+                {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "color-mix(in srgb, var(--marca-primaria) 10%, transparent)" }}><Icone nome="salao" tamanho={28} className="text-orange-500/70" /></div>}
                 <div className="p-2">
                   <div className="truncate text-sm font-medium">{i.nome}</div>
                   <div className="text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
@@ -534,7 +534,7 @@ export function PedirClient({
         {(busca || aba !== "__pizzas__") && visiveis.map((i) => {
           const noCarrinho = cart.filter((l) => l.payload.kind !== "pizza" && "itemId" in l.payload && l.payload.itemId === i.id).reduce((s, l) => s + l.qtd, 0);
           return (
-            <button key={i.id} onClick={() => clicarItem(i)} className={`flex w-full items-center justify-between gap-3 rounded-cartao border p-3 text-left ${noCarrinho > 0 ? "" : "border-borda"}`} style={noCarrinho > 0 ? { borderColor: LARANJA, background: "rgba(199,131,64,0.06)" } : {}}>
+            <button key={i.id} onClick={() => clicarItem(i)} className={`flex w-full items-center justify-between gap-3 rounded-cartao border p-3 text-left ${noCarrinho > 0 ? "" : "border-borda"}`} style={noCarrinho > 0 ? { borderColor: LARANJA, background: "color-mix(in srgb, var(--marca-primaria) 6%, transparent)" } : {}}>
               <div className="min-w-0 flex-1">
                 <div className="font-medium leading-tight">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</div>
                 {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-texto-suave">{i.descricao}</div>}

@@ -6,8 +6,8 @@ import { AutoRefresh } from "./auto-refresh";
 export const metadata = { title: "Seu pedido · Brasa" };
 export const dynamic = "force-dynamic";
 
-const LARANJA = "#C78340";
-const ESCURO = "#211915";
+const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
+const ESCURO = "var(--marca-escuro)"; // vem do cadastro da empresa
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hhmm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) : null);
 

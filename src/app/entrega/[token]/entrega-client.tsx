@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import jsQR from "jsqr";
 import { historicoEntregas, marcarEntregue, meusGanhos, minhasEntregas, pegarEntrega, registrarPosicao, sairComEntregas, type Boy, type EntregaBoy } from "./entrega-actions";
 
-const LARANJA = "#C78340";
+const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hhmm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) : "");
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });

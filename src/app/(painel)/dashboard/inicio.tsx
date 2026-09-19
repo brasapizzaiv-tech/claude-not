@@ -168,7 +168,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
                       "flex h-11 w-11 items-center justify-center rounded-controle font-numero text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria";
                     const cor =
                       m.estado === "ocupada"
-                        ? "bg-primaria text-white"
+                        ? "bg-primaria text-marca-sobre-primaria"
                         : m.estado === "conta"
                           ? "border-2 border-primaria bg-transparent text-primaria font-semibold"
                           : "border border-borda bg-painel-fundo text-texto-suave";

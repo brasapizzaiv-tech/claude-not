@@ -17,7 +17,7 @@ const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transpa
 const btnSec = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";
 // Valor literal porque <input type="color"> não aceita variável de CSS.
 // Etapa 3: passa a vir da cor da empresa.
-const COR_PRIMARIA = "#c78340";
+const COR_PRIMARIA = "#c78340"; // <input type="color"> não aceita variável de CSS; é só o valor inicial do seletor
 const chip = (on: boolean) =>
   `rounded-full border px-3 py-1 text-xs font-medium ${on ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`;
 

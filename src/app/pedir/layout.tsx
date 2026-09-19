@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { SemZoom } from "@/components/sem-zoom";
+import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 
 // App do cliente (/pedir): manifest próprio (o atalho abre no cardápio, não no
 // site), tela cheia no iPhone e zoom travado — regra da casa pra todo app.
@@ -13,6 +14,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, maxi
 export default function PedirLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <CoresDaEmpresa />
       <SemZoom />
       {children}
     </>

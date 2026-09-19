@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { SemZoom } from "@/components/sem-zoom";
+import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 
 // Faz o "Adicionar à tela de início" a partir do app do garçom instalar um
 // atalho que abre direto em /garcom (e não no site). No iPhone o atalho já usa
@@ -35,6 +36,7 @@ export default async function GarcomLayout({ children }: { children: React.React
   // `display: contents` = a caixa não existe pro layout, só pro CSS herdar.
   return (
     <div data-tema="escuro" className="contents">
+      <CoresDaEmpresa />
       <SemZoom />
       {children}
     </div>
