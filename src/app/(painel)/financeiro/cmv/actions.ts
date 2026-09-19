@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 
 // Corrige/insere a quantidade de um produto numa contagem (estoque inicial ou
@@ -28,11 +29,16 @@ export async function salvarFaturamentoDia(
   valor: number,
 ) {
   const supabase = await createClient();
+  // O par dia + turno virou dia + turno DENTRO da empresa (migration 0190),
+  // senão dois restaurantes não poderiam faturar no mesmo dia. O upsert tem
+  // que dizer os três, ou o banco não sabe qual linha atualizar.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const };
   await supabase
     .from("faturamento_dia")
     .upsert(
-      { data, turno: turno === "noite" ? "noite" : "dia", valor },
-      { onConflict: "data,turno" },
+      { empresa_id: empresaId, data, turno: turno === "noite" ? "noite" : "dia", valor },
+      { onConflict: "empresa_id,data,turno" },
     );
   revalidatePath("/financeiro/cmv");
   return { ok: true };

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/server";
 import { lerRelatorioNotas } from "@/lib/notas-emitidas";
@@ -54,14 +55,24 @@ export async function importarFaturamentoPlanilha(fd: FormData) {
 
   // Grava na tabela PRÓPRIA da comparação (não mexe no Financeiro/DRE).
   // Reimportar a mesma data substitui o valor (upsert).
+  // A chave desta tabela virou o par empresa + data (migration 0190): antes a
+  // data sozinha era a chave, o que impediria dois restaurantes de faturar no
+  // mesmo dia. O upsert precisa dizer os dois, senão o banco não sabe sobre
+  // qual linha ele está gravando.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, erro: "Não consegui identificar a empresa." };
+
   const linhas = comValor.map((d) => ({
+    empresa_id: empresaId,
     data: d.data,
     almoco: d.almoco,
     noite: d.noite,
     atualizado_em: new Date().toISOString(),
   }));
   for (let i = 0; i < linhas.length; i += 500) {
-    const { error } = await supabase.from("faturamento_dias").upsert(linhas.slice(i, i + 500), { onConflict: "data" });
+    const { error } = await supabase
+      .from("faturamento_dias")
+      .upsert(linhas.slice(i, i + 500), { onConflict: "empresa_id,data" });
     if (error) return { ok: false as const, erro: `Falha ao gravar: ${error.message}` };
   }
 
