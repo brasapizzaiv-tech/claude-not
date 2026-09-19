@@ -45,6 +45,9 @@ export async function updateSession(request: NextRequest) {
   }
   const isPublic =
     path === "/" ||
+    // O manifest do sistema é metadado público ("Adicionar à tela de início").
+    // Antes era arquivo parado em public/ e não passava por aqui; agora é rota.
+    path === "/manifest.webmanifest" ||
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
     path.startsWith("/contar") ||

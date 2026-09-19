@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { lerMarca } from "@/lib/marca";
 import { SemZoom } from "@/components/sem-zoom";
 import { minhasEntregas, sessaoEntregador } from "./entrega-actions";
 import { EntregaClient } from "./entrega-client";
@@ -14,7 +15,11 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
     appleWebApp: { capable: true, title: "Entregas", statusBarStyle: "black-translucent" },
   };
 }
-export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: "#09090b" };
+// App do entregador: escuro sempre, na cor escura da empresa.
+export async function generateViewport(): Promise<Viewport> {
+  const { escuro } = await lerMarca();
+  return { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: escuro };
+}
 export const dynamic = "force-dynamic";
 
 // App do entregador: entra pelo link pessoal (token), sem login.

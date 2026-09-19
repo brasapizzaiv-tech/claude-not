@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
+import { lerMarca } from "@/lib/marca";
 import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
@@ -43,6 +44,7 @@ export default async function PainelLayout({
 
   // Reservas de hoje em diante que ainda estão como "nova" ou "aguardando" —
   // vira o numerozinho no menu, para nenhuma passar batida.
+  const marca = await lerMarca();
   const hoje = hojeBR();
   let reservasNovas = 0;
   if (admin || permissoes.includes("reservas")) {
@@ -75,6 +77,7 @@ export default async function PainelLayout({
         reservasNovas={reservasNovas}
         pedidosCompra={pedidosCompra}
         tema={tema}
+        logoUrl={marca.logoUrl}
       />
       <main className="flex-1 overflow-auto bg-painel-fundo">
         {children}

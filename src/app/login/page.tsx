@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+// O logo aqui fica fixo de propósito: antes de entrar, o sistema ainda não
+// sabe de qual empresa é a pessoa. Num dia com várias empresas, quem decide
+// isso é o endereço (subdomínio), não o cadastro.
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();

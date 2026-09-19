@@ -1,9 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { lerMarca } from "@/lib/marca";
 import { SemZoom } from "@/components/sem-zoom";
 import { EntradaEntrega } from "./entrada";
 
 export const metadata: Metadata = { title: "Brasa Entregas", robots: { index: false, follow: false } };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: "#09090b" };
+// App do entregador: escuro sempre, na cor escura da empresa.
+export async function generateViewport(): Promise<Viewport> {
+  const { escuro } = await lerMarca();
+  return { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: escuro };
+}
 export const dynamic = "force-dynamic";
 
 // Porta de entrada do APP NATIVO do entregador (Capacitor abre esta página):

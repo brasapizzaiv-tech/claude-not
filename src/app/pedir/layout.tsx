@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { lerMarca } from "@/lib/marca";
 import { SemZoom } from "@/components/sem-zoom";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 
@@ -9,7 +10,11 @@ export const metadata: Metadata = {
   icons: { icon: "/icons/pedir-192.png", apple: "/icons/pedir-192.png" },
   appleWebApp: { capable: true, title: "Brasa Pedidos", statusBarStyle: "default" },
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: "#C78340" };
+// A cor da barra do navegador vem do cadastro da empresa, não escrita aqui.
+export async function generateViewport(): Promise<Viewport> {
+  const { primaria } = await lerMarca();
+  return { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: primaria };
+}
 
 export default function PedirLayout({ children }: { children: React.ReactNode }) {
   return (

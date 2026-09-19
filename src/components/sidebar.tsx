@@ -107,6 +107,7 @@ export function Sidebar({
   reservasNovas = 0,
   pedidosCompra = 0,
   tema = TEMA_PADRAO,
+  logoUrl = "/logo-brasa.png",
 }: {
   nome: string;
   papel: string;
@@ -115,6 +116,8 @@ export function Sidebar({
   reservasNovas?: number;
   pedidosCompra?: number;
   tema?: Tema;
+  /** Logo da empresa. Vem do cadastro (Etapa 3); o padrão é o da Brasa. */
+  logoUrl?: string;
 }) {
   const pathname = usePathname();
   const abertosRaw = useSyncExternalStore(subscribe, lerAbertosRaw, () => "{}");
@@ -266,7 +269,7 @@ export function Sidebar({
     <div className="flex h-full flex-col items-center gap-1 border-r border-borda bg-painel-cartao py-3">
       <Link href="/dashboard" aria-label="Início" className="mb-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-brasa.png" alt="Brasa" className="h-10 w-10 rounded-controle object-contain" />
+        <img src={logoUrl} alt="" className="h-10 w-10 rounded-controle object-contain" />
       </Link>
 
       <BotaoRail icone="inicio" rotulo="Início" ativo={noInicio} href="/dashboard" />
@@ -348,7 +351,7 @@ export function Sidebar({
         </button>
         <Link href="/dashboard" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa.png" alt="Brasa" className="h-8 w-8 rounded-controle object-contain" />
+          <img src={logoUrl} alt="" className="h-8 w-8 rounded-controle object-contain" />
           <span className="font-semibold text-texto">Brasa</span>
         </Link>
         {!!reservasNovas && (
@@ -370,7 +373,7 @@ export function Sidebar({
           <aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-painel-cartao">
             <div className="flex items-center gap-2 border-b border-borda px-3 py-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-brasa.png" alt="Brasa" className="h-9 w-9 rounded-controle object-contain" />
+              <img src={logoUrl} alt="" className="h-9 w-9 rounded-controle object-contain" />
               <span className="flex-1 font-semibold text-texto">Brasa</span>
               <button
                 type="button"

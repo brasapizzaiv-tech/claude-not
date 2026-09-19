@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { lerMarca } from "@/lib/marca";
 import { Icone } from "@/components/icone";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
@@ -24,13 +25,14 @@ export async function generateMetadata({
   };
 }
 
-function Moldura({ children }: { children: React.ReactNode }) {
+async function Moldura({ children }: { children: React.ReactNode }) {
+  const { logoUrl: logoDaEmpresa } = await lerMarca();
   return (
     <div className="flex min-h-screen items-center justify-center bg-superficie-suave p-6">
       <div className="w-full max-w-sm rounded-cartao border border-borda bg-painel-cartao p-6">
         <div className="mb-5 flex flex-col items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-brasa.png" alt="Brasa" className="h-14 w-14 object-contain" />
+          <img src={logoDaEmpresa} alt="" className="h-14 w-14 object-contain" />
           <p className="mt-2 text-xs font-semibold text-texto-fraco">
             Brasa · Equipe
           </p>
