@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 
@@ -60,15 +61,15 @@ export default async function DeliveryPage() {
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
-        <h1 className="text-xl font-bold">🛵 Delivery</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="entrega" tamanho={20} /> Delivery</h1>
         <Link href="/delivery/novo" className="rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white">+ Novo pedido</Link>
         <div className="ml-auto flex gap-3 text-sm text-zinc-500">
-          <Link href="/salao/cardapio" className="hover:underline">📖 Cardápio</Link>
-          <Link href="/delivery/areas" className="hover:underline">🗺️ Áreas e tele</Link>
-          <Link href="/delivery/cupons" className="hover:underline">🎟️ Cupons</Link>
-          <Link href="/delivery/relatorios" className="hover:underline">📊 Relatórios</Link>
-          <Link href="/delivery/entregadores" className="hover:underline">🛵 Entregadores</Link>
-          <Link href="/delivery/config" className="hover:underline">⚙️ Config</Link>
+          <Link href="/salao/cardapio" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="caderno" tamanho={14} /> Cardápio</Link>
+          <Link href="/delivery/areas" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="mapa" tamanho={14} /> Áreas e tele</Link>
+          <Link href="/delivery/cupons" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="etiqueta" tamanho={14} /> Cupons</Link>
+          <Link href="/delivery/relatorios" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="grafico" tamanho={14} /> Relatórios</Link>
+          <Link href="/delivery/entregadores" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="entrega" tamanho={14} /> Entregadores</Link>
+          <Link href="/delivery/config" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="ajustes" tamanho={14} /> Config</Link>
         </div>
       </div>
       <Board

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { abrirCaixa } from "../actions";
 import { servicoAgora } from "../util";
@@ -48,7 +49,7 @@ export default async function CaixaPage({
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Frente de Caixa</h1>
         <p className="mt-1 text-zinc-500">Nenhum caixa aberto. Abra um para começar a receber.</p>
-        <Link href="/salao/caixa/pix" className="mt-2 inline-block text-sm text-orange-600 hover:underline">💠 Pix recebidos / estornar</Link>
+        <Link href="/salao/caixa/pix" className="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:underline"><Icone nome="rapido" tamanho={14} /> Pix recebidos / estornar</Link>
 
         <form
           action={abrirCaixa}
@@ -266,10 +267,10 @@ export default async function CaixaPage({
         <div className="flex flex-wrap items-start gap-2">
           <NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} />
           <Link href="/salao/caixa/pix" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
-            💠 Pix recebidos
+            <Icone nome="rapido" tamanho={15} className="mr-1.5" /> Pix recebidos
           </Link>
           <Link href="/salao/caixa/fiado" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
-            👥 Fiado de clientes
+            <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
           </Link>
           <CaixaAcoes caixaId={caixa.id} />
           <FechamentoZ
@@ -309,19 +310,19 @@ export default async function CaixaPage({
           href="/salao/caixa/movimentos"
           className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
         >
-          📄 Movimentações
+          <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
         </Link>
         <Link
           href="/salao/caixa/tef"
           className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
         >
-          💳 Cartões (TEF)
+          <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Cartões (TEF)
         </Link>
       </div>
 
       <details className="mt-2 rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4">
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">📊 Resumo do caixa</span>
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100"><Icone nome="grafico" tamanho={15} /> Resumo do caixa</span>
           {/* Sem valores à mostra: a tela do caixa é virada pro cliente na hora
               do Pix, e o movimento do dia não é da conta de quem está pagando. */}
           <span className="text-xs text-zinc-400">toque para ver os valores</span>
@@ -353,7 +354,7 @@ export default async function CaixaPage({
               <span>{brl(totalVendas)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold text-zinc-900 dark:text-zinc-50">
-              <span>💵 Dinheiro no caixa</span>
+              <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Dinheiro no caixa</span>
               <span>{brl(dinheiroEmCaixa)}</span>
             </div>
           </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone, type NomeIcone } from "@/components/icone";
+
 // App do entregador (celular, por link pessoal). Abas: Entregas · Ganhos ·
 // Histórico · GPS. Copiado do que funciona no Suit Express: pendente/entregue,
 // leitor de QR do cupom pra "pegar" o pedido, "saí com essas", "entreguei"
@@ -67,7 +69,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
   }
   function sair() {
     const ids = [...sel];
-    rodar(() => sairComEntregas(token, ids), `🛵 Saiu com ${ids.length} entrega${ids.length > 1 ? "s" : ""}.`);
+    rodar(() => sairComEntregas(token, ids), `Saiu com ${ids.length} entrega${ids.length > 1 ? "s" : ""}.`);
     setSel(new Set());
   }
 
@@ -163,8 +165,8 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
         <div className="min-w-0">
           <div className="text-lg font-bold">#{p.numero ?? "—"} · {p.nome}</div>
           <div className="text-sm text-zinc-300">{p.endereco}</div>
-          {p.referencia && <div className="text-sm text-amber-300">📍 {p.referencia}</div>}
-          {p.observacao && <div className="text-sm text-zinc-400">📝 {p.observacao}</div>}
+          {p.referencia && <div className="flex items-start gap-1.5 text-sm text-amber-300"><Icone nome="local" tamanho={14} className="mt-0.5" /> {p.referencia}</div>}
+          {p.observacao && <div className="flex items-start gap-1.5 text-sm text-zinc-400"><Icone nome="editar" tamanho={14} className="mt-0.5" /> {p.observacao}</div>}
         </div>
         <div className="text-right">
           <div className="text-lg font-bold">{brl(p.total)}</div>
@@ -173,9 +175,9 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
         </div>
       </div>
       <div className="mt-2 flex flex-wrap gap-2 text-sm">
-        <a href={mapaUrl(p)} target="_blank" rel="noreferrer" className="rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-sky-300">🗺️ Mapa</a>
-        {p.telefone && <a href={`https://wa.me/55${p.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-emerald-300">💬 WhatsApp</a>}
-        {p.telefone && <a href={`tel:${p.telefone.replace(/\D/g, "")}`} className="rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-zinc-200">📞</a>}
+        <a href={mapaUrl(p)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-sky-300"><Icone nome="mapa" tamanho={14} /> Mapa</a>
+        {p.telefone && <a href={`https://wa.me/55${p.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-emerald-300"><Icone nome="zap" tamanho={14} /> WhatsApp</a>}
+        {p.telefone && <a href={`tel:${p.telefone.replace(/\D/g, "")}`} className="rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-zinc-200"><Icone nome="telefone" tamanho={15} titulo="Ligar" /></a>}
         <span className="ml-auto self-center text-xs text-zinc-500">{p.saiu_em ? `saiu ${hhmm(p.saiu_em)}` : p.previsao_em ? `prev. ${hhmm(p.previsao_em)}` : ""}</span>
       </div>
       {acoes}
@@ -189,7 +191,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
           <div className="text-xs text-zinc-500">Brasa · Entregas</div>
           <div className="font-bold">{boy.nome}</div>
         </div>
-        <button onClick={() => setScan(true)} className="rounded-xl px-3 py-2 text-sm font-bold text-white" style={{ background: LARANJA }}>📷 Ler cupom</button>
+        <button onClick={() => setScan(true)} className="rounded-xl px-3 py-2 text-sm font-bold text-white" style={{ background: LARANJA }}><span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={14} /> Ler cupom</span></button>
       </header>
 
       {msg && <div className="mx-4 mt-3 rounded-xl bg-zinc-800 px-3 py-2 text-sm">{msg}</div>}
@@ -198,7 +200,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
         <main className="space-y-4 p-4">
           {aCaminho.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-indigo-300">🛵 A caminho ({aCaminho.length})</h2>
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-indigo-300"><span className="inline-flex items-center gap-1.5"><Icone nome="entrega" tamanho={15} /> A caminho ({aCaminho.length})</span></h2>
               <div className="space-y-2">
                 {aCaminho.map((p) => (
                   <Card key={p.id} p={p} acoes={
@@ -209,7 +211,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
             </section>
           )}
           <section>
-            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-zinc-400">📦 Comigo, esperando sair ({esperando.length})</h2>
+            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-zinc-400"><span className="inline-flex items-center gap-1.5"><Icone nome="pacote" tamanho={15} /> Comigo, esperando sair ({esperando.length})</span></h2>
             {esperando.length === 0 && <p className="text-sm text-zinc-500">Nada esperando. Leia o QR do cupom ou pegue uma pronta abaixo.</p>}
             <div className="space-y-2">
               {esperando.map((p) => (
@@ -225,17 +227,17 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
             </div>
             {esperando.length > 0 && (
               <button onClick={sair} disabled={proc || sel.size === 0} className="mt-3 w-full rounded-xl py-3 text-base font-bold text-white disabled:opacity-40" style={{ background: LARANJA }}>
-                🛵 Saí com {sel.size || ""} entrega{sel.size === 1 ? "" : "s"}
+                <Icone nome="entrega" tamanho={16} className="mr-1.5" /> Saí com {sel.size || ""} entrega{sel.size === 1 ? "" : "s"}
               </button>
             )}
           </section>
           {dados.disponiveis.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-emerald-300">✅ Prontas sem entregador ({dados.disponiveis.length})</h2>
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-emerald-300"><span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={15} /> Prontas sem entregador ({dados.disponiveis.length})</span></h2>
               <div className="space-y-2">
                 {dados.disponiveis.map((p) => (
                   <Card key={p.id} p={p} acoes={
-                    <button onClick={() => pegar(p.id)} disabled={proc} className="mt-2 w-full rounded-xl border border-emerald-500 py-2.5 font-bold text-emerald-300 disabled:opacity-50">🙋 Peguei essa</button>
+                    <button onClick={() => pegar(p.id)} disabled={proc} className="mt-2 w-full rounded-xl border border-emerald-500 py-2.5 font-bold text-emerald-300 disabled:opacity-50"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pessoa" tamanho={15} /> Peguei essa</span></button>
                   } />
                 ))}
               </div>
@@ -243,7 +245,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
           )}
           {dados.entreguesHoje.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-zinc-500">🎉 Entregues hoje ({dados.entreguesHoje.length})</h2>
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-zinc-500"><span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={15} /> Entregues hoje ({dados.entreguesHoje.length})</span></h2>
               <div className="space-y-1 text-sm text-zinc-400">
                 {dados.entreguesHoje.map((p) => (
                   <div key={p.id} className="flex justify-between rounded-lg bg-zinc-900 px-3 py-2">
@@ -317,14 +319,14 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
       {aba === "gps" && (
         <main className="space-y-4 p-4">
           <div className="rounded-2xl bg-zinc-900 p-4">
-            <div className="mb-1 text-lg font-bold">📍 Localização</div>
+            <div className="mb-1 flex items-center gap-2 text-lg font-bold"><Icone nome="local" tamanho={18} /> Localização</div>
             <p className="mb-3 text-sm text-zinc-400">
               {nativo
                 ? <>Com o rastreamento ligado o restaurante vê onde você está no mapa — <b>mesmo com a tela apagada</b> (fica uma notificação fixa enquanto estiver ativo). Na primeira vez, escolha <b>“Permitir o tempo todo”</b>.</>
                 : <>Com o rastreamento ligado o restaurante vê onde você está no mapa. Pelo navegador só funciona com este app <b>aberto na tela</b> (a tela fica acesa sozinha). Instale o app Brasa Entregas pra rastrear em segundo plano.</>}
             </p>
             <button onClick={alternarGps} className={`w-full rounded-xl py-3 text-base font-bold ${gpsOn ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-200"}`}>
-              {gpsOn ? "✅ Rastreamento ATIVO — tocar pra desligar" : "Ligar rastreamento"}
+              {gpsOn ? <span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={14} /> Rastreamento ATIVO — tocar pra desligar</span> : "Ligar rastreamento"}
             </button>
             {gpsErro && <p className="mt-2 text-sm text-rose-400">{gpsErro}</p>}
           </div>
@@ -340,15 +342,16 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
 
       {/* barra de abas */}
       <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-zinc-800 bg-zinc-950 text-xs">
-        {([["entregas", "🛵", "Entregas"], ["ganhos", "💰", "Ganhos"], ["historico", "🕓", "Histórico"], ["gps", gpsOn ? "🟢" : "📍", "GPS"]] as const).map(([k, i, l]) => (
+        {([["entregas", "entrega", "Entregas"], ["ganhos", "dinheiro", "Ganhos"], ["historico", "relogio", "Histórico"], ["gps", "local", "GPS"]] as [Aba, NomeIcone, string][]).map(([k, i, l]) => (
           <button key={k} onClick={() => setAba(k)} className={`flex flex-col items-center py-2.5 ${aba === k ? "text-white" : "text-zinc-500"}`} style={aba === k ? { color: LARANJA } : {}}>
-            <span className="text-xl">{i}</span>{l}
+            <Icone nome={i} tamanho={21} />
+            <span className="mt-0.5">{l}</span>
           </button>
         ))}
       </nav>
 
       {/* modal: entreguei */}
-      {entregando && <ModalEntregue p={entregando} proc={proc} onFechar={() => setEntregando(null)} onOk={(forma, valor) => { const p = entregando; setEntregando(null); rodar(() => marcarEntregue(token, p.id, { forma, valor }), "🎉 Entrega concluída!"); }} />}
+      {entregando && <ModalEntregue p={entregando} proc={proc} onFechar={() => setEntregando(null)} onOk={(forma, valor) => { const p = entregando; setEntregando(null); rodar(() => marcarEntregue(token, p.id, { forma, valor }), "Entrega concluída!"); }} />}
       {/* modal: ler QR */}
       {scan && <ModalScan onFechar={() => setScan(false)} onLido={pegar} refManual={refManual} setRefManual={setRefManual} />}
     </div>

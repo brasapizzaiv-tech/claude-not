@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -341,7 +343,7 @@ export function SemanaClient({
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Semana e 10%</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Marque quem trabalhou em cada dia (☀️ dia / 🌙 noite). O 10% de cada noite é dividido por quem trabalhou naquela noite e entra no acerto da semana seguinte.
+            Marque quem trabalhou em cada dia (dia ou noite). O 10% de cada noite é dividido por quem trabalhou naquela noite e entra no acerto da semana seguinte.
             {" "}<Link href="/colaboradores" className="text-orange-600 hover:underline">Cadastro da equipe</Link>
           </p>
         </div>
@@ -354,24 +356,24 @@ export function SemanaClient({
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
-          <button onClick={() => setModo("grade")} className={`px-3 py-1.5 ${modo === "grade" ? "bg-orange-500 text-white" : ""}`}>🗓️ Grade</button>
-          <button onClick={() => setModo("resumo")} className={`px-3 py-1.5 ${modo === "resumo" ? "bg-orange-500 text-white" : ""}`}>💵 Resumo pra pagar</button>
+          <button onClick={() => setModo("grade")} className={`px-3 py-1.5 ${modo === "grade" ? "bg-orange-500 text-white" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="horario" tamanho={14} /> Grade</span></button>
+          <button onClick={() => setModo("resumo")} className={`px-3 py-1.5 ${modo === "resumo" ? "bg-orange-500 text-white" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Resumo pra pagar</span></button>
         </div>
         <button
           onClick={() => start(async () => { const r = await preencherEscalaFixa(segunda); if (r.erro) setErro(r.erro); else router.refresh(); })}
           className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
           title="Marca os dias fixos de cada pessoa (não apaga o que já foi marcado)"
         >
-          ✨ Preencher com a escala fixa
+          <Icone nome="brilho" tamanho={15} className="mr-1.5" /> Preencher com a escala fixa
         </button>
         <button onClick={() => setAddAberto((v) => !v)} className="rounded-lg border border-orange-500 px-3 py-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
           + Free esporádico
         </button>
         <button onClick={baixarCsv} className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
-          ⬇️ Planilha (CSV)
+          <Icone nome="baixar" tamanho={15} className="mr-1.5" /> Planilha (CSV)
         </button>
         <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700" title="Filtrar por turno">
-          {([["todos", "Todos"], ["dia", "☀️ Dia"], ["noite", "🌙 Noite"]] as const).map(([k, rot]) => (
+          {([["todos", "Todos"], ["dia", "Dia"], ["noite", "Noite"]] as const).map(([k, rot]) => (
             <button key={k} onClick={() => setTurnoFiltro(k)} className={`px-3 py-1.5 ${turnoFiltro === k ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : ""}`}>
               {rot}
             </button>
@@ -436,7 +438,7 @@ export function SemanaClient({
       <div className="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="font-semibold">🌙 10% da noite</p>
+            <p className="flex items-center gap-1.5 font-semibold"><Icone nome="noite" tamanho={15} /> 10% da noite</p>
             <p className="text-xs text-zinc-500">
               Digite o arrecadado de cada noite. Entra no acerto desta semana ({rotuloSemana(segunda)}) o que está marcado como <b>paga nesta semana</b> — normalmente as noites da semana passada.
             </p>
@@ -498,11 +500,11 @@ export function SemanaClient({
                         </select>
                       </td>
                       <td className="px-2 py-1 text-center">
-                        {n.presentes > 0 ? `${n.presentes} 🌙` : n.pool > 0 ? <span className="text-red-600">ninguém marcado nessa noite</span> : "—"}
+                        {n.presentes > 0 ? <span className="inline-flex items-center gap-1">{n.presentes} <Icone nome="noite" tamanho={13} /></span> : n.pool > 0 ? <span className="text-red-600">ninguém marcado nessa noite</span> : "—"}
                       </td>
                       <td className="px-2 py-1 text-right font-semibold">{n.presentes > 0 ? brl(n.unit) : "—"}</td>
                       <td className="px-2 py-1 text-right">
-                        <button onClick={() => removerNoite(n.data)} className="text-zinc-400 hover:text-red-600" title="Apagar">🗑</button>
+                        <button onClick={() => removerNoite(n.data)} className="text-zinc-400 hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
                       </td>
                     </tr>
                   );
@@ -564,21 +566,24 @@ export function SemanaClient({
                             title="Trabalhou de dia"
                             className={`h-8 w-8 rounded-md border text-base ${kd ? "border-yellow-500 bg-yellow-400 text-zinc-900" : "border-zinc-200 text-zinc-300 hover:border-yellow-400 dark:border-zinc-800"} ${mostraDia ? "" : "opacity-30"}`}
                           >
-                            ☀️
+                            <Icone nome="dia" tamanho={17} titulo="Trabalhou de dia" />
                           </button>
                           <button
                             onClick={() => toggle(p, d, "noite")}
                             title="Trabalhou de noite"
                             className={`h-8 w-8 rounded-md border text-base ${kn ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 text-zinc-300 hover:border-indigo-400 dark:border-zinc-800"} ${mostraNoite ? "" : "opacity-30"}`}
                           >
-                            🌙
+                            <Icone nome="noite" tamanho={17} titulo="Trabalhou de noite" />
                           </button>
                         </div>
                       </td>
                     );
                   })}
                   <td className="px-3 py-1.5 text-right">
-                    <div className="text-xs text-zinc-500">{nDias}☀️ {nNoites}🌙</div>
+                    <div className="flex items-center justify-end gap-2 text-xs text-zinc-500">
+                      <span className="inline-flex items-center gap-1">{nDias} <Icone nome="dia" tamanho={12} /></span>
+                      <span className="inline-flex items-center gap-1">{nNoites} <Icone nome="noite" tamanho={12} /></span>
+                    </div>
                     <div className="font-semibold text-zinc-900 dark:text-zinc-100">{brl(total)}</div>
                   </td>
                 </tr>
@@ -591,12 +596,12 @@ export function SemanaClient({
           {/* Gasto por turno da semana */}
           <div className="grid gap-3 border-b border-zinc-200 bg-zinc-50 p-3 sm:grid-cols-3 dark:border-zinc-800 dark:bg-zinc-900">
             <div className={`rounded-xl border bg-white p-3 dark:bg-zinc-950 ${turnoFiltro === "dia" ? "border-yellow-500" : "border-zinc-200 dark:border-zinc-800"}`}>
-              <div className="text-xs font-bold uppercase text-zinc-500">☀️ Dia</div>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-zinc-500"><Icone nome="dia" tamanho={13} /> Dia</div>
               <div className="text-lg font-semibold">{brl(calc.turnoDia.diarias + calc.turnoDia.extras)}</div>
               <div className="text-xs text-zinc-500">{calc.turnoDia.presencas} presença{calc.turnoDia.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoDia.diarias)}{calc.turnoDia.extras > 0 ? ` + extras ${brl(calc.turnoDia.extras)}` : ""} (CLT não entra)</div>
             </div>
             <div className={`rounded-xl border bg-white p-3 dark:bg-zinc-950 ${turnoFiltro === "noite" ? "border-indigo-500" : "border-zinc-200 dark:border-zinc-800"}`}>
-              <div className="text-xs font-bold uppercase text-zinc-500">🌙 Noite</div>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-zinc-500"><Icone nome="noite" tamanho={13} /> Noite</div>
               <div className="text-lg font-semibold">{brl(calc.turnoNoite.diarias + calc.turnoNoite.dez + calc.turnoNoite.extras)}</div>
               <div className="text-xs text-zinc-500">{calc.turnoNoite.presencas} presença{calc.turnoNoite.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoNoite.diarias)} + 10% {brl(calc.turnoNoite.dez)}{calc.turnoNoite.extras > 0 ? ` + extras ${brl(calc.turnoNoite.extras)}` : ""}</div>
             </div>
@@ -632,7 +637,7 @@ export function SemanaClient({
           )}
           {turnoFiltro !== "todos" && (
             <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-              Mostrando só o turno {turnoFiltro === "dia" ? "☀️ DIA" : "🌙 NOITE"}: os valores abaixo são só desse turno. Pra lançar o pagamento, volte em <b>Todos</b>.
+              Mostrando só o turno {turnoFiltro === "dia" ? "DIA" : "NOITE"}: os valores abaixo são só desse turno. Pra lançar o pagamento, volte em <b>Todos</b>.
             </div>
           )}
           <div className="overflow-x-auto">
@@ -656,7 +661,7 @@ export function SemanaClient({
                   );
                 })()}
                 <th className="px-3 py-3">Pessoa</th>
-                <th className="px-2 py-3 text-center" title="Presenças: dias ☀️ e noites 🌙">Pres.</th>
+                <th className="px-2 py-3 text-center" title="Presenças: dias e noites">Pres.</th>
                 <th className="px-3 py-3 text-right">Diárias</th>
                 {turnoFiltro !== "dia" && <th className="px-3 py-3 text-right">10%</th>}
                 <th className="px-3 py-3 text-right" title="Algo que fez a mais nesta semana (conta no turno escolhido)">Extra</th>
@@ -712,7 +717,10 @@ export function SemanaClient({
                       )}
                     </td>
                     <td className="px-2 py-2 text-center whitespace-nowrap text-zinc-600 dark:text-zinc-300">
-                      {turnoFiltro !== "noite" ? `${nDias}☀️` : ""}{turnoFiltro === "todos" ? " " : ""}{turnoFiltro !== "dia" ? `${nNoites}🌙` : ""}
+                      <span className="inline-flex items-center justify-center gap-2">
+                          {turnoFiltro !== "noite" && <span className="inline-flex items-center gap-1">{nDias} <Icone nome="dia" tamanho={12} /></span>}
+                          {turnoFiltro !== "dia" && <span className="inline-flex items-center gap-1">{nNoites} <Icone nome="noite" tamanho={12} /></span>}
+                        </span>
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">{brl(diariasM)}</td>
                     {turnoFiltro !== "dia" && <td className="px-3 py-2 text-right">{brl(dezM)}</td>}
@@ -729,8 +737,8 @@ export function SemanaClient({
                                 title="Em que turno esse extra conta"
                                 className={`${inputCls} px-1 py-1 text-xs`}
                               >
-                                <option value="dia">☀️ dia</option>
-                                <option value="noite">🌙 noite</option>
+                                <option value="dia">dia</option>
+                                <option value="noite">noite</option>
                               </select>
                             )}
                             <input
@@ -818,14 +826,14 @@ export function SemanaClient({
                 </tr>
               ) : turnoFiltro === "dia" ? (
                 <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
-                  <td className="px-4 py-3" colSpan={2}>Total do turno ☀️ Dia</td>
+                  <td className="px-4 py-3" colSpan={2}><span className="inline-flex items-center gap-1.5">Total do turno <Icone nome="dia" tamanho={13} /> Dia</span></td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoDia.diarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoDia.extras)}</td>
                   <td className="px-4 py-3 text-right">{brl(calc.turnoDia.diarias + calc.turnoDia.extras)}</td>
                 </tr>
               ) : (
                 <tr className="bg-zinc-50 font-semibold dark:bg-zinc-900">
-                  <td className="px-4 py-3" colSpan={2}>Total do turno 🌙 Noite</td>
+                  <td className="px-4 py-3" colSpan={2}><span className="inline-flex items-center gap-1.5">Total do turno <Icone nome="noite" tamanho={13} /> Noite</span></td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoNoite.diarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoNoite.dez)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.turnoNoite.extras)}</td>
@@ -862,7 +870,7 @@ export function SemanaClient({
               disabled={pending || aLancar.length === 0}
               className="rounded-lg bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600 disabled:opacity-40"
             >
-              💸 Lançar {aLancar.length} pagamento{aLancar.length === 1 ? "" : "s"} · {brl(totalALancar)} no Contas a pagar
+              <Icone nome="dinheiro" tamanho={16} className="mr-1.5" /> Lançar {aLancar.length} pagamento{aLancar.length === 1 ? "" : "s"} · {brl(totalALancar)} no Contas a pagar
             </button>
             <span className="text-xs text-zinc-500">categoria: CMO Eventual / Diaristas · a conta entra com o valor cheio; o fiado só abate o que sai em mãos</span>
             {comFiado.length > 0 && (

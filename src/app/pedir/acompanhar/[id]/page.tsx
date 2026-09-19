@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Icone, type NomeIcone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AutoRefresh } from "./auto-refresh";
 
@@ -35,15 +36,15 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
   const status = p.status as string;
   const retirada = p.tipo === "retirada";
   const ETAPAS = [
-    { key: "pendente", label: "Recebido", emoji: "📨", hora: hhmm(p.criado_em as string) },
-    { key: "aceito", label: "Confirmado", emoji: "✅", hora: hhmm(p.aceito_em as string | null) },
-    { key: "em_preparo", label: "Preparando", emoji: "👨‍🍳", hora: hhmm(p.preparo_em as string | null) },
-    { key: "pronto", label: "Pronto", emoji: "🍕", hora: hhmm(p.pronto_em as string | null) },
+    { key: "pendente", label: "Recebido", icone: "entrada" as NomeIcone, hora: hhmm(p.criado_em as string) },
+    { key: "aceito", label: "Confirmado", icone: "certo" as NomeIcone, hora: hhmm(p.aceito_em as string | null) },
+    { key: "em_preparo", label: "Preparando", icone: "cozinha" as NomeIcone, hora: hhmm(p.preparo_em as string | null) },
+    { key: "pronto", label: "Pronto", icone: "pizza" as NomeIcone, hora: hhmm(p.pronto_em as string | null) },
     ...(retirada
-      ? [{ key: "entregue", label: "Retirado", emoji: "🎉", hora: hhmm(p.entregue_em as string | null) }]
+      ? [{ key: "entregue", label: "Retirado", icone: "festa" as NomeIcone, hora: hhmm(p.entregue_em as string | null) }]
       : [
-          { key: "saiu", label: "Saiu pra entrega", emoji: "🛵", hora: hhmm(p.saiu_em as string | null) },
-          { key: "entregue", label: "Entregue", emoji: "🎉", hora: hhmm(p.entregue_em as string | null) },
+          { key: "saiu", label: "Saiu pra entrega", icone: "entrega" as NomeIcone, hora: hhmm(p.saiu_em as string | null) },
+          { key: "entregue", label: "Entregue", icone: "festa" as NomeIcone, hora: hhmm(p.entregue_em as string | null) },
         ]),
   ];
   const idx = ETAPAS.findIndex((e) => e.key === status);
@@ -82,7 +83,7 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
               return (
                 <div key={e.key} className="flex gap-3">
                   <div className="flex flex-col items-center">
-                    <div className={`flex h-9 w-9 items-center justify-center rounded-full text-base ${feito ? "text-white" : "bg-zinc-100 dark:bg-zinc-800"}`} style={feito ? { background: LARANJA } : {}}>{e.emoji}</div>
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-full text-base ${feito ? "text-white" : "bg-zinc-100 dark:bg-zinc-800"}`} style={feito ? { background: LARANJA } : {}}><Icone nome={e.icone} tamanho={17} /></div>
                     {i < ETAPAS.length - 1 && <div className="h-6 w-0.5" style={{ background: i < idx ? LARANJA : "rgb(212 212 216 / 0.5)" }} />}
                   </div>
                   <div className="pb-2">

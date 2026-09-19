@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icone } from "@/components/icone";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
@@ -193,7 +194,7 @@ export default async function AppColaboradorPage({
           href={`/folga/${token}`}
           className="mb-3 block rounded-2xl bg-emerald-600 p-4 text-center font-semibold text-white hover:bg-emerald-700"
         >
-          🌴 Minhas folgas
+          <Icone nome="folga" tamanho={17} className="mr-1.5" /> Minhas folgas
         </Link>
       )}
       {fazContas && (
@@ -201,7 +202,7 @@ export default async function AppColaboradorPage({
           href={`/eu/${token}/contas`}
           className="mb-3 flex items-center justify-between rounded-2xl bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
         >
-          <span>💰 Contas a pagar</span>
+          <span className="inline-flex items-center gap-2"><Icone nome="dinheiro" tamanho={17} /> Contas a pagar</span>
           <span className="text-xs font-normal opacity-80">
             {contasAbertas} aberta(s){contasVencidas > 0 ? ` · ${contasVencidas} vencida(s)` : ""}
           </span>
@@ -212,7 +213,7 @@ export default async function AppColaboradorPage({
           href={`/eu/${token}/garcom`}
           className="mb-3 flex items-center justify-between rounded-2xl bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-800"
         >
-          <span>🧑‍🍳 Modo garçom</span>
+          <span className="inline-flex items-center gap-2"><Icone nome="garcom" tamanho={17} /> Modo garçom</span>
           <span className="text-xs font-normal opacity-80">mesas, pedidos, conta →</span>
         </a>
       )}
@@ -221,7 +222,7 @@ export default async function AppColaboradorPage({
           href={`/eu/${token}/checklist`}
           className="mb-3 flex items-center justify-between rounded-2xl bg-emerald-700 p-4 font-semibold text-white hover:bg-emerald-800"
         >
-          <span>✅ Checklists</span>
+          <span className="inline-flex items-center gap-2"><Icone nome="checklist" tamanho={17} /> Checklists</span>
           <span className="text-xs font-normal opacity-80">abertura e fechamento →</span>
         </Link>
       )}
@@ -230,7 +231,7 @@ export default async function AppColaboradorPage({
           href={`/eu/${token}/cardapio`}
           className="mb-3 flex items-center justify-between rounded-2xl bg-green-700 p-4 font-semibold text-white hover:bg-green-800"
         >
-          <span>🍽️ Cardápio do dia</span>
+          <span className="inline-flex items-center gap-2"><Icone nome="salao" tamanho={17} /> Cardápio do dia</span>
           <span className="text-xs font-normal opacity-80">buffet, saladas, marmitas →</span>
         </Link>
       )}
@@ -239,7 +240,7 @@ export default async function AppColaboradorPage({
           href={`/eu/${token}/rodizio`}
           className="mb-3 flex items-center justify-between rounded-2xl bg-orange-600 p-4 font-semibold text-white hover:bg-orange-700"
         >
-          <span>🍕 Rodízio</span>
+          <span className="inline-flex items-center gap-2"><Icone nome="pizza" tamanho={17} /> Rodízio</span>
           <span className="text-xs font-normal opacity-80">pedir pizza pra mesa →</span>
         </Link>
       )}
@@ -252,10 +253,10 @@ export default async function AppColaboradorPage({
       {fazEtiquetas && (
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Link href={`/eu/${token}/etiqueta`} className="rounded-2xl bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600">
-            🏷️ Nova etiqueta
+            <Icone nome="etiqueta" tamanho={17} className="mr-1.5" /> Nova etiqueta
           </Link>
           <Link href={`/eu/${token}/baixa`} className="rounded-2xl bg-zinc-800 p-4 text-center font-semibold text-white hover:bg-zinc-700">
-            📷 Dar baixa
+            <Icone nome="camera" tamanho={17} className="mr-1.5" /> Dar baixa
           </Link>
         </div>
       )}
@@ -263,7 +264,7 @@ export default async function AppColaboradorPage({
         href={`/eu/${token}/pagamentos`}
         className="mb-3 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"
       >
-        <span>💵 Meus pagamentos</span>
+        <span className="inline-flex items-center gap-2"><Icone nome="dinheiro" tamanho={17} /> Meus pagamentos</span>
         <span className="text-xs font-normal opacity-80">
           {ultimoPag
             ? `${ultimoPag.segunda.slice(8, 10)}/${ultimoPag.segunda.slice(5, 7)}: ${brl(ultimoPag.emMaos)} ${ultimoPag.pago ? "✓" : "· aguardando"}`
@@ -274,7 +275,7 @@ export default async function AppColaboradorPage({
         href={`/eu/${token}/compras`}
         className="mb-3 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
       >
-        <span>🛠️ Compra ou manutenção</span>
+        <span className="inline-flex items-center gap-2"><Icone nome="ferramenta" tamanho={17} /> Compra ou manutenção</span>
         <span className="text-xs font-normal text-zinc-500">
           {pedidosCompra > 0 ? `${pedidosCompra} aguardando` : "faltou algo ou quebrou? avise aqui"}
         </span>
@@ -282,7 +283,7 @@ export default async function AppColaboradorPage({
       {compras.length > 0 && (
         <div className="mb-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="mb-2 flex items-center justify-between">
-            <span className="font-semibold text-zinc-900 dark:text-zinc-50">🛒 Minhas compras</span>
+            <span className="inline-flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-50"><Icone nome="compras" tamanho={17} /> Minhas compras</span>
             <span className={`text-sm font-bold ${abertoTotal > 0 ? "text-amber-600" : "text-emerald-600"}`}>
               {abertoTotal > 0 ? `Em aberto: ${brl(abertoTotal)}` : "Tudo pago ✓"}
             </span>
@@ -324,7 +325,7 @@ export default async function AppColaboradorPage({
                   href={`/contar/${c.token}`}
                   className="block rounded-2xl bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600"
                 >
-                  📦 {c.descricao || "Contagem"}
+                  <Icone nome="pacote" tamanho={15} className="mr-1.5" /> {c.descricao || "Contagem"}
                   {c.data && (
                     <span className="mt-0.5 block text-xs font-normal text-orange-100">
                       {dataBR(c.data)}

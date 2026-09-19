@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone, type NomeIcone } from "@/components/icone";
+
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -65,7 +67,13 @@ const ST: Record<string, { label: string; cor: string; bg: string; proximo?: str
   entregue: { label: "Entregue", cor: "text-zinc-500", bg: "bg-zinc-500/10" },
   cancelado: { label: "Cancelado", cor: "text-zinc-400", bg: "bg-zinc-500/10" },
 };
-const ORIGEM: Record<string, string> = { app: "📱 App", whatsapp: "🟢 WhatsApp", instagram: "📸 Instagram", telefone: "📞 Telefone", balcao: "🏪 Balcão" };
+const ORIGEM: Record<string, { label: string; icone: NomeIcone }> = {
+  app: { label: "App", icone: "celular" },
+  whatsapp: { label: "WhatsApp", icone: "zap" },
+  instagram: { label: "Instagram", icone: "camera" },
+  telefone: { label: "Telefone", icone: "telefone" },
+  balcao: { label: "Balcão", icone: "loja" },
+};
 const KANBAN_COLS = ["pendente", "aceito", "em_preparo", "pronto", "saiu"];
 
 function haQuanto(iso: string, nowMs: number) {
@@ -106,30 +114,34 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
       </div>
       {p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && (
         <div className={`mb-2 rounded-lg px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300"}`}>
-          📅 Agendado pra {hora(p.agendado_para)}{nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? " · hora de preparar" : ""}
+          <Icone nome="agenda" tamanho={13} className="mr-1" /> Agendado pra {hora(p.agendado_para)}{nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? " · hora de preparar" : ""}
         </div>
       )}
       <Link href={`/delivery/${p.id}`} className="block">
         <div className="font-semibold leading-tight">{p.nome}</div>
         <div className="text-xs text-zinc-500">{p.telefone}</div>
         <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-          <span>{ORIGEM[p.origem] ?? p.origem}</span>
+          <span className="inline-flex items-center gap-1">
+            {ORIGEM[p.origem] ? <><Icone nome={ORIGEM[p.origem].icone} tamanho={12} /> {ORIGEM[p.origem].label}</> : p.origem}
+          </span>
           <span>·</span>
           <span>{p.forma_pagamento ?? "—"}</span>
           {!p.pago && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-600">a receber</span>}
         </div>
         <div className="mt-1.5 text-sm">
           {p.tipo === "retirada" ? (
-            <span className="font-medium text-zinc-600 dark:text-zinc-300">🏃 Retirada no balcão</span>
+            <span className="inline-flex items-center gap-1 font-medium text-zinc-600 dark:text-zinc-300"><Icone nome="loja" tamanho={13} /> Retirada no balcão</span>
           ) : (
-            <span className="text-zinc-600 dark:text-zinc-300">🛵 {[p.bairro, p.logradouro].filter(Boolean).join(" · ") || "Endereço no detalhe"}</span>
+            <span className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-300"><Icone nome="entrega" tamanho={13} /> {[p.bairro, p.logradouro].filter(Boolean).join(" · ") || "Endereço no detalhe"}</span>
           )}
         </div>
         <div className="mt-1.5 flex items-center justify-between">
           <span className="text-xs text-zinc-400">{hora(p.criado_em)}</span>
           <span className="font-bold">{brl(total)}</span>
         </div>
-        {atrasado(p) && <div className="mt-1 text-xs font-bold text-rose-600">⏰ Atrasado</div>}
+        {atrasado(p) && (
+            <div className="mt-1 flex items-center gap-1 text-xs font-bold text-rose-600"><Icone nome="atraso" tamanho={13} /> Atrasado</div>
+          )}
       </Link>
 
       <div className="mt-2 flex items-center gap-1.5 border-t border-zinc-100 pt-2 dark:border-zinc-800">
@@ -154,7 +166,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
             {entregadores.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
           </select>
         )}
-        <button onClick={() => imprimir(p)} disabled={proc} title="Reimprimir" className="rounded-lg border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700">🖨️</button>
+        <button onClick={() => imprimir(p)} disabled={proc} title="Reimprimir" className="rounded-lg border border-zinc-300 px-2 py-1 dark:border-zinc-700"><Icone nome="imprimir" tamanho={14} titulo="Reimprimir" /></button>
       </div>
     </div>
   );
@@ -281,11 +293,15 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
       {/* Filtros */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <button onClick={alternarSom} title={som ? "Som de pedido novo ligado — clique pra desligar" : "Ligar som de pedido novo"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${som ? "bg-emerald-600 text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}`}>
-          {som ? "🔔 Som ligado" : "🔕 Som"}
+          {som
+            ? <span className="inline-flex items-center gap-1.5"><Icone nome="campainha" tamanho={14} /> Som ligado</span>
+            : <span className="inline-flex items-center gap-1.5"><Icone nome="mudo" tamanho={14} /> Som</span>}
         </button>
         <div className="flex gap-1 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
-          {[["cards", "▦ Cards"], ["kanban", "▥ Kanban"], ["mapa", "🗺️ Mapa"]].map(([k, lbl]) => (
-            <button key={k} onClick={() => mudarVisao(k as "cards" | "kanban" | "mapa")} className={`rounded-md px-3 py-1.5 text-sm font-medium ${visao === k ? "bg-white shadow dark:bg-zinc-950" : "text-zinc-500"}`}>{lbl}</button>
+          {([["cards", "Cards", "cards"], ["kanban", "Kanban", "colunas"], ["mapa", "Mapa", "mapa"]] as [string, string, NomeIcone][]).map(([k, lbl, ico]) => (
+            <button key={k} onClick={() => mudarVisao(k as "cards" | "kanban" | "mapa")} className={`rounded-md px-3 py-1.5 text-sm font-medium ${visao === k ? "bg-white shadow dark:bg-zinc-950" : "text-zinc-500"}`}>
+              <span className="inline-flex items-center gap-1.5"><Icone nome={ico} tamanho={14} /> {lbl}</span>
+            </button>
           ))}
         </div>
         {visao === "cards" && (
@@ -302,7 +318,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
         </select>
         <select value={fOrigem} onChange={(e) => setFOrigem(e.target.value)} className="rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm dark:border-zinc-700">
           <option value="todos">Todas as origens</option>
-          {Object.entries(ORIGEM).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          {Object.entries(ORIGEM).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
         <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nº / nome / telefone" className="ml-auto w-56 rounded-lg border border-zinc-300 bg-transparent px-3 py-1.5 text-sm outline-none dark:border-zinc-700" />
       </div>
@@ -340,7 +356,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
           <>
             {futuros.length > 0 && (
               <div className="mb-4">
-                <div className="mb-2 text-sm font-bold text-sky-700 dark:text-sky-300">📅 Agendados pra mais tarde ({futuros.length})</div>
+                <div className="mb-2 flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-300"><Icone nome="agenda" tamanho={15} /> Agendados pra mais tarde ({futuros.length})</div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {futuros.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
                 </div>

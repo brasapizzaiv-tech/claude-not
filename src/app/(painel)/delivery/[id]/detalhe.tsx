@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, definirPagoDelivery, reimprimirDelivery } from "../actions";
@@ -35,7 +37,7 @@ export type PedidoDetalhe = {
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const ORIGEM: Record<string, string> = { app: "📱 App", whatsapp: "🟢 WhatsApp", instagram: "📸 Instagram", telefone: "📞 Telefone", balcao: "🏪 Balcão" };
+const ORIGEM: Record<string, string> = { app: "App", whatsapp: "WhatsApp", instagram: "Instagram", telefone: "Telefone", balcao: "Balcão" };
 const hhmm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—");
 
 const ETAPAS: { key: string; label: string; carimbo: keyof PedidoDetalhe["carimbos"] }[] = [
@@ -71,7 +73,7 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
           {PROX[p.status] && !cancelado && (
             <button onClick={() => act(() => definirStatusDelivery(p.id, PROX[p.status]))} disabled={proc} className="rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-50">→ {ETAPAS.find((e) => e.key === PROX[p.status])?.label}</button>
           )}
-          <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">🖨️ Reimprimir</button>
+          <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>
           {p.comandaId && (
             <button
               onClick={() => {
@@ -79,10 +81,10 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
                 start(async () => {
                   const r = await emitirNfceComanda(p.comandaId!, cpf.trim() || undefined);
                   if (r.ok) {
-                    alert(`✅ NFC-e ${"jaEmitida" in r && r.jaEmitida ? "já estava emitida" : "emitida"}!${"numero" in r && r.numero ? ` Nº ${r.numero}` : ""}`);
+                    alert(`NFC-e ${"jaEmitida" in r && r.jaEmitida ? "já estava emitida" : "emitida"}!${"numero" in r && r.numero ? ` Nº ${r.numero}` : ""}`);
                     if ("urlDanfe" in r && r.urlDanfe) window.open(r.urlDanfe as string, "_blank");
                   } else {
-                    alert(`❌ ${"mensagem" in r && r.mensagem ? r.mensagem : "Não foi possível emitir."}`);
+                    alert(`${"mensagem" in r && r.mensagem ? r.mensagem : "Não foi possível emitir."}`);
                   }
                   router.refresh();
                 });
@@ -91,7 +93,7 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
               className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
               title="Emitir a nota fiscal do consumidor deste pedido"
             >
-              🧾 NFC-e
+              <Icone nome="cupom" tamanho={15} className="mr-1.5" /> NFC-e
             </button>
           )}
           {!cancelado && p.status !== "entregue" && (
@@ -126,26 +128,26 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
         <div className="space-y-4">
           <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-bold">👤 {p.nome}</h2>
+              <h2 className="flex items-center gap-1.5 font-bold"><Icone nome="pessoa" tamanho={15} /> {p.nome}</h2>
               {p.historicoCliente > 0 && <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800">{p.historicoCliente} pedido(s) antes</span>}
             </div>
             <div className="text-sm text-zinc-500">{p.telefone}</div>
             {p.tipo === "entrega" ? (
               <div className="mt-2 text-sm">
-                <div>📍 {[p.endereco.logradouro, p.endereco.numero].filter(Boolean).join(", ")}</div>
+                <div className="flex items-start gap-1.5"><Icone nome="local" tamanho={14} className="mt-0.5" /> {[p.endereco.logradouro, p.endereco.numero].filter(Boolean).join(", ")}</div>
                 {p.endereco.complemento && <div className="text-zinc-500">{p.endereco.complemento}</div>}
                 <div className="text-zinc-500">Bairro: {p.endereco.bairro || "—"} · {p.endereco.cidade || "—"}</div>
                 {p.endereco.referencia && <div className="text-zinc-500">Ref.: {p.endereco.referencia}</div>}
                 <a href={mapaUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-emerald-600 hover:underline">Ver no mapa →</a>
               </div>
             ) : (
-              <div className="mt-2 font-medium text-zinc-600 dark:text-zinc-300">🏃 Retirada no balcão</div>
+              <div className="mt-2 flex items-center gap-1.5 font-medium text-zinc-600 dark:text-zinc-300"><Icone nome="loja" tamanho={14} /> Retirada no balcão</div>
             )}
           </div>
 
           {p.tipo === "entrega" && (
             <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-              <h2 className="mb-2 font-bold">🛵 Entregador</h2>
+              <h2 className="mb-2 flex items-center gap-1.5 font-bold"><Icone nome="entrega" tamanho={15} /> Entregador</h2>
               <select value={p.entregadorId ?? ""} onChange={(e) => act(() => definirEntregador(p.id, e.target.value || null))} className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700">
                 <option value="">Não informado</option>
                 {entregadores.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
@@ -155,14 +157,14 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
 
           {p.observacao && (
             <div className="rounded-2xl border border-amber-300 bg-amber-500/5 p-4 dark:border-amber-800">
-              <h2 className="mb-1 font-bold text-amber-600">📝 Observação</h2>
+              <h2 className="mb-1 flex items-center gap-1.5 font-bold text-amber-600"><Icone nome="editar" tamanho={15} /> Observação</h2>
               <p className="text-sm">{p.observacao}</p>
             </div>
           )}
 
           {p.historico.length > 0 && (
             <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-              <h2 className="mb-2 font-bold">🕘 Últimos pedidos do cliente</h2>
+              <h2 className="mb-2 flex items-center gap-1.5 font-bold"><Icone nome="relogio" tamanho={15} /> Últimos pedidos do cliente</h2>
               <div className="space-y-1">
                 {p.historico.map((h, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">

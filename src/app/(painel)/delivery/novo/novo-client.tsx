@@ -1,5 +1,7 @@
 "use client";
 
+import { Icone } from "@/components/icone";
+
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -10,7 +12,7 @@ import {
 } from "@/components/delivery-pedido-ui";
 
 const FORMAS = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito"];
-const ORIGENS: [string, string][] = [["whatsapp", "🟢 WhatsApp"], ["instagram", "📸 Instagram"], ["telefone", "📞 Telefone"], ["balcao", "🏪 Balcão"]];
+const ORIGENS: [string, string][] = [["whatsapp", "WhatsApp"], ["instagram", "Instagram"], ["telefone", "Telefone"], ["balcao", "Balcão"]];
 
 export function NovoPedido({
   itens, categorias, comComplemento, pizza, complementos, cfg,
@@ -95,7 +97,7 @@ export function NovoPedido({
     if (r.ok) {
       setTaxa(String(r.taxa));
       setGeo({ km: r.distanciaKm, lat: r.lat, lng: r.lng, aprox: r.aproximado, fora: r.foraDeArea, areaId: r.areaId ?? null, areaNome: r.areaNome ?? null });
-      setCalcMsg(`${r.areaNome ? `área ${r.areaNome}` : `${r.distanciaKm} km${r.aproximado ? " (aprox.)" : ""}`}${r.foraDeArea ? " · ⚠️ fora da área!" : ""}`);
+      setCalcMsg(`${r.areaNome ? `área ${r.areaNome}` : `${r.distanciaKm} km${r.aproximado ? " (aprox.)" : ""}`}${r.foraDeArea ? " · fora da área!" : ""}`);
     } else {
       setGeo(null);
       setCalcMsg(r.mensagem ?? "Não consegui calcular.");
@@ -136,7 +138,7 @@ export function NovoPedido({
         {!busca && (
           <div className="flex flex-wrap gap-1.5 border-b border-zinc-200 p-2 dark:border-zinc-800">
             {pizza.tamanhos.length > 0 && (
-              <button onClick={() => setPzOpen(true)} className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-sm font-bold text-orange-600">🍕 Montar pizza</button>
+              <button onClick={() => setPzOpen(true)} className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-sm font-bold text-orange-600"><span className="inline-flex items-center gap-1.5"><Icone nome="pizza" tamanho={14} /> Montar pizza</span></button>
             )}
             {categorias.map((c) => (
               <button key={c} onClick={() => setAba(c)} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${aba === c ? "bg-zinc-100 dark:bg-zinc-800" : "text-zinc-500"}`}>{c}</button>
@@ -146,7 +148,7 @@ export function NovoPedido({
         <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-3 sm:grid-cols-3 lg:grid-cols-4">
           {visiveis.map((i) => (
             <button key={i.id} onClick={() => clicarItem(i)} className="flex min-h-[72px] flex-col justify-between rounded-xl border border-zinc-200 p-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">
-              <span className="text-sm font-medium leading-tight">{i.nome}{comComplSet.has(i.id) ? " ⚙️" : ""}</span>
+              <span className="text-sm font-medium leading-tight">{i.nome}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-zinc-400" />}</span>
               <span className="text-sm text-emerald-600">{i.preco > 0 ? brl(i.preco) : "—"}</span>
             </button>
           ))}
@@ -179,8 +181,8 @@ export function NovoPedido({
 
           {/* Tipo */}
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setTipo("entrega")} className={`rounded-lg border py-2 text-sm font-semibold ${tipo === "entrega" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}>🛵 Entrega</button>
-            <button onClick={() => setTipo("retirada")} className={`rounded-lg border py-2 text-sm font-semibold ${tipo === "retirada" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}>🏃 Retirada</button>
+            <button onClick={() => setTipo("entrega")} className={`rounded-lg border py-2 text-sm font-semibold ${tipo === "entrega" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={14} /> Entrega</span></button>
+            <button onClick={() => setTipo("retirada")} className={`rounded-lg border py-2 text-sm font-semibold ${tipo === "retirada" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={14} /> Retirada</span></button>
           </div>
 
           {/* Endereço */}
@@ -196,7 +198,7 @@ export function NovoPedido({
               </div>
               <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700" />
               <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência" className="w-full rounded-lg border border-zinc-300 bg-transparent px-2 py-1.5 text-sm outline-none dark:border-zinc-700" />
-              <button type="button" onClick={calcularTaxa} disabled={calculando} className="w-full rounded-lg border border-emerald-500 py-1.5 text-sm font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "Calculando..." : "📍 Calcular taxa pela distância"}</button>
+              <button type="button" onClick={calcularTaxa} disabled={calculando} className="w-full rounded-lg border border-emerald-500 py-1.5 text-sm font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "Calculando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="local" tamanho={14} /> Calcular taxa pela distância</span>}</button>
               {calcMsg && (
                 <p className={`text-xs ${geo?.fora ? "text-rose-600" : "text-zinc-500"}`}>
                   {calcMsg}
@@ -225,7 +227,7 @@ export function NovoPedido({
                       <div className="text-xs text-emerald-600">{brl(l.preco * l.qtd)}</div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => setQtd(l.uid, l.qtd - 1)} className="h-6 w-6 rounded border border-zinc-300 dark:border-zinc-600">{l.qtd === 1 ? "🗑️" : "−"}</button>
+                      <button onClick={() => setQtd(l.uid, l.qtd - 1)} className="h-6 w-6 rounded border border-zinc-300 dark:border-zinc-600">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={13} titulo="Tirar do pedido" /> : "−"}</button>
                       <span className="w-4 text-center text-sm font-bold">{l.qtd}</span>
                       <button onClick={() => setQtd(l.uid, l.qtd + 1)} className="h-6 w-6 rounded border border-zinc-300 text-emerald-600 dark:border-zinc-600">+</button>
                     </div>
@@ -254,7 +256,7 @@ export function NovoPedido({
             <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
           )}
           <div>
-            <label className="block text-xs font-semibold text-zinc-500">📅 Agendar pra (opcional — vazio = pra agora)</label>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500"><Icone nome="agenda" tamanho={13} /> Agendar pra (opcional — vazio = pra agora)</label>
             <input type="datetime-local" value={agendar} onChange={(e) => setAgendar(e.target.value)} className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -262,7 +264,7 @@ export function NovoPedido({
               <div>
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-zinc-500">Taxa entrega</label>
-                  <button type="button" onClick={calcularTaxa} disabled={calculando} className="text-xs font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "..." : "📍 calcular"}</button>
+                  <button type="button" onClick={calcularTaxa} disabled={calculando} className="text-xs font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "..." : <span className="inline-flex items-center gap-1"><Icone nome="local" tamanho={12} /> calcular</span>}</button>
                 </div>
                 <input value={taxa} onChange={(e) => setTaxa(e.target.value)} inputMode="decimal" placeholder="0,00" className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
               </div>
@@ -286,7 +288,7 @@ export function NovoPedido({
           <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
           {forma === "Dinheiro" && trocoN > total && <div className="mb-2 flex justify-between text-sm text-amber-600"><span>Troco</span><span>{brl(Math.round((trocoN - total) * 100) / 100)}</span></div>}
           {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-          <button onClick={finalizar} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50">{proc ? "Criando..." : "✅ Criar pedido"}</button>
+          <button onClick={finalizar} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50">{proc ? "Criando..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={17} /> Criar pedido</span>}</button>
         </div>
       </div>
 
