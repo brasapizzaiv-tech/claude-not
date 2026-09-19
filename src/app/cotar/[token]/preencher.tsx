@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -319,7 +320,7 @@ export function CotarPreencher({
 
   async function naoTrabalho(produtoId: string, nome: string) {
     if (
-      !window.confirm(
+      !await confirmar(
         `Confirmar que você NÃO trabalha com "${nome}"? Ele não aparecerá nas próximas cotações.`,
       )
     )

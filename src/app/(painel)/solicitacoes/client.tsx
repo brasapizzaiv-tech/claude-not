@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar, perguntar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -82,28 +83,28 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
   function comprado(s: Solic) {
     rodar(() => responderSolicitacao(s.id, "comprado"));
   }
-  function rejeitar(s: Solic) {
-    const motivo = prompt(`${s.tipo === "manutencao" ? "Não vai fazer" : "Rejeitar"} "${s.item}". Quer deixar um recado pra ${s.nome.split(" ")[0]}? (opcional)`);
+  async function rejeitar(s: Solic) {
+    const motivo = await perguntar(`${s.tipo === "manutencao" ? "Não vai fazer" : "Rejeitar"} "${s.item}". Quer deixar um recado pra ${s.nome.split(" ")[0]}? (opcional)`);
     if (motivo === null) return;
     rodar(() => responderSolicitacao(s.id, "rejeitado", motivo));
   }
-  function recado(s: Solic) {
-    const texto = prompt("Recado pra pessoa (aparece no app dela):", s.resposta ?? "");
+  async function recado(s: Solic) {
+    const texto = await perguntar("Recado pra pessoa (aparece no app dela):", s.resposta ?? "");
     if (texto === null) return;
     rodar(() => responderSolicitacao(s.id, s.status, texto));
   }
   function reabrir(s: Solic) {
     rodar(() => responderSolicitacao(s.id, "pendente"));
   }
-  function excluir(s: Solic) {
-    if (!confirm(`Apagar o pedido "${s.item}"?`)) return;
+  async function excluir(s: Solic) {
+    if (!await confirmar(`Apagar o pedido "${s.item}"?`)) return;
     rodar(() => excluirSolicitacao(s.id));
   }
   function loteComprado() {
     rodar(() => responderVarias([...marcadas], "comprado"));
   }
-  function loteRejeitar() {
-    const motivo = prompt("Rejeitar os selecionados. Recado (opcional):");
+  async function loteRejeitar() {
+    const motivo = await perguntar("Rejeitar os selecionados. Recado (opcional):");
     if (motivo === null) return;
     rodar(() => responderVarias([...marcadas], "rejeitado", motivo));
   }

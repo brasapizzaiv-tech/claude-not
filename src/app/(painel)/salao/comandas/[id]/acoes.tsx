@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { avisar, confirmar, perguntar } from "@/components/dialogo";
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -16,11 +17,11 @@ export function AcoesComanda({
 
   // Cliente pesou e depois resolveu comer à vontade: o valor do peso vira o
   // do buffet livre do dia. Nada é apagado — a nota sai com o valor certo.
-  const virarLivre = () => {
-    if (!window.confirm("Trocar o valor do peso pelo BUFFET LIVRE do dia?")) return;
+  const virarLivre = async () => {
+    if (!await confirmar("Trocar o valor do peso pelo BUFFET LIVRE do dia?")) return;
     start(async () => {
       const r = await virarLivreComanda(comandaId);
-      if (!r.ok) { window.alert(r.mensagem); return; }
+      if (!r.ok) { void avisar(r.mensagem); return; }
       router.refresh();
     });
   };
@@ -29,16 +30,16 @@ export function AcoesComanda({
   const conta = () => {
     start(async () => {
       const r = await alternarContaPedida(comandaId);
-      if (!r.ok) { window.alert(r.mensagem); return; }
+      if (!r.ok) { void avisar(r.mensagem); return; }
       router.refresh();
     });
   };
 
-  const excluir = () => {
-    const motivo = window.prompt("Motivo da exclusão da comanda (obrigatório):", "");
+  const excluir = async () => {
+    const motivo = await perguntar("Motivo da exclusão da comanda (obrigatório):", "");
     if (motivo == null) return;
     if (motivo.trim().length < 3) {
-      window.alert("Informe o motivo (pelo menos 3 caracteres).");
+      void avisar("Informe o motivo (pelo menos 3 caracteres).");
       return;
     }
     start(async () => {
@@ -48,7 +49,7 @@ export function AcoesComanda({
       // Quando exclui, a ação redireciona pro salão e nunca volta aqui; se
       // voltar, é porque recusou — e o motivo precisa aparecer.
       const r = await excluirComanda(fd);
-      if (r && !r.ok) window.alert(r.mensagem);
+      if (r && !r.ok) void avisar(r.mensagem);
     });
   };
 

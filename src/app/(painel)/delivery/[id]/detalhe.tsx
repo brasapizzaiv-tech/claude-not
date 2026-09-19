@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { avisar, perguntar } from "@/components/dialogo";
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -61,7 +62,7 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
   const idxAtual = ETAPAS.findIndex((e) => e.key === p.status);
   const mapaUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([p.endereco.logradouro, p.endereco.numero, p.endereco.bairro, p.endereco.cidade].filter(Boolean).join(", "))}`;
 
-  const act = (fn: () => Promise<unknown>) => start(async () => { const r = (await fn()) as { ok?: boolean; mensagem?: string } | undefined; if (r && r.ok === false && r.mensagem) alert(r.mensagem); router.refresh(); });
+  const act = (fn: () => Promise<unknown>) => start(async () => { const r = (await fn()) as { ok?: boolean; mensagem?: string } | undefined; if (r && r.ok === false && r.mensagem) void avisar(r.mensagem); router.refresh(); });
 
   return (
     <div className="mt-3">
@@ -76,15 +77,15 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
           <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="rounded-cartao border border-borda-forte px-3 py-2 text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>
           {p.comandaId && (
             <button
-              onClick={() => {
-                const cpf = prompt("CPF na nota? (deixe vazio pra emitir sem CPF)") ?? "";
+              onClick={async () => {
+                const cpf = await perguntar("CPF na nota? (deixe vazio pra emitir sem CPF)") ?? "";
                 start(async () => {
                   const r = await emitirNfceComanda(p.comandaId!, cpf.trim() || undefined);
                   if (r.ok) {
-                    alert(`NFC-e ${"jaEmitida" in r && r.jaEmitida ? "já estava emitida" : "emitida"}!${"numero" in r && r.numero ? ` Nº ${r.numero}` : ""}`);
+                    void avisar(`NFC-e ${"jaEmitida" in r && r.jaEmitida ? "já estava emitida" : "emitida"}!${"numero" in r && r.numero ? ` Nº ${r.numero}` : ""}`);
                     if ("urlDanfe" in r && r.urlDanfe) window.open(r.urlDanfe as string, "_blank");
                   } else {
-                    alert(`${"mensagem" in r && r.mensagem ? r.mensagem : "Não foi possível emitir."}`);
+                    void avisar(`${"mensagem" in r && r.mensagem ? r.mensagem : "Não foi possível emitir."}`);
                   }
                   router.refresh();
                 });
@@ -97,7 +98,7 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
             </button>
           )}
           {!cancelado && p.status !== "entregue" && (
-            <button onClick={() => { const m = window.prompt("Motivo do cancelamento (o cliente vai ver):", ""); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="rounded-cartao border border-rose-300 px-3 py-2 text-sm text-rose-600 dark:border-rose-800">Cancelar</button>
+            <button onClick={async () => { const m = await perguntar("Motivo do cancelamento (o cliente vai ver):", ""); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="rounded-cartao border border-rose-300 px-3 py-2 text-sm text-rose-600 dark:border-rose-800">Cancelar</button>
           )}
         </div>
       </div>

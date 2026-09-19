@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { manifestarEBaixar } from "../sefaz-actions";
 
@@ -10,9 +11,9 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [diag, setDiag] = useState<string | null>(null);
 
-  function manifestar() {
+  async function manifestar() {
     if (
-      !window.confirm(
+      !await confirmar(
         "Isto registra a 'Ciência da Operação' desta nota na SEFAZ (ação fiscal oficial) e tenta baixar a nota completa. Continuar?",
       )
     )

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { avisar } from "@/components/dialogo";
 import { pagarValores } from "../actions";
 import type { Comanda } from "./receber";
 
@@ -90,7 +91,7 @@ export function DividirConta({
     start(async () => {
       const r = await pagarValores(comanda.id, itensPag, buffetValor, [{ forma: formaSel, valor: somaSel }]);
       if (!r.ok) {
-        alert(("mensagem" in r && r.mensagem) || "Não foi possível receber.");
+        void avisar(("mensagem" in r && r.mensagem) || "Não foi possível receber.");
         return;
       }
       // Abate o que foi pago de cada linha; remove as quitadas.

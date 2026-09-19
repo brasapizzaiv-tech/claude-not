@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { avisar, confirmar } from "@/components/dialogo";
 
 import { Fragment, useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -366,13 +367,13 @@ export function CompararClient({
       : "https://web.whatsapp.com/";
   }
 
-  function adiantar(fid: string, nome: string) {
+  async function adiantar(fid: string, nome: string) {
     const itens = escolhasDoForn(fid);
     if (itens.length === 0) {
-      window.alert(`Nenhum item escolhido de ${nome}. Escolha ao menos um item desse fornecedor antes de adiantar.`);
+      void avisar(`Nenhum item escolhido de ${nome}. Escolha ao menos um item desse fornecedor antes de adiantar.`);
       return;
     }
-    if (!window.confirm(`Adiantar o pedido de ${nome} agora (${itens.length} item(ns))? Os outros fornecedores continuam abertos.`))
+    if (!await confirmar(`Adiantar o pedido de ${nome} agora (${itens.length} item(ns))? Os outros fornecedores continuam abertos.`))
       return;
     setAdiantando(fid);
     startSave(async () => {
@@ -383,7 +384,7 @@ export function CompararClient({
       } else if ("jaGerado" in r) {
         setGerados((s) => new Set(s).add(fid));
       } else if ("travada" in r) {
-        window.alert("A cotação já foi fechada — não dá mais para adiantar.");
+        void avisar("A cotação já foi fechada — não dá mais para adiantar.");
       }
     });
   }

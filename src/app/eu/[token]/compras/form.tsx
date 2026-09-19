@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -40,8 +41,8 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
       router.refresh();
     });
   }
-  function cancelar(id: number) {
-    if (!confirm("Desistir deste pedido?")) return;
+  async function cancelar(id: number) {
+    if (!await confirmar("Desistir deste pedido?")) return;
     start(async () => {
       await cancelarMinhaSolicitacao(token, id);
       router.refresh();

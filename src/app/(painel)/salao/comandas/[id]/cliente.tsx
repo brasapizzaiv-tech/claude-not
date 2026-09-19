@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { avisar } from "@/components/dialogo";
 
 import { siteUrl } from "@/lib/site-url";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -89,9 +90,9 @@ export function LancarItens({
     start(async () => {
       try {
         const r = await adicionarItemComanda(comandaId, item.id);
-        if (!r.ok) alert(r.mensagem);
+        if (!r.ok) void avisar(r.mensagem);
       } catch {
-        alert("Sem conexão. Confira se o item entrou antes de tentar de novo.");
+        void avisar("Sem conexão. Confira se o item entrou antes de tentar de novo.");
       }
       router.refresh();
       setAddId("");
@@ -244,9 +245,9 @@ function MontarCombo({
     start(async () => {
       try {
         const r = await adicionarComboComanda(comandaId, item.id, todosIds);
-        if (!r.ok) alert(r.mensagem);
+        if (!r.ok) void avisar(r.mensagem);
       } catch {
-        alert("Sem conexão. Confira se o item entrou antes de tentar de novo.");
+        void avisar("Sem conexão. Confira se o item entrou antes de tentar de novo.");
       }
       router.refresh();
       onFechar();
@@ -421,9 +422,9 @@ export function MontarPizza({
     start(async () => {
       try {
         const r = await adicionarPizzaComanda(comandaId, tamId, sel, bordaId || null);
-        if (!r.ok) alert(r.mensagem);
+        if (!r.ok) void avisar(r.mensagem);
       } catch {
-        alert("Sem conexão. Confira se a pizza entrou antes de tentar de novo.");
+        void avisar("Sem conexão. Confira se a pizza entrou antes de tentar de novo.");
       }
       setSel([]);
       setBordaId("");

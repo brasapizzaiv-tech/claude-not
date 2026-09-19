@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar as perguntarSeOk } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -37,12 +38,12 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
     setMsg(null);
   }
 
-  function confirmar(l: PixLinha) {
+  async function confirmar(l: PixLinha) {
     const v = Math.round(num(valor) * 100) / 100;
     const resta = Math.round((l.valor - l.valorDevolvido) * 100) / 100;
     if (!(v > 0) || v > resta + 0.005) { setMsg(`Valor inválido. Dá pra devolver até ${brl(resta)}.`); return; }
     if (motivo.trim().length < 3) { setMsg("Escreva o motivo (mín. 3 letras)."); return; }
-    if (!confirm(`Devolver ${brl(v)} pro cliente que pagou este Pix? Não dá pra desfazer.`)) return;
+    if (!await perguntarSeOk(`Devolver ${brl(v)} pro cliente que pagou este Pix? Não dá pra desfazer.`)) return;
     start(async () => {
       try {
         const r = await estornarPix(l.txid, v, motivo.trim());

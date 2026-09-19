@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 // Saladas do dia: marca na base quais entram no buffet de saladas de um dia.
 // Aparece na TV da cozinha (página "Saladas do dia"). A base cresce aqui
@@ -39,8 +40,8 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
       router.refresh();
     });
   }
-  function salvarPadrao() {
-    if (!confirm(`Gravar esta seleção como o padrão de toda ${DIA_NOME[dow]}?`)) return;
+  async function salvarPadrao() {
+    if (!await confirmar(`Gravar esta seleção como o padrão de toda ${DIA_NOME[dow]}?`)) return;
     setMsg(null);
     start(async () => {
       const r = await salvarPadraoSemanaSaladas(dow, [...sel]);
@@ -107,7 +108,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
                         type="button"
                         title="Tirar da base"
                         disabled={proc}
-                        onClick={() => { if (confirm(`Tirar "${s.nome}" da base de saladas?`)) start(async () => { await removerSalada(s.id); router.refresh(); }); }}
+                        onClick={async () => { if (await confirmar(`Tirar "${s.nome}" da base de saladas?`)) start(async () => { await removerSalada(s.id); router.refresh(); }); }}
                         className="text-xs text-texto-fraco hover:text-red-600"
                       >
                         ✕

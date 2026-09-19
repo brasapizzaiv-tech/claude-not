@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -424,8 +425,8 @@ function CategoriaCard({
           </form>
           <form
             action={excluirCategoria}
-            onSubmit={(e) => {
-              if (!confirm(`Excluir a categoria "${cat.nome}"? Os produtos não são apagados.`)) e.preventDefault();
+            onSubmit={async (e) => {
+              if (!await confirmar(`Excluir a categoria "${cat.nome}"? Os produtos não são apagados.`)) e.preventDefault();
             }}
           >
             <input type="hidden" name="id" value={cat.id} />
@@ -527,7 +528,7 @@ function ItensTabela({
                   <form
                     action={excluirItem}
                     className="inline"
-                    onSubmit={(e) => { if (!confirm(`Remover "${i.nome}"?`)) e.preventDefault(); }}
+                    onSubmit={async (e) => { if (!await confirmar(`Remover "${i.nome}"?`)) e.preventDefault(); }}
                   >
                     <input type="hidden" name="id" value={i.id} />
                     <button className="text-texto-fraco hover:text-red-600">Remover</button>

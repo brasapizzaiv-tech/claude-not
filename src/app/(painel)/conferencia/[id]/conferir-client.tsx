@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -78,8 +79,8 @@ export function ConferirClient({
   const [salvando, startSave] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [ligando, startLigar] = useTransition();
-  function ligarNota(notaId: string | null) {
-    if (!notaId && !confirm("Desligar a nota deste pedido?")) return;
+  async function ligarNota(notaId: string | null) {
+    if (!notaId && !await confirmar("Desligar a nota deste pedido?")) return;
     startLigar(async () => {
       const r = await ligarNotaConferencia(pedidoId, notaId);
       if (!r.ok) { setMsg(("mensagem" in r && r.mensagem) || "Não consegui ligar a nota."); return; }

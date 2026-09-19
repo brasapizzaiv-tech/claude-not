@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { excluirPedido } from "./actions";
 
@@ -7,9 +8,9 @@ export function ExcluirPedido({ id, nome }: { id: string; nome: string }) {
   return (
     <form
       action={excluirPedido}
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         if (
-          !confirm(
+          !await confirmar(
             `Apagar o pedido de ${nome}? Isso remove o pedido e o lançamento dele no financeiro. Não dá pra desfazer.`,
           )
         )

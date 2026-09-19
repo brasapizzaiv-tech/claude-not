@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 // Tablet da cozinha: a mesma fila da TV, com botão grande de ação por card.
 // Realtime do Supabase (usuário logado) + busca a cada 10 s como reserva.
@@ -93,7 +94,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
       {botao(p)}
       {(p.status === "pendente" || p.status === "forno") && (
         <button
-          onClick={() => { if (confirm(`Cancelar ${p.sabor} da mesa ${p.mesa}?`)) agir(() => cancelarRodizio(p.id)); }}
+          onClick={async () => { if (await confirmar(`Cancelar ${p.sabor} da mesa ${p.mesa}?`)) agir(() => cancelarRodizio(p.id)); }}
           disabled={proc}
           style={{ fontSize: 13, color: "#999", background: "transparent", border: 0, textDecoration: "underline", padding: 6 }}
         >

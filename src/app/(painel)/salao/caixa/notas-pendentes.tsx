@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 // Fila da nota automática, sempre visível no caixa.
 //
@@ -127,8 +128,8 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
                 Emitir e imprimir
               </button>
               <button
-                onClick={() => {
-                  if (!confirm(`Não emitir a nota de ${p.numeros || "esta conta"}?`)) return;
+                onClick={async () => {
+                  if (!await confirmar(`Não emitir a nota de ${p.numeros || "esta conta"}?`)) return;
                   agir(p.id, () => cancelarNotaPendente(p.id));
                 }}
                 disabled={proc}

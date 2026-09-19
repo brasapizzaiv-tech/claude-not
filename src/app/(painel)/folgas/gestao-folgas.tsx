@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -280,7 +281,7 @@ function CalendarioAprovadas({ pedidos, byId, bloqueios, hojeIso, proc, run }: {
             return (
               <button
                 key={p.id}
-                onClick={() => { if (window.confirm(`Excluir a folga de ${f.nome} em ${fmtData(p.data)}?`)) run(() => excluirPedido(p.id)); }}
+                onClick={async () => { if (await confirmar(`Excluir a folga de ${f.nome} em ${fmtData(p.data)}?`)) run(() => excluirPedido(p.id)); }}
                 disabled={proc}
                 className="truncate rounded px-1 py-0.5 text-left text-[11px] leading-tight"
                 style={{ color: GRUPOS[g]?.cor, background: `${GRUPOS[g]?.cor}1f` }}
@@ -485,7 +486,7 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
                   return (
                     <button
                       key={p.id}
-                      onClick={() => { if (window.confirm(`Excluir a folga de ${f.nome} em ${fmtData(p.data)}?`)) run(() => excluirPedido(p.id)); }}
+                      onClick={async () => { if (await confirmar(`Excluir a folga de ${f.nome} em ${fmtData(p.data)}?`)) run(() => excluirPedido(p.id)); }}
                       className="rounded px-2 py-0.5 text-xs"
                       style={{ color: GRUPOS[g]?.cor, background: `${GRUPOS[g]?.cor}22` }}
                       title="Excluir esta folga"

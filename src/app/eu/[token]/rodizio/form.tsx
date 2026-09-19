@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 // Aba Rodízio do app do garçom: mesa, sabor (busca), fração, quantidade,
 // observação, enviar. Depois de enviar limpa o pedido mas MANTÉM a mesa — o
@@ -60,8 +61,8 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       setTimeout(() => buscaRef.current?.focus(), 50);
     });
   }
-  function cancelar(id: string) {
-    if (!confirm("Cancelar este pedido?")) return;
+  async function cancelar(id: string) {
+    if (!await confirmar("Cancelar este pedido?")) return;
     start(async () => {
       const r = await cancelarPedidoRodizio(token, id);
       if (!r.ok) setMsg(r.mensagem);

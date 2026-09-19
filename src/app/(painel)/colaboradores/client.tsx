@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { avisar } from "@/components/dialogo";
 
 import { siteUrl } from "@/lib/site-url";
 import { useState, useTransition } from "react";
@@ -395,7 +396,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
         <form
           action={async (fd) => {
             const r = await salvarColaborador(fd);
-            if (r && "erro" in r && r.erro) { window.alert(r.erro); return; }
+            if (r && "erro" in r && r.erro) { void avisar(r.erro); return; }
             onClose();
           }}
           className="space-y-3"

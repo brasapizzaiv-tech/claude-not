@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -27,10 +28,10 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
 
   const lista = clientes.filter((c) => !soAbertos || c.saldo > 0.005);
 
-  function receber(c: ClienteFiado) {
+  async function receber(c: ClienteFiado) {
     const v = Math.round(num(valor) * 100) / 100;
     if (!(v > 0)) { setMsg("Informe o valor."); return; }
-    if (v > c.saldo + 0.005 && !confirm(`O valor (${brl(v)}) é maior que o saldo (${brl(c.saldo)}). Continuar?`)) return;
+    if (v > c.saldo + 0.005 && !await confirmar(`O valor (${brl(v)}) é maior que o saldo (${brl(c.saldo)}). Continuar?`)) return;
     start(async () => {
       try {
         const r = await receberFiado(c.id, v, forma);

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { lerMarca } from "@/lib/marca";
 import { SemZoom } from "@/components/sem-zoom";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
+import { Dialogos } from "@/components/dialogo";
 
 // App do cliente (/pedir): manifest próprio (o atalho abre no cardápio, não no
 // site), tela cheia no iPhone e zoom travado — regra da casa pra todo app.
@@ -20,6 +21,7 @@ export default function PedirLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <CoresDaEmpresa />
+      <Dialogos />
       <SemZoom />
       {children}
     </>

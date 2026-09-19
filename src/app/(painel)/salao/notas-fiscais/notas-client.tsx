@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { avisar, perguntar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -72,13 +73,13 @@ export function NotasClient({
     });
   }, [linhas, busca, fStatus, fModelo]);
 
-  function cancelar(id: string) {
-    const j = window.prompt("Motivo do cancelamento (mínimo 15 caracteres):", "");
+  async function cancelar(id: string) {
+    const j = await perguntar("Motivo do cancelamento (mínimo 15 caracteres):", "");
     if (j == null) return;
-    if (j.trim().length < 15) { window.alert("A justificativa precisa ter pelo menos 15 caracteres."); return; }
+    if (j.trim().length < 15) { void avisar("A justificativa precisa ter pelo menos 15 caracteres."); return; }
     start(async () => {
       const r = await cancelarNfceEmitida(id, j.trim());
-      if (!r.ok) window.alert("Não cancelou: " + (r.mensagem || "erro"));
+      if (!r.ok) void avisar("Não cancelou: " + (r.mensagem || "erro"));
       router.refresh();
     });
   }
@@ -175,7 +176,7 @@ export function NotasClient({
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   {l.urlDanfe && l.status === "autorizado" && (
                     <button
-                      onClick={() => { imprimirNfce(l.id).then((r) => alert(r.ok ? "Enviada pra impressora." : r.mensagem)).catch(() => alert("Sem conexão.")); }}
+                      onClick={() => { imprimirNfce(l.id).then((r) => void avisar(r.ok ? "Enviada pra impressora." : r.mensagem)).catch(() => void avisar("Sem conexão.")); }}
                       className="mr-3 text-emerald-600 hover:underline"
                     >
                       Imprimir

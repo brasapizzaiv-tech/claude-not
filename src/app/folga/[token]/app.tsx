@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -250,7 +251,7 @@ export function FolgaApp({
                   {p.status === "Pendente" && (
                     <button
                       disabled={proc}
-                      onClick={() => { if (window.confirm("Cancelar este pedido?")) start(async () => { await cancelarMeuPedido(token, p.id); router.refresh(); }); }}
+                      onClick={async () => { if (await confirmar("Cancelar este pedido?")) start(async () => { await cancelarMeuPedido(token, p.id); router.refresh(); }); }}
                       className="shrink-0 text-xs text-red-500 underline"
                     >
                       cancelar

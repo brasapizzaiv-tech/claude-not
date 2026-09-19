@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar, perguntar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -117,9 +118,9 @@ export function RetiradasClient({
                       <td className="py-2 pr-2 whitespace-nowrap text-center">
                         <button
                           disabled={proc}
-                          onClick={() => {
+                          onClick={async () => {
                             if (r.status === "pago") { run(() => definirStatusRetirada(r.id, false)); return; }
-                            const obs = window.prompt("Observação do pagamento (opcional):", "");
+                            const obs = await perguntar("Observação do pagamento (opcional):", "");
                             if (obs === null) return;
                             run(() => definirStatusRetirada(r.id, true, obs));
                           }}
@@ -132,7 +133,7 @@ export function RetiradasClient({
                       <td className="py-2 text-right">
                         <button
                           disabled={proc}
-                          onClick={() => { if (window.confirm("Excluir este lançamento?")) run(() => excluirRetirada(r.id)); }}
+                          onClick={async () => { if (await confirmar("Excluir este lançamento?")) run(() => excluirRetirada(r.id)); }}
                           className="text-xs text-texto-fraco hover:text-red-600"
                         >
                           excluir
@@ -296,8 +297,8 @@ function ResumoTab({ retiradas, proc, run }: {
                     {p.aberto > 0 && p.colaboradorId && (
                       <button
                         disabled={proc}
-                        onClick={() => {
-                          const obs = window.prompt(`Quitar tudo em aberto de ${p.nome} (${brl(p.aberto)}). Observação do pagamento (opcional):`, "");
+                        onClick={async () => {
+                          const obs = await perguntar(`Quitar tudo em aberto de ${p.nome} (${brl(p.aberto)}). Observação do pagamento (opcional):`, "");
                           if (obs === null) return;
                           run(() => quitarColaborador(p.colaboradorId!, obs));
                         }}

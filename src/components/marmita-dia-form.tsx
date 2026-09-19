@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 // Marmitas Kern de UM dia: mostra o que a rotação manda e deixa a cozinha
 // trocar só esse dia (exceção). Usado no painel e no app da equipe — a ação
@@ -64,8 +65,8 @@ export function MarmitaDiaForm({
       router.refresh();
     });
   }
-  function voltarRotacao() {
-    if (!confirm("Voltar este dia pro cardápio da rotação?")) return;
+  async function voltarRotacao() {
+    if (!await confirmar("Voltar este dia pro cardápio da rotação?")) return;
     setMsg(null);
     start(async () => {
       const r = await salvar(dia, { pratos: [], proteinas: [], salada: "" });

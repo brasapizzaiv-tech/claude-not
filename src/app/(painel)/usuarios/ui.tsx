@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { MODULOS } from "@/lib/permissoes";
 import { Icone } from "@/components/icone";
@@ -209,8 +210,8 @@ export function UsuarioLinha({
     });
   }
 
-  function excluir() {
-    if (!confirm(`Excluir o usuário ${usuario.nome}? Ele perderá o acesso.`))
+  async function excluir() {
+    if (!await confirmar(`Excluir o usuário ${usuario.nome}? Ele perderá o acesso.`))
       return;
     start(async () => {
       const r = await excluirUsuario(usuario.id);

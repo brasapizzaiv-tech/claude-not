@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -64,10 +65,10 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
     });
   }
 
-  function cancelar(l: TefLinha) {
+  async function cancelar(l: TefLinha) {
     if (!agente) { setMsg("O Agente TEF não está rodando neste PC — o cancelamento precisa do pinpad."); return; }
     if (!l.nsu) { setMsg("Essa transação não tem NSU, não dá pra cancelar pelo TEF."); return; }
-    if (!confirm(`Cancelar a venda de ${brl(l.valor)} no cartão (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. O valor sai do caixa e a via do cancelamento é impressa.`)) return;
+    if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} no cartão (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. O valor sai do caixa e a via do cancelamento é impressa.`)) return;
     setMsg("Aguardando o pinpad… peça o cartão ao cliente.");
     setOcupadoId(l.id);
     start(async () => {

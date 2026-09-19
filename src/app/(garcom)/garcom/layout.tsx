@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { SemZoom } from "@/components/sem-zoom";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
+import { Dialogos } from "@/components/dialogo";
 
 // Faz o "Adicionar à tela de início" a partir do app do garçom instalar um
 // atalho que abre direto em /garcom (e não no site). No iPhone o atalho já usa
@@ -37,6 +38,7 @@ export default async function GarcomLayout({ children }: { children: React.React
   return (
     <div data-tema="escuro" className="contents">
       <CoresDaEmpresa />
+      <Dialogos />
       <SemZoom />
       {children}
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { alternarRecadoTv, excluirRecadoTv, salvarRecadoTv, type RecadoTvLinha } from "./actions";
 
@@ -79,7 +80,7 @@ export function RecadosClient({ inicial }: { inicial: RecadoTvLinha[] }) {
                 {r.ativo ? "Desligar" : "Ligar"}
               </button>
               <button onClick={() => editar(r)} disabled={proc} className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-semibold">Editar</button>
-              <button onClick={() => { if (confirm("Apagar este recado?")) rodar(() => excluirRecadoTv(r.id)); }} disabled={proc} className="rounded-controle px-3 py-1.5 text-xs font-semibold text-red-600">Apagar</button>
+              <button onClick={async () => { if (await confirmar("Apagar este recado?")) rodar(() => excluirRecadoTv(r.id)); }} disabled={proc} className="rounded-controle px-3 py-1.5 text-xs font-semibold text-red-600">Apagar</button>
             </div>
           );
         })}

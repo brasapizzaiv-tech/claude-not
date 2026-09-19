@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -338,8 +339,8 @@ export function BancoTabela({
                         <div className="inline-flex items-center gap-2">
                           {t.sugestaoId && !sugestaoForte(t) && (
                             <button
-                              onClick={() => {
-                                if (!window.confirm(
+                              onClick={async () => {
+                                if (!await confirmar(
                                   "Essa conta está a " + t.sugestaoDias + " dias da data do extrato. Conciliar mesmo assim?",
                                 )) return;
                                 run(() => conciliar(t.id, t.sugestaoId!));

@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -100,10 +101,10 @@ export function SemanaClient({
     return m;
   }, [pagos]);
   // Esqueceu algo depois de lançar: lança só a diferença.
-  function lancarDiferenca(p: Pessoa, diferenca: number) {
+  async function lancarDiferenca(p: Pessoa, diferenca: number) {
     const ex = extrasSem[p.id];
     const detalhe = ex?.motivo ? `extra ${ex.motivo}` : "valor esquecido";
-    if (!window.confirm(`Lançar mais ${brl(diferenca)} pra ${p.nome} (semana ${rotuloSemana(segunda)}) no Contas a pagar${jaPago ? ", já marcado como pago" : ""}?`)) return;
+    if (!await confirmar(`Lançar mais ${brl(diferenca)} pra ${p.nome} (semana ${rotuloSemana(segunda)}) no Contas a pagar${jaPago ? ", já marcado como pago" : ""}?`)) return;
     start(async () => {
       const r = await lancarComplementoSemana(segunda, p.id, p.nome, diferenca, detalhe, { jaPago, data: dataPag, forma: formaPag || null });
       setMsg("erro" in r && r.erro ? r.erro : `✓ Diferença de ${brl(diferenca)} lançada pra ${p.nome}.`);
@@ -256,8 +257,8 @@ export function SemanaClient({
       else router.refresh(); // carrega as presenças daquela noite se for de outra semana
     });
   }
-  function removerNoite(data: string) {
-    if (!window.confirm(`Apagar o 10% da noite ${rotuloDia(data)}?`)) return;
+  async function removerNoite(data: string) {
+    if (!await confirmar(`Apagar o 10% da noite ${rotuloDia(data)}?`)) return;
     setDez((l) => l.filter((e) => e.data !== data));
     start(async () => {
       const r = await excluirDezPorCento(data);
@@ -303,9 +304,9 @@ export function SemanaClient({
   const totalDesconto = aLancar.reduce((s, x) => s + descontoDe(x.p.id, x.total), 0);
   const comFiado = aLancar.filter((x) => (fiadoPor[x.p.id]?.valor ?? 0) > 0.005);
 
-  function lancar() {
+  async function lancar() {
     if (!aLancar.length) return;
-    const ok = window.confirm(
+    const ok = await confirmar(
       `Lançar ${aLancar.length} pagamento(s) somando ${brl(totalALancar)} no Contas a pagar (CMO Eventual / Diaristas)${jaPago ? ", já marcados como pagos" : ""}?` +
         (totalDesconto > 0 ? `\n\nFiado descontado: ${brl(totalDesconto)} (sai em mãos ${brl(totalALancar - totalDesconto)}). As compras internas dessas pessoas serão marcadas como pagas.` : ""),
     );

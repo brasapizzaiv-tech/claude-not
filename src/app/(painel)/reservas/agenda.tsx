@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -405,8 +406,8 @@ function CartaoReserva({
         )}
         <button
           disabled={proc}
-          onClick={() => {
-            if (confirm(`Apagar de vez a reserva de ${r.nome}?`))
+          onClick={async () => {
+            if (await confirmar(`Apagar de vez a reserva de ${r.nome}?`))
               acao(() => apagarReserva(r.id));
           }}
           className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"

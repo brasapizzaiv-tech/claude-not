@@ -3,6 +3,7 @@
 // Cadastro dos modelos de checklist: setores (lista editável), listas por setor
 // e momento, e os itens de cada lista (arrastar pra reordenar).
 import { useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import {
   DIAS_CURTO, MOMENTOS, ROTULO_MOMENTO, ROTULO_SERVICO, ROTULO_TIPO, SERVICOS, TIPOS_ITEM,
@@ -121,7 +122,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
                           {m.ativo ? "Desativar" : "Ativar"}
                         </button>
                         <button
-                          onClick={() => { if (confirm(`Apagar a lista "${m.nome}"?`)) agir(() => excluirModelo(m.id)); }}
+                          onClick={async () => { if (await confirmar(`Apagar a lista "${m.nome}"?`)) agir(() => excluirModelo(m.id)); }}
                           disabled={proc}
                           className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"
                         >
@@ -226,7 +227,7 @@ function ItensDoModelo({
               </span>
               <button onClick={() => setEditItem(i)} className="text-xs text-orange-600 hover:underline">editar</button>
               <button
-                onClick={() => { if (confirm(`Tirar "${i.texto}" da lista?`)) agir(() => excluirItemModelo(i.id)); }}
+                onClick={async () => { if (await confirmar(`Tirar "${i.texto}" da lista?`)) agir(() => excluirItemModelo(i.id)); }}
                 disabled={proc}
                 className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"
               >

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { avisar, confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
 import { pagarContasColab } from "./contas-actions";
@@ -61,9 +62,9 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
   const selecionadas = contas.filter((c) => marcadas.has(c.id));
   const total = selecionadas.reduce((s, c) => s + c.valor, 0);
 
-  function darBaixa() {
+  async function darBaixa() {
     if (selecionadas.length === 0) return;
-    if (!confirm(`Dar baixa em ${selecionadas.length} conta(s) — ${moeda(total)} — pagas em ${dataBR(dataPago)}?`)) return;
+    if (!await confirmar(`Dar baixa em ${selecionadas.length} conta(s) — ${moeda(total)} — pagas em ${dataBR(dataPago)}?`)) return;
     const ids = selecionadas.flatMap((c) => c.ids);
     start(async () => {
       const r = await pagarContasColab(token, ids, dataPago);
@@ -73,7 +74,7 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
         router.refresh();
         setTimeout(() => setFeito(null), 3500);
       } else {
-        alert(r.mensagem || "Não foi possível.");
+        void avisar(r.mensagem || "Não foi possível.");
       }
     });
   }

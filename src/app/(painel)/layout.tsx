@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
+import { Dialogos } from "@/components/dialogo";
 import { lerMarca } from "@/lib/marca";
 import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
 
@@ -69,6 +70,7 @@ export default async function PainelLayout({
   return (
     <div className="flex min-h-full flex-1">
       <CoresDaEmpresa />
+      <Dialogos />
       <Sidebar
         nome={profile?.nome ?? user.email ?? "Usuário"}
         papel={admin ? "dono" : "funcionário"}

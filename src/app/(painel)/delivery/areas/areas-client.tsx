@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 // Editor de áreas de entrega (Leaflet + OpenStreetMap, sem chave): clica no
 // mapa pra ir marcando os cantos da área; salva com nome, cor e valor. Embaixo,
@@ -149,7 +150,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
                 <div className="text-[11px] text-texto-suave">{brl(Number(a.valor))}{a.taxa_motoboy != null ? ` · boy ${brl(Number(a.taxa_motoboy))}` : ""}{a.tempo_min ? ` · ${a.tempo_min} min` : ""}{a.ativo ? "" : " · desligada"}</div>
               </button>
               <button onClick={() => rodar(() => alternarArea(a.id, !a.ativo))} disabled={proc} className="rounded-controle border border-borda-forte px-2 py-1 text-[11px]">{a.ativo ? "Desligar" : "Ligar"}</button>
-              <button onClick={() => { if (confirm(`Apagar a área "${a.nome}"?`)) rodar(() => excluirArea(a.id)); }} disabled={proc} className="px-1 text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
+              <button onClick={async () => { if (await confirmar(`Apagar a área "${a.nome}"?`)) rodar(() => excluirArea(a.id)); }} disabled={proc} className="px-1 text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
             </div>
           ))}
         </div>
@@ -202,7 +203,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
                   <div className="text-[11px] text-texto-suave">{descPromo(p)}</div>
                 </button>
                 <button onClick={() => rodar(() => alternarPromoTele(p.id, !p.ativo))} disabled={proc} className="rounded-controle border border-borda-forte px-2 py-1 text-[11px]">{p.ativo ? "Desligar" : "Ligar"}</button>
-                <button onClick={() => { if (confirm(`Apagar "${p.nome}"?`)) rodar(() => excluirPromoTele(p.id)); }} disabled={proc} className="px-1 text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
+                <button onClick={async () => { if (await confirmar(`Apagar "${p.nome}"?`)) rodar(() => excluirPromoTele(p.id)); }} disabled={proc} className="px-1 text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
               </div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { confirmar } from "@/components/dialogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Contagem, Colaborador } from "@/lib/types";
@@ -42,7 +43,7 @@ export function AtribuirClient({
   async function darTudo() {
     if (!todosPara) return;
     if (
-      !confirm(
+      !await confirmar(
         "Isso vai atribuir a contagem INTEIRA a esse colaborador (ele conta tudo). Continuar?",
       )
     )

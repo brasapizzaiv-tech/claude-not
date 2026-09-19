@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone, type NomeIcone } from "@/components/icone";
+import { avisar, perguntar } from "@/components/dialogo";
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -100,8 +101,8 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
 }) {
   const st = ST[p.status] ?? ST.pendente;
   const [tempo, setTempo] = useState(40);
-  function recusar() {
-    const motivo = window.prompt("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "");
+  async function recusar() {
+    const motivo = await perguntar("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "");
     if (motivo && motivo.trim()) avancar({ ...p, status: "__cancelar" } as PedidoBoard, { motivo: motivo.trim() });
   }
   const total = Math.round((p.subtotal + Number(p.taxa_entrega) - Number(p.desconto)) * 100) / 100;
@@ -269,7 +270,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     if (!prox) return;
     start(async () => {
       const r = await definirStatusDelivery(p.id, prox, extra);
-      if (!r.ok && "mensagem" in r && r.mensagem) alert(r.mensagem);
+      if (!r.ok && "mensagem" in r && r.mensagem) void avisar(r.mensagem);
       router.refresh();
     });
   }

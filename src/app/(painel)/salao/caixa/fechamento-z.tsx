@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { avisar, confirmar as perguntarSeOk } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -44,8 +45,8 @@ export function FechamentoZ({
   const contado = num(contadoStr);
   const quebra = Math.round((contado - esperado) * 100) / 100;
 
-  function confirmar() {
-    if (!confirm("Fechar o caixa agora? Depois de fechado não entra mais venda nele.")) return;
+  async function confirmar() {
+    if (!await perguntarSeOk("Fechar o caixa agora? Depois de fechado não entra mais venda nele.")) return;
     start(async () => {
       try {
         const r = await fecharCaixaZ(caixaId, contado, obs);
@@ -57,11 +58,11 @@ export function FechamentoZ({
           if (!r.impressoras) setTimeout(() => { try { window.print(); } catch {} }, 400);
           router.refresh();
         } else {
-          alert("Não consegui fechar o caixa — ele pode já ter sido fechado em outra tela. Atualize a página.");
+          void avisar("Não consegui fechar o caixa — ele pode já ter sido fechado em outra tela. Atualize a página.");
           router.refresh();
         }
       } catch {
-        alert("Sem conexão. Atualize a página e confira se o caixa fechou antes de tentar de novo.");
+        void avisar("Sem conexão. Atualize a página e confira se o caixa fechou antes de tentar de novo.");
       }
     });
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
 import { alternarPago, ajustarValorConta, pagarVarias } from "../actions";
@@ -229,9 +230,9 @@ export function ListaContasView({
   const selecao: Selecao | undefined = aberto ? { marcadas, alternar } : undefined;
   const selecionadas = useMemo(() => linhas.filter((l) => marcadas.has(l.id)), [linhas, marcadas]);
   const totalSel = selecionadas.reduce((s, l) => s + Number(l.valor), 0);
-  function pagarSelecionadas() {
+  async function pagarSelecionadas() {
     if (selecionadas.length === 0) return;
-    if (!confirm(`Dar baixa em ${selecionadas.length} conta(s) — ${moeda(totalSel)} — com pagamento em ${dataBR(dataLote)}?`)) return;
+    if (!await confirmar(`Dar baixa em ${selecionadas.length} conta(s) — ${moeda(totalSel)} — com pagamento em ${dataBR(dataLote)}?`)) return;
     const ids = selecionadas.flatMap((l) => l.ids ?? [l.id]);
     startPagar(async () => {
       const r = await pagarVarias(ids, dataLote);

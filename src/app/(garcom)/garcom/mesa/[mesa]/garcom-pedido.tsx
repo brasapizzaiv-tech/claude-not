@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { avisar } from "@/components/dialogo";
 import { alternarContaPedida } from "@/app/(painel)/salao/actions";
 
 import { useMemo, useRef, useState, useTransition } from "react";
@@ -71,7 +72,7 @@ export function GarcomPedido({
     setAvisando(comandaId);
     try {
       const r = await alternarContaPedida(comandaId);
-      if (!r.ok) { window.alert(r.mensagem); return; }
+      if (!r.ok) { void avisar(r.mensagem); return; }
       setAvisadas((s) => {
         const n = new Set(s);
         if (r.pedida) n.add(comandaId); else n.delete(comandaId);

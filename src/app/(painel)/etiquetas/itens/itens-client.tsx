@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { salvarItemEtiqueta, excluirItemEtiqueta, salvarCategoriaEtiqueta } from "../actions";
 
@@ -58,8 +59,8 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
       router.refresh();
     });
   }
-  function excluir(i: ItemRow) {
-    if (!confirm(`Excluir "${i.nome}"? As etiquetas já impressas continuam no histórico.`)) return;
+  async function excluir(i: ItemRow) {
+    if (!await confirmar(`Excluir "${i.nome}"? As etiquetas já impressas continuam no histórico.`)) return;
     start(async () => { await excluirItemEtiqueta(i.id); router.refresh(); });
   }
   function criarCat() {

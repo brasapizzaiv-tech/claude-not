@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataCurta, type Apontamento } from "@/lib/checklists-core";
 import { excluirApontamentoPainel, resolverApontamentoPainel, tirarApontamentoDaTv } from "../actions";
@@ -79,7 +80,7 @@ export function ApontamentosClient({
                 <button onClick={() => agir(() => tirarApontamentoDaTv(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">tirar da TV</button>
               )}
               <button
-                onClick={() => { if (confirm("Apagar este apontamento?")) agir(() => excluirApontamentoPainel(a.id)); }}
+                onClick={async () => { if (await confirmar("Apagar este apontamento?")) agir(() => excluirApontamentoPainel(a.id)); }}
                 disabled={proc}
                 className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"
               >

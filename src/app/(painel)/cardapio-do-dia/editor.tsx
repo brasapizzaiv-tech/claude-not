@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
 import {
@@ -314,8 +315,8 @@ export function EditorCardapio({
               {atual && (
                 <button
                   disabled={proc}
-                  onClick={() => {
-                    if (confirm(`Apagar o cardápio de ${dataBR(dia)}?`))
+                  onClick={async () => {
+                    if (await confirmar(`Apagar o cardápio de ${dataBR(dia)}?`))
                       start(async () => {
                         await apagarCardapio(dia);
                         setSel({ proteinas: [], carboidratos: [], especial: [] });
@@ -646,8 +647,8 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
                 )}
               </span>
               <button
-                onClick={() => {
-                  if (confirm(`Tirar “${i.nome}” do catálogo?`))
+                onClick={async () => {
+                  if (await confirmar(`Tirar “${i.nome}” do catálogo?`))
                     start(async () => {
                       await apagarItem(i.id);
                       router.refresh();

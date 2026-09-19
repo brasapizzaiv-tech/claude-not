@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
 import {
@@ -129,8 +130,8 @@ export function AgendamentosClient({
                 </button>
                 <button
                   disabled={p}
-                  onClick={() => {
-                    if (!confirm(`Excluir o agendamento "${a.nome}"?`)) return;
+                  onClick={async () => {
+                    if (!await confirmar(`Excluir o agendamento "${a.nome}"?`)) return;
                     const fd = new FormData();
                     fd.set("id", a.id);
                     acao(() => excluirAgendamento(fd));

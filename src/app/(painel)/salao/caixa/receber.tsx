@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { avisar, confirmar as perguntarSeOk, perguntar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { pagarSelecao, fecharTef, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
 import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
@@ -111,29 +112,29 @@ export function ReceberComandas({
   // exclusão de comanda). Some da lista na hora; o servidor confirma no refresh.
   const [excluidos, setExcluidos] = useState<Set<string>>(new Set());
   // Dividir um item em partes (duas pessoas pagam metade cada): vira N linhas.
-  function dividirItem(l: Linha) {
+  async function dividirItem(l: Linha) {
     if (!l.itemId) return;
-    const resp = window.prompt(`Dividir "${l.nome}" em quantas partes?`, "2");
+    const resp = await perguntar(`Dividir "${l.nome}" em quantas partes?`, "2");
     if (resp == null) return;
     const partes = Number(resp);
-    if (!(partes >= 2 && partes <= 10)) { window.alert("Digite um número de 2 a 10."); return; }
+    if (!(partes >= 2 && partes <= 10)) { void avisar("Digite um número de 2 a 10."); return; }
     const itemId = l.itemId;
     start(async () => {
       const r = await dividirItemCaixa(itemId, partes);
-      if (!r.ok) { window.alert(r.mensagem); return; }
+      if (!r.ok) { void avisar(r.mensagem); return; }
       setCarrinho((prev) => { const n = new Set(prev); n.delete(l.key); return n; });
       router.refresh();
     });
   }
-  function excluirItem(l: Linha) {
+  async function excluirItem(l: Linha) {
     if (!l.itemId) return;
-    const motivo = window.prompt(`Motivo da exclusão de "${l.nome}" (obrigatório):`, "");
+    const motivo = await perguntar(`Motivo da exclusão de "${l.nome}" (obrigatório):`, "");
     if (motivo == null) return;
-    if (motivo.trim().length < 3) { window.alert("Informe o motivo (pelo menos 3 caracteres)."); return; }
+    if (motivo.trim().length < 3) { void avisar("Informe o motivo (pelo menos 3 caracteres)."); return; }
     const itemId = l.itemId;
     start(async () => {
       const r = await removerItemCaixa(itemId, motivo.trim());
-      if (!r.ok) { window.alert(r.mensagem); return; }
+      if (!r.ok) { void avisar(r.mensagem); return; }
       setExcluidos((prev) => new Set(prev).add(itemId));
       setCarrinho((prev) => { const n = new Set(prev); n.delete(l.key); return n; });
       router.refresh();
@@ -300,8 +301,8 @@ export function ReceberComandas({
   }
   // Cliente pesou e resolveu comer à vontade: o valor do peso vira o do buffet
   // livre do dia. Antes disso o caixa não tinha como fazer, e apagava a comanda.
-  function virarLivre(c: Comanda) {
-    if (!window.confirm(`Comanda ${c.numero}: trocar o valor do peso pelo BUFFET LIVRE do dia?`)) return;
+  async function virarLivre(c: Comanda) {
+    if (!await perguntarSeOk(`Comanda ${c.numero}: trocar o valor do peso pelo BUFFET LIVRE do dia?`)) return;
     start(async () => {
       const r = await virarLivreComanda(c.id);
       if (!r.ok) { setMsg(r.mensagem); return; }

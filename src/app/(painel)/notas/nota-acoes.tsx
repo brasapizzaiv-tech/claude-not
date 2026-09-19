@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { estornarNota, cancelarNota } from "./actions";
@@ -22,7 +23,7 @@ export function NotaAcoes({
     });
   const cancelar = () =>
     start(async () => {
-      if (!window.confirm("Marcar esta nota como cancelada? Sai do financeiro."))
+      if (!await confirmar("Marcar esta nota como cancelada? Sai do financeiro."))
         return;
       await cancelarNota(notaId);
       router.refresh();

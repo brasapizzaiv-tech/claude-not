@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { avisar, perguntar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -110,12 +111,12 @@ export function MesaDetalhe({
     setSel(todos ? new Set() : new Set(selecionaveis.map((l) => l.key)));
   }
 
-  function cancelar() {
+  async function cancelar() {
     const ids = todasLinhas.filter((l) => l.itemId && sel.has(l.key)).map((l) => l.itemId as string);
     if (ids.length === 0) { setMsg("Selecione ao menos um item (não pago)."); return; }
-    const motivo = window.prompt(`Cancelar ${ids.length} item(ns)? Informe o motivo:`, "");
+    const motivo = await perguntar(`Cancelar ${ids.length} item(ns)? Informe o motivo:`, "");
     if (motivo == null) return;
-    if (motivo.trim().length < 3) { window.alert("Informe o motivo (mín. 3 caracteres)."); return; }
+    if (motivo.trim().length < 3) { void avisar("Informe o motivo (mín. 3 caracteres)."); return; }
     start(async () => {
       const r = await cancelarItensComanda(ids, motivo.trim());
       setMsg(r.ok ? `✓ ${r.cancelados} item(ns) cancelado(s).` : (r.mensagem || "Não deu pra cancelar."));

@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { confirmar } from "@/components/dialogo";
 
 import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -112,8 +113,8 @@ export function CotacaoClient({
     });
   }
 
-  function desfazer() {
-    if (!confirm("Desfazer o último salvamento e voltar as quantidades como estavam antes dele?")) return;
+  async function desfazer() {
+    if (!await confirmar("Desfazer o último salvamento e voltar as quantidades como estavam antes dele?")) return;
     startSave(async () => {
       const r = await reverterCotacao(cotacao.id);
       if (r.ok) window.location.reload();

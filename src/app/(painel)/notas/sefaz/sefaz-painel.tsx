@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import {
   salvarConfigSefaz,
@@ -117,11 +118,11 @@ export function SefazPainel({
     });
   }
 
-  function reprocessar(dias?: number) {
+  async function reprocessar(dias?: number) {
     const msg = dias
       ? `Reprocessar os últimos ${dias} dias (mais rápido) para recuperar notas que faltaram. Continuar?`
       : "Reprocessar volta ao início e puxa novamente as notas dos últimos ~90 dias, recuperando as que faltaram. Pode levar vários minutos e consome a cota da SEFAZ. Continuar?";
-    if (!confirm(msg)) return;
+    if (!await confirmar(msg)) return;
     startBuscar(async () => {
       setResultado("Reprocessando...");
       const r = await reprocessarSefaz(dias);

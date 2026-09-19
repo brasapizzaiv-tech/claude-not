@@ -3,6 +3,7 @@
 // Cardápio do dia no celular, na cozinha: letra grande, botões altos, três
 // abas (Buffet, Saladas, Marmitas). O dia abre no próximo a ser servido.
 import { useMemo, useState, useTransition } from "react";
+import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { addDiasIso, diaSemanaIso, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import {
@@ -77,8 +78,8 @@ export function CardapioApp({
   }
   const rotuloEstat = (e: EstatPrato | undefined) =>
     !e ? "nunca publicado" : `${e.semana}× na semana · ${e.mes}× no mês · último: ${e.ultimo ? diaCurto(e.ultimo) : "—"}`;
-  function salvarBuffet(publicar: boolean) {
-    if (publicar && !confirm(`Publicar o cardápio de ${rotuloDiaLongo(dia)}? Site e TV passam a mostrar.`)) return;
+  async function salvarBuffet(publicar: boolean) {
+    if (publicar && !await confirmar(`Publicar o cardápio de ${rotuloDiaLongo(dia)}? Site e TV passam a mostrar.`)) return;
     setMsg(null);
     start(async () => {
       const r = publicar ? await salvarEPublicarApp(token, dia, dados()) : await salvarBuffetApp(token, dia, dados());
@@ -88,8 +89,8 @@ export function CardapioApp({
       router.refresh();
     });
   }
-  function publicarSo() {
-    if (!confirm(`Publicar o cardápio de ${rotuloDiaLongo(dia)}? Site e TV passam a mostrar.`)) return;
+  async function publicarSo() {
+    if (!await confirmar(`Publicar o cardápio de ${rotuloDiaLongo(dia)}? Site e TV passam a mostrar.`)) return;
     setMsg(null);
     start(async () => {
       const r = await publicarApp(token, dia);
@@ -251,7 +252,7 @@ export function CardapioApp({
               {proc ? "Salvando…" : "Salvar saladas deste dia"}
             </button>
             {temExcecao && (
-              <button type="button" onClick={() => { if (confirm(`Voltar ao padrão de ${DIA_NOME[dow]}?`)) salvarSaladas([]); }} disabled={proc} className="h-12 w-full rounded-cartao border border-borda-forte bg-painel-cartao text-base font-semibold text-texto-suave">
+              <button type="button" onClick={async () => { if (await confirmar(`Voltar ao padrão de ${DIA_NOME[dow]}?`)) salvarSaladas([]); }} disabled={proc} className="h-12 w-full rounded-cartao border border-borda-forte bg-painel-cartao text-base font-semibold text-texto-suave">
                 Voltar ao padrão de {DIA_NOME[dow]}
               </button>
             )}
