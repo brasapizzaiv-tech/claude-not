@@ -490,7 +490,7 @@ export function CompararClient({
 
       {produtos.length > 0 && (
       <div className="max-h-[75vh] overflow-auto rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
+        <table className="min-w-[560px] w-full text-sm">
           <thead className="text-left text-xs text-texto-suave">
             <tr>
               <th className="sticky left-0 top-0 z-30 bg-superficie-suave px-3 py-3 text-left">

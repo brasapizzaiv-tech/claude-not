@@ -58,52 +58,54 @@ export default async function CuponsPage() {
       </form>
 
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <thead className="bg-superficie-suave text-left text-xs text-texto-suave">
-            <tr>
-              <th className="px-4 py-3">Código</th>
-              <th className="px-4 py-3">Desconto</th>
-              <th className="px-4 py-3">Regras</th>
-              <th className="px-4 py-3 text-right">Usos</th>
-              <th className="px-4 py-3 text-right"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-borda">
-            {cupons.map((c) => {
-              const vencido = c.validade != null && c.validade < hoje;
-              const esgotado = c.max_usos != null && c.usos >= c.max_usos;
-              return (
-                <tr key={c.id} className={`bg-painel-cartao ${!c.ativo || vencido || esgotado ? "opacity-50" : ""}`}>
-                  <td className="px-4 py-2 font-bold">{c.codigo}
-                    {vencido && <span className="ml-2 text-mini text-rose-500">VENCIDO</span>}
-                    {esgotado && <span className="ml-2 text-mini text-rose-500">ESGOTADO</span>}
-                  </td>
-                  <td className="px-4 py-2">{c.tipo === "percent" ? `${Number(c.valor)}%` : brl(Number(c.valor))}</td>
-                  <td className="px-4 py-2 text-xs text-texto-suave">
-                    {c.minimo != null ? `mín. ${brl(Number(c.minimo))}` : "sem mínimo"}
-                    {c.validade ? ` · até ${dataBR(c.validade)}` : ""}
-                    {c.max_usos != null ? ` · máx. ${c.max_usos} usos` : ""}
-                  </td>
-                  <td className="px-4 py-2 text-right">{c.usos}</td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
-                    <form action={alternarCupom} className="inline">
-                      <input type="hidden" name="id" value={c.id} />
-                      <input type="hidden" name="ativo" value={c.ativo ? "0" : "1"} />
-                      <Enviar className="mr-3 text-xs text-texto-fraco hover:text-orange-600">{c.ativo ? "desativar" : "reativar"}</Enviar>
-                    </form>
-                    <form action={excluirCupom} className="inline">
-                      <input type="hidden" name="id" value={c.id} />
-                      <Enviar className="text-xs text-texto-fraco hover:text-red-600">excluir</Enviar>
-                    </form>
-                  </td>
-                </tr>
-              );
-            })}
-            {cupons.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-texto-fraco">Nenhum cupom ainda. Crie o primeiro acima — ex.: BRASA10 com 10%.</td></tr>
-            )}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="min-w-[560px] w-full text-sm">
+            <thead className="bg-superficie-suave text-left text-xs text-texto-suave">
+              <tr>
+                <th className="px-4 py-3">Código</th>
+                <th className="px-4 py-3">Desconto</th>
+                <th className="px-4 py-3">Regras</th>
+                <th className="px-4 py-3 text-right">Usos</th>
+                <th className="px-4 py-3 text-right"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-borda">
+              {cupons.map((c) => {
+                const vencido = c.validade != null && c.validade < hoje;
+                const esgotado = c.max_usos != null && c.usos >= c.max_usos;
+                return (
+                  <tr key={c.id} className={`bg-painel-cartao ${!c.ativo || vencido || esgotado ? "opacity-50" : ""}`}>
+                    <td className="px-4 py-2 font-bold">{c.codigo}
+                      {vencido && <span className="ml-2 text-mini text-rose-500">VENCIDO</span>}
+                      {esgotado && <span className="ml-2 text-mini text-rose-500">ESGOTADO</span>}
+                    </td>
+                    <td className="px-4 py-2">{c.tipo === "percent" ? `${Number(c.valor)}%` : brl(Number(c.valor))}</td>
+                    <td className="px-4 py-2 text-xs text-texto-suave">
+                      {c.minimo != null ? `mín. ${brl(Number(c.minimo))}` : "sem mínimo"}
+                      {c.validade ? ` · até ${dataBR(c.validade)}` : ""}
+                      {c.max_usos != null ? ` · máx. ${c.max_usos} usos` : ""}
+                    </td>
+                    <td className="px-4 py-2 text-right">{c.usos}</td>
+                    <td className="px-4 py-2 text-right whitespace-nowrap">
+                      <form action={alternarCupom} className="inline">
+                        <input type="hidden" name="id" value={c.id} />
+                        <input type="hidden" name="ativo" value={c.ativo ? "0" : "1"} />
+                        <Enviar className="mr-3 text-xs text-texto-fraco hover:text-orange-600">{c.ativo ? "desativar" : "reativar"}</Enviar>
+                      </form>
+                      <form action={excluirCupom} className="inline">
+                        <input type="hidden" name="id" value={c.id} />
+                        <Enviar className="text-xs text-texto-fraco hover:text-red-600">excluir</Enviar>
+                      </form>
+                    </td>
+                  </tr>
+                );
+              })}
+              {cupons.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-texto-fraco">Nenhum cupom ainda. Crie o primeiro acima — ex.: BRASA10 com 10%.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

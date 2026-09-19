@@ -85,25 +85,29 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-cartao bg-painel-cartao">
           <p className="border-b border-borda px-4 py-2 text-sm font-semibold">Sabores mais pedidos</p>
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-borda">
-              {topSabores.map(([s, n]) => (
-                <tr key={s}><td className="px-4 py-1.5">{s}</td><td className="px-4 py-1.5 text-right font-semibold tabular-nums">{n}</td></tr>
-              ))}
-              {topSabores.length === 0 && <tr><td className="px-4 py-6 text-center text-texto-fraco">Nada no período.</td></tr>}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-borda">
+                {topSabores.map(([s, n]) => (
+                  <tr key={s}><td className="px-4 py-1.5">{s}</td><td className="px-4 py-1.5 text-right font-semibold tabular-nums">{n}</td></tr>
+                ))}
+                {topSabores.length === 0 && <tr><td className="px-4 py-6 text-center text-texto-fraco">Nada no período.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </div>
         <div className="rounded-cartao bg-painel-cartao">
           <p className="border-b border-borda px-4 py-2 text-sm font-semibold">Pedidos por mesa</p>
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-borda">
-              {topMesas.map(([m, n]) => (
-                <tr key={m}><td className="px-4 py-1.5">Mesa {m}</td><td className="px-4 py-1.5 text-right font-semibold tabular-nums">{n}</td></tr>
-              ))}
-              {topMesas.length === 0 && <tr><td className="px-4 py-6 text-center text-texto-fraco">Nada no período.</td></tr>}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-borda">
+                {topMesas.map(([m, n]) => (
+                  <tr key={m}><td className="px-4 py-1.5">Mesa {m}</td><td className="px-4 py-1.5 text-right font-semibold tabular-nums">{n}</td></tr>
+                ))}
+                {topMesas.length === 0 && <tr><td className="px-4 py-6 text-center text-texto-fraco">Nada no período.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

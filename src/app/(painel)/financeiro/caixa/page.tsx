@@ -65,42 +65,44 @@ export default async function CaixaListaPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
-              <tr>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3 text-right">Pedidos</th>
-                <th className="px-4 py-3 text-right">Total pedidos</th>
-                <th className="px-4 py-3 text-right">Saldo final</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borda">
-              {lista.map((r) => {
-                const c = calcFechamento(r);
-                return (
-                  <tr key={r.id} className="">
-                    <td className="px-4 py-3 font-medium">
-                      <Link
-                        href={`/financeiro/caixa/${r.id}`}
-                        className="text-texto hover:text-orange-600 hover:underline"
-                      >
-                        {dataBR(r.data)}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-right text-texto-suave">
-                      {c.pedidos_total}
-                    </td>
-                    <td className="px-4 py-3 text-right text-texto-suave">
-                      {moeda(c.total_pedidos)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-texto">
-                      {moeda(c.saldo_final)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="min-w-[560px] w-full text-sm">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
+                <tr>
+                  <th className="px-4 py-3">Data</th>
+                  <th className="px-4 py-3 text-right">Pedidos</th>
+                  <th className="px-4 py-3 text-right">Total pedidos</th>
+                  <th className="px-4 py-3 text-right">Saldo final</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borda">
+                {lista.map((r) => {
+                  const c = calcFechamento(r);
+                  return (
+                    <tr key={r.id} className="">
+                      <td className="px-4 py-3 font-medium">
+                        <Link
+                          href={`/financeiro/caixa/${r.id}`}
+                          className="text-texto hover:text-orange-600 hover:underline"
+                        >
+                          {dataBR(r.data)}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-right text-texto-suave">
+                        {c.pedidos_total}
+                      </td>
+                      <td className="px-4 py-3 text-right text-texto-suave">
+                        {moeda(c.total_pedidos)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-texto">
+                        {moeda(c.saldo_final)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -57,63 +57,65 @@ export default async function ContagensPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
-              <tr>
-                <th className="px-4 py-3">Descrição</th>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borda">
-              {contagens.map((c) => (
-                <tr
-                  key={c.id}
-                  className="transition hover:bg-superficie-suave"
-                >
-                  <td className="px-4 py-3 font-medium text-texto">
-                    <Link
-                      href={`/contagens/${c.id}`}
-                      className="hover:text-orange-600 hover:underline"
-                    >
-                      {c.descricao}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-texto-suave">
-                    {dataBR(c.data)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {c.status === "finalizada" ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-                        Finalizada
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                        Rascunho
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <Link
-                      href={`/contagens/${c.id}`}
-                      className="mr-3 text-orange-600 hover:underline"
-                    >
-                      Abrir
-                    </Link>
-                    <form action={excluirContagem} className="inline">
-                      <input type="hidden" name="id" value={c.id} />
-                      <Enviar
-                        className="text-texto-fraco hover:text-red-600"
-                      >
-                        Remover
-                      </Enviar>
-                    </form>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-[560px] w-full text-sm">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
+                <tr>
+                  <th className="px-4 py-3">Descrição</th>
+                  <th className="px-4 py-3">Data</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-borda">
+                {contagens.map((c) => (
+                  <tr
+                    key={c.id}
+                    className="transition hover:bg-superficie-suave"
+                  >
+                    <td className="px-4 py-3 font-medium text-texto">
+                      <Link
+                        href={`/contagens/${c.id}`}
+                        className="hover:text-orange-600 hover:underline"
+                      >
+                        {c.descricao}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-texto-suave">
+                      {dataBR(c.data)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {c.status === "finalizada" ? (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                          Finalizada
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                          Rascunho
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <Link
+                        href={`/contagens/${c.id}`}
+                        className="mr-3 text-orange-600 hover:underline"
+                      >
+                        Abrir
+                      </Link>
+                      <form action={excluirContagem} className="inline">
+                        <input type="hidden" name="id" value={c.id} />
+                        <Enviar
+                          className="text-texto-fraco hover:text-red-600"
+                        >
+                          Remover
+                        </Enviar>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

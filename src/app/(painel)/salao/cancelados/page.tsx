@@ -70,7 +70,7 @@ export default async function CanceladosPage() {
       <p className="mt-1 text-sm text-texto-suave">Auditoria: comandas excluídas e itens cancelados, com o motivo, quem fez e quando.</p>
 
       <div className="mt-4 overflow-x-auto rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
+        <table className="min-w-[560px] w-full text-sm">
           <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
             <tr>
               <th className="px-4 py-2 font-medium">O quê</th>

@@ -189,7 +189,7 @@ export default async function NotaDetalhePage({
             no DRE. Em âmbar = ainda sem vínculo.
           </p>
           <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
-            <table className="w-full text-sm">
+            <table className="min-w-[560px] w-full text-sm">
               <thead className="text-left text-xs font-medium text-texto-fraco">
                 <tr>
                   <th className="px-4 py-2">Item da nota</th>
@@ -252,44 +252,46 @@ export default async function NotaDetalhePage({
         </p>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-borda">
-              {pedidos.map((p) => {
-                const vinculado = nota.pedido_id === p.id;
-                const dif = Number(nota.valor) - p.total;
-                return (
-                  <tr
-                    key={p.id}
-                    className={`bg-painel-cartao ${vinculado ? "bg-orange-50 dark:bg-orange-950/30" : ""}`}
-                  >
-                    <td className="px-4 py-2">
-                      <div className="text-texto">
-                        Pedido de {dataBR(p.data)}
-                      </div>
-                      <div className="text-xs text-texto-fraco">
-                        pedido {moeda(p.total)} · nota {moeda(Number(nota.valor))}
-                        {Math.abs(dif) > 0.01 && (
-                          <span className="ml-1 text-amber-600">
-                            (dif {moeda(dif)})
-                          </span>
-                        )}
-                        {Math.abs(dif) <= 0.01 && (
-                          <span className="ml-1 text-green-600">(bate ✓)</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <BotaoConciliar
-                        notaId={nota.id}
-                        pedidoId={p.id}
-                        vincular={!vinculado}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-borda">
+                {pedidos.map((p) => {
+                  const vinculado = nota.pedido_id === p.id;
+                  const dif = Number(nota.valor) - p.total;
+                  return (
+                    <tr
+                      key={p.id}
+                      className={`bg-painel-cartao ${vinculado ? "bg-orange-50 dark:bg-orange-950/30" : ""}`}
+                    >
+                      <td className="px-4 py-2">
+                        <div className="text-texto">
+                          Pedido de {dataBR(p.data)}
+                        </div>
+                        <div className="text-xs text-texto-fraco">
+                          pedido {moeda(p.total)} · nota {moeda(Number(nota.valor))}
+                          {Math.abs(dif) > 0.01 && (
+                            <span className="ml-1 text-amber-600">
+                              (dif {moeda(dif)})
+                            </span>
+                          )}
+                          {Math.abs(dif) <= 0.01 && (
+                            <span className="ml-1 text-green-600">(bate ✓)</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <BotaoConciliar
+                          notaId={nota.id}
+                          pedidoId={p.id}
+                          vincular={!vinculado}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       {nota.pedido_id && (

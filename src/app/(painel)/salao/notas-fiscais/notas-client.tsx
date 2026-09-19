@@ -140,7 +140,7 @@ export function NotasClient({
       </div>
 
       <div className="mt-3 overflow-x-auto rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
+        <table className="min-w-[720px] w-full text-sm">
           <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
             <tr>
               <th className="px-4 py-2 font-medium">Lançamento</th>

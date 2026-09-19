@@ -141,7 +141,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
         <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">Nenhum item ainda. Cadastre acima.</p>
       ) : (
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
+          <table className="min-w-[720px] w-full text-sm">
             <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-3 py-2">Item</th>

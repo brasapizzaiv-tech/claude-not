@@ -116,7 +116,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
       {msg && <p className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
+        <table className="min-w-[720px] w-full text-sm">
           <thead className="bg-superficie-suave text-left text-xs text-texto-suave">
             <tr>
               <th className="px-3 py-2">Quando</th>

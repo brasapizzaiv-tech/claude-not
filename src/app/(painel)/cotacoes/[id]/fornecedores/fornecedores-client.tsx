@@ -183,47 +183,49 @@ export function FornecedoresClient({
           )}
         </div>
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
-              <tr>
-                <th className="px-4 py-3">Fornecedor</th>
-                <th className="px-4 py-3 text-right">Fornece</th>
-                <th className="px-4 py-3 text-right"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borda">
-              {linhas.map((l) => (
-                <tr key={l.id} className="">
-                  <td className="px-4 py-2 font-medium text-texto">
-                    {l.nome}
-                    {!l.whatsapp && (
-                      <span className="ml-2 text-mini text-amber-500">sem WhatsApp</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-right text-texto-suave">
-                    {l.cobertura} de {totalItens}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    {l.convidado ? (
-                      <BotaoAcao
-                        aoClicar={() => remover(l.id)}
-                        className="text-xs text-texto-fraco hover:text-red-600"
-                      >
-                        Remover
-                      </BotaoAcao>
-                    ) : (
-                      <BotaoAcao
-                        aoClicar={() => convidar(l.id)}
-                        className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
-                      >
-                        Convidar
-                      </BotaoAcao>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
+                <tr>
+                  <th className="px-4 py-3">Fornecedor</th>
+                  <th className="px-4 py-3 text-right">Fornece</th>
+                  <th className="px-4 py-3 text-right"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-borda">
+                {linhas.map((l) => (
+                  <tr key={l.id} className="">
+                    <td className="px-4 py-2 font-medium text-texto">
+                      {l.nome}
+                      {!l.whatsapp && (
+                        <span className="ml-2 text-mini text-amber-500">sem WhatsApp</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right text-texto-suave">
+                      {l.cobertura} de {totalItens}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      {l.convidado ? (
+                        <BotaoAcao
+                          aoClicar={() => remover(l.id)}
+                          className="text-xs text-texto-fraco hover:text-red-600"
+                        >
+                          Remover
+                        </BotaoAcao>
+                      ) : (
+                        <BotaoAcao
+                          aoClicar={() => convidar(l.id)}
+                          className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
+                        >
+                          Convidar
+                        </BotaoAcao>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -313,7 +315,7 @@ export function FornecedoresClient({
           </div>
 
           <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
-            <table className="w-full text-sm">
+            <table className="min-w-[560px] w-full text-sm">
               <thead className="text-left text-xs font-medium text-texto-fraco">
                 <tr>
                   <th className="px-4 py-3">Fornecedor</th>

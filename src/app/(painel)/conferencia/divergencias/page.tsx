@@ -104,23 +104,25 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
 
       {fornecedores.length > 0 && (
         <div className="mb-6 overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
-              <tr><th className="px-4 py-2">Fornecedor</th><th className="px-4 py-2 text-right">Pedidos c/ problema</th><th className="px-4 py-2 text-right">Divergências</th><th className="px-4 py-2 text-right">Qtd/falta</th><th className="px-4 py-2 text-right">Preço acima</th><th className="px-4 py-2 text-right">Cobrado a mais</th></tr>
-            </thead>
-            <tbody className="divide-y divide-borda">
-              {fornecedores.map((f) => (
-                <tr key={f.id} className="">
-                  <td className="px-4 py-2 font-medium text-texto"><Link href={`/conferencia/divergencias?de=${de}&ate=${ate}&forn=${f.id}`} className="hover:text-orange-600 hover:underline">{f.nome}</Link></td>
-                  <td className="px-4 py-2 text-right">{f.pedidos}</td>
-                  <td className="px-4 py-2 text-right">{f.divergencias}</td>
-                  <td className="px-4 py-2 text-right">{f.faltas}</td>
-                  <td className="px-4 py-2 text-right text-amber-600">{f.precoAcima}</td>
-                  <td className="px-4 py-2 text-right font-semibold text-red-600">{f.valorAMais > 0 ? moeda(f.valorAMais) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="min-w-[720px] w-full text-sm">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
+                <tr><th className="px-4 py-2">Fornecedor</th><th className="px-4 py-2 text-right">Pedidos c/ problema</th><th className="px-4 py-2 text-right">Divergências</th><th className="px-4 py-2 text-right">Qtd/falta</th><th className="px-4 py-2 text-right">Preço acima</th><th className="px-4 py-2 text-right">Cobrado a mais</th></tr>
+              </thead>
+              <tbody className="divide-y divide-borda">
+                {fornecedores.map((f) => (
+                  <tr key={f.id} className="">
+                    <td className="px-4 py-2 font-medium text-texto"><Link href={`/conferencia/divergencias?de=${de}&ate=${ate}&forn=${f.id}`} className="hover:text-orange-600 hover:underline">{f.nome}</Link></td>
+                    <td className="px-4 py-2 text-right">{f.pedidos}</td>
+                    <td className="px-4 py-2 text-right">{f.divergencias}</td>
+                    <td className="px-4 py-2 text-right">{f.faltas}</td>
+                    <td className="px-4 py-2 text-right text-amber-600">{f.precoAcima}</td>
+                    <td className="px-4 py-2 text-right font-semibold text-red-600">{f.valorAMais > 0 ? moeda(f.valorAMais) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

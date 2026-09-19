@@ -117,7 +117,7 @@ function Linhas({
 }) {
   return (
     <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
-      <table className="w-full text-sm">
+      <table className="min-w-[560px] w-full text-sm">
         <thead>
           <tr className="text-xs text-texto-fraco">
             {selecao && <th className="w-8" />}

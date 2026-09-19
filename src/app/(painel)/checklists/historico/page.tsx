@@ -127,39 +127,41 @@ export default async function HistoricoChecklistsPage({
       </div>
 
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs font-medium text-texto-fraco">
-            <tr><th className="px-4 py-2">Dia</th><th className="px-4 py-2">Lista</th><th className="px-4 py-2">Quem</th><th className="px-4 py-2 text-right">Itens</th><th className="px-4 py-2">Situação</th></tr>
-          </thead>
-          <tbody className="divide-y divide-borda">
-            {execs.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-texto-fraco">Nenhuma execução no período.</td></tr>}
-            {execs.map((e) => {
-              const m = porModelo.get(e.modelo_id);
-              const meus = itens.filter((i) => i.modelo_id === e.modelo_id);
-              const sit = core.situacao(meus, respostas.filter((r) => r.execucao_id === e.id), e);
-              const s = setores.find((x) => x.id === m?.setor_id);
-              return (
-                <tr key={e.id} className="">
-                  <td className="px-4 py-2 tabular-nums text-texto-suave">{core.dataCurta(e.data)}</td>
-                  <td className="px-4 py-2">
-                    <Link href={`/checklists?dia=${e.data}&ver=${e.modelo_id}`} className="font-medium text-texto hover:text-orange-600 hover:underline">{m?.nome ?? "—"}</Link>
-                    <span className="ml-2 text-xs" style={{ color: s?.cor ?? undefined }}>{s?.nome}</span>
-                  </td>
-                  <td className="px-4 py-2 text-xs text-texto-suave">
-                    {e.iniciado_nome ?? "—"} {hora(e.iniciado_em)}
-                    {e.concluido_em && <span className="block">✓ {e.concluido_nome ?? "—"} {hora(e.concluido_em)}</span>}
-                  </td>
-                  <td className="px-4 py-2 text-right tabular-nums">{sit.feitos}/{sit.total}</td>
-                  <td className="px-4 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-mini font-medium ${e.concluido_em ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
-                      {e.concluido_em ? "concluída" : "em andamento"}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="min-w-[560px] w-full text-sm">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
+              <tr><th className="px-4 py-2">Dia</th><th className="px-4 py-2">Lista</th><th className="px-4 py-2">Quem</th><th className="px-4 py-2 text-right">Itens</th><th className="px-4 py-2">Situação</th></tr>
+            </thead>
+            <tbody className="divide-y divide-borda">
+              {execs.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-texto-fraco">Nenhuma execução no período.</td></tr>}
+              {execs.map((e) => {
+                const m = porModelo.get(e.modelo_id);
+                const meus = itens.filter((i) => i.modelo_id === e.modelo_id);
+                const sit = core.situacao(meus, respostas.filter((r) => r.execucao_id === e.id), e);
+                const s = setores.find((x) => x.id === m?.setor_id);
+                return (
+                  <tr key={e.id} className="">
+                    <td className="px-4 py-2 tabular-nums text-texto-suave">{core.dataCurta(e.data)}</td>
+                    <td className="px-4 py-2">
+                      <Link href={`/checklists?dia=${e.data}&ver=${e.modelo_id}`} className="font-medium text-texto hover:text-orange-600 hover:underline">{m?.nome ?? "—"}</Link>
+                      <span className="ml-2 text-xs" style={{ color: s?.cor ?? undefined }}>{s?.nome}</span>
+                    </td>
+                    <td className="px-4 py-2 text-xs text-texto-suave">
+                      {e.iniciado_nome ?? "—"} {hora(e.iniciado_em)}
+                      {e.concluido_em && <span className="block">✓ {e.concluido_nome ?? "—"} {hora(e.concluido_em)}</span>}
+                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums">{sit.feitos}/{sit.total}</td>
+                    <td className="px-4 py-2">
+                      <span className={`rounded-full px-2 py-0.5 text-mini font-medium ${e.concluido_em ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                        {e.concluido_em ? "concluída" : "em andamento"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

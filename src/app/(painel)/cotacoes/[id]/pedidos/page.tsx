@@ -100,28 +100,30 @@ export default async function PedidosPage({
                     {moeda(total)}
                   </span>
                 </div>
-                <table className="w-full text-sm">
-                  <tbody className="divide-y divide-borda">
-                    {itens.map((i, idx) => (
-                      <tr key={idx}>
-                        <td className="py-1.5 text-texto">
-                          {i.produtos?.nome}
-                        </td>
-                        <td className="py-1.5 text-right text-texto-suave">
-                          {i.qtd} {i.produtos?.unidade}
-                        </td>
-                        <td className="py-1.5 text-right text-texto-suave">
-                          {i.preco_unit != null ? moeda(i.preco_unit) : "—"}
-                        </td>
-                        <td className="py-1.5 text-right text-texto">
-                          {i.preco_unit != null
-                            ? moeda(i.preco_unit * i.qtd)
-                            : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-borda">
+                      {itens.map((i, idx) => (
+                        <tr key={idx}>
+                          <td className="py-1.5 text-texto">
+                            {i.produtos?.nome}
+                          </td>
+                          <td className="py-1.5 text-right text-texto-suave">
+                            {i.qtd} {i.produtos?.unidade}
+                          </td>
+                          <td className="py-1.5 text-right text-texto-suave">
+                            {i.preco_unit != null ? moeda(i.preco_unit) : "—"}
+                          </td>
+                          <td className="py-1.5 text-right text-texto">
+                            {i.preco_unit != null
+                              ? moeda(i.preco_unit * i.qtd)
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                 <div className="mt-4">
                   <PedidoAcoes texto={texto} whatsapp={ped.fornecedores?.whatsapp ?? null} />
                 </div>

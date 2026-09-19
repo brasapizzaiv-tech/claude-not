@@ -62,68 +62,70 @@ export function FornecedoresClient({
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
-              <tr>
-                <th className="px-4 py-3">Nome</th>
-                <th className="px-4 py-3">Contato</th>
-                <th className="px-4 py-3">Telefone</th>
-                <th className="px-4 py-3">WhatsApp</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borda">
-              {fornecedores.map((f) => (
-                <tr
-                  key={f.id}
-                  className="transition hover:bg-superficie-suave"
-                >
-                  <td className="px-4 py-3 font-medium text-texto">
-                    {f.nome}
-                    {f.cnpj && (
-                      <span className="block text-xs font-normal text-texto-fraco">
-                        {f.cnpj}
-                      </span>
-                    )}
-                    {(f.categoria_ids ?? []).length > 0 && (
-                      <span className="mt-0.5 flex flex-wrap gap-1">
-                        {(f.categoria_ids ?? []).map((c) => (
-                          <span key={c} className="rounded-full bg-orange-100 px-2 py-0.5 text-mini font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
-                            {nomeCatProd(c) || "?"}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-texto-suave">
-                    {f.contato ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-texto-suave">
-                    {f.telefone ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-texto-suave">
-                    {f.whatsapp ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => abrirEdicao(f)}
-                      className="mr-3 text-orange-600 hover:underline"
-                    >
-                      Editar
-                    </button>
-                    <form action={excluirFornecedor} className="inline">
-                      <input type="hidden" name="id" value={f.id} />
-                      <Enviar
-                        className="text-texto-fraco hover:text-red-600"
-                      >
-                        Remover
-                      </Enviar>
-                    </form>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-[560px] w-full text-sm">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
+                <tr>
+                  <th className="px-4 py-3">Nome</th>
+                  <th className="px-4 py-3">Contato</th>
+                  <th className="px-4 py-3">Telefone</th>
+                  <th className="px-4 py-3">WhatsApp</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-borda">
+                {fornecedores.map((f) => (
+                  <tr
+                    key={f.id}
+                    className="transition hover:bg-superficie-suave"
+                  >
+                    <td className="px-4 py-3 font-medium text-texto">
+                      {f.nome}
+                      {f.cnpj && (
+                        <span className="block text-xs font-normal text-texto-fraco">
+                          {f.cnpj}
+                        </span>
+                      )}
+                      {(f.categoria_ids ?? []).length > 0 && (
+                        <span className="mt-0.5 flex flex-wrap gap-1">
+                          {(f.categoria_ids ?? []).map((c) => (
+                            <span key={c} className="rounded-full bg-orange-100 px-2 py-0.5 text-mini font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                              {nomeCatProd(c) || "?"}
+                            </span>
+                          ))}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-texto-suave">
+                      {f.contato ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-texto-suave">
+                      {f.telefone ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-texto-suave">
+                      {f.whatsapp ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => abrirEdicao(f)}
+                        className="mr-3 text-orange-600 hover:underline"
+                      >
+                        Editar
+                      </button>
+                      <form action={excluirFornecedor} className="inline">
+                        <input type="hidden" name="id" value={f.id} />
+                        <Enviar
+                          className="text-texto-fraco hover:text-red-600"
+                        >
+                          Remover
+                        </Enviar>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

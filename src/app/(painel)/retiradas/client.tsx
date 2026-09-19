@@ -276,7 +276,7 @@ function ResumoTab({ retiradas, proc, run }: {
       <div className={card}>
         <h2 className="mb-2 font-bold">Por funcionário</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="min-w-[560px] w-full text-sm">
             <thead className="text-left text-xs text-texto-fraco">
               <tr>
                 <th className="py-1 pr-2">Nome</th>
@@ -326,26 +326,28 @@ function ResumoTab({ retiradas, proc, run }: {
 
       <div className={card}>
         <h2 className="mb-2 font-bold">Por mês</h2>
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs text-texto-fraco">
-            <tr>
-              <th className="py-1 pr-2">Mês</th>
-              <th className="py-1 pr-2 text-right">Comprado</th>
-              <th className="py-1 pr-2 text-right">Em aberto</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-borda">
-            {porMes.length === 0 ? (
-              <tr><td colSpan={3} className="py-3 text-center text-texto-suave">Sem lançamentos.</td></tr>
-            ) : porMes.map(([mm, v]) => (
-              <tr key={mm}>
-                <td className="py-2 pr-2">{mesLabel(mm)}</td>
-                <td className="py-2 pr-2 text-right">{brl(v.comprado)}</td>
-                <td className={`py-2 pr-2 text-right ${v.aberto > 0 ? "text-red-500" : "text-texto-fraco"}`}>{brl(v.aberto)}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs text-texto-fraco">
+              <tr>
+                <th className="py-1 pr-2">Mês</th>
+                <th className="py-1 pr-2 text-right">Comprado</th>
+                <th className="py-1 pr-2 text-right">Em aberto</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-borda">
+              {porMes.length === 0 ? (
+                <tr><td colSpan={3} className="py-3 text-center text-texto-suave">Sem lançamentos.</td></tr>
+              ) : porMes.map(([mm, v]) => (
+                <tr key={mm}>
+                  <td className="py-2 pr-2">{mesLabel(mm)}</td>
+                  <td className="py-2 pr-2 text-right">{brl(v.comprado)}</td>
+                  <td className={`py-2 pr-2 text-right ${v.aberto > 0 ? "text-red-500" : "text-texto-fraco"}`}>{brl(v.aberto)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

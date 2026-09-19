@@ -153,66 +153,68 @@ export function NovoPedidoClient({
       {/* Itens do pedido */}
       {itens.length > 0 && (
         <div className="mt-4 overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
-              <tr>
-                <th className="px-3 py-2">Produto</th>
-                <th className="px-3 py-2 text-right">Qtd</th>
-                <th className="px-3 py-2 text-right">Preço un.</th>
-                <th className="px-3 py-2 text-right">Total</th>
-                <th className="px-3 py-2"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borda">
-              {itens.map((i, idx) => (
-                <tr key={i.produto_id} className="">
-                  <td className="px-3 py-2 text-texto">
-                    {i.nome} <span className="text-xs text-texto-fraco">{i.unidade}</span>
-                  </td>
-                  <td className="px-2 py-1 text-right">
-                    <input
-                      inputMode="decimal"
-                      value={i.qtd}
-                      onChange={(e) => alterar(idx, "qtd", e.target.value)}
-                      className="w-16 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
-                    />
-                  </td>
-                  <td className="px-2 py-1 text-right">
-                    <input
-                      inputMode="decimal"
-                      value={i.preco}
-                      placeholder="—"
-                      onChange={(e) => alterar(idx, "preco", e.target.value)}
-                      className="w-20 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right text-texto-suave">
-                    {(num(i.qtd) * num(i.preco)).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </td>
-                  <td className="px-2 py-1 text-right">
-                    <button
-                      onClick={() => remover(idx)}
-                      className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
-                    >
-                      ×
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-[560px] w-full text-sm">
+              <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+                <tr>
+                  <th className="px-3 py-2">Produto</th>
+                  <th className="px-3 py-2 text-right">Qtd</th>
+                  <th className="px-3 py-2 text-right">Preço un.</th>
+                  <th className="px-3 py-2 text-right">Total</th>
+                  <th className="px-3 py-2"></th>
                 </tr>
-              ))}
-              <tr className="bg-superficie-suave">
-                <td className="px-3 py-2 font-semibold" colSpan={3}>
-                  Total
-                </td>
-                <td className="px-3 py-2 text-right font-semibold">
-                  {total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </td>
-                <td />
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-borda">
+                {itens.map((i, idx) => (
+                  <tr key={i.produto_id} className="">
+                    <td className="px-3 py-2 text-texto">
+                      {i.nome} <span className="text-xs text-texto-fraco">{i.unidade}</span>
+                    </td>
+                    <td className="px-2 py-1 text-right">
+                      <input
+                        inputMode="decimal"
+                        value={i.qtd}
+                        onChange={(e) => alterar(idx, "qtd", e.target.value)}
+                        className="w-16 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
+                      />
+                    </td>
+                    <td className="px-2 py-1 text-right">
+                      <input
+                        inputMode="decimal"
+                        value={i.preco}
+                        placeholder="—"
+                        onChange={(e) => alterar(idx, "preco", e.target.value)}
+                        className="w-20 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right text-texto-suave">
+                      {(num(i.qtd) * num(i.preco)).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
+                    </td>
+                    <td className="px-2 py-1 text-right">
+                      <button
+                        onClick={() => remover(idx)}
+                        className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-superficie-suave">
+                  <td className="px-3 py-2 font-semibold" colSpan={3}>
+                    Total
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold">
+                    {total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

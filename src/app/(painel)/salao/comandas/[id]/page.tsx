@@ -187,43 +187,45 @@ export default async function ComandaPage({
 
       {/* Itens */}
       <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <tbody className="divide-y divide-borda">
-            {temBuffet && (
-              <tr className="">
-                <td className="px-4 py-2 font-medium text-texto">
-                  Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}
-                </td>
-                <td className="px-4 py-2 text-right text-texto-suave">
-                  {moeda(Number(comanda.valor_buffet))}
-                </td>
-                <td className="px-4 py-2" />
-              </tr>
-            )}
-            {lista.map((i) => (
-              <tr key={i.id} className="">
-                <td className="whitespace-pre-line px-4 py-2 text-texto">
-                  {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
-                  {i.descricao}
-                </td>
-                <td className="px-4 py-2 text-right align-top text-texto-suave">
-                  {moeda(Number(i.qtd) * Number(i.preco_unit))}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  {!fechada && (
-                    <form action={removerItemComanda} className="inline">
-                      <input type="hidden" name="id" value={i.id} />
-                      <input type="hidden" name="comanda_id" value={comanda.id} />
-                      <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">
-                        ×
-                      </Enviar>
-                    </form>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-borda">
+              {temBuffet && (
+                <tr className="">
+                  <td className="px-4 py-2 font-medium text-texto">
+                    Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}
+                  </td>
+                  <td className="px-4 py-2 text-right text-texto-suave">
+                    {moeda(Number(comanda.valor_buffet))}
+                  </td>
+                  <td className="px-4 py-2" />
+                </tr>
+              )}
+              {lista.map((i) => (
+                <tr key={i.id} className="">
+                  <td className="whitespace-pre-line px-4 py-2 text-texto">
+                    {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
+                    {i.descricao}
+                  </td>
+                  <td className="px-4 py-2 text-right align-top text-texto-suave">
+                    {moeda(Number(i.qtd) * Number(i.preco_unit))}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    {!fechada && (
+                      <form action={removerItemComanda} className="inline">
+                        <input type="hidden" name="id" value={i.id} />
+                        <input type="hidden" name="comanda_id" value={comanda.id} />
+                        <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">
+                          ×
+                        </Enviar>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {!fechada && (

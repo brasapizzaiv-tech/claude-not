@@ -149,47 +149,49 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         Por forma de pagamento
       </h2>
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
-            <tr>
-              <th className="px-4 py-2">Forma</th>
-              <th className="px-4 py-2 text-right">Pedidos</th>
-              <th className="px-4 py-2 text-right">Valor (R$)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-borda">
-            {f.formas.map((x) => (
-              <tr key={x.forma} className="">
-                <td className="px-4 py-2 font-medium text-texto">
-                  {x.forma}
-                </td>
-                <td className="px-2 py-1 text-right">
-                  <input
-                    inputMode="numeric"
-                    value={x.pedidos}
-                    onChange={(e) => setForma(x.forma, "pedidos", e.target.value)}
-                    placeholder="0"
-                    className="w-20 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
-                  />
-                </td>
-                <td className="px-2 py-1 text-right">
-                  <input
-                    inputMode="decimal"
-                    value={x.valor}
-                    onChange={(e) => setForma(x.forma, "valor", e.target.value)}
-                    placeholder="0,00"
-                    className="w-28 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
-                  />
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+              <tr>
+                <th className="px-4 py-2">Forma</th>
+                <th className="px-4 py-2 text-right">Pedidos</th>
+                <th className="px-4 py-2 text-right">Valor (R$)</th>
               </tr>
-            ))}
-            <tr className="bg-superficie-suave">
-              <td className="px-4 py-2 font-semibold">Total</td>
-              <td className="px-4 py-2 text-right font-semibold">{c.pedidos_total}</td>
-              <td className="px-4 py-2 text-right font-semibold">{moeda(c.formas_total)}</td>
-            </tr>
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-borda">
+              {f.formas.map((x) => (
+                <tr key={x.forma} className="">
+                  <td className="px-4 py-2 font-medium text-texto">
+                    {x.forma}
+                  </td>
+                  <td className="px-2 py-1 text-right">
+                    <input
+                      inputMode="numeric"
+                      value={x.pedidos}
+                      onChange={(e) => setForma(x.forma, "pedidos", e.target.value)}
+                      placeholder="0"
+                      className="w-20 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
+                    />
+                  </td>
+                  <td className="px-2 py-1 text-right">
+                    <input
+                      inputMode="decimal"
+                      value={x.valor}
+                      onChange={(e) => setForma(x.forma, "valor", e.target.value)}
+                      placeholder="0,00"
+                      className="w-28 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right dark:text-zinc-100"
+                    />
+                  </td>
+                </tr>
+              ))}
+              <tr className="bg-superficie-suave">
+                <td className="px-4 py-2 font-semibold">Total</td>
+                <td className="px-4 py-2 text-right font-semibold">{c.pedidos_total}</td>
+                <td className="px-4 py-2 text-right font-semibold">{moeda(c.formas_total)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       {Math.abs(difFormas) > 0.01 && (
         <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">

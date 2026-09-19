@@ -151,37 +151,39 @@ export default async function GarcomComandaPage({
         {lista.length === 0 ? (
           <p className="p-4 text-center text-sm text-texto-suave">Nada lançado ainda.</p>
         ) : (
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-100 dark:divide-borda">
-              {lista.map((i) => (
-                <tr key={i.id} className="bg-white dark:bg-painel-fundo">
-                  <td className="whitespace-pre-line px-3 py-2 text-zinc-800 dark:text-texto">
-                    {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
-                    {i.descricao}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-zinc-100 dark:divide-borda">
+                {lista.map((i) => (
+                  <tr key={i.id} className="bg-white dark:bg-painel-fundo">
+                    <td className="whitespace-pre-line px-3 py-2 text-zinc-800 dark:text-texto">
+                      {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
+                      {i.descricao}
+                    </td>
+                    <td className="px-3 py-2 text-right align-top text-texto-fraco dark:text-texto-suave">
+                      {moeda(Number(i.qtd) * Number(i.preco_unit))}
+                    </td>
+                    <td className="px-2 py-2 text-right">
+                      {!fechada && (
+                        <form action={removerItemComanda} className="inline">
+                          <input type="hidden" name="id" value={i.id} />
+                          <input type="hidden" name="comanda_id" value={comanda.id} />
+                          <Enviar className="text-texto-suave hover:text-red-600 dark:text-texto-fraco">×</Enviar>
+                        </form>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-zinc-50 dark:bg-painel-cartao">
+                  <td className="px-3 py-2 font-semibold text-zinc-900 dark:text-texto">Total</td>
+                  <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-texto">
+                    {moeda(total)}
                   </td>
-                  <td className="px-3 py-2 text-right align-top text-texto-fraco dark:text-texto-suave">
-                    {moeda(Number(i.qtd) * Number(i.preco_unit))}
-                  </td>
-                  <td className="px-2 py-2 text-right">
-                    {!fechada && (
-                      <form action={removerItemComanda} className="inline">
-                        <input type="hidden" name="id" value={i.id} />
-                        <input type="hidden" name="comanda_id" value={comanda.id} />
-                        <Enviar className="text-texto-suave hover:text-red-600 dark:text-texto-fraco">×</Enviar>
-                      </form>
-                    )}
-                  </td>
+                  <td />
                 </tr>
-              ))}
-              <tr className="bg-zinc-50 dark:bg-painel-cartao">
-                <td className="px-3 py-2 font-semibold text-zinc-900 dark:text-texto">Total</td>
-                <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-texto">
-                  {moeda(total)}
-                </td>
-                <td />
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

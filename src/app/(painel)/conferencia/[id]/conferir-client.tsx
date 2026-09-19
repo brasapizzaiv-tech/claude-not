@@ -265,7 +265,7 @@ export function ConferirClient({
       )}
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
+        <table className="min-w-[720px] w-full text-sm">
           <thead className="text-left text-xs font-medium text-texto-fraco">
             <tr>
               <th className="px-3 py-3">Produto</th>

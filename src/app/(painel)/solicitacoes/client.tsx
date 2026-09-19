@@ -184,7 +184,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
         </div>
       ) : (
         <div className="overflow-x-auto rounded-cartao border border-borda bg-painel-cartao">
-          <table className="w-full text-sm">
+          <table className="min-w-[720px] w-full text-sm">
             <thead className="bg-superficie-suave text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="w-8 px-3 py-2">

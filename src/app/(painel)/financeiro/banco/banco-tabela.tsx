@@ -243,305 +243,307 @@ export function BancoTabela({
       </div>
 
       <div className="rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs font-medium text-texto-fraco">
-            <tr>
-              <th className="w-8 px-3 py-3">
-                {selecionaveis.length > 0 && (
-                  <input
-                    type="checkbox"
-                    checked={todosSel}
-                    onChange={toggleTodos}
-                    title="Selecionar todas com sugestão"
-                  />
-                )}
-              </th>
-              <th className="px-4 py-3">Data</th>
-              <th className="px-4 py-3">Descrição (banco)</th>
-              <th className="px-4 py-3 text-right">Valor</th>
-              <th className="px-4 py-3">Lançamento</th>
-              <th className="px-4 py-3 text-right"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-borda">
-            {lista.map((t) => {
-              const conciliado = !!t.lancamento_id;
-              const entrada = Number(t.valor) > 0;
-              const aberto = painel === t.id;
-              const cats = categorias.filter((c) =>
-                entrada ? c.tipo === "receita" : c.tipo !== "receita",
-              );
-              const lancs = lancamentos.filter((l) =>
-                entrada ? l.tipo === "receita" : l.tipo !== "receita",
-              );
-              return (
-                <Fragment key={t.id}>
-                  <tr className="">
-                    <td className="px-3 py-2">
-                      {!conciliado && sugestaoForte(t) && (
-                        <input
-                          type="checkbox"
-                          checked={sel.has(t.id)}
-                          onChange={() => toggleSel(t.id)}
-                        />
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-texto-suave">{dataBR(t.data)}</td>
-                    <td className="px-4 py-2 text-texto">
-                      {t.banco && (
-                        <span className="mr-2 rounded bg-superficie-suave px-1.5 py-0.5 text-mini font-medium text-texto-suave">
-                          {t.banco}
-                        </span>
-                      )}
-                      {t.descricao}
-                    </td>
-                    <td
-                      className={`px-4 py-2 text-right font-medium ${
-                        entrada ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {moeda(Number(t.valor))}
-                    </td>
-                    <td className="px-4 py-2 text-xs">
-                      {conciliado ? (
-                        <span className="text-green-600">
-                          ✓ {t.lancamentoLabel ?? "conciliado"}
-                        </span>
-                      ) : t.sugestaoLabel ? (
-                        sugestaoForte(t) ? (
-                          <span className="text-texto-suave">sugestão: {t.sugestaoLabel}</span>
-                        ) : (
-                          <span className="text-amber-600">
-                            <Icone nome="alerta" tamanho={12} className="mr-1" /> confira a data: {t.sugestaoLabel}
-                            <span className="block text-mini text-amber-600/80">
-                              {t.sugestaoDias} dias de diferença do extrato — pode ser outro mês do mesmo fornecedor
-                            </span>
+        <div className="overflow-x-auto">
+          <table className="min-w-[720px] w-full text-sm">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
+              <tr>
+                <th className="w-8 px-3 py-3">
+                  {selecionaveis.length > 0 && (
+                    <input
+                      type="checkbox"
+                      checked={todosSel}
+                      onChange={toggleTodos}
+                      title="Selecionar todas com sugestão"
+                    />
+                  )}
+                </th>
+                <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Descrição (banco)</th>
+                <th className="px-4 py-3 text-right">Valor</th>
+                <th className="px-4 py-3">Lançamento</th>
+                <th className="px-4 py-3 text-right"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-borda">
+              {lista.map((t) => {
+                const conciliado = !!t.lancamento_id;
+                const entrada = Number(t.valor) > 0;
+                const aberto = painel === t.id;
+                const cats = categorias.filter((c) =>
+                  entrada ? c.tipo === "receita" : c.tipo !== "receita",
+                );
+                const lancs = lancamentos.filter((l) =>
+                  entrada ? l.tipo === "receita" : l.tipo !== "receita",
+                );
+                return (
+                  <Fragment key={t.id}>
+                    <tr className="">
+                      <td className="px-3 py-2">
+                        {!conciliado && sugestaoForte(t) && (
+                          <input
+                            type="checkbox"
+                            checked={sel.has(t.id)}
+                            onChange={() => toggleSel(t.id)}
+                          />
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-texto-suave">{dataBR(t.data)}</td>
+                      <td className="px-4 py-2 text-texto">
+                        {t.banco && (
+                          <span className="mr-2 rounded bg-superficie-suave px-1.5 py-0.5 text-mini font-medium text-texto-suave">
+                            {t.banco}
                           </span>
-                        )
-                      ) : t.notaSugeridaLabel ? (
-                        <span className="text-orange-600 dark:text-orange-400">
-                          nota pendente: {t.notaSugeridaLabel}
-                        </span>
-                      ) : (
-                        <span className="text-texto-fraco">—</span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-2 text-right">
-                      {conciliado ? (
-                        <button
-                          disabled={proc}
-                          onClick={() => run(() => desconciliar(t.id))}
-                          className="text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
-                        >
-                          Desfazer
-                        </button>
-                      ) : (
-                        <div className="inline-flex items-center gap-2">
-                          {t.sugestaoId && !sugestaoForte(t) && (
-                            <button
-                              onClick={async () => {
-                                if (!await confirmar(
-                                  "Essa conta está a " + t.sugestaoDias + " dias da data do extrato. Conciliar mesmo assim?",
-                                )) return;
-                                run(() => conciliar(t.id, t.sugestaoId!));
-                              }}
-                              disabled={proc}
-                              className="rounded-controle bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
-                            >
-                              Conciliar assim mesmo
-                            </button>
-                          )}
-                          {t.sugestaoId && sugestaoForte(t) && (
-                            <button
-                              disabled={proc}
-                              onClick={() => run(() => conciliar(t.id, t.sugestaoId!))}
-                              className="rounded-controle bg-texto px-3 py-1.5 text-xs font-medium text-fundo hover:opacity-90 disabled:opacity-60"
-                            >
-                              Conciliar
-                            </button>
-                          )}
-                          {!t.sugestaoId && t.notaSugeridaId && (
-                            <button
-                              disabled={proc}
-                              onClick={() =>
-                                run(() => lancarNotaEConciliar(t.id, t.notaSugeridaId!))
-                              }
-                              title={t.notaSugeridaLabel ?? ""}
-                              className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-60"
-                            >
-                              Lançar nota e conciliar
-                            </button>
-                          )}
-                          <button
-                            onClick={() => abrir(t.id)}
-                            className={`rounded-controle border px-2.5 py-1.5 text-xs font-medium transition ${
-                              aberto
-                                ? "border-orange-500 text-orange-600"
-                                : "border-borda-forte text-texto-suave hover:bg-superficie-suave  "
-                            }`}
-                          >
-                            Lançar ▾
-                          </button>
-                        </div>
-                      )}
-                      <button
-                        disabled={proc}
-                        onClick={() => run(() => {
-                          const fd = new FormData();
-                          fd.set("id", t.id);
-                          return excluirTransacao(fd);
-                        })}
-                        className="ml-2 text-xs text-zinc-300 hover:text-red-600 disabled:opacity-60 dark:text-zinc-600"
+                        )}
+                        {t.descricao}
+                      </td>
+                      <td
+                        className={`px-4 py-2 text-right font-medium ${
+                          entrada ? "text-green-600" : "text-red-600"
+                        }`}
                       >
-                        ×
-                      </button>
-                    </td>
-                  </tr>
-                  {aberto && !conciliado && (
-                    <tr className="bg-orange-50/40 dark:bg-orange-950/10">
-                      <td colSpan={6} className="px-4 py-3">
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          {/* Gerar novo */}
-                          <div className="rounded-cartao border border-borda p-3">
-                            <p className="mb-2 text-xs font-semibold text-texto-suave">
-                              Criar lançamento novo ({entrada ? "receita" : "despesa"})
-                            </p>
-                            <Combobox
-                              options={cats.map((c) => ({
-                                value: c.id,
-                                label: `${c.grupo} — ${c.nome}`,
-                              }))}
-                              value={catSel}
-                              onChange={setCatSel}
-                              placeholder="Buscar categoria..."
-                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
-                            />
-                            <input
-                              value={obs}
-                              onChange={(e) => setObs(e.target.value)}
-                              placeholder={`Observação (opcional) — padrão: ${t.descricao ?? "descrição do banco"}`}
-                              className="mt-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
-                            />
-                            {/* Rateio: fatura do cartão tem gasto de várias categorias */}
-                            {partes.length === 0 ? (
+                        {moeda(Number(t.valor))}
+                      </td>
+                      <td className="px-4 py-2 text-xs">
+                        {conciliado ? (
+                          <span className="text-green-600">
+                            ✓ {t.lancamentoLabel ?? "conciliado"}
+                          </span>
+                        ) : t.sugestaoLabel ? (
+                          sugestaoForte(t) ? (
+                            <span className="text-texto-suave">sugestão: {t.sugestaoLabel}</span>
+                          ) : (
+                            <span className="text-amber-600">
+                              <Icone nome="alerta" tamanho={12} className="mr-1" /> confira a data: {t.sugestaoLabel}
+                              <span className="block text-mini text-amber-600/80">
+                                {t.sugestaoDias} dias de diferença do extrato — pode ser outro mês do mesmo fornecedor
+                              </span>
+                            </span>
+                          )
+                        ) : t.notaSugeridaLabel ? (
+                          <span className="text-orange-600 dark:text-orange-400">
+                            nota pendente: {t.notaSugeridaLabel}
+                          </span>
+                        ) : (
+                          <span className="text-texto-fraco">—</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2 text-right">
+                        {conciliado ? (
+                          <button
+                            disabled={proc}
+                            onClick={() => run(() => desconciliar(t.id))}
+                            className="text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
+                          >
+                            Desfazer
+                          </button>
+                        ) : (
+                          <div className="inline-flex items-center gap-2">
+                            {t.sugestaoId && !sugestaoForte(t) && (
                               <button
-                                type="button"
-                                onClick={novaParte}
-                                className="mt-2 block text-xs text-texto-suave underline hover:text-orange-600"
+                                onClick={async () => {
+                                  if (!await confirmar(
+                                    "Essa conta está a " + t.sugestaoDias + " dias da data do extrato. Conciliar mesmo assim?",
+                                  )) return;
+                                  run(() => conciliar(t.id, t.sugestaoId!));
+                                }}
+                                disabled={proc}
+                                className="rounded-controle bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
                               >
-                                ＋ dividir em várias categorias (fatura do cartão, compra grande)
+                                Conciliar assim mesmo
                               </button>
-                            ) : (
-                              <div className="mt-3 space-y-2 rounded-controle border border-orange-300 p-2 dark:border-orange-900">
-                                <p className="text-mini font-semibold text-texto-suave">
-                                  Dividir {moeda(Math.abs(Number(t.valor)))} entre categorias
-                                </p>
-                                {partes.map((x) => (
-                                  <div key={x.uid} className="flex flex-wrap items-center gap-1.5">
-                                    <div className="min-w-[180px] flex-1">
-                                      <Combobox
-                                        options={cats.map((c) => ({ value: c.id, label: `${c.grupo} — ${c.nome}` }))}
-                                        value={x.categoriaId}
-                                        onChange={(v) => mudarParte(x.uid, "categoriaId", v)}
-                                        placeholder="Categoria..."
-                                        className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
-                                      />
-                                    </div>
-                                    <input
-                                      value={x.descricao}
-                                      onChange={(e) => mudarParte(x.uid, "descricao", e.target.value)}
-                                      placeholder="o que é (opcional)"
-                                      className="w-32 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
-                                    />
-                                    <input
-                                      inputMode="decimal"
-                                      value={x.valor}
-                                      onChange={(e) => mudarParte(x.uid, "valor", e.target.value)}
-                                      placeholder="0,00"
-                                      className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
-                                    />
-                                    <button type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-red-600">✕</button>
-                                  </div>
-                                ))}
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <button type="button" onClick={novaParte} className="text-xs text-texto-suave underline hover:text-orange-600">
-                                    ＋ outra categoria
-                                  </button>
-                                  {(() => {
-                                    const soma = partes.reduce((a, x) => a + numeroBR(x.valor), 0);
-                                    const falta = Math.round((Math.abs(Number(t.valor)) - soma) * 100) / 100;
-                                    return (
-                                      <span className={`text-xs font-semibold ${Math.abs(falta) < 0.005 ? "text-emerald-600" : "text-amber-600"}`}>
-                                        {Math.abs(falta) < 0.005
-                                          ? "✓ fecha o valor"
-                                          : falta > 0
-                                            ? `falta ${moeda(falta)}`
-                                            : `passou ${moeda(-falta)}`}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-                                <button type="button" onClick={() => setPartes([])} className="text-mini text-texto-fraco underline">
-                                  cancelar a divisão
-                                </button>
-                              </div>
+                            )}
+                            {t.sugestaoId && sugestaoForte(t) && (
+                              <button
+                                disabled={proc}
+                                onClick={() => run(() => conciliar(t.id, t.sugestaoId!))}
+                                className="rounded-controle bg-texto px-3 py-1.5 text-xs font-medium text-fundo hover:opacity-90 disabled:opacity-60"
+                              >
+                                Conciliar
+                              </button>
+                            )}
+                            {!t.sugestaoId && t.notaSugeridaId && (
+                              <button
+                                disabled={proc}
+                                onClick={() =>
+                                  run(() => lancarNotaEConciliar(t.id, t.notaSugeridaId!))
+                                }
+                                title={t.notaSugeridaLabel ?? ""}
+                                className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+                              >
+                                Lançar nota e conciliar
+                              </button>
                             )}
                             <button
-                              disabled={
-                                proc ||
-                                (partes.length === 0
-                                  ? !catSel
-                                  : partes.some((x) => !x.categoriaId || numeroBR(x.valor) <= 0) ||
-                                    Math.abs(partes.reduce((a, x) => a + numeroBR(x.valor), 0) - Math.abs(Number(t.valor))) > 0.005)
-                              }
-                              onClick={() =>
-                                run(() =>
-                                  gerarLancamentoDaTransacao(
-                                    t.id,
-                                    catSel,
-                                    obs,
-                                    partes.length > 0
-                                      ? partes.map((x) => ({ categoriaId: x.categoriaId, valor: numeroBR(x.valor), descricao: x.descricao }))
-                                      : undefined,
-                                  ),
-                                )
-                              }
-                              className="mt-2 rounded-controle bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+                              onClick={() => abrir(t.id)}
+                              className={`rounded-controle border px-2.5 py-1.5 text-xs font-medium transition ${
+                                aberto
+                                  ? "border-orange-500 text-orange-600"
+                                  : "border-borda-forte text-texto-suave hover:bg-superficie-suave  "
+                              }`}
                             >
-                              {partes.length > 0
-                                ? `Gerar ${partes.length} lançamentos e conciliar`
-                                : `Gerar ${moeda(Math.abs(Number(t.valor)))} e conciliar`}
+                              Lançar ▾
                             </button>
                           </div>
-                          {/* Procurar existente */}
-                          <div className="rounded-cartao border border-borda p-3">
-                            <p className="mb-2 text-xs font-semibold text-texto-suave">
-                              Vincular a um lançamento existente
-                            </p>
-                            <Combobox
-                              options={lancs.map((l) => ({ value: l.id, label: l.label }))}
-                              value={lancSel}
-                              onChange={setLancSel}
-                              placeholder="Buscar lançamento..."
-                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
-                            />
-                            <button
-                              disabled={proc || !lancSel}
-                              onClick={() => run(() => conciliar(t.id, lancSel))}
-                              className="mt-2 rounded-controle bg-zinc-800 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
-                            >
-                              Vincular
-                            </button>
-                          </div>
-                        </div>
+                        )}
+                        <button
+                          disabled={proc}
+                          onClick={() => run(() => {
+                            const fd = new FormData();
+                            fd.set("id", t.id);
+                            return excluirTransacao(fd);
+                          })}
+                          className="ml-2 text-xs text-zinc-300 hover:text-red-600 disabled:opacity-60 dark:text-zinc-600"
+                        >
+                          ×
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                    {aberto && !conciliado && (
+                      <tr className="bg-orange-50/40 dark:bg-orange-950/10">
+                        <td colSpan={6} className="px-4 py-3">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {/* Gerar novo */}
+                            <div className="rounded-cartao border border-borda p-3">
+                              <p className="mb-2 text-xs font-semibold text-texto-suave">
+                                Criar lançamento novo ({entrada ? "receita" : "despesa"})
+                              </p>
+                              <Combobox
+                                options={cats.map((c) => ({
+                                  value: c.id,
+                                  label: `${c.grupo} — ${c.nome}`,
+                                }))}
+                                value={catSel}
+                                onChange={setCatSel}
+                                placeholder="Buscar categoria..."
+                                className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+                              />
+                              <input
+                                value={obs}
+                                onChange={(e) => setObs(e.target.value)}
+                                placeholder={`Observação (opcional) — padrão: ${t.descricao ?? "descrição do banco"}`}
+                                className="mt-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+                              />
+                              {/* Rateio: fatura do cartão tem gasto de várias categorias */}
+                              {partes.length === 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={novaParte}
+                                  className="mt-2 block text-xs text-texto-suave underline hover:text-orange-600"
+                                >
+                                  ＋ dividir em várias categorias (fatura do cartão, compra grande)
+                                </button>
+                              ) : (
+                                <div className="mt-3 space-y-2 rounded-controle border border-orange-300 p-2 dark:border-orange-900">
+                                  <p className="text-mini font-semibold text-texto-suave">
+                                    Dividir {moeda(Math.abs(Number(t.valor)))} entre categorias
+                                  </p>
+                                  {partes.map((x) => (
+                                    <div key={x.uid} className="flex flex-wrap items-center gap-1.5">
+                                      <div className="min-w-[180px] flex-1">
+                                        <Combobox
+                                          options={cats.map((c) => ({ value: c.id, label: `${c.grupo} — ${c.nome}` }))}
+                                          value={x.categoriaId}
+                                          onChange={(v) => mudarParte(x.uid, "categoriaId", v)}
+                                          placeholder="Categoria..."
+                                          className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                                        />
+                                      </div>
+                                      <input
+                                        value={x.descricao}
+                                        onChange={(e) => mudarParte(x.uid, "descricao", e.target.value)}
+                                        placeholder="o que é (opcional)"
+                                        className="w-32 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                                      />
+                                      <input
+                                        inputMode="decimal"
+                                        value={x.valor}
+                                        onChange={(e) => mudarParte(x.uid, "valor", e.target.value)}
+                                        placeholder="0,00"
+                                        className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                                      />
+                                      <button type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-red-600">✕</button>
+                                    </div>
+                                  ))}
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <button type="button" onClick={novaParte} className="text-xs text-texto-suave underline hover:text-orange-600">
+                                      ＋ outra categoria
+                                    </button>
+                                    {(() => {
+                                      const soma = partes.reduce((a, x) => a + numeroBR(x.valor), 0);
+                                      const falta = Math.round((Math.abs(Number(t.valor)) - soma) * 100) / 100;
+                                      return (
+                                        <span className={`text-xs font-semibold ${Math.abs(falta) < 0.005 ? "text-emerald-600" : "text-amber-600"}`}>
+                                          {Math.abs(falta) < 0.005
+                                            ? "✓ fecha o valor"
+                                            : falta > 0
+                                              ? `falta ${moeda(falta)}`
+                                              : `passou ${moeda(-falta)}`}
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
+                                  <button type="button" onClick={() => setPartes([])} className="text-mini text-texto-fraco underline">
+                                    cancelar a divisão
+                                  </button>
+                                </div>
+                              )}
+                              <button
+                                disabled={
+                                  proc ||
+                                  (partes.length === 0
+                                    ? !catSel
+                                    : partes.some((x) => !x.categoriaId || numeroBR(x.valor) <= 0) ||
+                                      Math.abs(partes.reduce((a, x) => a + numeroBR(x.valor), 0) - Math.abs(Number(t.valor))) > 0.005)
+                                }
+                                onClick={() =>
+                                  run(() =>
+                                    gerarLancamentoDaTransacao(
+                                      t.id,
+                                      catSel,
+                                      obs,
+                                      partes.length > 0
+                                        ? partes.map((x) => ({ categoriaId: x.categoriaId, valor: numeroBR(x.valor), descricao: x.descricao }))
+                                        : undefined,
+                                    ),
+                                  )
+                                }
+                                className="mt-2 rounded-controle bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+                              >
+                                {partes.length > 0
+                                  ? `Gerar ${partes.length} lançamentos e conciliar`
+                                  : `Gerar ${moeda(Math.abs(Number(t.valor)))} e conciliar`}
+                              </button>
+                            </div>
+                            {/* Procurar existente */}
+                            <div className="rounded-cartao border border-borda p-3">
+                              <p className="mb-2 text-xs font-semibold text-texto-suave">
+                                Vincular a um lançamento existente
+                              </p>
+                              <Combobox
+                                options={lancs.map((l) => ({ value: l.id, label: l.label }))}
+                                value={lancSel}
+                                onChange={setLancSel}
+                                placeholder="Buscar lançamento..."
+                                className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+                              />
+                              <button
+                                disabled={proc || !lancSel}
+                                onClick={() => run(() => conciliar(t.id, lancSel))}
+                                className="mt-2 rounded-controle bg-zinc-800 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 dark:bg-zinc-700"
+                              >
+                                Vincular
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

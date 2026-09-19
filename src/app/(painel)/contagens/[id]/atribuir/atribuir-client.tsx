@@ -134,45 +134,47 @@ export function AtribuirClient({
 
       {/* Atribuição por categoria */}
       <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs font-medium text-texto-fraco">
-            <tr>
-              <th className="px-4 py-3">Categoria</th>
-              <th className="px-4 py-3">Produtos</th>
-              <th className="px-4 py-3">Responsável</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-borda">
-            {categorias.map((c) => (
-              <tr key={c.id} className="">
-                <td className="px-4 py-2 font-medium text-texto">
-                  {c.nome}
-                </td>
-                <td className="px-4 py-2 text-texto-suave">{c.qtdProdutos}</td>
-                <td className="px-4 py-2">
-                  <span className="inline-flex items-center gap-2">
-                  <select
-                    value={c.colaboradorId ?? ""}
-                    onChange={(e) => atribuir(c.id, e.target.value)}
-                    disabled={colaboradores.length === 0 || salvando === c.id}
-                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
-                  >
-                    <option value="">— ninguém —</option>
-                    {colaboradores.map((col) => (
-                      <option key={col.id} value={col.id}>
-                        {col.nome}
-                      </option>
-                    ))}
-                  </select>
-                  {salvando === c.id && (
-                    <Icone nome="esperando" tamanho={14} className="animate-spin text-texto-fraco" titulo="Salvando" />
-                  )}
-                  </span>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
+              <tr>
+                <th className="px-4 py-3">Categoria</th>
+                <th className="px-4 py-3">Produtos</th>
+                <th className="px-4 py-3">Responsável</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-borda">
+              {categorias.map((c) => (
+                <tr key={c.id} className="">
+                  <td className="px-4 py-2 font-medium text-texto">
+                    {c.nome}
+                  </td>
+                  <td className="px-4 py-2 text-texto-suave">{c.qtdProdutos}</td>
+                  <td className="px-4 py-2">
+                    <span className="inline-flex items-center gap-2">
+                    <select
+                      value={c.colaboradorId ?? ""}
+                      onChange={(e) => atribuir(c.id, e.target.value)}
+                      disabled={colaboradores.length === 0 || salvando === c.id}
+                      className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                    >
+                      <option value="">— ninguém —</option>
+                      {colaboradores.map((col) => (
+                        <option key={col.id} value={col.id}>
+                          {col.nome}
+                        </option>
+                      ))}
+                    </select>
+                    {salvando === c.id && (
+                      <Icone nome="esperando" tamanho={14} className="animate-spin text-texto-fraco" titulo="Salvando" />
+                    )}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {semAtribuir > 0 && (

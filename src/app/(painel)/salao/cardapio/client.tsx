@@ -477,69 +477,71 @@ function ItensTabela({
     return <p className="text-sm text-texto-fraco">Nenhum produto nesta categoria.</p>;
   return (
     <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-      <table className="w-full text-sm">
-        <tbody className="divide-y divide-borda">
-          {itens.map((i) => {
-            const canaisOff = [!i.delivery && "APP", !i.canal_garcom && "Garçom", !i.canal_pdv && "PDV"].filter(Boolean) as string[];
-            const temHorario = resumoHorarios(i.horarios);
-            return (
-              <tr key={i.id} className={`bg-painel-cartao ${i.ativo ? "" : "opacity-50"}`}>
-                <td className="w-14 py-1.5 pl-3"><Foto url={i.foto_url} tam="h-10 w-10" /></td>
-                <td className="px-2 py-2 font-medium text-texto">
-                  {i.nome}
-                  {!i.ativo && <span className="ml-2 text-mini text-red-500">oculto</span>}
-                  {canaisOff.length > 0 && <span className="ml-2 text-mini text-texto-fraco">sem: {canaisOff.join(", ")}</span>}
-                  {temHorario && <span className="ml-2 inline-flex items-center gap-1 text-mini text-sky-500"><Icone nome="relogio" tamanho={11} /> {temHorario}</span>}
-                </td>
-                <td className="px-2 py-2 text-right text-texto-suave">
-                  {i.promo_preco != null && Number(i.promo_preco) > 0 ? (
-                    <><span className="mr-1 text-xs text-texto-fraco line-through">{moeda(Number(i.preco))}</span><span className="font-semibold text-orange-600">{moeda(Number(i.promo_preco))}</span></>
-                  ) : moeda(Number(i.preco))}
-                </td>
-                <td className="px-2 py-2 text-right">
-                  <form action={toggleDisponivelItem} className="inline">
-                    <input type="hidden" name="id" value={i.id} />
-                    <input type="hidden" name="disponivel" value={i.disponivel ? "0" : "1"} />
-                    <Enviar
-                      className={`rounded-controle px-2 py-0.5 text-mini font-semibold ${
-                        i.disponivel
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-                          : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
-                      }`}
-                      title="Disponível/indisponível em todos os canais (ex.: esgotou)"
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <tbody className="divide-y divide-borda">
+            {itens.map((i) => {
+              const canaisOff = [!i.delivery && "APP", !i.canal_garcom && "Garçom", !i.canal_pdv && "PDV"].filter(Boolean) as string[];
+              const temHorario = resumoHorarios(i.horarios);
+              return (
+                <tr key={i.id} className={`bg-painel-cartao ${i.ativo ? "" : "opacity-50"}`}>
+                  <td className="w-14 py-1.5 pl-3"><Foto url={i.foto_url} tam="h-10 w-10" /></td>
+                  <td className="px-2 py-2 font-medium text-texto">
+                    {i.nome}
+                    {!i.ativo && <span className="ml-2 text-mini text-red-500">oculto</span>}
+                    {canaisOff.length > 0 && <span className="ml-2 text-mini text-texto-fraco">sem: {canaisOff.join(", ")}</span>}
+                    {temHorario && <span className="ml-2 inline-flex items-center gap-1 text-mini text-sky-500"><Icone nome="relogio" tamanho={11} /> {temHorario}</span>}
+                  </td>
+                  <td className="px-2 py-2 text-right text-texto-suave">
+                    {i.promo_preco != null && Number(i.promo_preco) > 0 ? (
+                      <><span className="mr-1 text-xs text-texto-fraco line-through">{moeda(Number(i.preco))}</span><span className="font-semibold text-orange-600">{moeda(Number(i.promo_preco))}</span></>
+                    ) : moeda(Number(i.preco))}
+                  </td>
+                  <td className="px-2 py-2 text-right">
+                    <form action={toggleDisponivelItem} className="inline">
+                      <input type="hidden" name="id" value={i.id} />
+                      <input type="hidden" name="disponivel" value={i.disponivel ? "0" : "1"} />
+                      <Enviar
+                        className={`rounded-controle px-2 py-0.5 text-mini font-semibold ${
+                          i.disponivel
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
+                        }`}
+                        title="Disponível/indisponível em todos os canais (ex.: esgotou)"
+                      >
+                        {i.disponivel ? "✓ Disponível" : "✕ Indisponível"}
+                      </Enviar>
+                    </form>
+                  </td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <form action={toggleItem} className="inline">
+                      <input type="hidden" name="id" value={i.id} />
+                      <input type="hidden" name="ativo" value={i.ativo ? "0" : "1"} />
+                      <Enviar className="mr-3 text-texto-fraco hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
+                        {i.ativo ? "Ocultar" : "Mostrar"}
+                      </Enviar>
+                    </form>
+                    {comAdicionais.has(i.id) && (
+                      <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-3 text-emerald-600 hover:underline">
+                        Adicionais
+                      </Link>
+                    )}
+                    <button onClick={() => onEditar(i)} className="mr-3 text-orange-600 hover:underline">Editar</button>
+                    <form
+                      action={excluirItem}
+                      className="inline"
+                      onSubmit={async (e) => { if (!await confirmar(`Remover "${i.nome}"?`)) e.preventDefault(); }}
                     >
-                      {i.disponivel ? "✓ Disponível" : "✕ Indisponível"}
-                    </Enviar>
-                  </form>
-                </td>
-                <td className="px-4 py-2 text-right whitespace-nowrap">
-                  <form action={toggleItem} className="inline">
-                    <input type="hidden" name="id" value={i.id} />
-                    <input type="hidden" name="ativo" value={i.ativo ? "0" : "1"} />
-                    <Enviar className="mr-3 text-texto-fraco hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
-                      {i.ativo ? "Ocultar" : "Mostrar"}
-                    </Enviar>
-                  </form>
-                  {comAdicionais.has(i.id) && (
-                    <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-3 text-emerald-600 hover:underline">
-                      Adicionais
-                    </Link>
-                  )}
-                  <button onClick={() => onEditar(i)} className="mr-3 text-orange-600 hover:underline">Editar</button>
-                  <form
-                    action={excluirItem}
-                    className="inline"
-                    onSubmit={async (e) => { if (!await confirmar(`Remover "${i.nome}"?`)) e.preventDefault(); }}
-                  >
-                    <input type="hidden" name="id" value={i.id} />
-                    <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
-                  </form>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                      <input type="hidden" name="id" value={i.id} />
+                      <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
+                    </form>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

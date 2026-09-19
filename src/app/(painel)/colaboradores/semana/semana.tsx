@@ -455,7 +455,7 @@ export function SemanaClient({
           <p className="text-sm text-texto-suave">Nenhuma noite lançada. Adicione a data da noite e digite o valor.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-[720px] w-full text-sm">
               <thead className="text-left text-xs font-medium text-texto-fraco">
                 <tr>
                   <th className="px-2 py-1">Noite</th>

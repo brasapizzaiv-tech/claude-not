@@ -99,40 +99,42 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
       />
 
       <div className="mt-4 overflow-hidden rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <tbody className="divide-y divide-borda">
-            {filtrados.map((c) => (
-              <tr key={c.id} className="">
-                <td className="px-4 py-3">
-                  <div className="font-medium text-texto">{c.nome}</div>
-                  <div className="text-xs text-texto-fraco">
-                    {[c.cpf_cnpj, c.municipio, c.uf].filter(Boolean).join(" · ")}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <button
-                    onClick={() => {
-                      setEditando(c);
-                      setAberto(true);
-                    }}
-                    className="mr-3 text-orange-600 hover:underline"
-                  >
-                    Editar
-                  </button>
-                  <form action={excluirCliente} className="inline">
-                    <input type="hidden" name="id" value={c.id} />
-                    <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
-                  </form>
-                </td>
-              </tr>
-            ))}
-            {filtrados.length === 0 && (
-              <tr>
-                <td className="px-4 py-8 text-center text-texto-fraco">Nenhum cliente.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-borda">
+              {filtrados.map((c) => (
+                <tr key={c.id} className="">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-texto">{c.nome}</div>
+                    <div className="text-xs text-texto-fraco">
+                      {[c.cpf_cnpj, c.municipio, c.uf].filter(Boolean).join(" · ")}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => {
+                        setEditando(c);
+                        setAberto(true);
+                      }}
+                      className="mr-3 text-orange-600 hover:underline"
+                    >
+                      Editar
+                    </button>
+                    <form action={excluirCliente} className="inline">
+                      <input type="hidden" name="id" value={c.id} />
+                      <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+              {filtrados.length === 0 && (
+                <tr>
+                  <td className="px-4 py-8 text-center text-texto-fraco">Nenhum cliente.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {aberto && (

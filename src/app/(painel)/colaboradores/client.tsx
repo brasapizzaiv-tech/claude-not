@@ -296,68 +296,70 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
-              <tr>
-                <th className="px-4 py-3">Nome</th>
-                <th className="px-4 py-3">Folga / Contagem</th>
-                <th className="px-4 py-3">App pessoal</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borda">
-              {visiveis.map((c) => (
-                <tr key={c.id} className="transition hover:bg-superficie-suave">
-                  <td className="px-4 py-3 font-medium text-texto">
-                    {c.nome}
-                    {c.nascimento && (
-                      <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-pink-600">
-                        <Icone nome="bolo" tamanho={12} /> {aniversarioBR(c.nascimento)}
-                      </span>
-                    )}
-                    {c.whatsapp && <div className="text-xs font-normal text-texto-fraco">{c.whatsapp}</div>}
-                    <div className="text-xs font-normal text-texto-suave">{resumoQuadro(c)}</div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-texto-suave">
-                    {c.folga ? <div className="flex items-center gap-1.5" style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}><Icone nome="folga" tamanho={13} /> {resumoFolga(c.folga)}</div> : <span className="text-texto-fraco">sem folga</span>}
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-texto-fraco">
-                        {c.faz_contagem && <span className="inline-flex items-center gap-1"><Icone nome="pacote" tamanho={12} /> contagem</span>}
-                        {c.faz_etiquetas && <span className="inline-flex items-center gap-1"><Icone nome="etiqueta" tamanho={12} /> etiquetas</span>}
-                        {c.faz_contas && <span className="inline-flex items-center gap-1"><Icone nome="dinheiro" tamanho={12} /> contas</span>}
-                        {c.faz_cardapio && <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> cardápio</span>}
-                      </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {c.ativo ? <LinkApp c={c} /> : (
-                      <div className="text-xs text-texto-suave">
-                        <div className="font-semibold text-red-600">Desligado em {dataBRcurta(c.desligado_em)}</div>
-                        <div>{c.desligado_motivo}</div>
-                        <div className="text-texto-fraco">sem acesso ao app</div>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {c.ativo ? (
-                      <>
-                        <button
-                          onClick={() => { setEditando(c); setAberto(true); }}
-                          className="mr-3 text-orange-600 hover:underline"
-                        >
-                          Editar
-                        </button>
-                        <button type="button" onClick={() => setDesligando(c)} className="text-texto-fraco hover:text-red-600">Desligar</button>
-                      </>
-                    ) : (
-                      <form action={reativarColaborador} className="inline">
-                        <input type="hidden" name="id" value={c.id} />
-                        <Enviar className="text-emerald-600 hover:underline">Reativar</Enviar>
-                      </form>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-[560px] w-full text-sm">
+              <thead className="text-left text-xs font-medium text-texto-fraco">
+                <tr>
+                  <th className="px-4 py-3">Nome</th>
+                  <th className="px-4 py-3">Folga / Contagem</th>
+                  <th className="px-4 py-3">App pessoal</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-borda">
+                {visiveis.map((c) => (
+                  <tr key={c.id} className="transition hover:bg-superficie-suave">
+                    <td className="px-4 py-3 font-medium text-texto">
+                      {c.nome}
+                      {c.nascimento && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-pink-600">
+                          <Icone nome="bolo" tamanho={12} /> {aniversarioBR(c.nascimento)}
+                        </span>
+                      )}
+                      {c.whatsapp && <div className="text-xs font-normal text-texto-fraco">{c.whatsapp}</div>}
+                      <div className="text-xs font-normal text-texto-suave">{resumoQuadro(c)}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-texto-suave">
+                      {c.folga ? <div className="flex items-center gap-1.5" style={{ color: GRUPOS[c.folga.grupo as GrupoKey]?.cor }}><Icone nome="folga" tamanho={13} /> {resumoFolga(c.folga)}</div> : <span className="text-texto-fraco">sem folga</span>}
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-texto-fraco">
+                          {c.faz_contagem && <span className="inline-flex items-center gap-1"><Icone nome="pacote" tamanho={12} /> contagem</span>}
+                          {c.faz_etiquetas && <span className="inline-flex items-center gap-1"><Icone nome="etiqueta" tamanho={12} /> etiquetas</span>}
+                          {c.faz_contas && <span className="inline-flex items-center gap-1"><Icone nome="dinheiro" tamanho={12} /> contas</span>}
+                          {c.faz_cardapio && <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> cardápio</span>}
+                        </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {c.ativo ? <LinkApp c={c} /> : (
+                        <div className="text-xs text-texto-suave">
+                          <div className="font-semibold text-red-600">Desligado em {dataBRcurta(c.desligado_em)}</div>
+                          <div>{c.desligado_motivo}</div>
+                          <div className="text-texto-fraco">sem acesso ao app</div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {c.ativo ? (
+                        <>
+                          <button
+                            onClick={() => { setEditando(c); setAberto(true); }}
+                            className="mr-3 text-orange-600 hover:underline"
+                          >
+                            Editar
+                          </button>
+                          <button type="button" onClick={() => setDesligando(c)} className="text-texto-fraco hover:text-red-600">Desligar</button>
+                        </>
+                      ) : (
+                        <form action={reativarColaborador} className="inline">
+                          <input type="hidden" name="id" value={c.id} />
+                          <Enviar className="text-emerald-600 hover:underline">Reativar</Enviar>
+                        </form>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

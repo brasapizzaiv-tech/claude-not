@@ -151,40 +151,42 @@ export default async function VendasPage({
 
       {/* Por dia */}
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs font-medium text-texto-fraco">
-            <tr>
-              <th className="px-4 py-3">Dia</th>
-              <th className="px-4 py-3 text-right">Notas</th>
-              <th className="px-4 py-3 text-right">Valor emitido</th>
-              <th className="px-4 py-3 text-right">Faturamento</th>
-              <th className="px-4 py-3 text-right">Diferença</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-borda">
-            {dias.map(([dia, g]) => {
-              const fat = fatDe.get(dia);
-              const dif = fat != null ? fat - g.valor : null;
-              return (
-                <tr key={dia} className="">
-                  <td className="px-4 py-2 text-texto-suave">
-                    {dataBR(dia)}
-                  </td>
-                  <td className="px-4 py-2 text-right text-texto-suave">{g.n}</td>
-                  <td className="px-4 py-2 text-right font-medium text-texto">
-                    {moeda(g.valor)}
-                  </td>
-                  <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
-                    {fat != null ? moeda(fat) : "—"}
-                  </td>
-                  <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-texto-fraco" : Math.abs(dif) < 0.01 ? "text-texto-fraco" : "text-amber-600"}`}>
-                    {dif != null ? moeda(dif) : "—"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="min-w-[560px] w-full text-sm">
+            <thead className="text-left text-xs font-medium text-texto-fraco">
+              <tr>
+                <th className="px-4 py-3">Dia</th>
+                <th className="px-4 py-3 text-right">Notas</th>
+                <th className="px-4 py-3 text-right">Valor emitido</th>
+                <th className="px-4 py-3 text-right">Faturamento</th>
+                <th className="px-4 py-3 text-right">Diferença</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-borda">
+              {dias.map(([dia, g]) => {
+                const fat = fatDe.get(dia);
+                const dif = fat != null ? fat - g.valor : null;
+                return (
+                  <tr key={dia} className="">
+                    <td className="px-4 py-2 text-texto-suave">
+                      {dataBR(dia)}
+                    </td>
+                    <td className="px-4 py-2 text-right text-texto-suave">{g.n}</td>
+                    <td className="px-4 py-2 text-right font-medium text-texto">
+                      {moeda(g.valor)}
+                    </td>
+                    <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
+                      {fat != null ? moeda(fat) : "—"}
+                    </td>
+                    <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-texto-fraco" : Math.abs(dif) < 0.01 ? "text-texto-fraco" : "text-amber-600"}`}>
+                      {dif != null ? moeda(dif) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

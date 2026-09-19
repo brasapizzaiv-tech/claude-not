@@ -335,6 +335,14 @@ body {
     background: #ffffff;
     color: #000000;
   }
+
+  /* Tabela larga rola de lado na tela, mas no papel não há pra onde rolar:
+     a parte que não coubesse sairia cortada. Na impressão a caixa de rolagem
+     se abre e o navegador quebra a tabela em páginas, como deve. */
+  .overflow-x-auto,
+  .overflow-auto {
+    overflow: visible !important;
+  }
 }
 
 /* Quem pediu menos animação no aparelho (Windows, Android e iPhone têm esse
