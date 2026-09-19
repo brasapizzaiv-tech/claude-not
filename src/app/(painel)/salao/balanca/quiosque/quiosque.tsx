@@ -864,7 +864,7 @@ export function QuiosqueBalanca({
                 onChange={(e) => setNumeroVirar(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") virarPorNumero(); }}
                 placeholder="Nº"
-                className="w-full rounded-2xl border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums outline-none focus:border-orange-500"
+                className="w-full rounded-2xl border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums focus:border-orange-500"
               />
             </div>
             {/* teclado na tela: o PC do quiosque é touch e não abre teclado sozinho */}

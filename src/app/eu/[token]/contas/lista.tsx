@@ -85,7 +85,7 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Fornecedor, descrição ou categoria"
-        className="mb-3 w-full rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-2.5 text-sm text-texto outline-none"
+        className="mb-3 w-full rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-2.5 text-sm text-texto "
       />
 
       {contas.length === 0 ? (

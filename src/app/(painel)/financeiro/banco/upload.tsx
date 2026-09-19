@@ -32,7 +32,7 @@ export function UploadOfx() {
       <select
         value={banco}
         onChange={(e) => setBanco(e.target.value)}
-        className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+        className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
       >
         {BANCOS.map((b) => (
           <option key={b} value={b}>

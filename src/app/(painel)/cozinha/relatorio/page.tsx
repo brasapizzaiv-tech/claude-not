@@ -48,7 +48,7 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
   const mediaMin = nMin ? somaMin / nMin : null;
   const doces = validas.filter((l) => l.tipo === "doce").reduce((s, l) => s + l.quantidade, 0);
 
-  const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
   return (
     <div className="p-4 md:p-6">

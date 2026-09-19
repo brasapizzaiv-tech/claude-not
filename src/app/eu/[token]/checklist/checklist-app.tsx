@@ -325,7 +325,7 @@ function ExecutarLista({
                         gravar(i.id, { valor: v === "" ? null : Number(v.replace(/\./g, "").replace(",", ".")) || 0 });
                       }}
                       placeholder={i.tipo === "contagem" ? "quantidade" : "valor"}
-                      className="mt-2 h-12 w-full rounded-cartao border border-borda-forte bg-white px-3 text-lg text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                      className="mt-2 h-12 w-full rounded-cartao border border-borda-forte bg-white px-3 text-lg text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                     />
                   )}
                   {i.tipo === "texto" && (
@@ -335,7 +335,7 @@ function ExecutarLista({
                       defaultValue={r.texto ?? ""}
                       onBlur={(e) => gravar(i.id, { texto: e.target.value.trim() || null })}
                       placeholder="Escreva aqui"
-                      className="mt-2 w-full rounded-cartao border border-borda-forte bg-white px-3 py-2 text-base text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                      className="mt-2 w-full rounded-cartao border border-borda-forte bg-white px-3 py-2 text-base text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                     />
                   )}
 

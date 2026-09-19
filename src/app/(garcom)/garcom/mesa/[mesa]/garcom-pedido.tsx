@@ -211,7 +211,7 @@ export function GarcomPedido({
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar produto..."
-            className="w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm outline-none"
+            className="w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm "
           />
         </div>
       )}
@@ -338,7 +338,7 @@ export function GarcomPedido({
               onChange={(e) => setObs(e.target.value)}
               placeholder="Observações do pedido (opcional)"
               rows={2}
-              className="mb-2 w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm outline-none"
+              className="mb-2 w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm "
             />
             <div className="mb-2 flex justify-between text-sm">
               <span className="text-texto-suave">Total</span>

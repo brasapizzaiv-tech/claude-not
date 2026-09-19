@@ -104,7 +104,7 @@ export function AvulsaForm({
             <select
               value={colab}
               onChange={(e) => setColab(e.target.value)}
-              className="mb-4 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+              className="mb-4 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
             >
               <option value="">escolha...</option>
               {colaboradores.map((col) => (

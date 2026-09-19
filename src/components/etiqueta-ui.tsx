@@ -81,7 +81,7 @@ export type NovoItemDados = {
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
 const itemBtn =
   "rounded-xl border border-zinc-300 bg-white px-3 py-3 text-left text-sm font-semibold text-zinc-800 hover:border-orange-500 hover:bg-orange-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-orange-950/30";
 

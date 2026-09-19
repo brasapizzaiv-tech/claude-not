@@ -96,7 +96,7 @@ export function MesasGrid({
               }}
               autoFocus
               placeholder="Pagamento rápido — digite o nº da comanda ou leia o QR e tecle Enter"
-              className="min-w-0 flex-1 bg-transparent text-lg font-medium outline-none placeholder:opacity-60"
+              className="min-w-0 flex-1 bg-transparent text-lg font-medium placeholder:opacity-60"
             />
             <button
               onClick={irPagamento}
@@ -129,7 +129,7 @@ export function MesasGrid({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por mesa..."
-          className="min-h-11 min-w-56 flex-1 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+          className="min-h-11 min-w-56 flex-1 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
         />
       </div>
 

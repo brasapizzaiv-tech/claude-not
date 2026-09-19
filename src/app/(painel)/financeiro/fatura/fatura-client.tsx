@@ -37,7 +37,7 @@ export function FaturaClient({
   const [ignoradas, setIgnoradas] = useState(0);
 
   const input =
-    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
   function enviar(formData: FormData) {
     setErro(null);
@@ -229,7 +229,7 @@ export function FaturaClient({
                             value={c.categoriaId ?? ""}
                             onChange={(v) => mudarCategoria(c.uid, v)}
                             placeholder="Escolher..."
-                            className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                            className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                           />
                         </div>
                         {c.categoriaId && (

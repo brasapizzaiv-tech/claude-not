@@ -27,9 +27,9 @@ export type LinhaProduto = {
 };
 
 const campo =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 const numInput =
-  "w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function CotacaoClient({
   cotacao,

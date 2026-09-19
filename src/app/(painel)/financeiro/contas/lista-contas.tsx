@@ -82,7 +82,7 @@ function ValorConta({ l }: { l: LinhaConta }) {
         autoFocus
         inputMode="decimal"
         defaultValue={Number(l.valor).toFixed(2).replace(".", ",")}
-        className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+        className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
       />
       <button
         className="rounded-controle bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600"
@@ -174,7 +174,7 @@ function Linhas({
                       name="data_pago"
                       defaultValue={hojeBR}
                       title="Data do pagamento (padrão: hoje)"
-                      className="rounded-controle border border-borda-forte bg-transparent px-2 py-1 font-numero text-xs text-texto outline-none focus:border-primaria"
+                      className="rounded-controle border border-borda-forte bg-transparent px-2 py-1 font-numero text-xs text-texto focus:border-primaria"
                     />
                   )}
                   <span
@@ -315,7 +315,7 @@ export function ListaContasView({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar conta por descrição, fornecedor ou categoria..."
-          className="min-h-11 w-full max-w-md rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+          className="min-h-11 w-full max-w-md rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
         />
         {busca && (
           <button
@@ -341,7 +341,7 @@ export function ListaContasView({
               <button onClick={() => setMarcadas(new Set())} className="text-xs text-texto-suave underline">limpar</button>
               <label className="ml-auto flex items-center gap-1.5 text-xs text-texto-suave">
                 pago em
-                <input type="date" value={dataLote} onChange={(e) => setDataLote(e.target.value)} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-xs text-texto-suave outline-none" />
+                <input type="date" value={dataLote} onChange={(e) => setDataLote(e.target.value)} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-xs text-texto-suave " />
               </label>
               <button
                 onClick={pagarSelecionadas}

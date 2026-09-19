@@ -130,7 +130,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
               onChange={(e) => setNovo(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); adicionar(); } }}
               placeholder="Ex.: Mix de folhas"
-              className="w-56 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+              className="w-56 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
             />
           </div>
           <div>

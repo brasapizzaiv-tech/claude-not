@@ -16,7 +16,7 @@ import { alternarArea, alternarPromoTele, excluirArea, excluirPromoTele, salvarA
 const CORES = ["#C78340", "#2563eb", "#059669", "#e11d48", "#7c3aed", "#d97706", "#0891b2", "#db2777", "#65a30d", "#78716c"];
 const DIAS = [["1", "Seg"], ["2", "Ter"], ["3", "Qua"], ["4", "Qui"], ["5", "Sex"], ["6", "Sáb"], ["0", "Dom"]] as const;
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const inp = "rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm outline-none ";
+const inp = "rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm ";
 
 type Rascunho = { id: string | null; nome: string; cor: string; valor: string; taxaMotoboy: string; tempoMin: string; pontos: [number, number][] };
 const vazio = (cor: string): Rascunho => ({ id: null, nome: "", cor, valor: "", taxaMotoboy: "", tempoMin: "", pontos: [] });

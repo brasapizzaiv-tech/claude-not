@@ -76,7 +76,7 @@ export default async function BalancaPage() {
             inputMode="decimal"
             autoFocus
             placeholder="0,000"
-            className="w-36 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+            className="w-36 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           />
         </div>
         <div>
@@ -86,7 +86,7 @@ export default async function BalancaPage() {
             inputMode="decimal"
             defaultValue={taraPadrao ? String(taraPadrao).replace(".", ",") : ""}
             placeholder="0,000"
-            className="w-28 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+            className="w-28 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           />
         </div>
         <button className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">

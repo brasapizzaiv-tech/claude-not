@@ -19,7 +19,7 @@ export type CategoriaComContagem = {
 };
 
 const inputCls =
-  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function CategoriasClient({
   categorias,
@@ -100,7 +100,7 @@ export function CategoriasClient({
                   <select
                     value={c.dreCategoriaId ?? ""}
                     onChange={(e) => mapear(c.id, e.target.value)}
-                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                   >
                     <option value="">— não lançar —</option>
                     {[...porGrupo.entries()].map(([grupo, ds]) => (

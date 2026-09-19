@@ -118,7 +118,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
       <div className="flex flex-1 flex-col overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="flex items-center gap-2 border-b border-borda p-3">
           <h1 className="flex items-center gap-2 text-lg font-bold"><Icone nome="cupom" tamanho={18} /> PDV — Balcão</h1>
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="ml-auto w-64 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm outline-none" />
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="ml-auto w-64 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
         </div>
         <div className="flex flex-wrap gap-1.5 border-b border-borda p-2">
           {abas.map((c) => (
@@ -173,7 +173,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 <button onClick={() => setLocal("aqui")} className={`rounded-controle border py-2 text-sm font-semibold ${local === "aqui" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="salao" tamanho={14} /> Comer aqui</span></button>
                 <button onClick={() => setLocal("viagem")} className={`rounded-controle border py-2 text-sm font-semibold ${local === "viagem" ? "border-amber-500 bg-amber-500/10 text-amber-600" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="viagem" tamanho={14} /> Viagem</span></button>
               </div>
-              <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm outline-none" />
+              <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
               <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
               {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
               <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="mb-2 w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo disabled:opacity-50"><span className="inline-flex items-center justify-center gap-2"><Icone nome="dinheiro" tamanho={18} /> Cobrar e finalizar</span></button>
@@ -199,7 +199,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             {forma === "Dinheiro" && (
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">Valor recebido</label>
-                <input value={recebido} onChange={(e) => setRecebido(e.target.value)} inputMode="decimal" placeholder="Ex.: 50" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-lg outline-none" />
+                <input value={recebido} onChange={(e) => setRecebido(e.target.value)} inputMode="decimal" placeholder="Ex.: 50" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-lg " />
                 <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
               </div>
             )}

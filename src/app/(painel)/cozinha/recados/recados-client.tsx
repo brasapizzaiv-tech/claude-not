@@ -15,7 +15,7 @@ export function RecadosClient({ inicial }: { inicial: RecadoTvLinha[] }) {
   const [erro, setErro] = useState<string | null>(null);
   const [proc, start] = useTransition();
 
-  const inputCls = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  const inputCls = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
   function rodar(fn: () => Promise<{ ok: boolean; mensagem?: string }>) {
     setErro(null);

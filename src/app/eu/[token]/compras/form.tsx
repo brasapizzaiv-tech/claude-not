@@ -49,7 +49,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
     });
   }
 
-  const cx = "w-full rounded-cartao border border-borda-forte bg-white px-3 py-3 text-base text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
+  const cx = "w-full rounded-cartao border border-borda-forte bg-white px-3 py-3 text-base text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
   const pendentes = lista.filter((s) => s.status === "pendente");
   const outras = lista.filter((s) => s.status !== "pendente");
 

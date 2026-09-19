@@ -321,7 +321,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
           <option value="todos">Todas as origens</option>
           {Object.entries(ORIGEM).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nº / nome / telefone" className="ml-auto min-h-11 w-56 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria" />
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nº / nome / telefone" className="ml-auto min-h-11 w-56 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria" />
       </div>
 
       {visao === "mapa" ? (

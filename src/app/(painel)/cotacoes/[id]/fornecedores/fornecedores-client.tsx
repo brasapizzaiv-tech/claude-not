@@ -295,7 +295,7 @@ export function FornecedoresClient({
                 rows={3}
                 value={template}
                 onChange={(e) => salvarTemplate(e.target.value)}
-                className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+                className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
               />
               <p className="mt-1 text-mini text-texto-fraco">
                 Use <b>{"{link}"}</b> (o link), <b>{"{itens}"}</b> (qtd de itens),{" "}

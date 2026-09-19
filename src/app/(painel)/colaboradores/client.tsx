@@ -141,7 +141,7 @@ function CardApp({ c }: { c: Colaborador }) {
 }
 
 const inputCls =
-  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 function resumoFolga(f: FolgaPerfil | null): string {
   if (!f) return "";
@@ -181,7 +181,7 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
   const [data, setData] = useState(() => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10));
   const [msg, setMsg] = useState<string | null>(null);
   const [proc, start] = useTransition();
-  const inputCls = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  const inputCls = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">

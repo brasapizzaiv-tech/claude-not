@@ -128,7 +128,7 @@ export function CardapioApp({
     `flex-1 rounded-cartao py-3 text-base font-bold ${aba === a ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900" : "bg-painel-cartao text-texto-suave  "}`;
   const chip = (on: boolean) =>
     `rounded-full border px-4 py-2.5 text-base font-medium ${on ? "border-green-600 bg-texto text-fundo" : "border-borda-forte bg-painel-cartao text-texto-suave   "}`;
-  const input = "h-12 w-full rounded-cartao border border-borda-forte bg-white px-3 text-base text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  const input = "h-12 w-full rounded-cartao border border-borda-forte bg-white px-3 text-base text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
   return (
     <div>

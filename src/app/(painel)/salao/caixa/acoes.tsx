@@ -8,7 +8,7 @@ import { useState } from "react";
 import { suprimento, sangria } from "../actions";
 
 const inputCls =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
 export function CaixaAcoes({ caixaId }: { caixaId: string }) {
   const [aberto, setAberto] = useState(false);

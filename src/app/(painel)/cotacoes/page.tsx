@@ -34,7 +34,7 @@ export default async function CotacoesPage() {
           <select
             name="contagem_id"
             defaultValue=""
-            className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+            className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
           >
             <option value="">Sem contagem (usar só o ideal)</option>
             {contagens.map((c) => (

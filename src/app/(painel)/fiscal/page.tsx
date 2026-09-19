@@ -5,7 +5,7 @@ import { salvarConfigFiscal } from "./actions";
 import { TesteNota } from "./teste-nota";
 
 const campo =
-  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
 function Campo({ nome, label, def, ph }: { nome: string; label: string; def: string; ph?: string }) {
   return (

@@ -64,8 +64,7 @@ function BotaoRail({
   onClick?: () => void; href?: string;
 }) {
   // 44 px de alvo, que é o mínimo confortável pro dedo.
-  const cls = `group relative flex h-11 w-11 items-center justify-center rounded-controle transition
-    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria ${
+  const cls = `group relative flex h-11 w-11 items-center justify-center rounded-controle transition ${
       ativo ? "bg-superficie-suave text-primaria" : "text-texto-suave hover:bg-superficie-suave hover:text-texto"
     }`;
   const dentro = (
@@ -299,7 +298,7 @@ export function Sidebar({
           <button
             aria-label="Sair"
             title="Sair"
-            className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-suave transition hover:bg-superficie-suave hover:text-texto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria"
+            className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-suave transition hover:bg-superficie-suave hover:text-texto"
           >
             <Icone nome="sair" tamanho={19} />
           </button>
@@ -313,7 +312,7 @@ export function Sidebar({
     <div className="flex flex-col gap-0.5">
       {g.itens.map((it) => {
         const ehAtivo = ativo?.href === it.href;
-        const cls = `flex items-center gap-2.5 rounded-controle px-2.5 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria ${
+        const cls = `flex items-center gap-2.5 rounded-controle px-2.5 py-2 text-sm transition ${
           ehAtivo ? "bg-superficie-suave font-semibold text-texto" : "text-texto-suave hover:bg-superficie-suave hover:text-texto"
         }`;
         const dentro = (

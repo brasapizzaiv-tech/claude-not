@@ -20,7 +20,7 @@ const TECLAS = ["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "−", 
 const MAPA: Record<string, string> = { "÷": "/", "×": "*", "−": "-" };
 
 const boxCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-right text-base text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-right text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
 // Campo de estoque com CAIXAS separadas (um por local/lugar) que somam,
 // mais uma calculadora. O total vai num input escondido (name) para salvar.

@@ -20,9 +20,9 @@ type ItemInicial = {
 };
 
 const numInput =
-  "w-28 rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-right text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-28 rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-right text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 const campo =
-  "rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function ContarClient({
   contagem,

@@ -17,7 +17,7 @@ export type ItemRow = {
 };
 
 const input =
-  "w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 const num = (s: string) => (s.trim() === "" ? null : Math.max(0, Math.floor(Number(s))) || null);
 const str = (n: number | null) => (n == null ? "" : String(n));
 

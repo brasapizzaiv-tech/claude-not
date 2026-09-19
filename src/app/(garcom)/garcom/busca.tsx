@@ -63,7 +63,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
           onKeyDown={(e) => e.key === "Enter" && abrir(codigo)}
           inputMode="numeric"
           placeholder="Nº da comanda / cartão"
-          className="h-11 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto outline-none placeholder:text-texto-fraco"
+          className="h-11 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto placeholder:text-texto-fraco"
         />
         <button
           onClick={() => abrir(codigo)}

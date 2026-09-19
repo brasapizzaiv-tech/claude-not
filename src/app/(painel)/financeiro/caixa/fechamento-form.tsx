@@ -8,7 +8,7 @@ import { salvarFechamento, type EntradaFechamento } from "./actions";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const campo =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
 type MoneyKey =
   | "venda_bruta"

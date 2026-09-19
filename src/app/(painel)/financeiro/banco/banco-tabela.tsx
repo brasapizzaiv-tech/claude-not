@@ -182,7 +182,7 @@ export function BancoTabela({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar descrição ou valor…"
-          className="w-64 rounded-controle border border-borda-forte bg-white px-3 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+          className="w-64 rounded-controle border border-borda-forte bg-white px-3 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
         />
         <label className="flex items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" checked={soFalta} onChange={(e) => { setSoFalta(e.target.checked); setSel(new Set()); }} />
@@ -414,13 +414,13 @@ export function BancoTabela({
                               value={catSel}
                               onChange={setCatSel}
                               placeholder="Buscar categoria..."
-                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
                             />
                             <input
                               value={obs}
                               onChange={(e) => setObs(e.target.value)}
                               placeholder={`Observação (opcional) — padrão: ${t.descricao ?? "descrição do banco"}`}
-                              className="mt-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+                              className="mt-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
                             />
                             {/* Rateio: fatura do cartão tem gasto de várias categorias */}
                             {partes.length === 0 ? (
@@ -444,21 +444,21 @@ export function BancoTabela({
                                         value={x.categoriaId}
                                         onChange={(v) => mudarParte(x.uid, "categoriaId", v)}
                                         placeholder="Categoria..."
-                                        className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                                        className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                       />
                                     </div>
                                     <input
                                       value={x.descricao}
                                       onChange={(e) => mudarParte(x.uid, "descricao", e.target.value)}
                                       placeholder="o que é (opcional)"
-                                      className="w-32 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                                      className="w-32 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                     />
                                     <input
                                       inputMode="decimal"
                                       value={x.valor}
                                       onChange={(e) => mudarParte(x.uid, "valor", e.target.value)}
                                       placeholder="0,00"
-                                      className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                                      className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                     />
                                     <button type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-red-600">✕</button>
                                   </div>
@@ -523,7 +523,7 @@ export function BancoTabela({
                               value={lancSel}
                               onChange={setLancSel}
                               placeholder="Buscar lançamento..."
-                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+                              className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
                             />
                             <button
                               disabled={proc || !lancSel}

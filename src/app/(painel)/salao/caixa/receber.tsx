@@ -516,7 +516,7 @@ export function ReceberComandas({
   }, [etapa, temAlgo, selComandas.length]);
 
   const inputCls =
-    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
   const titulo = "text-center text-base font-bold text-zinc-800 dark:text-zinc-100";
 
   return (

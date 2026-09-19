@@ -65,7 +65,7 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
   }
 
   const campo =
-    "w-40 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+    "w-40 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
   const aviso = (id: string) =>
     msg[id] ? (
       <span className={msg[id] === "✓" ? "text-xs text-emerald-600" : "text-xs text-red-600"}>{msg[id]}</span>

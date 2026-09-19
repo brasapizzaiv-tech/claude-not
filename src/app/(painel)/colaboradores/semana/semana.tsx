@@ -33,7 +33,7 @@ type DezLinha = { data: string; valor: string; pagar_em: string };
 const chave = (id: string, data: string, turno: Turno) => `${id}|${data}|${turno}`;
 
 const inputCls =
-  "rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 function numBRtxt(s: string) {
   const t = s.trim();

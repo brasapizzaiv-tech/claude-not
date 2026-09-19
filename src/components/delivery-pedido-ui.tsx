@@ -105,7 +105,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, comObs }: {
         </div>
       )}
       {comObs && (
-        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mb-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mb-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
       )}
       <div className="flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>
@@ -176,7 +176,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
         ))}
       </div>
       {comObs && (
-        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-zinc-700" />
+        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
       )}
       <div className="mt-3 flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>

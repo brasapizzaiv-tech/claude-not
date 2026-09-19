@@ -45,7 +45,7 @@ export function EmitirNfce({
             onChange={(e) => setCpf(e.target.value)}
             inputMode="numeric"
             placeholder="CPF na nota? (opcional)"
-            className="mb-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+            className="mb-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
           />
           <button
             onClick={emitir}

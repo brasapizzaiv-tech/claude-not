@@ -61,7 +61,7 @@ const OCASIOES = ["Só uma reserva", "Aniversário", "Outra data especial"];
 const SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
 const campo =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 const rotulo = "mb-1 block text-xs text-texto-suave";
 const cartao = "rounded-cartao border border-borda p-4 ";
 const btn =

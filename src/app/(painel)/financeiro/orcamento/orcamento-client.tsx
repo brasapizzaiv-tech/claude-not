@@ -110,7 +110,7 @@ export function OrcamentoClient({
                           onChange={(e) =>
                             setValores((s) => ({ ...s, [l.id]: e.target.value }))
                           }
-                          className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+                          className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                         />
                       </td>
                       <td className="px-4 py-1.5 text-right text-texto-suave">

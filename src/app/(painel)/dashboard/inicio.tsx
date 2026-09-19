@@ -101,7 +101,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
             type="date"
             value={d.dia}
             onChange={(e) => router.push(`/dashboard?dia=${e.target.value}`)}
-            className="bg-transparent font-numero text-texto outline-none"
+            className="bg-transparent font-numero text-texto "
           />
         </label>
       </div>
@@ -131,7 +131,10 @@ export function Inicio({ d }: { d: DadosInicio }) {
         ))}
 
         {/* O cartão de foco: invertido em relação ao fundo. Uma por tela. */}
-        <div className="rounded-cartao bg-painel-foco-fundo p-4 text-painel-foco-texto lg:col-span-4">
+        <div
+          className="rounded-cartao bg-painel-foco-fundo p-4 text-painel-foco-texto lg:col-span-4"
+          style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}
+        >
           <p className="text-xs font-medium opacity-70">Caixa do dia</p>
           <p className={`mt-2 text-3xl font-semibold font-numero tracking-apertada`}>{d.caixa.valor}</p>
           <p className="mt-0.5 text-xs opacity-70">
@@ -165,7 +168,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
                 <div className="flex flex-wrap gap-1.5">
                   {g.mesas.map((m) => {
                     const base =
-                      "flex h-11 w-11 items-center justify-center rounded-controle font-numero text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria";
+                      "flex h-11 w-11 items-center justify-center rounded-controle font-numero text-sm transition";
                     const cor =
                       m.estado === "ocupada"
                         ? "bg-primaria text-marca-sobre-primaria"

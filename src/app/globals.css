@@ -194,6 +194,14 @@
   /* Número e título grande ficam um pouco mais apertados. */
   --letra-apertada: -0.03em;
 
+  /* ---------- 3c. A cor do foco do teclado ----------
+     Quem anda pelo sistema com a tecla Tab (por hábito, por rapidez no caixa
+     ou porque não usa mouse) precisa enxergar onde está. É o laranja da marca,
+     mas um degrau mais escuro que a primária: sobre fundo branco o laranja
+     puro fica em 3,1 de contraste, no limite; escurecendo, sobra folga.
+     No escuro ele clareia, pelo mesmo motivo ao contrário. */
+  --foco: color-mix(in srgb, var(--marca-primaria) 82%, black);
+
 
   /* ---------- A ESCOLHA DA LETRA MORA AQUI ----------
      Estas duas linhas decidem a letra do sistema inteiro. Pra voltar pra Geist,
@@ -244,6 +252,9 @@
     --painel-cartao: #2b211b;
     --painel-foco-fundo: #ece3da;
     --painel-foco-texto: #211915;
+
+    /* Sobre o grafite, o foco clareia em vez de escurecer. */
+    --foco: color-mix(in srgb, var(--marca-primaria) 78%, white);
 
     /* Um degrau mais claro: sobre o grafite os tons 600 fecham demais. */
     --sucesso: var(--color-emerald-400);
@@ -337,5 +348,41 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- O FOCO DO TECLADO ----------
+   Antes desta regra, 164 campos do sistema traziam `outline-none`: o anel do
+   navegador estava desligado e nada entrava no lugar. Quem andava de Tab —
+   no caixa, com a mão ocupada, ou por não usar mouse — ficava sem saber onde
+   estava. Só cinco lugares no sistema inteiro mostravam alguma coisa.
+
+   Agora todo campo, botão e link que RECEBE foco pelo teclado ganha um anel.
+   O `:focus-visible` é o que separa teclado de mouse: clicar num botão não
+   acende o anel, chegar nele pelo Tab acende.
+
+   Duas decisões de escrita:
+   • `:where(...)` zera o peso do seletor, e a regra mora na camada `base`.
+     Assim qualquer tela que queira um foco próprio (a barra lateral, os
+     quadradinhos de mesa) continua ganhando, sem precisar de !important.
+   • O `outline-offset` afasta o anel 2px da borda. É o que faz ele aparecer
+     mesmo em cima de um botão laranja: o vão mostra o fundo do cartão atrás.
+
+   O anel é `outline`, e não sombra (`ring`), por dois motivos: sombra
+   briga com a sombra que o elemento já tenha, e `outline` é o que dá pra
+   ligar de uma vez para o sistema inteiro sem tocar em 400 telas. */
+@layer base {
+  :where(
+    a[href],
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role="button"],
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
   }
 }

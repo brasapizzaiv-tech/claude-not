@@ -123,7 +123,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     { k: "rejeitado", rotulo: "Rejeitadas", n: contagem.rejeitado },
     { k: "todas", rotulo: "Todas" },
   ];
-  const inp = "rounded-cartao border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
+  const inp = "rounded-cartao border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
 
   return (
     <div className="p-4 md:p-6">
@@ -275,7 +275,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
   const [urgente, setUrgente] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [proc, start] = useTransition();
-  const inp = "rounded-cartao border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
+  const inp = "rounded-cartao border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
 
   function salvar() {
     setMsg(null);

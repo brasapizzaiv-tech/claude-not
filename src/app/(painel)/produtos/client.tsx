@@ -39,7 +39,7 @@ function CampoInline({ id, campo, valor, placeholder }: { id: string; campo: "es
         onFocus={(e) => e.target.select()}
         inputMode="decimal"
         placeholder={placeholder ?? "—"}
-        className={`w-16 rounded-controle border bg-transparent px-2 py-1 text-right text-sm outline-none focus:border-orange-500 ${estado === "erro" ? "border-red-500" : estado === "ok" ? "border-emerald-500" : "border-borda dark:border-borda-forte"}`}
+        className={`w-16 rounded-controle border bg-transparent px-2 py-1 text-right text-sm focus:border-orange-500 ${estado === "erro" ? "border-red-500" : estado === "ok" ? "border-emerald-500" : "border-borda dark:border-borda-forte"}`}
       />
       {estado === "ok" && <span className="absolute -right-4 top-1 text-xs text-emerald-500">✓</span>}
       {estado === "salvando" && <span className="absolute -right-4 top-1 text-xs text-texto-fraco">…</span>}
@@ -50,7 +50,7 @@ function CampoInline({ id, campo, valor, placeholder }: { id: string; campo: "es
 type Fornecedor = { id: string; nome: string };
 
 const inputCls =
-  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 const UNIDADES = [
   "un", "kg", "g", "L", "ml", "cx", "pct", "fardo", "dz", "saco", "bandeja",

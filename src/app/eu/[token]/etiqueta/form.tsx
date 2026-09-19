@@ -10,7 +10,7 @@ import {
 } from "@/components/etiqueta-ui";
 import type { EtiquetaConfig, EtiquetaDados, TipoEtiqueta } from "@/lib/etiqueta-tipos";
 
-const input = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2.5 text-sm text-texto outline-none   ";
+const input = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2.5 text-sm text-texto   ";
 
 export function EtiquetaColabForm({
   token,

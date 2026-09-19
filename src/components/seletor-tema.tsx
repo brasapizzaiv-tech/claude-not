@@ -68,7 +68,7 @@ export function SeletorTema({ inicial, recolhido = false }: { inicial: Tema; rec
         title={`Aparência: ${atual.label}`}
         aria-label={`Aparência: ${atual.label}. Tocar pra mudar.`}
         aria-expanded={aberto}
-        className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-suave transition hover:bg-superficie-suave hover:text-texto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria"
+        className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-suave transition hover:bg-superficie-suave hover:text-texto"
       >
         <Icone nome={atual.icone} tamanho={18} />
       </button>

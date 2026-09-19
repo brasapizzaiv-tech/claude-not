@@ -35,7 +35,7 @@ export function MarmitaDiaForm({
   const [sujo, setSujo] = useState(false);
 
   const txt = grande ? "text-base" : "text-sm";
-  const input = `${grande ? "h-12 text-base" : "h-9 text-sm"} w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100`;
+  const input = `${grande ? "h-12 text-base" : "h-9 text-sm"} w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-900 focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100`;
   const chip = `${grande ? "px-4 py-2.5 text-base" : "px-3 py-1.5 text-sm"} inline-flex items-center gap-2 rounded-full bg-orange-100 font-medium text-orange-900 dark:bg-orange-500/20 dark:text-orange-100`;
   const editavel = pode.ok && !!kern && !kern.bloqueado;
 

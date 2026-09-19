@@ -27,7 +27,7 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
         : "💬 WhatsApp oficial ainda não configurado: faltam WHATSAPP_TOKEN e WHATSAPP_PHONE_ID na Vercel (e os 4 modelos aprovados na Meta). Sem isso, nada é enviado."}
       {configurado && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" placeholder="Seu celular com DDD" className="rounded-controle border border-emerald-300 bg-white px-3 py-1.5 text-sm text-texto outline-none dark:border-emerald-800 dark:bg-zinc-950" />
+          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" placeholder="Seu celular com DDD" className="rounded-controle border border-emerald-300 bg-white px-3 py-1.5 text-sm text-texto dark:border-emerald-800 dark:bg-zinc-950" />
           <button
             onClick={() => {
               setMsg(null);

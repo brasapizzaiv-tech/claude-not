@@ -17,7 +17,7 @@ import { Combobox } from "@/components/combobox";
 import { dataBR, numeroBR } from "@/lib/format";
 
 const campo =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = numeroBR;

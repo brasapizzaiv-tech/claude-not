@@ -108,7 +108,7 @@ export function LancarItens({
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Buscar produto pelo nome..."
-        className="mb-3 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+        className="mb-3 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
       />
 
       {/* Abas */}
@@ -472,7 +472,7 @@ export function MontarPizza({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="buscar sabor..."
-              className="w-40 rounded-controle border border-borda-forte bg-white px-2 py-1 text-xs outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
+              className="w-40 rounded-controle border border-borda-forte bg-white px-2 py-1 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
             />
           </div>
           <div className="max-h-60 space-y-1 overflow-y-auto rounded-controle border border-borda p-1">
@@ -512,7 +512,7 @@ export function MontarPizza({
           <select
             value={bordaId}
             onChange={(e) => setBordaId(e.target.value)}
-            className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+            className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
           >
             <option value="">Sem borda</option>
             {bordas

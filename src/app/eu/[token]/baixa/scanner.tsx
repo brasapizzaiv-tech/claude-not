@@ -249,7 +249,7 @@ export function BaixaScanner({ token }: { token: string }) {
             onChange={(e) => setNumero(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") adicionarPorNumero(); }}
             placeholder="Nº da etiqueta"
-            className="flex-1 rounded-controle border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none"
+            className="flex-1 rounded-controle border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white "
           />
           <button onClick={adicionarPorNumero} disabled={proc || !numero.trim()} className="rounded-controle bg-zinc-700 px-4 py-2 text-sm font-semibold disabled:opacity-50">Adicionar</button>
         </div>

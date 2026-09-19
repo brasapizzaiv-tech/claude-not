@@ -46,7 +46,7 @@ const estadoDe = (estado: Record<string, Estado>, i: ItemLinha): Estado =>
     obs: i.obs ?? "",
   };
 const numInput =
-  "w-20 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-20 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function ConferirClient({
   pedidoId,
@@ -350,7 +350,7 @@ export function ConferirClient({
                       value={e.obs}
                       onChange={(ev) => set("obs", ev.target.value)}
                       placeholder="ok / faltou / avariado"
-                      className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                      className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                     />
                   </td>
                 </tr>
@@ -389,7 +389,7 @@ export function ConferirClient({
             value={addProd}
             onChange={setAddProd}
             placeholder="Buscar produto..."
-            className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+            className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
           />
         </div>
         <div>
@@ -417,7 +417,7 @@ export function ConferirClient({
           rows={2}
           value={obsGeral}
           onChange={(e) => setObsGeral(e.target.value)}
-          className="mt-1 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
+          className="mt-1 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
         />
       </label>
     </div>

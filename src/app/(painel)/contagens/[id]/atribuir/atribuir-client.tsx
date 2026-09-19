@@ -103,7 +103,7 @@ export function AtribuirClient({
           <select
             value={todosPara}
             onChange={(e) => setTodosPara(e.target.value)}
-            className="rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+            className="rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           >
             <option value="">escolha...</option>
             {colaboradores.map((col) => (
@@ -144,7 +144,7 @@ export function AtribuirClient({
                     value={c.colaboradorId ?? ""}
                     onChange={(e) => atribuir(c.id, e.target.value)}
                     disabled={colaboradores.length === 0}
-                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                    className="rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                   >
                     <option value="">— ninguém —</option>
                     {colaboradores.map((col) => (

@@ -60,7 +60,7 @@ export default async function CaixaPage({
             <input
               name="nome"
               defaultValue="Noite"
-              className="min-h-11 w-full rounded-controle border border-current/30 bg-transparent px-3 text-sm outline-none placeholder:opacity-60"
+              className="min-h-11 w-full rounded-controle border border-current/30 bg-transparent px-3 text-sm placeholder:opacity-60"
             />
           </div>
           <div>
@@ -69,7 +69,7 @@ export default async function CaixaPage({
               name="saldo_inicial"
               inputMode="decimal"
               placeholder="0,00"
-              className="min-h-11 w-40 rounded-controle border border-current/30 bg-transparent px-3 font-numero text-sm outline-none"
+              className="min-h-11 w-40 rounded-controle border border-current/30 bg-transparent px-3 font-numero text-sm "
             />
           </div>
           <button className="min-h-11 rounded-controle bg-painel-foco-texto px-5 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90">

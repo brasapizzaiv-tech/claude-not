@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
-const inp = "rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm outline-none ";
+const inp = "rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm ";
 
 // Entregadores: cadastro, link pessoal do app (/entrega/{token}), valores
 // (fixo por turno + por tele) e onde está agora (GPS do app).
@@ -33,8 +33,8 @@ export default async function EntregadoresPage() {
       </div>
 
       <form action={criarEntregador} className="mb-6 flex flex-wrap gap-2">
-        <input name="nome" required placeholder="Nome" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm outline-none" />
-        <input name="telefone" placeholder="Telefone (opcional)" className="w-44 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm outline-none" />
+        <input name="nome" required placeholder="Nome" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+        <input name="telefone" placeholder="Telefone (opcional)" className="w-44 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
         <button className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo">Adicionar</button>
       </form>
 

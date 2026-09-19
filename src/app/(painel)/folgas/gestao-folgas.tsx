@@ -202,7 +202,7 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                   value={motivoNeg}
                   onChange={(e) => setMotivoNeg(e.target.value)}
                   placeholder="Motivo da negativa — a pessoa vai ler isso"
-                  className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm outline-none"
+                  className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm "
                 />
                 <button
                   disabled={proc}

@@ -24,7 +24,7 @@ import { resumoHorarios, disponivelAgora, type Horarios } from "@/lib/disponibil
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const inputCls =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
 type Item = {
   id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; ativo: boolean;

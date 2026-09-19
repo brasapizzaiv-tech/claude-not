@@ -11,7 +11,7 @@ type Prod = { id: string; nome: string; unidade: string; preco_referencia: numbe
 type Item = { produto_id: string; nome: string; unidade: string; qtd: string; preco: string };
 
 const campo =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 const num = (s: string) => Number(String(s).replace(",", ".")) || 0;
 
 type Forn = { id: string; nome: string; whatsapp: string | null };

@@ -44,7 +44,7 @@ export function EntradaEntrega() {
         onChange={(e) => { setValor(e.target.value); setErro(null); }}
         onKeyDown={(e) => { if (e.key === "Enter") entrar(); }}
         placeholder="https://www.brasarestaurante.com.br/entrega/…"
-        className="w-full max-w-md rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-base outline-none focus:border-orange-500"
+        className="w-full max-w-md rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-base focus:border-orange-500"
       />
       {erro && <p className="mt-2 text-sm text-rose-400">{erro}</p>}
       <button onClick={entrar} className="mt-4 w-full max-w-md rounded-cartao py-3.5 text-base font-bold text-white" style={{ background: LARANJA }}>Entrar</button>

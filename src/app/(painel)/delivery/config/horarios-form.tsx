@@ -4,7 +4,7 @@ import { Icone } from "@/components/icone";
 // Seção "Horários e agendamento" do formulário de config do delivery
 // (campos simples; quem lê é salvarConfigDelivery).
 const DIAS = [["1", "Seg"], ["2", "Ter"], ["3", "Qua"], ["4", "Qui"], ["5", "Sex"], ["6", "Sáb"], ["0", "Dom"]] as const;
-const inp = "mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm outline-none ";
+const inp = "mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm ";
 
 export function HorariosConfig({ cfg }: { cfg: ConfigHorarios }) {
   const turnos = [

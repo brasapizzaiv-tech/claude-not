@@ -168,7 +168,7 @@ export function RetiradasClient({
   );
 }
 
-const inputCls = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto outline-none   ";
+const inputCls = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto   ";
 
 function NovaCompra({
   pessoas, produtos, hojeIso, proc, onClose, onSalvar,

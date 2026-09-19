@@ -251,7 +251,7 @@ export function PainelPagamentos({
   }
 
   const btn = "rounded-cartao border px-3 py-2 text-sm font-semibold transition";
-  const campo = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  const campo = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
   return (
     <div className="space-y-3">
@@ -459,7 +459,7 @@ export function PainelPagamentos({
                     value={buscaColab}
                     onChange={(e) => setBuscaColab(e.target.value)}
                     placeholder="Buscar pelo nome…"
-                    className="mb-1.5 w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
+                    className="mb-1.5 w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                   />
                   <div className="max-h-36 overflow-y-auto rounded-controle border border-borda dark:border-borda-forte">
                     {colaboradores

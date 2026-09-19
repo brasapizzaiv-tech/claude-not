@@ -11,7 +11,7 @@ export type Categoria = { id: string; nome: string; perfil_fiscal_id: string | n
 export type ItemCard = { id: string; nome: string; categoria: string | null; perfil_fiscal_id: string | null };
 
 const inputCls =
-  "rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 const VAZIO: Omit<Perfil, "id" | "ativo"> = { nome: "", ncm: "", cest: "", cfop: "5102", csosn: "102", origem: "0", unidade: "UN", pis_cst: "49", cofins_cst: "49", homologado: false, obs: "", is_cst: "", is_classificacao: "", is_aliquota: null, ibs_cbs_cst: "", ibs_cbs_classificacao: "", ibs_uf_aliquota: null, ibs_mun_aliquota: null, cbs_aliquota: null };
 

@@ -70,7 +70,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
     });
   }
 
-  const cx = "w-full rounded-cartao border border-borda-forte bg-white px-3 py-3 text-base text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
+  const cx = "w-full rounded-cartao border border-borda-forte bg-white px-3 py-3 text-base text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
   const btnFr = (f: FracaoRodizio) =>
     `rounded-cartao py-3 text-base font-bold ${fracao === f ? "bg-orange-500 text-white" : "bg-superficie-suave text-texto-suave  "}`;
 

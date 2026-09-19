@@ -69,6 +69,12 @@ export default async function PainelLayout({
 
   return (
     <div className="flex min-h-full flex-1">
+      <a
+        href="#conteudo"
+        className="absolute left-4 top-4 z-50 -translate-y-24 whitespace-nowrap rounded-controle bg-painel-foco-fundo px-4 py-3 text-sm font-semibold text-painel-foco-texto transition focus:translate-y-0"
+      >
+        Pular para o conteúdo
+      </a>
       <CoresDaEmpresa />
       <Dialogos />
       <Sidebar
@@ -81,7 +87,7 @@ export default async function PainelLayout({
         tema={tema}
         logoUrl={marca.logoUrl}
       />
-      <main className="flex-1 overflow-auto bg-painel-fundo">
+      <main id="conteudo" className="flex-1 overflow-auto bg-painel-fundo">
         {children}
       </main>
     </div>

@@ -276,7 +276,7 @@ export function PreencherClient({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar item..."
-              className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
             {gruposFiltrados.length === 0 && (
               <p className="mt-4 text-center text-sm text-zinc-400">
@@ -378,7 +378,7 @@ export function PreencherClient({
                         onChange={(e) => setAddBusca(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") buscarAdd(); }}
                         placeholder="Nome do item (ex.: vinagre)"
-                        className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base outline-none dark:border-zinc-700 dark:bg-zinc-950"
+                        className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950"
                       />
                       <button onClick={buscarAdd} disabled={addBuscando || addBusca.trim().length < 2} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
                         {addBuscando ? "..." : "Buscar"}

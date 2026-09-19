@@ -38,7 +38,7 @@ const BLOCOS: { grupo: Grupo; titulo: string }[] = [
 ];
 
 const campo =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria";
+  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 const rotulo = "mb-1 block text-xs font-medium text-orange-600";
 const btn =
   "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";

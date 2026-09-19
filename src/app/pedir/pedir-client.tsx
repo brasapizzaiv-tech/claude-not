@@ -312,7 +312,7 @@ export function PedirClient({
           <button onClick={() => setFase("menu")} className="mb-3 text-sm font-semibold" style={{ color: LARANJA }}>← Voltar pro cardápio</button>
           <h1 className="mb-3 flex items-center gap-2 text-xl font-bold"><Icone nome="lista" tamanho={19} /> Meus pedidos</h1>
           <div className="mb-4 flex gap-2">
-            <input value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+            <input value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
             <button onClick={buscarHistorico} disabled={histBuscando} className="rounded-cartao px-4 font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>{histBuscando ? "..." : "Buscar"}</button>
           </div>
           {histLista !== null && (
@@ -364,7 +364,7 @@ export function PedirClient({
                   onChange={(e) => setObsLinha(l.uid, e.target.value)}
                   maxLength={200}
                   placeholder="Observação deste item (ex.: sem cebola)"
-                  className="mt-2 w-full rounded-controle border border-borda bg-transparent px-2.5 py-1.5 text-xs outline-none"
+                  className="mt-2 w-full rounded-controle border border-borda bg-transparent px-2.5 py-1.5 text-xs "
                 />
               </div>
             ))}
@@ -373,8 +373,8 @@ export function PedirClient({
 
           <h2 className="mb-2 font-bold">Seus dados</h2>
           <div className="mb-4 space-y-2">
-            <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
-            <input value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+            <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+            <input value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
           </div>
 
           <h2 className="mb-2 font-bold">Pra quando?</h2>
@@ -384,7 +384,7 @@ export function PedirClient({
           </div>
           {quando === "agendar" && horario.podeAgendar && (
             <div className="mb-4">
-              <select value={slot} onChange={(e) => setSlot(e.target.value)} className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none dark:bg-zinc-950">
+              <select value={slot} onChange={(e) => setSlot(e.target.value)} className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 dark:bg-zinc-950">
                 <option value="">Escolha o horário…</option>
                 {horario.slots.map((s) => (
                   <option key={s.iso} value={s.iso} disabled={s.lotado}>{s.turno} · {s.label}{s.lotado ? " — lotado" : ""}</option>
@@ -407,15 +407,15 @@ export function PedirClient({
             <div className="mb-4 space-y-2">
               {lembrado && <p className="text-xs text-emerald-600">{lembrado}</p>}
               <div className="grid grid-cols-3 gap-2">
-                <input value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
-                <input value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+                <input value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+                <input value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
-                <input value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+                <input value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+                <input value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
               </div>
-              <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
-              <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência (opcional)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+              <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+              <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência (opcional)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
               <button onClick={calcularTaxa} disabled={calculando} className="w-full rounded-cartao border-2 py-2.5 font-bold disabled:opacity-50" style={{ borderColor: LARANJA, color: LARANJA }}>
                 {calculando ? "Calculando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="local" tamanho={14} /> Calcular entrega</span>}
               </button>
@@ -437,14 +437,14 @@ export function PedirClient({
             ))}
           </div>
           {forma === "Dinheiro" && (
-            <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+            <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
           )}
           <div className="mb-3 flex gap-2">
-            <input value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 uppercase outline-none" />
+            <input value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 uppercase " />
             <button onClick={aplicarCupom} disabled={cupomProc || !cupomCodigo.trim()} className="rounded-cartao border-2 px-4 font-bold disabled:opacity-50" style={{ borderColor: LARANJA, color: LARANJA }}>{cupomProc ? "..." : "Aplicar"}</button>
           </div>
           {cupomMsg && <p className="mb-3 text-sm text-texto-suave">{cupomMsg}</p>}
-          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
         </div>
 
         <div className="fixed inset-x-0 bottom-0 border-t border-borda bg-painel-cartao p-4">
@@ -483,7 +483,7 @@ export function PedirClient({
           </div>
       )}
       <div className="sticky top-0 z-10 border-b border-borda bg-white/95 p-3 backdrop-blur dark:bg-zinc-950/95">
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar no cardápio..." className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 outline-none" />
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar no cardápio..." className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
         {!busca && (
           <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
             {pizza.tamanhos.length > 0 && (

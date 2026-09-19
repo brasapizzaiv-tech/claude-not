@@ -43,7 +43,7 @@ export function ItemFator({
           inputMode="decimal"
           placeholder="1"
           disabled={salvando}
-          className={`w-14 rounded border px-1.5 py-0.5 text-right text-xs outline-none focus:border-orange-500 dark:bg-zinc-950 ${
+          className={`w-14 rounded border px-1.5 py-0.5 text-right text-xs focus:border-orange-500 dark:bg-zinc-950 ${
             f !== 1 ? "border-orange-400 bg-orange-50/60 dark:border-orange-700 dark:bg-orange-950/20" : "border-borda-forte"
           }`}
         />
