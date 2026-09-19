@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { emitirNfce, cancelarNfce, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
@@ -29,7 +30,12 @@ async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
 export async function definirNfceAuto(ligado: boolean) {
   await exigirAcesso(["/salao", "/pdv"]);
   const supabase = await createClient();
-  await supabase.from("config_fiscal").upsert({ chave: "nfce_auto", valor: ligado ? "1" : "0" });
+  await supabase
+    .from("config_fiscal")
+    .upsert(
+      { empresa_id: await empresaAtualId(), chave: "nfce_auto", valor: ligado ? "1" : "0" },
+      { onConflict: "empresa_id,chave" },
+    );
   revalidatePath("/salao/caixa");
   revalidatePath("/pdv");
   return { ok: true as const };

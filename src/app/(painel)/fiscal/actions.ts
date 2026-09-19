@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { emitirNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
 import { exigirAcesso } from "@/lib/permissoes-server";
@@ -31,11 +32,16 @@ export async function salvarConfigFiscal(formData: FormData) {
     "ncm_buffet",
     "nfce_serie",
   ];
+  // A chave desta tabela virou o par empresa + nome (migration 0189), então
+  // o upsert precisa dizer os dois — senão ele tentaria bater só pelo nome e
+  // sobrescreveria o ajuste de outro restaurante.
+  const empresaId = await empresaAtualId();
   const linhas = campos.map((chave) => ({
+    empresa_id: empresaId,
     chave,
     valor: ((formData.get(chave) as string) ?? "").trim(),
   }));
-  await supabase.from("config_fiscal").upsert(linhas);
+  await supabase.from("config_fiscal").upsert(linhas, { onConflict: "empresa_id,chave" });
   revalidatePath("/fiscal");
 }
 
