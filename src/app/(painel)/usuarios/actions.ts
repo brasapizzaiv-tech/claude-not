@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -30,11 +31,20 @@ export async function criarUsuario(dados: {
   await garantirDono();
   const admin = createAdminClient();
 
+  // O usuário nasce na MESMA empresa de quem está convidando. A chave
+  // administrativa não tem "quem sou eu", então a empresa vai escrita junto
+  // com o convite; a trigger do banco lê daqui. Sem isso, no dia da segunda
+  // empresa o usuário novo nasceria sem empresa nenhuma.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) {
+    return { ok: false, erro: "Não consegui identificar a empresa. Recarregue e tente de novo." };
+  }
+
   const { data: novo, error } = await admin.auth.admin.createUser({
     email: dados.email.trim().toLowerCase(),
     password: dados.senha,
     email_confirm: true,
-    user_metadata: { nome: dados.nome.trim() },
+    user_metadata: { nome: dados.nome.trim(), empresa_id: empresaId },
   });
 
   if (error || !novo?.user) {
