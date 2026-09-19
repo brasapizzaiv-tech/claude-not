@@ -154,7 +154,7 @@ export function FaturaClient({
             <div>
               <label className="mb-1 block text-xs text-texto-suave">Competência</label>
               <input type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className={input} />
-              <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">mês da fatura (vai pro DRE)</p>
+              <p className="mt-0.5 max-w-[9rem] text-mini leading-tight text-texto-fraco">mês da fatura (vai pro DRE)</p>
             </div>
             <div>
               <label className="mb-1 block text-xs text-texto-suave">Vencimento</label>
@@ -218,8 +218,8 @@ export function FaturaClient({
                     <td className="whitespace-nowrap px-3 py-2 text-texto-suave">{c.data ? dataBR(c.data) : c.dataTexto}</td>
                     <td className="px-3 py-2 text-texto">
                       {c.descricao}
-                      {c.parcela && <span className="ml-1 rounded bg-zinc-200 px-1 text-[10px] text-texto-suave dark:bg-zinc-700">{c.parcela}</span>}
-                      {c.sugerida && <span className="ml-1 text-[10px] text-emerald-600">já classificada antes</span>}
+                      {c.parcela && <span className="ml-1 rounded bg-zinc-200 px-1 text-mini text-texto-suave dark:bg-zinc-700">{c.parcela}</span>}
+                      {c.sugerida && <span className="ml-1 text-mini text-emerald-600">já classificada antes</span>}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-1">
@@ -237,7 +237,7 @@ export function FaturaClient({
                             type="button"
                             onClick={() => aplicarIguais(c.uid)}
                             title="Usar esta categoria em todas as compras deste estabelecimento"
-                            className="text-[11px] text-texto-fraco underline hover:text-orange-600"
+                            className="text-mini text-texto-fraco underline hover:text-orange-600"
                           >
                             iguais
                           </button>

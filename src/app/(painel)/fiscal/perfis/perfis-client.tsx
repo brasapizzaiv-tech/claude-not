@@ -90,7 +90,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
                 <tr key={p.id} className={`bg-painel-cartao ${!p.ativo ? "opacity-50" : ""}`}>
                   <td className="px-3 py-2">
                     <div className="font-medium">{p.nome}</div>
-                    {p.obs && <div className="text-[11px] text-texto-fraco">{p.obs}</div>}
+                    {p.obs && <div className="text-mini text-texto-fraco">{p.obs}</div>}
                   </td>
                   <td className="px-3 py-2 font-mono text-xs">{p.ncm || "—"}</td>
                   <td className="px-3 py-2 font-mono text-xs">{p.cest || "—"}</td>
@@ -128,7 +128,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
             <div key={c.id} className="flex items-center gap-2 rounded-cartao border border-borda px-3 py-2">
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{c.nome}</div>
-                <div className="text-[11px] text-texto-fraco">{contagemCat.get(c.nome) ?? 0} itens</div>
+                <div className="text-mini text-texto-fraco">{contagemCat.get(c.nome) ?? 0} itens</div>
               </div>
               <select
                 value={c.perfil_fiscal_id ?? ""}
@@ -180,7 +180,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
                       ) : (
                         <span className="text-amber-600">padrão da config</span>
                       )}
-                      <span className="ml-1 text-[11px] text-texto-fraco">({ef.fonte === "item" ? "exceção" : ef.fonte === "categoria" ? "categoria" : "config"})</span>
+                      <span className="ml-1 text-mini text-texto-fraco">({ef.fonte === "item" ? "exceção" : ef.fonte === "categoria" ? "categoria" : "config"})</span>
                     </td>
                     <td className="px-3 py-1.5">
                       <select
@@ -284,14 +284,14 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
             <details className="rounded-controle border border-borda p-2">
               <summary className="cursor-pointer text-xs font-semibold text-texto-suave">Reforma tributária (IS, IBS/CBS) — informativo em 2026</summary>
               <div className="mt-2 grid grid-cols-3 gap-2">
-                <div><label className="mb-1 block text-[11px] text-texto-suave">CST do IS</label><input name="is_cst" defaultValue={editando.is_cst ?? ""} placeholder="000" className={`${inputCls} w-full font-mono`} /></div>
-                <div><label className="mb-1 block text-[11px] text-texto-suave">Alíquota IS (%)</label><input name="is_aliquota" defaultValue={editando.is_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
-                <div><label className="mb-1 block text-[11px] text-texto-suave">Classif. trib. IS</label><input name="is_classificacao" defaultValue={editando.is_classificacao ?? ""} placeholder="000001" className={`${inputCls} w-full font-mono`} /></div>
-                <div><label className="mb-1 block text-[11px] text-texto-suave">CST IBS/CBS</label><input name="ibs_cbs_cst" defaultValue={editando.ibs_cbs_cst ?? ""} placeholder="000" className={`${inputCls} w-full font-mono`} /></div>
-                <div className="col-span-2"><label className="mb-1 block text-[11px] text-texto-suave">Classif. trib. IBS/CBS</label><input name="ibs_cbs_classificacao" defaultValue={editando.ibs_cbs_classificacao ?? ""} placeholder="000001" className={`${inputCls} w-full font-mono`} /></div>
-                <div><label className="mb-1 block text-[11px] text-texto-suave">IBS estadual (%)</label><input name="ibs_uf_aliquota" defaultValue={editando.ibs_uf_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
-                <div><label className="mb-1 block text-[11px] text-texto-suave">IBS municipal (%)</label><input name="ibs_mun_aliquota" defaultValue={editando.ibs_mun_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
-                <div><label className="mb-1 block text-[11px] text-texto-suave">CBS (%)</label><input name="cbs_aliquota" defaultValue={editando.cbs_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
+                <div><label className="mb-1 block text-mini text-texto-suave">CST do IS</label><input name="is_cst" defaultValue={editando.is_cst ?? ""} placeholder="000" className={`${inputCls} w-full font-mono`} /></div>
+                <div><label className="mb-1 block text-mini text-texto-suave">Alíquota IS (%)</label><input name="is_aliquota" defaultValue={editando.is_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
+                <div><label className="mb-1 block text-mini text-texto-suave">Classif. trib. IS</label><input name="is_classificacao" defaultValue={editando.is_classificacao ?? ""} placeholder="000001" className={`${inputCls} w-full font-mono`} /></div>
+                <div><label className="mb-1 block text-mini text-texto-suave">CST IBS/CBS</label><input name="ibs_cbs_cst" defaultValue={editando.ibs_cbs_cst ?? ""} placeholder="000" className={`${inputCls} w-full font-mono`} /></div>
+                <div className="col-span-2"><label className="mb-1 block text-mini text-texto-suave">Classif. trib. IBS/CBS</label><input name="ibs_cbs_classificacao" defaultValue={editando.ibs_cbs_classificacao ?? ""} placeholder="000001" className={`${inputCls} w-full font-mono`} /></div>
+                <div><label className="mb-1 block text-mini text-texto-suave">IBS estadual (%)</label><input name="ibs_uf_aliquota" defaultValue={editando.ibs_uf_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
+                <div><label className="mb-1 block text-mini text-texto-suave">IBS municipal (%)</label><input name="ibs_mun_aliquota" defaultValue={editando.ibs_mun_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
+                <div><label className="mb-1 block text-mini text-texto-suave">CBS (%)</label><input name="cbs_aliquota" defaultValue={editando.cbs_aliquota ?? ""} inputMode="decimal" className={`${inputCls} w-full`} /></div>
               </div>
             </details>
             <div>

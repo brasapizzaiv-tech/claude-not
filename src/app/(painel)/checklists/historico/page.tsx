@@ -151,7 +151,7 @@ export default async function HistoricoChecklistsPage({
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums">{sit.feitos}/{sit.total}</td>
                   <td className="px-4 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${e.concluido_em ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-mini font-medium ${e.concluido_em ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
                       {e.concluido_em ? "concluída" : "em andamento"}
                     </span>
                   </td>

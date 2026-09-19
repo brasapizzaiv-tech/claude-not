@@ -102,7 +102,7 @@ export function MarmitaDiaForm({
 
       {/* Pratos */}
       <div>
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Pratos (a pessoa escolhe até 4)</p>
+        <p className="mb-1 text-mini font-semibold uppercase tracking-wide text-zinc-400">Pratos (a pessoa escolhe até 4)</p>
         <div className="flex flex-wrap gap-2">
           {pratos.map((p, i) => (
             <span key={i} className={chip}>
@@ -122,7 +122,7 @@ export function MarmitaDiaForm({
 
       {/* Proteínas */}
       <div>
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Proteínas (a pessoa escolhe uma)</p>
+        <p className="mb-1 text-mini font-semibold uppercase tracking-wide text-zinc-400">Proteínas (a pessoa escolhe uma)</p>
         <div className="flex flex-wrap gap-2">
           {proteinas.map((p, i) => (
             <span key={i} className={chip}>
@@ -142,7 +142,7 @@ export function MarmitaDiaForm({
 
       {/* Salada */}
       <div>
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Salada</p>
+        <p className="mb-1 text-mini font-semibold uppercase tracking-wide text-zinc-400">Salada</p>
         {editavel
           ? <input value={salada} onChange={(e) => { setSalada(e.target.value); setSujo(true); }} placeholder="Ex.: Alface e tomate" className={input} />
           : <p className={txt}>{salada || <span className="text-zinc-400">—</span>}</p>}

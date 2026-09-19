@@ -170,7 +170,7 @@ export function NotasClient({
                 <td className="px-4 py-2">
                   <span className={`rounded px-2 py-0.5 text-xs font-medium ${badge(l.status)}`}>{rotulo(l.status)}</span>
                   {l.status !== "autorizado" && l.status !== "cancelado" && l.mensagem && (
-                    <div className="mt-0.5 max-w-xs truncate text-[11px] text-red-500" title={l.mensagem}>{l.mensagem}</div>
+                    <div className="mt-0.5 max-w-xs truncate text-mini text-red-500" title={l.mensagem}>{l.mensagem}</div>
                   )}
                 </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">

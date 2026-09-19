@@ -520,13 +520,13 @@ export function CompararClient({
                   >
                     <div className="font-semibold text-texto-suave">
                       {respondeu && (
-                        <span className="mr-1 rounded bg-green-100 px-1 text-[10px] font-bold text-green-700 dark:bg-green-950 dark:text-green-300">
+                        <span className="mr-1 rounded bg-green-100 px-1 text-mini font-bold text-green-700 dark:bg-green-950 dark:text-green-300">
                           {i + 1}º
                         </span>
                       )}
                       {f.nome}
                     </div>
-                    <div className="text-[10px] font-normal text-texto-fraco">
+                    <div className="text-mini font-normal text-texto-fraco">
                       {respondeu ? `respondeu ${hora}` : "não respondeu"}
                       {f.prazo_entrega ? ` · entrega ${dataBR(f.prazo_entrega)}` : ""}
                       {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
@@ -535,7 +535,7 @@ export function CompararClient({
                     <div className="mt-1 flex flex-wrap items-center justify-end gap-1">
                       {gerados.has(f.id) ? (
                         <>
-                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-mini font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
                             ✓ gerado
                           </span>
                           <a
@@ -543,7 +543,7 @@ export function CompararClient({
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Enviar este pedido pelo WhatsApp"
-                            className="rounded bg-texto px-2 py-0.5 text-[10px] font-semibold text-fundo hover:opacity-90"
+                            className="rounded bg-texto px-2 py-0.5 text-mini font-semibold text-fundo hover:opacity-90"
                           >
                             <Icone nome="mandar" tamanho={13} className="mr-1" /> Enviar
                           </a>
@@ -554,7 +554,7 @@ export function CompararClient({
                             onClick={() => adiantar(f.id, f.nome)}
                             disabled={salvando}
                             title="Gerar só o pedido deste fornecedor agora (sem esperar os outros)"
-                            className="rounded bg-orange-500 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+                            className="rounded bg-orange-500 px-2 py-0.5 text-mini font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
                           >
                             {adiantando === f.id ? "..." : <span className="inline-flex items-center gap-1"><Icone nome="rapido" tamanho={13} /> Adiantar</span>}
                           </button>
@@ -622,7 +622,7 @@ export function CompararClient({
                       <button
                         type="button"
                         onClick={() => toggleDividir(p.produto_id)}
-                        className={`mt-0.5 block w-full text-[10px] ${
+                        className={`mt-0.5 block w-full text-mini ${
                           dividindo.has(p.produto_id)
                             ? "font-medium text-orange-600"
                             : "text-texto-fraco hover:text-orange-600"
@@ -631,7 +631,7 @@ export function CompararClient({
                         {dividindo.has(p.produto_id) ? <span className="inline-flex items-center gap-1"><Icone nome="cortar" tamanho={12} /> dividido</span> : "dividir"}
                       </button>
                     </td>
-                    <td className="px-3 py-2 text-right align-top text-[11px] leading-tight">
+                    <td className="px-3 py-2 text-right align-top text-mini leading-tight">
                       {ultimaCompra[p.produto_id] ? (
                         <>
                           <div className="font-semibold text-texto-suave">
@@ -676,7 +676,7 @@ export function CompararClient({
                         <td key={f.id} className="px-2 py-1 text-right align-top">
                           {dividido ? (
                             <div className="flex items-center justify-end gap-1">
-                              <span className="text-[10px] text-texto-fraco">{moeda(cel.preco)}</span>
+                              <span className="text-mini text-texto-fraco">{moeda(cel.preco)}</span>
                               <input
                                 type="number"
                                 min={0}
@@ -713,7 +713,7 @@ export function CompararClient({
                                   key={ex.id}
                                   onClick={() => escolherOferta(p.produto_id, f.id, ex.id)}
                                   title={ex.obs ?? ""}
-                                  className={`flex w-full items-center justify-between gap-1 rounded-controle px-2 py-1 text-[11px] transition ${
+                                  className={`flex w-full items-center justify-between gap-1 rounded-controle px-2 py-1 text-mini transition ${
                                     escolhido && ofSel === ex.id
                                       ? "bg-sky-500 font-semibold text-white"
                                       : "bg-sky-50 text-sky-800 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300"
@@ -726,7 +726,7 @@ export function CompararClient({
                             </div>
                           )}
                           {cel.temSt && (
-                            <div className="mt-0.5 text-right text-[10px] leading-tight text-violet-500 dark:text-violet-400">
+                            <div className="mt-0.5 text-right text-mini leading-tight text-violet-500 dark:text-violet-400">
                               {cel.preco != null &&
                               cel.precoBruto != null &&
                               Math.abs(cel.preco - cel.precoBruto) > 0.001
@@ -735,7 +735,7 @@ export function CompararClient({
                             </div>
                           )}
                           {(cel.emb || cel.tam || cel.obs) && (
-                            <div className="mt-0.5 text-right text-[10px] leading-tight text-texto-fraco">
+                            <div className="mt-0.5 text-right text-mini leading-tight text-texto-fraco">
                               {[cel.emb, cel.tam, cel.obs].filter(Boolean).join(" · ")}
                             </div>
                           )}
@@ -743,7 +743,7 @@ export function CompararClient({
                             <button
                               type="button"
                               onClick={() => setFotoAberta(cel.foto)}
-                              className="mt-0.5 text-[10px] font-medium text-orange-600 hover:underline"
+                              className="mt-0.5 text-mini font-medium text-orange-600 hover:underline"
                             >
                               <Icone nome="camera" tamanho={12} className="mr-1" /> ver foto
                             </button>

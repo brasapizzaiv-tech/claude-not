@@ -102,15 +102,15 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
                 <div className="rounded-cartao bg-superficie-suave p-2">
-                  <div className="text-[10px] uppercase text-texto-fraco">Semana</div>
+                  <div className="text-mini uppercase text-texto-fraco">Semana</div>
                   <div className="font-semibold text-texto">{brl(l.valor)}</div>
                 </div>
                 <div className="rounded-cartao bg-superficie-suave p-2">
-                  <div className="text-[10px] uppercase text-texto-fraco">Fiado desc.</div>
+                  <div className="text-mini uppercase text-texto-fraco">Fiado desc.</div>
                   <div className={`font-semibold ${l.desconto > 0 ? "text-red-600" : "text-texto-fraco"}`}>{l.desconto > 0 ? `− ${brl(l.desconto)}` : "—"}</div>
                 </div>
                 <div className="rounded-cartao bg-emerald-50 p-2 dark:bg-emerald-950/30">
-                  <div className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300">Em mãos</div>
+                  <div className="text-mini uppercase text-emerald-700 dark:text-emerald-300">Em mãos</div>
                   <div className="font-bold text-emerald-700 dark:text-emerald-300">{brl(l.emMaos)}</div>
                 </div>
               </div>

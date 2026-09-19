@@ -90,7 +90,7 @@ export function AgendamentosClient({
                 <p className="font-medium text-texto">
                   {a.nome}
                   {!a.ativo && (
-                    <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] text-texto-suave dark:bg-zinc-800">
+                    <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-mini text-texto-suave dark:bg-zinc-800">
                       pausado
                     </span>
                   )}

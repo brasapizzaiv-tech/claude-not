@@ -56,7 +56,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
           <summary className="cursor-pointer text-xs text-texto-fraco">
             detalhe técnico (me mande isto para eu corrigir)
           </summary>
-          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-controle bg-zinc-900 p-2 text-[10px] text-green-400">
+          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-controle bg-zinc-900 p-2 text-mini text-green-400">
             {diag}
           </pre>
         </details>

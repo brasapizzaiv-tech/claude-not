@@ -209,7 +209,7 @@ export function EtiquetaColabForm({
                   placeholder="ex.: temperado com alho e sal"
                   className={input}
                 />
-                <p className="mt-1 text-[11px] text-texto-fraco">Sai impresso na etiqueta, logo acima da validade.</p>
+                <p className="mt-1 text-mini text-texto-fraco">Sai impresso na etiqueta, logo acima da validade.</p>
               </div>
             </>
           )}
@@ -218,13 +218,13 @@ export function EtiquetaColabForm({
             <ValidadePresets value={validade} onChange={setValidade} />
             <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={`${input} mt-2`} />
             {!livre && item && !diasPadrao(item, conservacao, tipo) && !validade && (
-              <p className="mt-1 text-[11px] text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
+              <p className="mt-1 text-mini text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
             )}
           </div>
           {!livre && <CamposExtras value={extras} onChange={setExtras} />}
 
           <div className="rounded-cartao border border-borda bg-superficie-suave p-3">
-            <p className="mb-2 text-center text-[11px] font-semibold text-texto-fraco">Assim vai sair</p>
+            <p className="mb-2 text-center text-mini font-semibold text-texto-fraco">Assim vai sair</p>
             <PreviewEtiqueta d={preview} config={config} />
             <div className="mt-3 flex justify-center">
               <Copias value={copias} onChange={setCopias} />

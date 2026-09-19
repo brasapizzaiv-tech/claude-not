@@ -340,7 +340,7 @@ export function ContarClient({
                           <td className="px-4 py-2 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               {!preenchidos.has(p.id) && !finalizada && (
-                                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-mini font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                                   falta
                                 </span>
                               )}
@@ -370,14 +370,14 @@ export function ContarClient({
                             </div>
                             {refs.get(p.id) && !finalizada && (
                               precisaConferir(p.id) ? (
-                                <div className="mt-1 max-w-md text-right text-[11px] text-amber-700 dark:text-amber-300">
+                                <div className="mt-1 max-w-md text-right text-mini text-amber-700 dark:text-amber-300">
                                   <Icone nome="alerta" tamanho={12} className="mr-1" /> {explicacao(refs.get(p.id)!, valores[p.id] ?? 0)}{" "}
                                   <button type="button" onClick={() => setConfirmados((s) => new Set(s).add(p.id))} className="ml-1 rounded bg-amber-600 px-1.5 py-0.5 font-semibold text-white">
                                     contei de novo, está certo
                                   </button>
                                 </div>
                               ) : (
-                                <div className="mt-0.5 text-right text-[10px] text-texto-fraco">
+                                <div className="mt-0.5 text-right text-mini text-texto-fraco">
                                   {confirmados.has(p.id) && ehSuspeito(p.id) ? "✓ conferido · " : ""}
                                   última: {refs.get(p.id)!.ultima_qtd}{refs.get(p.id)!.comprado > 0 ? ` · chegou: ${refs.get(p.id)!.comprado}` : ""}
                                 </div>

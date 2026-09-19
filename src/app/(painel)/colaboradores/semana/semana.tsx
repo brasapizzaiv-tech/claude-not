@@ -474,7 +474,7 @@ export function SemanaClient({
                     <tr key={n.data} className={n.nestaSemana ? "bg-painel-cartao " : "opacity-70"}>
                       <td className="px-2 py-1 font-medium whitespace-nowrap">
                         {rotuloDia(n.data)}
-                        {(n.data < dias[0] || n.data > dias[6]) && <span className="ml-1 text-[10px] text-texto-fraco">(outra semana)</span>}
+                        {(n.data < dias[0] || n.data > dias[6]) && <span className="ml-1 text-mini text-texto-fraco">(outra semana)</span>}
                       </td>
                       <td className="px-2 py-1 text-right">
                         <input
@@ -541,9 +541,9 @@ export function SemanaClient({
                   <td className="sticky left-0 z-10 bg-painel-cartao px-3 py-1.5">
                     <div className="font-medium text-texto">
                       {p.nome}
-                      {p.esporadico && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">free</span>}
+                      {p.esporadico && <span className="ml-1 rounded bg-amber-100 px-1 text-mini text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">free</span>}
                     </div>
-                    <div className="text-[11px] text-texto-fraco">
+                    <div className="text-mini text-texto-fraco">
                       {clt
                         ? "CLT"
                         : [
@@ -642,7 +642,7 @@ export function SemanaClient({
           )}
           <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] text-sm">
-            <thead className="bg-superficie-suave text-left text-[11px] text-texto-suave">
+            <thead className="bg-superficie-suave text-left text-mini text-texto-suave">
               <tr>
                 {turnoFiltro === "todos" && (() => {
                   // Marcar/desmarcar todo mundo que pode ser lançado (tem valor e ainda não foi pago).
@@ -700,7 +700,7 @@ export function SemanaClient({
                     </td>}
                     <td className="px-4 py-2">
                       <div className="font-medium text-texto">{p.nome}</div>
-                      <div className="text-[11px] text-texto-fraco">
+                      <div className="text-mini text-texto-fraco">
                         {rotuloVinculo}{p.funcao ? ` · ${p.funcao}` : ""}
                         {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))}{pagoDe.get(p.id)!.n > 1 ? `, ${pagoDe.get(p.id)!.n} lançamentos` : ""})</span>}
                       </div>
@@ -709,7 +709,7 @@ export function SemanaClient({
                           type="button"
                           onClick={() => lancarDiferenca(p, Math.round((total - pagoDe.get(p.id)!.valor) * 100) / 100)}
                           disabled={pending}
-                          className="mt-1 rounded-controle border border-amber-500 px-2 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-400"
+                          className="mt-1 rounded-controle border border-amber-500 px-2 py-0.5 text-mini font-medium text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-400"
                           title="Esqueceu algo? Lança só a diferença entre o total de agora e o que já foi lançado."
                         >
                           + Lançar diferença {brl(total - pagoDe.get(p.id)!.valor)}
@@ -758,7 +758,7 @@ export function SemanaClient({
                               onBlur={() => salvarExtraDe(p)}
                               onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                               placeholder="motivo (ex.: hora extra)"
-                              className={`${inputCls} w-28 px-1 py-0.5 text-[11px]`}
+                              className={`${inputCls} w-28 px-1 py-0.5 text-mini`}
                             />
                           )}
                         </div>
@@ -783,7 +783,7 @@ export function SemanaClient({
                               onBlur={() => salvarExtraDe(p)}
                               onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                               placeholder="motivo (ex.: atraso)"
-                              className={`${inputCls} w-28 px-1 py-0.5 text-[11px]`}
+                              className={`${inputCls} w-28 px-1 py-0.5 text-mini`}
                             />
                           )}
                         </div>

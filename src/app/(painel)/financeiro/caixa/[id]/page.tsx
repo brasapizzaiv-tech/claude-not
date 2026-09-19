@@ -127,7 +127,7 @@ export default async function FechamentoRelatorio({
                       : "border-b border-borda /60"
                   }`}
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-bold text-texto-suave dark:bg-zinc-700">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-mini font-bold text-texto-suave dark:bg-zinc-700">
                     {letra}
                   </span>
                   <span

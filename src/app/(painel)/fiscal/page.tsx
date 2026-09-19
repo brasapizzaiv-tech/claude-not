@@ -111,7 +111,7 @@ export default async function FiscalPage() {
             <div className="sm:col-span-3">
               <label className="mb-1 block text-xs text-texto-suave">Token de API do emissor ({v("emissor_ambiente") === "producao" ? "PRODUÇÃO" : "homologação"})</label>
               <input name="emissor_token" defaultValue={v("emissor_token")} placeholder="token do Focus" className={campo} />
-              <p className="mt-1 text-[11px] text-texto-fraco">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto.</p>
+              <p className="mt-1 text-mini text-texto-fraco">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto.</p>
             </div>
             <Campo nome="csc" def={v("csc")} label="CSC (código do QR)" />
             <Campo nome="csc_id" def={v("csc_id")} label="ID do CSC" />
@@ -126,7 +126,7 @@ export default async function FiscalPage() {
             <Campo nome="cfop_padrao" def={v("cfop_padrao")} label="CFOP padrão" ph="Ex.: 5102" />
             <Campo nome="csosn_padrao" def={v("csosn_padrao")} label="CSOSN padrão" ph="Ex.: 102" />
           </div>
-          <p className="mt-2 text-[11px] text-texto-fraco">
+          <p className="mt-2 text-mini text-texto-fraco">
             Usados quando um produto não tiver os campos fiscais próprios (ex.: o buffet). O contador informa os valores certos.
           </p>
         </section>

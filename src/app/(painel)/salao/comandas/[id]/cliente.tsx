@@ -162,7 +162,7 @@ export function LancarItens({
               <span className="text-sm font-medium leading-tight text-texto">
                 {i.nome}
                 {complementos[i.id]?.length ? (
-                  <span className="ml-1 text-[10px] text-texto-fraco">montar ›</span>
+                  <span className="ml-1 text-mini text-texto-fraco">montar ›</span>
                 ) : null}
               </span>
               <span className="mt-1 text-xs font-semibold text-orange-600">{brl(Number(i.preco))}</span>
@@ -275,7 +275,7 @@ function MontarCombo({
               <div key={g.id}>
                 <div className="mb-1 flex items-center justify-between">
                   <p className="text-sm font-semibold text-texto">{g.nome}</p>
-                  <span className={`text-[11px] ${okMin ? "text-texto-fraco" : "text-red-500"}`}>
+                  <span className={`text-mini ${okMin ? "text-texto-fraco" : "text-red-500"}`}>
                     {g.min > 0 ? `escolha ${g.min}` : "opcional"}
                     {g.max > 1 ? ` até ${g.max}` : ""} · {escolhidas}
                   </span>
@@ -454,7 +454,7 @@ export function MontarPizza({
                 }`}
               >
                 {t.nome}
-                <span className="ml-1 text-[11px] opacity-70">
+                <span className="ml-1 text-mini opacity-70">
                   ({t.max} {t.max > 1 ? "sabores" : "sabor"})
                 </span>
               </button>

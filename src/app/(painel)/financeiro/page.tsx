@@ -191,7 +191,7 @@ export default async function FinanceiroPage({
             title="Mês da despesa (entra no DRE por aqui). Pagou em agosto uma conta de julho? Ponha julho aqui e a data do boleto no Vencimento."
             className={inputCls}
           />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">mês da despesa (vai pro DRE)</p>
+          <p className="mt-0.5 max-w-[9rem] text-mini leading-tight text-texto-fraco">mês da despesa (vai pro DRE)</p>
         </div>
         <div className="min-w-56 flex-1">
           <label className="mb-1 block text-xs text-texto-suave">Categoria</label>
@@ -219,7 +219,7 @@ export default async function FinanceiroPage({
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Emissão</label>
           <input type="date" name="emissao" title="Data da nota/recibo (opcional)" className={inputCls} />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">da nota/recibo</p>
+          <p className="mt-0.5 max-w-[9rem] text-mini leading-tight text-texto-fraco">da nota/recibo</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Vencimento</label>
@@ -228,12 +228,12 @@ export default async function FinanceiroPage({
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Pago em</label>
           <input type="date" name="pago_em" title="Quando saiu do banco. Em branco com 'Já pago' marcado, vale o vencimento." className={inputCls} />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">só se já pagou</p>
+          <p className="mt-0.5 max-w-[9rem] text-mini leading-tight text-texto-fraco">só se já pagou</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Lançado em</label>
           <input type="date" name="lancamento_em" defaultValue={hojeSP()} title="Quando esta conta foi cadastrada no sistema" className={inputCls} />
-          <p className="mt-0.5 max-w-[9rem] text-[10px] leading-tight text-texto-fraco">cadastro (hoje)</p>
+          <p className="mt-0.5 max-w-[9rem] text-mini leading-tight text-texto-fraco">cadastro (hoje)</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Origem (banco)</label>

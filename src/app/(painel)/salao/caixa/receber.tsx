@@ -584,12 +584,12 @@ export function ReceberComandas({
             >
               Comanda {c.numero}
               {c.mesa ? ` · ${c.mesa}` : ""}
-              {c.livre && <span className="ml-1 rounded bg-orange-500 px-1.5 text-[10px] font-bold text-white">LIVRE</span>}
+              {c.livre && <span className="ml-1 rounded bg-orange-500 px-1.5 text-mini font-bold text-white">LIVRE</span>}
               {c.pesada && !c.livre && !c.buffetPago && (
                 <button
                   onClick={() => virarLivre(c)}
                   title="Cliente vai comer à vontade: troca o valor do peso pelo buffet livre do dia"
-                  className="ml-1 rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-bold text-white hover:bg-orange-600"
+                  className="ml-1 rounded-full bg-orange-500 px-2 py-0.5 text-mini font-bold text-white hover:bg-orange-600"
                 >
                   <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> Virar livre</span>
                 </button>
@@ -665,7 +665,7 @@ export function ReceberComandas({
                       <span className={`flex-1 truncate ${noCarrinho ? "line-through" : ""} text-zinc-800 dark:text-zinc-100`}>
                         {l.tipo === "item" && l.qtd > 1 ? `${l.qtd}× ` : ""}
                         {l.nome}
-                        <span className="ml-1 text-[11px] text-texto-fraco">#{l.numero}</span>
+                        <span className="ml-1 text-mini text-texto-fraco">#{l.numero}</span>
                       </span>
                       <span className={`${noCarrinho ? "line-through" : ""} text-texto-suave`}>
                         {brl(l.valor)}
@@ -734,7 +734,7 @@ export function ReceberComandas({
                       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">
                         {l.tipo === "item" && l.qtd > 1 ? `${l.qtd}× ` : ""}
                         {l.nome}
-                        <span className="ml-1 text-[11px] text-texto-fraco">#{l.numero}</span>
+                        <span className="ml-1 text-mini text-texto-fraco">#{l.numero}</span>
                       </span>
                       <span className="text-texto-suave">{brl(l.valor)}</span>
                       <button
@@ -751,7 +751,7 @@ export function ReceberComandas({
                       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">
                         {e.qtd > 1 ? `${e.qtd}× ` : ""}
                         {e.nome}
-                        <span className="ml-1 rounded bg-blue-100 px-1 text-[10px] text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                        <span className="ml-1 rounded bg-blue-100 px-1 text-mini text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
                           avulso
                         </span>
                       </span>
@@ -773,7 +773,7 @@ export function ReceberComandas({
             {menu.length > 0 && (
               <div className="mt-2 flex items-end gap-2 border-t border-borda pt-2">
                 <div className="min-w-0 flex-1">
-                  <label className="mb-1 block text-[11px] text-texto-suave">Inserir produto</label>
+                  <label className="mb-1 block text-mini text-texto-suave">Inserir produto</label>
                   <select
                     value={novoProd}
                     onChange={(e) => setNovoProd(e.target.value)}
@@ -817,7 +817,7 @@ export function ReceberComandas({
                   className="mt-3 w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
                 >
                   Receber {brl(subtotalBruto)} →
-                  <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
+                  <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-mini font-semibold">Enter</span>
                 </button>
               </>
             )}
@@ -858,7 +858,7 @@ export function ReceberComandas({
                     <div>
                       <div className="mb-1 flex items-center justify-between">
                         <label className="text-xs text-texto-suave">Desconto</label>
-                        <span className="flex overflow-hidden rounded-controle border border-borda-forte text-[11px]">
+                        <span className="flex overflow-hidden rounded-controle border border-borda-forte text-mini">
                           <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-white" : "text-texto-suave"}`}>R$</button>
                           <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-white" : "text-texto-suave"}`}>%</button>
                         </span>
@@ -877,7 +877,7 @@ export function ReceberComandas({
                       >
                         <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> 5% no dinheiro</span>
                       </button>
-                      {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-[11px] text-texto-suave">= {brl(desc)}</p>}
+                      {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-mini text-texto-suave">= {brl(desc)}</p>}
                     </div>
                     <div>
                       <label className="mb-1 block text-xs text-texto-suave">Acréscimo (R$)</label>

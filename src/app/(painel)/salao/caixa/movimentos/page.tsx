@@ -97,7 +97,7 @@ export default async function MovimentosCaixaPage() {
               <tr key={m.id} className="">
                 <td className="px-4 py-2 text-texto">
                   {m.descricao || m.tipo}
-                  <span className="ml-2 text-[10px] text-texto-fraco">{m.tipo}</span>
+                  <span className="ml-2 text-mini text-texto-fraco">{m.tipo}</span>
                   {m.tipo === "venda" && (
                     <Link
                       href={`/salao/caixa/movimentos/${m.id}`}
@@ -108,7 +108,7 @@ export default async function MovimentosCaixaPage() {
                     </Link>
                   )}
                   {comandasDo(m).length > 0 && (
-                    <span className="ml-2 text-[11px] text-texto-fraco">
+                    <span className="ml-2 text-mini text-texto-fraco">
                       {comandasDo(m).length} comanda{comandasDo(m).length === 1 ? "" : "s"}
                     </span>
                   )}

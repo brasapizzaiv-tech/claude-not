@@ -69,11 +69,11 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
               </div>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 text-sm md:grid-cols-5">
-              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Entregas</div><div className="font-semibold">{meus.length}</div></div>
-              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Teles</div><div className="font-semibold">{brl(teles)}</div></div>
-              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Fixo</div><div className="font-semibold">{brl(fixo)}</div></div>
-              <div className="rounded-controle bg-amber-50 p-2 dark:bg-amber-950/30"><div className="text-[11px] text-texto-suave">Trouxe em dinheiro</div><div className="font-semibold">{brl(rec.Dinheiro)}</div></div>
-              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-[11px] text-texto-suave">Cartão / Pix</div><div className="font-semibold">{brl(rec.Cartão)} / {brl(rec.Pix)}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-mini text-texto-suave">Entregas</div><div className="font-semibold">{meus.length}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-mini text-texto-suave">Teles</div><div className="font-semibold">{brl(teles)}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-mini text-texto-suave">Fixo</div><div className="font-semibold">{brl(fixo)}</div></div>
+              <div className="rounded-controle bg-amber-50 p-2 dark:bg-amber-950/30"><div className="text-mini text-texto-suave">Trouxe em dinheiro</div><div className="font-semibold">{brl(rec.Dinheiro)}</div></div>
+              <div className="rounded-controle bg-superficie-suave p-2"><div className="text-mini text-texto-suave">Cartão / Pix</div><div className="font-semibold">{brl(rec.Cartão)} / {brl(rec.Pix)}</div></div>
             </div>
             <details className="mt-2 text-xs text-texto-suave">
               <summary className="cursor-pointer">ver as {meus.length} entregas</summary>

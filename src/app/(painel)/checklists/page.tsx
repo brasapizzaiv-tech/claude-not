@@ -86,7 +86,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
                     href={`/checklists?dia=${dia}&ver=${l.modelo.id}`}
                     className={`rounded-cartao border p-3 ${l.s.concluida ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30" : l.s.iniciada ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20" : "border-dashed border-borda-forte"}`}
                   >
-                    <p className="text-[11px] text-texto-fraco">{core.ROTULO_MOMENTO[mom]}</p>
+                    <p className="text-mini text-texto-fraco">{core.ROTULO_MOMENTO[mom]}</p>
                     <p className="font-semibold text-texto">{l.modelo.nome}</p>
                     <p className="mt-1 text-sm">
                       <b className={l.s.concluida ? "text-emerald-600" : l.s.iniciada ? "text-amber-600" : "text-texto-fraco"}>{l.s.feitos}/{l.s.total}</b>

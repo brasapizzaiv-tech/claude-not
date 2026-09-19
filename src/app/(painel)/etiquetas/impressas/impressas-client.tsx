@@ -84,9 +84,9 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
         <div className="flex h-36 items-end gap-1">
           {porHora.map((n, h) => (
             <div key={h} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${h}h: ${n}`}>
-              {n > 0 && <span className="text-[10px] text-texto-suave">{n}</span>}
+              {n > 0 && <span className="text-mini text-texto-suave">{n}</span>}
               <div className="w-full rounded-t bg-orange-400" style={{ height: `${(n / max) * 100}%`, minHeight: n > 0 ? 3 : 0 }} />
-              <span className="text-[9px] text-texto-fraco">{h}</span>
+              <span className="text-mini text-texto-fraco">{h}</span>
             </div>
           ))}
         </div>
@@ -165,7 +165,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
                   <td className="px-3 py-2 font-mono text-texto-suave">#{r.numero}</td>
                   <td className="px-3 py-2">
                     <Link href={`/etiquetas/${r.id}`} className="font-medium text-texto hover:text-orange-600">{r.produto_nome}</Link>
-                    {r.tipo && r.tipo !== "manipulacao" && <span className="ml-2 text-[10px] text-texto-fraco">{tipoInfo(r.tipo).titulo}</span>}
+                    {r.tipo && r.tipo !== "manipulacao" && <span className="ml-2 text-mini text-texto-fraco">{tipoInfo(r.tipo).titulo}</span>}
                     {r.quantidade != null && <span className="ml-2 text-xs text-texto-fraco">{r.quantidade} {r.unidade ?? ""}</span>}
                   </td>
                   <td className="px-3 py-2 text-texto-suave">{r.categoria_nome ?? "—"}</td>
@@ -173,7 +173,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
                   <td className="px-3 py-2 text-xs text-texto-suave">{fmt(r.criado_em)}</td>
                   <td className="px-3 py-2">{r.validade ? dataBR(r.validade) : "—"}</td>
                   <td className="px-3 py-2">
-                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold  ${r.status === "ativa" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-superficie-suave text-texto-suave  "}`}>
+                    <span className={`rounded px-1.5 py-0.5 text-mini font-semibold  ${r.status === "ativa" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-superficie-suave text-texto-suave  "}`}>
                       {r.status === "ativa" ? "em estoque" : r.status}
                     </span>
                   </td>

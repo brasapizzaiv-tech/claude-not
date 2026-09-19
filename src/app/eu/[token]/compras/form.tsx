@@ -100,7 +100,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
 
       {pendentes.length > 0 && (
         <div>
-          <p className="mb-1.5 text-[11px] font-semibold text-texto-fraco">Aguardando</p>
+          <p className="mb-1.5 text-mini font-semibold text-texto-fraco">Aguardando</p>
           <ul className="space-y-2">
             {pendentes.map((s) => (
               <li key={s.id} className="rounded-cartao border border-borda bg-painel-cartao p-3">
@@ -116,7 +116,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
 
       {outras.length > 0 && (
         <div>
-          <p className="mb-1.5 text-[11px] font-semibold text-texto-fraco">Respondidos</p>
+          <p className="mb-1.5 text-mini font-semibold text-texto-fraco">Respondidos</p>
           <ul className="space-y-2">
             {outras.map((s) => (
               <li key={s.id} className="rounded-cartao border border-borda bg-painel-cartao p-3">
@@ -144,7 +144,7 @@ function Linha({ s }: { s: Solicitacao }) {
           {s.item}
           {s.quantidade ? <span className="font-normal text-texto-suave"> · {s.quantidade}</span> : null}
         </span>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${COR[s.status]}`}>{rotulo(s)}</span>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-mini font-semibold ${COR[s.status]}`}>{rotulo(s)}</span>
       </div>
       {s.motivo && <p className="mt-0.5 text-sm text-texto-suave">{s.motivo}</p>}
       <p className="mt-0.5 text-xs text-texto-fraco">pedido em {fData(s.criado_em)}{s.respondido_em ? ` · respondido ${fData(s.respondido_em)}` : ""}</p>

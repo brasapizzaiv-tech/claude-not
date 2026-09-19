@@ -537,7 +537,7 @@ export function CotarPreencher({
                         <span className="text-sm text-zinc-400">%</span>
                       </div>
                     </div>
-                    <p className="mt-1 text-[11px] text-zinc-400">
+                    <p className="mt-1 text-mini text-zinc-400">
                       {stInc[p.produto_id]
                         ? "Já inclusa → usamos o preço como está."
                         : "Não inclusa → somamos a % ao preço para o custo real."}

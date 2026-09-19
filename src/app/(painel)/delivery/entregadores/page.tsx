@@ -88,9 +88,9 @@ export default async function EntregadoresPage() {
 
               <form action={salvarValoresEntregador} className="mt-2 flex flex-wrap items-end gap-2 text-xs">
                 <input type="hidden" name="id" value={e.id} />
-                <div><label className="block text-[11px] text-texto-suave">Fixo almoço (R$)</label><input name="valor_fixo_dia" defaultValue={e.valor_fixo_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
-                <div><label className="block text-[11px] text-texto-suave">Fixo noite (R$)</label><input name="valor_fixo_noite" defaultValue={e.valor_fixo_noite ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
-                <div><label className="block text-[11px] text-texto-suave">Por tele (R$)</label><input name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
+                <div><label className="block text-mini text-texto-suave">Fixo almoço (R$)</label><input name="valor_fixo_dia" defaultValue={e.valor_fixo_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
+                <div><label className="block text-mini text-texto-suave">Fixo noite (R$)</label><input name="valor_fixo_noite" defaultValue={e.valor_fixo_noite ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
+                <div><label className="block text-mini text-texto-suave">Por tele (R$)</label><input name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <button className="rounded-controle border border-borda-forte px-3 py-1.5 font-semibold">Salvar valores</button>
                 <span className="text-texto-fraco">{e.valor_tele != null ? `hoje: ${brl(Number(e.valor_tele))}/tele` : "a tele usa o valor da área"}</span>
               </form>

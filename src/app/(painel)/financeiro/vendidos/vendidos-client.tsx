@@ -74,7 +74,7 @@ export function VendidosClient({ linhas, total, agrupar, periodo }: { linhas: Li
                     <td className="px-3 py-2 font-medium text-texto">{l.nome}</td>
                     {agrupar === "produto" && <td className="px-3 py-2 text-texto-suave">{l.categoria}</td>}
                     <td className="px-3 py-2 text-right">{l.qtd.toLocaleString("pt-BR")}</td>
-                    <td className="px-3 py-2 text-right font-medium">{brl(l.valor)}{l.pagos < l.valor - 0.005 && <span className="ml-1 text-[11px] text-amber-600" title="parte ainda em aberto">({brl(l.pagos)} pago)</span>}</td>
+                    <td className="px-3 py-2 text-right font-medium">{brl(l.valor)}{l.pagos < l.valor - 0.005 && <span className="ml-1 text-mini text-amber-600" title="parte ainda em aberto">({brl(l.pagos)} pago)</span>}</td>
                     <td className="px-3 py-2 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <div className="h-1.5 w-16 overflow-hidden rounded bg-superficie-suave"><div className="h-full bg-orange-400" style={{ width: `${Math.min(100, pct)}%` }} /></div>

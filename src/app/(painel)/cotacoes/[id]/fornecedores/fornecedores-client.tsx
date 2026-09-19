@@ -196,7 +196,7 @@ export function FornecedoresClient({
                   <td className="px-4 py-2 font-medium text-texto">
                     {l.nome}
                     {!l.whatsapp && (
-                      <span className="ml-2 text-[10px] text-amber-500">sem WhatsApp</span>
+                      <span className="ml-2 text-mini text-amber-500">sem WhatsApp</span>
                     )}
                   </td>
                   <td className="px-4 py-2 text-right text-texto-suave">
@@ -297,7 +297,7 @@ export function FornecedoresClient({
                 onChange={(e) => salvarTemplate(e.target.value)}
                 className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
               />
-              <p className="mt-1 text-[11px] text-texto-fraco">
+              <p className="mt-1 text-mini text-texto-fraco">
                 Use <b>{"{link}"}</b> (o link), <b>{"{itens}"}</b> (qtd de itens),{" "}
                 <b>{"{nome}"}</b> (nome do fornecedor) e <b>{"{empresa}"}</b> (nossa empresa). A mensagem fica salva.
               </p>

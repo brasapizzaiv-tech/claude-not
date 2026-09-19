@@ -283,7 +283,7 @@ function CalendarioAprovadas({ pedidos, byId, bloqueios, hojeIso, proc, run }: {
                 key={p.id}
                 onClick={async () => { if (await confirmar(`Excluir a folga de ${f.nome} em ${fmtData(p.data)}?`)) run(() => excluirPedido(p.id)); }}
                 disabled={proc}
-                className="truncate rounded px-1 py-0.5 text-left text-[11px] leading-tight"
+                className="truncate rounded px-1 py-0.5 text-left text-mini leading-tight"
                 style={{ color: GRUPOS[g]?.cor, background: `${GRUPOS[g]?.cor}1f` }}
                 title={`${f.nome} — ${GRUPOS[g]?.nome ?? ""} (clique para excluir)`}
               >
@@ -309,7 +309,7 @@ function CalendarioAprovadas({ pedidos, byId, bloqueios, hojeIso, proc, run }: {
         {DIAS.map((d) => <div key={d}>{d}</div>)}
       </div>
       <div className="mt-1 grid grid-cols-7 gap-1">{celulas}</div>
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-texto-suave">
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-mini text-texto-suave">
         {GRUPO_KEYS.map((g) => (
           <span key={g} className="flex items-center gap-1">
             <i className="h-2 w-2 rounded-full" style={{ background: GRUPOS[g].cor }} />{GRUPOS[g].nome}
@@ -425,7 +425,7 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
         <span className="flex items-center justify-between text-sm font-semibold">
           {d}<span className={`h-2.5 w-2.5 rounded-full ${cor}`} />
         </span>
-        <span className="mt-0.5 text-[10px] leading-tight text-texto-suave">{rot.join(" · ")}</span>
+        <span className="mt-0.5 text-mini leading-tight text-texto-suave">{rot.join(" · ")}</span>
       </button>,
     );
   }

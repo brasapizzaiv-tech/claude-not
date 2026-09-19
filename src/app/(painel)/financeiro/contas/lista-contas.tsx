@@ -60,7 +60,7 @@ function ValorConta({ l }: { l: LinhaConta }) {
           {moeda(Number(l.valor))}
         </span>
         {Math.abs(custas) >= 0.01 && (
-          <span className="block text-[11px] text-amber-600">
+          <span className="block text-mini text-amber-600">
             {custas > 0 ? "+" : "−"} {moeda(Math.abs(custas))}{" "}
             {custas > 0 ? "de custas" : "de desconto"}
           </span>
@@ -155,7 +155,7 @@ function Linhas({
                   {mostrarPago && l.pago_em ? ` · pago ${dataBR(l.pago_em)}` : ""}
                 </div>
                 {/* As outras datas da conta (competência, emissão, cadastro) */}
-                <div className="text-[11px] text-texto-fraco">
+                <div className="text-mini text-texto-fraco">
                   {l.data ? `comp. ${mesBR(l.data)}` : ""}
                   {l.emissao ? ` · emitida ${dataBR(l.emissao)}` : ""}
                   {l.lancamento_em ? ` · lançada ${dataBR(l.lancamento_em)}` : ""}
@@ -388,7 +388,7 @@ export function ListaContasView({
                   <h2 className="text-sm font-semibold text-texto">
                     Semana {curto(sem.inicio)} a {curto(sem.fim)}
                     {rot && (
-                      <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                      <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-mini font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
                         {rot}
                       </span>
                     )}

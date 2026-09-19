@@ -289,7 +289,7 @@ export function BancoTabela({
                     <td className="px-4 py-2 text-texto-suave">{dataBR(t.data)}</td>
                     <td className="px-4 py-2 text-texto">
                       {t.banco && (
-                        <span className="mr-2 rounded bg-superficie-suave px-1.5 py-0.5 text-[10px] font-medium text-texto-suave">
+                        <span className="mr-2 rounded bg-superficie-suave px-1.5 py-0.5 text-mini font-medium text-texto-suave">
                           {t.banco}
                         </span>
                       )}
@@ -313,7 +313,7 @@ export function BancoTabela({
                         ) : (
                           <span className="text-amber-600">
                             <Icone nome="alerta" tamanho={12} className="mr-1" /> confira a data: {t.sugestaoLabel}
-                            <span className="block text-[11px] text-amber-600/80">
+                            <span className="block text-mini text-amber-600/80">
                               {t.sugestaoDias} dias de diferença do extrato — pode ser outro mês do mesmo fornecedor
                             </span>
                           </span>
@@ -433,7 +433,7 @@ export function BancoTabela({
                               </button>
                             ) : (
                               <div className="mt-3 space-y-2 rounded-controle border border-orange-300 p-2 dark:border-orange-900">
-                                <p className="text-[11px] font-semibold text-texto-suave">
+                                <p className="text-mini font-semibold text-texto-suave">
                                   Dividir {moeda(Math.abs(Number(t.valor)))} entre categorias
                                 </p>
                                 {partes.map((x) => (
@@ -481,7 +481,7 @@ export function BancoTabela({
                                     );
                                   })()}
                                 </div>
-                                <button type="button" onClick={() => setPartes([])} className="text-[11px] text-texto-fraco underline">
+                                <button type="button" onClick={() => setPartes([])} className="text-mini text-texto-fraco underline">
                                   cancelar a divisão
                                 </button>
                               </div>

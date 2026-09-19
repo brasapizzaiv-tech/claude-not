@@ -188,7 +188,7 @@ export function CardapioApp({
               </div>
               {sugestoes(g).length > 0 && (
                 <div className="mt-2 space-y-1.5">
-                  <p className="text-[11px] text-texto-fraco">
+                  <p className="text-mini text-texto-fraco">
                     {busca[g].trim() ? "encontrados" : "mais usados"} · <span className="text-amber-600">amarelo</span> = entrou nos últimos 2 dias
                   </p>
                   {sugestoes(g).map((s) => {

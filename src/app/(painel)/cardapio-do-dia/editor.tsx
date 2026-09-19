@@ -197,17 +197,17 @@ export function EditorCardapio({
               {dia === hoje ? " · hoje" : ""}
             </span>
             {status === "publicado" && (
-              <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+              <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-mini font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
                 no ar{atual?.publicado_por ? ` · ${atual.publicado_por} ${quando(atual.publicado_em)}` : ""}
               </span>
             )}
             {status === "alterado" && (
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-mini font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
                 no ar · com alterações não publicadas ({atual?.alterado_por ?? "?"} {quando(atual?.alterado_em ?? null)})
               </span>
             )}
             {status === "rascunho" && (
-              <span className="rounded-full bg-superficie-suave px-2.5 py-0.5 text-[11px] font-medium text-texto-suave">
+              <span className="rounded-full bg-superficie-suave px-2.5 py-0.5 text-mini font-medium text-texto-suave">
                 rascunho{atual?.alterado_por ? ` · ${atual.alterado_por} ${quando(atual.alterado_em)}` : ""}
               </span>
             )}
@@ -271,7 +271,7 @@ export function EditorCardapio({
                   className={`${campo} w-28 text-right`}
                 />
               </div>
-              <p className="self-end pb-2 text-[11px] text-texto-fraco">
+              <p className="self-end pb-2 text-mini text-texto-fraco">
                 Sugeridos pelo dia da semana ({moeda(sugerido?.livre ?? null)} e{" "}
                 {moeda(sugerido?.kg ?? null)}).
               </p>
@@ -381,7 +381,7 @@ export function EditorCardapio({
           {/* Prévia igual à do site */}
           <div className="overflow-hidden rounded-cartao bg-painel-cartao">
             <div className="bg-marca-escuro p-5 text-marca-sobre-escuro">
-              <p className="text-center text-[11px] tracking-[.2em] text-orange-500">
+              <p className="text-center text-mini tracking-[.2em] text-orange-500">
                 Cardápio
               </p>
               <p className="mb-4 text-center text-lg font-bold text-white">
@@ -390,7 +390,7 @@ export function EditorCardapio({
               {BLOCOS.map((b) =>
                 sel[b.grupo].length > 0 ? (
                   <div key={b.grupo} className="mb-3">
-                    <span className="inline-block bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-marca-escuro">
+                    <span className="inline-block bg-orange-500 px-2 py-0.5 text-mini font-bold text-marca-escuro">
                       {b.titulo}
                     </span>
                     <ul className="mt-1.5 space-y-0.5 text-sm">
@@ -403,16 +403,16 @@ export function EditorCardapio({
               )}
               <div className="mt-4 flex justify-center gap-3">
                 <span className="rounded-controle bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
-                  <b className="block text-[10px]">Livre</b>
+                  <b className="block text-mini">Livre</b>
                   <b className="text-sm">{moeda(numero(precos.livre))}</b>
                 </span>
                 <span className="rounded-controle bg-orange-500 px-4 py-1.5 text-center text-marca-escuro">
-                  <b className="block text-[10px]">KG</b>
+                  <b className="block text-mini">KG</b>
                   <b className="text-sm">{moeda(numero(precos.kg))}</b>
                 </span>
               </div>
             </div>
-            <p className="bg-superficie-suave px-3 py-2 text-[11px] text-texto-fraco">
+            <p className="bg-superficie-suave px-3 py-2 text-mini text-texto-fraco">
               Prévia de como fica no site.
             </p>
           </div>
@@ -473,10 +473,10 @@ function BlocoItens({
   return (
     <div className="rounded-cartao border border-borda p-4">
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="inline-block bg-orange-500 px-2 py-0.5 text-[11px] font-bold text-white">
+        <span className="inline-block bg-orange-500 px-2 py-0.5 text-mini font-bold text-white">
           {titulo}
         </span>
-        <span className="text-[11px] text-texto-fraco">
+        <span className="text-mini text-texto-fraco">
           {escolhidos.length} no cardápio · {catalogo.length} no catálogo
         </span>
       </div>
@@ -554,7 +554,7 @@ function BlocoItens({
           <span className="text-xs text-texto-fraco">Tudo já está no cardápio de hoje.</span>
         )}
       </div>
-      <p className="mt-2 text-[11px] text-texto-fraco">
+      <p className="mt-2 text-mini text-texto-fraco">
         {busca
           ? "Enter põe o primeiro da lista."
           : `Mostrando os mais usados de ${grupo === "especial" ? "especial do dia" : titulo.toLowerCase()} — digite para buscar o resto.`}
@@ -625,7 +625,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
           >
             Cadastrar
           </button>
-          {msg && <p className="mt-1 text-[11px] text-texto-suave">{msg}</p>}
+          {msg && <p className="mt-1 text-mini text-texto-suave">{msg}</p>}
         </div>
 
         <input
@@ -664,7 +664,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
             <p className="text-xs text-texto-fraco">Nada encontrado nesse grupo.</p>
           )}
         </div>
-        <p className="text-[11px] text-texto-fraco">
+        <p className="text-mini text-texto-fraco">
           Tirar do catálogo não mexe nos cardápios já publicados. Para mudar um
           prato de grupo, apague aqui e cadastre no grupo certo.
         </p>

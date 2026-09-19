@@ -175,11 +175,11 @@ export default async function ComandaPage({
         </div>
         {temBuffet && (
           <div className="text-right">
-            <p className="text-[11px] text-texto-fraco">Buffet</p>
+            <p className="text-mini text-texto-fraco">Buffet</p>
             <p className="text-lg font-bold text-texto">
               {moeda(Number(comanda.valor_buffet))}
             </p>
-            {comanda.livre && <p className="text-[11px] font-semibold text-orange-600">BUFFET LIVRE</p>}
+            {comanda.livre && <p className="text-mini font-semibold text-orange-600">BUFFET LIVRE</p>}
           </div>
         )}
       </div>

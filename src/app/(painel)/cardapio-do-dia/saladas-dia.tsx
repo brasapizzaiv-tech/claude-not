@@ -96,7 +96,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
         <div className="space-y-3">
           {porCategoria.map((g) => (
             <div key={g.categoria}>
-              <p className="mb-1.5 text-[11px] font-semibold text-texto-fraco">{g.categoria}</p>
+              <p className="mb-1.5 text-mini font-semibold text-texto-fraco">{g.categoria}</p>
               <div className="flex flex-wrap gap-1.5">
                 {g.itens.map((s) => (
                   <span key={s.id} className="inline-flex items-center gap-1">

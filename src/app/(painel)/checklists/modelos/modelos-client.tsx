@@ -98,7 +98,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
                       <div>
                         <p className="font-semibold text-texto">
                           {m.nome}
-                          <span className="ml-2 rounded-full bg-superficie-suave px-2 py-0.5 text-[11px] font-medium text-texto-suave">
+                          <span className="ml-2 rounded-full bg-superficie-suave px-2 py-0.5 text-mini font-medium text-texto-suave">
                             {ROTULO_MOMENTO[m.momento]}
                           </span>
                           {!m.ativo && <span className="ml-2 text-xs text-texto-fraco">inativa</span>}
@@ -218,11 +218,11 @@ function ItensDoModelo({
               <span className="cursor-grab select-none pt-0.5 text-zinc-300 dark:text-zinc-600" title="Arraste para reordenar">⠿</span>
               <span className="w-5 pt-0.5 text-right text-xs text-texto-fraco">{n + 1}</span>
               <span className="flex-1">
-                {i.secao && <span className="mr-1.5 rounded bg-superficie-suave px-1.5 py-0.5 text-[10px] font-bold text-texto-suave">{i.secao}</span>}
+                {i.secao && <span className="mr-1.5 rounded bg-superficie-suave px-1.5 py-0.5 text-mini font-bold text-texto-suave">{i.secao}</span>}
                 <span className="text-zinc-800 dark:text-zinc-100">{i.texto}</span>
-                <span className="ml-2 text-[11px] text-texto-fraco">{ROTULO_TIPO[i.tipo]}</span>
-                {i.obrigatorio && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-950 dark:text-red-300">obrigatório</span>}
-                {i.exige_foto && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">foto</span>}
+                <span className="ml-2 text-mini text-texto-fraco">{ROTULO_TIPO[i.tipo]}</span>
+                {i.obrigatorio && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-mini font-medium text-red-700 dark:bg-red-950 dark:text-red-300">obrigatório</span>}
+                {i.exige_foto && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-mini font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">foto</span>}
                 {i.instrucao && <span className="block text-xs text-texto-fraco">{i.instrucao}</span>}
               </span>
               <button onClick={() => setEditItem(i)} className="text-xs text-orange-600 hover:underline">editar</button>

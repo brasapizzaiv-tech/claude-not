@@ -102,7 +102,7 @@ export function ParcelasEditor({
         <span className="text-sm font-semibold text-texto">
           <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Parcelamento manual
           {parcelas.length > 1 && (
-            <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+            <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-mini font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
               {parcelas.length}x salvo
             </span>
           )}
@@ -123,7 +123,7 @@ export function ParcelasEditor({
           {/* Gerador rápido */}
           <div className="mb-3 flex flex-wrap items-end gap-2 rounded-cartao bg-superficie-suave p-3 /50">
             <div>
-              <label className="mb-1 block text-[11px] text-texto-suave">Dividir em</label>
+              <label className="mb-1 block text-mini text-texto-suave">Dividir em</label>
               <input
                 inputMode="numeric"
                 value={nGerar}

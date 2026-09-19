@@ -87,7 +87,7 @@ export function FornecedoresClient({
                     {(f.categoria_ids ?? []).length > 0 && (
                       <span className="mt-0.5 flex flex-wrap gap-1">
                         {(f.categoria_ids ?? []).map((c) => (
-                          <span key={c} className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                          <span key={c} className="rounded-full bg-orange-100 px-2 py-0.5 text-mini font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
                             {nomeCatProd(c) || "?"}
                           </span>
                         ))}
@@ -222,7 +222,7 @@ export function FornecedoresClient({
               {/* Categorias de produto que ele fornece → cotação já sugere/envia pra ele */}
               <div className="rounded-cartao border border-orange-200 bg-orange-50/40 p-3 dark:border-orange-900 dark:bg-orange-950/10">
                 <p className="mb-1 text-xs font-bold text-texto-fraco">O que este fornecedor vende (categorias de produto)</p>
-                <p className="mb-2 text-[11px] text-texto-suave">
+                <p className="mb-2 text-mini text-texto-suave">
                   Ao salvar, ele fica vinculado a todos os produtos dessas categorias — a cotação já sugere ele e manda os itens. Produto novo na categoria entra sozinho.
                 </p>
                 {categoriasProduto.length === 0 ? (
@@ -265,7 +265,7 @@ export function FornecedoresClient({
                     </select>
                   </div>
                 </div>
-                <p className="mt-1 text-[11px] text-texto-fraco">Ex.: conta de luz → Serviço + Energia elétrica. Na nota, dá pra trocar se precisar.</p>
+                <p className="mt-1 text-mini text-texto-fraco">Ex.: conta de luz → Serviço + Energia elétrica. Na nota, dá pra trocar se precisar.</p>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

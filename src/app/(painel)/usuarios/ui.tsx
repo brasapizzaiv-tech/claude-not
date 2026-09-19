@@ -238,7 +238,7 @@ export function UsuarioLinha({
           <p className="font-medium text-texto">
             {usuario.nome}{" "}
             {usuario.dono && (
-              <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+              <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-mini font-semibold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
                 DONO
               </span>
             )}

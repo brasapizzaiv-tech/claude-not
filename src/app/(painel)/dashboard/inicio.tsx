@@ -109,12 +109,12 @@ export function Inicio({ d }: { d: DadosInicio }) {
       {/* ---------- 2. Indicadores + 3. Cartão de foco ---------- */}
       <div className="grid gap-4 lg:grid-cols-12">
         {d.indicadores.map((i) => (
-          <div key={i.chave} className={`${CARTAO} lg:col-span-3`}>
+          <div key={i.chave} className={`${CARTAO} lg:col-span-2`}>
             <div className="flex items-center justify-between gap-2">
               <p className={ROTULO}>{i.rotulo}</p>
               <Variacao pct={i.variacao} />
             </div>
-            <p className={`mt-2 text-3xl font-semibold ${NUMERO}`}>{i.valor}</p>
+            <p className={`mt-2 text-2xl font-semibold ${NUMERO}`}>{i.valor}</p>
             {/* Quando o número junta coisas diferentes, a divisão fica aqui —
                 senão não dá pra saber o que está atrasado sem clicar. */}
             {i.detalhe && i.detalhe.length > 0 && (
@@ -131,13 +131,13 @@ export function Inicio({ d }: { d: DadosInicio }) {
         ))}
 
         {/* O cartão de foco: invertido em relação ao fundo. Uma por tela. */}
-        <div className="rounded-cartao bg-painel-foco-fundo p-4 text-painel-foco-texto lg:col-span-3">
+        <div className="rounded-cartao bg-painel-foco-fundo p-4 text-painel-foco-texto lg:col-span-4">
           <p className="text-xs font-medium opacity-70">Caixa do dia</p>
           <p className={`mt-2 text-3xl font-semibold font-numero tracking-apertada`}>{d.caixa.valor}</p>
           <p className="mt-0.5 text-xs opacity-70">
             {d.caixa.aberto ? `aberto${d.caixa.desde ? ` desde ${d.caixa.desde}` : ""}` : "fechado"}
           </p>
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <Link
               href="/pdv"
               className="flex min-h-11 items-center justify-center gap-2 rounded-controle bg-painel-foco-texto px-3 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90"
@@ -254,7 +254,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
             ].map((x) => (
               <div key={x.r}>
                 <p className={`text-xl font-semibold ${NUMERO}`}>{x.n}</p>
-                <p className="text-[11px] text-texto-fraco">{x.r}</p>
+                <p className="text-mini text-texto-fraco">{x.r}</p>
               </div>
             ))}
           </div>

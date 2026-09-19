@@ -31,7 +31,7 @@ export function NfceAutoToggle({ ligado, producao, compacto }: { ligado: boolean
         <span className={`block h-3 w-3 rounded-full bg-white transition ${ligado ? "translate-x-3" : ""}`} />
       </span>
       {compacto ? "Nota auto" : `NFC-e automática (Pix/cartão): ${ligado ? "ligada" : "desligada"}`}
-      {!producao && !compacto && <span className="text-[10px] text-amber-600">só em produção</span>}
+      {!producao && !compacto && <span className="text-mini text-amber-600">só em produção</span>}
     </button>
   );
 }

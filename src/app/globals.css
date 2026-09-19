@@ -194,6 +194,7 @@
   /* Número e título grande ficam um pouco mais apertados. */
   --letra-apertada: -0.03em;
 
+
   /* ---------- A ESCOLHA DA LETRA MORA AQUI ----------
      Estas duas linhas decidem a letra do sistema inteiro. Pra voltar pra Geist,
      troque as duas por var(--font-geist-sans): nenhuma tela precisa mudar.
@@ -250,6 +251,26 @@
     --erro: var(--color-red-400);
     --info: var(--color-blue-400);
   }
+}
+
+/* ---------- O TAMANHO DA LETRA MORA AQUI ----------
+   O sistema estava miúdo: mais de mil usos no tamanho `xs` e quase trezentos
+   ainda menores, contra setenta e poucos no tamanho de leitura. Para o caixa a
+   um braço de distância, para a cozinha com tablet e para quem confere número
+   à noite, isso cansa.
+
+   Mexer nestas linhas muda a letra em TODAS as telas de uma vez. Se ficar
+   grande demais, é aqui que se volta atrás.
+
+   Fica num `@theme` próprio (e não inline) porque é assim que o Tailwind
+   registra o degrau novo e liga a altura de linha junto. */
+@theme {
+  --text-mini: 0.72rem;                       /* 11,5px — o menor rótulo legível */
+  --text-mini--line-height: calc(1 / 0.72);
+  --text-xs: 0.8125rem;                       /* 13px — era 12 */
+  --text-xs--line-height: calc(1.125 / 0.8125);
+  --text-sm: 0.9375rem;                       /* 15px — era 14 */
+  --text-sm--line-height: calc(1.375 / 0.9375);
 }
 
 /* ---------- 4. Tipografia + exposição dos tokens como classes ----------

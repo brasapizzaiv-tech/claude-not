@@ -44,7 +44,7 @@ export function HorariosConfig({ cfg }: { cfg: ConfigHorarios }) {
                 <input type="time" name={`t_${t.id}_livre_fecha`} defaultValue={t.livreFecha} className={inp} />
               </div>
             </div>
-            <p className="mt-1 text-[11px] text-texto-fraco">Sem nenhum dia marcado, o turno fica desligado.</p>
+            <p className="mt-1 text-mini text-texto-fraco">Sem nenhum dia marcado, o turno fica desligado.</p>
           </div>
         ))}
       </div>
@@ -56,7 +56,7 @@ export function HorariosConfig({ cfg }: { cfg: ConfigHorarios }) {
         <div>
           <label className="text-xs text-texto-suave">Pedidos por horário</label>
           <input name="max_por_horario" defaultValue={cfg.maxPorHorario} inputMode="numeric" className={inp} />
-          <p className="mt-1 text-[11px] text-texto-fraco">0 = sem limite</p>
+          <p className="mt-1 text-mini text-texto-fraco">0 = sem limite</p>
         </div>
         <div>
           <label className="text-xs text-texto-suave">Antecedência mínima (min)</label>
@@ -65,7 +65,7 @@ export function HorariosConfig({ cfg }: { cfg: ConfigHorarios }) {
         <div>
           <label className="text-xs text-texto-suave">Pedido mínimo (R$)</label>
           <input name="pedido_minimo" defaultValue={cfg.pedidoMinimo} inputMode="decimal" className={inp} />
-          <p className="mt-1 text-[11px] text-texto-fraco">Sem a taxa. Vale na retirada.</p>
+          <p className="mt-1 text-mini text-texto-fraco">Sem a taxa. Vale na retirada.</p>
         </div>
       </div>
     </div>

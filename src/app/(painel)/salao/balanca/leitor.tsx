@@ -155,7 +155,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
 
       {/* Peso lido */}
       <div className="rounded-cartao bg-superficie-suave p-4 text-center">
-        <p className="text-[11px] text-texto-fraco">Peso lido</p>
+        <p className="text-mini text-texto-fraco">Peso lido</p>
         <p className="text-4xl font-black text-texto">
           {peso == null ? "—" : peso.toFixed(3)} <span className="text-lg">kg</span>
         </p>
@@ -205,12 +205,12 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       {conectado && (
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <p className="text-[11px] text-texto-fraco">Dado bruto da balança</p>
-            <p className={`text-[11px] font-medium ${bytes > 0 ? "text-green-600" : "text-amber-600"}`}>
+            <p className="text-mini text-texto-fraco">Dado bruto da balança</p>
+            <p className={`text-mini font-medium ${bytes > 0 ? "text-green-600" : "text-amber-600"}`}>
               {bytes} bytes recebidos
             </p>
           </div>
-          <pre className="max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-controle bg-zinc-900 p-2 text-[11px] text-green-400">
+          <pre className="max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-controle bg-zinc-900 p-2 text-mini text-green-400">
             {raw || "aguardando dados... (coloque um prato na balança)"}
           </pre>
 
@@ -262,7 +262,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
           Gerar comanda
         </button>
       </form>
-      <p className="text-[11px] text-texto-fraco">
+      <p className="text-mini text-texto-fraco">
         Dica: o campo do peso já vem preenchido com a leitura; se precisar, dá pra corrigir na mão antes de gerar.
       </p>
     </div>

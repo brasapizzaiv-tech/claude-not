@@ -67,7 +67,7 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
               >
                 <span className="min-w-0 flex-1 truncate text-sm text-texto">
                   {o.nome}
-                  {!o.ativo && <span className="ml-2 text-[10px] text-red-500">oculto</span>}
+                  {!o.ativo && <span className="ml-2 text-mini text-red-500">oculto</span>}
                 </span>
                 <form action={editarPrecoOpcao} className="flex items-center gap-1">
                   <input type="hidden" name="id" value={o.id} />

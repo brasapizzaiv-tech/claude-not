@@ -263,8 +263,8 @@ export function PainelPagamentos({
               <span className="min-w-0 flex-1 truncate text-texto-suave">
                 {p.forma}
                 {p.bandeira ? <span className="text-texto-fraco"> · {p.bandeira}</span> : null}
-                {p.tef ? <span className="ml-1 rounded bg-emerald-100 px-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">TEF · NSU {p.tef.nsu ?? "—"}</span> : null}
-                {p.observacao ? <span className="block truncate text-[11px] text-texto-fraco">{p.observacao}</span> : null}
+                {p.tef ? <span className="ml-1 rounded bg-emerald-100 px-1 text-mini font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">TEF · NSU {p.tef.nsu ?? "—"}</span> : null}
+                {p.observacao ? <span className="block truncate text-mini text-texto-fraco">{p.observacao}</span> : null}
               </span>
               <span className="font-semibold tabular-nums text-texto">{brl(p.valor)}</span>
               <button onClick={() => onRemover(p.uid)} title="Tirar este pagamento" className="text-texto-fraco hover:text-red-600">✕</button>
@@ -276,11 +276,11 @@ export function PainelPagamentos({
       {/* ---------- total pago / falta pagar ---------- */}
       <div className="grid grid-cols-2 gap-2 rounded-cartao border border-borda p-2.5">
         <div>
-          <p className="text-[11px] text-texto-fraco">Total pago</p>
+          <p className="text-mini text-texto-fraco">Total pago</p>
           <p className="text-xl font-black tabular-nums text-texto">{brl(somaPagos)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[11px] text-texto-fraco">{falta > 0.005 ? "Falta pagar" : "Fechou"}</p>
+          <p className="text-mini text-texto-fraco">{falta > 0.005 ? "Falta pagar" : "Fechou"}</p>
           <p className={`text-xl font-black tabular-nums ${falta > 0.005 ? "text-amber-600" : "text-emerald-600"}`}>
             {falta > 0.005 ? brl(falta) : "✓"}
           </p>
@@ -294,7 +294,7 @@ export function PainelPagamentos({
       {!forma ? (
         falta > 0.005 && (
           <div>
-            <p className="mb-1.5 text-[11px] text-texto-fraco">Adicionar pagamento</p>
+            <p className="mb-1.5 text-mini text-texto-fraco">Adicionar pagamento</p>
             <div className="grid grid-cols-2 gap-2">
               {formas.map((f) => {
                 const k = atalhoDaForma(f);
@@ -307,14 +307,14 @@ export function PainelPagamentos({
                   >
                     <span className="flex h-4 items-center">{ICONE[k] ? <Icone nome={ICONE[k]} tamanho={15} /> : "•"}</span>
                     <span className="min-w-0 flex-1 truncate">
-                      <span className="rounded bg-zinc-200 px-1 text-[11px] font-bold text-texto-suave dark:bg-zinc-700">{k}</span>{" "}
+                      <span className="rounded bg-zinc-200 px-1 text-mini font-bold text-texto-suave dark:bg-zinc-700">{k}</span>{" "}
                       {f}
                     </span>
                   </button>
                 );
               })}
             </div>
-            <p className="mt-1.5 text-[11px] text-texto-fraco">Aperte a letra do atalho pra lançar direto.</p>
+            <p className="mt-1.5 text-mini text-texto-fraco">Aperte a letra do atalho pra lançar direto.</p>
           </div>
         )
       ) : (
@@ -357,7 +357,7 @@ export function PainelPagamentos({
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-texto-fraco">Clique para preencher. Segure Shift para somar.</p>
+              <p className="mt-1 text-mini text-texto-fraco">Clique para preencher. Segure Shift para somar.</p>
               {troco > 0.005 && <p className="mt-1 text-right text-sm font-bold text-emerald-600">Troco: {brl(troco)}</p>}
             </>
           )}
@@ -387,7 +387,7 @@ export function PainelPagamentos({
                           <option key={n} value={n}>{n === 1 ? "à vista" : `${n}x de ${brl(cent(aplica / n))}`}</option>
                         ))}
                       </select>
-                      {parcelas > 1 && <span className="text-[11px] text-emerald-800/70 dark:text-emerald-400/70">parcelado pela loja (sem juros)</span>}
+                      {parcelas > 1 && <span className="text-mini text-emerald-800/70 dark:text-emerald-400/70">parcelado pela loja (sem juros)</span>}
                     </div>
                   )}
                   <button
@@ -395,9 +395,9 @@ export function PainelPagamentos({
                     className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
                   >
                     <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && tipoTefDaForma(forma) === "credito" ? ` em ${parcelas}x` : ""}
-                    <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold">Enter</span>
+                    <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-mini font-semibold">Enter</span>
                   </button>
-                  <p className="mt-1.5 text-center text-[11px] text-emerald-800/70 dark:text-emerald-400/70">
+                  <p className="mt-1.5 text-center text-mini text-emerald-800/70 dark:text-emerald-400/70">
                     Pinpad {tef?.terminal}{tef?.gerenciador ? "" : " · gerenciador de TEF não encontrado neste PC"}. Bandeira, NSU e autorização vêm sozinhos.
                   </p>
                 </>
@@ -407,7 +407,7 @@ export function PainelPagamentos({
 
           {ehCartao(forma) && !tefAplica(forma) && (
             <div className="mt-3">
-              <p className="mb-1 text-[11px] text-texto-fraco">Bandeira</p>
+              <p className="mb-1 text-mini text-texto-fraco">Bandeira</p>
               <div className="flex flex-wrap gap-1.5">
                 {BANDEIRAS.map((b) => (
                   <button
@@ -423,7 +423,7 @@ export function PainelPagamentos({
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-texto-fraco">Número da autorização e NSU vão vir sozinhos quando a maquininha for integrada.</p>
+              <p className="mt-1 text-mini text-texto-fraco">Número da autorização e NSU vão vir sozinhos quando a maquininha for integrada.</p>
             </div>
           )}
 
@@ -450,7 +450,7 @@ export function PainelPagamentos({
 
           {ehEquipe(forma) && (
             <div className="mt-3 rounded-controle bg-superficie-suave p-2">
-              <p className="mb-1 text-[11px] text-texto-fraco">Funcionário</p>
+              <p className="mb-1 text-mini text-texto-fraco">Funcionário</p>
               {colaboradores.length === 0 ? (
                 <p className="text-xs text-amber-600">Nenhum funcionário ativo cadastrado.</p>
               ) : (
@@ -479,7 +479,7 @@ export function PainelPagamentos({
                         </button>
                       ))}
                   </div>
-                  <p className="mt-1 text-[11px] text-texto-suave">Vai pra conta da pessoa em Compras internas, pra descontar depois.</p>
+                  <p className="mt-1 text-mini text-texto-suave">Vai pra conta da pessoa em Compras internas, pra descontar depois.</p>
                 </>
               )}
             </div>
@@ -489,7 +489,7 @@ export function PainelPagamentos({
             <div className="mt-3">{qrPix(cent(aplica), salvar)}</div>
           )}
 
-          <label className="mt-3 block text-[11px] text-texto-fraco">
+          <label className="mt-3 block text-mini text-texto-fraco">
             Observação
             <input
               value={obs}

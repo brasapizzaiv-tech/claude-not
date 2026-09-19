@@ -129,7 +129,7 @@ export function FolgaApp({
         className={`flex min-h-[46px] flex-col items-center justify-center rounded-lg border text-sm ${sel === data ? "border-blue-500 ring-1 ring-blue-500" : "border-zinc-200 dark:border-zinc-800"} ${passado ? "opacity-30" : ""} ${clicavel ? "" : "cursor-default"}`}
       >
         <span className="font-semibold">{d}</span>
-        {marcado ? <span className="text-[10px] text-blue-500">✓ pedida</span> : <span className={`mt-0.5 h-2 w-2 rounded-full ${cor}`} />}
+        {marcado ? <span className="text-mini text-blue-500">✓ pedida</span> : <span className={`mt-0.5 h-2 w-2 rounded-full ${cor}`} />}
       </button>,
     );
   }
@@ -160,11 +160,11 @@ export function FolgaApp({
           <h3 className="text-sm font-bold">{MESES[mes]} {ano}</h3>
           <button onClick={() => navega(1)} className="text-sm text-zinc-500">›</button>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-zinc-400">
+        <div className="grid grid-cols-7 gap-1 text-center text-mini font-semibold text-zinc-400">
           {DIAS.map((d) => <div key={d}>{d}</div>)}
         </div>
         <div className="mt-1 grid grid-cols-7 gap-1">{celulas}</div>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-500">
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-mini text-zinc-500">
           <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-emerald-500" /> tem vaga</span>
           <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-red-500" /> sem vaga</span>
           <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-zinc-400" /> travado / não trabalha</span>
@@ -264,7 +264,7 @@ export function FolgaApp({
         )}
       </div>
 
-      <p className="mt-4 pb-6 text-center text-[11px] text-zinc-400">Brasa · folgas</p>
+      <p className="mt-4 pb-6 text-center text-mini text-zinc-400">Brasa · folgas</p>
     </div>
   );
 }

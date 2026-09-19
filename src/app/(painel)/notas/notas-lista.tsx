@@ -107,7 +107,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                     {n.vencimento ? dataBR(n.vencimento) : "—"}
                     {n.parcelas > 1 && (
                       <span
-                        className="ml-1 rounded-controle bg-superficie-suave px-1.5 py-0.5 font-numero text-[10px] font-medium text-texto-suave"
+                        className="ml-1 rounded-controle bg-superficie-suave px-1.5 py-0.5 font-numero text-mini font-medium text-texto-suave"
                         title={`Nota parcelada em ${n.parcelas}x`}
                       >
                         {n.parcelas}x

@@ -80,7 +80,7 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
             <li key={p.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2 text-sm">
               <span className="text-zinc-800 dark:text-zinc-100">
                 {p.forma_pagamento ?? "—"}
-                {p.bandeira && <span className="ml-2 rounded bg-superficie-suave px-1.5 py-0.5 text-[11px] text-texto-suave">{p.bandeira}</span>}
+                {p.bandeira && <span className="ml-2 rounded bg-superficie-suave px-1.5 py-0.5 text-mini text-texto-suave">{p.bandeira}</span>}
                 {p.tef_nsu && (
                   <span className="ml-2 text-xs text-texto-suave">
                     pinpad · NSU {p.tef_nsu}{p.tef_autorizacao ? ` · aut ${p.tef_autorizacao}` : ""}{p.tef_rede ? ` · ${p.tef_rede}` : ""}
@@ -115,8 +115,8 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
                 <p className="font-semibold text-texto">
                   Comanda #{c.numero}
                   {c.mesa ? <span className="ml-2 text-sm font-normal text-texto-suave">{c.mesa}</span> : null}
-                  {c.livre && <span className="ml-2 rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-white">LIVRE</span>}
-                  <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${c.status === "fechada" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                  {c.livre && <span className="ml-2 rounded bg-orange-500 px-1.5 py-0.5 text-mini font-bold text-white">LIVRE</span>}
+                  <span className={`ml-2 rounded-full px-2 py-0.5 text-mini font-medium ${c.status === "fechada" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
                     {c.status}
                   </span>
                 </p>
@@ -133,7 +133,7 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
                   <li key={i.id} className="flex justify-between gap-2 py-1.5">
                     <span className="text-texto-suave">
                       {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}{i.descricao ?? "Item"}
-                      {!i.pago && <span className="ml-2 text-[11px] text-amber-600">não pago</span>}
+                      {!i.pago && <span className="ml-2 text-mini text-amber-600">não pago</span>}
                     </span>
                     <span className="text-texto-suave">{brl(Number(i.qtd) * Number(i.preco_unit))}</span>
                   </li>

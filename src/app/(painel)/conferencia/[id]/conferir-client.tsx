@@ -295,7 +295,7 @@ export function ConferirClient({
                       {i.unidade}
                     </span>
                     {i.qtd === 0 && (
-                      <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                      <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-mini font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
                         veio a mais
                       </span>
                     )}

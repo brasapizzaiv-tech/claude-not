@@ -145,8 +145,8 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
                   <td className="px-3 py-2 text-right font-semibold tabular-nums">{brl(l.valor)}</td>
                   <td className="px-3 py-2 tabular-nums text-texto-suave">{l.nsu ?? "—"}{l.autorizacao ? ` / ${l.autorizacao}` : ""}</td>
                   <td className="px-3 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>{st.rotulo}</span>
-                    {l.mensagem && <div className="mt-0.5 max-w-[260px] truncate text-[11px] text-texto-fraco" title={l.mensagem}>{l.mensagem}</div>}
+                    <span className={`rounded-full px-2 py-0.5 text-mini font-medium ${st.cls}`}>{st.rotulo}</span>
+                    {l.mensagem && <div className="mt-0.5 max-w-[260px] truncate text-mini text-texto-fraco" title={l.mensagem}>{l.mensagem}</div>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1.5">

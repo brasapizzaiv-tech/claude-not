@@ -211,7 +211,7 @@ export function AgendaReservas({
                     <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-superficie-suave">
                       <div className={`h-full ${cor}`} style={{ width: `${pct}%` }} />
                     </div>
-                    <p className="mt-1 text-[11px] text-texto-fraco">
+                    <p className="mt-1 text-mini text-texto-fraco">
                       {pct >= 100
                         ? "Lotado — o site não aceita mais reservas neste turno."
                         : `Restam ${lim[t].max_pessoas - pes} lugares.`}
@@ -299,7 +299,7 @@ function CartaoReserva({
           ? "border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/20"
           : "border-l-4 border-l-orange-500";
   const tag =
-    "rounded-full border border-borda px-2 py-0.5 text-[11px] text-texto-suave dark:border-borda-forte";
+    "rounded-full border border-borda px-2 py-0.5 text-mini text-texto-suave dark:border-borda-forte";
   const zap = (chave: string) =>
     `https://web.whatsapp.com/send?phone=${foneWhats(r.telefone)}&text=${encodeURIComponent(
       montarMsg(mensagens["msg_" + chave] ?? "", r),
@@ -319,7 +319,7 @@ function CartaoReserva({
           {r.pessoas} {r.pessoas === 1 ? "pessoa" : "pessoas"}
         </span>
         {r.criancas > 0 && (
-          <span className="rounded-full border border-amber-300 px-2 py-0.5 text-[11px] text-amber-600">
+          <span className="rounded-full border border-amber-300 px-2 py-0.5 text-mini text-amber-600">
             {r.criancas} cadeirão
           </span>
         )}
@@ -327,27 +327,27 @@ function CartaoReserva({
           <span className={tag}>{r.ocasiao}</span>
         )}
         {r.status === "aguardando" && (
-          <span className="rounded-full border border-amber-400 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+          <span className="rounded-full border border-amber-400 px-2 py-0.5 text-mini font-medium text-amber-600">
             aguardando mesa
           </span>
         )}
         {r.status === "confirmada" && (
-          <span className="rounded-full border border-green-400 px-2 py-0.5 text-[11px] font-medium text-green-600">
+          <span className="rounded-full border border-green-400 px-2 py-0.5 text-mini font-medium text-green-600">
             confirmada
           </span>
         )}
         {r.status === "cancelada" && (
-          <span className="rounded-full border border-red-300 px-2 py-0.5 text-[11px] text-red-500">
+          <span className="rounded-full border border-red-300 px-2 py-0.5 text-mini text-red-500">
             cancelada
           </span>
         )}
         {r.chegou_em && (
-          <span className="rounded-full border border-green-400 px-2 py-0.5 text-[11px] font-medium text-green-600">
+          <span className="rounded-full border border-green-400 px-2 py-0.5 text-mini font-medium text-green-600">
             chegou
           </span>
         )}
         {r.mesa && (
-          <span className="rounded-full border border-orange-400 px-2 py-0.5 text-[11px] font-medium text-orange-600">
+          <span className="rounded-full border border-orange-400 px-2 py-0.5 text-mini font-medium text-orange-600">
             mesa {r.mesa}
           </span>
         )}
@@ -881,7 +881,7 @@ function Ajustes({
             </div>
           </div>
         ))}
-        <p className="text-[11px] text-texto-fraco">
+        <p className="text-mini text-texto-fraco">
           Grupo grande: a partir desse número a reserva do site entra como
           “aguardando”, para vocês confirmarem as mesas antes.
         </p>

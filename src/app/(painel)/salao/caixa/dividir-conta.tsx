@@ -153,7 +153,7 @@ export function DividirConta({
                   <button
                     onClick={() => metade(l)}
                     title="Rachar: pagar metade desta linha"
-                    className="rounded border border-borda-forte px-1.5 py-0.5 text-[11px] text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
+                    className="rounded border border-borda-forte px-1.5 py-0.5 text-mini text-texto-suave hover:bg-superficie-suave dark:border-borda-forte"
                   >
                     ½
                   </button>

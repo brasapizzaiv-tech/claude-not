@@ -69,9 +69,9 @@ export function ReservasHoje({
           <button onClick={() => irDia(addDias(dia, 1))} className="rounded-controle border border-borda-forte px-3 py-1.5"><Icone nome="seguir" tamanho={16} titulo="Próximo dia" /></button>
         </div>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-controle bg-superficie-suave py-1.5"><div className="text-lg font-bold text-texto">{reservas.length}</div><div className="text-[10px] text-texto-fraco">reservas</div></div>
-          <div className="rounded-controle bg-superficie-suave py-1.5"><div className="text-lg font-bold text-texto">{totalPessoas}</div><div className="text-[10px] text-texto-fraco">pessoas</div></div>
-          <div className="rounded-controle bg-emerald-100 py-1.5 dark:bg-emerald-950/40"><div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{chegaram}</div><div className="text-[10px] text-emerald-600/70">chegaram</div></div>
+          <div className="rounded-controle bg-superficie-suave py-1.5"><div className="text-lg font-bold text-texto">{reservas.length}</div><div className="text-mini text-texto-fraco">reservas</div></div>
+          <div className="rounded-controle bg-superficie-suave py-1.5"><div className="text-lg font-bold text-texto">{totalPessoas}</div><div className="text-mini text-texto-fraco">pessoas</div></div>
+          <div className="rounded-controle bg-emerald-100 py-1.5 dark:bg-emerald-950/40"><div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{chegaram}</div><div className="text-mini text-emerald-600/70">chegaram</div></div>
         </div>
         <label className="mt-2 flex items-center justify-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={soFaltam} onChange={(e) => setSoFaltam(e.target.checked)} />
@@ -107,9 +107,9 @@ export function ReservasHoje({
                 </div>
                 <div className="shrink-0 text-right">
                   {r.chegou_em ? (
-                    <span className="rounded-full bg-texto px-2 py-0.5 text-[11px] font-bold text-fundo">✓ chegou</span>
+                    <span className="rounded-full bg-texto px-2 py-0.5 text-mini font-bold text-fundo">✓ chegou</span>
                   ) : (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">aguardando</span>
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-mini font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">aguardando</span>
                   )}
                 </div>
               </div>

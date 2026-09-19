@@ -18,7 +18,7 @@ export function ChecklistItensVista({
     <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
       {porSecao(itens).flatMap((grupo, gi) => [
         ...(grupo.secao
-          ? [<li key={`s${gi}`} className="pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">{grupo.secao}</li>]
+          ? [<li key={`s${gi}`} className="pt-3 pb-1 text-mini font-bold uppercase tracking-wider text-zinc-400">{grupo.secao}</li>]
           : []),
         ...grupo.itens.map((i) => {
         const n = itens.indexOf(i);
@@ -34,7 +34,7 @@ export function ChecklistItensVista({
                 <span className="mr-1 text-xs text-zinc-400">{n + 1}.</span>
                 {i.texto}
                 {i.obrigatorio && <span className="ml-1 text-red-600" title="obrigatório">*</span>}
-                {!ok && <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">não feito</span>}
+                {!ok && <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-mini font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">não feito</span>}
               </p>
               <p className="text-xs text-zinc-500">
                 {i.tipo !== "feito" && <span className="mr-2 text-zinc-400">{ROTULO_TIPO[i.tipo]}</span>}

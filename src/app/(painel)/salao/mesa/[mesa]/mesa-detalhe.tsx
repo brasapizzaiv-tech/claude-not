@@ -134,13 +134,13 @@ export function MesaDetalhe({
       )}
       <span className="font-medium text-emerald-600">{l.qtd > 1 ? `${l.qtd}× ` : "1× "}</span>
       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">{l.descricao}</span>
-      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${l.quitado ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : l.pago > 0.005 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"}`}>
+      <span className={`rounded px-1.5 py-0.5 text-mini font-semibold ${l.quitado ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : l.pago > 0.005 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"}`}>
         {l.quitado ? "Pago" : l.pago > 0.005 ? "Parcial" : "Pendente"}
       </span>
       <div className="w-28 shrink-0 text-right">
         <div className="text-texto-suave">{brl(l.payable)}</div>
         {l.pago > 0.005 && !l.quitado && (
-          <div className="text-[10px] text-texto-fraco">pago {brl(l.pago)} · falta {brl(l.pendente)}</div>
+          <div className="text-mini text-texto-fraco">pago {brl(l.pago)} · falta {brl(l.pendente)}</div>
         )}
       </div>
     </div>

@@ -68,11 +68,11 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
         <td colSpan={5} className="px-4 py-3">
           <div className="flex flex-wrap items-end gap-2">
             <div>
-              <label className="mb-1 block text-[11px] text-texto-suave">Data</label>
+              <label className="mb-1 block text-mini text-texto-suave">Data</label>
               <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputCls} />
             </div>
             <div className="min-w-52 flex-1">
-              <label className="mb-1 block text-[11px] text-texto-suave">Categoria</label>
+              <label className="mb-1 block text-mini text-texto-suave">Categoria</label>
               <select value={cat} onChange={(e) => setCat(e.target.value)} className={`${inputCls} w-full`}>
                 <option value="">Escolha...</option>
                 {[...porGrupo.entries()].map(([g, cs]) => (
@@ -87,15 +87,15 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] text-texto-suave">Valor</label>
+              <label className="mb-1 block text-mini text-texto-suave">Valor</label>
               <input inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} className={`${inputCls} w-24 text-right`} />
             </div>
             <div className="min-w-40 flex-1">
-              <label className="mb-1 block text-[11px] text-texto-suave">Descrição</label>
+              <label className="mb-1 block text-mini text-texto-suave">Descrição</label>
               <input value={desc} onChange={(e) => setDesc(e.target.value)} className={`${inputCls} w-full`} />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] text-texto-suave">Vencimento</label>
+              <label className="mb-1 block text-mini text-texto-suave">Vencimento</label>
               <input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} className={inputCls} />
             </div>
             <label className="flex items-center gap-1.5 pb-1.5 text-xs text-texto-suave">
@@ -120,7 +120,7 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
       <td className="px-4 py-2 text-texto-suave">
         {l.descricao ?? l.fornecedor_nome ?? ""}
         {l.origem !== "manual" && (
-          <span className="ml-2 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+          <span className="ml-2 rounded bg-orange-100 px-1.5 py-0.5 text-mini text-orange-700 dark:bg-orange-950 dark:text-orange-300">
             {l.origem === "caixa" ? "caixa" : "auto"}
           </span>
         )}

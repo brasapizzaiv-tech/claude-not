@@ -181,7 +181,7 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
       </div>
 
       {pediuConta && (
-        <p className="mb-1.5 text-[11px] font-semibold text-primaria">
+        <p className="mb-1.5 text-mini font-semibold text-primaria">
           pediu a conta{quemMarcou ? ` · ${quemMarcou}` : ""}
         </p>
       )}

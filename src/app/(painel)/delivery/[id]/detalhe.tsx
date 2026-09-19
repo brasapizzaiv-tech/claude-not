@@ -115,7 +115,7 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
               <div key={e.key} className="flex items-center gap-1">
                 <div className="text-center">
                   <div className={`rounded-full px-3 py-1 text-xs font-bold ${atual ? "bg-texto text-fundo" : feito ? "bg-emerald-500/15 text-emerald-600" : "bg-superficie-suave text-texto-fraco "}`}>{e.label}</div>
-                  <div className="mt-1 text-[11px] text-texto-fraco">{hhmm(feito)}</div>
+                  <div className="mt-1 text-mini text-texto-fraco">{hhmm(feito)}</div>
                 </div>
                 {i < ETAPAS.length - 1 && <div className={`h-0.5 w-6 ${feito ? "bg-emerald-400" : "bg-zinc-200 dark:bg-zinc-700"}`} />}
               </div>

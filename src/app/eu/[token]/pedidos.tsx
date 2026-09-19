@@ -84,7 +84,7 @@ export function PedidosColab({
         </button>
       </div>
       {aba === "antigos" && (
-        <p className="mb-2 text-center text-[11px] text-texto-fraco">
+        <p className="mb-2 text-center text-mini text-texto-fraco">
           Mais de 7 dias sem conferir. Com mais de 10 dias somem daqui sozinhos.
         </p>
       )}
@@ -220,7 +220,7 @@ function PedidoCard({
                     {i.nome}
                   </div>
                   {i.qtd === 0 ? (
-                    <span className="rounded bg-sky-100 px-1 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                    <span className="rounded bg-sky-100 px-1 py-0.5 text-mini font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
                       veio a mais
                     </span>
                   ) : (
@@ -286,7 +286,7 @@ function PedidoCard({
               {erro}
             </p>
           )}
-          <p className="text-[11px] text-texto-fraco">
+          <p className="text-mini text-texto-fraco">
             Confirme quanto de cada item chegou (pode usar vírgula, ex.: 1,5 kg). Isso é só um aviso pro
             responsável — a conferência final continua com ele.
           </p>
@@ -298,7 +298,7 @@ function PedidoCard({
             {salvando ? "Salvando..." : feito ? "Atualizar conferência" : "Confirmar recebimento"}
           </button>
           {feito && pedido.conf_por && (
-            <p className="text-center text-[11px] text-green-600">
+            <p className="text-center text-mini text-green-600">
               Conferido por {pedido.conf_por}
             </p>
           )}

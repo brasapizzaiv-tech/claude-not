@@ -379,8 +379,8 @@ export function PedirClient({
 
           <h2 className="mb-2 font-bold">Pra quando?</h2>
           <div className="mb-2 grid grid-cols-2 gap-2">
-            <button onClick={() => setQuando("agora")} disabled={!aberto} className={`rounded-cartao border py-2.5 font-semibold disabled:opacity-40 ${quando === "agora" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={quando === "agora" ? { background: LARANJA, borderColor: LARANJA } : {}}><Icone nome="rapido" tamanho={14} className="mr-1" /> Agora{aberto && horario.fechaEm ? <span className="block text-[11px] font-normal opacity-80">até {horario.fechaEm}</span> : !aberto ? <span className="block text-[11px] font-normal opacity-80">fechado</span> : null}</button>
-            <button onClick={() => setQuando("agendar")} disabled={!horario.podeAgendar} className={`rounded-cartao border py-2.5 font-semibold disabled:opacity-40 ${quando === "agendar" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={quando === "agendar" ? { background: LARANJA, borderColor: LARANJA } : {}}><Icone nome="agenda" tamanho={14} className="mr-1" /> Agendar{!horario.podeAgendar ? <span className="block text-[11px] font-normal opacity-80">indisponível</span> : null}</button>
+            <button onClick={() => setQuando("agora")} disabled={!aberto} className={`rounded-cartao border py-2.5 font-semibold disabled:opacity-40 ${quando === "agora" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={quando === "agora" ? { background: LARANJA, borderColor: LARANJA } : {}}><Icone nome="rapido" tamanho={14} className="mr-1" /> Agora{aberto && horario.fechaEm ? <span className="block text-mini font-normal opacity-80">até {horario.fechaEm}</span> : !aberto ? <span className="block text-mini font-normal opacity-80">fechado</span> : null}</button>
+            <button onClick={() => setQuando("agendar")} disabled={!horario.podeAgendar} className={`rounded-cartao border py-2.5 font-semibold disabled:opacity-40 ${quando === "agendar" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={quando === "agendar" ? { background: LARANJA, borderColor: LARANJA } : {}}><Icone nome="agenda" tamanho={14} className="mr-1" /> Agendar{!horario.podeAgendar ? <span className="block text-mini font-normal opacity-80">indisponível</span> : null}</button>
           </div>
           {quando === "agendar" && horario.podeAgendar && (
             <div className="mb-4">
@@ -538,7 +538,7 @@ export function PedirClient({
               <div className="min-w-0 flex-1">
                 <div className="font-medium leading-tight">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</div>
                 {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-texto-suave">{i.descricao}</div>}
-                <div className="mt-0.5 text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1.5 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="ml-1.5 rounded bg-rose-500/10 px-1 text-[10px] font-bold text-rose-500">PROMO</span>}</div>
+                <div className="mt-0.5 text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1.5 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="ml-1.5 rounded bg-rose-500/10 px-1 text-mini font-bold text-rose-500">PROMO</span>}</div>
               </div>
               {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white" style={{ background: LARANJA }}>+</span>}
             </button>

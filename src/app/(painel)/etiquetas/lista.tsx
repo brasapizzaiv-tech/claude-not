@@ -81,7 +81,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
 
   const badgeTipo = (t: string | null) =>
     t && t !== "manipulacao" ? (
-      <span className="ml-2 rounded bg-superficie-suave px-1.5 py-0.5 text-[10px] font-semibold text-texto-suave">
+      <span className="ml-2 rounded bg-superficie-suave px-1.5 py-0.5 text-mini font-semibold text-texto-suave">
         {tipoInfo(t).icone} {tipoInfo(t).titulo}
       </span>
     ) : null;

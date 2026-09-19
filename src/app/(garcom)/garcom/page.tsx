@@ -129,7 +129,7 @@ export default async function GarcomPage() {
               {ocupada && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {comandas.map((n) => (
-                    <span key={n} className="rounded bg-zinc-700 px-1.5 text-[11px] text-texto">{n}</span>
+                    <span key={n} className="rounded bg-zinc-700 px-1.5 text-mini text-texto">{n}</span>
                   ))}
                 </div>
               )}

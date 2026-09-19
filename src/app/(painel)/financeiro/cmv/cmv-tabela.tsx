@@ -245,12 +245,12 @@ export function CmvTabela({
               "mt-0.5 block w-24 rounded border border-borda-forte bg-painel-cartao px-2 py-1 text-right text-sm   dark:text-zinc-100";
             return (
               <div key={d.data} className="rounded-controle border border-borda p-2">
-                <p className="mb-1 text-[11px] font-semibold text-texto-suave">
+                <p className="mb-1 text-mini font-semibold text-texto-suave">
                   {DIAS_SEM[d.dow]} {dd}/{m}
                 </p>
                 <div className="flex gap-2">
                   {temDia && (
-                    <label className="text-[10px] text-texto-fraco">
+                    <label className="text-mini text-texto-fraco">
                       almoço
                       <input
                         inputMode="decimal"
@@ -263,7 +263,7 @@ export function CmvTabela({
                     </label>
                   )}
                   {temNoite && (
-                    <label className="text-[10px] text-texto-fraco">
+                    <label className="text-mini text-texto-fraco">
                       noite
                       <input
                         inputMode="decimal"
@@ -419,7 +419,7 @@ export function CmvTabela({
                                 : "border-borda-forte bg-white "
                             }`}
                           />
-                          <div className="mt-0.5 text-[10px] leading-tight text-texto-fraco">
+                          <div className="mt-0.5 text-mini leading-tight text-texto-fraco">
                             {r.precoCompra > 0 && (
                               <div>
                                 un {moeda(r.precoCompra)}
@@ -480,11 +480,11 @@ export function CmvTabela({
                           {r.nivel <= 0 ? (
                             <span className="text-xs text-zinc-300 dark:text-zinc-600">—</span>
                           ) : comprar ? (
-                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-mini font-bold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
                               COMPRAR
                             </span>
                           ) : (
-                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-mini font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
                               ok
                             </span>
                           )}

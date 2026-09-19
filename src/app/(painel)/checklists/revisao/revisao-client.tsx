@@ -109,7 +109,7 @@ export function RevisaoClient({
                   <p className="font-semibold text-texto">
                     {l.modelo.nome}
                     <span className="ml-2 text-xs font-normal" style={{ color: l.cor ?? undefined }}>{l.setor}</span>
-                    <span className="ml-2 rounded-full bg-superficie-suave px-2 py-0.5 text-[11px] font-medium text-texto-suave">{ROTULO_MOMENTO[l.modelo.momento]}</span>
+                    <span className="ml-2 rounded-full bg-superficie-suave px-2 py-0.5 text-mini font-medium text-texto-suave">{ROTULO_MOMENTO[l.modelo.momento]}</span>
                   </p>
                   <p className="mt-0.5 text-xs text-texto-suave">
                     {l.execucao
@@ -135,7 +135,7 @@ export function RevisaoClient({
                       <button
                         key={item.id}
                         onClick={() => setApontando({ lista: l, item })}
-                        className="shrink-0 rounded-controle border border-amber-400 px-2 py-1 text-[11px] font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-300"
+                        className="shrink-0 rounded-controle border border-amber-400 px-2 py-1 text-mini font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-300"
                       >
                         Apontar
                       </button>
@@ -162,7 +162,7 @@ export function RevisaoClient({
           <ul className="mt-2 space-y-1 text-sm">
             {naoPublicados.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
+                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-mini font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
                 <span className="flex-1 text-zinc-800 dark:text-zinc-100">{a.texto}</span>
                 <button onClick={() => agir(() => excluirApontamentoPainel(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">apagar</button>
               </li>
@@ -208,7 +208,7 @@ export function RevisaoClient({
           <ul className="divide-y divide-zinc-100 text-sm dark:divide-zinc-800">
             {naTv.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-2 py-2">
-                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
+                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-mini font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
                 <span className="flex-1 text-zinc-800 dark:text-zinc-100">
                   {a.texto}
                   {a.mostrar_nome && a.pessoa_nome && <span className="ml-1 text-xs text-texto-suave">({a.pessoa_nome})</span>}

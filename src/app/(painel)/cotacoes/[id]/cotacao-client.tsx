@@ -292,7 +292,7 @@ export function CotacaoClient({
                         <td className="px-4 py-2 text-right font-medium text-texto-suave">
                           {l.sugestao > 0 ? l.sugestao : "—"}
                           {l.fardo > 1 && l.sugestao > 0 && (
-                            <span className="ml-1 block text-[10px] font-normal text-texto-fraco">
+                            <span className="ml-1 block text-mini font-normal text-texto-fraco">
                               {l.sugestao / l.fardo} fardo{l.sugestao / l.fardo === 1 ? "" : "s"} de {l.fardo}
                             </span>
                           )}

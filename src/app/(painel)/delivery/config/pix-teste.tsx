@@ -34,8 +34,8 @@ export function PixTeste({ banco, ambiente, configurado, faltando }: { banco: st
               {res.ok ? (
                 <>
                   <p><Icone nome="certo" tamanho={14} className="mr-1.5 text-emerald-600" /> Funcionou em {res.ms} ms. Cobrança criada (expira em 1 min, não precisa pagar). Ambiente: <b>{res.ambiente === "producao" ? "PRODUÇÃO" : "SANDBOX (teste — não recebe dinheiro de verdade)"}</b>.</p>
-                  <p className="mt-1 break-all text-[10px] text-texto-suave">location: {res.location}</p>
-                  <p className="mt-1 break-all font-mono text-[10px] text-texto-suave">{res.copiaECola}</p>
+                  <p className="mt-1 break-all text-mini text-texto-suave">location: {res.location}</p>
+                  <p className="mt-1 break-all font-mono text-mini text-texto-suave">{res.copiaECola}</p>
                 </>
               ) : (
                 <p><Icone nome="errado" tamanho={14} className="mr-1.5 text-red-600" /> Falhou em {res.ms} ms: {res.erro}</p>

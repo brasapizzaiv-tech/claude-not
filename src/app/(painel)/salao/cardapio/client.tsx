@@ -486,9 +486,9 @@ function ItensTabela({
                 <td className="w-14 py-1.5 pl-3"><Foto url={i.foto_url} tam="h-10 w-10" /></td>
                 <td className="px-2 py-2 font-medium text-texto">
                   {i.nome}
-                  {!i.ativo && <span className="ml-2 text-[10px] text-red-500">oculto</span>}
-                  {canaisOff.length > 0 && <span className="ml-2 text-[10px] text-texto-fraco">sem: {canaisOff.join(", ")}</span>}
-                  {temHorario && <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-sky-500"><Icone nome="relogio" tamanho={11} /> {temHorario}</span>}
+                  {!i.ativo && <span className="ml-2 text-mini text-red-500">oculto</span>}
+                  {canaisOff.length > 0 && <span className="ml-2 text-mini text-texto-fraco">sem: {canaisOff.join(", ")}</span>}
+                  {temHorario && <span className="ml-2 inline-flex items-center gap-1 text-mini text-sky-500"><Icone nome="relogio" tamanho={11} /> {temHorario}</span>}
                 </td>
                 <td className="px-2 py-2 text-right text-texto-suave">
                   {i.promo_preco != null && Number(i.promo_preco) > 0 ? (
@@ -500,7 +500,7 @@ function ItensTabela({
                     <input type="hidden" name="id" value={i.id} />
                     <input type="hidden" name="disponivel" value={i.disponivel ? "0" : "1"} />
                     <button
-                      className={`rounded-controle px-2 py-0.5 text-[11px] font-semibold ${
+                      className={`rounded-controle px-2 py-0.5 text-mini font-semibold ${
                         i.disponivel
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
                           : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
@@ -606,7 +606,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
               placeholder="0,00"
               className={`${inputCls} w-28`}
             />
-            <p className="mt-1 text-[11px] text-texto-fraco">acima disso, cobra fixo (0 = desligado)</p>
+            <p className="mt-1 text-mini text-texto-fraco">acima disso, cobra fixo (0 = desligado)</p>
           </div>
         </div>
 

@@ -50,11 +50,11 @@ export function ItemFator({
         <span>un</span>
       </label>
       {f !== 1 ? (
-        <span className="text-[11px] text-orange-600">
+        <span className="text-mini text-orange-600">
           = {unidades.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} un{precoUn != null ? ` · ${moeda(precoUn)}/un` : ""}
         </span>
       ) : temProduto && /^(CX|CXA|FD|FDO|PCT|PC|SC|ENG|DZ|PACK|CJ)$/i.test((unidade ?? "").trim()) ? (
-        <span className="text-[11px] text-amber-600">vem em {unidade}: informe quantas un.</span>
+        <span className="text-mini text-amber-600">vem em {unidade}: informe quantas un.</span>
       ) : null}
     </div>
   );

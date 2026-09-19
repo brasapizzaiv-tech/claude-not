@@ -90,7 +90,7 @@ function BotaoRail({
 function Badge({ n, canto = false }: { n: number; canto?: boolean }) {
   return (
     <span
-      className={`flex h-4 min-w-4 items-center justify-center rounded-full bg-erro px-1 text-[10px] font-bold text-white ${
+      className={`flex h-4 min-w-4 items-center justify-center rounded-full bg-erro px-1 text-mini font-bold text-white ${
         canto ? "absolute -right-0.5 -top-0.5" : ""
       }`}
     >
@@ -425,7 +425,7 @@ export function Sidebar({
               </div>
               <div className="min-w-0 flex-1 leading-tight">
                 <p className="truncate text-sm font-medium text-texto">{nome}</p>
-                <p className="text-[11px] text-texto-fraco">{papel}</p>
+                <p className="text-mini text-texto-fraco">{papel}</p>
               </div>
               <SeletorTema inicial={tema} />
               <form action="/auth/signout" method="post">

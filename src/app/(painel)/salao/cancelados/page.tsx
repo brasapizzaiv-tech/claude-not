@@ -84,7 +84,7 @@ export default async function CanceladosPage() {
               <tr key={idx} className="">
                 <td className="px-4 py-2">
                   <div className="font-medium text-zinc-800 dark:text-zinc-100">{l.descricao}</div>
-                  <div className="text-[11px] text-texto-fraco">{l.tipo}</div>
+                  <div className="text-mini text-texto-fraco">{l.tipo}</div>
                 </td>
                 <td className="px-4 py-2 text-texto-suave">{l.motivo}</td>
                 <td className="px-4 py-2 text-right text-texto-suave">{brl(l.valor)}</td>

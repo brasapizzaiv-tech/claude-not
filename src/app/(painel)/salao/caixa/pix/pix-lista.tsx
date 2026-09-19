@@ -102,7 +102,7 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
                       <span className="text-texto-fraco">aguardando</span>
                     )}
                     {l.devolucoes.length > 0 && (
-                      <ul className="mt-1 space-y-0.5 text-[11px] text-texto-suave">
+                      <ul className="mt-1 space-y-0.5 text-mini text-texto-suave">
                         {l.devolucoes.map((d) => (
                           <li key={d.id}>{d.em} · {brl(d.valor)} · {d.motivo} · {d.status}</li>
                         ))}

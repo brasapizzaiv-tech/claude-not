@@ -317,7 +317,7 @@ export function ProdutosClient({
                   <button
                     type="button"
                     onClick={marcarTodosExclusivos}
-                    className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium normal-case text-orange-700 hover:bg-orange-200 dark:bg-orange-500/15 dark:text-orange-300"
+                    className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-mini font-medium normal-case text-orange-700 hover:bg-orange-200 dark:bg-orange-500/15 dark:text-orange-300"
                     title="Marcar todos os produtos filtrados como exclusivos (os que têm 1 fornecedor)"
                   >
                     todos
@@ -612,7 +612,7 @@ export function ProdutosClient({
                     <input name="origem" defaultValue={editando?.origem ?? "0"} placeholder="0" className={inputCls} />
                   </div>
                 </div>
-                <p className="mt-2 text-[11px] text-texto-fraco">
+                <p className="mt-2 text-mini text-texto-fraco">
                   Usado na emissão da nota fiscal. Deixe em branco por enquanto se ainda
                   não tiver com o contador — dá pra preencher depois.
                 </p>
@@ -800,7 +800,7 @@ function FornecedoresModal({
                     : "text-texto-suave hover:bg-superficie-suave  "
                 }`}
               >
-                <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte"}`}>
+                <span className={`flex h-4 w-4 items-center justify-center rounded border text-mini ${on ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte"}`}>
                   {on ? "✓" : ""}
                 </span>
                 {f.nome}

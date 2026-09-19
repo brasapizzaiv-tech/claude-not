@@ -248,7 +248,7 @@ export default async function AppColaboradorPage({
       )}
       {fazEtiquetas && contagemEtq && (
         <div className="mb-3">
-          <p className="mb-1.5 text-center text-[11px] font-semibold text-texto-fraco">Vencimentos das etiquetas</p>
+          <p className="mb-1.5 text-center text-mini font-semibold text-texto-fraco">Vencimentos das etiquetas</p>
           <PainelVencimentos contagem={contagemEtq} base={`/eu/${token}/etiqueta/vencimentos`} />
         </div>
       )}

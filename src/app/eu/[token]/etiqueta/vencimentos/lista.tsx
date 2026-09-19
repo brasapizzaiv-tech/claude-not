@@ -64,7 +64,7 @@ export function ListaVencimentos({ token, lista, hoje }: { token: string; lista:
               </div>
               <div className={`shrink-0 text-right text-sm font-bold ${vencida ? "text-red-600" : "text-zinc-800 dark:text-zinc-100"}`}>
                 {e.validade ? dataBR(e.validade) : "—"}
-                {vencida && <div className="text-[10px] font-semibold uppercase">vencida</div>}
+                {vencida && <div className="text-mini font-semibold uppercase">vencida</div>}
               </div>
             </div>
             {f ? (

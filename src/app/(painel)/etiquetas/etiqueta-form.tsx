@@ -203,7 +203,7 @@ export function EtiquetaForm({
                   placeholder="ex.: temperado com alho e sal"
                   className={input}
                 />
-                <p className="mt-1 text-[11px] text-texto-fraco">Sai impresso na etiqueta, logo acima da validade.</p>
+                <p className="mt-1 text-mini text-texto-fraco">Sai impresso na etiqueta, logo acima da validade.</p>
               </div>
             </>
           )}
@@ -221,7 +221,7 @@ export function EtiquetaForm({
               <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={input} />
             </div>
             {!livre && item && !diasPadrao(item, conservacao, tipo) && !validade && (
-              <p className="mt-1 text-[11px] text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
+              <p className="mt-1 text-mini text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
             )}
           </div>
 
@@ -244,7 +244,7 @@ export function EtiquetaForm({
         </div>
 
         <div className="flex flex-col items-center gap-3">
-          <p className="text-[11px] font-semibold text-texto-fraco">Pré-visualização</p>
+          <p className="text-mini font-semibold text-texto-fraco">Pré-visualização</p>
           <PreviewEtiqueta d={preview} config={config} />
           <Copias value={copias} onChange={setCopias} />
         </div>

@@ -74,8 +74,8 @@ export default async function CuponsPage() {
               return (
                 <tr key={c.id} className={`bg-painel-cartao ${!c.ativo || vencido || esgotado ? "opacity-50" : ""}`}>
                   <td className="px-4 py-2 font-bold">{c.codigo}
-                    {vencido && <span className="ml-2 text-[10px] text-rose-500">VENCIDO</span>}
-                    {esgotado && <span className="ml-2 text-[10px] text-rose-500">ESGOTADO</span>}
+                    {vencido && <span className="ml-2 text-mini text-rose-500">VENCIDO</span>}
+                    {esgotado && <span className="ml-2 text-mini text-rose-500">ESGOTADO</span>}
                   </td>
                   <td className="px-4 py-2">{c.tipo === "percent" ? `${Number(c.valor)}%` : brl(Number(c.valor))}</td>
                   <td className="px-4 py-2 text-xs text-texto-suave">

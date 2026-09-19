@@ -260,7 +260,7 @@ function EtiquetaFormato({ im, proc, run }: {
           🏷️ Imprimir etiqueta de teste
         </button>
       </div>
-      <p className="mt-1 text-[11px] text-texto-fraco">
+      <p className="mt-1 text-mini text-texto-fraco">
         Vale pras etiquetas impressas nesta impressora (todos os tipos). A Elgin L42 usa 55×55mm. A pré-visualização nos formulários já segue essas opções.
         <b> Calibração:</b> a etiqueta de teste sai com uma moldura na borda — se a moldura sair pra baixo, use vertical <b>negativo</b> (ex.: −5 sobe 5 mm); pra direita, horizontal negativo.
       </p>

@@ -110,13 +110,13 @@ export function PreencherClient({
     const f = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
     if (!ehSuspeito(id)) {
       return (
-        <div className="mt-1 text-[11px] text-zinc-400">
+        <div className="mt-1 text-mini text-zinc-400">
           última contagem: {f(r.ultima_qtd)}{r.comprado > 0 ? ` · chegou depois: ${f(r.comprado)}` : ""}
         </div>
       );
     }
     if (confirmados.has(id)) {
-      return <div className="mt-1 text-[11px] text-emerald-600">✓ Conferido: você contou de novo e confirmou {f(totalDe(id))}.</div>;
+      return <div className="mt-1 text-mini text-emerald-600">✓ Conferido: você contou de novo e confirmou {f(totalDe(id))}.</div>;
     }
     return (
       <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
@@ -129,7 +129,7 @@ export function PreencherClient({
           >
             Contei de novo, está certo
           </button>
-          <span className="self-center text-[11px]">ou corrija o número acima</span>
+          <span className="self-center text-mini">ou corrija o número acima</span>
         </div>
       </div>
     );

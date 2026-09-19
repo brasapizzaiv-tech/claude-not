@@ -193,7 +193,7 @@ export function LancamentoNota({
           </button>
         </div>
         {ehServico && (
-          <p className="mt-1 text-[11px] text-texto-fraco">
+          <p className="mt-1 text-mini text-texto-fraco">
             Nota de serviço: lança o valor total na categoria de despesa
             escolhida (sem CMV por produto).
           </p>
@@ -330,7 +330,7 @@ export function LancamentoNota({
               </span>
             ))}
           </div>
-          <p className="mt-1 text-[11px] text-texto-fraco">
+          <p className="mt-1 text-mini text-texto-fraco">
             Parcelas lidas do XML da nota. Desmarque para lançar como uma conta
             única no vencimento abaixo.
           </p>
@@ -403,7 +403,7 @@ export function LancamentoNota({
               </button>
             )}
           </div>
-          <p className="mt-1 text-[11px] text-texto-suave">
+          <p className="mt-1 text-mini text-texto-suave">
             Nota: {moeda(valorNota)}
             {num(boleto) > 0 && Math.abs(num(boleto) - valorNota) >= 0.01 && (
               <>
@@ -415,7 +415,7 @@ export function LancamentoNota({
             )}
           </p>
           {msgBoleto && (
-            <p className="mt-1 text-[11px] text-texto-suave">{msgBoleto}</p>
+            <p className="mt-1 text-mini text-texto-suave">{msgBoleto}</p>
           )}
         </div>
       )}
@@ -465,7 +465,7 @@ export function LancamentoNota({
         )}
       </div>
       {!ehServico && (
-        <p className="text-[11px] text-texto-fraco">
+        <p className="text-mini text-texto-fraco">
           Dica: vincule cada item ao produto certo (abaixo) para o CMV cair na
           categoria do DRE. Sem vínculo, vai tudo para “Compras”.
         </p>
