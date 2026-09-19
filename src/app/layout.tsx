@@ -1,6 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+
+// As letras do sistema.
+//
+// O Next BAIXA a fonte na hora de publicar e serve do nosso próprio endereço —
+// não sai pedindo nada pro Google quando a tela abre. Por isso o quiosque da
+// balança e qualquer tela sem internet continuam funcionando igual.
+//
+// Instrument Sans: interface e texto corrido.
+// Space Grotesk: número, valor e título (os dígitos se distinguem melhor, o
+//                que ajuda a bater valor de caixa).
+// Geist: continua carregada só pra dar meia-volta fácil se você não gostar do
+//        par novo. Quando decidir, a gente apaga esta e fica mais leve.
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
+  subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="pt-BR"
       data-tema="claro"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${instrumentSans.variable} ${spaceGrotesk.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />

@@ -1,58 +1,71 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Icone, type NomeIcone } from "@/components/icone";
 import { moedaBR } from "@/lib/format";
+import { type NomeIcone } from "@/components/icone";
+import { Inicio, type DadosInicio, type Mesa } from "./inicio";
 
-type Resumo = {
-  faturamento_mes: number;
-  faturamento_mes_ant: number;
-  notas_mes: number;
-  despesas_mes: number;
-  contas_aberto: number;
-  contas_vencidas: number;
-  contas_vencer7: number;
-  etiquetas_ativas: number;
-  etiquetas_vencendo: number;
-  etiquetas_vencidas: number;
-  estoque_tem_contagem: boolean;
-  estoque_valor: number;
-  fornecedores: number;
-  produtos: number;
-  colaboradores: number;
-};
+// Tela inicial do painel (Etapa 4 do design).
+//
+// Aqui só se busca e se conta. O desenho todo mora em inicio.tsx, o que deixa
+// esta página legível e permite conferir a tela sem depender do banco.
+//
+// Tudo é do DIA escolhido (?dia=AAAA-MM-DD), não do mês. A comparação de cada
+// indicador é contra o MESMO DIA DA SEMANA anterior — comparar sexta com quinta
+// num restaurante não diz nada.
 
-const CORES: Record<string, string> = {
-  blue: "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300",
-  green: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
-  amber: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
-  violet: "bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300",
-  rose: "bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-  cyan: "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300",
-  indigo: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300",
-  teal: "bg-teal-100 text-teal-600 dark:bg-teal-500/15 dark:text-teal-300",
-  orange: "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300",
-};
+// Fora do componente: Date.now() dentro dele quebra a regra de pureza do React.
+function hojeBR() {
+  return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+}
+function agoraMs() {
+  return Date.now();
+}
 
-const curto = (n: number) =>
-  n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(Math.round(n));
+const DIA = 86400000;
+const somarDias = (iso: string, n: number) =>
+  new Date(new Date(iso + "T12:00:00Z").getTime() + n * DIA).toISOString().slice(0, 10);
 
-export default async function DashboardPage() {
+/** Começo e fim do dia no fuso de Brasília, em ISO, pra filtrar timestamptz. */
+function janelaDoDia(dia: string) {
+  return { de: `${dia}T03:00:00.000Z`, ate: `${somarDias(dia, 1)}T03:00:00.000Z` };
+}
+
+function porcentagem(agora: number, antes: number): number | null {
+  if (!antes) return null;
+  return Math.round((agora / antes - 1) * 100);
+}
+
+type GrupoMesa = { nome: string; de: number; ate: number };
+
+function lerGrupos(bruto: string | undefined, qtd: number): GrupoMesa[] {
+  try {
+    const g = JSON.parse(bruto ?? "[]") as GrupoMesa[];
+    const validos = g.filter((x) => x && x.nome && Number(x.de) >= 1 && Number(x.ate) >= Number(x.de));
+    if (validos.length) return validos;
+  } catch { /* configuração inválida: cai no padrão de baixo */ }
+  return [{ nome: "Salão", de: 1, ate: qtd }];
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ dia?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: resumoData }] = await Promise.all([
-    supabase.from("profiles").select("nome, papel, permissoes").eq("id", user?.id ?? "").single(),
-    supabase.rpc("painel_resumo"),
-  ]);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("nome, papel, permissoes")
+    .eq("id", user?.id ?? "")
+    .single();
 
   const admin = profile?.papel === "dono";
   const permissoes = (profile?.permissoes as string[] | null) ?? [];
 
-  // Usuário só de recepção: vai direto pra tela de celular das reservas, sem
-  // ver o dashboard nem o resto do sistema.
+  // Usuário só de recepção: vai direto pra tela de celular das reservas.
   if (!admin && permissoes.includes("recepcao") && permissoes.every((p) => p === "recepcao")) {
     redirect("/reservas/hoje");
   }
@@ -60,376 +73,241 @@ export default async function DashboardPage() {
   if (!admin && permissoes.includes("garcom") && permissoes.every((p) => p === "garcom")) {
     redirect("/garcom");
   }
-
   const pode = (k: string) => admin || permissoes.includes(k);
-  const r = (resumoData as Resumo) ?? ({} as Resumo);
 
-  const hoje = new Date();
-  const mesBruto = hoje.toLocaleDateString("pt-BR", { month: "long" });
-  const mesNome = mesBruto.charAt(0).toUpperCase() + mesBruto.slice(1);
-  const primeiroNome = (profile?.nome ?? "").split(" ")[0];
-  const iniciais = ((profile?.nome as string) ?? "U")
-    .split(" ")
-    .slice(0, 2)
-    .map((p: string) => p[0])
-    .join("")
-    .toUpperCase();
+  const hoje = hojeBR();
+  const { dia: diaPedido } = await searchParams;
+  const dia = /^\d{4}-\d{2}-\d{2}$/.test(diaPedido ?? "") ? diaPedido! : hoje;
+  const ehHoje = dia === hoje;
+  const semanaAtras = somarDias(dia, -7);
+  const j = janelaDoDia(dia);
+  const jAntes = janelaDoDia(semanaAtras);
+  // Sete dias terminando no dia escolhido, pra linha de tendência.
+  const inicioSerie = `${somarDias(dia, -6)}T03:00:00.000Z`;
 
-  // Série dos últimos 6 meses (faturamento + despesas).
-  const meses: { label: string; ym: string; fat: number; real: number; desp: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-    meses.push({
-      ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
-      fat: 0,
-      real: 0,
-      desp: 0,
-    });
+  const [
+    { data: cfgRows },
+    { data: comandasAbertas },
+    { data: caixaAberto },
+    { data: movSerie },
+    { data: rodizioDia },
+    { data: deliveryDia },
+    { data: etiquetasVencidas },
+    { data: presencasHoje },
+  ] = await Promise.all([
+    supabase.from("pdv_config").select("chave, valor"),
+    supabase
+      .from("pdv_comandas")
+      .select("id, numero, mesa, criado_em, conta_pedida_em, conta_pedida_por")
+      .eq("status", "aberta"),
+    supabase.from("pdv_caixas").select("id, saldo_inicial, aberto_em").eq("status", "aberto").maybeSingle(),
+    // Movimentos dos últimos 7 dias + o dia da semana anterior, numa consulta só.
+    supabase
+      .from("pdv_caixa_mov")
+      .select("tipo, valor, criado_em")
+      .gte("criado_em", jAntes.de < inicioSerie ? jAntes.de : inicioSerie)
+      .lt("criado_em", j.ate),
+    supabase.from("pedidos_rodizio").select("status, quantidade, criado_em").gte("criado_em", j.de).lt("criado_em", j.ate),
+    supabase
+      .from("delivery_pedidos")
+      .select("status, criado_em, previsao_em, saiu_em, entregue_em")
+      .gte("criado_em", j.de)
+      .lt("criado_em", j.ate),
+    pode("etiquetas")
+      ? supabase.from("etiquetas").select("id").eq("status", "ativa").lt("validade", dia)
+      : Promise.resolve({ data: [] as { id: string }[] }),
+    supabase.from("presencas").select("colaborador_id, turno").eq("data", dia),
+  ]);
+
+  const cfg: Record<string, string> = {};
+  for (const r of (cfgRows as { chave: string; valor: string }[]) ?? []) cfg[r.chave] = r.valor;
+  const qtdMesas = Math.max(1, Number(cfg.qtd_mesas || 40));
+  const grupos = lerGrupos(cfg.mesa_grupos, qtdMesas);
+
+  // ---------- Faturamento: do dia, do mesmo dia da semana passada, e a série ----------
+  type Mov = { tipo: string; valor: number; criado_em: string };
+  const movs = ((movSerie as Mov[]) ?? []).filter((m) => m.tipo === "venda");
+  const somaEntre = (de: string, ate: string) =>
+    movs.filter((m) => m.criado_em >= de && m.criado_em < ate).reduce((s, m) => s + Number(m.valor || 0), 0);
+
+  const fatDia = somaEntre(j.de, j.ate);
+  const fatAntes = somaEntre(jAntes.de, jAntes.ate);
+  const serieFat: number[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = janelaDoDia(somarDias(dia, -i));
+    serieFat.push(somaEntre(d.de, d.ate));
   }
-  if (pode("financeiro")) {
-    // Agregado no banco (função SQL) — evita o limite de 1000 linhas do Supabase.
-    const { data: serieData } = await supabase.rpc("dashboard_serie_6meses");
-    const byYm = new Map(
-      (
-        (serieData as {
-          ym: string;
-          fiscal: number;
-          receita: number;
-          despesa: number;
-        }[]) ?? []
-      ).map((s) => [s.ym, s]),
-    );
-    for (const m of meses) {
-      const s = byYm.get(m.ym);
-      if (s) {
-        m.fat = Number(s.fiscal) || 0;
-        m.real = Number(s.receita) || 0;
-        m.desp = Number(s.despesa) || 0;
+
+  // ---------- Salão ----------
+  type Com = {
+    id: string; numero: number; mesa: string | null; criado_em: string;
+    conta_pedida_em: string | null; conta_pedida_por: string | null;
+  };
+  const abertas = ((comandasAbertas as Com[]) ?? []).filter((c) => c.mesa);
+  const porMesa = new Map<number, Com>();
+  for (const c of abertas) {
+    const n = Number(String(c.mesa).replace(/\D/g, ""));
+    if (n >= 1) porMesa.set(n, c);
+  }
+
+  const gruposMesas = grupos.map((g) => {
+    const mesas: Mesa[] = [];
+    for (let n = g.de; n <= Math.min(g.ate, qtdMesas); n++) {
+      const c = porMesa.get(n);
+      mesas.push({
+        numero: n,
+        estado: !c ? "livre" : c.conta_pedida_em ? "conta" : "ocupada",
+        comandaId: c?.id ?? null,
+        contaPor: c?.conta_pedida_por ?? null,
+      });
+    }
+    return { nome: g.nome, mesas };
+  });
+  const todasMesas = gruposMesas.flatMap((g) => g.mesas);
+  const nOcupadas = todasMesas.filter((m) => m.estado === "ocupada").length;
+  const nConta = todasMesas.filter((m) => m.estado === "conta").length;
+
+  const agora = agoraMs();
+  const maisVelha = [...abertas].sort((a, b) => a.criado_em.localeCompare(b.criado_em))[0];
+  const maisAntiga = maisVelha
+    ? {
+        numero: Number(String(maisVelha.mesa).replace(/\D/g, "")) || maisVelha.numero,
+        minutos: Math.max(0, Math.round((agora - new Date(maisVelha.criado_em).getTime()) / 60000)),
+        comandaId: maisVelha.id,
       }
+    : null;
+
+  // ---------- Rodízio ----------
+  type Rod = { status: string; quantidade: number; criado_em: string };
+  const rods = (rodizioDia as Rod[]) ?? [];
+  const rodizioTotal = rods.filter((r) => r.status !== "cancelado").reduce((s, r) => s + Number(r.quantidade || 1), 0);
+  // "Parado": pedido de sabor ainda pendente há mais de 8 minutos — é o mesmo
+  // limite que já pinta de vermelho na TV da cozinha.
+  const rodAtrasados = rods.filter(
+    (r) => r.status === "pendente" && agora - new Date(r.criado_em).getTime() > 8 * 60000,
+  ).length;
+
+  // ---------- Delivery ----------
+  type Del = { status: string; criado_em: string; previsao_em: string | null; saiu_em: string | null; entregue_em: string | null };
+  const dels = (deliveryDia as Del[]) ?? [];
+  const delCozinha = dels.filter((p) => p.status === "em_preparo" || p.status === "aceito").length;
+  const delRua = dels.filter((p) => p.status === "saiu").length;
+  const entregues = dels.filter((p) => p.entregue_em);
+  const tempos = entregues
+    .map((p) => (new Date(p.entregue_em!).getTime() - new Date(p.criado_em).getTime()) / 60000)
+    .filter((n) => n > 0 && n < 240);
+  const tempoMedio = tempos.length ? Math.round(tempos.reduce((s, n) => s + n, 0) / tempos.length) : null;
+  const delAtrasados = dels.filter(
+    (p) => p.previsao_em && !p.entregue_em && p.status !== "cancelado" && agora > new Date(p.previsao_em).getTime(),
+  ).length;
+
+  // ---------- Itens em atraso ----------
+  // O Rafael pediu um número só juntando os três. Como um número só esconde o
+  // que está errado, a divisão vai junto e cada pedaço leva pra tela dele.
+  const nEtiquetas = ((etiquetasVencidas as { id: string }[]) ?? []).length;
+  const atrasoTotal = rodAtrasados + delAtrasados + nEtiquetas;
+
+  // ---------- Quem está na casa ----------
+  // Antes das 17h conta o turno do dia; da 17h em diante, o da noite.
+  const horaAgora = Number(new Date(agora - 3 * 3600 * 1000).toISOString().slice(11, 13));
+  const turnoAgora: "dia" | "noite" = horaAgora >= 17 ? "noite" : "dia";
+  const presencas = ((presencasHoje as { colaborador_id: string; turno: string }[]) ?? []).filter(
+    (p) => p.turno === turnoAgora,
+  );
+  let pessoasTurno: string[] = [];
+  if (presencas.length) {
+    const { data: colabs } = await supabase
+      .from("colaboradores")
+      .select("id, nome")
+      .in("id", presencas.map((p) => p.colaborador_id));
+    pessoasTurno = ((colabs as { id: string; nome: string }[]) ?? [])
+      .map((c) => c.nome.split(" ")[0])
+      .sort();
+  }
+
+  // ---------- Precisa de você ----------
+  const pendencias: { rotulo: string; n: number; href: string; icone: NomeIcone }[] = [];
+  if (pode("checklists")) {
+    const { count } = await supabase
+      .from("checklist_execucoes")
+      .select("id", { count: "exact", head: true })
+      .eq("data", dia)
+      .is("concluido_em", null);
+    if (count) pendencias.push({ rotulo: "Checklist não concluído", n: count, href: "/checklists", icone: "checklist" });
+  }
+  if (pode("cotacoes")) {
+    const { count } = await supabase
+      .from("cotacao_fornecedores")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "enviado");
+    if (count) pendencias.push({ rotulo: "Cotação sem resposta", n: count, href: "/cotacoes", icone: "moedas" });
+  }
+  if (pode("cardapio_dia")) {
+    const { data: card } = await supabase.from("cardapio_dia").select("publicado").eq("data", dia).maybeSingle();
+    if (!card?.publicado) {
+      pendencias.push({ rotulo: "Cardápio do dia não publicado", n: 1, href: "/cardapio-do-dia", icone: "salao" });
     }
   }
-  // Faturamento do gráfico: caixa (real) quando houver; senão, notas (fiscal).
-  const serie = meses.map((m) => ({ ...m, valor: m.real > 0 ? m.real : m.fat }));
-  const maxFat = Math.max(1, ...serie.map((m) => Math.max(m.valor, m.desp)));
-  const pctFat =
-    r.faturamento_mes_ant > 0
-      ? Math.round((r.faturamento_mes / r.faturamento_mes_ant - 1) * 100)
-      : null;
-  const despAtual = meses[5]?.desp ?? 0;
-  const despAnt = meses[4]?.desp ?? 0;
-  const pctDesp = despAnt > 0 ? Math.round((despAtual / despAnt - 1) * 100) : null;
+  if (delAtrasados) {
+    pendencias.push({ rotulo: "Entrega atrasada", n: delAtrasados, href: "/delivery", icone: "entrega" });
+  }
 
-  // Anotado aqui (e não depois do .filter) pra o TypeScript conferir o nome de
-  // cada ícone: nome errado vira erro na hora de compilar.
-  const todosAtalhos: { perm: string; href: string; icon: NomeIcone; label: string; cor: string }[] = [
-    { perm: "cotacoes", href: "/cotacoes", icon: "moedas", label: "Cotações", cor: "green" },
-    { perm: "contagem", href: "/contagens", icon: "lista", label: "Contagem", cor: "blue" },
-    { perm: "conferencia", href: "/conferencia", icon: "entrada", label: "Conferência", cor: "cyan" },
-    { perm: "notas", href: "/notas", icon: "cupom", label: "Notas", cor: "violet" },
-    { perm: "financeiro", href: "/financeiro", icon: "grafico", label: "Financeiro", cor: "indigo" },
-    { perm: "salao", href: "/salao", icon: "pizza", label: "Salão", cor: "orange" },
-    { perm: "etiquetas", href: "/etiquetas", icon: "etiqueta", label: "Etiquetas", cor: "rose" },
-    { perm: "produtos", href: "/produtos", icon: "pacote", label: "Produtos", cor: "teal" },
-    { perm: "fornecedores", href: "/fornecedores", icon: "caminhao", label: "Fornecedores", cor: "amber" },
-  ];
-  const atalhos = todosAtalhos.filter((a) => pode(a.perm));
+  const dados: DadosInicio = {
+    nome: (profile?.nome ?? user?.email ?? "").split(" ")[0] || "por aqui",
+    dia,
+    diaLegivel: new Date(dia + "T12:00:00Z").toLocaleDateString("pt-BR", {
+      weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
+    }),
+    ehHoje,
+    indicadores: [
+      {
+        chave: "faturamento",
+        rotulo: "Faturamento do dia",
+        valor: moedaBR(fatDia),
+        variacao: porcentagem(fatDia, fatAntes),
+        serie: serieFat,
+      },
+      {
+        chave: "comandas",
+        rotulo: "Comandas abertas",
+        valor: String(abertas.length),
+        variacao: null,
+        serie: [],
+      },
+      {
+        chave: "atraso",
+        rotulo: "Itens em atraso",
+        valor: String(atrasoTotal),
+        variacao: null,
+        serie: [],
+        detalhe: [
+          { rotulo: "rodízio", n: rodAtrasados, href: "/cozinha" },
+          { rotulo: "entrega", n: delAtrasados, href: "/delivery" },
+          { rotulo: "etiqueta", n: nEtiquetas, href: "/etiquetas" },
+        ].filter((x) => x.n > 0),
+      },
+    ],
+    caixa: {
+      aberto: !!caixaAberto,
+      valor: moedaBR(fatDia),
+      desde: caixaAberto?.aberto_em
+        ? new Date(caixaAberto.aberto_em as string).toLocaleTimeString("pt-BR", {
+            hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo",
+          })
+        : null,
+    },
+    salao: {
+      grupos: gruposMesas,
+      ocupadas: nOcupadas,
+      livres: todasMesas.length - nOcupadas - nConta,
+      conta: nConta,
+      maisAntiga,
+      rodizioDia: rodizioTotal,
+    },
+    delivery: { cozinha: delCozinha, rua: delRua, entregues: entregues.length, tempoMedio },
+    pendencias,
+    turno: { rotulo: turnoAgora === "noite" ? "à noite" : "de dia", pessoas: pessoasTurno },
+  };
 
-  const alertas = [
-    pode("financeiro") && r.contas_vencidas > 0
-      ? { icon: "alerta" as NomeIcone, txt: `${moedaBR(r.contas_vencidas)} em contas vencidas`, href: "/financeiro/contas" }
-      : null,
-    pode("financeiro") && r.contas_vencer7 > 0
-      ? { icon: "aviso" as NomeIcone, txt: `${moedaBR(r.contas_vencer7)} vencem em 7 dias`, href: "/financeiro/contas" }
-      : null,
-    pode("etiquetas") && r.etiquetas_vencidas > 0
-      ? { icon: "etiqueta" as NomeIcone, txt: `${r.etiquetas_vencidas} etiqueta(s) vencida(s)`, href: "/etiquetas" }
-      : null,
-    pode("contagem") && !r.estoque_tem_contagem
-      ? { icon: "pacote" as NomeIcone, txt: "Nenhuma contagem finalizada ainda", href: "/contagens" }
-      : null,
-  ].filter(Boolean) as { icon: NomeIcone; txt: string; href: string }[];
-
-  return (
-    <div className="mx-auto max-w-7xl p-4 sm:p-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            {primeiroNome ? `Olá, ${primeiroNome}` : "Início"}
-          </h1>
-          <p className="mt-0.5 text-sm text-zinc-500">Resumo de {mesNome}</p>
-        </div>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
-          {iniciais}
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Coluna principal */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Destaques */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            {pode("financeiro") && (
-              <Link
-                href="/financeiro/vendas"
-                className="relative overflow-hidden rounded-3xl bg-orange-500 p-5 text-white transition hover:bg-orange-600"
-              >
-                <div className="flex items-center gap-2 text-sm font-medium text-orange-100">
-                  <Icone nome="dinheiro" tamanho={19} className="text-emerald-600 dark:text-emerald-400" /> Faturamento
-                </div>
-                <p className="mt-3 text-2xl font-black">{moedaBR(r.faturamento_mes)}</p>
-                <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-100">
-                  {pctFat != null && (
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 font-semibold">
-                      {pctFat >= 0 ? "▲" : "▼"} {Math.abs(pctFat)}%
-                    </span>
-                  )}
-                  <span>vs mês passado</span>
-                </div>
-                <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
-              </Link>
-            )}
-            {pode("financeiro") && (
-              <Destaque
-                href="/financeiro/contas"
-                icon="documento"
-                titulo="Contas a pagar"
-                valor={moedaBR(r.contas_aberto)}
-                rodape={r.contas_aberto > 0 ? "em aberto" : "nada em aberto"}
-                cor={r.contas_vencidas > 0 ? "red" : "zinc"}
-                pct={pctDesp}
-                pctLabel="despesas"
-              />
-            )}
-            {pode("contagem") && (
-              <Destaque
-                href="/contagens"
-                icon="pacote"
-                titulo="Valor em estoque"
-                valor={r.estoque_tem_contagem ? moedaBR(r.estoque_valor) : "—"}
-                rodape={r.estoque_tem_contagem ? "última contagem" : "finalize uma contagem"}
-                cor="zinc"
-              />
-            )}
-          </div>
-
-          {/* Gráfico de faturamento */}
-          {pode("financeiro") && (
-            <div className="rounded-3xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="font-bold text-zinc-900 dark:text-zinc-50">Faturamento</h2>
-                  <p className="text-xs text-zinc-400">Últimos 6 meses</p>
-                </div>
-              </div>
-              <div className="flex h-48 items-stretch justify-between gap-3">
-                {serie.map((m) => {
-                  const hf = m.valor > 0 ? Math.max(4, Math.round((m.valor / maxFat) * 100)) : 0;
-                  const hd = m.desp > 0 ? Math.max(4, Math.round((m.desp / maxFat) * 100)) : 0;
-                  return (
-                    <div key={m.ym} className="flex flex-1 flex-col items-center">
-                      <span className="mb-1 text-[10px] font-medium text-zinc-400">
-                        {m.valor > 0 ? curto(m.valor) : ""}
-                      </span>
-                      <div className="flex w-full flex-1 items-end justify-center gap-1">
-                        <div
-                          title={`Faturamento ${m.real > 0 ? "(real do caixa)" : "(fiscal)"}: ${moedaBR(m.valor)}`}
-                          className={`w-2/5 rounded-t-md transition-all ${
-                            m.real > 0
-                              ? "bg-orange-500"
-                              : "bg-orange-300 dark:bg-orange-500/50"
-                          }`}
-                          style={{ height: `${hf}%` }}
-                        />
-                        <div
-                          title={`Despesas: ${moedaBR(m.desp)}`}
-                          className="w-2/5 rounded-t-md bg-rose-400 transition-all dark:bg-rose-500/60"
-                          style={{ height: `${hd}%` }}
-                        />
-                      </div>
-                      <span className="mt-1.5 text-[11px] capitalize text-zinc-500">{m.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-500">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-orange-500" /> Faturamento
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-rose-400" /> Despesas
-                </span>
-                <span className="text-zinc-400">
-                  laranja = faturamento real · claro = fiscal (notas), quando faltar
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Acesso rápido */}
-          {atalhos.length > 0 && (
-            <div>
-              <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                Acesso rápido
-              </h2>
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-                {atalhos.map((a) => (
-                  <Link
-                    key={a.href}
-                    href={a.href}
-                    className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-3 text-center transition hover:border-orange-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-                  >
-                    <span className={`flex h-11 w-11 items-center justify-center rounded-xl text-xl ${CORES[a.cor]}`}>
-                      <Icone nome={a.icon} tamanho={22} />
-                    </span>
-                    <span className="text-[11px] font-medium leading-tight text-zinc-600 dark:text-zinc-300">
-                      {a.label}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Painel lateral */}
-        <aside className="space-y-4">
-          {/* Precisa de atenção */}
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-              Precisa de atenção
-            </h2>
-            {alertas.length === 0 ? (
-              <p className="text-sm text-zinc-400">Tudo em dia por aqui.</p>
-            ) : (
-              <div className="space-y-2">
-                {alertas.map((a, i) => (
-                  <Link
-                    key={i}
-                    href={a.href}
-                    className="flex items-center gap-2 rounded-xl bg-zinc-50 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:bg-zinc-800/60 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                  >
-                    <Icone nome={a.icon} tamanho={17} />
-                    <span className="flex-1">{a.txt}</span>
-                    <span className="text-zinc-300">›</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Números rápidos */}
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Números</h2>
-            <div className="space-y-1">
-              {pode("financeiro") && (
-                <MiniStat href="/financeiro/vendas" icon="cupom" cor="violet" titulo="Notas no mês" valor={String(r.notas_mes ?? 0)} />
-              )}
-              {pode("financeiro") && (
-                <MiniStat href="/financeiro" icon="descendo" cor="indigo" titulo="Despesas no mês" valor={moedaBR(r.despesas_mes)} />
-              )}
-              {pode("etiquetas") && (
-                <MiniStat
-                  href="/etiquetas"
-                  icon="etiqueta"
-                  cor="rose"
-                  titulo="Etiquetas a vencer"
-                  valor={String((r.etiquetas_vencidas ?? 0) + (r.etiquetas_vencendo ?? 0))}
-                />
-              )}
-              {pode("fornecedores") && (
-                <MiniStat href="/fornecedores" icon="caminhao" cor="amber" titulo="Fornecedores" valor={String(r.fornecedores ?? 0)} />
-              )}
-              {pode("produtos") && (
-                <MiniStat href="/produtos" icon="pacote" cor="teal" titulo="Produtos" valor={String(r.produtos ?? 0)} />
-              )}
-              {pode("colaboradores") && (
-                <MiniStat href="/colaboradores" icon="pessoa" cor="blue" titulo="Colaboradores" valor={String(r.colaboradores ?? 0)} />
-              )}
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-function Destaque({
-  href,
-  icon,
-  titulo,
-  valor,
-  rodape,
-  cor,
-  pct,
-  pctLabel,
-}: {
-  href: string;
-  icon: NomeIcone;
-  titulo: string;
-  valor: string;
-  rodape: string;
-  cor: "green" | "red" | "zinc";
-  pct?: number | null;
-  pctLabel?: string;
-}) {
-  const valorCor =
-    cor === "green"
-      ? "text-green-600 dark:text-green-400"
-      : cor === "red"
-        ? "text-red-600 dark:text-red-400"
-        : "text-zinc-900 dark:text-zinc-50";
-  return (
-    <Link
-      href={href}
-      className="rounded-3xl border border-zinc-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      <div className="flex items-center gap-2 text-sm font-medium text-zinc-500">
-        <Icone nome={icon} tamanho={19} />
-        {titulo}
-      </div>
-      <p className={`mt-3 text-2xl font-black ${valorCor}`}>{valor}</p>
-      <div className="mt-2 flex items-center gap-1.5 text-xs text-zinc-400">
-        {pct != null && (
-          <span
-            className={`rounded-full px-1.5 py-0.5 font-semibold ${
-              pct <= 0
-                ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
-                : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
-            }`}
-          >
-            {pct >= 0 ? "▲" : "▼"} {Math.abs(pct)}%
-          </span>
-        )}
-        <span>{pct != null ? pctLabel : rodape}</span>
-      </div>
-    </Link>
-  );
-}
-
-function MiniStat({
-  href,
-  icon,
-  titulo,
-  valor,
-  cor,
-}: {
-  href: string;
-  icon: NomeIcone;
-  titulo: string;
-  valor: string;
-  cor: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-    >
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base ${CORES[cor]}`}>
-        <Icone nome={icon} tamanho={17} />
-      </span>
-      <span className="flex-1 truncate text-sm text-zinc-500">{titulo}</span>
-      <span className="font-bold text-zinc-900 dark:text-zinc-50">{valor}</span>
-    </Link>
-  );
+  return <Inicio d={dados} />;
 }

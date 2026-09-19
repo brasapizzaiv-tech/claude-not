@@ -52,16 +52,23 @@ export default async function ContasPagarPage({
     Object.entries(f).filter(([, v]) => v) as [string, string][],
   ).toString();
 
+  // Trocar a situação NÃO pode apagar os outros filtros que a pessoa montou.
+  const comStatus = (status: string) => {
+    const q = new URLSearchParams(Object.entries(f).filter(([, v]) => v) as [string, string][]);
+    q.set("status", status);
+    return q.toString();
+  };
+
   const aberto = f.status !== "pagas" && f.status !== "todas";
 
   return (
-    <div className="mx-auto max-w-5xl p-8">
+    <div className="mx-auto max-w-[1200px] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
             Contas a pagar
           </h1>
-          <p className="mt-1 text-zinc-500">
+          <p className="mt-0.5 text-sm text-texto-suave">
             Filtre por competência, vencimento, origem e mais. Baixe o relatório
             para a contabilidade.
           </p>
@@ -69,62 +76,76 @@ export default async function ContasPagarPage({
         <div className="flex items-center gap-2">
           <a
             href={`/financeiro/contas/export?${querystring}`}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            className="flex min-h-11 items-center rounded-controle bg-superficie-suave px-4 text-sm font-medium text-texto transition hover:bg-borda"
           >
             <Icone nome="baixar" tamanho={14} className="mr-1.5" /> Baixar relatório (Excel)
           </a>
           <Link
             href="/financeiro"
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
           >
             Lançamentos
           </Link>
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* Situação: botão, não lista suspensa — são três opções e a pessoa
+          precisa ver em qual está sem abrir nada. */}
+      <div className="mb-3 flex flex-wrap gap-2">
+        {([["aberto", "Em aberto"], ["pagas", "Pagas"], ["todas", "Todas"]] as const).map(([v, rot]) => {
+          const ativo = (f.status || "aberto") === v;
+          return (
+            <Link
+              key={v}
+              href={`/financeiro/contas?${comStatus(v)}`}
+              className={`flex min-h-11 items-center rounded-controle px-4 text-sm font-medium transition ${
+                ativo
+                  ? "bg-texto text-fundo"
+                  : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"
+              }`}
+            >
+              {rot}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Demais filtros */}
       <form
         method="get"
-        className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+        className="mb-4 flex flex-wrap items-end gap-3 rounded-cartao bg-painel-cartao p-4"
       >
+        <input type="hidden" name="status" value={f.status || "aberto"} />
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Situação</label>
-          <select name="status" defaultValue={f.status} className={inputCls}>
-            <option value="aberto">Em aberto</option>
-            <option value="pagas">Pagas</option>
-            <option value="todas">Todas</option>
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-zinc-500">Competência</label>
+          <label className="mb-1 block text-xs text-texto-fraco">Competência</label>
           <input type="month" name="comp" defaultValue={f.comp} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Vencimento de</label>
+          <label className="mb-1 block text-xs text-texto-fraco">Vencimento de</label>
           <input type="date" name="vde" defaultValue={f.vde} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">até</label>
+          <label className="mb-1 block text-xs text-texto-fraco">até</label>
           <input type="date" name="vate" defaultValue={f.vate} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Lançamento de</label>
+          <label className="mb-1 block text-xs text-texto-fraco">Lançamento de</label>
           <input type="date" name="lde" defaultValue={f.lde} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">até</label>
+          <label className="mb-1 block text-xs text-texto-fraco">até</label>
           <input type="date" name="late" defaultValue={f.late} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Pago de</label>
+          <label className="mb-1 block text-xs text-texto-fraco">Pago de</label>
           <input type="date" name="pde" defaultValue={f.pde} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">até</label>
+          <label className="mb-1 block text-xs text-texto-fraco">até</label>
           <input type="date" name="pate" defaultValue={f.pate} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Origem (banco)</label>
+          <label className="mb-1 block text-xs text-texto-fraco">Origem (banco)</label>
           <select name="banco" defaultValue={f.banco} className={inputCls}>
             <option value="">Todas</option>
             {BANCOS.map((b) => (
@@ -135,7 +156,7 @@ export default async function ContasPagarPage({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Tipo pagto.</label>
+          <label className="mb-1 block text-xs text-texto-fraco">Tipo pagto.</label>
           <select name="forma" defaultValue={f.forma} className={inputCls}>
             <option value="">Todos</option>
             {TIPOS_PAGAMENTO.map((t) => (
@@ -146,7 +167,7 @@ export default async function ContasPagarPage({
           </select>
         </div>
         <div className="min-w-44">
-          <label className="mb-1 block text-xs text-zinc-500">Categoria</label>
+          <label className="mb-1 block text-xs text-texto-fraco">Categoria</label>
           <select name="cat" defaultValue={f.cat} className={`${inputCls} w-full`}>
             <option value="">Todas</option>
             {categorias.map((c) => (
@@ -156,35 +177,33 @@ export default async function ContasPagarPage({
             ))}
           </select>
         </div>
-        <button className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
+        <button className="flex min-h-11 items-center rounded-controle bg-texto px-4 text-sm font-medium text-fundo transition hover:opacity-90">
           Aplicar
         </button>
         <Link
           href="/financeiro/contas"
-          className="rounded-lg px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex min-h-11 items-center rounded-controle px-3 text-sm text-texto-suave transition hover:bg-superficie-suave"
         >
           Limpar
         </Link>
       </form>
 
-      {/* Total */}
-      <div className="mb-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-        <p className="text-xs text-zinc-500">
-          Total {aberto ? "em aberto" : "filtrado"} · {linhasAgrupadas.length} conta(s)
-        </p>
-        <p
-          className={`mt-1 text-2xl font-bold ${aberto ? "text-red-600" : "text-zinc-900 dark:text-zinc-50"}`}
-        >
-          {moeda(total)}
-        </p>
-      </div>
-
       {linhasAgrupadas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-cartao bg-painel-cartao p-12 text-center text-sm text-texto-fraco">
           Nenhuma conta com esses filtros.
         </div>
       ) : (
-        <ListaContasView linhas={linhasAgrupadas} aberto={aberto} />
+        <>
+          <ListaContasView linhas={linhasAgrupadas} aberto={aberto} />
+          {/* Rodapé: o resumo do que está na tela agora. */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-cartao bg-painel-cartao px-4 py-3">
+            <p className="text-xs text-texto-fraco">
+              {linhasAgrupadas.length} conta{linhasAgrupadas.length === 1 ? "" : "s"}
+              {aberto ? " em aberto" : " no filtro"}
+            </p>
+            <p className="font-numero text-xl font-semibold tracking-apertada text-texto">{moeda(total)}</p>
+          </div>
+        </>
       )}
     </div>
   );

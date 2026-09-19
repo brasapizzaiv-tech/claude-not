@@ -74,7 +74,7 @@ export default async function PainelLayout({
         pedidosCompra={pedidosCompra}
         tema={tema}
       />
-      <main className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950">
+      <main className="flex-1 overflow-auto bg-painel-fundo">
         {children}
       </main>
     </div>

@@ -114,27 +114,39 @@ function Linhas({
   selecao?: Selecao;
 }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+    <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
       <table className="w-full text-sm">
-        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        <thead>
+          <tr className="text-xs text-texto-fraco">
+            {selecao && <th className="w-8" />}
+            <th className="px-4 py-2 text-left font-medium">Conta</th>
+            <th className="px-4 py-2 text-right font-medium">Valor</th>
+            <th className="px-4 py-2 text-right font-medium">Situação</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-borda">
           {itens.map((l) => (
-            <tr key={l.id} className={`bg-white dark:bg-zinc-950 ${selecao?.marcadas.has(l.id) ? "bg-green-50 dark:bg-green-950/20" : ""}`}>
-              {selecao && !l.pago && (
+            <tr key={l.id} className={selecao?.marcadas.has(l.id) ? "bg-superficie-suave" : ""}>
+              {/* A célula existe SEMPRE que há seleção, mesmo na conta já paga:
+                  se some numa linha e fica na outra, a tabela desalinha. */}
+              {selecao && (
                 <td className="w-8 pl-3">
-                  <input
-                    type="checkbox"
-                    checked={selecao.marcadas.has(l.id)}
-                    onChange={() => selecao.alternar(l.id)}
-                    className="h-4 w-4 accent-green-600"
-                    title="Selecionar pra pagar em lote"
-                  />
+                  {!l.pago && (
+                    <input
+                      type="checkbox"
+                      checked={selecao.marcadas.has(l.id)}
+                      onChange={() => selecao.alternar(l.id)}
+                      className="h-4 w-4 accent-[var(--sucesso)]"
+                      title="Selecionar pra pagar em lote"
+                    />
+                  )}
                 </td>
               )}
               <td className="px-4 py-2">
-                <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                <div className="font-medium text-texto">
                   {l.descricao ?? l.fornecedores?.nome ?? "Despesa"}
                 </div>
-                <div className="text-xs text-zinc-400">
+                <div className="text-xs text-texto-suave">
                   {l.dre_categorias?.nome ?? ""}
                   {l.vencimento ? ` · vence ${dataBR(l.vencimento)}` : ""}
                   {l.banco ? ` · ${l.banco}` : ""}
@@ -142,13 +154,13 @@ function Linhas({
                   {mostrarPago && l.pago_em ? ` · pago ${dataBR(l.pago_em)}` : ""}
                 </div>
                 {/* As outras datas da conta (competência, emissão, cadastro) */}
-                <div className="text-[11px] text-zinc-400/70">
+                <div className="text-[11px] text-texto-fraco">
                   {l.data ? `comp. ${mesBR(l.data)}` : ""}
                   {l.emissao ? ` · emitida ${dataBR(l.emissao)}` : ""}
                   {l.lancamento_em ? ` · lançada ${dataBR(l.lancamento_em)}` : ""}
                 </div>
               </td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-2 text-right font-numero tracking-apertada">
                 <ValorConta l={l} />
               </td>
               <td className="px-4 py-2 text-right">
@@ -161,14 +173,25 @@ function Linhas({
                       name="data_pago"
                       defaultValue={hojeBR}
                       title="Data do pagamento (padrão: hoje)"
-                      className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-700 outline-none focus:border-green-600 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
+                      className="rounded-controle border border-borda-forte bg-transparent px-2 py-1 font-numero text-xs text-texto outline-none focus:border-primaria"
                     />
                   )}
-                  <button
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+                  <span
+                    className={`rounded-controle px-2 py-1 text-xs font-medium ${
                       l.pago
-                        ? "border border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                        : "bg-green-600 text-white hover:bg-green-700"
+                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                        : l.vencimento && l.vencimento < hojeBR
+                          ? "bg-red-500/15 text-red-700 dark:text-red-300"
+                          : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                    }`}
+                  >
+                    {l.pago ? "Paga" : l.vencimento && l.vencimento < hojeBR ? "Vencida" : "Em aberto"}
+                  </span>
+                  <button
+                    className={`min-h-11 rounded-controle px-3 text-xs font-medium transition ${
+                      l.pago
+                        ? "border border-borda-forte text-texto-suave hover:bg-superficie-suave"
+                        : "bg-texto text-fundo hover:opacity-90"
                     }`}
                   >
                     {l.pago ? "Reabrir" : "Pagar"}
@@ -291,7 +314,7 @@ export function ListaContasView({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar conta por descrição, fornecedor ou categoria..."
-          className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="min-h-11 w-full max-w-md rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto outline-none focus:border-primaria"
         />
         {busca && (
           <button
@@ -307,13 +330,13 @@ export function ListaContasView({
       </div>
 
       {aberto && (
-        <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-green-300 bg-green-50 px-3 py-2 text-sm shadow-sm dark:border-green-900 dark:bg-green-950/40">
-          <span className="font-semibold text-green-800 dark:text-green-200">
+        <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao px-3 py-2 text-sm">
+          <span className="font-medium text-texto">
             {marcadas.size === 0 ? "Marque as contas pagas na caixinha e dê baixa em lote" : `${marcadas.size} selecionada(s) · ${moeda(totalSel)}`}
           </span>
           {marcadas.size > 0 && (
             <>
-              <button onClick={() => setMarcadas(new Set(filtradas.filter((l) => !l.pago).map((l) => l.id)))} className="text-xs text-green-700 underline dark:text-green-300">todas da busca</button>
+              <button onClick={() => setMarcadas(new Set(filtradas.filter((l) => !l.pago).map((l) => l.id)))} className="text-xs text-texto-suave underline hover:text-texto">todas da busca</button>
               <button onClick={() => setMarcadas(new Set())} className="text-xs text-zinc-500 underline">limpar</button>
               <label className="ml-auto flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300">
                 pago em
@@ -322,13 +345,13 @@ export function ListaContasView({
               <button
                 onClick={pagarSelecionadas}
                 disabled={pagando}
-                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
               >
                 {pagando ? "Baixando..." : `✓ Dar baixa em ${marcadas.size}`}
               </button>
             </>
           )}
-          {msgLote && <span className="w-full text-xs font-medium text-green-700 dark:text-green-300">{msgLote}</span>}
+          {msgLote && <span className="w-full text-xs font-medium text-sucesso">{msgLote}</span>}
         </div>
       )}
 

@@ -68,7 +68,7 @@ export function SeletorTema({ inicial, recolhido = false }: { inicial: Tema; rec
         title={`Aparência: ${atual.label}`}
         aria-label={`Aparência: ${atual.label}. Tocar pra mudar.`}
         aria-expanded={aberto}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/90 hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+        className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-suave transition hover:bg-superficie-suave hover:text-texto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria"
       >
         <Icone nome={atual.icone} tamanho={18} />
       </button>
@@ -83,11 +83,11 @@ export function SeletorTema({ inicial, recolhido = false }: { inicial: Tema; rec
             className="fixed inset-0 z-40 cursor-default"
           />
           <div
-            className={`absolute bottom-10 z-50 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900 ${
-              recolhido ? "left-0" : "right-0"
+            className={`absolute bottom-12 z-50 w-56 overflow-hidden rounded-cartao border border-borda bg-painel-cartao ${
+              recolhido ? "right-0" : "left-0"
             }`}
           >
-            <p className="border-b border-zinc-200 px-3 py-2 text-sm font-semibold text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+            <p className="border-b border-borda px-3 py-2 text-sm font-semibold text-texto">
               Aparência
             </p>
             {TEMAS.map((t) => (
@@ -95,16 +95,16 @@ export function SeletorTema({ inicial, recolhido = false }: { inicial: Tema; rec
                 key={t.valor}
                 type="button"
                 onClick={() => escolher(t.valor)}
-                className={`flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800 ${
-                  t.valor === tema ? "bg-orange-50 dark:bg-zinc-800" : ""
+                className={`flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition hover:bg-superficie-suave ${
+                  t.valor === tema ? "bg-superficie-suave" : ""
                 }`}
               >
-                <Icone nome={t.icone} tamanho={17} className="mt-0.5 text-zinc-500 dark:text-zinc-400" />
+                <Icone nome={t.icone} tamanho={17} className="mt-0.5 text-texto-suave" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">{t.label}</span>
-                  <span className="block text-xs text-zinc-500 dark:text-zinc-400">{t.ajuda}</span>
+                  <span className="block text-sm font-medium text-texto">{t.label}</span>
+                  <span className="block text-xs text-texto-fraco">{t.ajuda}</span>
                 </span>
-                {t.valor === tema && <Icone nome="ok" tamanho={16} className="mt-0.5 text-orange-600 dark:text-orange-400" />}
+                {t.valor === tema && <Icone nome="ok" tamanho={16} className="mt-0.5 text-primaria" />}
               </button>
             ))}
           </div>

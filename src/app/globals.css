@@ -154,6 +154,39 @@
   --erro: var(--color-red-600);
   --info: var(--color-blue-600);
 
+  /* ---------- 3a. Superfícies do painel (Etapa 4) ----------
+     O desenho novo pede cartão SEM borda, um degrau acima do fundo da página.
+     Ficam num par próprio (e não em --fundo/--superficie) pra não mudar as
+     telas públicas, que continuam com fundo branco puro.
+
+     O cartão de FOCO é invertido em relação ao fundo: no tema claro ele é
+     grafite, no escuro ele é claro. É onde ficam as ações principais da tela —
+     uma por tela, pra não competir com nada. */
+  --painel-fundo: #f4f4f5;        /* a mesa onde os cartões se apoiam */
+  --painel-cartao: #ffffff;       /* o cartão, um degrau acima */
+  --painel-foco-fundo: #211915;   /* grafite da marca */
+  --painel-foco-texto: #e8ded5;
+
+  /* ---------- 3b. Formas (Etapa 4) ----------
+     Só DOIS raios no sistema, pra parar com a mistura de rounded-lg,
+     rounded-xl e rounded-2xl espalhada pelas telas:
+       cartão   → o que agrupa conteúdo
+       controle → botão, campo, etiqueta e quadradinho de mesa
+     Viram as classes rounded-cartao e rounded-controle. As telas que ainda não
+     foram convertidas seguem com os raios antigos até chegar a vez delas. */
+  --raio-cartao: 16px;
+  --raio-controle: 10px;
+
+  /* Número e título grande ficam um pouco mais apertados. */
+  --letra-apertada: -0.03em;
+
+  /* ---------- A ESCOLHA DA LETRA MORA AQUI ----------
+     Estas duas linhas decidem a letra do sistema inteiro. Pra voltar pra Geist,
+     troque as duas por var(--font-geist-sans): nenhuma tela precisa mudar.
+     As famílias são carregadas em src/app/layout.tsx. */
+  --fonte-interface: var(--font-instrument-sans);  /* interface e texto corrido */
+  --fonte-numero: var(--font-space-grotesk);       /* número, valor e título */
+
   /* Compatibilidade: nomes antigos usados pelo body. */
   --background: var(--fundo);
   --foreground: var(--texto);
@@ -183,6 +216,13 @@
     --texto: #ececec;
     --texto-suave: #a1a1aa;    /* zinc-400 */
     --texto-fraco: #71717a;    /* zinc-500 */
+
+    /* Painel: o cartão continua um degrau acima da mesa, e o cartão de foco
+       inverte — aqui ele é o claro. */
+    --painel-fundo: #211915;
+    --painel-cartao: #2b211b;
+    --painel-foco-fundo: #ece3da;
+    --painel-foco-texto: #211915;
 
     /* Um degrau mais claro: sobre o grafite os tons 600 fecham demais. */
     --sucesso: var(--color-emerald-400);
@@ -215,15 +255,24 @@
   --color-marca-escuro: var(--marca-escuro);
   --color-marca-sobre-escuro: var(--marca-sobre-escuro);
 
-  --font-sans: var(--font-geist-sans);
+  --color-painel-fundo: var(--painel-fundo);
+  --color-painel-cartao: var(--painel-cartao);
+  --color-painel-foco-fundo: var(--painel-foco-fundo);
+  --color-painel-foco-texto: var(--painel-foco-texto);
+
+  --radius-cartao: var(--raio-cartao);
+  --radius-controle: var(--raio-controle);
+  --tracking-apertada: var(--letra-apertada);
+
+  --font-sans: var(--fonte-interface), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-numero: var(--fonte-numero), var(--fonte-interface), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--fundo);
   color: var(--texto);
-  /* Geist (carregada em layout.tsx) com as de sistema como reserva. */
-  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-family: var(--fonte-interface), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
 
 /* Papel é sempre claro: fundo branco e tinta preta, mesmo com o painel no
