@@ -210,7 +210,9 @@
 
     --fundo: var(--marca-escuro);
     --superficie: #2b211b;
-    --superficie-suave: #2b211b;
+    /* Um degrau ACIMA da superfície, e não igual a ela como era antes: no
+       escuro, ficha e cabeçalho de tabela sumiam dentro do cartão. */
+    --superficie-suave: #362a21;
     --borda: #3d2f26;
     --borda-forte: #4d3b2f;
     --texto: #ececec;

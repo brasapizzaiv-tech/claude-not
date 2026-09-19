@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
@@ -304,6 +305,44 @@ export async function virarLivreKiosk(comandaId: string) {
 // Caixa / tela da comanda: comanda pesada vira BUFFET LIVRE (o valor do dia
 // substitui o do peso). É o que faltava — sem isso o caixa pagava o valor do
 // livre e EXCLUÍA a comanda pesada, e a nota fiscal ficava sem itens.
+// "Conta pedida": a mesa já chamou pra fechar e ainda não pagou. É o terceiro
+// estado do mapa do salão na tela inicial.
+//
+// O Rafael decidiu que marcam OS DOIS, garçom e caixa. Quando a tarefa é de
+// todo mundo é fácil ninguém fazer e ninguém saber de onde veio, então
+// guardamos o nome de quem marcou e mostramos na mesa.
+export async function alternarContaPedida(comandaId: string) {
+  // Os dois lados: o caixa entra logado, o garçom entra pelo link pessoal.
+  await exigirAcesso(["/salao", "/garcom"]);
+  const sessao = await sessaoGarcom();
+  if (!sessao) return { ok: false as const, mensagem: "Faça login de novo." };
+  const supabase = sessao.db;
+
+  const { data: c } = await supabase
+    .from("pdv_comandas")
+    .select("id, status, conta_pedida_em")
+    .eq("id", comandaId)
+    .maybeSingle();
+  if (!c) return { ok: false as const, mensagem: "Comanda não encontrada." };
+  if (c.status !== "aberta") return { ok: false as const, mensagem: "Esta comanda já foi fechada." };
+
+  const quem = (sessao.nome ?? "").split(" ")[0] || "equipe";
+  const marcando = !c.conta_pedida_em;
+  await supabase
+    .from("pdv_comandas")
+    .update({
+      conta_pedida_em: marcando ? new Date().toISOString() : null,
+      conta_pedida_por: marcando ? quem : null,
+    })
+    .eq("id", comandaId);
+
+  revalidatePath("/salao");
+  revalidatePath("/dashboard");
+  revalidatePath("/garcom");
+  revalidatePath(`/salao/comandas/${comandaId}`);
+  return { ok: true as const, pedida: marcando };
+}
+
 export async function virarLivreComanda(comandaId: string) {
   await exigirAcesso("/salao");
   const r = await virarLivreKiosk(comandaId);

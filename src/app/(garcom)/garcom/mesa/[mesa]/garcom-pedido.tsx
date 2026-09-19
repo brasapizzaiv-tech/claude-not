@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { alternarContaPedida } from "@/app/(painel)/salao/actions";
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -63,6 +64,23 @@ export function GarcomPedido({
   // Comanda escolhida: "nova" = cria uma nova; senão o id de uma existente.
   const [comandaSel, setComandaSel] = useState<string>(comandaInicial ?? comandas[0]?.id ?? "nova");
   const [contaOpen, setContaOpen] = useState(false);
+  const [avisando, setAvisando] = useState<string | null>(null);
+  const [avisadas, setAvisadas] = useState<Set<string>>(new Set());
+
+  async function avisarConta(comandaId: string) {
+    setAvisando(comandaId);
+    try {
+      const r = await alternarContaPedida(comandaId);
+      if (!r.ok) { window.alert(r.mensagem); return; }
+      setAvisadas((s) => {
+        const n = new Set(s);
+        if (r.pedida) n.add(comandaId); else n.delete(comandaId);
+        return n;
+      });
+    } finally {
+      setAvisando(null);
+    }
+  }
   const [trocaOpen, setTrocaOpen] = useState(false);
   const [trocaComanda, setTrocaComanda] = useState<string>(comandas[0]?.id ?? "");
   const [trocaMesa, setTrocaMesa] = useState<string>("");
@@ -354,6 +372,16 @@ export function GarcomPedido({
                       <span className="font-bold">Comanda {c.numero}</span>
                       <span className="font-bold text-emerald-400">{brl(c.total)}</span>
                     </div>
+                    {/* Avisa o caixa que a mesa chamou pra fechar: pinta a mesa
+                        no mapa da tela inicial. O caixa também pode marcar. */}
+                    <button
+                      onClick={() => avisarConta(c.id)}
+                      disabled={avisando === c.id}
+                      className="flex min-h-11 w-full items-center justify-center gap-2 border-b border-zinc-800 text-sm font-semibold text-amber-300 disabled:opacity-60"
+                    >
+                      <Icone nome="cupom" tamanho={15} />
+                      {avisadas.has(c.id) ? "Caixa avisado" : "Avisar o caixa que pediu a conta"}
+                    </button>
                     <div className="divide-y divide-zinc-800/60">
                       {c.buffet > 0 && (
                         <div className="flex justify-between px-3 py-1.5 text-sm">

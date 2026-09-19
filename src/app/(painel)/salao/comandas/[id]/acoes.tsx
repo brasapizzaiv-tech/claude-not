@@ -3,9 +3,14 @@ import { Icone } from "@/components/icone";
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { excluirComanda, virarLivreComanda } from "../../actions";
+import { excluirComanda, virarLivreComanda, alternarContaPedida } from "../../actions";
 
-export function AcoesComanda({ comandaId, livre, temBuffet }: { comandaId: string; livre?: boolean; temBuffet?: boolean }) {
+export function AcoesComanda({
+  comandaId, livre, temBuffet, contaPedida = false, contaPedidaPor = null,
+}: {
+  comandaId: string; livre?: boolean; temBuffet?: boolean;
+  contaPedida?: boolean; contaPedidaPor?: string | null;
+}) {
   const [p, start] = useTransition();
   const router = useRouter();
 
@@ -15,6 +20,15 @@ export function AcoesComanda({ comandaId, livre, temBuffet }: { comandaId: strin
     if (!window.confirm("Trocar o valor do peso pelo BUFFET LIVRE do dia?")) return;
     start(async () => {
       const r = await virarLivreComanda(comandaId);
+      if (!r.ok) { window.alert(r.mensagem); return; }
+      router.refresh();
+    });
+  };
+
+  // Marca que a mesa chamou pra fechar. Pinta a mesa no mapa da tela inicial.
+  const conta = () => {
+    start(async () => {
+      const r = await alternarContaPedida(comandaId);
       if (!r.ok) { window.alert(r.mensagem); return; }
       router.refresh();
     });
@@ -40,6 +54,24 @@ export function AcoesComanda({ comandaId, livre, temBuffet }: { comandaId: strin
 
   return (
     <div className="nao-imprimir mt-4 flex flex-wrap gap-2">
+      <button
+        onClick={conta}
+        disabled={p}
+        title={contaPedidaPor ? `Marcado por ${contaPedidaPor}` : undefined}
+        className={`min-h-11 rounded-controle px-4 text-sm font-medium transition disabled:opacity-60 ${
+          contaPedida
+            ? "bg-primaria text-white hover:opacity-90"
+            : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"
+        }`}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <Icone nome="cupom" tamanho={15} />
+          {contaPedida
+            ? `Conta pedida${contaPedidaPor ? ` · ${contaPedidaPor}` : ""}`
+            : "Marcar que pediu a conta"}
+        </span>
+      </button>
+
       {temBuffet && !livre && (
         <button
           onClick={virarLivre}

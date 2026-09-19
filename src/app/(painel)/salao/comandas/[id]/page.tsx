@@ -20,7 +20,7 @@ export default async function ComandaPage({
 
   const { data: comanda } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, mesa, status, peso, tara, valor_buffet, livre, so_kg, servico, forma_pagamento, aberta_em")
+    .select("id, numero, mesa, status, peso, tara, valor_buffet, livre, so_kg, servico, forma_pagamento, aberta_em, conta_pedida_em, conta_pedida_por")
     .eq("id", id)
     .single();
   if (!comanda) notFound();
@@ -261,7 +261,13 @@ export default async function ComandaPage({
         O pagamento é feito no caixa. Aqui você só adiciona ou retira itens.
       </p>
 
-      {!fechada && <AcoesComanda comandaId={comanda.id} livre={!!comanda.livre} temBuffet={temBuffet} />}
+      {!fechada && <AcoesComanda
+          comandaId={comanda.id}
+          livre={!!comanda.livre}
+          temBuffet={temBuffet}
+          contaPedida={!!comanda.conta_pedida_em}
+          contaPedidaPor={comanda.conta_pedida_por as string | null}
+        />}
     </div>
   );
 }

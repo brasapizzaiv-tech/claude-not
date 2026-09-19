@@ -6,7 +6,7 @@ export default async function SalaoPage() {
   const [{ data: abertas }, { data: cfgRows }] = await Promise.all([
     supabase
       .from("pdv_comandas")
-      .select("id, numero, mesa, valor_buffet")
+      .select("id, numero, mesa, valor_buffet, conta_pedida_em, conta_pedida_por")
       .eq("status", "aberta")
       .order("numero", { ascending: true }),
     supabase.from("pdv_config").select("chave, valor"),
@@ -17,7 +17,10 @@ export default async function SalaoPage() {
   const qtdMesas = Number(cfg.qtd_mesas || 40);
 
   const todasAbertas =
-    (abertas as { id: string; numero: number; mesa: string | null; valor_buffet: number }[]) ?? [];
+    (abertas as {
+      id: string; numero: number; mesa: string | null; valor_buffet: number;
+      conta_pedida_em: string | null; conta_pedida_por: string | null;
+    }[]) ?? [];
 
   // Comandas de delivery têm painel próprio (/delivery) — não entram no salão.
   let comandas = todasAbertas;
@@ -49,7 +52,10 @@ export default async function SalaoPage() {
   for (const c of comandas) {
     const nome = c.mesa || "Balcão";
     const total = Number(c.valor_buffet) + (totItens.get(c.id) || 0);
-    porMesa.set(nome, [...(porMesa.get(nome) ?? []), { id: c.id, numero: c.numero, total }]);
+    porMesa.set(nome, [
+      ...(porMesa.get(nome) ?? []),
+      { id: c.id, numero: c.numero, total, contaPedida: !!c.conta_pedida_em, contaPor: c.conta_pedida_por ?? null },
+    ]);
   }
 
   // monta a lista fixa de mesas: Balcão, Mesa 1..N, Balança
@@ -74,8 +80,8 @@ export default async function SalaoPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1500px] p-6">
-      <h1 className="mb-4 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Salão</h1>
+    <div className="mx-auto max-w-[1500px] p-5">
+      <h1 className="mb-4 font-numero text-2xl font-semibold tracking-apertada text-texto">Salão</h1>
       <MesasGrid mesas={mesas} />
     </div>
   );

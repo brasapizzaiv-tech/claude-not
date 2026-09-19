@@ -19,7 +19,7 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
     <>
       <button
         onClick={() => setAberto(true)}
-        className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
       >
         <Icone nome="dinheiro" tamanho={15} className="mr-1.5" /> Movimentar caixa
       </button>
@@ -67,11 +67,11 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
                 />
               </div>
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setAberto(false)} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">
+                <button type="button" onClick={() => setAberto(false)} className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
                   Cancelar
                 </button>
                 <button
-                  className={`rounded-lg px-5 py-2 text-sm font-semibold text-white ${entrada ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"}`}
+                  className="min-h-11 rounded-controle bg-texto px-5 text-sm font-semibold text-fundo transition hover:opacity-90"
                 >
                   {entrada ? "Lançar entrada" : "Lançar saída"}
                 </button>

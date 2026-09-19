@@ -47,20 +47,20 @@ export default async function CaixaPage({
         <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
           ← Salão
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Frente de Caixa</h1>
+        <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Frente de Caixa</h1>
         <p className="mt-1 text-zinc-500">Nenhum caixa aberto. Abra um para começar a receber.</p>
         <Link href="/salao/caixa/pix" className="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:underline"><Icone nome="rapido" tamanho={14} /> Pix recebidos / estornar</Link>
 
         <form
           action={abrirCaixa}
-          className="mt-6 space-y-4 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+          className="mt-6 space-y-4 rounded-cartao bg-painel-foco-fundo p-5 text-painel-foco-texto"
         >
           <div>
             <label className="mb-1 block text-xs text-zinc-500">Nome / turno</label>
             <input
               name="nome"
               defaultValue="Noite"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="min-h-11 w-full rounded-controle border border-current/30 bg-transparent px-3 text-sm outline-none placeholder:opacity-60"
             />
           </div>
           <div>
@@ -69,10 +69,10 @@ export default async function CaixaPage({
               name="saldo_inicial"
               inputMode="decimal"
               placeholder="0,00"
-              className="w-40 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="min-h-11 w-40 rounded-controle border border-current/30 bg-transparent px-3 font-numero text-sm outline-none"
             />
           </div>
-          <button className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+          <button className="min-h-11 rounded-controle bg-painel-foco-texto px-5 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90">
             Abrir caixa
           </button>
         </form>
@@ -259,17 +259,17 @@ export default async function CaixaPage({
           <Link href="/salao" className="text-sm text-zinc-500 hover:text-orange-600">
             ← Salão
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">Frente de Caixa</h1>
+          <h1 className="mt-1 font-numero text-2xl font-semibold tracking-apertada text-texto">Frente de Caixa</h1>
           <p className="mt-1 text-sm text-zinc-500">
             {caixa.nome} · <span className="font-medium text-emerald-600">Aberto</span> às {abertoHora}
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
           <NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} />
-          <Link href="/salao/caixa/pix" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
+          <Link href="/salao/caixa/pix" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
             <Icone nome="rapido" tamanho={15} className="mr-1.5" /> Pix recebidos
           </Link>
-          <Link href="/salao/caixa/fiado" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900">
+          <Link href="/salao/caixa/fiado" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
             <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
           </Link>
           <CaixaAcoes caixaId={caixa.id} />
@@ -308,21 +308,21 @@ export default async function CaixaPage({
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href="/salao/caixa/movimentos"
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
         >
           <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
         </Link>
         <Link
           href="/salao/caixa/tef"
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
         >
           <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Cartões (TEF)
         </Link>
       </div>
 
-      <details className="mt-2 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <details className="mt-2 rounded-cartao bg-painel-cartao">
         <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4">
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100"><Icone nome="grafico" tamanho={15} /> Resumo do caixa</span>
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-texto"><Icone nome="grafico" tamanho={15} /> Resumo do caixa</span>
           {/* Sem valores à mostra: a tela do caixa é virada pro cliente na hora
               do Pix, e o movimento do dia não é da conta de quem está pagando. */}
           <span className="text-xs text-zinc-400">toque para ver os valores</span>
@@ -349,11 +349,11 @@ export default async function CaixaPage({
             </div>
           </div>
           <div className="space-y-1 border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
-            <div className="flex justify-between font-medium text-zinc-900 dark:text-zinc-100">
+            <div className="flex justify-between font-medium text-texto">
               <span>Total recebido</span>
               <span>{brl(totalVendas)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold text-zinc-900 dark:text-zinc-50">
+            <div className="flex justify-between font-numero text-lg font-semibold tracking-apertada text-texto">
               <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Dinheiro no caixa</span>
               <span>{brl(dinheiroEmCaixa)}</span>
             </div>
