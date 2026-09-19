@@ -203,15 +203,15 @@ export function BaixaScanner({ token }: { token: string }) {
       </div>
 
       <div className="flex gap-2 px-3 pb-2">
-        <button onClick={() => setStatus("usada")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${status === "usada" ? "bg-emerald-600" : "bg-zinc-800"}`}>Usada</button>
-        <button onClick={() => setStatus("descartada")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${status === "descartada" ? "bg-red-600" : "bg-zinc-800"}`}>Descartada</button>
+        <button onClick={() => setStatus("usada")} className={`flex-1 rounded-controle py-2 text-sm font-bold ${status === "usada" ? "bg-emerald-600" : "bg-zinc-800"}`}>Usada</button>
+        <button onClick={() => setStatus("descartada")} className={`flex-1 rounded-controle py-2 text-sm font-bold ${status === "descartada" ? "bg-red-600" : "bg-zinc-800"}`}>Descartada</button>
       </div>
 
       {/* Câmera */}
       <div className="relative h-[42vh] min-h-56 shrink-0 overflow-hidden bg-zinc-900">
         <video ref={videoRef} playsInline muted autoPlay className="h-full w-full object-cover" />
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-44 w-44 rounded-2xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+          <div className="h-44 w-44 rounded-cartao border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
         </div>
         <div className="absolute right-2 top-2 flex gap-1.5">
           {torchOk && (
@@ -227,18 +227,18 @@ export function BaixaScanner({ token }: { token: string }) {
           </div>
         )}
       </div>
-      <p className="py-1 text-center text-xs text-zinc-400">
+      <p className="py-1 text-center text-xs text-texto-fraco">
         {lista.length === 0 ? msg : "Continue lendo as etiquetas…"} · segure a uns <b>15–20 cm</b>
       </p>
       <div className="flex gap-2 px-3 pb-2">
         <button
           onClick={() => fotoRef.current?.click()}
           disabled={lendoFoto}
-          className="flex-1 rounded-lg bg-zinc-800 py-2 text-sm font-semibold disabled:opacity-50"
+          className="flex-1 rounded-controle bg-zinc-800 py-2 text-sm font-semibold disabled:opacity-50"
         >
           {lendoFoto ? "Lendo a foto…" : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="camera" tamanho={14} /> Tirar foto do QR</span>}
         </button>
-        <button onClick={() => setManual((v) => !v)} className="flex-1 rounded-lg bg-zinc-800 py-2 text-sm font-semibold"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="teclado" tamanho={14} /> Digitar o nº</span></button>
+        <button onClick={() => setManual((v) => !v)} className="flex-1 rounded-controle bg-zinc-800 py-2 text-sm font-semibold"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="teclado" tamanho={14} /> Digitar o nº</span></button>
         <input ref={fotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => lerFoto(e.target.files?.[0])} />
       </div>
       {manual && (
@@ -249,22 +249,22 @@ export function BaixaScanner({ token }: { token: string }) {
             onChange={(e) => setNumero(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") adicionarPorNumero(); }}
             placeholder="Nº da etiqueta"
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none"
+            className="flex-1 rounded-controle border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none"
           />
-          <button onClick={adicionarPorNumero} disabled={proc || !numero.trim()} className="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-semibold disabled:opacity-50">Adicionar</button>
+          <button onClick={adicionarPorNumero} disabled={proc || !numero.trim()} className="rounded-controle bg-zinc-700 px-4 py-2 text-sm font-semibold disabled:opacity-50">Adicionar</button>
         </div>
       )}
 
       {/* Lista acumulada */}
       <div className="flex-1 overflow-y-auto px-3">
         {lista.length === 0 ? (
-          <p className="mt-6 text-center text-sm text-zinc-500">Nenhuma etiqueta lida ainda.</p>
+          <p className="mt-6 text-center text-sm text-texto-suave">Nenhuma etiqueta lida ainda.</p>
         ) : (
           <ul className="space-y-1.5 py-2">
             {lista.map((it) => (
-              <li key={it.id} className="flex items-center justify-between gap-2 rounded-lg bg-zinc-900 px-3 py-2 text-sm">
-                <span className="min-w-0 truncate">{it.produto} <span className="text-zinc-500">· Nº {it.numero}</span></span>
-                <button onClick={() => remover(it.id)} className="shrink-0 text-zinc-400">✕</button>
+              <li key={it.id} className="flex items-center justify-between gap-2 rounded-controle bg-zinc-900 px-3 py-2 text-sm">
+                <span className="min-w-0 truncate">{it.produto} <span className="text-texto-suave">· Nº {it.numero}</span></span>
+                <button onClick={() => remover(it.id)} className="shrink-0 text-texto-fraco">✕</button>
               </li>
             ))}
           </ul>
@@ -276,7 +276,7 @@ export function BaixaScanner({ token }: { token: string }) {
         <button
           onClick={darBaixa}
           disabled={proc || lista.length === 0}
-          className={`w-full rounded-xl py-3 text-base font-bold text-white disabled:opacity-40 ${status === "descartada" ? "bg-red-600" : "bg-emerald-600"}`}
+          className={`w-full rounded-cartao py-3 text-base font-bold text-white disabled:opacity-40 ${status === "descartada" ? "bg-red-600" : "bg-emerald-600"}`}
         >
           {proc ? "Dando baixa..." : `✓ Dar baixa em ${lista.length} (${status})`}
         </button>
@@ -284,7 +284,7 @@ export function BaixaScanner({ token }: { token: string }) {
 
       {feito && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="rounded-2xl bg-zinc-800 px-8 py-6 text-center">
+          <div className="rounded-cartao bg-zinc-800 px-8 py-6 text-center">
             <div className="mb-2 flex justify-center"><Icone nome="certo" tamanho={42} className="text-emerald-500" /></div>
             <p className="font-semibold">{feito}</p>
           </div>

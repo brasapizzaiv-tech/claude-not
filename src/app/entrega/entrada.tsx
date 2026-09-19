@@ -31,23 +31,23 @@ export function EntradaEntrega() {
   }
 
   if (lembrado === null) {
-    return <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">Abrindo…</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-painel-fundo text-texto-suave">Abrindo…</div>;
   }
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 p-6 text-zinc-100">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-painel-fundo p-6 text-texto">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icons/entregas-192.png" alt="" className="mb-4 h-24 w-24 rounded-3xl" />
+      <img src="/icons/entregas-192.png" alt="" className="mb-4 h-24 w-24 rounded-cartao" />
       <h1 className="text-2xl font-bold">Brasa Entregas</h1>
-      <p className="mb-6 mt-1 text-center text-sm text-zinc-400">Cole aqui o link pessoal que a gerência te mandou no WhatsApp. Só precisa uma vez.</p>
+      <p className="mb-6 mt-1 text-center text-sm text-texto-suave">Cole aqui o link pessoal que a gerência te mandou no WhatsApp. Só precisa uma vez.</p>
       <input
         value={valor}
         onChange={(e) => { setValor(e.target.value); setErro(null); }}
         onKeyDown={(e) => { if (e.key === "Enter") entrar(); }}
         placeholder="https://www.brasarestaurante.com.br/entrega/…"
-        className="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-base outline-none focus:border-orange-500"
+        className="w-full max-w-md rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-base outline-none focus:border-orange-500"
       />
       {erro && <p className="mt-2 text-sm text-rose-400">{erro}</p>}
-      <button onClick={entrar} className="mt-4 w-full max-w-md rounded-xl py-3.5 text-base font-bold text-white" style={{ background: LARANJA }}>Entrar</button>
+      <button onClick={entrar} className="mt-4 w-full max-w-md rounded-cartao py-3.5 text-base font-bold text-white" style={{ background: LARANJA }}>Entrar</button>
     </div>
   );
 }

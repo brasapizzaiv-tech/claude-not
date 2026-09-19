@@ -27,10 +27,16 @@ export default async function GarcomLayout({ children }: { children: React.React
   const s = await sessaoGarcom();
   if (!s) redirect("/login?next=/garcom");
   if (!s.podeGarcom) redirect("/dashboard");
+  // O app do garçom é escuro SEMPRE, e isso é decisão de uso: celular na mão
+  // dentro do salão, muitas vezes à noite. Não segue a escolha de tema da
+  // pessoa. Declarando aqui, as telas de dentro usam os mesmos tokens do resto
+  // do sistema e já saem nos tons escuros.
+  //
+  // `display: contents` = a caixa não existe pro layout, só pro CSS herdar.
   return (
-    <>
+    <div data-tema="escuro" className="contents">
       <SemZoom />
       {children}
-    </>
+    </div>
   );
 }

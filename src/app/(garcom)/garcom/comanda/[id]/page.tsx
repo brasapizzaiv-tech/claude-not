@@ -137,28 +137,28 @@ export default async function GarcomComandaPage({
   return (
     <div className="mx-auto max-w-xl p-4 pb-24">
       <div className="mb-3 flex items-center justify-between">
-        <Link href="/garcom" className="text-sm text-zinc-500 hover:text-orange-600">
+        <Link href="/garcom" className="text-sm text-texto-fraco hover:text-orange-600">
           ← Mesas
         </Link>
-        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+        <span className="text-sm font-semibold text-zinc-700 dark:text-texto-suave">
           {comanda.mesa} · #{comanda.numero}
         </span>
       </div>
 
       {/* Itens lançados */}
-      <div className="mb-4 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <div className="mb-4 overflow-hidden rounded-cartao border border-zinc-200 dark:border-borda">
         {lista.length === 0 ? (
-          <p className="p-4 text-center text-sm text-zinc-400">Nada lançado ainda.</p>
+          <p className="p-4 text-center text-sm text-texto-suave">Nada lançado ainda.</p>
         ) : (
           <table className="w-full text-sm">
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-zinc-100 dark:divide-borda">
               {lista.map((i) => (
-                <tr key={i.id} className="bg-white dark:bg-zinc-950">
-                  <td className="whitespace-pre-line px-3 py-2 text-zinc-800 dark:text-zinc-200">
+                <tr key={i.id} className="bg-white dark:bg-painel-fundo">
+                  <td className="whitespace-pre-line px-3 py-2 text-zinc-800 dark:text-texto">
                     {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
                     {i.descricao}
                   </td>
-                  <td className="px-3 py-2 text-right align-top text-zinc-600 dark:text-zinc-300">
+                  <td className="px-3 py-2 text-right align-top text-texto-fraco dark:text-texto-suave">
                     {moeda(Number(i.qtd) * Number(i.preco_unit))}
                   </td>
                   <td className="px-2 py-2 text-right">
@@ -166,15 +166,15 @@ export default async function GarcomComandaPage({
                       <form action={removerItemComanda} className="inline">
                         <input type="hidden" name="id" value={i.id} />
                         <input type="hidden" name="comanda_id" value={comanda.id} />
-                        <button className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">×</button>
+                        <button className="text-texto-suave hover:text-red-600 dark:text-texto-fraco">×</button>
                       </form>
                     )}
                   </td>
                 </tr>
               ))}
-              <tr className="bg-zinc-50 dark:bg-zinc-900">
-                <td className="px-3 py-2 font-semibold text-zinc-900 dark:text-zinc-100">Total</td>
-                <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-zinc-100">
+              <tr className="bg-zinc-50 dark:bg-painel-cartao">
+                <td className="px-3 py-2 font-semibold text-zinc-900 dark:text-texto">Total</td>
+                <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-texto">
                   {moeda(total)}
                 </td>
                 <td />
@@ -185,7 +185,7 @@ export default async function GarcomComandaPage({
       </div>
 
       {fechada ? (
-        <p className="rounded-xl bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-950/30">
+        <p className="rounded-cartao bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-950/30">
           Comanda fechada.
         </p>
       ) : (

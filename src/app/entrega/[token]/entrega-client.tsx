@@ -160,41 +160,43 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}`;
 
   const Card = ({ p, acoes }: { p: EntregaBoy; acoes?: React.ReactNode }) => (
-    <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-3">
+    <div className="rounded-cartao border border-borda-forte bg-painel-cartao p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="text-lg font-bold">#{p.numero ?? "—"} · {p.nome}</div>
-          <div className="text-sm text-zinc-300">{p.endereco}</div>
+          <div className="text-sm text-texto-suave">{p.endereco}</div>
           {p.referencia && <div className="flex items-start gap-1.5 text-sm text-amber-300"><Icone nome="local" tamanho={14} className="mt-0.5" /> {p.referencia}</div>}
-          {p.observacao && <div className="flex items-start gap-1.5 text-sm text-zinc-400"><Icone nome="editar" tamanho={14} className="mt-0.5" /> {p.observacao}</div>}
+          {p.observacao && <div className="flex items-start gap-1.5 text-sm text-texto-suave"><Icone nome="editar" tamanho={14} className="mt-0.5" /> {p.observacao}</div>}
         </div>
         <div className="text-right">
           <div className="text-lg font-bold">{brl(p.total)}</div>
           <div className={`text-xs font-semibold ${p.pago ? "text-emerald-400" : "text-amber-400"}`}>{p.pago ? "já pago" : `receber · ${p.forma_pagamento ?? "?"}`}</div>
-          {!p.pago && p.troco_para ? <div className="text-xs text-zinc-400">troco p/ {brl(p.troco_para)}</div> : null}
+          {!p.pago && p.troco_para ? <div className="text-xs text-texto-suave">troco p/ {brl(p.troco_para)}</div> : null}
         </div>
       </div>
       <div className="mt-2 flex flex-wrap gap-2 text-sm">
-        <a href={mapaUrl(p)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-sky-300"><Icone nome="mapa" tamanho={14} /> Mapa</a>
-        {p.telefone && <a href={`https://wa.me/55${p.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-emerald-300"><Icone nome="zap" tamanho={14} /> WhatsApp</a>}
-        {p.telefone && <a href={`tel:${p.telefone.replace(/\D/g, "")}`} className="rounded-lg bg-zinc-800 px-3 py-1.5 font-semibold text-zinc-200"><Icone nome="telefone" tamanho={15} titulo="Ligar" /></a>}
-        <span className="ml-auto self-center text-xs text-zinc-500">{p.saiu_em ? `saiu ${hhmm(p.saiu_em)}` : p.previsao_em ? `prev. ${hhmm(p.previsao_em)}` : ""}</span>
+        <a href={mapaUrl(p)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-controle bg-superficie-suave px-3 py-1.5 font-semibold text-sky-300"><Icone nome="mapa" tamanho={14} /> Mapa</a>
+        {p.telefone && <a href={`https://wa.me/55${p.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-controle bg-superficie-suave px-3 py-1.5 font-semibold text-emerald-300"><Icone nome="zap" tamanho={14} /> WhatsApp</a>}
+        {p.telefone && <a href={`tel:${p.telefone.replace(/\D/g, "")}`} className="rounded-controle bg-superficie-suave px-3 py-1.5 font-semibold text-texto"><Icone nome="telefone" tamanho={15} titulo="Ligar" /></a>}
+        <span className="ml-auto self-center text-xs text-texto-fraco">{p.saiu_em ? `saiu ${hhmm(p.saiu_em)}` : p.previsao_em ? `prev. ${hhmm(p.previsao_em)}` : ""}</span>
       </div>
       {acoes}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950 pb-24 text-zinc-50">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 bg-zinc-950/95 px-4 py-3 backdrop-blur">
+    // O app do entregador é escuro SEMPRE: ele usa na rua, muitas vezes de
+    // noite. Não segue a escolha de tema da pessoa.
+    <div data-tema="escuro" className="min-h-screen bg-painel-fundo pb-24 text-texto">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-borda bg-painel-fundo/95 px-4 py-3 backdrop-blur">
         <div>
-          <div className="text-xs text-zinc-500">Brasa · Entregas</div>
+          <div className="text-xs text-texto-fraco">Brasa · Entregas</div>
           <div className="font-bold">{boy.nome}</div>
         </div>
-        <button onClick={() => setScan(true)} className="rounded-xl px-3 py-2 text-sm font-bold text-white" style={{ background: LARANJA }}><span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={14} /> Ler cupom</span></button>
+        <button onClick={() => setScan(true)} className="rounded-cartao px-3 py-2 text-sm font-bold text-white" style={{ background: LARANJA }}><span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={14} /> Ler cupom</span></button>
       </header>
 
-      {msg && <div className="mx-4 mt-3 rounded-xl bg-zinc-800 px-3 py-2 text-sm">{msg}</div>}
+      {msg && <div className="mx-4 mt-3 rounded-cartao bg-superficie-suave px-3 py-2 text-sm">{msg}</div>}
 
       {aba === "entregas" && (
         <main className="space-y-4 p-4">
@@ -204,15 +206,15 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
               <div className="space-y-2">
                 {aCaminho.map((p) => (
                   <Card key={p.id} p={p} acoes={
-                    <button onClick={() => setEntregando(p)} disabled={proc} className="mt-2 w-full rounded-xl bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50">✓ Entreguei</button>
+                    <button onClick={() => setEntregando(p)} disabled={proc} className="mt-2 w-full rounded-cartao bg-emerald-600 py-3 text-base font-bold text-white disabled:opacity-50">✓ Entreguei</button>
                   } />
                 ))}
               </div>
             </section>
           )}
           <section>
-            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-zinc-400"><span className="inline-flex items-center gap-1.5"><Icone nome="pacote" tamanho={15} /> Comigo, esperando sair ({esperando.length})</span></h2>
-            {esperando.length === 0 && <p className="text-sm text-zinc-500">Nada esperando. Leia o QR do cupom ou pegue uma pronta abaixo.</p>}
+            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-texto-suave"><span className="inline-flex items-center gap-1.5"><Icone nome="pacote" tamanho={15} /> Comigo, esperando sair ({esperando.length})</span></h2>
+            {esperando.length === 0 && <p className="text-sm text-texto-fraco">Nada esperando. Leia o QR do cupom ou pegue uma pronta abaixo.</p>}
             <div className="space-y-2">
               {esperando.map((p) => (
                 <label key={p.id} className="block">
@@ -226,7 +228,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
               ))}
             </div>
             {esperando.length > 0 && (
-              <button onClick={sair} disabled={proc || sel.size === 0} className="mt-3 w-full rounded-xl py-3 text-base font-bold text-white disabled:opacity-40" style={{ background: LARANJA }}>
+              <button onClick={sair} disabled={proc || sel.size === 0} className="mt-3 w-full rounded-cartao py-3 text-base font-bold text-white disabled:opacity-40" style={{ background: LARANJA }}>
                 <Icone nome="entrega" tamanho={16} className="mr-1.5" /> Saí com {sel.size || ""} entrega{sel.size === 1 ? "" : "s"}
               </button>
             )}
@@ -237,7 +239,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
               <div className="space-y-2">
                 {dados.disponiveis.map((p) => (
                   <Card key={p.id} p={p} acoes={
-                    <button onClick={() => pegar(p.id)} disabled={proc} className="mt-2 w-full rounded-xl border border-emerald-500 py-2.5 font-bold text-emerald-300 disabled:opacity-50"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pessoa" tamanho={15} /> Peguei essa</span></button>
+                    <button onClick={() => pegar(p.id)} disabled={proc} className="mt-2 w-full rounded-cartao border border-emerald-500 py-2.5 font-bold text-emerald-300 disabled:opacity-50"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pessoa" tamanho={15} /> Peguei essa</span></button>
                   } />
                 ))}
               </div>
@@ -245,10 +247,10 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
           )}
           {dados.entreguesHoje.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-zinc-500"><span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={15} /> Entregues hoje ({dados.entreguesHoje.length})</span></h2>
-              <div className="space-y-1 text-sm text-zinc-400">
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-texto-fraco"><span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={15} /> Entregues hoje ({dados.entreguesHoje.length})</span></h2>
+              <div className="space-y-1 text-sm text-texto-suave">
                 {dados.entreguesHoje.map((p) => (
-                  <div key={p.id} className="flex justify-between rounded-lg bg-zinc-900 px-3 py-2">
+                  <div key={p.id} className="flex justify-between rounded-controle bg-painel-cartao px-3 py-2">
                     <span>#{p.numero} {p.nome} · {hhmm(p.entregue_em)}</span>
                     <span>{p.recebido_forma === "Já pago" ? "já pago" : `${p.recebido_forma ?? ""} ${p.recebido_valor != null ? brl(p.recebido_valor) : ""}`}{p.taxa_motoboy != null ? ` · +${brl(p.taxa_motoboy)}` : ""}</span>
                   </div>
@@ -263,28 +265,28 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
         <main className="space-y-4 p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Meus ganhos</h2>
-            <input type="month" value={mes} onChange={(e) => setMes(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm" />
+            <input type="month" value={mes} onChange={(e) => setMes(e.target.value)} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm" />
           </div>
-          {!ganhos ? <p className="text-sm text-zinc-500">Carregando…</p> : (
+          {!ganhos ? <p className="text-sm text-texto-fraco">Carregando…</p> : (
             <>
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Entregas</div><div className="text-2xl font-bold">{ganhos.entregas}</div></div>
-                <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Ganhos (teles + fixos)</div><div className="text-2xl font-bold text-emerald-400">{brl(ganhos.teles + ganhos.fixos)}</div></div>
+                <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Entregas</div><div className="text-2xl font-bold">{ganhos.entregas}</div></div>
+                <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Ganhos (teles + fixos)</div><div className="text-2xl font-bold text-emerald-400">{brl(ganhos.teles + ganhos.fixos)}</div></div>
               </div>
-              <div className="text-xs text-zinc-500">Teles {brl(ganhos.teles)} · fixos já acertados {brl(ganhos.fixos)}</div>
+              <div className="text-xs text-texto-fraco">Teles {brl(ganhos.teles)} · fixos já acertados {brl(ganhos.fixos)}</div>
               <div>
-                <div className="mb-1 text-xs font-bold uppercase tracking-wide text-zinc-500">Recebido na porta</div>
+                <div className="mb-1 text-xs font-bold uppercase tracking-wide text-texto-fraco">Recebido na porta</div>
                 <div className="grid grid-cols-3 gap-2">
                   {(["Cartão", "Pix", "Dinheiro"] as const).map((f) => (
-                    <div key={f} className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">{f}</div><div className="text-lg font-bold">{brl(ganhos.porForma[f] ?? 0)}</div></div>
+                    <div key={f} className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">{f}</div><div className="text-lg font-bold">{brl(ganhos.porForma[f] ?? 0)}</div></div>
                   ))}
                 </div>
               </div>
               <div>
-                <div className="mb-1 text-xs font-bold uppercase tracking-wide text-zinc-500">Pagamentos efetuados</div>
-                {ganhos.acertos.length === 0 && <p className="text-sm text-zinc-500">Nenhum acerto neste mês.</p>}
+                <div className="mb-1 text-xs font-bold uppercase tracking-wide text-texto-fraco">Pagamentos efetuados</div>
+                {ganhos.acertos.length === 0 && <p className="text-sm text-texto-fraco">Nenhum acerto neste mês.</p>}
                 {ganhos.acertos.map((a) => (
-                  <div key={a.data} className="flex justify-between rounded-lg bg-zinc-900 px-3 py-2 text-sm">
+                  <div key={a.data} className="flex justify-between rounded-controle bg-painel-cartao px-3 py-2 text-sm">
                     <span>{a.data.split("-").reverse().join("/")} · {a.teles_qtd} tele{a.teles_qtd === 1 ? "" : "s"}</span>
                     <span className="font-bold text-emerald-400">{brl(a.total)}</span>
                   </div>
@@ -298,17 +300,17 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
       {aba === "historico" && (
         <main className="space-y-3 p-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => setDia(addDias(dia, -1))} className="rounded-lg bg-zinc-900 px-3 py-1.5">‹</button>
+            <button onClick={() => setDia(addDias(dia, -1))} className="rounded-controle bg-painel-cartao px-3 py-1.5">‹</button>
             <span className="font-bold">{new Date(dia + "T12:00:00-03:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "America/Sao_Paulo" })}</span>
-            <button onClick={() => setDia(addDias(dia, 1))} disabled={dia >= hoje} className="rounded-lg bg-zinc-900 px-3 py-1.5 disabled:opacity-30">›</button>
+            <button onClick={() => setDia(addDias(dia, 1))} disabled={dia >= hoje} className="rounded-controle bg-painel-cartao px-3 py-1.5 disabled:opacity-30">›</button>
           </div>
-          {!hist ? <p className="text-sm text-zinc-500">Carregando…</p> : hist.length === 0 ? <p className="py-10 text-center text-zinc-500">Nenhuma entrega nesse dia.</p> : (
+          {!hist ? <p className="text-sm text-texto-fraco">Carregando…</p> : hist.length === 0 ? <p className="py-10 text-center text-texto-fraco">Nenhuma entrega nesse dia.</p> : (
             <div className="space-y-2">
               {hist.map((p) => (
-                <div key={p.id} className="rounded-xl bg-zinc-900 px-3 py-2 text-sm">
+                <div key={p.id} className="rounded-cartao bg-painel-cartao px-3 py-2 text-sm">
                   <div className="flex justify-between font-semibold"><span>#{p.numero} {p.nome}</span><span>{p.status === "entregue" ? `✓ ${hhmm(p.entregue_em)}` : p.status}</span></div>
-                  <div className="text-zinc-400">{p.endereco}</div>
-                  <div className="text-zinc-500">{p.recebido_forma ? `${p.recebido_forma}${p.recebido_valor ? ` ${brl(p.recebido_valor)}` : ""}` : ""}{p.taxa_motoboy != null ? ` · tele ${brl(p.taxa_motoboy)}` : ""}</div>
+                  <div className="text-texto-suave">{p.endereco}</div>
+                  <div className="text-texto-fraco">{p.recebido_forma ? `${p.recebido_forma}${p.recebido_valor ? ` ${brl(p.recebido_valor)}` : ""}` : ""}{p.taxa_motoboy != null ? ` · tele ${brl(p.taxa_motoboy)}` : ""}</div>
                 </div>
               ))}
             </div>
@@ -318,32 +320,32 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
 
       {aba === "gps" && (
         <main className="space-y-4 p-4">
-          <div className="rounded-2xl bg-zinc-900 p-4">
+          <div className="rounded-cartao bg-painel-cartao p-4">
             <div className="mb-1 flex items-center gap-2 text-lg font-bold"><Icone nome="local" tamanho={18} /> Localização</div>
-            <p className="mb-3 text-sm text-zinc-400">
+            <p className="mb-3 text-sm text-texto-suave">
               {nativo
                 ? <>Com o rastreamento ligado o restaurante vê onde você está no mapa — <b>mesmo com a tela apagada</b> (fica uma notificação fixa enquanto estiver ativo). Na primeira vez, escolha <b>“Permitir o tempo todo”</b>.</>
                 : <>Com o rastreamento ligado o restaurante vê onde você está no mapa. Pelo navegador só funciona com este app <b>aberto na tela</b> (a tela fica acesa sozinha). Instale o app Brasa Entregas pra rastrear em segundo plano.</>}
             </p>
-            <button onClick={alternarGps} className={`w-full rounded-xl py-3 text-base font-bold ${gpsOn ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-200"}`}>
+            <button onClick={alternarGps} className={`w-full rounded-cartao py-3 text-base font-bold ${gpsOn ? "bg-emerald-600 text-white" : "bg-superficie-suave text-texto"}`}>
               {gpsOn ? <span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={14} /> Rastreamento ATIVO — tocar pra desligar</span> : "Ligar rastreamento"}
             </button>
             {gpsErro && <p className="mt-2 text-sm text-rose-400">{gpsErro}</p>}
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Modo</div><div className="font-bold">{nativo ? "App (2º plano)" : "Navegador"} · {GPS_INTERVALO_MS / 1000} s</div></div>
-            <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Precisão</div><div className="font-bold">{gps?.precisao != null ? `${Math.round(gps.precisao)} m` : "—"}</div></div>
-            <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Latitude</div><div className="font-bold">{gps ? gps.lat.toFixed(5) : "—"}</div></div>
-            <div className="rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Longitude</div><div className="font-bold">{gps ? gps.lng.toFixed(5) : "—"}</div></div>
-            <div className="col-span-2 rounded-2xl bg-zinc-900 p-3"><div className="text-xs text-zinc-500">Última atualização</div><div className="font-bold">{gps ? new Date(gps.em).toLocaleTimeString("pt-BR") : "—"}</div></div>
+            <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Modo</div><div className="font-bold">{nativo ? "App (2º plano)" : "Navegador"} · {GPS_INTERVALO_MS / 1000} s</div></div>
+            <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Precisão</div><div className="font-bold">{gps?.precisao != null ? `${Math.round(gps.precisao)} m` : "—"}</div></div>
+            <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Latitude</div><div className="font-bold">{gps ? gps.lat.toFixed(5) : "—"}</div></div>
+            <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Longitude</div><div className="font-bold">{gps ? gps.lng.toFixed(5) : "—"}</div></div>
+            <div className="col-span-2 rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Última atualização</div><div className="font-bold">{gps ? new Date(gps.em).toLocaleTimeString("pt-BR") : "—"}</div></div>
           </div>
         </main>
       )}
 
       {/* barra de abas */}
-      <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-zinc-800 bg-zinc-950 text-xs">
+      <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-borda bg-painel-fundo text-xs">
         {([["entregas", "entrega", "Entregas"], ["ganhos", "dinheiro", "Ganhos"], ["historico", "relogio", "Histórico"], ["gps", "local", "GPS"]] as [Aba, NomeIcone, string][]).map(([k, i, l]) => (
-          <button key={k} onClick={() => setAba(k)} className={`flex flex-col items-center py-2.5 ${aba === k ? "text-white" : "text-zinc-500"}`} style={aba === k ? { color: LARANJA } : {}}>
+          <button key={k} onClick={() => setAba(k)} className={`flex flex-col items-center py-2.5 ${aba === k ? "text-white" : "text-texto-fraco"}`} style={aba === k ? { color: LARANJA } : {}}>
             <Icone nome={i} tamanho={21} />
             <span className="mt-0.5">{l}</span>
           </button>
@@ -363,22 +365,22 @@ function ModalEntregue({ p, proc, onFechar, onOk }: { p: EntregaBoy; proc: boole
   const [valor, setValor] = useState(String(p.total.toFixed(2)).replace(".", ","));
   return (
     <div className="fixed inset-0 z-20 flex items-end bg-black/70" onClick={onFechar}>
-      <div className="w-full rounded-t-3xl bg-zinc-900 p-5" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full rounded-t-3xl bg-painel-cartao p-5" onClick={(e) => e.stopPropagation()}>
         <div className="mb-1 text-lg font-bold">Entreguei #{p.numero} · {p.nome}</div>
-        <div className="mb-3 text-sm text-zinc-400">Total {brl(p.total)}{p.pago ? " · já estava pago" : ""}</div>
+        <div className="mb-3 text-sm text-texto-suave">Total {brl(p.total)}{p.pago ? " · já estava pago" : ""}</div>
         <div className="mb-3 grid grid-cols-2 gap-2">
           {["Dinheiro", "Cartão", "Pix", "Já pago"].map((f) => (
-            <button key={f} onClick={() => setForma(f)} className={`rounded-xl border py-3 font-semibold ${forma === f ? "border-emerald-500 bg-emerald-600 text-white" : "border-zinc-700 text-zinc-300"}`}>{f}</button>
+            <button key={f} onClick={() => setForma(f)} className={`rounded-cartao border py-3 font-semibold ${forma === f ? "border-emerald-500 bg-emerald-600 text-white" : "border-borda-forte text-texto-suave"}`}>{f}</button>
           ))}
         </div>
         {forma !== "Já pago" && (
           <div className="mb-3">
-            <label className="text-xs text-zinc-500">Valor recebido (R$)</label>
-            <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-xl font-bold" />
+            <label className="text-xs text-texto-fraco">Valor recebido (R$)</label>
+            <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" className="w-full rounded-cartao border border-borda-forte bg-painel-fundo px-3 py-3 text-xl font-bold" />
           </div>
         )}
-        <button onClick={() => onOk(forma, Number(valor.replace(",", ".")) || 0)} disabled={proc} className="w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-50">✓ Confirmar entrega</button>
-        <button onClick={onFechar} className="mt-2 w-full py-2 text-sm text-zinc-500">cancelar</button>
+        <button onClick={() => onOk(forma, Number(valor.replace(",", ".")) || 0)} disabled={proc} className="w-full rounded-cartao bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-50">✓ Confirmar entrega</button>
+        <button onClick={onFechar} className="mt-2 w-full py-2 text-sm text-texto-fraco">cancelar</button>
       </div>
     </div>
   );
@@ -429,16 +431,16 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
   }, []);
   return (
     <div className="fixed inset-0 z-20 flex flex-col bg-black">
-      <div className="flex items-center justify-between p-3 text-white"><span className="font-bold">{lendo ? "Aponte pro QR do cupom" : "Abrindo a câmera…"}</span><button onClick={onFechar} className="rounded-lg bg-zinc-800 px-3 py-1.5">Fechar</button></div>
+      <div className="flex items-center justify-between p-3 text-white"><span className="font-bold">{lendo ? "Aponte pro QR do cupom" : "Abrindo a câmera…"}</span><button onClick={onFechar} className="rounded-controle bg-superficie-suave px-3 py-1.5">Fechar</button></div>
       <div className="relative flex-1 overflow-hidden">
         <video ref={videoRef} className="h-full w-full object-cover" muted playsInline autoPlay />
         <canvas ref={canvasRef} className="hidden" />
-        {lendo && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="h-56 w-56 rounded-2xl border-4 border-white/70" /></div>}
+        {lendo && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="h-56 w-56 rounded-cartao border-4 border-white/70" /></div>}
       </div>
       {erro && <p className="px-4 py-2 text-sm text-rose-400">{erro}</p>}
       <div className="flex gap-2 p-3">
-        <input value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-lg text-white" />
-        <button onClick={() => onLido(refManual)} className="rounded-xl px-4 font-bold text-white" style={{ background: LARANJA }}>Pegar</button>
+        <input value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="flex-1 rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-lg text-white" />
+        <button onClick={() => onLido(refManual)} className="rounded-cartao px-4 font-bold text-white" style={{ background: LARANJA }}>Pegar</button>
       </div>
     </div>
   );

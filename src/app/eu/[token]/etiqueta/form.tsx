@@ -10,7 +10,7 @@ import {
 } from "@/components/etiqueta-ui";
 import type { EtiquetaConfig, EtiquetaDados, TipoEtiqueta } from "@/lib/etiqueta-tipos";
 
-const input = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+const input = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2.5 text-sm text-texto outline-none   ";
 
 export function EtiquetaColabForm({
   token,
@@ -124,24 +124,24 @@ export function EtiquetaColabForm({
   return (
     <div className="space-y-3">
       <div>
-        <label className="mb-1 block text-xs text-zinc-500">Tipo</label>
+        <label className="mb-1 block text-xs text-texto-suave">Tipo</label>
         <TipoSelector value={tipo} onChange={mudarTipo} />
       </div>
 
       {livre ? (
         <>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Título</label>
+            <label className="mb-1 block text-xs text-texto-suave">Título</label>
             <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Reservado — evento sábado" className={input} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Texto (opcional)</label>
+            <label className="mb-1 block text-xs text-texto-suave">Texto (opcional)</label>
             <textarea rows={3} value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 200))} placeholder="Até 200 caracteres" className={input} />
           </div>
         </>
       ) : (
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">Item</label>
+          <label className="mb-1 block text-xs text-texto-suave">Item</label>
           <SeletorItem
             itens={itens}
             categorias={categorias}
@@ -165,14 +165,14 @@ export function EtiquetaColabForm({
           {!livre && (
             <>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Conservação</label>
+                <label className="mb-1 block text-xs text-texto-suave">Conservação</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[["resfriado", "Resfriado"], ["congelado", "Congelado"], ["ambiente", "Ambiente"]].map(([v, lab]) => (
                     <button
                       key={v}
                       type="button"
                       onClick={() => { setConservacao(v); recalc(itemId, v); }}
-                      className={`rounded-xl border py-2.5 text-sm font-semibold ${conservacao === v ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+                      className={`rounded-cartao border py-2.5 text-sm font-semibold ${conservacao === v ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte bg-painel-cartao text-texto-suave   "}`}
                     >
                       {lab}
                     </button>
@@ -181,17 +181,17 @@ export function EtiquetaColabForm({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">Quantidade *</label>
+                  <label className="mb-1 block text-xs text-texto-suave">Quantidade *</label>
                   <input
                     inputMode="decimal"
                     value={quantidade}
                     onChange={(e) => setQuantidade(e.target.value)}
                     placeholder="ex.: 1,5"
-                    className={`${input} ${quantidade && !qtdValida(quantidade) ? "border-red-400" : ""}`}
+                    className={`${input}  ${quantidade && !qtdValida(quantidade) ? "border-red-400" : ""}`}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">Unidade</label>
+                  <label className="mb-1 block text-xs text-texto-suave">Unidade</label>
                   <select value={unidade} onChange={(e) => setUnidade(e.target.value)} className={input}>
                     <option value="un">und</option>
                     <option value="kg">kg</option>
@@ -202,19 +202,19 @@ export function EtiquetaColabForm({
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Observação (opcional)</label>
+                <label className="mb-1 block text-xs text-texto-suave">Observação (opcional)</label>
                 <input
                   value={texto}
                   onChange={(e) => setTexto(e.target.value.slice(0, 80))}
                   placeholder="ex.: temperado com alho e sal"
                   className={input}
                 />
-                <p className="mt-1 text-[11px] text-zinc-400">Sai impresso na etiqueta, logo acima da validade.</p>
+                <p className="mt-1 text-[11px] text-texto-fraco">Sai impresso na etiqueta, logo acima da validade.</p>
               </div>
             </>
           )}
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">{tipo === "descongelamento" ? "Usar até *" : livre ? "Válido até (opcional)" : "Validade *"}</label>
+            <label className="mb-1 block text-xs text-texto-suave">{tipo === "descongelamento" ? "Usar até *" : livre ? "Válido até (opcional)" : "Validade *"}</label>
             <ValidadePresets value={validade} onChange={setValidade} />
             <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={`${input} mt-2`} />
             {!livre && item && !diasPadrao(item, conservacao, tipo) && !validade && (
@@ -223,8 +223,8 @@ export function EtiquetaColabForm({
           </div>
           {!livre && <CamposExtras value={extras} onChange={setExtras} />}
 
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-100 p-3 dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Assim vai sair</p>
+          <div className="rounded-cartao border border-borda bg-superficie-suave p-3">
+            <p className="mb-2 text-center text-[11px] font-semibold text-texto-fraco">Assim vai sair</p>
             <PreviewEtiqueta d={preview} config={config} />
             <div className="mt-3 flex justify-center">
               <Copias value={copias} onChange={setCopias} />
@@ -234,18 +234,18 @@ export function EtiquetaColabForm({
           <button
             onClick={gerar}
             disabled={proc || !pronto}
-            className="w-full rounded-xl bg-orange-500 py-3 text-base font-bold text-white disabled:opacity-50"
+            className="w-full rounded-cartao bg-orange-500 py-3 text-base font-bold text-white disabled:opacity-50"
           >
             {proc ? "Gerando..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="imprimir" tamanho={16} /> {copias > 1 ? `Imprimir ${copias} etiquetas` : "Imprimir etiqueta"}</span>}
           </button>
           {!pronto && !livre && (
-            <p className="text-center text-xs text-zinc-500">Falta: {[!qtdValida(quantidade) && "quantidade", !validade && "validade"].filter(Boolean).join(" e ")}.</p>
+            <p className="text-center text-xs text-texto-suave">Falta: {[!qtdValida(quantidade) && "quantidade", !validade && "validade"].filter(Boolean).join(" e ")}.</p>
           )}
         </>
       )}
 
       {toast && (
-        <div className="fixed inset-x-4 bottom-6 z-50 rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg">
+        <div className="fixed inset-x-4 bottom-6 z-50 rounded-cartao bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white">
           {toast}
         </div>
       )}

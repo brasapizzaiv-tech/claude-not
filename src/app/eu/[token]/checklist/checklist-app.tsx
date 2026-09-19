@@ -116,15 +116,15 @@ export function ChecklistApp({
 
   return (
     <div>
-      <h1 className="mt-2 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="checklist" tamanho={18} className="mr-2" /> Checklists</h1>
-      <p className="mb-3 text-sm text-zinc-500">{dia === new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) ? "Hoje" : dia.split("-").reverse().join("/")}</p>
+      <h1 className="mt-2 text-xl font-bold text-texto"><Icone nome="checklist" tamanho={18} className="mr-2" /> Checklists</h1>
+      <p className="mb-3 text-sm text-texto-suave">{dia === new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) ? "Hoje" : dia.split("-").reverse().join("/")}</p>
 
       {!online && <Aviso tipo="off">Sem internet. O que você marcar fica guardado e sobe sozinho quando voltar.</Aviso>}
       {online && pendentes > 0 && <Aviso tipo="fila">{pendentes} marcação(ões) esperando pra subir…</Aviso>}
       {msg && <Aviso tipo="msg">{msg}</Aviso>}
 
       {listas.length === 0 && (
-        <p className="mt-8 rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-zinc-400 dark:border-zinc-700">
+        <p className="mt-8 rounded-cartao bg-painel-cartao p-8 text-center text-texto-fraco">
           Nenhuma lista pra hoje no seu setor.
         </p>
       )}
@@ -134,7 +134,7 @@ export function ChecklistApp({
         if (doMomento.length === 0) return null;
         return (
           <div key={m} className="mt-4">
-            <p className={`mb-2 text-xs font-bold uppercase tracking-wide ${m === momentoAgora ? "text-orange-600" : "text-zinc-400"}`}>
+            <p className={`mb-2 text-xs font-bold  ${m === momentoAgora ? "text-orange-600" : "text-texto-fraco"}`}>
               {ROTULO_MOMENTO[m]}{m === momentoAgora ? " · agora" : ""}
             </p>
             <div className="space-y-2">
@@ -142,10 +142,10 @@ export function ChecklistApp({
                 <button
                   key={l.modelo.id}
                   onClick={() => setAberta(l.modelo.id)}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white p-4 text-left dark:border-zinc-800 dark:bg-zinc-900"
+                  className="flex w-full items-center justify-between gap-3 rounded-cartao border border-borda bg-painel-cartao p-4 text-left"
                 >
                   <span className="min-w-0">
-                    <span className="block text-base font-bold text-zinc-900 dark:text-zinc-50">{l.modelo.nome}</span>
+                    <span className="block text-base font-bold text-texto">{l.modelo.nome}</span>
                     <span className="block text-xs" style={{ color: l.cor ?? undefined }}>{l.setor}</span>
                     {l.execucao && !l.situacao.concluida && (
                       <span className="mt-0.5 block text-xs text-amber-600">
@@ -159,10 +159,10 @@ export function ChecklistApp({
                     )}
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className={`block text-lg font-bold ${l.situacao.concluida ? "text-emerald-600" : l.situacao.feitos > 0 ? "text-amber-600" : "text-zinc-400"}`}>
+                    <span className={`block text-lg font-bold ${l.situacao.concluida ? "text-emerald-600" : l.situacao.feitos > 0 ? "text-amber-600" : "text-texto-fraco"}`}>
                       {l.situacao.feitos}/{l.situacao.total}
                     </span>
-                    <span className="text-xs text-zinc-400">{l.situacao.concluida ? "concluída" : l.situacao.iniciada ? "em andamento" : "não iniciada"}</span>
+                    <span className="text-xs text-texto-fraco">{l.situacao.concluida ? "concluída" : l.situacao.iniciada ? "em andamento" : "não iniciada"}</span>
                   </span>
                 </button>
               ))}
@@ -179,8 +179,8 @@ function Aviso({ tipo, children }: { tipo: "off" | "fila" | "msg"; children: Rea
     ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
     : tipo === "fila"
       ? "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200"
-      : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200";
-  return <p className={`mb-3 rounded-xl px-3 py-2 text-sm font-medium ${cls}`}>{children}</p>;
+      : "bg-superficie-suave text-texto-suave  ";
+  return <p className={`mb-3 rounded-cartao px-3 py-2 text-sm font-medium ${cls}`}>{children}</p>;
 }
 
 // ---------- execução de uma lista ----------
@@ -271,8 +271,8 @@ function ExecutarLista({
 
   return (
     <div>
-      <button onClick={onVoltar} className="mt-2 text-sm text-zinc-500">← Todas as listas</button>
-      <h1 className="mt-1 text-xl font-bold text-zinc-900 dark:text-zinc-50">{lista.modelo.nome}</h1>
+      <button onClick={onVoltar} className="mt-2 text-sm text-texto-suave">← Todas as listas</button>
+      <h1 className="mt-1 text-xl font-bold text-texto">{lista.modelo.nome}</h1>
       <p className="mb-3 text-sm" style={{ color: lista.cor ?? undefined }}>
         {lista.setor} · {ROTULO_MOMENTO[lista.modelo.momento]}
       </p>
@@ -285,7 +285,7 @@ function ExecutarLista({
         {porSecao(lista.itens).map((grupo, gi) => (
           <div key={gi} className="space-y-2">
             {grupo.secao && (
-              <p className="mt-3 text-xs font-bold uppercase tracking-wider text-orange-600">{grupo.secao}</p>
+              <p className="mt-3 text-xs font-bold text-orange-600">{grupo.secao}</p>
             )}
             {grupo.itens.map((i) => {
           const n = lista.itens.indexOf(i);
@@ -295,25 +295,25 @@ function ExecutarLista({
           return (
             <div
               key={i.id}
-              className={`rounded-2xl border p-3 ${ok ? "border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30" : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"}`}
+              className={`rounded-cartao border p-3 ${ok ? "border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30" : "border-borda bg-painel-cartao  "}`}
             >
               <div className="flex items-start gap-3">
                 <button
                   type="button"
                   disabled={travado || i.tipo !== "feito"}
                   onClick={() => gravar(i.id, { feito: !r.feito })}
-                  className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 text-2xl ${ok ? "border-emerald-500 bg-emerald-500 text-white" : "border-zinc-300 text-transparent dark:border-zinc-600"} ${i.tipo !== "feito" ? "opacity-60" : ""}`}
+                  className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-cartao border-2 text-2xl ${ok ? "border-emerald-500 bg-emerald-500 text-white" : "border-borda-forte text-transparent dark:border-zinc-600"}  ${i.tipo !== "feito" ? "opacity-60" : ""}`}
                   aria-label={i.tipo === "feito" ? "marcar feito" : "preencha abaixo"}
                 >
                   ✓
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
-                    <span className="mr-1.5 text-sm text-zinc-400">{n + 1}.</span>
+                  <p className="text-base font-semibold leading-snug text-texto">
+                    <span className="mr-1.5 text-sm text-texto-fraco">{n + 1}.</span>
                     {i.texto}
                     {i.obrigatorio && <span className="ml-1 text-red-600">*</span>}
                   </p>
-                  {i.instrucao && <p className="text-sm text-zinc-500">{i.instrucao}</p>}
+                  {i.instrucao && <p className="text-sm text-texto-suave">{i.instrucao}</p>}
 
                   {(i.tipo === "numero" || i.tipo === "contagem") && (
                     <input
@@ -325,7 +325,7 @@ function ExecutarLista({
                         gravar(i.id, { valor: v === "" ? null : Number(v.replace(/\./g, "").replace(",", ".")) || 0 });
                       }}
                       placeholder={i.tipo === "contagem" ? "quantidade" : "valor"}
-                      className="mt-2 h-12 w-full rounded-xl border border-zinc-300 bg-white px-3 text-lg text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                      className="mt-2 h-12 w-full rounded-cartao border border-borda-forte bg-white px-3 text-lg text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                     />
                   )}
                   {i.tipo === "texto" && (
@@ -335,7 +335,7 @@ function ExecutarLista({
                       defaultValue={r.texto ?? ""}
                       onBlur={(e) => gravar(i.id, { texto: e.target.value.trim() || null })}
                       placeholder="Escreva aqui"
-                      className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                      className="mt-2 w-full rounded-cartao border border-borda-forte bg-white px-3 py-2 text-base text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
                     />
                   )}
 
@@ -343,9 +343,9 @@ function ExecutarLista({
                     <div className="mt-2 flex items-center gap-2">
                       {r.foto_url && (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={r.foto_url} alt="foto do item" className="h-16 w-16 rounded-lg object-cover" />
+                        <img src={r.foto_url} alt="foto do item" className="h-16 w-16 rounded-controle object-cover" />
                       )}
-                      <label className={`inline-flex h-12 items-center rounded-xl px-4 text-base font-semibold ${travado ? "bg-zinc-200 text-zinc-400 dark:bg-zinc-800" : "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"}`}>
+                      <label className={`inline-flex h-12 items-center rounded-cartao px-4 text-base font-semibold ${travado ? "bg-zinc-200 text-texto-fraco dark:bg-zinc-800" : "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"}`}>
                         {subindo === i.id ? "Enviando…" : r.foto_url ? "Trocar foto" : <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={13} /> Tirar foto</span>}
                         <input
                           type="file"
@@ -356,7 +356,7 @@ function ExecutarLista({
                           className="hidden"
                         />
                       </label>
-                      {!r.foto_url && <span className="text-xs text-zinc-400">foto obrigatória</span>}
+                      {!r.foto_url && <span className="text-xs text-texto-fraco">foto obrigatória</span>}
                     </div>
                   )}
                 </div>
@@ -373,7 +373,7 @@ function ExecutarLista({
           <button
             onClick={concluir}
             disabled={proc || faltamObrig.length > 0 || !execucaoId}
-            className="h-14 w-full rounded-2xl bg-green-600 text-lg font-bold text-white shadow-lg disabled:opacity-40"
+            className="h-14 w-full rounded-cartao bg-texto text-lg font-bold text-fundo disabled:opacity-40"
           >
             {proc ? "Concluindo…" : faltamObrig.length > 0 ? `Faltam ${faltamObrig.length} obrigatório(s)` : `Concluir (${itensOk.length}/${lista.itens.length})`}
           </button>

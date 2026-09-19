@@ -22,7 +22,7 @@ export default async function ChecklistColabPage({
   if (!colab) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
-        <p className="text-zinc-500">Esta tela é só pra quem tem um setor de checklist liberado — ou entre com o PIN de novo.</p>
+        <p className="text-texto-suave">Esta tela é só pra quem tem um setor de checklist liberado — ou entre com o PIN de novo.</p>
         <Link href={`/eu/${token}`} className="mt-3 inline-block text-sm text-orange-600">← Voltar</Link>
       </div>
     );
@@ -58,10 +58,10 @@ export default async function ChecklistColabPage({
     .sort((a, b) => core.MOMENTOS.indexOf(a.modelo.momento) - core.MOMENTOS.indexOf(b.modelo.momento) || a.setor.localeCompare(b.setor));
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-4 pb-24 dark:bg-zinc-950">
+    <div className="mx-auto min-h-screen max-w-md bg-superficie-suave p-4 pb-24">
       <div className="flex items-center justify-between">
-        <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
-        <span className="text-xs text-zinc-400">{colab.nome.split(" ")[0]}</span>
+        <Link href={`/eu/${token}`} className="text-sm text-texto-suave">← Voltar</Link>
+        <span className="text-xs text-texto-fraco">{colab.nome.split(" ")[0]}</span>
       </div>
       <ChecklistApp token={token} dia={dia} listas={listas} momentoAgora={core.momentoAgora()} />
     </div>

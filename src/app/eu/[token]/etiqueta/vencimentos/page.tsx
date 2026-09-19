@@ -27,7 +27,7 @@ export default async function VencimentosColabPage({
   if (!colab || !colab.ativo || !colab.faz_etiquetas) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
-        <p className="text-zinc-500">Você não tem acesso a etiquetas.</p>
+        <p className="text-texto-suave">Você não tem acesso a etiquetas.</p>
         <Link href={`/eu/${token}`} className="mt-3 inline-block text-sm text-orange-600">← Voltar</Link>
       </div>
     );
@@ -46,9 +46,9 @@ export default async function VencimentosColabPage({
   const base = `/eu/${token}/etiqueta/vencimentos`;
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-4 dark:bg-zinc-950">
-      <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
-      <h1 className="mt-2 mb-3 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="agenda" tamanho={18} className="mr-2" /> Painel de vencimentos</h1>
+    <div className="mx-auto min-h-screen max-w-md bg-superficie-suave p-4">
+      <Link href={`/eu/${token}`} className="text-sm text-texto-suave">← Voltar</Link>
+      <h1 className="mt-2 mb-3 text-xl font-bold text-texto"><Icone nome="agenda" tamanho={18} className="mr-2" /> Painel de vencimentos</h1>
       <PainelVencimentos contagem={contagem} base={base} ativo={faixa} />
       <ListaVencimentos token={token} lista={lista} hoje={hoje} />
     </div>

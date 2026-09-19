@@ -189,11 +189,11 @@ export function GarcomPedido({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-zinc-950 text-zinc-100">
+    <div className="fixed inset-0 z-40 flex flex-col bg-painel-fundo text-texto">
       {/* Topo */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-3">
+      <div className="flex items-center justify-between border-b border-borda px-3 py-3">
         <div className="flex items-center gap-2">
-          <Link href="/garcom" className="text-xl text-zinc-400">←</Link>
+          <Link href="/garcom" className="text-xl text-texto-suave">←</Link>
           <span className="text-lg font-bold">{mesa}</span>
         </div>
         <div className="flex items-center gap-4 text-sm font-medium text-blue-400">
@@ -204,13 +204,13 @@ export function GarcomPedido({
 
       {/* Busca (quando ativa) */}
       {buscaOn && (
-        <div className="border-b border-zinc-800 p-2">
+        <div className="border-b border-borda p-2">
           <input
             autoFocus
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar produto..."
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none"
+            className="w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm outline-none"
           />
         </div>
       )}
@@ -219,7 +219,7 @@ export function GarcomPedido({
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-2">
           {visiveis.length === 0 ? (
-            <p className="py-10 text-center text-sm text-zinc-500">Nenhum produto.</p>
+            <p className="py-10 text-center text-sm text-texto-fraco">Nenhum produto.</p>
           ) : (
             <div className="space-y-2">
               {visiveis.map((i) => {
@@ -229,14 +229,14 @@ export function GarcomPedido({
                   <div
                     key={i.id}
                     onClick={() => (q === 0 || temCompl) && add(i)}
-                    className={`flex items-center justify-between rounded-lg border p-3 ${q > 0 ? "border-blue-500 bg-blue-500/10" : "border-zinc-800 bg-zinc-900"}`}
+                    className={`flex items-center justify-between rounded-controle border p-3 ${q > 0 ? "border-blue-500 bg-blue-500/10" : "border-borda bg-painel-cartao"}`}
                   >
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{i.nome}{temCompl && <Icone nome="ajustes" tamanho={12} className="ml-1 text-zinc-400" />}</div>
+                      <div className="truncate font-medium">{i.nome}{temCompl && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-suave" />}</div>
                       <div className="text-sm text-emerald-400">{i.preco > 0 ? brl(i.preco) : "Preço variável"}</div>
                     </div>
                     {q > 0 && (
-                      <div className="flex items-center gap-3 rounded-lg border border-blue-500 px-2 py-1">
+                      <div className="flex items-center gap-3 rounded-controle border border-blue-500 px-2 py-1">
                         <button onClick={(e) => { e.stopPropagation(); tiraUm(i.id); }} className="text-lg">{q === 1 ? <Icone nome="lixeira" tamanho={16} titulo="Tirar" /> : "−"}</button>
                         <span className="w-5 text-center font-bold">{q}</span>
                         <button onClick={(e) => { e.stopPropagation(); add(i); }} className="text-lg text-blue-400">+</button>
@@ -250,11 +250,11 @@ export function GarcomPedido({
         </div>
 
         {/* Rail de categorias */}
-        <div className="w-28 shrink-0 overflow-y-auto border-l border-zinc-800 bg-zinc-900/50 p-1.5">
+        <div className="w-28 shrink-0 overflow-y-auto border-l border-borda bg-painel-cartao/50 p-1.5">
           {pizza.tamanhos.length > 0 && (
             <button
               onClick={() => setPzOpen(true)}
-              className="mb-1.5 w-full rounded-md bg-orange-500 px-2 py-3 text-xs font-bold text-white"
+              className="mb-1.5 w-full rounded-controle bg-orange-500 px-2 py-3 text-xs font-bold text-white"
             >
               <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Montar pizza
             </button>
@@ -264,7 +264,7 @@ export function GarcomPedido({
               key={c}
               onClick={() => setAba(c)}
               style={{ borderLeftColor: corDe(c) }}
-              className={`mb-1.5 w-full rounded-md border-l-4 px-2 py-3 text-xs font-medium ${aba === c ? "bg-zinc-700 text-white" : "bg-zinc-800/60 text-zinc-300"}`}
+              className={`mb-1.5 w-full rounded-controle border-l-4 px-2 py-3 text-xs font-medium ${aba === c ? "bg-zinc-700 text-white" : "bg-superficie-suave/60 text-texto-suave"}`}
             >
               {c}
             </button>
@@ -273,12 +273,12 @@ export function GarcomPedido({
       </div>
 
       {/* Rodapé */}
-      <div className="flex items-center gap-3 border-t border-zinc-800 p-3">
-        <button onClick={() => { setBuscaOn((v) => !v); if (buscaOn) setBusca(""); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-700"><Icone nome="buscar" tamanho={19} titulo="Buscar" /></button>
+      <div className="flex items-center gap-3 border-t border-borda p-3">
+        <button onClick={() => { setBuscaOn((v) => !v); if (buscaOn) setBusca(""); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-borda-forte"><Icone nome="buscar" tamanho={19} titulo="Buscar" /></button>
         <button
           onClick={() => setCartOpen(true)}
           disabled={cartCount === 0}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-base font-bold ${cartCount > 0 ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-500"}`}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-cartao py-3 text-base font-bold ${cartCount > 0 ? "bg-blue-600 text-white" : "bg-superficie-suave text-texto-fraco"}`}
         >
           <Icone nome="compras" tamanho={16} className="mr-1.5" /> Carrinho{cartCount > 0 ? ` (${cartCount})` : ""}
         </button>
@@ -286,23 +286,23 @@ export function GarcomPedido({
 
       {/* Carrinho */}
       {cartOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950">
-          <div className="flex items-center justify-between border-b border-zinc-800 p-3">
+        <div className="fixed inset-0 z-50 flex flex-col bg-painel-fundo">
+          <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Carrinho · {mesa}</span>
-            <button onClick={() => setCartOpen(false)} className="text-zinc-400">✕</button>
+            <button onClick={() => setCartOpen(false)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {cart.length === 0 ? (
-              <p className="py-10 text-center text-sm text-zinc-500">Carrinho vazio.</p>
+              <p className="py-10 text-center text-sm text-texto-fraco">Carrinho vazio.</p>
             ) : (
               <div className="space-y-2">
                 {cart.map((l) => (
-                  <div key={l.uid} className="flex items-start justify-between rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+                  <div key={l.uid} className="flex items-start justify-between rounded-controle border border-borda bg-painel-cartao p-3">
                     <div className="min-w-0 flex-1">
                       <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
                       <div className="mt-0.5 text-sm text-emerald-400">{brl(l.preco * l.qtd)}</div>
                     </div>
-                    <div className="ml-2 flex items-center gap-3 rounded-lg border border-zinc-700 px-2 py-1">
+                    <div className="ml-2 flex items-center gap-3 rounded-controle border border-borda-forte px-2 py-1">
                       <button onClick={() => setQtdLinha(l.uid, l.qtd - 1)} className="text-lg">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={16} titulo="Tirar" /> : "−"}</button>
                       <span className="w-5 text-center font-bold">{l.qtd}</span>
                       <button onClick={() => setQtdLinha(l.uid, l.qtd + 1)} className="text-lg text-blue-400">+</button>
@@ -312,22 +312,22 @@ export function GarcomPedido({
               </div>
             )}
           </div>
-          <div className="max-h-[60vh] shrink-0 overflow-y-auto border-t border-zinc-800 p-3">
+          <div className="max-h-[60vh] shrink-0 overflow-y-auto border-t border-borda p-3">
             {/* Escolher a comanda (lista rola quando a mesa tem muitas) */}
-            <p className="mb-1 text-xs text-zinc-400">Lançar na comanda:{comandas.length > 6 ? " (" + comandas.length + " abertas — role a lista)" : ""}</p>
-            <div className="mb-2 flex max-h-24 flex-wrap gap-2 overflow-y-auto rounded-lg">
+            <p className="mb-1 text-xs text-texto-suave">Lançar na comanda:{comandas.length > 6 ? " (" + comandas.length + " abertas — role a lista)" : ""}</p>
+            <div className="mb-2 flex max-h-24 flex-wrap gap-2 overflow-y-auto rounded-controle">
               {comandas.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setComandaSel(c.id)}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium ${comandaSel === c.id ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+                  className={`rounded-controle px-3 py-1.5 text-sm font-medium ${comandaSel === c.id ? "bg-blue-600 text-white" : "border border-borda-forte text-texto-suave"}`}
                 >
                   Comanda {c.numero}
                 </button>
               ))}
               <button
                 onClick={() => setComandaSel("nova")}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${comandaSel === "nova" ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+                className={`rounded-controle px-3 py-1.5 text-sm font-medium ${comandaSel === "nova" ? "bg-blue-600 text-white" : "border border-borda-forte text-texto-suave"}`}
               >
                 + Nova comanda
               </button>
@@ -337,16 +337,16 @@ export function GarcomPedido({
               onChange={(e) => setObs(e.target.value)}
               placeholder="Observações do pedido (opcional)"
               rows={2}
-              className="mb-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none"
+              className="mb-2 w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm outline-none"
             />
             <div className="mb-2 flex justify-between text-sm">
-              <span className="text-zinc-400">Total</span>
+              <span className="text-texto-suave">Total</span>
               <span className="font-bold">{brl(cartTotal)}</span>
             </div>
             <button
               onClick={lancar}
               disabled={proc || cart.length === 0}
-              className="w-full rounded-xl bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
+              className="w-full rounded-cartao bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
             >
               {proc ? "Lançando..." : "✓ Lançar pedido"}
             </button>
@@ -356,19 +356,19 @@ export function GarcomPedido({
 
       {/* Conta / histórico do que foi lançado */}
       {contaOpen && (
-        <div className="fixed inset-0 z-[65] flex flex-col bg-zinc-950">
-          <div className="flex items-center justify-between border-b border-zinc-800 p-3">
+        <div className="fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
+          <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Conta · {mesa}</span>
-            <button onClick={() => setContaOpen(false)} className="text-zinc-400">✕</button>
+            <button onClick={() => setContaOpen(false)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {comandas.length === 0 ? (
-              <p className="py-10 text-center text-sm text-zinc-500">Esta mesa não tem comanda aberta.</p>
+              <p className="py-10 text-center text-sm text-texto-fraco">Esta mesa não tem comanda aberta.</p>
             ) : (
               <div className="space-y-4">
                 {comandas.map((c) => (
-                  <div key={c.id} className="rounded-lg border border-zinc-800 bg-zinc-900">
-                    <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-2">
+                  <div key={c.id} className="rounded-controle border border-borda bg-painel-cartao">
+                    <div className="flex items-center justify-between border-b border-borda px-3 py-2">
                       <span className="font-bold">Comanda {c.numero}</span>
                       <span className="font-bold text-emerald-400">{brl(c.total)}</span>
                     </div>
@@ -377,24 +377,24 @@ export function GarcomPedido({
                     <button
                       onClick={() => avisarConta(c.id)}
                       disabled={avisando === c.id}
-                      className="flex min-h-11 w-full items-center justify-center gap-2 border-b border-zinc-800 text-sm font-semibold text-amber-300 disabled:opacity-60"
+                      className="flex min-h-11 w-full items-center justify-center gap-2 border-b border-borda text-sm font-semibold text-amber-300 disabled:opacity-60"
                     >
                       <Icone nome="cupom" tamanho={15} />
                       {avisadas.has(c.id) ? "Caixa avisado" : "Avisar o caixa que pediu a conta"}
                     </button>
-                    <div className="divide-y divide-zinc-800/60">
+                    <div className="divide-y divide-borda/60">
                       {c.buffet > 0 && (
                         <div className="flex justify-between px-3 py-1.5 text-sm">
-                          <span className="text-zinc-300">Buffet (balança)</span>
+                          <span className="text-texto-suave">Buffet (balança)</span>
                           <span>{brl(c.buffet)}</span>
                         </div>
                       )}
                       {c.itens.length === 0 && c.buffet === 0 ? (
-                        <p className="px-3 py-2 text-sm text-zinc-500">Nada lançado ainda.</p>
+                        <p className="px-3 py-2 text-sm text-texto-fraco">Nada lançado ainda.</p>
                       ) : (
                         c.itens.map((it, idx) => (
                           <div key={idx} className="flex justify-between px-3 py-1.5 text-sm">
-                            <span className="min-w-0 flex-1 truncate whitespace-pre-line text-zinc-200">
+                            <span className="min-w-0 flex-1 truncate whitespace-pre-line text-texto">
                               {it.qtd}× {it.descricao}
                             </span>
                             <span className="ml-2 shrink-0">{it.preco > 0 ? brl(it.qtd * it.preco) : "—"}</span>
@@ -407,8 +407,8 @@ export function GarcomPedido({
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between border-t border-zinc-800 p-3 text-lg">
-            <span className="font-medium text-zinc-300">Total da mesa</span>
+          <div className="flex items-center justify-between border-t border-borda p-3 text-lg">
+            <span className="font-medium text-texto-suave">Total da mesa</span>
             <span className="font-bold text-emerald-400">{brl(totalMesa)}</span>
           </div>
         </div>
@@ -416,25 +416,25 @@ export function GarcomPedido({
 
       {/* Trocar mesa: mover a comanda para outra mesa */}
       {trocaOpen && (
-        <div className="fixed inset-0 z-[65] flex flex-col bg-zinc-950">
-          <div className="flex items-center justify-between border-b border-zinc-800 p-3">
+        <div className="fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
+          <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Trocar mesa</span>
-            <button onClick={() => setTrocaOpen(false)} className="text-zinc-400">✕</button>
+            <button onClick={() => setTrocaOpen(false)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {comandas.length === 0 ? (
-              <p className="py-10 text-center text-sm text-zinc-500">Esta mesa não tem comanda para mover.</p>
+              <p className="py-10 text-center text-sm text-texto-fraco">Esta mesa não tem comanda para mover.</p>
             ) : (
               <>
                 {comandas.length > 1 && (
                   <>
-                    <p className="mb-1 text-xs text-zinc-400">Qual comanda mover?</p>
+                    <p className="mb-1 text-xs text-texto-suave">Qual comanda mover?</p>
                     <div className="mb-4 flex flex-wrap gap-2">
                       {comandas.map((c) => (
                         <button
                           key={c.id}
                           onClick={() => setTrocaComanda(c.id)}
-                          className={`rounded-lg px-3 py-1.5 text-sm font-medium ${trocaComanda === c.id ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+                          className={`rounded-controle px-3 py-1.5 text-sm font-medium ${trocaComanda === c.id ? "bg-blue-600 text-white" : "border border-borda-forte text-texto-suave"}`}
                         >
                           Comanda {c.numero}
                         </button>
@@ -442,13 +442,13 @@ export function GarcomPedido({
                     </div>
                   </>
                 )}
-                <p className="mb-1 text-xs text-zinc-400">Mover para qual mesa?</p>
+                <p className="mb-1 text-xs text-texto-suave">Mover para qual mesa?</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {mesas.map((m) => (
                     <button
                       key={m}
                       onClick={() => setTrocaMesa(m)}
-                      className={`rounded-lg px-2 py-2.5 text-sm font-medium ${trocaMesa === m ? "bg-blue-600 text-white" : "border border-zinc-700 text-zinc-300"}`}
+                      className={`rounded-controle px-2 py-2.5 text-sm font-medium ${trocaMesa === m ? "bg-blue-600 text-white" : "border border-borda-forte text-texto-suave"}`}
                     >
                       {m}
                     </button>
@@ -458,11 +458,11 @@ export function GarcomPedido({
             )}
           </div>
           {comandas.length > 0 && (
-            <div className="border-t border-zinc-800 p-3">
+            <div className="border-t border-borda p-3">
               <button
                 onClick={transferir}
                 disabled={proc || !trocaComanda || !trocaMesa}
-                className="w-full rounded-xl bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
+                className="w-full rounded-cartao bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
               >
                 {proc ? "Movendo..." : trocaMesa ? `⇄ Mover para ${trocaMesa}` : "Escolha a mesa"}
               </button>
@@ -478,7 +478,7 @@ export function GarcomPedido({
       {/* Toast */}
       {toast && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-          <div className="rounded-2xl bg-zinc-800 px-8 py-6 text-center">
+          <div className="rounded-cartao bg-superficie-suave px-8 py-6 text-center">
             <div className="mb-2 flex justify-center"><Icone nome="certo" tamanho={42} className="text-emerald-500" /></div>
             <p className="font-semibold">{toast}</p>
           </div>

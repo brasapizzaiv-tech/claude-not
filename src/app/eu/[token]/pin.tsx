@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { definirPin, entrarPin } from "./actions";
 
 const box =
-  "w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-center text-2xl tracking-[0.5em] text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-cartao border border-borda-forte bg-white px-4 py-3 text-center text-2xl tracking-[0.5em] text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 const btn =
-  "w-full rounded-xl bg-orange-500 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-60";
+  "w-full rounded-cartao bg-orange-500 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-60";
 
 export function CriarPin({ token }: { token: string }) {
   const router = useRouter();
@@ -29,7 +29,7 @@ export function CriarPin({ token }: { token: string }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-center text-sm text-zinc-500">
+      <p className="text-center text-sm text-texto-suave">
         Crie um PIN de 4 números só seu. Você vai usar ele para entrar.
       </p>
       <input
@@ -71,7 +71,7 @@ export function EntrarPin({ token }: { token: string }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-center text-sm text-zinc-500">Digite seu PIN.</p>
+      <p className="text-center text-sm text-texto-suave">Digite seu PIN.</p>
       <input
         value={pin}
         onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}

@@ -105,11 +105,11 @@ export default async function GarcomPage() {
   const historico = grupos.slice(0, 40);
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-2 text-zinc-100">
+    <div className="min-h-screen bg-painel-fundo p-2 text-texto">
       <div className="flex items-center justify-between px-1 py-2">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="garcom" tamanho={19} /> Mesas</h1>
         {sessao.viaColab && sessao.token && (
-          <Link href={`/eu/${sessao.token}`} className="text-xs text-zinc-400">{sessao.nome} · voltar pro meu app</Link>
+          <Link href={`/eu/${sessao.token}`} className="text-xs text-texto-suave">{sessao.nome} · voltar pro meu app</Link>
         )}
       </div>
       <BuscaComanda mesas={nomes} />
@@ -121,7 +121,7 @@ export default async function GarcomPage() {
             <Link
               key={nome}
               href={`/garcom/mesa/${encodeURIComponent(nome)}`}
-              className="flex min-h-[84px] flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-2"
+              className="flex min-h-[84px] flex-col rounded-controle border border-borda bg-painel-cartao p-2"
             >
               <span className={`rounded px-2 py-1 text-center text-sm font-bold ${ocupada ? "bg-red-400/90 text-red-950" : "bg-emerald-400/90 text-emerald-950"}`}>
                 {nome}
@@ -129,7 +129,7 @@ export default async function GarcomPage() {
               {ocupada && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {comandas.map((n) => (
-                    <span key={n} className="rounded bg-zinc-700 px-1.5 text-[11px] text-zinc-200">{n}</span>
+                    <span key={n} className="rounded bg-zinc-700 px-1.5 text-[11px] text-texto">{n}</span>
                   ))}
                 </div>
               )}
@@ -141,31 +141,31 @@ export default async function GarcomPage() {
       {/* Histórico geral de lançamentos, em ordem (mais recentes primeiro) */}
       <h2 className="flex items-center gap-2 px-1 pb-2 pt-5 text-lg font-bold"><Icone nome="cupom" tamanho={17} /> Últimos lançamentos</h2>
       {historico.length === 0 ? (
-        <p className="px-1 pb-6 text-sm text-zinc-500">Nenhum lançamento ainda.</p>
+        <p className="px-1 pb-6 text-sm text-texto-fraco">Nenhum lançamento ainda.</p>
       ) : (
         <div className="space-y-2 pb-6">
           {historico.map((g) => (
-            <div key={g.key} className="rounded-lg border border-zinc-800 bg-zinc-900 p-2.5">
+            <div key={g.key} className="rounded-controle border border-borda bg-painel-cartao p-2.5">
               <div className="mb-1 flex items-center justify-between gap-2 text-xs">
-                <span className="font-semibold text-zinc-100">
+                <span className="font-semibold text-texto">
                   {g.mesa}
                   {g.numero ? ` · Comanda ${g.numero}` : ""}
                 </span>
-                <span className="shrink-0 text-zinc-400">
+                <span className="shrink-0 text-texto-suave">
                   {g.quem ? `${g.quem} · ` : ""}
                   {quando(g.quando)}
                 </span>
               </div>
-              <div className="space-y-0.5 text-sm text-zinc-200">
+              <div className="space-y-0.5 text-sm text-texto">
                 {g.itens.map((it, i) => (
                   <div key={i} className="flex justify-between gap-2">
                     <span className="min-w-0 flex-1 whitespace-pre-line">{it.qtd}× {it.desc}</span>
-                    {it.preco > 0 && <span className="shrink-0 text-zinc-400">{brl(it.qtd * it.preco)}</span>}
+                    {it.preco > 0 && <span className="shrink-0 text-texto-suave">{brl(it.qtd * it.preco)}</span>}
                   </div>
                 ))}
               </div>
               {g.total > 0 && (
-                <div className="mt-1 border-t border-zinc-800 pt-1 text-right text-xs font-semibold text-emerald-400">
+                <div className="mt-1 border-t border-borda pt-1 text-right text-xs font-semibold text-emerald-400">
                   {brl(g.total)}
                 </div>
               )}

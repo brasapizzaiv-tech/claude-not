@@ -16,7 +16,7 @@ export default async function BaixaColabPage({ params }: { params: Promise<{ tok
   if (!colab || !colab.ativo || !colab.faz_etiquetas) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
-        <p className="text-zinc-500">Você não tem acesso a etiquetas.</p>
+        <p className="text-texto-suave">Você não tem acesso a etiquetas.</p>
         <Link href={`/eu/${token}`} className="mt-3 inline-block text-sm text-orange-600">← Voltar</Link>
       </div>
     );

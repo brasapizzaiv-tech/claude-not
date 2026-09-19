@@ -69,15 +69,15 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
     });
   }
 
-  const cx = "w-full rounded-xl border border-zinc-300 bg-white px-3 py-3 text-base text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
+  const cx = "w-full rounded-cartao border border-borda-forte bg-white px-3 py-3 text-base text-texto outline-none focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
   const btnFr = (f: FracaoRodizio) =>
-    `rounded-xl py-3 text-base font-bold ${fracao === f ? "bg-orange-500 text-white" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"}`;
+    `rounded-cartao py-3 text-base font-bold ${fracao === f ? "bg-orange-500 text-white" : "bg-superficie-suave text-texto-suave  "}`;
 
   return (
     <div className="space-y-3">
       {/* mesa */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
-        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-400">Mesa</label>
+      <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+        <label className="mb-1 block text-xs font-semibold text-texto-fraco">Mesa</label>
         <input
           inputMode="numeric"
           pattern="[0-9]*"
@@ -91,10 +91,10 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       </div>
 
       {/* sabor */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
-        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-400">Sabor</label>
+      <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+        <label className="mb-1 block text-xs font-semibold text-texto-fraco">Sabor</label>
         {sabor ? (
-          <div className="flex items-center justify-between rounded-xl bg-orange-500 px-3 py-3 text-white">
+          <div className="flex items-center justify-between rounded-cartao bg-orange-500 px-3 py-3 text-white">
             <span className="inline-flex items-center gap-1.5 font-bold"><Icone nome={sabor.tipo === "doce" ? "bolo" : "pizza"} tamanho={14} /> {sabor.nome}</span>
             <button type="button" onClick={() => { setSabor(null); setTimeout(() => buscaRef.current?.focus(), 30); }} className="text-sm underline">trocar</button>
           </div>
@@ -109,25 +109,25 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
             />
             <div className="mt-2 grid grid-cols-2 gap-2">
               <div>
-                <p className="mb-1 text-[11px] font-semibold uppercase text-zinc-400"><span className="inline-flex items-center gap-1"><Icone nome="pizza" tamanho={12} /> Salgadas</span></p>
+                <p className="mb-1 text-[11px] font-semibold uppercase text-texto-fraco"><span className="inline-flex items-center gap-1"><Icone nome="pizza" tamanho={12} /> Salgadas</span></p>
                 <div className="space-y-1">
                   {filtrados.salgadas.map((s) => (
-                    <button key={s.id} type="button" onClick={() => setSabor(s)} className="block w-full rounded-lg bg-zinc-100 px-2 py-2 text-left text-sm font-medium text-zinc-800 active:bg-orange-100 dark:bg-zinc-800 dark:text-zinc-100">
+                    <button key={s.id} type="button" onClick={() => setSabor(s)} className="block w-full rounded-controle bg-superficie-suave px-2 py-2 text-left text-sm font-medium text-zinc-800 active:bg-orange-100 dark:text-zinc-100">
                       {s.nome}
                     </button>
                   ))}
-                  {filtrados.salgadas.length === 0 && <p className="text-xs text-zinc-400">nenhuma</p>}
+                  {filtrados.salgadas.length === 0 && <p className="text-xs text-texto-fraco">nenhuma</p>}
                 </div>
               </div>
               <div>
-                <p className="mb-1 text-[11px] font-semibold uppercase text-zinc-400"><span className="inline-flex items-center gap-1"><Icone nome="bolo" tamanho={12} /> Doces</span></p>
+                <p className="mb-1 text-[11px] font-semibold uppercase text-texto-fraco"><span className="inline-flex items-center gap-1"><Icone nome="bolo" tamanho={12} /> Doces</span></p>
                 <div className="space-y-1">
                   {filtrados.doces.map((s) => (
-                    <button key={s.id} type="button" onClick={() => setSabor(s)} className="block w-full rounded-lg bg-zinc-100 px-2 py-2 text-left text-sm font-medium text-zinc-800 active:bg-orange-100 dark:bg-zinc-800 dark:text-zinc-100">
+                    <button key={s.id} type="button" onClick={() => setSabor(s)} className="block w-full rounded-controle bg-superficie-suave px-2 py-2 text-left text-sm font-medium text-zinc-800 active:bg-orange-100 dark:text-zinc-100">
                       {s.nome}
                     </button>
                   ))}
-                  {filtrados.doces.length === 0 && <p className="text-xs text-zinc-400">nenhuma</p>}
+                  {filtrados.doces.length === 0 && <p className="text-xs text-texto-fraco">nenhuma</p>}
                 </div>
               </div>
             </div>
@@ -136,18 +136,18 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       </div>
 
       {/* fração + quantidade + obs */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
         <div className="grid grid-cols-3 gap-2">
           <button type="button" onClick={() => setFracao("inteira")} className={btnFr("inteira")}>Inteira</button>
           <button type="button" onClick={() => setFracao("meia")} className={btnFr("meia")}>Meia</button>
           <button type="button" onClick={() => setFracao("quarto")} className={btnFr("quarto")}>1/4</button>
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-zinc-500">Quantidade</span>
+          <span className="text-sm text-texto-suave">Quantidade</span>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setQtd((n) => Math.max(1, n - 1))} className="h-11 w-11 rounded-xl bg-zinc-100 text-2xl font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">−</button>
-            <span className="w-8 text-center text-2xl font-black tabular-nums text-zinc-900 dark:text-zinc-50">{qtd}</span>
-            <button type="button" onClick={() => setQtd((n) => Math.min(20, n + 1))} className="h-11 w-11 rounded-xl bg-zinc-100 text-2xl font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">+</button>
+            <button type="button" onClick={() => setQtd((n) => Math.max(1, n - 1))} className="h-11 w-11 rounded-cartao bg-superficie-suave text-2xl font-bold text-texto-suave">−</button>
+            <span className="w-8 text-center text-2xl font-black tabular-nums text-texto">{qtd}</span>
+            <button type="button" onClick={() => setQtd((n) => Math.min(20, n + 1))} className="h-11 w-11 rounded-cartao bg-superficie-suave text-2xl font-bold text-texto-suave">+</button>
           </div>
         </div>
         <input
@@ -162,7 +162,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
         type="button"
         onClick={enviar}
         disabled={proc || !mesaOk || !sabor}
-        className="w-full rounded-2xl bg-emerald-600 py-4 text-lg font-bold text-white hover:bg-emerald-700 disabled:opacity-40"
+        className="w-full rounded-cartao bg-texto py-4 text-lg font-bold text-fundo hover:opacity-90 disabled:opacity-40"
       >
         {proc ? "Enviando…" : "Enviar para a cozinha"}
       </button>
@@ -170,23 +170,23 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
 
       {/* pedidos abertos da mesa */}
       {mesaOk && (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Mesa {mesaNum} · na cozinha</p>
+        <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+          <p className="mb-2 text-xs font-semibold text-texto-fraco">Mesa {mesaNum} · na cozinha</p>
           {lista.length === 0 ? (
-            <p className="text-sm text-zinc-400">Nenhum pedido aberto.</p>
+            <p className="text-sm text-texto-fraco">Nenhum pedido aberto.</p>
           ) : (
             <ul className="space-y-1.5">
               {lista.map((p) => {
                 const cor = STATUS_COR[p.status];
                 return (
-                  <li key={p.id} className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm" style={{ background: `${cor.borda}22` }}>
+                  <li key={p.id} className="flex items-center gap-2 rounded-cartao px-2.5 py-2 text-sm" style={{ background: `${cor.borda}22` }}>
                     <span className="rounded px-1.5 py-0.5 text-[10px] font-black" style={{ background: cor.borda, color: "#fff" }}>{cor.rotulo}</span>
                     <span className="min-w-0 flex-1 truncate font-medium text-zinc-800 dark:text-zinc-100">
-                      {p.quantidade > 1 ? `${p.quantidade}× ` : ""}{p.sabor} <span className="text-zinc-500">· {FRACAO_ROTULO[p.fracao]}</span>
+                      {p.quantidade > 1 ? `${p.quantidade}× ` : ""}{p.sabor} <span className="text-texto-suave">· {FRACAO_ROTULO[p.fracao]}</span>
                     </span>
-                    <span className="text-xs text-zinc-500">{tempoEspera(p.criado_em, agora)}</span>
+                    <span className="text-xs text-texto-suave">{tempoEspera(p.criado_em, agora)}</span>
                     {p.status === "pendente" && (
-                      <button type="button" onClick={() => cancelar(p.id)} className="text-xs text-zinc-400 hover:text-red-600">✕</button>
+                      <button type="button" onClick={() => cancelar(p.id)} className="text-xs text-texto-fraco hover:text-red-600">✕</button>
                     )}
                   </li>
                 );

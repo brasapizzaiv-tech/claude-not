@@ -63,19 +63,19 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
           onKeyDown={(e) => e.key === "Enter" && abrir(codigo)}
           inputMode="numeric"
           placeholder="Nº da comanda / cartão"
-          className="h-11 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+          className="h-11 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto outline-none placeholder:text-texto-fraco"
         />
         <button
           onClick={() => abrir(codigo)}
           disabled={proc || !codigo.trim()}
-          className="h-11 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white disabled:opacity-40"
+          className="h-11 rounded-controle bg-blue-600 px-4 text-sm font-bold text-white disabled:opacity-40"
         >
           {proc ? "..." : "Abrir"}
         </button>
         <button
           onClick={() => { setErro(null); setScan(true); }}
           title="Ler QR / código de barras"
-          className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 text-xl"
+          className="flex h-11 w-11 items-center justify-center rounded-controle border border-borda-forte text-xl"
         >
           <Icone nome="camera" tamanho={20} titulo="Ler código" />
         </button>
@@ -85,14 +85,14 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
         <Scanner onClose={() => setScan(false)} onLido={onLido} />
       )}
       {abrirCod !== null && (
-        <div className="fixed inset-0 z-[65] flex flex-col bg-zinc-950 text-zinc-100">
-          <div className="flex items-center justify-between border-b border-zinc-800 p-3">
+        <div className="fixed inset-0 z-[65] flex flex-col bg-painel-fundo text-texto">
+          <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Abrir comanda</span>
-            <button onClick={() => setAbrirCod(null)} className="text-zinc-400">✕</button>
+            <button onClick={() => setAbrirCod(null)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
-            <p className="mb-3 text-sm text-zinc-400">
-              Não existe comanda aberta com <span className="font-semibold text-zinc-200">{abrirCod}</span>.
+            <p className="mb-3 text-sm text-texto-suave">
+              Não existe comanda aberta com <span className="font-semibold text-texto">{abrirCod}</span>.
               Escolha a mesa para abrir uma nova:
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -101,7 +101,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
                   key={m}
                   onClick={() => novaComanda(m)}
                   disabled={proc}
-                  className="rounded-lg border border-zinc-700 px-2 py-3 text-sm font-medium text-zinc-200 active:bg-blue-600 disabled:opacity-50"
+                  className="rounded-controle border border-borda-forte px-2 py-3 text-sm font-medium text-texto active:bg-blue-600 disabled:opacity-50"
                 >
                   {m}
                 </button>
@@ -164,17 +164,17 @@ function Scanner({ onClose, onLido }: { onClose: () => void; onLido: (v: string)
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-black">
-      <div className="flex items-center justify-between p-3 text-zinc-100">
+      <div className="flex items-center justify-between p-3 text-texto">
         <span className="font-bold">Ler comanda</span>
-        <button onClick={onClose} className="text-2xl leading-none text-zinc-300">✕</button>
+        <button onClick={onClose} className="text-2xl leading-none text-texto-suave">✕</button>
       </div>
       <div className="relative flex-1 overflow-hidden">
         <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-56 w-56 rounded-2xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+          <div className="h-56 w-56 rounded-cartao border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
         </div>
       </div>
-      <p className="p-3 text-center text-sm text-zinc-300">{msg}</p>
+      <p className="p-3 text-center text-sm text-texto-suave">{msg}</p>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default async function EntregaPage({ params }: { params: Promise<{ token:
   const boy = await sessaoEntregador(token);
   if (!boy) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-center text-zinc-300">
+      <div className="flex min-h-screen items-center justify-center bg-painel-fundo p-6 text-center text-texto-suave">
         <div>
           <p className="text-2xl font-bold">Link inválido</p>
           <p className="mt-2 text-sm">Peça o seu link de entregador pra gerência.</p>

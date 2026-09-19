@@ -44,9 +44,9 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
       { titulo: "Vencidas", cor: "text-red-600", itens: [] },
       { titulo: "Hoje", cor: "text-orange-600", itens: [] },
       { titulo: "Amanhã", cor: "text-amber-600", itens: [] },
-      { titulo: "Próximos 7 dias", cor: "text-zinc-700 dark:text-zinc-200", itens: [] },
-      { titulo: "Depois", cor: "text-zinc-500", itens: [] },
-      { titulo: "Sem vencimento", cor: "text-zinc-400", itens: [] },
+      { titulo: "Próximos 7 dias", cor: "text-texto-suave", itens: [] },
+      { titulo: "Depois", cor: "text-texto-suave", itens: [] },
+      { titulo: "Sem vencimento", cor: "text-texto-fraco", itens: [] },
     ];
     for (const c of filtradas) {
       const v = c.vencimento;
@@ -84,13 +84,13 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Fornecedor, descrição ou categoria"
-        className="mb-3 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        className="mb-3 w-full rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-2.5 text-sm text-texto outline-none"
       />
 
       {contas.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">Nenhuma conta aberta.</p>
+        <p className="rounded-cartao bg-painel-cartao p-6 text-center text-sm text-texto-fraco">Nenhuma conta aberta.</p>
       ) : filtradas.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">Nada encontrado.</p>
+        <p className="rounded-cartao bg-painel-cartao p-6 text-center text-sm text-texto-fraco">Nada encontrado.</p>
       ) : (
         <div className="space-y-4">
           {grupos.map((g) => (
@@ -105,19 +105,19 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
                   return (
                     <label
                       key={c.id}
-                      className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3 ${sel ? "border-green-500 bg-green-50 dark:bg-green-950/30" : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"}`}
+                      className={`flex cursor-pointer items-start gap-3 rounded-cartao border p-3 ${sel ? "border-green-500 bg-green-50 dark:bg-green-950/30" : "border-borda bg-painel-cartao  "}`}
                     >
                       <input type="checkbox" checked={sel} onChange={() => alternar(c.id)} className="mt-1 h-5 w-5 accent-green-600" />
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold leading-snug text-zinc-900 dark:text-zinc-50">{c.descricao}</div>
-                        <div className="text-xs text-zinc-500">
+                        <div className="font-semibold leading-snug text-texto">{c.descricao}</div>
+                        <div className="text-xs text-texto-suave">
                           {c.fornecedor && c.fornecedor !== c.descricao ? `${c.fornecedor} · ` : ""}
                           {c.categoria ?? ""}
                           {c.vencimento ? ` · vence ${dataBR(c.vencimento)}` : ""}
                           {c.banco ? ` · ${c.banco}` : ""}
                         </div>
                       </div>
-                      <div className="shrink-0 text-right font-bold text-zinc-900 dark:text-zinc-50">{moeda(c.valor)}</div>
+                      <div className="shrink-0 text-right font-bold text-texto">{moeda(c.valor)}</div>
                     </label>
                   );
                 })}
@@ -128,22 +128,22 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
       )}
 
       {/* Barra fixa de baixa */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-borda bg-painel-cartao p-3">
         <div className="mx-auto max-w-md">
           {feito && <p className="mb-2 text-center text-sm font-medium text-green-600">{feito}</p>}
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-semibold text-zinc-800 dark:text-zinc-100">
               {marcadas.size === 0 ? "Marque as contas pagas" : `${marcadas.size} selecionada(s) · ${moeda(total)}`}
             </span>
-            <label className="flex items-center gap-1 text-xs text-zinc-500">
+            <label className="flex items-center gap-1 text-xs text-texto-suave">
               pago em
-              <input type="date" value={dataPago} onChange={(e) => setDataPago(e.target.value)} className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100" />
+              <input type="date" value={dataPago} onChange={(e) => setDataPago(e.target.value)} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-xs dark:text-zinc-100" />
             </label>
           </div>
           <button
             onClick={darBaixa}
             disabled={proc || marcadas.size === 0}
-            className="w-full rounded-xl bg-green-600 py-3 text-base font-bold text-white disabled:opacity-40"
+            className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo disabled:opacity-40"
           >
             {proc ? "Dando baixa..." : `✓ Dar baixa em ${marcadas.size}`}
           </button>

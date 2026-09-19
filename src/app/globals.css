@@ -198,7 +198,11 @@
    valores fora da impressão, então o papel usa sempre os tokens claros lá de
    cima, sem precisar repetir nenhum valor aqui embaixo. */
 @media screen {
-  :root[data-tema="escuro"] {
+  /* Vale na raiz (a escolha da pessoa) E em qualquer elemento que se declare
+     escuro. É o que deixa o app do garçom e o do entregador ficarem escuros
+     sempre — decisão de uso, celular na mão dentro do salão à noite — sem
+     sair do sistema de cores. */
+  [data-tema="escuro"] {
     color-scheme: dark;
 
     /* Grafite da marca como fundo, com superfícies e bordas em tons quentes

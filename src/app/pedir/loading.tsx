@@ -12,16 +12,16 @@ export default function Loading() {
 
       {/* Topo com o nome da casa */}
       <div className="mb-4 flex items-center gap-3">
-        <Bloco className="h-9 w-9 shrink-0 rounded-lg" />
+        <Bloco className="h-9 w-9 shrink-0 rounded-controle" />
         <div className="min-w-0 flex-1">
           <Bloco className="h-4 w-52" />
           <Bloco className="mt-2 h-3 w-40" />
         </div>
-        <Bloco className="h-8 w-28 shrink-0 rounded-lg" />
+        <Bloco className="h-8 w-28 shrink-0 rounded-controle" />
       </div>
 
       {/* Busca */}
-      <Bloco className="mb-3 h-11 w-full rounded-xl" />
+      <Bloco className="mb-3 h-11 w-full rounded-cartao" />
 
       {/* Categorias */}
       <div className="mb-5 flex gap-2 overflow-hidden">
@@ -34,7 +34,7 @@ export default function Loading() {
       <Bloco className="mb-2.5 h-4 w-36" />
       <div className="mb-6 flex gap-3 overflow-hidden">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="w-40 shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div key={i} className="w-40 shrink-0 rounded-cartao bg-painel-cartao">
             <Bloco className="h-24 w-full rounded-t-xl rounded-b-none" />
             <div className="p-2.5">
               <Bloco className="h-3.5 w-24" />
@@ -47,7 +47,7 @@ export default function Loading() {
       {/* Lista do cardápio */}
       <div className="space-y-2.5">
         {[...Array(7)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
+          <div key={i} className="flex items-center gap-3 rounded-cartao border border-borda p-3.5">
             <div className="min-w-0 flex-1">
               <Bloco className="h-4 w-44" />
               <Bloco className="mt-2 h-3 w-16" />

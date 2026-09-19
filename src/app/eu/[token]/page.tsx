@@ -26,12 +26,12 @@ export async function generateMetadata({
 
 function Moldura({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex min-h-screen items-center justify-center bg-superficie-suave p-6">
+      <div className="w-full max-w-sm rounded-cartao border border-borda bg-painel-cartao p-6">
         <div className="mb-5 flex flex-col items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-brasa.png" alt="Brasa" className="h-14 w-14 object-contain" />
-          <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          <p className="mt-2 text-xs font-semibold text-texto-fraco">
             Brasa · Equipe
           </p>
         </div>
@@ -55,10 +55,10 @@ export default async function AppColaboradorPage({
   if (!status) {
     return (
       <Moldura>
-        <h1 className="text-center text-lg font-bold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-center text-lg font-bold text-texto">
           Link inválido
         </h1>
-        <p className="mt-2 text-center text-sm text-zinc-500">
+        <p className="mt-2 text-center text-sm text-texto-suave">
           Peça um novo link ao responsável.
         </p>
       </Moldura>
@@ -68,7 +68,7 @@ export default async function AppColaboradorPage({
   const nome = status.nome as string;
   const temPin = status.tem_pin as boolean;
   const saudacao = (
-    <h1 className="mb-4 text-center text-xl font-bold text-zinc-900 dark:text-zinc-50">
+    <h1 className="mb-4 text-center text-xl font-bold text-texto">
       Olá, {nome}
     </h1>
   );
@@ -192,7 +192,7 @@ export default async function AppColaboradorPage({
       {temFolga && (
         <Link
           href={`/folga/${token}`}
-          className="mb-3 block rounded-2xl bg-emerald-600 p-4 text-center font-semibold text-white hover:bg-emerald-700"
+          className="mb-3 block rounded-cartao bg-texto p-4 text-center font-semibold text-fundo hover:opacity-90"
         >
           <Icone nome="folga" tamanho={17} className="mr-1.5" /> Minhas folgas
         </Link>
@@ -200,7 +200,7 @@ export default async function AppColaboradorPage({
       {fazContas && (
         <Link
           href={`/eu/${token}/contas`}
-          className="mb-3 flex items-center justify-between rounded-2xl bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
+          className="mb-3 flex items-center justify-between rounded-cartao bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
         >
           <span className="inline-flex items-center gap-2"><Icone nome="dinheiro" tamanho={17} /> Contas a pagar</span>
           <span className="text-xs font-normal opacity-80">
@@ -211,7 +211,7 @@ export default async function AppColaboradorPage({
       {fazGarcom && (
         <a
           href={`/eu/${token}/garcom`}
-          className="mb-3 flex items-center justify-between rounded-2xl bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-800"
+          className="mb-3 flex items-center justify-between rounded-cartao bg-zinc-900 p-4 font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-800"
         >
           <span className="inline-flex items-center gap-2"><Icone nome="garcom" tamanho={17} /> Modo garçom</span>
           <span className="text-xs font-normal opacity-80">mesas, pedidos, conta →</span>
@@ -220,7 +220,7 @@ export default async function AppColaboradorPage({
       {fazChecklist && (
         <Link
           href={`/eu/${token}/checklist`}
-          className="mb-3 flex items-center justify-between rounded-2xl bg-emerald-700 p-4 font-semibold text-white hover:bg-emerald-800"
+          className="mb-3 flex items-center justify-between rounded-cartao bg-emerald-700 p-4 font-semibold text-white hover:bg-emerald-800"
         >
           <span className="inline-flex items-center gap-2"><Icone nome="checklist" tamanho={17} /> Checklists</span>
           <span className="text-xs font-normal opacity-80">abertura e fechamento →</span>
@@ -229,7 +229,7 @@ export default async function AppColaboradorPage({
       {fazCardapio && (
         <Link
           href={`/eu/${token}/cardapio`}
-          className="mb-3 flex items-center justify-between rounded-2xl bg-green-700 p-4 font-semibold text-white hover:bg-green-800"
+          className="mb-3 flex items-center justify-between rounded-cartao bg-green-700 p-4 font-semibold text-white hover:bg-green-800"
         >
           <span className="inline-flex items-center gap-2"><Icone nome="salao" tamanho={17} /> Cardápio do dia</span>
           <span className="text-xs font-normal opacity-80">buffet, saladas, marmitas →</span>
@@ -238,7 +238,7 @@ export default async function AppColaboradorPage({
       {fazGarcom && (
         <Link
           href={`/eu/${token}/rodizio`}
-          className="mb-3 flex items-center justify-between rounded-2xl bg-orange-600 p-4 font-semibold text-white hover:bg-orange-700"
+          className="mb-3 flex items-center justify-between rounded-cartao bg-orange-600 p-4 font-semibold text-white hover:bg-orange-700"
         >
           <span className="inline-flex items-center gap-2"><Icone nome="pizza" tamanho={17} /> Rodízio</span>
           <span className="text-xs font-normal opacity-80">pedir pizza pra mesa →</span>
@@ -246,23 +246,23 @@ export default async function AppColaboradorPage({
       )}
       {fazEtiquetas && contagemEtq && (
         <div className="mb-3">
-          <p className="mb-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Vencimentos das etiquetas</p>
+          <p className="mb-1.5 text-center text-[11px] font-semibold text-texto-fraco">Vencimentos das etiquetas</p>
           <PainelVencimentos contagem={contagemEtq} base={`/eu/${token}/etiqueta/vencimentos`} />
         </div>
       )}
       {fazEtiquetas && (
         <div className="mb-3 grid grid-cols-2 gap-3">
-          <Link href={`/eu/${token}/etiqueta`} className="rounded-2xl bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600">
+          <Link href={`/eu/${token}/etiqueta`} className="rounded-cartao bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600">
             <Icone nome="etiqueta" tamanho={17} className="mr-1.5" /> Nova etiqueta
           </Link>
-          <Link href={`/eu/${token}/baixa`} className="rounded-2xl bg-zinc-800 p-4 text-center font-semibold text-white hover:bg-zinc-700">
+          <Link href={`/eu/${token}/baixa`} className="rounded-cartao bg-zinc-800 p-4 text-center font-semibold text-white hover:bg-zinc-700">
             <Icone nome="camera" tamanho={17} className="mr-1.5" /> Dar baixa
           </Link>
         </div>
       )}
       <Link
         href={`/eu/${token}/pagamentos`}
-        className="mb-3 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"
+        className="mb-3 flex items-center justify-between rounded-cartao border border-emerald-200 bg-emerald-50 p-4 font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"
       >
         <span className="inline-flex items-center gap-2"><Icone nome="dinheiro" tamanho={17} /> Meus pagamentos</span>
         <span className="text-xs font-normal opacity-80">
@@ -273,24 +273,24 @@ export default async function AppColaboradorPage({
       </Link>
       <Link
         href={`/eu/${token}/compras`}
-        className="mb-3 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+        className="mb-3 flex items-center justify-between rounded-cartao border border-borda bg-painel-cartao p-4 font-semibold text-texto hover:bg-superficie-suave"
       >
         <span className="inline-flex items-center gap-2"><Icone nome="ferramenta" tamanho={17} /> Compra ou manutenção</span>
-        <span className="text-xs font-normal text-zinc-500">
+        <span className="text-xs font-normal text-texto-suave">
           {pedidosCompra > 0 ? `${pedidosCompra} aguardando` : "faltou algo ou quebrou? avise aqui"}
         </span>
       </Link>
       {compras.length > 0 && (
-        <div className="mb-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3 rounded-cartao border border-borda p-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="inline-flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-50"><Icone nome="compras" tamanho={17} /> Minhas compras</span>
+            <span className="inline-flex items-center gap-2 font-semibold text-texto"><Icone nome="compras" tamanho={17} /> Minhas compras</span>
             <span className={`text-sm font-bold ${abertoTotal > 0 ? "text-amber-600" : "text-emerald-600"}`}>
               {abertoTotal > 0 ? `Em aberto: ${brl(abertoTotal)}` : "Tudo pago ✓"}
             </span>
           </div>
           <ul className="space-y-1 text-sm">
             {compras.slice(0, 8).map((r, i) => (
-              <li key={i} className="flex items-start justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+              <li key={i} className="flex items-start justify-between gap-2 text-texto-suave">
                 <span className="min-w-0">
                   <span className="block truncate">{fData(r.data)} · {r.item}</span>
                   {r.status === "pago" && (r.data_pagamento || r.obs_pagamento) && (
@@ -309,21 +309,21 @@ export default async function AppColaboradorPage({
       {fazContagem && (
         <>
           {contagens.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
+            <div className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">
               Nenhuma contagem agora.
               <br />
               Volte no dia da contagem.
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-center text-sm text-zinc-500">
+              <p className="text-center text-sm text-texto-suave">
                 Você tem contagem para fazer:
               </p>
               {contagens.map((c) => (
                 <Link
                   key={c.token}
                   href={`/contar/${c.token}`}
-                  className="block rounded-2xl bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600"
+                  className="block rounded-cartao bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600"
                 >
                   <Icone nome="pacote" tamanho={15} className="mr-1.5" /> {c.descricao || "Contagem"}
                   {c.data && (

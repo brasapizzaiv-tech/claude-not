@@ -59,15 +59,15 @@ export function PedidosColab({
   const lista = aba === "pendentes" ? pendentes : aba === "antigos" ? antigos : conferidos;
 
   const tab = (ativo: boolean) =>
-    `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
+    `flex-1 rounded-controle px-3 py-2 text-sm font-medium transition ${
       ativo
         ? "bg-orange-500 text-white"
-        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+        : "bg-superficie-suave text-texto-suave hover:bg-zinc-200  "
     }`;
 
   return (
     <div className="mt-5">
-      <div className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+      <div className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-texto-suave">
         <Icone nome="pacote" tamanho={16} className="mr-1.5" /> Pedidos
       </div>
       <div className="mb-3 flex gap-2">
@@ -84,12 +84,12 @@ export function PedidosColab({
         </button>
       </div>
       {aba === "antigos" && (
-        <p className="mb-2 text-center text-[11px] text-zinc-400">
+        <p className="mb-2 text-center text-[11px] text-texto-fraco">
           Mais de 7 dias sem conferir. Com mais de 10 dias somem daqui sozinhos.
         </p>
       )}
       {lista.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-700">
+        <p className="rounded-cartao bg-painel-cartao p-6 text-center text-sm text-texto-fraco">
           {aba === "pendentes"
             ? "Nenhum pedido para conferir"
             : aba === "antigos"
@@ -178,10 +178,10 @@ function PedidoCard({
 
   return (
     <div
-      className={`rounded-2xl border p-3 ${
+      className={`rounded-cartao border p-3 ${
         feito
           ? "border-green-200 bg-green-50/60 dark:border-green-900 dark:bg-green-950/20"
-          : "border-zinc-200 dark:border-zinc-800"
+          : "border-borda"
       }`}
     >
       <button
@@ -189,10 +189,10 @@ function PedidoCard({
         className="flex w-full items-center justify-between text-left"
       >
         <span>
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+          <span className="font-semibold text-texto">
             {pedido.fornecedor || "Fornecedor"}
           </span>
-          <span className="ml-2 text-xs text-zinc-400">{dataBR(pedido.data)}</span>
+          <span className="ml-2 text-xs text-texto-fraco">{dataBR(pedido.data)}</span>
           {pedido.prazo_entrega && (
             <span className="mt-0.5 block text-xs font-medium text-orange-600 dark:text-orange-400">
               <Icone nome="caminhao" tamanho={13} className="mr-1" /> entrega prevista: {dataBR(pedido.prazo_entrega)}
@@ -216,7 +216,7 @@ function PedidoCard({
             return (
               <div key={i.id} className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="break-words text-sm leading-snug text-zinc-700 dark:text-zinc-300">
+                  <div className="break-words text-sm leading-snug text-texto-suave">
                     {i.nome}
                   </div>
                   {i.qtd === 0 ? (
@@ -224,7 +224,7 @@ function PedidoCard({
                       veio a mais
                     </span>
                   ) : (
-                    <div className="text-xs text-zinc-400">
+                    <div className="text-xs text-texto-fraco">
                       pedido: {mostrar(i.qtd)} {i.unidade}
                     </div>
                   )}
@@ -235,8 +235,8 @@ function PedidoCard({
                   onChange={(e) =>
                     setQtds((s) => ({ ...s, [i.id]: e.target.value }))
                   }
-                  className={`w-20 shrink-0 rounded-lg border bg-white px-2 py-1.5 text-right text-sm dark:bg-zinc-950 dark:text-zinc-100 ${
-                    ruim ? "border-red-400" : "border-zinc-300 dark:border-zinc-700"
+                  className={`w-20 shrink-0 rounded-controle border bg-painel-cartao px-2 py-1.5 text-right text-sm dark:text-zinc-100 ${
+                    ruim ? "border-red-400" : "border-borda-forte"
                   }`}
                 />
                 <button
@@ -252,8 +252,8 @@ function PedidoCard({
           })}
 
           {/* Adicionar item que veio a mais */}
-          <div className="rounded-xl border border-dashed border-sky-300 bg-sky-50/40 p-2.5 dark:border-sky-800 dark:bg-sky-950/10">
-            <p className="mb-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+          <div className="rounded-cartao border border-dashed border-sky-300 bg-sky-50/40 p-2.5 dark:border-sky-800 dark:bg-sky-950/10">
+            <p className="mb-1.5 text-xs font-medium text-texto-suave">
               Veio algo a mais? Adicione aqui:
             </p>
             <Combobox
@@ -261,7 +261,7 @@ function PedidoCard({
               value={addProd}
               onChange={setAddProd}
               placeholder="Buscar produto..."
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm dark:text-zinc-100"
             />
             <div className="mt-2 flex items-center gap-2">
               <input
@@ -269,12 +269,12 @@ function PedidoCard({
                 value={addQtd}
                 onChange={(e) => setAddQtd(e.target.value)}
                 placeholder="Qtd"
-                className="w-20 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                className="w-20 rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-right text-sm dark:text-zinc-100"
               />
               <button
                 onClick={adicionar}
                 disabled={salvando || !addProd || !(addQtdNum > 0)}
-                className="flex-1 rounded-lg bg-sky-600 py-1.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+                className="flex-1 rounded-controle bg-sky-600 py-1.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
               >
                 + Adicionar
               </button>
@@ -282,18 +282,18 @@ function PedidoCard({
           </div>
 
           {erro && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+            <p className="rounded-controle bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
               {erro}
             </p>
           )}
-          <p className="text-[11px] text-zinc-400">
+          <p className="text-[11px] text-texto-fraco">
             Confirme quanto de cada item chegou (pode usar vírgula, ex.: 1,5 kg). Isso é só um aviso pro
             responsável — a conferência final continua com ele.
           </p>
           <button
             onClick={confirmar}
             disabled={salvando}
-            className="w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            className="w-full rounded-cartao bg-orange-500 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
           >
             {salvando ? "Salvando..." : feito ? "Atualizar conferência" : "Confirmar recebimento"}
           </button>

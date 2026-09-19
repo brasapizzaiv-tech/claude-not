@@ -22,7 +22,7 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
   if (!colab || !colab.ativo || !colab.pin || colab.pin !== pin) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
-        <p className="text-zinc-500">Entre com o seu PIN de novo pra ver os pagamentos.</p>
+        <p className="text-texto-suave">Entre com o seu PIN de novo pra ver os pagamentos.</p>
         <Link href={`/eu/${token}`} className="mt-3 inline-block text-sm text-orange-600">← Voltar</Link>
       </div>
     );
@@ -67,49 +67,49 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
   const totalPago = linhas.filter((l) => l.pago).reduce((s, l) => s + l.emMaos, 0);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-4 pb-24 dark:bg-zinc-950">
-      <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
-      <h1 className="mt-2 mb-1 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="dinheiro" tamanho={18} className="mr-2" /> Meus pagamentos</h1>
-      <p className="mb-4 text-sm text-zinc-500">Olá, {String(colab.nome).split(" ")[0]} — aqui está o seu acerto de cada semana.</p>
+    <div className="mx-auto min-h-screen max-w-md bg-superficie-suave p-4 pb-24">
+      <Link href={`/eu/${token}`} className="text-sm text-texto-suave">← Voltar</Link>
+      <h1 className="mt-2 mb-1 text-xl font-bold text-texto"><Icone nome="dinheiro" tamanho={18} className="mr-2" /> Meus pagamentos</h1>
+      <p className="mb-4 text-sm text-texto-suave">Olá, {String(colab.nome).split(" ")[0]} — aqui está o seu acerto de cada semana.</p>
 
       {!semanaAtualLancada && (
-        <div className="mb-3 rounded-2xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
-          <div className="font-semibold text-zinc-900 dark:text-zinc-50">Semana atual · {rotuloSemana(estaSegunda)}</div>
-          <div className="mt-1 text-zinc-600 dark:text-zinc-300">
+        <div className="mb-3 rounded-cartao bg-painel-cartao p-4 text-sm">
+          <div className="font-semibold text-texto">Semana atual · {rotuloSemana(estaSegunda)}</div>
+          <div className="mt-1 text-texto-suave">
             Marcado até agora: <b>{dias}</b> dia{dias === 1 ? "" : "s"} · <b>{noites}</b> noite{noites === 1 ? "" : "s"}
             {extra && Number(extra.valor) > 0 && <> · extra <b>{brl(Number(extra.valor))}</b>{extra.motivo ? ` (${extra.motivo})` : ""}</>}
           </div>
-          <div className="mt-1 text-xs text-zinc-400">O valor aparece aqui quando a semana for fechada. Se algum dia estiver faltando, avise a gerência.</div>
+          <div className="mt-1 text-xs text-texto-fraco">O valor aparece aqui quando a semana for fechada. Se algum dia estiver faltando, avise a gerência.</div>
         </div>
       )}
 
       {linhas.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-200 p-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
+        <div className="rounded-cartao border border-borda p-6 text-center text-sm text-texto-suave">
           Nenhuma semana fechada ainda.
         </div>
       ) : (
         <ul className="space-y-3">
           {linhas.map((l) => (
-            <li key={l.segunda} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <li key={l.segunda} className="rounded-cartao border border-borda bg-painel-cartao p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-semibold text-zinc-900 dark:text-zinc-50">Semana {rotuloSemana(l.segunda)}</div>
-                  {l.detalhe && <div className="mt-0.5 text-xs text-zinc-500">{l.detalhe.replace(/^\(|\)$/g, "")}</div>}
+                  <div className="font-semibold text-texto">Semana {rotuloSemana(l.segunda)}</div>
+                  {l.detalhe && <div className="mt-0.5 text-xs text-texto-suave">{l.detalhe.replace(/^\(|\)$/g, "")}</div>}
                 </div>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${l.pago ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"}`}>
                   {l.pago ? `pago${l.pagoEm ? ` ${fData(l.pagoEm)}` : ""} ✓` : "aguardando pagamento"}
                 </span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
-                <div className="rounded-xl bg-zinc-50 p-2 dark:bg-zinc-950">
-                  <div className="text-[10px] uppercase text-zinc-400">Semana</div>
-                  <div className="font-semibold text-zinc-900 dark:text-zinc-100">{brl(l.valor)}</div>
+                <div className="rounded-cartao bg-superficie-suave p-2">
+                  <div className="text-[10px] uppercase text-texto-fraco">Semana</div>
+                  <div className="font-semibold text-texto">{brl(l.valor)}</div>
                 </div>
-                <div className="rounded-xl bg-zinc-50 p-2 dark:bg-zinc-950">
-                  <div className="text-[10px] uppercase text-zinc-400">Fiado desc.</div>
-                  <div className={`font-semibold ${l.desconto > 0 ? "text-red-600" : "text-zinc-400"}`}>{l.desconto > 0 ? `− ${brl(l.desconto)}` : "—"}</div>
+                <div className="rounded-cartao bg-superficie-suave p-2">
+                  <div className="text-[10px] uppercase text-texto-fraco">Fiado desc.</div>
+                  <div className={`font-semibold ${l.desconto > 0 ? "text-red-600" : "text-texto-fraco"}`}>{l.desconto > 0 ? `− ${brl(l.desconto)}` : "—"}</div>
                 </div>
-                <div className="rounded-xl bg-emerald-50 p-2 dark:bg-emerald-950/30">
+                <div className="rounded-cartao bg-emerald-50 p-2 dark:bg-emerald-950/30">
                   <div className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300">Em mãos</div>
                   <div className="font-bold text-emerald-700 dark:text-emerald-300">{brl(l.emMaos)}</div>
                 </div>
@@ -120,7 +120,7 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
       )}
 
       {linhas.length > 0 && (
-        <p className="mt-4 text-center text-xs text-zinc-400">
+        <p className="mt-4 text-center text-xs text-texto-fraco">
           Recebido nas últimas {linhas.length} semana{linhas.length === 1 ? "" : "s"} fechadas: {brl(totalPago)}
         </p>
       )}

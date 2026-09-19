@@ -14,7 +14,7 @@ export default async function ContasColabPage({ params }: { params: Promise<{ to
   if (!colab) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
-        <p className="text-zinc-500">Você não tem acesso às contas — ou precisa entrar com o PIN de novo.</p>
+        <p className="text-texto-suave">Você não tem acesso às contas — ou precisa entrar com o PIN de novo.</p>
         <Link href={`/eu/${token}`} className="mt-3 inline-block text-sm text-orange-600">← Voltar</Link>
       </div>
     );
@@ -53,10 +53,10 @@ export default async function ContasColabPage({ params }: { params: Promise<{ to
   const hoje = new Date(new Date().getTime() - 3 * 3600 * 1000).toISOString().slice(0, 10);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-4 pb-32 dark:bg-zinc-950">
-      <Link href={`/eu/${token}`} className="text-sm text-zinc-500">← Voltar</Link>
-      <h1 className="mt-2 mb-1 text-xl font-bold text-zinc-900 dark:text-zinc-50"><Icone nome="dinheiro" tamanho={18} className="mr-2" /> Contas a pagar</h1>
-      <p className="mb-4 text-sm text-zinc-500">Olá, {colab.nome.split(" ")[0]} — marque as que foram pagas e dê baixa.</p>
+    <div className="mx-auto min-h-screen max-w-md bg-superficie-suave p-4 pb-32">
+      <Link href={`/eu/${token}`} className="text-sm text-texto-suave">← Voltar</Link>
+      <h1 className="mt-2 mb-1 text-xl font-bold text-texto"><Icone nome="dinheiro" tamanho={18} className="mr-2" /> Contas a pagar</h1>
+      <p className="mb-4 text-sm text-texto-suave">Olá, {colab.nome.split(" ")[0]} — marque as que foram pagas e dê baixa.</p>
       <ContasColab token={token} contas={contas} hoje={hoje} />
     </div>
   );
