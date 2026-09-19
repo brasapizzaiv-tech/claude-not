@@ -4,6 +4,8 @@ import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ModuloKey } from "@/lib/permissoes";
+import { TEMA_PADRAO, type Tema } from "@/lib/tema";
+import { SeletorTema } from "@/components/seletor-tema";
 
 // Menu lateral: barra larga com os nomes visíveis e grupos que abrem/fecham ao
 // clicar (funciona no toque). Dá pra recolher em ícones (lembra a escolha).
@@ -48,6 +50,7 @@ export function Sidebar({
   permissoes,
   reservasNovas = 0,
   pedidosCompra = 0,
+  tema = TEMA_PADRAO,
 }: {
   nome: string;
   papel: string;
@@ -55,6 +58,7 @@ export function Sidebar({
   permissoes: string[];
   reservasNovas?: number;
   pedidosCompra?: number;
+  tema?: Tema;
 }) {
   const pathname = usePathname();
   const recolhido = useSyncExternalStore(subscribe, lerRecolhido, () => false);
@@ -302,6 +306,7 @@ export function Sidebar({
             <p className="text-[11px] text-white/70">{papel}</p>
           </div>
         )}
+        <SeletorTema inicial={tema} recolhido={recolhido} />
         <form action="/auth/signout" method="post">
           <button title="Sair" className="flex h-8 w-8 items-center justify-center rounded-lg text-lg text-white/90 hover:bg-white/15">
             🚪

@@ -3,21 +3,39 @@
 /* =====================================================================
    TOKENS DO SISTEMA
    Lugar único das cores, tipografia e formas do painel. Quem escreve tela
-   usa as classes do Tailwind (bg-orange-500, text-zinc-500, rounded-lg) —
+   usa as classes do Tailwind (bg-orange-500, text-emerald-600, bg-zinc-50) —
    elas já apontam pra cá.
 
    Como está organizado:
-   1. Marca        — as cores da empresa (na Etapa 3 vêm da tabela `empresas`)
-   2. Escalas      — orange-* e zinc-* remapeados pros tons da marca
-   3. Semânticos   — fundo, superfície, borda, texto, sucesso, alerta, erro…
-   4. Tipografia   — famílias
-   5. Modo escuro  — só o que muda
+   0. Gatilho do escuro — o que faz `dark:` ligar
+   1. Marca            — as cores da empresa (na Etapa 3 vêm da tabela `empresas`)
+   2. Escalas          — orange-*, e os verdes/vermelhos/âmbares/azuis de estado
+   3. Semânticos       — fundo, superfície, borda, texto, sucesso, alerta, erro…
+   4. Tipografia       — famílias
+   5. Modo escuro      — só o que muda
 
    Formas (raio, espaçamento, sombra) continuam nas classes do Tailwind, que
    já são o padrão do projeto: rounded-lg em botões e campos, rounded-2xl em
    cartões, shadow-sm/lg em modais. Não criamos variáveis paralelas pra isso
    porque seriam um segundo sistema sem ninguém usando.
    ===================================================================== */
+
+/* ---------- 0. O gatilho do modo escuro ----------
+   De fábrica o Tailwind liga o `dark:` no ajuste do aparelho. Aqui ele passa
+   a obedecer o atributo `data-tema` do <html>, que é quem a pessoa controla na
+   tela. O script em layout.tsx resolve "sistema" e escreve claro ou escuro ali
+   antes da página pintar, então nada aparece na cor errada.
+
+   O `@media not print` desliga TODO `dark:` na impressão: papel sai sempre
+   claro, sem cupom preto gastando tinta. Anda junto com o `@media screen` da
+   seção 5, que segura os tokens escuros fora do papel. */
+@custom-variant dark {
+  @media not print {
+    &:where([data-tema="escuro"], [data-tema="escuro"] *) {
+      @slot;
+    }
+  }
+}
 
 :root {
   /* ---------- 1. Marca ---------- */
@@ -42,7 +60,85 @@
   --color-orange-900: #4b2f18;
   --color-orange-950: #2a1a0d;
 
+  /* ---------- 2b. As cores de estado ----------
+     Vêm da cozinha em vez do verde, vermelho e amarelo de fábrica, que
+     brigavam com o laranja da marca. Cada par de escalas do Tailwind vira um
+     tom só, então nenhuma tela precisa ser reescrita: quem já escreveu
+     `bg-emerald-600` continua escrevendo igual e passa a sair manjericão.
+
+     Manjericão = deu certo. Forno = deu errado. Gema = espera.
+     Azulejo = informação. */
+
+  /* Manjericão — verde de erva: pronto, conferido, pago, salvo. */
+  --color-emerald-50:  #f3f8f4;  --color-green-50:  var(--color-emerald-50);
+  --color-emerald-100: #e2efe5;  --color-green-100: var(--color-emerald-100);
+  --color-emerald-200: #c4ddca;  --color-green-200: var(--color-emerald-200);
+  --color-emerald-300: #9cc4a6;  --color-green-300: var(--color-emerald-300);
+  --color-emerald-400: #77ab84;  --color-green-400: var(--color-emerald-400);
+  --color-emerald-500: #589a66;  --color-green-500: var(--color-emerald-500);
+  --color-emerald-600: #3f7d4e;  --color-green-600: var(--color-emerald-600);
+  --color-emerald-700: #346540;  --color-green-700: var(--color-emerald-700);
+  --color-emerald-800: #2c5136;  --color-green-800: var(--color-emerald-800);
+  --color-emerald-900: #26442e;  --color-green-900: var(--color-emerald-900);
+  --color-emerald-950: #11251a;  --color-green-950: var(--color-emerald-950);
+
+  /* Forno — vermelho de boca de forno: erro, faltou, cancelado. */
+  --color-red-50:  #fdf5f3;  --color-rose-50:  var(--color-red-50);
+  --color-red-100: #fae7e3;  --color-rose-100: var(--color-red-100);
+  --color-red-200: #f4cfc8;  --color-rose-200: var(--color-red-200);
+  --color-red-300: #e9aca1;  --color-rose-300: var(--color-red-300);
+  --color-red-400: #d9806f;  --color-rose-400: var(--color-red-400);
+  --color-red-500: #c75c48;  --color-rose-500: var(--color-red-500);
+  --color-red-600: #b3402f;  --color-rose-600: var(--color-red-600);
+  --color-red-700: #943226;  --color-rose-700: var(--color-red-700);
+  --color-red-800: #7b2b22;  --color-rose-800: var(--color-red-800);
+  --color-red-900: #672821;  --color-rose-900: var(--color-red-900);
+  --color-red-950: #38100c;  --color-rose-950: var(--color-red-950);
+
+  /* Gema — amarelo de gema e massa crua: atenção, pendente, esperando. */
+  --color-amber-50:  #fdf9ee;  --color-yellow-50:  var(--color-amber-50);
+  --color-amber-100: #fbf0d2;  --color-yellow-100: var(--color-amber-100);
+  --color-amber-200: #f5dfa0;  --color-yellow-200: var(--color-amber-200);
+  --color-amber-300: #eecb69;  --color-yellow-300: var(--color-amber-300);
+  --color-amber-400: #e0b340;  --color-yellow-400: var(--color-amber-400);
+  --color-amber-500: #c9962b;  --color-yellow-500: var(--color-amber-500);
+  --color-amber-600: #ac7622;  --color-yellow-600: var(--color-amber-600);
+  --color-amber-700: #89561f;  --color-yellow-700: var(--color-amber-700);
+  --color-amber-800: #714520;  --color-yellow-800: var(--color-amber-800);
+  --color-amber-900: #603a1e;  --color-yellow-900: var(--color-amber-900);
+  --color-amber-950: #371e0c;  --color-yellow-950: var(--color-amber-950);
+
+  /* Azulejo — azul de azulejo de cozinha: informação, link, em andamento. */
+  --color-blue-50:  #f3f7fa;
+  --color-blue-100: #e4eef4;
+  --color-blue-200: #c4dbe8;
+  --color-blue-300: #97bfd4;
+  --color-blue-400: #629dba;
+  --color-blue-500: #3f7d9d;
+  --color-blue-600: #2f5d7c;
+  --color-blue-700: #294c65;
+  --color-blue-800: #264055;
+  --color-blue-900: #243849;
+  --color-blue-950: #182430;
+
+  /* Azulejo lavado — o mesmo azulejo, mais claro. Existe separado porque há
+     tela que precisa de dois azuis ao mesmo tempo: no board do delivery
+     "aceito" é o azulejo e "agendado" é este. */
+  --color-sky-50:  #f1f9fb;
+  --color-sky-100: #ddf0f5;
+  --color-sky-200: #bee1ea;
+  --color-sky-300: #8ecbdb;
+  --color-sky-400: #57adc4;
+  --color-sky-500: #3e8ea8;
+  --color-sky-600: #35748d;
+  --color-sky-700: #305f73;
+  --color-sky-800: #2e5060;
+  --color-sky-900: #2a4452;
+  --color-sky-950: #182c37;
+
   /* ---------- 3. Semânticos (tema claro) ---------- */
+  color-scheme: light;        /* barra de rolagem e campos do navegador */
+
   --fundo: #ffffff;           /* fundo da página */
   --superficie: #ffffff;      /* cartões, barras, modais */
   --superficie-suave: #fafafa;/* faixas e cabeçalhos de tabela (zinc-50) */
@@ -53,10 +149,10 @@
   --texto-fraco: #a1a1aa;     /* zinc-400 — vazio e desabilitado */
 
   --primaria: var(--marca-primaria);
-  --sucesso: #059669;         /* emerald-600 */
-  --alerta: #f59e0b;          /* amber-500 */
-  --erro: #dc2626;            /* red-600 */
-  --info: #0284c7;            /* sky-600 */
+  --sucesso: var(--color-emerald-600);
+  --alerta: var(--color-amber-500);
+  --erro: var(--color-red-600);
+  --info: var(--color-blue-600);
 
   /* Compatibilidade: nomes antigos usados pelo body. */
   --background: var(--fundo);
@@ -64,10 +160,14 @@
 }
 
 /* ---------- 5. Modo escuro ----------
-   Hoje segue o sistema operacional. Na Etapa 2 isto passa a responder também
-   à escolha do usuário; por enquanto o comportamento é exatamente o de antes. */
-@media (prefers-color-scheme: dark) {
-  :root {
+   Responde ao que a pessoa escolheu em Aparência (o script do layout já
+   traduziu "sistema" pro ajuste do aparelho). O `@media screen` deixa estes
+   valores fora da impressão, então o papel usa sempre os tokens claros lá de
+   cima, sem precisar repetir nenhum valor aqui embaixo. */
+@media screen {
+  :root[data-tema="escuro"] {
+    color-scheme: dark;
+
     /* Grafite da marca como fundo, com superfícies e bordas em tons quentes
        derivados dele — combinam com o laranja. */
     --color-zinc-950: #211915; /* fundo principal / linhas */
@@ -84,10 +184,11 @@
     --texto-suave: #a1a1aa;    /* zinc-400 */
     --texto-fraco: #71717a;    /* zinc-500 */
 
-    --sucesso: #10b981;        /* emerald-500 — mais visível no escuro */
-    --alerta: #fbbf24;         /* amber-400 */
-    --erro: #f87171;           /* red-400 */
-    --info: #38bdf8;           /* sky-400 */
+    /* Um degrau mais claro: sobre o grafite os tons 600 fecham demais. */
+    --sucesso: var(--color-emerald-400);
+    --alerta: var(--color-amber-400);
+    --erro: var(--color-red-400);
+    --info: var(--color-blue-400);
   }
 }
 
@@ -123,4 +224,13 @@ body {
   color: var(--texto);
   /* Geist (carregada em layout.tsx) com as de sistema como reserva. */
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+/* Papel é sempre claro: fundo branco e tinta preta, mesmo com o painel no
+   escuro. Vale pra cupom, relatório e etiqueta. */
+@media print {
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
 }

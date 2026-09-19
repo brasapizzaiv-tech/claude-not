@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
+import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
 function hojeBR() {
@@ -29,12 +30,15 @@ export default async function PainelLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nome, papel, permissoes")
+    .select("nome, papel, permissoes, tema")
     .eq("id", user.id)
     .single();
 
   const admin = profile?.papel === "dono";
   const permissoes = (profile?.permissoes as string[] | null) ?? [];
+  // Aparência escolhida pela pessoa (claro / escuro / do aparelho). Vem do
+  // perfil, e não do navegador, pra valer em qualquer aparelho onde ela entrar.
+  const tema: Tema = ehTema(profile?.tema) ? profile.tema : TEMA_PADRAO;
 
   // Reservas de hoje em diante que ainda estão como "nova" ou "aguardando" —
   // vira o numerozinho no menu, para nenhuma passar batida.
@@ -68,6 +72,7 @@ export default async function PainelLayout({
         permissoes={permissoes}
         reservasNovas={reservasNovas}
         pedidosCompra={pedidosCompra}
+        tema={tema}
       />
       <main className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950">
         {children}
