@@ -18,7 +18,6 @@ export default async function CentralImpressaoPage() {
   const { data: cfg } = await admin
     .from("impressao_config")
     .select("token, hostname, printers, visto_em")
-    .eq("id", 1)
     .maybeSingle();
 
   const vistoEm = (cfg?.visto_em as string) ?? null;

@@ -3,6 +3,7 @@
 // Ações do painel — só conferem o acesso e chamam a regra compartilhada em
 // src/lib/cardapio-dia-core.ts (a mesma que o app da equipe usa).
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import * as core from "@/lib/cardapio-dia-core";
@@ -28,7 +29,11 @@ const atualizar = () => revalidatePath("/cardapio-do-dia");
 // Salva; com publicar=true também publica (botão "Publicar no site").
 export async function salvarCardapio(data: string, d: core.DadosCardapio, publicar: boolean) {
   const { db, ator } = await sessao();
-  const r = publicar ? await core.salvarEPublicarCardapioDia(db, data, d, ator) : await core.salvarCardapioDia(db, data, d, ator);
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, erro: "Não consegui identificar a empresa." };
+  const r = publicar
+    ? await core.salvarEPublicarCardapioDia(db, data, d, ator, empresaId)
+    : await core.salvarCardapioDia(db, data, d, ator, empresaId);
   atualizar();
   return r.ok ? { ok: true as const } : { ok: false as const, erro: r.mensagem };
 }
@@ -42,7 +47,9 @@ export async function publicarCardapio(data: string) {
 
 export async function criarItens(grupo: core.Grupo, texto: string) {
   const { db } = await sessao();
-  const r = await core.criarItensCatalogo(db, grupo, texto);
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, erro: "Não consegui identificar a empresa." };
+  const r = await core.criarItensCatalogo(db, grupo, texto, empresaId);
   atualizar();
   return r.ok ? { ok: true as const, total: r.total } : { ok: false as const, erro: r.mensagem };
 }

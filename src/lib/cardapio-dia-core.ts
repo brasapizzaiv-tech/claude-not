@@ -87,12 +87,13 @@ export async function listarCardapios(db: Db, de: string, ate: string): Promise<
 
 // Salva SEM mexer no publicado: dia no ar continua no ar (com a versão
 // publicada) até alguém apertar Publicar de novo.
-export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, ator: Ator) {
+export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, ator: Ator, empresaId: string) {
   if (!diaValido(data)) return { ok: false as const, mensagem: "Dia inválido." };
   const agora = new Date().toISOString();
   const atual = await lerCardapioDia(db, data);
   const { error } = await db.from("cardapio_dia").upsert(
     {
+      empresa_id: empresaId,
       data,
       proteinas: linhas(d.proteinas).join("\n") || null,
       carboidratos: linhas(d.carboidratos).join("\n") || null,
@@ -104,7 +105,7 @@ export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, 
       alterado_em: agora,
       alterado_por: ator.nome || null,
     },
-    { onConflict: "data" },
+    { onConflict: "empresa_id,data" },
   );
   if (error) return { ok: false as const, mensagem: "Não consegui salvar." };
   // Garante os itens no catálogo (pra busca); os USOS só contam na publicação.
@@ -132,8 +133,8 @@ export async function publicarCardapioDia(db: Db, data: string, ator: Ator) {
 }
 
 // Salva e publica de uma vez (o botão do painel "Salvar e manter no ar").
-export async function salvarEPublicarCardapioDia(db: Db, data: string, d: DadosCardapio, ator: Ator) {
-  const s = await salvarCardapioDia(db, data, d, ator);
+export async function salvarEPublicarCardapioDia(db: Db, data: string, d: DadosCardapio, ator: Ator, empresaId: string) {
+  const s = await salvarCardapioDia(db, data, d, ator, empresaId);
   if (!s.ok) return s;
   return publicarCardapioDia(db, data, ator);
 }
@@ -210,12 +211,15 @@ export async function estatisticasPratos(db: Db, dia: string): Promise<Record<st
   return out;
 }
 
-export async function criarItensCatalogo(db: Db, grupo: Grupo, texto: string) {
+export async function criarItensCatalogo(db: Db, grupo: Grupo, texto: string, empresaId: string) {
   const nomes = [...new Set(linhas(texto))];
   if (nomes.length === 0) return { ok: false as const, mensagem: "Nada para cadastrar." };
   const { error } = await db
     .from("cardapio_itens")
-    .upsert(nomes.map((nome) => ({ grupo, nome, usos: 0 })), { onConflict: "grupo,nome", ignoreDuplicates: true });
+    .upsert(
+      nomes.map((nome) => ({ empresa_id: empresaId, grupo, nome, usos: 0 })),
+      { onConflict: "empresa_id,grupo,nome", ignoreDuplicates: true },
+    );
   if (error) return { ok: false as const, mensagem: "Não consegui cadastrar." };
   return { ok: true as const, total: nomes.length };
 }
@@ -266,13 +270,13 @@ export async function salvarPadraoSemanaSaladas(db: Db, dow: number, ids: string
   }
   return { ok: true as const };
 }
-export async function criarSalada(db: Db, nome: string, categoria: CategoriaSalada) {
+export async function criarSalada(db: Db, nome: string, categoria: CategoriaSalada, empresaId: string) {
   const n = nome.trim().slice(0, 60);
   if (n.length < 2) return { ok: false as const, mensagem: "Escreva o nome da salada." };
   if (!CATEGORIAS_SALADA.includes(categoria)) return { ok: false as const, mensagem: "Categoria inválida." };
   const { data, error } = await db
     .from("saladas_base")
-    .upsert({ nome: n, categoria, ativo: true }, { onConflict: "nome" })
+    .upsert({ empresa_id: empresaId, nome: n, categoria, ativo: true }, { onConflict: "empresa_id,nome" })
     .select("id")
     .single();
   if (error) return { ok: false as const, mensagem: error.message };

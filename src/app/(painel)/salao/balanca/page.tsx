@@ -12,7 +12,7 @@ export default async function BalancaPage() {
   const supabase = await createClient();
   const [{ data: cfgRows }, { data: agStatus }] = await Promise.all([
     supabase.from("pdv_config").select("chave, valor"),
-    supabase.from("balanca_status").select("hostname, visto_em, fila_pendente").eq("id", 1).maybeSingle(),
+    supabase.from("balanca_status").select("hostname, visto_em, fila_pendente").maybeSingle(),
   ]);
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;

@@ -1,9 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { agenteAutorizado } from "@/lib/impressao-agente";
+import { empresaDoAgente } from "@/lib/impressao-agente";
 
 // O agente avisa que está online e manda a lista de impressoras do PC.
 export async function POST(req: Request) {
-  if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
+  // O token do agente diz de qual loja é este PC.
+  const empresaId = await empresaDoAgente(req);
+  if (!empresaId) return new Response("nao autorizado", { status: 401 });
   const body = (await req.json().catch(() => ({}))) as { hostname?: string; printers?: string[] };
   const admin = createAdminClient();
   await admin
@@ -13,6 +15,6 @@ export async function POST(req: Request) {
       printers: Array.isArray(body.printers) ? body.printers : [],
       visto_em: new Date().toISOString(),
     })
-    .eq("id", 1);
+    .eq("empresa_id", empresaId);
   return Response.json({ ok: true });
 }

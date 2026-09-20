@@ -2,6 +2,7 @@
 
 // Saladas — ações do painel; a regra fica em src/lib/cardapio-dia-core.ts.
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import * as core from "@/lib/cardapio-dia-core";
@@ -40,7 +41,9 @@ export async function salvarSaladasDia(data: string, ids: string[]) {
 }
 export async function criarSalada(nome: string, categoria: CategoriaSalada) {
   const { db } = await sessao();
-  const r = await core.criarSalada(db, nome, categoria);
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, mensagem: "Não consegui identificar a empresa." };
+  const r = await core.criarSalada(db, nome, categoria, empresaId);
   atualizar();
   return r;
 }

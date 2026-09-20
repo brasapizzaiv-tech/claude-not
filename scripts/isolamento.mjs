@@ -53,6 +53,7 @@ async function comoUsuario(uid, fn) {
 const ok = [];
 const vazou = [];
 const naoTestei = [];
+const semDado = []; // vazias, mas com a regra certa
 
 try {
   await c.query("begin");
@@ -106,7 +107,23 @@ try {
         where empresa_id = $1 limit 1`,
       [BRASA],
     );
-    if (!alvo.length) { naoTestei.push(`${tabela} — sem nenhuma linha pra emprestar`); continue; }
+    if (!alvo.length) {
+      // Tabela vazia: não há linha pra emprestar, então não dá pra provar pelo
+      // uso. Dá pra conferir a REGRA: se ela exige a empresa nas duas pontas
+      // (ler e gravar), a tabela nasce protegida quando receber o primeiro
+      // dado. É menos que o teste de verdade, e por isso vai separado.
+      const { rows: pol } = await c.query(
+        `select coalesce(qual,'') q, coalesce(with_check,'') w
+           from pg_policies where schemaname='public' and tablename=$1`,
+        [tabela],
+      );
+      const fechada =
+        pol.length > 0 &&
+        pol.every((x) => x.q.includes("empresa_atual()") && x.w.includes("empresa_atual()"));
+      if (fechada) semDado.push(tabela);
+      else naoTestei.push(`${tabela} — vazia E sem regra por empresa`);
+      continue;
+    }
     const valores = pk.map((k) => alvo[0][k.nome]);
 
     await c.query("savepoint emprestar");
@@ -180,6 +197,11 @@ try {
 
   console.log(`✅ isoladas: ${ok.length}`);
   console.log(`   ${ok.join(", ")}`);
+  if (semDado.length) {
+    console.log(`
+◻ vazias, regra conferida (nada pra vazar hoje): ${semDado.length}`);
+    console.log(`   ${semDado.join(", ")}`);
+  }
   if (naoTestei.length) {
     console.log(`\n⚠  por conferir à mão: ${naoTestei.length}`);
     for (const t of naoTestei) console.log(`   ${t}`);

@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { agenteAutorizado } from "@/lib/impressao-agente";
-import { empresaAtualId } from "@/lib/empresa";
+import { empresaDoAgente } from "@/lib/impressao-agente";
 
 export const runtime = "nodejs";
 
@@ -19,12 +19,9 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
 
   // O nome do terminal ("CAIXA1") pode repetir entre restaurantes, então a
-  // chave virou empresa + terminal (migration 0193). Aqui a empresa vem do
-  // ENDEREÇO pra onde o agente manda o batimento — cada loja aponta pro
-  // endereço dela. O jeito definitivo é o token do agente carregar a loja
-  // (decisão 6 do multiempresa: instalador que pede um código); até lá, o
-  // endereço resolve.
-  const empresaId = await empresaAtualId();
+  // chave é empresa + terminal. A empresa vem do TOKEN do agente, que é o
+  // mesmo da estação de impressão e já diz de qual loja é o PC.
+  const empresaId = await empresaDoAgente(req);
   if (!empresaId) return Response.json({ ok: false, erro: "empresa nao identificada" }, { status: 400 });
 
   await admin.from("tef_status").upsert(

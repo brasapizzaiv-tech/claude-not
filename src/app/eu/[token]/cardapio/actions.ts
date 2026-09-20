@@ -4,6 +4,7 @@
 // válido, colaborador ativo, caixinha "faz_cardapio" e PIN batendo (cookie).
 // A regra de gravação é a mesma do painel (src/lib/cardapio-dia-core.ts).
 import { cookies } from "next/headers";
+import { empresaDoColaborador } from "@/lib/empresa";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import * as core from "@/lib/cardapio-dia-core";
@@ -39,7 +40,9 @@ function atualizar(token: string) {
 export async function salvarBuffetApp(token: string, dia: string, d: core.DadosCardapio) {
   const s = await sessao(token);
   if (!s) return SEM_PERMISSAO;
-  const r = await core.salvarCardapioDia(s.db, dia, d, s.ator);
+  const empresaId = await empresaDoColaborador(token);
+  if (!empresaId) return SEM_PERMISSAO;
+  const r = await core.salvarCardapioDia(s.db, dia, d, s.ator, empresaId);
   atualizar(token);
   return r;
 }
@@ -55,7 +58,9 @@ export async function publicarApp(token: string, dia: string) {
 export async function salvarEPublicarApp(token: string, dia: string, d: core.DadosCardapio) {
   const s = await sessao(token);
   if (!s) return SEM_PERMISSAO;
-  const r = await core.salvarEPublicarCardapioDia(s.db, dia, d, s.ator);
+  const empresaId = await empresaDoColaborador(token);
+  if (!empresaId) return SEM_PERMISSAO;
+  const r = await core.salvarEPublicarCardapioDia(s.db, dia, d, s.ator, empresaId);
   atualizar(token);
   return r;
 }

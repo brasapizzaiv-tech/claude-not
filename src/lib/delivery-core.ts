@@ -122,7 +122,6 @@ export async function calcularTaxaEntrega(db: Db, endereco: {
   const { data: cfg } = await db
     .from("delivery_config")
     .select("origem_lat, origem_lng, taxa_base, preco_km, raio_max_km")
-    .eq("id", 1)
     .maybeSingle();
   const c = cfg as { origem_lat?: number; origem_lng?: number; taxa_base?: number; preco_km?: number; raio_max_km?: number } | null;
   if (c?.origem_lat == null || c?.origem_lng == null) {

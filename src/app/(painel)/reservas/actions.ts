@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 
 export type DadosReserva = {
@@ -126,14 +127,26 @@ export async function salvarLimites(
   linhas: { turno: string; max_reservas: number; max_pessoas: number; grupo_grande: number }[],
 ) {
   const supabase = await createClient();
-  await supabase.from("reservas_limites").upsert(linhas, { onConflict: "turno" });
+  const empresaId = await empresaAtualId();
+  await supabase
+    .from("reservas_limites")
+    .upsert(
+      linhas.map((l) => ({ ...l, empresa_id: empresaId })),
+      { onConflict: "empresa_id,turno" },
+    );
   revalidatePath("/reservas");
   return { ok: true };
 }
 
 export async function salvarMensagens(msgs: { chave: string; valor: string }[]) {
   const supabase = await createClient();
-  await supabase.from("reservas_config").upsert(msgs, { onConflict: "chave" });
+  const empresaId = await empresaAtualId();
+  await supabase
+    .from("reservas_config")
+    .upsert(
+      msgs.map((m) => ({ ...m, empresa_id: empresaId })),
+      { onConflict: "empresa_id,chave" },
+    );
   revalidatePath("/reservas");
   return { ok: true };
 }

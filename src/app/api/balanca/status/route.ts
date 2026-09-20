@@ -1,12 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { agenteAutorizado } from "@/lib/impressao-agente";
+import { empresaDoAgente } from "@/lib/impressao-agente";
 
 export const runtime = "nodejs";
 
 // Heartbeat do agente da balança: hostname + tamanho da fila offline.
 // O painel usa isso pra ALERTAR pesagens não sincronizadas (nunca em silêncio).
 export async function POST(req: Request) {
-  if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
+  // O token do agente diz de qual loja é esta balança.
+  const empresaId = await empresaDoAgente(req);
+  if (!empresaId) return new Response("nao autorizado", { status: 401 });
 
   let body: { hostname?: string; fila_pendente?: number; versao?: string };
   try {
@@ -19,12 +21,12 @@ export async function POST(req: Request) {
   await admin
     .from("balanca_status")
     .upsert({
-      id: 1,
+      empresa_id: empresaId,
       hostname: (body.hostname ?? "").slice(0, 100) || null,
       fila_pendente: Math.max(0, Math.round(Number(body.fila_pendente) || 0)),
       versao: (body.versao ?? "").slice(0, 20) || null,
       visto_em: new Date().toISOString(),
-    }, { onConflict: "id" });
+    }, { onConflict: "empresa_id" });
 
   // Devolve o que o agente precisa pra numerar: número inicial da balança e
   // quando o caixa atual abriu (muda → o agente reinicia a numeração).
