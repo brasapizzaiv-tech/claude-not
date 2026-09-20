@@ -321,6 +321,19 @@ export function TvPaginaCardapio({
                     </span>
                   </div>
                 )}
+                {/* A divisão por loja, numa linha própria embaixo: a cozinha
+                    embala por destino, então o total sozinho não basta. Fica
+                    recuado até onde começa o nome da salada, pra leitura
+                    descer em coluna. */}
+                {k.saladaPorLoja.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0 18px", paddingLeft: "5.2em", marginTop: 1, fontSize: vh(tamDir - 6), fontWeight: 700, color: "#888" }}>
+                    {k.saladaPorLoja.map((x) => (
+                      <span key={x.loja} style={{ whiteSpace: "nowrap" }}>
+                        {x.loja} <span style={{ color: AMBAR, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{x.n}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </Bloco>

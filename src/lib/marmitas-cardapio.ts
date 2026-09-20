@@ -22,6 +22,10 @@ export type KernDia = {
   // normalizada (minúscula, sem espaço nas pontas) — é o que a cozinha precisa
   // pra saber quantas de cada fazer. Vazio antes do primeiro pedido do dia.
   escolhas: Record<string, number>;
+  // Quantas saladas vão pra cada loja do convênio (Matriz, Centro, ADM, CD).
+  // A cozinha embala por destino, então precisa da divisão — não só do total.
+  // Só entram as lojas que pediram salada hoje, da maior pra menor.
+  saladaPorLoja: { loja: string; n: number }[];
   horaEntrega: string;    // "11:00"
   nomeConvenio: string;
   bloqueado: string | null; // motivo (feriado) quando não tem marmita
@@ -109,21 +113,23 @@ function listaDoPedido(v: unknown): string[] {
   return [];
 }
 
-/** Quantas pessoas escolheram cada prato e cada proteína no dia. */
+/** Quantas pessoas escolheram cada prato e cada proteína no dia, e quantas
+ *  saladas vão pra cada loja do convênio. */
 async function contarEscolhas(
   admin: ReturnType<typeof createAdminClient>,
   iso: string,
-): Promise<Record<string, number>> {
+): Promise<{ conta: Record<string, number>; saladaPorLoja: { loja: string; n: number }[] }> {
   const { data } = await admin
     .from("mkt_pedidos")
-    .select("pratos, proteina, salada")
+    .select("pratos, proteina, salada, filial")
     .eq("data", iso);
   const conta: Record<string, number> = {};
+  const porLoja: Record<string, number> = {};
   const somar = (nome: unknown) => {
     const k = chaveItem(nome as string);
     if (k) conta[k] = (conta[k] ?? 0) + 1;
   };
-  for (const p of (data as { pratos: unknown; proteina: unknown; salada: unknown }[]) ?? []) {
+  for (const p of (data as { pratos: unknown; proteina: unknown; salada: unknown; filial: unknown }[]) ?? []) {
     // Uma marmita pode levar mais de um prato; a proteína é uma só.
     //
     // `pratos` é uma coluna de TEXTO com a lista escrita dentro
@@ -135,8 +141,19 @@ async function contarEscolhas(
     // A salada do dia é uma só: quem não quis vem em branco. Então este
     // número é "quantos levaram salada", não "qual salada escolheram".
     somar(p.salada);
+
+    // A divisão por loja vale só pra quem levou salada.
+    if (chaveItem(p.salada as string)) {
+      const loja = String(p.filial ?? "").trim() || "Sem loja";
+      porLoja[loja] = (porLoja[loja] ?? 0) + 1;
+    }
   }
-  return conta;
+  return {
+    conta,
+    saladaPorLoja: Object.entries(porLoja)
+      .map(([loja, n]) => ({ loja, n }))
+      .sort((a, b) => b.n - a.n),
+  };
 }
 
 export async function kernDoDia(iso: string): Promise<KernDia> {
@@ -147,6 +164,7 @@ export async function kernDoDia(iso: string): Promise<KernDia> {
     lerExcecaoMarmita(admin, iso),
     contarEscolhas(admin, iso),
   ]);
+  const { conta: escolhasPorItem, saladaPorLoja } = escolhas;
   const hit = cfg.bloqueios.find((x) => x.data === iso);
   const sem = semanaPara(cfg.cardapios, iso);
   const dia = sem?.dias?.[CHAVE_DIA[diaSemanaIso(iso)]];
@@ -158,7 +176,8 @@ export async function kernDoDia(iso: string): Promise<KernDia> {
     proteinas: vale.proteinas,
     salada: vale.salada,
     quantidade: count ?? 0,
-    escolhas,
+    escolhas: escolhasPorItem,
+    saladaPorLoja,
     horaEntrega: cfg.horaEntrega,
     nomeConvenio: cfg.nomeConvenio,
     bloqueado: hit ? hit.motivo : null,
