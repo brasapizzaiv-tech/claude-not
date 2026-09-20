@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { agenteAutorizado } from "@/lib/impressao-agente";
+import { empresaDoAgente } from "@/lib/impressao-agente";
 import { gerarEtiquetaPdf, type EtiquetaConfig } from "@/lib/etiqueta-pdf";
 import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
 import { gerarTestePdf } from "@/lib/teste-pdf";
@@ -36,13 +36,19 @@ async function logoDaBrasa(baseUrl: string): Promise<Buffer | null> {
 
 // Gera o PDF de um item da fila (etiqueta ou comanda) para o agente imprimir.
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
+  const empresaId = await empresaDoAgente(req);
+  if (!empresaId) return new Response("nao autorizado", { status: 401 });
   const { id } = await params;
   const admin = createAdminClient();
   const baseUrl = new URL(req.url).origin;
   const formato = new URL(req.url).searchParams.get("formato") ?? "pdf";
 
-  const { data: job } = await admin.from("impressao_fila").select("tipo, ref_id, impressora_id").eq("id", id).maybeSingle();
+  const { data: job } = await admin
+    .from("impressao_fila")
+    .select("tipo, ref_id, impressora_id")
+    .eq("id", id)
+    .eq("empresa_id", empresaId)
+    .maybeSingle();
   if (!job) return new Response("nao encontrado", { status: 404 });
 
   let pdf: Buffer;
@@ -88,7 +94,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       job.impressora_id
         ? admin.from("impressoras").select("etiqueta_config").eq("id", job.impressora_id).maybeSingle()
         : Promise.resolve({ data: null }),
-      admin.from("mkt_config").select("chave, valor").in("chave", ["nomeConvenio", "horaEntrega"]),
+      admin.from("mkt_config").select("chave, valor").eq("empresa_id", empresaId).in("chave", ["nomeConvenio", "horaEntrega"]),
     ]);
     if (!ped) return new Response("pedido nao encontrado", { status: 404 });
     const cfg = Object.fromEntries((((cfgRows as { chave: string; valor: string }[]) ?? [])).map((r) => [r.chave, r.valor]));
@@ -143,7 +149,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     ]);
     const origem = (nota?.url_xml as string) || (nota?.url_danfe as string) || "";
     if (!origem) return new Response("nota sem XML", { status: 404 });
-    const { data: cfgRows } = await admin.from("config_fiscal").select("chave, valor").in("chave", ["emissor_token"]);
+    const { data: cfgRows } = await admin.from("config_fiscal").select("chave, valor").eq("empresa_id", empresaId).in("chave", ["emissor_token"]);
     const token = (cfgRows ?? []).find((r) => r.chave === "emissor_token")?.valor ?? "";
     const xml = await baixarXmlNfce({ token, ambiente: (nota?.ambiente as FocusAmbiente) || "producao" }, origem);
     if (!xml) return new Response("nao consegui baixar o XML da nota", { status: 502 });
@@ -182,7 +188,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       job.impressora_id
         ? admin.from("impressoras").select("comanda_config").eq("id", job.impressora_id).maybeSingle()
         : Promise.resolve({ data: null }),
-      admin.from("pdv_config").select("valor").eq("chave", "nome_restaurante").maybeSingle(),
+      admin.from("pdv_config").select("valor").eq("empresa_id", empresaId).eq("chave", "nome_restaurante").maybeSingle(),
     ]);
     if (!cx) return new Response("caixa nao encontrado", { status: 404 });
     const r = (cx.resumo ?? {}) as {

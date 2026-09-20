@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { agenteAutorizado } from "@/lib/impressao-agente";
+import { empresaDoAgente } from "@/lib/impressao-agente";
 
 export const runtime = "nodejs";
 
@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 // (inclusive as represadas da fila offline — o `ts` preserva o horário real).
 // Mesma regra do quiosque: preço por dia da semana, teto do livre, marmita só-kg.
 export async function POST(req: Request) {
-  if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
+  const empresaId = await empresaDoAgente(req);
+  if (!empresaId) return new Response("nao autorizado", { status: 401 });
 
   // id/numero: gerados pelo AGENTE (ele imprime o cupom antes de sincronizar).
   let body: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean; ts?: string; id?: string; numero?: number };
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     }
   }
   const numeroAgente = Number(body.numero) > 0 ? Math.round(Number(body.numero)) : null;
-  const { data: cfgRows } = await admin.from("pdv_config").select("chave, valor");
+  const { data: cfgRows } = await admin.from("pdv_config").select("chave, valor").eq("empresa_id", empresaId);
   const cfg: Record<string, string> = {};
   for (const r of (cfgRows as { chave: string; valor: string }[]) ?? []) cfg[r.chave] = r.valor;
 
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
   const { data: com, error } = await admin
     .from("pdv_comandas")
     .insert({
+      empresa_id: empresaId,
       ...(idAgente ? { id: idAgente } : {}),
       ...(numeroAgente ? { numero: numeroAgente } : {}),
       peso,

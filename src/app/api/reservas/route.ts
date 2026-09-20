@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 
 // Reservas vindas do site público. A página é estática (public/site), então
 // toda a regra fica aqui: nenhum dado de acesso ao banco aparece no HTML.
@@ -20,17 +21,34 @@ export async function GET(req: NextRequest) {
   const data = req.nextUrl.searchParams.get("data") ?? "";
   const supabase = createAdminClient();
 
-  const { data: limData } = await supabase.from("reservas_limites").select("*");
+  // A página do site é estática, então tudo passa por aqui com a chave
+  // administrativa — que não obedece às regras do banco. O restaurante vem do
+  // endereço de quem chamou, e entra em cada consulta: sem isso, o site de um
+  // mostraria a agenda lotada do outro.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) {
+    return NextResponse.json({ erro: "Restaurante não identificado." }, { status: 400 });
+  }
+
+  const { data: limData } = await supabase
+    .from("reservas_limites")
+    .select("*")
+    .eq("empresa_id", empresaId);
   const limites = Object.fromEntries(
     ((limData as { turno: string }[]) ?? []).map((l) => [l.turno, l]),
   );
   if (!ehData(data)) return NextResponse.json({ limites, bloqueios: [], lotacao: {} });
 
   const [{ data: bloqData }, { data: resData }] = await Promise.all([
-    supabase.from("reservas_bloqueios").select("turno, motivo").eq("data", data),
+    supabase
+      .from("reservas_bloqueios")
+      .select("turno, motivo")
+      .eq("empresa_id", empresaId)
+      .eq("data", data),
     supabase
       .from("reservas")
       .select("turno, pessoas")
+      .eq("empresa_id", empresaId)
       .eq("data", data)
       .neq("status", "cancelada"),
   ]);
@@ -74,11 +92,16 @@ export async function POST(req: NextRequest) {
   if (pessoas < 1) return NextResponse.json({ erro: "Quantas pessoas vão?" }, { status: 400 });
 
   const supabase = createAdminClient();
+  const empresaId = await empresaAtualId();
+  if (!empresaId) {
+    return NextResponse.json({ erro: "Restaurante não identificado." }, { status: 400 });
+  }
 
   // Dia (ou turno) fechado pela equipe.
   const { data: bloq } = await supabase
     .from("reservas_bloqueios")
     .select("turno")
+    .eq("empresa_id", empresaId)
     .eq("data", data);
   const fechados = ((bloq as { turno: string }[]) ?? []).map((b) => b.turno);
   if (fechados.includes("Dia todo") || fechados.includes(turno))
@@ -89,10 +112,16 @@ export async function POST(req: NextRequest) {
 
   // Lotação do turno.
   const [{ data: limData }, { data: doDia }] = await Promise.all([
-    supabase.from("reservas_limites").select("*").eq("turno", turno).maybeSingle(),
+    supabase
+      .from("reservas_limites")
+      .select("*")
+      .eq("empresa_id", empresaId)
+      .eq("turno", turno)
+      .maybeSingle(),
     supabase
       .from("reservas")
       .select("pessoas")
+      .eq("empresa_id", empresaId)
       .eq("data", data)
       .eq("turno", turno)
       .neq("status", "cancelada"),
@@ -118,6 +147,7 @@ export async function POST(req: NextRequest) {
   const nascimento = texto(corpo.nascimento, 10);
 
   const { error } = await supabase.from("reservas").insert({
+    empresa_id: empresaId,
     nome,
     telefone,
     data,

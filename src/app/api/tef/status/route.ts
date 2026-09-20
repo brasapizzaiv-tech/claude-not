@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { agenteAutorizado } from "@/lib/impressao-agente";
 import { empresaDoAgente } from "@/lib/impressao-agente";
 
 export const runtime = "nodejs";
@@ -7,7 +6,6 @@ export const runtime = "nodejs";
 // Heartbeat do Agente TEF (um por PC de caixa): mostra no sistema quais
 // terminais estão com TEF ligado. Usa o mesmo token dos outros agentes.
 export async function POST(req: Request) {
-  if (!(await agenteAutorizado(req))) return new Response("nao autorizado", { status: 401 });
   let body: { hostname?: string; terminal?: string; versao?: string; gerenciador?: boolean; etapa?: string };
   try {
     body = await req.json();
