@@ -116,14 +116,14 @@ async function contarEscolhas(
 ): Promise<Record<string, number>> {
   const { data } = await admin
     .from("mkt_pedidos")
-    .select("pratos, proteina")
+    .select("pratos, proteina, salada")
     .eq("data", iso);
   const conta: Record<string, number> = {};
   const somar = (nome: unknown) => {
     const k = chaveItem(nome as string);
     if (k) conta[k] = (conta[k] ?? 0) + 1;
   };
-  for (const p of (data as { pratos: unknown; proteina: unknown }[]) ?? []) {
+  for (const p of (data as { pratos: unknown; proteina: unknown; salada: unknown }[]) ?? []) {
     // Uma marmita pode levar mais de um prato; a proteína é uma só.
     //
     // `pratos` é uma coluna de TEXTO com a lista escrita dentro
@@ -132,6 +132,9 @@ async function contarEscolhas(
     // sem reclamar de nada.
     for (const x of listaDoPedido(p.pratos)) somar(x);
     somar(p.proteina);
+    // A salada do dia é uma só: quem não quis vem em branco. Então este
+    // número é "quantos levaram salada", não "qual salada escolheram".
+    somar(p.salada);
   }
   return conta;
 }

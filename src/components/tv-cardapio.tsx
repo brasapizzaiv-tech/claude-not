@@ -310,7 +310,17 @@ export function TvPaginaCardapio({
                     <Lista itens={k.proteinas} inicio={k.pratos.length + 1} cor={AMBAR} tamanho={tamDir} porColuna={4} compacto contagem={k.escolhas} />
                   </div>
                 )}
-                {k.salada && <div style={{ fontSize: vh(tamDir - 2), fontWeight: 700, color: "#ccc" }}><span style={{ color: "#888", letterSpacing: "0.12em", fontSize: vh(16), fontWeight: 900 }}>SALADA </span>{k.salada}</div>}
+                {k.salada && (
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, fontSize: vh(tamDir - 2), fontWeight: 700, color: "#ccc" }}>
+                    <span style={{ color: "#888", letterSpacing: "0.12em", fontSize: vh(16), fontWeight: 900, flexShrink: 0 }}>SALADA</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>{k.salada}</span>
+                    {/* Aqui o número quer dizer QUANTOS LEVARAM: a salada do
+                        dia é uma só, e quem não quis não escolhe outra. */}
+                    <span style={{ flexShrink: 0, minWidth: "2.2em", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 900, color: k.escolhas[k.salada.trim().toLowerCase()] ? AMBAR : "transparent" }}>
+                      {k.escolhas[k.salada.trim().toLowerCase()] ?? 0}
+                    </span>
+                  </div>
+                )}
               </>
             )}
           </Bloco>
