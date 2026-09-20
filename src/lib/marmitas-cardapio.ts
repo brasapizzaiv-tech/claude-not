@@ -18,6 +18,10 @@ export type KernDia = {
   proteinas: string[];
   salada: string;
   quantidade: number;     // pedidos já feitos pra esse dia
+  // Quantas pessoas escolheram cada prato e cada proteína, pela CHAVE
+  // normalizada (minúscula, sem espaço nas pontas) — é o que a cozinha precisa
+  // pra saber quantas de cada fazer. Vazio antes do primeiro pedido do dia.
+  escolhas: Record<string, number>;
   horaEntrega: string;    // "11:00"
   nomeConvenio: string;
   bloqueado: string | null; // motivo (feriado) quando não tem marmita
@@ -85,12 +89,60 @@ export async function lerExcecaoMarmita(admin: ReturnType<typeof createAdminClie
   return { pratos: lista(r.pratos), proteinas: lista(r.proteinas), salada: String(r.salada ?? "").trim(), por_nome: r.por_nome, atualizado_em: r.atualizado_em };
 }
 
+/** Chave de comparação entre o nome no cardápio e o nome no pedido: a mesma
+ *  usada pela rota das marmitas pra achar item fora do cardápio. */
+const chaveItem = (s: string) => String(s ?? "").trim().toLowerCase();
+
+/** Os pratos de um pedido, venham como lista ou como texto com a lista
+ *  dentro. Devolve vazio em qualquer formato que eu não reconheça, em vez de
+ *  quebrar a TV. */
+function listaDoPedido(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String);
+  if (typeof v === "string" && v.trim().startsWith("[")) {
+    try {
+      const j = JSON.parse(v);
+      return Array.isArray(j) ? j.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/** Quantas pessoas escolheram cada prato e cada proteína no dia. */
+async function contarEscolhas(
+  admin: ReturnType<typeof createAdminClient>,
+  iso: string,
+): Promise<Record<string, number>> {
+  const { data } = await admin
+    .from("mkt_pedidos")
+    .select("pratos, proteina")
+    .eq("data", iso);
+  const conta: Record<string, number> = {};
+  const somar = (nome: unknown) => {
+    const k = chaveItem(nome as string);
+    if (k) conta[k] = (conta[k] ?? 0) + 1;
+  };
+  for (const p of (data as { pratos: unknown; proteina: unknown }[]) ?? []) {
+    // Uma marmita pode levar mais de um prato; a proteína é uma só.
+    //
+    // `pratos` é uma coluna de TEXTO com a lista escrita dentro
+    // (`["Arroz Branco","Feijão"]`), não uma lista de verdade — foi assim que
+    // a tabela nasceu. Tratar só como lista fazia a conta dos pratos dar zero
+    // sem reclamar de nada.
+    for (const x of listaDoPedido(p.pratos)) somar(x);
+    somar(p.proteina);
+  }
+  return conta;
+}
+
 export async function kernDoDia(iso: string): Promise<KernDia> {
   const admin = createAdminClient();
-  const [cfg, { count }, exc] = await Promise.all([
+  const [cfg, { count }, exc, escolhas] = await Promise.all([
     lerCfgKern(admin),
     admin.from("mkt_pedidos").select("id", { count: "exact", head: true }).eq("data", iso),
     lerExcecaoMarmita(admin, iso),
+    contarEscolhas(admin, iso),
   ]);
   const hit = cfg.bloqueios.find((x) => x.data === iso);
   const sem = semanaPara(cfg.cardapios, iso);
@@ -103,6 +155,7 @@ export async function kernDoDia(iso: string): Promise<KernDia> {
     proteinas: vale.proteinas,
     salada: vale.salada,
     quantidade: count ?? 0,
+    escolhas,
     horaEntrega: cfg.horaEntrega,
     nomeConvenio: cfg.nomeConvenio,
     bloqueado: hit ? hit.motivo : null,

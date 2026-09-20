@@ -67,7 +67,7 @@ function Bloco({ titulo, cor, extra, children, style }: { titulo: string; cor: s
 
 // Lista NUMERADA a partir de `inicio`; passando de `porColuna` itens, divide
 // em duas colunas em vez de rolar. O número fica em destaque, na cor do bloco.
-function Lista({ itens, inicio, cor, tamanho, porColuna = 6, compacto = false }: { itens: string[]; inicio: number; cor: string; tamanho: number; porColuna?: number; compacto?: boolean }) {
+function Lista({ itens, inicio, cor, tamanho, porColuna = 6, compacto = false, contagem }: { itens: string[]; inicio: number; cor: string; tamanho: number; porColuna?: number; compacto?: boolean; contagem?: Record<string, number> }) {
   const duas = itens.length > porColuna;
   const meio = Math.ceil(itens.length / 2);
   const colunas = duas ? [itens.slice(0, meio), itens.slice(meio)] : [itens];
@@ -81,7 +81,25 @@ function Lista({ itens, inicio, cor, tamanho, porColuna = 6, compacto = false }:
             return (
               <li key={j} style={{ display: "flex", alignItems: "baseline", gap: 10, fontSize: vh(tamanho), lineHeight: compacto ? 1.15 : 1.22, fontWeight: 700, color: "#fff", padding: compacto ? "1px 0" : "2px 0", overflowWrap: "anywhere" }}>
                 <span style={{ minWidth: "1.5em", textAlign: "right", color: cor, fontWeight: 900, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{num}</span>
-                <span>{nome}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>{nome}</span>
+                {/* Quantas pessoas pediram este item. Fica à direita, na cor
+                    do bloco, pra cozinha ler a coluna de números de relance.
+                    Item que ninguém pediu não ganha zero: fica em branco, que
+                    é mais fácil de varrer com o olho. */}
+                {contagem ? (
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      minWidth: "2.2em",
+                      textAlign: "right",
+                      fontVariantNumeric: "tabular-nums",
+                      fontWeight: 900,
+                      color: contagem[nome.trim().toLowerCase()] ? cor : "transparent",
+                    }}
+                  >
+                    {contagem[nome.trim().toLowerCase()] ?? 0}
+                  </span>
+                ) : null}
               </li>
             );
           })}
@@ -283,13 +301,13 @@ export function TvPaginaCardapio({
                 {k.pratos.length > 0 && (
                   <div style={{ marginBottom: 6 }}>
                     <Subtitulo texto="Pratos" />
-                    <Lista itens={k.pratos} inicio={1} cor={AMBAR} tamanho={tamDir} porColuna={3} compacto />
+                    <Lista itens={k.pratos} inicio={1} cor={AMBAR} tamanho={tamDir} porColuna={3} compacto contagem={k.escolhas} />
                   </div>
                 )}
                 {k.proteinas.length > 0 && (
                   <div style={{ marginBottom: 4 }}>
                     <Subtitulo texto="Proteínas (escolhe uma)" />
-                    <Lista itens={k.proteinas} inicio={k.pratos.length + 1} cor={AMBAR} tamanho={tamDir} porColuna={4} compacto />
+                    <Lista itens={k.proteinas} inicio={k.pratos.length + 1} cor={AMBAR} tamanho={tamDir} porColuna={4} compacto contagem={k.escolhas} />
                   </div>
                 )}
                 {k.salada && <div style={{ fontSize: vh(tamDir - 2), fontWeight: 700, color: "#ccc" }}><span style={{ color: "#888", letterSpacing: "0.12em", fontSize: vh(16), fontWeight: 900 }}>SALADA </span>{k.salada}</div>}
