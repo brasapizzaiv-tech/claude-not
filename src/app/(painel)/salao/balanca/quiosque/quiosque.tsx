@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useVoz, valorFalado } from "./voz";
-import { gerarComandaBuffetKiosk, gerarComandaLivreKiosk, virarLivreKiosk, virarLivrePorNumeroKiosk } from "../../actions";
+import { buscarComandaBalancaKiosk, gerarComandaBuffetKiosk, gerarComandaLivreKiosk, repesarKiosk, virarLivreKiosk, virarLivrePorNumeroKiosk } from "../../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -33,6 +33,7 @@ type Resultado = {
   tara: number;
   livre: boolean;
   viradaLivre?: boolean;  // pesou antes e virou livre pelo QR
+  somou?: { antes: number; desta: number }; // 2ª pesagem somada numa comanda que já existia
   antes?: number;         // valor que era antes de virar livre
   codigoOffline?: string; // sem internet: código local da fila do agente
 };
@@ -190,6 +191,15 @@ export function QuiosqueBalanca({
     setEst("processando");
     // O que vai pro sistema é o peso LÍQUIDO já resolvido (marmita = leitura + tara).
     const liquido = Math.round(netDe(bruto, taraBalancaRef.current, soKgRef.current) * 1000) / 1000;
+    // Pesando de novo: some nesta comanda em vez de abrir outra.
+    const somarEm = alvoRef.current;
+    if (somarEm) {
+      capturaRef.current = { bruto, liquido, ts: Date.now() };
+      viuPratoSair.current = false;
+      precisaZerar.current = true;
+      await somarNaComanda(liquido, somarEm);
+      return;
+    }
     capturaRef.current = { bruto, liquido, ts: Date.now() };
     viuPratoSair.current = false;
     // Com o agente no PC: ele numera, IMPRIME NA HORA e sincroniza depois — o
@@ -319,6 +329,74 @@ export function QuiosqueBalanca({
   // (ou digita o nº) e a comanda vira BUFFET LIVRE.
   const [virarAberto, setVirarAberto] = useState(false);
   const [numeroVirar, setNumeroVirar] = useState("");
+
+  // PESAR DE NOVO: a pessoa voltou ao buffet. Enquanto isto tem valor, a
+  // próxima pesagem SOMA nesta comanda em vez de abrir outra.
+  const [repesarAberto, setRepesarAberto] = useState(false);
+  const [numeroRepesar, setNumeroRepesar] = useState("");
+  const [alvo, setAlvo] = useState<{ id: string; numero: number; peso: number; valor: number } | null>(null);
+  const alvoRef = useRef<typeof alvo>(null);
+  useEffect(() => { alvoRef.current = alvo; }, [alvo]);
+  // O leitor de QR é global (age como teclado) e por isso lê por fora do
+  // React: precisa saber, por referência, se a tela está em "voltei ao buffet".
+  const repesarAbertoRef = useRef(false);
+  useEffect(() => { repesarAbertoRef.current = repesarAberto; }, [repesarAberto]);
+
+  /** Confere a comanda ANTES de pedir o prato: se ela não existe, ou já
+   *  fechou, ou já é livre, a pessoa descobre agora e não depois de pesar. */
+  async function escolherAlvo(txt: string) {
+    if (virando) return;
+    setVirando(true);
+    setErro("");
+    try {
+      const r = await buscarComandaBalancaKiosk(txt);
+      if (!r.ok) { setErro(r.mensagem); setTimeout(() => setErro(""), 5000); return; }
+      if (r.livre) {
+        setErro(`Comanda ${r.numero} já é BUFFET LIVRE — pode servir à vontade.`);
+        setTimeout(() => setErro(""), 6000);
+        setRepesarAberto(false);
+        setNumeroRepesar("");
+        return;
+      }
+      setAlvo({ id: r.id, numero: r.numero, peso: r.peso, valor: r.valor });
+      setRepesarAberto(false);
+      setNumeroRepesar("");
+    } catch {
+      setErro("Sem conexão com o sistema.");
+      setTimeout(() => setErro(""), 5000);
+    } finally {
+      setVirando(false);
+    }
+  }
+
+  /** A segunda pesagem, somada na comanda escolhida. Sempre pelo sistema: só
+   *  ele sabe o que já está lançado ali. */
+  async function somarNaComanda(liquido: number, alvoAtual: { id: string; numero: number; peso: number; valor: number }) {
+    setEst("processando");
+    try {
+      const r = await repesarKiosk(alvoAtual.id, liquido, taraBalancaRef.current);
+      if (r.ok) {
+        setAlvo(null);
+        concluir({
+          id: r.id, numero: r.numero, valor: r.valor, liquido: r.liquido,
+          peso: r.peso, tara: 0, livre: r.livre,
+          somou: { antes: r.antes.peso, desta: r.desta },
+        });
+      } else {
+        setErro(r.mensagem);
+        setTimeout(() => setErro(""), 8000);
+        setAlvo(null);
+        voltarAguardando();
+      }
+    } catch {
+      // Sem internet não dá pra somar: só o sistema sabe o que já tem na
+      // comanda. Recusar é melhor do que abrir uma segunda comanda escondida.
+      setErro("Sem conexão: não consegui somar. Chame alguém do caixa.");
+      setTimeout(() => setErro(""), 8000);
+      setAlvo(null);
+      voltarAguardando();
+    }
+  }
   const [virando, setVirando] = useState(false);
   async function virarPorNumero() {
     // Leitor QR com o campo focado digita a URL inteira aqui: pega o id dela.
@@ -535,7 +613,14 @@ export function QuiosqueBalanca({
         const m =
           qrBuf.current.txt.match(/comandas\/([0-9a-f-]{36})/i) ||
           qrBuf.current.txt.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-        if (m) virarLivre(m[1]);
+        // Mesmo cupom, dois destinos: no modo "voltei ao buffet" o QR escolhe
+        // a comanda pra SOMAR; fora dele, continua virando livre como antes.
+        // Sem esta separação, quem passasse o cupom pra somar acabaria
+        // virando livre — e pagando o teto sem querer.
+        if (m) {
+          if (repesarAbertoRef.current) void escolherAlvo(m[1]);
+          else void virarLivre(m[1]);
+        }
         qrBuf.current.txt = "";
       } else if (e.key.length === 1) {
         qrBuf.current.txt += e.key;
@@ -848,6 +933,49 @@ export function QuiosqueBalanca({
         </div>
       )}
 
+      {/* PESAR DE NOVO: escolhe a comanda ANTES de pesar. Mesmo teclado do
+          "virar livre", porque o quiosque é touch e não abre teclado sozinho. */}
+      {repesarAberto && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6" onClick={() => setRepesarAberto(false)}>
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-marca-escuro"><span className="inline-flex items-center justify-center gap-3"><Icone nome="balanca" tamanho={28} /> Voltei ao buffet</span></h2>
+            <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-marca-escuro/80">
+              Passe o <b>QR do seu cupom</b> no leitor, ou digite o número. O prato novo <b>soma</b> na sua comanda.
+            </p>
+            <div className="mx-auto mt-4 flex max-w-xs justify-center">
+              <input
+                autoFocus
+                inputMode="none"
+                value={numeroRepesar}
+                onChange={(e) => setNumeroRepesar(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") void escolherAlvo(numeroRepesar); }}
+                placeholder="Nº"
+                className="w-full rounded-2xl border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums focus:border-orange-500"
+              />
+            </div>
+            <div className="mx-auto mt-3 grid max-w-xs grid-cols-3 gap-2">
+              {["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "OK"].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={virando || (t === "OK" && !numeroRepesar.replace(/D/g, ""))}
+                  onClick={() => {
+                    if (t === "OK") { void escolherAlvo(numeroRepesar); return; }
+                    if (t === "⌫") { setNumeroRepesar((v) => v.slice(0, -1)); return; }
+                    setNumeroRepesar((v) => (v.replace(/D/g, "") + t).slice(0, 5));
+                  }}
+                  className="rounded-2xl border-2 border-marca-escuro/15 bg-white py-4 text-2xl font-black active:bg-marca-escuro/10 disabled:opacity-40"
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {erro && <p className="mt-4 text-lg font-bold text-red-600">{erro}</p>}
+            <button onClick={() => setRepesarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
+          </div>
+        </div>
+      )}
+
       {virarAberto && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6" onClick={() => setVirarAberto(false)}>
           <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -912,6 +1040,25 @@ export function QuiosqueBalanca({
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6">
+         {/* Enquanto há comanda escolhida, a tela inteira avisa: a próxima
+             pesagem NÃO abre comanda nova. Sem isso a pessoa de trás na fila
+             poderia pesar o prato dela na conta de outra. */}
+         {alvo && estado !== "resultado" && (
+           <div className="mx-auto mt-3 flex w-full max-w-4xl items-center justify-between gap-4 rounded-3xl bg-marca-escuro px-6 py-4 text-white">
+             <div className="text-left">
+               <p className="text-[clamp(1.1rem,2.6vw,1.8rem)] font-black">Somando na comanda nº {alvo.numero}</p>
+               <p className="text-[clamp(0.9rem,2vw,1.3rem)] opacity-80">
+                 já tem {alvo.peso.toFixed(3).replace(".", ",")} kg · {moeda(alvo.valor)} — ponha o prato na balança
+               </p>
+             </div>
+             <button
+               onClick={() => setAlvo(null)}
+               className="shrink-0 rounded-2xl border-2 border-white/40 px-5 py-3 text-[clamp(0.9rem,2vw,1.3rem)] font-bold"
+             >
+               Cancelar
+             </button>
+           </div>
+         )}
          <div className="m-auto flex w-full flex-col items-center py-3">
           {/* instrução / resultado */}
           {estado === "resultado" && resultado ? (
@@ -921,7 +1068,9 @@ export function QuiosqueBalanca({
                   ? `✓ REGISTRADO · ${resultado.codigoOffline}`
                   : resultado.viradaLivre
                     ? `✓ COMANDA Nº ${resultado.numero} AGORA É LIVRE`
-                    : `✓ COMANDA Nº ${resultado.numero}`}
+                    : resultado.somou
+                      ? `✓ SOMADO NA COMANDA Nº ${resultado.numero}`
+                      : `✓ COMANDA Nº ${resultado.numero}`}
               </div>
               {resultado.codigoOffline && (
                 <p className="mb-2 text-[clamp(0.9rem,2.5vw,1.4rem)] text-amber-700">
@@ -989,6 +1138,15 @@ export function QuiosqueBalanca({
                   >
                     <Icone nome="salao" tamanho={30} className="mr-3" /> QUERO O BUFFET LIVRE
                     <span className="block text-[clamp(1.1rem,2.8vw,2.2rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>
+                  </button>
+                )}
+                {liq <= LIMIAR && (
+                  <button
+                    onClick={() => { setRepesarAberto(true); setNumeroRepesar(""); }}
+                    className="min-w-[16rem] flex-1 rounded-3xl border-4 border-marca-escuro/20 bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-marca-escuro/80 shadow-md active:brightness-95"
+                  >
+                    <Icone nome="balanca" tamanho={26} className="mr-3" /> VOLTEI AO BUFFET
+                    <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium text-marca-escuro/50">soma na comanda que já tenho</span>
                   </button>
                 )}
                 {buffetLivre > 0 && liq <= LIMIAR && (
@@ -1121,6 +1279,14 @@ export function QuiosqueBalanca({
             )}
             {resultado.viradaLivre && resultado.antes != null && (
               <div style={{ fontSize: "8pt" }}>era {moeda(resultado.antes)} por peso</div>
+            )}
+            {/* Segunda pesagem: o cupom mostra de onde veio o peso, senão a
+                pessoa olha o total e acha que pesaram errado. */}
+            {resultado.somou && (
+              <div style={{ fontSize: "8pt", marginTop: "1mm" }}>
+                {resultado.somou.antes.toFixed(3).replace(".", ",")} kg + {resultado.somou.desta.toFixed(3).replace(".", ",")} kg
+                {resultado.livre ? " — passou do livre" : ""}
+              </div>
             )}
 
             {resultado.codigoOffline ? (

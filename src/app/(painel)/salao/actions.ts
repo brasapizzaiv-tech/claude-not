@@ -379,6 +379,111 @@ export async function virarLivrePorNumeroKiosk(numero: number) {
   return virarLivreKiosk(com.id as string);
 }
 
+// ---------- PESAR DE NOVO ----------
+//
+// A pessoa pesou, comeu e voltou ao buffet. Em vez de sair uma segunda
+// comanda (que ela pagaria separada), o segundo prato ENTRA NA MESMA:
+//
+//   • as duas pesagens somam;
+//   • se a soma passar do teto do dia, a comanda vira BUFFET LIVRE e o valor
+//     é SUBSTITUÍDO pelo preço do livre — nunca a soma dos dois.
+//
+// É a mesma conta de uma pesagem só, feita sobre o peso somado. Quem come
+// duas vezes nunca paga mais do que quem enche o prato uma vez.
+//
+// Não passa pelo agente do PC: só o sistema sabe o que já tem na comanda.
+// Sem internet, esta operação recusa em vez de adivinhar.
+
+/** Acha a comanda de balança pelo número OU pelo id do QR do cupom. */
+export async function buscarComandaBalancaKiosk(alvo: string) {
+  const supabase = await createClient();
+  const txt = (alvo || "").trim();
+  const uuid = txt.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  const consulta = supabase
+    .from("pdv_comandas")
+    .select("id, numero, status, peso, tara, valor_buffet, livre, so_kg");
+
+  const { data: com } = uuid
+    ? await consulta.eq("id", uuid[1]).maybeSingle()
+    : await consulta
+        .eq("numero", Math.floor(Number(txt.replace(/\D/g, ""))) || -1)
+        .eq("status", "aberta")
+        .order("aberta_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+  if (!com) return { ok: false as const, mensagem: "Não achei essa comanda." };
+  if (com.status !== "aberta") {
+    return { ok: false as const, mensagem: `Comanda ${com.numero} já foi fechada.` };
+  }
+  return {
+    ok: true as const,
+    id: com.id as string,
+    numero: Number(com.numero),
+    peso: Number(com.peso ?? 0),
+    valor: Number(com.valor_buffet ?? 0),
+    livre: !!com.livre,
+    soKg: !!com.so_kg,
+  };
+}
+
+/** Soma uma segunda pesagem na comanda que já existe. */
+export async function repesarKiosk(comandaId: string, liquidoNovo: number, taraBalanca = 0) {
+  const supabase = await createClient();
+  const cid = (comandaId || "").trim();
+  if (!/^[0-9a-f-]{36}$/i.test(cid)) return { ok: false as const, mensagem: "Comanda inválida." };
+  if (!(liquidoNovo > 0)) return { ok: false as const, mensagem: "Peso não veio da balança." };
+
+  const { data: com } = await supabase
+    .from("pdv_comandas")
+    .select("id, numero, status, peso, tara, valor_buffet, livre, so_kg")
+    .eq("id", cid)
+    .maybeSingle();
+  if (!com) return { ok: false as const, mensagem: "Comanda não encontrada." };
+  if (com.status !== "aberta") {
+    return { ok: false as const, mensagem: `Comanda ${com.numero} já foi fechada.` };
+  }
+  // Já é livre: somar não muda nada — ela já paga o teto. Melhor dizer isso do
+  // que registrar uma pesagem que não altera o valor.
+  if (com.livre) {
+    return { ok: false as const, mensagem: `Comanda ${com.numero} já é BUFFET LIVRE — pode servir à vontade.` };
+  }
+
+  const pesoAntes = Number(com.peso ?? 0);
+  const valorAntes = Number(com.valor_buffet ?? 0);
+  const soKg = !!com.so_kg; // marmita continua marmita: não ganha teto de livre
+  const pesoTotal = Math.round((pesoAntes + liquidoNovo) * 1000) / 1000;
+
+  const cfg = await pdvCfg(supabase);
+  // `tara` aqui é só registro (o peso guardado já é o líquido), então a conta
+  // vai sobre o total com tara zero, igual à primeira pesagem.
+  const { valor, livre } = calcBuffet(cfg, pesoTotal, 0, soKg);
+
+  const { error } = await supabase
+    .from("pdv_comandas")
+    .update({
+      peso: pesoTotal,
+      tara: Math.round((Number(com.tara ?? 0) + Math.max(0, taraBalanca)) * 1000) / 1000,
+      valor_buffet: valor,
+      livre,
+    })
+    .eq("id", cid);
+  if (error) return { ok: false as const, mensagem: "Não consegui somar na comanda." };
+
+  revalidatePath("/salao");
+  return {
+    ok: true as const,
+    id: cid,
+    numero: Number(com.numero),
+    valor,
+    livre,
+    peso: pesoTotal,
+    liquido: pesoTotal,
+    antes: { peso: pesoAntes, valor: valorAntes },
+    desta: Math.round(liquidoNovo * 1000) / 1000,
+  };
+}
+
 // Nova comanda de buffet a partir do peso (kg). Aplica "livre" (teto) se passar.
 export async function criarComandaBuffet(formData: FormData) {
   const supabase = await createClient();
