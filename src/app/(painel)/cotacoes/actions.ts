@@ -449,7 +449,25 @@ export async function fecharCotacao(formData: FormData) {
 export async function reabrirCotacao(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;
-  await supabase.from("cotacoes").update({ status: "aberta" }).eq("id", id);
+
+  // Reabrir também solta a trava de "já gerei os pedidos".
+  //
+  // O carimbo `pedidos_gerados_em` existe pra ninguém gerar duas vezes e
+  // duplicar pedido. Mas ele ficava pra sempre: quem reabria a cotação pra
+  // refazer (porque ninguém respondeu, por exemplo) esbarrava numa mensagem
+  // dizendo que a cotação "já pode estar fechada" — e ela estava aberta.
+  //
+  // Só solto a trava se NÃO houver pedido nenhum. Com pedido, soltar deixaria
+  // gerar por cima e duplicar, que é exatamente o que o carimbo evita.
+  const { count } = await supabase
+    .from("pedidos")
+    .select("id", { count: "exact", head: true })
+    .eq("cotacao_id", id);
+
+  await supabase
+    .from("cotacoes")
+    .update({ status: "aberta", ...((count ?? 0) === 0 ? { pedidos_gerados_em: null } : {}) })
+    .eq("id", id);
   revalidatePath(`/cotacoes/${id}`);
   revalidatePath("/cotacoes");
 }

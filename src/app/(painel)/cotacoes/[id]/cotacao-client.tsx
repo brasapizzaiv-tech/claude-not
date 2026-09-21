@@ -108,7 +108,13 @@ export function CotacaoClient({
         setMsg(`✓ ${ex.gerados} fornecedor(es) exclusivo(s) com pedido pronto — envie em “Ver pedidos”.`);
       else if (ex.ok)
         setMsg("Nenhum item exclusivo pronto (confira se o produto tem 1 fornecedor só e quantidade > 0).");
-      else setMsg("Não foi possível gerar (a cotação já pode estar fechada).");
+      // A ação devolve `travada` quando os pedidos já foram gerados uma vez.
+      // A mensagem antiga chutava "a cotação já pode estar fechada" — e quem
+      // batia nela normalmente estava com a cotação ABERTA, procurando o erro
+      // no lugar errado.
+      else if ("travada" in ex && ex.travada)
+        setMsg("Os pedidos desta cotação já foram gerados. Para refazer, apague os pedidos em “Ver pedidos” e reabra a cotação.");
+      else setMsg("Não consegui gerar os pedidos. Tente de novo em instantes.");
       setTimeout(() => setMsg(null), 7000);
     });
   }
