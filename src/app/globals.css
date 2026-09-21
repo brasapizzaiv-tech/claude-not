@@ -359,6 +359,29 @@ body {
   }
 }
 
+/* ---------- A LISTA QUE O <select> ABRE ----------
+   Quem desenha essa lista é o NAVEGADOR, não o sistema — ela é uma janelinha
+   à parte, por cima da página. Por isso ela não herda o fundo do cartão: a
+   maioria dos nossos campos usa fundo transparente, que fica certo fechado
+   (o cartão aparece atrás) e vira BRANCO quando a lista abre, porque ali não
+   há cartão nenhum atrás. No tema escuro o texto continuava claro, e o
+   resultado era letra clara sobre branco: ilegível.
+
+   A saída é pintar as OPÇÕES, não o campo. Opção não leva classe do Tailwind,
+   então uma regra por elemento alcança as 112 listas do sistema de uma vez —
+   e, sendo por token, acerta os dois temas sozinha.
+
+   O `color-scheme` da seção 5 continua cuidando do resto que o navegador
+   desenha (barra de rolagem, seletor de data). */
+option,
+optgroup {
+  background-color: var(--painel-cartao);
+  color: var(--texto);
+}
+optgroup {
+  color: var(--texto-fraco);
+}
+
 /* ---------- O FOCO DO TECLADO ----------
    Antes desta regra, 164 campos do sistema traziam `outline-none`: o anel do
    navegador estava desligado e nada entrava no lugar. Quem andava de Tab —
