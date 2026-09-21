@@ -73,3 +73,6 @@ agente-tef/node_modules/
 # app nativo do entregador: android/ e node_modules/ são gerados no CI
 app-entregador/node_modules/
 app-entregador/*.apk
+
+# Cópias de segurança tiradas antes de remover dados — ficam só neste PC.
+backup-*.json
