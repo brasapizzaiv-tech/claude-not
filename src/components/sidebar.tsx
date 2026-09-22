@@ -196,6 +196,7 @@ export function Sidebar({
     {
       key: "equipe", label: "Equipe", icon: "equipe",
       itens: [
+        ...so(has("mural"), { href: "/mural", label: "Mural do escritório", icon: "aparelho" }),
         ...so(has("colaboradores"),
           { href: "/colaboradores", label: "Colaboradores", icon: "pessoa" },
           { href: "/colaboradores/semana", label: "Semana e 10%", icon: "horario" },

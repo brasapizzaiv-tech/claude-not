@@ -27,6 +27,7 @@ export type ModuloKey =
   | "delivery"
   | "solicitacoes"
   | "checklists"
+  | "mural"
   | "rodizio";
 
 // `icon` é o NOME do ícone, não o desenho: quem desenha é o <Icone> em
@@ -66,6 +67,7 @@ export const MODULOS: {
   { key: "delivery", label: "Delivery", icon: "entrega", rotas: ["/delivery"] },
   { key: "solicitacoes", label: "Pedidos da equipe (compras e manutenção)", icon: "ferramenta", rotas: ["/solicitacoes"] },
   { key: "checklists", label: "Checklists de rotina", icon: "checklist", rotas: ["/checklists"] },
+  { key: "mural", label: "Mural do escritório", icon: "aparelho", rotas: ["/mural"] },
   { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "pizza", rotas: ["/cozinha"] },
 ];
 
