@@ -2,10 +2,39 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { formaDoExtrato } from "@/lib/forma-do-extrato";
 import { createClient } from "@/lib/supabase/server";
 import { lerOfx } from "@/lib/ofx";
 import { lancarNota } from "@/app/(painel)/notas/actions";
 import { exigirAcesso } from "@/lib/permissoes-server";
+
+/** Grava no lançamento de onde veio o dinheiro e como ele andou, LENDO do
+ *  extrato. Só preenche o que está vazio: se alguém já escreveu a forma de
+ *  pagamento na mão, o extrato confirma, não corrige por cima. */
+async function carimbarOrigem(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  lancamentoIds: string[],
+  transacao: { banco?: string | null; descricao?: string | null },
+) {
+  if (lancamentoIds.length === 0) return;
+  const forma = formaDoExtrato(transacao.descricao);
+  const banco = (transacao.banco ?? "").trim();
+
+  if (banco) {
+    await supabase
+      .from("lancamentos")
+      .update({ banco })
+      .in("id", lancamentoIds)
+      .or("banco.is.null,banco.eq.");
+  }
+  if (forma) {
+    await supabase
+      .from("lancamentos")
+      .update({ forma_pagamento: forma })
+      .in("id", lancamentoIds)
+      .or("forma_pagamento.is.null,forma_pagamento.eq.");
+  }
+}
 
 export async function importarOfx(texto: string, banco: string) {
   await exigirAcesso("/financeiro");
@@ -79,10 +108,14 @@ export async function gerarLancamentoDaTransacao(
   const supabase = await createClient();
   const { data: t } = await supabase
     .from("transacoes_banco")
-    .select("data, valor, descricao")
+    .select("data, valor, descricao, banco")
     .eq("id", transacaoId)
     .maybeSingle();
   if (!t) return { ok: false, erro: "Transação não encontrada." };
+
+  // De onde veio e como andou — direto do extrato, sem ninguém digitar.
+  const formaExtrato = formaDoExtrato(t.descricao as string | null);
+  const bancoExtrato = ((t.banco as string | null) ?? "").trim() || null;
 
   const total = Math.round(Math.abs(Number(t.valor)) * 100) / 100;
   const base = observacao?.trim() || (t.descricao as string) || "Lançamento do extrato";
@@ -105,6 +138,8 @@ export async function gerarLancamentoDaTransacao(
           origem: "manual",
           pago: true,
           pago_em: t.data,
+          banco: bancoExtrato,
+          forma_pagamento: formaExtrato,
           grupo_id: grupo,
         })),
       )
@@ -129,6 +164,8 @@ export async function gerarLancamentoDaTransacao(
       origem: "manual",
       pago: true,
       pago_em: t.data,
+      banco: bancoExtrato,
+      forma_pagamento: formaExtrato,
     })
     .select("id")
     .single();
@@ -148,7 +185,7 @@ export async function conciliar(transacaoId: string, lancamentoId: string) {
   const supabase = await createClient();
   const { data: t } = await supabase
     .from("transacoes_banco")
-    .select("data")
+    .select("data, descricao, banco")
     .eq("id", transacaoId)
     .maybeSingle();
   await supabase
@@ -160,6 +197,7 @@ export async function conciliar(transacaoId: string, lancamentoId: string) {
     .from("lancamentos")
     .update({ pago: true, pago_em: (t?.data as string) ?? null })
     .eq("id", lancamentoId);
+  await carimbarOrigem(supabase, [lancamentoId], t ?? {});
   revalidatePath("/financeiro/banco");
   revalidatePath("/financeiro/contas");
   return { ok: true };
@@ -171,7 +209,7 @@ export async function lancarNotaEConciliar(transacaoId: string, notaId: string) 
   const supabase = await createClient();
   const { data: t } = await supabase
     .from("transacoes_banco")
-    .select("data")
+    .select("data, descricao, banco")
     .eq("id", transacaoId)
     .maybeSingle();
   await lancarNota(notaId, {});
@@ -189,6 +227,8 @@ export async function lancarNotaEConciliar(transacaoId: string, notaId: string) 
       .from("transacoes_banco")
       .update({ lancamento_id: ids[0] })
       .eq("id", transacaoId);
+    // A nota vira vários lançamentos (um por categoria): todos carimbados.
+    await carimbarOrigem(supabase, ids, t ?? {});
   }
   revalidatePath("/financeiro/banco");
   revalidatePath("/notas");
@@ -206,7 +246,7 @@ export async function conciliarVarias(
     if (!p.lancamentoId) continue;
     const { data: t } = await supabase
       .from("transacoes_banco")
-      .select("data")
+      .select("data, descricao, banco")
       .eq("id", p.transacaoId)
       .maybeSingle();
     await supabase
@@ -217,6 +257,7 @@ export async function conciliarVarias(
       .from("lancamentos")
       .update({ pago: true, pago_em: (t?.data as string) ?? null })
       .eq("id", p.lancamentoId);
+    await carimbarOrigem(supabase, [p.lancamentoId], t ?? {});
   }
   revalidatePath("/financeiro/banco");
   revalidatePath("/financeiro/contas");
