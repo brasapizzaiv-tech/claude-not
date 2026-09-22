@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EscolhaComBusca } from "@/components/escolha-com-busca";
 import { Enviar } from "@/components/enviar";
 import { createClient } from "@/lib/supabase/server";
 import type { DreCategoria } from "@/lib/types";
@@ -196,18 +197,16 @@ export default async function FinanceiroPage({
         </div>
         <div className="min-w-56 flex-1">
           <label className="mb-1 block text-xs text-texto-suave">Categoria</label>
-          <select name="categoria_id" required className={`${inputCls} w-full`}>
-            <option value="">Escolha...</option>
-            {[...porGrupo.entries()].map(([grupo, cs]) => (
-              <optgroup key={grupo} label={grupo}>
-                {cs.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          {/* 117 categorias: digitar filtra. O grupo entra no rótulo pra
+              procurar tanto por "Salários" quanto por "Pessoal". */}
+          <EscolhaComBusca
+            name="categoria_id"
+            obrigatorio
+            rotuloVazio="Escolha..."
+            opcoes={[...porGrupo.entries()].flatMap(([grupo, cs]) =>
+              cs.map((c) => ({ value: c.id, label: `${c.nome} — ${grupo}` })),
+            )}
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Valor (R$)</label>

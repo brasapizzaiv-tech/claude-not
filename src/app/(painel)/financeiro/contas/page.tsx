@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EscolhaComBusca } from "@/components/escolha-com-busca";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
@@ -168,14 +169,12 @@ export default async function ContasPagarPage({
         </div>
         <div className="min-w-44">
           <label className="mb-1 block text-xs text-texto-fraco">Categoria</label>
-          <select name="cat" defaultValue={f.cat} className={`${inputCls} w-full`}>
-            <option value="">Todas</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
+          {/* 117 categorias: aqui a pessoa digita e a lista filtra. */}
+          <EscolhaComBusca
+            name="cat"
+            inicial={f.cat ?? ""}
+            opcoes={categorias.map((c) => ({ value: c.id, label: c.nome }))}
+          />
         </div>
         <button className="flex min-h-11 items-center rounded-controle bg-texto px-4 text-sm font-medium text-fundo transition hover:opacity-90">
           Aplicar

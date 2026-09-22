@@ -13,6 +13,8 @@ export function Combobox({
   placeholder = "Buscar...",
   disabled,
   className = "",
+  name,
+  required,
 }: {
   options: ComboOpt[];
   value: string;
@@ -20,6 +22,14 @@ export function Combobox({
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** Preencha quando o campo estiver dentro de um formulário: o valor
+   *  escolhido vai num campo escondido com este nome, e o formulário envia
+   *  igual a um <select> comum. Sem isso, a escolha só existe na tela. */
+  name?: string;
+  /** Sem escolha, o formulário não envia. O aviso do navegador cai no campo
+   *  de digitar (que fica vazio até escolher algo) — campo escondido o
+   *  navegador não valida. */
+  required?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -74,9 +84,11 @@ export function Combobox({
 
   return (
     <div ref={wrap} className="relative">
+      {name && <input type="hidden" name={name} value={value} />}
       <input
         type="text"
         disabled={disabled}
+        required={required && !value}
         value={open ? query : selected?.label ?? ""}
         placeholder={selected ? selected.label : placeholder}
         onFocus={abrir}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Combobox } from "@/components/combobox";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
 import { editarLancamento, excluirLancamento } from "./actions";
@@ -73,18 +74,16 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
             </div>
             <div className="min-w-52 flex-1">
               <label className="mb-1 block text-mini text-texto-suave">Categoria</label>
-              <select value={cat} onChange={(e) => setCat(e.target.value)} className={`${inputCls} w-full`}>
-                <option value="">Escolha...</option>
-                {[...porGrupo.entries()].map(([g, cs]) => (
-                  <optgroup key={g} label={g}>
-                    {cs.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              {/* Digitar filtra: são 117 categorias. O grupo entra no rótulo
+                  pra achar tanto por "Salários" quanto por "Pessoal". */}
+              <Combobox
+                value={cat}
+                onChange={setCat}
+                placeholder="Escolha..."
+                options={[...porGrupo.entries()].flatMap(([g, cs]) =>
+                  cs.map((c) => ({ value: c.id, label: `${c.nome} — ${g}` })),
+                )}
+              />
             </div>
             <div>
               <label className="mb-1 block text-mini text-texto-suave">Valor</label>
