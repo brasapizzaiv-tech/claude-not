@@ -244,7 +244,7 @@ export function BancoTabela({
 
       <div className="rounded-cartao bg-painel-cartao">
         <div className="overflow-x-auto">
-          <table className="min-w-[720px] w-full text-sm">
+          <table className="min-w-[560px] w-full text-sm">
             <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="w-8 px-3 py-3">
@@ -257,7 +257,7 @@ export function BancoTabela({
                     />
                   )}
                 </th>
-                <th className="px-4 py-3">Data</th>
+                <th className="whitespace-nowrap px-4 py-3">Data</th>
                 <th className="px-4 py-3">Descrição (banco)</th>
                 <th className="px-4 py-3 text-right">Valor</th>
                 <th className="px-4 py-3">Lançamento</th>
@@ -287,8 +287,8 @@ export function BancoTabela({
                           />
                         )}
                       </td>
-                      <td className="px-4 py-2 text-texto-suave">{dataBR(t.data)}</td>
-                      <td className="px-4 py-2 text-texto">
+                      <td className="whitespace-nowrap px-4 py-2 text-texto-suave">{dataBR(t.data)}</td>
+                      <td className="w-full min-w-[14ch] px-4 py-2 text-texto">
                         {t.banco && (
                           <span className="mr-2 rounded bg-superficie-suave px-1.5 py-0.5 text-mini font-medium text-texto-suave">
                             {t.banco}
@@ -297,13 +297,13 @@ export function BancoTabela({
                         {t.descricao}
                       </td>
                       <td
-                        className={`px-4 py-2 text-right font-medium ${
+                        className={`whitespace-nowrap px-4 py-2 text-right font-medium ${
                           entrada ? "text-green-600" : "text-red-600"
                         }`}
                       >
                         {moeda(Number(t.valor))}
                       </td>
-                      <td className="px-4 py-2 text-xs">
+                      <td className="max-w-[22ch] px-4 py-2 text-xs">
                         {conciliado ? (
                           <span className="text-green-600">
                             ✓ {t.lancamentoLabel ?? "conciliado"}

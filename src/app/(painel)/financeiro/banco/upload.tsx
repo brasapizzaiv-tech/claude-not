@@ -11,6 +11,25 @@ export function UploadOfx() {
   const [msg, setMsg] = useState<string | null>(null);
   const [banco, setBanco] = useState(BANCOS[0] ?? "");
 
+  // Os bancos brasileiros mandam o OFX em Latin-1 (ISO-8859-1 / Windows-1252),
+  // não em UTF-8. Lido como UTF-8, todo acento vira "�": "RDC AUTOMÁTICO"
+  // chegava como "RDC AUTOM�TICO" e ficava assim pra sempre no extrato.
+  //
+  // O arquivo diz a codificação no cabeçalho (CHARSET), mas nem todo banco
+  // preenche direito — então a regra é: tenta UTF-8 e, se aparecer o caractere
+  // de "não entendi" (\uFFFD), lê de novo como Latin-1. É o que acerta os dois
+  // sem depender da boa vontade do banco.
+  async function lerArquivoOfx(file: File): Promise<string> {
+    const bytes = await file.arrayBuffer();
+    const utf8 = new TextDecoder("utf-8").decode(bytes);
+    if (!utf8.includes("\uFFFD")) return utf8;
+    try {
+      return new TextDecoder("windows-1252").decode(bytes);
+    } catch {
+      return utf8; // navegador sem esse decodificador: melhor o texto torto do que nada
+    }
+  }
+
   function escolher(file: File | null) {
     if (!file) return;
     if (!banco) {
@@ -18,7 +37,7 @@ export function UploadOfx() {
       return;
     }
     start(async () => {
-      const texto = await file.text();
+      const texto = await lerArquivoOfx(file);
       const r = await importarOfx(texto, banco);
       if (r?.ok)
         setMsg(`✓ ${banco}: ${r.novas} nova(s) de ${r.total} transação(ões)${r.repetidas ? ` · ${r.repetidas} já estavam importadas` : ""}.`);

@@ -34,7 +34,21 @@ export async function importarOfx(texto: string, banco: string) {
   let novas = 0;
   let repetidas = 0;
   for (const t of trans) {
-    if (t.fitid && jaTem.has(t.fitid)) { repetidas++; continue; }
+    if (t.fitid && jaTem.has(t.fitid)) {
+      repetidas++;
+      // Já estava importada, mas a descrição pode estar torta (extrato antigo
+      // lido na codificação errada). Reimportar o mesmo arquivo conserta o
+      // texto sem duplicar nada nem desfazer conciliação — só o texto muda.
+      if (t.descricao) {
+        await supabase
+          .from("transacoes_banco")
+          .update({ descricao: t.descricao })
+          .eq("fitid", t.fitid)
+          .or(`banco.eq.${bancoNome},banco.is.null`)
+          .neq("descricao", t.descricao);
+      }
+      continue;
+    }
     const { error } = await supabase.from("transacoes_banco").insert({
       data: t.data,
       valor: t.valor,
