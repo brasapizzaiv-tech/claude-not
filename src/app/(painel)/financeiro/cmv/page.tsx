@@ -56,7 +56,7 @@ export default async function CmvPage({
 
   if (contagens.length < 2) {
     return (
-      <div className="mx-auto max-w-7xl p-6 sm:p-8">
+      <div className="w-full p-6 sm:p-8">
         {cabecalho}
         <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           É preciso ter pelo menos <b>duas contagens finalizadas</b> (uma vira o

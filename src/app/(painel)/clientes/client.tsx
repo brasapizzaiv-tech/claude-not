@@ -73,7 +73,7 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     : clientes;
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="w-full p-6">
       <Link href="/dashboard" className="text-sm text-texto-suave hover:text-orange-600">← Início</Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>

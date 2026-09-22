@@ -235,7 +235,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
   const visiveis = busca ? base.filter((c) => c.nome.toLowerCase().includes(busca.toLowerCase())) : base;
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="w-full p-8">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Colaboradores</h1>

@@ -33,7 +33,7 @@ export default async function CaixaListaPage() {
   const lista = (data as Row[]) ?? [];
 
   return (
-    <div className="mx-auto max-w-4xl p-6 sm:p-8">
+    <div className="w-full p-6 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">

@@ -121,7 +121,7 @@ export default async function NotaDetalhePage({
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
+    <div className="w-full p-8">
       <Link href="/notas" className="text-sm text-texto-suave hover:text-orange-600">
         ← Voltar para notas
       </Link>

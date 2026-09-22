@@ -17,7 +17,7 @@ export default async function PerfisFiscaisPage() {
   for (const r of cfg ?? []) c[r.chave] = r.valor ?? "";
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="w-full p-6">
       <Link href="/fiscal" className="text-sm text-texto-suave hover:text-orange-600">← Config fiscal</Link>
       <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="cupom" tamanho={20} className="mr-2" /> Perfis fiscais</h1>
       <p className="mb-6 mt-1 text-sm text-texto-suave">

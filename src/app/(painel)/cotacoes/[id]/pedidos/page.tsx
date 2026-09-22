@@ -43,7 +43,7 @@ export default async function PedidosPage({
   const pedidos = (pedidosData as unknown as Ped[]) ?? [];
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
+    <div className="w-full p-8">
       <Link
         href={`/cotacoes/${cotacao.id}/comparar`}
         className="text-sm text-texto-suave hover:text-orange-600"

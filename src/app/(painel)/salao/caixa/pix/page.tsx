@@ -76,7 +76,7 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
   const diag = pixDiagnostico();
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="w-full p-6">
       <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">← Caixa</Link>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>

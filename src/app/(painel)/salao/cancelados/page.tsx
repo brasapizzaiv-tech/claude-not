@@ -64,7 +64,7 @@ export default async function CanceladosPage() {
   ].sort((a, b) => String(b.quando).localeCompare(String(a.quando)));
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="w-full p-6">
       <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">← Salão</Link>
       <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Cancelados / excluídos</h1>
       <p className="mt-1 text-sm text-texto-suave">Auditoria: comandas excluídas e itens cancelados, com o motivo, quem fez e quando.</p>

@@ -206,7 +206,7 @@ export function ProdutosClient({
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
+    <div className="w-full p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">

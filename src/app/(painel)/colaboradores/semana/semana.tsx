@@ -339,7 +339,7 @@ export function SemanaClient({
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-4 sm:p-6">
+    <div className="w-full p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Semana e 10%</h1>

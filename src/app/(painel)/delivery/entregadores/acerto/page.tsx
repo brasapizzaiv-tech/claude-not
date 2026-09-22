@@ -43,7 +43,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
   }).filter((l) => l.meus.length > 0 || l.feito);
 
   return (
-    <div className="mx-auto max-w-4xl p-4">
+    <div className="w-full p-4">
       <Link href="/delivery/entregadores" className="text-sm text-emerald-600">← Entregadores</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="dinheiro" tamanho={19} /> Acerto dos entregadores</h1>

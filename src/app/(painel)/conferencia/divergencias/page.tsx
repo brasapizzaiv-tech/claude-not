@@ -73,7 +73,7 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
   const inputCls = "rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto   ";
 
   return (
-    <div className="mx-auto max-w-5xl p-8">
+    <div className="w-full p-8">
       <Link href="/conferencia" className="text-sm text-texto-suave hover:text-orange-600">← Voltar para conferência</Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>

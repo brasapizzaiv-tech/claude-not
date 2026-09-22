@@ -25,7 +25,7 @@ export default async function ImpressasPage({ searchParams }: { searchParams: Pr
     .limit(3000);
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
+    <div className="w-full p-8">
       <Link href="/etiquetas" className="text-sm text-texto-suave hover:text-orange-600">← Etiquetas</Link>
       <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">📈 Etiquetas impressas</h1>
       <p className="mt-1 mb-5 text-texto-suave">Quantas etiquetas saíram, em que horário e por quem.</p>

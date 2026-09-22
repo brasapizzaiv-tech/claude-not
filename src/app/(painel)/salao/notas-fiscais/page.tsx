@@ -41,7 +41,7 @@ export default async function NotasFiscaisPage() {
   const valorTotal = autorizadas.reduce((s, l) => s + (l.valor ?? 0), 0);
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className="w-full p-6">
       <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">← Salão</Link>
       <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Notas fiscais</h1>
       <p className="mt-1 text-sm text-texto-suave">

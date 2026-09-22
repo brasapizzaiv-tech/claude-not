@@ -52,7 +52,7 @@ export default async function ConferenciaPage() {
   const comProblemaMes = pedidos.filter((p) => p.data >= mesIni && p.divergencias_n > 0).length;
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="w-full p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">

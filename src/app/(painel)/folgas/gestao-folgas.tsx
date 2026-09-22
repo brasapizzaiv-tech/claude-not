@@ -72,7 +72,7 @@ export function GestaoFolgas({
   const ctx = { equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIso, proc, run, setAviso };
 
   return (
-    <div className="mx-auto max-w-4xl p-3 sm:p-5">
+    <div className="w-full p-3 sm:p-5">
       <div className="mb-4">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="folga" tamanho={19} /> Folgas</h1>
         <p className="text-xs text-texto-suave">Cadastro da equipe e escala agora em <b>Cadastros → Colaboradores</b>.</p>

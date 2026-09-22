@@ -155,7 +155,7 @@ export function ConferirClient({
   const conferido = status === "conferido";
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="w-full p-8">
       <Link
         href="/conferencia"
         className="text-sm text-texto-suave hover:text-orange-600"

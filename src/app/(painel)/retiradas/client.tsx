@@ -67,7 +67,7 @@ export function RetiradasClient({
   );
 
   return (
-    <div className="mx-auto max-w-4xl p-3 sm:p-5">
+    <div className="w-full p-3 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="compras" tamanho={19} /> Compras internas</h1>
         <button onClick={() => setNovo(true)} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600">

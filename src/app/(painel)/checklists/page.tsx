@@ -40,7 +40,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
   const card = "rounded-cartao border border-borda p-4 ";
 
   return (
-    <div className="mx-auto max-w-5xl p-8">
+    <div className="w-full p-8">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>

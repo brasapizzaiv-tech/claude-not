@@ -136,7 +136,7 @@ export function AgendaReservas({
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
+    <div className="w-full p-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Reservas</h1>
         <a
