@@ -31,7 +31,7 @@ export type PedidoCompraMural = {
   respondidoEm: string | null;
 };
 
-const CARTAO = "h-fit rounded-cartao bg-painel-cartao p-4";
+const CARTAO = "rounded-cartao bg-painel-cartao p-4";
 const ROTULO = "text-xs font-medium text-texto-fraco";
 
 /** Quantos dias entre duas datas em AAAA-MM-DD, sem passar por fuso. */
@@ -109,9 +109,24 @@ export function Mural({
     [solicitacoes],
   );
   const comprasResolvidas = useMemo(
-    () => solicitacoes.filter((s) => s.status !== "pendente").slice(0, 6),
-    [solicitacoes],
+    () => solicitacoes.filter((s) => s.status !== "pendente").slice(0, tv ? 4 : 6),
+    [solicitacoes, tv],
   );
+  const limiteDeDias = tv ? 9 : 14;
+  const limiteDeEsperando = tv ? 4 : 6;
+  // Na TV o terceiro bloco só aparece quando tem pedido esperando. Um bloco
+  // inteiro dizendo "nada aqui" custa um terço da tela, e o que sobra é
+  // justamente o que o Rafael precisa enxergar de longe — com o bloco fora, o
+  // resto cresce e a letra fica maior.
+  const mostrarCompras = !tv || comprasAbertas.length > 0;
+  // As classes vêm escritas por extenso porque o Tailwind lê o código como
+  // texto: um nome montado na hora ("col-span-" + n) ele não enxerga, e o
+  // estilo não chega a existir.
+  const largura = tv
+    ? mostrarCompras
+      ? { foco: "col-span-4", folgas: "col-span-5", compras: "col-span-3" }
+      : { foco: "col-span-5", folgas: "col-span-7", compras: "" }
+    : { foco: "lg:col-span-4", folgas: "lg:col-span-5", compras: "lg:col-span-3" };
 
   // Folgas aprovadas agrupadas por dia, que é como se lê uma escala.
   const porDia = useMemo(() => {
@@ -126,10 +141,11 @@ export function Mural({
 
   const esperando = pendentes.length + comprasAbertas.length;
   // O cartão mostra no máximo 6 de cada lado; o resto vira uma linha só.
-  const mostrados = Math.min(pendentes.length, 6) + Math.min(comprasAbertas.length, 6);
+  const mostrados =
+    Math.min(pendentes.length, limiteDeEsperando) + Math.min(comprasAbertas.length, limiteDeEsperando);
 
   return (
-    <div className="flex w-full flex-col gap-4 p-5">
+    <div className={`flex w-full flex-col gap-4 p-5 ${tv ? "h-full" : ""}`}>
       {/* ---------- Cabeçalho ---------- */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -145,11 +161,15 @@ export function Mural({
         </span>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-12">
+      {/* Na TV a largura é sempre a mesma (o Ajustar cuida do resto), então as
+          três colunas valem sempre — empilhar só jogaria conteúdo pra fora. */}
+      <div className={`grid gap-4 ${tv ? "min-h-0 flex-1 grid-cols-12" : "lg:grid-cols-12"}`}>
         {/* ---------- 1. Esperando você ---------- */}
         {/* O cartão invertido, como na tela inicial: uma chamada por tela, e
             aqui ela é esta — é o motivo de o mural existir. */}
-        <section className="h-fit rounded-cartao bg-painel-foco-fundo p-4 text-painel-foco-texto lg:col-span-4">
+        <section
+          className={`overflow-hidden rounded-cartao bg-painel-foco-fundo p-4 text-painel-foco-texto ${tv ? "flex flex-col justify-center" : "h-fit"} ${largura.foco}`}
+        >
           <p className="text-xs font-medium opacity-70">Esperando você</p>
           <p className="mt-1 font-numero text-4xl font-semibold tracking-apertada">{esperando}</p>
           <p className="mt-0.5 text-xs opacity-70">
@@ -163,7 +183,7 @@ export function Mural({
             </p>
           ) : (
             <div className="mt-4 flex flex-col gap-2">
-              {pendentes.slice(0, 6).map((f) => (
+              {pendentes.slice(0, limiteDeEsperando).map((f) => (
                 <Caixa
                   key={`f${f.id}`}
                   tv={tv}
@@ -180,7 +200,7 @@ export function Mural({
                   {f.motivo && <p className="mt-0.5 text-xs opacity-70">{f.motivo}</p>}
                 </Caixa>
               ))}
-              {comprasAbertas.slice(0, 6).map((s) => (
+              {comprasAbertas.slice(0, limiteDeEsperando).map((s) => (
                 <Caixa
                   key={`c${s.id}`}
                   tv={tv}
@@ -210,7 +230,7 @@ export function Mural({
         </section>
 
         {/* ---------- 2. Folgas que vêm aí ---------- */}
-        <section className={`${CARTAO} lg:col-span-5`}>
+        <section className={`${CARTAO} overflow-hidden ${tv ? "" : "h-fit"} ${largura.folgas}`}>
           <div className="mb-3 flex items-baseline justify-between gap-2">
             <p className={ROTULO}>Folgas aprovadas · próximos 45 dias</p>
             {!tv && (
@@ -223,7 +243,7 @@ export function Mural({
             <p className="text-sm text-texto-fraco">Nenhuma folga marcada pra frente.</p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {porDia.slice(0, 14).map(([data, lista]) => {
+              {porDia.slice(0, limiteDeDias).map(([data, lista]) => {
                 const falta = dias(hoje, data);
                 const temGerente = lista.some((f) => f.gerente);
                 return (
@@ -265,15 +285,18 @@ export function Mural({
                   </li>
                 );
               })}
-              {porDia.length > 14 && (
-                <li className="text-xs text-texto-fraco">e mais {porDia.length - 14} dia(s)…</li>
+              {porDia.length > limiteDeDias && (
+                <li className="text-xs text-texto-fraco">
+                  e mais {plural(porDia.length - limiteDeDias, "dia", "dias")} com folga marcada
+                </li>
               )}
             </ul>
           )}
         </section>
 
         {/* ---------- 3. Pedidos de compra ---------- */}
-        <section className={`${CARTAO} lg:col-span-3`}>
+        {mostrarCompras && (
+        <section className={`${CARTAO} overflow-hidden ${tv ? "" : "h-fit"} ${largura.compras}`}>
           <div className="mb-3 flex items-baseline justify-between gap-2">
             <p className={ROTULO}>Pedidos da equipe</p>
             {!tv && (
@@ -309,7 +332,7 @@ export function Mural({
                   ))}
                 </ul>
               )}
-              {comprasResolvidas.length > 0 && (
+              {!tv && comprasResolvidas.length > 0 && (
                 <>
                   <p className={`${ROTULO} mb-1.5`}>Já resolvidos</p>
                   <ul className="flex flex-col gap-1">
@@ -334,6 +357,7 @@ export function Mural({
             </>
           )}
         </section>
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dadosDoMural, empresaDaChaveMural } from "@/lib/mural-server";
 import { Mural } from "@/app/(painel)/mural/mural";
+import { Ajustar } from "./ajustar";
 
 export const metadata: Metadata = {
   title: "Mural do escritório",
@@ -51,18 +52,17 @@ export default async function MuralTvPage({
 
   const { folgas, solicitacoes, hoje } = await dadosDoMural(createAdminClient(), empresaId);
 
-  // Numa TV a pessoa lê de longe, e a tela é grande: 1,75 é o que faz o mural
-  // ocupar um monitor de 1920 sem quebrar as três colunas (acima de 1,8 elas
-  // empilham). O tamanho sai do endereço (?tamanho=1.5) pra o Rafael acertar
-  // sozinho conforme a TV dele, sem depender de mim.
-  const escala = Math.min(Math.max(Number(tamanho) || 1.75, 0.8), 3);
+  // O tamanho não é mais um número fixo: o Ajustar mede a TV e encaixa o mural
+  // nela. O ?tamanho= continua valendo como um empurrãozinho pra mais ou pra
+  // menos, caso a TV do Rafael fique num canto mais longe do que a gente supôs.
+  const ajuste = Math.min(Math.max(Number(tamanho) || 1, 0.5), 2);
 
   return (
     // A TV fica num canto, ligada à noite: escuro sempre, como a da cozinha.
-    <div data-tema="escuro" className="min-h-screen bg-painel-fundo">
-      <div style={{ zoom: escala }}>
+    <div data-tema="escuro">
+      <Ajustar ajuste={ajuste}>
         <Mural folgas={folgas} solicitacoes={solicitacoes} hoje={hoje} tv />
-      </div>
+      </Ajustar>
     </div>
   );
 }
