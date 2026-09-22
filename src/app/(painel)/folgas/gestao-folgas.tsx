@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   GRUPOS, GRUPO_KEYS, DIAS, MESES, TURNO, DIAS_ANTECEDENCIA,
   type GrupoKey, type Funcionario, type Pedido, type Limites, type Ajustes, type Bloqueios,
-  iso, dow, fmtData, difDias, gruposDe, alvosDe, limiteDe, contar, semGerente,
+  iso, dow, fmtData, difDias, haQuantoTempo, gruposDe, alvosDe, limiteDe, contar, semGerente,
 } from "@/lib/folgas";
 import {
   decidirPedido, reabrirPedido, lancarFolga, excluirPedido,
@@ -169,6 +169,19 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                   {!p.grupo_alvo && doisTurnos ? <span className="text-amber-500"> · dia inteiro</span> : ""}
                 </div>
                 {p.motivo && <p className="mt-1 text-sm text-texto-suave">{p.motivo}</p>}
+                {/* Quando a pessoa pediu. Num pedido esperando resposta, o
+                    "há quanto tempo" vale mais que a data: é o que mostra que
+                    alguém está há uma semana sem saber se pode faltar. */}
+                {p.criado_em && (
+                  <p className="mt-1 text-xs text-texto-fraco">
+                    pedida em {fmtData(p.criado_em.slice(0, 10))}
+                    {(() => {
+                      const t = haQuantoTempo(p.criado_em, hojeIso);
+                      return t ? ` · ${t}` : "";
+                    })()}
+                    {p.origem === "gestao" ? " · lançada pela gestão" : ""}
+                  </p>
+                )}
                 <p className={`mt-1 text-xs ${estoura ? "text-red-500" : "text-texto-suave"}`}>
                   {lim === null ? "Grupo sem operação nesse dia" : `${aprov} de ${lim} já aprovada(s) em ${GRUPOS[gApertado].nome.toLowerCase()}`}
                   {estoura ? " · aprovar aqui passa do limite" : ""}
@@ -231,6 +244,9 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                   <span className="min-w-0">
                     {f.nome} · {fmtData(p.data)}{" "}
                     <span className="text-texto-fraco">{p.motivo_negativa || "sem motivo registrado"}</span>
+                    {p.criado_em && (
+                      <span className="text-texto-fraco"> · pedida em {fmtData(p.criado_em.slice(0, 10))}</span>
+                    )}
                   </span>
                   <button onClick={() => run(() => reabrirPedido(p.id))} className="shrink-0 text-xs text-blue-500 underline">reabrir</button>
                 </li>

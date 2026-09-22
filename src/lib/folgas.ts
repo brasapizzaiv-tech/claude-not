@@ -46,7 +46,22 @@ export type Pedido = {
   motivo_negativa: string | null;
   origem: "app" | "gestao";
   grupo_alvo: string | null;
+  /** Quando a pessoa pediu. Já era guardado desde sempre; não aparecia. */
+  criado_em?: string | null;
+  /** Quando alguém aprovou ou negou. */
+  decidido_em?: string | null;
 };
+
+/** "hoje", "ontem", "há 3 dias" — a distância importa mais que a data em si
+ *  quando o assunto é um pedido esperando resposta. */
+export function haQuantoTempo(iso: string | null | undefined, hojeIso: string): string {
+  if (!iso) return "";
+  const dia = iso.slice(0, 10);
+  const dias = difDias(dia, hojeIso);
+  if (dias === 0) return "hoje";
+  if (dias === 1) return "ontem";
+  return `há ${dias} dias`;
+}
 
 // limites[grupo][dia_semana] = limite | null
 export type Limites = Record<string, Record<number, number | null>>;
