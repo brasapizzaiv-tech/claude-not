@@ -104,30 +104,98 @@ function ValorConta({ l }: { l: LinhaConta }) {
 
 type Selecao = { marcadas: Set<string>; alternar: (id: string) => void };
 
+/** Por qual coluna a lista está ordenada. `null` = como o sistema monta
+ *  (por vencimento), que é o padrão e o mais útil no dia a dia. */
+export type Ordem = { campo: "conta" | "valor"; desc: boolean } | null;
+
+/** O texto que aparece como nome da conta — é por ele que a ordem alfabética
+ *  vai, e não pelo que está guardado no banco: a pessoa ordena pelo que vê. */
+const nomeDaConta = (l: LinhaConta) =>
+  (l.descricao ?? l.fornecedores?.nome ?? "Despesa").trim();
+
+function ordenar(itens: LinhaConta[], ordem: Ordem) {
+  if (!ordem) return itens;
+  const sinal = ordem.desc ? -1 : 1;
+  // Cópia: ordenar no lugar mexeria na lista que o agrupamento montou.
+  return [...itens].sort((a, b) => {
+    if (ordem.campo === "valor") return (Number(a.valor) - Number(b.valor)) * sinal;
+    // localeCompare com pt-BR pra "Ácido" ficar junto de "Acido", e não no fim.
+    return nomeDaConta(a).localeCompare(nomeDaConta(b), "pt-BR") * sinal;
+  });
+}
+
+/** Cabeçalho que ordena. Uma seta diz por onde está e pra que lado. */
+function Cabecalho({
+  rotulo, campo, ordem, aoOrdenar, alinhar,
+}: {
+  rotulo: string;
+  campo: "conta" | "valor";
+  ordem: Ordem;
+  aoOrdenar: (campo: "conta" | "valor") => void;
+  alinhar: "left" | "right";
+}) {
+  const ativa = ordem?.campo === campo;
+  return (
+    <th className={`px-4 py-2 font-medium text-${alinhar}`}>
+      <button
+        type="button"
+        onClick={() => aoOrdenar(campo)}
+        className={`inline-flex items-center gap-1 rounded-controle px-1 py-0.5 transition hover:text-texto ${ativa ? "text-texto" : ""}`}
+        title={
+          campo === "valor"
+            ? "Ordenar pelo valor (clique de novo pra inverter)"
+            : "Ordenar pelo nome (clique de novo pra inverter)"
+        }
+      >
+        {rotulo}
+        {/* A seta só aparece na coluna que está ordenando: duas setas na tela
+            deixariam dúvida sobre qual manda. */}
+        <span aria-hidden className={ativa ? "" : "opacity-0"}>
+          {ordem?.desc ? "↓" : "↑"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 function Linhas({
   itens,
   mostrarPago,
   hojeBR,
   selecao,
+  ordem = null,
+  aoOrdenar,
 }: {
   itens: LinhaConta[];
   mostrarPago?: boolean;
   hojeBR: string;
   selecao?: Selecao;
+  ordem?: Ordem;
+  aoOrdenar?: (campo: "conta" | "valor") => void;
 }) {
+  const lista = ordenar(itens, ordem);
   return (
     <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
       <table className="min-w-[560px] w-full text-sm">
         <thead>
           <tr className="text-xs text-texto-fraco">
             {selecao && <th className="w-8" />}
-            <th className="px-4 py-2 text-left font-medium">Conta</th>
-            <th className="px-4 py-2 text-right font-medium">Valor</th>
+            {aoOrdenar ? (
+              <>
+                <Cabecalho rotulo="Conta" campo="conta" ordem={ordem} aoOrdenar={aoOrdenar} alinhar="left" />
+                <Cabecalho rotulo="Valor" campo="valor" ordem={ordem} aoOrdenar={aoOrdenar} alinhar="right" />
+              </>
+            ) : (
+              <>
+                <th className="px-4 py-2 text-left font-medium">Conta</th>
+                <th className="px-4 py-2 text-right font-medium">Valor</th>
+              </>
+            )}
             <th className="px-4 py-2 text-right font-medium">Situação</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-borda">
-          {itens.map((l) => (
+          {lista.map((l) => (
             <tr key={l.id} className={selecao?.marcadas.has(l.id) ? "bg-superficie-suave" : ""}>
               {/* A célula existe SEMPRE que há seleção, mesmo na conta já paga:
                   se some numa linha e fica na outra, a tabela desalinha. */}
@@ -216,6 +284,25 @@ export function ListaContasView({
   aberto: boolean;
 }) {
   const [busca, setBusca] = useState("");
+
+  // Por qual coluna a lista está ordenada. Vale pra tela toda, e ordena DENTRO
+  // de cada grupo — a divisão por vencimento continua mandando, porque é ela
+  // que diz o que precisa ser pago primeiro. Clicar de novo inverte; a terceira
+  // vez volta pro normal (por vencimento).
+  const [ordem, setOrdem] = useState<Ordem>(null);
+  // Cada coluna tem TRÊS estados, nesta ordem: o jeito natural dela, o
+  // contrário, e de volta ao normal (por vencimento).
+  //   Valor →  maior primeiro  ·  menor primeiro  ·  desliga
+  //   Conta →  A a Z           ·  Z a A           ·  desliga
+  // O "jeito natural" muda por coluna de propósito: procurar conta grande é o
+  // uso comum do valor, e ninguém procura fornecedor começando pelo Z.
+  const aoOrdenar = (campo: "conta" | "valor") =>
+    setOrdem((o) => {
+      const padrao = campo === "valor"; // valor começa do maior
+      if (o?.campo !== campo) return { campo, desc: padrao };
+      if (o.desc === padrao) return { campo, desc: !padrao }; // ainda no padrão: inverte
+      return null; // já estava invertida: volta pro normal
+    });
   const hojeBR = new Date(new Date().getTime() - 3 * 3600 * 1000)
     .toISOString()
     .slice(0, 10);
@@ -377,7 +464,7 @@ export function ListaContasView({
                   {moeda(grupos.totalVencidas)}
                 </span>
               </div>
-              <Linhas itens={grupos.vencidas} hojeBR={hojeBR} selecao={selecao} />
+              <Linhas itens={grupos.vencidas} hojeBR={hojeBR} selecao={selecao} ordem={ordem} aoOrdenar={aoOrdenar} />
             </section>
           )}
 
@@ -416,7 +503,7 @@ export function ListaContasView({
                             {moeda(d.total)}
                           </span>
                         </div>
-                        <Linhas itens={d.itens} hojeBR={hojeBR} selecao={selecao} />
+                        <Linhas itens={d.itens} hojeBR={hojeBR} selecao={selecao} ordem={ordem} aoOrdenar={aoOrdenar} />
                       </div>
                     );
                   })}
@@ -433,12 +520,12 @@ export function ListaContasView({
                   {moeda(grupos.totalSemVenc)}
                 </span>
               </div>
-              <Linhas itens={grupos.semVenc} hojeBR={hojeBR} selecao={selecao} />
+              <Linhas itens={grupos.semVenc} hojeBR={hojeBR} selecao={selecao} ordem={ordem} aoOrdenar={aoOrdenar} />
             </section>
           )}
         </div>
       ) : (
-        <Linhas itens={filtradas} mostrarPago hojeBR={hojeBR} />
+        <Linhas itens={filtradas} mostrarPago hojeBR={hojeBR} ordem={ordem} aoOrdenar={aoOrdenar} />
       )}
     </div>
   );
