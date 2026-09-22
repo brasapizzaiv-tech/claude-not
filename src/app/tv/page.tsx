@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { RodizioCard } from "@/components/rodizio-card";
-import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
+import { QuadroRodizio } from "@/components/tv-rodizio";
+import { TV } from "@/lib/tv-cores";
+import { filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 import { agoraMs, aniversariantesMes, apontamentosTv, cardapioTv, chaveTvOk, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
 import { TvPaginaCardapio, TvPontos, totalPaginasTv, type AniversarianteTv, type CardapioTv, type RecadoTv } from "@/components/tv-cardapio";
 import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
@@ -83,45 +84,25 @@ function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversarian
   const hora = new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 
   return (
-    <div style={{ height: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ height: "100vh", background: TV.fundo, color: TV.texto, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <meta httpEquiv="refresh" content={String(SIMPLES_INTERVALO_SEG)} />
       {!mostrarFila ? (
         <TvPaginaCardapio cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={false} apontamentos={apontamentos} pagina={pagina} />
       ) : fila.length === 0 ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <p style={{ fontSize: 56, fontWeight: 800, color: "#555" }}>Nenhum pedido</p>
+          <p style={{ fontSize: "5.2vh", fontWeight: 800, color: TV.fraco }}>Nenhum pedido</p>
         </div>
       ) : (
-        <div style={{ flex: 1, display: "flex", padding: "20px 24px 0" }}>
-          <ColunaSimples titulo="SALGADAS" cor="#C78340" lista={salgadas} agora={agora} />
-          <ColunaSimples titulo="DOCES" cor="#f472b6" lista={doces} agora={agora} />
-        </div>
+        <QuadroRodizio salgadas={salgadas} doces={doces} agora={agora} />
       )}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: 20, color: "#777" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: "1.9vh", color: TV.fraco }}>
         <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio {!mostrarFila && <TvPontos pagina={pagina} total={totalPaginas} />}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? "#ef4444" : "#22c55e", display: "inline-block" }} />
           {semRede && <span style={{ color: "#ef4444", fontWeight: 700 }}>SEM CONEXÃO</span>}
-          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#aaa" }}>{hora}</span>
+          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: TV.suave }}>{hora}</span>
         </span>
       </div>
-    </div>
-  );
-}
-
-function ColunaSimples({ titulo, cor, lista, agora }: { titulo: string; cor: string; lista: PedidoRodizio[]; agora: number }) {
-  const visiveis = lista.slice(0, CARDS_POR_COLUNA);
-  const resto = lista.length - visiveis.length;
-  return (
-    <div style={{ flex: 1, width: "50%", display: "flex", flexDirection: "column", minHeight: 0, padding: "0 12px" }}>
-      <div style={{ marginBottom: 12 }}>
-        <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: "0.12em", color: cor }}>{titulo}</span>
-        <span style={{ fontSize: 22, fontWeight: 700, color: "#777", marginLeft: 12 }}>{lista.length}</span>
-      </div>
-      <div>
-        {visiveis.map((p) => <div key={p.id} style={{ marginBottom: 12 }}><RodizioCard p={p} agora={agora} /></div>)}
-      </div>
-      {resto > 0 && <div style={{ marginTop: 12, textAlign: "center", fontSize: 26, fontWeight: 800, color: cor }}>+{resto} na fila</div>}
     </div>
   );
 }

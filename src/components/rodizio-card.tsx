@@ -10,17 +10,26 @@ export function RodizioCard({
   p,
   agora,
   escala = 1,
+  tv = false,
   acoes,
 }: {
   p: PedidoRodizio;
   agora: number;
   escala?: number;          // 1 = TV; 0.85 = tablet (mais cards na tela)
+  tv?: boolean;             // na TV o cartão mede pela ALTURA da tela
   acoes?: React.ReactNode;  // botões do tablet
 }) {
   const cor = STATUS_COR[p.status];
   const esperaMin = minutosDesde(p.criado_em, agora);
   const atrasado = p.status === "pendente" && esperaMin >= ESPERA_ALERTA_MIN;
-  const px = (n: number) => `${Math.round(n * escala)}px`;
+  // No tablet o cartão é medido em pixels, porque o tablet é sempre o mesmo
+  // aparelho. Na TV não: o mesmo projeto tem que servir numa de 32" e numa de
+  // 50", então tudo é medido em "por cento da altura da tela" — os números
+  // continuam sendo os do projeto de 1080p, só mudam de unidade. Era isto que
+  // faltava: em pixel fixo, a TV de 768p cortava o sexto cartão.
+  const px = tv
+    ? (n: number) => `${((n * escala) / 10.8).toFixed(2)}vh`
+    : (n: number) => `${Math.round(n * escala)}px`;
   // Nome do sabor NUNCA abreviado: nome comprido só diminui a letra e quebra
   // em quantas linhas precisar ("Bacon com Cebola Caramelizada" tem que caber).
   const nome = p.sabor.trim();

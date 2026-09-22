@@ -6,11 +6,12 @@
 // aberto a noite inteira: um único timer, sem acúmulo de listeners, e o
 // relógio/tempo de espera recalculados a partir do estado atual (nada cresce).
 import { useEffect, useRef, useState } from "react";
-import { RodizioCard } from "@/components/rodizio-card";
+import { QuadroRodizio } from "@/components/tv-rodizio";
+import { TV } from "@/lib/tv-cores";
 import { TvPaginaCardapio, TvPontos, totalPaginasTv, type AniversarianteTv, type CardapioTv, type RecadoTv } from "@/components/tv-cardapio";
 import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
 import type { ApontamentoTv } from "@/lib/checklists-core";
-import { CARDS_POR_COLUNA, filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
+import { filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
 const INTERVALO_MS = 3000;
 
@@ -92,23 +93,20 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   const semRede = !conectado || (ultimaOk > 0 && agora - ultimaOk > 20000);
 
   return (
-    <div style={{ height: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ height: "100vh", background: TV.fundo, color: TV.texto, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {!mostrarFila ? (
         // Fora do rodízio: tela única — cardápio do dia + hora + saladas + marmitas + aniversários/recados.
         <TvPaginaCardapio key={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar apontamentos={apontamentos} pagina={pagina} />
       ) : fila.length === 0 ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <p style={{ fontSize: 56, fontWeight: 800, color: "#555" }}>Nenhum pedido</p>
+          <p style={{ fontSize: "5.2vh", fontWeight: 800, color: TV.fraco }}>Nenhum pedido</p>
         </div>
       ) : (
-        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: "20px 24px 0" }}>
-          <Coluna titulo="SALGADAS" cor="#C78340" lista={salgadas} agora={agora} />
-          <Coluna titulo="DOCES" cor="#f472b6" lista={doces} agora={agora} />
-        </div>
+        <QuadroRodizio salgadas={salgadas} doces={doces} agora={agora} />
       )}
 
       {/* rodapé: relógio + conexão */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: 20, color: "#777" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: "1.9vh", color: TV.fraco }}>
         <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio {!mostrarFila && <TvPontos pagina={pagina} total={totalPaginas} />}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span
@@ -116,30 +114,11 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
             style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? "#ef4444" : "#22c55e", display: "inline-block", boxShadow: semRede ? "0 0 10px #ef4444" : "0 0 10px #22c55e" }}
           />
           {semRede && <span style={{ color: "#ef4444", fontWeight: 700 }}>SEM CONEXÃO</span>}
-          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#aaa" }}>
+          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: TV.suave }}>
             {new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
           </span>
         </span>
       </div>
-    </div>
-  );
-}
-
-function Coluna({ titulo, cor, lista, agora }: { titulo: string; cor: string; lista: PedidoRodizio[]; agora: number }) {
-  const visiveis = lista.slice(0, CARDS_POR_COLUNA);
-  const resto = lista.length - visiveis.length;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
-        <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: "0.12em", color: cor }}>{titulo}</span>
-        <span style={{ fontSize: 22, fontWeight: 700, color: "#777" }}>{lista.length}</span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {visiveis.map((p) => <RodizioCard key={p.id} p={p} agora={agora} />)}
-      </div>
-      {resto > 0 && (
-        <div style={{ marginTop: 12, textAlign: "center", fontSize: 26, fontWeight: 800, color: cor }}>+{resto} na fila</div>
-      )}
     </div>
   );
 }

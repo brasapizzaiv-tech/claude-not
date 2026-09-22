@@ -24,7 +24,7 @@ export type PedidoRodizio = {
 export const MESAS_MAX = 46;
 export const ESPERA_ALERTA_MIN = 8;      // pendente há mais que isso fica vermelho
 export const PRONTO_SOME_SEG = 90;       // "pronto" some da TV depois disso
-export const CARDS_POR_COLUNA = 6;       // cabe na TV sem rolar
+export const CARDS_POR_COLUNA = 7;       // cabe na TV sem rolar (cartão medido em vh)
 
 export const FRACAO_ROTULO: Record<FracaoRodizio, string> = {
   inteira: "INTEIRA",
@@ -32,12 +32,15 @@ export const FRACAO_ROTULO: Record<FracaoRodizio, string> = {
   quarto: "1/4",
 };
 
-// Cores por status (a paleta do sistema: laranja da marca, azul, verde).
+// Cores por status, assentadas no grafite da marca (o fundo da TV deixou de
+// ser preto puro). O status se lê de três jeitos ao mesmo tempo — a tarja
+// grossa da esquerda, o tom do cartão e a palavra escrita — porque na cozinha
+// a TV é vista de longe e de lado.
 export const STATUS_COR: Record<StatusRodizio, { fundo: string; borda: string; texto: string; rotulo: string }> = {
-  pendente: { fundo: "#3a2410", borda: "#C78340", texto: "#ffd9a8", rotulo: "PENDENTE" },
-  forno:    { fundo: "#0f2740", borda: "#3b82f6", texto: "#bfdbfe", rotulo: "NO FORNO" },
-  pronto:   { fundo: "#0f3320", borda: "#22c55e", texto: "#bbf7d0", rotulo: "PRONTO" },
-  cancelado:{ fundo: "#2a2a2a", borda: "#555", texto: "#aaa", rotulo: "CANCELADO" },
+  pendente: { fundo: "#3a2712", borda: "#C78340", texto: "#eac79c", rotulo: "PENDENTE" },
+  forno:    { fundo: "#1c2c3d", borda: "#6aa9e0", texto: "#bcd9f2", rotulo: "NO FORNO" },
+  pronto:   { fundo: "#1c2e20", borda: "#7ec98a", texto: "#c3e6c9", rotulo: "PRONTO" },
+  cancelado:{ fundo: "#2b211b", borda: "#57463b", texto: "#9b8878", rotulo: "CANCELADO" },
 };
 
 // Minutos desde uma data.
