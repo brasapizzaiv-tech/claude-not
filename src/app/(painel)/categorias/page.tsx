@@ -13,6 +13,9 @@ export default async function CategoriasPage() {
       .from("dre_categorias")
       .select("*")
       .in("tipo", ["cmv", "despesa_fixa"])
+      // Categoria desativada não aparece pra escolher. Era a única lista que
+      // ainda mostrava as inativas — desativar ali não surtia efeito.
+      .eq("ativo", true)
       .order("ordem"),
   ]);
 

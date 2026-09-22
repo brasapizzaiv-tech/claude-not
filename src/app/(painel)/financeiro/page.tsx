@@ -144,6 +144,12 @@ export default async function FinanceiroPage({
             Produtos vendidos
           </Link>
           <Link
+            href="/financeiro/categorias"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+          >
+            Categorias
+          </Link>
+          <Link
             href={`/financeiro/dre?mes=${mes}`}
             className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
           >
