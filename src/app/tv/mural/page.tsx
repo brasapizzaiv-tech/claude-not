@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dadosDoMural, empresaDaChaveMural } from "@/lib/mural-server";
-import { Mural } from "@/app/(painel)/mural/mural";
-import { Ajustar } from "./ajustar";
+import { MuralTv } from "./mural-tv";
 
 export const metadata: Metadata = {
   title: "Mural do escritório",
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#211915" };
 export const dynamic = "force-dynamic";
 
-// A MESMA TELA, NUMA TV
+// O MURAL NUMA TV
 //
 // O mural do painel pede login, e numa TV isso não funciona: a sessão cai, não
 // tem ninguém ali pra digitar senha, e a tela passa o dia na página de login.
@@ -19,8 +18,11 @@ export const dynamic = "force-dynamic";
 // banco e pertence a uma empresa, então o link de uma casa nunca abre o mural
 // de outra.
 //
-// O desenho é o mesmo componente do painel: o que o Rafael vê na mesa dele é,
-// letra por letra, o que está na TV.
+// O desenho NÃO é o mesmo componente do painel. O aparelho de Android TV do
+// escritório não roda o CSS moderno em que o painel é escrito: ele recebeu a
+// página e despejou tudo numa lista sem formato. Então esta tela tem a sua
+// própria versão, em HTML simples — ver src/app/tv/mural/mural-tv.tsx. Os
+// números dos dois lados saem do mesmo lugar (src/lib/mural-server.ts).
 export default async function MuralTvPage({
   searchParams,
 }: {
@@ -31,20 +33,29 @@ export default async function MuralTvPage({
 
   if (!empresaId) {
     return (
-      // "fixed inset-0" e não "min-h-screen": esta página cai dentro do
-      // invólucro do site, que tem largura própria — centralizar dentro dele
-      // deixava o aviso enfiado num canto da TV.
       <div
-        data-tema="escuro"
-        className="fixed inset-0 flex items-center justify-center bg-painel-fundo p-8 text-center"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          boxSizing: "border-box",
+          background: "#211915",
+          color: "#9b8878",
+          fontFamily: "system-ui, -apple-system, Roboto, Arial, sans-serif",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          padding: "4vw",
+        }}
       >
         <div>
-          <p className="font-numero text-4xl font-semibold tracking-apertada text-texto">
-            Mural do escritório
-          </p>
-          <p className="mt-3 text-xl text-texto-suave">
+          <div style={{ fontSize: "3vw", fontWeight: 700, color: "#e8ded5" }}>Mural do escritório</div>
+          <div style={{ fontSize: "1.6vw", marginTop: "1vw" }}>
             Abra pelo link completo, com a chave no fim do endereço.
-          </p>
+          </div>
         </div>
       </div>
     );
@@ -52,17 +63,10 @@ export default async function MuralTvPage({
 
   const { folgas, solicitacoes, hoje } = await dadosDoMural(createAdminClient(), empresaId);
 
-  // O tamanho não é mais um número fixo: o Ajustar mede a TV e encaixa o mural
-  // nela. O ?tamanho= continua valendo como um empurrãozinho pra mais ou pra
-  // menos, caso a TV do Rafael fique num canto mais longe do que a gente supôs.
+  // O tamanho da letra já sai proporcional à TV (é tudo em "por cento da
+  // largura"). O ?tamanho= continua valendo como empurrãozinho, caso a TV do
+  // Rafael fique num canto mais longe do que a gente supôs.
   const ajuste = Math.min(Math.max(Number(tamanho) || 1, 0.5), 2);
 
-  return (
-    // A TV fica num canto, ligada à noite: escuro sempre, como a da cozinha.
-    <div data-tema="escuro">
-      <Ajustar ajuste={ajuste}>
-        <Mural folgas={folgas} solicitacoes={solicitacoes} hoje={hoje} tv />
-      </Ajustar>
-    </div>
-  );
+  return <MuralTv folgas={folgas} solicitacoes={solicitacoes} hoje={hoje} ajuste={ajuste} />;
 }
