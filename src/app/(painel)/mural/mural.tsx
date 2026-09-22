@@ -53,6 +53,15 @@ function espera(iso: string | null, hoje: string) {
   return `há ${n} dias`;
 }
 
+/** Vira <Link> no painel e uma caixa comum na TV, onde clicar só levaria
+ *  quem passasse por ali pra uma tela de senha. */
+function Caixa({ tv, href, className, children }: {
+  tv: boolean; href: string; className: string; children: React.ReactNode;
+}) {
+  if (tv) return <div className={className}>{children}</div>;
+  return <Link href={href} className={className}>{children}</Link>;
+}
+
 function plural(n: number, um: string, varios: string) {
   return `${n} ${n === 1 ? um : varios}`;
 }
@@ -65,10 +74,13 @@ export function Mural({
   folgas,
   solicitacoes,
   hoje,
+  tv = false,
 }: {
   folgas: FolgaMural[];
   solicitacoes: PedidoCompraMural[];
   hoje: string;
+  /** Numa TV ninguém está logado: link levaria pra tela de senha. */
+  tv?: boolean;
 }) {
   const router = useRouter();
   const [atualizadoEm, setAtualizadoEm] = useState<string>("");
@@ -152,8 +164,9 @@ export function Mural({
           ) : (
             <div className="mt-4 flex flex-col gap-2">
               {pendentes.slice(0, 6).map((f) => (
-                <Link
+                <Caixa
                   key={`f${f.id}`}
+                  tv={tv}
                   href="/folgas"
                   className="rounded-controle bg-painel-foco-texto/10 px-3 py-2 transition hover:bg-painel-foco-texto/20"
                 >
@@ -165,11 +178,12 @@ export function Mural({
                     {f.criadoEm ? ` · pediu ${espera(f.criadoEm, hoje)}` : ""}
                   </p>
                   {f.motivo && <p className="mt-0.5 text-xs opacity-70">{f.motivo}</p>}
-                </Link>
+                </Caixa>
               ))}
               {comprasAbertas.slice(0, 6).map((s) => (
-                <Link
+                <Caixa
                   key={`c${s.id}`}
+                  tv={tv}
                   href="/solicitacoes"
                   className="rounded-controle bg-painel-foco-texto/10 px-3 py-2 transition hover:bg-painel-foco-texto/20"
                 >
@@ -186,7 +200,7 @@ export function Mural({
                     {s.quantidade ? ` · ${s.quantidade}` : ""}
                     {s.criadoEm ? ` · pediu ${espera(s.criadoEm, hoje)}` : ""}
                   </p>
-                </Link>
+                </Caixa>
               ))}
               {esperando > mostrados && (
                 <p className="text-xs opacity-70">e mais {esperando - mostrados}…</p>
@@ -199,9 +213,11 @@ export function Mural({
         <section className={`${CARTAO} lg:col-span-5`}>
           <div className="mb-3 flex items-baseline justify-between gap-2">
             <p className={ROTULO}>Folgas aprovadas · próximos 45 dias</p>
-            <Link href="/folgas" className="text-xs text-texto-suave hover:underline">
-              gerir →
-            </Link>
+            {!tv && (
+              <Link href="/folgas" className="text-xs text-texto-suave hover:underline">
+                gerir →
+              </Link>
+            )}
           </div>
           {porDia.length === 0 ? (
             <p className="text-sm text-texto-fraco">Nenhuma folga marcada pra frente.</p>
@@ -260,9 +276,11 @@ export function Mural({
         <section className={`${CARTAO} lg:col-span-3`}>
           <div className="mb-3 flex items-baseline justify-between gap-2">
             <p className={ROTULO}>Pedidos da equipe</p>
-            <Link href="/solicitacoes" className="text-xs text-texto-suave hover:underline">
-              ver →
-            </Link>
+            {!tv && (
+              <Link href="/solicitacoes" className="text-xs text-texto-suave hover:underline">
+                ver →
+              </Link>
+            )}
           </div>
           {comprasAbertas.length === 0 && comprasResolvidas.length === 0 ? (
             <p className="text-sm text-texto-fraco">Ninguém pediu nada ainda.</p>

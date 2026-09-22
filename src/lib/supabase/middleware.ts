@@ -69,6 +69,8 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/sefaz/") ||
     path.startsWith("/api/impressao/") ||
     path.startsWith("/api/balanca/") ||
+    // O mural do escritório numa TV: quem valida é a chave da própria página.
+    path === "/tv/mural" ||
     path === "/tv" ||
     path.startsWith("/api/tv/") ||
     path.startsWith("/api/whatsapp/") ||
