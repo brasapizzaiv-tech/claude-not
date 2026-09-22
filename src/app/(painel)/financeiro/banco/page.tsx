@@ -204,8 +204,12 @@ export default async function BancoPage() {
     tipo: l.dre_categorias?.tipo ?? "",
   }));
 
+  // Tela de conferir extrato: tabela densa, de leitura em coluna, e quanto
+  // mais largura melhor. Em monitor grande ela parava em 896px e sobrava meia
+  // tela vazia enquanto a descrição do banco quebrava em três linhas. Aqui não
+  // tem teto: acompanha o monitor.
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="w-full p-5">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">

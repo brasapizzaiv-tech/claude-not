@@ -243,9 +243,11 @@ export function BancoTabela({
       </div>
 
       <div className="rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto xl:overflow-x-visible">
           <table className="min-w-[560px] w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
+            {/* Fica no topo enquanto a lista rola: com 225 linhas, sem isso
+                não dá pra saber qual coluna é qual no meio da tela. */}
+            <thead className="sticky top-0 z-10 bg-painel-cartao text-left text-xs font-medium text-texto-fraco shadow-[0_1px_0_var(--borda)]">
               <tr>
                 <th className="w-8 px-3 py-3">
                   {selecionaveis.length > 0 && (
@@ -303,7 +305,7 @@ export function BancoTabela({
                       >
                         {moeda(Number(t.valor))}
                       </td>
-                      <td className="max-w-[22ch] px-4 py-2 text-xs">
+                      <td className="max-w-[22ch] px-4 py-2 text-xs xl:max-w-[38ch]">
                         {conciliado ? (
                           <span className="text-green-600">
                             ✓ {t.lancamentoLabel ?? "conciliado"}
