@@ -10,7 +10,8 @@ import { rotuloDia, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import { TV } from "@/lib/tv-cores";
 import type { CardapioTv } from "@/lib/cardapio-dia-core";
 import { APONTAMENTOS_NA_TELA, APONTAMENTOS_POR_PAGINA, tituloApontamentos, type ApontamentoTv } from "@/lib/checklists-core";
-import { SITUACAO, proximos, rotuloDaData, type Feriado } from "@/lib/feriados";
+import type { Feriado } from "@/lib/feriados";
+import { agendaDaTv, type Evento, type LinhaDaAgenda } from "@/lib/eventos";
 
 export type { CardapioTv } from "@/lib/cardapio-dia-core";
 export type RecadoTv = { id: string; texto: string };
@@ -236,29 +237,30 @@ function Subtitulo({ texto }: { texto: string }) {
 // "No dia 12 a gente abre?" é a pergunta que a equipe faz toda semana, e a
 // resposta morria na conversa com o Rafael. Agora ela fica escrita na parede.
 // Duas datas bastam: a terceira já é longe demais pra alguém guardar.
-function Datas({ feriados, tamanho, hoje }: { feriados: Feriado[]; tamanho: number; hoje: string }) {
-  // `proximos` tira as datas soltas que caem dentro de um período: durante as
-  // férias coletivas, "25/12 Natal FECHA" não acrescenta nada a "fechado até
-  // 02/01", e gastaria a outra linha.
-  const lista = proximos(feriados, hoje, 120, 2);
-  if (lista.length === 0) return null;
+function Datas({ linhas, tamanho }: { linhas: LinhaDaAgenda[]; tamanho: number }) {
+  if (linhas.length === 0) return null;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {lista.map((f) => {
-        const s = SITUACAO[f.situacao];
-        return (
-          <div key={f.id} style={{ display: "flex", alignItems: "baseline", gap: 12, fontSize: vh(tamanho), fontWeight: 700, color: TV.suave }}>
-            <span style={{ color: TV.texto, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>{rotuloDaData(f)}</span>
-            <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{f.nome}</span>
-            {/* A decisão em caixa alta, na cor dela: é a única coisa que
-                precisa ser lida do outro lado da cozinha. */}
-            <span style={{ color: s.cor, fontWeight: 900, letterSpacing: "0.08em", whiteSpace: "nowrap", flexShrink: 0 }}>
-              {s.curto}
+    <div>
+      {linhas.map((l) => (
+        <div key={l.id} style={{ marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, fontSize: vh(tamanho), fontWeight: 700, color: TV.suave }}>
+            <span style={{ color: TV.texto, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>{l.quando}</span>
+            <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{l.titulo}</span>
+            {/* A decisão (ou a hora do evento) em destaque, na cor dela: é a
+                única coisa que precisa ser lida do outro lado da cozinha. */}
+            <span style={{ color: l.cor, fontWeight: 900, letterSpacing: "0.08em", whiteSpace: "nowrap", flexShrink: 0 }}>
+              {l.destaque}
             </span>
-            {f.detalhe && <span style={{ color: TV.fraco, whiteSpace: "nowrap", flexShrink: 0 }}>{f.detalhe}</span>}
           </div>
-        );
-      })}
+          {/* Numa segunda linha vai o combinado do evento — quantos, onde, e o
+              que ficou de comer e beber. É por isso que a cozinha olha. */}
+          {l.detalhe ? (
+            <div style={{ fontSize: vh(Math.round(tamanho * 0.85)), color: TV.fraco, fontWeight: 700, overflowWrap: "anywhere" }}>
+              {l.detalhe}
+            </div>
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 }
@@ -347,10 +349,10 @@ export function TvPontos({ pagina, total }: { pagina: number; total: number }) {
 // A tela inteira: cabeçalho com hora; CARDÁPIO DO DIA + avisos à esquerda (3/5);
 // MARMITAS em cima e SALADAS embaixo à direita (2/5).
 export function TvPaginaCardapio({
-  cardapio: c, agora, recados, temperatura, aniversariantes, piscar, apontamentos = [], pagina = 0, feriados = [],
+  cardapio: c, agora, recados, temperatura, aniversariantes, piscar, apontamentos = [], pagina = 0, feriados = [], eventos = [],
 }: {
   cardapio: CardapioTv; agora: number; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; piscar: boolean;
-  apontamentos?: ApontamentoTv[]; pagina?: number; feriados?: Feriado[];
+  apontamentos?: ApontamentoTv[]; pagina?: number; feriados?: Feriado[]; eventos?: Evento[];
 }) {
   const totalPaginas = totalPaginasTv(apontamentos);
   const naTela = apontamentos.length > 0 && apontamentos.length <= APONTAMENTOS_NA_TELA ? apontamentos : [];
@@ -374,6 +376,10 @@ export function TvPaginaCardapio({
   }
   const b = c.buffet;
   const compacto = naTela.length > 0;
+  // Feriado e evento disputam as mesmas duas linhas: viram uma lista só, em
+  // ordem de data. O dia de HOJE, e não o do cardápio — depois do corte a tela
+  // já mostra o cardápio de amanhã, e usar essa data esconderia o que é hoje.
+  const agenda = agendaDaTv(feriados, eventos, hojeSp(agora), 2);
   const linhasBuffet = b
     ? linhasDoBuffet([
         { titulo: "Proteínas", itens: b.proteinas },
@@ -384,9 +390,19 @@ export function TvPaginaCardapio({
   const [colunaA, colunaB] = emDuasColunas(linhasBuffet);
   // O que os avisos vão comer da altura antes de a lista começar a medir.
   const reservado =
-    (feriados.length ? 30 + Math.min(feriados.length, 2) * 30 : 0) +
+    // 56 = o rótulo "PRÓXIMAS DATAS", a linha de cima e os respiros do bloco.
+    (agenda.length
+      ? 56 +
+        agenda.reduce(
+          (s, l) =>
+            s + 30 + (l.detalhe ? linhasDeTexto(l.detalhe, 19, 1040) * 24 : 0),
+          0,
+        )
+      : 0) +
     (recados.length ? Math.min(recados.length, compacto ? 1 : 3) * 58 + 8 : 0) +
-    (aniversariantes.length ? (compacto ? (aniversariantes.some((a) => a.hoje) ? 56 : 0) : 74) : 0) +
+    // O bloco dos aniversariantes: o rótulo mais a fileira de etiquetas, que
+    // tem respiro em cima e embaixo — 74 deixava a fileira cortada no pé.
+    (aniversariantes.length ? (compacto ? (aniversariantes.some((a) => a.hoje) ? 62 : 0) : 100) : 0) +
     (naTela.length ? 58 + naTela.length * 40 : 0);
   const tamBuffet = maiorQueCabe(
     (n) => Math.max(alturaDaColunaDoBuffet(colunaA, n), alturaDaColunaDoBuffet(colunaB, n)),
@@ -442,15 +458,12 @@ export function TvPaginaCardapio({
               <p style={{ fontSize: vh(30), fontWeight: 800, color: TV.fraco, margin: "12px 0" }}>Cardápio de {rotuloDiaLongo(c.dia)} ainda não cadastrado</p>
             )}
             <div style={{ marginTop: "auto" }}>
-              {feriados.length > 0 && (
+              {agenda.length > 0 && (
                 <div style={{ paddingTop: 8, marginBottom: 6, borderTop: `2px solid ${TV.borda}` }}>
                   <div style={{ fontSize: vh(16), fontWeight: 900, letterSpacing: "0.16em", color: TV.fraco, marginBottom: 2, paddingTop: 6 }}>
                     PRÓXIMAS DATAS
                   </div>
-                  {/* O dia de HOJE, e não o dia do cardápio: depois do corte
-                      a tela já mostra o cardápio de amanhã, e usar essa data
-                      esconderia um feriado que é hoje. */}
-                  <Datas feriados={feriados} tamanho={22} hoje={hojeSp(agora)} />
+                  <Datas linhas={agenda} tamanho={22} />
                 </div>
               )}
               <Avisos aniversariantes={aniversariantes} recados={recados} mes={mes} compacto={compacto} />

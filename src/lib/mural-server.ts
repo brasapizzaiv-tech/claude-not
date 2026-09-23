@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 import type { Feriado } from "@/lib/feriados";
+import type { Evento } from "@/lib/eventos";
 
 // DADOS DO MURAL
 //
@@ -66,6 +67,12 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
   let qCompras = supabase
     .from("solicitacoes_compra")
     .select("id, nome, item, quantidade, motivo, urgente, status, tipo, criado_em, respondido_em");
+  let qEventos = supabase
+    .from("eventos")
+    .select("id, data, hora, titulo, pessoas, lugar, contato, telefone, cardapio, observacao, status")
+    .neq("status", "cancelado")
+    .gte("data", hoje)
+    .lte("data", daquiA(hoje, 120));
   let qFeriados = supabase
     .from("feriados")
     .select("id, data, data_fim, nome, situacao, detalhe")
@@ -76,14 +83,17 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     qEquipe = qEquipe.eq("empresa_id", empresaId);
     qCompras = qCompras.eq("empresa_id", empresaId);
     qFeriados = qFeriados.eq("empresa_id", empresaId);
+    qEventos = qEventos.eq("empresa_id", empresaId);
   }
 
-  const [{ data: pedidos }, { data: equipe }, { data: compras }, { data: datas }] = await Promise.all([
-    qFolgas.order("data"),
-    qEquipe,
-    qCompras.order("criado_em", { ascending: false }).limit(40),
-    qFeriados.order("data").limit(6),
-  ]);
+  const [{ data: pedidos }, { data: equipe }, { data: compras }, { data: datas }, { data: marcados }] =
+    await Promise.all([
+      qFolgas.order("data"),
+      qEquipe,
+      qCompras.order("criado_em", { ascending: false }).limit(40),
+      qFeriados.order("data").limit(6),
+      qEventos.order("data").limit(6),
+    ]);
 
   const quem = new Map<number, { nome: string; grupo: string; gerente: boolean }>();
   for (const f of (equipe as { id: number; nome: string; grupo: string; gerente: boolean }[]) ?? []) {
@@ -127,5 +137,19 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     detalhe: (f.detalhe as string | null) ?? null,
   }));
 
-  return { folgas, solicitacoes, feriados, hoje };
+  const eventos: Evento[] = ((marcados as Record<string, unknown>[]) ?? []).map((e) => ({
+    id: String(e.id),
+    data: String(e.data).slice(0, 10),
+    hora: (e.hora as string | null) ?? null,
+    titulo: String(e.titulo ?? ""),
+    pessoas: Number(e.pessoas ?? 0),
+    lugar: (e.lugar as string | null) ?? null,
+    contato: (e.contato as string | null) ?? null,
+    telefone: (e.telefone as string | null) ?? null,
+    cardapio: (e.cardapio as string | null) ?? null,
+    observacao: (e.observacao as string | null) ?? null,
+    status: String(e.status ?? "marcado") as Evento["status"],
+  }));
+
+  return { folgas, solicitacoes, feriados, eventos, hoje };
 }

@@ -5,6 +5,7 @@ import { montarCardapioDia, type CardapioTv, type Db } from "@/lib/cardapio-dia-
 import { apontamentosTv as apontamentosDaRevisao, type ApontamentoTv } from "@/lib/checklists-core";
 import { PRONTO_SOME_SEG, type PedidoRodizio } from "@/lib/rodizio";
 import { somarDias, type Feriado } from "@/lib/feriados";
+import type { Evento } from "@/lib/eventos";
 
 // Fila do rodízio pra TV (cliente administrativo: a TV não tem login).
 // Pendentes e no forno de qualquer hora + prontos recentes (a TV mostra por 90 s).
@@ -47,6 +48,34 @@ export async function feriadosTv(): Promise<Feriado[]> {
     nome: String(f.nome ?? ""),
     situacao: String(f.situacao ?? "indefinido") as Feriado["situacao"],
     detalhe: (f.detalhe as string | null) ?? null,
+  }));
+}
+
+/** Os eventos marcados que vêm aí. Cancelado não vai pra TV: o que interessa
+ *  na parede é o que ainda vai acontecer. */
+export async function eventosTv(): Promise<Evento[]> {
+  const admin = createAdminClient();
+  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const { data } = await admin
+    .from("eventos")
+    .select("id, data, hora, titulo, pessoas, lugar, contato, telefone, cardapio, observacao, status")
+    .neq("status", "cancelado")
+    .gte("data", hoje)
+    .lte("data", somarDias(hoje, 120))
+    .order("data")
+    .limit(6);
+  return ((data as Record<string, unknown>[]) ?? []).map((e) => ({
+    id: String(e.id),
+    data: String(e.data).slice(0, 10),
+    hora: (e.hora as string | null) ?? null,
+    titulo: String(e.titulo ?? ""),
+    pessoas: Number(e.pessoas ?? 0),
+    lugar: (e.lugar as string | null) ?? null,
+    contato: (e.contato as string | null) ?? null,
+    telefone: (e.telefone as string | null) ?? null,
+    cardapio: (e.cardapio as string | null) ?? null,
+    observacao: (e.observacao as string | null) ?? null,
+    status: String(e.status ?? "marcado") as Evento["status"],
   }));
 }
 

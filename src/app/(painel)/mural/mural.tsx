@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icone } from "@/components/icone";
 import { GRUPOS, DIAS, TURNO } from "@/lib/folgas";
-import { SITUACAO, proximos, quandoE, rotuloDaData, type Feriado } from "@/lib/feriados";
+import { quandoE, type Feriado } from "@/lib/feriados";
+import { agendaDaTv, type Evento } from "@/lib/eventos";
 
 export type FolgaMural = {
   id: number;
@@ -70,11 +71,13 @@ export function Mural({
   folgas,
   solicitacoes,
   feriados = [],
+  eventos = [],
   hoje,
 }: {
   folgas: FolgaMural[];
   solicitacoes: PedidoCompraMural[];
   feriados?: Feriado[];
+  eventos?: Evento[];
   hoje: string;
 }) {
   const router = useRouter();
@@ -119,9 +122,9 @@ export function Mural({
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [aprovadas]);
 
-  // Datas soltas dentro de um período saem: com a casa fechada de 24/12 a
-  // 02/01, "25/12 Natal" não é notícia.
-  const datas = useMemo(() => proximos(feriados, hoje, 120, 4), [feriados, hoje]);
+  // Feriado e evento na mesma faixa, em ordem de data: quem olha quer saber o
+  // que vem aí, não de qual cadastro veio.
+  const datas = useMemo(() => agendaDaTv(feriados, eventos, hoje, 4), [feriados, eventos, hoje]);
 
   const esperando = pendentes.length + comprasAbertas.length;
   // O cartão mostra no máximo 6 de cada lado; o resto vira uma linha só.
@@ -150,15 +153,15 @@ export function Mural({
       {datas.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-cartao bg-painel-cartao px-4 py-3">
           <p className={ROTULO}>Próximas datas</p>
-          {datas.map((f) => (
-            <span key={f.id} className="flex items-baseline gap-2 text-sm">
-              <span className="font-numero font-semibold tracking-apertada text-texto">{rotuloDaData(f)}</span>
-              <span className="text-texto-suave">{f.nome}</span>
-              <span className="text-xs text-texto-fraco">{quandoE(hoje, f)}</span>
-              <span className="text-xs font-bold tracking-wide" style={{ color: SITUACAO[f.situacao].cor }}>
-                {SITUACAO[f.situacao].curto}
+          {datas.map((l) => (
+            <span key={l.id} className="flex items-baseline gap-2 text-sm">
+              <span className="font-numero font-semibold tracking-apertada text-texto">{l.quando}</span>
+              <span className="text-texto-suave">{l.titulo}</span>
+              <span className="text-xs text-texto-fraco">{quandoE(hoje, l.data)}</span>
+              <span className="text-xs font-bold tracking-wide" style={{ color: l.cor }}>
+                {l.destaque}
               </span>
-              {f.detalhe && <span className="text-xs text-texto-fraco">{f.detalhe}</span>}
+              {l.detalhe && <span className="text-xs text-texto-fraco">{l.detalhe}</span>}
             </span>
           ))}
           <Link href="/feriados" className="ml-auto text-xs text-texto-suave hover:underline">

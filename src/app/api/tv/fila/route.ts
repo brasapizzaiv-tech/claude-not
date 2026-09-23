@@ -1,4 +1,4 @@
-import { aniversariantesMes, apontamentosTv, cardapioTv, chaveTvOk, feriadosTv, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
+import { aniversariantesMes, apontamentosTv, cardapioTv, chaveTvOk, eventosTv, feriadosTv, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,8 +19,9 @@ export async function GET(req: Request) {
     const [pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados] = await Promise.all([
       filaTv(), recadosTv(), temperaturaIvoti(), aniversariantesMes(), cardapioTv(), ultimaAtividadeRodizio(), apontamentosTv(), feriadosTv(),
     ]);
+    const eventos = await eventosTv();
     return Response.json(
-      { ok: true, agora: new Date().toISOString(), pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados },
+      { ok: true, agora: new Date().toISOString(), pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, eventos },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {

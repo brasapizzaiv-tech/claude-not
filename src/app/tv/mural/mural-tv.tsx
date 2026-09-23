@@ -1,5 +1,6 @@
 import { DIAS, GRUPOS } from "@/lib/folgas";
-import { SITUACAO, proximos, rotuloDaData, type Feriado } from "@/lib/feriados";
+import type { Feriado } from "@/lib/feriados";
+import { agendaDaTv, type Evento } from "@/lib/eventos";
 import type { FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 
 // O MURAL PARA O NAVEGADOR DE UMA TV
@@ -53,12 +54,14 @@ export function MuralTv({
   folgas,
   solicitacoes,
   feriados = [],
+  eventos = [],
   hoje,
   ajuste = 1,
 }: {
   folgas: FolgaMural[];
   solicitacoes: PedidoCompraMural[];
   feriados?: Feriado[];
+  eventos?: Evento[];
   hoje: string;
   /** Empurrãozinho pra letra: 1 é o tamanho calculado, 1.2 aumenta 20%. */
   ajuste?: number;
@@ -83,9 +86,9 @@ export function MuralTv({
   const dias = [...porDia.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   const mostrados = dias.slice(0, 9);
 
-  // Datas soltas dentro de um período saem: com a casa fechada de 24/12 a
-  // 02/01, "25/12 Natal" não é notícia.
-  const datas = proximos(feriados, hoje, 120, 4);
+  // Feriado e evento na mesma caixa, em ordem de data: de longe ninguém quer
+  // saber de qual cadastro a linha veio.
+  const datas = agendaDaTv(feriados, eventos, hoje, 4);
 
   const hora = new Date().toLocaleTimeString("pt-BR", {
     hour: "2-digit",
@@ -218,18 +221,19 @@ export function MuralTv({
             <div style={{ fontSize: t(1.2), color: FRACO, marginBottom: "0.8vw" }}>
               Próximas datas
             </div>
-            {datas.map((f) => (
-              <div key={f.id} style={{ borderBottom: `1px solid ${BORDA}`, paddingBottom: "0.7vw", marginBottom: "0.7vw" }}>
+            {datas.map((l) => (
+              <div key={l.id} style={{ borderBottom: `1px solid ${BORDA}`, paddingBottom: "0.7vw", marginBottom: "0.7vw" }}>
                 <div style={{ display: "flex", alignItems: "baseline" }}>
-                  <div style={{ flex: 1, fontSize: t(1.4), fontWeight: 700 }}>{rotuloDaData(f)}</div>
-                  {/* A decisão à direita, na cor dela: é o que se lê primeiro. */}
-                  <div style={{ fontSize: t(1.25), fontWeight: 700, color: SITUACAO[f.situacao].cor, whiteSpace: "nowrap", marginLeft: "0.8vw" }}>
-                    {SITUACAO[f.situacao].curto}
+                  <div style={{ flex: 1, fontSize: t(1.4), fontWeight: 700 }}>{l.quando}</div>
+                  {/* A decisão (ou a hora do evento) à direita, na cor dela: é
+                      o que se lê primeiro. */}
+                  <div style={{ fontSize: t(1.25), fontWeight: 700, color: l.cor, whiteSpace: "nowrap", marginLeft: "0.8vw" }}>
+                    {l.destaque}
                   </div>
                 </div>
                 <div style={{ fontSize: t(1.15), color: FRACO, marginTop: "0.2vw" }}>
-                  {f.nome}
-                  {f.detalhe ? ` · ${f.detalhe}` : ""}
+                  {l.titulo}
+                  {l.detalhe ? ` · ${l.detalhe}` : ""}
                 </div>
               </div>
             ))}
