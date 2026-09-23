@@ -370,6 +370,7 @@ export function TvPaginaCardapio({
       if (k) {
         if (k.pratos.length) h += ALTURA_DO_SUBTITULO + alturaDaLista(k.pratos, n, LARGURA_DA_DIREITA, 3, true);
         if (k.proteinas.length) h += ALTURA_DO_SUBTITULO + alturaDaLista(k.proteinas, n, LARGURA_DA_DIREITA, 4, true);
+        if (k.porLoja.length) h += n * 1.25 + 6;
         if (k.salada) h += n * 1.25 + 4;
         if (k.saladaPorLoja.length) h += (n - 6) * 1.25;
       }
@@ -428,6 +429,19 @@ export function TvPaginaCardapio({
               <p style={{ fontSize: vh(22), fontWeight: 700, color: TV.fraco, margin: 0 }}>Cardápio da marmita ainda não cadastrado</p>
             ) : (
               <>
+                {/* Quantas viandas vão pra cada loja. A cozinha embala por
+                    destino, e o total sozinho ("14 un") não diz quantas caixas
+                    fechar nem de que tamanho. */}
+                {k.porLoja.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "0 20px", marginBottom: 6, fontSize: vh(tamDir), fontWeight: 800, color: TV.texto }}>
+                    <span style={{ color: TV.fraco, letterSpacing: "0.12em", fontSize: vh(16), fontWeight: 900, flexShrink: 0 }}>POR LOJA</span>
+                    {k.porLoja.map((x) => (
+                      <span key={x.loja} style={{ whiteSpace: "nowrap" }}>
+                        {x.loja} <span style={{ color: TV.areia, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{x.n}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {k.pratos.length > 0 && (
                   <div style={{ marginBottom: 6 }}>
                     <Subtitulo texto="Pratos" />
