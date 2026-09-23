@@ -85,7 +85,7 @@ export function MuralTv({
 
   // Datas soltas dentro de um período saem: com a casa fechada de 24/12 a
   // 02/01, "25/12 Natal" não é notícia.
-  const datas = proximos(feriados, hoje, 120, 3);
+  const datas = proximos(feriados, hoje, 120, 4);
 
   const hora = new Date().toLocaleTimeString("pt-BR", {
     hour: "2-digit",
@@ -138,19 +138,25 @@ export function MuralTv({
       </div>
 
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        {/* ---------- 1. Esperando você ---------- */}
+        {/* ---------- Coluna da esquerda: o que espera, e as datas ---------- */}
         <div
           style={{
             width: "34%",
+            boxSizing: "border-box",
+            marginRight: "1.4vw",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+          }}
+        >
+        {/* ---------- 1. Esperando você ---------- */}
+        <div
+          style={{
             boxSizing: "border-box",
             background: CREME,
             color: FUNDO,
             borderRadius: "1vw",
             padding: "1.6vw",
-            marginRight: "1.4vw",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
             overflow: "hidden",
           }}
         >
@@ -189,7 +195,49 @@ export function MuralTv({
           )}
         </div>
 
-        {/* ---------- 2. Folgas que vêm aí ---------- */}
+        {/* ---------- 2. As datas que vêm aí ---------- */}
+        {/* Uma caixa de verdade, embaixo do cartão creme, e não mais uma
+            tira no pé da tela: ali as datas saíam numa linha só, apertadas,
+            e o navegador da TV ainda grudava tudo (ele não conhece o `gap`
+            do flex, então todo espaço virava zero — "DATASSeg", "FECHASeg").
+            Aqui cada data tem duas linhas suas e o espaço vem de margem, que
+            qualquer navegador entende. */}
+        {datas.length > 0 && (
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              boxSizing: "border-box",
+              background: CARTAO,
+              borderRadius: "1vw",
+              padding: "1.4vw",
+              marginTop: "1.4vw",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ fontSize: t(1.2), color: FRACO, marginBottom: "0.8vw" }}>
+              Próximas datas
+            </div>
+            {datas.map((f) => (
+              <div key={f.id} style={{ borderBottom: `1px solid ${BORDA}`, paddingBottom: "0.7vw", marginBottom: "0.7vw" }}>
+                <div style={{ display: "flex", alignItems: "baseline" }}>
+                  <div style={{ flex: 1, fontSize: t(1.4), fontWeight: 700 }}>{rotuloDaData(f)}</div>
+                  {/* A decisão à direita, na cor dela: é o que se lê primeiro. */}
+                  <div style={{ fontSize: t(1.25), fontWeight: 700, color: SITUACAO[f.situacao].cor, whiteSpace: "nowrap", marginLeft: "0.8vw" }}>
+                    {SITUACAO[f.situacao].curto}
+                  </div>
+                </div>
+                <div style={{ fontSize: t(1.15), color: FRACO, marginTop: "0.2vw" }}>
+                  {f.nome}
+                  {f.detalhe ? ` · ${f.detalhe}` : ""}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        </div>
+
+        {/* ---------- 3. Folgas que vêm aí ---------- */}
         <div
           style={{
             flex: 1,
@@ -259,21 +307,6 @@ export function MuralTv({
           ) : null}
         </div>
       </div>
-
-      {/* ---------- As datas que vêm aí ---------- */}
-      {datas.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "0.4vw 2vw", marginTop: "1.2vw", paddingTop: "1vw", borderTop: `1px solid ${BORDA}` }}>
-          <span style={{ fontSize: t(1), letterSpacing: "0.12em", color: FRACO, fontWeight: 700 }}>PRÓXIMAS DATAS</span>
-          {datas.map((f) => (
-            <span key={f.id} style={{ fontSize: t(1.3), whiteSpace: "nowrap" }}>
-              <span style={{ fontWeight: 700 }}>{rotuloDaData(f)}</span>{" "}
-              <span style={{ color: FRACO }}>{f.nome}</span>{" "}
-              <span style={{ color: SITUACAO[f.situacao].cor, fontWeight: 700 }}>{SITUACAO[f.situacao].curto}</span>
-              {f.detalhe ? <span style={{ color: FRACO }}> · {f.detalhe}</span> : null}
-            </span>
-          ))}
-        </div>
-      )}
 
       <div style={{ fontSize: t(1), color: BORDA, marginTop: "0.8vw", textAlign: "right" }}>
         <span style={{ color: LARANJA }}>Brasa</span> · mural
