@@ -30,8 +30,10 @@ export const cobre = (f: Feriado, iso: string) => iso >= f.data && iso <= ultimo
  *  vista de 4 metros, "ABRE" e "FECHA" se leem de relance; frase não. */
 export const SITUACAO: Record<SituacaoFeriado, { curto: string; longo: string; cor: string }> = {
   indefinido: { curto: "A DEFINIR", longo: "Ainda não decidido", cor: "#e8836c" },
-  abre: { curto: "ABRE", longo: "Abre normal", cor: "#9dbd7c" },
-  fecha: { curto: "FECHA", longo: "Fechado", cor: "#9b8878" },
+  // ABERTO e FECHADO, não ABRE e FECHA: na tela isto é um ESTADO da casa
+  // naquele dia, não uma ação que alguém vai fazer.
+  abre: { curto: "ABERTO", longo: "Abre normal", cor: "#9dbd7c" },
+  fecha: { curto: "FECHADO", longo: "Fechado", cor: "#9b8878" },
   especial: { curto: "ESPECIAL", longo: "Abre diferente", cor: "#C78340" },
 };
 
