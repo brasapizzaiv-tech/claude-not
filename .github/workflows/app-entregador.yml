@@ -1,6 +1,12 @@
-# Compila o APK do app do entregador na nuvem (não precisa de Android Studio no PC).
+# Compila o app do entregador na nuvem (não precisa de Android Studio no PC).
 # Roda quando algo em app-entregador/ muda, ou à mão em Actions → "Run workflow".
-# O APK fica anexado ao release "app-entregador" (link fixo pra baixar no celular).
+#
+# Sai sempre o APK de teste, que é como o app é instalado hoje no celular dos
+# entregadores (link fixo no release "app-entregador").
+#
+# E sai TAMBÉM o .aab assinado — o formato que a Play Store exige — desde que os
+# segredos da chave de assinatura existam no repositório. Enquanto não
+# existirem, essa parte é pulada em silêncio e o APK continua saindo.
 name: App do entregador (Android)
 
 on:
@@ -11,6 +17,12 @@ on:
 
 permissions:
   contents: write
+
+env:
+  # O identificador do app é PRA SEMPRE depois de publicado na loja.
+  APP_ID: br.com.vtmstore.entregas
+  APP_NOME: Entregas
+  APP_VERSION_NAME: "1.0.0"
 
 jobs:
   apk:
@@ -32,14 +44,17 @@ jobs:
       - name: Dependências
         run: npm install --no-audit --no-fund
 
-      - name: Projeto Android (sincroniza, aplica permissões/nome/ícone)
+      - name: Projeto Android (sincroniza, aplica permissões/nome/ícone/versão)
+        env:
+          # A Play recusa uma versão repetida. O número da execução nunca volta.
+          APP_VERSION_CODE: ${{ github.run_number }}
         run: |
           set -x
           npx cap sync android
           node scripts/patch-android.mjs
           chmod +x android/gradlew
 
-      - name: Compilar APK
+      - name: Compilar APK de teste
         run: cd android && ./gradlew assembleDebug --no-daemon
 
       - name: Renomear
@@ -49,6 +64,42 @@ jobs:
         with:
           name: BrasaEntregas-apk
           path: app-entregador/BrasaEntregas.apk
+
+      # ---------------------------------------------------------------------
+      # O pacote da loja. Só acontece quando a chave de assinatura existe.
+      # ---------------------------------------------------------------------
+      - name: Tem chave de assinatura?
+        id: chave
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "tem=sim" >> "$GITHUB_OUTPUT"
+          else
+            echo "tem=nao" >> "$GITHUB_OUTPUT"
+            echo "Sem ANDROID_KEYSTORE_BASE64 nos segredos: pulando o pacote da loja."
+          fi
+
+      - name: Montar o .aab assinado
+        if: steps.chave.outputs.tem == 'sim'
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/chave.jks"
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/chave.jks"
+          cd android && ./gradlew bundleRelease --no-daemon
+          cd .. && cp android/app/build/outputs/bundle/release/app-release.aab Entregas.aab
+          # A chave não fica na máquina depois do build.
+          rm -f "$RUNNER_TEMP/chave.jks"
+
+      # O .aab NÃO vai pro release público: é o pacote que sobe na Play Console,
+      # e fica guardado como artefato da execução, pra baixar de dentro do Actions.
+      - uses: actions/upload-artifact@v4
+        if: steps.chave.outputs.tem == 'sim'
+        with:
+          name: Entregas-aab
+          path: app-entregador/Entregas.aab
+          retention-days: 30
 
       # Link fixo: https://github.com/<org>/<repo>/releases/download/app-entregador/BrasaEntregas.apk
       - name: Publicar no release "app-entregador"

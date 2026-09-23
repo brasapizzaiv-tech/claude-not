@@ -56,6 +56,9 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/eu/") ||
     path === "/entrega" ||
     path.startsWith("/entrega/") ||
+    // O app do entregador pergunta aqui se este endereço é um sistema nosso,
+    // antes de existir qualquer login.
+    path.startsWith("/api/entrega/") ||
     path.startsWith("/garcom") ||
     path.startsWith("/folga/") ||
     path.startsWith("/balanca-teste") ||

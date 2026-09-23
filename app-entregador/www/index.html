@@ -3,15 +3,130 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Brasa Entregas</title>
+<title>Entregas</title>
+<!--
+  A PORTA DE ENTRADA DO APP
+
+  Esta tela mora DENTRO do app (não é do site), e é o que faz um app só servir
+  qualquer restaurante: o app não nasce sabendo de que sistema ele é. O
+  entregador cola o link pessoal que a empresa dele mandou, o app confere que
+  aquele endereço é mesmo um sistema nosso, guarda, e daí em diante abre direto
+  lá — inclusive sem internet no momento de abrir.
+
+  É por isso que ela é escrita em HTML puro, com o estilo colado: precisa
+  aparecer antes de existir qualquer conexão.
+-->
 <style>
-  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #09090b; color: #e4e4e7; font-family: system-ui, sans-serif; text-align: center; }
-  p { max-width: 320px; line-height: 1.5; }
+  :root { --fundo: #0e0e10; --cartao: #1a1a1e; --borda: #2c2c32; --texto: #ececef; --fraco: #8d8d96; --acento: #f0872b; --erro: #ef7a6a; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 28px 22px;
+    display: flex; flex-direction: column; justify-content: center;
+    background: var(--fundo); color: var(--texto);
+    font-family: system-ui, -apple-system, Roboto, Arial, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  p.sub { margin: 0 0 24px; color: var(--fraco); font-size: 15px; line-height: 1.5; }
+  label { display: block; font-size: 13px; color: var(--fraco); margin-bottom: 6px; }
+  input {
+    width: 100%; padding: 15px 14px; font-size: 16px; /* 16px: menos que isso o Android dá zoom */
+    color: var(--texto); background: var(--cartao);
+    border: 1px solid var(--borda); border-radius: 12px;
+  }
+  input:focus { outline: 2px solid var(--acento); outline-offset: 2px; border-color: var(--acento); }
+  button {
+    width: 100%; margin-top: 14px; padding: 16px; font-size: 17px; font-weight: 700;
+    color: #17110b; background: var(--acento); border: 0; border-radius: 12px;
+  }
+  button[disabled] { opacity: .6; }
+  .aviso { margin-top: 14px; font-size: 14px; line-height: 1.45; min-height: 20px; }
+  .erro { color: var(--erro); }
+  .ok { color: var(--fraco); }
+  .rodape { margin-top: 28px; font-size: 13px; color: var(--fraco); line-height: 1.5; }
 </style>
 </head>
 <body>
-  <!-- Esta página só aparece se o app não conseguir abrir o sistema
-       (sem internet). Com internet, o Capacitor carrega server.url direto. -->
-  <p>📶 Sem conexão.<br/>Ligue a internet do celular e abra o app de novo.</p>
+  <h1 id="titulo">Entregas</h1>
+  <p class="sub">Cole o link que a empresa te mandou. Só na primeira vez — depois o app abre sozinho.</p>
+
+  <label for="link">Link do seu app</label>
+  <input id="link" type="url" inputmode="url" autocomplete="off" autocapitalize="none"
+         spellcheck="false" placeholder="https://…/entrega/…" />
+  <button id="entrar" type="button">Entrar</button>
+  <p class="aviso" id="aviso"></p>
+
+  <p class="rodape">
+    Não tem o link? Peça pra gerência — ela manda pelo WhatsApp. O link é seu,
+    não passe pra ninguém.
+  </p>
+
+<script>
+(function () {
+  "use strict";
+  var CHAVE = "entrega_endereco";
+  var input = document.getElementById("link");
+  var botao = document.getElementById("entrar");
+  var aviso = document.getElementById("aviso");
+
+  function diz(texto, ruim) {
+    aviso.textContent = texto || "";
+    aviso.className = "aviso" + (ruim ? " erro" : " ok");
+  }
+
+  function irPara(url) { window.location.replace(url); }
+
+  // Já entrou antes neste aparelho: vai direto, sem perguntar nada.
+  try {
+    var guardado = localStorage.getItem(CHAVE);
+    if (guardado && guardado.indexOf("https://") === 0) { irPara(guardado); return; }
+  } catch (e) { /* aparelho sem armazenamento: segue pedindo o link */ }
+
+  /** O link tem que ser https e apontar pra uma página de entrega com código. */
+  function separar(texto) {
+    var t = String(texto || "").trim();
+    if (!t) return null;
+    if (t.indexOf("http") !== 0) t = "https://" + t.replace(/^\/+/, "");
+    var m = t.match(/^https:\/\/([^/\s]+)\/entrega\/([0-9a-f]{16,64})\/?$/i);
+    if (!m) return null;
+    return { host: m[1], token: m[2], url: "https://" + m[1] + "/entrega/" + m[2] };
+  }
+
+  /**
+   * Antes de abrir, o app pergunta pro endereço se ali roda mesmo um sistema
+   * nosso. Sem isso, um link qualquer colado abriria um site estranho DENTRO
+   * do app — e lá dentro estão o GPS e a câmera liberados.
+   */
+  function conferir(host) {
+    return fetch("https://" + host + "/api/entrega/identidade", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { return j && j.sistema === "entregas" ? j : null; })
+      .catch(function () { return null; });
+  }
+
+  function entrar() {
+    var alvo = separar(input.value);
+    if (!alvo) {
+      diz("Esse link não parece o certo. Cole o endereço inteiro, do https até o código do fim.", true);
+      return;
+    }
+    botao.disabled = true;
+    diz("Conferindo o endereço…", false);
+    conferir(alvo.host).then(function (id) {
+      botao.disabled = false;
+      if (!id) {
+        diz("Não consegui falar com esse endereço. Confira o link e a internet do celular.", true);
+        return;
+      }
+      try { localStorage.setItem(CHAVE, alvo.url); } catch (e) { /* segue sem lembrar */ }
+      if (id.nome) { try { document.getElementById("titulo").textContent = id.nome; } catch (e) {} }
+      irPara(alvo.url);
+    });
+  }
+
+  botao.addEventListener("click", entrar);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") entrar(); });
+})();
+</script>
 </body>
 </html>

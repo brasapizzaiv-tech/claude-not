@@ -70,3 +70,78 @@ if (fs.existsSync(icone)) {
 } else {
   console.log("ícone não encontrado, mantém o padrão");
 }
+
+// ---------------------------------------------------------------------------
+// 4) IDENTIDADE E ASSINATURA — o que separa um APK de teste de um app na loja
+//
+// O identificador (`applicationId`) é PRA SEMPRE depois de publicado, e vem do
+// ambiente pra o mesmo código servir a loja e um build de cliente. A versão
+// sobe a cada envio (a Play recusa `versionCode` repetido) e vem do número da
+// execução do GitHub, que nunca repete.
+//
+// A assinatura lê variáveis de ambiente: a chave e as senhas ficam nos segredos
+// do repositório, nunca aqui. Sem elas, o projeto continua compilando em debug
+// — que é como o app é instalado hoje no celular dos entregadores.
+// ---------------------------------------------------------------------------
+const appId = process.env.APP_ID || "br.com.vtmstore.entregas";
+const versionCode = process.env.APP_VERSION_CODE || "1";
+const versionName = process.env.APP_VERSION_NAME || "1.0.0";
+
+const gradleApp = path.join(android, "app/build.gradle");
+let g = fs.readFileSync(gradleApp, "utf8");
+
+g = g.replace(/namespace\s+"[^"]*"/, `namespace "${appId}"`)
+     .replace(/applicationId\s+"[^"]*"/, `applicationId "${appId}"`)
+     .replace(/versionCode\s+\d+/, `versionCode ${versionCode}`)
+     .replace(/versionName\s+"[^"]*"/, `versionName "${versionName}"`);
+
+const assinatura = `    signingConfigs {
+        release {
+            // Vem dos segredos do repositório. Sem eles, o build segue em debug.
+            def arquivo = System.getenv("ANDROID_KEYSTORE_FILE")
+            if (arquivo) {
+                storeFile file(arquivo)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+`;
+if (!g.includes("signingConfigs {")) {
+  g = g.replace(/(\n    buildTypes \{)/, `\n${assinatura}$1`);
+}
+if (!g.includes("signingConfig signingConfigs.release")) {
+  g = g.replace(
+    /(buildTypes \{\s*\n\s*release \{\n)/,
+    `$1            if (System.getenv("ANDROID_KEYSTORE_FILE")) signingConfig signingConfigs.release\n`,
+  );
+}
+fs.writeFileSync(gradleApp, g);
+console.log("ok app:", appId, "versão", versionName, `(${versionCode})`);
+
+// O pacote Java gerado pelo `cap add android` fica no caminho do appId antigo.
+// Trocar o `namespace` sem mover a classe quebra o build, então a classe vai
+// junto — e ela é uma só, gerada pelo Capacitor.
+const javaRaiz = path.join(android, "app/src/main/java");
+const destino = path.join(javaRaiz, ...appId.split("."));
+function acharMainActivity(dir) {
+  for (const nome of fs.readdirSync(dir)) {
+    const cheio = path.join(dir, nome);
+    if (fs.statSync(cheio).isDirectory()) {
+      const achado = acharMainActivity(cheio);
+      if (achado) return achado;
+    } else if (nome === "MainActivity.java") return cheio;
+  }
+  return null;
+}
+if (fs.existsSync(javaRaiz)) {
+  const atual = acharMainActivity(javaRaiz);
+  if (atual && path.dirname(atual) !== destino) {
+    fs.mkdirSync(destino, { recursive: true });
+    const corpo = fs.readFileSync(atual, "utf8").replace(/^package\s+[^;]+;/m, `package ${appId};`);
+    fs.writeFileSync(path.join(destino, "MainActivity.java"), corpo);
+    fs.rmSync(atual);
+    console.log("ok MainActivity movida pra", appId);
+  }
+}

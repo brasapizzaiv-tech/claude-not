@@ -1,4 +1,4 @@
-package br.com.brasarestaurante.entregas;
+package br.com.vtmstore.entregas;
 
 import com.getcapacitor.BridgeActivity;
 
