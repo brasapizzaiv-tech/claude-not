@@ -21,13 +21,16 @@ export default async function FeriadosPage() {
   // ninguém e só faria a tela pesar.
   const { data } = await supabase
     .from("feriados")
-    .select("id, data, nome, situacao, detalhe")
-    .gte("data", somarDias(hoje, -180))
+    .select("id, data, data_fim, nome, situacao, detalhe")
+    // Pelo FIM, não pelo começo: férias coletivas que já começaram ainda estão
+    // valendo, e sumir da lista no primeiro dia seria o pior momento.
+    .or(`data_fim.gte.${somarDias(hoje, -180)},and(data_fim.is.null,data.gte.${somarDias(hoje, -180)})`)
     .order("data");
 
   const feriados: Feriado[] = ((data as Record<string, unknown>[]) ?? []).map((f) => ({
     id: String(f.id),
     data: String(f.data).slice(0, 10),
+    dataFim: (f.data_fim as string | null) ?? null,
     nome: String(f.nome ?? ""),
     situacao: String(f.situacao ?? "indefinido") as Feriado["situacao"],
     detalhe: (f.detalhe as string | null) ?? null,

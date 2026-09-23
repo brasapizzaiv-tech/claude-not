@@ -32,14 +32,21 @@ export async function decidirFeriado(id: string, situacao: string, detalhe: stri
 export async function criarFeriado(fd: FormData) {
   await exigirAcesso("/feriados");
   const data = String(fd.get("data") ?? "").trim();
+  const fim = String(fd.get("data_fim") ?? "").trim();
   const nome = String(fd.get("nome") ?? "").trim();
   const situacao = String(fd.get("situacao") ?? "indefinido");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { ok: false as const, erro: "Escolha uma data." };
+  if (fim && !/^\d{4}-\d{2}-\d{2}$/.test(fim)) return { ok: false as const, erro: "A data do fim está estranha." };
+  // Fim antes do começo é engano de digitação, e o banco recusaria com uma
+  // mensagem que ninguém entende.
+  if (fim && fim < data) return { ok: false as const, erro: "O último dia não pode ser antes do primeiro." };
   if (!nome) return { ok: false as const, erro: "Dê um nome à data." };
   if (!SITUACOES.includes(situacao as SituacaoFeriado)) return { ok: false as const, erro: "Situação inválida." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("feriados").insert({ data, nome, situacao });
+  const { error } = await supabase
+    .from("feriados")
+    .insert({ data, data_fim: fim && fim > data ? fim : null, nome, situacao });
   // A data é única por empresa: repetir é erro de digitação, não um feriado novo.
   if (error) {
     return {

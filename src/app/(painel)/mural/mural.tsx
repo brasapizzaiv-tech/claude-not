@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icone } from "@/components/icone";
 import { GRUPOS, DIAS, TURNO } from "@/lib/folgas";
-import { SITUACAO, quandoE, rotuloDoDia, type Feriado } from "@/lib/feriados";
+import { SITUACAO, proximos, quandoE, rotuloDaData, type Feriado } from "@/lib/feriados";
 
 export type FolgaMural = {
   id: number;
@@ -119,6 +119,10 @@ export function Mural({
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [aprovadas]);
 
+  // Datas soltas dentro de um período saem: com a casa fechada de 24/12 a
+  // 02/01, "25/12 Natal" não é notícia.
+  const datas = useMemo(() => proximos(feriados, hoje, 120, 4), [feriados, hoje]);
+
   const esperando = pendentes.length + comprasAbertas.length;
   // O cartão mostra no máximo 6 de cada lado; o resto vira uma linha só.
   const mostrados = Math.min(pendentes.length, 6) + Math.min(comprasAbertas.length, 6);
@@ -143,14 +147,14 @@ export function Mural({
       {/* ---------- As datas que vêm aí ---------- */}
       {/* Em cima de tudo, numa faixa: "no dia 12 a gente abre?" é a pergunta
           que chega antes de qualquer outra, e a resposta cabe numa linha. */}
-      {feriados.length > 0 && (
+      {datas.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-cartao bg-painel-cartao px-4 py-3">
           <p className={ROTULO}>Próximas datas</p>
-          {feriados.map((f) => (
+          {datas.map((f) => (
             <span key={f.id} className="flex items-baseline gap-2 text-sm">
-              <span className="font-numero font-semibold tracking-apertada text-texto">{rotuloDoDia(f.data)}</span>
+              <span className="font-numero font-semibold tracking-apertada text-texto">{rotuloDaData(f)}</span>
               <span className="text-texto-suave">{f.nome}</span>
-              <span className="text-xs text-texto-fraco">{quandoE(hoje, f.data)}</span>
+              <span className="text-xs text-texto-fraco">{quandoE(hoje, f)}</span>
               <span className="text-xs font-bold tracking-wide" style={{ color: SITUACAO[f.situacao].cor }}>
                 {SITUACAO[f.situacao].curto}
               </span>

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Icone } from "@/components/icone";
 import { Enviar, BotaoAcao } from "@/components/enviar";
 import { confirmar, avisar } from "@/components/dialogo";
-import { SITUACAO, quandoE, rotuloDoDia, type Feriado, type SituacaoFeriado } from "@/lib/feriados";
+import { SITUACAO, ehPeriodo, quandoE, quantosDias, rotuloDaData, ultimoDia, type Feriado, type SituacaoFeriado } from "@/lib/feriados";
 import { criarFeriado, decidirFeriado, excluirFeriado, trazerCalendario } from "./actions";
 
 const ESCOLHAS: SituacaoFeriado[] = ["abre", "fecha", "especial"];
@@ -14,8 +14,9 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
   const [msg, setMsg] = useState<string | null>(null);
   const [detalhes, setDetalhes] = useState<Record<string, string>>({});
 
-  const futuros = feriados.filter((f) => f.data >= hoje);
-  const passados = feriados.filter((f) => f.data < hoje).reverse();
+  // Pelo ÚLTIMO dia: férias coletivas que começaram ontem continuam em cima.
+  const futuros = feriados.filter((f) => ultimoDia(f) >= hoje);
+  const passados = feriados.filter((f) => ultimoDia(f) < hoje).reverse();
   const aDefinir = futuros.filter((f) => f.situacao === "indefinido").length;
 
   function aviso(texto: string) {
@@ -79,6 +80,20 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
             />
           </div>
+          {/* Férias coletivas, emenda de fim de ano: deixe em branco pra um
+              dia só. Um registro cobrindo o período inteiro é o que faz a TV
+              dizer "fechado até sábado" em vez de repetir "FECHA" dez vezes. */}
+          <div>
+            <label className="mb-1 block text-xs text-texto-suave" htmlFor="f-fim">
+              Até <span className="text-texto-fraco">(se durar vários dias)</span>
+            </label>
+            <input
+              id="f-fim"
+              name="data_fim"
+              type="date"
+              className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            />
+          </div>
           <div className="min-w-56 flex-1">
             <label className="mb-1 block text-xs text-texto-suave" htmlFor="f-nome">O que é</label>
             <input
@@ -131,9 +146,12 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
         <ul className="overflow-hidden rounded-cartao bg-painel-cartao">
           {futuros.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-borda px-4 py-3 last:border-0">
-              <div className="w-44 shrink-0">
-                <p className="font-numero text-sm font-semibold tracking-apertada text-texto">{rotuloDoDia(f.data)}</p>
-                <p className="text-xs text-texto-fraco">{quandoE(hoje, f.data)}</p>
+              <div className="w-56 shrink-0">
+                <p className="font-numero text-sm font-semibold tracking-apertada text-texto">{rotuloDaData(f)}</p>
+                <p className="text-xs text-texto-fraco">
+                  {quandoE(hoje, f)}
+                  {ehPeriodo(f) ? ` · ${quantosDias(f)} dias` : ""}
+                </p>
               </div>
               <p className="min-w-40 flex-1 text-sm text-texto">{f.nome}</p>
 
@@ -196,7 +214,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
           <ul className="mt-3 flex flex-col gap-1">
             {passados.slice(0, 30).map((f) => (
               <li key={f.id} className="flex items-baseline gap-3 text-xs text-texto-fraco">
-                <span className="w-24 font-numero tracking-apertada">{rotuloDoDia(f.data)}</span>
+                <span className="w-40 font-numero tracking-apertada">{rotuloDaData(f)}</span>
                 <span className="flex-1">{f.nome}</span>
                 <span>{SITUACAO[f.situacao].longo}{f.detalhe ? ` · ${f.detalhe}` : ""}</span>
               </li>

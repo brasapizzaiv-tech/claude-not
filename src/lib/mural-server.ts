@@ -68,8 +68,8 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     .select("id, nome, item, quantidade, motivo, urgente, status, tipo, criado_em, respondido_em");
   let qFeriados = supabase
     .from("feriados")
-    .select("id, data, nome, situacao, detalhe")
-    .gte("data", hoje)
+    .select("id, data, data_fim, nome, situacao, detalhe")
+    .or(`data_fim.gte.${hoje},and(data_fim.is.null,data.gte.${hoje})`)
     .lte("data", daquiA(hoje, 120));
   if (empresaId) {
     qFolgas = qFolgas.eq("empresa_id", empresaId);
@@ -82,7 +82,7 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     qFolgas.order("data"),
     qEquipe,
     qCompras.order("criado_em", { ascending: false }).limit(40),
-    qFeriados.order("data").limit(4),
+    qFeriados.order("data").limit(6),
   ]);
 
   const quem = new Map<number, { nome: string; grupo: string; gerente: boolean }>();
@@ -121,6 +121,7 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
   const feriados: Feriado[] = ((datas as Record<string, unknown>[]) ?? []).map((f) => ({
     id: String(f.id),
     data: String(f.data).slice(0, 10),
+    dataFim: (f.data_fim as string | null) ?? null,
     nome: String(f.nome ?? ""),
     situacao: String(f.situacao ?? "indefinido") as Feriado["situacao"],
     detalhe: (f.detalhe as string | null) ?? null,

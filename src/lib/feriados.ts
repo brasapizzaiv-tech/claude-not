@@ -8,11 +8,23 @@ export type SituacaoFeriado = "indefinido" | "abre" | "fecha" | "especial";
 
 export type Feriado = {
   id: string;
-  data: string; // AAAA-MM-DD
+  data: string; // AAAA-MM-DD — o dia, ou o começo quando é um período
+  /** Último dia, quando a data dura mais de um (férias coletivas). */
+  dataFim: string | null;
   nome: string;
   situacao: SituacaoFeriado;
   detalhe: string | null;
 };
+
+/** Férias coletivas, emenda de fim de ano: uma data que dura vários dias. */
+export const ehPeriodo = (f: Feriado) => !!f.dataFim && f.dataFim > f.data;
+
+/** O último dia que a data ocupa — dela mesma, se for um dia só. */
+export const ultimoDia = (f: Feriado) => f.dataFim && f.dataFim > f.data ? f.dataFim : f.data;
+
+/** O período engole o dia? Um feriado solto dentro das férias coletivas não
+ *  precisa aparecer: a casa já está fechada, e repetir só gasta linha de tela. */
+export const cobre = (f: Feriado, iso: string) => iso >= f.data && iso <= ultimoDia(f);
 
 /** Como cada situação aparece nas telas. O rótulo é curto de propósito: numa TV
  *  vista de 4 metros, "ABRE" e "FECHA" se leem de relance; frase não. */
@@ -31,6 +43,16 @@ export function rotuloDoDia(iso: string) {
   return `${DIAS[d.getDay()]}, ${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 }
 
+/** "Seg, 12/10" ou "Qui, 24/12 a Sex, 02/01". */
+export function rotuloDaData(f: Feriado) {
+  return ehPeriodo(f) ? `${rotuloDoDia(f.data)} a ${rotuloDoDia(f.dataFim!)}` : rotuloDoDia(f.data);
+}
+
+/** Quantos dias o período cobre, contando as duas pontas. */
+export function quantosDias(f: Feriado) {
+  return ehPeriodo(f) ? diasAte(f.data, f.dataFim!) + 1 : 1;
+}
+
 /** Dias entre duas datas em AAAA-MM-DD, sem passar por fuso. */
 export function diasAte(de: string, ate: string) {
   const [a1, m1, d1] = de.split("-").map(Number);
@@ -38,19 +60,29 @@ export function diasAte(de: string, ate: string) {
   return Math.round((+new Date(a2, m2 - 1, d2) - +new Date(a1, m1 - 1, d1)) / 86400000);
 }
 
-/** "hoje", "amanhã", "em 12 dias". */
-export function quandoE(hoje: string, data: string) {
+/** "hoje", "amanhã", "em 12 dias" — e, num período já em andamento, "até
+ *  sexta": durante as férias coletivas, a pergunta deixa de ser "quando
+ *  começa" e passa a ser "quando volta". */
+export function quandoE(hoje: string, f: Feriado | string) {
+  const data = typeof f === "string" ? f : f.data;
+  if (typeof f !== "string" && ehPeriodo(f) && hoje >= f.data && hoje <= f.dataFim!) {
+    return `até ${rotuloDoDia(f.dataFim!)}`;
+  }
   const n = diasAte(hoje, data);
   if (n <= 0) return "hoje";
   if (n === 1) return "amanhã";
   return `em ${n} dias`;
 }
 
-/** Os que vêm aí, do mais próximo pro mais distante. */
+/** Os que vêm aí, do mais próximo pro mais distante. Um período já começado
+ *  continua na lista — o que importa é o que ainda não ACABOU —, e as datas
+ *  soltas que caem dentro dele saem: a casa já está fechada nelas. */
 export function proximos(lista: Feriado[], hoje: string, dias = 120, quantos = 4) {
   const limite = somarDias(hoje, dias);
-  return lista
-    .filter((f) => f.data >= hoje && f.data <= limite)
+  const vivos = lista.filter((f) => ultimoDia(f) >= hoje && f.data <= limite);
+  const periodos = vivos.filter(ehPeriodo);
+  return vivos
+    .filter((f) => ehPeriodo(f) || !periodos.some((p) => cobre(p, f.data)))
     .sort((a, b) => a.data.localeCompare(b.data))
     .slice(0, quantos);
 }

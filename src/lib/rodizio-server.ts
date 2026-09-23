@@ -33,14 +33,17 @@ export async function feriadosTv(): Promise<Feriado[]> {
   const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const { data } = await admin
     .from("feriados")
-    .select("id, data, nome, situacao, detalhe")
-    .gte("data", hoje)
+    .select("id, data, data_fim, nome, situacao, detalhe")
+    // Um período em andamento continua valendo: a pergunta passa a ser "até
+    // quando", e é justamente aí que a tela mais serve.
+    .or(`data_fim.gte.${hoje},and(data_fim.is.null,data.gte.${hoje})`)
     .lte("data", somarDias(hoje, 120))
     .order("data")
-    .limit(4);
+    .limit(6);
   return ((data as Record<string, unknown>[]) ?? []).map((f) => ({
     id: String(f.id),
     data: String(f.data).slice(0, 10),
+    dataFim: (f.data_fim as string | null) ?? null,
     nome: String(f.nome ?? ""),
     situacao: String(f.situacao ?? "indefinido") as Feriado["situacao"],
     detalhe: (f.detalhe as string | null) ?? null,

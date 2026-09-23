@@ -10,7 +10,7 @@ import { rotuloDia, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import { TV } from "@/lib/tv-cores";
 import type { CardapioTv } from "@/lib/cardapio-dia-core";
 import { APONTAMENTOS_NA_TELA, APONTAMENTOS_POR_PAGINA, tituloApontamentos, type ApontamentoTv } from "@/lib/checklists-core";
-import { SITUACAO, rotuloDoDia, type Feriado } from "@/lib/feriados";
+import { SITUACAO, proximos, rotuloDaData, type Feriado } from "@/lib/feriados";
 
 export type { CardapioTv } from "@/lib/cardapio-dia-core";
 export type RecadoTv = { id: string; texto: string };
@@ -63,6 +63,9 @@ function maiorQueCabe(altura: (n: number) => number, cabe: number, menor: number
   for (let n = maior; n > menor; n--) if (altura(n) <= cabe) return n;
   return menor;
 }
+
+/** O dia de hoje em São Paulo, no formato das datas do banco. */
+const hojeSp = (agora: number) => new Date(agora).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 // Hora/minuto/segundo e mês em horário de Brasília (o servidor roda em UTC).
 function partesSP(agora: number) {
@@ -233,15 +236,19 @@ function Subtitulo({ texto }: { texto: string }) {
 // "No dia 12 a gente abre?" é a pergunta que a equipe faz toda semana, e a
 // resposta morria na conversa com o Rafael. Agora ela fica escrita na parede.
 // Duas datas bastam: a terceira já é longe demais pra alguém guardar.
-function Datas({ feriados, tamanho }: { feriados: Feriado[]; tamanho: number }) {
-  if (feriados.length === 0) return null;
+function Datas({ feriados, tamanho, hoje }: { feriados: Feriado[]; tamanho: number; hoje: string }) {
+  // `proximos` tira as datas soltas que caem dentro de um período: durante as
+  // férias coletivas, "25/12 Natal FECHA" não acrescenta nada a "fechado até
+  // 02/01", e gastaria a outra linha.
+  const lista = proximos(feriados, hoje, 120, 2);
+  if (lista.length === 0) return null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {feriados.slice(0, 2).map((f) => {
+      {lista.map((f) => {
         const s = SITUACAO[f.situacao];
         return (
           <div key={f.id} style={{ display: "flex", alignItems: "baseline", gap: 12, fontSize: vh(tamanho), fontWeight: 700, color: TV.suave }}>
-            <span style={{ color: TV.texto, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>{rotuloDoDia(f.data)}</span>
+            <span style={{ color: TV.texto, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>{rotuloDaData(f)}</span>
             <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{f.nome}</span>
             {/* A decisão em caixa alta, na cor dela: é a única coisa que
                 precisa ser lida do outro lado da cozinha. */}
@@ -440,7 +447,10 @@ export function TvPaginaCardapio({
                   <div style={{ fontSize: vh(16), fontWeight: 900, letterSpacing: "0.16em", color: TV.fraco, marginBottom: 2, paddingTop: 6 }}>
                     PRÓXIMAS DATAS
                   </div>
-                  <Datas feriados={feriados} tamanho={22} />
+                  {/* O dia de HOJE, e não o dia do cardápio: depois do corte
+                      a tela já mostra o cardápio de amanhã, e usar essa data
+                      esconderia um feriado que é hoje. */}
+                  <Datas feriados={feriados} tamanho={22} hoje={hojeSp(agora)} />
                 </div>
               )}
               <Avisos aniversariantes={aniversariantes} recados={recados} mes={mes} compacto={compacto} />

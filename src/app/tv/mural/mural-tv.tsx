@@ -1,5 +1,5 @@
 import { DIAS, GRUPOS } from "@/lib/folgas";
-import { SITUACAO, rotuloDoDia, type Feriado } from "@/lib/feriados";
+import { SITUACAO, proximos, rotuloDaData, type Feriado } from "@/lib/feriados";
 import type { FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 
 // O MURAL PARA O NAVEGADOR DE UMA TV
@@ -82,6 +82,10 @@ export function MuralTv({
   }
   const dias = [...porDia.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   const mostrados = dias.slice(0, 9);
+
+  // Datas soltas dentro de um período saem: com a casa fechada de 24/12 a
+  // 02/01, "25/12 Natal" não é notícia.
+  const datas = proximos(feriados, hoje, 120, 3);
 
   const hora = new Date().toLocaleTimeString("pt-BR", {
     hour: "2-digit",
@@ -257,12 +261,12 @@ export function MuralTv({
       </div>
 
       {/* ---------- As datas que vêm aí ---------- */}
-      {feriados.length > 0 && (
+      {datas.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "0.4vw 2vw", marginTop: "1.2vw", paddingTop: "1vw", borderTop: `1px solid ${BORDA}` }}>
           <span style={{ fontSize: t(1), letterSpacing: "0.12em", color: FRACO, fontWeight: 700 }}>PRÓXIMAS DATAS</span>
-          {feriados.slice(0, 3).map((f) => (
+          {datas.map((f) => (
             <span key={f.id} style={{ fontSize: t(1.3), whiteSpace: "nowrap" }}>
-              <span style={{ fontWeight: 700 }}>{rotuloDoDia(f.data)}</span>{" "}
+              <span style={{ fontWeight: 700 }}>{rotuloDaData(f)}</span>{" "}
               <span style={{ color: FRACO }}>{f.nome}</span>{" "}
               <span style={{ color: SITUACAO[f.situacao].cor, fontWeight: 700 }}>{SITUACAO[f.situacao].curto}</span>
               {f.detalhe ? <span style={{ color: FRACO }}> · {f.detalhe}</span> : null}
