@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { lerMarca } from "@/lib/marca";
+import { empresaAtual } from "@/lib/empresa";
 import { SemZoom } from "@/components/sem-zoom";
 import { minhasEntregas, sessaoEntregador } from "./entrega-actions";
 import { EntregaClient } from "./entrega-client";
@@ -36,11 +37,14 @@ export default async function EntregaPage({ params }: { params: Promise<{ token:
       </div>
     );
   }
-  const dados = await minhasEntregas(token);
+  // O nome da empresa vai pra notificação fixa do GPS, que o entregador vê
+  // por horas na barra do celular. Num app que serve vários restaurantes, ali
+  // tem que estar o nome de quem ele trabalha.
+  const [dados, empresa] = await Promise.all([minhasEntregas(token), empresaAtual()]);
   return (
     <>
       <SemZoom />
-      <EntregaClient token={token} boy={boy} inicial={dados!} />
+      <EntregaClient token={token} boy={boy} inicial={dados!} empresa={empresa?.nome ?? "Entregas"} />
     </>
   );
 }

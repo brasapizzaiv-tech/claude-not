@@ -9,7 +9,7 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const android = path.join(raiz, "android");
 const manifest = path.join(android, "app/src/main/AndroidManifest.xml");
 const strings = path.join(android, "app/src/main/res/values/strings.xml");
-const nome = process.env.APP_NOME || "Brasa Entregas";
+const nome = process.env.APP_NOME || "Entregas";
 
 // 1) permissões
 let m = fs.readFileSync(manifest, "utf8");

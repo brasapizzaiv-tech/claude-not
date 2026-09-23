@@ -32,7 +32,7 @@ function capacitorNativo(): CapGlobal | null {
 type Dados = NonNullable<Awaited<ReturnType<typeof minhasEntregas>>>;
 type Aba = "entregas" | "ganhos" | "historico" | "gps";
 
-export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy; inicial: Dados }) {
+export function EntregaClient({ token, boy, inicial, empresa }: { token: string; boy: Boy; inicial: Dados; empresa: string }) {
   const [aba, setAba] = useState<Aba>("entregas");
   const [dados, setDados] = useState<Dados>(inicial);
   const [proc, start] = useTransition();
@@ -95,7 +95,10 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
       let watcherId: string | null = null; let vivo = true;
       const bg = cap.registerPlugin("BackgroundGeolocation") as BgGeo;
       bg.addWatcher(
-        { backgroundTitle: "Brasa Entregas", backgroundMessage: "Rastreando sua posição pro restaurante.", requestPermissions: true, stale: false, distanceFilter: 5 },
+        // O nome da EMPRESA na notificação, não o do app: quem fica horas com
+        // isso na barra é o entregador, e ele trabalha pra um restaurante, não
+        // pra um aplicativo.
+        { backgroundTitle: empresa, backgroundMessage: "Rastreando sua posição pro restaurante.", requestPermissions: true, stale: false, distanceFilter: 5 },
         (loc, err) => {
           if (!vivo) return;
           if (err) { setGpsErro(err.code === "NOT_AUTHORIZED" ? "Permita a localização \"o tempo todo\" nas configurações do app." : (err.message ?? "Sem sinal de GPS agora.")); return; }
@@ -130,7 +133,7 @@ export function EntregaClient({ token, boy, inicial }: { token: string; boy: Boy
     // Tela ligada enquanto rastreia (o navegador não manda posição com a tela apagada).
     (async () => { try { const n = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }; wake.current = (await n.wakeLock?.request("screen")) ?? null; } catch { /* sem wake lock */ } })();
     return () => { navigator.geolocation.clearWatch(id); wake.current?.release().catch(() => {}); wake.current = null; };
-  }, [gpsOn, token]);
+  }, [gpsOn, token, empresa]);
   function alternarGps() {
     const v = !gpsOn; setGpsOn(v);
     try { localStorage.setItem("entrega_gps", v ? "1" : "0"); } catch { /* sem storage */ }
