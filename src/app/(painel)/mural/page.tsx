@@ -27,7 +27,7 @@ export default async function MuralPage() {
   await exigirAcesso("/mural");
   const supabase = await createClient();
 
-  const [{ folgas, solicitacoes, hoje }, { data: config }, h] = await Promise.all([
+  const [{ folgas, solicitacoes, feriados, hoje }, { data: config }, h] = await Promise.all([
     dadosDoMural(supabase),
     supabase.from("mural_config").select("chave").maybeSingle(),
     headers(),
@@ -36,7 +36,7 @@ export default async function MuralPage() {
 
   return (
     <div className="flex w-full flex-col">
-      <Mural folgas={folgas} solicitacoes={solicitacoes} hoje={hoje} />
+      <Mural folgas={folgas} solicitacoes={solicitacoes} feriados={feriados} hoje={hoje} />
       <LinkDaTv chave={(config as { chave: string } | null)?.chave ?? null} origem={origem} />
     </div>
   );

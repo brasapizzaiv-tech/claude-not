@@ -4,6 +4,7 @@ import { kernDoDia } from "@/lib/marmitas-cardapio";
 import { montarCardapioDia, type CardapioTv, type Db } from "@/lib/cardapio-dia-core";
 import { apontamentosTv as apontamentosDaRevisao, type ApontamentoTv } from "@/lib/checklists-core";
 import { PRONTO_SOME_SEG, type PedidoRodizio } from "@/lib/rodizio";
+import { somarDias, type Feriado } from "@/lib/feriados";
 
 // Fila do rodízio pra TV (cliente administrativo: a TV não tem login).
 // Pendentes e no forno de qualquer hora + prontos recentes (a TV mostra por 90 s).
@@ -23,6 +24,27 @@ export async function filaTv(): Promise<PedidoRodizio[]> {
 export function chaveTvOk(chave: string | undefined) {
   const esperada = (process.env.RODIZIO_TV_CHAVE ?? "").trim();
   return { configurada: !!esperada, ok: !!esperada && (chave ?? "") === esperada };
+}
+
+/** As datas que vêm aí e o que a casa faz nelas. A TV mostra as duas mais
+ *  próximas: é a pergunta que a equipe faz toda semana. */
+export async function feriadosTv(): Promise<Feriado[]> {
+  const admin = createAdminClient();
+  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const { data } = await admin
+    .from("feriados")
+    .select("id, data, nome, situacao, detalhe")
+    .gte("data", hoje)
+    .lte("data", somarDias(hoje, 120))
+    .order("data")
+    .limit(4);
+  return ((data as Record<string, unknown>[]) ?? []).map((f) => ({
+    id: String(f.id),
+    data: String(f.data).slice(0, 10),
+    nome: String(f.nome ?? ""),
+    situacao: String(f.situacao ?? "indefinido") as Feriado["situacao"],
+    detalhe: (f.detalhe as string | null) ?? null,
+  }));
 }
 
 // Hora atual (fora do componente por causa da regra de pureza do React).

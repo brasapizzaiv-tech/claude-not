@@ -10,6 +10,7 @@ import { rotuloDia, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import { TV } from "@/lib/tv-cores";
 import type { CardapioTv } from "@/lib/cardapio-dia-core";
 import { APONTAMENTOS_NA_TELA, APONTAMENTOS_POR_PAGINA, tituloApontamentos, type ApontamentoTv } from "@/lib/checklists-core";
+import { SITUACAO, rotuloDoDia, type Feriado } from "@/lib/feriados";
 
 export type { CardapioTv } from "@/lib/cardapio-dia-core";
 export type RecadoTv = { id: string; texto: string };
@@ -227,6 +228,34 @@ function Subtitulo({ texto }: { texto: string }) {
   return <div style={{ fontSize: vh(17), fontWeight: 900, letterSpacing: "0.16em", color: TV.fraco, marginBottom: 1, marginTop: 2 }}>{texto.toUpperCase()}</div>;
 }
 
+// AS DATAS QUE VÊM AÍ
+//
+// "No dia 12 a gente abre?" é a pergunta que a equipe faz toda semana, e a
+// resposta morria na conversa com o Rafael. Agora ela fica escrita na parede.
+// Duas datas bastam: a terceira já é longe demais pra alguém guardar.
+function Datas({ feriados, tamanho }: { feriados: Feriado[]; tamanho: number }) {
+  if (feriados.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {feriados.slice(0, 2).map((f) => {
+        const s = SITUACAO[f.situacao];
+        return (
+          <div key={f.id} style={{ display: "flex", alignItems: "baseline", gap: 12, fontSize: vh(tamanho), fontWeight: 700, color: TV.suave }}>
+            <span style={{ color: TV.texto, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>{rotuloDoDia(f.data)}</span>
+            <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{f.nome}</span>
+            {/* A decisão em caixa alta, na cor dela: é a única coisa que
+                precisa ser lida do outro lado da cozinha. */}
+            <span style={{ color: s.cor, fontWeight: 900, letterSpacing: "0.08em", whiteSpace: "nowrap", flexShrink: 0 }}>
+              {s.curto}
+            </span>
+            {f.detalhe && <span style={{ color: TV.fraco, whiteSpace: "nowrap", flexShrink: 0 }}>{f.detalhe}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Aniversariantes do mês (quem faz hoje ganha destaque) e recados, compactos,
 // no espaço que sobra embaixo do buffet.
 // compacto = tem bloco de pontos de atenção na tela: os aniversariantes do mês
@@ -311,10 +340,10 @@ export function TvPontos({ pagina, total }: { pagina: number; total: number }) {
 // A tela inteira: cabeçalho com hora; CARDÁPIO DO DIA + avisos à esquerda (3/5);
 // MARMITAS em cima e SALADAS embaixo à direita (2/5).
 export function TvPaginaCardapio({
-  cardapio: c, agora, recados, temperatura, aniversariantes, piscar, apontamentos = [], pagina = 0,
+  cardapio: c, agora, recados, temperatura, aniversariantes, piscar, apontamentos = [], pagina = 0, feriados = [],
 }: {
   cardapio: CardapioTv; agora: number; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; piscar: boolean;
-  apontamentos?: ApontamentoTv[]; pagina?: number;
+  apontamentos?: ApontamentoTv[]; pagina?: number; feriados?: Feriado[];
 }) {
   const totalPaginas = totalPaginasTv(apontamentos);
   const naTela = apontamentos.length > 0 && apontamentos.length <= APONTAMENTOS_NA_TELA ? apontamentos : [];
@@ -348,6 +377,7 @@ export function TvPaginaCardapio({
   const [colunaA, colunaB] = emDuasColunas(linhasBuffet);
   // O que os avisos vão comer da altura antes de a lista começar a medir.
   const reservado =
+    (feriados.length ? 30 + Math.min(feriados.length, 2) * 30 : 0) +
     (recados.length ? Math.min(recados.length, compacto ? 1 : 3) * 58 + 8 : 0) +
     (aniversariantes.length ? (compacto ? (aniversariantes.some((a) => a.hoje) ? 56 : 0) : 74) : 0) +
     (naTela.length ? 58 + naTela.length * 40 : 0);
@@ -405,6 +435,14 @@ export function TvPaginaCardapio({
               <p style={{ fontSize: vh(30), fontWeight: 800, color: TV.fraco, margin: "12px 0" }}>Cardápio de {rotuloDiaLongo(c.dia)} ainda não cadastrado</p>
             )}
             <div style={{ marginTop: "auto" }}>
+              {feriados.length > 0 && (
+                <div style={{ paddingTop: 8, marginBottom: 6, borderTop: `2px solid ${TV.borda}` }}>
+                  <div style={{ fontSize: vh(16), fontWeight: 900, letterSpacing: "0.16em", color: TV.fraco, marginBottom: 2, paddingTop: 6 }}>
+                    PRÓXIMAS DATAS
+                  </div>
+                  <Datas feriados={feriados} tamanho={22} />
+                </div>
+              )}
               <Avisos aniversariantes={aniversariantes} recados={recados} mes={mes} compacto={compacto} />
               {naTela.length > 0 && (
                 <div style={{ paddingTop: 8 }}>

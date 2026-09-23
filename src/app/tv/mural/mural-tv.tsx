@@ -1,4 +1,5 @@
 import { DIAS, GRUPOS } from "@/lib/folgas";
+import { SITUACAO, rotuloDoDia, type Feriado } from "@/lib/feriados";
 import type { FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 
 // O MURAL PARA O NAVEGADOR DE UMA TV
@@ -51,11 +52,13 @@ function espera(iso: string | null, hoje: string) {
 export function MuralTv({
   folgas,
   solicitacoes,
+  feriados = [],
   hoje,
   ajuste = 1,
 }: {
   folgas: FolgaMural[];
   solicitacoes: PedidoCompraMural[];
+  feriados?: Feriado[];
   hoje: string;
   /** Empurrãozinho pra letra: 1 é o tamanho calculado, 1.2 aumenta 20%. */
   ajuste?: number;
@@ -252,6 +255,21 @@ export function MuralTv({
           ) : null}
         </div>
       </div>
+
+      {/* ---------- As datas que vêm aí ---------- */}
+      {feriados.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "0.4vw 2vw", marginTop: "1.2vw", paddingTop: "1vw", borderTop: `1px solid ${BORDA}` }}>
+          <span style={{ fontSize: t(1), letterSpacing: "0.12em", color: FRACO, fontWeight: 700 }}>PRÓXIMAS DATAS</span>
+          {feriados.slice(0, 3).map((f) => (
+            <span key={f.id} style={{ fontSize: t(1.3), whiteSpace: "nowrap" }}>
+              <span style={{ fontWeight: 700 }}>{rotuloDoDia(f.data)}</span>{" "}
+              <span style={{ color: FRACO }}>{f.nome}</span>{" "}
+              <span style={{ color: SITUACAO[f.situacao].cor, fontWeight: 700 }}>{SITUACAO[f.situacao].curto}</span>
+              {f.detalhe ? <span style={{ color: FRACO }}> · {f.detalhe}</span> : null}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div style={{ fontSize: t(1), color: BORDA, marginTop: "0.8vw", textAlign: "right" }}>
         <span style={{ color: LARANJA }}>Brasa</span> · mural

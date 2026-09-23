@@ -11,19 +11,21 @@ import { TV } from "@/lib/tv-cores";
 import { TvPaginaCardapio, TvPontos, totalPaginasTv, type AniversarianteTv, type CardapioTv, type RecadoTv } from "@/components/tv-cardapio";
 import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
 import type { ApontamentoTv } from "@/lib/checklists-core";
+import type { Feriado } from "@/lib/feriados";
 import { filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
 const INTERVALO_MS = 3000;
 
 declare global { interface Window { __tvOk?: boolean } }
 
-export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial, aniversariantesInicial, cardapioInicial, ultimaAtividadeInicial, apontamentosInicial = [] }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null; aniversariantesInicial: AniversarianteTv[]; cardapioInicial: CardapioTv; ultimaAtividadeInicial: string | null; apontamentosInicial?: ApontamentoTv[] }) {
+export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial, aniversariantesInicial, cardapioInicial, ultimaAtividadeInicial, apontamentosInicial = [], feriadosInicial = [] }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null; aniversariantesInicial: AniversarianteTv[]; cardapioInicial: CardapioTv; ultimaAtividadeInicial: string | null; apontamentosInicial?: ApontamentoTv[]; feriadosInicial?: Feriado[] }) {
   const [aniversariantes, setAniversariantes] = useState<AniversarianteTv[]>(aniversariantesInicial);
   const [cardapio, setCardapio] = useState<CardapioTv>(cardapioInicial);
   const [ultimaAtividade, setUltimaAtividade] = useState<string | null>(ultimaAtividadeInicial);
   const [pedidos, setPedidos] = useState<PedidoRodizio[]>(inicial);
   const [recados, setRecados] = useState<RecadoTv[]>(recadosInicial);
   const [apontamentos, setApontamentos] = useState<ApontamentoTv[]>(apontamentosInicial);
+  const [feriados, setFeriados] = useState<Feriado[]>(feriadosInicial);
   const [temperatura, setTemperatura] = useState<number | null>(temperaturaInicial);
   const [agora, setAgora] = useState(agoraInicial);
   const [conectado, setConectado] = useState(true);
@@ -47,6 +49,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
           setPedidos(j.pedidos as PedidoRodizio[]);
           if (Array.isArray(j.recados)) setRecados(j.recados as RecadoTv[]);
           if (Array.isArray(j.apontamentos)) setApontamentos(j.apontamentos as ApontamentoTv[]);
+          if (Array.isArray(j.feriados)) setFeriados(j.feriados as Feriado[]);
           if (Array.isArray(j.aniversariantes)) setAniversariantes(j.aniversariantes as AniversarianteTv[]);
           if (j.cardapio) setCardapio(j.cardapio as CardapioTv);
           setUltimaAtividade(typeof j.ultimaAtividade === "string" ? j.ultimaAtividade : null);
@@ -96,7 +99,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
     <div style={{ height: "100vh", background: TV.fundo, color: TV.texto, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {!mostrarFila ? (
         // Fora do rodízio: tela única — cardápio do dia + hora + saladas + marmitas + aniversários/recados.
-        <TvPaginaCardapio key={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar apontamentos={apontamentos} pagina={pagina} />
+        <TvPaginaCardapio key={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar apontamentos={apontamentos} pagina={pagina} feriados={feriados} />
       ) : fila.length === 0 ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <p style={{ fontSize: "5.2vh", fontWeight: 800, color: TV.fraco }}>Nenhum pedido</p>

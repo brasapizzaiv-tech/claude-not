@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icone } from "@/components/icone";
 import { GRUPOS, DIAS, TURNO } from "@/lib/folgas";
+import { SITUACAO, quandoE, rotuloDoDia, type Feriado } from "@/lib/feriados";
 
 export type FolgaMural = {
   id: number;
@@ -68,10 +69,12 @@ function nomeGrupo(g: string) {
 export function Mural({
   folgas,
   solicitacoes,
+  feriados = [],
   hoje,
 }: {
   folgas: FolgaMural[];
   solicitacoes: PedidoCompraMural[];
+  feriados?: Feriado[];
   hoje: string;
 }) {
   const router = useRouter();
@@ -136,6 +139,29 @@ export function Mural({
           atualiza sozinho · {atualizadoEm || "—"}
         </span>
       </div>
+
+      {/* ---------- As datas que vêm aí ---------- */}
+      {/* Em cima de tudo, numa faixa: "no dia 12 a gente abre?" é a pergunta
+          que chega antes de qualquer outra, e a resposta cabe numa linha. */}
+      {feriados.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-cartao bg-painel-cartao px-4 py-3">
+          <p className={ROTULO}>Próximas datas</p>
+          {feriados.map((f) => (
+            <span key={f.id} className="flex items-baseline gap-2 text-sm">
+              <span className="font-numero font-semibold tracking-apertada text-texto">{rotuloDoDia(f.data)}</span>
+              <span className="text-texto-suave">{f.nome}</span>
+              <span className="text-xs text-texto-fraco">{quandoE(hoje, f.data)}</span>
+              <span className="text-xs font-bold tracking-wide" style={{ color: SITUACAO[f.situacao].cor }}>
+                {SITUACAO[f.situacao].curto}
+              </span>
+              {f.detalhe && <span className="text-xs text-texto-fraco">{f.detalhe}</span>}
+            </span>
+          ))}
+          <Link href="/feriados" className="ml-auto text-xs text-texto-suave hover:underline">
+            gerir →
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-12">
         {/* ---------- 1. Esperando você ---------- */}

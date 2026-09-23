@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
+import type { Feriado } from "@/lib/feriados";
 
 // DADOS DO MURAL
 //
@@ -65,16 +66,23 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
   let qCompras = supabase
     .from("solicitacoes_compra")
     .select("id, nome, item, quantidade, motivo, urgente, status, tipo, criado_em, respondido_em");
+  let qFeriados = supabase
+    .from("feriados")
+    .select("id, data, nome, situacao, detalhe")
+    .gte("data", hoje)
+    .lte("data", daquiA(hoje, 120));
   if (empresaId) {
     qFolgas = qFolgas.eq("empresa_id", empresaId);
     qEquipe = qEquipe.eq("empresa_id", empresaId);
     qCompras = qCompras.eq("empresa_id", empresaId);
+    qFeriados = qFeriados.eq("empresa_id", empresaId);
   }
 
-  const [{ data: pedidos }, { data: equipe }, { data: compras }] = await Promise.all([
+  const [{ data: pedidos }, { data: equipe }, { data: compras }, { data: datas }] = await Promise.all([
     qFolgas.order("data"),
     qEquipe,
     qCompras.order("criado_em", { ascending: false }).limit(40),
+    qFeriados.order("data").limit(4),
   ]);
 
   const quem = new Map<number, { nome: string; grupo: string; gerente: boolean }>();
@@ -110,5 +118,13 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     respondidoEm: (s.respondido_em as string | null) ?? null,
   }));
 
-  return { folgas, solicitacoes, hoje };
+  const feriados: Feriado[] = ((datas as Record<string, unknown>[]) ?? []).map((f) => ({
+    id: String(f.id),
+    data: String(f.data).slice(0, 10),
+    nome: String(f.nome ?? ""),
+    situacao: String(f.situacao ?? "indefinido") as Feriado["situacao"],
+    detalhe: (f.detalhe as string | null) ?? null,
+  }));
+
+  return { folgas, solicitacoes, feriados, hoje };
 }

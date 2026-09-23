@@ -61,12 +61,12 @@ export default async function MuralTvPage({
     );
   }
 
-  const { folgas, solicitacoes, hoje } = await dadosDoMural(createAdminClient(), empresaId);
+  const { folgas, solicitacoes, feriados, hoje } = await dadosDoMural(createAdminClient(), empresaId);
 
   // O tamanho da letra já sai proporcional à TV (é tudo em "por cento da
   // largura"). O ?tamanho= continua valendo como empurrãozinho, caso a TV do
   // Rafael fique num canto mais longe do que a gente supôs.
   const ajuste = Math.min(Math.max(Number(tamanho) || 1, 0.5), 2);
 
-  return <MuralTv folgas={folgas} solicitacoes={solicitacoes} hoje={hoje} ajuste={ajuste} />;
+  return <MuralTv folgas={folgas} solicitacoes={solicitacoes} feriados={feriados} hoje={hoje} ajuste={ajuste} />;
 }
