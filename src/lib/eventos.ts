@@ -64,11 +64,18 @@ export type LinhaDaAgenda = {
   cor: string;
 };
 
+/** Quantas linhas a tela dá pra agenda. Um número é o total, misturado em
+ *  ordem de data. Um par é uma COTA por tipo — e existe por causa da cozinha:
+ *  lá o evento não pode ser empurrado pra fora por dois feriados mais
+ *  próximos. Feriado a cozinha só precisa saber na véspera; evento de 40
+ *  pessoas ela precisa saber com semanas, pra comprar. */
+export type CotaDaAgenda = number | { feriados: number; eventos: number };
+
 export function agendaDaTv(
   feriados: Feriado[],
   eventos: Evento[],
   hoje: string,
-  quantos = 3,
+  cota: CotaDaAgenda = 3,
   dias = 120,
 ): LinhaDaAgenda[] {
   const limite = somarDias(hoje, dias);
@@ -90,7 +97,7 @@ export function agendaDaTv(
       cor: SITUACAO[f.situacao].cor,
     }));
 
-  const deEvento: LinhaDaAgenda[] = proximosEventos(eventos, hoje, dias, quantos + 3).map((e) => ({
+  const deEvento: LinhaDaAgenda[] = proximosEventos(eventos, hoje, dias, 12).map((e) => ({
     id: `e${e.id}`,
     data: e.data,
     quando: rotuloDoDia(e.data),
@@ -107,7 +114,13 @@ export function agendaDaTv(
     cor: STATUS_EVENTO[e.status].cor,
   }));
 
-  return [...deFeriado, ...deEvento]
-    .sort((a, b) => a.data.localeCompare(b.data))
-    .slice(0, quantos);
+  const porData = (a: LinhaDaAgenda, b: LinhaDaAgenda) => a.data.localeCompare(b.data);
+  deFeriado.sort(porData);
+  deEvento.sort(porData);
+
+  if (typeof cota === "number") return [...deFeriado, ...deEvento].sort(porData).slice(0, cota);
+
+  // Com cota, cada tipo tem o seu lugar garantido; o que sobra de um não passa
+  // pro outro, e a tela devolve o espaço pro cardápio.
+  return [...deFeriado.slice(0, cota.feriados), ...deEvento.slice(0, cota.eventos)].sort(porData);
 }

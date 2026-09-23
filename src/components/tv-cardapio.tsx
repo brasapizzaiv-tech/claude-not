@@ -376,10 +376,13 @@ export function TvPaginaCardapio({
   }
   const b = c.buffet;
   const compacto = naTela.length > 0;
-  // Feriado e evento disputam as mesmas duas linhas: viram uma lista só, em
-  // ordem de data. O dia de HOJE, e não o do cardápio — depois do corte a tela
-  // já mostra o cardápio de amanhã, e usar essa data esconderia o que é hoje.
-  const agenda = agendaDaTv(feriados, eventos, hojeSp(agora), 2);
+  // Três linhas, com lugar marcado: dois feriados e um evento. Sem a cota, um
+  // evento de 40 pessoas marcado pra novembro sumia daqui enquanto houvesse
+  // dois feriados mais perto — e é justamente com antecedência que a cozinha
+  // precisa saber, pra comprar.
+  // O dia de HOJE, e não o do cardápio: depois do corte a tela já mostra o
+  // cardápio de amanhã, e usar essa data esconderia o que é hoje.
+  const agenda = agendaDaTv(feriados, eventos, hojeSp(agora), { feriados: 2, eventos: 1 });
   const linhasBuffet = b
     ? linhasDoBuffet([
         { titulo: "Proteínas", itens: b.proteinas },
