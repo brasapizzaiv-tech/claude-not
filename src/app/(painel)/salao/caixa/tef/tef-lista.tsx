@@ -131,14 +131,18 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
         const r = await tefPix({ valor });
         if (!r.ok) { setMsg(r.erro ?? "O agente não respondeu."); return; }
         if (!r.aprovada) {
-          // O Pix vem DESLIGADO de fábrica no gerenciador. Quando está
-          // desligado ele recusa a operação sem explicar, e sem esta dica o
-          // erro manda a gente procurar no lugar errado.
-          const semSuporte = /suport|inval|desconhec/i.test(r.mensagem ?? "");
-          setMsg(
-            `Pix não aprovado: ${r.mensagem || "recusado"}.` +
-              (semSuporte ? ' Confira se o gerenciador está com "pix4": 1 no config_tef.json.' : ""),
-          );
+          // Duas recusas têm causa conhecida e mandam procurar em lugares
+          // diferentes — sem a dica, se perde tempo no lugar errado.
+          const msg = r.mensagem ?? "";
+          const dica = /habilita/i.test(msg)
+            // "Erro ao obter os dados de habilitação": o gerenciador processou,
+            // mas o Pix não está liberado pra esse CNPJ na adquirente.
+            ? " O Pix não está habilitado pra esse CNPJ — isso é liberação da Elgin/adquirente, não é ajuste aqui."
+            : /suport|inval|desconhec/i.test(msg)
+              // Pix vem desligado de fábrica no gerenciador.
+              ? ' Confira se o gerenciador está com "pix4": 1 no config_tef.json.'
+              : "";
+          setMsg(`Pix não aprovado: ${msg || "recusado"}.${dica}`);
           return;
         }
         // Aprovou: confirma na hora. Aqui não há venda pra gravar antes — é
