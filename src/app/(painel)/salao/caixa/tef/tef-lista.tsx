@@ -76,7 +76,13 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
     const aviso = doCaixa
       ? "O valor sai do caixa e a via do cancelamento é impressa."
       : "Essa cobrança não entrou no caixa, então nada sai de lá — só a via do cancelamento é impressa.";
-    if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. ${aviso}`)) return;
+    // A armadilha que derrubou o terminal em 16/09: a janela da Elgin pediu a
+    // senha de supervisor, o operador fechou a janela sem digitar, e o Hub
+    // executou "Manutenção" — desativou o terminal na adquirente. Só volta com
+    // a Elgin reprovisionando. Então o aviso diz o que fazer nessa hora.
+    const armadilha =
+      'ATENÇÃO: se a janela da Elgin pedir SENHA DE SUPERVISOR, NÃO feche a janela nem aperte Esc — fechar sem a senha DESATIVA o terminal. Digite a senha ou responda "Não" na pergunta anterior.';
+    if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. ${aviso}\n\n${armadilha}`)) return;
     setMsg("Aguardando o pinpad… peça o cartão ao cliente.");
     setOcupadoId(l.id);
     start(async () => {
@@ -100,7 +106,9 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
 
   function adm() {
     if (!agente) { setMsg("O Agente TEF não está rodando neste PC."); return; }
-    setMsg("Abrindo o menu administrativo do gerenciador… olhe a janela da Elgin.");
+    // "Manutenção" nesse menu desativa o terminal na adquirente (foi o que
+    // aconteceu em 16/09) e só a Elgin reativa. Quem abre o menu precisa saber.
+    setMsg('Abrindo o menu administrativo do gerenciador… olhe a janela da Elgin. CUIDADO: a opção "Manutenção" DESATIVA o terminal — só a Elgin reativa.');
     start(async () => {
       try {
         const r = await tefAdm();
