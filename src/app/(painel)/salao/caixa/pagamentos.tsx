@@ -6,7 +6,7 @@
 // botão de "auto preencher o que falta", cédulas (Shift soma), observação e,
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { tefDisponivel, tefVenda, tipoTefDaForma, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { tefConfirmar, tefDisponivel, tefVenda, tipoTefDaForma, type TefDados, type TefStatus } from "@/lib/tef-client";
 import { Icone, type NomeIcone } from "@/components/icone";
 
 export type Pagamento = {
@@ -67,6 +67,7 @@ export function PainelPagamentos({
   pagos,
   onAdicionar,
   onRemover,
+  onTefConfirmado,
   ativo,
   fiado,
   qrPix,
@@ -77,6 +78,9 @@ export function PainelPagamentos({
   pagos: Pagamento[];
   onAdicionar: (p: Pagamento) => void;
   onRemover: (uid: string) => void;
+  // Um cartão já lançado foi confirmado (CNF) no pinpad antes de passar o
+  // próximo — o dono da lista marca `tef.confirmado` nele.
+  onTefConfirmado?: (uid: string) => void;
   ativo: boolean; // a tela está pronta pra receber (tem itens)
   fiado?: { nome: string; saldo: number; limite: number | null } | null;
   qrPix?: (valor: number, aoPagar: () => void) => React.ReactNode;
@@ -184,6 +188,24 @@ export function PainelPagamentos({
     setAviso(null);
     setTefEtapa("enviando");
     try {
+      // Dois cartões na mesma conta: o gerenciador exige que a transação
+      // anterior esteja confirmada (CNF) ou desfeita antes de começar outra.
+      // Até 24/09 o caixa só confirmava depois de gravar a venda inteira, e o
+      // agente — seguindo a regra — DESFAZIA o primeiro cartão em silêncio ao
+      // receber o segundo. Então o cartão que já passou é confirmado aqui,
+      // antes do próximo. Daí em diante ele não tem mais "desfazer": se a
+      // venda não gravar, vai pra Cartões (TEF) pra ser cancelado (quem cuida
+      // disso é a tela de receber).
+      for (const p of pagos) {
+        if (!p.tef?.idAgente || p.tef.confirmado) continue;
+        const c = await tefConfirmar(p.tef.idAgente);
+        if (!c.ok) { setAviso(`Não consegui confirmar o cartão anterior (NSU ${p.tef.nsu ?? "?"}): ${c.erro || "o agente não respondeu"}.`); return; }
+        if (c.aviso) {
+          setAviso(`O cartão anterior (NSU ${p.tef.nsu ?? "?"}) não está mais em aberto no agente — deve ter sido desfeito. Tire esse pagamento da conta e passe o cartão de novo.`);
+          return;
+        }
+        onTefConfirmado?.(p.uid);
+      }
       setTefEtapa("pinpad");
       const r = await tefVenda({ valor: cent(aplica), tipo, parcelas: tipo === "credito" ? parcelas : 1 });
       if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
@@ -203,6 +225,7 @@ export function PainelPagamentos({
         viaCliente: r.viaCliente ?? [],
         viaLoja: r.viaLoja ?? [],
         requerConfirmacao: !!r.requerConfirmacao,
+        confirmado: false,
       };
       onAdicionar({
         uid: novoUid(),
@@ -212,6 +235,14 @@ export function PainelPagamentos({
         observacao: obs.trim() || null,
         tef: dados,
       });
+      // Rede de segurança: se mesmo assim o agente desfez um cartão anterior,
+      // o caixa fica sabendo e aquele pagamento sai da conta.
+      if (r.desfeitaAnterior) {
+        const antigo = pagos.find((p) => p.tef?.idAgente === r.desfeitaAnterior?.id);
+        if (antigo) onRemover(antigo.uid);
+        setAviso(`O agente DESFEZ o cartão anterior (NSU ${r.desfeitaAnterior.nsu ?? "?"}, ${brl(r.desfeitaAnterior.valor)}) porque estava sem confirmação. Esse pagamento saiu da conta — passe o cartão de novo.`);
+        return;
+      }
       fechar();
     } catch {
       setAviso("O agente TEF não respondeu. Confira o ícone na bandeja.");

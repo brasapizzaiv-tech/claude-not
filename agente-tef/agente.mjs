@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.4"; // 0.9.4: Pix pelo pinpad (/pix) com os campos exatos da documentação da Elgin
+const VERSAO = "0.9.5"; // 0.9.5: cancelamento/ADM esperam o operador (10 min); /venda avisa quando desfez a anterior
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -32,6 +32,12 @@ const pastaResp = cfg.pastaResp || path.join(pastaBase, "Resp");
 const terminal = String(cfg.terminal || os.hostname()).slice(0, 16); // ID de terminal da Elgin tem 10 dígitos
 const timeoutVendaMs = Number(cfg.timeoutVendaMs) || 120000; // o cliente pode demorar pra achar o cartão
 const timeoutStsMs = Number(cfg.timeoutStsMs) || 15000;      // o gerenciador tem que acusar recebimento rápido
+// Cancelamento e menu administrativo: o gerenciador da Elgin conversa com o
+// OPERADOR na janela dele (data da venda, número do documento, "confirma?",
+// cartão de novo). Em 24/09 isso levou 2 min e 8 s e o agente desistiu 7 s
+// antes da resposta chegar — o cancelamento saiu na adquirente e o caixa não
+// ficou sabendo. Aqui o limite é de gente, não de cartão: 10 minutos.
+const timeoutOperadorMs = Number(cfg.timeoutOperadorMs) || 600000;
 
 const logFile = path.join(dataDir, "agente.log");
 const ultimaRespFile = path.join(dataDir, "ultima-resposta.txt"); // cópia crua do último IntPos.001 de resposta (pra diagnóstico)
@@ -193,6 +199,21 @@ async function desfazer(id, motivo = "") {
   return { ok: true };
 }
 
+// Chegou uma venda nova com outra ainda sem CNF/NCN. Pelo protocolo, uma
+// transação aprovada tem que ser confirmada ou desfeita antes da próxima;
+// a regra da casa é "sem venda gravada, sem cobrança", então desfaz a antiga.
+// Mas devolve o que desfez, pro caixa ficar sabendo: em 24/09 uma conta paga
+// com dois cartões perdeu o primeiro exatamente assim, em silêncio — o caixa
+// só confirmava depois de gravar a venda inteira. (Hoje o caixa confirma o
+// cartão anterior antes de mandar o próximo; isto é a rede de segurança.)
+async function desfazerPendenteAntes() {
+  const pend = estado.pendente;
+  if (!pend) return null;
+  const info = { id: pend.id, nsu: pend.nsu ?? null, valor: pend.valor };
+  await desfazer(undefined, "venda anterior ficou sem confirmação");
+  return info;
+}
+
 // Ao ligar: se ficou uma venda aprovada sem confirmação (o PC caiu no meio),
 // desfaz — a regra é "sem venda gravada, sem cobrança".
 async function recuperar() {
@@ -236,29 +257,29 @@ const server = http.createServer(async (req, res) => {
       const p = await corpo(req);
       if (url === "/venda") {
         if (!(Number(p.valor) > 0)) return json(res, 400, { ok: false, erro: "Valor inválido." });
-        if (estado.pendente) await desfazer(undefined, "venda anterior ficou sem confirmação");
+        const desfeitaAnterior = await desfazerPendenteAntes();
         const r = await venda(p);
-        return json(res, 200, { ok: true, ...r });
+        return json(res, 200, { ok: true, ...r, desfeitaAnterior });
       }
       if (url === "/pix") {
         if (!(Number(p.valor) > 0)) return json(res, 400, { ok: false, erro: "Valor inválido." });
-        if (estado.pendente) await desfazer(undefined, "venda anterior ficou sem confirmação");
+        const desfeitaAnterior = await desfazerPendenteAntes();
         const r = await pix(p);
-        return json(res, 200, { ok: true, ...r });
+        return json(res, 200, { ok: true, ...r, desfeitaAnterior });
       }
       if (url === "/confirmar") return json(res, 200, await confirmar(p.id));
       if (url === "/desfazer") return json(res, 200, await desfazer(p.id, p.motivo));
       if (url === "/cancelar") {
         const id = proximoId();
         log(`Cancelamento #${id}: NSU ${p.nsu} R$ ${Number(p.valor).toFixed(2)} de ${p.data}`);
-        const r = await executar(requisicaoCancelar({ id, valor: p.valor, nsu: p.nsu, data: p.data, terminal }));
+        const r = await executar(requisicaoCancelar({ id, valor: p.valor, nsu: p.nsu, data: p.data, terminal }), { timeoutMs: timeoutOperadorMs });
         if (r.requerConfirmacao) await executar(requisicaoConfirmar(id, r.finalizacao), { esperaResp: false });
         etapa = "livre";
         return json(res, 200, { ok: true, ...r, idAgente: id });
       }
       if (url === "/adm") {
         const id = proximoId();
-        const r = await executar(requisicaoAdm(id, terminal));
+        const r = await executar(requisicaoAdm(id, terminal), { timeoutMs: timeoutOperadorMs });
         etapa = "livre";
         return json(res, 200, { ok: true, ...r });
       }

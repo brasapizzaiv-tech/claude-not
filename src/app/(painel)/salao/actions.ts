@@ -1484,6 +1484,54 @@ export async function registrarPixTeste(r: {
   return { ok: true as const, id };
 }
 
+/**
+ * Cartão CONFIRMADO no pinpad cuja venda NÃO foi gravada.
+ *
+ * Acontece na conta com dois cartões: o primeiro é confirmado (CNF) antes de
+ * passar o segundo — o gerenciador exige — e depois a venda falha ou o caixa
+ * tira o pagamento da conta. O dinheiro já foi cobrado e não dá mais pra
+ * desfazer (NCN); só cancelar (CNC), que precisa do cartão de novo. Fica
+ * registrado fora do caixa (mov_id nulo), como o Pix de teste, pra aparecer em
+ * Cartões (TEF) e poder ser cancelado por lá.
+ */
+export async function registrarTefAvulso(
+  t: {
+    idAgente: string; terminal: string | null; nsu: string | null; nsuHost: string | null; autorizacao: string | null;
+    rede: string | null; bandeira: string | null; produto: string | null; tipo: "credito" | "debito" | "voucher";
+    parcelas: number; panMascarado: string | null; viaCliente: string[]; viaLoja: string[];
+  },
+  valor: number,
+  motivo: string,
+) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase.from("tef_transacoes").insert({
+    mov_id: null,
+    caixa_id: null,
+    terminal: t.terminal,
+    tipo: t.tipo,
+    valor,
+    parcelas: Math.max(1, Number(t.parcelas) || 1),
+    rede: t.rede,
+    bandeira: t.bandeira,
+    produto: t.produto,
+    nsu: t.nsu,
+    nsu_host: t.nsuHost,
+    autorizacao: t.autorizacao,
+    pan_mascarado: t.panMascarado,
+    status: "confirmada",
+    mensagem: `Cobrado no pinpad sem venda gravada (${motivo}) — cancelar aqui`,
+    via_cliente: t.viaCliente ?? [],
+    via_loja: t.viaLoja ?? [],
+    id_agente: t.idAgente,
+    criado_por: userData.user?.id ?? null,
+  });
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath("/salao/caixa/tef");
+  return { ok: true as const };
+}
+
 // Reimprime a via do cliente de um cartão já passado.
 export async function reimprimirTef(transacaoId: string) {
   await exigirAcesso("/salao");

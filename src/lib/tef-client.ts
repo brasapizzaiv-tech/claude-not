@@ -39,6 +39,9 @@ export type TefVenda = {
   requerConfirmacao?: boolean;
   viaCliente?: string[];
   viaLoja?: string[];
+  // Só na venda/Pix: o agente achou uma transação anterior sem CNF/NCN e a
+  // DESFEZ antes de começar esta. O caixa tira aquele pagamento da conta.
+  desfeitaAnterior?: { id: string; nsu: string | null; valor: number } | null;
 };
 
 // Dados do TEF que viajam junto com o pagamento até o servidor.
@@ -57,6 +60,10 @@ export type TefDados = {
   viaCliente: string[];
   viaLoja: string[];
   requerConfirmacao: boolean;
+  // Já confirmado (CNF) no pinpad ANTES de a venda gravar — acontece com o
+  // primeiro de dois cartões na mesma conta. Não tem mais "desfazer": se a
+  // venda não gravar, esse cartão só sai por cancelamento em Cartões (TEF).
+  confirmado?: boolean;
 };
 
 async function chamar<T>(rota: string, body?: unknown, timeoutMs = 8000): Promise<T> {
@@ -93,19 +100,24 @@ export function tefVenda(p: { valor: number; tipo: "credito" | "debito" | "vouch
 export function tefPix(p: { valor: number }) {
   return chamar<TefVenda>("/pix", p, 300000);
 }
+// `aviso` vem quando o agente não tinha nada pendente com esse id — ou já foi
+// confirmado antes, ou foi desfeito (agente religado, outra venda no meio).
 export function tefConfirmar(idAgente: string) {
-  return chamar<{ ok: boolean; erro?: string }>("/confirmar", { id: idAgente }, 20000);
+  return chamar<{ ok: boolean; erro?: string; aviso?: string }>("/confirmar", { id: idAgente }, 20000);
 }
 export function tefDesfazer(idAgente: string, motivo: string) {
-  return chamar<{ ok: boolean; erro?: string }>("/desfazer", { id: idAgente, motivo }, 20000);
+  return chamar<{ ok: boolean; erro?: string; aviso?: string }>("/desfazer", { id: idAgente, motivo }, 20000);
 }
+// Cancelamento e menu administrativo: a janela da Elgin conversa com o
+// OPERADOR (data, número do documento, "confirma?", cartão de novo). O agente
+// espera até 10 min; aqui um pouco mais, pra resposta dele não se perder.
 export function tefCancelar(p: { nsu: string; valor: number; data: string }) {
-  return chamar<TefVenda>("/cancelar", p, 150000);
+  return chamar<TefVenda>("/cancelar", p, 630000);
 }
 // Menu administrativo do gerenciador (reimpressão pela Elgin, testes, etc.);
 // a interação toda acontece na janela da Elgin, aqui só esperamos terminar.
 export function tefAdm() {
-  return chamar<TefVenda>("/adm", {}, 300000);
+  return chamar<TefVenda>("/adm", {}, 630000);
 }
 
 // Traduz a forma de pagamento do caixa pro tipo que o TEF entende.

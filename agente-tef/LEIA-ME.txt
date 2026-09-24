@@ -33,3 +33,20 @@ Se o Pix voltar "Erro ao obter os dados de habilitacao", olhe
 C:ElginTEFloge1.log: se aparecer "habilitarTerminalTef: (404)",
 o terminal nao esta habilitado no servidor da Elgin - e liberacao deles,
 nao ajuste aqui.
+
+------------------------------------------------------------------
+TEMPO DE ESPERA E DOIS CARTOES NA MESMA CONTA (0.9.5)
+------------------------------------------------------------------
+Venda: o agente espera o cartao por 2 minutos (timeoutVendaMs no
+config.json). Cancelamento e menu administrativo: a janela da Elgin
+conversa com o OPERADOR (data da venda, numero do documento = NSU,
+"confirma?", cartao de novo), entao o agente espera 10 minutos
+(timeoutOperadorMs). Se o agente desistir antes da resposta chegar, o
+gerenciador termina sozinho e o sistema NAO fica sabendo - foi o que
+aconteceu em 24/09 com o limite antigo de 2 minutos.
+
+Dois cartoes na mesma conta: o gerenciador exige que cada transacao
+aprovada seja confirmada (CNF) ou desfeita (NCN) antes da proxima.
+O caixa confirma o cartao anterior antes de mandar o seguinte. Se
+mesmo assim chegar uma venda com outra pendente, o agente desfaz a
+antiga e devolve "desfeitaAnterior" na resposta, pro caixa avisar.

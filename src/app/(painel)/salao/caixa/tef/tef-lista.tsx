@@ -35,6 +35,8 @@ const dataTef = (iso: string) => {
   const g = (t: string) => p.find((x) => x.type === t)?.value ?? "";
   return `${g("day")}${g("month")}${g("year")}`;
 };
+// A mesma data, do jeito que o operador lê (pra digitar na janela da Elgin).
+const dataBr = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 const STATUS: Record<string, { rotulo: string; cls: string }> = {
   confirmada: { rotulo: "aprovada", cls: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" },
   aprovada: { rotulo: "aprovada (sem confirmar)", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" },
@@ -83,7 +85,9 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
     const armadilha =
       'ATENÇÃO: se a janela da Elgin pedir SENHA DE SUPERVISOR, NÃO feche a janela nem aperte Esc — fechar sem a senha DESATIVA o terminal. Digite a senha ou responda "Não" na pergunta anterior.';
     if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. ${aviso}\n\n${armadilha}`)) return;
-    setMsg("Aguardando o pinpad… peça o cartão ao cliente.");
+    // O gerenciador da Elgin ignora a data e o NSU que mandamos e pergunta os
+    // dois na janela dele — então a tela já diz o que responder.
+    setMsg(`Olhe a janela da Elgin: ela pergunta a data da venda (${dataBr(l.criado_em)}) e o "Número do Documento" — é o NSU ${l.nsu}. Depois peça o cartão ao cliente. Tem até 10 minutos.`);
     setOcupadoId(l.id);
     start(async () => {
       try {
