@@ -5,7 +5,7 @@ import { confirmar } from "@/components/dialogo";
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { tefAdm, tefCancelar, tefDisponivel, type TefStatus } from "@/lib/tef-client";
+import { tefAdm, tefCancelar, tefConfirmar, tefDisponivel, tefPix, type TefStatus } from "@/lib/tef-client";
 import { registrarCancelamentoTef, reimprimirTef } from "../../actions";
 
 export type TefLinha = {
@@ -103,6 +103,37 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
     });
   }
 
+  // PIX PELO PINPAD
+  //
+  // Fica aqui, e não no caixa, de propósito. O Pix do dia a dia é o do Sicoob,
+  // que não tem taxa; este passa pela adquirente e tem. Existe porque é item do
+  // roteiro de homologação da Elgin, e porque serve de reserva se o Sicoob cair.
+  //
+  // Pede o valor e cobra: o gerenciador desenha o QR na tela do pinpad. Não
+  // registra pagamento nenhum no caixa — é uma cobrança avulsa, de teste.
+  function pix() {
+    if (!agente) { setMsg("O Agente TEF não está rodando neste PC."); return; }
+    const digitado = window.prompt("Valor do Pix pelo pinpad (só pra teste — não entra no caixa):", "1,00");
+    if (digitado === null) return;
+    const valor = Number(digitado.replace(/\./g, "").replace(",", "."));
+    if (!(valor > 0)) { setMsg("Valor inválido."); return; }
+    setMsg("Mandei pro pinpad — o QR aparece na tela dele. Esperando o cliente pagar…");
+    start(async () => {
+      try {
+        const r = await tefPix({ valor });
+        if (!r.ok) { setMsg(r.erro ?? "O agente não respondeu."); return; }
+        if (!r.aprovada) { setMsg(`Pix não aprovado: ${r.mensagem || "recusado"}.`); return; }
+        // Aprovou: confirma na hora. Aqui não há venda pra gravar antes — é
+        // teste —, então o CNF vai direto, senão o gerenciador desfaz sozinho.
+        if (r.requerConfirmacao && r.idAgente) await tefConfirmar(r.idAgente);
+        setMsg(`Pix aprovado · NSU ${r.nsu ?? "-"} · ${r.rede ?? ""}. Confirmado.`);
+        router.refresh();
+      } catch (e) {
+        setMsg(e instanceof Error ? e.message : "Falha ao falar com o agente.");
+      }
+    });
+  }
+
   const btn = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave disabled:opacity-40 dark:border-borda-forte  ";
 
   return (
@@ -112,6 +143,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
           {agente ? `Agente TEF ${agente.versao} · ${agente.terminal}${agente.gerenciador ? " · gerenciador OK" : " · gerenciador não encontrado"}` : "Agente TEF não encontrado neste PC"}
         </span>
         <button onClick={adm} disabled={proc || !agente} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="ajustes" tamanho={14} /> Menu administrativo (Elgin)</span></button>
+        <button onClick={pix} disabled={proc || !agente} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="celular" tamanho={14} /> Pix pelo pinpad (teste)</span></button>
       </div>
       {msg && <p className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
 

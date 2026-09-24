@@ -53,10 +53,12 @@ async function responder(campos) {
   const final = centavos % 100;
   const { data, hora } = agora();
 
-  if (op === "CRT" || op === "CNC") {
+  // PIX responde como uma venda: o gerenciador é quem desenha o QR no pinpad e
+  // só volta quando o cliente paga. Pro agente, o caminho é o mesmo.
+  if (op === "CRT" || op === "CNC" || op === "PIX") {
     if (final === 97) { log("cenário 97: fico mudo (o agente vai dar timeout)"); return; }
     if (final === 98) { log("cenário 98: demorando 20 s..."); await dormir(20000); }
-    else { log(`no pinpad... (R$ ${valorStr})`); await dormir(3000); }
+    else { log(`${op === "PIX" ? "QR na tela do pinpad" : "no pinpad"}... (R$ ${valorStr})`); await dormir(3000); }
 
     if (final === 99) {
       gravar(arqResp, montar([
@@ -68,23 +70,24 @@ async function responder(campos) {
       return;
     }
 
+    const ehPix = op === "PIX";
     const tipo = campos[CHAVES.TIPO_CARTAO];
     const rede = campos[CHAVES.REDE] || "SICREDI";
-    const credito = tipo === "1" || (tipo !== "2" && tipo !== "3" && seq % 2 === 0);
-    const bandeira = tipo === "3" ? "ALELO" : seq % 3 === 0 ? "MASTERCARD" : "VISA";
-    const produto = tipo === "3" ? "VOUCHER REFEICAO" : credito ? `${bandeira} CREDITO` : `${bandeira} DEBITO`;
+    const credito = !ehPix && (tipo === "1" || (tipo !== "2" && tipo !== "3" && seq % 2 === 0));
+    const bandeira = ehPix ? "PIX" : tipo === "3" ? "ALELO" : seq % 3 === 0 ? "MASTERCARD" : "VISA";
+    const produto = ehPix ? "PIX" : tipo === "3" ? "VOUCHER REFEICAO" : credito ? `${bandeira} CREDITO` : `${bandeira} DEBITO`;
     const nsu = String(++seq);
     const aut = String(100000 + Math.floor(Math.random() * 899999));
     const linhas = [
       "BRASA PIZZARIA E RESTAURANTE", "CNPJ 47.261.660/0001-90", `${rede} - ${produto}`,
       `${data.slice(0, 2)}/${data.slice(2, 4)}/${data.slice(4)} ${hora.slice(0, 2)}:${hora.slice(2, 4)}`,
-      `NSU ${nsu}   AUT ${aut}`, `VALOR: R$ ${valorStr}`, "CARTAO **** **** **** 1234",
+      `NSU ${nsu}   AUT ${aut}`, `VALOR: R$ ${valorStr}`, ehPix ? "PIX - QR CODE" : "CARTAO **** **** **** 1234",
       op === "CNC" ? "*** CANCELAMENTO ***" : "TRANSACAO APROVADA", "(simulador - sem valor)",
     ];
     const pares = [
       [CHAVES.OPERACAO, op], [CHAVES.ID, id], [CHAVES.STATUS, "OK"],
       [CHAVES.REDE, rede], [CHAVES.BANDEIRA, bandeira], [CHAVES.PRODUTO, produto],
-      [CHAVES.COD_TRANSACAO, credito ? 10 : 20], [CHAVES.TIPO_CARTAO, tipo === "3" ? 3 : credito ? 1 : 2],
+      [CHAVES.COD_TRANSACAO, ehPix ? 60 : credito ? 10 : 20], [CHAVES.TIPO_CARTAO, ehPix ? 0 : tipo === "3" ? 3 : credito ? 1 : 2],
       [CHAVES.NSU, nsu], [CHAVES.NSU_HOST, nsu], [CHAVES.AUTORIZACAO, aut],
       [CHAVES.VALOR, centavos], [CHAVES.DATA, data], [CHAVES.HORA, hora],
       [CHAVES.PAN_MASCARADO, "************1234"], [CHAVES.PORTADOR, "CLIENTE TESTE"],
@@ -92,7 +95,7 @@ async function responder(campos) {
       [CHAVES.FINALIZACAO, `FIN${nsu}`],
       [CHAVES.COD_OPERACAO, 0], [CHAVES.MSG_OPERACAO, "TRANSACAO APROVADA"],
       [CHAVES.TEXTO_OPERADOR, "Transação aprovada"],
-      [CHAVES.RETORNO, op === "CRT" ? 0 : 1], [CHAVES.REQUER_CONFIRMACAO, op === "CRT" ? 2 : 1],
+      [CHAVES.RETORNO, op === "CNC" ? 1 : 0], [CHAVES.REQUER_CONFIRMACAO, op === "CNC" ? 1 : 2],
       [CHAVES.N_LINHAS_CUPOM, linhas.length],
     ];
     linhas.forEach((l, i) => { pares.push([`713-${String(i).padStart(3, "0")}`, l]); pares.push([`715-${String(i).padStart(3, "0")}`, l]); });

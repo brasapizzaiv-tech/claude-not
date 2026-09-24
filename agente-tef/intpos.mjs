@@ -87,6 +87,24 @@ export function requisicaoVenda({ id, valor, tipo = "qualquer", parcelas = 1, re
   return montar(pares);
 }
 
+// PIX pelo pinpad. Mesma forma da venda — o gerenciador é quem mostra o QR na
+// tela do pinpad e espera o cliente pagar —, só muda a operação. É item do
+// roteiro de homologação da Elgin.
+//
+// No dia a dia da casa o Pix principal continua sendo o do Sicoob, que é de
+// graça; este aqui passa pela adquirente e tem taxa. Ver o memorando do Pix.
+export function requisicaoPix({ id, valor, terminal, docFiscal }) {
+  const pares = [
+    [CHAVES.OPERACAO, "PIX"],
+    [CHAVES.ID, id],
+    [CHAVES.DOC_FISCAL, docFiscal],
+    [CHAVES.VALOR, Math.round(Number(valor) * 100)],
+    [CHAVES.MOEDA, 0],
+  ];
+  if (terminal) pares.push([CHAVES.TERMINAL, terminal]);
+  return montar(pares);
+}
+
 export function requisicaoConfirmar(id, finalizacao) {
   return montar([[CHAVES.OPERACAO, "CNF"], [CHAVES.ID, id], [CHAVES.FINALIZACAO, finalizacao]]);
 }

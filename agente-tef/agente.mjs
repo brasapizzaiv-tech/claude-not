@@ -14,9 +14,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, renameS
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { requisicaoVenda, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
+import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.2"; // 0.9.2: guarda a última resposta crua do gerenciador (ultima-resposta.txt) e loga os códigos quando a venda não aprova
+const VERSAO = "0.9.3"; // 0.9.3: Pix pelo pinpad (/pix), item do roteiro de homologação da Elgin
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -154,6 +154,27 @@ async function venda(p) {
   return { ...r, idAgente: id, terminal };
 }
 
+// Pix pelo pinpad: o gerenciador desenha o QR na tela do pinpad e só responde
+// quando o cliente paga (ou desiste). Daí pra frente é igual à venda — inclusive
+// a confirmação, que é o que evita cobrar sem ter registrado a venda.
+async function pix(p) {
+  const id = proximoId();
+  log(`Pix #${id}: R$ ${Number(p.valor).toFixed(2)}`);
+  const r = await executar(requisicaoPix({ id, valor: p.valor, terminal, docFiscal: p.docFiscal }));
+  if (r.aprovada && r.requerConfirmacao) {
+    estado.pendente = { id, finalizacao: r.finalizacao, valor: p.valor, nsu: r.nsu, desde: Date.now() };
+    salvarEstado();
+    etapa = "aguardando_confirmacao";
+  } else {
+    etapa = "livre";
+  }
+  log(`Pix #${id}: ${r.aprovada ? "APROVADO" : "NEGADO"} · NSU ${r.nsu ?? "-"} · ${r.mensagem}`);
+  if (!r.aprovada) {
+    log(`Pix #${id}: detalhe · status "${r.status}" · código ${r.codigo ?? "-"} · retorno ${r.retorno ?? "-"} · resposta crua em ${ultimaRespFile}`);
+  }
+  return { ...r, idAgente: id, terminal };
+}
+
 async function confirmar(id) {
   const pend = estado.pendente;
   if (!pend || (id && pend.id !== id)) return { ok: true, aviso: "nada pendente" };
@@ -208,7 +229,7 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  if (req.method === "POST" && (url === "/venda" || url === "/confirmar" || url === "/desfazer" || url === "/cancelar" || url === "/adm")) {
+  if (req.method === "POST" && (url === "/venda" || url === "/pix" || url === "/confirmar" || url === "/desfazer" || url === "/cancelar" || url === "/adm")) {
     if (ocupado) return json(res, 409, { ok: false, erro: "Já tem uma operação em andamento no pinpad." });
     ocupado = true;
     try {
@@ -217,6 +238,12 @@ const server = http.createServer(async (req, res) => {
         if (!(Number(p.valor) > 0)) return json(res, 400, { ok: false, erro: "Valor inválido." });
         if (estado.pendente) await desfazer(undefined, "venda anterior ficou sem confirmação");
         const r = await venda(p);
+        return json(res, 200, { ok: true, ...r });
+      }
+      if (url === "/pix") {
+        if (!(Number(p.valor) > 0)) return json(res, 400, { ok: false, erro: "Valor inválido." });
+        if (estado.pendente) await desfazer(undefined, "venda anterior ficou sem confirmação");
+        const r = await pix(p);
         return json(res, 200, { ok: true, ...r });
       }
       if (url === "/confirmar") return json(res, 200, await confirmar(p.id));

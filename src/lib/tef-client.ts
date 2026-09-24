@@ -83,6 +83,16 @@ export async function tefDisponivel(): Promise<TefStatus | null> {
 export function tefVenda(p: { valor: number; tipo: "credito" | "debito" | "voucher"; parcelas?: number; rede?: string | null }) {
   return chamar<TefVenda>("/venda", p, 150000);
 }
+// Pix pelo pinpad: o gerenciador desenha o QR na tela do pinpad e só responde
+// quando o cliente paga. Daí pra frente é igual à venda no cartão — inclusive a
+// confirmação, que é o que evita cobrar sem a venda ter sido registrada.
+//
+// No dia a dia da casa o Pix principal é o do Sicoob, que não tem taxa; este
+// aqui passa pela adquirente. Existe porque é item do roteiro de homologação e
+// porque serve de reserva quando o Sicoob estiver fora do ar.
+export function tefPix(p: { valor: number }) {
+  return chamar<TefVenda>("/pix", p, 300000);
+}
 export function tefConfirmar(idAgente: string) {
   return chamar<{ ok: boolean; erro?: string }>("/confirmar", { id: idAgente }, 20000);
 }
