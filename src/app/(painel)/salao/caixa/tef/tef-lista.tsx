@@ -6,7 +6,7 @@ import { confirmar } from "@/components/dialogo";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { tefAdm, tefCancelar, tefConfirmar, tefDisponivel, tefPix, type TefStatus } from "@/lib/tef-client";
-import { registrarCancelamentoTef, reimprimirTef } from "../../actions";
+import { registrarCancelamentoTef, registrarPixTeste, reimprimirTef } from "../../actions";
 
 export type TefLinha = {
   id: string;
@@ -22,6 +22,8 @@ export type TefLinha = {
   pan_mascarado: string | null;
   terminal: string | null;
   criado_em: string;
+  /** Nulo quando a cobranca nao passou pelo caixa (Pix avulso do pinpad). */
+  mov_id?: string | null;
 };
 
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -68,7 +70,13 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
   async function cancelar(l: TefLinha) {
     if (!agente) { setMsg("O Agente TEF não está rodando neste PC — o cancelamento precisa do pinpad."); return; }
     if (!l.nsu) { setMsg("Essa transação não tem NSU, não dá pra cancelar pelo TEF."); return; }
-    if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} no cartão (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. O valor sai do caixa e a via do cancelamento é impressa.`)) return;
+    // Cobrança que não passou pelo caixa (o Pix avulso do pinpad) não gera
+    // estorno lá — prometer isso no aviso seria mentira.
+    const doCaixa = !!l.mov_id;
+    const aviso = doCaixa
+      ? "O valor sai do caixa e a via do cancelamento é impressa."
+      : "Essa cobrança não entrou no caixa, então nada sai de lá — só a via do cancelamento é impressa.";
+    if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. ${aviso}`)) return;
     setMsg("Aguardando o pinpad… peça o cartão ao cliente.");
     setOcupadoId(l.id);
     start(async () => {
@@ -134,9 +142,20 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
           return;
         }
         // Aprovou: confirma na hora. Aqui não há venda pra gravar antes — é
-        // teste —, então o CNF vai direto, senão o gerenciador desfaz sozinho.
+        // cobrança avulsa —, então o CNF vai direto, senão o gerenciador desfaz.
         if (r.requerConfirmacao && r.idAgente) await tefConfirmar(r.idAgente);
-        setMsg(`Pix aprovado · NSU ${r.nsu ?? "-"} · ${r.rede ?? ""}. Confirmado.`);
+        // E guarda na lista: é o que permite CANCELAR esse Pix depois (item do
+        // roteiro). Não entra no caixa — fica com mov_id nulo.
+        const g = await registrarPixTeste({
+          valor, nsu: r.nsu ?? null, nsuHost: r.nsuHost ?? null, autorizacao: r.autorizacao ?? null,
+          rede: r.rede ?? null, bandeira: r.bandeira ?? null, produto: r.produto ?? null,
+          viaCliente: r.viaCliente ?? [], viaLoja: r.viaLoja ?? [], idAgente: r.idAgente ?? null,
+          terminal: r.terminal ?? null,
+        });
+        setMsg(
+          `Pix aprovado · NSU ${r.nsu ?? "-"} · ${r.rede ?? ""}. Confirmado.` +
+            (g.ok ? " Está na lista abaixo, dá pra cancelar." : ` (não consegui guardar na lista: ${g.mensagem})`),
+        );
         router.refresh();
       } catch (e) {
         setMsg(e instanceof Error ? e.message : "Falha ao falar com o agente.");

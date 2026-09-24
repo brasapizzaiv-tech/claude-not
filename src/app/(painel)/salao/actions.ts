@@ -1360,8 +1360,14 @@ export async function registrarCancelamentoTef(
     .maybeSingle();
   if (!orig) return { ok: false as const, mensagem: "Transação não encontrada." };
   if (orig.status !== "confirmada") return { ok: false as const, mensagem: "Só dá pra cancelar uma venda aprovada e confirmada." };
-  const caixaId = await caixaAberto(supabase);
-  if (!caixaId) return { ok: false as const, mensagem: "Não tem caixa aberto pra lançar o estorno." };
+
+  // Transação SEM movimento no caixa é uma cobrança avulsa — hoje, o Pix de
+  // teste da homologação. Ela não entrou no caixa, então o cancelamento
+  // também não sai de lá: estornar o que nunca entrou deixaria o caixa
+  // negativo em cima de dinheiro que não existiu.
+  const veioDoCaixa = !!orig.mov_id;
+  const caixaId = veioDoCaixa ? await caixaAberto(supabase) : null;
+  if (veioDoCaixa && !caixaId) return { ok: false as const, mensagem: "Não tem caixa aberto pra lançar o estorno." };
   const { data: userData } = await supabase.auth.getUser();
   const agora = new Date().toISOString();
 
@@ -1373,18 +1379,22 @@ export async function registrarCancelamentoTef(
   } else {
     forma = orig.tipo === "debito" ? "Cartão de débito" : orig.tipo === "voucher" ? "Vale refeição" : "Cartão de crédito";
   }
-  const { data: estorno } = await supabase
-    .from("pdv_caixa_mov")
-    .insert({
-      caixa_id: caixaId,
-      tipo: "venda",
-      descricao: `Cancelamento cartão NSU ${orig.nsu ?? "-"}`,
-      forma_pagamento: forma,
-      valor: -Number(orig.valor),
-      tef_nsu: r.nsu, tef_autorizacao: r.autorizacao, tef_rede: r.rede ?? orig.rede, tef_terminal: r.terminal,
-    })
-    .select("id")
-    .single();
+  const estorno = veioDoCaixa
+    ? (
+        await supabase
+          .from("pdv_caixa_mov")
+          .insert({
+            caixa_id: caixaId,
+            tipo: "venda",
+            descricao: `Cancelamento cartão NSU ${orig.nsu ?? "-"}`,
+            forma_pagamento: forma,
+            valor: -Number(orig.valor),
+            tef_nsu: r.nsu, tef_autorizacao: r.autorizacao, tef_rede: r.rede ?? orig.rede, tef_terminal: r.terminal,
+          })
+          .select("id")
+          .single()
+      ).data
+    : null;
 
   const { data: nova } = await supabase
     .from("tef_transacoes")
@@ -1413,6 +1423,65 @@ export async function registrarCancelamentoTef(
   revalidatePath("/salao/caixa");
   revalidatePath("/salao/caixa/tef");
   return { ok: true as const };
+}
+
+/**
+ * Guarda um Pix cobrado direto no pinpad, pela tela Cartões (TEF).
+ *
+ * É uma cobrança AVULSA: não veio de comanda nem entra no caixa (o Pix do dia a
+ * dia é o do Sicoob, sem taxa). Fica registrada por dois motivos: pra aparecer
+ * na lista com o NSU, e — principalmente — pra poder ser CANCELADA, que é um
+ * item do roteiro de homologação da Elgin.
+ *
+ * `mov_id` nulo é o que marca isso: o cancelamento olha pra ele e não mexe no
+ * caixa.
+ */
+export async function registrarPixTeste(r: {
+  valor: number;
+  nsu: string | null;
+  nsuHost: string | null;
+  autorizacao: string | null;
+  rede: string | null;
+  bandeira: string | null;
+  produto: string | null;
+  viaCliente: string[];
+  viaLoja: string[];
+  idAgente: string | null;
+  terminal: string | null;
+}) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("tef_transacoes")
+    .insert({
+      mov_id: null,
+      caixa_id: null,
+      terminal: r.terminal,
+      tipo: "pix",
+      valor: r.valor,
+      parcelas: 1,
+      rede: r.rede,
+      bandeira: r.bandeira,
+      produto: r.produto,
+      nsu: r.nsu,
+      nsu_host: r.nsuHost,
+      autorizacao: r.autorizacao,
+      status: "confirmada",
+      mensagem: "Pix cobrado pelo pinpad (fora do caixa)",
+      via_cliente: r.viaCliente,
+      via_loja: r.viaLoja,
+      id_agente: r.idAgente,
+      criado_por: userData.user?.id ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false as const, mensagem: error.message };
+
+  const id = (data as { id: string }).id;
+  if (r.viaCliente.length > 0) await reimprimirTef(id);
+  revalidatePath("/salao/caixa/tef");
+  return { ok: true as const, id };
 }
 
 // Reimprime a via do cliente de um cartão já passado.

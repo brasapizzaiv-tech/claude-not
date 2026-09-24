@@ -16,7 +16,7 @@ export default async function TefPage() {
   const desde = seteDiasAtras();
   const { data } = await supabase
     .from("tef_transacoes")
-    .select("id, tipo, valor, parcelas, rede, bandeira, nsu, autorizacao, status, mensagem, pan_mascarado, terminal, criado_em")
+    .select("id, tipo, valor, parcelas, rede, bandeira, nsu, autorizacao, status, mensagem, pan_mascarado, terminal, criado_em, mov_id")
     .gte("criado_em", desde)
     .order("criado_em", { ascending: false })
     .limit(150);
