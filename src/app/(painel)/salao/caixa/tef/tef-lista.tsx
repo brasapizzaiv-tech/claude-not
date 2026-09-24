@@ -131,17 +131,14 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
         const r = await tefPix({ valor });
         if (!r.ok) { setMsg(r.erro ?? "O agente não respondeu."); return; }
         if (!r.aprovada) {
-          // Duas recusas têm causa conhecida e mandam procurar em lugares
-          // diferentes — sem a dica, se perde tempo no lugar errado.
+          // A recusa mais comum tem causa conhecida e manda procurar no lugar
+          // certo — sem a dica, se perde tempo do lado errado.
           const msg = r.mensagem ?? "";
           const dica = /habilita/i.test(msg)
             // "Erro ao obter os dados de habilitação": o gerenciador processou,
             // mas o Pix não está liberado pra esse CNPJ na adquirente.
             ? " O Pix não está habilitado pra esse CNPJ — isso é liberação da Elgin/adquirente, não é ajuste aqui."
-            : /suport|inval|desconhec/i.test(msg)
-              // Pix vem desligado de fábrica no gerenciador.
-              ? ' Confira se o gerenciador está com "pix4": 1 no config_tef.json.'
-              : "";
+            : "";
           setMsg(`Pix não aprovado: ${msg || "recusado"}.${dica}`);
           return;
         }

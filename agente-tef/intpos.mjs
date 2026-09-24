@@ -96,9 +96,10 @@ export function requisicaoVenda({ id, valor, tipo = "qualquer", parcelas = 1, re
 // versão disto mandava os dois, por analogia com o CRT, antes de a documentação
 // aparecer. Campo a mais em protocolo de troca de arquivos é pedir recusa.
 //
-// ATENÇÃO, DO LADO DO WINDOWS: o Pix só funciona com `"pix4": 1` no
-// `config_tef.json` do gerenciador. Vem 0 de fábrica, e com 0 esta operação
-// falha sem dizer por quê.
+// CUIDADO com `"pix4"` no config_tef.json do gerenciador: NÃO é "Pix", é o
+// Pix4, um aparelho USB da Elgin que exibe QR. Com 1 o gerenciador sai caçando
+// esse aparelho a cada transação e falha (-12). Sem o aparelho, fica 0 — o QR
+// do Pix sai na tela do próprio pinpad.
 //
 // No dia a dia da casa o Pix principal continua sendo o do Sicoob, que é de
 // graça; este aqui passa pela adquirente e tem taxa. Ver o memorando do Pix.
