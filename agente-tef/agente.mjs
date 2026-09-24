@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.3"; // 0.9.3: Pix pelo pinpad (/pix), item do roteiro de homologação da Elgin
+const VERSAO = "0.9.4"; // 0.9.4: Pix pelo pinpad (/pix) com os campos exatos da documentação da Elgin
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -160,7 +160,7 @@ async function venda(p) {
 async function pix(p) {
   const id = proximoId();
   log(`Pix #${id}: R$ ${Number(p.valor).toFixed(2)}`);
-  const r = await executar(requisicaoPix({ id, valor: p.valor, terminal, docFiscal: p.docFiscal }));
+  const r = await executar(requisicaoPix({ id, valor: p.valor, docFiscal: p.docFiscal }));
   if (r.aprovada && r.requerConfirmacao) {
     estado.pendente = { id, finalizacao: r.finalizacao, valor: p.valor, nsu: r.nsu, desde: Date.now() };
     salvarEstado();

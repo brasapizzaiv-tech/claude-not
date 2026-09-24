@@ -122,7 +122,17 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
       try {
         const r = await tefPix({ valor });
         if (!r.ok) { setMsg(r.erro ?? "O agente não respondeu."); return; }
-        if (!r.aprovada) { setMsg(`Pix não aprovado: ${r.mensagem || "recusado"}.`); return; }
+        if (!r.aprovada) {
+          // O Pix vem DESLIGADO de fábrica no gerenciador. Quando está
+          // desligado ele recusa a operação sem explicar, e sem esta dica o
+          // erro manda a gente procurar no lugar errado.
+          const semSuporte = /suport|inval|desconhec/i.test(r.mensagem ?? "");
+          setMsg(
+            `Pix não aprovado: ${r.mensagem || "recusado"}.` +
+              (semSuporte ? ' Confira se o gerenciador está com "pix4": 1 no config_tef.json.' : ""),
+          );
+          return;
+        }
         // Aprovou: confirma na hora. Aqui não há venda pra gravar antes — é
         // teste —, então o CNF vai direto, senão o gerenciador desfaz sozinho.
         if (r.requerConfirmacao && r.idAgente) await tefConfirmar(r.idAgente);

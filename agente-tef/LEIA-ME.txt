@@ -16,3 +16,21 @@ Log: C:\ProgramData\AgenteTEF\agente.log
 
 TESTE SEM O TEF DA ELGIN: rode "node simulador-gp.mjs" nesta pasta. Ele responde
 como se fosse o gerenciador (aprova tudo; valor terminando em ,99 nega).
+
+------------------------------------------------------------------
+PIX PELO PINPAD
+------------------------------------------------------------------
+O botao "Pix pelo pinpad" (Caixa -> Cartoes (TEF)) so funciona se o
+gerenciador estiver com o Pix LIGADO. Vem desligado de fabrica.
+
+Como ligar, no PC onde esta o gerenciador:
+  1. Abra o arquivo config_tef.json do Elgin TEF HUB.
+  2. Troque   "pix4": 0    por    "pix4": 1
+  3. Feche e abra o gerenciador de novo.
+
+Com "pix4": 0 a operacao falha sem dizer o motivo - o gerenciador
+simplesmente nao aceita a operacao PIX.
+
+(Fonte: documentacao oficial, Modo Passivo -> "Operacoes com PIX",
+ elgindevelopercommunity.github.io/group__t01.html - repare nos DOIS
+ underlines do endereco.)

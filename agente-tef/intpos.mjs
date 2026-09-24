@@ -87,22 +87,28 @@ export function requisicaoVenda({ id, valor, tipo = "qualquer", parcelas = 1, re
   return montar(pares);
 }
 
-// PIX pelo pinpad. Mesma forma da venda — o gerenciador é quem mostra o QR na
-// tela do pinpad e espera o cliente pagar —, só muda a operação. É item do
-// roteiro de homologação da Elgin.
+// PIX pelo pinpad: o gerenciador mostra o QR na tela do pinpad e espera o
+// cliente pagar. É item do roteiro de homologação da Elgin.
+//
+// Os campos são EXATAMENTE os quatro da documentação (Modo Passivo → "Operações
+// com PIX"): operação, id, documento fiscal e valor em centavos. Nem moeda
+// (004-000) nem terminal (718-000), que a venda no cartão manda — a primeira
+// versão disto mandava os dois, por analogia com o CRT, antes de a documentação
+// aparecer. Campo a mais em protocolo de troca de arquivos é pedir recusa.
+//
+// ATENÇÃO, DO LADO DO WINDOWS: o Pix só funciona com `"pix4": 1` no
+// `config_tef.json` do gerenciador. Vem 0 de fábrica, e com 0 esta operação
+// falha sem dizer por quê.
 //
 // No dia a dia da casa o Pix principal continua sendo o do Sicoob, que é de
 // graça; este aqui passa pela adquirente e tem taxa. Ver o memorando do Pix.
-export function requisicaoPix({ id, valor, terminal, docFiscal }) {
-  const pares = [
+export function requisicaoPix({ id, valor, docFiscal }) {
+  return montar([
     [CHAVES.OPERACAO, "PIX"],
     [CHAVES.ID, id],
     [CHAVES.DOC_FISCAL, docFiscal],
     [CHAVES.VALOR, Math.round(Number(valor) * 100)],
-    [CHAVES.MOEDA, 0],
-  ];
-  if (terminal) pares.push([CHAVES.TERMINAL, terminal]);
-  return montar(pares);
+  ]);
 }
 
 export function requisicaoConfirmar(id, finalizacao) {
