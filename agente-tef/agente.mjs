@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.7"; // 0.9.7: data do cancelamento em dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min, /venda avisa quando desfez a anterior
+const VERSAO = "0.9.8"; // 0.9.8: Pix espera os 240 s do QR; 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -166,7 +166,9 @@ async function venda(p) {
 async function pix(p) {
   const id = proximoId();
   log(`Pix #${id}: R$ ${Number(p.valor).toFixed(2)}`);
-  const r = await executar(requisicaoPix({ id, valor: p.valor, docFiscal: p.docFiscal }));
+  // O QR do gerenciador fica na tela por 240 s; o limite de venda (120 s)
+  // derrubava o Pix no meio da contagem (25/09). Espera como o operador.
+  const r = await executar(requisicaoPix({ id, valor: p.valor, docFiscal: p.docFiscal }), { timeoutMs: timeoutOperadorMs });
   if (r.aprovada && r.requerConfirmacao) {
     estado.pendente = { id, finalizacao: r.finalizacao, valor: p.valor, nsu: r.nsu, desde: Date.now() };
     salvarEstado();
