@@ -123,14 +123,21 @@ export function requisicaoDesfazer(id, finalizacao) {
 // que na tabela da Elgin é só de SAÍDA — o gerenciador não achava o NSU,
 // perguntava data e "Número do Documento" pro operador, e a Elgin, no log,
 // viu "todas as tentativas de cancelamento com erro" (Thais, 25/09).
+//
+// A data (022-000) o Hub copia sem mexer pra "dataHoraTransacao" da biblioteca
+// E1, e essa biblioteca quer dd/MM/yyyy — é a máscara que ela mostra quando
+// não entende e pergunta ao operador ("Data Transacao Original"). A tabela do
+// modo passivo diz DDMMAAAA, e foi assim que o caixa manda; aqui converte.
 export function requisicaoCancelar({ id, valor, nsu, data, terminal }) {
+  const d = String(data ?? "").replace(/\D/g, "");
+  const dataElgin = d.length === 8 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : data;
   return montar([
     [CHAVES.OPERACAO, "CNC"],
     [CHAVES.ID, id],
     [CHAVES.VALOR, Math.round(Number(valor) * 100)],
     [CHAVES.MOEDA, 0],
     [CHAVES.NSU, String(nsu ?? "").replace(/\D/g, "").padStart(6, "0")], // a tabela pede 6 dígitos com zeros à esquerda
-    [CHAVES.DATA, data],
+    [CHAVES.DATA, dataElgin],
     [CHAVES.TERMINAL, terminal],
   ]);
 }
