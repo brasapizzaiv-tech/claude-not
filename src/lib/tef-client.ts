@@ -98,7 +98,7 @@ export function tefVenda(p: { valor: number; tipo: "credito" | "debito" | "vouch
 // aqui passa pela adquirente. Existe porque é item do roteiro de homologação e
 // porque serve de reserva quando o Sicoob estiver fora do ar.
 export function tefPix(p: { valor: number }) {
-  return chamar<TefVenda>("/pix", p, 630000); // o QR fica 240 s na tela; o agente espera até 10 min
+  return chamar<TefVenda>("/pix", p, 1530000); // a contagem do QR leva uns 18 min (4,5 s por tique); o agente espera 25
 }
 // `aviso` vem quando o agente não tinha nada pendente com esse id — ou já foi
 // confirmado antes, ou foi desfeito (agente religado, outra venda no meio).

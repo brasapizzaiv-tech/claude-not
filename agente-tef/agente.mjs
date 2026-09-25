@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.8"; // 0.9.8: Pix espera os 240 s do QR; 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
+const VERSAO = "0.9.9"; // 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -38,6 +38,11 @@ const timeoutStsMs = Number(cfg.timeoutStsMs) || 15000;      // o gerenciador te
 // antes da resposta chegar — o cancelamento saiu na adquirente e o caixa não
 // ficou sabendo. Aqui o limite é de gente, não de cartão: 10 minutos.
 const timeoutOperadorMs = Number(cfg.timeoutOperadorMs) || 600000;
+// Pix: o gerenciador mostra "[240]" mas cada tique da contagem leva uns 4,5 s
+// (é uma consulta ao servidor por tique), então o QR fica na tela uns 18 min.
+// Se o agente desistir antes, o Pix termina no gerenciador e o caixa não fica
+// sabendo. 25 minutos cobre a contagem inteira com folga.
+const timeoutPixMs = Number(cfg.timeoutPixMs) || 1500000;
 
 const logFile = path.join(dataDir, "agente.log");
 const ultimaRespFile = path.join(dataDir, "ultima-resposta.txt"); // cópia crua do último IntPos.001 de resposta (pra diagnóstico)
@@ -166,9 +171,8 @@ async function venda(p) {
 async function pix(p) {
   const id = proximoId();
   log(`Pix #${id}: R$ ${Number(p.valor).toFixed(2)}`);
-  // O QR do gerenciador fica na tela por 240 s; o limite de venda (120 s)
-  // derrubava o Pix no meio da contagem (25/09). Espera como o operador.
-  const r = await executar(requisicaoPix({ id, valor: p.valor, docFiscal: p.docFiscal }), { timeoutMs: timeoutOperadorMs });
+  // O limite de venda (120 s) derrubava o Pix no meio da contagem (25/09).
+  const r = await executar(requisicaoPix({ id, valor: p.valor, docFiscal: p.docFiscal }), { timeoutMs: timeoutPixMs });
   if (r.aprovada && r.requerConfirmacao) {
     estado.pendente = { id, finalizacao: r.finalizacao, valor: p.valor, nsu: r.nsu, desde: Date.now() };
     salvarEstado();
