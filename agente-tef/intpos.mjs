@@ -118,13 +118,18 @@ export function requisicaoConfirmar(id, finalizacao) {
 export function requisicaoDesfazer(id, finalizacao) {
   return montar([[CHAVES.OPERACAO, "NCN"], [CHAVES.ID, id], [CHAVES.FINALIZACAO, finalizacao]]);
 }
+// Cancelamento: o NSU da venda vai em 012-000 (NUMERO_TRANSACAO_NSU), que é
+// campo de ENTRADA. Até 24/09 ia em 025-000 (NUMERO_TRANSACAO_ORIGINAL_NSU),
+// que na tabela da Elgin é só de SAÍDA — o gerenciador não achava o NSU,
+// perguntava data e "Número do Documento" pro operador, e a Elgin, no log,
+// viu "todas as tentativas de cancelamento com erro" (Thais, 25/09).
 export function requisicaoCancelar({ id, valor, nsu, data, terminal }) {
   return montar([
     [CHAVES.OPERACAO, "CNC"],
     [CHAVES.ID, id],
     [CHAVES.VALOR, Math.round(Number(valor) * 100)],
     [CHAVES.MOEDA, 0],
-    [CHAVES.NSU_ORIGINAL, nsu],
+    [CHAVES.NSU, String(nsu ?? "").replace(/\D/g, "").padStart(6, "0")], // a tabela pede 6 dígitos com zeros à esquerda
     [CHAVES.DATA, data],
     [CHAVES.TERMINAL, terminal],
   ]);

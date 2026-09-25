@@ -85,9 +85,9 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
     const armadilha =
       'ATENÇÃO: se a janela da Elgin pedir SENHA DE SUPERVISOR, NÃO feche a janela nem aperte Esc — fechar sem a senha DESATIVA o terminal. Digite a senha ou responda "Não" na pergunta anterior.';
     if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. ${aviso}\n\n${armadilha}`)) return;
-    // O gerenciador da Elgin ignora a data e o NSU que mandamos e pergunta os
-    // dois na janela dele — então a tela já diz o que responder.
-    setMsg(`Olhe a janela da Elgin: ela pergunta a data da venda (${dataBr(l.criado_em)}) e o "Número do Documento" — é o NSU ${l.nsu}. Depois peça o cartão ao cliente. Tem até 10 minutos.`);
+    // O NSU vai na requisição (012-000); se mesmo assim a janela da Elgin
+    // perguntar a data ou o "Número do Documento", a tela já diz o que responder.
+    setMsg(`Olhe a janela da Elgin e peça o cartão ao cliente. Se ela perguntar a data da venda, é ${dataBr(l.criado_em)}; se perguntar o "Número do Documento", é o NSU ${l.nsu}. Tem até 10 minutos.`);
     setOcupadoId(l.id);
     start(async () => {
       try {
