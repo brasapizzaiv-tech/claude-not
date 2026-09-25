@@ -262,7 +262,65 @@ export async function salvarDetalheCardapio(formData: FormData) {
     const tipoSabor = formData.get("tipo_sabor") === "doce" ? "doce" : "salgada";
     const rodizio = formData.get("rodizio") === "on";
     await supabase.from("pdv_pizza_sabores").update({ descricao, tipo: tipoSabor, rodizio }).eq("id", id);
+    await salvarPrecosDoSabor(supabase, id, formData);
   }
+  revalidatePath("/salao/cardapio");
+}
+
+// Preço digitado do jeito brasileiro ("12,50") ou com ponto ("12.50").
+function precoDigitado(v: FormDataEntryValue | null): number {
+  const s = String(v ?? "").trim();
+  if (!s) return 0;
+  const n = s.includes(",") ? Number(s.replace(/\./g, "").replace(",", ".")) : Number(s);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+}
+
+// Campos "preco_<id do tamanho>" do formulário → uma linha por tamanho.
+// Sabor sem preço num tamanho NÃO é vendido naquele tamanho (o montador de
+// pizza só oferece o sabor onde acha preço), então vazio/zero apaga a linha.
+async function salvarPrecosDoSabor(supabase: Awaited<ReturnType<typeof createClient>>, saborId: string, formData: FormData) {
+  const com: { sabor_id: string; tamanho_id: string; preco: number }[] = [];
+  const sem: string[] = [];
+  for (const [chave, valor] of formData.entries()) {
+    if (!chave.startsWith("preco_")) continue;
+    const tamanhoId = chave.slice("preco_".length);
+    if (!tamanhoId) continue;
+    const preco = precoDigitado(valor);
+    if (preco > 0) com.push({ sabor_id: saborId, tamanho_id: tamanhoId, preco });
+    else sem.push(tamanhoId);
+  }
+  if (com.length > 0) await supabase.from("pdv_pizza_sabor_precos").upsert(com, { onConflict: "sabor_id,tamanho_id" });
+  if (sem.length > 0) await supabase.from("pdv_pizza_sabor_precos").delete().eq("sabor_id", saborId).in("tamanho_id", sem);
+}
+
+// Sabor novo de pizza, pela tela Cardápio. Até 25/09/2026 os sabores só
+// entravam por importação. Entra no fim da lista (ordem = último + 1).
+export async function adicionarSabor(formData: FormData) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const nome = String(formData.get("nome") ?? "").trim().slice(0, 80);
+  if (!nome) return;
+  const descricao = String(formData.get("descricao") ?? "").trim().slice(0, 300) || null;
+  const tipo = formData.get("tipo_sabor") === "doce" ? "doce" : "salgada";
+  const rodizio = formData.get("rodizio") === "on";
+  const { data: ultimo } = await supabase.from("pdv_pizza_sabores").select("ordem").order("ordem", { ascending: false }).limit(1).maybeSingle();
+  const ordem = (Number((ultimo as { ordem?: number } | null)?.ordem) || 0) + 1;
+  const { data: novo } = await supabase
+    .from("pdv_pizza_sabores")
+    .insert({ nome, ordem, ativo: true, descricao, tipo, rodizio })
+    .select("id")
+    .single();
+  const id = (novo as { id?: string } | null)?.id;
+  if (id) await salvarPrecosDoSabor(supabase, id, formData);
+  revalidatePath("/salao/cardapio");
+}
+
+// Tira o sabor do cardápio sem apagar: as pizzas já vendidas apontam pra ele.
+export async function desativarSabor(id: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  if (!id) return;
+  await supabase.from("pdv_pizza_sabores").update({ ativo: false }).eq("id", id);
   revalidatePath("/salao/cardapio");
 }
 

@@ -4,7 +4,7 @@ import type { Horarios } from "@/lib/disponibilidade";
 
 export default async function CardapioPage() {
   const supabase = await createClient();
-  const [{ data: cfg }, { data: itens }, { data: cats }, { data: gruposRows }, { data: tamanhos }, { data: sabores }] = await Promise.all([
+  const [{ data: cfg }, { data: itens }, { data: cats }, { data: gruposRows }, { data: tamanhos }, { data: sabores }, { data: precos }] = await Promise.all([
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_itens")
@@ -14,6 +14,7 @@ export default async function CardapioPage() {
     supabase.from("pdv_item_grupos").select("item_id"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem"),
     supabase.from("pdv_pizza_sabores").select("id, nome, ativo, foto_url, descricao, tipo, rodizio").eq("ativo", true).order("ordem"),
+    supabase.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco"),
   ]);
   const config: Record<string, string> = {};
   for (const r of cfg ?? []) config[r.chave] = r.valor;
@@ -40,6 +41,7 @@ export default async function CardapioPage() {
         comAdicionais={comAdicionais}
         tamanhos={(tamanhos as { id: string; nome: string; max_sabores: number; fatias: number | null }[]) ?? []}
         sabores={(sabores as { id: string; nome: string; foto_url: string | null; descricao: string | null }[]) ?? []}
+        precos={(precos as { sabor_id: string; tamanho_id: string; preco: number }[]) ?? []}
       />
     </div>
   );

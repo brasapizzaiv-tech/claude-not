@@ -1,7 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
-import { Enviar } from "@/components/enviar";
+import { Enviar, BotaoAcao } from "@/components/enviar";
 import { confirmar } from "@/components/dialogo";
 
 import { useRef, useState, useTransition } from "react";
@@ -19,7 +19,7 @@ import {
   moverCategoria,
   excluirCategoria,
 } from "../actions";
-import { salvarFotoCardapio, removerFotoCardapio, salvarDetalheCardapio, salvarFatias } from "../../delivery/actions";
+import { salvarFotoCardapio, removerFotoCardapio, salvarDetalheCardapio, salvarFatias, adicionarSabor, desativarSabor } from "../../delivery/actions";
 import { resumoHorarios, disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 
 const moeda = (n: number) =>
@@ -34,6 +34,32 @@ type Item = {
 };
 type Categoria = { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios; canal_app: boolean; canal_garcom: boolean; canal_pdv: boolean };
 type Tam = { id: string; nome: string; max_sabores: number; fatias: number | null };
+// Preço de um sabor num tamanho. Sabor sem linha num tamanho não é vendido
+// naquele tamanho — é assim que o montador de pizza lê a tabela.
+type PrecoSabor = { sabor_id: string; tamanho_id: string; preco: number };
+const precoTxt = (n?: number) => (n && n > 0 ? n.toFixed(2).replace(".", ",") : "");
+
+// Um campo de preço por tamanho (Broto, Média, Grande…). Serve pro sabor novo
+// e pra editar os que já existem; o nome do campo é "preco_<id do tamanho>".
+function PrecosPorTamanho({ tamanhos, valorDe }: { tamanhos: Tam[]; valorDe?: (tamanhoId: string) => number | undefined }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {tamanhos.map((t) => (
+        <label key={t.id} className="flex items-center gap-1.5 text-xs text-texto-suave">
+          {t.nome}
+          <input
+            name={`preco_${t.id}`}
+            defaultValue={precoTxt(valorDe?.(t.id))}
+            inputMode="decimal"
+            placeholder="—"
+            title={`Preço do sabor na ${t.nome}. Vazio = não vende nesse tamanho.`}
+            className={`${inputCls} w-24`}
+          />
+        </label>
+      ))}
+    </div>
+  );
+}
 type Sabor = { id: string; nome: string; foto_url: string | null; descricao: string | null; tipo?: "salgada" | "doce" | null; rodizio?: boolean | null };
 
 // ---------- foto ----------
@@ -125,7 +151,7 @@ function HorariosEditor({ inicial }: { inicial: Horarios }) {
 
 // ---------- tela ----------
 export function CardapioClient({
-  config, itens, categorias, comAdicionais, tamanhos, sabores,
+  config, itens, categorias, comAdicionais, tamanhos, sabores, precos,
 }: {
   config: Record<string, string>;
   itens: Item[];
@@ -133,11 +159,13 @@ export function CardapioClient({
   comAdicionais: string[];
   tamanhos: Tam[];
   sabores: Sabor[];
+  precos: PrecoSabor[];
 }) {
   const [editando, setEditando] = useState<Item | null>(null);
   const [buscaSabor, setBuscaSabor] = useState("");
   const [horariosCat, setHorariosCat] = useState<Categoria | null>(null);
   const setAdic = new Set(comAdicionais);
+  const precoDe = new Map(precos.map((p) => [`${p.sabor_id}|${p.tamanho_id}`, Number(p.preco)]));
 
   const grupos = new Map<string, Item[]>();
   for (const i of itens) {
@@ -266,6 +294,33 @@ export function CardapioClient({
                 </form>
               ))}
             </div>
+            {/* Sabor novo: nome, salgada ou doce, rodízio e o preço em cada
+                tamanho. Antes os sabores só entravam por importação. */}
+            <form action={adicionarSabor} className="rounded-cartao border border-dashed border-borda-forte p-3">
+              <div className="mb-2 text-sm font-semibold text-texto">Novo sabor</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input name="nome" required maxLength={80} placeholder="Nome do sabor" className={`${inputCls} w-64`} />
+                <select name="tipo_sabor" defaultValue="salgada" className={`${inputCls} w-36`} title="Coluna no quadro do rodízio">
+                  <option value="salgada">Salgada</option>
+                  <option value="doce">Doce</option>
+                </select>
+                <label className="flex items-center gap-1.5 whitespace-nowrap text-sm text-texto-suave" title="Aparece na busca de sabores do rodízio">
+                  <input type="checkbox" name="rodizio" defaultChecked /> rodízio
+                </label>
+              </div>
+              <div className="mt-2">
+                <PrecosPorTamanho tamanhos={tamanhos} />
+              </div>
+              <input
+                name="descricao"
+                maxLength={300}
+                placeholder="Descrição (ingredientes) — aparece no app do cliente"
+                className={`${inputCls} mt-2 w-full`}
+              />
+              <Enviar className="mt-2 rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+                + Adicionar sabor
+              </Enviar>
+            </form>
             {/* Sabores: o nome vem inteiro (antes era cortado numa coluna fixa)
                 e a descrição ocupa a linha de baixo, que é onde se escreve mais. */}
             <div>
@@ -279,11 +334,8 @@ export function CardapioClient({
                 {sabores
                   .filter((s) => !buscaSabor.trim() || s.nome.toLowerCase().includes(buscaSabor.trim().toLowerCase()))
                   .map((s) => (
-                    <form
-                      key={s.id}
-                      action={salvarDetalheCardapio}
-                      className="rounded-cartao border border-borda p-3"
-                    >
+                    <div key={s.id} className="rounded-cartao border border-borda p-3">
+                    <form action={salvarDetalheCardapio}>
                       <input type="hidden" name="tipo" value="sabor" />
                       <input type="hidden" name="id" value={s.id} />
                       <div className="flex flex-wrap items-center gap-3">
@@ -319,7 +371,25 @@ export function CardapioClient({
                         placeholder="Descrição (ingredientes) — aparece no app do cliente"
                         className={`${inputCls} mt-2 w-full`}
                       />
+                      {/* Preço por tamanho: salva junto com o botão Salvar acima. */}
+                      <div className="mt-2">
+                        <PrecosPorTamanho tamanhos={tamanhos} valorDe={(tid) => precoDe.get(`${s.id}|${tid}`)} />
+                      </div>
                     </form>
+                    {/* Fora do form de cima: é um clique, não um envio. Tirar do
+                        cardápio só desativa — as vendas antigas continuam. */}
+                    <div className="mt-2 text-right">
+                      <BotaoAcao
+                        className="text-xs text-texto-fraco hover:text-red-600"
+                        aoClicar={async () => {
+                          if (!(await confirmar(`Tirar "${s.nome}" do cardápio?\n\nEle some do salão, do garçom e do app. As vendas antigas ficam.`))) return;
+                          await desativarSabor(s.id);
+                        }}
+                      >
+                        Tirar do cardápio
+                      </BotaoAcao>
+                    </div>
+                    </div>
                   ))}
                 {sabores.filter((s) => !buscaSabor.trim() || s.nome.toLowerCase().includes(buscaSabor.trim().toLowerCase())).length === 0 && (
                   <p className="py-6 text-center text-sm text-texto-fraco">Nenhum sabor com esse nome.</p>
