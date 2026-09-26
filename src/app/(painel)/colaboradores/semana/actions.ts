@@ -135,7 +135,7 @@ export async function preencherEscalaFixa(segunda: string) {
 // CHEIO (pra somar a mão de obra do mês); o desconto só reduz o que sai em mãos.
 export async function lancarPagamentosSemana(
   segunda: string,
-  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean }[],
+  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean; descontarAdiantamento?: boolean }[],
   opts: { jaPago: boolean; data: string; forma: string | null },
 ) {
   await exigirAcesso("/colaboradores");
@@ -159,8 +159,26 @@ export async function lancarPagamentosSemana(
   let n = 0;
   let totalDesc = 0;
   for (const it of validos) {
-    // Fiado: pega as retiradas em aberto (mais antigas primeiro) enquanto couber no valor.
+    // Adiantamento: dinheiro dado antes do acerto. Sai PRIMEIRO (a regra dele
+    // é voltar na semana seguinte); o fiado, se marcado, no que sobrar.
     let desconto = 0;
+    const idsAdiant: string[] = [];
+    if (it.descontarAdiantamento !== false) {
+      const { data: abertos } = await supabase
+        .from("adiantamentos")
+        .select("id, valor")
+        .eq("colaborador_id", it.colaboradorId)
+        .eq("status", "aberto")
+        .order("data", { ascending: true });
+      for (const a of (abertos ?? []) as { id: string; valor: number }[]) {
+        const v = Number(a.valor) || 0;
+        if (desconto + v > it.valor + 0.005) break;
+        desconto += v;
+        idsAdiant.push(a.id);
+      }
+    }
+    const descAdiant = desconto;
+    // Fiado: pega as retiradas em aberto (mais antigas primeiro) enquanto couber no valor.
     const idsFiado: number[] = [];
     if (it.descontarFiado) {
       const { data: abertas } = await supabase
@@ -178,7 +196,12 @@ export async function lancarPagamentosSemana(
       }
     }
     const emMaos = Math.round((it.valor - desconto) * 100) / 100;
-    const sufixo = desconto > 0 ? ` · fiado descontado ${desconto.toFixed(2).replace(".", ",")} → em mãos ${emMaos.toFixed(2).replace(".", ",")}` : "";
+    const descFiado = desconto - descAdiant;
+    const partes = [
+      descAdiant > 0 ? `adiantamento descontado ${descAdiant.toFixed(2).replace(".", ",")}` : "",
+      descFiado > 0 ? `fiado descontado ${descFiado.toFixed(2).replace(".", ",")}` : "",
+    ].filter(Boolean);
+    const sufixo = desconto > 0 ? ` · ${partes.join(", ")} → em mãos ${emMaos.toFixed(2).replace(".", ",")}` : "";
 
     const { data: l, error } = await supabase
       .from("lancamentos")
@@ -197,15 +220,24 @@ export async function lancarPagamentosSemana(
       .select("id")
       .single();
     if (error) return { erro: error.message, n };
-    await supabase.from("semana_pagamentos").insert({
-      segunda, colaborador_id: it.colaboradorId, valor: it.valor, lancamento_id: l.id, desconto,
-    });
+    const { data: sp } = await supabase
+      .from("semana_pagamentos")
+      .insert({ segunda, colaborador_id: it.colaboradorId, valor: it.valor, lancamento_id: l.id, desconto })
+      .select("id")
+      .single();
+    if (idsAdiant.length) {
+      await supabase
+        .from("adiantamentos")
+        .update({ status: "descontado", descontado_em: segunda, pagamento_id: (sp as { id?: string } | null)?.id ?? null })
+        .in("id", idsAdiant);
+      totalDesc += descAdiant;
+    }
     if (idsFiado.length) {
       await supabase
         .from("retiradas")
         .update({ status: "pago", data_pagamento: dataLanc, obs_pagamento: `Descontado no acerto da semana ${rotulo}` })
         .in("id", idsFiado);
-      totalDesc += desconto;
+      totalDesc += descFiado;
     }
     n++;
   }
@@ -214,6 +246,35 @@ export async function lancarPagamentosSemana(
   revalidatePath("/financeiro");
   revalidatePath("/retiradas");
   return { ok: true, n, totalDesc };
+}
+
+// Adiantamento: dinheiro dado à pessoa ANTES do acerto. Fica "aberto" até a
+// próxima semana lançada, quando sai do que ela recebe em mãos (a conta no
+// Contas a pagar continua cheia). Separado das compras internas de propósito:
+// tem gente cujo fiado é descontado só uma vez por mês.
+export async function registrarAdiantamento(colaboradorId: string, nome: string, valor: number, data: string, motivo: string) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const v = Math.round(Number(valor) * 100) / 100;
+  if (!colaboradorId || !(v > 0)) return { erro: "Escolha a pessoa e informe o valor." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("adiantamentos")
+    .insert({ colaborador_id: colaboradorId, nome, valor: v, data, motivo: motivo.trim().slice(0, 200) || null, criado_por: userData.user?.id ?? null });
+  if (error) return { erro: error.message };
+  revalidatePath("/colaboradores/semana");
+  return { ok: true };
+}
+
+// Só apaga o que ainda não foi descontado (o descontado já está na história do acerto).
+export async function excluirAdiantamento(id: string) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const { error } = await supabase.from("adiantamentos").delete().eq("id", id).eq("status", "aberto");
+  if (error) return { erro: error.message };
+  revalidatePath("/colaboradores/semana");
+  return { ok: true };
 }
 
 // Esqueceu algo depois de já ter lançado a semana da pessoa (um extra, uma

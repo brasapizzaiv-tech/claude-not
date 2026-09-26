@@ -7,7 +7,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
-import { criarEsporadico, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
+import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
   id: string;
@@ -46,9 +46,11 @@ function numBRtxt(s: string) {
 const fmtNum = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 type Pago = { colaborador_id: string; valor: number; lancamento_id: string | null; desconto: number };
+// Adiantamento em aberto: dinheiro dado antes do acerto, descontado na próxima semana lançada.
+type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais,
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais, adiantamentos,
 }: {
   segunda: string;
   dias: string[];
@@ -58,9 +60,43 @@ export function SemanaClient({
   pagos: Pago[];
   fiadoPor: Record<string, { valor: number; n: number }>;
   extrasIniciais: { colaborador_id: string; valor: number; motivo: string | null; turno: Turno; desconto?: number; desconto_motivo?: string | null }[];
+  adiantamentos: Adiantamento[];
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  // Adiantamentos em aberto por pessoa. Diferente do fiado, saem no acerto por
+  // padrão (a caixinha já vem marcada) — dar adiantamento é exatamente isso.
+  const adiantPor = useMemo(() => {
+    const o: Record<string, { valor: number; n: number }> = {};
+    for (const a of adiantamentos) {
+      const x = (o[a.colaborador_id] ??= { valor: 0, n: 0 });
+      x.valor = Math.round((x.valor + Number(a.valor)) * 100) / 100;
+      x.n++;
+    }
+    return o;
+  }, [adiantamentos]);
+  const [descontarAdiant, setDescontarAdiant] = useState<Set<string>>(() => new Set(adiantamentos.map((a) => a.colaborador_id)));
+  const [adiantAberto, setAdiantAberto] = useState(false);
+  const [adiantPessoa, setAdiantPessoa] = useState("");
+  const [adiantValor, setAdiantValor] = useState("");
+  const [adiantData, setAdiantData] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  const [adiantMotivo, setAdiantMotivo] = useState("");
+  function registrarAdiant() {
+    const p = pessoas.find((x) => x.id === adiantPessoa);
+    const v = numBRtxt(adiantValor);
+    if (!p || !(v > 0)) { setErro("Escolha a pessoa e informe o valor do adiantamento."); return; }
+    start(async () => {
+      const r = await registrarAdiantamento(p.id, p.nome, v, adiantData, adiantMotivo);
+      if (r.erro) { setErro(r.erro); return; }
+      setDescontarAdiant((s) => new Set(s).add(p.id));
+      setAdiantValor(""); setAdiantMotivo("");
+      setMsg(`✓ Adiantamento de ${brl(v)} registrado pra ${p.nome}. Sai no próximo acerto.`);
+      router.refresh();
+    });
+  }
   // Extra e desconto por pessoa na semana (valor + motivo; extra tem turno).
   type ExtraSem = { valor: string; motivo: string; turno: Turno; desconto: string; descMotivo: string };
   const [extrasSem, setExtrasSem] = useState<Record<string, ExtraSem>>(() => {
@@ -298,9 +334,13 @@ export function SemanaClient({
   // Quem entra no lançamento: tem valor, ainda não foi lançado e não foi desmarcado.
   const aLancar = calc.porPessoa.filter((x) => x.total > 0.005 && !pagoDe.has(x.p.id) && !desmarcados.has(x.p.id));
   const totalALancar = aLancar.reduce((s, x) => s + x.total, 0);
-  // Fiado que será descontado (só até o valor da pessoa; a conta continua cheia).
-  const descontoDe = (id: string, total: number) =>
-    descontar.has(id) ? Math.min(fiadoPor[id]?.valor ?? 0, total) : 0;
+  // O que sai do valor em mãos (a conta continua cheia): o adiantamento primeiro,
+  // e o fiado, se marcado, no que sobrar. Nunca passa do valor da pessoa.
+  const adiantDe = (id: string, total: number) => (descontarAdiant.has(id) ? Math.min(adiantPor[id]?.valor ?? 0, total) : 0);
+  const descontoDe = (id: string, total: number) => {
+    const a = adiantDe(id, total);
+    return a + (descontar.has(id) ? Math.min(fiadoPor[id]?.valor ?? 0, total - a) : 0);
+  };
   const totalDesconto = aLancar.reduce((s, x) => s + descontoDe(x.p.id, x.total), 0);
   const comFiado = aLancar.filter((x) => (fiadoPor[x.p.id]?.valor ?? 0) > 0.005);
 
@@ -355,7 +395,7 @@ export function SemanaClient({
 <div class="sub">Semana e 10% · gerado em ${esc(agora)} · valores em reais</div>
 <table><thead><tr>
   <th>Nome</th><th class="c">Dias</th><th class="c">Noites</th><th class="r">Diárias</th><th class="r">10%</th><th class="r">Extra</th><th class="r">Desconto</th>
-  <th class="r">Total</th><th class="r">Fiado desc.</th><th class="r">Em mãos</th><th class="c">Situação</th><th class="ass">Assinatura</th>
+  <th class="r">Total</th><th class="r">Adiant./fiado</th><th class="r">Em mãos</th><th class="c">Situação</th><th class="ass">Assinatura</th>
 </tr></thead><tbody>${corpo}</tbody>
 <tfoot><tr><td>Total · ${linhas.length} pessoa${linhas.length === 1 ? "" : "s"}</td><td class="c">${calc.turnoDia.presencas}</td><td class="c">${calc.turnoNoite.presencas}</td>
   <td class="r">${fmtNum(calc.totalDiarias)}</td><td class="r">${fmtNum(calc.totalDez)}</td><td class="r">${fmtNum(calc.totalExtras)}</td><td class="r neg">${calc.totalDescontosSem > 0.005 ? `− ${fmtNum(calc.totalDescontosSem)}` : ""}</td>
@@ -403,12 +443,13 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             x.descontoSem > 0.005 ? `desconto ${fmtNum(x.descontoSem)}${x.descontoMotivo ? ` ${x.descontoMotivo}` : ""}` : "",
           ].filter(Boolean).join(", "),
           descontarFiado: descontar.has(x.p.id),
+          descontarAdiantamento: descontarAdiant.has(x.p.id),
         })),
         { jaPago, data: dataPag, forma: formaPag || null },
       );
       if (r.erro) setErro(r.erro);
       else {
-        setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar${r.totalDesc ? `, fiado descontado ${brl(r.totalDesc)}` : ""}.`);
+        setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar${r.totalDesc ? `, descontado em mãos ${brl(r.totalDesc)} (adiantamento/fiado)` : ""}.`);
         setDescontar(new Set());
         router.refresh();
       }
@@ -447,6 +488,13 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         <button onClick={() => setAddAberto((v) => !v)} className="rounded-controle border border-orange-500 px-3 py-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
           + Free esporádico
         </button>
+        <button
+          onClick={() => setAdiantAberto((v) => !v)}
+          className="rounded-controle border border-orange-500 px-3 py-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+          title="Dinheiro dado antes do acerto; sai do valor em mãos na próxima semana lançada"
+        >
+          <Icone nome="dinheiro" tamanho={15} className="mr-1.5" /> Adiantamento{adiantamentos.length > 0 ? ` (${adiantamentos.length})` : ""}
+        </button>
         <button onClick={baixarCsv} className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave">
           <Icone nome="baixar" tamanho={15} className="mr-1.5" /> Planilha (CSV)
         </button>
@@ -467,6 +515,52 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         {pending && <span className="text-xs text-texto-fraco">salvando…</span>}
         {erro && <span className="text-xs text-red-600">{erro}</span>}
       </div>
+
+      {adiantAberto && (
+        <div className="mb-4 rounded-cartao border border-orange-200 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-950/20">
+          <p className="mb-1 text-sm font-medium">Adiantamento</p>
+          <p className="mb-3 text-xs text-texto-suave">
+            Dinheiro que você deu antes do acerto. Fica em aberto e sai do valor em mãos no próximo acerto lançado, separado do fiado das compras internas.
+            A conta no Contas a pagar continua com o valor cheio. Se o dinheiro saiu do caixa, faça também a sangria lá.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={adiantPessoa} onChange={(e) => setAdiantPessoa(e.target.value)} className={`${inputCls} w-56`}>
+              <option value="">Pessoa…</option>
+              {pessoas.filter((p) => p.turno !== "proprietario").map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+            <input value={adiantValor} onChange={(e) => setAdiantValor(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="R$ valor" inputMode="decimal" className={`${inputCls} w-28`} />
+            <input type="date" value={adiantData} onChange={(e) => setAdiantData(e.target.value)} className={inputCls} />
+            <input value={adiantMotivo} onChange={(e) => setAdiantMotivo(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="motivo (opcional)" className={`${inputCls} w-48`} />
+            <button onClick={registrarAdiant} disabled={pending} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-40">
+              Registrar adiantamento
+            </button>
+          </div>
+          {adiantamentos.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-bold text-texto-fraco">Em aberto (saem no próximo acerto de cada pessoa)</p>
+              <ul className="space-y-1 text-sm">
+                {adiantamentos.map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{a.nome}</span>
+                    <span className="text-texto-suave">{rotuloDia(a.data)}</span>
+                    <span className="font-semibold">{brl(Number(a.valor))}</span>
+                    {a.motivo && <span className="text-xs text-texto-suave">{a.motivo}</span>}
+                    <button
+                      onClick={async () => {
+                        if (!await confirmar(`Apagar o adiantamento de ${brl(Number(a.valor))} de ${a.nome}?`)) return;
+                        start(async () => { const r = await excluirAdiantamento(a.id); if (r.erro) setErro(r.erro); else router.refresh(); });
+                      }}
+                      className="text-xs text-texto-fraco hover:text-red-600"
+                    >
+                      apagar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {addAberto && (
         <div className="mb-4 rounded-cartao border border-orange-200 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-950/20">
@@ -751,7 +845,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                 <th className="px-3 py-3 text-right" title="Algo que fez a mais nesta semana (conta no turno escolhido)">Extra</th>
                 {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Atraso, falta… abate do total">Desconto</th>}
                 <th className="px-4 py-3 text-right">Total a pagar</th>
-                {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Compras internas em aberto (opcional descontar)">Fiado</th>}
+                {turnoFiltro === "todos" && <th className="px-3 py-3 text-right" title="Adiantamento (sai por padrão) e compras internas em aberto (opcional descontar)">Adiant. / fiado</th>}
                 {turnoFiltro === "todos" && <th className="px-4 py-3 text-right">Em mãos</th>}
               </tr>
             </thead>
@@ -877,15 +971,29 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-right whitespace-nowrap">
                       {pagoDe.has(p.id) ? (
                         Number(pagoDe.get(p.id)!.desconto) > 0 ? <span className="text-xs text-texto-suave">− {brl(Number(pagoDe.get(p.id)!.desconto))}</span> : <span className="text-zinc-300">—</span>
-                      ) : (fiadoPor[p.id]?.valor ?? 0) > 0.005 ? (
-                        <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-red-600" title={`${fiadoPor[p.id].n} compra(s) em aberto — marque pra descontar no acerto`}>
-                          <input
-                            type="checkbox"
-                            checked={descontar.has(p.id)}
-                            onChange={(e) => setDescontar((s) => { const n = new Set(s); if (e.target.checked) n.add(p.id); else n.delete(p.id); return n; })}
-                          />
-                          deve {brl(fiadoPor[p.id].valor)}
-                        </label>
+                      ) : (adiantPor[p.id]?.valor ?? 0) > 0.005 || (fiadoPor[p.id]?.valor ?? 0) > 0.005 ? (
+                        <div className="flex flex-col items-end gap-0.5">
+                          {(adiantPor[p.id]?.valor ?? 0) > 0.005 && (
+                            <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-amber-700 dark:text-amber-400" title={`${adiantPor[p.id].n} adiantamento(s) em aberto — desmarque só se for descontar em outra semana`}>
+                              <input
+                                type="checkbox"
+                                checked={descontarAdiant.has(p.id)}
+                                onChange={(e) => setDescontarAdiant((s) => { const n = new Set(s); if (e.target.checked) n.add(p.id); else n.delete(p.id); return n; })}
+                              />
+                              adiant. {brl(adiantPor[p.id].valor)}
+                            </label>
+                          )}
+                          {(fiadoPor[p.id]?.valor ?? 0) > 0.005 && (
+                            <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-red-600" title={`${fiadoPor[p.id].n} compra(s) em aberto — marque pra descontar no acerto`}>
+                              <input
+                                type="checkbox"
+                                checked={descontar.has(p.id)}
+                                onChange={(e) => setDescontar((s) => { const n = new Set(s); if (e.target.checked) n.add(p.id); else n.delete(p.id); return n; })}
+                              />
+                              deve {brl(fiadoPor[p.id].valor)}
+                            </label>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-zinc-300">—</span>
                       )}
