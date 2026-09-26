@@ -304,6 +304,83 @@ export function SemanaClient({
   const totalDesconto = aLancar.reduce((s, x) => s + descontoDe(x.p.id, x.total), 0);
   const comFiado = aLancar.filter((x) => (fiadoPor[x.p.id]?.valor ?? 0) > 0.005);
 
+  // Relatório dos pagamentos da semana: abre numa aba nova, pronto pra imprimir
+  // ou salvar em PDF. É montado daqui, com o mesmo cálculo da tela (o CSV também
+  // é), então mostra exatamente o que o Resumo mostra — inclusive o que ainda
+  // não foi lançado. Tem coluna de assinatura porque o acerto é em mãos.
+  function abrirRelatorio() {
+    const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+    const linhas = calc.porPessoa.filter((x) => x.total > 0.005 || pagoDe.has(x.p.id));
+    const fiadoDescDe = (id: string, total: number) => (pagoDe.has(id) ? Number(pagoDe.get(id)!.desconto || 0) : descontoDe(id, total));
+    const emMaosDe = (id: string, total: number) =>
+      pagoDe.has(id) ? Number(pagoDe.get(id)!.valor) - Number(pagoDe.get(id)!.desconto || 0) : total - descontoDe(id, total);
+    const totalFiado = linhas.reduce((s, x) => s + fiadoDescDe(x.p.id, x.total), 0);
+    const totalEmMaos = linhas.reduce((s, x) => s + emMaosDe(x.p.id, x.total), 0);
+    const totalGeral = calc.totalDiarias + calc.totalDez + calc.totalExtras - calc.totalDescontosSem;
+    const agora = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const n = (v: number) => (v > 0.005 ? fmtNum(v) : "");
+    const corpo = linhas
+      .map((x) => {
+        const extraTxt = x.extra > 0.005 ? `${fmtNum(x.extra)}${x.extraMotivo ? `<div class="mini">${esc(x.extraMotivo)}</div>` : ""}` : "";
+        const descTxt = x.descontoSem > 0.005 ? `− ${fmtNum(x.descontoSem)}${x.descontoMotivo ? `<div class="mini">${esc(x.descontoMotivo)}</div>` : ""}` : "";
+        const fiado = fiadoDescDe(x.p.id, x.total);
+        const situacao = pagoDe.has(x.p.id) ? "Lançado" : x.total > 0.005 ? "A lançar" : "—";
+        return `<tr>
+          <td>${esc(x.p.nome)}<div class="mini">${esc(x.rotuloVinculo)}${x.p.funcao ? ` · ${esc(x.p.funcao)}` : ""}</div></td>
+          <td class="c">${x.nDias || ""}</td><td class="c">${x.nNoites || ""}</td>
+          <td class="r">${n(x.diarias)}</td><td class="r">${n(x.dez10)}</td><td class="r">${extraTxt}</td><td class="r neg">${descTxt}</td>
+          <td class="r b">${fmtNum(x.total)}</td><td class="r neg">${fiado > 0.005 ? `− ${fmtNum(fiado)}` : ""}</td>
+          <td class="r b">${fmtNum(emMaosDe(x.p.id, x.total))}</td><td class="c">${situacao}</td><td class="ass"></td>
+        </tr>`;
+      })
+      .join("");
+    const noites = calc.noitesPagas
+      .map((x) => `<tr><td>${esc(rotuloDia(x.data))}</td><td class="r">${fmtNum(x.pool)}</td><td class="c">${x.presentes}</td><td class="r">${fmtNum(x.unit)}</td></tr>`)
+      .join("");
+    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Pagamentos ${esc(rotuloSemana(segunda))}</title>
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+  body { font: 11px/1.35 Arial, Helvetica, sans-serif; color: #111; margin: 0; padding: 16px; }
+  h1 { font-size: 18px; margin: 0 0 2px; } .sub { color: #555; margin-bottom: 12px; }
+  h2 { font-size: 13px; margin: 16px 0 6px; }
+  table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; }
+  th { background: #eee; text-align: left; font-weight: 600; } .c { text-align: center; } .r { text-align: right; white-space: nowrap; }
+  .b { font-weight: 700; } .neg { color: #b00; } .mini { font-size: 9px; color: #666; font-weight: 400; } .ass { width: 120px; }
+  tfoot td { background: #f4f4f4; font-weight: 700; } .peq { width: 45%; }
+  .botao { position: fixed; right: 16px; top: 12px; padding: 8px 14px; font: 600 13px Arial; background: #222; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  @media print { .botao { display: none; } body { padding: 0; } }
+</style></head><body>
+<button class="botao" onclick="window.print()">Imprimir / salvar PDF</button>
+<h1>Pagamentos da semana · ${esc(rotuloSemana(segunda))}</h1>
+<div class="sub">Semana e 10% · gerado em ${esc(agora)} · valores em reais</div>
+<table><thead><tr>
+  <th>Nome</th><th class="c">Dias</th><th class="c">Noites</th><th class="r">Diárias</th><th class="r">10%</th><th class="r">Extra</th><th class="r">Desconto</th>
+  <th class="r">Total</th><th class="r">Fiado desc.</th><th class="r">Em mãos</th><th class="c">Situação</th><th class="ass">Assinatura</th>
+</tr></thead><tbody>${corpo}</tbody>
+<tfoot><tr><td>Total · ${linhas.length} pessoa${linhas.length === 1 ? "" : "s"}</td><td class="c">${calc.turnoDia.presencas}</td><td class="c">${calc.turnoNoite.presencas}</td>
+  <td class="r">${fmtNum(calc.totalDiarias)}</td><td class="r">${fmtNum(calc.totalDez)}</td><td class="r">${fmtNum(calc.totalExtras)}</td><td class="r neg">${calc.totalDescontosSem > 0.005 ? `− ${fmtNum(calc.totalDescontosSem)}` : ""}</td>
+  <td class="r">${fmtNum(totalGeral)}</td><td class="r neg">${totalFiado > 0.005 ? `− ${fmtNum(totalFiado)}` : ""}</td><td class="r">${fmtNum(totalEmMaos)}</td><td></td><td></td></tr></tfoot>
+</table>
+<div style="display:flex; gap:24px; align-items:flex-start">
+<div class="peq"><h2>Por turno</h2>
+<table><thead><tr><th>Turno</th><th class="c">Presenças</th><th class="r">Diárias</th><th class="r">10%</th><th class="r">Extras</th><th class="r">Total</th></tr></thead><tbody>
+<tr><td>Dia</td><td class="c">${calc.turnoDia.presencas}</td><td class="r">${fmtNum(calc.turnoDia.diarias)}</td><td class="r"></td><td class="r">${fmtNum(calc.turnoDia.extras)}</td><td class="r b">${fmtNum(calc.turnoDia.diarias + calc.turnoDia.extras)}</td></tr>
+<tr><td>Noite</td><td class="c">${calc.turnoNoite.presencas}</td><td class="r">${fmtNum(calc.turnoNoite.diarias)}</td><td class="r">${fmtNum(calc.turnoNoite.dez)}</td><td class="r">${fmtNum(calc.turnoNoite.extras)}</td><td class="r b">${fmtNum(calc.turnoNoite.diarias + calc.turnoNoite.dez + calc.turnoNoite.extras)}</td></tr>
+</tbody></table></div>
+<div class="peq"><h2>10% que entra neste acerto</h2>
+<table><thead><tr><th>Noite</th><th class="r">Arrecadado</th><th class="c">Presentes</th><th class="r">Cada um</th></tr></thead>
+<tbody>${noites || `<tr><td colspan="4">Nenhuma noite de 10% neste acerto.</td></tr>`}</tbody>
+<tfoot><tr><td>Total</td><td class="r">${fmtNum(calc.totalPool)}</td><td></td><td></td></tr></tfoot></table>
+${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="margin-top:4px">${fmtNum(calc.totalPool - calc.totalDez)} do 10% sem ninguém marcado pra receber.</div>` : ""}
+</div></div>
+</body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) { setErro("O navegador bloqueou a aba do relatório. Libere pop-ups pra este site e tente de novo."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
+
   async function lancar() {
     if (!aLancar.length) return;
     const ok = await confirmar(
@@ -372,6 +449,13 @@ export function SemanaClient({
         </button>
         <button onClick={baixarCsv} className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave">
           <Icone nome="baixar" tamanho={15} className="mr-1.5" /> Planilha (CSV)
+        </button>
+        <button
+          onClick={abrirRelatorio}
+          className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave"
+          title="Abre numa aba nova, pronto pra imprimir ou salvar em PDF, com coluna de assinatura"
+        >
+          <Icone nome="imprimir" tamanho={15} className="mr-1.5" /> Relatório dos pagamentos
         </button>
         <div className="flex overflow-hidden rounded-controle border border-borda-forte" title="Filtrar por turno">
           {([["todos", "Todos"], ["dia", "Dia"], ["noite", "Noite"]] as const).map(([k, rot]) => (
