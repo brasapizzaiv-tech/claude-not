@@ -9,7 +9,7 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const android = path.join(raiz, "android");
 const manifest = path.join(android, "app/src/main/AndroidManifest.xml");
 const strings = path.join(android, "app/src/main/res/values/strings.xml");
-const nome = process.env.APP_NOME || "Entregas";
+const nome = process.env.APP_NOME || "Motelli";
 
 // 1) permissões
 let m = fs.readFileSync(manifest, "utf8");
@@ -83,7 +83,7 @@ if (fs.existsSync(icone)) {
 // do repositório, nunca aqui. Sem elas, o projeto continua compilando em debug
 // — que é como o app é instalado hoje no celular dos entregadores.
 // ---------------------------------------------------------------------------
-const appId = process.env.APP_ID || "br.com.vtmstore.entregas";
+const appId = process.env.APP_ID || "br.com.vtmstore.motelli";
 const versionCode = process.env.APP_VERSION_CODE || "1";
 const versionName = process.env.APP_VERSION_NAME || "1.0.0";
 

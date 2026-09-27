@@ -20,8 +20,11 @@ permissions:
 
 env:
   # O identificador do app é PRA SEMPRE depois de publicado na loja.
-  APP_ID: br.com.vtmstore.entregas
-  APP_NOME: Entregas
+  # "Motelli" foi o nome que o Rafael escolheu em 27/09/2026 (app genérico da
+  # VTM Store, um só na loja pra qualquer restaurante). Antes era "Entregas"
+  # (br.com.vtmstore.entregas), só instalado por APK, nunca publicado.
+  APP_ID: br.com.vtmstore.motelli
+  APP_NOME: Motelli
   APP_VERSION_NAME: "1.0.0"
 
 jobs:
@@ -58,12 +61,12 @@ jobs:
         run: cd android && ./gradlew assembleDebug --no-daemon
 
       - name: Renomear
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk BrasaEntregas.apk
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk Motelli.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: BrasaEntregas-apk
-          path: app-entregador/BrasaEntregas.apk
+          name: Motelli-apk
+          path: app-entregador/Motelli.apk
 
       # ---------------------------------------------------------------------
       # O pacote da loja. Só acontece quando a chave de assinatura existe.
@@ -88,7 +91,7 @@ jobs:
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/chave.jks"
           export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/chave.jks"
           cd android && ./gradlew bundleRelease --no-daemon
-          cd .. && cp android/app/build/outputs/bundle/release/app-release.aab Entregas.aab
+          cd .. && cp android/app/build/outputs/bundle/release/app-release.aab Motelli.aab
           # A chave não fica na máquina depois do build.
           rm -f "$RUNNER_TEMP/chave.jks"
 
@@ -97,15 +100,15 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: steps.chave.outputs.tem == 'sim'
         with:
-          name: Entregas-aab
-          path: app-entregador/Entregas.aab
+          name: Motelli-aab
+          path: app-entregador/Motelli.aab
           retention-days: 30
 
-      # Link fixo: https://github.com/<org>/<repo>/releases/download/app-entregador/BrasaEntregas.apk
+      # Link fixo: https://github.com/<org>/<repo>/releases/download/app-entregador/Motelli.apk
       - name: Publicar no release "app-entregador"
         uses: softprops/action-gh-release@v2
         with:
           tag_name: app-entregador
-          name: App do entregador (Android)
-          body: "APK mais recente do app do entregador. Baixe no celular e instale (permitir 'fontes desconhecidas')."
-          files: app-entregador/BrasaEntregas.apk
+          name: Motelli (app do entregador, Android)
+          body: "APK mais recente do Motelli, o app do entregador. Baixe no celular e instale (permitir 'fontes desconhecidas')."
+          files: app-entregador/Motelli.apk

@@ -11,8 +11,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // Antes daqui havia um `server.url` fixo no domínio da Brasa. Ficava mais
 // simples, mas amarrava o app publicado a um restaurante só.
 const config: CapacitorConfig = {
-  appId: process.env.APP_ID || "br.com.vtmstore.entregas",
-  appName: process.env.APP_NOME || "Entregas",
+  appId: process.env.APP_ID || "br.com.vtmstore.motelli",
+  appName: process.env.APP_NOME || "Motelli",
   webDir: "www",
   server: {
     // Sem `url`: o app começa na tela de dentro dele. Depois de o entregador
