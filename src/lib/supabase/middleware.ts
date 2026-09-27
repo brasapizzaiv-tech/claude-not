@@ -78,7 +78,9 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/tv/") ||
     path.startsWith("/api/whatsapp/") ||
     path.startsWith("/api/rastreio") ||
-    path.startsWith("/api/contagem/cron");
+    path.startsWith("/api/contagem/cron") ||
+    // Site da marca Motelli (apresentação e política de privacidade).
+    path.startsWith("/motelli");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
