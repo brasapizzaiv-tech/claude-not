@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { aplicarRecebimentoFiado, planejarRecebimentoFiado, type PlanoFiado } from "@/lib/retiradas-quitar";
 
 export type Turno = "dia" | "noite";
 
@@ -135,7 +136,7 @@ export async function preencherEscalaFixa(segunda: string) {
 // CHEIO (pra somar a mão de obra do mês); o desconto só reduz o que sai em mãos.
 export async function lancarPagamentosSemana(
   segunda: string,
-  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean; descontarAdiantamento?: boolean }[],
+  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean; fiadoValor?: number; descontarAdiantamento?: boolean }[],
   opts: { jaPago: boolean; data: string; forma: string | null },
 ) {
   await exigirAcesso("/colaboradores");
@@ -178,22 +179,14 @@ export async function lancarPagamentosSemana(
       }
     }
     const descAdiant = desconto;
-    // Fiado: pega as retiradas em aberto (mais antigas primeiro) enquanto couber no valor.
-    const idsFiado: number[] = [];
+    // Fiado: o caixa diz QUANTO descontar (pode ser parte). As compras mais
+    // antigas saem primeiro; a que não couber inteira é dividida. Nunca passa
+    // do que sobrou do valor da pessoa depois do adiantamento.
+    let planoFiado: PlanoFiado | null = null;
     if (it.descontarFiado) {
-      const { data: abertas } = await supabase
-        .from("retiradas")
-        .select("id, valor")
-        .eq("colaborador_id", it.colaboradorId)
-        .eq("status", "aberto")
-        .order("data", { ascending: true })
-        .order("id", { ascending: true });
-      for (const r of (abertas ?? []) as { id: number; valor: number }[]) {
-        const v = Number(r.valor) || 0;
-        if (desconto + v > it.valor + 0.005) break;
-        desconto += v;
-        idsFiado.push(r.id);
-      }
+      const alvo = Math.min(Number.isFinite(it.fiadoValor) && (it.fiadoValor as number) > 0 ? (it.fiadoValor as number) : Infinity, it.valor - descAdiant);
+      planoFiado = await planejarRecebimentoFiado(supabase, it.colaboradorId, alvo);
+      desconto = Math.round((desconto + planoFiado.recebido) * 100) / 100;
     }
     const emMaos = Math.round((it.valor - desconto) * 100) / 100;
     const descFiado = desconto - descAdiant;
@@ -232,11 +225,9 @@ export async function lancarPagamentosSemana(
         .in("id", idsAdiant);
       totalDesc += descAdiant;
     }
-    if (idsFiado.length) {
-      await supabase
-        .from("retiradas")
-        .update({ status: "pago", data_pagamento: dataLanc, obs_pagamento: `Descontado no acerto da semana ${rotulo}` })
-        .in("id", idsFiado);
+    if (planoFiado && planoFiado.recebido > 0) {
+      const r = await aplicarRecebimentoFiado(supabase, planoFiado, dataLanc, `Descontado no acerto da semana ${rotulo}`);
+      if ("erro" in r) return { erro: `Conta lançada, mas o fiado de ${it.nome} não foi baixado: ${r.erro}`, n: n + 1 };
       totalDesc += descFiado;
     }
     n++;

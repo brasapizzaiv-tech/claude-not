@@ -5,7 +5,7 @@ import { confirmar, perguntar } from "@/components/dialogo";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  lancarRetirada, definirStatusRetirada, quitarColaborador, excluirRetirada, salvarProduto,
+  lancarRetirada, definirStatusRetirada, quitarColaborador, receberParcial, excluirRetirada, salvarProduto,
 } from "./actions";
 
 export type Pessoa = { id: string; nome: string };
@@ -293,19 +293,36 @@ function ResumoTab({ retiradas, proc, run }: {
                   <td className="py-2 pr-2 text-right">{brl(p.comprado)}</td>
                   <td className="py-2 pr-2 text-right text-emerald-600">{brl(p.pago)}</td>
                   <td className={`py-2 pr-2 text-right font-semibold ${p.aberto > 0 ? "text-red-500" : "text-texto-fraco"}`}>{brl(p.aberto)}</td>
-                  <td className="py-2 text-right">
+                  <td className="py-2 text-right whitespace-nowrap">
                     {p.aberto > 0 && p.colaboradorId && (
-                      <button
-                        disabled={proc}
-                        onClick={async () => {
-                          const obs = await perguntar(`Quitar tudo em aberto de ${p.nome} (${brl(p.aberto)}). Observação do pagamento (opcional):`, "");
-                          if (obs === null) return;
-                          run(() => quitarColaborador(p.colaboradorId!, obs));
-                        }}
-                        className="rounded-controle bg-texto px-2.5 py-1 text-xs font-medium text-fundo"
-                      >
-                        Quitar
-                      </button>
+                      <span className="inline-flex gap-1.5">
+                        {/* Parte do valor: as compras mais antigas saem primeiro; a que
+                            não couber inteira é dividida (a parte paga vira uma linha). */}
+                        <button
+                          disabled={proc}
+                          onClick={async () => {
+                            const txt = await perguntar(`Quanto ${p.nome} está pagando agora? Em aberto: ${brl(p.aberto)}.`, "", { detalhe: "Pode ser parte do valor. O que sobrar continua em aberto." });
+                            if (txt === null) return;
+                            const v = Number(txt.replace(/\./g, "").replace(",", "."));
+                            if (!(v > 0)) return;
+                            run(() => receberParcial(p.colaboradorId!, Math.min(v, p.aberto)));
+                          }}
+                          className="rounded-controle border border-borda-forte px-2.5 py-1 text-xs font-medium"
+                        >
+                          Receber parte
+                        </button>
+                        <button
+                          disabled={proc}
+                          onClick={async () => {
+                            const obs = await perguntar(`Quitar tudo em aberto de ${p.nome} (${brl(p.aberto)}). Observação do pagamento (opcional):`, "");
+                            if (obs === null) return;
+                            run(() => quitarColaborador(p.colaboradorId!, obs));
+                          }}
+                          className="rounded-controle bg-texto px-2.5 py-1 text-xs font-medium text-fundo"
+                        >
+                          Quitar
+                        </button>
+                      </span>
                     )}
                   </td>
                 </tr>

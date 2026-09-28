@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { receberFiado } from "@/lib/retiradas-quitar";
 
 const hojeBR = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
@@ -73,6 +74,20 @@ export async function quitarColaborador(colaboradorId: string, obs?: string) {
     .eq("colaborador_id", colaboradorId)
     .eq("status", "aberto");
   return error ? erro(error.message) : ok();
+}
+
+// Recebe só uma parte do que está em aberto: quita as compras mais antigas
+// e divide a que não couber inteira (ver lib/retiradas-quitar).
+export async function receberParcial(colaboradorId: string, valor: number, obs?: string) {
+  await exigirAcesso("/retiradas");
+  const supabase = await createClient();
+  const v = Math.round(Number(valor) * 100) / 100;
+  if (!colaboradorId || !(v > 0)) return erro("Informe o valor recebido.");
+  const r = await receberFiado(supabase, colaboradorId, v, hojeBR(), obs?.trim() || "Pagamento parcial");
+  if (r.erro) return erro(r.erro);
+  if (r.recebido <= 0) return erro("Essa pessoa não tem nada em aberto.");
+  revalidatePath("/colaboradores/semana");
+  return ok();
 }
 
 export async function excluirRetirada(id: number) {

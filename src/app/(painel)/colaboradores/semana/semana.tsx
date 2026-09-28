@@ -149,6 +149,8 @@ export function SemanaClient({
   }
   const [desmarcados, setDesmarcados] = useState<Set<string>>(new Set()); // quem NÃO lançar agora
   const [descontar, setDescontar] = useState<Set<string>>(new Set()); // de quem descontar o fiado (opcional)
+  // Quanto do fiado descontar (texto digitado); sem nada digitado = tudo que couber.
+  const [descontarValor, setDescontarValor] = useState<Record<string, string>>({});
   const [jaPago, setJaPago] = useState(false);
   const [dataPag, setDataPag] = useState(() => {
     const d = new Date();
@@ -337,9 +339,13 @@ export function SemanaClient({
   // O que sai do valor em mãos (a conta continua cheia): o adiantamento primeiro,
   // e o fiado, se marcado, no que sobrar. Nunca passa do valor da pessoa.
   const adiantDe = (id: string, total: number) => (descontarAdiant.has(id) ? Math.min(adiantPor[id]?.valor ?? 0, total) : 0);
+  // Fiado pedido: o que foi digitado, ou tudo (Infinity) se o campo está como veio.
+  const fiadoPedido = (id: string) => (descontarValor[id] === undefined ? Infinity : numBRtxt(descontarValor[id]));
+  const fiadoDe = (id: string, total: number, a: number) =>
+    descontar.has(id) ? Math.max(0, Math.min(fiadoPor[id]?.valor ?? 0, fiadoPedido(id), total - a)) : 0;
   const descontoDe = (id: string, total: number) => {
     const a = adiantDe(id, total);
-    return a + (descontar.has(id) ? Math.min(fiadoPor[id]?.valor ?? 0, total - a) : 0);
+    return a + fiadoDe(id, total, a);
   };
   const totalDesconto = aLancar.reduce((s, x) => s + descontoDe(x.p.id, x.total), 0);
   const comFiado = aLancar.filter((x) => (fiadoPor[x.p.id]?.valor ?? 0) > 0.005);
@@ -443,6 +449,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             x.descontoSem > 0.005 ? `desconto ${fmtNum(x.descontoSem)}${x.descontoMotivo ? ` ${x.descontoMotivo}` : ""}` : "",
           ].filter(Boolean).join(", "),
           descontarFiado: descontar.has(x.p.id),
+          fiadoValor: fiadoDe(x.p.id, x.total, adiantDe(x.p.id, x.total)),
           descontarAdiantamento: descontarAdiant.has(x.p.id),
         })),
         { jaPago, data: dataPag, forma: formaPag || null },
@@ -451,6 +458,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
       else {
         setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar${r.totalDesc ? `, descontado em mãos ${brl(r.totalDesc)} (adiantamento/fiado)` : ""}.`);
         setDescontar(new Set());
+        setDescontarValor({});
         router.refresh();
       }
     });
@@ -984,14 +992,26 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             </label>
                           )}
                           {(fiadoPor[p.id]?.valor ?? 0) > 0.005 && (
-                            <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-red-600" title={`${fiadoPor[p.id].n} compra(s) em aberto — marque pra descontar no acerto`}>
-                              <input
-                                type="checkbox"
-                                checked={descontar.has(p.id)}
-                                onChange={(e) => setDescontar((s) => { const n = new Set(s); if (e.target.checked) n.add(p.id); else n.delete(p.id); return n; })}
-                              />
-                              deve {brl(fiadoPor[p.id].valor)}
-                            </label>
+                            <div className="flex items-center justify-end gap-1.5 text-xs text-red-600">
+                              <label className="flex cursor-pointer items-center gap-1" title={`${fiadoPor[p.id].n} compra(s) em aberto — marque pra descontar no acerto`}>
+                                <input
+                                  type="checkbox"
+                                  checked={descontar.has(p.id)}
+                                  onChange={(e) => setDescontar((s) => { const n = new Set(s); if (e.target.checked) n.add(p.id); else n.delete(p.id); return n; })}
+                                />
+                                deve {brl(fiadoPor[p.id].valor)}
+                              </label>
+                              {/* Quanto descontar agora: vem cheio (o que couber) e pode ser diminuído — parte do fiado fica pra depois. */}
+                              {descontar.has(p.id) && (
+                                <input
+                                  value={descontarValor[p.id] ?? fmtNum(fiadoDe(p.id, total, adiantDe(p.id, total)))}
+                                  onChange={(e) => setDescontarValor((o) => ({ ...o, [p.id]: e.target.value }))}
+                                  inputMode="decimal"
+                                  title="Quanto do fiado descontar neste acerto (pode ser só uma parte)"
+                                  className={`${inputCls} w-20 text-right text-red-700`}
+                                />
+                              )}
+                            </div>
                           )}
                         </div>
                       ) : (
