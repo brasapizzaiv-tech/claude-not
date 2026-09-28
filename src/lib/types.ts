@@ -84,6 +84,8 @@ export type ContagemItem = {
   produto_id: string;
   qtd_estoque: number;
   qtd_pedir: number;
+  /** Detalhe da contagem por local/etiqueta (jsonb) — ver lib/contagem-parcelas. */
+  parcelas?: unknown;
 };
 
 export type Produto = {

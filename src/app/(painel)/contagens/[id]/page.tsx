@@ -41,7 +41,7 @@ export default async function ContagemPage({
     prodQuery,
     supabase
       .from("contagem_itens")
-      .select("produto_id, qtd_estoque, qtd_pedir")
+      .select("produto_id, qtd_estoque, qtd_pedir, parcelas")
       .eq("contagem_id", id),
     supabase.rpc("contagem_referencia", { p_contagem_id: id }),
   ]);
@@ -52,7 +52,7 @@ export default async function ContagemPage({
       produtos={(produtos as unknown as Produto[]) ?? []}
       itens={(itens as Pick<
         ContagemItem,
-        "produto_id" | "qtd_estoque" | "qtd_pedir"
+        "produto_id" | "qtd_estoque" | "qtd_pedir" | "parcelas"
       >[]) ?? []}
       referencia={(ref as Referencia[] | null) ?? []}
     />

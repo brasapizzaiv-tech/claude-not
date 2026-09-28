@@ -12,11 +12,13 @@ import {
   reabrirContagem,
 } from "../actions";
 import { mapaReferencia, suspeito, explicacao, type Referencia } from "@/lib/contagem-referencia";
+import { lerParcelas, resumoParcelas, somaParcelas } from "@/lib/contagem-parcelas";
 
 type ItemInicial = {
   produto_id: string;
   qtd_estoque: number;
   qtd_pedir: number;
+  parcelas?: unknown;
 };
 
 const numInput =
@@ -102,13 +104,20 @@ export function ContarClient({
   // zerarFaltantes: ao FINALIZAR, item em branco vira "contei 0" (assim entra na
   // cotação com estoque 0 em vez de sumir da lista).
   function montarItens(zerarFaltantes = false) {
+    const iniDe = new Map(itens.map((i) => [i.produto_id, i]));
     return produtos.map((p) => {
       const contado = preenchidos.has(p.id);
+      const qtd = contado ? ler(`estoque_${p.id}`) : 0;
+      // O detalhe por local/etiqueta (vindo da contagem pelo link) só continua
+      // valendo se o total não foi mexido aqui; senão fica sem detalhe.
+      const ps = lerParcelas(iniDe.get(p.id)?.parcelas);
+      const manter = ps.length > 0 && Math.abs(somaParcelas(ps) - qtd) < 0.0005;
       return {
         produto_id: p.id,
-        qtd_estoque: contado ? ler(`estoque_${p.id}`) : 0,
+        qtd_estoque: qtd,
         qtd_pedir: 0,
         contado: contado || zerarFaltantes,
+        parcelas: manter ? ps : null,
       };
     });
   }
@@ -368,6 +377,12 @@ export function ContarClient({
                                 className={`${numInput}  ${precisaConferir(p.id) ? "border-amber-500 ring-2 ring-amber-200" : ""}`}
                               />
                             </div>
+                            {/* Como foi contado pelo link: por local (congelado/resfriado/ambiente) e etiquetas lidas. */}
+                            {ini && lerParcelas(ini.parcelas).length > 0 && (
+                              <div className="mt-1 text-right text-mini text-texto-suave" title="Detalhe da contagem por local e etiquetas">
+                                {resumoParcelas(lerParcelas(ini.parcelas))}
+                              </div>
+                            )}
                             {refs.get(p.id) && !finalizada && (
                               precisaConferir(p.id) ? (
                                 <div className="mt-1 max-w-md text-right text-mini text-amber-700 dark:text-amber-300">

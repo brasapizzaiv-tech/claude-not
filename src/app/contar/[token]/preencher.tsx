@@ -4,9 +4,11 @@ import { Icone } from "@/components/icone";
 
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import type { Produto } from "@/lib/types";
-import { EstoqueInput, calcular } from "@/components/estoque-input";
-import { salvarContagemPublica, buscarProdutosContagem } from "./actions";
+import { EstoqueInput, calcular, normalizarCaixas, type Caixa } from "@/components/estoque-input";
+import { LeitorQr } from "@/components/leitor-qr";
+import { salvarContagemPublica, buscarProdutosContagem, consultarEtiquetaContagem, type EtiquetaContagem } from "./actions";
 import { mapaReferencia, suspeito, explicacao, type Referencia } from "@/lib/contagem-referencia";
+import { ONDE_ROTULO, ehOnde, lerParcelas, type Parcela } from "@/lib/contagem-parcelas";
 
 type ExtraProduto = { id: string; nome: string; unidade: string; categoria: string };
 
@@ -14,7 +16,20 @@ type ItemInicial = {
   produto_id: string;
   qtd_estoque: number;
   qtd_pedir: number;
+  parcelas?: unknown;
 };
+
+// Caixas iniciais de um item: as parcelas gravadas (com onde e etiqueta), ou
+// o total numa caixa só, como era antes.
+function caixasDoItem(i: ItemInicial): Caixa[] {
+  const ps = lerParcelas(i.parcelas);
+  if (ps.length === 0) return [{ v: String(i.qtd_estoque ?? 0), onde: null }];
+  return ps.map((p) => ({
+    v: String(p.qtd),
+    onde: p.onde,
+    etiqueta: p.etiqueta_id && p.etiqueta_numero != null ? { id: p.etiqueta_id, numero: p.etiqueta_numero } : null,
+  }));
+}
 
 export function PreencherClient({
   token,
@@ -50,12 +65,17 @@ export function PreencherClient({
 
   // TODOS os valores vivem AQUI (não nos campos da tela). Assim, filtrar a
   // busca ou rolar a página nunca apaga o que já foi digitado.
-  const [valores, setValores] = useState<Record<string, string[]>>(() => {
-    const v: Record<string, string[]> = {};
+  const [valores, setValores] = useState<Record<string, Caixa[]>>(() => {
+    const v: Record<string, Caixa[]> = {};
     // Linha gravada = item respondido (0 também): mostra o 0 em vez de vazio.
-    for (const i of itens) v[i.produto_id] = [String(i.qtd_estoque ?? 0)];
+    for (const i of itens) v[i.produto_id] = caixasDoItem(i);
     return v;
   });
+  // Leitor de etiquetas (QR): cada leitura vira uma caixa no item certo.
+  const [leitor, setLeitor] = useState(false);
+  const [avisoLeitor, setAvisoLeitor] = useState<string | null>(null);
+  const [numeroEtq, setNumeroEtq] = useState("");
+  const [lidas, setLidas] = useState(0);
 
   const chaveRascunho = `contagem_rascunho_${token}`;
 
@@ -65,15 +85,19 @@ export function PreencherClient({
       try {
         const raw = localStorage.getItem(chaveRascunho);
         if (!raw) return;
-        const draft = JSON.parse(raw) as { v?: Record<string, string[]>; x?: ExtraProduto[] } | Record<string, string[]>;
+        type Rascunho = Record<string, (string | Caixa)[]>;
+        // Rascunhos antigos têm só o texto de cada caixa; os novos têm onde/etiqueta.
+        const norm = (o: Rascunho): Record<string, Caixa[]> =>
+          Object.fromEntries(Object.entries(o).map(([k, cs]) => [k, normalizarCaixas(Array.isArray(cs) ? cs : [])]));
+        const draft = JSON.parse(raw) as { v?: Rascunho; x?: ExtraProduto[] } | Rascunho;
         if (draft && typeof draft === "object") {
-          const novo = draft as { v?: Record<string, string[]>; x?: ExtraProduto[] };
+          const novo = draft as { v?: Rascunho; x?: ExtraProduto[] };
           if (novo.v && typeof novo.v === "object" && !Array.isArray(novo.v)) {
-            const v = novo.v;
+            const v = norm(novo.v);
             setValores((atual) => ({ ...atual, ...v }));
             if (Array.isArray(novo.x)) setExtras(novo.x);
           } else {
-            const antigo = draft as Record<string, string[]>;
+            const antigo = norm(draft as Rascunho);
             setValores((atual) => ({ ...atual, ...antigo }));
           }
           setMsg("Recuperei o que você já tinha digitado neste aparelho.");
@@ -83,10 +107,10 @@ export function PreencherClient({
     return () => clearTimeout(id);
   }, [chaveRascunho]);
 
-  function gravarRascunho(v: Record<string, string[]>, x: ExtraProduto[]) {
+  function gravarRascunho(v: Record<string, Caixa[]>, x: ExtraProduto[]) {
     try { localStorage.setItem(chaveRascunho, JSON.stringify({ v, x })); } catch { /* sem storage */ }
   }
-  function setCaixas(produtoId: string, caixas: string[]) {
+  function setCaixas(produtoId: string, caixas: Caixa[]) {
     setValores((v) => {
       const novo = { ...v, [produtoId]: caixas };
       gravarRascunho(novo, extras);
@@ -95,11 +119,59 @@ export function PreencherClient({
   }
 
   const totalDe = (produtoId: string) =>
-    Math.round((valores[produtoId] ?? []).reduce((s, b) => s + calcular(b), 0) * 1000) / 1000;
+    Math.round((valores[produtoId] ?? []).reduce((s, b) => s + calcular(b.v), 0) * 1000) / 1000;
 
   // Preenchido = o contador respondeu algo (0 também vale!).
   const foiPreenchido = (produtoId: string) =>
-    (valores[produtoId] ?? []).some((b) => b.trim() !== "");
+    (valores[produtoId] ?? []).some((b) => b.v.trim() !== "");
+
+  // ---- etiquetas lidas na contagem ----
+  // Cada etiqueta vira uma caixa no item dela, com a quantidade e o "onde"
+  // que estão impressos. Etiqueta já lida nesta contagem, ou já baixada
+  // (usada/descartada), não conta. Produto fora da lista do contador entra
+  // como "adicionado por você".
+  function avisar(txt: string) {
+    setAvisoLeitor(txt);
+    setTimeout(() => setAvisoLeitor(null), 1800);
+  }
+  function tratarEtiqueta(r: EtiquetaContagem) {
+    if (!r.ok) { avisar(r.mensagem || "Etiqueta não encontrada"); return; }
+    if (r.status !== "ativa") { avisar(`Nº ${r.numero} já está "${r.status}" — não conta`); return; }
+    if (!r.produto_id) { avisar(`Nº ${r.numero} não está ligada a um produto do estoque`); return; }
+    const pid = r.produto_id;
+    const jaLida = Object.values(valores).some((cs) => cs.some((c) => c.etiqueta?.id === r.id));
+    if (jaLida) { avisar(`Nº ${r.numero} já foi lida nesta contagem`); return; }
+    const naLista = produtos.some((p) => p.id === pid) || extras.some((x) => x.id === pid);
+    let extrasNovo = extras;
+    if (!naLista) {
+      extrasNovo = [...extras, { id: pid, nome: r.nome_produto || r.produto, unidade: r.unidade_produto || r.unidade || "un", categoria: r.categoria || "Sem categoria" }];
+      setExtras(extrasNovo);
+    }
+    const qtd = r.quantidade != null && r.quantidade > 0 ? r.quantidade : 1;
+    const onde = ehOnde(r.conservacao) ? r.conservacao : null;
+    setValores((v) => {
+      // Caixa vazia ou "0" digitado some quando entra a primeira etiqueta.
+      const atuais = (v[pid] ?? []).filter((c) => c.etiqueta || (c.v.trim() !== "" && calcular(c.v) !== 0));
+      const novo = { ...v, [pid]: [...atuais, { v: String(qtd), onde, etiqueta: { id: r.id, numero: r.numero } }] };
+      gravarRascunho(novo, extrasNovo);
+      return novo;
+    });
+    setLidas((n) => n + 1);
+    const nome = r.nome_produto || r.produto;
+    avisar(`+ ${nome} · nº ${r.numero} · ${qtd} ${r.unidade ?? ""}${onde ? ` ${ONDE_ROTULO[onde].toLowerCase()}` : ""}`);
+    if (navigator.vibrate) navigator.vibrate(90);
+  }
+  function aoLerQr(texto: string) {
+    const id = texto.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
+    if (!id) { avisar("Esse QR não é de uma etiqueta"); return; }
+    consultarEtiquetaContagem(token, { id }).then(tratarEtiqueta);
+  }
+  function lerPorNumero() {
+    const n = Number(numeroEtq.replace(/\D/g, ""));
+    if (!n) return;
+    setNumeroEtq("");
+    consultarEtiquetaContagem(token, { numero: n }).then(tratarEtiqueta);
+  }
   // Digitou mais do que podia ter e ainda não confirmou que contou de novo.
   const ehSuspeito = (produtoId: string) => suspeito(totalDe(produtoId), refs.get(produtoId));
   const precisaConferir = (produtoId: string) => ehSuspeito(produtoId) && !confirmados.has(produtoId);
@@ -226,6 +298,15 @@ export function PreencherClient({
           qtd_estoque: totalDe(p.id),
           qtd_pedir: 0,
           preenchido: "true",
+          // O detalhe: cada caixa com onde está e a etiqueta, se veio de uma.
+          parcelas: (valores[p.id] ?? [])
+            .filter((c) => c.v.trim() !== "")
+            .map((c): Parcela => ({
+              qtd: calcular(c.v),
+              onde: c.onde,
+              etiqueta_id: c.etiqueta?.id ?? null,
+              etiqueta_numero: c.etiqueta?.numero ?? null,
+            })),
         }));
       const r = await salvarContagemPublica(token, payload);
       if (r.ok) {
@@ -270,14 +351,47 @@ export function PreencherClient({
         ) : (
           <>
             <p className="mt-4 text-sm text-zinc-500">
-              Preencha <b>quanto tem em estoque</b> de cada item.
+              Preencha <b>quanto tem em estoque</b> de cada item. Em cada caixa dá pra dizer se está no congelado, resfriado ou ambiente.
             </p>
-            <input
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar item..."
-              className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-            />
+            <div className="mt-3 flex gap-2">
+              <input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar item..."
+                className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              />
+              {/* Lê o QR das etiquetas: cada uma soma no item dela, com o "onde" impresso. */}
+              <button
+                type="button"
+                onClick={() => setLeitor(true)}
+                className="shrink-0 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+              >
+                <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={15} /> Ler etiquetas{lidas > 0 ? ` (${lidas})` : ""}</span>
+              </button>
+            </div>
+            {leitor && (
+              <LeitorQr titulo="Ler etiquetas da contagem" aoLer={aoLerQr} fechar={() => setLeitor(false)} aviso={avisoLeitor}>
+                <p className="py-2 text-center text-xs text-zinc-400">
+                  Cada etiqueta lida soma no item dela, com a quantidade e o local impressos. {lidas > 0 ? `${lidas} lida(s) nesta contagem.` : ""}
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    inputMode="numeric"
+                    value={numeroEtq}
+                    onChange={(e) => setNumeroEtq(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") lerPorNumero(); }}
+                    placeholder="Ou digite o nº da etiqueta"
+                    className="flex-1 rounded-controle border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white"
+                  />
+                  <button onClick={lerPorNumero} disabled={!numeroEtq.trim()} className="rounded-controle bg-zinc-700 px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    Adicionar
+                  </button>
+                </div>
+                <button onClick={() => setLeitor(false)} className="mt-4 w-full rounded-cartao bg-emerald-600 py-3 text-base font-bold text-white">
+                  Pronto, voltar pra contagem
+                </button>
+              </LeitorQr>
+            )}
             {gruposFiltrados.length === 0 && (
               <p className="mt-4 text-center text-sm text-zinc-400">
                 Nenhum item com “{busca}”.
@@ -313,8 +427,9 @@ export function PreencherClient({
                               <div className="mt-1">
                                 <EstoqueInput
                                   name={`estoque_${p.id}`}
-                                  caixas={valores[p.id] ?? [""]}
+                                  caixas={valores[p.id] ?? [{ v: "", onde: null }]}
                                   onCaixasChange={(cs) => setCaixas(p.id, cs)}
+                                  comLocal
                                 />
                               </div>
                             </label>
@@ -351,8 +466,9 @@ export function PreencherClient({
                             <div className="mt-1">
                               <EstoqueInput
                                 name={`estoque_${p.id}`}
-                                caixas={valores[p.id] ?? [""]}
+                                caixas={valores[p.id] ?? [{ v: "", onde: null }]}
                                 onCaixasChange={(cs) => setCaixas(p.id, cs)}
+                                comLocal
                               />
                             </div>
                           </label>

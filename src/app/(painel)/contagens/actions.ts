@@ -30,6 +30,7 @@ type ItemContagem = {
   qtd_estoque: number;
   qtd_pedir: number;
   contado?: boolean; // marcado quando o item foi contado (inclusive "contei 0")
+  parcelas?: unknown; // detalhe por local/etiqueta; null limpa (total mexido à mão)
 };
 
 export async function salvarContagemItens(
@@ -43,10 +44,11 @@ export async function salvarContagemItens(
   const contou = (i: ItemContagem) => i.contado ?? (i.qtd_estoque > 0 || i.qtd_pedir > 0);
   const paraGravar = itens
     .filter(contou)
-    .map(({ produto_id, qtd_estoque, qtd_pedir }) => ({
+    .map(({ produto_id, qtd_estoque, qtd_pedir, parcelas }) => ({
       produto_id,
       qtd_estoque,
       qtd_pedir,
+      parcelas: parcelas ?? null,
       contagem_id: contagemId,
     }));
 
