@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { VigiaVersao } from "@/components/vigia-versao";
 
 // As letras do sistema.
 //
@@ -64,7 +65,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* Avisa quando o sistema foi atualizado com a página aberta (e recarrega se um clique falhar por isso). */}
+        <VigiaVersao />
+      </body>
     </html>
   );
 }

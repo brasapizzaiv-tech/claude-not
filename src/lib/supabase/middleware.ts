@@ -80,7 +80,9 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/rastreio") ||
     path.startsWith("/api/contagem/cron") ||
     // Site da marca Motelli (apresentação e política de privacidade).
-    path.startsWith("/motelli");
+    path.startsWith("/motelli") ||
+    // Qual versão está no ar: toda tela pergunta, logada ou não.
+    path === "/api/versao";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
