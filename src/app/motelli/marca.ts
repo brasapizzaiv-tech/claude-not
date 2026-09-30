@@ -12,7 +12,10 @@ export const CORES = {
   manjericaoEscuro: "#2c5340",
 };
 
-export const CONTATO_EMAIL = "contato@motelli.com.br";
+// Por enquanto é o Gmail da VTM (decisão do Rafael em 30/09/2026): ainda não
+// existe caixa de entrada no domínio motelli.com.br. Quando existir, troca aqui
+// e o site, a política e a ficha da Play passam a apontar pra ela.
+export const CONTATO_EMAIL = "vtmsstore@gmail.com";
 
 export const FONTE_TITULO = "var(--font-space-grotesk), system-ui, sans-serif";
 export const FONTE_TEXTO = "var(--font-instrument-sans), system-ui, sans-serif";
