@@ -7,13 +7,14 @@ export const metadata: Metadata = {
 };
 
 // A empresa responsável só aparece aqui, porque a LGPD manda dizer quem
-// responde pelos dados. Preencher com o cartão CNPJ antes de apontar o domínio.
+// responde pelos dados. É a razão social do cartão CNPJ (a marca é Motelli;
+// o nome da empresa não aparece em mais nenhum lugar público).
 const RESPONSAVEL = {
-  razaoSocial: "[razão social da empresa]",
-  cnpj: "[CNPJ]",
+  razaoSocial: "VTM Store Ltda",
+  cnpj: "67.140.718/0001-54",
 };
 
-const ATUALIZADA_EM = "27 de setembro de 2026";
+const ATUALIZADA_EM = "30 de setembro de 2026";
 
 // A política é escrita como conversa, não como contrato: quem lê é o
 // entregador ou o dono do restaurante, no celular. Cada seção responde uma
