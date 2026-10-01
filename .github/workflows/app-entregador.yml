@@ -12,7 +12,7 @@ name: App do entregador (Android)
 on:
   push:
     branches: [main]
-    paths: ["app-entregador/**", "public/icons/entregas-512.png", ".github/workflows/app-entregador.yml"]
+    paths: ["app-entregador/**", "public/icons/motelli-entregador-*.png", ".github/workflows/app-entregador.yml"]
   workflow_dispatch:
 
 permissions:

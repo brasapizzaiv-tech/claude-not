@@ -40,17 +40,22 @@ s = s.replace(/<string name="app_name">[^<]*<\/string>/, `<string name="app_name
 fs.writeFileSync(strings, s);
 console.log("ok nome:", nome);
 
-// 3) ícone: o PNG do site em todas as densidades (o Android redimensiona)
-const icone = path.join(raiz, "..", "public", "icons", "entregas-512.png");
+// 3) ícone: os PNGs da marca Motelli (gerados por scripts/play-graficos.mjs)
+// em todas as densidades (o Android redimensiona). O adaptativo usa a camada
+// de frente com fundo transparente (o sistema corta a borda) sobre o verde.
+const icone = path.join(raiz, "..", "public", "icons", "motelli-entregador-512.png");
+const iconeFrente = path.join(raiz, "..", "public", "icons", "motelli-entregador-fg-512.png");
 if (fs.existsSync(icone)) {
   const res = path.join(android, "app/src/main/res");
   for (const d of fs.readdirSync(res).filter((x) => x.startsWith("mipmap-"))) {
-    for (const f of ["ic_launcher.png", "ic_launcher_round.png", "ic_launcher_foreground.png"]) {
+    for (const f of ["ic_launcher.png", "ic_launcher_round.png"]) {
       const alvo = path.join(res, d, f);
       if (fs.existsSync(alvo)) fs.copyFileSync(icone, alvo);
     }
+    const frente = path.join(res, d, "ic_launcher_foreground.png");
+    if (fs.existsSync(frente)) fs.copyFileSync(fs.existsSync(iconeFrente) ? iconeFrente : icone, frente);
   }
-  // ícone adaptativo: fundo marrom da marca
+  // ícone adaptativo: fundo verde manjericão da marca Motelli
   const anydpi = path.join(res, "mipmap-anydpi-v26");
   if (fs.existsSync(anydpi)) {
     for (const f of ["ic_launcher.xml", "ic_launcher_round.xml"]) {
@@ -65,7 +70,7 @@ if (fs.existsSync(icone)) {
   }
   const valores = path.join(res, "values");
   const bg = path.join(valores, "ic_launcher_background.xml");
-  fs.writeFileSync(bg, `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#211915</color>\n</resources>\n`);
+  fs.writeFileSync(bg, `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#3b6d4f</color>\n</resources>\n`);
   console.log("ok ícone");
 } else {
   console.log("ícone não encontrado, mantém o padrão");

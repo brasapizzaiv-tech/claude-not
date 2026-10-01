@@ -12,10 +12,10 @@ export const CORES = {
   manjericaoEscuro: "#2c5340",
 };
 
-// Por enquanto é o Gmail da VTM (decisão do Rafael em 30/09/2026): ainda não
-// existe caixa de entrada no domínio motelli.com.br. Quando existir, troca aqui
-// e o site, a política e a ficha da Play passam a apontar pra ela.
-export const CONTATO_EMAIL = "vtmsstore@gmail.com";
+// contato@motelli.com.br existe desde 01/10/2026 (redirecionador ImprovMX →
+// Gmail da VTM): a Play Console exigiu um e-mail no domínio do site pra conta
+// da organização. É o mesmo e-mail da ficha da loja e da política.
+export const CONTATO_EMAIL = "contato@motelli.com.br";
 
 export const FONTE_TITULO = "var(--font-space-grotesk), system-ui, sans-serif";
 export const FONTE_TEXTO = "var(--font-instrument-sans), system-ui, sans-serif";

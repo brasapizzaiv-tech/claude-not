@@ -134,9 +134,27 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
     (async () => { try { const n = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }; wake.current = (await n.wakeLock?.request("screen")) ?? null; } catch { /* sem wake lock */ } })();
     return () => { navigator.geolocation.clearWatch(id); wake.current?.release().catch(() => {}); wake.current = null; };
   }, [gpsOn, token, empresa]);
-  function alternarGps() {
-    const v = !gpsOn; setGpsOn(v);
+  // Aviso de localização em segundo plano. A política da Play exige, ANTES do
+  // pedido de permissão do Android, um aviso dentro do app que diga o que é
+  // coletado, pra quê, com quem é compartilhado e que vale "mesmo com o app
+  // fechado ou sem uso" — com um botão de aceite. Só no app nativo (no
+  // navegador não existe segundo plano) e só na primeira vez por aparelho.
+  const [avisoGps, setAvisoGps] = useState(false);
+  function ligarGps(v: boolean) {
+    setGpsOn(v);
     try { localStorage.setItem("entrega_gps", v ? "1" : "0"); } catch { /* sem storage */ }
+  }
+  function alternarGps() {
+    if (gpsOn) return ligarGps(false);
+    let aceito = false;
+    try { aceito = localStorage.getItem("entrega_gps_aviso") === "1"; } catch { /* sem storage */ }
+    if (nativo && !aceito) { setAvisoGps(true); return; }
+    ligarGps(true);
+  }
+  function aceitarAvisoGps() {
+    try { localStorage.setItem("entrega_gps_aviso", "1"); } catch { /* sem storage */ }
+    setAvisoGps(false);
+    ligarGps(true);
   }
 
   // ---------- Ganhos / Histórico ----------
@@ -328,13 +346,33 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
             <p className="mb-3 text-sm text-texto-suave">
               {nativo
                 ? <>Com o rastreamento ligado o restaurante vê onde você está no mapa — <b>mesmo com a tela apagada</b> (fica uma notificação fixa enquanto estiver ativo). Na primeira vez, escolha <b>“Permitir o tempo todo”</b>.</>
-                : <>Com o rastreamento ligado o restaurante vê onde você está no mapa. Pelo navegador só funciona com este app <b>aberto na tela</b> (a tela fica acesa sozinha). Instale o app Brasa Entregas pra rastrear em segundo plano.</>}
+                : <>Com o rastreamento ligado o restaurante vê onde você está no mapa. Pelo navegador só funciona com este app <b>aberto na tela</b> (a tela fica acesa sozinha). Instale o app Motelli Entregador pra rastrear em segundo plano.</>}
             </p>
             <button onClick={alternarGps} className={`w-full rounded-cartao py-3 text-base font-bold ${gpsOn ? "bg-emerald-600 text-white" : "bg-superficie-suave text-texto"}`}>
               {gpsOn ? <span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={14} /> Rastreamento ATIVO — tocar pra desligar</span> : "Ligar rastreamento"}
             </button>
             {gpsErro && <p className="mt-2 text-sm text-rose-400">{gpsErro}</p>}
           </div>
+          {avisoGps && (
+            <div role="dialog" aria-modal="true" aria-labelledby="aviso-gps-titulo" className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
+              <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
+                <div id="aviso-gps-titulo" className="mb-2 flex items-center gap-2 text-lg font-bold"><Icone nome="local" tamanho={18} /> Sua localização</div>
+                <p className="text-sm text-texto">
+                  O Motelli Entregador coleta a sua <b>localização</b> para mostrar ao restaurante <b>{empresa}</b> onde você está durante as entregas e calcular o tempo até o cliente.
+                </p>
+                <p className="mt-2 text-sm text-texto">
+                  Isso acontece <b>mesmo quando o app está fechado ou não está em uso</b>, enquanto o rastreamento estiver ligado. Uma notificação fixa avisa que ele está ativo, e você desliga quando quiser nesta tela.
+                </p>
+                <p className="mt-2 text-sm text-texto-suave">
+                  A posição vai só para o restaurante que cadastrou você e é apagada após 90 dias. Na próxima tela, escolha <b>“Permitir o tempo todo”</b>.
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button onClick={() => setAvisoGps(false)} className="rounded-cartao bg-superficie-suave py-3 font-semibold text-texto">Agora não</button>
+                  <button onClick={aceitarAvisoGps} className="rounded-cartao py-3 font-bold text-white" style={{ background: LARANJA }}>Aceitar e ligar</button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Modo</div><div className="font-bold">{nativo ? "App (2º plano)" : "Navegador"} · {GPS_INTERVALO_MS / 1000} s</div></div>
             <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Precisão</div><div className="font-bold">{gps?.precisao != null ? `${Math.round(gps.precisao)} m` : "—"}</div></div>
