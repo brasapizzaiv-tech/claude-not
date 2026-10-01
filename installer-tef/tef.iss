@@ -2,7 +2,10 @@
 ; Compile com: ISCC.exe tef.iss  (após rodar build.ps1, que monta build\app).
 
 #define AppName "Agente TEF"
-#define AppVer "0.9.2"
+; A versão vem do build.ps1 (/DAppVer=...), lida do VERSAO do agente.mjs.
+#ifndef AppVer
+#define AppVer "0.9.9"
+#endif
 #define AppPublisher "Brasa Sistemas"
 
 [Setup]
@@ -51,13 +54,12 @@ begin
   PageCfg := CreateInputQueryPage(wpSelectDir,
     'Configuração do sistema',
     'Informe os dados de acesso',
-    'Esses dados estão na Central de Impressões do seu sistema. O programa liga o caixa ao pinpad pelo gerenciador de TEF (Elgin TEF Hub) instalado neste PC.');
+    'Endereço e token estão na Central de Impressões do seu sistema. O ID do terminal é o número que a Elgin dá a este caixa na ativação do TEF Hub (Administração > Ativação): tem que ser exatamente ele, só números. Numa atualização, deixe tudo em branco para manter a configuração atual.');
   PageCfg.Add('Endereço do sistema (ex.: https://www.brasarestaurante.com.br):', False);
   PageCfg.Add('Token (código de acesso do agente):', False);
-  PageCfg.Add('Nome deste terminal (ex.: CAIXA1):', False);
+  PageCfg.Add('ID do terminal dado pela Elgin (só números, ex.: 5071100000018):', False);
   PageCfg.Add('Pasta do TEF (onde o gerenciador troca os arquivos):', False);
   PageCfg.Values[0] := 'https://www.brasarestaurante.com.br';
-  PageCfg.Values[2] := 'CAIXA1';
   PageCfg.Values[3] := 'C:\Cliente';
 end;
 
@@ -74,7 +76,17 @@ end;
 function Terminal(): String;
 begin
   Result := Trim(PageCfg.Values[2]);
-  if Result = '' then Result := 'CAIXA1';
+end;
+
+{ Só dígitos: o Hub da Elgin usa esse valor como ponto de captura e recusa
+  qualquer coisa que não seja o terminal ativado (apelidos como CAIXA1 dão 404). }
+function TerminalValido(const t: String): Boolean;
+var
+  i: Integer;
+begin
+  Result := Length(t) >= 6;
+  for i := 1 to Length(t) do
+    if (t[i] < '0') or (t[i] > '9') then Result := False;
 end;
 
 { No JSON a barra precisa ser dupla. }
@@ -85,10 +97,17 @@ begin
   StringChangeEx(Result, '\', '\\', True);
 end;
 
+{ Atualização: já existe config.json e a pessoa deixou token e terminal em
+  branco -> mantém a configuração atual (não valida nada). }
+function Atualizacao(): Boolean;
+begin
+  Result := FileExists(ExpandConstant('{app}\config.json')) and (Token() = '') and (Terminal() = '');
+end;
+
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
-  if CurPageID = PageCfg.ID then
+  if (CurPageID = PageCfg.ID) and not Atualizacao() then
   begin
     if BaseUrl() = '' then
     begin
@@ -98,6 +117,11 @@ begin
     else if Token() = '' then
     begin
       MsgBox('Informe o token (código de acesso).', mbError, MB_OK);
+      Result := False;
+    end
+    else if not TerminalValido(Terminal()) then
+    begin
+      MsgBox('Informe o ID do terminal dado pela Elgin: só números, como aparece na ativação do TEF Hub (ex.: 5071100000018). Sem ele o pinpad responde "terminal desabilitado".', mbError, MB_OK);
       Result := False;
     end;
   end;

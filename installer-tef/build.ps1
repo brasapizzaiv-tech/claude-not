@@ -47,8 +47,10 @@ if (-not $iscc) {
   exit 1
 }
 
-Write-Host "==> Compilando o instalador..." -ForegroundColor Cyan
-& $iscc (Join-Path $root "tef.iss") | Out-Host
+# A versao do instalador e a mesma do agente (const VERSAO em agente.mjs).
+$ver = (Select-String -Path (Join-Path $src "agente.mjs") -Pattern 'const VERSAO = "([^"]+)"').Matches[0].Groups[1].Value
+Write-Host "==> Compilando o instalador (versao $ver)..." -ForegroundColor Cyan
+& $iscc "/DAppVer=$ver" (Join-Path $root "tef.iss") | Out-Host
 
 $out = Join-Path $root "Output\AgenteTEF-Setup.exe"
 if (Test-Path $out) {
