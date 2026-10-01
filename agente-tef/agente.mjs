@@ -10,13 +10,13 @@
 // Sem gerenciador instalado (antes da Elgin liberar), o simulador-gp.mjs
 // responde como se fosse ele — dá pra testar o caixa inteiro.
 import http from "node:http";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, renameSync, appendFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, renameSync, appendFileSync, readdirSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.9"; // 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
+const VERSAO = "0.9.10"; // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -29,7 +29,63 @@ const portaHttp = Number(cfg.portaHttp) || 8544;
 const pastaBase = cfg.pastaTef || "C:\\Cliente";
 const pastaReq = cfg.pastaReq || path.join(pastaBase, "Req");
 const pastaResp = cfg.pastaResp || path.join(pastaBase, "Resp");
-const terminal = String(cfg.terminal || os.hostname()).slice(0, 16); // ID de terminal da Elgin tem 10 dígitos
+// ---------- terminal: o ID que a Elgin deu a este caixa ----------
+// O Hub 06.x usa o 718-000 que mandamos como ponto de captura e responde 404
+// ("terminal desabilitado") pra qualquer coisa que não seja o terminal ativado
+// nele — apelido tipo CAIXA1 não serve (24/09). Quem sabe o número certo é o
+// próprio Hub: na ativação ele grava Dats\comprovante-ativacao-<terminal>.txt.
+// Então: config.json manda se tiver; senão o agente lê o comprovante mais novo,
+// e volta a olhar a cada operação enquanto não achar (a ativação pode vir
+// depois da instalação). Hostname é o último recurso, só pro simulador.
+const pastaDatsHub = cfg.pastaDatsHub || "C:\\Elgin\\TEF\\Dats";
+function terminalDoComprovante() {
+  try {
+    const arqs = readdirSync(pastaDatsHub)
+      .filter((n) => /^comprovante-ativacao-(\d{6,16})\.txt$/i.test(n))
+      .map((n) => ({ n, t: statSync(path.join(pastaDatsHub, n)).mtimeMs }))
+      .sort((a, b) => b.t - a.t);
+    if (!arqs.length) return "";
+    const txt = readFileSync(path.join(pastaDatsHub, arqs[0].n), "latin1");
+    const m = txt.match(/Identificador Terminal:\s*(\d{6,16})/i) || arqs[0].n.match(/(\d{6,16})/);
+    return m ? m[1] : "";
+  } catch { return ""; }
+}
+let terminal = "";
+let terminalOrigem = "";
+function resolverTerminal() {
+  if (terminalOrigem === "config" || terminalOrigem === "ativação") return terminal;
+  const daCfg = String(cfg.terminal || "").trim();
+  const novo = daCfg || terminalDoComprovante() || os.hostname();
+  const origem = daCfg ? "config" : novo !== os.hostname() ? "ativação" : "hostname";
+  if (novo !== terminal) {
+    terminal = novo.slice(0, 16);
+    terminalOrigem = origem;
+    log(`Terminal: ${terminal} (${origem === "config" ? "config.json" : origem === "ativação" ? "comprovante de ativação do Hub" : "sem config nem ativação — usando o nome do PC, só serve pro simulador"})`);
+    sincronizarPontoCapturaHub();
+  }
+  return terminal;
+}
+// O Hub guarda o terminal em Dats\e1_tef_configs.json (identificadorPontoCaptura)
+// e, em 24/09, deixou o campo VAZIO depois da ativação — a janela passou a
+// mostrar "{nome} - {cnpj}" e a pedir o CNPJ na mão. Preenchi na mão naquele dia;
+// aqui o agente faz isso sozinho, com backup e sem BOM (o Hub recusa BOM).
+function sincronizarPontoCapturaHub() {
+  const f = path.join(pastaDatsHub, "e1_tef_configs.json");
+  if (!/^\d{6,16}$/.test(terminal) || !existsSync(f)) return;
+  try {
+    const txt = readFileSync(f, "utf8");
+    const j = JSON.parse(txt.replace(/^\uFEFF/, ""));
+    if (j.identificadorPontoCaptura === terminal) return;
+    const bak = f + ".bak-agente";
+    if (!existsSync(bak)) writeFileSync(bak, txt);
+    const antes = j.identificadorPontoCaptura;
+    j.identificadorPontoCaptura = terminal;
+    writeFileSync(f, JSON.stringify(j, null, 4) + "\n");
+    log(`Hub da Elgin: identificadorPontoCaptura era "${antes ?? ""}", agora ${terminal} (${f}). O Hub só lê isso ao abrir: reabra o Elgin TEF Hub ou reinicie o PC.`);
+  } catch (e) {
+    log(`Não consegui ajustar o ponto de captura do Hub (${f}): ${e?.message || e}`);
+  }
+}
 const timeoutVendaMs = Number(cfg.timeoutVendaMs) || 120000; // o cliente pode demorar pra achar o cartão
 const timeoutStsMs = Number(cfg.timeoutStsMs) || 15000;      // o gerenciador tem que acusar recebimento rápido
 // Cancelamento e menu administrativo: o gerenciador da Elgin conversa com o
@@ -149,6 +205,7 @@ async function executar(conteudoReq, { esperaResp = true, timeoutMs = timeoutVen
 // Venda: devolve a resposta interpretada e deixa a transação PENDENTE de
 // confirmação. O caixa chama /confirmar depois de gravar a venda.
 async function venda(p) {
+  resolverTerminal();
   const id = proximoId();
   const req = requisicaoVenda({ id, valor: p.valor, tipo: p.tipo, parcelas: p.parcelas, rede: p.rede, terminal, docFiscal: p.docFiscal });
   log(`Venda #${id}: R$ ${Number(p.valor).toFixed(2)} ${p.tipo || "qualquer"}${p.rede ? " · rede " + p.rede : ""}${p.parcelas > 1 ? " · " + p.parcelas + "x" : ""}`);
@@ -169,6 +226,7 @@ async function venda(p) {
 // quando o cliente paga (ou desiste). Daí pra frente é igual à venda — inclusive
 // a confirmação, que é o que evita cobrar sem ter registrado a venda.
 async function pix(p) {
+  resolverTerminal();
   const id = proximoId();
   log(`Pix #${id}: R$ ${Number(p.valor).toFixed(2)}`);
   // O limite de venda (120 s) derrubava o Pix no meio da contagem (25/09).
@@ -249,8 +307,9 @@ const server = http.createServer(async (req, res) => {
   const url = req.url || "/";
 
   if (req.method === "GET" && url === "/status") {
+    resolverTerminal();
     return json(res, 200, {
-      ok: true, versao: VERSAO, terminal, hostname: os.hostname(), etapa, ocupado,
+      ok: true, versao: VERSAO, terminal, terminalOrigem, hostname: os.hostname(), etapa, ocupado,
       gerenciador: gerenciadorPresente(), pastaReq, pastaResp,
       pendente: estado.pendente ? { id: estado.pendente.id, valor: estado.pendente.valor, nsu: estado.pendente.nsu } : null,
     });
@@ -276,6 +335,7 @@ const server = http.createServer(async (req, res) => {
       if (url === "/confirmar") return json(res, 200, await confirmar(p.id));
       if (url === "/desfazer") return json(res, 200, await desfazer(p.id, p.motivo));
       if (url === "/cancelar") {
+        resolverTerminal();
         const id = proximoId();
         log(`Cancelamento #${id}: NSU ${p.nsu} R$ ${Number(p.valor).toFixed(2)} de ${p.data}`);
         const r = await executar(requisicaoCancelar({ id, valor: p.valor, nsu: p.nsu, data: p.data, terminal }), { timeoutMs: timeoutOperadorMs });
@@ -284,6 +344,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 200, { ok: true, ...r, idAgente: id });
       }
       if (url === "/adm") {
+        resolverTerminal();
         const id = proximoId();
         const r = await executar(requisicaoAdm(id, terminal), { timeoutMs: timeoutOperadorMs });
         etapa = "livre";
@@ -315,6 +376,7 @@ server.on("error", (e) => {
   process.exit(1);
 });
 server.listen(portaHttp, "127.0.0.1", () => {
+  resolverTerminal();
   log(`Agente TEF v${VERSAO} no ar em http://localhost:${portaHttp} · terminal ${terminal} · pastas ${pastaReq} / ${pastaResp}${gerenciadorPresente() ? "" : " (pastas do TEF ainda não existem — instale o gerenciador ou rode o simulador)"}`);
   recuperar();
 });
@@ -322,6 +384,7 @@ server.listen(portaHttp, "127.0.0.1", () => {
 // Heartbeat: o sistema mostra qual PC está com TEF ativo.
 async function heartbeat() {
   if (!baseUrl || !token) return;
+  resolverTerminal();
   try {
     await fetch(`${baseUrl}/api/tef/status`, {
       method: "POST",

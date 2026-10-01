@@ -54,10 +54,10 @@ begin
   PageCfg := CreateInputQueryPage(wpSelectDir,
     'Configuração do sistema',
     'Informe os dados de acesso',
-    'Endereço e token estão na Central de Impressões do seu sistema. O ID do terminal é o número que a Elgin dá a este caixa na ativação do TEF Hub (Administração > Ativação): tem que ser exatamente ele, só números. Numa atualização, deixe tudo em branco para manter a configuração atual.');
+    'Endereço e token estão na Central de Impressões do seu sistema. O terminal pode ficar em branco: o agente lê o número da ativação feita no Elgin TEF Hub deste PC (Administração > Ativação). Só preencha se a Elgin mandou usar um número específico. Numa atualização, deixe tudo em branco para manter a configuração atual.');
   PageCfg.Add('Endereço do sistema (ex.: https://www.brasarestaurante.com.br):', False);
   PageCfg.Add('Token (código de acesso do agente):', False);
-  PageCfg.Add('ID do terminal dado pela Elgin (só números, ex.: 5071100000018):', False);
+  PageCfg.Add('ID do terminal da Elgin (opcional, só números; em branco = o da ativação):', False);
   PageCfg.Add('Pasta do TEF (onde o gerenciador troca os arquivos):', False);
   PageCfg.Values[0] := 'https://www.brasarestaurante.com.br';
   PageCfg.Values[3] := 'C:\Cliente';
@@ -78,13 +78,14 @@ begin
   Result := Trim(PageCfg.Values[2]);
 end;
 
-{ Só dígitos: o Hub da Elgin usa esse valor como ponto de captura e recusa
-  qualquer coisa que não seja o terminal ativado (apelidos como CAIXA1 dão 404). }
+{ Em branco = o agente lê o terminal da ativação do Hub. Se preencher, só
+  dígitos: o Hub usa esse valor como ponto de captura e recusa qualquer coisa
+  que não seja o terminal ativado (apelidos como CAIXA1 dão 404). }
 function TerminalValido(const t: String): Boolean;
 var
   i: Integer;
 begin
-  Result := Length(t) >= 6;
+  Result := (t = '') or (Length(t) >= 6);
   for i := 1 to Length(t) do
     if (t[i] < '0') or (t[i] > '9') then Result := False;
 end;
@@ -121,7 +122,7 @@ begin
     end
     else if not TerminalValido(Terminal()) then
     begin
-      MsgBox('Informe o ID do terminal dado pela Elgin: só números, como aparece na ativação do TEF Hub (ex.: 5071100000018). Sem ele o pinpad responde "terminal desabilitado".', mbError, MB_OK);
+      MsgBox('O ID do terminal é só números, como aparece na ativação do TEF Hub (ex.: 5071100000018) — ou deixe em branco para o agente usar o da ativação deste PC.', mbError, MB_OK);
       Result := False;
     end;
   end;

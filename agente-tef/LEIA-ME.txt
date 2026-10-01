@@ -11,6 +11,27 @@ grava o pagamento.
 
 Pastas do TEF: C:\Cliente\Req e C:\Cliente\Resp (configuravel em config.json).
 
+------------------------------------------------------------------
+TERMINAL (o ID que a Elgin da a este caixa) - 0.9.10
+------------------------------------------------------------------
+O gerenciador da Elgin so aceita o terminal que foi ATIVADO nele
+(Elgin TEF Hub -> Administracao -> Ativacao -> CNPJ). Qualquer outro
+valor (um apelido como CAIXA1, por exemplo) da "terminal desabilitado"
+(habilitarTerminalTef 404 no e1.log).
+
+Ordem certa num PC novo:
+  1. instalar o Elgin TEF Hub (instalador da Elgin) e ligar o pinpad;
+  2. fazer a Ativacao no Hub com o CNPJ do estabelecimento;
+  3. instalar este agente DEIXANDO O TERMINAL EM BRANCO.
+O agente le o numero do comprovante que o Hub grava na ativacao
+(C:\Elgin\TEF\Dats\comprovante-ativacao-<terminal>.txt) e tambem
+preenche o identificadorPontoCaptura do e1_tef_configs.json do Hub
+(backup .bak-agente ao lado). Se a ativacao vier DEPOIS da instalacao,
+nao precisa reinstalar: o agente volta a olhar a cada operacao.
+Depois da ativacao, reabra o Hub (ou reinicie o PC) pra ele reler.
+
+Se preferir fixar: "terminal": "5071100000018" no config.json manda.
+
 Menu da bandeja: Ver log / Status / Reiniciar / Sair.
 Log: C:\ProgramData\AgenteTEF\agente.log
 
