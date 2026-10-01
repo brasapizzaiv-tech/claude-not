@@ -4,9 +4,10 @@ import { Icone } from "@/components/icone";
 import { avisar } from "@/components/dialogo";
 import { alternarContaPedida } from "@/app/(painel)/salao/actions";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { pareceVersaoVelha, recarregarUmaVez } from "@/components/vigia-versao";
 import { lancarPedidoGarcomLinhas, transferirComanda } from "../../actions";
 import {
   PizzaModal, ComboModal, novoUid,
@@ -67,6 +68,43 @@ export function GarcomPedido({
   const [contaOpen, setContaOpen] = useState(false);
   const [avisando, setAvisando] = useState<string | null>(null);
   const [avisadas, setAvisadas] = useState<Set<string>>(new Set());
+
+  // O SISTEMA FOI PUBLICADO COM O APP ABERTO (01/10/2026, almoço): o celular
+  // ainda roda a versão antiga, o servidor já não reconhece o "Lançar" dela, e
+  // o erro caía no "Sem conexão. Toque em Lançar de novo" — que nunca ia
+  // funcionar, porque não era rede. O garçom tentava e tentava e a bebida não
+  // chegava na comanda. Agora: se o erro for de versão, o carrinho é guardado,
+  // a página recarrega (vem a versão nova) e o carrinho volta como estava, com
+  // o mesmo id de lançamento (então não duplica se o servidor tiver gravado).
+  const chaveGuarda = `garcom_carrinho_${mesa}`;
+  useEffect(() => {
+    let g: { cart?: CartLine[]; obs?: string; comandaSel?: string; lancId?: string } | null = null;
+    try {
+      const raw = sessionStorage.getItem(chaveGuarda);
+      if (raw) { sessionStorage.removeItem(chaveGuarda); g = JSON.parse(raw); }
+    } catch { /* sem storage */ }
+    if (!g || !Array.isArray(g.cart) || g.cart.length === 0) return;
+    const guardado = g;
+    // Depois da hidratação (por isso o timeout), devolve o carrinho como estava.
+    const t = setTimeout(() => {
+      setCart(guardado.cart!);
+      setObs(guardado.obs ?? "");
+      if (guardado.comandaSel) setComandaSel(guardado.comandaSel);
+      lancIdRef.current = guardado.lancId ?? "";
+      setCartOpen(true);
+      setToast("O app foi atualizado. Seus itens foram mantidos: toque em Lançar de novo.");
+      setTimeout(() => setToast(null), 6000);
+    }, 0);
+    return () => clearTimeout(t);
+    // só na montagem: é o resgate do carrinho guardado antes de recarregar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  function guardarERecarregar() {
+    try {
+      sessionStorage.setItem(chaveGuarda, JSON.stringify({ cart, obs, comandaSel, lancId: lancIdRef.current }));
+    } catch { /* sem storage: recarrega mesmo assim, o garçom refaz */ }
+    recarregarUmaVez();
+  }
 
   async function avisarConta(comandaId: string) {
     setAvisando(comandaId);
@@ -149,7 +187,8 @@ export function GarcomPedido({
           setToast(r.mensagem || "Não foi possível transferir.");
           setTimeout(() => setToast(null), 3000);
         }
-      } catch {
+      } catch (e) {
+        if (pareceVersaoVelha(e)) { guardarERecarregar(); return; }
         setToast("Sem conexão. Tente de novo.");
         setTimeout(() => setToast(null), 3000);
       }
@@ -180,7 +219,8 @@ export function GarcomPedido({
           setToast(r.mensagem || "Não foi possível lançar.");
           setTimeout(() => setToast(null), 3500);
         }
-      } catch {
+      } catch (e) {
+        if (pareceVersaoVelha(e)) { setToast("O app foi atualizado, recarregando…"); guardarERecarregar(); return; }
         // Rede caiu no meio: o carrinho fica como está; ao tentar de novo vai
         // com a mesma chave, então não duplica se o servidor já tiver gravado.
         setToast("Sem conexão. Toque em Lançar de novo — não vai duplicar.");

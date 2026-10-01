@@ -76,3 +76,6 @@ app-entregador/*.apk
 
 # Cópias de segurança tiradas antes de remover dados — ficam só neste PC.
 backup-*.json
+
+.vercel
+.env*
