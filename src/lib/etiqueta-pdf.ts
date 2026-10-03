@@ -122,10 +122,26 @@ export async function gerarEtiquetaPdf(d: EtiquetaPdfDados, baseUrl: string, cfg
   // Moldura na borda + marcas de centro: mostra onde a impressora acha que é a
   // etiqueta, pra acertar o deslocamento. Desenhada ANTES do deslocamento.
   if (opts?.moldura) {
-    doc.lineWidth(0.6).rect(0.8, 0.8, width - 1.6, height - 1.6).stroke("#000");
+    // A moldura fica na MARGEM (não na borda da página): a borda a impressora
+    // não imprime, e a moldura nunca aparecia. Assim a régua mede a distância
+    // da linha até a beirada da etiqueta: tem que dar a margem configurada nos
+    // quatro lados. Marcas de 5 em 5 mm nas bordas ajudam a ler o deslocamento.
+    doc.lineWidth(1).rect(pad, pad, W, height - pad * 2).stroke("#000");
+    doc.lineWidth(0.5);
+    for (let mm = 5; mm < Wmm; mm += 5) {
+      const x = mm * MM, l = mm % 10 === 0 ? 2.5 * MM : 1.5 * MM;
+      doc.moveTo(x, 0).lineTo(x, l).moveTo(x, height).lineTo(x, height - l).stroke("#000");
+    }
+    for (let mm = 5; mm < Hmm; mm += 5) {
+      const y = mm * MM, l = mm % 10 === 0 ? 2.5 * MM : 1.5 * MM;
+      doc.moveTo(0, y).lineTo(l, y).moveTo(width, y).lineTo(width - l, y).stroke("#000");
+    }
     const cx = width / 2, cy = height / 2, m = 3 * MM;
     doc.moveTo(cx - m, cy).lineTo(cx + m, cy).moveTo(cx, cy - m).lineTo(cx, cy + m).stroke("#000");
-    doc.font("Helvetica").fontSize(5).fillColor("#000").text(`${Wmm}×${Hmm}mm`, 3, height - 9, { width: 60 });
+    doc.font("Helvetica").fontSize(5).fillColor("#000").text(
+      `${Wmm}×${Hmm}mm · margem ${Pmm} · desloc ${Number(c.deslocX) || 0}/${Number(c.deslocY) || 0}`,
+      pad + 2, height - pad - 7, { width: W - 4 },
+    );
   }
   // Calibração: desloca todo o desenho (mm) conforme a impressora imprime fora do lugar.
   const dx = Math.max(-15, Math.min(15, Number(c.deslocX) || 0)) * MM;
