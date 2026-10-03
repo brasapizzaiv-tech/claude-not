@@ -19,6 +19,5 @@
       "path": "/api/entrega/limpar",
       "schedule": "20 7 * * *"
     }
-  ],
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . \":(exclude).github\" \":(exclude)app-entregador\" \":(exclude)agente-tef\" \":(exclude)agente-impressao\" \":(exclude)agente-balanca\" \":(exclude)installer\" \":(exclude)installer-tef\" \":(exclude)installer-impressao\" \":(exclude)installer-balanca\" \":(exclude)*.md\""
+  ]
 }
