@@ -40,7 +40,7 @@ export function RetiradasClient({
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
-  const [aba, setAba] = useState<"lancamentos" | "resumo" | "produtos">("resumo");
+  const [aba, setAba] = useState<"lancamentos" | "resumo" | "acertos" | "produtos">("resumo");
   const [aviso, setAviso] = useState<string | null>(null);
   const [ano, setAno] = useState(Number(hojeIso.slice(0, 4)));
   const [mes, setMes] = useState(Number(hojeIso.slice(5, 7)) - 1);
@@ -78,7 +78,7 @@ export function RetiradasClient({
       {aviso && <div className="mb-3 rounded-controle border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600">{aviso}</div>}
 
       <div className="mb-4 flex gap-2">
-        {([["resumo", "Resumo"], ["lancamentos", "Lançamentos"], ["produtos", "Produtos e preços"]] as const).map(([k, label]) => (
+        {([["resumo", "Resumo"], ["lancamentos", "Lançamentos"], ["acertos", "Acertos"], ["produtos", "Produtos e preços"]] as const).map(([k, label]) => (
           <button
             key={k}
             onClick={() => setAba(k)}
@@ -152,6 +152,8 @@ export function RetiradasClient({
         </div>
       )}
 
+      {aba === "acertos" && <AcertosTab retiradas={retiradas} pessoas={pessoas} />}
+
       {aba === "produtos" && <ProdutosTab produtos={produtos} proc={proc} run={run} />}
 
       {novo && (
@@ -169,6 +171,83 @@ export function RetiradasClient({
 }
 
 const inputCls = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto   ";
+
+// Histórico de quitação (pedido do Rafael, 02/10/2026): "quando o fulano
+// acertou e quanto". Não existe tabela de acertos — cada compra paga guarda a
+// data e a forma ("recebido no acerto da semana", "parte de 20,00"…). Então o
+// acerto é a reunião das compras pagas da mesma pessoa, no mesmo dia, do mesmo
+// jeito. Dá pra abrir cada um e ver as compras que ele cobriu.
+type Acerto = { chave: string; nome: string; colaboradorId: string | null; data: string; como: string; valor: number; compras: Retirada[] };
+
+function AcertosTab({ retiradas, pessoas }: { retiradas: Retirada[]; pessoas: Pessoa[] }) {
+  const [quem, setQuem] = useState<string>("");
+  const [aberto, setAberto] = useState<string | null>(null);
+
+  const acertos = useMemo(() => {
+    const m = new Map<string, Acerto>();
+    for (const r of retiradas) {
+      if (r.status !== "pago" || !r.data_pagamento) continue;
+      const como = (r.obs_pagamento || "").replace(/\s*·?\s*parte de [\d.,]+$/i, "").trim() || "pago na mão";
+      const quemId = r.colaborador_id ?? `nome:${r.nome}`;
+      const chave = `${quemId}|${r.data_pagamento}|${como}`;
+      const cur = m.get(chave) ?? { chave, nome: r.nome, colaboradorId: r.colaborador_id, data: r.data_pagamento, como, valor: 0, compras: [] };
+      // Compra dividida: a linha paga já tem só a parte recebida como valor
+      // ("parte de X" é o total original, só informação) — soma o valor direto.
+      cur.valor += Number(r.valor);
+      cur.compras.push(r);
+      m.set(chave, cur);
+    }
+    return [...m.values()]
+      .filter((a) => !quem || a.colaboradorId === quem)
+      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : a.nome.localeCompare(b.nome)));
+  }, [retiradas, quem]);
+
+  const total = acertos.reduce((s, a) => s + a.valor, 0);
+
+  return (
+    <div className={card}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-bold">Acertos (quitações)</h2>
+        <select value={quem} onChange={(e) => setQuem(e.target.value)} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm text-texto">
+          <option value="">Todos os colaboradores</option>
+          {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        </select>
+      </div>
+      {acertos.length === 0 ? (
+        <p className="py-4 text-center text-sm text-texto-suave">Nenhum acerto registrado{quem ? " pra essa pessoa" : ""}.</p>
+      ) : (
+        <>
+          <p className="mb-2 text-xs text-texto-suave">{acertos.length} acerto{acertos.length > 1 ? "s" : ""} · total recebido {brl(total)}</p>
+          <div className="divide-y divide-borda">
+            {acertos.map((a) => (
+              <div key={a.chave}>
+                <button type="button" onClick={() => setAberto(aberto === a.chave ? null : a.chave)} className="flex w-full items-center gap-3 py-2 text-left text-sm">
+                  <span className="w-20 shrink-0 whitespace-nowrap text-texto-suave">{fmtData(a.data)}</span>
+                  <span className="flex-1">
+                    <span className="font-medium">{a.nome}</span>
+                    <span className="block text-xs text-texto-suave">{a.como} · {a.compras.length} compra{a.compras.length > 1 ? "s" : ""}</span>
+                  </span>
+                  <span className="font-semibold text-emerald-600">{brl(a.valor)}</span>
+                  <span className="text-texto-fraco">{aberto === a.chave ? "▴" : "▾"}</span>
+                </button>
+                {aberto === a.chave && (
+                  <ul className="mb-2 ml-20 space-y-0.5 text-xs text-texto-suave">
+                    {a.compras.map((r) => (
+                      <li key={r.id} className="flex justify-between gap-2">
+                        <span>{fmtData(r.data)} · {r.item}{r.peso ? ` · ${r.peso} kg` : ""}</span>
+                        <span>{brl(Number(r.valor))}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function NovaCompra({
   pessoas, produtos, hojeIso, proc, onClose, onSalvar,
