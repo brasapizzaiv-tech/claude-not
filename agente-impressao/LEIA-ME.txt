@@ -20,3 +20,13 @@ Log e dados: C:\ProgramData\AgenteImpressao\agente.log
 Desde a versao 1.1.4 o cupom da NFC-e sai em ESC/POS (bytes direto pra
 termica, como o cupom da balanca): letra preta e nitida. Se a impressora da
 nota NAO for termica ESC/POS, o agente cai sozinho pro PDF.
+
+------------------------------------------------------------------
+ETIQUETA DEITADA (mais larga que alta) - 1.1.5
+------------------------------------------------------------------
+O SumatraPDF, que imprime os PDFs, gira sozinho toda pagina mais larga que
+alta, e so desgira quando recebe a ordem "landscape". Por isso a etiqueta
+100x70 saia de lado (02/10/2026), com o driver em Retrato ou em Paisagem.
+Desde a 1.1.5 o servidor manda a orientacao de cada etiqueta (pelo formato
+cadastrado na Central de Impressoes) e o agente repassa. O driver do Windows
+fica em RETRATO, com o papel no tamanho real da etiqueta (ex.: 100 x 70).

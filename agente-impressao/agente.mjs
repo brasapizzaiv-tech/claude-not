@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { print } = ptp;
-const VERSAO = "1.1.4"; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
+const VERSAO = "1.1.5"; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -29,6 +29,17 @@ function log(m) {
   const linha = `[${t}] ${m}`;
   console.log(linha);
   try { appendFileSync(logFile, linha + "\n"); } catch { /* sem log em arquivo */ }
+}
+
+// Orientação da etiqueta lida do próprio PDF (/MediaBox do pdfkit, que vem
+// sem compressão): mais larga que alta = landscape. Serve quando o servidor
+// ainda não manda "orientacao" — assim o agente novo já acerta sozinho.
+function orientacaoDoPdf(buf) {
+  const m = buf.toString("latin1").match(/\/MediaBox\s*\[\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\]/);
+  if (!m) return null;
+  const w = Number(m[3]) - Number(m[1]), h = Number(m[4]) - Number(m[2]);
+  if (!(w > 0) || !(h > 0)) return null;
+  return w > h ? "landscape" : "portrait";
 }
 
 // Lista as impressoras do Windows (Get-Printer funciona no Windows novo;
@@ -127,7 +138,14 @@ async function ciclo() {
           ? job.escala
           : (etiqueta ? "noscale" : "fit");
         const opcoes = { printer: job.printer, scale: escala };
-        if (!etiqueta) opcoes.orientation = job.orientacao === "landscape" ? "landscape" : "portrait";
+        // Orientação: o SumatraPDF gira sozinho qualquer página mais larga que
+        // alta e só desgira quando recebe "landscape" (sem mexer no driver, que
+        // fica em Retrato). O servidor sabe o formato da etiqueta e manda a
+        // orientação certa; sem ela (servidor antigo), etiqueta vai sem
+        // orientação como antes e o resto vai em retrato.
+        if (job.orientacao === "landscape" || job.orientacao === "portrait") opcoes.orientation = job.orientacao;
+        else if (etiqueta) { const o = orientacaoDoPdf(buf); if (o) opcoes.orientation = o; }
+        else opcoes.orientation = "portrait";
         await print(file, opcoes);
         await darBaixa(job.id);
         log(`Impresso em "${job.printer}".`);
