@@ -18,15 +18,40 @@ const GPS_INTERVALO_MS = 15000;
 
 // Dentro do app nativo (Capacitor) existe window.Capacitor; aí o GPS vai pelo
 // plugin de segundo plano (serviço nativo, funciona com a tela apagada).
-type CapGlobal = { isNativePlatform?: () => boolean; registerPlugin: (nome: string) => unknown };
+//
+// ATENÇÃO (03/10/2026): esta página é carregada de longe (o app abre o site),
+// e o que o app injeta nela é só a PONTE nativa — `nativeCallback` /
+// `nativePromise` — não o `registerPlugin` do @capacitor/core. A versão
+// anterior procurava `registerPlugin`, nunca achava, e caía no modo
+// "Navegador" em silêncio: no iPhone e no Android, o GPS nativo nunca tinha
+// sido usado de verdade. Por isso o plugin é chamado direto pela ponte.
+type CapGlobal = {
+  isNativePlatform?: () => boolean;
+  getPlatform?: () => string;
+  nativeCallback?: (plugin: string, metodo: string, opts: unknown, cb: (dados: unknown, erro?: unknown) => void) => string;
+  nativePromise?: (plugin: string, metodo: string, opts?: unknown) => Promise<unknown>;
+};
+type BgLoc = { latitude: number; longitude: number; accuracy?: number };
+type BgErr = { code?: string; message?: string };
 type BgGeo = {
-  addWatcher: (opts: { backgroundMessage?: string; backgroundTitle?: string; requestPermissions?: boolean; stale?: boolean; distanceFilter?: number }, cb: (loc: { latitude: number; longitude: number; accuracy?: number } | undefined, err?: { code?: string; message?: string }) => void) => Promise<string>;
+  addWatcher: (opts: { backgroundMessage?: string; backgroundTitle?: string; requestPermissions?: boolean; stale?: boolean; distanceFilter?: number }, cb: (loc: BgLoc | undefined, err?: BgErr) => void) => Promise<string>;
   removeWatcher: (o: { id: string }) => Promise<void>;
   openSettings: () => Promise<void>;
 };
 function capacitorNativo(): CapGlobal | null {
   const c = (typeof window !== "undefined" ? (window as unknown as { Capacitor?: CapGlobal }).Capacitor : undefined) ?? null;
-  return c && typeof c.registerPlugin === "function" && c.isNativePlatform?.() ? c : null;
+  return c && typeof c.nativeCallback === "function" && typeof c.nativePromise === "function" && c.isNativePlatform?.() ? c : null;
+}
+// O plugin @capacitor-community/background-geolocation, falado pela ponte:
+// `addWatcher` é um método de "callback" (o id do watcher é o id do callback),
+// `removeWatcher` e `openSettings` são promessas.
+function pluginGps(cap: CapGlobal): BgGeo {
+  const P = "BackgroundGeolocation";
+  return {
+    addWatcher: (opts, cb) => Promise.resolve(cap.nativeCallback!(P, "addWatcher", opts, (dados, erro) => cb(dados as BgLoc | undefined, erro as BgErr | undefined))),
+    removeWatcher: (o) => cap.nativePromise!(P, "removeWatcher", o).then(() => undefined),
+    openSettings: () => cap.nativePromise!(P, "openSettings").then(() => undefined),
+  };
 }
 
 type Dados = NonNullable<Awaited<ReturnType<typeof minhasEntregas>>>;
@@ -93,7 +118,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
     const cap = capacitorNativo();
     if (cap) {
       let watcherId: string | null = null; let vivo = true;
-      const bg = cap.registerPlugin("BackgroundGeolocation") as BgGeo;
+      const bg = pluginGps(cap);
       bg.addWatcher(
         // O nome da EMPRESA na notificação, não o do app: quem fica horas com
         // isso na barra é o entregador, e ele trabalha pra um restaurante, não
@@ -348,7 +373,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
             <div className="mb-1 flex items-center gap-2 text-lg font-bold"><Icone nome="local" tamanho={18} /> Localização</div>
             <p className="mb-3 text-sm text-texto-suave">
               {nativo
-                ? <>Com o rastreamento ligado o restaurante vê onde você está no mapa — <b>mesmo com a tela apagada</b> (fica uma notificação fixa enquanto estiver ativo). Na primeira vez, escolha <b>“Permitir o tempo todo”</b>.</>
+                ? <>Com o rastreamento ligado o restaurante vê onde você está no mapa — <b>mesmo com a tela apagada</b> (fica uma notificação fixa enquanto estiver ativo). Na primeira vez, escolha <b>“Permitir o tempo todo”</b> (no iPhone, <b>“Permitir Sempre”</b>).</>
                 : <>Com o rastreamento ligado o restaurante vê onde você está no mapa. Pelo navegador só funciona com este app <b>aberto na tela</b> (a tela fica acesa sozinha). Instale o app Motelli Entregador pra rastrear em segundo plano.</>}
             </p>
             <button onClick={alternarGps} className={`w-full rounded-cartao py-3 text-base font-bold ${gpsOn ? "bg-emerald-600 text-white" : "bg-superficie-suave text-texto"}`}>
@@ -367,7 +392,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
                   Isso acontece <b>mesmo quando o app está fechado ou não está em uso</b>, enquanto o rastreamento estiver ligado. Uma notificação fixa avisa que ele está ativo, e você desliga quando quiser nesta tela.
                 </p>
                 <p className="mt-2 text-sm text-texto-suave">
-                  A posição vai só para o restaurante que cadastrou você e é apagada após 90 dias. Na próxima tela, escolha <b>“Permitir o tempo todo”</b>.
+                  A posição vai só para o restaurante que cadastrou você e é apagada após 90 dias. Na próxima tela, escolha <b>“Permitir o tempo todo”</b> (no iPhone, <b>“Permitir Sempre”</b>).
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button onClick={() => setAvisoGps(false)} className="rounded-cartao bg-superficie-suave py-3 font-semibold text-texto">Agora não</button>
