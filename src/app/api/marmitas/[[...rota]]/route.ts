@@ -222,13 +222,14 @@ function validaPedido(p: Pedido) {
 async function inserePedido(db: Db, data: string, p: Pedido) {
   const id = novoId();
   const criadoEm = new Date().toISOString().replace("T", " ").slice(0, 19);
-  const { error } = await db.from("mkt_pedidos").insert({ id, data, filial: p.filial, colaborador_id: p.colaboradorId || null, cliente: p.cliente, matricula: p.matricula, pratos: JSON.stringify(p.pratos), proteina: p.proteina, salada: p.salada, origem: p.origem, criado_em: criadoEm });
+  // O número do pedido no dia/filial é dado pelo banco (trigger, migration 0202).
+  const { data: ins, error } = await db.from("mkt_pedidos").insert({ id, data, filial: p.filial, colaborador_id: p.colaboradorId || null, cliente: p.cliente, matricula: p.matricula, pratos: JSON.stringify(p.pratos), proteina: p.proteina, salada: p.salada, origem: p.origem, criado_em: criadoEm }).select("numero").single();
   if (error) throw Object.assign(new Error(error.message), { code: error.code });
-  return { id, data, filial: p.filial, colaboradorId: p.colaboradorId, cliente: p.cliente, matricula: p.matricula, pratos: p.pratos, proteina: p.proteina, salada: p.salada, origem: p.origem, criadoEm };
+  return { id, data, numero: (ins?.numero as number | null) ?? null, filial: p.filial, colaboradorId: p.colaboradorId, cliente: p.cliente, matricula: p.matricula, pratos: p.pratos, proteina: p.proteina, salada: p.salada, origem: p.origem, criadoEm };
 }
-type Row = { id: string; data: string; filial: string; colaborador_id: string | null; cliente: string; matricula: string | null; pratos: string | null; proteina: string | null; salada: string | null; origem: string | null; criado_em: string | null };
+type Row = { id: string; data: string; numero?: number | null; filial: string; colaborador_id: string | null; cliente: string; matricula: string | null; pratos: string | null; proteina: string | null; salada: string | null; origem: string | null; criado_em: string | null };
 function saidaPedido(row: Row) {
-  return { id: row.id, data: row.data, filial: row.filial, colaboradorId: row.colaborador_id || "", cliente: row.cliente, matricula: row.matricula, pratos: parseLista(row.pratos), proteina: row.proteina || "", salada: normSalada(row.salada), origem: row.origem || "", criadoEm: row.criado_em };
+  return { id: row.id, data: row.data, numero: row.numero ?? null, filial: row.filial, colaboradorId: row.colaborador_id || "", cliente: row.cliente, matricula: row.matricula, pratos: parseLista(row.pratos), proteina: row.proteina || "", salada: normSalada(row.salada), origem: row.origem || "", criadoEm: row.criado_em };
 }
 
 async function handle(req: NextRequest, rota: string[]) {

@@ -89,6 +89,7 @@
     .et-l{font-size:16px;margin:1.2mm 0;line-height:1.3}
     .et-l b{font-weight:800}
   }
+.pill.num{background:#111;color:#fff;font-weight:700}
 </style>
 </head>
 <body>
@@ -198,6 +199,7 @@
         <label>Filtrar por filial</label><select id="filtroFilial" onchange="renderPedidos()"></select>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="ghost" onclick="imprimirTodos()">🖨️ Imprimir etiquetas (todos os mostrados)</button>
+          <button class="ghost" onclick="listaConferencia()" title="Uma folha por filial, com o nº de cada marmita, pro entregador conferir na entrega">📋 Lista de conferência (por filial)</button>
           <span id="impInfo" class="miudo"></span>
         </div>
         <div id="listaPedidos" style="margin-top:8px"></div>
@@ -574,7 +576,7 @@ function renderPedidos(){
   const podeEdit=perm('pedidos_edit');
   const nFora=lista.filter(p=>foraDoCardapio(p).length).length;
   el.innerHTML = (nFora?`<div class="aviso">⚠ ${nFora} pedido(s) com itens fora do cardápio do dia — confira antes de imprimir.</div>`:'')+(lista.length===0?'<div class="empty">Nenhum pedido'+(filtro?' nesta filial':'')+'.</div>':lista.map(p=>{const fora=foraDoCardapio(p);return `<div class="item">
-    <div class="grow"><div class="nome">${escapeHtml(p.cliente)} ${p.matricula?`<span class="pill">${escapeHtml(p.matricula)}</span>`:''} <span class="pill fil">${escapeHtml(p.filial)}</span> ${p.origem==='colaborador'?'<span class="pill ok">app</span>':''} ${fora.length?`<span class="pill" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b">⚠ fora do cardápio: ${escapeHtml(fora.join(', '))}</span>`:''}</div>
+    <div class="grow"><div class="nome">${p.numero!=null?`<span class="pill num">nº ${p.numero}</span> `:''}${escapeHtml(p.cliente)} ${p.matricula?`<span class="pill">${escapeHtml(p.matricula)}</span>`:''} <span class="pill fil">${escapeHtml(p.filial)}</span> ${p.origem==='colaborador'?'<span class="pill ok">app</span>':''} ${fora.length?`<span class="pill" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b">⚠ fora do cardápio: ${escapeHtml(fora.join(', '))}</span>`:''}</div>
     <div class="meta">${descPedido(p)}</div></div>
     <button class="ghost mini" onclick="imprimirPedido('${p.id}')" title="Imprimir etiqueta">🖨️</button>
     ${podeEdit?`<button class="ghost mini" onclick="abrirEdicao('${p.id}')">✎</button><button class="danger mini" onclick="removerPedido('${p.id}')">✕</button>`:''}
@@ -599,7 +601,7 @@ function etiquetaHTML(p){
   const pratosHtml=arr(p.pratos).map(x=>`<div class="et-l" style="padding-left:10px">- ${escapeHtml(x)}</div>`).join('');
   return `<div class="etiqueta">
     <div class="et-conv">${escapeHtml(CONFIG.nomeConvenio||'Kern')} · ${data}${CONFIG.horaEntrega?(' · entrega '+escapeHtml(CONFIG.horaEntrega)):''}</div>
-    <div class="et-filial">${escapeHtml(p.filial)}</div>
+    <div class="et-filial">${escapeHtml(p.filial)}${p.numero!=null?` · Nº ${p.numero}`:''}</div>
     <div class="et-nome">${escapeHtml(p.cliente)} ${p.matricula?`<span>${escapeHtml(p.matricula)}</span>`:''}</div>
     <div class="et-sep"></div>
     <div class="et-l"><b>Pratos:</b></div>
@@ -607,6 +609,35 @@ function etiquetaHTML(p){
     ${p.proteina?`<div class="et-l"><b>Proteína:</b> ${escapeHtml(p.proteina)}</div>`:''}
     <div class="et-l"><b>Salada:</b> ${p.salada?escapeHtml(p.salada):'Não'}</div>
   </div>`;
+}
+/* ---- lista de conferência por filial (A4, pro entregador) ----
+   Uma folha por filial, pedidos em ordem de número (o mesmo nº que sai na
+   etiqueta), com quadradinho pra marcar na entrega. Abre numa aba nova e
+   chama a impressão do navegador. */
+function listaConferencia(){
+  const f=$('#filtroFilial').value; const base=f?PEDIDOS_DIA.filter(p=>p.filial===f):PEDIDOS_DIA;
+  if(!base.length){ toast('Nenhum pedido pra listar',true); return; }
+  const dataIso=$('#dataDia').value||hoje(); const data=formatarData(dataIso);
+  const dia=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][new Date(dataIso+'T12:00:00').getDay()];
+  const filiais=[]; base.forEach(p=>{ if(!filiais.includes(p.filial)) filiais.push(p.filial); }); filiais.sort((a,b)=>a.localeCompare(b));
+  const conv=escapeHtml(CONFIG.nomeConvenio||'Kern');
+  const paginas=filiais.map(fil=>{
+    const ped=base.filter(p=>p.filial===fil).sort((a,b)=>(a.numero||9999)-(b.numero||9999)||a.cliente.localeCompare(b.cliente));
+    const linhas=ped.map(p=>`<tr><td class="n">${p.numero!=null?p.numero:'—'}</td><td>${escapeHtml(p.cliente)}</td><td>${escapeHtml(p.matricula||'')}</td><td class="d">${escapeHtml(arr(p.pratos).join(', '))}${p.proteina?' · '+escapeHtml(p.proteina):''}${p.salada?' · salada':''}</td><td class="c">☐</td></tr>`).join('');
+    return `<section><h1>${conv} · ${escapeHtml(fil)}</h1><div class="sub">${data} (${dia})${CONFIG.horaEntrega?' · entrega '+escapeHtml(CONFIG.horaEntrega):''} · <b>${ped.length} marmita${ped.length===1?'':'s'}</b></div>
+      <table><thead><tr><th class="n">Nº</th><th>Nome</th><th>Matrícula</th><th>Marmita</th><th class="c">Entregue</th></tr></thead><tbody>${linhas}</tbody></table>
+      <div class="ass">Conferido por: ____________________________ &nbsp;&nbsp; Recebido por: ____________________________</div></section>`;
+  }).join('');
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Conferência de marmitas · ${data}</title><style>
+    body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;padding:12mm}
+    section{page-break-after:always} section:last-child{page-break-after:auto}
+    h1{font-size:20px;margin:0 0 2px} .sub{font-size:13px;color:#333;margin-bottom:10px}
+    table{width:100%;border-collapse:collapse;font-size:13px} th,td{border:1px solid #000;padding:5px 6px;text-align:left;vertical-align:top}
+    th{background:#eee} td.n,th.n{width:34px;text-align:center;font-weight:bold;font-size:15px} td.c,th.c{width:64px;text-align:center;font-size:18px} td.d{color:#333;font-size:12px}
+    .ass{margin-top:16px;font-size:12px} @media print{body{padding:8mm}}
+  </style></head><body>${paginas}<scr${""}ipt>window.onload=function(){window.print();}</scr${""}ipt></body></html>`;
+  const w=window.open('','_blank'); if(!w){ toast('O navegador bloqueou a janela. Libere pop-ups pra este site.',true); return; }
+  w.document.open(); w.document.write(html); w.document.close();
 }
 function imprimirEtiquetas(lista){
   if(!lista||!lista.length){ toast('Nada para imprimir',true); return; }

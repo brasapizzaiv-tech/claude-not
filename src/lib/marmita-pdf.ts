@@ -10,6 +10,7 @@ export type MarmitaPdfDados = {
   data: string; // AAAA-MM-DD
   horaEntrega: string | null;
   filial: string;
+  numero: number | null; // nº do pedido no dia/filial — o mesmo da lista de conferência
   cliente: string;
   matricula: string | null;
   pratos: string[];
@@ -30,7 +31,7 @@ function desenhar(doc: PDFKit.PDFDocument, fe: number, pad: number, W: number, d
     `${d.convenio.toUpperCase()} · ${dataBR(d.data)}${d.horaEntrega ? ` · entrega ${d.horaEntrega}` : ""}`,
     pad, pad, { width: W, align: "center", characterSpacing: 0.4 },
   );
-  doc.font("Helvetica-Bold").fontSize(12 * fe).text(d.filial, pad, doc.y + 2, { width: W, align: "center" });
+  doc.font("Helvetica-Bold").fontSize(12 * fe).text(d.numero != null ? `${d.filial} · Nº ${d.numero}` : d.filial, pad, doc.y + 2, { width: W, align: "center" });
   doc.font("Helvetica-Bold").fontSize(10 * fe).text(d.cliente, pad, doc.y + 1, { width: W, align: "center" });
   if (d.matricula) doc.font("Helvetica").fontSize(6.5 * fe).text(`matrícula ${d.matricula}`, pad, doc.y, { width: W, align: "center" });
   const y = doc.y + 2;

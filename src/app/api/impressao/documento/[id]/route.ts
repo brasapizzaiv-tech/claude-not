@@ -90,7 +90,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   } else if (job.tipo === "marmita") {
     // Etiqueta da marmita do convênio (Kern), no formato da impressora de etiquetas.
     const [{ data: ped }, { data: imp }, { data: cfgRows }] = await Promise.all([
-      admin.from("mkt_pedidos").select("data, filial, cliente, matricula, pratos, proteina, salada").eq("id", job.ref_id).maybeSingle(),
+      admin.from("mkt_pedidos").select("data, filial, numero, cliente, matricula, pratos, proteina, salada").eq("id", job.ref_id).maybeSingle(),
       job.impressora_id
         ? admin.from("impressoras").select("etiqueta_config").eq("id", job.impressora_id).maybeSingle()
         : Promise.resolve({ data: null }),
@@ -107,6 +107,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         data: ped.data as string,
         horaEntrega: cfg.horaEntrega || null,
         filial: ped.filial as string,
+        numero: (ped.numero as number | null) ?? null,
         cliente: ped.cliente as string,
         matricula: (ped.matricula as string) || null,
         pratos,
