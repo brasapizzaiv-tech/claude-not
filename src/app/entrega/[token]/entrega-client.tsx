@@ -6,7 +6,7 @@ import { Icone, type NomeIcone } from "@/components/icone";
 // Histórico · GPS. Copiado do que funciona no Suit Express: pendente/entregue,
 // leitor de QR do cupom pra "pegar" o pedido, "saí com essas", "entreguei"
 // com o que recebeu, meus ganhos por forma, histórico por dia, localização.
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import jsQR from "jsqr";
 import { historicoEntregas, marcarEntregue, meusGanhos, minhasEntregas, pegarEntrega, registrarPosicao, sairComEntregas, type Boy, type EntregaBoy } from "./entrega-actions";
 
@@ -111,7 +111,23 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
     const t = setTimeout(() => { if (ligado) setGpsOn(true); }, 0);
     return () => clearTimeout(t);
   }, []);
-  const nativo = capacitorNativo() !== null;
+  // No Android, a ponte do Capacitor às vezes NÃO é injetada na página (ela vem
+  // de um domínio de allowNavigation, não do app), mas o canal nativo
+  // `androidBridge` existe. Então a própria página carrega a ponte
+  // (public/app/capacitor-native-bridge.js) e avisa pra tudo recalcular.
+  const [ponte, setPonte] = useState(0);
+  useEffect(() => {
+    const w = window as unknown as { Capacitor?: unknown; androidBridge?: unknown; webkit?: { messageHandlers?: { bridge?: unknown } } };
+    if (w.Capacitor || !(w.androidBridge || w.webkit?.messageHandlers?.bridge)) return;
+    if (document.querySelector('script[data-ponte-capacitor]')) return;
+    const s = document.createElement("script");
+    s.src = "/app/capacitor-native-bridge.js";
+    s.dataset.ponteCapacitor = "1";
+    s.onload = () => setPonte((n) => n + 1);
+    document.head.appendChild(s);
+  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const nativo = useMemo(() => capacitorNativo() !== null, [ponte]);
   useEffect(() => {
     if (!gpsOn) { wake.current?.release().catch(() => {}); wake.current = null; return; }
     // ---- app nativo: plugin de segundo plano ----
@@ -158,7 +174,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
     // Tela ligada enquanto rastreia (o navegador não manda posição com a tela apagada).
     (async () => { try { const n = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }; wake.current = (await n.wakeLock?.request("screen")) ?? null; } catch { /* sem wake lock */ } })();
     return () => { navigator.geolocation.clearWatch(id); wake.current?.release().catch(() => {}); wake.current = null; };
-  }, [gpsOn, token, empresa]);
+  }, [gpsOn, token, empresa, ponte]);
   // Aviso de localização em segundo plano. A política da Play exige, ANTES do
   // pedido de permissão do Android, um aviso dentro do app que diga o que é
   // coletado, pra quê, com quem é compartilhado e que vale "mesmo com o app

@@ -82,7 +82,9 @@ export async function updateSession(request: NextRequest) {
     // Site da marca Motelli (apresentação e política de privacidade).
     path.startsWith("/motelli") ||
     // Qual versão está no ar: toda tela pergunta, logada ou não.
-    path === "/api/versao";
+    path === "/api/versao" ||
+    // Arquivos do app nativo do entregador (ponte do Capacitor), sem login.
+    path.startsWith("/app/");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
