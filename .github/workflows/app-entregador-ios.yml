@@ -141,7 +141,7 @@ jobs:
           ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
           P8_B64: ${{ secrets.APPSTORE_P8_BASE64 }}
         run: |
-          set -e
+          set -eo pipefail
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$P8_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_"$KEY_ID".p8
           xcrun altool --upload-app --type ios --file MotelliEntregador.ipa \
