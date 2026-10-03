@@ -1,0 +1,149 @@
+# Compila o app do entregador para iPhone num Mac da nuvem do GitHub (grátis
+# porque o repositório é público) e manda pro TestFlight / App Store Connect.
+# Não precisa de Mac nem de Xcode no PC. Roda à mão (Actions → "Run workflow")
+# ou quando algo em app-entregador/ muda na main.
+#
+# O que ele precisa, nos segredos do repositório (gravados em 03/10/2026, a
+# partir da pasta "Motelli - chave do app (NAO APAGAR)\ios" do Rafael):
+#   IOS_CERT_P12_BASE64 / IOS_CERT_PASSWORD   certificado "Apple Distribution" + chave
+#   IOS_PROFILE_BASE64                        perfil "Motelli Entregador App Store"
+#   APPSTORE_KEY_ID / APPSTORE_ISSUER_ID / APPSTORE_P8_BASE64   chave da API do App Store Connect
+# Sem eles, o job é pulado em silêncio.
+name: App do entregador (iOS)
+
+on:
+  push:
+    branches: [main]
+    paths: ["app-entregador/**", "public/icons/motelli-entregador-1024.png", ".github/workflows/app-entregador-ios.yml"]
+  workflow_dispatch:
+
+env:
+  APP_ID: br.com.motelli.entregador
+  APP_NOME: Motelli Entregador
+  APP_VERSION_NAME: "1.0.0"
+  # Conta Apple Developer (pessoa física) do Rafael.
+  APPLE_TEAM_ID: NG2HMYU9Q7
+  IOS_PROFILE_NAME: Motelli Entregador App Store
+
+jobs:
+  ios:
+    runs-on: macos-15
+    # Sem os segredos da Apple não tem como assinar: pula.
+    if: ${{ vars.IOS_DESLIGADO != '1' }}
+    defaults:
+      run:
+        working-directory: app-entregador
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Tem os segredos da Apple?
+        id: chave
+        env:
+          TEM: ${{ secrets.IOS_CERT_P12_BASE64 != '' && secrets.APPSTORE_P8_BASE64 != '' }}
+        run: |
+          echo "tem=$TEM" >> "$GITHUB_OUTPUT"
+          [ "$TEM" = "true" ] || echo "Sem segredos da Apple: pulando o build do iPhone."
+
+      - name: Dependências
+        if: steps.chave.outputs.tem == 'true'
+        run: npm install --no-audit --no-fund
+
+      - name: Projeto iOS (sincroniza, pods, permissões/nome/ícone/versão/assinatura)
+        if: steps.chave.outputs.tem == 'true'
+        env:
+          # A App Store recusa versão repetida: o número da execução nunca volta.
+          APP_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          set -x
+          npx cap sync ios
+          node scripts/patch-ios.mjs
+
+      - name: Certificado e perfil no Mac
+        if: steps.chave.outputs.tem == 'true'
+        env:
+          P12_B64: ${{ secrets.IOS_CERT_P12_BASE64 }}
+          P12_SENHA: ${{ secrets.IOS_CERT_PASSWORD }}
+          PERFIL_B64: ${{ secrets.IOS_PROFILE_BASE64 }}
+        run: |
+          set -e
+          KC="$RUNNER_TEMP/build.keychain-db"
+          KC_SENHA="$(uuidgen)"
+          echo "$P12_B64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KC_SENHA" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KC_SENHA" "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_SENHA" -A -t cert -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KC_SENHA" "$KC"
+          security list-keychain -d user -s "$KC" login.keychain-db
+          security find-identity -v -p codesigning "$KC"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PERFIL_B64" | base64 --decode > "$RUNNER_TEMP/perfil.mobileprovision"
+          security cms -D -i "$RUNNER_TEMP/perfil.mobileprovision" > "$RUNNER_TEMP/perfil.plist"
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/perfil.plist")
+          cp "$RUNNER_TEMP/perfil.mobileprovision" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "perfil $UUID instalado"
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+      - name: Archive (xcodebuild)
+        if: steps.chave.outputs.tem == 'true'
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            archive | tail -40
+
+      - name: Exportar .ipa
+        if: steps.chave.outputs.tem == 'true'
+        run: |
+          set -e
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key><dict>
+              <key>${APP_ID}</key><string>${IOS_PROFILE_NAME}</string>
+            </dict>
+            <key>uploadSymbols</key><true/>
+            <key>destination</key><string>export</string>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" | tail -20
+          ls -la "$RUNNER_TEMP/export"
+          cp "$RUNNER_TEMP/export/App.ipa" MotelliEntregador.ipa
+
+      - name: Log completo do xcodebuild (se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: steps.chave.outputs.tem == 'true'
+        with:
+          name: MotelliEntregador-ipa
+          path: app-entregador/MotelliEntregador.ipa
+          retention-days: 30
+
+      # Sobe pro App Store Connect (aparece em TestFlight em alguns minutos).
+      - name: Enviar ao App Store Connect
+        if: steps.chave.outputs.tem == 'true'
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          P8_B64: ${{ secrets.APPSTORE_P8_BASE64 }}
+        run: |
+          set -e
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$P8_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_"$KEY_ID".p8
+          xcrun altool --upload-app --type ios --file MotelliEntregador.ipa \
+            --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID" 2>&1 | tail -15
+          rm -f ~/.appstoreconnect/private_keys/AuthKey_"$KEY_ID".p8

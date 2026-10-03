@@ -37,6 +37,16 @@ mkdirSync("public/play", { recursive: true });
 // Ícone da loja: cheio, sem cantos arredondados (a Play arredonda).
 await icone("public/icons/motelli-entregador-512.png", 512, 0.78, VERDE);
 await icone("public/icons/motelli-entregador-192.png", 192, 0.78, VERDE);
+// iPhone: a App Store exige 1024×1024 SEM canal alfa.
+{
+  const fig = await motoboy(PAPEL, Math.round(1024 * 0.78));
+  const pos = Math.round((1024 - Math.round(1024 * 0.78)) / 2);
+  await sharp({ create: { width: 1024, height: 1024, channels: 3, background: VERDE } })
+    .composite([{ input: fig, left: pos, top: pos }])
+    .removeAlpha().png()
+    .toFile("public/icons/motelli-entregador-1024.png");
+  console.log("ok public/icons/motelli-entregador-1024.png");
+}
 // Camada de frente do adaptativo: o Android corta ~1/3 da borda, então o
 // desenho fica em 58% do quadro, sobre transparente; o fundo verde vai em cor.
 await icone("public/icons/motelli-entregador-fg-512.png", 512, 0.58, { r: 0, g: 0, b: 0, alpha: 0 });
