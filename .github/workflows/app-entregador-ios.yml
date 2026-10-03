@@ -47,6 +47,17 @@ jobs:
           echo "tem=$TEM" >> "$GITHUB_OUTPUT"
           [ "$TEM" = "true" ] || echo "Sem segredos da Apple: pulando o build do iPhone."
 
+      # A App Store só aceita app compilado com o Xcode 26 (iOS 26 SDK) — regra
+      # da Apple desde 2026; o Xcode padrão da máquina (16.4) é recusado no envio.
+      - name: Xcode 26
+        if: steps.chave.outputs.tem == 'true'
+        run: |
+          ls -d /Applications/Xcode*.app
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$X" ]; then echo "Xcode 26 não está nesta máquina; troque o runs-on pra macos-26"; exit 1; fi
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+
       - name: Dependências
         if: steps.chave.outputs.tem == 'true'
         run: npm install --no-audit --no-fund
