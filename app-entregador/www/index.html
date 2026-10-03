@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Motelli Entregador</title>
 <!--
   A PORTA DE ENTRADA DO APP
@@ -21,6 +21,9 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; min-height: 100vh; padding: 28px 22px;
+    /* iPhone: fora da barra de status e do risco de início */
+    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
     display: flex; flex-direction: column; justify-content: center;
     background: var(--fundo); color: var(--texto);
     font-family: system-ui, -apple-system, Roboto, Arial, sans-serif;

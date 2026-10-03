@@ -15,9 +15,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     scope: base,
     escuro: true, // o app do entregador é escuro sempre
     icones: [
-      { src: "/icons/entregas-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/entregas-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/entregas-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/motelli-entregador-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/motelli-entregador-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icons/motelli-entregador-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   });
 }

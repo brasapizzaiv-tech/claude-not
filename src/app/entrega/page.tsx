@@ -3,7 +3,7 @@ import { lerMarca } from "@/lib/marca";
 import { SemZoom } from "@/components/sem-zoom";
 import { EntradaEntrega } from "./entrada";
 
-export const metadata: Metadata = { title: "Brasa Entregas", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Motelli Entregador", robots: { index: false, follow: false } };
 // App do entregador: escuro sempre, na cor escura da empresa.
 export async function generateViewport(): Promise<Viewport> {
   const { escuro } = await lerMarca();

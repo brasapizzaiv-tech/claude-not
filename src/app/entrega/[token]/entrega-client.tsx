@@ -208,10 +208,13 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
   return (
     // O app do entregador é escuro SEMPRE: ele usa na rua, muitas vezes de
     // noite. Não segue a escolha de tema da pessoa.
-    <div data-tema="escuro" className="min-h-screen bg-painel-fundo pb-24 text-texto">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-borda bg-painel-fundo/95 px-4 py-3 backdrop-blur">
+    <div data-tema="escuro" className="min-h-screen bg-painel-fundo text-texto" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
+      {/* Área segura do iPhone: o app nativo desenha embaixo da barra de status
+          (hora, bateria) e do risco de início; cabeçalho e barra de abas
+          empurram o conteúdo pra fora delas. No navegador e no Android dá 0. */}
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-borda bg-painel-fundo/95 px-4 pb-3 backdrop-blur" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}>
         <div>
-          <div className="text-xs text-texto-fraco">Brasa · Entregas</div>
+          <div className="text-xs text-texto-fraco">{empresa} · Entregas</div>
           <div className="font-bold">{boy.nome}</div>
         </div>
         <button onClick={() => setScan(true)} className="rounded-cartao px-3 py-2 text-sm font-bold text-white" style={{ background: LARANJA }}><span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={14} /> Ler cupom</span></button>
@@ -354,7 +357,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
             {gpsErro && <p className="mt-2 text-sm text-rose-400">{gpsErro}</p>}
           </div>
           {avisoGps && (
-            <div role="dialog" aria-modal="true" aria-labelledby="aviso-gps-titulo" className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
+            <div role="dialog" aria-modal="true" aria-labelledby="aviso-gps-titulo" className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
               <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
                 <div id="aviso-gps-titulo" className="mb-2 flex items-center gap-2 text-lg font-bold"><Icone nome="local" tamanho={18} /> Sua localização</div>
                 <p className="text-sm text-texto">
@@ -384,7 +387,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
       )}
 
       {/* barra de abas */}
-      <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-borda bg-painel-fundo text-xs">
+      <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-borda bg-painel-fundo text-xs" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {([["entregas", "entrega", "Entregas"], ["ganhos", "dinheiro", "Ganhos"], ["historico", "relogio", "Histórico"], ["gps", "local", "GPS"]] as [Aba, NomeIcone, string][]).map(([k, i, l]) => (
           <button key={k} onClick={() => setAba(k)} className={`flex flex-col items-center py-2.5 ${aba === k ? "text-white" : "text-texto-fraco"}`} style={aba === k ? { color: LARANJA } : {}}>
             <Icone nome={i} tamanho={21} />
@@ -405,7 +408,7 @@ function ModalEntregue({ p, proc, onFechar, onOk }: { p: EntregaBoy; proc: boole
   const [forma, setForma] = useState(p.pago ? "Já pago" : (p.forma_pagamento && ["Dinheiro", "Cartão", "Pix"].includes(p.forma_pagamento) ? p.forma_pagamento : "Dinheiro"));
   const [valor, setValor] = useState(String(p.total.toFixed(2)).replace(".", ","));
   return (
-    <div className="fixed inset-0 z-20 flex items-end bg-black/70" onClick={onFechar}>
+    <div className="fixed inset-0 z-20 flex items-end bg-black/70" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }} onClick={onFechar}>
       <div className="w-full rounded-t-3xl bg-painel-cartao p-5" onClick={(e) => e.stopPropagation()}>
         <div className="mb-1 text-lg font-bold">Entreguei #{p.numero} · {p.nome}</div>
         <div className="mb-3 text-sm text-texto-suave">Total {brl(p.total)}{p.pago ? " · já estava pago" : ""}</div>
@@ -471,7 +474,7 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
     return () => { vivo = false; if (timer) clearInterval(timer); stream?.getTracks().forEach((t) => t.stop()); };
   }, []);
   return (
-    <div className="fixed inset-0 z-20 flex flex-col bg-black">
+    <div className="fixed inset-0 z-20 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       <div className="flex items-center justify-between p-3 text-white"><span className="font-bold">{lendo ? "Aponte pro QR do cupom" : "Abrindo a câmera…"}</span><button onClick={onFechar} className="rounded-controle bg-superficie-suave px-3 py-1.5">Fechar</button></div>
       <div className="relative flex-1 overflow-hidden">
         <video ref={videoRef} className="h-full w-full object-cover" muted playsInline autoPlay />

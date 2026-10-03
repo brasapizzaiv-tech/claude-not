@@ -36,8 +36,8 @@ export function EntradaEntrega() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-painel-fundo p-6 text-texto">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icons/entregas-192.png" alt="" className="mb-4 h-24 w-24 rounded-cartao" />
-      <h1 className="text-2xl font-bold">Brasa Entregas</h1>
+      <img src="/icons/motelli-entregador-192.png" alt="" className="mb-4 h-24 w-24 rounded-cartao" />
+      <h1 className="text-2xl font-bold">Motelli Entregador</h1>
       <p className="mb-6 mt-1 text-center text-sm text-texto-suave">Cole aqui o link pessoal que a gerência te mandou no WhatsApp. Só precisa uma vez.</p>
       <input
         value={valor}

@@ -12,14 +12,17 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
     title: "Entregas · Brasa",
     robots: { index: false, follow: false },
     manifest: `/entrega/${encodeURIComponent(token)}/manifest.webmanifest`,
-    icons: { icon: "/icons/entregas-192.png", apple: "/icons/entregas-192.png" },
+    icons: { icon: "/icons/motelli-entregador-192.png", apple: "/icons/motelli-entregador-192.png" },
     appleWebApp: { capable: true, title: "Entregas", statusBarStyle: "black-translucent" },
   };
 }
 // App do entregador: escuro sempre, na cor escura da empresa.
 export async function generateViewport(): Promise<Viewport> {
   const { escuro } = await lerMarca();
-  return { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, themeColor: escuro };
+  // viewportFit cover: no app do iPhone a tela vai até embaixo da barra de
+  // status e do risco de início; com isso o CSS enxerga env(safe-area-inset-*)
+  // e o cabeçalho/barra de abas desviam deles (entrega-client.tsx).
+  return { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: "cover", themeColor: escuro };
 }
 export const dynamic = "force-dynamic";
 
