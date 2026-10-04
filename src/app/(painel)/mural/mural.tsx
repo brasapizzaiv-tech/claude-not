@@ -12,6 +12,9 @@ export type FolgaMural = {
   id: number;
   nome: string;
   grupo: string;
+  // O turno que a pessoa pediu: "dia" / "noite", ou "dia inteiro" quando ela
+  // trabalha nos dois e pediu os dois (pedido do Rafael, 03/10/2026).
+  turno: "dia" | "noite" | "dia inteiro";
   gerente: boolean;
   data: string;
   motivo: string | null;
@@ -19,6 +22,10 @@ export type FolgaMural = {
   origem: string;
   criadoEm: string | null;
 };
+
+// Aniversariantes dos próximos dias (colaboradores ativos com data de
+// nascimento). "dias" = quantos dias faltam (0 = hoje).
+export type AniversarioMural = { nome: string; data: string; dias: number };
 
 export type PedidoCompraMural = {
   id: number;
@@ -72,12 +79,14 @@ export function Mural({
   solicitacoes,
   feriados = [],
   eventos = [],
+  aniversarios = [],
   hoje,
 }: {
   folgas: FolgaMural[];
   solicitacoes: PedidoCompraMural[];
   feriados?: Feriado[];
   eventos?: Evento[];
+  aniversarios?: AniversarioMural[];
   hoje: string;
 }) {
   const router = useRouter();
@@ -170,6 +179,25 @@ export function Mural({
         </div>
       )}
 
+      {/* ---------- Aniversários ---------- */}
+      {/* Mesma faixa das datas: próximos 30 dias, o de hoje em destaque.
+          (Pedido do Rafael, 03/10/2026, pra TV do caixa; vale aqui também.) */}
+      {aniversarios.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-cartao bg-painel-cartao px-4 py-3">
+          <p className={ROTULO}>Aniversários</p>
+          {aniversarios.slice(0, 8).map((a) => (
+            <span key={`${a.nome}${a.data}`} className={`flex items-baseline gap-2 text-sm ${a.dias === 0 ? "font-semibold text-texto" : ""}`}>
+              <span className="font-numero font-semibold tracking-apertada text-texto">{a.dias === 0 ? "HOJE" : dataCurta(a.data)}</span>
+              <span className={a.dias === 0 ? "" : "text-texto-suave"}>🎂 {a.nome}</span>
+              <span className="text-xs text-texto-fraco">{a.dias === 0 ? "" : a.dias === 1 ? "amanhã" : `em ${a.dias} dias`}</span>
+            </span>
+          ))}
+          <Link href="/colaboradores" className="ml-auto text-xs text-texto-suave hover:underline">
+            cadastro →
+          </Link>
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-12">
         {/* ---------- 1. Esperando você ---------- */}
         {/* O cartão invertido, como na tela inicial: uma chamada por tela, e
@@ -198,7 +226,7 @@ export function Mural({
                     {f.nome} <span className="font-normal opacity-70">quer folga</span>
                   </p>
                   <p className="text-xs opacity-80">
-                    {DIAS[new Date(`${f.data}T12:00:00`).getDay()]}, {dataCurta(f.data)}
+                    {DIAS[new Date(`${f.data}T12:00:00`).getDay()]}, {dataCurta(f.data)} · {f.turno}
                     {f.criadoEm ? ` · pediu ${espera(f.criadoEm, hoje)}` : ""}
                   </p>
                   {f.motivo && <p className="mt-0.5 text-xs opacity-70">{f.motivo}</p>}
@@ -269,6 +297,7 @@ export function Mural({
                           >
                             <span style={g ? { color: g.cor } : undefined}>●</span>{" "}
                             {f.nome.split(" ")[0]}
+                            <span className="text-texto-fraco"> {f.turno === "dia inteiro" ? "dia todo" : f.turno}</span>
                             {f.gerente ? " (ger.)" : ""}
                           </span>
                         );

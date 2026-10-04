@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
+import type { AniversarioMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
+import { TURNO } from "@/lib/folgas";
 import type { Feriado } from "@/lib/feriados";
 import type { Evento } from "@/lib/eventos";
 
@@ -73,6 +74,11 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     .neq("status", "cancelado")
     .gte("data", hoje)
     .lte("data", daquiA(hoje, 120));
+  let qAniv = supabase
+    .from("colaboradores")
+    .select("nome, nascimento")
+    .eq("ativo", true)
+    .not("nascimento", "is", null);
   let qFeriados = supabase
     .from("feriados")
     .select("id, data, data_fim, nome, situacao, detalhe")
@@ -84,21 +90,31 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     qCompras = qCompras.eq("empresa_id", empresaId);
     qFeriados = qFeriados.eq("empresa_id", empresaId);
     qEventos = qEventos.eq("empresa_id", empresaId);
+    qAniv = qAniv.eq("empresa_id", empresaId);
   }
 
-  const [{ data: pedidos }, { data: equipe }, { data: compras }, { data: datas }, { data: marcados }] =
+  const [{ data: pedidos }, { data: equipe }, { data: compras }, { data: datas }, { data: marcados }, { data: nascidos }] =
     await Promise.all([
       qFolgas.order("data"),
       qEquipe,
       qCompras.order("criado_em", { ascending: false }).limit(40),
       qFeriados.order("data").limit(6),
       qEventos.order("data").limit(6),
+      qAniv,
     ]);
 
-  const quem = new Map<number, { nome: string; grupo: string; gerente: boolean }>();
-  for (const f of (equipe as { id: number; nome: string; grupo: string; gerente: boolean }[]) ?? []) {
-    quem.set(f.id, { nome: f.nome, grupo: f.grupo, gerente: !!f.gerente });
+  const quem = new Map<number, { nome: string; grupo: string; grupo2: string | null; gerente: boolean }>();
+  for (const f of (equipe as { id: number; nome: string; grupo: string; grupo2: string | null; gerente: boolean }[]) ?? []) {
+    quem.set(f.id, { nome: f.nome, grupo: f.grupo, grupo2: f.grupo2 ?? null, gerente: !!f.gerente });
   }
+  // Turno pedido: grupo_alvo diz o turno; sem ele, quem trabalha nos dois
+  // turnos pediu o dia inteiro, quem trabalha num só pediu o turno dele.
+  const turnoDe = (alvo: string | null, f?: { grupo: string; grupo2: string | null }): FolgaMural["turno"] => {
+    const t = (g: string | null | undefined) => (g && TURNO[g] ? (TURNO[g].toLowerCase() as "dia" | "noite") : null);
+    if (alvo) return t(alvo) ?? "dia inteiro";
+    if (f?.grupo2) return "dia inteiro";
+    return t(f?.grupo) ?? "dia inteiro";
+  };
 
   const folgas: FolgaMural[] = ((pedidos as Record<string, unknown>[]) ?? []).map((p) => {
     const f = quem.get(Number(p.funcionario_id));
@@ -106,6 +122,7 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
       id: Number(p.id),
       nome: f?.nome ?? "—",
       grupo: (p.grupo_alvo as string | null) ?? f?.grupo ?? "",
+      turno: turnoDe((p.grupo_alvo as string | null) ?? null, f),
       gerente: f?.gerente ?? false,
       data: String(p.data).slice(0, 10),
       motivo: (p.motivo as string | null) ?? null,
@@ -151,5 +168,19 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     status: String(e.status ?? "marcado") as Evento["status"],
   }));
 
-  return { folgas, solicitacoes, feriados, eventos, hoje };
+  // Aniversários dos próximos 30 dias (e o de hoje), pela data deste ano — ou
+  // do ano que vem, se já passou. Nome curto (dois primeiros nomes).
+  const ano = Number(hoje.slice(0, 4));
+  const aniversarios: AniversarioMural[] = ((nascidos as { nome: string; nascimento: string }[]) ?? [])
+    .map((c) => {
+      const md = String(c.nascimento).slice(5, 10);
+      let data = `${ano}-${md}`;
+      if (data < hoje) data = `${ano + 1}-${md}`;
+      const dias = Math.round((Date.parse(`${data}T12:00:00Z`) - Date.parse(`${hoje}T12:00:00Z`)) / 86400000);
+      return { nome: c.nome.trim().split(/s+/).slice(0, 2).join(" "), data, dias };
+    })
+    .filter((a) => a.dias <= 30)
+    .sort((a, b) => a.dias - b.dias);
+
+  return { folgas, solicitacoes, feriados, eventos, aniversarios, hoje };
 }

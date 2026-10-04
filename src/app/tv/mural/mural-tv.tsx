@@ -1,7 +1,7 @@
 import { DIAS, GRUPOS } from "@/lib/folgas";
 import type { Feriado } from "@/lib/feriados";
 import { agendaDaTv, type Evento } from "@/lib/eventos";
-import type { FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
+import type { AniversarioMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 
 // O MURAL PARA O NAVEGADOR DE UMA TV
 //
@@ -55,6 +55,7 @@ export function MuralTv({
   solicitacoes,
   feriados = [],
   eventos = [],
+  aniversarios = [],
   hoje,
   ajuste = 1,
 }: {
@@ -62,6 +63,7 @@ export function MuralTv({
   solicitacoes: PedidoCompraMural[];
   feriados?: Feriado[];
   eventos?: Evento[];
+  aniversarios?: AniversarioMural[];
   hoje: string;
   /** Empurrãozinho pra letra: 1 é o tamanho calculado, 1.2 aumenta 20%. */
   ajuste?: number;
@@ -176,7 +178,7 @@ export function MuralTv({
                 <div key={`f${f.id}`} style={caixaDoPedido}>
                   <div style={{ fontSize: t(1.5), fontWeight: 700 }}>{f.nome} quer folga</div>
                   <div style={{ fontSize: t(1.15), opacity: 0.75 }}>
-                    {DIAS[new Date(`${f.data}T12:00:00`).getDay()]}, {diaCurto(f.data)}
+                    {DIAS[new Date(`${f.data}T12:00:00`).getDay()]}, {diaCurto(f.data)} · {f.turno}
                     {f.criadoEm ? ` · pediu ${espera(f.criadoEm, hoje)}` : ""}
                   </div>
                 </div>
@@ -239,6 +241,7 @@ export function MuralTv({
             ))}
           </div>
         )}
+
         </div>
 
         {/* ---------- 3. Folgas que vêm aí ---------- */}
@@ -283,6 +286,7 @@ export function MuralTv({
                       <span key={f.id} style={{ whiteSpace: "nowrap" }}>
                         {i > 0 ? <span style={{ color: BORDA }}> · </span> : null}
                         <span style={{ color: corDoGrupo(f.grupo) }}>●</span> {f.nome.split(" ")[0]}
+                        <span style={{ color: FRACO, fontSize: t(1.05) }}> {f.turno === "dia inteiro" ? "dia todo" : f.turno}</span>
                         {f.gerente ? " (ger.)" : ""}
                       </span>
                     ))}
@@ -309,6 +313,25 @@ export function MuralTv({
               e mais {dias.length - mostrados.length} dia(s) com folga marcada
             </div>
           ) : null}
+
+          {/* ---------- Aniversários ---------- */}
+          {/* Pedido do Rafael (03/10/2026): a TV do caixa lembra os aniversários
+              da equipe. Próximos 30 dias, o de hoje em destaque. Fica no pé do
+              cartão das folgas, onde sobra espaço (na coluna da esquerda
+              apertava as "Próximas datas"). Sem `gap`: a TV não entende. */}
+          {aniversarios.length > 0 && (
+            <div style={{ marginTop: "1.6vw", paddingTop: "1vw", borderTop: `1px solid ${BORDA}` }}>
+              <div style={{ fontSize: t(1.2), color: FRACO, marginBottom: "0.5vw" }}>Aniversários</div>
+              <div style={{ fontSize: t(1.35), lineHeight: 1.7 }}>
+                {aniversarios.slice(0, 8).map((an) => (
+                  <span key={`${an.nome}${an.data}`} style={{ whiteSpace: "nowrap", marginRight: "1.6vw", color: an.dias === 0 ? ATENCAO : TEXTO, fontWeight: an.dias === 0 ? 700 : 400 }}>
+                    🎂 <span style={{ fontWeight: 700 }}>{an.dias === 0 ? "HOJE" : diaCurto(an.data)}</span> {an.nome}
+                    {an.dias === 1 ? <span style={{ color: FRACO, fontSize: t(1.05) }}> amanhã</span> : null}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
