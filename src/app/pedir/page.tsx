@@ -38,13 +38,13 @@ export default async function PedirPage() {
     admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app").eq("disponivel", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_item_grupos").select("item_id").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem").eq("empresa_id", empresaId),
-    admin.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao, novo").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco").eq("empresa_id", empresaId),
     admin.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
-    admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso, config").eq("empresa_id", empresaId).maybeSingle(),
+    admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso, config, taxa_base").eq("empresa_id", empresaId).maybeSingle(),
     admin.from("pdv_comanda_itens").select("item_id").not("item_id", "is", null).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1000).eq("empresa_id", empresaId),
   ]);
 
@@ -99,8 +99,11 @@ export default async function PedirPage() {
   // "Os mais vendidos": itens do cardápio mais lançados nos últimos 60 dias.
   const cont = new Map<string, number>();
   for (const v of (vendidos as { item_id: string }[]) ?? []) cont.set(v.item_id, (cont.get(v.item_id) ?? 0) + 1);
+  // Bebida sai muito no salão, mas na vitrine do delivery o lugar é da comida.
+  const ehBebida = (cat: string | null) => /bebid|refri|suco|cervej|[aá]gua|drink|vinho|chop|energ|cafe|café|ch[aá]/i.test(cat ?? "");
+  const ehBalcao = (cat: string | null) => /doce|bala|chiclete|gulosei|sobremesa/i.test(cat ?? "");
   const maisVendidos = itens
-    .filter((i) => cont.has(i.id))
+    .filter((i) => cont.has(i.id) && !ehBebida(i.categoria) && !ehBalcao(i.categoria) && Number(i.preco) >= 10)
     .sort((a, b) => (cont.get(b.id) ?? 0) - (cont.get(a.id) ?? 0))
     .slice(0, 6)
     .map((i) => i.id);
@@ -116,7 +119,7 @@ export default async function PedirPage() {
       comComplemento={[...comComplemento]}
       pizza={{
         tamanhos: ((tamanhos as { id: string; nome: string; max_sabores: number; fatias: number | null }[]) ?? []),
-        sabores: ((sabores as { id: string; nome: string; foto_url: string | null; descricao: string | null }[]) ?? []),
+        sabores: ((sabores as { id: string; nome: string; foto_url: string | null; descricao: string | null; novo: boolean | null }[]) ?? []).map((s) => ({ ...s, novo: !!s.novo })),
         saborPrecos: ((saborPrecos as { sabor_id: string; tamanho_id: string; preco: number }[]) ?? []).map((p) => ({ ...p, preco: Number(p.preco) })),
         bordas: ((bordas as { id: string; nome: string }[]) ?? []),
         bordaPrecos: ((bordaPrecos as { borda_id: string; tamanho_id: string; preco: number }[]) ?? []).map((p) => ({ ...p, preco: Number(p.preco) })),
@@ -128,6 +131,7 @@ export default async function PedirPage() {
       aberto={horario.livre}
       horario={horario}
       tempoPreparo={Number((cfg as { tempo_preparo_min?: number } | null)?.tempo_preparo_min ?? 40)}
+      taxaBase={Number((cfg as { taxa_base?: number } | null)?.taxa_base ?? 0)}
       aviso={((cfg as { aviso?: string | null } | null)?.aviso || "").trim() || null}
       maisVendidos={maisVendidos}
       pixAtivo={pixConfigurado()}

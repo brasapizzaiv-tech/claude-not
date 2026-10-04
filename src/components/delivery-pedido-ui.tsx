@@ -9,7 +9,7 @@ import type { LinhaPedido } from "@/lib/delivery-core";
 
 export type Item = { id: string; nome: string; categoria: string; preco: number; preco_antigo?: number | null; foto_url?: string | null; descricao?: string | null };
 export type Tam = { id: string; nome: string; max_sabores: number; fatias?: number | null };
-export type Sabor = { id: string; nome: string; foto_url?: string | null; descricao?: string | null };
+export type Sabor = { id: string; nome: string; foto_url?: string | null; descricao?: string | null; novo?: boolean };
 export type Borda = { id: string; nome: string };
 export type Grupo = { id: string; item_id: string; nome: string; min: number; max: number; permite_repetir: boolean };
 export type Opcao = { id: string; grupo_id: string; nome: string; preco: number };
@@ -25,15 +25,17 @@ export const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency",
 let seq = 0;
 export const novoUid = () => `l${++seq}`;
 
-export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, comObs }: {
+export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial, comObs }: {
   pizza: PizzaData;
   onClose: () => void;
   onAdd: (l: CartLine) => void;
   tamanhoInicial?: string;
+  /** Abre já com um sabor marcado (vitrine "Novidades" do app do cliente). */
+  saborInicial?: string;
   comObs?: boolean;
 }) {
   const [tamId, setTamId] = useState(tamanhoInicial ?? pizza.tamanhos[0]?.id ?? "");
-  const [sabIds, setSabIds] = useState<string[]>([]);
+  const [sabIds, setSabIds] = useState<string[]>(saborInicial ? [saborInicial] : []);
   const [bordaId, setBordaId] = useState<string>("");
   const [obs, setObs] = useState("");
   const tam = pizza.tamanhos.find((t) => t.id === tamId);
@@ -84,7 +86,10 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, comObs }: {
                   <img src={s.foto_url} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium leading-tight">{s.nome}</span>
+                  <span className="block text-sm font-medium leading-tight">
+                    {s.nome}
+                    {s.novo && <span className="ml-1.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-emerald-600">novo</span>}
+                  </span>
                   {s.descricao && <span className="block text-xs leading-tight text-zinc-500">{s.descricao}</span>}
                 </span>
                 <span className="shrink-0 text-xs text-zinc-400">{p ? brl(p) : ""}</span>

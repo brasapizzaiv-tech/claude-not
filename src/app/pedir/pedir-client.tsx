@@ -49,7 +49,7 @@ export type HorarioPedir = {
 };
 
 export function PedirClient({
-  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo, horario,
+  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo, horario, taxaBase = 0,
 }: {
   itens: Item[];
   categorias: string[];
@@ -58,6 +58,7 @@ export function PedirClient({
   complementos: { grupos: Grupo[]; opcoes: Opcao[] };
   aberto: boolean;
   tempoPreparo: number;
+  taxaBase?: number;
   aviso: string | null;
   maisVendidos: string[];
   pixAtivo?: boolean;
@@ -65,7 +66,8 @@ export function PedirClient({
 }) {
   const [proc, start] = useTransition();
   const [fase, setFase] = useState<"menu" | "checkout" | "historico">("menu");
-  const [aba, setAba] = useState(categorias[0] ?? "");
+  // Abre na aba das pizzas quando existem (é uma pizzaria); senão na 1ª categoria.
+  const [aba, setAba] = useState(pizza.tamanhos.length > 0 ? "__pizzas__" : (categorias[0] ?? ""));
   const [busca, setBusca] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
 
@@ -96,6 +98,7 @@ export function PedirClient({
   const FORMAS = pixAtivo ? [{ id: "Pix online", label: "Pix agora", icone: "rapido" as NomeIcone }, ...FORMAS_BASE] : FORMAS_BASE;
 
   const [pzTamanho, setPzTamanho] = useState<string | null>(null);
+  const [pzSabor, setPzSabor] = useState<string | null>(null);
   const [comboItem, setComboItem] = useState<Item | null>(null);
 
   // histórico
@@ -468,8 +471,14 @@ export function PedirClient({
 
   // fase "menu"
   const destaque = maisVendidos.map((id) => itemDe.get(id)).filter(Boolean) as Item[];
+  const novidades = pizza.sabores.filter((s) => s.novo);
+  const linhaInfo = [
+    `entrega em ~${tempoPreparo} min`,
+    taxaBase > 0 ? `taxa a partir de ${brl(taxaBase)}` : "retirada sem taxa",
+    aberto && horario.fechaEm ? `aberto até ${horario.fechaEm}` : null,
+  ].filter(Boolean).join(" · ");
   return (
-    <Casca onMeusPedidos={() => setFase("historico")}>
+    <Casca onMeusPedidos={() => setFase("historico")} linha={linhaInfo}>
       {!aberto && (
         <div className={`px-4 py-2 text-center text-sm font-bold text-white ${horario.podeAgendar ? "bg-sky-700" : "bg-rose-600"}`}>
           {horario.podeAgendar
@@ -496,6 +505,31 @@ export function PedirClient({
         )}
       </div>
 
+      {/* Novidades: os sabores marcados como "novo" no cardápio, com os
+          ingredientes — é o que uma pizzaria tem pra mostrar na vitrine.
+          Toca e abre o montador já com o sabor marcado. */}
+      {!busca && novidades.length > 0 && (
+        <div className="pt-3">
+          <h2 className="flex items-center gap-1.5 px-3 font-bold"><Icone nome="pizza" tamanho={16} className="text-orange-500" /> Novidades</h2>
+          <div className="flex gap-2 overflow-x-auto p-3">
+            {novidades.map((s) => {
+              const menor = Math.min(...pizza.saborPrecos.filter((p) => p.sabor_id === s.id && pizza.tamanhos.some((t) => t.id === p.tamanho_id && (t.max_sabores ?? 1) >= 1)).map((p) => Number(p.preco)).filter((v) => v > 0));
+              const tamGrande = [...pizza.tamanhos].sort((a, b) => (b.max_sabores ?? 1) - (a.max_sabores ?? 1))[0];
+              return (
+                <button key={s.id} onClick={() => { setPzSabor(s.id); setPzTamanho(tamGrande?.id ?? pizza.tamanhos[0]?.id ?? null); }} className="w-48 shrink-0 overflow-hidden rounded-cartao border border-borda text-left">
+                  {s.foto_url ? <FotoItem url={s.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "color-mix(in srgb, var(--marca-primaria) 10%, transparent)" }}><Icone nome="pizza" tamanho={30} className="text-orange-500/70" /></div>}
+                  <div className="p-2.5">
+                    <div className="flex items-center gap-1.5 font-semibold leading-tight"><span className="truncate">{s.nome}</span><span className="shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-500">novo</span></div>
+                    {s.descricao && <div className="mt-1 line-clamp-2 text-xs leading-snug text-texto-suave">{s.descricao}</div>}
+                    {Number.isFinite(menor) && <div className="mt-1.5 text-sm font-bold" style={{ color: LARANJA }}>a partir de {brl(menor)}</div>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Os mais vendidos */}
       {!busca && destaque.length > 0 && aba !== "__pizzas__" && (
         <div className="pt-3">
@@ -503,7 +537,7 @@ export function PedirClient({
           <div className="flex gap-2 overflow-x-auto p-3">
             {destaque.map((i) => (
               <button key={i.id} onClick={() => clicarItem(i)} className="w-40 shrink-0 overflow-hidden rounded-cartao border border-borda text-left">
-                {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "color-mix(in srgb, var(--marca-primaria) 10%, transparent)" }}><Icone nome="salao" tamanho={28} className="text-orange-500/70" /></div>}
+                {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "color-mix(in srgb, var(--marca-primaria) 10%, transparent)" }}><Icone nome={iconeDaCategoria(i.categoria)} tamanho={30} className="text-orange-500/70" /></div>}
                 <div className="p-2">
                   <div className="truncate text-sm font-medium">{i.nome}</div>
                   <div className="text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
@@ -558,13 +592,24 @@ export function PedirClient({
         </div>
       )}
 
-      {pzTamanho && <PizzaModal pizza={pizza} tamanhoInicial={pzTamanho} comObs onClose={() => setPzTamanho(null)} onAdd={(l) => { addLinha(l); setPzTamanho(null); }} />}
+      {pzTamanho && <PizzaModal pizza={pizza} tamanhoInicial={pzTamanho} saborInicial={pzSabor ?? undefined} comObs onClose={() => { setPzTamanho(null); setPzSabor(null); }} onAdd={(l) => { addLinha(l); setPzTamanho(null); setPzSabor(null); }} />}
       {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} comObs onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
     </Casca>
   );
 }
 
-function Casca({ children, onMeusPedidos }: { children: React.ReactNode; onMeusPedidos?: () => void }) {
+// Ícone de reserva por categoria, pra quando o item ainda não tem foto: um
+// garfo genérico em tudo fazia o cardápio parecer vazio.
+function iconeDaCategoria(cat: string | null | undefined): "pizza" | "bebida" | "bolo" | "salada" | "salao" {
+  const c = (cat ?? "").toLowerCase();
+  if (/pizza/.test(c)) return "pizza";
+  if (/bebid|refri|suco|cervej|[aá]gua|drink|vinho|chop|energ|caf[eé]/.test(c)) return "bebida";
+  if (/doce|sobremesa|bolo|torta|gelad|sorvete/.test(c)) return "bolo";
+  if (/salad|vegan|legume|verdura/.test(c)) return "salada";
+  return "salao";
+}
+
+function Casca({ children, onMeusPedidos, linha }: { children: React.ReactNode; onMeusPedidos?: () => void; linha?: string }) {
   return (
     <div className="min-h-screen bg-painel-cartao text-texto">
       <header className="px-4 py-3 text-white" style={{ background: ESCURO }}>
@@ -572,7 +617,7 @@ function Casca({ children, onMeusPedidos }: { children: React.ReactNode; onMeusP
           <Icone nome="pizza" tamanho={22} className="text-orange-500" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-lg font-bold" style={{ color: LARANJA }}>Brasa Pizzaria e Restaurante</div>
-            <div className="text-xs text-zinc-300">Peça online · entrega ou retirada</div>
+            <div className="text-xs text-zinc-300">{linha ?? "Peça online · entrega ou retirada"}</div>
           </div>
           {onMeusPedidos && (
             <button onClick={onMeusPedidos} className="shrink-0 rounded-cartao border border-zinc-600 px-3 py-1.5 text-xs font-semibold text-zinc-200"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lista" tamanho={13} /> Meus pedidos</span></button>
