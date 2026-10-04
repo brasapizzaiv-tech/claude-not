@@ -191,6 +191,20 @@ export async function toggleDisponivelItem(formData: FormData) {
   revalidatePath("/salao/cardapio");
 }
 
+// Liga/desliga um CANAL do item direto na listagem do cardápio (pedido do
+// Rafael, 03/10/2026: "sem ter que entrar no Editar"). "app" é a coluna
+// `delivery` (nome antigo da flag do app do cliente).
+export async function toggleCanalItem(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const canal = formData.get("canal") as string;
+  const ligado = formData.get("ligado") === "1";
+  const coluna = canal === "app" ? "delivery" : canal === "garcom" ? "canal_garcom" : canal === "pdv" ? "canal_pdv" : null;
+  if (!id || !coluna) return;
+  await supabase.from("pdv_itens").update({ [coluna]: ligado }).eq("id", id);
+  revalidatePath("/salao/cardapio");
+}
+
 // Liga/desliga uma opção de complemento (adicional)
 export async function toggleOpcaoComplemento(formData: FormData) {
   const supabase = await createClient();

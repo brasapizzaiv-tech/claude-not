@@ -12,6 +12,7 @@ import {
   excluirItem,
   toggleItem,
   toggleDisponivelItem,
+  toggleCanalItem,
   salvarHorarios,
   salvarCanaisCategoria,
   adicionarCategoria,
@@ -551,7 +552,6 @@ function ItensTabela({
         <table className="w-full text-sm">
           <tbody className="divide-y divide-borda">
             {itens.map((i) => {
-              const canaisOff = [!i.delivery && "APP", !i.canal_garcom && "Garçom", !i.canal_pdv && "PDV"].filter(Boolean) as string[];
               const temHorario = resumoHorarios(i.horarios);
               return (
                 <tr key={i.id} className={`bg-painel-cartao ${i.ativo ? "" : "opacity-50"}`}>
@@ -559,13 +559,33 @@ function ItensTabela({
                   <td className="px-2 py-2 font-medium text-texto">
                     {i.nome}
                     {!i.ativo && <span className="ml-2 text-mini text-red-500">oculto</span>}
-                    {canaisOff.length > 0 && <span className="ml-2 text-mini text-texto-fraco">sem: {canaisOff.join(", ")}</span>}
                     {temHorario && <span className="ml-2 inline-flex items-center gap-1 text-mini text-sky-500"><Icone nome="relogio" tamanho={11} /> {temHorario}</span>}
                   </td>
                   <td className="px-2 py-2 text-right text-texto-suave">
                     {i.promo_preco != null && Number(i.promo_preco) > 0 ? (
                       <><span className="mr-1 text-xs text-texto-fraco line-through">{moeda(Number(i.preco))}</span><span className="font-semibold text-orange-600">{moeda(Number(i.promo_preco))}</span></>
                     ) : moeda(Number(i.preco))}
+                  </td>
+                  <td className="px-2 py-2 text-right whitespace-nowrap">
+                    {/* Canais direto na lista: verde = aparece naquele canal; cinza
+                        riscado = não aparece. Um clique inverte. */}
+                    {([["app", "App", i.delivery], ["garcom", "Garçom", i.canal_garcom], ["pdv", "PDV", i.canal_pdv]] as [string, string, boolean][]).map(([canal, rotulo, ligado]) => (
+                      <form key={canal} action={toggleCanalItem} className="inline">
+                        <input type="hidden" name="id" value={i.id} />
+                        <input type="hidden" name="canal" value={canal} />
+                        <input type="hidden" name="ligado" value={ligado ? "0" : "1"} />
+                        <Enviar
+                          className={`mr-1 rounded-controle px-2 py-0.5 text-mini font-semibold ${
+                            ligado
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                              : "bg-superficie-suave text-texto-fraco line-through"
+                          }`}
+                          title={`${ligado ? "Aparece" : "Não aparece"} no canal ${rotulo} — clique pra ${ligado ? "tirar" : "colocar"}`}
+                        >
+                          {rotulo}
+                        </Enviar>
+                      </form>
+                    ))}
                   </td>
                   <td className="px-2 py-2 text-right">
                     <form action={toggleDisponivelItem} className="inline">
