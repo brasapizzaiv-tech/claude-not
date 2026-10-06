@@ -104,8 +104,10 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
     if (!canal) return;
     const supabase = createClient();
     let t: ReturnType<typeof setTimeout> | null = null;
+    // Canal PRIVADO: aviso vindo do banco só chega assim (migration 0209 libera
+    // a leitura do tópico pra qualquer um — o aviso não carrega dado).
     const ch = supabase
-      .channel(canal)
+      .channel(canal, { config: { private: true } })
       .on("broadcast", { event: "mudou" }, () => {
         // Vários avisos no mesmo segundo (pedido com 3 pizzas) viram uma busca.
         if (t) clearTimeout(t);
