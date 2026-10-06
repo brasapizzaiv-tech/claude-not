@@ -8,6 +8,7 @@ import { BotaoConciliar } from "./conciliar";
 import { ManifestarNota } from "./manifestar";
 import { ItemProduto } from "./item-produto";
 import { ItemFator } from "./item-fator";
+import { EntradaNota } from "./entrada-nota";
 import { LancamentoNota } from "./lancamento";
 import { ParcelasEditor } from "./parcelas-editor";
 
@@ -144,6 +145,12 @@ export default async function NotaDetalhePage({
         {nota.vencimento ? ` · vence ${dataBR(nota.vencimento)}` : ""}
         {lancadaEm ? ` · lançada ${dataBR(lancadaEm)}` : ""}
       </p>
+      {(nota as { situacao?: string }).situacao !== "cancelada" && (
+        <EntradaNota
+          notaId={nota.id}
+          dia={nota.entrada_em ? new Date(nota.entrada_em).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) : null}
+        />
+      )}
       {!nota.fornecedor_id && (
         <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
           Fornecedor (CNPJ {nota.emit_cnpj}) não está no seu cadastro — cadastre-o

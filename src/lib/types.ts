@@ -164,6 +164,7 @@ export type NotaFiscal = {
   status: "importada" | "conciliada";
   tipo: "mercadoria" | "servico";
   dre_categoria_id: string | null;
+  entrada_em: string | null; // quando a mercadoria deu entrada (Lançar grava; editável)
   criado_em: string;
 };
 

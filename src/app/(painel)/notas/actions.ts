@@ -411,6 +411,14 @@ export async function lancarNota(
     .from("notas_fiscais")
     .update({ situacao: "lancada" })
     .eq("id", notaId);
+  // Lançar é "dar entrada": a contagem soma o que chegou por esta data (não
+  // pela emissão — a Deale emite numa semana e entrega na outra). Se alguém já
+  // marcou a entrada antes, na tela da nota, fica a data marcada.
+  await supabase
+    .from("notas_fiscais")
+    .update({ entrada_em: new Date().toISOString() })
+    .eq("id", notaId)
+    .is("entrada_em", null);
 
   // Valor do boleto informado (custas/juros/desconto) volta a valer depois de
   // lançar — a diferença entra como lançamento à parte, sem sujar o CMV.
@@ -564,6 +572,21 @@ export async function criarEVincularFornecedor(
   revalidatePath("/notas");
   revalidatePath("/fornecedores");
   return { ok: true, fornecedorId: data.id };
+}
+
+// Dia em que a mercadoria da nota deu entrada (a contagem soma "o que chegou"
+// por esta data). Guarda ao meio-dia de Brasília: entrou "no dia", sem hora.
+export async function definirEntradaNota(notaId: string, dia: string) {
+  await exigirAcesso("/notas");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return { ok: false, erro: "Data inválida." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("notas_fiscais")
+    .update({ entrada_em: `${dia}T12:00:00-03:00` })
+    .eq("id", notaId);
+  if (error) return { ok: false, erro: error.message };
+  revalidatePath(`/notas/${notaId}`);
+  return { ok: true };
 }
 
 // Vincula um item da nota a um produto do sistema (para o CMV detalhado).

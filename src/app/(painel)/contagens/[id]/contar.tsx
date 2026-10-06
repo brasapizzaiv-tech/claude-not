@@ -417,7 +417,7 @@ export function ContarClient({
               <Icone nome="alerta" tamanho={14} className="mr-1.5" /> {avisoSusp.nomes.length} {avisoSusp.nomes.length === 1 ? "item" : "itens"} com número maior do que podia ter
             </h2>
             <p className="mt-1 text-sm text-texto-suave">
-              Na última contagem tinha menos, e o que chegou depois não fecha com o número digitado. Pode ser erro de digitação ou entrada que não foi conferida no sistema. Conte de novo antes de seguir.
+              Na última contagem tinha menos, e o que deu entrada depois não fecha com o número digitado. Pode ser erro de digitação, ou mercadoria que chegou e cuja nota ainda não foi lançada. Conte de novo antes de seguir.
             </p>
             <div className="mt-3 max-h-56 overflow-y-auto rounded-cartao border border-borda p-2 text-sm">
               {avisoSusp.nomes.map((n) => (
