@@ -6,8 +6,9 @@
 // botão de "auto preencher o que falta", cédulas (Shift soma), observação e,
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { tefConfirmar, tefDisponivel, tefVenda, tipoTefDaForma, type TefDados, type TefStatus } from "@/lib/tef-client";
-import { Icone, type NomeIcone } from "@/components/icone";
+import { tefConfirmar, tefDisponivel, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { atalhoDoTipo, ehCartaoTipo, iconeDoTipo, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
+import { Icone } from "@/components/icone";
 
 export type Pagamento = {
   uid: string;
@@ -30,28 +31,23 @@ const cent = (n: number) => Math.round(n * 100) / 100;
 // do React não deixa chamar Date.now/Math.random dentro do render).
 const novoUid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-// Tecla de atalho por forma (a letra é mostrada no botão).
-export function atalhoDaForma(forma: string): string {
-  const f = forma.toLowerCase();
-  if (f.includes("dinheiro")) return "A";
-  if (f.includes("pix")) return "P";
-  if (f.includes("créd") || f.includes("cred")) return "C";
-  if (f.includes("déb") || f.includes("deb")) return "B";
-  if (f.includes("vale") || f.includes("refei")) return "R";
-  if (f.includes("saldo") || f.includes("fiado")) return "F";
-  // "E" de equipe: a primeira letra seria "C" e bateria com Cartão de crédito.
-  if (f.includes("equipe") || f.includes("funcion")) return "E";
-  return forma.trim().charAt(0).toUpperCase();
+// Comportamento de cada forma vem do TIPO (cadastro em /formas-pagamento);
+// forma antiga ou fixa cai na regra pelo nome.
+function testesDeForma(formas: FormaOpcao[]) {
+  const tipo = (f: string | null | undefined): TipoForma => tipoDe(f, formas);
+  return {
+    tipo,
+    dinheiro: (f: string) => tipo(f) === "dinheiro",
+    cartao: (f: string) => ehCartaoTipo(tipo(f)),
+    pix: (f: string) => tipo(f) === "pix",
+    fiado: (f: string) => tipo(f) === "saldo",
+    equipe: (f: string) => tipo(f) === "equipe",
+    tef: (f: string) => tefDoTipo(tipo(f)),
+    icone: (f: string) => iconeDoTipo(tipo(f)),
+    // Tecla de atalho (a letra é mostrada no botão).
+    atalho: (f: string) => atalhoDoTipo(tipo(f)) ?? f.trim().charAt(0).toUpperCase(),
+  };
 }
-const ehCartao = (f: string) => /cart|créd|cred|déb|deb/i.test(f);
-const ehDinheiro = (f: string) => /dinheiro/i.test(f);
-const ehFiado = (f: string) => /saldo cliente|fiado/i.test(f);
-// Consumo de funcionário: entra em Compras internas (o "fiado" da equipe).
-export const ehEquipe = (f: string) => /compra da equipe|funcion/i.test(f);
-const ehPix = (f: string) => /pix/i.test(f);
-
-// Desenho de cada forma de pagamento, pela tecla de atalho.
-const ICONE: Record<string, NomeIcone> = { A: "dinheiro", P: "rapido", C: "cartao", B: "cartao", R: "salao", F: "cupom" };
 const CEDULAS = [2, 5, 10, 20, 50, 100];
 const BANDEIRAS: { tecla: string; nome: string }[] = [
   { tecla: "V", nome: "Visa" },
@@ -73,7 +69,7 @@ export function PainelPagamentos({
   qrPix,
   colaboradores = [],
 }: {
-  formas: string[];
+  formas: FormaOpcao[];
   total: number;
   pagos: Pagamento[];
   onAdicionar: (p: Pagamento) => void;
@@ -86,6 +82,7 @@ export function PainelPagamentos({
   qrPix?: (valor: number, aoPagar: () => void) => React.ReactNode;
   colaboradores?: ColabMini[];
 }) {
+  const T = useMemo(() => testesDeForma(formas), [formas]);
   const [forma, setForma] = useState<string | null>(null); // forma sendo lançada
   const [valor, setValor] = useState("");
   const [bandeira, setBandeira] = useState("");
@@ -138,7 +135,7 @@ export function PainelPagamentos({
         if (e.key === "Escape") { e.preventDefault(); fechar(); }
         // Bandeira por tecla, mas só com o foco no campo do valor (senão a letra
         // sumiria de dentro da observação).
-        if (ehCartao(forma) && campoRef.current && document.activeElement === campoRef.current) {
+        if (T.cartao(forma) && campoRef.current && document.activeElement === campoRef.current) {
           const b = BANDEIRAS.find((x) => x.tecla === e.key.toUpperCase());
           if (b) { e.preventDefault(); setBandeira(b.nome); setAviso(null); }
         }
@@ -146,7 +143,7 @@ export function PainelPagamentos({
       }
       if (digitando || e.ctrlKey || e.altKey || e.metaKey) return;
       const letra = e.key.toUpperCase();
-      const f = formas.find((x) => atalhoDaForma(x) === letra);
+      const f = formas.find((x) => T.atalho(x.nome) === letra)?.nome;
       if (f) { e.preventDefault(); abrir(f); }
     }
     window.addEventListener("keydown", onKey);
@@ -158,13 +155,13 @@ export function PainelPagamentos({
   const entregue = num(valor);
   // Nunca lança mais do que falta; no dinheiro a diferença vira troco.
   const aplica = cent(Math.min(entregue, falta));
-  const troco = forma && ehDinheiro(forma) ? Math.max(0, cent(entregue - falta)) : 0;
+  const troco = forma && T.dinheiro(forma) ? Math.max(0, cent(entregue - falta)) : 0;
 
   const fiadoEstoura = useMemo(() => {
-    if (!forma || !ehFiado(forma) || !fiado || fiado.limite == null) return null;
+    if (!forma || !T.fiado(forma) || !fiado || fiado.limite == null) return null;
     const novo = cent(fiado.saldo + aplica);
     return novo > fiado.limite + 0.005 ? { novo, limite: fiado.limite, saldo: fiado.saldo } : null;
-  }, [forma, fiado, aplica]);
+  }, [forma, fiado, aplica, T]);
 
   // Agente TEF neste PC? (pinpad integrado). Procura ao abrir a tela e de
   // tempos em tempos — se o programa for ligado depois, o botão aparece sozinho.
@@ -177,12 +174,12 @@ export function PainelPagamentos({
     const t = setInterval(olhar, 15000);
     return () => { vivo = false; clearTimeout(t0); clearInterval(t); };
   }, []);
-  const tefAplica = (f: string | null) => !!f && !!tef && tipoTefDaForma(f) !== null;
+  const tefAplica = (f: string | null) => !!f && !!tef && T.tef(f) !== null;
 
   // Manda o valor pro pinpad; aprovado → vira pagamento já com NSU/bandeira.
   async function passarNoCartao() {
     if (!forma || !tef || tefEtapa) return;
-    const tipo = tipoTefDaForma(forma);
+    const tipo = T.tef(forma);
     if (!tipo) return;
     if (!(aplica > 0.005)) { setAviso("Informe o valor."); return; }
     setAviso(null);
@@ -254,22 +251,22 @@ export function PainelPagamentos({
   function salvar() {
     if (!forma) return;
     if (!(aplica > 0.005)) { setAviso("Informe o valor."); return; }
-    if (ehFiado(forma) && !fiado) { setAviso("Vincule o cliente antes de usar o Saldo cliente."); return; }
-    if (ehEquipe(forma) && !colabId) { setAviso("Escolha o funcionário."); return; }
+    if (T.fiado(forma) && !fiado) { setAviso("Vincule o cliente antes de usar o Saldo cliente."); return; }
+    if (T.equipe(forma) && !colabId) { setAviso("Escolha o funcionário."); return; }
     if (fiadoEstoura) {
       setAviso(`Passa do limite: ${fiado?.nome} já deve ${brl(fiadoEstoura.saldo)} e o limite é ${brl(fiadoEstoura.limite)}.`);
       return;
     }
-    if (ehCartao(forma) && !bandeira && !tefAplica(forma)) { setAviso("Escolha a bandeira."); return; }
+    if (T.cartao(forma) && !bandeira && !tefAplica(forma)) { setAviso("Escolha a bandeira."); return; }
     onAdicionar({
       uid: novoUid(),
       forma,
       valor: cent(aplica),
-      recebido: ehDinheiro(forma) ? cent(entregue) : undefined,
+      recebido: T.dinheiro(forma) ? cent(entregue) : undefined,
       bandeira: bandeira || null,
       observacao: obs.trim() || null,
-      colaboradorId: ehEquipe(forma) ? colabId : null,
-      colaboradorNome: ehEquipe(forma) ? (colaboradores.find((c) => c.id === colabId)?.nome ?? null) : null,
+      colaboradorId: T.equipe(forma) ? colabId : null,
+      colaboradorNome: T.equipe(forma) ? (colaboradores.find((c) => c.id === colabId)?.nome ?? null) : null,
     });
     fechar();
   }
@@ -327,8 +324,8 @@ export function PainelPagamentos({
           <div>
             <p className="mb-1.5 text-mini text-texto-fraco">Adicionar pagamento</p>
             <div className="grid grid-cols-2 gap-2">
-              {formas.map((f) => {
-                const k = atalhoDaForma(f);
+              {formas.map(({ nome: f }) => {
+                const k = T.atalho(f);
                 return (
                   <button
                     key={f}
@@ -336,7 +333,7 @@ export function PainelPagamentos({
                     disabled={!ativo}
                     className={`${btn} flex items-center gap-2 border-borda-forte text-left text-texto-suave hover:border-orange-500 hover:bg-orange-500/5 disabled:opacity-40 dark:border-borda-forte`}
                   >
-                    <span className="flex h-4 items-center">{ICONE[k] ? <Icone nome={ICONE[k]} tamanho={15} /> : "•"}</span>
+                    <span className="flex h-4 items-center"><Icone nome={T.icone(f)} tamanho={15} /></span>
                     <span className="min-w-0 flex-1 truncate">
                       <span className="rounded bg-zinc-200 px-1 text-mini font-bold text-texto-suave dark:bg-zinc-700">{k}</span>{" "}
                       {f}
@@ -353,7 +350,7 @@ export function PainelPagamentos({
         <div className="rounded-cartao border-2 border-orange-500 p-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="flex items-center gap-1.5 font-bold text-texto">
-              {ICONE[atalhoDaForma(forma)] && <Icone nome={ICONE[atalhoDaForma(forma)]} tamanho={16} />} {forma}
+              <Icone nome={T.icone(forma)} tamanho={16} /> {forma}
             </p>
             <button onClick={fechar} className="text-xs text-texto-fraco hover:text-texto-suave">Esc · voltar</button>
           </div>
@@ -375,7 +372,7 @@ export function PainelPagamentos({
             <b>{brl(falta)}</b> <span className="text-texto-fraco">(faltando)</span>
           </button>
 
-          {ehDinheiro(forma) && (
+          {T.dinheiro(forma) && (
             <>
               <div className="mt-2 grid grid-cols-3 gap-1.5">
                 {CEDULAS.map((c) => (
@@ -406,7 +403,7 @@ export function PainelPagamentos({
                 </div>
               ) : (
                 <>
-                  {tipoTefDaForma(forma) === "credito" && (
+                  {T.tef(forma) === "credito" && (
                     <div className="mb-2 flex items-center gap-2">
                       <label className="text-xs font-semibold text-emerald-800/80 dark:text-emerald-300/80">Parcelas</label>
                       <select
@@ -425,7 +422,7 @@ export function PainelPagamentos({
                     onClick={passarNoCartao}
                     className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
                   >
-                    <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && tipoTefDaForma(forma) === "credito" ? ` em ${parcelas}x` : ""}
+                    <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && T.tef(forma) === "credito" ? ` em ${parcelas}x` : ""}
                     <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-mini font-semibold">Enter</span>
                   </button>
                   <p className="mt-1.5 text-center text-mini text-emerald-800/70 dark:text-emerald-400/70">
@@ -436,7 +433,7 @@ export function PainelPagamentos({
             </div>
           )}
 
-          {ehCartao(forma) && !tefAplica(forma) && (
+          {T.cartao(forma) && !tefAplica(forma) && (
             <div className="mt-3">
               <p className="mb-1 text-mini text-texto-fraco">Bandeira</p>
               <div className="flex flex-wrap gap-1.5">
@@ -458,7 +455,7 @@ export function PainelPagamentos({
             </div>
           )}
 
-          {ehFiado(forma) && (
+          {T.fiado(forma) && (
             <div className="mt-3 rounded-controle bg-superficie-suave p-2 text-xs">
               {fiado ? (
                 <>
@@ -479,7 +476,7 @@ export function PainelPagamentos({
             </div>
           )}
 
-          {ehEquipe(forma) && (
+          {T.equipe(forma) && (
             <div className="mt-3 rounded-controle bg-superficie-suave p-2">
               <p className="mb-1 text-mini text-texto-fraco">Funcionário</p>
               {colaboradores.length === 0 ? (
@@ -516,7 +513,7 @@ export function PainelPagamentos({
             </div>
           )}
 
-          {ehPix(forma) && qrPix && aplica > 0.005 && (
+          {T.pix(forma) && qrPix && aplica > 0.005 && (
             <div className="mt-3">{qrPix(cent(aplica), salvar)}</div>
           )}
 

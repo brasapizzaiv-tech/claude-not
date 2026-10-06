@@ -9,10 +9,11 @@ import { FechamentoZ } from "./fechamento-z";
 import { ReceberComandas } from "./receber";
 import { NotasPendentes, type Pendente } from "./notas-pendentes";
 import { pixConfigurado } from "@/lib/pix";
+import { listarFormas } from "@/lib/formas-pagamento-server";
+import { FORMAS_FIXAS_CAIXA } from "@/lib/formas-pagamento";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 
-const FORMAS_PGTO = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito", "Vale refeição", "Saldo cliente", "Compra da equipe"];
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -253,6 +254,9 @@ export default async function CaixaPage({
     minute: "2-digit",
   });
 
+  // Formas do cadastro (/formas-pagamento) + os dois fluxos fixos do caixa.
+  const formasPgto = [...(await listarFormas("caixa")), ...FORMAS_FIXAS_CAIXA];
+
   return (
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -294,7 +298,7 @@ export default async function CaixaPage({
       <div className="mb-4">
         <ReceberComandas
           comandas={comandasReceber}
-          formas={FORMAS_PGTO}
+          formas={formasPgto}
           servPercent={servPercent}
           autoAbrir={abrir}
           menu={menu}

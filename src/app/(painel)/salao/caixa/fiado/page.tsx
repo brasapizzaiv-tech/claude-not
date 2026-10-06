@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
+import { listarFormas } from "@/lib/formas-pagamento-server";
 import { FiadoClient, type ClienteFiado } from "./fiado-client";
 
 export const metadata = { title: "Fiado de clientes · Caixa" };
-
-const FORMAS = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito"];
 
 export default async function FiadoPage() {
   const supabase = await createClient();
@@ -43,7 +42,7 @@ export default async function FiadoPage() {
         Contas recebidas como &quot;Saldo cliente&quot; no caixa. Quando o cliente pagar, clique em Receber: entra no caixa do dia com a forma usada.
         Em aberto: <b className="text-zinc-800 dark:text-zinc-100">{totalAberto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</b>
       </p>
-      <FiadoClient clientes={clientes} formas={FORMAS} />
+      <FiadoClient clientes={clientes} formas={(await listarFormas("fiado")).map((f) => f.nome)} />
     </div>
   );
 }

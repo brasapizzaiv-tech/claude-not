@@ -7,7 +7,7 @@ import { pagarSelecao, fecharTef, registrarTefAvulso, virarLivreComanda, remover
 import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
-import { formaEmiteAuto } from "@/components/nfce-auto-toggle";
+import { emiteNotaAuto, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { PainelPagamentos, type ColabMini, type Pagamento } from "./pagamentos";
 import { Icone } from "@/components/icone";
 import { emitirNotaPendenteAgora } from "./pendentes-actions";
@@ -72,7 +72,7 @@ export function ReceberComandas({
   colaboradores = [],
 }: {
   comandas: Comanda[];
-  formas: string[];
+  formas: FormaOpcao[];
   servPercent: number;
   autoAbrir?: string;
   menu?: ItemMenu[];
@@ -454,7 +454,7 @@ export function ReceberComandas({
         // Pix/cartão/vale com o interruptor ligado entram na FILA da nota
         // automática (aparece no topo do caixa com o tempo pra digitar o CPF),
         // então aqui não pedimos nada. A caixinha manual continua pro dinheiro.
-        setAutoNaFila(nfceAuto && pagamentos.some((p) => formaEmiteAuto(p.forma)));
+        setAutoNaFila(nfceAuto && pagamentos.some((p) => emiteNotaAuto(tipoDe(p.forma, formas))));
         setAutoIds([]);
         setCarrinho(new Set());
         setExtras([]);

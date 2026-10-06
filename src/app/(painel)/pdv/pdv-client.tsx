@@ -1,27 +1,23 @@
 "use client";
 
-import { Icone, type NomeIcone } from "@/components/icone";
+import { Icone } from "@/components/icone";
 
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { finalizarVendaPdv } from "./actions";
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
-import { NfceAutoToggle, formaEmiteAuto } from "@/components/nfce-auto-toggle";
+import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
+import { FORMAS_PADRAO, emiteNotaAuto, iconeDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const CORES = ["#6366f1", "#10b981", "#ec4899", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e", "#84cc16", "#8b5cf6"];
-const FORMAS = [
-  { id: "Dinheiro", label: "Dinheiro", icone: "dinheiro" as NomeIcone },
-  { id: "Cartão", label: "Cartão", icone: "cartao" as NomeIcone },
-  { id: "Pix", label: "Pix", icone: "celular" as NomeIcone },
-];
-
 type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
 
-export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false } }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean } }) {
+export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false }, formas = FORMAS_PADRAO.pdv }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean }; formas?: FormaOpcao[] }) {
+  const FORMAS = formas.map((f) => ({ id: f.nome, label: f.nome, icone: iconeDoTipo(f.tipo) }));
   const [proc, start] = useTransition();
   const [aba, setAba] = useState<string>("Todos");
   const [busca, setBusca] = useState("");
@@ -29,7 +25,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const [obs, setObs] = useState("");
   const [fase, setFase] = useState<"menu" | "pagar">("menu");
   const [local, setLocal] = useState<"aqui" | "viagem">("aqui");
-  const [forma, setForma] = useState("Dinheiro");
+  const [forma, setForma] = useState(formas[0]?.nome ?? "Dinheiro");
   const [recebido, setRecebido] = useState("");
   const [feito, setFeito] = useState<Feito | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -49,7 +45,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const total = Math.round(cartLista.reduce((s, x) => s + x.item.preco * x.qtd, 0) * 100) / 100;
   const cartCount = cartLista.reduce((s, x) => s + x.qtd, 0);
   const recebidoNum = Number(recebido.replace(",", ".")) || 0;
-  const troco = forma === "Dinheiro" && recebidoNum > total ? Math.round((recebidoNum - total) * 100) / 100 : 0;
+  const troco = tipoDe(forma, formas) === "dinheiro" && recebidoNum > total ? Math.round((recebidoNum - total) * 100) / 100 : 0;
 
   const setQtd = (id: string, q: number) => setCart((c) => { const n = { ...c }; if (q <= 0) delete n[id]; else n[id] = q; return n; });
   const add = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
@@ -65,7 +61,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
       try {
         const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
         if (r.ok) {
-          setFeito({ numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma, troco: pagamento?.forma === "Dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
+          setFeito({ numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma, troco: tipoDe(pagamento?.forma, formas) === "dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
           setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro"); setLocal("aqui");
         } else {
           setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
@@ -101,7 +97,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
         )}
         {feito.pago && feito.comandaId && (
           <div className="mt-4 text-left">
-            <EmitirNotaCaixa comandas={[{ id: feito.comandaId, numero: feito.numero }]} autoIds={nfce.ligado && nfce.producao && formaEmiteAuto(feito.forma ?? "") ? [feito.comandaId] : []} />
+            <EmitirNotaCaixa comandas={[{ id: feito.comandaId, numero: feito.numero }]} autoIds={nfce.ligado && nfce.producao && emiteNotaAuto(tipoDe(feito.forma, formas)) ? [feito.comandaId] : []} />
           </div>
         )}
         <div className="mt-6 flex justify-center gap-3">
@@ -196,19 +192,19 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 </button>
               ))}
             </div>
-            {forma === "Dinheiro" && (
+            {tipoDe(forma, formas) === "dinheiro" && (
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">Valor recebido</label>
                 <input value={recebido} onChange={(e) => setRecebido(e.target.value)} inputMode="decimal" placeholder="Ex.: 50" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-lg " />
                 <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
               </div>
             )}
-            {forma === "Pix" && pixAtivo && total > 0 && (
-              <div className="mb-3"><PixQr valor={total} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma: "Pix" })} compacto /></div>
+            {tipoDe(forma, formas) === "pix" && pixAtivo && total > 0 && (
+              <div className="mb-3"><PixQr valor={total} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma })} compacto /></div>
             )}
             <div className="flex-1" />
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-            {forma === "Pix" && pixAtivo && total > 0 ? (
+            {tipoDe(forma, formas) === "pix" && pixAtivo && total > 0 ? (
               // Com QR na tela, a venda fecha sozinha quando o Pix cai (ou por "Vi que caiu").
               // Este botão é só pra quem recebeu pela chave, sem QR.
               <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-cartao border border-borda-forte py-2.5 text-sm font-semibold text-texto-suave disabled:opacity-50 dark:border-borda-forte">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>

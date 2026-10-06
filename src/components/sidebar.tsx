@@ -244,6 +244,7 @@ export function Sidebar({
         { href: "/clientes", label: "Clientes (NF-e)", icon: "cracha" },
         ...so(admin, { href: "/usuarios", label: "Usuários e permissões", icon: "chave" }),
         ...so(admin, { href: "/aparencia", label: "Aparência da empresa", icon: "brilho" }),
+        ...so(admin, { href: "/formas-pagamento", label: "Formas de pagamento", icon: "cartao" }),
       ],
     },
   ];

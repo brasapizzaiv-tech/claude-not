@@ -1,4 +1,5 @@
 "use client";
+import { tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 
 import { useState, useTransition } from "react";
 import { avisar } from "@/components/dialogo";
@@ -25,7 +26,7 @@ export function DividirConta({
   onClose,
 }: {
   comanda: Comanda;
-  formas: string[];
+  formas: FormaOpcao[];
   servPercent: number;
   onClose: () => void;
 }) {
@@ -77,9 +78,9 @@ export function DividirConta({
   const valorDe = (l: Linha) => Math.min(l.restante, num(pagarDe[l.key] ?? ""));
   const somaSel = r2(selLinhas.reduce((s, l) => s + valorDe(l), 0));
   const restanteTotal = r2(linhas.reduce((s, l) => s + l.restante, 0));
-  const troco = formaSel === "Dinheiro" && recebido ? num(recebido) - somaSel : 0;
+  const troco = tipoDe(formaSel, formas) === "dinheiro" && recebido ? num(recebido) - somaSel : 0;
   const podeReceber =
-    somaSel > 0.005 && !!formaSel && (formaSel !== "Dinheiro" || num(recebido) >= somaSel - 0.01);
+    somaSel > 0.005 && !!formaSel && (tipoDe(formaSel, formas) !== "dinheiro" || num(recebido) >= somaSel - 0.01);
 
   function receber() {
     if (!podeReceber) return;
@@ -169,7 +170,7 @@ export function DividirConta({
             {somaSel > 0.005 && (
               <div className="mt-2 space-y-2">
                 <div className="flex flex-wrap gap-1.5">
-                  {formas.map((f) => (
+                  {formas.map(({ nome: f }) => (
                     <button
                       key={f}
                       onClick={() => setFormaSel(f)}
@@ -183,7 +184,7 @@ export function DividirConta({
                     </button>
                   ))}
                 </div>
-                {formaSel === "Dinheiro" && (
+                {tipoDe(formaSel, formas) === "dinheiro" && (
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-texto-suave">Recebido</span>
                     <input

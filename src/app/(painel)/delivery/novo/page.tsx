@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NovoPedido } from "./novo-client";
+import { listarFormas } from "@/lib/formas-pagamento-server";
 
 export const metadata = { title: "Novo pedido · Delivery" };
 
@@ -54,6 +55,7 @@ export default async function NovoPedidoPage() {
         grupos: ((grupos as { id: string; item_id: string; nome: string; min: number; max: number; permite_repetir: boolean }[]) ?? []),
         opcoes: ((opcoes as { id: string; grupo_id: string; nome: string; preco: number }[]) ?? []).map((o) => ({ ...o, preco: Number(o.preco) })),
       }}
+      formas={await listarFormas("delivery")}
       cfg={{
         taxaBase: Number((cfg as { taxa_base?: number } | null)?.taxa_base ?? 0),
         precoKm: Number((cfg as { preco_km?: number } | null)?.preco_km ?? 0),

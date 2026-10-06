@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { codigoFiscalDoTipo } from "@/lib/formas-pagamento";
+import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { emitirNfce, cancelarNfce, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
@@ -18,6 +20,15 @@ const FORMA_FOCUS: Record<string, string> = {
   "Vale refeicao": "11",
   "Saldo cliente": "05", // crédito loja (fiado)
 };
+
+// Primeiro o cadastro (o tipo da forma decide), depois o mapa fixo acima;
+// nome desconhecido (ex.: "Dividido") vai como dinheiro, como sempre foi.
+async function codigoFiscalDaForma(nome: string): Promise<string> {
+  const n = nome.trim().toLowerCase();
+  const f = (await formasParaTipo()).find((x) => x.nome.trim().toLowerCase() === n);
+  if (f) return codigoFiscalDoTipo(f.tipo);
+  return FORMA_FOCUS[nome] || "01";
+}
 
 async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase.from("config_fiscal").select("chave, valor");
@@ -185,7 +196,7 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   total = Math.round(total * 100) / 100;
   if (items.length === 0 || total <= 0) return { ok: false, mensagem: "Comanda sem itens/valor para emitir." };
 
-  const forma = FORMA_FOCUS[(com.forma_pagamento as string) || ""] || "01";
+  const forma = await codigoFiscalDaForma((com.forma_pagamento as string) || "");
 
   const bras = new Date(Date.now() - 3 * 3600 * 1000 - 60 * 1000);
   const iso = bras.toISOString().slice(0, 19) + "-03:00";

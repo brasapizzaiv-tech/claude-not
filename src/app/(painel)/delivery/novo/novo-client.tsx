@@ -10,12 +10,12 @@ import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
 } from "@/components/delivery-pedido-ui";
+import { tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 
-const FORMAS = ["Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito"];
 const ORIGENS: [string, string][] = [["whatsapp", "WhatsApp"], ["instagram", "Instagram"], ["telefone", "Telefone"], ["balcao", "Balcão"]];
 
 export function NovoPedido({
-  itens, categorias, comComplemento, pizza, complementos, cfg,
+  itens, categorias, comComplemento, pizza, complementos, cfg, formas,
 }: {
   itens: Item[];
   categorias: string[];
@@ -23,6 +23,7 @@ export function NovoPedido({
   pizza: PizzaData;
   complementos: { grupos: Grupo[]; opcoes: Opcao[] };
   cfg: { taxaBase: number; precoKm: number; tempoPreparo: number };
+  formas: FormaOpcao[];
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -43,7 +44,7 @@ export function NovoPedido({
   const [calculando, setCalculando] = useState(false);
   const [desconto, setDesconto] = useState("");
   const [descMotivo, setDescMotivo] = useState("");
-  const [forma, setForma] = useState("Dinheiro");
+  const [forma, setForma] = useState(formas[0]?.nome ?? "Dinheiro");
   const [trocoPara, setTrocoPara] = useState("");
   const [agendar, setAgendar] = useState(""); // "YYYY-MM-DDTHH:MM" (horário de SP) ou vazio
   const [origem, setOrigem] = useState<string>("whatsapp");
@@ -63,7 +64,7 @@ export function NovoPedido({
   const taxaN = tipo === "retirada" ? 0 : Number(taxa.replace(",", ".")) || 0;
   const descN = Number(desconto.replace(",", ".")) || 0;
   const total = Math.round((subtotal + taxaN - descN) * 100) / 100;
-  const trocoN = forma === "Dinheiro" ? Number(trocoPara.replace(",", ".")) || 0 : 0;
+  const trocoN = tipoDe(forma, formas) === "dinheiro" ? Number(trocoPara.replace(",", ".")) || 0 : 0;
 
   // ---- modais ----
   const [pzOpen, setPzOpen] = useState(false);
@@ -242,7 +243,7 @@ export function NovoPedido({
             <div>
               <label className="text-xs font-semibold text-texto-suave">Forma</label>
               <select value={forma} onChange={(e) => setForma(e.target.value)} className="w-full rounded-controle border border-borda-forte bg-transparent px-2 py-2 text-sm">
-                {FORMAS.map((f) => <option key={f} value={f}>{f}</option>)}
+                {formas.map((f) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
               </select>
             </div>
             <div>

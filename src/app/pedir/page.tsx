@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { pixConfigurado } from "@/lib/pix";
+import { listarFormas } from "@/lib/formas-pagamento-server";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { PedirClient } from "./pedir-client";
 
@@ -135,6 +136,7 @@ export default async function PedirPage() {
       aviso={((cfg as { aviso?: string | null } | null)?.aviso || "").trim() || null}
       maisVendidos={maisVendidos}
       pixAtivo={pixConfigurado()}
+      formas={await listarFormas("app")}
     />
   );
 }

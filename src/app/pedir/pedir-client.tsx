@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone, type NomeIcone } from "@/components/icone";
+import { FORMAS_PADRAO, iconeDoTipo, rotuloDa, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import QRCode from "qrcode";
@@ -12,12 +13,6 @@ import {
 
 const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
 const ESCURO = "var(--marca-escuro)"; // vem do cadastro da empresa
-const FORMAS_BASE = [
-  { id: "Dinheiro", label: "Dinheiro", icone: "dinheiro" as NomeIcone },
-  { id: "Pix", label: "Pix na entrega", icone: "celular" as NomeIcone },
-  { id: "Cartão", label: "Cartão na entrega", icone: "cartao" as NomeIcone },
-];
-
 // QR do Pix gerado na hora a partir do copia-e-cola.
 function QrPix({ codigo }: { codigo: string }) {
   const [src, setSrc] = useState("");
@@ -49,7 +44,7 @@ export type HorarioPedir = {
 };
 
 export function PedirClient({
-  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo, horario, taxaBase = 0,
+  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo, horario, taxaBase = 0, formas = FORMAS_PADRAO.app,
 }: {
   itens: Item[];
   categorias: string[];
@@ -62,6 +57,7 @@ export function PedirClient({
   aviso: string | null;
   maisVendidos: string[];
   pixAtivo?: boolean;
+  formas?: FormaOpcao[];
   horario: HorarioPedir;
 }) {
   const [proc, start] = useTransition();
@@ -84,7 +80,7 @@ export function PedirClient({
   // Quando: "agora" (dentro do horário livre) ou "agendar" (horário exato).
   const [quando, setQuando] = useState<"agora" | "agendar">(aberto ? "agora" : "agendar");
   const [slot, setSlot] = useState<string>("");
-  const [forma, setForma] = useState("Dinheiro");
+  const [forma, setForma] = useState(formas[0]?.nome ?? "Dinheiro");
   const [trocoPara, setTrocoPara] = useState("");
   const [obs, setObs] = useState("");
   const [cupomCodigo, setCupomCodigo] = useState("");
@@ -95,7 +91,8 @@ export function PedirClient({
   const [feito, setFeito] = useState<{ id: string; numero?: number; pix?: { copiaECola: string } | null } | null>(null);
   const [pixPago, setPixPago] = useState(false);
   const [pixCopiado, setPixCopiado] = useState(false);
-  const FORMAS = pixAtivo ? [{ id: "Pix online", label: "Pix agora", icone: "rapido" as NomeIcone }, ...FORMAS_BASE] : FORMAS_BASE;
+  const FORMAS_LISTA = formas.map((f) => ({ id: f.nome, label: rotuloDa(f), icone: iconeDoTipo(f.tipo) }));
+  const FORMAS = pixAtivo ? [{ id: "Pix online", label: "Pix agora", icone: "rapido" as NomeIcone }, ...FORMAS_LISTA] : FORMAS_LISTA;
 
   const [pzTamanho, setPzTamanho] = useState<string | null>(null);
   const [pzSabor, setPzSabor] = useState<string | null>(null);
@@ -226,7 +223,7 @@ export function PedirClient({
     if (horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo) { setErro(`Pedido mínimo é ${brl(horario.pedidoMinimo)} (sem contar a entrega).`); return; }
     if (quando === "agendar" && !slot) { setErro("Escolha o horário do agendamento."); return; }
     if (quando === "agora" && !aberto) { setErro("Estamos fechados agora — agende um horário."); return; }
-    const trocoN = forma === "Dinheiro" ? Number(trocoPara.replace(",", ".")) || 0 : 0;
+    const trocoN = tipoDe(forma, formas) === "dinheiro" ? Number(trocoPara.replace(",", ".")) || 0 : 0;
     start(async () => {
       const r = await enviarPedidoPublico({
         nome, telefone, tipo,
@@ -439,7 +436,7 @@ export function PedirClient({
               </button>
             ))}
           </div>
-          {forma === "Dinheiro" && (
+          {tipoDe(forma, formas) === "dinheiro" && (
             <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
           )}
           <div className="mb-3 flex gap-2">
