@@ -169,8 +169,8 @@ export const FORMAS_PADRAO: Record<"caixa" | "pdv" | "delivery" | "app" | "fiado
   ],
 };
 
-/** Os dois fluxos fixos do caixa, sempre depois das cadastradas. */
-export const FORMAS_FIXAS_CAIXA: FormaOpcao[] = [
+/** Os dois fluxos fixos (caixa, PDV e delivery), sempre depois das cadastradas. */
+export const FORMAS_FIXAS_VENDA: FormaOpcao[] = [
   { nome: "Saldo cliente", tipo: "saldo" },
   { nome: "Compra da equipe", tipo: "equipe" },
 ];

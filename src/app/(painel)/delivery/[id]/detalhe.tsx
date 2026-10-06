@@ -3,15 +3,17 @@
 import { Icone } from "@/components/icone";
 import { avisar, perguntar } from "@/components/dialogo";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { definirStatusDelivery, definirEntregador, definirPagoDelivery, reimprimirDelivery } from "../actions";
+import { definirStatusDelivery, definirEntregador, definirPagoDelivery, receberDelivery, reimprimirDelivery } from "../actions";
+import { tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { emitirNfceComanda } from "../../salao/fiscal-actions";
 
 export type PedidoDetalhe = {
   id: string;
   numero: number | null;
   comandaId: string | null;
+  clienteId: string | null;
   nome: string;
   telefone: string;
   tipo: "entrega" | "retirada";
@@ -51,7 +53,13 @@ const ETAPAS: { key: string; label: string; carimbo: keyof PedidoDetalhe["carimb
 ];
 const PROX: Record<string, string> = { pendente: "aceito", aceito: "em_preparo", em_preparo: "pronto", pronto: "saiu", saiu: "entregue" };
 
-export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; entregadores: { id: string; nome: string }[] }) {
+export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = [] }: { pedido: PedidoDetalhe; entregadores: { id: string; nome: string }[]; formas?: FormaOpcao[]; colaboradores?: { id: string; nome: string }[] }) {
+  // Recebimento: a forma que o cliente disse vem marcada; o operador pode trocar
+  // (ex.: funcionário pediu pelo app → Compra da equipe).
+  const [formaSel, setFormaSel] = useState(() => (p.formaPagamento && formas.some((f) => f.nome === p.formaPagamento) ? p.formaPagamento : (formas[0]?.nome ?? "Dinheiro")));
+  const [colabId, setColabId] = useState("");
+  const tipoSel = tipoDe(formaSel, formas);
+  const faltaQuem = (tipoSel === "equipe" && !colabId) || (tipoSel === "saldo" && !p.clienteId);
   const router = useRouter();
   const [proc, start] = useTransition();
 
@@ -195,14 +203,37 @@ export function Detalhe({ pedido: p, entregadores }: { pedido: PedidoDetalhe; en
             {p.desconto > 0 && <div className="flex justify-between text-rose-500"><span>Desconto {p.descontoMotivo ? `· ${p.descontoMotivo}` : ""}</span><span>− {brl(p.desconto)}</span></div>}
             <div className="flex justify-between pt-1 text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-borda pt-3">
-            <div>
-              <div className="text-sm font-semibold">{p.formaPagamento ?? "—"}</div>
-              {p.formaPagamento === "Dinheiro" && p.trocoPara ? <div className="text-xs text-texto-suave">Troco para {brl(p.trocoPara)}</div> : null}
-            </div>
-            <button onClick={() => act(() => definirPagoDelivery(p.id, !p.pago))} disabled={proc} className={`rounded-full px-3 py-1.5 text-sm font-bold ${p.pago ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"}`}>
-              {p.pago ? "✓ Pago" : "A receber — marcar pago"}
-            </button>
+          <div className="mt-3 border-t border-borda pt-3">
+            {p.pago ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-semibold">{p.formaPagamento ?? "—"}</div>
+                  <div className="text-xs text-emerald-600">✓ Pago</div>
+                </div>
+                <button onClick={() => act(() => definirPagoDelivery(p.id, false))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto" title="Só desmarca a etiqueta; o que já entrou no caixa continua lá.">desmarcar</button>
+              </div>
+            ) : cancelado ? (
+              <div className="text-sm text-texto-suave">Pedido cancelado.</div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-xs text-texto-suave">Cliente disse: <b>{p.formaPagamento ?? "não informado"}</b>{tipoDe(p.formaPagamento, formas) === "dinheiro" && p.trocoPara ? ` · troco para ${brl(p.trocoPara)}` : ""}</div>
+                <select value={formaSel} onChange={(e) => { setFormaSel(e.target.value); setColabId(""); }} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm">
+                  {formas.map((f) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
+                </select>
+                {tipoSel === "equipe" && (
+                  <select value={colabId} onChange={(e) => setColabId(e.target.value)} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm">
+                    <option value="">— funcionário (vai pra Compras internas) —</option>
+                    {colaboradores.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
+                )}
+                {tipoSel === "saldo" && !p.clienteId && (
+                  <p className="text-xs text-amber-600">Este pedido não está ligado a um cliente cadastrado. Receba no caixa do salão, vinculando o cliente.</p>
+                )}
+                <button onClick={() => act(() => receberDelivery(p.id, { forma: formaSel, colaboradorId: colabId || null }))} disabled={proc || faltaQuem} className="w-full rounded-full bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
+                  {proc ? "Recebendo..." : `Receber ${brl(total)}`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

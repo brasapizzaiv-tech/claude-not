@@ -4,7 +4,7 @@ import { Icone } from "@/components/icone";
 
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
-import { finalizarVendaPdv } from "./actions";
+import { buscarClientesPdv, finalizarVendaPdv } from "./actions";
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
@@ -16,7 +16,7 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 const CORES = ["#6366f1", "#10b981", "#ec4899", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e", "#84cc16", "#8b5cf6"];
 type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
 
-export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false }, formas = FORMAS_PADRAO.pdv }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean }; formas?: FormaOpcao[] }) {
+export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false }, formas = FORMAS_PADRAO.pdv, colaboradores = [] }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean }; formas?: FormaOpcao[]; colaboradores?: { id: string; nome: string }[] }) {
   const FORMAS = formas.map((f) => ({ id: f.nome, label: f.nome, icone: iconeDoTipo(f.tipo) }));
   const [proc, start] = useTransition();
   const [aba, setAba] = useState<string>("Todos");
@@ -27,6 +27,13 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const [local, setLocal] = useState<"aqui" | "viagem">("aqui");
   const [forma, setForma] = useState(formas[0]?.nome ?? "Dinheiro");
   const [recebido, setRecebido] = useState("");
+  // Compra da equipe pede o funcionário; Saldo cliente pede o cliente.
+  const [colabId, setColabId] = useState("");
+  const [cliente, setCliente] = useState<{ id: string; nome: string } | null>(null);
+  const [buscaCli, setBuscaCli] = useState("");
+  const [cliResultados, setCliResultados] = useState<{ id: string; nome: string; cpf_cnpj: string | null }[]>([]);
+  const tipoForma = tipoDe(forma, formas);
+  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente);
   const [feito, setFeito] = useState<Feito | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   // Trava contra finalizar duas vezes (toque duplo, ou o QR Pix caindo no mesmo instante do clique).
@@ -52,7 +59,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
 
   const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd }));
 
-  function finalizar(pagamento: { forma: string } | null) {
+  function finalizar(pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null } | null) {
     if (cartLista.length === 0 || finalizandoRef.current) return;
     finalizandoRef.current = true;
     const trocoAtual = troco;
@@ -62,7 +69,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
         const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
         if (r.ok) {
           setFeito({ numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma, troco: tipoDe(pagamento?.forma, formas) === "dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
-          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma("Dinheiro"); setLocal("aqui");
+          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); setCliente(null); setBuscaCli(""); setCliResultados([]);
         } else {
           setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
         }
@@ -199,17 +206,43 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
               </div>
             )}
+            {tipoForma === "equipe" && (
+              <div className="mb-3">
+                <label className="text-sm text-texto-suave">Funcionário (vai pra Compras internas)</label>
+                <select value={colabId} onChange={(e) => setColabId(e.target.value)} className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm">
+                  <option value="">— escolher —</option>
+                  {colaboradores.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              </div>
+            )}
+            {tipoForma === "saldo" && (
+              <div className="mb-3">
+                <label className="text-sm text-texto-suave">Cliente (vai pro saldo dele)</label>
+                {cliente ? (
+                  <div className="mt-1 flex items-center justify-between rounded-controle border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm"><span className="font-semibold">{cliente.nome}</span><button type="button" onClick={() => setCliente(null)} className="text-xs text-texto-suave">trocar</button></div>
+                ) : (
+                  <>
+                    <input value={buscaCli} onChange={(e) => { const v = e.target.value; setBuscaCli(v); if (v.trim().length >= 2) buscarClientesPdv(v).then(setCliResultados).catch(() => setCliResultados([])); else setCliResultados([]); }} placeholder="Nome ou CPF do cliente" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
+                    {cliResultados.length > 0 && (
+                      <div className="mt-1 max-h-40 overflow-y-auto rounded-controle border border-borda">
+                        {cliResultados.map((c) => <button key={c.id} type="button" onClick={() => { setCliente({ id: c.id, nome: c.nome }); setCliResultados([]); }} className="block w-full px-3 py-2 text-left text-sm hover:bg-superficie-suave">{c.nome}{c.cpf_cnpj ? <span className="text-texto-fraco"> · {c.cpf_cnpj}</span> : null}</button>)}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
             {tipoDe(forma, formas) === "pix" && pixAtivo && total > 0 && (
-              <div className="mb-3"><PixQr valor={total} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma })} compacto /></div>
+              <div className="mb-3"><PixQr valor={total} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null })} compacto /></div>
             )}
             <div className="flex-1" />
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
             {tipoDe(forma, formas) === "pix" && pixAtivo && total > 0 ? (
               // Com QR na tela, a venda fecha sozinha quando o Pix cai (ou por "Vi que caiu").
               // Este botão é só pra quem recebeu pela chave, sem QR.
-              <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-cartao border border-borda-forte py-2.5 text-sm font-semibold text-texto-suave disabled:opacity-50 dark:border-borda-forte">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>
+              <button onClick={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null })} disabled={proc || faltaQuem} className="w-full rounded-cartao border border-borda-forte py-2.5 text-sm font-semibold text-texto-suave disabled:opacity-50 dark:border-borda-forte">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>
             ) : (
-              <button onClick={() => finalizar({ forma })} disabled={proc} className="w-full rounded-cartao bg-texto py-3.5 text-base font-bold text-fundo disabled:opacity-50">{proc ? "Concluindo..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={18} /> Confirmar e enviar pra cozinha</span>}</button>
+              <button onClick={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null })} disabled={proc || faltaQuem} className="w-full rounded-cartao bg-texto py-3.5 text-base font-bold text-fundo disabled:opacity-50">{proc ? "Concluindo..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={18} /> Confirmar e enviar pra cozinha</span>}</button>
             )}
           </div>
         )}

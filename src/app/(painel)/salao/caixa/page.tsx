@@ -10,7 +10,7 @@ import { ReceberComandas } from "./receber";
 import { NotasPendentes, type Pendente } from "./notas-pendentes";
 import { pixConfigurado } from "@/lib/pix";
 import { listarFormas } from "@/lib/formas-pagamento-server";
-import { FORMAS_FIXAS_CAIXA } from "@/lib/formas-pagamento";
+import { FORMAS_FIXAS_VENDA } from "@/lib/formas-pagamento";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 
@@ -255,7 +255,7 @@ export default async function CaixaPage({
   });
 
   // Formas do cadastro (/formas-pagamento) + os dois fluxos fixos do caixa.
-  const formasPgto = [...(await listarFormas("caixa")), ...FORMAS_FIXAS_CAIXA];
+  const formasPgto = [...(await listarFormas("caixa")), ...FORMAS_FIXAS_VENDA];
 
   return (
     <div className="mx-auto max-w-6xl p-6">

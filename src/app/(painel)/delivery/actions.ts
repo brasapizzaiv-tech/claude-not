@@ -3,6 +3,9 @@
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { tipoDe } from "@/lib/formas-pagamento";
+import { formasParaTipo } from "@/lib/formas-pagamento-server";
+import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { avisarPedido, enviarTemplate, listarModelos, whatsappConfigurado } from "@/lib/whatsapp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
@@ -400,4 +403,98 @@ export async function testarWhatsappDelivery(telefone: string) {
 export async function modelosWhatsappDelivery() {
   await exigirAcesso("/delivery");
   return listarModelos();
+}
+
+// Recebe o pedido na tela do delivery: lança no caixa aberto, fecha a comanda
+// e marca pago. A forma pode ser diferente da que o cliente disse no app — um
+// funcionário pede com "Pix" e o operador recebe como "Compra da equipe"
+// (vai pra Compras internas); "Saldo cliente" usa o cliente ligado ao pedido.
+// Comanda que o caixa do salão já recebeu só ganha a marca de pago.
+export async function receberDelivery(id: string, dados: { forma: string; colaboradorId?: string | null }) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const forma = (dados.forma || "").trim();
+  if (!forma) return { ok: false as const, mensagem: "Escolha a forma de pagamento." };
+
+  const { data: ped } = await supabase
+    .from("delivery_pedidos")
+    .select("id, comanda_id, cliente_id, nome, tipo, taxa_entrega, desconto, pago, pdv_comandas(numero)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!ped) return { ok: false as const, mensagem: "Pedido não encontrado." };
+  const p = ped as { comanda_id: string | null; cliente_id: string | null; nome: string; tipo: string; taxa_entrega: number | null; desconto: number | null; pago: boolean; pdv_comandas: { numero: number } | { numero: number }[] | null };
+  if (p.pago) return { ok: false as const, mensagem: "Este pedido já está pago." };
+  const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
+  const numero = com?.numero ?? null;
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
+  const { data: itensRaw } = p.comanda_id
+    ? await supabase.from("pdv_comanda_itens").select("id, qtd, preco_unit, pago").eq("comanda_id", p.comanda_id)
+    : { data: [] as { id: string; qtd: number; preco_unit: number | null; pago: boolean }[] };
+  const itens = (itensRaw as { id: string; qtd: number; preco_unit: number | null; pago: boolean }[]) ?? [];
+  const subtotal = r2(itens.reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit || 0), 0));
+  const taxa = p.tipo === "retirada" ? 0 : Number(p.taxa_entrega ?? 0);
+  const total = r2(subtotal + taxa - Number(p.desconto ?? 0));
+
+  // O caixa do salão já recebeu esta comanda (itens pagos)? Então só a marca.
+  const jaRecebida = itens.length > 0 && itens.every((i) => i.pago);
+  if (jaRecebida) {
+    await supabase.from("delivery_pedidos").update({ pago: true, forma_pagamento: forma }).eq("id", id);
+    revalidatePath("/delivery");
+    revalidatePath(`/delivery/${id}`);
+    return { ok: true as const };
+  }
+
+  const { data: cx } = await supabase
+    .from("pdv_caixas")
+    .select("id")
+    .eq("status", "aberto")
+    .order("aberto_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!cx?.id) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
+
+  const tipo = tipoDe(forma, await formasParaTipo());
+  if (tipo === "equipe" || tipo === "saldo") {
+    const esp = await lancarFormasEspeciais(supabase, {
+      pagamentos: [{ forma, valor: total, colaboradorId: dados.colaboradorId ?? null }],
+      clienteId: p.cliente_id,
+      rotulo: `delivery #${numero ?? "?"} · ${p.nome}`,
+      comandaId: p.comanda_id,
+      caixaId: cx.id,
+    });
+    if (!esp.ok) return { ok: false as const, mensagem: esp.mensagem };
+  }
+
+  for (const i of itens) {
+    if (i.pago) continue;
+    await supabase.from("pdv_comanda_itens").update({ valor_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), pago: true }).eq("id", i.id);
+  }
+  await supabase.from("pdv_caixa_mov").insert({
+    caixa_id: cx.id,
+    tipo: "venda",
+    descricao: `Delivery #${numero ?? "?"} · ${p.nome}`,
+    forma_pagamento: forma,
+    valor: total,
+    comanda_id: p.comanda_id,
+  });
+  if (p.comanda_id) {
+    await supabase
+      .from("pdv_comandas")
+      .update({
+        status: "fechada",
+        fechada_em: new Date().toISOString(),
+        forma_pagamento: forma,
+        servico: 0,
+        ...(p.cliente_id ? { cliente_id: p.cliente_id } : {}),
+      })
+      .eq("id", p.comanda_id);
+  }
+  await supabase.from("delivery_pedidos").update({ pago: true, forma_pagamento: forma }).eq("id", id);
+
+  revalidatePath("/delivery");
+  revalidatePath(`/delivery/${id}`);
+  revalidatePath("/salao/caixa");
+  revalidatePath("/retiradas");
+  return { ok: true as const };
 }

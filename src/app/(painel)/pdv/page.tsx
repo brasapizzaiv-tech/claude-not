@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PdvClient, type ItemMenu } from "./pdv-client";
 import { pixConfigurado } from "@/lib/pix";
 import { listarFormas } from "@/lib/formas-pagamento-server";
+import { FORMAS_FIXAS_VENDA } from "@/lib/formas-pagamento";
 import { lerNfceAuto } from "../salao/fiscal-actions";
 
 export const metadata = { title: "PDV · Brasa" };
@@ -31,5 +32,8 @@ export default async function PdvPage() {
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
 
   const nfce = await lerNfceAuto();
-  return <PdvClient itens={itens} categorias={categorias} pixAtivo={pixConfigurado()} nfce={nfce} formas={await listarFormas("pdv")} />;
+  // Funcionários pro "Compra da equipe"; Saldo cliente e Compra da equipe são fixos.
+  const { data: colabRows } = await supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome");
+  const formas = [...(await listarFormas("pdv")), ...FORMAS_FIXAS_VENDA];
+  return <PdvClient itens={itens} categorias={categorias} pixAtivo={pixConfigurado()} nfce={nfce} formas={formas} colaboradores={((colabRows ?? []) as { id: string; nome: string }[])} />;
 }

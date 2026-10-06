@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Detalhe, type PedidoDetalhe } from "./detalhe";
+import { listarFormas } from "@/lib/formas-pagamento-server";
+import { FORMAS_FIXAS_VENDA } from "@/lib/formas-pagamento";
 
 export const metadata = { title: "Pedido · Delivery" };
 
@@ -19,11 +21,12 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
   const p = ped as Record<string, unknown> & { comanda_id: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
 
   const tel = (p.telefone as string) ?? "___";
-  const [{ data: itensRaw }, { data: entregadores }, { data: histRows, count: histCount }] = await Promise.all([
+  const [{ data: itensRaw }, { data: entregadores }, { data: colabRows }, { data: histRows, count: histCount }] = await Promise.all([
     p.comanda_id
       ? supabase.from("pdv_comanda_itens").select("descricao, qtd, preco_unit").eq("comanda_id", p.comanda_id).order("criado_em")
       : Promise.resolve({ data: [] as { descricao: string; qtd: number; preco_unit: number | null }[] }),
     supabase.from("entregadores").select("id, nome").eq("ativo", true).order("nome"),
+    supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome"),
     supabase.from("delivery_pedidos").select("id, criado_em, status, tipo, pdv_comandas(numero)", { count: "exact" }).eq("telefone", tel).neq("id", id).order("criado_em", { ascending: false }).limit(5),
   ]);
 
@@ -41,6 +44,7 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
     id,
     numero: com?.numero ?? null,
     comandaId: p.comanda_id,
+    clienteId: (p.cliente_id as string) ?? null,
     nome: (p.nome as string) ?? "",
     telefone: (p.telefone as string) ?? "",
     tipo: (p.tipo as "entrega" | "retirada") ?? "entrega",
@@ -75,7 +79,12 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
   return (
     <div className="p-4">
       <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <Detalhe pedido={pedido} entregadores={(entregadores ?? []) as { id: string; nome: string }[]} />
+      <Detalhe
+        pedido={pedido}
+        entregadores={(entregadores ?? []) as { id: string; nome: string }[]}
+        formas={[...(await listarFormas("delivery")), ...FORMAS_FIXAS_VENDA]}
+        colaboradores={(colabRows ?? []) as { id: string; nome: string }[]}
+      />
     </div>
   );
 }

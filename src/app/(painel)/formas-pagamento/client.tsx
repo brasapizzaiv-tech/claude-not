@@ -136,7 +136,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
       </div>
 
       <p className="text-mini text-texto-fraco">
-        Ficam fixas, porque são fluxos próprios: <b>Saldo cliente</b> e <b>Compra da equipe</b> no caixa, e <b>Pix agora</b> (QR) no app quando o Pix online está ligado.
+        Ficam fixas, porque são fluxos próprios: <b>Saldo cliente</b> e <b>Compra da equipe</b> no caixa, no PDV e no recebimento do delivery, e <b>Pix agora</b> (QR) no app quando o Pix online está ligado.
       </p>
 
       {/* Formulário */}
