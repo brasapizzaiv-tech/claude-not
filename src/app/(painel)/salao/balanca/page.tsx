@@ -20,7 +20,7 @@ export default async function BalancaPage() {
   const taraPadrao = Number(cfg.tara_padrao ?? 0);
 
   const ag = agStatus as { hostname: string | null; visto_em: string | null; fila_pendente: number } | null;
-  const agenteOnline = !!ag?.visto_em && new Date().getTime() - new Date(ag.visto_em).getTime() < 60000;
+  const agenteOnline = !!ag?.visto_em && new Date().getTime() - new Date(ag.visto_em).getTime() < 150000; // sinal de vida do agente a cada 60 s (1.2.3)
   const filaPendente = Number(ag?.fila_pendente ?? 0);
 
   return (

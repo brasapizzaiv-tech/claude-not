@@ -69,6 +69,17 @@ async function main() {
     }
   }
 
+  // A partir de 30/10/2026 a Supabase não dá mais permissão automática nas
+  // tabelas novas do public. Depois de toda rodada (mesmo sem migration nova),
+  // garante o acesso dos papéis da API. Não abre dado: o RLS continua mandando.
+  await client.query(`
+    grant usage on schema public to anon, authenticated, service_role;
+    grant select, insert, update, delete on all tables in schema public to anon, authenticated, service_role;
+    grant usage, select, update on all sequences in schema public to anon, authenticated, service_role;
+    grant execute on all functions in schema public to anon, authenticated, service_role;
+  `);
+  console.log("✓ Permissões dos papéis da API garantidas (anon, authenticated, service_role)");
+
   console.log(
     count === 0
       ? "\nNada novo. Banco já está atualizado. ✅"

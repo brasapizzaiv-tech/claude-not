@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { gerarCupomEscPos, gerarTesteEscPos } from "./escpos.mjs";
 
-const VERSAO = "1.2.2"; // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
+const VERSAO = "1.2.3"; // 1.2.3: sinal de vida a cada 60 s (era 15 s; a Vercel cobra por chamada); // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -396,7 +396,7 @@ async function heartbeat() {
     if (r.ok) aplicarNumeracao(await r.json().catch(() => null));
   } catch { /* offline */ }
 }
-setInterval(heartbeat, 15000);
+setInterval(heartbeat, 60000);
 
 // ---------- servidor local pro quiosque ----------
 const cors = {

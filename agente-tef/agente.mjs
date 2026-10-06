@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.10"; // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
+const VERSAO = "0.9.11"; // 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -394,6 +394,6 @@ async function heartbeat() {
     });
   } catch { /* silencioso */ }
 }
-setInterval(heartbeat, 30000);
+setInterval(heartbeat, 60000);
 setTimeout(heartbeat, 2000);
 

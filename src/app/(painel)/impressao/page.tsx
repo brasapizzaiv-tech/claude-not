@@ -21,7 +21,7 @@ export default async function CentralImpressaoPage() {
     .maybeSingle();
 
   const vistoEm = (cfg?.visto_em as string) ?? null;
-  const online = vistoEm ? new Date().getTime() - new Date(vistoEm).getTime() < 40000 : false;
+  const online = vistoEm ? new Date().getTime() - new Date(vistoEm).getTime() < 150000 : false; // sinal de vida do agente a cada 60 s (1.1.6)
 
   return (
     <CentralImpressao

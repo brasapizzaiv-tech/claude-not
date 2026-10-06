@@ -13,6 +13,8 @@ function orientacaoDe(tipo: string, imp: { etiqueta_config: { largura?: number; 
   return largura > altura ? "landscape" : "portrait";
 }
 
+let ultimaNfce = 0;
+
 export async function GET(req: Request) {
   // O token do agente diz de qual loja é este PC — e é o que impede um
   // restaurante de imprimir a comanda do outro na cozinha.
@@ -22,7 +24,12 @@ export async function GET(req: Request) {
   // O agente consulta esta rota a cada 3 s — é o "relógio" do sistema. Aqui
   // também saem as notas automáticas cujo prazo de espera venceu (ninguém
   // precisa estar com a tela do caixa aberta).
-  try { await processarNfcePendentes(); } catch { /* nota não pode travar a impressão */ }
+  // Notas automáticas: no máximo uma checagem a cada 30 s, não a cada consulta
+  // do agente (que chegava a 3 s). A fila de notas já espera N minutos mesmo.
+  if (Date.now() - ultimaNfce > 30_000) {
+    ultimaNfce = Date.now();
+    try { await processarNfcePendentes(); } catch { /* nota não pode travar a impressão */ }
+  }
 
   const admin = createAdminClient();
   const limite = new Date(Date.now() - 90_000).toISOString();

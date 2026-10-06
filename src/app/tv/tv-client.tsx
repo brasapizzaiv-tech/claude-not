@@ -2,10 +2,12 @@
 
 // Quadro do rodízio na TV da cozinha (32", vista de 3–4 m, luz forte).
 //
-// Consulta a fila a cada 3 s pela rota protegida pela chave. Feito pra ficar
-// aberto a noite inteira: um único timer, sem acúmulo de listeners, e o
-// relógio/tempo de espera recalculados a partir do estado atual (nada cresce).
+// Recebe a fila pela rota protegida pela chave: o banco avisa "mudou" pelo
+// Realtime e a TV busca na hora; de segurança, a fila a cada 30 s e o resto
+// a cada 5 min. Feito pra ficar aberto a noite inteira: timers fixos, sem
+// acúmulo de listeners, relógio recalculado a partir do estado (nada cresce).
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { QuadroRodizio } from "@/components/tv-rodizio";
 import { TV } from "@/lib/tv-cores";
 import { TvPaginaCardapio, TvPontos, totalPaginasTv, type AniversarianteTv, type CardapioTv, type RecadoTv } from "@/components/tv-cardapio";
@@ -15,7 +17,8 @@ import type { Feriado } from "@/lib/feriados";
 import type { Evento } from "@/lib/eventos";
 import { filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
-const INTERVALO_MS = 3000;
+const LEVE_MS = 30_000;      // consulta de segurança da fila
+const COMPLETO_MS = 300_000; // cardápio, recados, feriados, temperatura...
 
 declare global { interface Window { __tvOk?: boolean } }
 
@@ -32,31 +35,39 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   const [agora, setAgora] = useState(agoraInicial);
   const [conectado, setConectado] = useState(true);
   const [ultimaOk, setUltimaOk] = useState<number>(0);
+  const [canal, setCanal] = useState<string | null>(null);
+  const buscarRef = useRef<((completo: boolean) => Promise<void>) | null>(null);
   const buscando = useRef(false);
 
   // Avisa a página que o código ligou (senão ela pula pro modo simples).
   useEffect(() => { window.__tvOk = true; }, []);
 
-  // Busca a fila; nunca sobrepõe duas buscas.
+  // Busca a fila; nunca sobrepõe duas buscas. Duas consultas: a LEVE (só a
+  // fila) roda quando o banco avisa "mudou" pelo Realtime e, por segurança, a
+  // cada 30 s; a COMPLETA (cardápio, recados, feriados...) a cada 5 min.
+  // Antes era tudo a cada 3 s: 28 mil chamadas e 22 GB por mês.
   useEffect(() => {
     let vivo = true;
-    const buscar = async () => {
+    const buscar = async (completo: boolean) => {
       if (buscando.current) return;
       buscando.current = true;
       try {
-        const r = await fetch(`/api/tv/fila?chave=${encodeURIComponent(chave)}`, { cache: "no-store", signal: AbortSignal.timeout(4000) });
+        const r = await fetch(`/api/tv/fila?chave=${encodeURIComponent(chave)}${completo ? "" : "&modo=leve"}`, { cache: "no-store", signal: AbortSignal.timeout(4000) });
         const j = await r.json();
         if (!vivo) return;
         if (j.ok) {
           setPedidos(j.pedidos as PedidoRodizio[]);
-          if (Array.isArray(j.recados)) setRecados(j.recados as RecadoTv[]);
-          if (Array.isArray(j.apontamentos)) setApontamentos(j.apontamentos as ApontamentoTv[]);
-          if (Array.isArray(j.feriados)) setFeriados(j.feriados as Feriado[]);
-          if (Array.isArray(j.eventos)) setEventos(j.eventos as Evento[]);
-          if (Array.isArray(j.aniversariantes)) setAniversariantes(j.aniversariantes as AniversarianteTv[]);
-          if (j.cardapio) setCardapio(j.cardapio as CardapioTv);
           setUltimaAtividade(typeof j.ultimaAtividade === "string" ? j.ultimaAtividade : null);
-          setTemperatura(typeof j.temperatura === "number" ? j.temperatura : null);
+          if (!j.leve) {
+            if (Array.isArray(j.recados)) setRecados(j.recados as RecadoTv[]);
+            if (Array.isArray(j.apontamentos)) setApontamentos(j.apontamentos as ApontamentoTv[]);
+            if (Array.isArray(j.feriados)) setFeriados(j.feriados as Feriado[]);
+            if (Array.isArray(j.eventos)) setEventos(j.eventos as Evento[]);
+            if (Array.isArray(j.aniversariantes)) setAniversariantes(j.aniversariantes as AniversarianteTv[]);
+            if (j.cardapio) setCardapio(j.cardapio as CardapioTv);
+            setTemperatura(typeof j.temperatura === "number" ? j.temperatura : null);
+            if (typeof j.canal === "string") setCanal(j.canal);
+          }
           setConectado(true);
           setUltimaOk(Date.now());
         } else {
@@ -68,19 +79,44 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
         buscando.current = false;
       }
     };
-    buscar();
-    const t = setInterval(buscar, INTERVALO_MS);
-    // Voltou a rede / a aba voltou a ficar visível: busca na hora.
-    const acordar = () => { if (document.visibilityState === "visible") buscar(); };
-    window.addEventListener("online", buscar);
+    buscarRef.current = buscar;
+    buscar(true);
+    const tLeve = setInterval(() => buscar(false), LEVE_MS);
+    const tCompleto = setInterval(() => buscar(true), COMPLETO_MS);
+    // Voltou a rede / a aba voltou a ficar visível: busca tudo na hora.
+    const tudo = () => buscar(true);
+    const acordar = () => { if (document.visibilityState === "visible") tudo(); };
+    window.addEventListener("online", tudo);
     document.addEventListener("visibilitychange", acordar);
     return () => {
       vivo = false;
-      clearInterval(t);
-      window.removeEventListener("online", buscar);
+      clearInterval(tLeve);
+      clearInterval(tCompleto);
+      window.removeEventListener("online", tudo);
       document.removeEventListener("visibilitychange", acordar);
     };
   }, [chave]);
+
+  // O banco avisa "mudou" num canal público do Realtime (migration 0207): a
+  // TV busca a fila na hora, sem ficar perguntando. O aviso não traz dado
+  // nenhum; a leitura continua pela rota com a chave.
+  useEffect(() => {
+    if (!canal) return;
+    const supabase = createClient();
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const ch = supabase
+      .channel(canal)
+      .on("broadcast", { event: "mudou" }, () => {
+        // Vários avisos no mesmo segundo (pedido com 3 pizzas) viram uma busca.
+        if (t) clearTimeout(t);
+        t = setTimeout(() => { t = null; buscarRef.current?.(false); }, 300);
+      })
+      .subscribe();
+    return () => {
+      if (t) clearTimeout(t);
+      supabase.removeChannel(ch);
+    };
+  }, [canal]);
 
   // Relógio de 1 s pro tempo de espera e pra sumir os "pronto" no prazo.
   useEffect(() => {

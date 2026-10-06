@@ -1,4 +1,5 @@
 import { aniversariantesMes, apontamentosTv, cardapioTv, chaveTvOk, eventosTv, feriadosTv, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
+import { empresaAtualId } from "@/lib/empresa";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,12 +17,25 @@ export async function GET(req: Request) {
   if (!ok) return Response.json({ ok: false, erro: "chave inválida" }, { status: 401 });
 
   try {
-    const [pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados] = await Promise.all([
-      filaTv(), recadosTv(), temperaturaIvoti(), aniversariantesMes(), cardapioTv(), ultimaAtividadeRodizio(), apontamentosTv(), feriadosTv(),
+    // Modo leve: só a fila (o que muda de minuto em minuto). A TV usa quando o
+    // banco avisa que um pedido mudou e na consulta de segurança de 30 s; o
+    // resto (cardápio, recados, feriados...) vem na consulta completa, a cada
+    // 5 min. Antes vinha tudo a cada 3 s — 22 GB por mês só de cardápio.
+    if (url.searchParams.get("modo") === "leve") {
+      const [pedidos, ultimaAtividade] = await Promise.all([filaTv(), ultimaAtividadeRodizio()]);
+      return Response.json(
+        { ok: true, leve: true, agora: new Date().toISOString(), pedidos, ultimaAtividade },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const [pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, empresaId] = await Promise.all([
+      filaTv(), recadosTv(), temperaturaIvoti(), aniversariantesMes(), cardapioTv(), ultimaAtividadeRodizio(), apontamentosTv(), feriadosTv(), empresaAtualId(),
     ]);
     const eventos = await eventosTv();
+    // Canal do Realtime em que o banco avisa "mudou" (migration 0207).
+    const canal = `tv-rodizio:${empresaId ?? "sem-empresa"}`;
     return Response.json(
-      { ok: true, agora: new Date().toISOString(), pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, eventos },
+      { ok: true, agora: new Date().toISOString(), pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, eventos, canal },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {

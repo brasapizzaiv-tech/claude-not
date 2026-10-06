@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { print } = ptp;
-const VERSAO = "1.1.5"; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
+const VERSAO = "1.1.6"; // 1.1.6: consulta a fila a cada 3 s só enquanto há impressão (2 min depois da última), senão a cada 10 s; sinal de vida a cada 60 s — corta 70% das chamadas na Vercel; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -20,6 +20,9 @@ const cfg = JSON.parse(readFileSync(path.join(dir, "config.json"), "utf8").repla
 const baseUrl = String(cfg.baseUrl || "").replace(/\/$/, "");
 const token = cfg.token || "";
 const intervalo = Number(cfg.intervaloMs) || 3000;
+// Sem nada pra imprimir há 2 min, a consulta espaça (a Vercel cobra por chamada).
+const intervaloOcioso = Number(cfg.intervaloOciosoMs) || 10000;
+let ultimoJob = 0;
 const headers = { Authorization: `Bearer ${token}` };
 const tmp = path.join(os.tmpdir(), "brasa-etiquetas");
 const logFile = path.join(dataDir, "agente.log");
@@ -103,6 +106,7 @@ async function ciclo() {
     if (r.status === 401) { log("Token inválido — confira o config.json (copie de Etiquetas → Estações)."); return; }
     if (!r.ok) { log(`Erro ao buscar a fila (${r.status}).`); return; }
     const { jobs } = await r.json();
+    if (jobs.length > 0) ultimoJob = Date.now();
     for (const job of jobs) {
       if (!job.printer) {
         log(`Impressora "${job.impressora || "?"}" sem "Nome no Windows" — pulei. Configure em Etiquetas → Estações.`);
@@ -165,7 +169,12 @@ log(`Agente de impressão v${VERSAO} no ar.`);
 log(`Servidor: ${baseUrl || "(vazio!)"}`);
 if (!token) log("ATENÇÃO: token vazio no config.json.");
 await mkdir(tmp, { recursive: true });
-setInterval(ciclo, intervalo);
-ciclo();
+// Um ciclo agenda o próximo: 3 s enquanto está imprimindo, 10 s quando ocioso.
+async function laco() {
+  await ciclo();
+  const ativo = Date.now() - ultimoJob < 120000;
+  setTimeout(laco, ativo ? intervalo : intervaloOcioso);
+}
+laco();
 heartbeat();
-setInterval(heartbeat, 15000);
+setInterval(heartbeat, 60000);
