@@ -354,6 +354,7 @@ export async function lancarNota(
     fornecedor_id: string | null;
     origem: "nota";
     nota_id: string;
+    lancamento_em: string;
     vencimento: string | null;
     pago: boolean;
     pago_em: string | null;
