@@ -37,10 +37,15 @@ export default async function NotaDetalhePage({
   // fim e a marca fica). A tela mostrava "✓ Lançada no financeiro" e a conta não
   // existia em lugar nenhum — foi assim que a NF 666 da Ovos da Estância ficou
   // sem conta e o pagamento de 21/08 não tinha com o que conciliar.
-  const { count: qtdLanc } = await supabase
+  // A mesma consulta traz o dia em que a nota foi lançada (lancamento_em da
+  // conta mais antiga; parcelas repetem a data).
+  const { data: lancs, count: qtdLanc } = await supabase
     .from("lancamentos")
-    .select("id", { count: "exact", head: true })
-    .eq("nota_id", id);
+    .select("lancamento_em", { count: "exact" })
+    .eq("nota_id", id)
+    .order("lancamento_em", { ascending: true, nullsFirst: false })
+    .limit(1);
+  const lancadaEm = (lancs as { lancamento_em: string | null }[] | null)?.[0]?.lancamento_em ?? null;
   const semConta = ((notaData as { situacao?: string }).situacao === "lancada") && (qtdLanc ?? 0) === 0;
   const nota = notaData as NotaFiscal;
 
@@ -137,6 +142,7 @@ export default async function NotaDetalhePage({
           ? ` · boleto ${moeda(Number(nota.valor_boleto))}`
           : ""}
         {nota.vencimento ? ` · vence ${dataBR(nota.vencimento)}` : ""}
+        {lancadaEm ? ` · lançada ${dataBR(lancadaEm)}` : ""}
       </p>
       {!nota.fornecedor_id && (
         <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">

@@ -19,6 +19,8 @@ export type NotaLinha = {
   situacao: string;
   aguardando: boolean;
   parcelas: number;
+  /** Dia em que a nota virou conta a pagar (null enquanto pendente). */
+  lancada_em: string | null;
 };
 
 const badge: Record<string, string> = {
@@ -79,7 +81,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead className="text-left text-xs font-medium text-texto-fraco">
               <tr>
                 <th className="px-4 py-3">Fornecedor</th>
@@ -88,6 +90,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                 <th className="px-4 py-3">Vencimento</th>
                 <th className="px-4 py-3 text-right">Valor</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Lançada em</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -135,6 +138,9 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                         </span>
                       )}
                     </div>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-texto-suave" title="Dia em que a nota virou conta a pagar">
+                    {n.lancada_em ? dataBR(n.lancada_em) : "—"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <NotaAcoes notaId={n.id} situacao={n.situacao} />

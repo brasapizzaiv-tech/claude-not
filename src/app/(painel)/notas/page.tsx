@@ -57,15 +57,32 @@ export default async function NotasPage() {
       data_emissao: n.data_emissao,
     }));
 
-  // Contagem de parcelas por nota (para o selo "Nx" na lista).
+  // Contagem de parcelas por nota (para o selo "Nx" na lista) e o dia em que
+  // cada nota lançada virou conta a pagar (fica na conta, lancamento_em).
   const parcCount = new Map<string, number>();
+  const lancadaEm = new Map<string, string>();
   {
-    const { data: parc } = await supabase
-      .from("nota_parcelas")
-      .select("nota_id")
-      .in("nota_id", notas.map((n) => n.id));
+    const idsLancadas = notas.filter((n) => n.situacao === "lancada").map((n) => n.id);
+    const [{ data: parc }, { data: lanc }] = await Promise.all([
+      supabase
+        .from("nota_parcelas")
+        .select("nota_id")
+        .in("nota_id", notas.map((n) => n.id)),
+      idsLancadas.length > 0
+        ? supabase
+            .from("lancamentos")
+            .select("nota_id, lancamento_em")
+            .in("nota_id", idsLancadas)
+            .not("lancamento_em", "is", null)
+        : Promise.resolve({ data: [] as { nota_id: string; lancamento_em: string }[] }),
+    ]);
     for (const p of (parc as { nota_id: string }[]) ?? [])
       parcCount.set(p.nota_id, (parcCount.get(p.nota_id) ?? 0) + 1);
+    // Nota parcelada tem várias contas com a mesma data; fica a mais antiga.
+    for (const l of (lanc as { nota_id: string; lancamento_em: string }[]) ?? []) {
+      const atual = lancadaEm.get(l.nota_id);
+      if (!atual || l.lancamento_em < atual) lancadaEm.set(l.nota_id, l.lancamento_em);
+    }
   }
 
   const linhas: NotaLinha[] = notas.map((n) => ({
@@ -78,6 +95,7 @@ export default async function NotasPage() {
     situacao: n.situacao,
     aguardando: aguardando(n),
     parcelas: parcCount.get(n.id) ?? 0,
+    lancada_em: lancadaEm.get(n.id) ?? null,
   }));
 
   return (
