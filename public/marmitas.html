@@ -52,6 +52,13 @@
   .chip span{display:inline-block;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;user-select:none}
   .chip input:checked + span{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
   .chip input:disabled + span{opacity:.35}
+  .qchip{display:inline-flex;align-items:stretch;border-radius:999px;border:1px solid var(--line);background:var(--card2);overflow:hidden}
+  .qchip button{border:0;background:transparent;color:var(--txt);font-size:15px;padding:10px 14px;cursor:pointer;font-family:inherit;user-select:none}
+  .qchip.on{background:var(--accent);border-color:transparent}
+  .qchip.on button{color:#fff;font-weight:700}
+  .qchip .qbadge{display:inline-block;margin-left:8px;background:#fff;color:var(--accent);border-radius:999px;padding:1px 8px;font-size:13px;font-weight:700}
+  .qchip .qmenos{border-left:1px solid #ffffff80;padding:10px 13px;font-size:18px;line-height:1}
+  .qchip.off{opacity:.35}
   .prod{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
   .prod .fh{display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px}
   .prod .ln{font-size:14px;color:var(--muted);margin-top:2px}
@@ -123,7 +130,7 @@
         <h2>3. Monte sua marmita</h2>
         <div id="colCardVazio" class="empty hidden">O cardápio de hoje ainda não está disponível. Fale com o buffet.</div>
         <div id="colMontar">
-          <h3>Pratos <span class="miudo" id="colContador">(1 a 4)</span></h3>
+          <h3>Pratos <span class="miudo" id="colContador">(até 4 porções)</span></h3>
           <div class="escolhas" id="colPratos"></div>
           <h3>Proteína <span class="miudo">(opcional)</span></h3>
           <div class="escolhas" id="colProt"></div>
@@ -189,7 +196,7 @@
           <div><label>Matrícula</label><input type="text" id="addMatricula" placeholder="Opcional"></div>
         </div>
         <label>Filial</label><div class="segbtns" id="addFiliais"></div>
-        <h3>Pratos <span class="miudo" id="addContador">(1 a 4)</span></h3><div class="escolhas" id="addPratos"></div>
+        <h3>Pratos <span class="miudo" id="addContador">(até 4 porções)</span></h3><div class="escolhas" id="addPratos"></div>
         <h3>Proteína <span class="miudo">(opcional)</span></h3><div class="escolhas" id="addProt"></div>
         <h3>Salada</h3><div class="escolhas" id="addSalada"></div>
         <button class="block" onclick="lancarPedido()">Adicionar pedido</button>
@@ -317,7 +324,7 @@
     <input type="hidden" id="edId">
     <div class="row"><div><label>Nome</label><input type="text" id="edNome"></div><div><label>Matrícula</label><input type="text" id="edMatricula"></div></div>
     <label>Filial</label><div class="segbtns" id="edFiliaisSel"></div>
-    <h3>Pratos <span class="miudo" id="edContador">(1 a 4)</span></h3><div class="escolhas" id="edPratos"></div>
+    <h3>Pratos <span class="miudo" id="edContador">(até 4 porções)</span></h3><div class="escolhas" id="edPratos"></div>
     <h3>Proteína</h3><div class="escolhas" id="edProt"></div>
     <h3>Salada</h3><div class="escolhas" id="edSalada"></div>
     <button class="block" onclick="salvarEdicao()">Salvar alterações</button>
@@ -355,22 +362,38 @@ async function api(path,opts={}){
 }
 
 /* ===== montagem reutilizável ===== */
+// Pratos com QUANTIDADE (06/10/2026): cada toque soma uma porção, o "−" tira
+// uma; no máximo 4 porções no total (4× arroz vale). A lista salva repete o
+// nome ("Arroz","Arroz","Feijão"), então pedido antigo continua igual.
+const MAX_PORCOES=4;
+const MONT={};
+function agruparPratos(lista){const o=[];arr(lista).forEach(n=>{if(!n)return;const g=o.find(x=>x.nome===n);if(g)g.q++;else o.push({nome:n,q:1});});return o;}
+function textoPratos(lista){return agruparPratos(lista).map(g=>(g.q>1?g.q+'× ':'')+g.nome).join(', ');}
 function renderMontagem(pre,card,sel){
   sel=sel||{pratos:[],proteina:'',salada:false};
-  const P=arr(card.pratos),PR=arr(card.proteinas);
-  $('#'+pre+'Pratos').innerHTML = P.length? P.map(n=>`<label class="chip"><input type="checkbox" data-g="${pre}p" value="${escapeHtml(n)}" ${sel.pratos.includes(n)?'checked':''} onchange="limitar('${pre}')"><span>${escapeHtml(n)}</span></label>`).join('') : '<span class="miudo">Sem pratos.</span>';
+  const P=arr(card.pratos).slice(),PR=arr(card.proteinas);
+  const qtd={};arr(sel.pratos).forEach(n=>{if(n)qtd[n]=(qtd[n]||0)+1;});
+  // Prato de pedido antigo que saiu do cardápio continua na tela pra não sumir da edição.
+  Object.keys(qtd).forEach(n=>{if(!P.includes(n))P.push(n);});
+  MONT[pre]={lista:P,qtd};
+  renderPratos(pre);
   $('#'+pre+'Prot').innerHTML = PR.length? (`<label class="chip"><input type="radio" name="${pre}prot" value="" ${!sel.proteina?'checked':''}><span>Nenhuma</span></label>`+PR.map(n=>`<label class="chip"><input type="radio" name="${pre}prot" value="${escapeHtml(n)}" ${sel.proteina===n?'checked':''}><span>${escapeHtml(n)}</span></label>`).join('')) : '<span class="miudo">—</span>';
   $('#'+pre+'Salada').innerHTML = card.salada? `<label class="chip"><input type="checkbox" id="${pre}ckSalada" data-nome="${escapeHtml(card.salada)}" ${sel.salada?'checked':''}><span>Incluir ${escapeHtml(card.salada)}</span></label>` : '<span class="miudo">Sem salada.</span>';
-  limitar(pre);
 }
-function limitar(pre){
-  const cks=[...document.querySelectorAll(`[data-g="${pre}p"]`)];
-  const n=cks.filter(c=>c.checked).length;
-  cks.forEach(c=>{if(!c.checked)c.disabled=n>=4;});
-  const c=$('#'+pre+'Contador');if(c)c.textContent=`(${n}/4)`;
+function totalPorcoes(pre){const m=MONT[pre];return m?Object.values(m.qtd).reduce((s,x)=>s+x,0):0;}
+function renderPratos(pre){
+  const m=MONT[pre];if(!m)return;
+  const total=totalPorcoes(pre), cheio=total>=MAX_PORCOES;
+  $('#'+pre+'Pratos').innerHTML = m.lista.length? m.lista.map((n,i)=>{const q=m.qtd[n]||0;
+    return `<div class="qchip ${q>0?'on':(cheio?'off':'')}"><button type="button" onclick="qtdMais('${pre}',${i})" ${(!q&&cheio)?'disabled':''} aria-label="Mais uma porção de ${escapeHtml(n)}">${escapeHtml(n)}${q>0?`<span class="qbadge">×${q}</span>`:''}</button>${q>0?`<button type="button" class="qmenos" onclick="qtdMenos('${pre}',${i})" aria-label="Tirar uma porção de ${escapeHtml(n)}">−</button>`:''}</div>`;
+  }).join('') : '<span class="miudo">Sem pratos.</span>';
+  const c=$('#'+pre+'Contador');if(c)c.textContent=`(${total} de ${MAX_PORCOES} porções)`;
 }
+function qtdMais(pre,i){const m=MONT[pre];if(!m)return;const n=m.lista[i];if(n==null||totalPorcoes(pre)>=MAX_PORCOES)return;m.qtd[n]=(m.qtd[n]||0)+1;renderPratos(pre);}
+function qtdMenos(pre,i){const m=MONT[pre];if(!m)return;const n=m.lista[i];if(!m.qtd[n])return;m.qtd[n]--;if(m.qtd[n]<=0)delete m.qtd[n];renderPratos(pre);}
 function lerMontagem(pre){
-  const pratos=[...document.querySelectorAll(`[data-g="${pre}p"]:checked`)].map(c=>c.value);
+  const m=MONT[pre]||{lista:[],qtd:{}};
+  const pratos=[];m.lista.forEach(n=>{for(let k=0;k<(m.qtd[n]||0);k++)pratos.push(n);});
   const pr=document.querySelector(`input[name="${pre}prot"]:checked`);
   const cs=$('#'+pre+'ckSalada');
   return {pratos,proteina:pr?pr.value:'',salada:(cs&&cs.checked)?(cs.dataset.nome||'Salada'):''};
@@ -467,7 +490,7 @@ async function colConfirmar(){
   try{
     await fetch('/api/marmitas/publico/pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:PUBLICO.data,colaboradorId:COL_SEL.id,filial:FILIAL_COL,pratos:m.pratos,proteina:m.proteina,salada:m.salada})}).then(async r=>{const d=await r.json();if(!r.ok){const e=new Error(d.erro||'Erro');e.recarregar=!!d.recarregar;throw e;}return d;});
     $('#colStep2').classList.add('hidden');
-    $('#colResumo').textContent=`${COL_SEL.nome} · ${FILIAL_COL} · ${m.pratos.join(', ')}${m.proteina?' · '+m.proteina:''}${m.salada?' · salada: '+m.salada:''}`;
+    $('#colResumo').textContent=`${COL_SEL.nome} · ${FILIAL_COL} · ${textoPratos(m.pratos)}${m.proteina?' · '+m.proteina:''}${m.salada?' · salada: '+m.salada:''}`;
     $('#colSucesso').classList.remove('hidden');
   }catch(e){ toast(e.message,true,e.recarregar?7000:2600); if(e.recarregar) setTimeout(iniciarColaborador,1500); }
 }
@@ -558,14 +581,14 @@ async function lancarPedido(){
     renderMontagem('add',window.CARD_DIA,null); toast('Pedido adicionado ✓'); carregarDia();
   }catch(e){ toast(e.message,true); }
 }
-function descPedido(p){const pratos=arr(p.pratos);let h='';if(pratos.length){h+='<div><b>Pratos:</b></div>'+pratos.map(x=>`<div style="padding-left:10px">- ${escapeHtml(x)}</div>`).join('');}if(p.proteina)h+=`<div><b>Proteína:</b> ${escapeHtml(p.proteina)}</div>`;h+=`<div><b>Salada:</b> ${p.salada?escapeHtml(p.salada):'Não'}</div>`;return h;}
+function descPedido(p){const pratos=arr(p.pratos);let h='';if(pratos.length){h+='<div><b>Pratos:</b></div>'+agruparPratos(pratos).map(g=>`<div style="padding-left:10px">- ${g.q>1?g.q+'× ':''}${escapeHtml(g.nome)}</div>`).join('');}if(p.proteina)h+=`<div><b>Proteína:</b> ${escapeHtml(p.proteina)}</div>`;h+=`<div><b>Salada:</b> ${p.salada?escapeHtml(p.salada):'Não'}</div>`;return h;}
 // Itens do pedido que não estão no cardápio do dia (pedido feito com a tela
 // desatualizada ou cardápio trocado depois) — destaca pra conferir antes de imprimir.
 function foraDoCardapio(p){
   const c=window.CARD_DIA; if(!c||!c.pratos.length) return [];
   const n=s=>String(s).trim().toLowerCase();
   const pr=new Set(c.pratos.map(n)), pt=new Set(c.proteinas.map(n));
-  const fora=arr(p.pratos).filter(x=>!pr.has(n(x)));
+  const fora=[...new Set(arr(p.pratos))].filter(x=>!pr.has(n(x)));
   if(p.proteina&&!pt.has(n(p.proteina))) fora.push(p.proteina);
   return fora;
 }
@@ -598,7 +621,7 @@ async function removerPedido(id){ if(!confirm('Remover este pedido?'))return; tr
 /* ---- impressão de etiquetas (impressora térmica 80mm) ---- */
 function etiquetaHTML(p){
   const data=formatarData($('#dataDia').value||hoje());
-  const pratosHtml=arr(p.pratos).map(x=>`<div class="et-l" style="padding-left:10px">- ${escapeHtml(x)}</div>`).join('');
+  const pratosHtml=agruparPratos(p.pratos).map(g=>`<div class="et-l" style="padding-left:10px">- ${g.q>1?g.q+'× ':''}${escapeHtml(g.nome)}</div>`).join('');
   return `<div class="etiqueta">
     <div class="et-conv">${escapeHtml(CONFIG.nomeConvenio||'Kern')} · ${data}${CONFIG.horaEntrega?(' · entrega '+escapeHtml(CONFIG.horaEntrega)):''}</div>
     <div class="et-filial">${escapeHtml(p.filial)}${p.numero!=null?` · Nº ${p.numero}`:''}</div>
@@ -623,7 +646,7 @@ function listaConferencia(){
   const conv=escapeHtml(CONFIG.nomeConvenio||'Kern');
   const paginas=filiais.map(fil=>{
     const ped=base.filter(p=>p.filial===fil).sort((a,b)=>(a.numero||9999)-(b.numero||9999)||a.cliente.localeCompare(b.cliente));
-    const linhas=ped.map(p=>`<tr><td class="n">${p.numero!=null?p.numero:'—'}</td><td>${escapeHtml(p.cliente)}</td><td>${escapeHtml(p.matricula||'')}</td><td class="d">${escapeHtml(arr(p.pratos).join(', '))}${p.proteina?' · '+escapeHtml(p.proteina):''}${p.salada?' · salada':''}</td><td class="c">☐</td></tr>`).join('');
+    const linhas=ped.map(p=>`<tr><td class="n">${p.numero!=null?p.numero:'—'}</td><td>${escapeHtml(p.cliente)}</td><td>${escapeHtml(p.matricula||'')}</td><td class="d">${escapeHtml(textoPratos(p.pratos))}${p.proteina?' · '+escapeHtml(p.proteina):''}${p.salada?' · salada':''}</td><td class="c">☐</td></tr>`).join('');
     return `<section><h1>${conv} · ${escapeHtml(fil)}</h1><div class="sub">${data} (${dia})${CONFIG.horaEntrega?' · entrega '+escapeHtml(CONFIG.horaEntrega):''} · <b>${ped.length} marmita${ped.length===1?'':'s'}</b></div>
       <table><thead><tr><th class="n">Nº</th><th>Nome</th><th>Matrícula</th><th>Marmita</th><th class="c">Entregue</th></tr></thead><tbody>${linhas}</tbody></table>
       <div class="ass">Conferido por: ____________________________ &nbsp;&nbsp; Recebido por: ____________________________</div></section>`;

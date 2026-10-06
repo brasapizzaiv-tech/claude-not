@@ -215,8 +215,9 @@ type Pedido = ReturnType<typeof pedidoDoBody>;
 function validaPedido(p: Pedido) {
   if (!p.filial) return "Escolha a filial";
   if (!p.cliente) return "Informe o nome";
+  // A lista repete o nome por porção ("Arroz","Arroz","Feijão"): 4× arroz vale.
   if (p.pratos.length < 1) return "Escolha pelo menos 1 prato";
-  if (p.pratos.length > MAX_PRATOS) return "No maximo " + MAX_PRATOS + " pratos";
+  if (p.pratos.length > MAX_PRATOS) return "No máximo " + MAX_PRATOS + " porções de pratos";
   return null;
 }
 async function inserePedido(db: Db, data: string, p: Pedido) {

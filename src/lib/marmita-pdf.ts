@@ -39,7 +39,14 @@ function desenhar(doc: PDFKit.PDFDocument, fe: number, pad: number, W: number, d
   doc.y = y + 3;
   doc.font("Helvetica-Bold").fontSize(7.5 * fe).text("Pratos:", pad, doc.y, { width: W });
   doc.font("Helvetica").fontSize(7.5 * fe);
-  for (const p of d.pratos) doc.text(`• ${p}`, pad + 4, doc.y, { width: W - 4 });
+  // Porções repetidas viram "2× Arroz" (a lista repete o nome por porção).
+  const grupos: { nome: string; q: number }[] = [];
+  for (const p of d.pratos) {
+    const g = grupos.find((x) => x.nome === p);
+    if (g) g.q++;
+    else grupos.push({ nome: p, q: 1 });
+  }
+  for (const g of grupos) doc.text(`• ${g.q > 1 ? `${g.q}× ` : ""}${g.nome}`, pad + 4, doc.y, { width: W - 4 });
   if (d.proteina) {
     doc.font("Helvetica-Bold").fontSize(7.5 * fe).text(`Proteína: ${d.proteina}`, pad, doc.y + 1.5, { width: W });
   }
