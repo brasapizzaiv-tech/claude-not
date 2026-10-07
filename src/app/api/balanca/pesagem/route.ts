@@ -28,7 +28,13 @@ export async function POST(req: Request) {
     }
   }
   const numeroAgente = Number(body.numero) > 0 ? Math.round(Number(body.numero)) : null;
-  const { data: cfgRows } = await admin.from("pdv_config").select("chave, valor").eq("empresa_id", empresaId);
+  const { data: cfgRows, error: erroCfg } = await admin.from("pdv_config").select("chave, valor").eq("empresa_id", empresaId);
+  // Sem a tabela de preços na mão, NÃO cria comanda: em 07/10/2026 a #241 nasceu
+  // com R$ 0,00 (0,39 kg) porque a leitura da config falhou e o preço do kg
+  // virou zero. 503 = "tenta de novo" pro agente, que guarda a pesagem na fila.
+  if (erroCfg || !cfgRows || cfgRows.length === 0) {
+    return Response.json({ ok: false, erro: "tabela de preços indisponível agora; tente de novo" }, { status: 503 });
+  }
   const cfg: Record<string, string> = {};
   for (const r of (cfgRows as { chave: string; valor: string }[]) ?? []) cfg[r.chave] = r.valor;
 
@@ -39,6 +45,9 @@ export async function POST(req: Request) {
   const livreDia = cfg[`buffet_livre_${dow}`];
   const precoKg = kgDia != null && kgDia !== "" ? Number(kgDia) : Number(cfg.preco_kg || 0);
   const livrePreco = livreDia != null && livreDia !== "" ? Number(livreDia) : Number(cfg.buffet_livre || 0);
+  if (!body.livre_direto && !(precoKg > 0)) {
+    return Response.json({ ok: false, erro: "preço do kg não configurado" }, { status: 422 });
+  }
 
   let peso = 0, tara = 0, liquido = 0, valor = 0, livre = false, soKg = false;
 
