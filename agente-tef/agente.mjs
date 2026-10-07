@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.12"; // 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
+const VERSAO = "0.9.13"; // 0.9.13: a ativacao do Hub manda sobre o terminal do config.json (o config antigo de homologacao derrubou a ativacao de producao em 07/10); 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -34,9 +34,11 @@ const pastaResp = cfg.pastaResp || path.join(pastaBase, "Resp");
 // ("terminal desabilitado") pra qualquer coisa que não seja o terminal ativado
 // nele — apelido tipo CAIXA1 não serve (24/09). Quem sabe o número certo é o
 // próprio Hub: na ativação ele grava Dats\comprovante-ativacao-<terminal>.txt.
-// Então: config.json manda se tiver; senão o agente lê o comprovante mais novo,
-// e volta a olhar a cada operação enquanto não achar (a ativação pode vir
-// depois da instalação). Hostname é o último recurso, só pro simulador.
+// Então: a ATIVAÇÃO do Hub manda (o comprovante mais novo); config.json só vale
+// enquanto não há ativação neste PC (simulador). Em 07/10/2026 o config.json
+// ainda tinha o terminal de homologação, o agente escreveu esse número no
+// e1_tef_configs.json do Hub ativado com o CNPJ da Brasa e o Hub passou a dar
+// "erro ao obter dados de ativação". Hostname é o último recurso.
 const pastaDatsHub = cfg.pastaDatsHub || "C:\\Elgin\\TEF\\Dats";
 function terminalDoComprovante() {
   try {
@@ -53,10 +55,12 @@ function terminalDoComprovante() {
 let terminal = "";
 let terminalOrigem = "";
 function resolverTerminal() {
-  if (terminalOrigem === "config" || terminalOrigem === "ativação") return terminal;
+  if (terminalOrigem === "ativação") return terminal;
   const daCfg = String(cfg.terminal || "").trim();
-  const novo = daCfg || terminalDoComprovante() || os.hostname();
-  const origem = daCfg ? "config" : novo !== os.hostname() ? "ativação" : "hostname";
+  const doHub = terminalDoComprovante();
+  const novo = doHub || daCfg || os.hostname();
+  const origem = doHub ? "ativação" : daCfg ? "config" : "hostname";
+  if (doHub && daCfg && doHub !== daCfg && terminal !== doHub) log(`config.json pede o terminal , mas este PC está ativado no Hub como : vale a ativação.`);
   if (novo !== terminal) {
     terminal = novo.slice(0, 16);
     terminalOrigem = origem;
