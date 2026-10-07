@@ -79,8 +79,17 @@ export function requisicaoVenda({ id, valor, tipo = "qualquer", parcelas = 1, re
     [CHAVES.MOEDA, 0],
     [CHAVES.TIPO_CARTAO, tipoCartao],
   ];
+  // Código da transação SEMPRE que o caixa já sabe o que é: sem ele o Hub abre
+  // a janela "à vista ou parcelado?" antes de mandar pro pinpad (reclamação do
+  // Rafael em 07/10/2026, nas primeiras vendas reais). 10 = crédito à vista,
+  // 20 = débito, 11 = crédito parcelado pela loja. "qualquer" (sem tipo)
+  // continua deixando o Hub perguntar.
   if (tipo === "credito" && Number(parcelas) > 1) {
     pares.push([CHAVES.COD_TRANSACAO, 11], [CHAVES.TIPO_PARCELAMENTO, 0], [CHAVES.PARCELAS, parcelas]);
+  } else if (tipo === "credito") {
+    pares.push([CHAVES.COD_TRANSACAO, 10]);
+  } else if (tipo === "debito") {
+    pares.push([CHAVES.COD_TRANSACAO, 20]);
   }
   if (rede) pares.push([CHAVES.REDE, rede]);
   if (terminal) pares.push([CHAVES.TERMINAL, terminal]);
