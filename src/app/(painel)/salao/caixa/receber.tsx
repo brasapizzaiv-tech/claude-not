@@ -178,11 +178,25 @@ export function ReceberComandas({
   const selComandas = comandas.filter((c) => sel.has(c.id));
 
   // Sugestões para adicionar comandas (as abertas ainda não escolhidas).
+  // O número EXATO vem primeiro: digitando "1" com trezentas comandas da
+  // balança abertas, a #1 ficava atrás de 321, 320, 319... e nunca aparecia
+  // nas 8 sugestões (07/10/2026, comandas 1 e 2 "sumidas" do caixa).
   const sugestoes = useMemo(() => {
     const q = busca.trim().toLowerCase();
+    const peso = (c: Comanda) => {
+      if (!q) return 0;
+      const n = String(c.numero);
+      if (n === q) return 0;
+      if (n.startsWith(q)) return 1;
+      if (c.mesa.toLowerCase().includes(q)) return 2;
+      return 3;
+    };
     return comandas
       .filter((c) => !sel.has(c.id))
       .filter((c) => !q || String(c.numero).includes(q) || c.mesa.toLowerCase().includes(q))
+      .map((c) => ({ c, p: peso(c) }))
+      .sort((a, b) => a.p - b.p)
+      .map((x) => x.c)
       .slice(0, 8);
   }, [comandas, sel, busca]);
 
