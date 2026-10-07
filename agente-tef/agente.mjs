@@ -60,7 +60,7 @@ function resolverTerminal() {
   const doHub = terminalDoComprovante();
   const novo = doHub || daCfg || os.hostname();
   const origem = doHub ? "ativação" : daCfg ? "config" : "hostname";
-  if (doHub && daCfg && doHub !== daCfg && terminal !== doHub) log(`config.json pede o terminal , mas este PC está ativado no Hub como : vale a ativação.`);
+  if (doHub && daCfg && doHub !== daCfg && terminal !== doHub) log(`config.json pede o terminal ${daCfg}, mas este PC está ativado no Hub como ${doHub}: vale a ativação.`);
   if (novo !== terminal) {
     terminal = novo.slice(0, 16);
     terminalOrigem = origem;
