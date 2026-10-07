@@ -100,15 +100,22 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
 
   // ---------- GPS ----------
   const [gpsOn, setGpsOn] = useState(false);
+  // Aviso de localização (política da Play, "Prominent Disclosure"): o pedido de
+  // permissão do sistema só pode aparecer DEPOIS do aviso aceito. Vale pra
+  // qualquer caminho (app nativo ou navegador) e é lembrado por aparelho.
+  const [avisoGps, setAvisoGps] = useState(false);
+  const [avisoAceito, setAvisoAceito] = useState(false);
   const [gps, setGps] = useState<{ lat: number; lng: number; precisao: number | null; em: number } | null>(null);
   const [gpsErro, setGpsErro] = useState<string | null>(null);
   const ultimoEnvio = useRef(0);
   const wake = useRef<{ release: () => Promise<void> } | null>(null);
   useEffect(() => {
     // Lembrado por aparelho; liga depois da hidratação (por isso o timeout).
-    let ligado = false;
-    try { ligado = localStorage.getItem("entrega_gps") === "1"; } catch { /* sem storage */ }
-    const t = setTimeout(() => { if (ligado) setGpsOn(true); }, 0);
+    let ligado = false, aceito = false;
+    try { ligado = localStorage.getItem("entrega_gps") === "1"; aceito = localStorage.getItem("entrega_gps_aviso") === "1"; } catch { /* sem storage */ }
+    // Sem o aviso aceito neste aparelho, não religa sozinho: a pessoa toca em
+    // "Ligar rastreamento", lê o aviso e aí sim o sistema pede a permissão.
+    const t = setTimeout(() => { setAvisoAceito(aceito); if (ligado && aceito) setGpsOn(true); }, 0);
     return () => clearTimeout(t);
   }, []);
   // No Android, a ponte do Capacitor às vezes NÃO é injetada na página (ela vem
@@ -130,6 +137,10 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
   const nativo = useMemo(() => capacitorNativo() !== null, [ponte]);
   useEffect(() => {
     if (!gpsOn) { wake.current?.release().catch(() => {}); wake.current = null; return; }
+    // Trava de segurança: nunca pede a permissão do sistema sem o aviso aceito
+    // antes (Play). Quem liga o GPS é alternarGps/aceitarAvisoGps, que já
+    // mostram o aviso; aqui só não roda.
+    if (!avisoAceito) return;
     // ---- app nativo: plugin de segundo plano ----
     const cap = capacitorNativo();
     if (cap) {
@@ -174,26 +185,23 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
     // Tela ligada enquanto rastreia (o navegador não manda posição com a tela apagada).
     (async () => { try { const n = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }; wake.current = (await n.wakeLock?.request("screen")) ?? null; } catch { /* sem wake lock */ } })();
     return () => { navigator.geolocation.clearWatch(id); wake.current?.release().catch(() => {}); wake.current = null; };
-  }, [gpsOn, token, empresa, ponte]);
-  // Aviso de localização em segundo plano. A política da Play exige, ANTES do
-  // pedido de permissão do Android, um aviso dentro do app que diga o que é
-  // coletado, pra quê, com quem é compartilhado e que vale "mesmo com o app
-  // fechado ou sem uso" — com um botão de aceite. Só no app nativo (no
-  // navegador não existe segundo plano) e só na primeira vez por aparelho.
-  const [avisoGps, setAvisoGps] = useState(false);
+  }, [gpsOn, token, empresa, ponte, avisoAceito]);
+  // O aviso diz o que é coletado, pra quê, com quem é compartilhado e que vale
+  // "mesmo com o app fechado ou sem uso", com botão de aceite. Em 06/10/2026 a
+  // Play recusou o app porque dava pra chegar no pedido de permissão sem ver o
+  // aviso (ele só aparecia quando a ponte nativa já tinha sido detectada).
   function ligarGps(v: boolean) {
     setGpsOn(v);
     try { localStorage.setItem("entrega_gps", v ? "1" : "0"); } catch { /* sem storage */ }
   }
   function alternarGps() {
     if (gpsOn) return ligarGps(false);
-    let aceito = false;
-    try { aceito = localStorage.getItem("entrega_gps_aviso") === "1"; } catch { /* sem storage */ }
-    if (nativo && !aceito) { setAvisoGps(true); return; }
+    if (!avisoAceito) { setAvisoGps(true); return; }
     ligarGps(true);
   }
   function aceitarAvisoGps() {
     try { localStorage.setItem("entrega_gps_aviso", "1"); } catch { /* sem storage */ }
+    setAvisoAceito(true);
     setAvisoGps(false);
     ligarGps(true);
   }
@@ -402,16 +410,16 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
               <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
                 <div id="aviso-gps-titulo" className="mb-2 flex items-center gap-2 text-lg font-bold"><Icone nome="local" tamanho={18} /> Sua localização</div>
                 <p className="text-sm text-texto">
-                  O Motelli Entregador coleta a sua <b>localização</b> para mostrar ao restaurante <b>{empresa}</b> onde você está durante as entregas e calcular o tempo até o cliente.
+                  O Motelli Entregador coleta <b>dados de localização</b> para mostrar ao restaurante <b>{empresa}</b> onde você está durante as entregas e calcular o tempo até o cliente, <b>mesmo quando o app está fechado ou não está em uso</b>.
                 </p>
                 <p className="mt-2 text-sm text-texto">
-                  Isso acontece <b>mesmo quando o app está fechado ou não está em uso</b>, enquanto o rastreamento estiver ligado. Uma notificação fixa avisa que ele está ativo, e você desliga quando quiser nesta tela.
+                  Isso só acontece enquanto o rastreamento estiver ligado. Uma notificação fixa avisa que ele está ativo, e você desliga quando quiser nesta tela.
                 </p>
                 <p className="mt-2 text-sm text-texto-suave">
                   A posição vai só para o restaurante que cadastrou você e é apagada após 90 dias. Na próxima tela, escolha <b>“Permitir o tempo todo”</b> (no iPhone, <b>“Permitir Sempre”</b>).
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button onClick={() => setAvisoGps(false)} className="rounded-cartao bg-superficie-suave py-3 font-semibold text-texto">Agora não</button>
+                  <button onClick={() => { setAvisoGps(false); ligarGps(false); }} className="rounded-cartao bg-superficie-suave py-3 font-semibold text-texto">Agora não</button>
                   <button onClick={aceitarAvisoGps} className="rounded-cartao py-3 font-bold text-white" style={{ background: LARANJA }}>Aceitar e ligar</button>
                 </div>
               </div>
