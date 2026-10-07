@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 // Histórico do caixa aberto: tudo que entrou e saiu. Fica fora da tela de
@@ -32,17 +31,29 @@ const comandasDo = (m: Mov) => (m.comanda_ids?.length ? m.comanda_ids : m.comand
 const hora = (iso: string) =>
   new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
-export default async function MovimentosCaixaPage() {
+export default async function MovimentosCaixaPage({ searchParams }: { searchParams: Promise<{ caixa?: string }> }) {
+  const { caixa: caixaParam } = await searchParams;
   const supabase = await createClient();
-  const { data: caixa } = await supabase
+  // Sem caixa aberto, mostra o ÚLTIMO caixa: consultar não é movimentar
+  // (pedido do Rafael em 07/10/2026). Os anteriores ficam numa lista no fim.
+  const { data: caixasRows } = await supabase
     .from("pdv_caixas")
-    .select("id, nome, saldo_inicial, aberto_em")
-    .is("fechado_em", null)
+    .select("id, nome, saldo_inicial, aberto_em, fechado_em")
     .order("aberto_em", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!caixa) redirect("/salao/caixa");
+    .limit(15);
+  type CaixaRow = { id: string; nome: string; saldo_inicial: number; aberto_em: string; fechado_em: string | null };
+  const caixas = (caixasRows as CaixaRow[]) ?? [];
+  const caixa = (caixaParam ? caixas.find((c) => c.id === caixaParam) : undefined) ?? caixas.find((c) => !c.fechado_em) ?? caixas[0];
+  if (!caixa) {
+    return (
+      <div className="p-4 md:p-6">
+        <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">← Voltar ao caixa</Link>
+        <p className="mt-4 text-texto-suave">Nenhum caixa foi aberto ainda.</p>
+      </div>
+    );
+  }
+  const anteriores = caixas.filter((c) => c.id !== caixa.id);
+  const diaBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
   const { data: movRows } = await supabase
     .from("pdv_caixa_mov")
@@ -72,7 +83,8 @@ export default async function MovimentosCaixaPage() {
         <div>
           <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Movimentações do caixa</h1>
           <p className="text-sm text-texto-suave">
-            Caixa <b>{caixa.nome}</b>, aberto às {abertoHora} · {movs.length} lançamento(s)
+            Caixa <b>{caixa.nome}</b> de {diaBR(caixa.aberto_em)}, aberto às {abertoHora}
+            {caixa.fechado_em ? <> e <b>fechado</b> às {hora(caixa.fechado_em)}</> : null} · {movs.length} lançamento(s)
           </p>
         </div>
         <div className="flex flex-wrap gap-4 text-sm">
@@ -136,6 +148,23 @@ export default async function MovimentosCaixaPage() {
           </tbody>
         </table>
       </div>
+
+      {anteriores.length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-2 text-sm font-semibold text-texto">Caixas anteriores</h2>
+          <div className="flex flex-wrap gap-2">
+            {anteriores.map((c) => (
+              <Link
+                key={c.id}
+                href={`/salao/caixa/movimentos?caixa=${c.id}`}
+                className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm text-texto-suave transition hover:bg-superficie-suave"
+              >
+                {diaBR(c.aberto_em)} · {hora(c.aberto_em)}{c.fechado_em ? ` – ${hora(c.fechado_em)}` : " (aberto)"}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

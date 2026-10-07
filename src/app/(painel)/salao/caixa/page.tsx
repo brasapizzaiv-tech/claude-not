@@ -51,7 +51,21 @@ export default async function CaixaPage({
         </Link>
         <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Frente de Caixa</h1>
         <p className="mt-1 text-texto-suave">Nenhum caixa aberto. Abra um para começar a receber.</p>
-        <Link href="/salao/caixa/pix" className="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:underline"><Icone nome="rapido" tamanho={14} /> Pix recebidos / estornar</Link>
+        {/* Histórico não depende de caixa aberto: consultar não é movimentar. */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href="/salao/caixa/movimentos" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+            <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
+          </Link>
+          <Link href="/salao/caixa/tef" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+            <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Cartões (TEF)
+          </Link>
+          <Link href="/salao/caixa/pix" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+            <Icone nome="rapido" tamanho={15} className="mr-1.5" /> Pix recebidos
+          </Link>
+          <Link href="/salao/caixa/fiado" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+            <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
+          </Link>
+        </div>
 
         <form
           action={abrirCaixa}
