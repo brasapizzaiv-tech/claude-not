@@ -64,7 +64,8 @@ export async function GET(req: Request) {
       // Cupom da NFC-e sai em ESC/POS (fonte da própria térmica, nítida como
       // o cupom da balança). O agente 1.1.4+ pede "?formato=escpos" e manda os
       // bytes crus pro spooler; o agente antigo ignora e imprime o PDF.
-      formato: e.tipo === "nfce" ? ("escpos" as const) : ("pdf" as const),
+      // O comprovante do cartão (tef) também: pelo PDF saía cinza (08/10/2026).
+      formato: e.tipo === "nfce" || e.tipo === "tef" ? ("escpos" as const) : ("pdf" as const),
     };
   });
   if (jobs.length > 0) {

@@ -6,6 +6,7 @@ import { gerarTestePdf } from "@/lib/teste-pdf";
 import { gerarMarmitaPdf } from "@/lib/marmita-pdf";
 import { gerarFechamentoPdf } from "@/lib/fechamento-pdf";
 import { gerarComprovanteTefPdf } from "@/lib/tef-comprovante-pdf";
+import { gerarComprovanteTefEscPos } from "@/lib/tef-comprovante-escpos";
 import { baixarXmlNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
 import { gerarNfceCupomPdf } from "@/lib/nfce-cupom-pdf";
 import { gerarNfceCupomEscPos } from "@/lib/nfce-cupom-escpos";
@@ -174,10 +175,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (!linhas || linhas.length === 0) return new Response("sem comprovante", { status: 404 });
     const quando = new Date(tr.criado_em as string).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
     const largT = larguraUtil(((impT as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80);
-    pdf = await gerarComprovanteTefPdf(
-      { titulo: "VIA DO CLIENTE", linhas, rodape: `NSU ${tr.nsu ?? "—"} · ${quando}` },
-      largT,
-    );
+    const comprovante = { titulo: "VIA DO CLIENTE", linhas, rodape: `NSU ${tr.nsu ?? "—"} · ${quando}` };
+    if (formato === "escpos") {
+      // Bytes crus pra térmica (agente 1.1.4+): o PDF saía cinza pelo driver (08/10/2026).
+      const bytes = gerarComprovanteTefEscPos(comprovante, largT <= 48 ? 32 : 48);
+      return new Response(new Uint8Array(bytes), { headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store" } });
+    }
+    pdf = await gerarComprovanteTefPdf(comprovante, largT);
   } else if (job.tipo === "fechamento") {
     // Cupom do fechamento de caixa (ref_id = pdv_caixas.id).
     const [{ data: cx }, { data: imp }, { data: cfgRows }] = await Promise.all([
