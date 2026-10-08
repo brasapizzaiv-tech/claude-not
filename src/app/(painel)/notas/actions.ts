@@ -601,19 +601,61 @@ export async function vincularItemProduto(
     .update({ produto_id: produtoId })
     .eq("id", itemId);
   await recalcularDoItemNota(supabase as unknown as DbConf, itemId);
-  // Sugestão automática do fator: nota em CX/FD/PCT e produto com "fardo"
-  // cadastrado → fator = fardo (só se ainda estiver em 1).
+  // Fator sugerido, só se ainda estiver em 1:
+  // 1) o que a casa usou da última vez pra este mesmo item deste fornecedor
+  //    com este produto (a nota "lembra" o por un.: pedido de 08/10/2026);
+  // 2) senão, nota em CX/FD/PCT e produto com "fardo" cadastrado → fardo.
   if (produtoId) {
     const [{ data: it }, { data: prod }] = await Promise.all([
-      supabase.from("nota_itens").select("unidade, fator").eq("id", itemId).maybeSingle(),
+      supabase.from("nota_itens").select("nota_id, descricao, unidade, fator, notas_fiscais(emit_cnpj)").eq("id", itemId).maybeSingle(),
       supabase.from("produtos").select("fardo").eq("id", produtoId).maybeSingle(),
     ]);
-    const un = String(it?.unidade ?? "").toUpperCase().trim();
-    const fardo = Number(prod?.fardo ?? 0);
-    if (Number(it?.fator ?? 1) <= 1 && fardo > 1 && ["CX", "CXA", "FD", "FDO", "PCT", "PC", "SC", "ENG", "DZ", "PACK", "CJ"].includes(un)) {
-      await supabase.from("nota_itens").update({ fator: fardo }).eq("id", itemId);
+    if (Number(it?.fator ?? 1) <= 1) {
+      const nf = it?.notas_fiscais as { emit_cnpj?: string | null } | { emit_cnpj?: string | null }[] | null;
+      const cnpj = (Array.isArray(nf) ? nf[0]?.emit_cnpj : nf?.emit_cnpj) ?? null;
+      let fator = 0;
+      if (cnpj && it?.descricao) {
+        const { data: ant } = await supabase
+          .from("nota_itens")
+          .select("fator, descricao, notas_fiscais!inner(emit_cnpj, situacao, data_emissao)")
+          .eq("produto_id", produtoId)
+          .eq("notas_fiscais.emit_cnpj", cnpj)
+          .neq("id", itemId)
+          .limit(200);
+        const desc = String(it.descricao).trim().toLowerCase();
+        type NF = { situacao?: string | null; data_emissao?: string | null };
+        type Ant = { fator: number | null; descricao: string | null; notas_fiscais: NF | NF[] | null };
+        const nfDe = (r: Ant) => (Array.isArray(r.notas_fiscais) ? r.notas_fiscais[0] : r.notas_fiscais) ?? {};
+        // A ligação mais recente (ordenar pela nota embutida no PostgREST só
+        // reordena o embutido, não as linhas; ordena aqui).
+        const igual = ((ant as unknown as Ant[]) ?? [])
+          .filter((r) => String(r.descricao ?? "").trim().toLowerCase() === desc && nfDe(r).situacao !== "cancelada")
+          .sort((x, y) => String(nfDe(y).data_emissao ?? "").localeCompare(String(nfDe(x).data_emissao ?? "")))[0];
+        if (igual && Number(igual.fator) > 0 && Number(igual.fator) !== 1) fator = Number(igual.fator);
+      }
+      if (!fator) {
+        const un = String(it?.unidade ?? "").toUpperCase().trim();
+        const fardo = Number(prod?.fardo ?? 0);
+        if (fardo > 1 && ["CX", "CXA", "FD", "FDO", "PCT", "PC", "SC", "ENG", "DZ", "PACK", "CJ"].includes(un)) fator = fardo;
+      }
+      if (fator) {
+        await supabase.from("nota_itens").update({ fator }).eq("id", itemId);
+        await recalcularDoItemNota(supabase as unknown as DbConf, itemId);
+      }
     }
   }
+  return { ok: true };
+}
+
+// Unidade em que o produto entra no estoque (kg, un, L...), ajustável direto na
+// nota: é ali que se percebe que "vem em caixa" mas se conta em quilo.
+export async function definirUnidadeProduto(produtoId: string, unidade: string) {
+  await exigirAcesso("/notas");
+  const u = String(unidade ?? "").trim().slice(0, 12);
+  if (!u) return { ok: false };
+  const supabase = await createClient();
+  await supabase.from("produtos").update({ unidade: u }).eq("id", produtoId);
+  revalidatePath("/produtos");
   return { ok: true };
 }
 

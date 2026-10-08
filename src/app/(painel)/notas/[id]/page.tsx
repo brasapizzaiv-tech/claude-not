@@ -61,11 +61,12 @@ export default async function NotaDetalhePage({
     itens.length > 0
       ? await supabase
           .from("produtos")
-          .select("id, nome")
+          .select("id, nome, unidade")
           .eq("ativo", true)
           .order("nome")
       : { data: [] };
-  const produtos = (prodData as { id: string; nome: string }[]) ?? [];
+  const produtos = (prodData as { id: string; nome: string; unidade: string }[]) ?? [];
+  const unidadeDe = new Map(produtos.map((p) => [p.id, p.unidade] as const));
 
   // Fornecedores para vincular/corrigir na revisão do lançamento.
   const { data: fornsData } = await supabase
@@ -236,6 +237,8 @@ export default async function NotaDetalhePage({
                         unidade={i.unidade}
                         valorTotal={i.valor_total != null ? Number(i.valor_total) : null}
                         temProduto={!!i.produto_id}
+                        produtoId={i.produto_id}
+                        unidadeProduto={i.produto_id ? unidadeDe.get(i.produto_id) ?? "un" : "un"}
                       />
                     </td>
                     <td className="px-4 py-2 text-right text-texto">
