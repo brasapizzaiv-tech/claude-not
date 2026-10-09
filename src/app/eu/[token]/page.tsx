@@ -10,6 +10,8 @@ import { CriarPin, EntrarPin } from "./pin";
 import { PedidosColab, type PedidoColab } from "./pedidos";
 import { PainelVencimentos } from "@/components/etiqueta-ui";
 import { contarFaixas, hojeSP } from "@/lib/etiqueta-vencimentos";
+import { lembretesDoColaborador } from "@/lib/lembretes-server";
+import { LembretesHoje } from "./lembretes-hoje";
 
 export async function generateMetadata({
   params,
@@ -185,12 +187,15 @@ export default async function AppColaboradorPage({
       .eq("status", "pendente");
     pedidosCompra = count ?? 0;
   }
+  // Lembretes da gestão pra hoje (Visto / Feito).
+  const lembretes = colab?.id ? await lembretesDoColaborador(colab.id as string) : [];
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const fData = (s: string) => { const [, m, d] = s.split("-"); return `${d}/${m}`; };
 
   return (
     <Moldura>
       {saudacao}
+      <LembretesHoje token={token} itens={lembretes} />
       {temFolga && (
         <Link
           href={`/folga/${token}`}

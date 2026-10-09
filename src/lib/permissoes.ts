@@ -29,6 +29,7 @@ export type ModuloKey =
   | "checklists"
   | "mural"
   | "feriados"
+  | "lembretes"
   | "rodizio";
 
 // `icon` é o NOME do ícone, não o desenho: quem desenha é o <Icone> em
@@ -70,6 +71,7 @@ export const MODULOS: {
   { key: "checklists", label: "Checklists de rotina", icon: "checklist", rotas: ["/checklists"] },
   { key: "mural", label: "Mural do escritório", icon: "aparelho", rotas: ["/mural"] },
   { key: "feriados", label: "Feriados e eventos", icon: "agenda", rotas: ["/feriados"] },
+  { key: "lembretes", label: "Lembretes pra equipe", icon: "sino", rotas: ["/lembretes"] },
   { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "pizza", rotas: ["/cozinha"] },
 ];
 

@@ -198,6 +198,7 @@ export function Sidebar({
       itens: [
         ...so(has("mural"), { href: "/mural", label: "Mural do escritório", icon: "aparelho" }),
         ...so(has("feriados"), { href: "/feriados", label: "Feriados e eventos", icon: "agenda" }),
+        ...so(has("lembretes"), { href: "/lembretes", label: "Lembretes", icon: "sino" }),
         ...so(has("colaboradores"),
           { href: "/colaboradores", label: "Colaboradores", icon: "pessoa" },
           { href: "/colaboradores/semana", label: "Semana e 10%", icon: "horario" },
