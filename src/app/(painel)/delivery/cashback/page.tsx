@@ -38,7 +38,7 @@ export default async function CashbackPage() {
   ]);
   const c: Config = (cfgRow as Config | null) ?? {
     ativo: false, percentual: 2, max_resgate: 20, validade_dias: 30,
-    canais: ["app", "delivery"], formas_excluidas: [], sem_combos: true, sem_promos: true,
+    canais: ["app", "delivery", "pdv"], formas_excluidas: [], sem_combos: true, sem_promos: true,
   };
   const movs = (movRows as unknown as Mov[]) ?? [];
   const abertos = (ativos as { cliente_id: string; restante: number }[]) ?? [];
@@ -91,10 +91,11 @@ export default async function CashbackPage() {
 
         <div className={secao}>
           <div className={titulo}>Onde o cliente ganha</div>
-          <p className={ajuda}>Pedido feito pelo próprio cliente no cardápio online, ou lançado pelo atendente no painel (telefone, WhatsApp). O saldo é usado no cardápio online.</p>
+          <p className={ajuda}>Pedido feito pelo próprio cliente no cardápio online, pedido lançado pelo atendente no painel (telefone, WhatsApp), ou venda no balcão com cliente vinculado. O saldo é usado no cardápio online e no balcão.</p>
           <div className="flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" name="canal_app" defaultChecked={c.canais.includes("app")} className="h-4 w-4" /> Cardápio online</label>
             <label className="flex items-center gap-2"><input type="checkbox" name="canal_delivery" defaultChecked={c.canais.includes("delivery")} className="h-4 w-4" /> Pedido lançado no painel</label>
+            <label className="flex items-center gap-2"><input type="checkbox" name="canal_pdv" defaultChecked={c.canais.includes("pdv")} className="h-4 w-4" /> Balcão (PDV)</label>
           </div>
         </div>
 

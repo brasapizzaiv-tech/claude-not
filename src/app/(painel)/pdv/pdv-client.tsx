@@ -4,7 +4,7 @@ import { Icone } from "@/components/icone";
 
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
-import { buscarClientesPdv, finalizarVendaPdv } from "./actions";
+import { buscarClientesPdv, cashbackClientePdv, finalizarVendaPdv } from "./actions";
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
@@ -14,7 +14,7 @@ export type ItemMenu = { id: string; nome: string; categoria: string; preco: num
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const CORES = ["#6366f1", "#10b981", "#ec4899", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e", "#84cc16", "#8b5cf6"];
-type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean };
+type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean; cliente?: string; cashbackUsado?: number; cashbackGanho?: number };
 
 export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false }, formas = FORMAS_PADRAO.pdv, colaboradores = [] }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean }; formas?: FormaOpcao[]; colaboradores?: { id: string; nome: string }[] }) {
   const FORMAS = formas.map((f) => ({ id: f.nome, label: f.nome, icone: iconeDoTipo(f.tipo) }));
@@ -31,7 +31,14 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const [colabId, setColabId] = useState("");
   const [cliente, setCliente] = useState<{ id: string; nome: string } | null>(null);
   const [buscaCli, setBuscaCli] = useState("");
-  const [cliResultados, setCliResultados] = useState<{ id: string; nome: string; cpf_cnpj: string | null }[]>([]);
+  const [cliResultados, setCliResultados] = useState<{ id: string; nome: string; cpf_cnpj: string | null; telefone?: string | null }[]>([]);
+  // Cashback do cliente vinculado (opcional no balcão).
+  const [cb, setCb] = useState<{ saldo: number; percentual: number; maxResgate: number | null } | null>(null);
+  const [usarCb, setUsarCb] = useState(true);
+  const escolherCliente = (c: { id: string; nome: string } | null) => {
+    setCliente(c); setCliResultados([]); setCb(null); setUsarCb(true);
+    if (c) cashbackClientePdv(c.id).then(setCb).catch(() => setCb(null));
+  };
   const tipoForma = tipoDe(forma, formas);
   const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente);
   const [feito, setFeito] = useState<Feito | null>(null);
@@ -51,25 +58,37 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const cartLista = Object.entries(cart).filter(([, q]) => q > 0).map(([id, q]) => ({ item: itemDe.get(id)!, qtd: q })).filter((x) => x.item);
   const total = Math.round(cartLista.reduce((s, x) => s + x.item.preco * x.qtd, 0) * 100) / 100;
   const cartCount = cartLista.reduce((s, x) => s + x.qtd, 0);
+  // Cashback usado sai do valor a cobrar (o servidor confere e tem a palavra final).
+  const cbUsado = cliente && cb && usarCb && cb.saldo > 0 && tipoDe(forma, formas) !== "equipe"
+    ? Math.round(Math.max(0, Math.min(cb.saldo, cb.maxResgate ?? Infinity, total)) * 100) / 100
+    : 0;
+  const cobrar = Math.round((total - cbUsado) * 100) / 100;
   const recebidoNum = Number(recebido.replace(",", ".")) || 0;
-  const troco = tipoDe(forma, formas) === "dinheiro" && recebidoNum > total ? Math.round((recebidoNum - total) * 100) / 100 : 0;
+  const troco = tipoDe(forma, formas) === "dinheiro" && recebidoNum > cobrar ? Math.round((recebidoNum - cobrar) * 100) / 100 : 0;
 
   const setQtd = (id: string, q: number) => setCart((c) => { const n = { ...c }; if (q <= 0) delete n[id]; else n[id] = q; return n; });
   const add = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
 
   const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd }));
 
-  function finalizar(pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null } | null) {
+  function finalizar(pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean } | null) {
     if (cartLista.length === 0 || finalizandoRef.current) return;
     finalizandoRef.current = true;
     const trocoAtual = troco;
     const ehViagem = local === "viagem";
+    const nomeCliente = cliente?.nome;
     start(async () => {
       try {
         const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
         if (r.ok) {
-          setFeito({ numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma, troco: tipoDe(pagamento?.forma, formas) === "dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem });
-          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); setCliente(null); setBuscaCli(""); setCliResultados([]);
+          setFeito({
+            numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma,
+            troco: tipoDe(pagamento?.forma, formas) === "dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem,
+            cliente: pagamento?.clienteId ? nomeCliente : undefined,
+            cashbackUsado: "cashbackUsado" in r ? r.cashbackUsado : 0,
+            cashbackGanho: "cashbackGanho" in r ? r.cashbackGanho : 0,
+          });
+          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); escolherCliente(null); setBuscaCli("");
         } else {
           setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
         }
@@ -96,6 +115,15 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
         <p className="mt-1 text-texto-suave">
           {feito.pago ? <>Pagou em <b>{feito.forma}</b> e o pedido foi pra cozinha.</> : "O pedido foi pra cozinha. Receba o pagamento no caixa."}
         </p>
+        {feito.pago && ((feito.cashbackUsado ?? 0) > 0 || (feito.cashbackGanho ?? 0) > 0) && (
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-cartao bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
+            <Icone nome="presente" tamanho={15} />
+            {feito.cliente ?? "Cliente"}
+            {(feito.cashbackUsado ?? 0) > 0 ? ` usou ${brl(feito.cashbackUsado!)} de cashback` : ""}
+            {(feito.cashbackUsado ?? 0) > 0 && (feito.cashbackGanho ?? 0) > 0 ? " e" : ""}
+            {(feito.cashbackGanho ?? 0) > 0 ? ` ganhou ${brl(feito.cashbackGanho!)}` : ""}.
+          </p>
+        )}
         {feito.pago && (feito.troco ?? 0) > 0 && (
           <div className="mt-4 rounded-cartao bg-amber-500/10 px-4 py-3 text-xl font-bold text-amber-600">Troco: {brl(feito.troco!)}</div>
         )}
@@ -187,7 +215,8 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
           <div className="flex flex-1 flex-col p-3">
             <div className="mb-3 rounded-cartao bg-superficie-suave p-3 text-center">
               <div className="text-sm text-texto-suave">Total a cobrar {local === "viagem" && <span className="inline-flex items-center gap-1 font-bold text-amber-600">· <Icone nome="viagem" tamanho={13} /> Viagem</span>}</div>
-              <div className="text-3xl font-bold">{brl(total)}</div>
+              <div className="text-3xl font-bold">{brl(cobrar)}</div>
+              {cbUsado > 0 && <div className="text-xs text-emerald-600">{brl(total)} − {brl(cbUsado)} de cashback</div>}
             </div>
             <div className="mb-2 flex justify-end"><NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} compacto /></div>
             <div className="mb-3 grid grid-cols-3 gap-2">
@@ -219,30 +248,56 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">Cliente (vai pro saldo dele)</label>
                 {cliente ? (
-                  <div className="mt-1 flex items-center justify-between rounded-controle border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm"><span className="font-semibold">{cliente.nome}</span><button type="button" onClick={() => setCliente(null)} className="text-xs text-texto-suave">trocar</button></div>
+                  <div className="mt-1 flex items-center justify-between rounded-controle border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm"><span className="font-semibold">{cliente.nome}</span><button type="button" onClick={() => escolherCliente(null)} className="text-xs text-texto-suave">trocar</button></div>
                 ) : (
                   <>
                     <input value={buscaCli} onChange={(e) => { const v = e.target.value; setBuscaCli(v); if (v.trim().length >= 2) buscarClientesPdv(v).then(setCliResultados).catch(() => setCliResultados([])); else setCliResultados([]); }} placeholder="Nome ou CPF do cliente" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
                     {cliResultados.length > 0 && (
                       <div className="mt-1 max-h-40 overflow-y-auto rounded-controle border border-borda">
-                        {cliResultados.map((c) => <button key={c.id} type="button" onClick={() => { setCliente({ id: c.id, nome: c.nome }); setCliResultados([]); }} className="block w-full px-3 py-2 text-left text-sm hover:bg-superficie-suave">{c.nome}{c.cpf_cnpj ? <span className="text-texto-fraco"> · {c.cpf_cnpj}</span> : null}</button>)}
+                        {cliResultados.map((c) => <button key={c.id} type="button" onClick={() => escolherCliente({ id: c.id, nome: c.nome })} className="block w-full px-3 py-2 text-left text-sm hover:bg-superficie-suave">{c.nome}{c.cpf_cnpj ? <span className="text-texto-fraco"> · {c.cpf_cnpj}</span> : null}</button>)}
                       </div>
                     )}
                   </>
                 )}
               </div>
             )}
-            {tipoDe(forma, formas) === "pix" && pixAtivo && total > 0 && (
-              <div className="mb-3"><PixQr valor={total} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null })} compacto /></div>
+            {tipoForma !== "saldo" && tipoForma !== "equipe" && (
+              <div className="mb-3">
+                <label className="text-sm text-texto-suave">Cliente <span className="text-texto-fraco">(opcional, pro cashback)</span></label>
+                {cliente ? (
+                  <div className="mt-1 rounded-controle border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between"><span className="font-semibold">{cliente.nome}</span><button type="button" onClick={() => escolherCliente(null)} className="text-xs text-texto-suave">tirar</button></div>
+                    {cb === null ? (
+                      <div className="mt-0.5 text-xs text-texto-suave">Cashback desligado no balcão.</div>
+                    ) : cb.saldo > 0 ? (
+                      <label className="mt-1 flex items-center gap-2 text-xs"><input type="checkbox" checked={usarCb} onChange={(e) => setUsarCb(e.target.checked)} className="h-4 w-4" /> Usar cashback: tem {brl(cb.saldo)}{cb.maxResgate != null && cb.saldo > cb.maxResgate ? ` (até ${brl(cb.maxResgate)} por venda)` : ""}</label>
+                    ) : (
+                      <div className="mt-0.5 text-xs text-texto-suave">Sem saldo ainda. Ganha {String(cb.percentual).replace(".", ",")}% desta compra.</div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <input value={buscaCli} onChange={(e) => { const v = e.target.value; setBuscaCli(v); if (v.trim().length >= 2) buscarClientesPdv(v).then(setCliResultados).catch(() => setCliResultados([])); else setCliResultados([]); }} placeholder="Nome, telefone ou CPF (opcional)" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                    {cliResultados.length > 0 && (
+                      <div className="mt-1 max-h-40 overflow-y-auto rounded-controle border border-borda">
+                        {cliResultados.map((c) => <button key={c.id} type="button" onClick={() => escolherCliente({ id: c.id, nome: c.nome })} className="block w-full px-3 py-2 text-left text-sm hover:bg-superficie-suave">{c.nome}{c.telefone ? <span className="text-texto-fraco"> · {c.telefone}</span> : c.cpf_cnpj ? <span className="text-texto-fraco"> · {c.cpf_cnpj}</span> : null}</button>)}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            {tipoDe(forma, formas) === "pix" && pixAtivo && cobrar > 0 && (
+              <div className="mb-3"><PixQr valor={cobrar} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 })} compacto /></div>
             )}
             <div className="flex-1" />
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-            {tipoDe(forma, formas) === "pix" && pixAtivo && total > 0 ? (
+            {tipoDe(forma, formas) === "pix" && pixAtivo && cobrar > 0 ? (
               // Com QR na tela, a venda fecha sozinha quando o Pix cai (ou por "Vi que caiu").
               // Este botão é só pra quem recebeu pela chave, sem QR.
-              <button onClick={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null })} disabled={proc || faltaQuem} className="w-full rounded-cartao border border-borda-forte py-2.5 text-sm font-semibold text-texto-suave disabled:opacity-50 dark:border-borda-forte">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>
+              <button onClick={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 })} disabled={proc || faltaQuem} className="w-full rounded-cartao border border-borda-forte py-2.5 text-sm font-semibold text-texto-suave disabled:opacity-50 dark:border-borda-forte">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>
             ) : (
-              <button onClick={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null })} disabled={proc || faltaQuem} className="w-full rounded-cartao bg-texto py-3.5 text-base font-bold text-fundo disabled:opacity-50">{proc ? "Concluindo..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={18} /> Confirmar e enviar pra cozinha</span>}</button>
+              <button onClick={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 })} disabled={proc || faltaQuem} className="w-full rounded-cartao bg-texto py-3.5 text-base font-bold text-fundo disabled:opacity-50">{proc ? "Concluindo..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={18} /> Confirmar e enviar pra cozinha</span>}</button>
             )}
           </div>
         )}

@@ -507,7 +507,7 @@ export async function salvarCashback(formData: FormData) {
   const pct = num("percentual");
   const max = String(formData.get("max_resgate") ?? "").trim() === "" ? null : num("max_resgate");
   const dias = Math.round(num("validade_dias"));
-  const canais = ["app", "delivery"].filter((c) => formData.get(`canal_${c}`) === "on");
+  const canais = ["app", "delivery", "pdv"].filter((c) => formData.get(`canal_${c}`) === "on");
   const formas = formData.getAll("formas_excluidas").map((f) => String(f).trim()).filter(Boolean);
   const row = {
     ativo: formData.get("ativo") === "on",

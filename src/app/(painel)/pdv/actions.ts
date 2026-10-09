@@ -17,7 +17,7 @@ type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number };
 export async function finalizarVendaPdv(
   itens: ItemVenda[],
   obs: string,
-  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null } | null,
+  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean } | null,
   local: "aqui" | "viagem" = "aqui",
 ) {
   // O rótulo da "mesa" vira o cabeçalho grande da comanda na cozinha — então
@@ -54,18 +54,42 @@ export async function finalizarVendaPdv(
     .limit(1)
     .maybeSingle();
 
+  // Cashback (só com cliente vinculado — é opcional no balcão). O usado sai do
+  // valor cobrado; o ganho entra depois da venda fechar.
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const clienteId = pagamento.clienteId ?? null;
+  const tipo = tipoDe(pagamento.forma, await formasParaTipo());
+  let cashbackUsado = 0;
+  type CbCfg = { ativo: boolean; max_resgate: number | null; canais: string[]; sem_promos: boolean };
+  let cbCfg: CbCfg | null = null;
+  if (clienteId) {
+    const { data } = await supabase.from("cashback_config").select("ativo, max_resgate, canais, sem_promos").maybeSingle();
+    cbCfg = (data as CbCfg | null) ?? null;
+  }
+  const cashbackNoPdv = !!(cbCfg?.ativo && (cbCfg.canais ?? []).includes("pdv"));
+  if (clienteId && cashbackNoPdv && pagamento.usarCashback && tipo !== "equipe") {
+    const { data: saldo } = await supabase.rpc("cashback_saldo", { p_cliente: clienteId });
+    const teto = cbCfg?.max_resgate != null ? Number(cbCfg.max_resgate) : Infinity;
+    const desejado = r2(Math.max(0, Math.min(Number(saldo ?? 0), teto, total)));
+    if (desejado > 0) {
+      const { data: usado } = await supabase.rpc("cashback_resgatar_ref", { p_cliente: clienteId, p_pedido: null, p_comanda: r.comandaId, p_valor: desejado });
+      cashbackUsado = r2(Number(usado ?? 0));
+    }
+  }
+  const cobrar = r2(total - cashbackUsado);
+
   // Funcionário / cliente antes de marcar qualquer coisa como paga: se faltar
   // alguém, a comanda fica aberta e o caixa recebe depois.
-  const tipo = tipoDe(pagamento.forma, await formasParaTipo());
   if (tipo === "equipe" || tipo === "saldo") {
     const esp = await lancarFormasEspeciais(supabase, {
-      pagamentos: [{ forma: pagamento.forma, valor: total, colaboradorId: pagamento.colaboradorId ?? null }],
+      pagamentos: [{ forma: pagamento.forma, valor: cobrar, colaboradorId: pagamento.colaboradorId ?? null }],
       clienteId: pagamento.clienteId ?? null,
       rotulo: `PDV Balcão #${r.numero}`,
       comandaId: r.comandaId,
       caixaId: cx?.id ?? null,
     });
     if (!esp.ok) {
+      if (cashbackUsado > 0) await supabase.rpc("cashback_estornar_resgate_comanda", { p_comanda: r.comandaId });
       return { ok: false as const, mensagem: `${esp.mensagem} A comanda #${r.numero} ficou aberta pra receber no caixa.` };
     }
   }
@@ -78,9 +102,9 @@ export async function finalizarVendaPdv(
     await supabase.from("pdv_caixa_mov").insert({
       caixa_id: cx.id,
       tipo: "venda",
-      descricao: `PDV Balcão #${r.numero}`,
+      descricao: `PDV Balcão #${r.numero}${cashbackUsado > 0 ? ` · cashback ${cashbackUsado.toFixed(2).replace(".", ",")}` : ""}`,
       forma_pagamento: pagamento.forma,
-      valor: total,
+      valor: cobrar,
       comanda_id: r.comandaId,
     });
   }
@@ -96,20 +120,49 @@ export async function finalizarVendaPdv(
     })
     .eq("id", r.comandaId);
 
-  return { ok: true as const, numero: r.numero, comandaId: r.comandaId, pago: true, semCaixa: !cx?.id, total };
+  // Cashback ganho nesta venda: itens (sem os em promoção, se a config manda),
+  // tirando a parte paga com cashback.
+  let cashbackGanho = 0;
+  if (clienteId && cashbackNoPdv && tipo !== "equipe" && total > 0) {
+    let elegivel = total;
+    if (cbCfg?.sem_promos !== false) {
+      const ids = [...new Set(itens.map((i) => i.itemId).filter(Boolean))];
+      const { data: promos } = ids.length
+        ? await supabase.from("pdv_itens").select("id").in("id", ids).gt("promo_preco", 0)
+        : { data: [] };
+      const emPromo = new Set(((promos as { id: string }[]) ?? []).map((p) => p.id));
+      elegivel = r2(itens.filter((i) => !emPromo.has(i.itemId)).reduce((s, i) => s + i.preco * i.qtd, 0));
+    }
+    const base = r2(Math.max(0, elegivel * (1 - cashbackUsado / total)));
+    const { data: ganho } = await supabase.rpc("cashback_creditar_venda", { p_cliente: clienteId, p_comanda: r.comandaId, p_base: base, p_forma: pagamento.forma });
+    cashbackGanho = r2(Number(ganho ?? 0));
+  }
+
+  return { ok: true as const, numero: r.numero, comandaId: r.comandaId, pago: true, semCaixa: !cx?.id, total: cobrar, cashbackUsado, cashbackGanho };
 }
 
-// Cliente pro "Saldo cliente" no balcão (nome ou CPF/CNPJ).
+// Saldo de cashback do cliente vinculado no balcão (pra mostrar e oferecer usar).
+export async function cashbackClientePdv(clienteId: string) {
+  await exigirAcesso("/pdv");
+  const supabase = await createClient();
+  const { data: cfg } = await supabase.from("cashback_config").select("ativo, percentual, max_resgate, canais").maybeSingle();
+  const c = cfg as { ativo: boolean; percentual: number; max_resgate: number | null; canais: string[] } | null;
+  if (!c?.ativo || !(c.canais ?? []).includes("pdv")) return null;
+  const { data: saldo } = await supabase.rpc("cashback_saldo", { p_cliente: clienteId });
+  return { saldo: Number(saldo ?? 0), percentual: Number(c.percentual), maxResgate: c.max_resgate != null ? Number(c.max_resgate) : null };
+}
+
+// Cliente no balcão (nome, CPF/CNPJ ou telefone) — pro "Saldo cliente" e pro cashback.
 export async function buscarClientesPdv(termo: string) {
   await exigirAcesso("/pdv");
   const q = (termo || "").trim();
   if (q.length < 2) return [];
   const supabase = await createClient();
   const soDigitos = q.replace(/\D/g, "");
-  let busca = supabase.from("clientes").select("id, nome, cpf_cnpj").eq("ativo", true);
+  let busca = supabase.from("clientes").select("id, nome, cpf_cnpj, telefone").eq("ativo", true);
   busca = soDigitos.length >= 3
-    ? busca.or(`nome.ilike.%${q}%,cpf_cnpj.ilike.%${soDigitos}%`)
+    ? busca.or(`nome.ilike.%${q}%,cpf_cnpj.ilike.%${soDigitos}%,telefone.ilike.%${soDigitos}%`)
     : busca.ilike("nome", `%${q}%`);
   const { data } = await busca.order("nome").limit(8);
-  return ((data as { id: string; nome: string; cpf_cnpj: string | null }[]) ?? []);
+  return ((data as { id: string; nome: string; cpf_cnpj: string | null; telefone: string | null }[]) ?? []);
 }
