@@ -4,8 +4,11 @@ import { Icone } from "@/components/icone";
 import { confirmar } from "@/components/dialogo";
 
 // Editor de áreas de entrega (Leaflet + OpenStreetMap, sem chave): clica no
-// mapa pra ir marcando os cantos da área; salva com nome, cor e valor. Embaixo,
-// as promoções da taxa (grátis / % / R$) por área, dia, horário e mínimo.
+// mapa pra ir marcando os cantos da área; os cantos se ARRASTAM (08/10/2026,
+// pra acertar as 17 áreas copiadas do Manda Pedido sem redesenhar), o ponto
+// do meio de cada lado vira canto novo ao arrastar, e botão direito num canto
+// apaga. Salva com nome, cor e valor. Embaixo, as promoções da taxa (grátis /
+// % / R$) por área, dia, horário e mínimo.
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import L from "leaflet";
@@ -62,13 +65,36 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
     }
   }, [areasIniciais]);
 
-  // Rascunho em edição.
+  // Rascunho em edição: cantos arrastáveis, meio de cada lado vira canto novo.
   useEffect(() => {
     const g = camadaRasc.current; if (!g) return;
     g.clearLayers();
-    for (const p of rasc.pontos) L.circleMarker(p, { radius: 5, color: rasc.cor, fillColor: "#fff", fillOpacity: 1, weight: 2 }).addTo(g);
-    if (rasc.pontos.length >= 2) L.polyline(rasc.pontos, { color: rasc.cor, weight: 2, dashArray: "6 4" }).addTo(g);
-    if (rasc.pontos.length >= 3) L.polygon(rasc.pontos, { color: rasc.cor, weight: 2, fillOpacity: 0.25 }).addTo(g);
+    const pts = rasc.pontos;
+    const fix = (ll: L.LatLng): [number, number] => [Number(ll.lat.toFixed(6)), Number(ll.lng.toFixed(6))];
+    const icone = (cor: string, meio: boolean) => L.divIcon({
+      className: "",
+      iconSize: meio ? [10, 10] : [14, 14],
+      iconAnchor: meio ? [5, 5] : [7, 7],
+      html: `<div style="width:100%;height:100%;border-radius:50%;background:${meio ? cor : "#fff"};opacity:${meio ? 0.45 : 1};border:2px solid ${cor};box-sizing:border-box;cursor:move"></div>`,
+    });
+    if (pts.length >= 3) L.polygon(pts, { color: rasc.cor, weight: 2, fillOpacity: 0.25, interactive: false }).addTo(g);
+    else if (pts.length >= 2) L.polyline(pts, { color: rasc.cor, weight: 2, dashArray: "6 4", interactive: false }).addTo(g);
+    pts.forEach((p, i) => {
+      const m = L.marker(p, { draggable: true, icon: icone(rasc.cor, false), title: "Arraste pra mover · botão direito apaga" }).addTo(g);
+      m.on("dragend", () => setRasc((r) => ({ ...r, pontos: r.pontos.map((q, j) => (j === i ? fix(m.getLatLng()) : q)) })));
+      m.on("contextmenu", (e) => { L.DomEvent.stop(e); setRasc((r) => ({ ...r, pontos: r.pontos.filter((_, j) => j !== i) })); });
+      m.on("click", (e) => L.DomEvent.stop(e)); // não vira canto novo
+    });
+    if (pts.length >= 2) {
+      const n = pts.length;
+      for (let i = 0; i < (pts.length >= 3 ? n : n - 1); i++) {
+        const a = pts[i], b = pts[(i + 1) % n];
+        const meio: [number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        const m = L.marker(meio, { draggable: true, icon: icone(rasc.cor, true), title: "Arraste pra criar um canto aqui" }).addTo(g);
+        m.on("dragend", () => setRasc((r) => { const novo = [...r.pontos]; novo.splice(i + 1, 0, fix(m.getLatLng())); return { ...r, pontos: novo }; }));
+        m.on("click", (e) => L.DomEvent.stop(e));
+      }
+    }
   }, [rasc]);
 
   function editar(a: AreaEntrega) {
@@ -121,7 +147,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
       <div className="space-y-4">
         {/* área em edição */}
         <div className="rounded-cartao border border-borda p-3">
-          <div className="mb-2 text-sm font-bold">{rasc.id ? "Editando área" : "Nova área"} <span className="font-normal text-texto-suave">— clique no mapa pra marcar os cantos ({rasc.pontos.length} ponto{rasc.pontos.length === 1 ? "" : "s"})</span></div>
+          <div className="mb-2 text-sm font-bold">{rasc.id ? "Editando área" : "Nova área"} <span className="font-normal text-texto-suave">— clique no mapa pra marcar os cantos; arraste um canto pra mover, a bolinha do meio do lado vira canto novo, botão direito apaga ({rasc.pontos.length} ponto{rasc.pontos.length === 1 ? "" : "s"})</span></div>
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <input value={rasc.nome} onChange={(e) => setRasc({ ...rasc, nome: e.target.value })} placeholder="Nome (ex.: Ivoti Central)" className={inp} />
             <input type="color" value={rasc.cor} onChange={(e) => setRasc({ ...rasc, cor: e.target.value })} className="h-9 w-12 cursor-pointer rounded-controle border border-borda-forte" title="Cor no mapa" />
