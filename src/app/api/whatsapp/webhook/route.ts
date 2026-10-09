@@ -1,5 +1,18 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { enviarTexto } from "@/lib/whatsapp";
+
+// Status da Meta → status do envio de campanha/gatilho (nunca volta pra trás:
+// "lida" pode chegar antes de "entregue").
+const PASSO: Record<string, { status: string; nivel: number; campo?: string }> = {
+  sent: { status: "enviada", nivel: 1 },
+  delivered: { status: "entregue", nivel: 2, campo: "entregue_em" },
+  read: { status: "lida", nivel: 3, campo: "lido_em" },
+  failed: { status: "falha", nivel: 9 },
+};
+const NIVEL: Record<string, number> = { fila: 0, enviada: 1, entregue: 2, lida: 3, falha: 9, pulada: 9 };
+// Pedidos pra sair da lista (texto ou botão "Parar promoções" da Meta).
+const SAIR = /^(sair|parar|pare|stop|cancelar|descadastrar|nao quero|não quero|parar promo(c|ç)(o|õ)es|stop promotions)[.!]*$/i;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +60,19 @@ export async function POST(req: Request) {
         await admin.from("whatsapp_mensagens")
           .update({ status: s.status, erro: s.errors?.[0] ? String(s.errors[0].message ?? s.errors[0].title ?? "").slice(0, 300) : null, atualizado_em: agora })
           .eq("wa_id", s.id);
+        const passo = PASSO[s.status];
+        if (passo) {
+          const { data: env } = await admin.from("wpp_envios").select("id, status").eq("wa_id", s.id).maybeSingle();
+          const atual = (env as { id: string; status: string } | null);
+          if (atual && passo.nivel > (NIVEL[atual.status] ?? 0) && atual.status !== "falha") {
+            await admin.from("wpp_envios").update({
+              status: passo.status,
+              ...(passo.campo ? { [passo.campo]: agora } : {}),
+              ...(passo.status === "lida" ? { entregue_em: agora } : {}),
+              ...(passo.status === "falha" ? { erro: String(s.errors?.[0]?.message ?? s.errors?.[0]?.title ?? "falhou").slice(0, 300) } : {}),
+            }).eq("id", atual.id);
+          }
+        }
       }
       // Mensagens do cliente (resposta ao aviso, dúvida…): ficam registradas;
       // a tela de atendimento vem depois.
@@ -57,6 +83,11 @@ export async function POST(req: Request) {
         const fone = m.from.replace(/\D/g, "");
         const desde = new Date(Date.now() - 7 * 86400000).toISOString();
         const { data: ped } = await admin.from("delivery_pedidos").select("id").eq("telefone", fone.startsWith("55") ? fone.slice(2) : fone).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1).maybeSingle();
+        // "SAIR": tira das campanhas e dos automáticos de marketing, e confirma.
+        if (SAIR.test(texto.trim().normalize("NFC"))) {
+          const { data: n } = await admin.rpc("wpp_marcar_sair", { p_fone: m.from });
+          if (Number(n ?? 0) > 0) await enviarTexto(m.from, "Pronto, você não vai mais receber promoções da Brasa por aqui. Os avisos dos seus pedidos continuam chegando normalmente.");
+        }
         await admin.from("whatsapp_mensagens").insert({
           direcao: "entrada", telefone: m.from, texto: texto.slice(0, 4000), wa_id: m.id, status: "received",
           pedido_id: (ped as { id: string } | null)?.id ?? null,

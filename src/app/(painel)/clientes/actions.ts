@@ -25,6 +25,15 @@ export async function salvarCliente(formData: FormData) {
     municipio: t("municipio"),
     uf: t("uf"),
     cod_municipio: t("cod_municipio"),
+    // WhatsApp: "sim" / "nao" / vazio (nunca perguntado — base importada).
+    ...((): Record<string, unknown> => {
+      const v = String(formData.get("aceita_promocoes") ?? "");
+      if (v === "sim") return { aceita_promocoes: true, aceita_promocoes_em: new Date().toISOString(), wpp_sair_em: null };
+      if (v === "nao") return { aceita_promocoes: false };
+      return { aceita_promocoes: null };
+    })(),
+    nascimento: /^\d{4}-\d{2}-\d{2}$/.test(String(formData.get("nascimento") ?? "")) ? String(formData.get("nascimento")) : null,
+    aceita_aniversario: formData.get("aceita_aniversario") === "on",
     // Teto do fiado ("Saldo cliente" no caixa). Vazio = sem limite.
     limite_credito: (() => {
       const v = ((formData.get("limite_credito") as string) || "").trim();

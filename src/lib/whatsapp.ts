@@ -149,3 +149,96 @@ export async function listarModelos(): Promise<{ ok: true; modelos: { nome: stri
     return { ok: false, erro: e instanceof Error ? e.message : "falha de rede" };
   }
 }
+
+// ---------- modelos completos (campanhas e gatilhos) ----------
+export type ModeloWpp = {
+  nome: string; idioma: string; categoria: string; status: string; motivo: string | null;
+  corpo: string;                     // texto do corpo, com {{1}}, {{2}}...
+  nVars: number;                     // quantas variáveis o corpo tem
+  cabecalho: "IMAGE" | "TEXT" | "VIDEO" | "DOCUMENT" | null;
+  rodape: string | null;
+};
+
+const WABA = () => (process.env.WHATSAPP_WABA_ID || "1173523463104133").trim();
+
+export async function listarModelosCompletos(): Promise<{ ok: true; modelos: ModeloWpp[] } | { ok: false; erro: string }> {
+  if (!TOKEN) return { ok: false, erro: "WhatsApp não configurado" };
+  try {
+    const r = await fetch(`${API}/${WABA()}/message_templates?fields=name,language,category,status,rejected_reason,components&limit=200`, {
+      headers: { Authorization: `Bearer ${TOKEN}` }, signal: AbortSignal.timeout(10000), cache: "no-store",
+    });
+    type Comp = { type: string; format?: string; text?: string };
+    const j = (await r.json().catch(() => ({}))) as { data?: { name: string; language: string; category: string; status: string; rejected_reason?: string; components?: Comp[] }[]; error?: { message?: string } };
+    if (!r.ok) return { ok: false, erro: j.error?.message ?? `HTTP ${r.status}` };
+    return {
+      ok: true,
+      modelos: (j.data ?? []).map((m) => {
+        const corpo = m.components?.find((c) => c.type === "BODY")?.text ?? "";
+        const head = m.components?.find((c) => c.type === "HEADER");
+        const vars = [...corpo.matchAll(/\{\{(\d+)\}\}/g)].map((x) => Number(x[1]));
+        return {
+          nome: m.name, idioma: m.language, categoria: m.category, status: m.status,
+          motivo: m.rejected_reason && m.rejected_reason !== "NONE" ? m.rejected_reason : null,
+          corpo, nVars: vars.length ? Math.max(...vars) : 0,
+          cabecalho: (head?.format as ModeloWpp["cabecalho"]) ?? null,
+          rodape: m.components?.find((c) => c.type === "FOOTER")?.text ?? null,
+        };
+      }),
+    };
+  } catch (e) {
+    return { ok: false, erro: e instanceof Error ? e.message : "falha de rede" };
+  }
+}
+
+// Cria um modelo de texto na Meta (vai pra aprovação). Nome: minúsculas e _.
+// As variáveis {{1}}, {{2}}... precisam de exemplo — a Meta recusa sem.
+export async function criarModeloWpp(input: { nome: string; categoria: "MARKETING" | "UTILITY"; corpo: string; rodape?: string | null; exemplos: string[] }) {
+  if (!TOKEN) return { ok: false as const, erro: "WhatsApp não configurado" };
+  const nome = input.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
+  if (!nome) return { ok: false as const, erro: "Dê um nome ao modelo." };
+  const corpo = input.corpo.trim();
+  if (!corpo) return { ok: false as const, erro: "Escreva o texto da mensagem." };
+  const nVars = Math.max(0, ...[...corpo.matchAll(/\{\{(\d+)\}\}/g)].map((x) => Number(x[1])));
+  const components: Record<string, unknown>[] = [{
+    type: "BODY", text: corpo,
+    ...(nVars > 0 ? { example: { body_text: [Array.from({ length: nVars }, (_, i) => input.exemplos[i] || `exemplo${i + 1}`)] } } : {}),
+  }];
+  if (input.rodape?.trim()) components.push({ type: "FOOTER", text: input.rodape.trim().slice(0, 60) });
+  try {
+    const r = await fetch(`${API}/${WABA()}/message_templates`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: nome, language: "pt_BR", category: input.categoria, components }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const j = (await r.json().catch(() => ({}))) as { id?: string; status?: string; error?: { message?: string; error_user_msg?: string } };
+    if (!r.ok) return { ok: false as const, erro: j.error?.error_user_msg ?? j.error?.message ?? `HTTP ${r.status}` };
+    return { ok: true as const, nome, status: j.status ?? "PENDING" };
+  } catch (e) {
+    return { ok: false as const, erro: e instanceof Error ? e.message : "falha de rede" };
+  }
+}
+
+// Envia um modelo com variáveis no corpo e, se o modelo tiver, imagem no topo.
+export async function enviarModeloWpp(telefone: string, modelo: string, idioma: string, params: string[], imagemUrl?: string | null): Promise<Resultado> {
+  const to = telefoneWa(telefone);
+  if (!to) return { ok: false, erro: "telefone inválido" };
+  if (!whatsappConfigurado()) return { ok: false, erro: "WhatsApp não configurado" };
+  const components: Record<string, unknown>[] = [];
+  if (imagemUrl) components.push({ type: "header", parameters: [{ type: "image", image: { link: imagemUrl } }] });
+  if (params.length) components.push({ type: "body", parameters: params.map((p) => ({ type: "text", text: (String(p).trim() || "-").slice(0, 1000) })) });
+  try {
+    const r = await fetch(`${API}/${PHONE_ID}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ messaging_product: "whatsapp", to, type: "template", template: { name: modelo, language: { code: idioma || "pt_BR" }, components } }),
+      signal: AbortSignal.timeout(10000),
+    });
+    const j = (await r.json().catch(() => ({}))) as { messages?: { id: string }[]; error?: { message?: string } };
+    const waId = j.messages?.[0]?.id ?? null;
+    if (!r.ok || !waId) return { ok: false, erro: (j.error?.message ?? `HTTP ${r.status}`).slice(0, 300) };
+    return { ok: true, waId };
+  } catch (e) {
+    return { ok: false, erro: e instanceof Error ? e.message : "falha de rede" };
+  }
+}

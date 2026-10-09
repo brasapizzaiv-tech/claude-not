@@ -5,7 +5,7 @@ import { FORMAS_PADRAO, iconeDoTipo, rotuloDa, tipoDe, type FormaOpcao } from "@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import QRCode from "qrcode";
-import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico, verificarPixPedido, dadosClientePublico, saldoCashbackPublico } from "./actions";
+import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico, verificarPixPedido, dadosClientePublico, saldoCashbackPublico, preferenciasPublico } from "./actions";
 import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -91,6 +91,12 @@ export function PedirClient({
   const [cashback, setCashback] = useState<Awaited<ReturnType<typeof saldoCashbackPublico>>>(null);
   const [usarCashback, setUsarCashback] = useState(true);
   const [histCashback, setHistCashback] = useState<Awaited<ReturnType<typeof saldoCashbackPublico>>>(null);
+  // WhatsApp: aceite de promoções, aniversário (opcional) e campanha de origem.
+  const [aceitaPromo, setAceitaPromo] = useState(false);
+  const [promoMexeu, setPromoMexeu] = useState(false);
+  const [nascimento, setNascimento] = useState("");
+  const [temAniversario, setTemAniversario] = useState(false);
+  const [campanhaId, setCampanhaId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [feito, setFeito] = useState<{ id: string; numero?: number; pix?: { copiaECola: string } | null } | null>(null);
   const [pixPago, setPixPago] = useState(false);
@@ -117,6 +123,23 @@ export function PedirClient({
         if (t) { setTelefone(t); setHistTel(t); }
         if (n) setNome(n);
       } catch { /* sem storage */ }
+      // Link de campanha: /pedir?c=<campanha>&cupom=CODIGO — guarda a campanha
+      // e já aplica o cupom.
+      try {
+        const qs = new URLSearchParams(window.location.search);
+        const c = qs.get("c");
+        if (c && /^[0-9a-f-]{36}$/i.test(c)) setCampanhaId(c);
+        const cod = (qs.get("cupom") || "").trim().toUpperCase();
+        if (cod) {
+          setCupomCodigo(cod);
+          validarCupomPublico(cod).then((r) => {
+            if (r.ok) {
+              setCupom({ codigo: r.codigo, tipo: r.tipo, valor: r.valor, minimo: r.minimo });
+              setCupomMsg(`Cupom ${r.codigo} aplicado: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `R$ ${r.valor.toFixed(2).replace(".", ",")} de desconto`}`);
+            }
+          }).catch(() => { /* sem rede */ });
+        }
+      } catch { /* sem URL */ }
     }, 0);
     return () => clearTimeout(id);
   }, []);
@@ -209,9 +232,11 @@ export function PedirClient({
     let vivo = true;
     (async () => {
       try {
-        const [d, cb] = await Promise.all([dadosClientePublico(fone), saldoCashbackPublico(fone)]);
+        const [d, cb, pref] = await Promise.all([dadosClientePublico(fone), saldoCashbackPublico(fone), preferenciasPublico(fone)]);
         if (!vivo) return;
         setCashback(cb);
+        if (pref?.aceita) setAceitaPromo((a) => a || true);
+        setTemAniversario(!!pref?.temAniversario);
         if (!d) return;
         setNome((n) => n.trim() ? n : d.nome);
         if (d.endereco) {
@@ -242,6 +267,10 @@ export function PedirClient({
         observacao: obs,
         cupom: cupom?.codigo ?? null,
         usarCashback: cashbackUsado > 0,
+        aceitaPromocoes: aceitaPromo,
+        promoMexeu,
+        nascimento: nascimento || null,
+        campanhaId,
         itens: cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
         agendadoPara: quando === "agendar" ? slot : null,
       });
@@ -399,6 +428,16 @@ export function PedirClient({
           <div className="mb-4 space-y-2">
             <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
             <input value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+            <label className="flex cursor-pointer items-start gap-3 rounded-cartao border border-borda p-3 text-sm">
+              <input type="checkbox" checked={aceitaPromo} onChange={(e) => { setAceitaPromo(e.target.checked); setPromoMexeu(true); }} className="mt-0.5 h-5 w-5" style={{ accentColor: LARANJA }} />
+              <span><span className="font-semibold">Quero receber promoções pelo WhatsApp</span><span className="block text-xs text-texto-suave">Pode parar quando quiser respondendo SAIR.</span></span>
+            </label>
+            {aceitaPromo && !temAniversario && (
+              <label className="block text-sm">
+                <span className="text-xs text-texto-suave">Seu aniversário (opcional): no seu dia você ganha uma promoção</span>
+                <input type="date" value={nascimento} onChange={(e) => setNascimento(e.target.value)} className="mt-1 w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5" />
+              </label>
+            )}
           </div>
 
           <h2 className="mb-2 font-bold">Pra quando?</h2>

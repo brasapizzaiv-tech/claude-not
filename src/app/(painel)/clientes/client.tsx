@@ -22,6 +22,9 @@ export type Cliente = {
   municipio: string | null;
   uf: string | null;
   cod_municipio: string | null;
+  aceita_promocoes?: boolean | null;
+  nascimento?: string | null;
+  aceita_aniversario?: boolean;
 };
 
 const campo =
@@ -169,6 +172,21 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
               <F nome="ie" label="Inscrição Estadual" def={editando?.ie} />
               <F nome="email" label="E-mail" def={editando?.email} />
               <F nome="telefone" label="Telefone" def={editando?.telefone} />
+              <label className="block">
+                <span className="mb-1 block text-xs text-texto-suave">Promoções pelo WhatsApp</span>
+                <select name="aceita_promocoes" defaultValue={editando?.aceita_promocoes === true ? "sim" : editando?.aceita_promocoes === false ? "nao" : ""} className={campo}>
+                  <option value="">Não perguntado (recebe campanhas)</option>
+                  <option value="sim">Aceita receber</option>
+                  <option value="nao">Não quer receber</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-texto-suave">Aniversário</span>
+                <input type="date" name="nascimento" defaultValue={editando?.nascimento ?? ""} className={campo} />
+              </label>
+              <label className="flex items-center gap-2 self-end pb-3 text-sm">
+                <input type="checkbox" name="aceita_aniversario" defaultChecked={!!editando?.aceita_aniversario} className="h-4 w-4" /> Quer promoção de aniversário
+              </label>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <F nome="cep" label="CEP" def={editando?.cep} />

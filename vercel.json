@@ -18,6 +18,10 @@
     {
       "path": "/api/entrega/limpar",
       "schedule": "20 7 * * *"
+    },
+    {
+      "path": "/api/whatsapp/disparos",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

@@ -108,6 +108,21 @@ export async function saldoCashbackPublico(telefone: string) {
   return { ...base, saldo: Number(saldo ?? 0), venceEm: pr?.expira_em ?? null, venceValor: pr ? Number(pr.restante) : 0 };
 }
 
+// Se o cliente (pelo telefone) já aceitou promoções — pra caixa vir marcada.
+// Não devolve a data de aniversário (é dado pessoal), só se já está cadastrada.
+export async function preferenciasPublico(telefone: string) {
+  const fone = (telefone || "").replace(/\D/g, "");
+  if (fone.length < 10) return null;
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return null;
+  const admin = createAdminClient();
+  const { data } = await admin.from("clientes").select("aceita_promocoes, nascimento, aceita_aniversario")
+    .eq("empresa_id", empresaId).ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
+  const c = data as { aceita_promocoes: boolean | null; nascimento: string | null; aceita_aniversario: boolean } | null;
+  if (!c) return null;
+  return { aceita: c.aceita_promocoes === true, temAniversario: !!c.nascimento && c.aceita_aniversario };
+}
+
 // Valida um cupom e devolve os dados pra prévia do desconto no carrinho.
 type CupomRow = { id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; validade: string | null; max_usos: number | null; usos: number; ativo: boolean };
 async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, codigo: string, empresaId: string) {
@@ -149,6 +164,10 @@ export async function enviarPedidoPublico(d: {
   itens: LinhaPedido[];
   agendadoPara?: string | null; // ISO de um horário oferecido pelo servidor
   usarCashback?: boolean;
+  aceitaPromocoes?: boolean;     // caixa "Quero receber promoções pelo WhatsApp"
+  promoMexeu?: boolean;          // o cliente mexeu na caixa (desmarcar = não quer mais)
+  nascimento?: string | null;    // "AAAA-MM-DD", opcional (promoção de aniversário)
+  campanhaId?: string | null;    // veio pelo link de uma campanha
 }) {
   const admin = createAdminClient();
 
@@ -225,6 +244,17 @@ export async function enviarPedidoPublico(d: {
   // Reconhece (ou cadastra) o cliente pelo telefone — dentro da empresa, senão
   // um telefone digitado no cardápio de um restaurante acharia o cadastro de
   // cliente de outro.
+  // Preferências de WhatsApp: marcar = aceita; desmarcar uma caixa que veio
+  // marcada = não quer mais; não mexer = deixa como está.
+  const prefs: Record<string, unknown> = {};
+  if (d.aceitaPromocoes) Object.assign(prefs, { aceita_promocoes: true, aceita_promocoes_em: new Date().toISOString(), wpp_sair_em: null });
+  else if (d.promoMexeu) Object.assign(prefs, { aceita_promocoes: false, aceita_promocoes_em: new Date().toISOString() });
+  const nasc = (d.nascimento || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(nasc)) {
+    const ano = Number(nasc.slice(0, 4));
+    if (ano >= 1900 && ano <= new Date().getFullYear()) Object.assign(prefs, { nascimento: nasc, aceita_aniversario: true });
+  }
+
   let clienteId: string | null = null;
   const { data: cli } = await admin
     .from("clientes").select("id")
@@ -232,6 +262,7 @@ export async function enviarPedidoPublico(d: {
     .ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
   if (cli?.id) {
     clienteId = cli.id as string;
+    if (Object.keys(prefs).length) await admin.from("clientes").update(prefs).eq("id", clienteId);
     // Guarda o endereço mais recente no cadastro do cliente (hoje 0 de 3.269 têm).
     if (d.tipo === "entrega" && (d.endereco?.logradouro || "").trim()) {
       await admin.from("clientes").update({
@@ -252,6 +283,7 @@ export async function enviarPedidoPublico(d: {
         bairro: d.endereco?.bairro ?? null,
         municipio: d.endereco?.cidade ?? null,
         cep: d.endereco?.cep ?? null,
+        ...prefs,
       })
       .select("id")
       .single();
@@ -293,6 +325,11 @@ export async function enviarPedidoPublico(d: {
   );
   if (!r.ok) return r;
   await avisarPedido(r.id, "recebido");
+  // Veio pelo link de uma campanha: marca o pedido (resultado da campanha).
+  if (d.campanhaId && /^[0-9a-f-]{36}$/i.test(d.campanhaId)) {
+    const { data: camp } = await admin.from("wpp_campanhas").select("id").eq("id", d.campanhaId).eq("empresa_id", empresaId).maybeSingle();
+    if (camp) await admin.from("delivery_pedidos").update({ campanha_id: d.campanhaId }).eq("id", r.id);
+  }
   if (cupomId) {
     const { data: cAtual } = await admin.from("cupons").select("usos").eq("id", cupomId).single();
     await admin.from("cupons").update({ usos: Number((cAtual as { usos: number } | null)?.usos ?? 0) + 1 }).eq("id", cupomId);
