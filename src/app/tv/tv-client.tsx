@@ -15,6 +15,7 @@ import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
 import type { ApontamentoTv } from "@/lib/checklists-core";
 import type { Feriado } from "@/lib/feriados";
 import type { Evento } from "@/lib/eventos";
+import { cameraPausada } from "@/lib/tv-camera-regras";
 import { filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 
 const LEVE_MS = 30_000;      // consulta de segurança da fila
@@ -56,6 +57,11 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
         const j = await r.json();
         if (!vivo) return;
         if (j.ok) {
+          // Câmera do buffet entrou no ar: a TV vai pra ela (src/lib/tv-camera.ts).
+          if (typeof j.camera === "string" && j.camera.startsWith("http://") && !cameraPausada(new URLSearchParams(window.location.search).get("semcamera"))) {
+            window.location.replace(j.camera);
+            return;
+          }
           setPedidos(j.pedidos as PedidoRodizio[]);
           setUltimaAtividade(typeof j.ultimaAtividade === "string" ? j.ultimaAtividade : null);
           if (!j.leve) {

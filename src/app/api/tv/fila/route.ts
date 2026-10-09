@@ -1,5 +1,6 @@
 import { aniversariantesMes, apontamentosTv, cardapioTv, chaveTvOk, eventosTv, feriadosTv, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
 import { empresaAtualId } from "@/lib/empresa";
+import { cameraNoAr, destinoCamera } from "@/lib/tv-camera";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,9 +23,10 @@ export async function GET(req: Request) {
     // resto (cardápio, recados, feriados...) vem na consulta completa, a cada
     // 5 min. Antes vinha tudo a cada 3 s — 22 GB por mês só de cardápio.
     if (url.searchParams.get("modo") === "leve") {
-      const [pedidos, ultimaAtividade] = await Promise.all([filaTv(), ultimaAtividadeRodizio()]);
+      const [pedidos, ultimaAtividade, cam] = await Promise.all([filaTv(), ultimaAtividadeRodizio(), cameraNoAr()]);
+      const camera = cam ? destinoCamera(cam, url.searchParams.get("chave") ?? "", "") : null;
       return Response.json(
-        { ok: true, leve: true, agora: new Date().toISOString(), pedidos, ultimaAtividade },
+        { ok: true, leve: true, agora: new Date().toISOString(), pedidos, ultimaAtividade, camera },
         { headers: { "Cache-Control": "no-store" } },
       );
     }

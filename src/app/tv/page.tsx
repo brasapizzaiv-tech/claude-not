@@ -8,6 +8,7 @@ import { paginaDaRotacao, TV_SEM_PEDIDO_MIN } from "@/lib/dia-cardapio";
 import type { ApontamentoTv } from "@/lib/checklists-core";
 import type { Feriado } from "@/lib/feriados";
 import type { Evento } from "@/lib/eventos";
+import { cameraNoAr, cameraPausada, destinoCamera } from "@/lib/tv-camera";
 import { TvClient } from "./tv-client";
 
 // TV da cozinha: tela cheia, sem menu. A chave da URL é conferida no servidor
@@ -28,8 +29,8 @@ export const dynamic = "force-dynamic";
 const SIMPLES_INTERVALO_SEG = 5;
 const FALLBACK_MS = 8000;
 
-export default async function TvPage({ searchParams }: { searchParams: Promise<{ chave?: string; modo?: string }> }) {
-  const { chave = "", modo = "" } = await searchParams;
+export default async function TvPage({ searchParams }: { searchParams: Promise<{ chave?: string; modo?: string; semcamera?: string }> }) {
+  const { chave = "", modo = "", semcamera = "" } = await searchParams;
   const { configurada, ok } = chaveTvOk(chave);
 
   if (!ok) {
@@ -41,6 +42,22 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
             {configurada ? "Endereço incompleto: abra o link com a chave (…/tv?chave=…)." : "Falta configurar RODIZIO_TV_CHAVE no servidor."}
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Câmera do buffet no ar (horário do almoço): a TV vai pra página dela, que
+  // devolve a TV pra cá quando a transmissão desliga. Ver src/lib/tv-camera.ts.
+  // ?semcamera=<hora> = a página da câmera voltou porque a TV não conseguiu
+  // mostrar a imagem; até essa hora a TV fica na tela de sempre.
+  const camera = cameraPausada(semcamera) ? null : await cameraNoAr();
+  if (camera) {
+    const destino = destinoCamera(camera, chave, modo);
+    return (
+      <div style={{ minHeight: "100vh", background: TV.fundo, color: TV.fraco, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", fontSize: "4vh" }}>
+        <meta httpEquiv="refresh" content={`0;url=${destino}`} />
+        <script dangerouslySetInnerHTML={{ __html: `location.replace(${JSON.stringify(destino)});` }} />
+        Abrindo a câmera do buffet…
       </div>
     );
   }
