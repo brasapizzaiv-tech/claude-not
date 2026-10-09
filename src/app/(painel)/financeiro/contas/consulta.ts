@@ -81,35 +81,51 @@ function proxMes(comp: string) {
 
 export async function consultarContas(f: FiltroContas): Promise<LinhaConta[]> {
   const supabase = await createClient();
-  let q = supabase
-    .from("lancamentos")
-    .select(
-      "id, nota_id, data, emissao, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, ajuste, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
-    );
+  // Monta a consulta com os filtros. Função (e não uma variável só) porque
+  // cada página precisa de uma consulta nova.
+  const montar = () => {
+    let q = supabase
+      .from("lancamentos")
+      .select(
+        "id, nota_id, data, emissao, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, ajuste, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)",
+      );
 
-  if (f.status === "pagas") q = q.eq("pago", true);
-  else if (f.status !== "todas") q = q.eq("pago", false);
+    if (f.status === "pagas") q = q.eq("pago", true);
+    else if (f.status !== "todas") q = q.eq("pago", false);
 
-  if (f.comp && /^\d{4}-\d{2}$/.test(f.comp)) {
-    q = q.gte("data", `${f.comp}-01`).lt("data", proxMes(f.comp));
+    if (f.comp && /^\d{4}-\d{2}$/.test(f.comp)) {
+      q = q.gte("data", `${f.comp}-01`).lt("data", proxMes(f.comp));
+    }
+    if (f.vde) q = q.gte("vencimento", f.vde);
+    if (f.vate) q = q.lte("vencimento", f.vate);
+    if (f.lde) q = q.gte("lancamento_em", f.lde);
+    if (f.late) q = q.lte("lancamento_em", f.late);
+    // Dia do pagamento (pago_em é data+hora: o "até" vai até o fim do dia).
+    if (f.pde) q = q.gte("pago_em", f.pde);
+    if (f.pate) q = q.lte("pago_em", `${f.pate}T23:59:59.999`);
+    if (f.banco) q = q.eq("banco", f.banco);
+    if (f.forma) q = q.eq("forma_pagamento", f.forma);
+    if (f.cat) q = q.eq("categoria_id", f.cat);
+    return q
+      .order("vencimento", { ascending: true, nullsFirst: false })
+      .order("id", { ascending: true }); // desempate: página estável
+  };
+
+  // O banco devolve no máximo 1000 linhas por consulta. Antes pedia 2000 de
+  // uma vez e vinham só 1000: com "Todas" ou "Pagas" (3 mil+ contas em out/2026)
+  // a lista cortava em silêncio, e as sem vencimento (que vêm por último)
+  // sumiam até da busca. Agora busca em páginas de 1000 até acabar.
+  const PAGINA = 1000;
+  const MAXIMO = 20000;
+  const todas: LinhaConta[] = [];
+  for (let de = 0; de < MAXIMO; de += PAGINA) {
+    const { data, error } = await montar().range(de, de + PAGINA - 1);
+    if (error) break;
+    const lote = (data as unknown as LinhaConta[]) ?? [];
+    todas.push(...lote);
+    if (lote.length < PAGINA) break;
   }
-  if (f.vde) q = q.gte("vencimento", f.vde);
-  if (f.vate) q = q.lte("vencimento", f.vate);
-  if (f.lde) q = q.gte("lancamento_em", f.lde);
-  if (f.late) q = q.lte("lancamento_em", f.late);
-  // Dia do pagamento (pago_em é data+hora: o "até" vai até o fim do dia).
-  if (f.pde) q = q.gte("pago_em", f.pde);
-  if (f.pate) q = q.lte("pago_em", `${f.pate}T23:59:59.999`);
-  if (f.banco) q = q.eq("banco", f.banco);
-  if (f.forma) q = q.eq("forma_pagamento", f.forma);
-  if (f.cat) q = q.eq("categoria_id", f.cat);
-
-  const { data } = await q
-    .order("vencimento", { ascending: true, nullsFirst: false })
-    .limit(2000);
 
   // Só despesas (não receitas) entram em contas a pagar.
-  return ((data as unknown as LinhaConta[]) ?? []).filter(
-    (l) => l.dre_categorias?.tipo !== "receita",
-  );
+  return todas.filter((l) => l.dre_categorias?.tipo !== "receita");
 }
