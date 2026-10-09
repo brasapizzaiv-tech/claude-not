@@ -5,7 +5,7 @@ import { urlCameraOk } from "@/lib/tv-camera-regras";
 
 export { cameraPausada, urlCameraOk } from "@/lib/tv-camera-regras";
 
-// Câmera do buffet na TV da cozinha (migration 0216, projeto app-buffet).
+// Câmera do buffet na TV da cozinha (migration 0217, projeto app-buffet).
 //
 // A TV não consegue mostrar a câmera dentro da página do sistema: a página está
 // na internet (https) e a câmera só existe dentro da rede da Brasa (http), e o
