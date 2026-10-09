@@ -83,6 +83,31 @@ export async function meusPedidos(telefone: string) {
   });
 }
 
+// Saldo de cashback do cliente (pelo telefone), pro carrinho e pro "Meus
+// pedidos". Só responde com o cashback ligado e valendo no app.
+export async function saldoCashbackPublico(telefone: string) {
+  const fone = (telefone || "").replace(/\D/g, "");
+  if (fone.length < 10) return null;
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return null;
+  const admin = createAdminClient();
+  const { data: cfg } = await admin.from("cashback_config").select("ativo, percentual, max_resgate, canais").eq("empresa_id", empresaId).maybeSingle();
+  const c = cfg as { ativo: boolean; percentual: number; max_resgate: number | null; canais: string[] } | null;
+  if (!c?.ativo || !(c.canais ?? []).includes("app")) return null;
+  const { data: cli } = await admin.from("clientes").select("id").eq("empresa_id", empresaId).ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
+  const base = { percentual: Number(c.percentual), maxResgate: c.max_resgate != null ? Number(c.max_resgate) : null };
+  if (!cli?.id) return { ...base, saldo: 0, venceEm: null as string | null, venceValor: 0 };
+  const { data: saldo } = await admin.rpc("cashback_saldo", { p_cliente: cli.id });
+  // O próximo crédito a vencer (pra avisar "R$ X vencem dia tal").
+  const { data: prox } = await admin
+    .from("cashback_mov").select("restante, expira_em")
+    .eq("cliente_id", cli.id).eq("tipo", "credito").is("estornado_em", null)
+    .gt("restante", 0).gt("expira_em", new Date().toISOString())
+    .order("expira_em").limit(1).maybeSingle();
+  const pr = prox as { restante: number; expira_em: string } | null;
+  return { ...base, saldo: Number(saldo ?? 0), venceEm: pr?.expira_em ?? null, venceValor: pr ? Number(pr.restante) : 0 };
+}
+
 // Valida um cupom e devolve os dados pra prévia do desconto no carrinho.
 type CupomRow = { id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; validade: string | null; max_usos: number | null; usos: number; ativo: boolean };
 async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, codigo: string, empresaId: string) {
@@ -123,6 +148,7 @@ export async function enviarPedidoPublico(d: {
   cupom?: string | null;
   itens: LinhaPedido[];
   agendadoPara?: string | null; // ISO de um horário oferecido pelo servidor
+  usarCashback?: boolean;
 }) {
   const admin = createAdminClient();
 
@@ -263,7 +289,7 @@ export async function enviarPedidoPublico(d: {
       agendadoPara,
       areaId, areaNome,
     },
-    { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo, empresaId },
+    { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo, empresaId, usarCashback: !!d.usarCashback },
   );
   if (!r.ok) return r;
   await avisarPedido(r.id, "recebido");
@@ -295,7 +321,7 @@ export async function enviarPedidoPublico(d: {
     }
   }
 
-  return { ok: true as const, id: r.id, numero: r.numero, taxa: r.taxa ?? taxa, desconto: r.desconto ?? 0, total: r.total ?? 0, pix };
+  return { ok: true as const, id: r.id, numero: r.numero, taxa: r.taxa ?? taxa, desconto: r.desconto ?? 0, total: r.total ?? 0, cashbackUsado: r.cashbackUsado ?? 0, pix };
 }
 
 // Confere se o Pix do pedido caiu (o app do cliente consulta a cada poucos

@@ -498,3 +498,30 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
   revalidatePath("/retiradas");
   return { ok: true as const };
 }
+
+// Cashback (Etapa 6): configuração da empresa. Uma linha por empresa.
+export async function salvarCashback(formData: FormData) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const num = (k: string) => { const v = Number(String(formData.get(k) ?? "").replace(/\./g, "").replace(",", ".")); return Number.isFinite(v) ? v : NaN; };
+  const pct = num("percentual");
+  const max = String(formData.get("max_resgate") ?? "").trim() === "" ? null : num("max_resgate");
+  const dias = Math.round(num("validade_dias"));
+  const canais = ["app", "delivery"].filter((c) => formData.get(`canal_${c}`) === "on");
+  const formas = formData.getAll("formas_excluidas").map((f) => String(f).trim()).filter(Boolean);
+  const row = {
+    ativo: formData.get("ativo") === "on",
+    percentual: Number.isFinite(pct) ? Math.min(100, Math.max(0, pct)) : 2,
+    max_resgate: max != null && Number.isFinite(max) ? Math.max(0, max) : null,
+    validade_dias: Number.isFinite(dias) && dias > 0 ? dias : 30,
+    canais: canais.length ? canais : ["app"],
+    formas_excluidas: formData.get("excluir_formas") === "on" ? formas : [],
+    sem_combos: formData.get("sem_combos") === "on",
+    sem_promos: formData.get("sem_promos") === "on",
+    atualizado_em: new Date().toISOString(),
+  };
+  const { data: atual } = await supabase.from("cashback_config").select("empresa_id").maybeSingle();
+  if (atual) await supabase.from("cashback_config").update(row).eq("empresa_id", (atual as { empresa_id: string }).empresa_id);
+  else await supabase.from("cashback_config").insert(row);
+  revalidatePath("/delivery/cashback");
+}

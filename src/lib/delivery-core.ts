@@ -40,7 +40,8 @@ export type DadosPedidoDelivery = {
   areaNome?: string | null;
 };
 
-type Linha = { descricao: string; qtd: number; preco: number; itemId: string | null };
+// combo/promo: pro cashback poder deixar de fora combos e itens em promoção.
+type Linha = { descricao: string; qtd: number; preco: number; itemId: string | null; combo?: boolean; promo?: boolean };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -98,7 +99,7 @@ async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]): Promis
   }
   const preco = r2(precoVenda(item) + extra);
   const descricao = nomes.length ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}` : item.nome;
-  return { descricao, qtd: 1, preco, itemId };
+  return { descricao, qtd: 1, preco, itemId, combo: true, promo: Number(item.promo_preco ?? 0) > 0 };
 }
 
 // Áreas ativas e promoções ativas (carregadas juntas; poucas linhas).
@@ -201,7 +202,7 @@ export async function resolverLinhas(db: Db, itens: LinhaPedido[]): Promise<Linh
     if (it.kind === "item") {
       const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", it.itemId).single();
       if (!prod) continue;
-      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId }));
+      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId, promo: Number((prod as { promo_preco?: number | null }).promo_preco ?? 0) > 0 }));
     } else if (it.kind === "pizza") {
       const l = await resolverPizza(db, it.tamanhoId, it.saborIds, it.bordaId);
       if (l) linhas.push(comObs({ ...l, qtd: q }));
@@ -232,6 +233,8 @@ export async function criarPedidoDeliveryCore(
     // chave administrativa (o cardápio público), porque aí as regras do banco
     // não filtram nada. Do painel pode vir vazio: o banco já filtra.
     empresaId?: string | null;
+    // Cliente quer usar o saldo de cashback neste pedido (só o app, por ora).
+    usarCashback?: boolean;
   },
 ) {
   const empresaId = opts.empresaId ?? null;
@@ -272,6 +275,28 @@ export async function criarPedidoDeliveryCore(
     const ap = aplicarPromoTele(taxaEntrega, promos, { areaId: d.areaId ?? null, subtotal: subtotalPromo, agora: Date.now() });
     taxaEntrega = ap.taxa; taxaMotivo = ap.motivo;
   }
+
+  // Cashback: config da empresa (uma linha) e, se o cliente quer usar, quanto.
+  const subtotalItens = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
+  const cbQuery = db.from("cashback_config").select("ativo, max_resgate, canais, sem_combos, sem_promos");
+  const { data: cbRow } = await (empresaId ? cbQuery.eq("empresa_id", empresaId) : cbQuery).maybeSingle();
+  const cb = cbRow as { ativo: boolean; max_resgate: number | null; canais: string[]; sem_combos: boolean; sem_promos: boolean } | null;
+  let cashbackDesejado = 0;
+  if (opts.usarCashback && cb?.ativo && d.clienteId && (cb.canais ?? []).includes(d.origem === "app" ? "app" : "delivery")) {
+    const { data: saldo } = await db.rpc("cashback_saldo", { p_cliente: d.clienteId });
+    const teto = cb.max_resgate != null ? Number(cb.max_resgate) : Infinity;
+    cashbackDesejado = r2(Math.max(0, Math.min(Number(saldo ?? 0), teto, subtotalItens - desconto)));
+  }
+  if (cashbackDesejado > 0) {
+    desconto = r2(desconto + cashbackDesejado);
+    descontoMotivo = [descontoMotivo, "Cashback"].filter(Boolean).join(" · ");
+  }
+  // Base do cashback que este pedido VAI gerar na entrega: itens elegíveis,
+  // sem a taxa, com a parte proporcional dos descontos (cupom + cashback usado).
+  const elegivel = r2(linhas
+    .filter((l) => !(cb?.sem_combos !== false && l.combo) && !(cb?.sem_promos !== false && l.promo))
+    .reduce((s, l) => s + l.preco * l.qtd, 0));
+  const cashbackBase = subtotalItens > 0 ? r2(Math.max(0, elegivel * (1 - Math.min(desconto, subtotalItens) / subtotalItens))) : 0;
 
   const mesa = `${d.nome.trim().split(" ")[0]} · ${d.tipo === "retirada" ? "RETIRADA" : "ENTREGA"}`;
   const { data: com } = await db
@@ -331,6 +356,7 @@ export async function criarPedidoDeliveryCore(
       area_nome: d.areaNome ?? null,
       desconto,
       desconto_motivo: descontoMotivo,
+      cashback_base: cashbackBase,
       forma_pagamento: d.formaPagamento || null,
       troco_para: d.trocoPara ?? null,
       origem: d.origem,
@@ -341,6 +367,22 @@ export async function criarPedidoDeliveryCore(
     })
     .select("id")
     .single();
+
+  // Cashback usado: consome do saldo agora (o que vence antes primeiro). Se
+  // outro pedido gastou no meio-tempo e veio menos, acerta o desconto.
+  const pedidoId = (ped as { id: string } | null)?.id ?? null;
+  if (pedidoId && cashbackDesejado > 0 && d.clienteId) {
+    const { data: usado } = await db.rpc("cashback_resgatar", { p_cliente: d.clienteId, p_pedido: pedidoId, p_valor: cashbackDesejado });
+    const real = r2(Number(usado ?? 0));
+    if (real !== cashbackDesejado) {
+      desconto = r2(desconto - cashbackDesejado + real);
+      if (real <= 0) descontoMotivo = (descontoMotivo ?? "").split(" · ").filter((m) => m !== "Cashback").join(" · ") || null;
+      await db.from("delivery_pedidos").update({ desconto, desconto_motivo: descontoMotivo, cashback_resgate: real }).eq("id", pedidoId);
+    } else {
+      await db.from("delivery_pedidos").update({ cashback_resgate: real }).eq("id", pedidoId);
+    }
+    cashbackDesejado = real;
+  }
 
   // Agendado NÃO imprime agora: a cozinha recebe quando o pedido for pra "em preparo".
   if (opts.status === "aceito" && !d.agendadoPara) {
@@ -357,6 +399,7 @@ export async function criarPedidoDeliveryCore(
     taxa: taxaFinal,
     taxaMotivo,
     desconto,
+    cashbackUsado: cashbackDesejado,
     total: r2(subtotalLinhas + taxaFinal - desconto),
   };
 }

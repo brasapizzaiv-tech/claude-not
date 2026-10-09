@@ -5,7 +5,7 @@ import { FORMAS_PADRAO, iconeDoTipo, rotuloDa, tipoDe, type FormaOpcao } from "@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import QRCode from "qrcode";
-import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico, verificarPixPedido, dadosClientePublico } from "./actions";
+import { enviarPedidoPublico, calcularEntregaPublico, meusPedidos, validarCupomPublico, verificarPixPedido, dadosClientePublico, saldoCashbackPublico } from "./actions";
 import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -87,6 +87,10 @@ export function PedirClient({
   const [cupom, setCupom] = useState<{ codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null } | null>(null);
   const [cupomMsg, setCupomMsg] = useState<string | null>(null);
   const [cupomProc, setCupomProc] = useState(false);
+  // Cashback do cliente (achado pelo telefone) e se ele quer usar neste pedido.
+  const [cashback, setCashback] = useState<Awaited<ReturnType<typeof saldoCashbackPublico>>>(null);
+  const [usarCashback, setUsarCashback] = useState(true);
+  const [histCashback, setHistCashback] = useState<Awaited<ReturnType<typeof saldoCashbackPublico>>>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [feito, setFeito] = useState<{ id: string; numero?: number; pix?: { copiaECola: string } | null } | null>(null);
   const [pixPago, setPixPago] = useState(false);
@@ -145,7 +149,11 @@ export function PedirClient({
     : cupom.tipo === "percent"
       ? Math.round(subtotal * cupom.valor) / 100
       : Math.min(subtotal, cupom.valor);
-  const total = Math.round((subtotal + taxaN - descontoCupom) * 100) / 100;
+  // Prévia do cashback usado (o servidor recalcula e tem a palavra final).
+  const cashbackUsado = cashback && usarCashback && cashback.saldo > 0
+    ? Math.round(Math.max(0, Math.min(cashback.saldo, cashback.maxResgate ?? Infinity, subtotal - descontoCupom)) * 100) / 100
+    : 0;
+  const total = Math.round((subtotal + taxaN - descontoCupom - cashbackUsado) * 100) / 100;
 
   async function aplicarCupom() {
     if (!cupomCodigo.trim()) return;
@@ -201,8 +209,10 @@ export function PedirClient({
     let vivo = true;
     (async () => {
       try {
-        const d = await dadosClientePublico(fone);
-        if (!vivo || !d) return;
+        const [d, cb] = await Promise.all([dadosClientePublico(fone), saldoCashbackPublico(fone)]);
+        if (!vivo) return;
+        setCashback(cb);
+        if (!d) return;
         setNome((n) => n.trim() ? n : d.nome);
         if (d.endereco) {
           setEnd((e) => e.logradouro.trim() ? e : d.endereco!);
@@ -231,6 +241,7 @@ export function PedirClient({
         formaPagamento: forma, trocoPara: trocoN || null,
         observacao: obs,
         cupom: cupom?.codigo ?? null,
+        usarCashback: cashbackUsado > 0,
         itens: cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
         agendadoPara: quando === "agendar" ? slot : null,
       });
@@ -244,9 +255,10 @@ export function PedirClient({
   async function buscarHistorico() {
     if (histTel.replace(/\D/g, "").length < 10) { setHistLista([]); return; }
     setHistBuscando(true);
-    const lista = await meusPedidos(histTel);
+    const [lista, cb] = await Promise.all([meusPedidos(histTel), saldoCashbackPublico(histTel)]);
     setHistBuscando(false);
     setHistLista(lista);
+    setHistCashback(cb);
   }
 
   // Fica de olho no Pix: quando cair, confirma sozinho na tela.
@@ -315,6 +327,18 @@ export function PedirClient({
             <input value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
             <button onClick={buscarHistorico} disabled={histBuscando} className="rounded-cartao px-4 font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>{histBuscando ? "..." : "Buscar"}</button>
           </div>
+          {histCashback && (
+            <div className="mb-4 rounded-cartao border-2 p-3" style={{ borderColor: LARANJA }}>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 font-bold"><Icone nome="presente" tamanho={17} /> Seu cashback</span>
+                <span className="text-lg font-bold" style={{ color: LARANJA }}>{brl(histCashback.saldo)}</span>
+              </div>
+              <p className="mt-1 text-xs text-texto-suave">
+                Você ganha {String(histCashback.percentual).replace(".", ",")}% de volta em cada pedido entregue{histCashback.maxResgate != null ? ` e pode usar até ${brl(histCashback.maxResgate)} por pedido` : ""}.
+                {histCashback.venceEm && histCashback.venceValor > 0 ? ` ${brl(histCashback.venceValor)} vencem em ${new Date(histCashback.venceEm).toLocaleDateString("pt-BR")}.` : ""}
+              </p>
+            </div>
+          )}
           {histLista !== null && (
             histLista.length === 0 ? <p className="py-8 text-center text-sm text-texto-fraco">Nenhum pedido encontrado pra esse telefone.</p> : (
               <div className="space-y-2">
@@ -444,6 +468,19 @@ export function PedirClient({
             <button onClick={aplicarCupom} disabled={cupomProc || !cupomCodigo.trim()} className="rounded-cartao border-2 px-4 font-bold disabled:opacity-50" style={{ borderColor: LARANJA, color: LARANJA }}>{cupomProc ? "..." : "Aplicar"}</button>
           </div>
           {cupomMsg && <p className="mb-3 text-sm text-texto-suave">{cupomMsg}</p>}
+          {cashback && cashback.saldo > 0 && (
+            <label className="mb-3 flex cursor-pointer items-start gap-3 rounded-cartao border-2 p-3" style={{ borderColor: LARANJA }}>
+              <input type="checkbox" checked={usarCashback} onChange={(e) => setUsarCashback(e.target.checked)} className="mt-1 h-5 w-5" style={{ accentColor: LARANJA }} />
+              <span className="text-sm">
+                <span className="font-bold">Usar meu cashback</span> — você tem {brl(cashback.saldo)}
+                {cashback.maxResgate != null && cashback.saldo > cashback.maxResgate ? ` (até ${brl(cashback.maxResgate)} por pedido)` : ""}.
+                {cashback.venceEm && cashback.venceValor > 0 ? <span className="block text-xs text-texto-suave">{brl(cashback.venceValor)} vencem em {new Date(cashback.venceEm).toLocaleDateString("pt-BR")}.</span> : null}
+              </span>
+            </label>
+          )}
+          {cashback && cashback.saldo <= 0 && (
+            <p className="mb-3 flex items-center gap-1.5 text-xs text-texto-suave"><Icone nome="presente" tamanho={14} /> Este pedido te dá {String(cashback.percentual).replace(".", ",")}% de volta em cashback quando for entregue.</p>
+          )}
           <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
         </div>
 
@@ -452,6 +489,7 @@ export function PedirClient({
             <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
             {tipo === "entrega" && <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Entrega</span><span>{taxa == null ? "—" : brl(taxaN)}</span></div>}
             {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
+            {cashbackUsado > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cashback</span><span>− {brl(cashbackUsado)}</span></div>}
             <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
             {horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo && cart.length > 0 && (
