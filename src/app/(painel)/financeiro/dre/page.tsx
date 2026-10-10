@@ -2,6 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DreTipo } from "@/lib/types";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { faturamentoPorDia, somarFaturamento } from "@/lib/faturamento";
+
+function somarDiasISO(dia: string, n: number) {
+  const [a, m, d] = dia.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10);
+}
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -59,20 +65,22 @@ export default async function DrePage({
   const fim = `${desloca(mes, 1)}-01`;
 
   const supabase = await createClient();
-  const [{ data }, { data: fatData }] = await Promise.all([
+  const [{ data }, fatDias] = await Promise.all([
     supabase
       .from("lancamentos")
       .select("valor, data, origem, dre_categorias(nome, tipo, grupo, ordem)")
       .gte("data", ini)
       .lt("data", fim)
       .limit(5000),
-    // Receita REAL: faturamento importado da planilha (dia a dia, almoço+noite).
-    supabase.from("faturamento_dias").select("data, almoco, noite").gte("data", ini).lt("data", fim),
+    // Receita REAL, dia a dia: a planilha nos dias importados, o caixa do
+    // sistema nos outros (src/lib/faturamento.ts). Antes só a planilha: desde
+    // set/2026 o DRE ficava sem receita.
+    faturamentoPorDia(supabase, ini, somarDiasISO(fim, -1)),
   ]);
-  const fatRows = (fatData as { data: string; almoco: number | null; noite: number | null }[]) ?? [];
-  // Dias que já têm o faturamento da planilha: a receita lançada pelo fechamento
-  // do caixa (origem 'caixa') nesses dias NÃO entra de novo — seria duplicar.
-  const diasComPlanilha = new Set(fatRows.map((f) => f.data));
+  // Dias que já têm faturamento (planilha ou caixa): a receita lançada pelo
+  // fechamento do caixa (origem 'caixa') nesses dias NÃO entra de novo.
+  const diasComPlanilha = new Set(fatDias.map((f) => f.dia));
+  const fonteFat = somarFaturamento(fatDias);
 
   type L = {
     valor: number;
@@ -116,9 +124,9 @@ export default async function DrePage({
   // (exceto os do caixa em dias já cobertos, filtrados acima) somam por cima.
   let fatAlmoco = 0;
   let fatNoite = 0;
-  for (const f of fatRows) {
-    fatAlmoco += Number(f.almoco ?? 0);
-    fatNoite += Number(f.noite ?? 0);
+  for (const f of fatDias) {
+    fatAlmoco += f.almoco;
+    fatNoite += f.noite;
   }
   fatAlmoco = Math.round(fatAlmoco * 100) / 100;
   fatNoite = Math.round(fatNoite * 100) / 100;
@@ -192,6 +200,11 @@ export default async function DrePage({
           <p className="mt-1 text-sm text-texto-suave">
             % sobre a receita bruta. Valores lançados no mês.
           </p>
+          {fonteFat.diasSistema > 0 && (
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+              Faturamento: {fonteFat.diasPlanilha ? `${fonteFat.diasPlanilha} dias da planilha e ` : ""}{fonteFat.diasSistema} dias do caixa do sistema, que hoje só tem o almoço (a noite ainda não passa por ele).
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/financeiro/dre?mes=${desloca(mes, -1)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">‹</Link>

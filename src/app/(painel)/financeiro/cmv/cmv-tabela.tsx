@@ -43,7 +43,7 @@ export function CmvTabela({
   rows,
   eiId,
   efId,
-  faturamentoCaixa,
+  fatAuto,
   fatManual,
   dias,
   meta,
@@ -52,7 +52,8 @@ export function CmvTabela({
   rows: CmvRow[];
   eiId: string;
   efId: string;
-  faturamentoCaixa: number;
+  /** Faturamento automático por "AAAA-MM-DD|dia" e "|noite": planilha ou caixa do sistema. */
+  fatAuto: Record<string, number>;
   fatManual: Record<string, number>;
   dias: { data: string; dow: number }[];
   meta: number;
@@ -97,8 +98,16 @@ export function CmvTabela({
   let totalCmv = 0;
   let totalCompras = 0;
   for (const r of rows) if (entra[r.produtoId]) { totalCmv += cmvDe(r.produtoId); totalCompras += num(compras[r.produtoId] ?? ""); }
-  const manualTotal = Object.values(fatM).reduce((s, v) => s + num(v), 0);
-  const faturamento = faturamentoCaixa + manualTotal;
+  // Por dia e turno: o que foi digitado vale; vazio = o automático (planilha
+  // ou caixa do sistema). Nunca soma os dois no mesmo turno.
+  const chavesFat = new Set([...Object.keys(fatAuto), ...Object.keys(fatM)]);
+  let faturamento = 0;
+  let faturamentoAuto = 0;
+  for (const k of chavesFat) {
+    const digitado = (fatM[k] ?? "").trim();
+    if (digitado) faturamento += num(digitado);
+    else { faturamento += fatAuto[k] ?? 0; faturamentoAuto += fatAuto[k] ?? 0; }
+  }
   const cmvPct = faturamento > 0 ? totalCmv / faturamento : 0;
   const lacuna = cmvPct - meta;
 
@@ -206,7 +215,7 @@ export function CmvTabela({
       ) : (
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {card("CMV Real", moeda(totalCmv))}
-        {card("Faturamento", faturamento > 0 ? moeda(faturamento) : "—", "", faturamento > 0 ? "" : "sem caixa no período")}
+        {card("Faturamento", faturamento > 0 ? moeda(faturamento) : "—", "", faturamento > 0 ? "" : "sem faturamento no período")}
         {card("CMV %", faturamento > 0 ? pct(cmvPct) : "—", faturamento <= 0 ? "" : cmvPct <= meta ? "text-green-600" : "text-red-600")}
         {card(
           "Meta / Lacuna",
@@ -222,9 +231,9 @@ export function CmvTabela({
         <div className="mb-1 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-texto">
             Faturamento da semana
-            {faturamentoCaixa > 0 && (
+            {faturamentoAuto > 0 && (
               <span className="ml-1 text-xs font-normal text-texto-fraco">
-                (+ caixa {moeda(faturamentoCaixa)})
+                ({moeda(faturamentoAuto)} automático)
               </span>
             )}
           </h2>
@@ -233,7 +242,7 @@ export function CmvTabela({
           </span>
         </div>
         <p className="mb-3 text-xs text-texto-suave">
-          Lance à mão por dia enquanto não usa o caixa. Almoço (seg–sáb) e noite (sex e sáb).
+          Vem sozinho da planilha ou do caixa do sistema (o valor em cinza dentro do campo). Digite só pra corrigir um turno; apagando, volta o automático. Hoje o caixa do sistema só tem o almoço: a noite precisa ser digitada.
         </p>
         <div className="flex flex-wrap gap-2">
           {dias.map((d) => {
@@ -255,7 +264,7 @@ export function CmvTabela({
                       <input
                         inputMode="decimal"
                         value={fatM[`${d.data}|dia`] ?? ""}
-                        placeholder="0,00"
+                        placeholder={fatAuto[`${d.data}|dia`] ? fatAuto[`${d.data}|dia`].toFixed(2).replace(".", ",") : "0,00"}
                         onChange={(e) => setFatM((s) => ({ ...s, [`${d.data}|dia`]: e.target.value }))}
                         onBlur={(e) => persistFat(d.data, "dia", e.target.value)}
                         className={campoFat}
@@ -268,7 +277,7 @@ export function CmvTabela({
                       <input
                         inputMode="decimal"
                         value={fatM[`${d.data}|noite`] ?? ""}
-                        placeholder="0,00"
+                        placeholder={fatAuto[`${d.data}|noite`] ? fatAuto[`${d.data}|noite`].toFixed(2).replace(".", ",") : "0,00"}
                         onChange={(e) => setFatM((s) => ({ ...s, [`${d.data}|noite`]: e.target.value }))}
                         onBlur={(e) => persistFat(d.data, "noite", e.target.value)}
                         className={campoFat}

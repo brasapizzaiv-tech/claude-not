@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { segundaDe, somarDias } from "@/lib/equipe";
-import { calcFechamento, type FechamentoDados } from "@/lib/caixa";
+import { faturamentoPorDia } from "@/lib/faturamento";
 import { CmvTabela, type CmvRow } from "./cmv-tabela";
 
 type Contagem = { id: string; data: string; descricao: string | null };
@@ -126,7 +126,7 @@ export default async function CmvPage({
     ...new Set([...eiContagens, ...efContagens].map((c) => c.id)),
   ];
 
-  const [{ data: ciData }, { data: prodData }, { data: caixas }] = await Promise.all([
+  const [{ data: ciData }, { data: prodData }, fatDias] = await Promise.all([
     supabase
       .from("contagem_itens")
       .select("contagem_id, produto_id, qtd_estoque")
@@ -136,7 +136,10 @@ export default async function CmvPage({
       .select("id, nome, unidade, preco_referencia, entra_cmv, categoria_id, estoque_minimo, estoque_ideal, categorias(nome)")
       .eq("ativo", true)
       .order("nome"),
-    supabase.from("fechamentos_caixa").select("*").gte("data", dEI).lte("data", dEF),
+    // Faturamento da semana: planilha nos dias importados, caixa do sistema
+    // nos outros (src/lib/faturamento.ts). Antes lia fechamentos_caixa, que
+    // só tinha um dia (18/08) — o CMV ficava sem faturamento.
+    faturamentoPorDia(supabase, dEI, dEF),
   ]);
 
   // Combina as contagens de cada virada por produto (a contagem mais recente
@@ -221,9 +224,11 @@ export default async function CmvPage({
   // Semana anterior (para a variação de preço) = segunda a domingo anteriores.
   const comprasAnt = await comprasNoPeriodo(somarDias(dEI, -7), somarDias(dEI, -1));
 
-  let faturamento = 0;
-  for (const f of (caixas as unknown as FechamentoDados[]) ?? []) {
-    faturamento += calcFechamento(f).total_pedidos;
+  // Automático por dia e turno ("dia" = almoço); o digitado à mão vence na tela.
+  const fatAuto: Record<string, number> = {};
+  for (const f of fatDias) {
+    if (f.almoco) fatAuto[`${f.dia}|dia`] = f.almoco;
+    if (f.noite) fatAuto[`${f.dia}|noite`] = f.noite;
   }
 
   const produtos = (prodData as unknown as Prod[]) ?? [];
@@ -338,7 +343,7 @@ export default async function CmvPage({
         eiId={eiRepId}
         efId={efRepId}
         emAndamento={emAndamento}
-        faturamentoCaixa={faturamento}
+        fatAuto={fatAuto}
         fatManual={fatManual}
         dias={dias}
         meta={meta}

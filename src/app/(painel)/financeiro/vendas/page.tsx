@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { UploadVendas, UploadFaturamento } from "./upload";
+import { faturamentoPorDia, notasPorDia, somarFaturamento } from "@/lib/faturamento";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -25,46 +26,24 @@ export default async function VendasPage({
 
   const supabase = await createClient();
 
-  // O banco devolve no máximo 1000 linhas por vez — pagina até o fim.
-  const lista: { data_emissao: string; valor: number }[] = [];
-  for (let i = 0; ; i += 1000) {
-    const { data: pagina } = await supabase
-      .from("notas_emitidas")
-      .select("data_emissao, valor")
-      .eq("status", "Autorizado")
-      .gte("data_emissao", de)
-      .lte("data_emissao", ate)
-      .order("data_emissao")
-      .range(i, i + 999);
-    const rows = (pagina as { data_emissao: string; valor: number }[]) ?? [];
-    lista.push(...rows);
-    if (rows.length < 1000) break;
-  }
+  // Notas: as importadas do sistema antigo (até ago/2026) + as NFC-e que o
+  // próprio sistema emite (desde 07/09). Faturamento: planilha onde o dia foi
+  // importado, senão o caixa do sistema (src/lib/faturamento.ts).
+  const [notasDias, fatDias] = await Promise.all([
+    notasPorDia(supabase, de, ate),
+    faturamentoPorDia(supabase, de, ate),
+  ]);
+  const totalNotas = notasDias.reduce((s, d) => s + d.notas, 0);
+  const totalEmitido = notasDias.reduce((s, d) => s + d.valor, 0);
 
-  const { data: fatRows } = await supabase
-    .from("faturamento_dias")
-    .select("data, almoco, noite")
-    .gte("data", de)
-    .lte("data", ate);
-  const totalNotas = lista.length;
-  const totalEmitido = lista.reduce((s, n) => s + Number(n.valor), 0);
-
-  // Faturamento da planilha (tabela própria — não mexe no DRE).
-  const fatDe = new Map<string, number>();
-  for (const f of ((fatRows as { data: string; almoco: number | null; noite: number | null }[]) ?? [])) {
-    fatDe.set(f.data, Number(f.almoco ?? 0) + Number(f.noite ?? 0));
-  }
-  const faturamentoLancado = [...fatDe.values()].reduce((s, v) => s + v, 0);
+  const fatDe = new Map(fatDias.map((f) => [f.dia, f]));
+  const somaFat = somarFaturamento(fatDias);
+  const faturamentoLancado = somaFat.total;
   const diferenca = faturamentoLancado - totalEmitido;
 
   // Agrupa por dia (notas + faturamento no mesmo dia).
   const porDia = new Map<string, { n: number; valor: number }>();
-  for (const n of lista) {
-    const g = porDia.get(n.data_emissao) ?? { n: 0, valor: 0 };
-    g.n += 1;
-    g.valor += Number(n.valor);
-    porDia.set(n.data_emissao, g);
-  }
+  for (const n of notasDias) porDia.set(n.dia, { n: n.notas, valor: n.valor });
   for (const d of fatDe.keys()) if (!porDia.has(d)) porDia.set(d, { n: 0, valor: 0 });
   const dias = [...porDia.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
 
@@ -79,8 +58,9 @@ export default async function VendasPage({
             Notas emitidas × Faturamento
           </h1>
           <p className="mt-1 text-texto-suave">
-            Valor das notas de venda (NFC-e) no período vs. o faturamento da
-            planilha (almoço + noite). Não mexe no Financeiro/DRE.
+            Notas de venda (NFC-e) do período contra o faturamento. Notas: as do
+            sistema antigo importadas e as que o próprio sistema emite desde 07/09.
+            Faturamento: a planilha nos dias importados, o caixa do sistema nos outros.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -125,9 +105,12 @@ export default async function VendasPage({
           </p>
         </div>
         <div className="rounded-cartao border border-borda p-4">
-          <p className="text-xs text-texto-suave">Faturamento (planilha)</p>
+          <p className="text-xs text-texto-suave">Faturamento</p>
           <p className="mt-1 text-xl font-bold text-green-600">
             {moeda(faturamentoLancado)}
+          </p>
+          <p className="mt-0.5 text-xs text-texto-fraco">
+            {[somaFat.diasPlanilha ? `${somaFat.diasPlanilha} dias da planilha` : "", somaFat.diasSistema ? `${somaFat.diasSistema} do caixa do sistema` : ""].filter(Boolean).join(" · ") || "sem dias"}
           </p>
         </div>
         <div className="rounded-cartao border border-borda p-4">
@@ -141,11 +124,11 @@ export default async function VendasPage({
           </p>
         </div>
       </div>
-      {faturamentoLancado === 0 && (
+      {somaFat.diasSistema > 0 && (
         <p className="mb-6 rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-          Sem faturamento importado neste período. Use o botão{" "}
-          <b>Importar faturamento (planilha)</b> acima — os valores ficam só
-          nesta comparação, sem mexer no Financeiro/DRE.
+          Nos dias marcados &quot;caixa&quot;, o faturamento é o que passou pelo caixa do sistema.
+          Hoje isso é só o almoço: a noite ainda não passa por ele. Importando a planilha
+          desses dias no botão <b>Importar faturamento (planilha)</b>, ela passa a valer no lugar.
         </p>
       )}
 
@@ -159,13 +142,14 @@ export default async function VendasPage({
                 <th className="px-4 py-3 text-right">Notas</th>
                 <th className="px-4 py-3 text-right">Valor emitido</th>
                 <th className="px-4 py-3 text-right">Faturamento</th>
+                <th className="px-4 py-3">Fonte</th>
                 <th className="px-4 py-3 text-right">Diferença</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">
               {dias.map(([dia, g]) => {
                 const fat = fatDe.get(dia);
-                const dif = fat != null ? fat - g.valor : null;
+                const dif = fat != null ? fat.total - g.valor : null;
                 return (
                   <tr key={dia} className="">
                     <td className="px-4 py-2 text-texto-suave">
@@ -176,8 +160,9 @@ export default async function VendasPage({
                       {moeda(g.valor)}
                     </td>
                     <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
-                      {fat != null ? moeda(fat) : "—"}
+                      {fat != null ? moeda(fat.total) : "—"}
                     </td>
+                    <td className="px-4 py-2 text-xs text-texto-fraco">{fat ? (fat.fonte === "planilha" ? "planilha" : "caixa") : ""}</td>
                     <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-texto-fraco" : Math.abs(dif) < 0.01 ? "text-texto-fraco" : "text-amber-600"}`}>
                       {dif != null ? moeda(dif) : "—"}
                     </td>
