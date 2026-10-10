@@ -79,6 +79,8 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/whatsapp/") ||
     path.startsWith("/api/rastreio") ||
     path.startsWith("/api/contagem/cron") ||
+    // Pedido automático da Kern (08:35): a própria rota confere o CRON_SECRET.
+    path.startsWith("/api/kern/") ||
     // Site da marca Motelli (apresentação e política de privacidade).
     path.startsWith("/motelli") ||
     // Qual versão está no ar: toda tela pergunta, logada ou não.
