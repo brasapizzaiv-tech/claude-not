@@ -202,6 +202,7 @@ export function Sidebar({
         ...so(has("colaboradores"),
           { href: "/colaboradores", label: "Colaboradores", icon: "pessoa" },
           { href: "/colaboradores/semana", label: "Semana e 10%", icon: "horario" },
+          { href: "/colaboradores/assiduidade", label: "Assiduidade", icon: "relogio" },
         ),
         ...so(has("folgas"), { href: "/folgas", label: "Folgas", icon: "folga" }),
         ...so(has("retiradas"), { href: "/retiradas", label: "Compras internas", icon: "compras" }),
