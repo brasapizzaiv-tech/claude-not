@@ -50,8 +50,12 @@ type Pago = { colaborador_id: string; valor: number; lancamento_id: string | nul
 type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [],
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [],
 }: {
+  /** Batidas do relógio de ponto da semana (migration 0221). */
+  batidasPonto?: { colaborador_id: string; data: string; turno: Turno; hora: string }[];
+  /** Batidas sem colaborador ligado (CPF não cadastrado). */
+  pontoSemPessoa?: { nome: string | null; cpf: string; n: number }[];
   /** Desativados que trabalharam nas noites de 10%: entram só na divisão. */
   inativos10?: { id: string; peso_10: number | null }[];
   segunda: string;
@@ -160,6 +164,17 @@ export function SemanaClient({
   });
   const [formaPag, setFormaPag] = useState("Dinheiro");
   const [msg, setMsg] = useState<string | null>(null);
+  const horasPonto = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const b of batidasPonto) {
+      const k = `${b.colaborador_id}|${b.data}|${b.turno}`;
+      const a = m.get(k) ?? [];
+      a.push(b.hora);
+      m.set(k, a);
+    }
+    for (const a of m.values()) a.sort((x, y) => (x < "05:00" ? "24" + x : x).localeCompare(y < "05:00" ? "24" + y : y));
+    return m;
+  }, [batidasPonto]);
   const [marcadas, setMarcadas] = useState<Set<string>>(
     () => new Set(presencasIniciais.map((p) => chave(p.colaborador_id, p.data, p.turno))),
   );
@@ -486,6 +501,14 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         </div>
       </div>
 
+      {pontoSemPessoa.length > 0 && (
+        <div className="mb-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <b>Batidas no relógio sem colaborador ligado:</b>{" "}
+          {pontoSemPessoa.map((x) => `${x.nome || "sem nome"} (CPF final ${x.cpf.slice(-4)}, ${x.n} batida${x.n === 1 ? "" : "s"})`).join(" · ")}.
+          {" "}Cadastre o CPF da pessoa em <Link href="/colaboradores" className="underline">Colaboradores</Link>; as próximas batidas entram sozinhas.
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <div className="flex overflow-hidden rounded-controle border border-borda-forte">
           <button onClick={() => setModo("grade")} className={`px-3 py-1.5 ${modo === "grade" ? "bg-orange-500 text-white" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="horario" tamanho={14} /> Grade</span></button>
@@ -767,6 +790,22 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             <Icone nome="noite" tamanho={17} titulo="Trabalhou de noite" />
                           </button>
                         </div>
+                        {(() => {
+                          // Horários do relógio de ponto (migration 0221), primeiro e último de cada turno.
+                          const faixa = (t: Turno) => {
+                            const hs = horasPonto.get(`${p.id}|${d}|${t}`);
+                            if (!hs?.length) return null;
+                            return hs.length === 1 ? hs[0] : `${hs[0]}–${hs[hs.length - 1]}`;
+                          };
+                          const fd = faixa("dia"), fn = faixa("noite");
+                          if (!fd && !fn) return null;
+                          return (
+                            <div className="mt-0.5 text-[10px] leading-tight text-texto-fraco" title="Batidas no relógio de ponto">
+                              {fd && <div>{fd}</div>}
+                              {fn && <div>{fn}</div>}
+                            </div>
+                          );
+                        })()}
                       </td>
                     );
                   })}

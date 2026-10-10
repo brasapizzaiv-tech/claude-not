@@ -9,9 +9,10 @@ import { execFile } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { iniciarPonto } from "./ponto.mjs";
 
 const { print } = ptp;
-const VERSAO = "1.1.6"; // 1.1.6: consulta a fila a cada 3 s só enquanto há impressão (2 min depois da última), senão a cada 10 s; sinal de vida a cada 60 s — corta 70% das chamadas na Vercel; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
+const VERSAO = "1.2.0"; // 1.2.0: lê o relógio de ponto Control iD (ponto.mjs, menu do ícone "Relógio de ponto...") e manda as batidas pro sistema; // 1.1.6: consulta a fila a cada 3 s só enquanto há impressão (2 min depois da última), senão a cada 10 s; sinal de vida a cada 60 s — corta 70% das chamadas na Vercel; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -178,3 +179,4 @@ async function laco() {
 laco();
 heartbeat();
 setInterval(heartbeat, 60000);
+iniciarPonto({ dataDir, baseUrl, headers, log });

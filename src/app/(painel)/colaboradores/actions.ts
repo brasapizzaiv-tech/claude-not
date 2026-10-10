@@ -50,6 +50,9 @@ export async function salvarColaborador(formData: FormData) {
     uniforme_tamanho: (formData.get("uniforme_tamanho") as string)?.trim() || null,
     dias_dia: diasDe("dias_dia"),
     dias_noite: diasDe("dias_noite"),
+    // Ponto (migration 0221): quem bate no relógio tem a presença marcada pelas batidas.
+    bate_ponto: formData.get("bate_ponto") === "on",
+    cpf: (() => { const d = String(formData.get("cpf") ?? "").replace(/\D/g, ""); return d.length === 11 ? d : null; })(),
   };
 
   let colaboradorId = id;
@@ -77,6 +80,23 @@ export async function salvarColaborador(formData: FormData) {
     colaboradorId = data?.id ?? null;
   }
   if (!colaboradorId) return { erro: "Não salvou." };
+
+  // Ponto: CPF novo no cadastro liga as batidas que chegaram antes sem pessoa
+  // e, se ela bate ponto, marca a presença desses turnos.
+  if (quadro.cpf) {
+    const { data: soltas } = await supabase
+      .from("ponto_batidas")
+      .update({ colaborador_id: colaboradorId })
+      .eq("cpf", quadro.cpf)
+      .is("colaborador_id", null)
+      .select("id, data, turno");
+    if (quadro.bate_ponto && soltas?.length) {
+      const pres = new Map<string, { colaborador_id: string; data: string; turno: string; origem: string }>();
+      for (const b of soltas as { data: string; turno: string }[]) pres.set(`${b.data}|${b.turno}`, { colaborador_id: colaboradorId, data: b.data, turno: b.turno, origem: "ponto" });
+      await supabase.from("presencas").upsert([...pres.values()], { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
+      await supabase.from("ponto_batidas").update({ presenca: true }).in("id", (soltas as { id: string }[]).map((b) => b.id));
+    }
+  }
 
   // perfil de folga
   const existente = (

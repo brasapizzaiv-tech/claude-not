@@ -13,6 +13,7 @@ New-Item -ItemType Directory -Force -Path $app | Out-Null
 
 Write-Host "==> Copiando arquivos do agente..." -ForegroundColor Cyan
 Copy-Item (Join-Path $src "agente.mjs")   $app
+Copy-Item (Join-Path $src "ponto.mjs")    $app
 Copy-Item (Join-Path $src "package.json") $app
 Copy-Item (Join-Path $src "start.vbs")    $app
 Copy-Item (Join-Path $src "bandeja.ps1")  $app

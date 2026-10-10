@@ -533,6 +533,16 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             </div>
           </div>
 
+          <p className="pt-1 text-xs font-bold text-texto-fraco">Ponto</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="bate_ponto" defaultChecked={editando ? !!editando.bate_ponto : false} /> <Icone nome="relogio" tamanho={14} /> Bate ponto no relógio (a presença vem das batidas)
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              CPF
+              <input name="cpf" inputMode="numeric" defaultValue={editando?.cpf ? editando.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4") : ""} placeholder="000.000.000-00" className="min-h-9 w-40 rounded-controle border border-borda-forte bg-transparent px-2 text-sm" />
+            </label>
+          </div>
           <p className="pt-1 text-xs font-bold text-texto-fraco">App pessoal</p>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_contagem" defaultChecked={editando ? editando.faz_contagem : false} /> Faz contagem de estoque

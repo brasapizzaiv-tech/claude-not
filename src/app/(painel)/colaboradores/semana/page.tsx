@@ -56,6 +56,26 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     ? await supabase.from("colaboradores").select("id, peso_10").in("id", idsInativos).eq("recebe_10", true)
     : { data: [] as { id: string; peso_10: number | null }[] };
 
+  // Relógio de ponto (migration 0221): horários de cada um na semana + batidas
+  // de quem ainda não está ligado a um colaborador (CPF não cadastrado).
+  const { data: batRows } = await supabase
+    .from("ponto_batidas")
+    .select("colaborador_id, data, turno, data_hora, cpf, nome")
+    .gte("data", segunda)
+    .lte("data", fim)
+    .order("data_hora")
+    .limit(5000);
+  const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+  type Bat = { colaborador_id: string | null; data: string; turno: "dia" | "noite"; data_hora: string; cpf: string; nome: string | null };
+  const batidas = (batRows ?? []) as Bat[];
+  const batidasPonto = batidas.filter((b) => b.colaborador_id).map((b) => ({ colaborador_id: b.colaborador_id as string, data: String(b.data).slice(0, 10), turno: b.turno, hora: hhmm(b.data_hora) }));
+  const semPessoa = new Map<string, { nome: string | null; cpf: string; n: number }>();
+  for (const b of batidas.filter((x) => !x.colaborador_id)) {
+    const s = semPessoa.get(b.cpf) ?? { nome: b.nome, cpf: b.cpf, n: 0 };
+    s.n++;
+    semPessoa.set(b.cpf, s);
+  }
+
   const fiadoPor: Record<string, { valor: number; n: number }> = {};
   for (const r of (fiado ?? []) as { colaborador_id: string | null; valor: number }[]) {
     if (!r.colaborador_id) continue;
@@ -77,6 +97,8 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       extrasIniciais={(extras ?? []) as { colaborador_id: string; valor: number; motivo: string | null; turno: "dia" | "noite"; desconto: number; desconto_motivo: string | null }[]}
       adiantamentos={(adiantamentos ?? []) as { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null }[]}
       inativos10={(inativos ?? []) as { id: string; peso_10: number | null }[]}
+      batidasPonto={batidasPonto}
+      pontoSemPessoa={[...semPessoa.values()]}
     />
   );
 }
