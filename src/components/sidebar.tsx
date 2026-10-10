@@ -203,6 +203,7 @@ export function Sidebar({
           { href: "/colaboradores", label: "Colaboradores", icon: "pessoa" },
           { href: "/colaboradores/semana", label: "Semana e 10%", icon: "horario" },
           { href: "/colaboradores/assiduidade", label: "Assiduidade", icon: "relogio" },
+          { href: "/colaboradores/ponto", label: "Relatórios de ponto", icon: "lista" },
         ),
         ...so(has("folgas"), { href: "/folgas", label: "Folgas", icon: "folga" }),
         ...so(has("retiradas"), { href: "/retiradas", label: "Compras internas", icon: "compras" }),
@@ -446,8 +447,8 @@ export function Sidebar({
       )}
 
       {/* ---------- Computador: barra fixa de 72 px ---------- */}
-      <div className="hidden shrink-0 md:block" style={{ width: RAIL }} />
-      <aside className="fixed inset-y-0 left-0 z-40 hidden md:block" style={{ width: RAIL }}>
+      <div className="hidden shrink-0 md:block print:!hidden" style={{ width: RAIL }} />
+      <aside className="fixed inset-y-0 left-0 z-40 hidden md:block print:!hidden" style={{ width: RAIL }}>
         {rail}
       </aside>
 

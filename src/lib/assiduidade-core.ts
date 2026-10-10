@@ -35,11 +35,13 @@ export function apurarMes(p: {
   primeiraBatida: Map<string, string>;  // dia → "HH:MM" (primeira batida do turno do dia)
   folgas: Set<string>;
   atestados: Set<string>;
+  abonos?: Set<string>;                 // ausência abonada pela casa: nem falta, nem perde
   fechados: Set<string>;                // feriados em que a casa fecha
   tolerancia: number;
 }): ResultadoMes {
   const r: ResultadoMes = { esperados: 0, atrasoTotal: 0, atrasos: [], faltas: [], folgas: [], atestados: [], ganhou: null, motivos: [] };
   for (const dia of p.dias) {
+    if (p.abonos?.has(dia)) continue;
     if (p.atestados.has(dia)) { r.atestados.push(dia); continue; }
     if (p.folgas.has(dia)) { r.folgas.push(dia); continue; }
     const dow = diaDaSemana(dia);

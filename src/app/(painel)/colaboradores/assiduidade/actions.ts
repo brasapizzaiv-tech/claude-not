@@ -14,9 +14,12 @@ export async function salvarConfigAssiduidade(fd: FormData) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const entradas: Record<string, string> = {};
+  const saidas: Record<string, string> = {};
   for (let d = 0; d <= 6; d++) {
     const v = String(fd.get(`entrada_${d}`) ?? "").trim();
     if (HORA.test(v)) entradas[String(d)] = v;
+    const sv = String(fd.get(`saida_${d}`) ?? "").trim();
+    if (HORA.test(sv) && HORA.test(v)) saidas[String(d)] = sv;
   }
   const num = (k: string, padrao: number) => { const n = Number(String(fd.get(k) ?? "").replace(",", ".")); return Number.isFinite(n) && n >= 0 ? n : padrao; };
   const inicio = String(fd.get("inicio") ?? "");
@@ -27,6 +30,7 @@ export async function salvarConfigAssiduidade(fd: FormData) {
     dia_inicio_mes: Math.min(28, Math.max(1, Math.round(num("dia_inicio_mes", 1)))),
     inicio: DATA.test(inicio) ? inicio : null,
     entradas,
+    saidas,
     atualizado_em: new Date().toISOString(),
   };
   const { data: atual } = await supabase.from("assiduidade_config").select("empresa_id").maybeSingle();

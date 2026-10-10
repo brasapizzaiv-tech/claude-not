@@ -167,10 +167,10 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
               <label className="flex items-center gap-2">Conta desde <input type="date" name="inicio" defaultValue={cfg.inicio ?? ""} className={CAMPO} /></label>
             </div>
             <div>
-              <p className="mb-1 text-xs text-texto-suave">Entrada do turno do dia (vazio = não trabalha). Igual ao &quot;Horário Restaurante&quot; do RHiD.</p>
+              <p className="mb-1 text-xs text-texto-suave">Entrada (em cima) e saída (embaixo) do turno do dia; vazio = não trabalha. Igual ao &quot;Horário Restaurante&quot; do RHiD. A saída serve pras horas previstas e extras dos relatórios.</p>
               <div className="flex flex-wrap gap-2">
                 {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                  <label key={d} className="flex flex-col text-xs text-texto-fraco">{DOW[d]}<input type="time" name={`entrada_${d}`} defaultValue={cfg.entradas[String(d)] ?? ""} className={CAMPO} /></label>
+                  <label key={d} className="flex flex-col gap-1 text-xs text-texto-fraco">{DOW[d]}<input type="time" name={`entrada_${d}`} defaultValue={cfg.entradas[String(d)] ?? ""} className={CAMPO} title="Entrada" /><input type="time" name={`saida_${d}`} defaultValue={cfg.saidas[String(d)] ?? ""} className={CAMPO} title="Saída" /></label>
                 ))}
               </div>
             </div>

@@ -19,6 +19,7 @@ export async function receberAfd(
   equipamento: string,
   afd: string,
   usuarios: { cpf: string; nome: string }[],
+  origem: "relogio" | "afd" = "relogio",
 ) {
   const admin = createAdminClient();
   const batidas = lerAfd(afd);
@@ -43,12 +44,27 @@ export async function receberAfd(
     porCpf.set(cpf, achado);
   }
 
-  const linhas = batidas.map((b) => {
+  // A mesma batida pode chegar por dois caminhos (relógio pelo agente e AFD
+  // importado do RHiD, com NSR diferente): pessoa + hora igual = repetida.
+  const horas = batidas.map((b) => new Date(b.dataHora).getTime());
+  const { data: jaTem } = await admin.from("ponto_batidas").select("cpf, data_hora").eq("empresa_id", empresaId)
+    .gte("data_hora", new Date(Math.min(...horas)).toISOString()).lte("data_hora", new Date(Math.max(...horas)).toISOString()).limit(50000);
+  const existe = new Set(((jaTem ?? []) as { cpf: string; data_hora: string }[]).map((x) => `${x.cpf}|${new Date(x.data_hora).getTime()}`));
+  const vistas = new Set<string>();
+  const unicas = batidas.filter((b) => {
+    const k = `${b.cpf}|${new Date(b.dataHora).getTime()}`;
+    if (existe.has(k) || vistas.has(k)) return false;
+    vistas.add(k);
+    return true;
+  });
+  if (unicas.length === 0) return { recebidas: batidas.length, novas: 0, presencas: 0, semColaborador: 0 };
+
+  const linhas = unicas.map((b) => {
     const { data, turno } = turnoDaBatida(b.dataHora);
     const c = porCpf.get(b.cpf) ?? null;
     return {
       empresa_id: empresaId, equipamento, nsr: b.nsr, data_hora: new Date(b.dataHora).toISOString(),
-      cpf: b.cpf, nome: nomeDoCpf.get(b.cpf) || c?.nome || null, colaborador_id: c?.id ?? null, data, turno,
+      cpf: b.cpf, nome: nomeDoCpf.get(b.cpf) || c?.nome || null, colaborador_id: c?.id ?? null, data, turno, origem,
     };
   });
   const { data: novas, error } = await admin.from("ponto_batidas")

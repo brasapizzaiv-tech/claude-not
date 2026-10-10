@@ -61,3 +61,10 @@ test("período e trimestre", () => {
   assert.equal(trimestreDe("2026-10"), "2026-T4");
   assert.deepEqual(mesesDoTrimestre("2026-T4"), ["2026-10", "2026-11", "2026-12"]);
 });
+
+test("abono não é falta e não tira o prêmio", () => {
+  const b = todasNoHorario(); b.delete("2026-10-13");
+  const r = apurarMes(base({ primeiraBatida: b, abonos: new Set(["2026-10-13"]) }));
+  assert.deepEqual(r.faltas, []);
+  assert.equal(r.ganhou, true);
+});
