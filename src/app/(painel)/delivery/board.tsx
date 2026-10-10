@@ -74,6 +74,7 @@ const ORIGEM: Record<string, { label: string; icone: NomeIcone }> = {
   instagram: { label: "Instagram", icone: "camera" },
   telefone: { label: "Telefone", icone: "telefone" },
   balcao: { label: "Balcão", icone: "loja" },
+  convenio: { label: "Convênio", icone: "empresa" },
 };
 const KANBAN_COLS = ["pendente", "aceito", "em_preparo", "pronto", "saiu"];
 

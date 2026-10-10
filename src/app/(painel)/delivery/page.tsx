@@ -69,6 +69,7 @@ export default async function DeliveryPage() {
           <Link href="/delivery/cupons" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="etiqueta" tamanho={14} /> Cupons</Link>
           <Link href="/delivery/cashback" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="presente" tamanho={14} /> Cashback</Link>
           <Link href="/delivery/campanhas" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="megafone" tamanho={14} /> Campanhas</Link>
+          <Link href="/delivery/kern" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="empresa" tamanho={14} /> Kern</Link>
           <Link href="/delivery/relatorios" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="grafico" tamanho={14} /> Relatórios</Link>
           <Link href="/delivery/entregadores" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="entrega" tamanho={14} /> Entregadores</Link>
           <Link href="/delivery/config" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="ajustes" tamanho={14} /> Config</Link>

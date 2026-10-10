@@ -32,7 +32,7 @@ export type DadosPedidoDelivery = {
   descontoMotivo?: string;
   formaPagamento: string;
   trocoPara?: number | null;
-  origem: "app" | "whatsapp" | "instagram" | "telefone" | "balcao";
+  origem: "app" | "whatsapp" | "instagram" | "telefone" | "balcao" | "convenio";
   observacao?: string;
   itens: LinhaPedido[];
   agendadoPara?: string | null; // ISO — pedido pra um horário marcado (senão é pra agora)
