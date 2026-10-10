@@ -13,8 +13,10 @@ export type LinhaEspelho = {
   batidas: number[];      // minutos desde 00:00 do dia (pode passar de 1440)
   previstoMin: number;
   trabalhadoMin: number;
-  atrasoMin: number;
-  saldoMin: number;       // trabalhado − previsto (positivo = extra)
+  atrasoMin: number;      // atraso que conta (passou da tolerância)
+  extraMin: number;
+  faltaMin: number;       // falta e atraso do dia (como o RHiD)
+  saldoMin: number;       // extra − falta
   situacao: SituacaoDia;
 };
 export type TotaisEspelho = { previsto: number; trabalhado: number; extra: number; faltante: number; atraso: number; faltas: number; diasTrabalhados: number; incompletos: number };
@@ -43,6 +45,18 @@ export function horasDoDia(batidas: number[]): { trabalhado: number; incompleto:
   return { trabalhado: t, incompleto: b.length % 2 === 1 };
 }
 
+/**
+ * Tolerância como a do RHiD: cada desvio da entrada/saída prevista até
+ * `tolerancia` min (5) não conta; passou, conta inteiro; se a soma do dia
+ * passar do `limite` (10), conta tudo. Vale separado pra extras (chegar
+ * antes, sair depois) e pra faltas (atraso, sair antes, buraco no meio).
+ */
+function contar(partes: number[], tolerancia: number, limite: number) {
+  const soma = partes.reduce((a, b) => a + b, 0);
+  if (soma > limite) return soma;
+  return partes.filter((x) => x > tolerancia).reduce((a, b) => a + b, 0);
+}
+
 export function espelho(p: {
   dias: string[];
   hoje: string;
@@ -54,7 +68,10 @@ export function espelho(p: {
   atestados: Set<string>;
   abonos?: Set<string>;
   fechados: Set<string>;
+  tolerancia?: number; // por batida (RHiD: 5)
+  limite?: number;     // por dia (RHiD: 10)
 }): { linhas: LinhaEspelho[]; totais: TotaisEspelho } {
+  const tol = p.tolerancia ?? 0, lim = p.limite ?? 0;
   const linhas: LinhaEspelho[] = [];
   const t: TotaisEspelho = { previsto: 0, trabalhado: 0, extra: 0, faltante: 0, atraso: 0, faltas: 0, diasTrabalhados: 0, incompletos: 0 };
   for (const dia of p.dias) {
@@ -65,7 +82,6 @@ export function espelho(p: {
     const ausenciaJustificada = p.atestados.has(dia) || p.folgas.has(dia) || !!p.abonos?.has(dia);
     const previsto = naEscala && !ausenciaJustificada && sai ? Math.max(0, min(sai) - min(ent)) : 0;
     const { trabalhado, incompleto } = horasDoDia(bs);
-    const atraso = naEscala && bs.length ? Math.max(0, bs[0] - min(ent)) : 0;
     let situacao: SituacaoDia;
     if (p.atestados.has(dia)) situacao = "atestado";
     else if (p.abonos?.has(dia) && !bs.length) situacao = "abono";
@@ -74,13 +90,31 @@ export function espelho(p: {
     else if (p.fechados.has(dia) && ent && p.escala.includes(dow)) situacao = "feriado";
     else if (!naEscala) situacao = "fora";
     else situacao = dia < p.hoje ? "falta" : "hoje";
-    // Dia de hoje ainda aberto: não conta previsto nem saldo.
+
+    let extra = 0, falta = 0, atraso = 0;
+    const atrasoBruto = naEscala && bs.length ? Math.max(0, bs[0] - min(ent)) : 0;
+    if (situacao === "hoje") {
+      // dia aberto: nada conta ainda
+    } else if (previsto > 0 && bs.length >= 2 && !incompleto) {
+      const e1 = bs[0], sl = bs[bs.length - 1], E = min(ent), S = min(sai);
+      const buracos = (sl - e1) - trabalhado;
+      extra = contar([Math.max(0, E - e1), Math.max(0, sl - S)], tol, lim);
+      const partesFalta = [atrasoBruto, Math.max(0, S - sl), buracos];
+      falta = contar(partesFalta, tol, lim);
+      atraso = partesFalta.reduce((a, b) => a + b, 0) > lim || atrasoBruto > tol ? atrasoBruto : 0;
+    } else if (previsto > 0) {
+      falta = Math.max(0, previsto - trabalhado);
+      extra = Math.max(0, trabalhado - previsto);
+      atraso = atrasoBruto > tol ? atrasoBruto : 0;
+    } else {
+      extra = trabalhado; // fora da escala (ou dia justificado em que trabalhou): tudo é extra
+    }
     const contaPrevisto = situacao === "hoje" ? 0 : previsto;
-    const saldo = situacao === "hoje" ? 0 : trabalhado - contaPrevisto;
-    linhas.push({ dia, dow, batidas: bs, previstoMin: contaPrevisto, trabalhadoMin: trabalhado, atrasoMin: atraso, saldoMin: saldo, situacao });
+    linhas.push({ dia, dow, batidas: bs, previstoMin: contaPrevisto, trabalhadoMin: trabalhado, atrasoMin: atraso, extraMin: extra, faltaMin: falta, saldoMin: extra - falta, situacao });
     t.previsto += contaPrevisto;
     t.trabalhado += trabalhado;
-    if (saldo > 0) t.extra += saldo; else t.faltante += -saldo;
+    t.extra += extra;
+    t.faltante += falta;
     t.atraso += atraso;
     if (situacao === "falta") t.faltas++;
     if (bs.length) t.diasTrabalhados++;
@@ -104,7 +138,7 @@ export function porSemana(linhas: LinhaEspelho[]) {
     const k = segundaDaSemana(l.dia);
     const s = m.get(k) ?? { previsto: 0, trabalhado: 0, extra: 0, faltante: 0 };
     s.previsto += l.previstoMin; s.trabalhado += l.trabalhadoMin;
-    if (l.saldoMin > 0) s.extra += l.saldoMin; else s.faltante += -l.saldoMin;
+    s.extra += l.extraMin; s.faltante += l.faltaMin;
     m.set(k, s);
   }
   return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([segunda, s]) => ({ segunda, ...s }));

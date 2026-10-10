@@ -28,8 +28,10 @@ test("extra, atraso, falta e domingo fora", () => {
   assert.equal(linhas[2].situacao, "falta");
   assert.equal(linhas[3].situacao, "ok");
   assert.equal(linhas[3].previstoMin, 0);
-  assert.equal(totais.extra, 50 + 180);
-  assert.equal(totais.faltante, 60 + 360);
+  assert.equal(linhas[0].extraMin, 60);   // saiu 1h depois
+  assert.equal(linhas[0].faltaMin, 10);   // chegou 10 min atrasado
+  assert.equal(totais.extra, 60 + 180);
+  assert.equal(totais.faltante, 10 + 60 + 360);
   assert.equal(totais.faltas, 1);
 });
 
@@ -57,4 +59,18 @@ test("duração e semana", () => {
   assert.equal(duracao(-20), "-0h20");
   const { linhas } = espelho(base({ batidas: new Map([["2026-10-12", [m("08:00"), m("14:00")]]]) }));
   assert.equal(porSemana(linhas)[0].segunda, "2026-10-12");
+});
+
+test("tolerância igual ao RHiD: espelho do Carlos de 21/09 a 01/10/2026 bate com o print", () => {
+  const dias = ["2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-26","2026-09-27","2026-09-28","2026-09-29","2026-09-30","2026-10-01"];
+  const pares = [["15:06"],["08:01","14:14"],["08:03","14:50"],["07:52","15:15"],["08:00","15:00"],["07:58","15:23"],[],["08:03","14:30"],["08:01","14:53"],["07:58","14:52"],["07:55","18:05"]];
+  const b = new Map(dias.map((d, i) => [d, pares[i].map(m)]).filter(([, v]) => v.length));
+  const { linhas, totais } = espelho(base({ dias, batidas: b, tolerancia: 5, limite: 10 }));
+  const extraRhid = [0, 14, 50, 83, 60, 85, 0, 30, 53, 54, 250];
+  assert.deepEqual(linhas.map((l) => l.extraMin), extraRhid);
+  assert.equal(linhas[0].faltaMin, 360);          // só a entrada 15:06: falta o dia todo
+  assert.equal(linhas[1].faltaMin, 0);            // 08:01: dentro dos 5 min
+  assert.equal(linhas[1].atrasoMin, 0);
+  assert.equal(duracao(totais.extra), "11h19");   // total do RHiD
+  assert.equal(duracao(totais.previsto - totais.faltante), "54h00"); // Total Normais do RHiD
 });

@@ -12,6 +12,7 @@ export type ConfigAssiduidade = {
   ativo: boolean; valor_mes: number; tolerancia_min: number;
   entradas: Record<string, string>; saidas: Record<string, string>;
   dia_inicio_mes: number; inicio: string | null;
+  tolerancia_batida_min: number; limite_diario_min: number;
 };
 export type PessoaAssiduidade = { id: string; nome: string; escala: number[]; resultado: ResultadoMes };
 
@@ -20,7 +21,7 @@ export function hojeSP() {
 }
 
 export async function lerConfig(db: Db): Promise<ConfigAssiduidade> {
-  const { data } = await db.from("assiduidade_config").select("ativo, valor_mes, tolerancia_min, entradas, saidas, dia_inicio_mes, inicio").maybeSingle();
+  const { data } = await db.from("assiduidade_config").select("ativo, valor_mes, tolerancia_min, entradas, saidas, dia_inicio_mes, inicio, tolerancia_batida_min, limite_diario_min").maybeSingle();
   const c = data as ConfigAssiduidade | null;
   return {
     ativo: c?.ativo ?? true,
@@ -30,6 +31,8 @@ export async function lerConfig(db: Db): Promise<ConfigAssiduidade> {
     saidas: (c?.saidas as Record<string, string>) ?? {},
     dia_inicio_mes: Number(c?.dia_inicio_mes ?? 1),
     inicio: c?.inicio ? String(c.inicio).slice(0, 10) : null,
+    tolerancia_batida_min: Number(c?.tolerancia_batida_min ?? 5),
+    limite_diario_min: Number(c?.limite_diario_min ?? 10),
   };
 }
 

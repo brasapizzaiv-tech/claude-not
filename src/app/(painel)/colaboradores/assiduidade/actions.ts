@@ -28,6 +28,8 @@ export async function salvarConfigAssiduidade(fd: FormData) {
     valor_mes: num("valor_mes", 100),
     tolerancia_min: Math.round(num("tolerancia_min", 15)),
     dia_inicio_mes: Math.min(28, Math.max(1, Math.round(num("dia_inicio_mes", 1)))),
+    tolerancia_batida_min: Math.min(30, Math.round(num("tolerancia_batida_min", 5))),
+    limite_diario_min: Math.min(120, Math.round(num("limite_diario_min", 10))),
     inicio: DATA.test(inicio) ? inicio : null,
     entradas,
     saidas,

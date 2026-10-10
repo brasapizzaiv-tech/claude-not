@@ -58,6 +58,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
       dias, hoje, escala: p.escala, entradas: cfg.entradas, saidas: cfg.saidas,
       batidas: base.batidas.get(id) ?? new Map(), folgas: base.folgas.get(id) ?? new Set(),
       atestados: base.atestados.get(id) ?? new Set(), abonos: base.abonos.get(id) ?? new Set(), fechados: base.fechados,
+      tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min,
     });
   };
   const idxPessoa = Math.max(0, ativos.findIndex((p) => p.id === sp.p));
@@ -139,8 +140,8 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                 <tbody className="divide-y divide-borda">
                   {visiveis.map((l) => {
                     const normais = l.previstoMin > 0 ? Math.min(l.trabalhadoMin, l.previstoMin) : 0;
-                    const falta = Math.max(0, -l.saldoMin);
-                    const extra = Math.max(0, l.saldoMin);
+                    const falta = l.faltaMin;
+                    const extra = l.extraMin;
                     const s = SIT[l.situacao];
                     return (
                       <tr key={l.dia} className={l.situacao === "fora" && !l.batidas.length ? "text-texto-fraco" : ""}>
@@ -211,7 +212,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
               })}
             </tbody>
           </table>
-          <p className="px-2 py-2 text-xs text-texto-fraco">Extra = tempo além do horário previsto no dia; dia fora da escala conta todo como extra. Sem a tolerância de 5 minutos da CLT que o RHiD aplica, então pode dar alguns minutos de diferença do RHiD.</p>
+          <p className="px-2 py-2 text-xs text-texto-fraco">Extra = tempo além do horário previsto; dia fora da escala conta todo como extra. Tolerância como a do RHiD: até {cfg.tolerancia_batida_min} min antes ou depois não conta; se o dia somar mais de {cfg.limite_diario_min} min, conta tudo.</p>
         </section>
       )}
 
