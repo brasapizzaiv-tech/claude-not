@@ -41,6 +41,21 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       : Promise.resolve({ data: [] as { colaborador_id: string; data: string; turno: string }[] }),
   ]);
 
+  // Quem trabalhou numa noite de 10% e depois foi DESATIVADO continua na divisão
+  // daquela noite. Sem isso, desativar alguém (ex.: Giovana, 10/2026) fazia a
+  // parte dela "sobrar" pros outros e aparecia "Lançar diferença" em todo mundo
+  // de uma semana já paga — pagando a parte dela duas vezes.
+  const noites10 = new Set(((dez ?? []) as { data: string }[]).map((d) => String(d.data).slice(0, 10)));
+  const ativos = new Set(((colabs ?? []) as { id: string }[]).map((c) => c.id));
+  const idsInativos = [...new Set(
+    ([...(presSemana ?? []), ...(presExtras ?? [])] as { colaborador_id: string; data: string; turno: string }[])
+      .filter((p) => p.turno === "noite" && noites10.has(String(p.data).slice(0, 10)) && !ativos.has(p.colaborador_id))
+      .map((p) => p.colaborador_id),
+  )];
+  const { data: inativos } = idsInativos.length
+    ? await supabase.from("colaboradores").select("id, peso_10").in("id", idsInativos).eq("recebe_10", true)
+    : { data: [] as { id: string; peso_10: number | null }[] };
+
   const fiadoPor: Record<string, { valor: number; n: number }> = {};
   for (const r of (fiado ?? []) as { colaborador_id: string | null; valor: number }[]) {
     if (!r.colaborador_id) continue;
@@ -61,6 +76,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       fiadoPor={fiadoPor}
       extrasIniciais={(extras ?? []) as { colaborador_id: string; valor: number; motivo: string | null; turno: "dia" | "noite"; desconto: number; desconto_motivo: string | null }[]}
       adiantamentos={(adiantamentos ?? []) as { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null }[]}
+      inativos10={(inativos ?? []) as { id: string; peso_10: number | null }[]}
     />
   );
 }

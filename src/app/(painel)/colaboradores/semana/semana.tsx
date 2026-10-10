@@ -50,8 +50,10 @@ type Pago = { colaborador_id: string; valor: number; lancamento_id: string | nul
 type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais, adiantamentos,
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [],
 }: {
+  /** Desativados que trabalharam nas noites de 10%: entram só na divisão. */
+  inativos10?: { id: string; peso_10: number | null }[];
   segunda: string;
   dias: string[];
   pessoas: Pessoa[];
@@ -203,7 +205,10 @@ export function SemanaClient({
   const calc = useMemo(() => {
     const porNoite = dez.map((e) => {
       const pool = numBRtxt(e.valor);
-      const presentes = pessoas.filter((p) => p.recebe_10 && marcadas.has(chave(p.id, e.data, "noite")));
+      const presentes = [
+        ...pessoas.filter((p) => p.recebe_10),
+        ...inativos10, // desativados depois: a parte deles já foi paga, não sobra pros outros
+      ].filter((p) => marcadas.has(chave(p.id, e.data, "noite")));
       const pesoTotal = presentes.reduce((s, p) => s + (Number(p.peso_10) || 1), 0);
       const unit = pesoTotal > 0 ? pool / pesoTotal : 0;
       return { data: e.data, pagar_em: e.pagar_em, pool, presentes: presentes.length, pesoTotal, unit, nestaSemana: e.pagar_em === segunda };
@@ -260,7 +265,7 @@ export function SemanaClient({
       extras: porPessoa.reduce((s, x) => s + x.extraNoite, 0),
     };
     return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez, totalExtras, totalDescontosSem, turnoDia, turnoNoite };
-  }, [dias, dez, naGrade, pessoas, marcadas, segunda, extrasSem]);
+  }, [dias, dez, naGrade, pessoas, marcadas, segunda, extrasSem, inativos10]);
 
   function toggle(p: Pessoa, d: string, turno: Turno) {
     const k = chave(p.id, d, turno);
