@@ -2,8 +2,9 @@ import Link from "next/link";
 import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { headers } from "next/headers";
+import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
-import { criarEntregador, alternarEntregador, salvarValoresEntregador } from "../actions";
+import { criarEntregador, alternarEntregador, salvarValoresEntregador, novoCodigoEntregador } from "../actions";
 
 export const metadata = { title: "Entregadores · Delivery" };
 export const dynamic = "force-dynamic";
@@ -20,10 +21,13 @@ export default async function EntregadoresPage() {
   const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "www.brasarestaurante.com.br"}`;
   const { data } = await supabase
     .from("entregadores")
-    .select("id, nome, telefone, ativo, token, valor_fixo_dia, valor_fixo_noite, valor_tele, ultima_lat, ultima_lng, ultima_pos_em")
+    .select("id, nome, telefone, ativo, token, codigo, valor_fixo_dia, valor_fixo_noite, valor_tele, ultima_lat, ultima_lng, ultima_pos_em")
     .order("nome");
-  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
+  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
   const agora = agoraMs();
+  // QR de cada entregador = o link pessoal; o app lê na tela inicial.
+  const qrs = new Map(await Promise.all(lista.filter((e) => e.token).map(async (e) => [e.id, await QRCode.toString(`${origem}/entrega/${e.token}`, { type: "svg", margin: 1, width: 180 })] as const)));
+  const codigoFmt = (c: string) => `${c.slice(0, 3)} ${c.slice(3)}`;
 
   return (
     <div className="mx-auto max-w-3xl p-4">
@@ -66,10 +70,30 @@ export default async function EntregadoresPage() {
               </div>
 
               {link && (
-                <div className="mt-2 flex flex-wrap items-center gap-2 rounded-controle bg-superficie-suave px-3 py-2 text-xs">
-                  <span className="text-texto-suave">Link do app:</span>
-                  <code className="select-all break-all text-texto-suave">{link}</code>
-                  <a href={`https://web.whatsapp.com/send?phone=${e.telefone ? "55" + e.telefone.replace(/\D/g, "") : ""}&text=${encodeURIComponent(`Seu app de entregas da Brasa: ${link}\nAbra no celular e toque em "Adicionar à tela inicial".`)}`} target="_blank" rel="noreferrer" className="ml-auto rounded-controle bg-texto px-2 py-1 font-semibold text-fundo">Mandar no WhatsApp</a>
+                <div className="mt-2 rounded-controle bg-superficie-suave px-3 py-2 text-xs">
+                  {/* Entrada no app: código de 6 números ou QR (migration 0227). */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-texto-suave">Código de entrada no app:</span>
+                    <span className="text-xl font-bold tracking-widest text-texto">{e.codigo ? codigoFmt(e.codigo) : "—"}</span>
+                    <form action={novoCodigoEntregador}>
+                      <input type="hidden" name="id" value={e.id} />
+                      <Enviar className="rounded-controle border border-borda-forte px-2 py-1">Trocar código</Enviar>
+                    </form>
+                    <a href={`https://web.whatsapp.com/send?phone=${e.telefone ? "55" + e.telefone.replace(/D/g, "") : ""}&text=${encodeURIComponent(`Seu acesso ao app de entregas da Brasa.
+No app Motelli Entregador, digite o código: ${e.codigo ? codigoFmt(e.codigo) : ""}
+Ou abra este link: ${link}
+O código é seu, não passe pra ninguém.`)}`} target="_blank" rel="noreferrer" className="ml-auto rounded-controle bg-texto px-2 py-1 font-semibold text-fundo">Mandar no WhatsApp</a>
+                  </div>
+                  <details className="mt-2">
+                    <summary className="cursor-pointer font-semibold text-texto-suave">Mostrar QR code e link</summary>
+                    <div className="mt-2 flex flex-wrap items-start gap-3">
+                      {qrs.get(e.id) && <div className="rounded-controle bg-white p-2" dangerouslySetInnerHTML={{ __html: qrs.get(e.id) as string }} />}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <p className="text-texto-suave">No app, toque em <b>Ler QR code</b> e aponte pra esta tela.</p>
+                        <code className="block select-all break-all text-texto-suave">{link}</code>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               )}
 

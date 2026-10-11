@@ -9,9 +9,9 @@
 
   Esta tela mora DENTRO do app (não é do site), e é o que faz um app só servir
   qualquer restaurante: o app não nasce sabendo de que sistema ele é. O
-  entregador cola o link pessoal que a empresa dele mandou, o app confere que
-  aquele endereço é mesmo um sistema nosso, guarda, e daí em diante abre direto
-  lá — inclusive sem internet no momento de abrir.
+  entregador digita o código de entrada (6 números, do painel), lê o QR do
+  painel ou cola o link pessoal; o app confere que aquele endereço é mesmo um
+  sistema nosso, guarda, e daí em diante abre direto lá.
 
   É por isso que ela é escrita em HTML puro, com o estilo colado: precisa
   aparecer antes de existir qualquer conexão.
@@ -46,31 +46,71 @@
   .aviso { margin-top: 14px; font-size: 14px; line-height: 1.45; min-height: 20px; }
   .erro { color: var(--erro); }
   .ok { color: var(--fraco); }
+  button.sec { background: var(--cartao); border: 1px solid var(--borda); color: var(--texto); }
+  button.texto { background: none; color: var(--fraco); font-weight: 600; font-size: 15px; padding: 10px; margin-top: 6px; }
+  #codigo { font-size: 26px; font-weight: 700; letter-spacing: .3em; text-align: center; }
+  .escondido { display: none !important; }
+  #camera { position: fixed; inset: 0; z-index: 10; background: #000; display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  #camera video { flex: 1; width: 100%; min-height: 0; object-fit: cover; }
+  #camera .topo { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-weight: 700; }
+  #camera .topo button { width: auto; margin: 0; padding: 8px 14px; font-size: 15px; }
+  .cartao { margin: auto 22px; background: var(--cartao); border-radius: 14px; padding: 20px; }
+  .cartao h2 { margin: 0 0 8px; font-size: 19px; }
+  .cartao p { margin: 0 0 8px; font-size: 15px; line-height: 1.5; }
   .rodape { margin-top: 28px; font-size: 13px; color: var(--fraco); line-height: 1.5; }
 </style>
 </head>
 <body>
   <h1 id="titulo">Motelli Entregador</h1>
-  <p class="sub">Cole o link que a empresa te mandou. Só na primeira vez — depois o app abre sozinho.</p>
+  <p class="sub">Digite o código de entrada que a empresa te passou. Só na primeira vez — depois o app abre sozinho.</p>
 
-  <label for="link">Link do seu app</label>
-  <input id="link" type="url" inputmode="url" autocomplete="off" autocapitalize="none"
-         spellcheck="false" placeholder="https://…/entrega/…" />
-  <button id="entrar" type="button">Entrar</button>
+  <div id="porCodigo">
+    <label for="codigo">Código de entrada</label>
+    <input id="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000 000" />
+    <button id="entrar" type="button">Entrar</button>
+    <button id="lerQr" type="button" class="sec">Ler QR code</button>
+    <button id="mostrarLink" type="button" class="texto">Tenho um link</button>
+  </div>
+
+  <div id="porLink" class="escondido">
+    <label for="link">Link do seu app</label>
+    <input id="link" type="url" inputmode="url" autocomplete="off" autocapitalize="none"
+           spellcheck="false" placeholder="https://…/entrega/…" />
+    <button id="entrarLink" type="button">Entrar com o link</button>
+    <button id="mostrarCodigo" type="button" class="texto">Usar o código</button>
+  </div>
   <p class="aviso" id="aviso"></p>
 
   <p class="rodape">
-    Não tem o link? Peça pra gerência — ela manda pelo WhatsApp. O link é seu,
-    não passe pra ninguém.
+    Não tem o código? Peça pra gerência — ele aparece no painel, em Delivery →
+    Entregadores, junto com o QR code. O código é seu, não passe pra ninguém.
   </p>
 
+  <!-- Leitor do QR. Começa pelo aviso da câmera (política da Play: o aviso vem
+       antes da permissão do sistema); só o botão "Abrir câmera" pede a câmera. -->
+  <div id="camera" class="escondido">
+    <div class="topo"><span id="cameraTitulo">Ler QR code</span><button id="fecharCamera" type="button" class="sec">Fechar</button></div>
+    <div id="cameraAviso" class="cartao">
+      <h2>Câmera</h2>
+      <p>O app usa a <b>câmera</b> só para ler o QR code de entrada que aparece no painel da empresa. Nenhuma foto ou vídeo é guardado ou enviado.</p>
+      <p style="color: var(--fraco)">Na próxima tela, permita o acesso à câmera. Se preferir, feche e digite o código.</p>
+      <button id="abrirCamera" type="button">Abrir câmera</button>
+    </div>
+    <video id="video" class="escondido" muted playsinline autoplay></video>
+    <canvas id="quadro" class="escondido"></canvas>
+  </div>
+
+<script src="jsQR.js"></script>
 <script>
 (function () {
   "use strict";
   var CHAVE = "entrega_endereco";
-  var input = document.getElementById("link");
-  var botao = document.getElementById("entrar");
-  var aviso = document.getElementById("aviso");
+  // Único endereço fixo que o app conhece: o site da marca traduz o código no
+  // link pessoal (src/app/api/entrega/ativar no sistema).
+  var CENTRAL = "https://motelli.com.br/api/entrega/ativar";
+  var $ = function (id) { return document.getElementById(id); };
+  var aviso = $("aviso");
 
   function diz(texto, ruim) {
     aviso.textContent = texto || "";
@@ -83,7 +123,7 @@
   try {
     var guardado = localStorage.getItem(CHAVE);
     if (guardado && guardado.indexOf("https://") === 0) { irPara(guardado); return; }
-  } catch (e) { /* aparelho sem armazenamento: segue pedindo o link */ }
+  } catch (e) { /* aparelho sem armazenamento: segue pedindo */ }
 
   /** O link tem que ser https e apontar pra uma página de entrega com código. */
   function separar(texto) {
@@ -97,8 +137,8 @@
 
   /**
    * Antes de abrir, o app pergunta pro endereço se ali roda mesmo um sistema
-   * nosso. Sem isso, um link qualquer colado abriria um site estranho DENTRO
-   * do app — e lá dentro estão o GPS e a câmera liberados.
+   * nosso. Sem isso, um link qualquer abriria um site estranho DENTRO do app —
+   * e lá dentro estão o GPS e a câmera liberados.
    */
   function conferir(host) {
     return fetch("https://" + host + "/api/entrega/identidade", { cache: "no-store" })
@@ -107,28 +147,101 @@
       .catch(function () { return null; });
   }
 
-  function entrar() {
-    var alvo = separar(input.value);
-    if (!alvo) {
-      diz("Esse link não parece o certo. Cole o endereço inteiro, do https até o código do fim.", true);
-      return;
-    }
-    botao.disabled = true;
+  var ocupado = false;
+  function abrirLink(texto) {
+    var alvo = separar(texto);
+    if (!alvo) { diz("Esse link não parece o certo. Precisa ser o endereço inteiro, do https até o código do fim.", true); return; }
+    ocupado = true;
     diz("Conferindo o endereço…", false);
     conferir(alvo.host).then(function (id) {
-      botao.disabled = false;
-      if (!id) {
-        diz("Não consegui falar com esse endereço. Confira o link e a internet do celular.", true);
-        return;
-      }
+      ocupado = false;
+      if (!id) { diz("Não consegui falar com esse endereço. Confira a internet do celular.", true); return; }
       try { localStorage.setItem(CHAVE, alvo.url); } catch (e) { /* segue sem lembrar */ }
-      if (id.nome) { try { document.getElementById("titulo").textContent = id.nome; } catch (e) {} }
+      if (id.nome) { try { $("titulo").textContent = id.nome; } catch (e) {} }
       irPara(alvo.url);
     });
   }
 
-  botao.addEventListener("click", entrar);
-  input.addEventListener("keydown", function (e) { if (e.key === "Enter") entrar(); });
+  // ---- código de 6 números ----
+  var campo = $("codigo");
+  campo.addEventListener("input", function () {
+    var d = campo.value.replace(/\D/g, "").slice(0, 6);
+    campo.value = d.length > 3 ? d.slice(0, 3) + " " + d.slice(3) : d;
+  });
+  function entrarCodigo() {
+    if (ocupado) return;
+    var codigo = campo.value.replace(/\D/g, "");
+    if (codigo.length !== 6) { diz("O código tem 6 números.", true); return; }
+    ocupado = true;
+    diz("Procurando o código…", false);
+    fetch(CENTRAL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ codigo: codigo }), cache: "no-store" })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (j) {
+        ocupado = false;
+        if (j && j.url) { abrirLink(j.url); return; }
+        diz((j && j.erro) || "Não deu certo. Tente de novo.", true);
+      })
+      .catch(function () { ocupado = false; diz("Sem internet agora. Confira a conexão do celular.", true); });
+  }
+  $("entrar").addEventListener("click", entrarCodigo);
+  campo.addEventListener("keydown", function (e) { if (e.key === "Enter") entrarCodigo(); });
+
+  // ---- link colado ----
+  $("mostrarLink").addEventListener("click", function () { $("porCodigo").classList.add("escondido"); $("porLink").classList.remove("escondido"); diz(""); });
+  $("mostrarCodigo").addEventListener("click", function () { $("porLink").classList.add("escondido"); $("porCodigo").classList.remove("escondido"); diz(""); });
+  $("entrarLink").addEventListener("click", function () { if (!ocupado) abrirLink($("link").value); });
+  $("link").addEventListener("keydown", function (e) { if (e.key === "Enter" && !ocupado) abrirLink($("link").value); });
+
+  // ---- QR code ----
+  var video = $("video"), canvas = $("quadro"), stream = null, timer = null;
+  function pararCamera() {
+    if (timer) { clearInterval(timer); timer = null; }
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    video.srcObject = null;
+  }
+  function fecharCamera() {
+    pararCamera();
+    $("camera").classList.add("escondido");
+  }
+  $("lerQr").addEventListener("click", function () {
+    diz("");
+    $("cameraAviso").classList.remove("escondido");
+    video.classList.add("escondido");
+    $("cameraTitulo").textContent = "Ler QR code";
+    $("camera").classList.remove("escondido");
+  });
+  $("fecharCamera").addEventListener("click", fecharCamera);
+  $("abrirCamera").addEventListener("click", function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fecharCamera(); diz("Este celular não abriu a câmera. Digite o código.", true); return; }
+    $("cameraAviso").classList.add("escondido");
+    video.classList.remove("escondido");
+    $("cameraTitulo").textContent = "Aponte pro QR do painel";
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }).then(function (s) {
+      stream = s;
+      video.srcObject = s;
+      video.setAttribute("playsinline", "true");
+      return video.play();
+    }).then(function () {
+      var ctx = canvas.getContext("2d", { willReadFrequently: true });
+      timer = setInterval(function () {
+        if (!stream || video.readyState < 2 || !video.videoWidth) return;
+        var esc = Math.min(1, 640 / video.videoWidth);
+        canvas.width = Math.round(video.videoWidth * esc); canvas.height = Math.round(video.videoHeight * esc);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var lido = window.jsQR && window.jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+        if (lido && lido.data) {
+          if (navigator.vibrate) navigator.vibrate(80);
+          fecharCamera();
+          if (separar(lido.data)) abrirLink(lido.data);
+          else diz("Esse QR não é o de entrada do app. Use o QR que aparece em Delivery → Entregadores.", true);
+        }
+      }, 250);
+    }).catch(function (e) {
+      fecharCamera();
+      diz(e && e.name === "NotAllowedError" ? "Sem permissão da câmera. Libere nas configurações do app ou digite o código." : "Não consegui abrir a câmera. Digite o código.", true);
+    });
+  });
 })();
 </script>
 </body>

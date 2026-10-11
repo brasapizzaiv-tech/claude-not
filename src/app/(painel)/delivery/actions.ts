@@ -114,6 +114,16 @@ export async function criarEntregador(formData: FormData) {
   revalidatePath("/delivery/entregadores");
 }
 
+// Troca o código de entrada no app (vazou, ou o entregador saiu). Quem já
+// entrou continua entrando: o app guarda o link, não o código.
+export async function novoCodigoEntregador(formData: FormData) {
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const { data: codigo } = await supabase.rpc("gerar_codigo_entregador");
+  if (typeof codigo === "string") await supabase.from("entregadores").update({ codigo }).eq("id", id);
+  revalidatePath("/delivery/entregadores");
+}
+
 export async function alternarEntregador(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;
