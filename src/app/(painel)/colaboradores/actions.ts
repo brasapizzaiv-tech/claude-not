@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { empresaAtualId } from "@/lib/empresa";
+import { marcarPresencasDoPonto } from "@/lib/ponto-server";
 import { numBR, parseAniversario } from "@/lib/equipe";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
@@ -90,11 +92,10 @@ export async function salvarColaborador(formData: FormData) {
       .eq("cpf", quadro.cpf)
       .is("colaborador_id", null)
       .select("id, data, turno");
-    if (quadro.bate_ponto && soltas?.length) {
-      const pres = new Map<string, { colaborador_id: string; data: string; turno: string; origem: string }>();
-      for (const b of soltas as { data: string; turno: string }[]) pres.set(`${b.data}|${b.turno}`, { colaborador_id: colaboradorId, data: b.data, turno: b.turno, origem: "ponto" });
-      await supabase.from("presencas").upsert([...pres.values()], { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
-      await supabase.from("ponto_batidas").update({ presenca: true }).in("id", (soltas as { id: string }[]).map((b) => b.id));
+    // Presença pela regra única (só quem bate ponto, só a partir do início, turno pela entrada).
+    const empresaId = await empresaAtualId();
+    if (empresaId && soltas?.length) {
+      await marcarPresencasDoPonto(empresaId, (soltas as { data: string }[]).map((x) => ({ colaboradorId: colaboradorId as string, data: String(x.data).slice(0, 10) })));
     }
   }
 

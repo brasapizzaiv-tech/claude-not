@@ -6,11 +6,16 @@
 // conta como 24h + a hora. Número ímpar de batidas = "batida faltando": o par
 // incompleto não soma.
 
+/** Uma batida no dia, com os ajustes do espelho (migration 0225). */
+export type BatidaDia = { id?: string; min: number; desloc?: number; ignorada?: boolean; origem?: string };
+
 export type SituacaoDia = "ok" | "falta" | "folga" | "atestado" | "abono" | "feriado" | "fora" | "incompleto" | "hoje";
 export type LinhaEspelho = {
   dia: string;
   dow: number;
-  batidas: number[];      // minutos desde 00:00 do dia (pode passar de 1440)
+  batidas: number[];      // minutos das batidas que contam, na ordem das colunas
+  colunas: (BatidaDia | null)[]; // Ent.1, Saí.1, Ent.2... (null = coluna vazia, após deslocar)
+  ignoradas: BatidaDia[]; // desconsideradas (aparecem riscadas)
   previstoMin: number;
   trabalhadoMin: number;
   atrasoMin: number;      // atraso que conta (passou da tolerância)
@@ -38,11 +43,34 @@ function dowDe(dia: string) {
   return new Date(Date.UTC(a, m - 1, d)).getUTCDay();
 }
 
-export function horasDoDia(batidas: number[]): { trabalhado: number; incompleto: boolean } {
-  const b = [...batidas].sort((x, y) => x - y);
-  let t = 0;
-  for (let i = 0; i + 1 < b.length; i += 2) t += b[i + 1] - b[i];
-  return { trabalhado: t, incompleto: b.length % 2 === 1 };
+/**
+ * Coloca as batidas nas colunas (Ent.1, Saí.1, Ent.2, Saí.2...): em ordem de
+ * hora, cada uma na próxima coluna livre, mais o deslocamento que alguém deu
+ * ("deslocar pra direita" = pula uma coluna). Desconsideradas ficam de fora.
+ */
+export function montarColunas(bs: BatidaDia[]): (BatidaDia | null)[] {
+  const validas = bs.filter((b) => !b.ignorada).sort((a, b) => a.min - b.min);
+  const cols: (BatidaDia | null)[] = [];
+  let ultima = -1;
+  for (const b of validas) {
+    const alvo = Math.max(ultima + 1, ultima + 1 + (b.desloc ?? 0));
+    while (cols.length < alvo) cols.push(null);
+    cols[alvo] = b;
+    ultima = alvo;
+  }
+  return cols;
+}
+
+/** Horas = soma de cada par Ent→Saí; par com um lado vazio = batida faltando. */
+export function horasDoDia(colunas: (number | null)[]): { trabalhado: number; incompleto: boolean } {
+  const c = colunas.every((x) => x != null) ? [...(colunas as number[])].sort((x, y) => x - y) : colunas;
+  let t = 0, incompleto = false;
+  for (let i = 0; i < c.length; i += 2) {
+    const e = c[i], s2 = i + 1 < c.length ? c[i + 1] : null;
+    if (e != null && s2 != null) t += s2 - e;
+    else if (e != null || s2 != null) incompleto = true;
+  }
+  return { trabalhado: t, incompleto };
 }
 
 /**
@@ -63,7 +91,7 @@ export function espelho(p: {
   escala: number[];
   entradas: Record<string, string>;
   saidas: Record<string, string>;
-  batidas: Map<string, number[]>;
+  batidas: Map<string, (BatidaDia | number)[]>;
   folgas: Set<string>;
   atestados: Set<string>;
   abonos?: Set<string>;
@@ -76,12 +104,15 @@ export function espelho(p: {
   const t: TotaisEspelho = { previsto: 0, trabalhado: 0, extra: 0, faltante: 0, atraso: 0, faltas: 0, diasTrabalhados: 0, incompletos: 0 };
   for (const dia of p.dias) {
     const dow = dowDe(dia);
-    const bs = [...(p.batidas.get(dia) ?? [])].sort((a, b) => a - b);
+    const todas = (p.batidas.get(dia) ?? []).map((b) => (typeof b === "number" ? { min: b } : b));
+    const colunas = montarColunas(todas);
+    const ignoradas = todas.filter((b) => b.ignorada);
+    const bs = colunas.filter((b): b is BatidaDia => b != null).map((b) => b.min);
     const ent = p.entradas[String(dow)], sai = p.saidas[String(dow)];
     const naEscala = !!ent && p.escala.includes(dow) && !p.fechados.has(dia);
     const ausenciaJustificada = p.atestados.has(dia) || p.folgas.has(dia) || !!p.abonos?.has(dia);
     const previsto = naEscala && !ausenciaJustificada && sai ? Math.max(0, min(sai) - min(ent)) : 0;
-    const { trabalhado, incompleto } = horasDoDia(bs);
+    const { trabalhado, incompleto } = horasDoDia(colunas.map((b) => (b ? b.min : null)));
     let situacao: SituacaoDia;
     if (p.atestados.has(dia)) situacao = "atestado";
     else if (p.abonos?.has(dia) && !bs.length) situacao = "abono";
@@ -110,7 +141,7 @@ export function espelho(p: {
       extra = trabalhado; // fora da escala (ou dia justificado em que trabalhou): tudo é extra
     }
     const contaPrevisto = situacao === "hoje" ? 0 : previsto;
-    linhas.push({ dia, dow, batidas: bs, previstoMin: contaPrevisto, trabalhadoMin: trabalhado, atrasoMin: atraso, extraMin: extra, faltaMin: falta, saldoMin: extra - falta, situacao });
+    linhas.push({ dia, dow, batidas: bs, colunas, ignoradas, previstoMin: contaPrevisto, trabalhadoMin: trabalhado, atrasoMin: atraso, extraMin: extra, faltaMin: falta, saldoMin: extra - falta, situacao });
     t.previsto += contaPrevisto;
     t.trabalhado += trabalhado;
     t.extra += extra;

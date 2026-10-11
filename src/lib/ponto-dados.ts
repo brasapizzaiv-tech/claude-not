@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { diasEntre } from "@/lib/assiduidade-core";
+import type { BatidaDia } from "@/lib/ponto-relatorio-core";
 
 // Tudo o que os relatórios de ponto e o prêmio assiduidade precisam de um
 // período: quem bate ponto, as batidas de cada dia, folgas aprovadas,
@@ -11,9 +12,9 @@ type Db = SupabaseClient<any, any, any>; // eslint-disable-line @typescript-esli
 export type PessoaPonto = { id: string; nome: string; escala: number[]; ativo: boolean; cpf: string | null };
 export type BasePonto = {
   pessoas: PessoaPonto[];
-  /** colaborador → dia → minutos das batidas (depois da meia-noite = 1440+). */
-  batidas: Map<string, Map<string, number[]>>;
-  /** colaborador → dia → minutos só do turno do dia (pro atraso do prêmio). */
+  /** colaborador → dia → batidas (minutos desde 00:00 do dia; madrugada = 1440+), com os ajustes. */
+  batidas: Map<string, Map<string, BatidaDia[]>>;
+  /** colaborador → dia → minutos só do turno do dia, sem as desconsideradas (pro prêmio). */
   batidasDia: Map<string, Map<string, number[]>>;
   folgas: Map<string, Set<string>>;
   atestados: Map<string, Set<string>>;
@@ -37,7 +38,9 @@ function minutosNoDia(iso: string, dia: string) {
   const local = new Date(iso).toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }); // "2026-10-12 08:03:00"
   const [d, h] = local.split(" ");
   const [hh, mm] = h.split(":").map(Number);
-  return (d > dia ? 1440 : 0) + hh * 60 + mm;
+  // Batida de outro dia civil (madrugada, ou deslocada pro dia anterior/seguinte).
+  const difDias = Math.round((Date.parse(`${d}T00:00:00Z`) - Date.parse(`${dia}T00:00:00Z`)) / 86400000);
+  return difDias * 1440 + hh * 60 + mm;
 }
 
 export async function carregarBasePonto(db: Db, de: string, ate: string, opts: { incluirInativos?: boolean; pessoaId?: string } = {}): Promise<BasePonto> {
@@ -46,8 +49,8 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
   if (opts.pessoaId) qCols = qCols.eq("id", opts.pessoaId);
   const [{ data: cols }, bats, { data: fol }, { data: ats }, { data: fer }] = await Promise.all([
     qCols,
-    todas<{ colaborador_id: string; data: string; turno: string; data_hora: string }>(() => {
-      let q = db.from("ponto_batidas").select("colaborador_id, data, turno, data_hora").not("colaborador_id", "is", null).gte("data", de).lte("data", ate);
+    todas<{ id: string; colaborador_id: string; data: string; turno: string; data_hora: string; origem: string; desconsiderada: boolean; deslocamento: number }>(() => {
+      let q = db.from("ponto_batidas").select("id, colaborador_id, data, turno, data_hora, origem, desconsiderada, deslocamento").not("colaborador_id", "is", null).gte("data", de).lte("data", ate);
       if (opts.pessoaId) q = q.eq("colaborador_id", opts.pessoaId);
       return q.order("data_hora").order("id");
     }),
@@ -56,18 +59,18 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
     db.from("feriados").select("data, data_fim").eq("situacao", "fecha").lte("data", ate),
   ]);
 
-  const batidas = new Map<string, Map<string, number[]>>();
+  const batidas = new Map<string, Map<string, BatidaDia[]>>();
   const batidasDia = new Map<string, Map<string, number[]>>();
-  const add = (alvo: Map<string, Map<string, number[]>>, c: string, dia: string, v: number) => {
-    const m = alvo.get(c) ?? new Map<string, number[]>();
+  const add = <T,>(alvo: Map<string, Map<string, T[]>>, c: string, dia: string, v: T) => {
+    const m = alvo.get(c) ?? new Map<string, T[]>();
     m.set(dia, [...(m.get(dia) ?? []), v]);
     alvo.set(c, m);
   };
   for (const b of bats) {
     const dia = String(b.data).slice(0, 10);
     const v = minutosNoDia(b.data_hora, dia);
-    add(batidas, b.colaborador_id, dia, v);
-    if (b.turno === "dia") add(batidasDia, b.colaborador_id, dia, v);
+    add(batidas, b.colaborador_id, dia, { id: b.id, min: v, desloc: b.deslocamento || 0, ignorada: !!b.desconsiderada, origem: b.origem });
+    if (b.turno === "dia" && !b.desconsiderada) add(batidasDia, b.colaborador_id, dia, v);
   }
 
   const folgas = new Map<string, Set<string>>();

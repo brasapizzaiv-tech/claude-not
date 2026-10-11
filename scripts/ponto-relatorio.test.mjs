@@ -74,3 +74,16 @@ test("tolerância igual ao RHiD: espelho do Carlos de 21/09 a 01/10/2026 bate co
   assert.equal(duracao(totais.extra), "11h19");   // total do RHiD
   assert.equal(duracao(totais.previsto - totais.faltante), "54h00"); // Total Normais do RHiD
 });
+
+test("alterações: desconsiderar e deslocar pra direita", async () => {
+  const { montarColunas } = await import("../src/lib/ponto-relatorio-core.ts");
+  // 21/09 do Carlos: só 15:06. Deslocada pra direita vira Saí.1, Ent.1 vazia.
+  const c = montarColunas([{ id: "a", min: m("15:06"), desloc: 1 }]);
+  assert.equal(c[0], null);
+  assert.equal(c[1].id, "a");
+  // Batida repetida desconsiderada não conta.
+  const { linhas } = espelho(base({ dias: ["2026-10-12"], batidas: new Map([["2026-10-12", [{ min: m("08:00") }, { min: m("08:01"), ignorada: true }, { min: m("14:00") }]]]) }));
+  assert.equal(linhas[0].trabalhadoMin, 360);
+  assert.equal(linhas[0].ignoradas.length, 1);
+  assert.equal(linhas[0].situacao, "ok");
+});

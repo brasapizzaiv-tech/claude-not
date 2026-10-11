@@ -6,7 +6,7 @@ import { diasEntre } from "@/lib/assiduidade-core";
 import { hojeSP, lerConfig } from "@/lib/assiduidade-server";
 import { carregarBasePonto } from "@/lib/ponto-dados";
 import { duracao, espelho, hhmm, porSemana, type LinhaEspelho } from "@/lib/ponto-relatorio-core";
-import { AjustarDia, ImportarAfd, Imprimir } from "./client";
+import { AjustarDia, BatidaMenu, ImportarAfd, Imprimir } from "./client";
 
 export const metadata = { title: "Relatórios de ponto · Brasa" };
 export const dynamic = "force-dynamic";
@@ -106,7 +106,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
       {aba === "espelho" && pessoa && (() => {
         const { linhas, totais } = espelhoDe(pessoa.id);
         const visiveis = soInconsistencias ? linhas.filter((l) => ["falta", "incompleto"].includes(l.situacao) || l.atrasoMin > 0) : linhas;
-        const maxBat = Math.max(4, ...linhas.map((l) => l.batidas.length + (l.batidas.length % 2)));
+        const maxBat = Math.max(4, ...linhas.map((l) => l.colunas.length + (l.colunas.length % 2)));
         return (
           <section>
             <div className="mb-3 flex flex-wrap items-center gap-2 print:hidden">
@@ -147,15 +147,22 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                       <tr key={l.dia} className={l.situacao === "fora" && !l.batidas.length ? "text-texto-fraco" : ""}>
                         <td className="px-2 py-1.5 whitespace-nowrap">{dm(l.dia)} <span className="text-xs text-texto-fraco">{DOW[l.dow]}</span></td>
                         <td className="px-2 py-1.5 text-xs text-texto-fraco">{horario(l)}</td>
-                        {Array.from({ length: maxBat }, (_, i) => (
-                          <td key={i} className={`px-2 py-1.5 ${i === 0 && l.atrasoMin > 0 ? "font-semibold text-amber-700 dark:text-amber-400" : ""}`}>
-                            {l.batidas[i] != null ? hhmm(l.batidas[i]) : i === l.batidas.length && l.situacao === "incompleto" ? <span className="text-red-600">—</span> : ""}
-                          </td>
-                        ))}
+                        {Array.from({ length: maxBat }, (_, i) => {
+                          const b = l.colunas[i];
+                          const faltando = !b && l.situacao === "incompleto" && i < l.colunas.length + (l.colunas.length % 2);
+                          return (
+                            <td key={i} className="px-1 py-1.5">
+                              {b ? <BatidaMenu id={b.id} hora={hhmm(b.min)} manual={b.origem === "manual"} destaque={i === 0 && l.atrasoMin > 0} /> : faltando ? <span className="px-1 text-red-600">—</span> : ""}
+                            </td>
+                          );
+                        })}
                         <td className="px-2 py-1.5 text-right">{normais ? duracao(normais) : ""}</td>
                         <td className={`px-2 py-1.5 text-right ${falta ? "text-red-600" : ""}`}>{falta ? duracao(falta) : ""}</td>
                         <td className={`px-2 py-1.5 text-right ${extra ? "text-emerald-700 dark:text-emerald-400" : ""}`}>{extra ? duracao(extra) : ""}</td>
-                        <td className={`px-2 py-1.5 text-xs ${s.cor}`}>{s.rot}{l.atrasoMin > 0 ? `${s.rot ? " · " : ""}atraso ${l.atrasoMin} min` : ""}</td>
+                        <td className={`px-2 py-1.5 text-xs ${s.cor}`}>
+                          {s.rot}{l.atrasoMin > 0 ? `${s.rot ? " · " : ""}atraso ${l.atrasoMin} min` : ""}
+                          {l.ignoradas.map((b) => <span key={b.id} className="ml-1"><BatidaMenu id={b.id} hora={hhmm(b.min)} ignorada /></span>)}
+                        </td>
                         <td className="px-2 py-1.5 print:hidden"><AjustarDia colaboradorId={pessoa.id} nome={pessoa.nome} dia={l.dia} /></td>
                       </tr>
                     );

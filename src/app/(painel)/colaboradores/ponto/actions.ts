@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { empresaAtualId } from "@/lib/empresa";
-import { receberAfd } from "@/lib/ponto-server";
+import { marcarPresencasDoPonto, receberAfd } from "@/lib/ponto-server";
 import { turnoDaBatida } from "@/lib/ponto-core";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
@@ -50,12 +50,11 @@ export async function incluirBatida(colaboradorId: string, dia: string, hora: st
   const { error } = await supabase.from("ponto_batidas").insert({
     equipamento: "manual", nsr: Date.now(), data_hora: new Date(local).toISOString(), cpf: col.cpf ?? "",
     nome: col.nome, colaborador_id: col.id, data: turnoDia, turno, origem: "manual",
-    obs: obs.trim().slice(0, 200) || null, criado_por: auth.user?.id ?? null, presenca: col.bate_ponto,
+    obs: obs.trim().slice(0, 200) || null, criado_por: auth.user?.id ?? null,
   });
   if (error) return { ok: false as const, erro: error.message };
-  if (col.bate_ponto) {
-    await supabase.from("presencas").upsert({ colaborador_id: col.id, data: turnoDia, turno, origem: "ponto" }, { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
-  }
+  const empresaId = await empresaAtualId();
+  if (empresaId) await marcarPresencasDoPonto(empresaId, [{ colaboradorId: col.id, data: turnoDia }]);
   revalidar();
   return { ok: true as const };
 }
@@ -104,4 +103,49 @@ export async function linkArquivoAtestado(caminho: string) {
   const supabase = await createClient();
   const { data } = await supabase.storage.from("atestados").createSignedUrl(caminho, 300);
   return data?.signedUrl ?? null;
+}
+
+// ---------- Alterações de ponto (menu da batida no espelho, como no RHiD) ----------
+// A batida original nunca some: só ganha a marca, e fica quem mexeu e quando.
+
+async function ajustar(id: string, campos: Record<string, unknown>) {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const { error } = await supabase.from("ponto_batidas")
+    .update({ ...campos, ajustada_por: auth.user?.id ?? null, ajustada_em: new Date().toISOString() }).eq("id", id);
+  if (error) return { ok: false as const, erro: error.message };
+  revalidar();
+  return { ok: true as const };
+}
+
+/** Desconsiderar marcação (ou considerar de novo). */
+export async function desconsiderarBatida(id: string, desconsiderar: boolean) {
+  await exigirAcesso("/colaboradores");
+  return ajustar(id, { desconsiderada: desconsiderar });
+}
+
+/** Deslocar pra direita (+1: pula uma coluna) ou pra esquerda (−1). */
+export async function deslocarBatida(id: string, direcao: 1 | -1) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const { data } = await supabase.from("ponto_batidas").select("deslocamento").eq("id", id).maybeSingle();
+  const atual = Number((data as { deslocamento: number } | null)?.deslocamento ?? 0);
+  const novo = Math.max(0, Math.min(6, atual + direcao));
+  if (novo === atual) return { ok: false as const, erro: direcao < 0 ? "Já está na primeira coluna livre." : "Não dá pra deslocar mais." };
+  return ajustar(id, { deslocamento: novo });
+}
+
+/** Deslocar pro dia anterior (−1) ou pro próximo dia (+1): muda o dia do turno. */
+export async function moverBatidaDia(id: string, delta: 1 | -1) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const { data } = await supabase.from("ponto_batidas").select("data, data_hora").eq("id", id).maybeSingle();
+  const b = data as { data: string; data_hora: string } | null;
+  if (!b) return { ok: false as const, erro: "Batida não encontrada." };
+  const [a, m, d] = String(b.data).slice(0, 10).split("-").map(Number);
+  const novoDia = new Date(Date.UTC(a, m - 1, d + delta)).toISOString().slice(0, 10);
+  // Indo pro dia anterior é saída de madrugada: noite. Indo pro seguinte, pela hora.
+  const hora = Number(new Date(b.data_hora).toLocaleTimeString("en-GB", { hour: "2-digit", hour12: false, timeZone: "America/Sao_Paulo" }).slice(0, 2));
+  const turno = delta < 0 ? "noite" : hora < 16 ? "dia" : "noite";
+  return ajustar(id, { data: novoDia, turno, deslocamento: 0 });
 }

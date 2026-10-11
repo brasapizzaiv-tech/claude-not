@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Enviar } from "@/components/enviar";
-import { importarAfdRhid, incluirBatida, justificar } from "./actions";
+import { desconsiderarBatida, deslocarBatida, importarAfdRhid, incluirBatida, justificar, moverBatidaDia } from "./actions";
 
 const CAMPO = "min-h-9 rounded-controle border border-borda-forte bg-transparent px-2 text-sm";
 
@@ -94,5 +94,49 @@ export function AjustarDia({ colaboradorId, nome, dia }: { colaboradorId: string
       )}
       {erro && <p className="mt-1 text-red-600">{erro}</p>}
     </div>
+  );
+}
+
+/** Hora da batida no espelho; clicando abre "Alterações de ponto" (como no RHiD). */
+export function BatidaMenu({ id, hora, manual, ignorada, destaque }: { id?: string; hora: string; manual?: boolean; ignorada?: boolean; destaque?: boolean }) {
+  const [aberto, setAberto] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [salvando, start] = useTransition();
+  if (!id) return <span>{hora}</span>;
+  const fazer = (f: () => Promise<{ ok: boolean; erro?: string } | void>) => start(async () => {
+    setErro(null);
+    const r = await f();
+    if (r && !r.ok) setErro(r.erro ?? "Não deu certo."); else setAberto(false);
+  });
+  const item = "block w-full px-3 py-1.5 text-left hover:bg-superficie-suave disabled:opacity-40";
+  return (
+    <span className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        title={manual ? "Batida incluída à mão" : "Alterações de ponto"}
+        className={`rounded px-1 hover:bg-superficie-suave ${ignorada ? "text-texto-fraco line-through" : ""} ${destaque ? "font-semibold text-amber-700 dark:text-amber-400" : ""} ${manual ? "italic" : ""}`}
+      >
+        {hora}{manual ? "*" : ""}
+      </button>
+      {aberto && (
+        <span className="absolute left-0 top-full z-30 mt-1 block w-56 rounded-controle border border-borda bg-painel-cartao py-1 text-xs shadow-lg print:hidden">
+          <span className="block px-3 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-wide text-texto-fraco">Alterações de ponto</span>
+          {ignorada ? (
+            <button type="button" disabled={salvando} onClick={() => fazer(() => desconsiderarBatida(id, false))} className={item}>Considerar de novo</button>
+          ) : (
+            <>
+              <button type="button" disabled={salvando} onClick={() => fazer(() => desconsiderarBatida(id, true))} className={item}>Desconsiderar marcação</button>
+              <button type="button" disabled={salvando} onClick={() => fazer(() => deslocarBatida(id, 1))} className={item}>Deslocar para a direita</button>
+              <button type="button" disabled={salvando} onClick={() => fazer(() => deslocarBatida(id, -1))} className={item}>Deslocar para a esquerda</button>
+              <button type="button" disabled={salvando} onClick={() => fazer(() => moverBatidaDia(id, -1))} className={item}>Deslocar para o dia anterior</button>
+              <button type="button" disabled={salvando} onClick={() => fazer(() => moverBatidaDia(id, 1))} className={item}>Deslocar para o próximo dia</button>
+            </>
+          )}
+          <button type="button" onClick={() => setAberto(false)} className={`${item} text-texto-fraco`}>fechar</button>
+          {erro && <span className="block px-3 pb-1 text-red-600">{erro}</span>}
+        </span>
+      )}
+    </span>
   );
 }

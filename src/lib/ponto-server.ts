@@ -73,22 +73,57 @@ export async function receberAfd(
   if (error) throw new Error(error.message);
   const inseridas = (novas ?? []) as { id: string; colaborador_id: string | null; data: string; turno: string }[];
 
-  // Presença: só de quem bate ponto, uma por dia e turno.
-  const batePonto = new Set(colaboradores.filter((c) => c.bate_ponto).map((c) => c.id));
-  const presencas = new Map<string, { empresa_id: string; colaborador_id: string; data: string; turno: string; origem: string }>();
-  for (const b of inseridas) {
-    if (!b.colaborador_id || !batePonto.has(b.colaborador_id)) continue;
-    presencas.set(`${b.colaborador_id}|${b.data}|${b.turno}`, { empresa_id: empresaId, colaborador_id: b.colaborador_id, data: b.data, turno: b.turno, origem: "ponto" });
-  }
-  if (presencas.size) {
-    await admin.from("presencas").upsert([...presencas.values()], { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
-    await admin.from("ponto_batidas").update({ presenca: true })
-      .in("id", inseridas.filter((b) => b.colaborador_id && batePonto.has(b.colaborador_id)).map((b) => b.id));
-  }
+  const presencas = await marcarPresencasDoPonto(empresaId, inseridas.filter((b) => b.colaborador_id).map((b) => ({ colaboradorId: b.colaborador_id as string, data: String(b.data).slice(0, 10) })));
   return {
     recebidas: batidas.length,
     novas: inseridas.length,
-    presencas: presencas.size,
+    presencas,
     semColaborador: inseridas.filter((b) => !b.colaborador_id).length,
   };
+}
+
+/**
+ * Marca a presença dos dias tocados por batidas novas. Regras:
+ *  - só quem está "bate ponto";
+ *  - só a partir de quando o ponto vale (assiduidade_config.inicio): o relógio
+ *    manda o histórico inteiro e batida antiga não pode mexer em semana paga;
+ *  - o turno vem da ENTRADA (batidas na posição 1, 3, 5... do dia), não de
+ *    cada batida: a saída das 18:05 de quem entrou 07:55 é do turno do dia.
+ * Nunca apaga presença (quem tira é a gestão, no Semana e 10%).
+ */
+export async function marcarPresencasDoPonto(empresaId: string, dias: { colaboradorId: string; data: string }[]): Promise<number> {
+  if (!dias.length) return 0;
+  const admin = createAdminClient();
+  const { data: cfgP } = await admin.from("assiduidade_config").select("inicio").eq("empresa_id", empresaId).maybeSingle();
+  const inicio = (cfgP as { inicio: string | null } | null)?.inicio ? String((cfgP as { inicio: string }).inicio).slice(0, 10) : "9999-12-31";
+  const alvo = dias.filter((d) => d.data >= inicio);
+  if (!alvo.length) return 0;
+  const ids = [...new Set(alvo.map((d) => d.colaboradorId))];
+  const { data: cols } = await admin.from("colaboradores").select("id").in("id", ids).eq("bate_ponto", true);
+  const batem = new Set(((cols ?? []) as { id: string }[]).map((c) => c.id));
+  const datas = [...new Set(alvo.map((d) => d.data))];
+  const { data: bats } = await admin.from("ponto_batidas").select("id, colaborador_id, data, data_hora")
+    .in("colaborador_id", [...batem]).in("data", datas).eq("desconsiderada", false).order("data_hora");
+  const porDia = new Map<string, { id: string; data_hora: string }[]>();
+  for (const b of (bats ?? []) as { id: string; colaborador_id: string; data: string; data_hora: string }[]) {
+    const k = `${b.colaborador_id}|${String(b.data).slice(0, 10)}`;
+    porDia.set(k, [...(porDia.get(k) ?? []), b]);
+  }
+  const pres = new Map<string, { empresa_id: string; colaborador_id: string; data: string; turno: string; origem: string }>();
+  const marcadas: string[] = [];
+  for (const [k, lista] of porDia) {
+    const [colaboradorId, data] = k.split("|");
+    lista.forEach((b, i) => {
+      if (i % 2 !== 0) return; // saída: fica no turno da entrada
+      const { turno } = turnoDaBatida(new Date(b.data_hora).toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).replace(" ", "T") + "-03:00");
+      // Entrada de madrugada (antes das 5h) que ficou neste dia é da noite.
+      pres.set(`${colaboradorId}|${data}|${turno}`, { empresa_id: empresaId, colaborador_id: colaboradorId, data, turno, origem: "ponto" });
+    });
+    marcadas.push(...lista.map((b) => b.id));
+  }
+  if (pres.size) {
+    await admin.from("presencas").upsert([...pres.values()], { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
+    await admin.from("ponto_batidas").update({ presenca: true }).in("id", marcadas);
+  }
+  return pres.size;
 }
