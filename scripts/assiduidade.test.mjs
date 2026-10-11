@@ -68,3 +68,15 @@ test("abono não é falta e não tira o prêmio", () => {
   assert.deepEqual(r.faltas, []);
   assert.equal(r.ganhou, true);
 });
+
+test("tolerância de 5 min por dia: 08:05 não conta, 08:08 conta 8", () => {
+  const b = todasNoHorario();
+  b.set("2026-10-12", "08:05"); b.set("2026-10-13", "08:05"); b.set("2026-10-14", "08:05");
+  const r1 = apurarMes(base({ primeiraBatida: b, toleranciaBatida: 5 }));
+  assert.equal(r1.atrasoTotal, 0);
+  assert.equal(r1.ganhou, true);
+  b.set("2026-10-15", "08:08"); b.set("2026-10-16", "08:08");
+  const r2 = apurarMes(base({ primeiraBatida: b, toleranciaBatida: 5 }));
+  assert.equal(r2.atrasoTotal, 16);
+  assert.equal(r2.ganhou, false);
+});

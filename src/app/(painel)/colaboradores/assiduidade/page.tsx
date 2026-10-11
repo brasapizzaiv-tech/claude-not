@@ -163,8 +163,8 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
               <label className="flex items-center gap-2">Tolerância (min no mês) <input name="tolerancia_min" defaultValue={cfg.tolerancia_min} inputMode="numeric" className={`${CAMPO} w-16 text-right`} /></label>
             </div>
             <div className="flex flex-wrap gap-3">
-              <label className="flex items-center gap-2" title="Só nos relatórios de ponto, como o RHiD. O prêmio conta todo minuto de atraso.">Relatórios: tolerância por batida (min) <input name="tolerancia_batida_min" defaultValue={cfg.tolerancia_batida_min} inputMode="numeric" className={`${CAMPO} w-14 text-right`} /></label>
-              <label className="flex items-center gap-2">limite do dia (min) <input name="limite_diario_min" defaultValue={cfg.limite_diario_min} inputMode="numeric" className={`${CAMPO} w-14 text-right`} /></label>
+              <label className="flex items-center gap-2" title="Atraso de até isso no dia não conta (no prêmio e nos relatórios); passou, conta inteiro.">Tolerância por batida (min) <input name="tolerancia_batida_min" defaultValue={cfg.tolerancia_batida_min} inputMode="numeric" className={`${CAMPO} w-14 text-right`} /></label>
+              <label className="flex items-center gap-2" title="Só nos relatórios: se o dia somar mais que isso, os minutinhos também contam (como o RHiD).">limite do dia nos relatórios (min) <input name="limite_diario_min" defaultValue={cfg.limite_diario_min} inputMode="numeric" className={`${CAMPO} w-14 text-right`} /></label>
             </div>
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-2">Mês começa no dia <input name="dia_inicio_mes" defaultValue={cfg.dia_inicio_mes} inputMode="numeric" className={`${CAMPO} w-14 text-right`} /></label>

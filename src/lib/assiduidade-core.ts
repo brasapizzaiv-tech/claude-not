@@ -38,6 +38,8 @@ export function apurarMes(p: {
   abonos?: Set<string>;                 // ausência abonada pela casa: nem falta, nem perde
   fechados: Set<string>;                // feriados em que a casa fecha
   tolerancia: number;
+  /** Atraso de até isso no dia não conta; passou, conta inteiro (Rafael, 10/10/2026: 5). */
+  toleranciaBatida?: number;
 }): ResultadoMes {
   const r: ResultadoMes = { esperados: 0, atrasoTotal: 0, atrasos: [], faltas: [], folgas: [], atestados: [], ganhou: null, motivos: [] };
   for (const dia of p.dias) {
@@ -51,7 +53,7 @@ export function apurarMes(p: {
     const chegou = p.primeiraBatida.get(dia);
     if (chegou) {
       const atraso = Math.max(0, minutos(chegou) - minutos(entrada));
-      if (atraso > 0) { r.atrasos.push({ dia, entrada, chegou, min: atraso }); r.atrasoTotal += atraso; }
+      if (atraso > (p.toleranciaBatida ?? 0)) { r.atrasos.push({ dia, entrada, chegou, min: atraso }); r.atrasoTotal += atraso; }
     } else if (dia < p.hoje) {
       r.faltas.push(dia);
     }

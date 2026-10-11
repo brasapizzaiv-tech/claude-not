@@ -57,7 +57,7 @@ export async function apurarAssiduidade(db: Db, mes: string, cfg?: ConfigAssidui
       resultado: apurarMes({
         dias, hoje, escala: p.escala, entradas: config.entradas, primeiraBatida: primeira,
         folgas: noPeriodo(base.folgas.get(p.id)), atestados: noPeriodo(base.atestados.get(p.id)), abonos: noPeriodo(base.abonos.get(p.id)),
-        fechados: base.fechados, tolerancia: config.tolerancia_min,
+        fechados: base.fechados, tolerancia: config.tolerancia_min, toleranciaBatida: config.tolerancia_batida_min,
       }),
     };
   });
