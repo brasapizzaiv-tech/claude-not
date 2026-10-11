@@ -54,6 +54,23 @@ export async function conferirPedidoColab(
   return { ok: !!data?.ok };
 }
 
+// Resposta à pergunta obrigatória do dia da entrega sem conferir:
+// "adiar" (ainda não chegou, pergunta de novo em 2 h) ou "nao_veio" (vai pro
+// mural do escritório). Migration 0228.
+export async function responderEntregaColab(token: string, pedidoId: string, resposta: "adiar" | "nao_veio", obs?: string) {
+  const jar = await cookies();
+  const pin = jar.get(`eu_${token}`)?.value ?? "";
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("colaborador_responder_entrega", {
+    p_token: token,
+    p_pin: pin,
+    p_pedido_id: pedidoId,
+    p_resposta: resposta,
+    p_obs: obs ?? null,
+  });
+  return { ok: !!data?.ok };
+}
+
 // Adiciona um item que veio a mais na conferência do colaborador.
 export async function adicionarItemColab(
   token: string,

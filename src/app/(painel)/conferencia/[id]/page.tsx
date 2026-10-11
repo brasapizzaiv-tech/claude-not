@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { calcularDivergencias, notasSugeridas, type Db as DbConf } from "@/lib/conferencia-core";
+import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { dataBR } from "@/lib/format";
+import { Enviar } from "@/components/enviar";
+import { remarcarEntrega, encerrarAvisoEntrega } from "../actions";
 import { ConferirClient, type ItemLinha, type NotaLigada, type NotaSugerida } from "./conferir-client";
 
 export default async function ConferirPage({
@@ -14,7 +18,7 @@ export default async function ConferirPage({
   const { data } = await supabase
     .from("pedidos")
     .select(
-      "id, data, status, observacoes, fornecedor_id, conf_colab_em, conf_colab_por, fornecedores(nome), cotacoes(descricao), pedido_itens(id, produto_id, qtd, preco_unit, qtd_recebida, preco_recebido, qtd_conf_colab, obs, produtos(nome, unidade))",
+      "id, data, status, observacoes, fornecedor_id, conf_colab_em, conf_colab_por, cobrar_conf, aviso_encerrado_em, nao_veio_em, nao_veio_por, nao_veio_obs, dia_entrega:pedido_dia_entrega, fornecedores(nome), cotacoes(descricao), pedido_itens(id, produto_id, qtd, preco_unit, qtd_recebida, preco_recebido, qtd_conf_colab, obs, produtos(nome, unidade))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -29,6 +33,12 @@ export default async function ConferirPage({
     fornecedor_id: string | null;
     conf_colab_em: string | null;
     conf_colab_por: string | null;
+    cobrar_conf: boolean;
+    aviso_encerrado_em: string | null;
+    nao_veio_em: string | null;
+    nao_veio_por: string | null;
+    nao_veio_obs: string | null;
+    dia_entrega: string | null;
     fornecedores: { nome?: string } | null;
     cotacoes: { descricao?: string } | null;
     pedido_itens: {
@@ -95,7 +105,45 @@ export default async function ConferirPage({
     })
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
+  // Entrega do fornecedor (migration 0228): o que a equipe respondeu e o que o
+  // escritório pode fazer — remarcar a data ou encerrar o aviso.
+  const hoje = hojeSP();
+  const dia = ped.dia_entrega ? String(ped.dia_entrega).slice(0, 10) : null;
+  const mostrarEntrega = ped.cobrar_conf && !ped.conf_colab_em && (ped.status === "rascunho" || ped.status === "enviado");
+  const entrega = mostrarEntrega && (
+    <div className={`mx-8 mt-6 rounded-cartao border p-4 text-sm ${ped.nao_veio_em && !ped.aviso_encerrado_em ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-borda bg-painel-cartao"}`}>
+      <p className="font-semibold text-texto">
+        Entrega prevista: {dia ? dataBR(dia) : "—"}
+        {ped.aviso_encerrado_em ? " · aviso encerrado" : ped.nao_veio_em ? " · a equipe avisou que NÃO VEIO" : dia && dia < hoje ? " · passou do dia e ninguém conferiu" : " · a equipe vai ser perguntada no dia"}
+      </p>
+      {ped.nao_veio_em && (
+        <p className="mt-1 text-texto-suave">
+          Avisado por {ped.nao_veio_por ?? "equipe"} em {new Date(ped.nao_veio_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+          {ped.nao_veio_obs ? ` — "${ped.nao_veio_obs}"` : ""}
+        </p>
+      )}
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <form action={remarcarEntrega} className="flex items-end gap-2">
+          <input type="hidden" name="id" value={ped.id} />
+          <label className="text-xs text-texto-suave">
+            Vai chegar em
+            <input type="date" name="dia" required min={hoje} defaultValue={dia && dia >= hoje ? dia : ""} className="mt-0.5 block rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm" />
+          </label>
+          <Enviar className="rounded-controle bg-texto px-3 py-1.5 font-semibold text-fundo">Remarcar entrega</Enviar>
+        </form>
+        {!ped.aviso_encerrado_em && (
+          <form action={encerrarAvisoEntrega}>
+            <input type="hidden" name="id" value={ped.id} />
+            <Enviar className="rounded-controle border border-borda-forte px-3 py-1.5">Encerrar aviso (não vem / resolvido)</Enviar>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+
   return (
+    <>
+    {entrega}
     <ConferirClient
       pedidoId={ped.id}
       fornecedor={ped.fornecedores?.nome ?? "—"}
@@ -110,5 +158,6 @@ export default async function ConferirPage({
       sugeridas={sugeridas as NotaSugerida[]}
       divergencias={divergencias}
     />
+    </>
   );
 }

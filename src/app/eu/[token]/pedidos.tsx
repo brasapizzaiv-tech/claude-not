@@ -26,6 +26,13 @@ export type PedidoColab = {
   status: string;
   conf_em: string | null;
   conf_por: string | null;
+  // Conferência obrigatória (migration 0228): dia previsto da entrega, se a
+  // equipe é cobrada por este pedido, "ainda não chegou" até quando, "não veio".
+  entrega?: string | null;
+  cobrar?: boolean;
+  adiado_ate?: string | null;
+  nao_veio_em?: string | null;
+  nao_veio_por?: string | null;
   itens: ItemPed[];
 };
 
@@ -107,17 +114,21 @@ export function PedidosColab({
   );
 }
 
-function PedidoCard({
+export function PedidoCard({
   token,
   pedido,
   produtos,
+  abertoInicial = false,
+  onConfirmado,
 }: {
   token: string;
   pedido: PedidoColab;
   produtos: { id: string; nome: string }[];
+  abertoInicial?: boolean;
+  onConfirmado?: () => void;
 }) {
   const router = useRouter();
-  const [aberto, setAberto] = useState(false);
+  const [aberto, setAberto] = useState(abertoInicial);
   // Só o que a pessoa digitou; o resto vem do pedido. Assim um item adicionado
   // depois (que chega via router.refresh) já aparece com a quantidade e não é
   // apagado ao confirmar.
@@ -150,7 +161,7 @@ function PedidoCard({
     if (invalido()) return;
     start(async () => {
       const r = await salvarAtual(true);
-      if (r.ok) setFeito(true);
+      if (r.ok) { setFeito(true); onConfirmado?.(); }
       else setErro("Não foi possível salvar. Confira as quantidades e tente de novo.");
     });
   }
@@ -193,6 +204,11 @@ function PedidoCard({
             {pedido.fornecedor || "Fornecedor"}
           </span>
           <span className="ml-2 text-xs text-texto-fraco">{dataBR(pedido.data)}</span>
+          {pedido.nao_veio_em && !feito && (
+            <span className="mt-0.5 block text-xs font-medium text-red-600 dark:text-red-400">
+              avisado que não veio{pedido.nao_veio_por ? ` (${pedido.nao_veio_por})` : ""} — se chegou, confira
+            </span>
+          )}
           {pedido.prazo_entrega && (
             <span className="mt-0.5 block text-xs font-medium text-orange-600 dark:text-orange-400">
               <Icone nome="caminhao" tamanho={13} className="mr-1" /> entrega prevista: {dataBR(pedido.prazo_entrega)}

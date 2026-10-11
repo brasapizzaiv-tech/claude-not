@@ -1,7 +1,7 @@
 import { DIAS, GRUPOS } from "@/lib/folgas";
 import type { Feriado } from "@/lib/feriados";
 import { agendaDaTv, type Evento } from "@/lib/eventos";
-import type { AniversarioMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
+import type { AniversarioMural, EntregaMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 
 // O MURAL PARA O NAVEGADOR DE UMA TV
 //
@@ -56,6 +56,7 @@ export function MuralTv({
   feriados = [],
   eventos = [],
   aniversarios = [],
+  entregas = [],
   hoje,
   ajuste = 1,
 }: {
@@ -64,6 +65,7 @@ export function MuralTv({
   feriados?: Feriado[];
   eventos?: Evento[];
   aniversarios?: AniversarioMural[];
+  entregas?: EntregaMural[];
   hoje: string;
   /** Empurrãozinho pra letra: 1 é o tamanho calculado, 1.2 aumenta 20%. */
   ajuste?: number;
@@ -74,7 +76,9 @@ export function MuralTv({
 
   const todosPendentes = folgas.filter((f) => f.status === "Pendente");
   const todosAbertos = solicitacoes.filter((s) => s.status === "pendente");
-  const esperando = todosPendentes.length + todosAbertos.length;
+  const esperando = entregas.length + todosPendentes.length + todosAbertos.length;
+  // Entrega de fornecedor primeiro: é a que tem gente esperando do outro lado.
+  const entregasTv = entregas.slice(0, 4);
   const pendentes = todosPendentes.slice(0, 4);
   const abertos = todosAbertos.slice(0, 4);
 
@@ -174,6 +178,18 @@ export function MuralTv({
             </div>
           ) : (
             <div style={{ marginTop: "1vw" }}>
+              {entregasTv.map((e) => (
+                <div key={`e${e.id}`} style={caixaDoPedido}>
+                  <div style={{ fontSize: t(1.5), fontWeight: 700 }}>
+                    {e.fornecedor} — {e.situacao === "nao_veio" ? "NÃO VEIO" : "SEM RESPOSTA"}
+                  </div>
+                  <div style={{ fontSize: t(1.15), opacity: 0.75 }}>
+                    entrega {diaCurto(e.dia)}
+                    {e.situacao === "nao_veio" ? ` · avisado por ${e.por ?? "equipe"} ${espera(e.em, hoje)}` : " · ninguém conferiu"}
+                    {e.obs ? ` · ${e.obs}` : ""}
+                  </div>
+                </div>
+              ))}
               {pendentes.map((f) => (
                 <div key={`f${f.id}`} style={caixaDoPedido}>
                   <div style={{ fontSize: t(1.5), fontWeight: 700 }}>{f.nome} quer folga</div>

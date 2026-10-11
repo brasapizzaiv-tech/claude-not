@@ -12,6 +12,19 @@ import { PainelVencimentos } from "@/components/etiqueta-ui";
 import { contarFaixas, hojeSP } from "@/lib/etiqueta-vencimentos";
 import { lembretesDoColaborador } from "@/lib/lembretes-server";
 import { LembretesHoje } from "./lembretes-hoje";
+import { EntregaObrigatoria } from "./entrega-obrigatoria";
+
+const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
+
+// Pedidos que a pessoa TEM que responder agora (migration 0228): cobrados, sem
+// conferência nem "não veio", dia da entrega até hoje e fora do "ainda não
+// chegou" (2 h). Os mais atrasados primeiro.
+function entregasObrigatorias(pedidos: PedidoColab[], hoje: string) {
+  const agora = agoraMs();
+  return pedidos
+    .filter((p) => p.cobrar && (p.status === "rascunho" || p.status === "enviado") && !p.conf_em && !p.nao_veio_em && !!p.entrega && p.entrega <= hoje && (!p.adiado_ate || new Date(p.adiado_ate).getTime() <= agora))
+    .sort((a, b) => String(a.entrega).localeCompare(String(b.entrega)));
+}
 
 export async function generateMetadata({
   params,
@@ -196,6 +209,7 @@ export default async function AppColaboradorPage({
     <Moldura>
       {saudacao}
       <LembretesHoje token={token} itens={lembretes} />
+      {fazContagem && <EntregaObrigatoria token={token} pedidos={entregasObrigatorias(pedidos, hojeSP())} produtos={produtos} hoje={hojeSP()} />}
       {temFolga && (
         <Link
           href={`/folga/${token}`}

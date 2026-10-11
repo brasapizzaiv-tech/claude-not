@@ -40,6 +40,18 @@ export type PedidoCompraMural = {
   respondidoEm: string | null;
 };
 
+// Entrega de fornecedor que precisa do escritório (migration 0228): a equipe
+// disse que não veio, ou passou o dia previsto sem ninguém responder.
+export type EntregaMural = {
+  id: string;
+  fornecedor: string;
+  dia: string;
+  situacao: "nao_veio" | "sem_resposta";
+  por: string | null;
+  obs: string | null;
+  em: string | null;
+};
+
 const CARTAO = "h-fit rounded-cartao bg-painel-cartao p-4";
 const ROTULO = "text-xs font-medium text-texto-fraco";
 
@@ -80,6 +92,7 @@ export function Mural({
   feriados = [],
   eventos = [],
   aniversarios = [],
+  entregas = [],
   hoje,
 }: {
   folgas: FolgaMural[];
@@ -87,6 +100,7 @@ export function Mural({
   feriados?: Feriado[];
   eventos?: Evento[];
   aniversarios?: AniversarioMural[];
+  entregas?: EntregaMural[];
   hoje: string;
 }) {
   const router = useRouter();
@@ -135,9 +149,9 @@ export function Mural({
   // que vem aí, não de qual cadastro veio.
   const datas = useMemo(() => agendaDaTv(feriados, eventos, hoje, 4), [feriados, eventos, hoje]);
 
-  const esperando = pendentes.length + comprasAbertas.length;
-  // O cartão mostra no máximo 6 de cada lado; o resto vira uma linha só.
-  const mostrados = Math.min(pendentes.length, 6) + Math.min(comprasAbertas.length, 6);
+  const esperando = entregas.length + pendentes.length + comprasAbertas.length;
+  // O cartão mostra no máximo 6 de cada tipo; o resto vira uma linha só.
+  const mostrados = Math.min(entregas.length, 6) + Math.min(pendentes.length, 6) + Math.min(comprasAbertas.length, 6);
 
   return (
     <div className="flex w-full flex-col gap-4 p-5">
@@ -206,6 +220,7 @@ export function Mural({
           <p className="text-xs font-medium opacity-70">Esperando você</p>
           <p className="mt-1 font-numero text-4xl font-semibold tracking-apertada">{esperando}</p>
           <p className="mt-0.5 text-xs opacity-70">
+            {entregas.length > 0 && <>{plural(entregas.length, "entrega pra conferir", "entregas pra conferir")} ·{" "}</>}
             {plural(pendentes.length, "pedido de folga", "pedidos de folga")} ·{" "}
             {plural(comprasAbertas.length, "pedido de compra", "pedidos de compra")}
           </p>
@@ -216,6 +231,25 @@ export function Mural({
             </p>
           ) : (
             <div className="mt-4 flex flex-col gap-2">
+              {entregas.slice(0, 6).map((e) => (
+                <Link
+                  key={`e${e.id}`}
+                  href={`/conferencia/${e.id}`}
+                  className="rounded-controle bg-painel-foco-texto/10 px-3 py-2 transition hover:bg-painel-foco-texto/20"
+                >
+                  <p className="text-sm font-semibold">
+                    {e.fornecedor}{" "}
+                    <span className="ml-1 rounded bg-painel-foco-texto/25 px-1.5 py-0.5 text-mini font-bold uppercase">
+                      {e.situacao === "nao_veio" ? "não veio" : "sem resposta"}
+                    </span>
+                  </p>
+                  <p className="text-xs opacity-80">
+                    entrega {dataCurta(e.dia)}
+                    {e.situacao === "nao_veio" ? ` · avisado por ${e.por ?? "equipe"} ${espera(e.em, hoje)}` : " · ninguém conferiu"}
+                  </p>
+                  {e.obs && <p className="mt-0.5 text-xs opacity-70">{e.obs}</p>}
+                </Link>
+              ))}
               {pendentes.slice(0, 6).map((f) => (
                 <Link
                   key={`f${f.id}`}

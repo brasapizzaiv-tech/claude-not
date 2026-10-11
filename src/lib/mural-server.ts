@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { AniversarioMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
+import type { AniversarioMural, EntregaMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 import { TURNO } from "@/lib/folgas";
 import type { Feriado } from "@/lib/feriados";
 import type { Evento } from "@/lib/eventos";
@@ -79,6 +79,17 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     .select("nome, nascimento")
     .eq("ativo", true)
     .not("nascimento", "is", null);
+  // Entregas de fornecedor (migration 0228): o que a equipe disse que não veio
+  // e o que passou do dia sem ninguém responder. `dia_entrega` é a função
+  // pedido_dia_entrega lida como coluna.
+  let qEntregas = supabase
+    .from("pedidos")
+    .select("id, data, nao_veio_em, nao_veio_por, nao_veio_obs, dia_entrega:pedido_dia_entrega, fornecedores(nome)")
+    .eq("cobrar_conf", true)
+    .is("aviso_encerrado_em", null)
+    .is("conf_colab_em", null)
+    .in("status", ["rascunho", "enviado"])
+    .gte("data", daquiA(hoje, -40));
   let qFeriados = supabase
     .from("feriados")
     .select("id, data, data_fim, nome, situacao, detalhe")
@@ -91,9 +102,10 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     qFeriados = qFeriados.eq("empresa_id", empresaId);
     qEventos = qEventos.eq("empresa_id", empresaId);
     qAniv = qAniv.eq("empresa_id", empresaId);
+    qEntregas = qEntregas.eq("empresa_id", empresaId);
   }
 
-  const [{ data: pedidos }, { data: equipe }, { data: compras }, { data: datas }, { data: marcados }, { data: nascidos }] =
+  const [{ data: pedidos }, { data: equipe }, { data: compras }, { data: datas }, { data: marcados }, { data: nascidos }, { data: forn }] =
     await Promise.all([
       qFolgas.order("data"),
       qEquipe,
@@ -101,6 +113,7 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
       qFeriados.order("data").limit(6),
       qEventos.order("data").limit(6),
       qAniv,
+      qEntregas.order("data").limit(60),
     ]);
 
   const quem = new Map<number, { nome: string; grupo: string; grupo2: string | null; gerente: boolean }>();
@@ -177,10 +190,27 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
       let data = `${ano}-${md}`;
       if (data < hoje) data = `${ano + 1}-${md}`;
       const dias = Math.round((Date.parse(`${data}T12:00:00Z`) - Date.parse(`${hoje}T12:00:00Z`)) / 86400000);
-      return { nome: c.nome.trim().split(/s+/).slice(0, 2).join(" "), data, dias };
+      return { nome: c.nome.trim().split(/\s+/).slice(0, 2).join(" "), data, dias };
     })
     .filter((a) => a.dias <= 30)
     .sort((a, b) => a.dias - b.dias);
 
-  return { folgas, solicitacoes, feriados, eventos, aniversarios, hoje };
+  const entregas: EntregaMural[] = ((forn as Record<string, unknown>[]) ?? [])
+    .map((p) => {
+      const f = p.fornecedores as { nome: string } | { nome: string }[] | null;
+      return {
+        id: String(p.id),
+        fornecedor: (Array.isArray(f) ? f[0]?.nome : f?.nome) ?? "Fornecedor",
+        dia: String(p.dia_entrega ?? p.data).slice(0, 10),
+        situacao: (p.nao_veio_em ? "nao_veio" : "sem_resposta") as EntregaMural["situacao"],
+        por: (p.nao_veio_por as string | null) ?? null,
+        obs: (p.nao_veio_obs as string | null) ?? null,
+        em: (p.nao_veio_em as string | null) ?? null,
+      };
+    })
+    // Sem resposta só conta depois que o dia da entrega passou.
+    .filter((e) => e.situacao === "nao_veio" || e.dia < hoje)
+    .sort((a, b) => (a.situacao === b.situacao ? a.dia.localeCompare(b.dia) : a.situacao === "nao_veio" ? -1 : 1));
+
+  return { folgas, solicitacoes, feriados, eventos, aniversarios, entregas, hoje };
 }

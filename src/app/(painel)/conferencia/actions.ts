@@ -26,6 +26,34 @@ export async function excluirPedido(formData: FormData) {
   revalidatePath("/financeiro");
 }
 
+// Entrega do fornecedor (migration 0228). Remarcar = nova data prevista: o
+// aviso some do mural e, nesse dia, o app da equipe pergunta de novo.
+export async function remarcarEntrega(formData: FormData) {
+  await exigirAcesso("/conferencia");
+  const id = String(formData.get("id") ?? "");
+  const dia = String(formData.get("dia") ?? "");
+  if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(dia)) return;
+  const supabase = await createClient();
+  await supabase
+    .from("pedidos")
+    .update({ entrega_prevista: dia, nao_veio_em: null, nao_veio_por: null, nao_veio_obs: null, adiado_ate: null, aviso_encerrado_em: null, cobrar_conf: true })
+    .eq("id", id);
+  revalidatePath(`/conferencia/${id}`);
+  revalidatePath("/mural");
+}
+
+// Encerrar = o escritório resolveu (não vem mais, foi cancelado, já conferiu
+// por fora): sai do mural e a equipe para de ser perguntada.
+export async function encerrarAvisoEntrega(formData: FormData) {
+  await exigirAcesso("/conferencia");
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase.from("pedidos").update({ aviso_encerrado_em: new Date().toISOString(), adiado_ate: null }).eq("id", id);
+  revalidatePath(`/conferencia/${id}`);
+  revalidatePath("/mural");
+}
+
 // Cria um pedido manual (compra direta, sem cotação) já pronto para conferir.
 export async function criarPedidoManual(
   fornecedorId: string,
@@ -40,6 +68,8 @@ export async function criarPedidoManual(
       fornecedor_id: fornecedorId || null,
       data: data || hojeSP(),
       status: "recebido",
+      // Compra direta já chega conferida aqui: a equipe não é cobrada (0228).
+      cobrar_conf: false,
     })
     .select("id")
     .single();
