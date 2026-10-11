@@ -100,22 +100,32 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
 
   // ---------- GPS ----------
   const [gpsOn, setGpsOn] = useState(false);
-  // Aviso de localização (política da Play, "Prominent Disclosure"): o pedido de
-  // permissão do sistema só pode aparecer DEPOIS do aviso aceito. Vale pra
-  // qualquer caminho (app nativo ou navegador) e é lembrado por aparelho.
+  // Aviso de localização (política da Play, "Prominent Disclosure"): a janela de
+  // permissão do sistema só pode abrir LOGO DEPOIS do aviso aceito, toda vez.
+  // Por isso o GPS liga de dois jeitos:
+  // - sem pedir permissão (pedir=false): religar sozinho ao abrir o app, ou o
+  //   toque em "Ligar" de quem já deu a permissão antes. Se o sistema disser
+  //   que não tem permissão, desliga e (no toque) mostra o aviso;
+  // - pedindo permissão (pedir=true): SÓ pelo botão "Aceitar e ligar" do aviso.
+  // Recusas da Play: 06/10/2026 (dava pra chegar na permissão sem o aviso) e
+  // 11/10/2026 (o aviso era lembrado por aparelho e o app religava sozinho
+  // pedindo a permissão de novo, sem aviso na frente).
   const [avisoGps, setAvisoGps] = useState(false);
-  const [avisoAceito, setAvisoAceito] = useState(false);
+  const [pedir, setPedir] = useState(false);
+  const peloToque = useRef(false);
   const [gps, setGps] = useState<{ lat: number; lng: number; precisao: number | null; em: number } | null>(null);
   const [gpsErro, setGpsErro] = useState<string | null>(null);
   const ultimoEnvio = useRef(0);
   const wake = useRef<{ release: () => Promise<void> } | null>(null);
+  // "entrega_gps_ok" = já recebeu posição neste aparelho, ou seja, a permissão
+  // foi dada. Sem isso, o toque em "Ligar" mostra o aviso antes de qualquer coisa.
+  const permissaoOk = () => { try { return localStorage.getItem("entrega_gps_ok") === "1"; } catch { return false; } };
+  const marcarPermissao = (v: boolean) => { try { localStorage.setItem("entrega_gps_ok", v ? "1" : "0"); } catch { /* sem storage */ } };
   useEffect(() => {
     // Lembrado por aparelho; liga depois da hidratação (por isso o timeout).
-    let ligado = false, aceito = false;
-    try { ligado = localStorage.getItem("entrega_gps") === "1"; aceito = localStorage.getItem("entrega_gps_aviso") === "1"; } catch { /* sem storage */ }
-    // Sem o aviso aceito neste aparelho, não religa sozinho: a pessoa toca em
-    // "Ligar rastreamento", lê o aviso e aí sim o sistema pede a permissão.
-    const t = setTimeout(() => { setAvisoAceito(aceito); if (ligado && aceito) setGpsOn(true); }, 0);
+    let ligado = false;
+    try { ligado = localStorage.getItem("entrega_gps") === "1"; localStorage.removeItem("entrega_gps_aviso"); } catch { /* sem storage */ }
+    const t = setTimeout(() => { if (ligado && permissaoOk()) { peloToque.current = false; setPedir(false); setGpsOn(true); } }, 0);
     return () => clearTimeout(t);
   }, []);
   // No Android, a ponte do Capacitor às vezes NÃO é injetada na página (ela vem
@@ -123,24 +133,42 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
   // `androidBridge` existe. Então a própria página carrega a ponte
   // (public/app/capacitor-native-bridge.js) e avisa pra tudo recalcular.
   const [ponte, setPonte] = useState(0);
+  // Dentro do app (mesmo antes da ponte carregar). Aí o GPS NUNCA vai pelo
+  // navegador: o WebView pediria a permissão do Android por conta própria.
+  const [dentroDoApp, setDentroDoApp] = useState(false);
   useEffect(() => {
     const w = window as unknown as { Capacitor?: unknown; androidBridge?: unknown; webkit?: { messageHandlers?: { bridge?: unknown } } };
-    if (w.Capacitor || !(w.androidBridge || w.webkit?.messageHandlers?.bridge)) return;
-    if (document.querySelector('script[data-ponte-capacitor]')) return;
+    const app = !!(w.Capacitor || w.androidBridge || w.webkit?.messageHandlers?.bridge);
+    const t = setTimeout(() => setDentroDoApp(app), 0);
+    if (w.Capacitor || !app) return () => clearTimeout(t);
+    if (document.querySelector('script[data-ponte-capacitor]')) return () => clearTimeout(t);
     const s = document.createElement("script");
     s.src = "/app/capacitor-native-bridge.js";
     s.dataset.ponteCapacitor = "1";
     s.onload = () => setPonte((n) => n + 1);
     document.head.appendChild(s);
+    return () => clearTimeout(t);
   }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const nativo = useMemo(() => capacitorNativo() !== null, [ponte]);
   useEffect(() => {
     if (!gpsOn) { wake.current?.release().catch(() => {}); wake.current = null; return; }
-    // Trava de segurança: nunca pede a permissão do sistema sem o aviso aceito
-    // antes (Play). Quem liga o GPS é alternarGps/aceitarAvisoGps, que já
-    // mostram o aviso; aqui só não roda.
-    if (!avisoAceito) return;
+    // Sem permissão: desliga. Se foi o toque da pessoa (e ainda não viu o aviso
+    // agora), mostra o aviso; ela aceita e aí sim o sistema pergunta.
+    const semPermissao = () => {
+      marcarPermissao(false);
+      setGpsOn(false);
+      if (peloToque.current && !pedir) { setGpsErro(null); setAvisoGps(true); return; }
+      try { localStorage.setItem("entrega_gps", "0"); } catch { /* sem storage */ }
+      setGpsErro(pedir ? "Sem permissão de localização. Toque em \"Ligar rastreamento\" e escolha \"Permitir o tempo todo\" (ou libere nas configurações do app)." : "O rastreamento foi desligado: falta a permissão de localização. Toque em \"Ligar rastreamento\".");
+    };
+    const recebeu = (p: { lat: number; lng: number; precisao: number | null; em: number }) => {
+      setGps(p); setGpsErro(null); marcarPermissao(true);
+      if (p.em - ultimoEnvio.current >= GPS_INTERVALO_MS) {
+        ultimoEnvio.current = p.em;
+        registrarPosicao(token, p.lat, p.lng, p.precisao).catch(() => {});
+      }
+    };
     // ---- app nativo: plugin de segundo plano ----
     const cap = capacitorNativo();
     if (cap) {
@@ -150,59 +178,62 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
         // O nome da EMPRESA na notificação, não o do app: quem fica horas com
         // isso na barra é o entregador, e ele trabalha pra um restaurante, não
         // pra um aplicativo.
-        { backgroundTitle: empresa, backgroundMessage: "Rastreando sua posição pro restaurante.", requestPermissions: true, stale: false, distanceFilter: 5 },
+        { backgroundTitle: empresa, backgroundMessage: "Rastreando sua posição pro restaurante.", requestPermissions: pedir, stale: false, distanceFilter: 5 },
         (loc, err) => {
           if (!vivo) return;
-          if (err) { setGpsErro(err.code === "NOT_AUTHORIZED" ? "Permita a localização \"o tempo todo\" nas configurações do app." : (err.message ?? "Sem sinal de GPS agora.")); return; }
+          if (err) { if (err.code === "NOT_AUTHORIZED") semPermissao(); else setGpsErro(err.message ?? "Sem sinal de GPS agora."); return; }
           if (!loc) return;
-          const agora = Date.now();
-          const p = { lat: loc.latitude, lng: loc.longitude, precisao: loc.accuracy ?? null, em: agora };
-          setGps(p); setGpsErro(null);
-          if (agora - ultimoEnvio.current >= GPS_INTERVALO_MS) {
-            ultimoEnvio.current = agora;
-            registrarPosicao(token, p.lat, p.lng, p.precisao).catch(() => {});
-          }
+          recebeu({ lat: loc.latitude, lng: loc.longitude, precisao: loc.accuracy ?? null, em: Date.now() });
         },
       ).then((id) => { if (vivo) watcherId = id; else bg.removeWatcher({ id }).catch(() => {}); }).catch((e: unknown) => setGpsErro(e instanceof Error ? e.message : "Não consegui ligar o GPS nativo."));
       return () => { vivo = false; if (watcherId) bg.removeWatcher({ id: watcherId }).catch(() => {}); };
     }
+    // Dentro do app, espera a ponte nativa (nunca cai no GPS do navegador).
+    if (dentroDoApp) {
+      const t = setTimeout(() => setGpsErro("O GPS do app não respondeu. Feche e abra o app de novo (ou atualize na Play Store)."), 8000);
+      return () => clearTimeout(t);
+    }
     // ---- navegador: só com a tela ligada ----
     const geo = navigator.geolocation;
     if (!geo) { const t = setTimeout(() => setGpsErro("Este celular não tem GPS disponível no navegador."), 0); return () => clearTimeout(t); }
-    const id = navigator.geolocation.watchPosition(
-      (pos) => {
-        const agora = Date.now();
-        const p = { lat: pos.coords.latitude, lng: pos.coords.longitude, precisao: pos.coords.accuracy ?? null, em: agora };
-        setGps(p); setGpsErro(null);
-        if (agora - ultimoEnvio.current >= GPS_INTERVALO_MS) {
-          ultimoEnvio.current = agora;
-          registrarPosicao(token, p.lat, p.lng, p.precisao).catch(() => {});
-        }
-      },
-      (e) => setGpsErro(e.code === 1 ? "Permissão de localização negada — libere nas configurações do navegador." : "Sem sinal de GPS agora."),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
-    );
-    // Tela ligada enquanto rastreia (o navegador não manda posição com a tela apagada).
-    (async () => { try { const n = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }; wake.current = (await n.wakeLock?.request("screen")) ?? null; } catch { /* sem wake lock */ } })();
-    return () => { navigator.geolocation.clearWatch(id); wake.current?.release().catch(() => {}); wake.current = null; };
-  }, [gpsOn, token, empresa, ponte, avisoAceito]);
+    let id: number | null = null; let vivo = true;
+    (async () => {
+      // Sem pedir: só segue se o navegador já tiver liberado (senão abriria a pergunta dele).
+      if (!pedir) {
+        let estado = "prompt";
+        try { estado = (await navigator.permissions?.query({ name: "geolocation" as PermissionName }))?.state ?? "prompt"; } catch { /* sem a API */ }
+        if (!vivo) return;
+        if (estado !== "granted") { semPermissao(); return; }
+      }
+      id = geo.watchPosition(
+        (pos) => recebeu({ lat: pos.coords.latitude, lng: pos.coords.longitude, precisao: pos.coords.accuracy ?? null, em: Date.now() }),
+        (e) => { if (e.code === 1) semPermissao(); else setGpsErro("Sem sinal de GPS agora."); },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
+      );
+      // Tela ligada enquanto rastreia (o navegador não manda posição com a tela apagada).
+      try { const n = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }; wake.current = (await n.wakeLock?.request("screen")) ?? null; } catch { /* sem wake lock */ }
+    })();
+    return () => { vivo = false; if (id != null) geo.clearWatch(id); wake.current?.release().catch(() => {}); wake.current = null; };
+  }, [gpsOn, token, empresa, ponte, pedir, dentroDoApp]);
   // O aviso diz o que é coletado, pra quê, com quem é compartilhado e que vale
-  // "mesmo com o app fechado ou sem uso", com botão de aceite. Em 06/10/2026 a
-  // Play recusou o app porque dava pra chegar no pedido de permissão sem ver o
-  // aviso (ele só aparecia quando a ponte nativa já tinha sido detectada).
+  // "mesmo com o app fechado ou sem uso", com botão de aceite.
   function ligarGps(v: boolean) {
     setGpsOn(v);
     try { localStorage.setItem("entrega_gps", v ? "1" : "0"); } catch { /* sem storage */ }
   }
   function alternarGps() {
     if (gpsOn) return ligarGps(false);
-    if (!avisoAceito) { setAvisoGps(true); return; }
+    setGpsErro(null);
+    peloToque.current = true;
+    // Nunca deu a permissão neste aparelho: aviso primeiro, sempre.
+    if (!permissaoOk()) { setAvisoGps(true); return; }
+    setPedir(false);
     ligarGps(true);
   }
   function aceitarAvisoGps() {
-    try { localStorage.setItem("entrega_gps_aviso", "1"); } catch { /* sem storage */ }
-    setAvisoAceito(true);
     setAvisoGps(false);
+    peloToque.current = true;
+    setPedir(true);
     ligarGps(true);
   }
 
@@ -490,12 +521,18 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
   // onLido muda a cada render do pai; guardar em ref evita reabrir a câmera toda hora.
   const onLidoRef = useRef(onLido);
   useEffect(() => { onLidoRef.current = onLido; }, [onLido]);
+  // Aviso da câmera antes da permissão do sistema (mesma regra da Play do GPS):
+  // enquanto a câmera nunca abriu neste aparelho, o modal começa explicando e
+  // só pede a câmera no toque em "Abrir câmera".
+  const [liberado, setLiberado] = useState(() => { try { return localStorage.getItem("entrega_camera_ok") === "1"; } catch { return false; } });
   useEffect(() => {
+    if (!liberado) return;
     let stream: MediaStream | null = null; let vivo = true; let timer: ReturnType<typeof setInterval> | null = null;
     (async () => {
       if (!navigator.mediaDevices?.getUserMedia) { setErro("Este navegador não abre a câmera — digite o número do pedido."); return; }
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+        try { localStorage.setItem("entrega_camera_ok", "1"); } catch { /* sem storage */ }
         if (!vivo || !videoRef.current) return;
         const v = videoRef.current;
         v.srcObject = stream; v.setAttribute("playsinline", "true"); v.muted = true;
@@ -515,17 +552,28 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
         }, 250);
       } catch (e) {
         const nome = e instanceof Error ? e.name : "";
+        if (nome === "NotAllowedError") { try { localStorage.removeItem("entrega_camera_ok"); } catch { /* sem storage */ } }
         setErro(nome === "NotAllowedError" ? "Permissão da câmera negada — libere nas configurações do navegador (cadeado ao lado do endereço) ou digite o número."
           : nome === "NotFoundError" ? "Nenhuma câmera encontrada — digite o número do pedido."
           : "Não consegui abrir a câmera — digite o número do pedido.");
       }
     })();
     return () => { vivo = false; if (timer) clearInterval(timer); stream?.getTracks().forEach((t) => t.stop()); };
-  }, []);
+  }, [liberado]);
   return (
     <div className="fixed inset-0 z-20 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-      <div className="flex items-center justify-between p-3 text-white"><span className="font-bold">{lendo ? "Aponte pro QR do cupom" : "Abrindo a câmera…"}</span><button onClick={onFechar} className="rounded-controle bg-superficie-suave px-3 py-1.5">Fechar</button></div>
+      <div className="flex items-center justify-between p-3 text-white"><span className="font-bold">{!liberado ? "Ler o QR do cupom" : lendo ? "Aponte pro QR do cupom" : "Abrindo a câmera…"}</span><button onClick={onFechar} className="rounded-controle bg-superficie-suave px-3 py-1.5">Fechar</button></div>
       <div className="relative flex-1 overflow-hidden">
+        {!liberado && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
+            <div className="max-w-sm rounded-cartao bg-painel-cartao p-5 text-texto">
+              <div className="mb-2 flex items-center gap-2 text-lg font-bold"><Icone nome="camera" tamanho={18} /> Câmera</div>
+              <p className="text-sm">O app usa a <b>câmera</b> só para ler o QR code do cupom do pedido. Nenhuma foto ou vídeo é guardado ou enviado.</p>
+              <p className="mt-2 text-sm text-texto-suave">Na próxima tela, permita o acesso à câmera. Se preferir, digite o número do pedido aqui embaixo.</p>
+              <button onClick={() => setLiberado(true)} className="mt-4 w-full rounded-cartao py-3 font-bold text-white" style={{ background: LARANJA }}>Abrir câmera</button>
+            </div>
+          </div>
+        )}
         <video ref={videoRef} className="h-full w-full object-cover" muted playsInline autoPlay />
         <canvas ref={canvasRef} className="hidden" />
         {lendo && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="h-56 w-56 rounded-cartao border-4 border-white/70" /></div>}
