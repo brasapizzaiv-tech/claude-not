@@ -9,13 +9,17 @@ export const TURNOS: Record<NonNullable<Colaborador["turno"]>, { nome: string }>
 };
 
 // Vínculo de cada turno. Quem é "dia e noite" pode ter carteira de dia e free de noite.
+// Quem bate ponto no relógio é de carteira assinada (Rafael, 10/10/2026):
+// recebe pela folha, então a presença não gera diária — mesmo que o cadastro
+// diga freelance. A noite de quem faz os dois turnos segue o "vínculo da
+// noite" (ex.: CLT de dia e free de noite).
 export function vinculoDoTurno(
-  c: { turno?: string | null; vinculo?: string | null; vinculo_noite?: string | null },
+  c: { turno?: string | null; vinculo?: string | null; vinculo_noite?: string | null; bate_ponto?: boolean | null },
   turno: "dia" | "noite",
 ): "clt" | "freelance" {
-  const base = c.vinculo === "clt" ? "clt" : "freelance";
   if (turno === "noite" && c.turno === "ambos" && c.vinculo_noite) return c.vinculo_noite === "clt" ? "clt" : "freelance";
-  return base;
+  if (c.bate_ponto) return "clt";
+  return c.vinculo === "clt" ? "clt" : "freelance";
 }
 
 export const DIAS_CURTO = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];

@@ -15,6 +15,7 @@ export type Pessoa = {
   turno: "dia" | "noite" | "ambos" | "proprietario";
   vinculo: "clt" | "freelance";
   vinculo_noite: "clt" | "freelance" | null;
+  bate_ponto?: boolean;
   funcao: string | null;
   valor_dia: number | null;
   valor_noite: number | null;

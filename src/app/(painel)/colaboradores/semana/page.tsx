@@ -15,7 +15,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
   const [{ data: colabs }, { data: dez }, { data: pagos }, { data: fiado }, { data: extras }, { data: adiantamentos }] = await Promise.all([
     supabase
       .from("colaboradores")
-      .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, salario_base, recebe_10, peso_10, esporadico, ativo")
+      .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, salario_base, recebe_10, peso_10, esporadico, ativo, bate_ponto")
       .eq("ativo", true)
       .order("nome"),
     // 10%: noites pagas NESTA semana (normalmente da semana passada) + noites desta semana (pagas na próxima).
@@ -76,6 +76,13 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     semPessoa.set(b.cpf, s);
   }
 
+  // "Bate ponto" = carteira assinada: sem diária no turno do dia (src/lib/equipe.ts).
+  // Vale a partir da semana em que o ponto começou (assiduidade_config.inicio,
+  // 12/10/2026); as semanas antes disso seguem calculando como foram pagas.
+  const { data: cfgPonto } = await supabase.from("assiduidade_config").select("inicio").maybeSingle();
+  const inicioPonto = String((cfgPonto as { inicio: string | null } | null)?.inicio ?? "9999-12-31").slice(0, 10);
+  const pessoasDaSemana = ((colabs ?? []) as Pessoa[]).map((c) => ({ ...c, bate_ponto: !!c.bate_ponto && fim >= inicioPonto }));
+
   const fiadoPor: Record<string, { valor: number; n: number }> = {};
   for (const r of (fiado ?? []) as { colaborador_id: string | null; valor: number }[]) {
     if (!r.colaborador_id) continue;
@@ -89,7 +96,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       key={segunda}
       segunda={segunda}
       dias={dias}
-      pessoas={(colabs ?? []) as Pessoa[]}
+      pessoas={pessoasDaSemana}
       presencasIniciais={[...(presSemana ?? []), ...(presExtras ?? [])] as { colaborador_id: string; data: string; turno: "dia" | "noite" }[]}
       dezIniciais={(dez ?? []) as { data: string; valor: number; pagar_em: string }[]}
       pagos={(pagos ?? []) as { colaborador_id: string; valor: number; lancamento_id: string | null; desconto: number }[]}
