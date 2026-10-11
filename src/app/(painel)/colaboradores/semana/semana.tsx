@@ -19,6 +19,9 @@ export type Pessoa = {
   funcao: string | null;
   valor_dia: number | null;
   valor_noite: number | null;
+  valor_free?: number | null;    // CLT trabalhando fora da escala (free)
+  dias_dia?: number[] | null;    // escala (0=dom): pra CLT, dia fora daqui = free
+  dias_noite?: number[] | null;
   salario_base: number | null;
   recebe_10: boolean;
   peso_10: number;
@@ -32,6 +35,12 @@ type Dez = { data: string; valor: number; pagar_em: string };
 type DezLinha = { data: string; valor: string; pagar_em: string };
 
 const chave = (id: string, data: string, turno: Turno) => `${id}|${data}|${turno}`;
+
+/** Dia fora da escala da pessoa no turno (sem escala cadastrada = nunca é "fora"). */
+function foraDaEscala(p: Pessoa, turno: Turno, dow: number) {
+  const escala = (turno === "dia" ? p.dias_dia : p.dias_noite) ?? [];
+  return escala.length > 0 && !escala.includes(dow);
+}
 
 const inputCls =
   "rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
@@ -231,10 +240,11 @@ export function SemanaClient({
     });
     const noitesPagas = porNoite.filter((n) => n.nestaSemana);
     const porPessoa = naGrade.map((p) => {
-      let nDias = 0, nNoites = 0, dez10 = 0;
+      let nDias = 0, nNoites = 0, dez10 = 0, freeDia = 0, freeNoite = 0;
       for (const d of dias) {
-        if (marcadas.has(chave(p.id, d, "dia"))) nDias++;
-        if (marcadas.has(chave(p.id, d, "noite"))) nNoites++;
+        const dow = deYmd(d).getDay();
+        if (marcadas.has(chave(p.id, d, "dia"))) { nDias++; if (foraDaEscala(p, "dia", dow)) freeDia++; }
+        if (marcadas.has(chave(p.id, d, "noite"))) { nNoites++; if (foraDaEscala(p, "noite", dow)) freeNoite++; }
       }
       if (p.recebe_10) {
         for (const n of noitesPagas) {
@@ -244,8 +254,10 @@ export function SemanaClient({
       // Carteira assinada = salário à parte (não entra diária); pode ser CLT de dia e free de noite.
       const cltDia = vinculoDoTurno(p, "dia") === "clt";
       const cltNoite = vinculoDoTurno(p, "noite") === "clt";
-      const diariasDia = cltDia ? 0 : nDias * (Number(p.valor_dia) || 0);
-      const diariasNoite = cltNoite ? 0 : nNoites * (Number(p.valor_noite) || 0);
+      // CLT: só o "free" (dia fora da escala) é pago, pelo valor do free.
+      const nFree = (cltDia ? freeDia : 0) + (cltNoite ? freeNoite : 0);
+      const diariasDia = cltDia ? freeDia * (Number(p.valor_free) || 0) : nDias * (Number(p.valor_dia) || 0);
+      const diariasNoite = cltNoite ? freeNoite * (Number(p.valor_free) || 0) : nNoites * (Number(p.valor_noite) || 0);
       const diarias = diariasDia + diariasNoite;
       const clt = cltDia && cltNoite;
       const rotuloVinculo = cltDia && cltNoite ? "CLT (salário fixo — só o 10%)"
@@ -261,7 +273,7 @@ export function SemanaClient({
       const descontoMotivo = extrasSem[p.id]?.descMotivo ?? "";
       const bruto = diarias + dez10 + extra;
       const total = Math.max(0, bruto - descontoSem);
-      return { p, nDias, nNoites, diarias, diariasDia, diariasNoite, dez10, extra, extraMotivo, extraTurno, extraDia, extraNoite, descontoSem: Math.min(descontoSem, bruto), descontoMotivo, total, clt, cltDia, cltNoite, rotuloVinculo };
+      return { p, nDias, nNoites, nFree, diarias, diariasDia, diariasNoite, dez10, extra, extraMotivo, extraTurno, extraDia, extraNoite, descontoSem: Math.min(descontoSem, bruto), descontoMotivo, total, clt, cltDia, cltNoite, rotuloVinculo };
     });
     const totalPool = noitesPagas.reduce((s, n) => s + n.pool, 0);
     const totalDiarias = porPessoa.reduce((s, x) => s + x.diarias, 0);
@@ -465,6 +477,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           detalhe: [
             x.nDias ? `${x.nDias} dia${x.nDias > 1 ? "s" : ""}` : "",
             x.nNoites ? `${x.nNoites} noite${x.nNoites > 1 ? "s" : ""}` : "",
+            x.nFree ? `${x.nFree} free${x.nFree > 1 ? "s" : ""} fora da escala` : "",
             x.dez10 > 0.005 ? `10% ${fmtNum(x.dez10)}` : "",
             x.extra > 0.005 ? `extra ${x.extraTurno === "dia" ? "dia" : "noite"} ${fmtNum(x.extra)}${x.extraMotivo ? ` ${x.extraMotivo}` : ""}` : "",
             x.descontoSem > 0.005 ? `desconto ${fmtNum(x.descontoSem)}${x.descontoMotivo ? ` ${x.descontoMotivo}` : ""}` : "",
@@ -791,6 +804,14 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             <Icone nome="noite" tamanho={17} titulo="Trabalhou de noite" />
                           </button>
                         </div>
+                        {(() => {
+                          // CLT trabalhando fora da escala = free (pago pelo "valor do free").
+                          const dow = deYmd(d).getDay();
+                          const fDia = kd && vinculoDoTurno(p, "dia") === "clt" && foraDaEscala(p, "dia", dow);
+                          const fNoite = kn && vinculoDoTurno(p, "noite") === "clt" && foraDaEscala(p, "noite", dow);
+                          if (!fDia && !fNoite) return null;
+                          return <div className="mt-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400" title={p.valor_free ? `Free: ${brl(Number(p.valor_free))}` : "Free sem valor: preencha o valor do free no cadastro"}>free{p.valor_free ? "" : " ?"}</div>;
+                        })()}
                         {(() => {
                           // Horários do relógio de ponto (migration 0221), primeiro e último de cada turno.
                           const faixa = (t: Turno) => {

@@ -42,6 +42,7 @@ export async function salvarColaborador(formData: FormData) {
     salario_base: numBR(formData.get("salario_base")),
     valor_dia: numBR(formData.get("valor_dia")),
     valor_noite: numBR(formData.get("valor_noite")),
+    valor_free: numBR(formData.get("valor_free")),
     recebe_10: formData.get("recebe_10") === "on",
     peso_10: numBR(formData.get("peso_10")) ?? 1,
     esporadico: formData.get("esporadico") === "on",

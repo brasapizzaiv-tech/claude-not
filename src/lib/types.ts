@@ -44,6 +44,7 @@ export type Colaborador = {
   faz_cardapio?: boolean;
   bate_ponto?: boolean;
   cpf?: string | null;
+  valor_free?: number | null;
   checklist_setores?: string[] | null;
   desligado_em?: string | null;
   desligado_motivo?: string | null;

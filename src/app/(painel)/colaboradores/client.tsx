@@ -451,7 +451,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {(cltDia || cltNoite) && (
+              {(cltDia || cltNoite || !!editando?.bate_ponto) && (
                 <div>
                   <label className={lbl}>Salário (R$)</label>
                   <input name="salario_base" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.salario_base)} className={inputCls} />
@@ -467,6 +467,12 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
                 <div>
                   <label className={`${lbl} flex items-center gap-1.5`}><Icone nome="noite" tamanho={13} /> Valor da noite (R$)</label>
                   <input name="valor_noite" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_noite)} className={inputCls} />
+                </div>
+              )}
+              {(cltDia || cltNoite || !!editando?.bate_ponto) && (
+                <div>
+                  <label className={lbl} title="Dia trabalhado fora da escala de quem é carteira assinada (ex.: um sábado). Vazio = não paga.">Valor do free (R$)</label>
+                  <input name="valor_free" inputMode="decimal" placeholder="0,00" defaultValue={fmtR(editando?.valor_free)} className={inputCls} />
                 </div>
               )}
               <div>
