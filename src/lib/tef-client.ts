@@ -54,7 +54,7 @@ export type TefDados = {
   rede: string | null;
   bandeira: string | null;
   produto: string | null;
-  tipo: "credito" | "debito" | "voucher";
+  tipo: "credito" | "debito" | "voucher" | "pix";
   parcelas: number;
   panMascarado: string | null;
   viaCliente: string[];

@@ -1035,7 +1035,7 @@ export type TefPagamento = {
   rede: string | null;
   bandeira: string | null;
   produto: string | null;
-  tipo: "credito" | "debito" | "voucher";
+  tipo: "credito" | "debito" | "voucher" | "pix";
   parcelas: number;
   panMascarado: string | null;
   viaCliente: string[];
@@ -1468,7 +1468,7 @@ export async function registrarPixTeste(r: {
 export async function registrarTefAvulso(
   t: {
     idAgente: string; terminal: string | null; nsu: string | null; nsuHost: string | null; autorizacao: string | null;
-    rede: string | null; bandeira: string | null; produto: string | null; tipo: "credito" | "debito" | "voucher";
+    rede: string | null; bandeira: string | null; produto: string | null; tipo: "credito" | "debito" | "voucher" | "pix";
     parcelas: number; panMascarado: string | null; viaCliente: string[]; viaLoja: string[];
   },
   valor: number,

@@ -6,7 +6,7 @@
 // botão de "auto preencher o que falta", cédulas (Shift soma), observação e,
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { tefConfirmar, tefDisponivel, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { tefConfirmar, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
 import { atalhoDoTipo, ehCartaoTipo, iconeDoTipo, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
 import { Icone } from "@/components/icone";
 
@@ -204,9 +204,13 @@ export function PainelPagamentos({
         onTefConfirmado?.(p.uid);
       }
       setTefEtapa("pinpad");
-      const r = await tefVenda({ valor: cent(aplica), tipo, parcelas: tipo === "credito" ? parcelas : 1 });
+      // Pix na maquininha: o QR aparece no pinpad e o agente só responde quando
+      // o cliente paga (ou cancela). Daí pra frente é igual ao cartão.
+      const r = tipo === "pix"
+        ? await tefPix({ valor: cent(aplica) })
+        : await tefVenda({ valor: cent(aplica), tipo, parcelas: tipo === "credito" ? parcelas : 1 });
       if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
-      if (!r.aprovada) { setAviso(`Cartão não aprovado: ${r.mensagem || "recusado"}.`); return; }
+      if (!r.aprovada) { setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`); return; }
       const dados: TefDados = {
         idAgente: r.idAgente || "",
         terminal: r.terminal ?? null,
@@ -395,10 +399,12 @@ export function PainelPagamentos({
               {tefEtapa ? (
                 <div className="text-center">
                   <p className="text-base font-bold text-emerald-800 dark:text-emerald-300">
-                    {tefEtapa === "enviando" ? "Enviando pro pinpad…" : "Aguardando o cartão no pinpad…"}
+                    {tefEtapa === "enviando" ? "Enviando pro pinpad…" : T.tef(forma) === "pix" ? "Aguardando o Pix no pinpad…" : "Aguardando o cartão no pinpad…"}
                   </p>
                   <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                    O cliente insere ou aproxima o cartão e digita a senha. Pra desistir, cancele no pinpad.
+                    {T.tef(forma) === "pix"
+                      ? "O cliente lê o QR da maquininha com o app do banco. Assim que pagar, entra sozinho. Pra desistir, cancele no pinpad."
+                      : "O cliente insere ou aproxima o cartão e digita a senha. Pra desistir, cancele no pinpad."}
                   </p>
                 </div>
               ) : (
@@ -422,7 +428,9 @@ export function PainelPagamentos({
                     onClick={passarNoCartao}
                     className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
                   >
-                    <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && T.tef(forma) === "credito" ? ` em ${parcelas}x` : ""}
+                    {T.tef(forma) === "pix"
+                      ? <><Icone nome="rapido" tamanho={15} className="mr-1.5" /> Mostrar QR na maquininha · {brl(cent(aplica))}</>
+                      : <><Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && T.tef(forma) === "credito" ? ` em ${parcelas}x` : ""}</>}
                     <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-mini font-semibold">Enter</span>
                   </button>
                   <p className="mt-1.5 text-center text-mini text-emerald-800/70 dark:text-emerald-400/70">

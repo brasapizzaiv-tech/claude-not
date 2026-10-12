@@ -4,7 +4,7 @@
 // formas-pagamento-server.ts); "saldo" e "equipe" são fluxos fixos do caixa.
 import type { NomeIcone } from "@/components/icone";
 
-export type TipoForma = "dinheiro" | "pix" | "credito" | "debito" | "cartao" | "vale" | "outro" | "saldo" | "equipe";
+export type TipoForma = "dinheiro" | "pix" | "pix_maquina" | "credito" | "debito" | "cartao" | "vale" | "outro" | "saldo" | "equipe";
 /** Tipos que o dono escolhe na tela de cadastro (os fixos ficam de fora). */
 export type TipoFormaCadastro = Exclude<TipoForma, "saldo" | "equipe">;
 
@@ -33,6 +33,7 @@ export type FormaPagamento = {
 export const TIPOS_FORMA: { id: TipoFormaCadastro; label: string; explica: string }[] = [
   { id: "dinheiro", label: "Dinheiro", explica: "pede o valor recebido e calcula o troco" },
   { id: "pix", label: "Pix", explica: "mostra o QR quando o Pix online está ligado; nota automática" },
+  { id: "pix_maquina", label: "Pix na maquininha", explica: "mostra o QR na tela do pinpad (TEF); nota automática" },
   { id: "credito", label: "Cartão de crédito", explica: "passa no pinpad (TEF) como crédito, com parcelas; nota automática" },
   { id: "debito", label: "Cartão de débito", explica: "passa no pinpad (TEF) como débito; nota automática" },
   { id: "cartao", label: "Cartão (sem dizer qual)", explica: "não passa no pinpad; pede a bandeira à mão; nota automática" },
@@ -54,7 +55,7 @@ export function tipoPeloNome(nome: string | null | undefined): TipoForma {
   const f = (nome ?? "").toLowerCase();
   if (!f) return "outro";
   if (f.includes("dinheiro")) return "dinheiro";
-  if (f.includes("pix")) return "pix";
+  if (f.includes("pix")) return f.includes("maquin") || f.includes("máquin") || f.includes("pinpad") ? "pix_maquina" : "pix";
   if (f.includes("créd") || f.includes("cred")) return "credito";
   if (f.includes("déb") || f.includes("deb")) return "debito";
   if (f.includes("vale") || f.includes("refei") || f.includes("alimenta")) return "vale";
@@ -76,7 +77,8 @@ export const daTroco = (tipo: TipoForma) => tipo === "dinheiro";
 export const ehCartaoTipo = (tipo: TipoForma) => tipo === "credito" || tipo === "debito" || tipo === "cartao";
 
 /** O que o pinpad (TEF) precisa saber; null = não passa no pinpad. */
-export function tefDoTipo(tipo: TipoForma): "credito" | "debito" | "voucher" | null {
+export function tefDoTipo(tipo: TipoForma): "credito" | "debito" | "voucher" | "pix" | null {
+  if (tipo === "pix_maquina") return "pix";
   if (tipo === "credito") return "credito";
   if (tipo === "debito") return "debito";
   if (tipo === "vale") return "voucher";
@@ -85,14 +87,15 @@ export function tefDoTipo(tipo: TipoForma): "credito" | "debito" | "voucher" | n
 
 /** Pix, cartão e vale entram na fila da nota automática; dinheiro é manual. */
 export function emiteNotaAuto(tipo: TipoForma): boolean {
-  return tipo === "pix" || tipo === "credito" || tipo === "debito" || tipo === "cartao" || tipo === "vale";
+  return tipo === "pix" || tipo === "pix_maquina" || tipo === "credito" || tipo === "debito" || tipo === "cartao" || tipo === "vale";
 }
 
 /** Código tPag da NFC-e (Focus/SEFAZ) por tipo. */
 export function codigoFiscalDoTipo(tipo: TipoForma): string {
   switch (tipo) {
     case "dinheiro": return "01";
-    case "pix": return "17";
+    case "pix":
+    case "pix_maquina": return "17";
     case "credito": return "03";
     case "debito": return "04";
     case "cartao": return "03"; // sem saber qual, vai como crédito (era "dinheiro" antes)
@@ -106,7 +109,8 @@ export function codigoFiscalDoTipo(tipo: TipoForma): string {
 export function iconeDoTipo(tipo: TipoForma): NomeIcone {
   switch (tipo) {
     case "dinheiro": return "dinheiro";
-    case "pix": return "rapido";
+    case "pix":
+    case "pix_maquina": return "rapido";
     case "credito":
     case "debito":
     case "cartao": return "cartao";
@@ -122,6 +126,7 @@ export function atalhoDoTipo(tipo: TipoForma): string | null {
   switch (tipo) {
     case "dinheiro": return "A";
     case "pix": return "P";
+    case "pix_maquina": return "Q";
     case "credito": return "C";
     case "debito": return "B";
     case "cartao": return "T";
