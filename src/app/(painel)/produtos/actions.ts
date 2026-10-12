@@ -50,6 +50,7 @@ export async function salvarProduto(formData: FormData) {
     cfop: fiscalTxt("cfop"),
     csosn: fiscalTxt("csosn"),
     origem: fiscalTxt("origem") ?? "0",
+    contagem_sim_nao: formData.get("contagem_sim_nao") === "on",
   };
 
   let produtoId = id;
@@ -214,4 +215,29 @@ export async function salvarIdealFardo(produtoId: string, campo: "estoque_ideal"
   if (error) return { ok: false as const, mensagem: error.message };
   revalidatePath("/produtos");
   return { ok: true as const };
+}
+
+// Contagem "precisa comprar?" (sim/não) em vários produtos de uma vez.
+export async function marcarContagemSimNao(ids: string[], valor: boolean) {
+  const supabase = await createClient();
+  if (!ids.length) return { ok: true as const, total: 0 };
+  const { error } = await supabase.from("produtos").update({ contagem_sim_nao: valor }).in("id", ids);
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath("/produtos");
+  return { ok: true as const, total: ids.length };
+}
+
+// Mescla dois cadastros do mesmo produto (vieram de fornecedores diferentes
+// com nomes diferentes): tudo do `de` passa pro `para` e o `de` é desativado.
+// A regra mora no banco (mesclar_produtos, migration 0231).
+export async function mesclarProdutos(de: string, para: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("mesclar_produtos", { p_de: de, p_para: para });
+  if (error) return { ok: false as const, mensagem: error.message };
+  const r = data as { ok: boolean; erro?: string; de?: string; para?: string };
+  if (!r?.ok) return { ok: false as const, mensagem: r?.erro ?? "Não consegui mesclar." };
+  revalidatePath("/produtos");
+  revalidatePath("/contagens");
+  revalidatePath("/cotacoes");
+  return { ok: true as const, de: r.de ?? "", para: r.para ?? "" };
 }

@@ -8,6 +8,7 @@ type RpcProduto = {
   nome: string;
   unidade: string;
   categoria: string | null;
+  sim_nao?: boolean;
 };
 
 export default async function ContarPublicoPage({
@@ -45,6 +46,7 @@ export default async function ContarPublicoPage({
         nome: p.nome,
         unidade: p.unidade,
         categorias: p.categoria ? { nome: p.categoria } : null,
+        contagem_sim_nao: !!p.sim_nao,
       }) as Produto,
   );
 

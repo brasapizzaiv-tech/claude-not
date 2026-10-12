@@ -31,15 +31,20 @@ export default async function CotacaoDetalhePage({
   // Estoque contado na contagem base (se houver). A presença aqui = produto
   // que fez parte daquela contagem (o que foi "solicitado").
   const contado = new Map<string, number>();
+  // Itens "precisa comprar?" da contagem (migration 0231): sem quantidade.
+  const simNao = new Map<string, boolean>();
   // Produtos que faziam parte da LISTA da contagem (pelas categorias atribuídas):
   // item deixado em branco na contagem vale 0 e entra na cotação do mesmo jeito.
   const daLista = new Set<string>();
   if (cotacao.contagem_id) {
     const [{ data: cont }, { data: atrib }] = await Promise.all([
-      supabase.from("contagem_itens").select("produto_id, qtd_estoque").eq("contagem_id", cotacao.contagem_id),
+      supabase.from("contagem_itens").select("produto_id, qtd_estoque, precisa_comprar").eq("contagem_id", cotacao.contagem_id),
       supabase.from("contagem_atribuicoes").select("categoria_id").eq("contagem_id", cotacao.contagem_id),
     ]);
-    for (const c of cont ?? []) contado.set(c.produto_id, Number(c.qtd_estoque) || 0);
+    for (const c of cont ?? []) {
+      contado.set(c.produto_id, Number(c.qtd_estoque) || 0);
+      if (typeof c.precisa_comprar === "boolean") simNao.set(c.produto_id, c.precisa_comprar);
+    }
     const catIds = new Set((atrib ?? []).map((a) => a.categoria_id as string | null).filter(Boolean) as string[]);
     if (catIds.size) {
       for (const p of (prodData as unknown as { id: string; categoria_id?: string | null }[]) ?? []) {
@@ -71,7 +76,10 @@ export default async function CotacaoDetalhePage({
     const fardo = Number(p.fardo) || 0;
     // Sugestão = o que falta para o estoque ideal, arredondada para CIMA
     // até fechar fardos inteiros (quando o produto tem fardo definido).
-    const bruta = Math.max(0, ideal - cont);
+    // "Precisa comprar?" respondido na contagem: não tem número contado.
+    // Precisa → o estoque ideal (ou um fardo, ou 1); tem o suficiente → nada.
+    const sn = simNao.get(p.id);
+    const bruta = sn === undefined ? Math.max(0, ideal - cont) : sn ? Math.max(ideal, fardo > 1 ? fardo : 1) : 0;
     const sugestao = fardo > 1 && bruta > 0 ? Math.ceil(bruta / fardo) * fardo : bruta;
     const existente = jaCotado.get(p.id);
     return {
@@ -80,6 +88,7 @@ export default async function CotacaoDetalhePage({
       unidade: p.unidade,
       categoria: p.categorias?.nome ?? "Sem categoria",
       contado: cont,
+      precisaComprar: sn,
       ideal,
       sugestao,
       fardo,

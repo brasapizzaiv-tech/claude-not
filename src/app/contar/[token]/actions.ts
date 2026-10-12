@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import type { Parcela } from "@/lib/contagem-parcelas";
 
-type Item = { produto_id: string; qtd_estoque: number; qtd_pedir: number; preenchido?: string; parcelas?: Parcela[] };
+type Item = { produto_id: string; qtd_estoque: number; qtd_pedir: number; preenchido?: string; parcelas?: Parcela[]; precisa_comprar?: boolean };
 
 export type EtiquetaContagem =
   | {

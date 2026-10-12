@@ -100,6 +100,8 @@ export type Produto = {
   estoque_ideal: number;
   fardo: number;
   exclusivo: boolean;
+  /** Na contagem só pergunta "precisa comprar?" (item difícil de contar). */
+  contagem_sim_nao?: boolean;
   validade_dias: number | null;
   validade_congelado: number | null;
   validade_resfriado: number | null;

@@ -129,7 +129,7 @@ export default async function CmvPage({
   const [{ data: ciData }, { data: prodData }, fatDias] = await Promise.all([
     supabase
       .from("contagem_itens")
-      .select("contagem_id, produto_id, qtd_estoque")
+      .select("contagem_id, produto_id, qtd_estoque, precisa_comprar")
       .in("contagem_id", idsContagem.length ? idsContagem : ["00000000-0000-0000-0000-000000000000"]),
     supabase
       .from("produtos")
@@ -151,7 +151,9 @@ export default async function CmvPage({
   const qtdEF = new Map<string, number>();
   const qDataEI = new Map<string, string>();
   const qDataEF = new Map<string, string>();
-  for (const r of (ciData as { contagem_id: string; produto_id: string; qtd_estoque: number }[]) ?? []) {
+  for (const r of (ciData as { contagem_id: string; produto_id: string; qtd_estoque: number; precisa_comprar: boolean | null }[]) ?? []) {
+    // Item "precisa comprar?" não tem quantidade contada: não entra no estoque.
+    if (typeof r.precisa_comprar === "boolean") continue;
     const d = dataDe.get(r.contagem_id) ?? "";
     if (eiIds.has(r.contagem_id) && (!qDataEI.has(r.produto_id) || d >= qDataEI.get(r.produto_id)!)) {
       qtdEI.set(r.produto_id, Number(r.qtd_estoque));

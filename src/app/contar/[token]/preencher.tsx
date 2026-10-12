@@ -10,13 +10,14 @@ import { salvarContagemPublica, buscarProdutosContagem, consultarEtiquetaContage
 import { mapaReferencia, suspeito, explicacao, type Referencia } from "@/lib/contagem-referencia";
 import { ONDE_ROTULO, ehOnde, lerParcelas, type Parcela } from "@/lib/contagem-parcelas";
 
-type ExtraProduto = { id: string; nome: string; unidade: string; categoria: string };
+type ExtraProduto = { id: string; nome: string; unidade: string; categoria: string; sim_nao?: boolean };
 
 type ItemInicial = {
   produto_id: string;
   qtd_estoque: number;
   qtd_pedir: number;
   parcelas?: unknown;
+  precisa_comprar?: boolean | null;
 };
 
 // Caixas iniciais de um item: as parcelas gravadas (com onde e etiqueta), ou
@@ -77,6 +78,17 @@ export function PreencherClient({
   const [numeroEtq, setNumeroEtq] = useState("");
   const [lidas, setLidas] = useState(0);
 
+  // Itens "precisa comprar?" (produto marcado em Produtos): em vez da
+  // quantidade, a pessoa responde sim ou não. true = precisa comprar.
+  const [simNao, setSimNao] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    for (const i of itens) if (typeof i.precisa_comprar === "boolean") m[i.produto_id] = i.precisa_comprar;
+    return m;
+  });
+  // Filtro "Faltam": a lista de quem faltava na hora do toque fica fixa, pra o
+  // item não sumir da tela enquanto a pessoa ainda está digitando nele.
+  const [soFaltam, setSoFaltam] = useState<Set<string> | null>(null);
+
   const chaveRascunho = `contagem_rascunho_${token}`;
 
   // Restaura o rascunho salvo no aparelho (proteção contra recarregar a página).
@@ -89,13 +101,14 @@ export function PreencherClient({
         // Rascunhos antigos têm só o texto de cada caixa; os novos têm onde/etiqueta.
         const norm = (o: Rascunho): Record<string, Caixa[]> =>
           Object.fromEntries(Object.entries(o).map(([k, cs]) => [k, normalizarCaixas(Array.isArray(cs) ? cs : [])]));
-        const draft = JSON.parse(raw) as { v?: Rascunho; x?: ExtraProduto[] } | Rascunho;
+        const draft = JSON.parse(raw) as { v?: Rascunho; x?: ExtraProduto[]; s?: Record<string, boolean> } | Rascunho;
         if (draft && typeof draft === "object") {
-          const novo = draft as { v?: Rascunho; x?: ExtraProduto[] };
+          const novo = draft as { v?: Rascunho; x?: ExtraProduto[]; s?: Record<string, boolean> };
           if (novo.v && typeof novo.v === "object" && !Array.isArray(novo.v)) {
             const v = norm(novo.v);
             setValores((atual) => ({ ...atual, ...v }));
             if (Array.isArray(novo.x)) setExtras(novo.x);
+            if (novo.s && typeof novo.s === "object") setSimNao((atual) => ({ ...atual, ...novo.s }));
           } else {
             const antigo = norm(draft as Rascunho);
             setValores((atual) => ({ ...atual, ...antigo }));
@@ -107,8 +120,15 @@ export function PreencherClient({
     return () => clearTimeout(id);
   }, [chaveRascunho]);
 
-  function gravarRascunho(v: Record<string, Caixa[]>, x: ExtraProduto[]) {
-    try { localStorage.setItem(chaveRascunho, JSON.stringify({ v, x })); } catch { /* sem storage */ }
+  function gravarRascunho(v: Record<string, Caixa[]>, x: ExtraProduto[], sn: Record<string, boolean> = simNao) {
+    try { localStorage.setItem(chaveRascunho, JSON.stringify({ v, x, s: sn })); } catch { /* sem storage */ }
+  }
+  function responderSimNao(produtoId: string, precisa: boolean) {
+    setSimNao((atual) => {
+      const novo = { ...atual, [produtoId]: precisa };
+      gravarRascunho(valores, extras, novo);
+      return novo;
+    });
   }
   function setCaixas(produtoId: string, caixas: Caixa[]) {
     setValores((v) => {
@@ -121,9 +141,12 @@ export function PreencherClient({
   const totalDe = (produtoId: string) =>
     Math.round((valores[produtoId] ?? []).reduce((s, b) => s + calcular(b.v), 0) * 1000) / 1000;
 
+  const ehSimNao = (produtoId: string) =>
+    !!produtos.find((p) => p.id === produtoId)?.contagem_sim_nao || !!extras.find((x) => x.id === produtoId)?.sim_nao;
+
   // Preenchido = o contador respondeu algo (0 também vale!).
   const foiPreenchido = (produtoId: string) =>
-    (valores[produtoId] ?? []).some((b) => b.v.trim() !== "");
+    ehSimNao(produtoId) ? typeof simNao[produtoId] === "boolean" : (valores[produtoId] ?? []).some((b) => b.v.trim() !== "");
 
   // ---- etiquetas lidas na contagem ----
   // Cada etiqueta vira uma caixa no item dela, com a quantidade e o "onde"
@@ -139,6 +162,7 @@ export function PreencherClient({
     if (r.status !== "ativa") { avisar(`Nº ${r.numero} já está "${r.status}" — não conta`); return; }
     if (!r.produto_id) { avisar(`Nº ${r.numero} não está ligada a um produto do estoque`); return; }
     const pid = r.produto_id;
+    if (ehSimNao(pid)) { avisar(`${r.nome_produto || r.produto}: esse item é só "precisa comprar?" — responda na lista`); return; }
     const jaLida = Object.values(valores).some((cs) => cs.some((c) => c.etiqueta?.id === r.id));
     if (jaLida) { avisar(`Nº ${r.numero} já foi lida nesta contagem`); return; }
     const naLista = produtos.some((p) => p.id === pid) || extras.some((x) => x.id === pid);
@@ -174,7 +198,7 @@ export function PreencherClient({
   }
   // Digitou mais do que podia ter e ainda não confirmou que contou de novo.
   const ehSuspeito = (produtoId: string) => suspeito(totalDe(produtoId), refs.get(produtoId));
-  const precisaConferir = (produtoId: string) => ehSuspeito(produtoId) && !confirmados.has(produtoId);
+  const precisaConferir = (produtoId: string) => !ehSimNao(produtoId) && ehSuspeito(produtoId) && !confirmados.has(produtoId);
 
   function AvisoRef({ id }: { id: string }) {
     const r = refs.get(id);
@@ -206,6 +230,34 @@ export function PreencherClient({
       </div>
     );
   }
+
+  // "Precisa comprar?" — render function (não componente: componente criado
+  // dentro do render remonta a cada tecla).
+  const botoesSimNao = (id: string) => {
+    const r = simNao[id];
+    const base = "flex-1 rounded-lg py-3 text-sm font-semibold ring-1 transition";
+    return (
+      <div>
+        <p className="mb-1.5 text-sm text-zinc-500">Só de olhar: precisa comprar?</p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => responderSimNao(id, false)}
+            className={`${base} ${r === false ? "bg-emerald-600 text-white ring-emerald-600" : "bg-white text-zinc-700 ring-zinc-300 dark:bg-zinc-950 dark:text-zinc-200 dark:ring-zinc-700"}`}
+          >
+            Tem o suficiente
+          </button>
+          <button
+            type="button"
+            onClick={() => responderSimNao(id, true)}
+            className={`${base} ${r === true ? "bg-orange-500 text-white ring-orange-500" : "bg-white text-zinc-700 ring-zinc-300 dark:bg-zinc-950 dark:text-zinc-200 dark:ring-zinc-700"}`}
+          >
+            Precisa comprar
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const todosItens = useMemo(
     () => [
@@ -257,14 +309,19 @@ export function PreencherClient({
   const semAcento = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const gruposFiltrados = useMemo(() => {
     const b = semAcento(busca.trim());
-    if (!b) return grupos;
+    if (!b && !soFaltam) return grupos;
     return grupos
       .map(([cat, itens]) => [
         cat,
-        itens.filter((p) => semAcento(p.nome).includes(b)),
+        itens.filter((p) => (!b || semAcento(p.nome).includes(b)) && (!soFaltam || soFaltam.has(p.id))),
       ] as [string, Produto[]])
       .filter(([, itens]) => itens.length > 0);
-  }, [grupos, busca]);
+  }, [grupos, busca, soFaltam]);
+  const faltamAgora = todosItens.length - preenchidos;
+  function filtrarFaltam(ligar: boolean) {
+    setSoFaltam(ligar ? new Set(todosItens.filter((p) => !foiPreenchido(p.id)).map((p) => p.id)) : null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   function salvar() {
     // TODO item precisa de resposta — não tem nenhum? Digite 0.
@@ -293,7 +350,15 @@ export function PreencherClient({
     startSave(async () => {
       const payload = todosItens
         .filter((p) => foiPreenchido(p.id))
-        .map((p) => ({
+        .map((p) => ehSimNao(p.id) ? ({
+          // "Precisa comprar?": sem quantidade; a cotação lê precisa_comprar.
+          produto_id: p.id,
+          qtd_estoque: 0,
+          qtd_pedir: 0,
+          preenchido: "true",
+          precisa_comprar: simNao[p.id] === true,
+          parcelas: [] as Parcela[],
+        }) : ({
           produto_id: p.id,
           qtd_estoque: totalDe(p.id),
           qtd_pedir: 0,
@@ -369,6 +434,27 @@ export function PreencherClient({
                 <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={15} /> Ler etiquetas{lidas > 0 ? ` (${lidas})` : ""}</span>
               </button>
             </div>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => filtrarFaltam(false)}
+                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${!soFaltam ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-600 ring-1 ring-zinc-300 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-zinc-700"}`}
+              >
+                Todos ({todosItens.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => filtrarFaltam(true)}
+                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${soFaltam ? "bg-orange-500 text-white" : "bg-white text-orange-600 ring-1 ring-orange-300 dark:bg-zinc-900 dark:ring-orange-800"}`}
+              >
+                Faltam ({faltamAgora})
+              </button>
+              {soFaltam && faltamAgora < soFaltam.size && (
+                <button type="button" onClick={() => filtrarFaltam(true)} className="text-xs text-zinc-500 underline">
+                  tirar os já feitos
+                </button>
+              )}
+            </div>
             {leitor && (
               <LeitorQr titulo="Ler etiquetas da contagem" aoLer={aoLerQr} fechar={() => setLeitor(false)} aviso={avisoLeitor}>
                 <p className="py-2 text-center text-xs text-zinc-400">
@@ -419,21 +505,25 @@ export function PreencherClient({
                                 ({p.unidade})
                               </span>
                             </div>
-                            <label className="block text-sm text-zinc-500">
-                              Em estoque
-                              <span className="ml-1 text-xs text-zinc-400">
-                                (em mais de um lugar? toque em “+ caixa”)
-                              </span>
-                              <div className="mt-1">
-                                <EstoqueInput
-                                  name={`estoque_${p.id}`}
-                                  caixas={valores[p.id] ?? [{ v: "", onde: null }]}
-                                  onCaixasChange={(cs) => setCaixas(p.id, cs)}
-                                  comLocal
-                                />
-                              </div>
-                            </label>
-                            <AvisoRef id={p.id} />
+                            {p.contagem_sim_nao ? botoesSimNao(p.id) : (
+                              <>
+                                <label className="block text-sm text-zinc-500">
+                                  Em estoque
+                                  <span className="ml-1 text-xs text-zinc-400">
+                                    (em mais de um lugar? toque em “+ caixa”)
+                                  </span>
+                                  <div className="mt-1">
+                                    <EstoqueInput
+                                      name={`estoque_${p.id}`}
+                                      caixas={valores[p.id] ?? [{ v: "", onde: null }]}
+                                      onCaixasChange={(cs) => setCaixas(p.id, cs)}
+                                      comLocal
+                                    />
+                                  </div>
+                                </label>
+                                <AvisoRef id={p.id} />
+                              </>
+                            )}
                           </div>
                         );
                       })}
@@ -461,18 +551,22 @@ export function PreencherClient({
                             </div>
                             <button onClick={() => removerExtra(p.id)} className="text-xs text-zinc-400 hover:text-red-600">remover</button>
                           </div>
-                          <label className="block text-sm text-zinc-500">
-                            Em estoque
-                            <div className="mt-1">
-                              <EstoqueInput
-                                name={`estoque_${p.id}`}
-                                caixas={valores[p.id] ?? [{ v: "", onde: null }]}
-                                onCaixasChange={(cs) => setCaixas(p.id, cs)}
-                                comLocal
-                              />
-                            </div>
-                          </label>
-                          <AvisoRef id={p.id} />
+                          {p.sim_nao ? botoesSimNao(p.id) : (
+                            <>
+                              <label className="block text-sm text-zinc-500">
+                                Em estoque
+                                <div className="mt-1">
+                                  <EstoqueInput
+                                    name={`estoque_${p.id}`}
+                                    caixas={valores[p.id] ?? [{ v: "", onde: null }]}
+                                    onCaixasChange={(cs) => setCaixas(p.id, cs)}
+                                    comLocal
+                                  />
+                                </div>
+                              </label>
+                              <AvisoRef id={p.id} />
+                            </>
+                          )}
                         </div>
                       );
                     })}

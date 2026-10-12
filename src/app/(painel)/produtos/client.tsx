@@ -15,6 +15,8 @@ import {
   marcarExclusivo,
   marcarExclusivosEmLote,
   salvarIdealFardo,
+  marcarContagemSimNao,
+  mesclarProdutos,
 } from "./actions";
 
 // Campo numérico editável na própria lista: salva ao sair do campo ou no Enter,
@@ -133,6 +135,38 @@ export function ProdutosClient({
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [bulkForn, setBulkForn] = useState("");
   const [bulkMsg, setBulkMsg] = useState<string | null>(null);
+  // Mesclar dois cadastros do mesmo produto: qual dos dois fica.
+  const [mesclar, setMesclar] = useState<{ a: Produto; b: Produto; fica: string } | null>(null);
+  const [mesclarErro, setMesclarErro] = useState<string | null>(null);
+  function abrirMesclar() {
+    const [a, b] = produtos.filter((p) => sel.has(p.id));
+    if (!a || !b) return;
+    // Sugere ficar o que tem mais fornecedores (o cadastro "principal").
+    const fica = (vinc.get(b.id)?.size ?? 0) > (vinc.get(a.id)?.size ?? 0) ? b.id : a.id;
+    setMesclarErro(null);
+    setMesclar({ a, b, fica });
+  }
+  function confirmarMesclar() {
+    if (!mesclar) return;
+    const para = mesclar.fica;
+    const de = mesclar.a.id === para ? mesclar.b.id : mesclar.a.id;
+    start(async () => {
+      const r = await mesclarProdutos(de, para);
+      if (!r.ok) { setMesclarErro(r.mensagem); return; }
+      setMesclar(null);
+      setSel(new Set());
+      setBulkMsg(`✓ "${r.de}" foi mesclado em "${r.para}". Contagens, cotações, pedidos, notas e fornecedores passaram pra ele.`);
+      router.refresh();
+    });
+  }
+  function simNaoSelecionados(valor: boolean) {
+    const ids = [...sel];
+    start(async () => {
+      const r = await marcarContagemSimNao(ids, valor);
+      setBulkMsg(r.ok ? `✓ ${r.total} produto(s): na contagem ${valor ? "só pergunta se precisa comprar" : "volta a pedir a quantidade"}.` : r.mensagem);
+      router.refresh();
+    });
+  }
   function toggleSel(id: string) {
     setSel((s) => {
       const n = new Set(s);
@@ -278,6 +312,31 @@ export function ProdutosClient({
           >
             {proc ? "Vinculando..." : "Vincular ao fornecedor"}
           </button>
+          {sel.size === 2 && (
+            <button
+              onClick={abrirMesclar}
+              disabled={proc}
+              title="Os dois são o mesmo produto com nomes diferentes? Junta num só."
+              className="min-h-11 rounded-controle border border-orange-500 px-4 text-sm font-semibold text-orange-700 hover:bg-orange-100 disabled:opacity-60 dark:text-orange-300 dark:hover:bg-orange-900/30"
+            >
+              Mesclar os 2
+            </button>
+          )}
+          <button
+            onClick={() => simNaoSelecionados(true)}
+            disabled={proc}
+            title="Na contagem, em vez da quantidade, pergunta só se precisa comprar"
+            className="min-h-11 rounded-controle border border-borda-forte px-3 text-sm text-texto-suave hover:text-texto disabled:opacity-60"
+          >
+            Contagem: só “precisa comprar?”
+          </button>
+          <button
+            onClick={() => simNaoSelecionados(false)}
+            disabled={proc}
+            className="min-h-11 rounded-controle border border-borda-forte px-3 text-sm text-texto-suave hover:text-texto disabled:opacity-60"
+          >
+            Contagem: quantidade
+          </button>
           <button
             onClick={() => setSel(new Set())}
             className="text-xs text-texto-suave hover:text-texto-suave"
@@ -347,6 +406,11 @@ export function ProdutosClient({
                   </td>
                   <td className="px-4 py-3 font-medium text-texto">
                     {p.nome}
+                    {p.contagem_sim_nao && (
+                      <span className="ml-2 rounded bg-sky-100 px-1.5 py-0.5 text-mini font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" title="Na contagem só pergunta se precisa comprar">
+                        sim/não
+                      </span>
+                    )}
                     {p.marca && (
                       <span className="block text-xs font-normal text-texto-fraco">
                         {p.marca}
@@ -510,6 +574,20 @@ export function ProdutosClient({
                 sugestão de compra será: ideal − o que foi contado, arredondado
                 pra <b>fechar fardos inteiros</b> (se o fardo estiver preenchido).
               </p>
+              <label className="flex items-start gap-2 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">
+                <input
+                  type="checkbox"
+                  name="contagem_sim_nao"
+                  defaultChecked={editando?.contagem_sim_nao ?? false}
+                  className="mt-0.5 h-4 w-4 accent-orange-500"
+                />
+                <span>
+                  <b className="text-texto">Na contagem, só perguntar se precisa comprar</b>
+                  <span className="block text-xs text-texto-fraco">
+                    Pra item de quantidade alta e difícil de contar: a pessoa responde “precisa comprar” ou “tem o suficiente”. Precisa → a cotação sugere o estoque ideal (ou um fardo).
+                  </span>
+                </span>
+              </label>
               <input
                 type="hidden"
                 name="estoque_minimo"
@@ -647,6 +725,55 @@ export function ProdutosClient({
           </div>
         </div>
       )}
+
+      {mesclar && (() => {
+        const lado = (p: Produto) => {
+          const ativo = mesclar.fica === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setMesclar({ ...mesclar, fica: p.id })}
+              className={`w-full rounded-cartao border p-3 text-left ${ativo ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" : "border-borda hover:bg-superficie-suave"}`}
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-texto">{p.nome}</span>
+                <span className={`text-xs font-semibold ${ativo ? "text-emerald-700 dark:text-emerald-300" : "text-texto-fraco"}`}>{ativo ? "FICA" : "sai"}</span>
+              </span>
+              <span className="mt-0.5 block text-xs text-texto-suave">
+                {p.categorias?.nome ?? "sem categoria"} · {p.unidade} · {vinc.get(p.id)?.size ?? 0} fornecedor(es){p.estoque_ideal ? ` · ideal ${p.estoque_ideal}` : ""}
+              </span>
+            </button>
+          );
+        };
+        const unidadesDiferentes = mesclar.a.unidade.trim().toLowerCase() !== mesclar.b.unidade.trim().toLowerCase();
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="mesclar-titulo">
+            <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
+              <h2 id="mesclar-titulo" className="text-lg font-semibold text-texto">Mesclar produtos</h2>
+              <p className="mt-1 text-sm text-texto-suave">
+                Os dois viram um só. Toque no nome que <b>fica</b>: tudo do outro (contagens, cotações, preços, pedidos, notas, etiquetas e fornecedores) passa pra ele, e o outro sai da lista.
+              </p>
+              <div className="mt-3 space-y-2">
+                {lado(mesclar.a)}
+                {lado(mesclar.b)}
+              </div>
+              {unidadesDiferentes && (
+                <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+                  <Icone nome="alerta" tamanho={14} className="mr-1" /> Unidades diferentes ({mesclar.a.unidade} × {mesclar.b.unidade}). As quantidades antigas do que sai passam como se fossem na unidade do que fica — confira antes.
+                </p>
+              )}
+              {mesclarErro && <p className="mt-3 text-sm text-red-600">{mesclarErro}</p>}
+              <div className="mt-4 flex justify-end gap-2">
+                <button type="button" onClick={() => setMesclar(null)} className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave">Cancelar</button>
+                <button type="button" onClick={confirmarMesclar} disabled={proc} className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60">
+                  {proc ? "Mesclando…" : "Mesclar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {fornDe && (
         <FornecedoresModal

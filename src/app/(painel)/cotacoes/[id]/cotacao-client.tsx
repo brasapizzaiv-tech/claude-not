@@ -20,6 +20,8 @@ export type LinhaProduto = {
   unidade: string;
   categoria: string;
   contado: number;
+  /** Item "precisa comprar?" da contagem: true/false; undefined = contado em número. */
+  precisaComprar?: boolean;
   ideal: number;
   sugestao: number;
   fardo: number; // unidades por fardo (0 = por unidade)
@@ -290,7 +292,7 @@ export function CotacaoClient({
                         </td>
                         <td className="px-4 py-2 text-texto-suave">{l.unidade}</td>
                         <td className="px-4 py-2 text-right text-texto-fraco">
-                          {temContagem ? l.contado : "—"}
+                          {!temContagem ? "—" : l.precisaComprar === true ? <span className="font-semibold text-orange-600">precisa</span> : l.precisaComprar === false ? <span className="text-emerald-600">tem</span> : l.contado}
                         </td>
                         <td className="px-4 py-2 text-right text-texto-fraco">
                           {l.ideal > 0 ? l.ideal : "—"}

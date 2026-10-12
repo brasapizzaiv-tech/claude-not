@@ -19,6 +19,7 @@ type ItemInicial = {
   qtd_estoque: number;
   qtd_pedir: number;
   parcelas?: unknown;
+  precisa_comprar?: boolean | null;
 };
 
 const numInput =
@@ -46,6 +47,12 @@ export function ContarClient({
     return v;
   });
   const [confirmados, setConfirmados] = useState<Set<string>>(new Set());
+  // Itens "precisa comprar?" (marcados em Produtos): resposta sim/não.
+  const [simNao, setSimNao] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    for (const i of itens) if (typeof i.precisa_comprar === "boolean") m[i.produto_id] = i.precisa_comprar;
+    return m;
+  });
   const [avisoSusp, setAvisoSusp] = useState<{ nomes: string[]; acao: "salvar" | "finalizar" } | null>(null);
   const ehSuspeito = (id: string) => suspeito(valores[id] ?? 0, refs.get(id));
   const precisaConferir = (id: string) => ehSuspeito(id) && !confirmados.has(id);
@@ -106,6 +113,17 @@ export function ContarClient({
   function montarItens(zerarFaltantes = false) {
     const iniDe = new Map(itens.map((i) => [i.produto_id, i]));
     return produtos.map((p) => {
+      if (p.contagem_sim_nao) {
+        const r = simNao[p.id];
+        return {
+          produto_id: p.id,
+          qtd_estoque: 0,
+          qtd_pedir: 0,
+          contado: typeof r === "boolean" || zerarFaltantes,
+          parcelas: null,
+          precisa_comprar: typeof r === "boolean" ? r : null,
+        };
+      }
       const contado = preenchidos.has(p.id);
       const qtd = contado ? ler(`estoque_${p.id}`) : 0;
       // O detalhe por local/etiqueta (vindo da contagem pelo link) só continua
@@ -353,7 +371,21 @@ export function ContarClient({
                                   falta
                                 </span>
                               )}
-                              {!finalizada && (
+                              {p.contagem_sim_nao ? (
+                                <span className="inline-flex gap-1">
+                                  {([[false, "tem"], [true, "precisa"]] as const).map(([v, rot]) => (
+                                    <button
+                                      key={rot}
+                                      type="button"
+                                      disabled={finalizada}
+                                      onClick={() => { setSimNao((m) => ({ ...m, [p.id]: v })); marcar(p.id, true); }}
+                                      className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${simNao[p.id] === v ? (v ? "bg-orange-500 text-white" : "bg-emerald-600 text-white") : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}
+                                    >
+                                      {rot}
+                                    </button>
+                                  ))}
+                                </span>
+                              ) : !finalizada && (
                                 <button
                                   type="button"
                                   onClick={() => contarZero(p.id)}
@@ -363,7 +395,7 @@ export function ContarClient({
                                   0
                                 </button>
                               )}
-                              <input
+                              {!p.contagem_sim_nao && <input
                                 name={`estoque_${p.id}`}
                                 inputMode="decimal"
                                 disabled={finalizada}
@@ -375,7 +407,7 @@ export function ContarClient({
                                   setConfirmados((s) => { if (!s.has(p.id)) return s; const n = new Set(s); n.delete(p.id); return n; });
                                 }}
                                 className={`${numInput}  ${precisaConferir(p.id) ? "border-amber-500 ring-2 ring-amber-200" : ""}`}
-                              />
+                              />}
                             </div>
                             {/* Como foi contado pelo link: por local (congelado/resfriado/ambiente) e etiquetas lidas. */}
                             {ini && lerParcelas(ini.parcelas).length > 0 && (

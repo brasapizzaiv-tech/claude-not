@@ -32,7 +32,7 @@ export default async function ContagemPage({
 
   let prodQuery = supabase
     .from("produtos")
-    .select("id, nome, unidade, estoque_minimo, categorias(nome)")
+    .select("id, nome, unidade, estoque_minimo, contagem_sim_nao, categorias(nome)")
     .eq("ativo", true)
     .order("nome");
   if (catIds.length) prodQuery = prodQuery.in("categoria_id", catIds);
@@ -41,7 +41,7 @@ export default async function ContagemPage({
     prodQuery,
     supabase
       .from("contagem_itens")
-      .select("produto_id, qtd_estoque, qtd_pedir, parcelas")
+      .select("produto_id, qtd_estoque, qtd_pedir, parcelas, precisa_comprar")
       .eq("contagem_id", id),
     supabase.rpc("contagem_referencia", { p_contagem_id: id }),
   ]);
@@ -50,10 +50,10 @@ export default async function ContagemPage({
     <ContarClient
       contagem={contagem as Contagem}
       produtos={(produtos as unknown as Produto[]) ?? []}
-      itens={(itens as Pick<
+      itens={(itens as (Pick<
         ContagemItem,
         "produto_id" | "qtd_estoque" | "qtd_pedir" | "parcelas"
-      >[]) ?? []}
+      > & { precisa_comprar: boolean | null })[]) ?? []}
       referencia={(ref as Referencia[] | null) ?? []}
     />
   );
