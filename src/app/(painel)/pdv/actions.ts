@@ -6,6 +6,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
+import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
 
 type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number };
 
@@ -17,7 +18,8 @@ type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number };
 export async function finalizarVendaPdv(
   itens: ItemVenda[],
   obs: string,
-  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean } | null,
+  // `tef`: já cobrado no pinpad (Pix na maquininha ou cartão), no valor `valorTef`.
+  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number } | null,
   local: "aqui" | "viagem" = "aqui",
 ) {
   // O rótulo da "mesa" vira o cabeçalho grande da comanda na cozinha — então
@@ -78,6 +80,15 @@ export async function finalizarVendaPdv(
   }
   const cobrar = r2(total - cashbackUsado);
 
+  // Cobrado no pinpad por um valor diferente do que o servidor calculou (o
+  // cashback mudou no meio)? Não fecha: a tela desfaz a cobrança e a comanda
+  // fica aberta pra receber no caixa.
+  const tef = pagamento.tef ?? null;
+  if (tef && Math.abs(r2(Number(pagamento.valorTef ?? 0)) - cobrar) > 0.009) {
+    if (cashbackUsado > 0) await supabase.rpc("cashback_estornar_resgate_comanda", { p_comanda: r.comandaId });
+    return { ok: false as const, mensagem: `O valor mudou (agora ${cobrar.toFixed(2).replace(".", ",")}). A comanda #${r.numero} foi pra cozinha e ficou aberta pra receber no caixa.` };
+  }
+
   // Funcionário / cliente antes de marcar qualquer coisa como paga: se faltar
   // alguém, a comanda fica aberta e o caixa recebe depois.
   if (tipo === "equipe" || tipo === "saldo") {
@@ -98,16 +109,21 @@ export async function finalizarVendaPdv(
     await supabase.from("pdv_comanda_itens").update({ valor_pago: p.payable, pago: true }).eq("id", p.id);
   }
 
+  let movId: string | null = null;
   if (cx?.id) {
-    await supabase.from("pdv_caixa_mov").insert({
+    const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
       caixa_id: cx.id,
       tipo: "venda",
       descricao: `PDV Balcão #${r.numero}${cashbackUsado > 0 ? ` · cashback ${cashbackUsado.toFixed(2).replace(".", ",")}` : ""}`,
       forma_pagamento: pagamento.forma,
       valor: cobrar,
       comanda_id: r.comandaId,
-    });
+      ...camposTefDoMov(tef),
+    }).select("id").maybeSingle();
+    movId = (mov as { id?: string } | null)?.id ?? null;
   }
+  // Pinpad: a transação nasce "aprovada"; a tela confirma no pinpad e fecha.
+  const tefTransacaoId = tef ? await registrarTefDaVenda(supabase, { caixaId: cx?.id ?? null, movId, comandaIds: [r.comandaId], valor: cobrar, tef }) : null;
 
   await supabase
     .from("pdv_comandas")
@@ -138,7 +154,7 @@ export async function finalizarVendaPdv(
     cashbackGanho = r2(Number(ganho ?? 0));
   }
 
-  return { ok: true as const, numero: r.numero, comandaId: r.comandaId, pago: true, semCaixa: !cx?.id, total: cobrar, cashbackUsado, cashbackGanho };
+  return { ok: true as const, numero: r.numero, comandaId: r.comandaId, pago: true, semCaixa: !cx?.id, total: cobrar, cashbackUsado, cashbackGanho, tefTransacaoId };
 }
 
 // Saldo de cashback do cliente vinculado no balcão (pra mostrar e oferecer usar).

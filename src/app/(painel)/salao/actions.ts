@@ -10,6 +10,7 @@ import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
+import { fecharTefNoBanco } from "@/lib/tef-venda-server";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -1298,20 +1299,12 @@ export async function pagarSelecao(
 
 // Depois que o pinpad confirmou (CNF) ou desfez (NCN), o registro do TEF
 // reflete isso; confirmado → a via do cliente sai na impressora da nota.
+// PDV e delivery também passam no pinpad (12/10/2026), então quem vende por
+// lá também fecha a transação. A regra mora em src/lib/tef-venda-server.ts.
 export async function fecharTef(transacaoId: string, confirmada: boolean, motivo?: string) {
-  await exigirAcesso("/salao");
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
   const supabase = await createClient();
-  await supabase
-    .from("tef_transacoes")
-    .update({ status: confirmada ? "confirmada" : "desfeita", mensagem: motivo ?? null, atualizado_em: new Date().toISOString() })
-    .eq("id", transacaoId);
-  if (confirmada) {
-    const { data: imps } = await supabase.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true);
-    const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
-    if (ids.length > 0) {
-      await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "tef", ref_id: transacaoId, impressora_id })));
-    }
-  }
+  await fecharTefNoBanco(supabase, transacaoId, confirmada, motivo);
   return { ok: true as const };
 }
 

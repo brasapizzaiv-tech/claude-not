@@ -6,7 +6,8 @@ import { avisar, perguntar } from "@/components/dialogo";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, definirPagoDelivery, receberDelivery, reimprimirDelivery } from "../actions";
-import { tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import { emitirNfceComanda } from "../../salao/fiscal-actions";
 
 export type PedidoDetalhe = {
@@ -62,6 +63,10 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
   const faltaQuem = (tipoSel === "equipe" && !colabId) || (tipoSel === "saldo" && !p.clienteId);
   const router = useRouter();
   const [proc, start] = useTransition();
+  // Pinpad neste PC: Pix na maquininha e cartão passam direto (o cliente que
+  // vem retirar decide pagar no Pix na hora, mesmo tendo dito "dinheiro").
+  const agenteTef = useAgenteTef();
+  const tefSel = tefDoTipo(tipoSel);
 
   const subtotal = p.itens.reduce((s, i) => s + i.preco * i.qtd, 0);
   const taxa = p.tipo === "retirada" ? 0 : p.taxaEntrega;
@@ -229,9 +234,23 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                 {tipoSel === "saldo" && !p.clienteId && (
                   <p className="text-xs text-amber-600">Este pedido não está ligado a um cliente cadastrado. Receba no caixa do salão, vinculando o cliente.</p>
                 )}
-                <button onClick={() => act(() => receberDelivery(p.id, { forma: formaSel, colaboradorId: colabId || null }))} disabled={proc || faltaQuem} className="w-full rounded-full bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
-                  {proc ? "Recebendo..." : `Receber ${brl(total)}`}
-                </button>
+                {tefSel && agenteTef ? (
+                  <CobrarPinpad
+                    tipo={tefSel}
+                    valor={total}
+                    agente={agenteTef}
+                    desabilitado={proc}
+                    aoAprovar={async (tef) => {
+                      const r = await receberDelivery(p.id, { forma: formaSel, tef, valorTef: total });
+                      return r.ok ? { ok: true, transacaoId: "tefTransacaoId" in r ? r.tefTransacaoId : null } : { ok: false, mensagem: r.mensagem };
+                    }}
+                    aoTerminar={() => router.refresh()}
+                  />
+                ) : (
+                  <button onClick={() => act(() => receberDelivery(p.id, { forma: formaSel, colaboradorId: colabId || null }))} disabled={proc || faltaQuem} className="w-full rounded-full bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
+                    {proc ? "Recebendo..." : `Receber ${brl(total)}`}
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -8,7 +8,9 @@ import { buscarClientesPdv, cashbackClientePdv, finalizarVendaPdv } from "./acti
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
-import { FORMAS_PADRAO, emiteNotaAuto, iconeDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { FORMAS_PADRAO, emiteNotaAuto, iconeDoTipo, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
+import type { TefDados } from "@/lib/tef-client";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
@@ -45,6 +47,8 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const [erro, setErro] = useState<string | null>(null);
   // Trava contra finalizar duas vezes (toque duplo, ou o QR Pix caindo no mesmo instante do clique).
   const finalizandoRef = useRef(false);
+  // Pinpad neste PC (Pix na maquininha / cartão pelo TEF).
+  const agenteTef = useAgenteTef();
 
   const abas = ["Todos", ...categorias];
   const corDe = (c: string) => (c === "Todos" ? "#3b82f6" : CORES[categorias.indexOf(c) % CORES.length]);
@@ -71,7 +75,37 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
 
   const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd }));
 
-  function finalizar(pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean } | null) {
+  type Pagto = { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean };
+  // Venda gravada: mostra a tela de concluído e limpa o pedido.
+  function concluir(r: Awaited<ReturnType<typeof finalizarVendaPdv>>, pagamento: Pagto | null, trocoAtual: number, ehViagem: boolean, nomeCliente?: string) {
+    if (!r.ok) return;
+          setFeito({
+            numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma,
+            troco: tipoDe(pagamento?.forma, formas) === "dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem,
+            cliente: pagamento?.clienteId ? nomeCliente : undefined,
+            cashbackUsado: "cashbackUsado" in r ? r.cashbackUsado : 0,
+            cashbackGanho: "cashbackGanho" in r ? r.cashbackGanho : 0,
+          });
+          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); escolherCliente(null); setBuscaCli("");
+  }
+
+  // Pinpad: a cobrança já foi aprovada; grava a venda levando o TEF. Quem
+  // confirma (ou desfaz) no pinpad é o CobrarPinpad, com o que voltar daqui.
+  async function finalizarComTef(tef: TefDados) {
+    if (cartLista.length === 0 || finalizandoRef.current) return { ok: false, mensagem: "Venda já em andamento." };
+    finalizandoRef.current = true;
+    const pagamento: Pagto = { forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 };
+    try {
+      const r = await finalizarVendaPdv(itensParaEnviar(), obs, { ...pagamento, tef, valorTef: cobrar }, local);
+      if (!r.ok) return { ok: false, mensagem: ("mensagem" in r && r.mensagem) || "Não foi possível concluir." };
+      concluir(r, pagamento, 0, local === "viagem", cliente?.nome);
+      return { ok: true, transacaoId: "tefTransacaoId" in r ? r.tefTransacaoId : null };
+    } finally {
+      finalizandoRef.current = false;
+    }
+  }
+
+  function finalizar(pagamento: Pagto | null) {
     if (cartLista.length === 0 || finalizandoRef.current) return;
     finalizandoRef.current = true;
     const trocoAtual = troco;
@@ -81,14 +115,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
       try {
         const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
         if (r.ok) {
-          setFeito({
-            numero: r.numero ?? 0, comandaId: r.comandaId, pago: !!pagamento, forma: pagamento?.forma,
-            troco: tipoDe(pagamento?.forma, formas) === "dinheiro" ? trocoAtual : 0, semCaixa: "semCaixa" in r ? r.semCaixa : false, viagem: ehViagem,
-            cliente: pagamento?.clienteId ? nomeCliente : undefined,
-            cashbackUsado: "cashbackUsado" in r ? r.cashbackUsado : 0,
-            cashbackGanho: "cashbackGanho" in r ? r.cashbackGanho : 0,
-          });
-          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); escolherCliente(null); setBuscaCli("");
+          concluir(r, pagamento, trocoAtual, ehViagem, nomeCliente);
         } else {
           setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
         }
@@ -292,7 +319,15 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             )}
             <div className="flex-1" />
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-            {tipoDe(forma, formas) === "pix" && pixAtivo && cobrar > 0 ? (
+            {tefDoTipo(tipoForma) && agenteTef ? (
+              <CobrarPinpad
+                tipo={tefDoTipo(tipoForma)!}
+                valor={cobrar}
+                agente={agenteTef}
+                desabilitado={proc || faltaQuem || cartLista.length === 0}
+                aoAprovar={finalizarComTef}
+              />
+            ) : tipoDe(forma, formas) === "pix" && pixAtivo && cobrar > 0 ? (
               // Com QR na tela, a venda fecha sozinha quando o Pix cai (ou por "Vi que caiu").
               // Este botão é só pra quem recebeu pela chave, sem QR.
               <button onClick={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 })} disabled={proc || faltaQuem} className="w-full rounded-cartao border border-borda-forte py-2.5 text-sm font-semibold text-texto-suave disabled:opacity-50 dark:border-borda-forte">{proc ? "Concluindo..." : "Recebi o Pix pela chave (sem QR) — concluir"}</button>

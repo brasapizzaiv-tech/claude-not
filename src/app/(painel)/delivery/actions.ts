@@ -10,6 +10,7 @@ import { avisarPedido, enviarTemplate, listarModelos, whatsappConfigurado } from
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
+import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
 
 export type { LinhaPedido, DadosPedidoDelivery } from "@/lib/delivery-core";
 
@@ -420,7 +421,7 @@ export async function modelosWhatsappDelivery() {
 // funcionário pede com "Pix" e o operador recebe como "Compra da equipe"
 // (vai pra Compras internas); "Saldo cliente" usa o cliente ligado ao pedido.
 // Comanda que o caixa do salão já recebeu só ganha a marca de pago.
-export async function receberDelivery(id: string, dados: { forma: string; colaboradorId?: string | null }) {
+export async function receberDelivery(id: string, dados: { forma: string; colaboradorId?: string | null; tef?: TefDaVenda | null; valorTef?: number }) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
   const forma = (dados.forma || "").trim();
@@ -446,9 +447,16 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
   const taxa = p.tipo === "retirada" ? 0 : Number(p.taxa_entrega ?? 0);
   const total = r2(subtotal + taxa - Number(p.desconto ?? 0));
 
+  // Cobrado no pinpad (Pix na maquininha / cartão): tem que ser o total exato.
+  const tef = dados.tef ?? null;
+  if (tef && Math.abs(r2(Number(dados.valorTef ?? 0)) - total) > 0.009) {
+    return { ok: false as const, mensagem: `O total do pedido mudou (agora ${total.toFixed(2).replace(".", ",")}). Atualize a tela.` };
+  }
+
   // O caixa do salão já recebeu esta comanda (itens pagos)? Então só a marca.
   const jaRecebida = itens.length > 0 && itens.every((i) => i.pago);
   if (jaRecebida) {
+    if (tef) return { ok: false as const, mensagem: "Este pedido já foi recebido no caixa do salão." };
     await supabase.from("delivery_pedidos").update({ pago: true, forma_pagamento: forma }).eq("id", id);
     revalidatePath("/delivery");
     revalidatePath(`/delivery/${id}`);
@@ -480,14 +488,18 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
     if (i.pago) continue;
     await supabase.from("pdv_comanda_itens").update({ valor_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), pago: true }).eq("id", i.id);
   }
-  await supabase.from("pdv_caixa_mov").insert({
+  const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
     caixa_id: cx.id,
     tipo: "venda",
     descricao: `Delivery #${numero ?? "?"} · ${p.nome}`,
     forma_pagamento: forma,
     valor: total,
     comanda_id: p.comanda_id,
-  });
+    ...camposTefDoMov(tef),
+  }).select("id").maybeSingle();
+  const tefTransacaoId = tef
+    ? await registrarTefDaVenda(supabase, { caixaId: cx.id, movId: (mov as { id?: string } | null)?.id ?? null, comandaIds: p.comanda_id ? [p.comanda_id] : [], valor: total, tef })
+    : null;
   if (p.comanda_id) {
     await supabase
       .from("pdv_comandas")
@@ -506,7 +518,7 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
   revalidatePath(`/delivery/${id}`);
   revalidatePath("/salao/caixa");
   revalidatePath("/retiradas");
-  return { ok: true as const };
+  return { ok: true as const, tefTransacaoId };
 }
 
 // Cashback (Etapa 6): configuração da empresa. Uma linha por empresa.
