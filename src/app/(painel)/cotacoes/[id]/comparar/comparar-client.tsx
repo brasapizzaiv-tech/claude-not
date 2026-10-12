@@ -64,20 +64,12 @@ export type ProdutoLinha = {
   melhorForn: string | null;
 };
 
+// Embalagem "Unidade" em todo preço só poluía a tela: só mostra quando diz algo.
+const embUtil = (e: string | null) => (e && !/^(unidade|un|und|unid)\.?$/i.test(e.trim()) ? e : null);
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Cada categoria ganha uma cor (faixa + tom das linhas, alternando claro/escuro).
-const CAT_CORES = [
-  { band: "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200", a: "bg-sky-50 dark:bg-sky-950/20", b: "bg-sky-100/70 dark:bg-sky-900/25" },
-  { band: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200", a: "bg-violet-50 dark:bg-violet-950/20", b: "bg-violet-100/70 dark:bg-violet-900/25" },
-  { band: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200", a: "bg-amber-50 dark:bg-amber-950/20", b: "bg-amber-100/70 dark:bg-amber-900/25" },
-  { band: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200", a: "bg-rose-50 dark:bg-rose-950/20", b: "bg-rose-100/70 dark:bg-rose-900/25" },
-  { band: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200", a: "bg-cyan-50 dark:bg-cyan-950/20", b: "bg-cyan-100/70 dark:bg-cyan-900/25" },
-  { band: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200", a: "bg-indigo-50 dark:bg-indigo-950/20", b: "bg-indigo-100/70 dark:bg-indigo-900/25" },
-  { band: "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200", a: "bg-teal-50 dark:bg-teal-950/20", b: "bg-teal-100/70 dark:bg-teal-900/25" },
-  { band: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/50 dark:text-fuchsia-200", a: "bg-fuchsia-50 dark:bg-fuchsia-950/20", b: "bg-fuchsia-100/70 dark:bg-fuchsia-900/25" },
-];
 
 export function CompararClient({
   cotacaoId,
@@ -400,15 +392,98 @@ export function CompararClient({
     return m;
   }, [exclusivos]);
 
+  // ---------- Leitura da tela (pedido do Rafael, 11/10/2026: "difícil de ler,
+  // falta informação") ----------
+
+  // Menor preço de cada item entre todos os fornecedores (marca principal ou
+  // outra marca): cada preço mostra quanto está acima dele.
+  const menorPreco = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const p of produtos) {
+      let min = Infinity;
+      for (const cel of Object.values(p.precos)) {
+        if (!cel.disp) continue;
+        for (const v of [cel.preco, ...cel.extras.map((e) => e.preco)]) if (v != null && v < min) min = v;
+      }
+      if (min < Infinity) m[p.produto_id] = min;
+    }
+    return m;
+  }, [produtos]);
+
+  // O que foi escolhido em cada item: quanto, por quanto (médio, se dividido)
+  // e a diferença pra última compra.
+  const linhaEscolha = useCallback(
+    (p: ProdutoLinha) => {
+      let qtd = 0, total = 0;
+      const forns: string[] = [];
+      for (const [fid, q] of Object.entries(alocacaoDe(p.produto_id))) {
+        const { preco } = precoDe(p, fid);
+        if (preco == null) continue;
+        qtd += q; total += preco * q; forns.push(fid);
+      }
+      const medio = qtd > 0 ? total / qtd : null;
+      const ult = ultimaCompra[p.produto_id]?.preco ?? null;
+      const delta = medio != null && ult != null && ult > 0 ? (medio - ult) / ult : null;
+      return { qtd, total, medio, ult, delta, forns };
+    },
+    [alocacaoDe, precoDe, ultimaCompra],
+  );
+
+  // Resumo: comparado à última compra, só nos itens que têm histórico.
+  const resumo = useMemo(() => {
+    let pagoAntes = 0, pagaAgora = 0, comHist = 0, subiram = 0;
+    for (const p of produtos) {
+      const l = linhaEscolha(p);
+      if (l.medio == null || l.ult == null || l.qtd <= 0) continue;
+      comHist++;
+      pagoAntes += l.ult * l.qtd;
+      pagaAgora += l.medio * l.qtd;
+      if (l.delta != null && l.delta > 0.005) subiram++;
+    }
+    return { diferenca: pagaAgora - pagoAntes, pct: pagoAntes > 0 ? (pagaAgora - pagoAntes) / pagoAntes : null, comHist, subiram };
+  }, [produtos, linhaEscolha]);
+
+  // Quem não mandou nenhum preço some da tabela (a coluna inteira seria "–"),
+  // com um botão pra mostrar.
+  const [mostrarTodos, setMostrarTodos] = useState(false);
+  const temPreco = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of produtos) for (const [fid, cel] of Object.entries(p.precos)) if (cel.preco != null || cel.extras.length) s.add(fid);
+    return s;
+  }, [produtos]);
+  const colunas = fornecedores.filter((f) => mostrarTodos || temPreco.has(f.id) || gerados.has(f.id));
+  const escondidos = fornecedores.length - colunas.length;
+  const responderam = fornecedores.filter((f) => f.respondido_em || temPreco.has(f.id)).length;
+
+  // Busca e filtro.
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<"todos" | "sem_escolha" | "subiu">("todos");
+  const semAcento = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  const visiveis = useMemo(() => {
+    const b = semAcento(busca.trim());
+    return produtos.filter((p) => {
+      if (b && !semAcento(p.nome).includes(b)) return false;
+      if (filtro === "sem_escolha") return Object.keys(alocacaoDe(p.produto_id)).length === 0;
+      if (filtro === "subiu") { const d = linhaEscolha(p).delta; return d != null && d > 0.005; }
+      return true;
+    });
+  }, [produtos, busca, filtro, alocacaoDe, linhaEscolha]);
+  const semEscolha = produtos.length - itensEscolhidos;
+
   const porCategoria = useMemo(() => {
     const m = new Map<string, ProdutoLinha[]>();
-    for (const p of produtos) {
+    for (const p of visiveis) {
       const arr = m.get(p.categoria) ?? [];
       arr.push(p);
       m.set(p.categoria, arr);
     }
     return m;
-  }, [produtos]);
+  }, [visiveis]);
+
+  const pct = (v: number) => `${v > 0 ? "+" : ""}${(v * 100).toLocaleString("pt-BR", { maximumFractionDigits: v !== 0 && Math.abs(v) < 0.1 ? 1 : 0 })}%`;
+  const chip = (ativo: boolean) =>
+    `rounded-controle px-3 py-1.5 text-sm transition ${ativo ? "bg-texto font-semibold text-fundo" : "bg-superficie-suave text-texto-suave hover:text-texto"}`;
+  const nCols = 4 + colunas.length;
 
   return (
     <div className="mt-6">
@@ -436,22 +511,59 @@ export function CompararClient({
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-texto-suave">
-          {itensEscolhidos} de {produtos.length} itens escolhidos ·{" "}
-          <b className="text-green-600">{conf.size} conferidos</b>
-          {exclusivos.length > 0 ? ` · ${exclusivos.length} exclusivos (direto)` : ""} · total{" "}
-          <b className="text-texto">{moeda(totalGeral)}</b>
-        </p>
-        {!travada && (
-          <button
-            onClick={gerar}
-            disabled={salvando || (itensEscolhidos === 0 && exclusivos.length === 0)}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
-          >
-            {salvando ? "Gerando..." : "Gerar pedidos →"}
-          </button>
-        )}
+      {/* ---------- Resumo ---------- */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-cartao bg-painel-cartao p-4">
+          <p className="text-xs text-texto-fraco">Total do pedido</p>
+          <p className="mt-1 font-numero text-2xl font-semibold tracking-apertada text-texto">{moeda(totalGeral)}</p>
+          <p className="text-xs text-texto-suave">{itensEscolhidos} de {produtos.length} itens escolhidos</p>
+        </div>
+        <div className="rounded-cartao bg-painel-cartao p-4">
+          <p className="text-xs text-texto-fraco">Comparado à última compra</p>
+          {resumo.comHist > 0 ? (
+            <>
+              <p className={`mt-1 font-numero text-2xl font-semibold tracking-apertada ${resumo.diferenca > 0.005 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                {resumo.diferenca > 0.005 ? "+" : resumo.diferenca < -0.005 ? "−" : ""}{moeda(Math.abs(resumo.diferenca))}
+                {resumo.pct != null && <span className="ml-1.5 text-base">({pct(resumo.pct)})</span>}
+              </p>
+              <p className="text-xs text-texto-suave">
+                {resumo.diferenca > 0.005 ? "a mais" : resumo.diferenca < -0.005 ? "de economia" : "igual"} em {resumo.comHist} itens com histórico
+                {resumo.subiram > 0 && <> · <button onClick={() => setFiltro("subiu")} className="font-semibold text-red-600 underline dark:text-red-400">{resumo.subiram} subiram</button></>}
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-texto-suave">Sem compras anteriores destes itens.</p>
+          )}
+        </div>
+        <div className="rounded-cartao bg-painel-cartao p-4">
+          <p className="text-xs text-texto-fraco">Fornecedores</p>
+          <p className="mt-1 font-numero text-2xl font-semibold tracking-apertada text-texto">{responderam} <span className="text-base font-normal text-texto-suave">de {fornecedores.length}</span></p>
+          <p className="text-xs text-texto-suave">responderam</p>
+        </div>
+        <div className="rounded-cartao bg-painel-cartao p-4">
+          <p className="text-xs text-texto-fraco">Falta escolher</p>
+          <p className={`mt-1 font-numero text-2xl font-semibold tracking-apertada ${semEscolha > 0 ? "text-amber-600 dark:text-amber-400" : "text-texto"}`}>{semEscolha}</p>
+          <p className="text-xs text-texto-suave">
+            {semEscolha > 0 ? <button onClick={() => setFiltro("sem_escolha")} className="underline">ver quais</button> : "tudo escolhido"}
+            {conf.size > 0 && <> · {conf.size} conferidos</>}
+            {exclusivos.length > 0 && <> · {exclusivos.length} exclusivos</>}
+          </p>
+        </div>
+        <div className="flex items-center rounded-cartao bg-painel-cartao p-4">
+          {!travada ? (
+            <button
+              onClick={gerar}
+              disabled={salvando || (itensEscolhidos === 0 && exclusivos.length === 0)}
+              className="min-h-11 w-full rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+            >
+              {salvando ? "Gerando..." : "Gerar pedidos →"}
+            </button>
+          ) : (
+            <Link href={`/cotacoes/${cotacaoId}/pedidos`} className="w-full rounded-controle bg-texto px-4 py-3 text-center text-sm font-semibold text-fundo">
+              Ver pedidos →
+            </Link>
+          )}
+        </div>
       </div>
 
       {fornecedores.some((f) => f.promocaoTexto || f.promocaoFoto) && (
@@ -488,21 +600,45 @@ export function CompararClient({
         </div>
       )}
 
+      {/* ---------- Busca e filtros ---------- */}
       {produtos.length > 0 && (
-      <div className="max-h-[75vh] overflow-auto rounded-cartao bg-painel-cartao">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar produto…"
+            aria-label="Buscar produto"
+            className="w-56 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-1.5 text-sm text-texto"
+          />
+          <button onClick={() => setFiltro("todos")} className={chip(filtro === "todos")}>Todos ({produtos.length})</button>
+          <button onClick={() => setFiltro("sem_escolha")} className={chip(filtro === "sem_escolha")}>Sem escolha ({semEscolha})</button>
+          <button onClick={() => setFiltro("subiu")} className={chip(filtro === "subiu")}>Mais caro que a última ({resumo.subiram})</button>
+          {(escondidos > 0 || mostrarTodos) && (
+            <button onClick={() => setMostrarTodos((v) => !v)} className="ml-auto text-sm text-texto-suave underline hover:text-texto">
+              {mostrarTodos ? "Esconder quem não mandou preço" : `Mostrar ${escondidos} fornecedor${escondidos > 1 ? "es" : ""} sem preço`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {produtos.length > 0 && (
+      <div className="max-h-[75vh] overflow-auto rounded-cartao border border-borda bg-painel-cartao">
         <table className="min-w-[560px] w-full text-sm">
           <thead className="text-left text-xs text-texto-suave">
             <tr>
-              <th className="sticky left-0 top-0 z-30 bg-superficie-suave px-3 py-3 text-left">
+              <th className="sticky left-0 top-0 z-30 bg-superficie-suave px-3 py-3 text-left font-semibold">
                 Produto
               </th>
-              <th className="sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right">
+              <th className="sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right font-semibold">
                 Qtd
               </th>
-              <th className="sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right">
+              <th className="sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right font-semibold">
                 Última compra
               </th>
-              {fornecedores.map((f, i) => {
+              <th className="sticky top-0 z-20 border-r border-borda bg-superficie-suave px-3 py-3 text-right font-semibold">
+                Escolhido
+              </th>
+              {colunas.map((f) => {
                 const respondeu = !!f.respondido_em;
                 const hora = f.respondido_em
                   ? new Date(f.respondido_em).toLocaleString("pt-BR", {
@@ -513,25 +649,25 @@ export function CompararClient({
                       minute: "2-digit",
                     })
                   : null;
+                const detalhes = [
+                  f.prazo_entrega ? `entrega ${dataBR(f.prazo_entrega)}` : null,
+                  f.pedido_minimo ? `mín. ${moeda(f.pedido_minimo)}` : null,
+                  f.condicao_pagamento || null,
+                ].filter(Boolean) as string[];
                 return (
                   <th
                     key={f.id}
-                    className={`sticky top-0 z-20 bg-superficie-suave px-3 py-3 text-right ${respondeu ? "" : "opacity-60"}`}
+                    className={`sticky top-0 z-20 min-w-[7.5rem] max-w-[11rem] bg-superficie-suave px-3 py-3 text-right align-top ${respondeu || temPreco.has(f.id) ? "" : "opacity-60"}`}
                   >
-                    <div className="font-semibold text-texto-suave">
-                      {respondeu && (
-                        <span className="mr-1 rounded bg-green-100 px-1 text-mini font-bold text-green-700 dark:bg-green-950 dark:text-green-300">
-                          {i + 1}º
-                        </span>
-                      )}
-                      {f.nome}
+                    <div className="line-clamp-2 font-semibold text-texto" title={f.nome}>{f.nome}</div>
+                    <div className="mt-0.5 text-mini font-normal text-texto-fraco">
+                      {respondeu ? `respondeu ${hora}` : temPreco.has(f.id) ? "preço lançado" : "não respondeu"}
                     </div>
-                    <div className="text-mini font-normal text-texto-fraco">
-                      {respondeu ? `respondeu ${hora}` : "não respondeu"}
-                      {f.prazo_entrega ? ` · entrega ${dataBR(f.prazo_entrega)}` : ""}
-                      {f.pedido_minimo ? ` · mín ${moeda(f.pedido_minimo)}` : ""}
-                      {f.condicao_pagamento ? ` · ${f.condicao_pagamento}` : ""}
-                    </div>
+                    {detalhes.length > 0 && (
+                      <div className="text-mini font-normal text-texto-fraco" title={detalhes.join(" · ")}>
+                        {detalhes.map((d) => <div key={d} className="truncate">{d}</div>)}
+                      </div>
+                    )}
                     <div className="mt-1 flex flex-wrap items-center justify-end gap-1">
                       {gerados.has(f.id) ? (
                         <>
@@ -549,7 +685,7 @@ export function CompararClient({
                           </a>
                         </>
                       ) : (
-                        !travada && (
+                        !travada && (totalPorForn[f.id] ?? 0) > 0 && (
                           <button
                             onClick={() => adiantar(f.id, f.nome)}
                             disabled={salvando}
@@ -566,63 +702,73 @@ export function CompararClient({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-borda">
-            {[...porCategoria.entries()].map(([cat, itensCat], ci) => (
+          <tbody>
+            {visiveis.length === 0 && (
+              <tr>
+                <td colSpan={nCols} className="px-3 py-8 text-center text-sm text-texto-suave">
+                  Nenhum item com esse filtro.{" "}
+                  <button onClick={() => { setFiltro("todos"); setBusca(""); }} className="underline">Ver todos</button>
+                </td>
+              </tr>
+            )}
+            {[...porCategoria.entries()].map(([cat, itensCat]) => (
               <Fragment key={cat}>
                 <tr>
                   <td
-                    colSpan={3 + fornecedores.length}
-                    className={`sticky left-0 px-3 py-1.5 text-xs font-semibold  ${CAT_CORES[ci % CAT_CORES.length].band}`}
+                    colSpan={nCols}
+                    className="sticky left-0 border-y border-borda bg-superficie-suave px-3 py-1.5 text-xs font-semibold text-texto-suave"
                   >
-                    {cat}
+                    {cat} <span className="font-normal text-texto-fraco">· {itensCat.length}</span>
                   </td>
                 </tr>
-                {itensCat.map((p, idx) => {
-                  const cor = CAT_CORES[ci % CAT_CORES.length];
+                {itensCat.map((p) => {
                   const conferido = conf.has(p.produto_id);
-                  const rowBg = conferido
-                    ? "bg-green-100 dark:bg-green-900/40"
-                    : idx % 2
-                      ? cor.b
-                      : cor.a;
+                  const l = linhaEscolha(p);
+                  const ult = ultimaCompra[p.produto_id];
+                  const menor = menorPreco[p.produto_id];
+                  const rowBg = conferido ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-painel-cartao";
                   return (
                   <tr
                     key={p.produto_id}
-                    className={`group transition-colors ${rowBg} hover:bg-orange-100 dark:hover:bg-orange-950/40`}
+                    className={`group border-b border-borda/60 ${rowBg} hover:bg-superficie-suave`}
                   >
                     <td
-                      className={`sticky left-0 z-10 px-3 py-2 font-medium text-texto ${rowBg} group-hover:bg-orange-100 dark:group-hover:bg-orange-950/40`}
+                      className={`sticky left-0 z-10 min-w-[13rem] px-3 py-2 font-medium text-texto ${rowBg} group-hover:bg-superficie-suave`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleConf(p.produto_id)}
-                        title={conferido ? "Conferido — clique para desmarcar" : "Marcar como conferido"}
-                        className={`mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs align-middle ${
-                          conferido
-                            ? "border-green-600 bg-texto text-fundo"
-                            : "border-zinc-400 text-transparent hover:border-green-500 dark:border-zinc-500"
-                        }`}
-                      >
-                        ✓
-                      </button>
-                      {p.nome}
-                      <span className="ml-1 text-xs text-texto-fraco">
-                        {p.unidade}
-                      </span>
+                      <div className="flex items-start gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleConf(p.produto_id)}
+                          title={conferido ? "Conferido — clique para desmarcar" : "Marcar como conferido"}
+                          aria-label={conferido ? `Desmarcar ${p.nome}` : `Marcar ${p.nome} como conferido`}
+                          className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs ${
+                            conferido
+                              ? "border-emerald-600 bg-emerald-600 text-white"
+                              : "border-zinc-400 text-transparent hover:border-emerald-500 dark:border-zinc-500"
+                          }`}
+                        >
+                          ✓
+                        </button>
+                        <span>
+                          {p.nome}
+                          <span className="ml-1 text-xs font-normal text-texto-fraco">{p.unidade}</span>
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-2 py-1 text-right align-top">
+                    <td className="px-2 py-1.5 text-right align-top">
                       <input
                         type="number"
                         min={0}
                         step="any"
                         value={qtds[p.produto_id] ?? 0}
                         onChange={(e) => setQtd(p.produto_id, Number(e.target.value) || 0)}
+                        aria-label={`Quantidade de ${p.nome}`}
                         className="w-16 rounded border border-borda-forte bg-painel-cartao px-1.5 py-1 text-right text-sm text-texto"
                       />
                       <button
                         type="button"
                         onClick={() => toggleDividir(p.produto_id)}
-                        className={`mt-0.5 block w-full text-mini ${
+                        className={`mt-0.5 block w-full text-right text-mini ${
                           dividindo.has(p.produto_id)
                             ? "font-medium text-orange-600"
                             : "text-texto-fraco hover:text-orange-600"
@@ -631,49 +777,56 @@ export function CompararClient({
                         {dividindo.has(p.produto_id) ? <span className="inline-flex items-center gap-1"><Icone nome="cortar" tamanho={12} /> dividido</span> : "dividir"}
                       </button>
                     </td>
-                    <td className="px-3 py-2 text-right align-top text-mini leading-tight">
-                      {ultimaCompra[p.produto_id] ? (
+                    <td className="px-3 py-2 text-right align-top">
+                      {ult ? (
                         <>
-                          <div className="font-semibold text-texto-suave">
-                            {ultimaCompra[p.produto_id].preco != null
-                              ? moeda(ultimaCompra[p.produto_id].preco as number)
-                              : "—"}
-                          </div>
-                          <div className="text-texto-fraco">{ultimaCompra[p.produto_id].forn}</div>
-                          <div className="text-texto-fraco">{ultimaCompra[p.produto_id].data}</div>
+                          <div className="text-sm text-texto-suave">{ult.preco != null ? moeda(ult.preco) : "—"}</div>
+                          <div className="max-w-[9rem] truncate text-mini text-texto-fraco" title={`${ult.forn} · ${ult.data}`}>{ult.forn} · {ult.data.slice(0, 5)}</div>
                         </>
                       ) : (
-                        <span className="text-zinc-300 dark:text-zinc-700">—</span>
+                        <span className="text-texto-fraco">—</span>
                       )}
                     </td>
-                    {fornecedores.map((f) => {
+                    <td className="border-r border-borda px-3 py-2 text-right align-top">
+                      {l.medio != null ? (
+                        <>
+                          <div className="text-sm font-semibold text-texto">{moeda(l.total)}</div>
+                          {l.delta != null && Math.abs(l.delta) >= 0.005 ? (
+                            <div className={`whitespace-nowrap text-mini font-semibold ${l.delta > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`} title="Preço escolhido comparado à última compra">
+                              {l.delta > 0 ? "↑" : "↓"} {pct(l.delta)} vs última
+                            </div>
+                          ) : l.delta != null ? (
+                            <div className="text-mini text-texto-fraco">igual à última</div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="text-mini text-amber-600 dark:text-amber-400">sem escolha</span>
+                      )}
+                    </td>
+                    {colunas.map((f) => {
                       const cel = p.precos[f.id];
                       const escolhido = escolha[p.produto_id] === f.id;
                       const ofSel = oferta[p.produto_id] ?? "main";
                       const melhor = p.melhorForn === f.id;
                       if (!cel) {
                         return (
-                          <td
-                            key={f.id}
-                            className="px-3 py-2 text-right text-zinc-300 dark:text-zinc-700"
-                          >
+                          <td key={f.id} className="px-3 py-2 text-right text-texto-fraco/50">
                             –
                           </td>
                         );
                       }
                       if (!cel.disp || cel.preco == null) {
                         return (
-                          <td
-                            key={f.id}
-                            className="px-3 py-2 text-right text-xs text-amber-500"
-                          >
+                          <td key={f.id} className="px-3 py-2 text-right text-xs text-amber-600 dark:text-amber-400">
                             em falta
                           </td>
                         );
                       }
                       const dividido = dividindo.has(p.produto_id);
+                      const acima = menor != null && menor > 0 ? (cel.preco - menor) / menor : 0;
+                      const detalhe = [cel.temSt ? (cel.precoBruto != null && Math.abs(cel.preco - cel.precoBruto) > 0.001 ? `c/ ST · bruto ${moeda(cel.precoBruto)}` : "ST inclusa") : null, embUtil(cel.emb), cel.tam, cel.obs].filter(Boolean).join(" · ");
                       return (
-                        <td key={f.id} className="px-2 py-1 text-right align-top">
+                        <td key={f.id} className="px-2 py-1.5 text-right align-top">
                           {dividido ? (
                             <div className="flex items-center justify-end gap-1">
                               <span className="text-mini text-texto-fraco">{moeda(cel.preco)}</span>
@@ -686,6 +839,7 @@ export function CompararClient({
                                 onChange={(e) =>
                                   setDivQty(p.produto_id, f.id, Number(e.target.value) || 0)
                                 }
+                                aria-label={`Quantidade de ${p.nome} com ${f.nome}`}
                                 className={`w-14 rounded border px-1 py-0.5 text-right text-sm ${
                                   (divisao[p.produto_id]?.[f.id] ?? 0) > 0
                                     ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-200"
@@ -697,16 +851,21 @@ export function CompararClient({
                             <div className="space-y-0.5">
                               <button
                                 onClick={() => escolherOferta(p.produto_id, f.id, "main")}
-                                className={`w-full rounded-controle px-2 py-1 text-right text-sm transition ${
+                                className={`w-full rounded-controle px-2 py-1 text-right transition ${
                                   escolhido && ofSel === "main"
                                     ? "bg-orange-500 font-semibold text-white"
                                     : melhor
-                                      ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300"
-                                      : "text-texto-suave hover:bg-superficie-suave  "
+                                      ? "font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/60 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                                      : "text-texto-suave hover:bg-superficie-suave"
                                 }`}
-                                title={cel.obs ?? ""}
+                                title={detalhe || (melhor ? "Mais barato" : "")}
                               >
-                                {moeda(cel.preco)}
+                                <span className="block text-sm">{moeda(cel.preco)}</span>
+                                {acima >= 0.005 ? (
+                                  <span className={`block text-mini font-normal ${escolhido && ofSel === "main" ? "text-white/80" : "text-texto-fraco"}`}>+{(acima * 100).toFixed(0)}%</span>
+                                ) : melhor ? (
+                                  <span className={`block text-mini font-normal ${escolhido && ofSel === "main" ? "text-white/80" : ""}`}>mais barato</span>
+                                ) : null}
                               </button>
                               {cel.extras.map((ex) => (
                                 <button
@@ -715,8 +874,8 @@ export function CompararClient({
                                   title={ex.obs ?? ""}
                                   className={`flex w-full items-center justify-between gap-1 rounded-controle px-2 py-1 text-mini transition ${
                                     escolhido && ofSel === ex.id
-                                      ? "bg-sky-500 font-semibold text-white"
-                                      : "bg-sky-50 text-sky-800 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300"
+                                      ? "bg-orange-500 font-semibold text-white"
+                                      : "bg-superficie-suave text-texto-suave hover:text-texto"
                                   }`}
                                 >
                                   <span className="truncate">{ex.marca ?? "outra marca"}</span>
@@ -725,18 +884,9 @@ export function CompararClient({
                               ))}
                             </div>
                           )}
-                          {cel.temSt && (
-                            <div className="mt-0.5 text-right text-mini leading-tight text-violet-500 dark:text-violet-400">
-                              {cel.preco != null &&
-                              cel.precoBruto != null &&
-                              Math.abs(cel.preco - cel.precoBruto) > 0.001
-                                ? `c/ ST · bruto ${moeda(cel.precoBruto)}`
-                                : "ST inclusa"}
-                            </div>
-                          )}
-                          {(cel.emb || cel.tam || cel.obs) && (
-                            <div className="mt-0.5 text-right text-mini leading-tight text-texto-fraco">
-                              {[cel.emb, cel.tam, cel.obs].filter(Boolean).join(" · ")}
+                          {detalhe && (
+                            <div className="mt-0.5 max-w-[11rem] truncate text-right text-mini leading-tight text-texto-fraco" title={detalhe}>
+                              {detalhe}
                             </div>
                           )}
                           {cel.foto && (
@@ -745,7 +895,7 @@ export function CompararClient({
                               onClick={() => setFotoAberta(cel.foto)}
                               className="mt-0.5 text-mini font-medium text-orange-600 hover:underline"
                             >
-                              <Icone nome="camera" tamanho={12} className="mr-1" /> ver foto
+                              <Icone nome="camera" tamanho={12} className="mr-1" /> foto
                             </button>
                           )}
                         </td>
@@ -765,12 +915,16 @@ export function CompararClient({
               >
                 Total escolhido
               </td>
-              {fornecedores.map((f) => {
+              <td className="sticky bottom-0 z-20 border-r border-borda bg-superficie-suave px-3 py-3 text-right text-texto">
+                {moeda(totalGeral)}
+              </td>
+              {colunas.map((f) => {
                 const total = totalPorForn[f.id] ?? 0;
                 const abaixoMin =
                   f.pedido_minimo != null &&
                   total > 0 &&
                   total < f.pedido_minimo;
+                const nItens = produtos.filter((p) => alocacaoDe(p.produto_id)[f.id]).length;
                 return (
                   <td
                     key={f.id}
@@ -779,10 +933,11 @@ export function CompararClient({
                         ? "text-amber-600"
                         : "text-texto"
                     }`}
-                    title={abaixoMin ? "Abaixo do pedido mínimo" : ""}
+                    title={abaixoMin ? `Abaixo do pedido mínimo (${moeda(f.pedido_minimo as number)})` : ""}
                   >
                     {total > 0 ? moeda(total) : "—"}
                     {abaixoMin && <Icone nome="alerta" tamanho={12} className="ml-1 text-amber-600" titulo="Abaixo do mínimo" />}
+                    {nItens > 0 && <div className="text-mini font-normal text-texto-fraco">{nItens} {nItens === 1 ? "item" : "itens"}{abaixoMin ? " · abaixo do mín." : ""}</div>}
                   </td>
                 );
               })}
@@ -834,12 +989,10 @@ export function CompararClient({
       )}
 
       <p className="mt-2 text-xs text-texto-fraco">
-        Clique num preço para escolher o fornecedor daquele item (verde = mais
-        barato). Clique no <b>✓</b> ao lado do nome para marcar o que já{" "}
-        <b>conferiu / vai pedir</b> (fica verde e é lembrado neste navegador). Edite a{" "}
-        <b>quantidade</b> na coluna Qtd; use <b>dividir</b> para pedir o mesmo item de{" "}
-        mais de um fornecedor (aí você digita quanto de cada). A coluna <b>Última compra</b>{" "}
-        mostra de quem e por quanto foi o último pedido. O triângulo de atenção marca o que está abaixo do mínimo, e a câmera marca quem mandou foto.
+        Clique num preço para escolher de quem comprar. <b className="text-emerald-600">Contorno verde</b> = mais barato,{" "}
+        <b className="text-orange-600">laranja</b> = escolhido, e o <b>+%</b> diz quanto está acima do mais barato. A coluna{" "}
+        <b>Escolhido</b> mostra quanto o item vai custar e se subiu ou baixou desde a última compra. Use <b>dividir</b> pra pedir
+        o mesmo item de mais de um fornecedor e o <b>✓</b> pra marcar o que já conferiu (fica guardado neste navegador).
       </p>
 
       {fotoAberta && (

@@ -224,12 +224,21 @@ export default async function CompararPage({
     { forn: string; preco: number | null; data: string }
   > = {};
   if (produtoIds.length) {
-    const { data: hist } = await supabase
-      .from("pedido_itens")
-      .select(
-        "produto_id, preco_unit, preco_recebido, pedidos!inner(fornecedor_id, criado_em, cotacao_id, fornecedores(nome))",
-      )
-      .in("produto_id", produtoIds);
+    // Em páginas: o banco devolve no máximo 1000 linhas por consulta, e o
+    // histórico dos itens de uma cotação grande passa disso com o tempo.
+    const hist: unknown[] = [];
+    for (let de = 0; ; de += 1000) {
+      const { data: pag } = await supabase
+        .from("pedido_itens")
+        .select(
+          "id, produto_id, preco_unit, preco_recebido, pedidos!inner(fornecedor_id, criado_em, cotacao_id, fornecedores(nome))",
+        )
+        .in("produto_id", produtoIds)
+        .order("id")
+        .range(de, de + 999);
+      hist.push(...(pag ?? []));
+      if (!pag || pag.length < 1000) break;
+    }
     const maisRecente: Record<string, string> = {};
     for (const row of (hist as unknown as {
       produto_id: string;
