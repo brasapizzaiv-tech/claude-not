@@ -18,7 +18,7 @@ USAR
 2) No sistema, abra a cotacao -> Fornecedores.
 3) Clique no icone da extensao -> "Enviar para os pendentes".
 4) Deixe o Chrome quieto: ele abre o WhatsApp, envia, fecha e passa pro proximo
-   (uns 15 a 30 segundos por fornecedor). "Parar" interrompe apos a atual.
+   (uns 30 segundos a 1 minuto por fornecedor: so fecha a aba depois do check). "Parar" interrompe apos a atual.
 5) No fim, o status mostra quantas foram e quais nao foram (ex.: numero sem WhatsApp).
 
 Se o WhatsApp Web mudar o botao Enviar e a extensao parar de enviar, avise —

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Brasa WhatsApp Sender",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Envia sozinho, pelo WhatsApp Web, as mensagens de cotação do sistema da Brasa aos fornecedores (um a um, marcando como enviado).",
   "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" },
   "action": {

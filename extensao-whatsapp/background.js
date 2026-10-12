@@ -90,8 +90,9 @@ async function iniciar(tabSistema, reenviar) {
       }
       await status(`(${i + 1}/${fila.length}) ${l.nome || l.telefone}: ${resultado === "enviado" ? "✓ enviada" : "✗ " + resultado}`, { enviados, total: fila.length });
       try { await chrome.tabs.remove(aba.id); } catch {}
-      // Pausa entre mensagens (3 a 6 s) — evita bloqueio por spam.
-      await esperar(3000 + Math.random() * 3000);
+      // Pausa entre mensagens (8 a 15 s) — mandar link pra muita gente em
+      // sequência rápida é o que o WhatsApp segura como spam.
+      await esperar(8000 + Math.random() * 7000);
     }
     await status(
       `Pronto: ${enviados} de ${fila.length} enviadas.` + (falhas.length ? ` Não foi: ${falhas.join("; ")}` : ""),
