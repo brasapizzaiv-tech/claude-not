@@ -20,7 +20,7 @@ on:
 env:
   APP_ID: br.com.motelli.entregador
   APP_NOME: Motelli Entregador
-  APP_VERSION_NAME: "1.0.0"
+  APP_VERSION_NAME: "1.0.1"
   # Conta Apple Developer (pessoa física) do Rafael.
   APPLE_TEAM_ID: NG2HMYU9Q7
   IOS_PROFILE_NAME: Motelli Entregador App Store
