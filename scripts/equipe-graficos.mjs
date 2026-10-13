@@ -63,3 +63,20 @@ await sharp({ create: { width: 1024, height: 500, channels: 3, background: AZUL 
   .png()
   .toFile("public/play/motelli-equipe-capa-1024x500.png");
 console.log("ok public/play/motelli-equipe-capa-1024x500.png");
+
+// Cabeçalho da página do app na App Store ("ativo de cabeçalho"), 3840×1646:
+// a mesma capa, em grande, com o texto à esquerda e o grupo à direita.
+{
+  const W = 3840, H = 1646;
+  const grande = await figura(1150);
+  const txt = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
+  <text x="300" y="760" font-family="Arial, Helvetica, sans-serif" font-size="300" font-weight="700" fill="${PAPEL}" letter-spacing="-6">Motelli</text>
+  <text x="300" y="1020" font-family="Arial, Helvetica, sans-serif" font-size="180" font-weight="400" fill="${PAPEL}" letter-spacing="-3">Equipe</text>
+  <text x="306" y="1220" font-family="Arial, Helvetica, sans-serif" font-size="76" fill="${PAPEL}" opacity="0.8">o app de quem trabalha no restaurante</text>
+</svg>`);
+  await sharp({ create: { width: W, height: H, channels: 3, background: AZUL } })
+    .composite([{ input: txt, left: 0, top: 0 }, { input: grande, left: 2350, top: 250 }])
+    .png()
+    .toFile("public/play/motelli-equipe-cabecalho-3840x1646.png");
+  console.log("ok public/play/motelli-equipe-cabecalho-3840x1646.png");
+}
