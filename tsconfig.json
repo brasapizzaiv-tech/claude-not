@@ -38,6 +38,7 @@
   ],
   "exclude": [
     "node_modules",
-    "app-entregador"
+    "app-entregador",
+    "app-equipe"
   ]
 }

@@ -79,3 +79,6 @@ backup-*.json
 
 .vercel
 .env*
+# app nativo da equipe: node_modules e APK gerados no CI
+app-equipe/node_modules/
+app-equipe/*.apk

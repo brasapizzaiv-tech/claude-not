@@ -5,7 +5,8 @@ import { Enviar } from "@/components/enviar";
 import { avisar } from "@/components/dialogo";
 
 import { siteUrl } from "@/lib/site-url";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import QRCode from "qrcode";
 import Link from "next/link";
 import type { Colaborador } from "@/lib/types";
 import { GRUPOS, GRUPO_KEYS, DIAS, type GrupoKey } from "@/lib/folgas";
@@ -48,6 +49,38 @@ function GerarLink({ id, small }: { id: string; small?: boolean }) {
   );
 }
 
+// Entrada no app Motelli Equipe: código de 6 números ou QR do link pessoal.
+const codigoFmt = (cod: string) => `${cod.slice(0, 3)} ${cod.slice(3)}`;
+function CodigoApp({ c, link }: { c: Colaborador; link: string }) {
+  const [qr, setQr] = useState<string | null>(null);
+  const [aberto, setAberto] = useState(false);
+  useEffect(() => {
+    if (!aberto || qr) return;
+    QRCode.toDataURL(link, { margin: 1, width: 220 }).then(setQr).catch(() => setQr(null));
+  }, [aberto, qr, link]);
+  if (!c.codigo) return null;
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="text-texto-fraco">código</span>
+      <b className="tracking-widest text-texto">{codigoFmt(c.codigo)}</b>
+      <button type="button" onClick={() => setAberto((v) => !v)} className="rounded border border-borda-forte px-1.5 py-0.5 text-texto-suave hover:bg-superficie-suave">
+        QR
+      </button>
+      {aberto && (
+        <span className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAberto(false)}>
+          <span className="rounded-cartao bg-white p-4 text-center text-zinc-900" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {qr ? <img src={qr} alt={`QR do app de ${c.nome}`} width={220} height={220} /> : <span className="block h-[220px] w-[220px]" />}
+            <span className="mt-2 block text-sm font-semibold">{c.nome}</span>
+            <span className="block text-xs text-zinc-500">No app Motelli Equipe: “Ler QR code” — ou o código {codigoFmt(c.codigo)}</span>
+            <button type="button" onClick={() => setAberto(false)} className="mt-3 rounded-controle bg-zinc-900 px-4 py-1.5 text-sm font-semibold text-white">Fechar</button>
+          </span>
+        </span>
+      )}
+    </span>
+  );
+}
+
 function LinkApp({ c }: { c: Colaborador }) {
   const [copiado, setCopiado] = useState(false);
   if (!c.token) return <GerarLink id={c.id} small />;
@@ -56,7 +89,8 @@ function LinkApp({ c }: { c: Colaborador }) {
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
   const msg = encodeURIComponent(
-    `Oi ${c.nome}! Esse é o seu app da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}`,
+    `Oi ${c.nome}! Esse é o seu app da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}` +
+      (c.codigo ? `\nNo app Motelli Equipe, o seu código de entrada é ${codigoFmt(c.codigo)}.` : ""),
   );
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -80,6 +114,7 @@ function LinkApp({ c }: { c: Colaborador }) {
           Enviar no WhatsApp
         </a>
       )}
+      <CodigoApp c={c} link={link} />
       <span className={c.pin ? "text-texto-fraco" : "text-amber-600"}>
         {c.pin ? "PIN definido" : "sem PIN"}
       </span>
@@ -107,7 +142,8 @@ function CardApp({ c }: { c: Colaborador }) {
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
   const msg = encodeURIComponent(
-    `Oi ${c.nome}! Esse é o seu app da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}`,
+    `Oi ${c.nome}! Esse é o seu app da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}` +
+      (c.codigo ? `\nNo app Motelli Equipe, o seu código de entrada é ${codigoFmt(c.codigo)}.` : ""),
   );
   return (
     <div className="rounded-cartao border border-borda p-3">
@@ -115,6 +151,7 @@ function CardApp({ c }: { c: Colaborador }) {
         <span className="truncate font-medium text-texto">{c.nome}</span>
         <span className={`text-xs ${c.pin ? "text-texto-fraco" : "text-amber-600"}`}>{c.pin ? "PIN ok" : "sem PIN"}</span>
       </div>
+      <div className="mb-2 text-xs"><CodigoApp c={c} link={link} /></div>
       <div className="flex gap-2">
         <button
           onClick={() => {

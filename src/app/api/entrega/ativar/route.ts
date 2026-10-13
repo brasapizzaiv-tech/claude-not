@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { bloqueado, corsAtivacao, dominioOk, ipDe, lerCodigo, registrarTentativa } from "@/lib/ativacao-codigo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,40 +10,20 @@ export const dynamic = "force-dynamic";
 // o código de 6 números que aparece no painel (Delivery → Entregadores) e o app
 // pergunta aqui, sempre em motelli.com.br, pra onde ir: devolve o link pessoal
 // dele (https://{domínio da empresa}/entrega/{token}). Migration 0227.
-//
-// 6 números são só 1 milhão de combinações, e o que sai daqui é o link pessoal.
-// Por isso conta os erros: 10 por aparelho/IP em 15 min, ou 300 no total
-// (alguém chutando de vários lugares), e fecha a porta por um tempo.
-
-const JANELA_MS = 15 * 60 * 1000;
-const MAX_ERROS_IP = 10;
-const MAX_ERROS_TOTAL = 300;
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Cache-Control": "no-store",
-};
-const resposta = (corpo: unknown, status = 200) => Response.json(corpo, { status, headers: cors });
+// A trava contra chute é a mesma do app da equipe (src/lib/ativacao-codigo.ts).
+const resposta = (corpo: unknown, status = 200) => Response.json(corpo, { status, headers: corsAtivacao });
 
 export function OPTIONS() {
-  return new Response(null, { status: 204, headers: cors });
+  return new Response(null, { status: 204, headers: corsAtivacao });
 }
 
 export async function POST(req: Request) {
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || req.headers.get("x-real-ip") || "?";
-  let codigo = "";
-  try { codigo = String(((await req.json()) as { codigo?: unknown })?.codigo ?? "").replace(/\D/g, ""); } catch { /* corpo inválido */ }
+  const ip = ipDe(req);
+  const codigo = await lerCodigo(req);
   if (!/^\d{6}$/.test(codigo)) return resposta({ erro: "O código tem 6 números." }, 400);
 
   const admin = createAdminClient();
-  const desde = new Date(Date.now() - JANELA_MS).toISOString();
-  const [{ count: errosIp }, { count: errosTotal }] = await Promise.all([
-    admin.from("entrega_ativacao_tentativas").select("id", { count: "exact", head: true }).eq("ip", ip).eq("ok", false).gte("em", desde),
-    admin.from("entrega_ativacao_tentativas").select("id", { count: "exact", head: true }).eq("ok", false).gte("em", desde),
-  ]);
-  if ((errosIp ?? 0) >= MAX_ERROS_IP || (errosTotal ?? 0) >= MAX_ERROS_TOTAL) {
+  if (await bloqueado(admin, ip)) {
     return resposta({ erro: "Muitas tentativas erradas. Espere 15 minutos ou use o QR code do painel." }, 429);
   }
 
@@ -53,12 +34,9 @@ export async function POST(req: Request) {
     .maybeSingle();
   const e = data as { token: string | null; ativo: boolean; empresas: { dominio: string | null; ativo: boolean } | null } | null;
   const dominio = String(e?.empresas?.dominio ?? "").trim().toLowerCase();
-  const ok = !!(e?.ativo && e.token && e.empresas?.ativo !== false && /^[a-z0-9.-]+\.[a-z]{2,}$/.test(dominio));
+  const ok = !!(e?.ativo && e.token && e.empresas?.ativo !== false && dominioOk(dominio));
 
-  await admin.from("entrega_ativacao_tentativas").insert({ ip, ok });
-  // Faxina: tentativas com mais de 1 dia não servem pra nada.
-  if (Math.random() < 0.05) await admin.from("entrega_ativacao_tentativas").delete().lt("em", new Date(Date.now() - 86400000).toISOString());
-
+  await registrarTentativa(admin, ip, ok);
   if (!ok) return resposta({ erro: "Código não encontrado. Confira os números com a gerência." }, 404);
   return resposta({ url: `https://${dominio}/entrega/${e!.token}` });
 }

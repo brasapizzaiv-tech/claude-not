@@ -1,0 +1,118 @@
+# Compila o app da EQUIPE (Motelli Equipe) na nuvem — irmão do workflow do
+# Entregador (app-entregador.yml), com o mesmo esquema: APK de teste sempre (no
+# release "app-equipe") e o .aab assinado pra Play quando a chave de upload
+# existe nos segredos (é a MESMA chave do Entregador: uma conta, vários apps).
+name: App da equipe (Android)
+
+on:
+  push:
+    branches: [main]
+    paths: ["app-equipe/**", "public/icons/motelli-equipe-*.png", ".github/workflows/app-equipe.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # O identificador do app é PRA SEMPRE depois de publicado na loja.
+  APP_ID: br.com.motelli.equipe
+  APP_NOME: Motelli Equipe
+  APP_VERSION_NAME: "1.0.0"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-equipe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      # O SDK do Android já vem instalado na máquina do GitHub (ANDROID_HOME).
+      # O android-actions/setup-android@v3 baixava outro sdkmanager e passou a
+      # falhar no aceite de licenças em 23/09/2026 ("6 of 7 SDK package
+      # licenses not accepted", exit 1) — o build inteiro parava ali. Aqui só
+      # aceitamos as licenças com o sdkmanager que já existe; o que faltar de
+      # plataforma/ferramenta o próprio Gradle baixa.
+      - name: SDK do Android (o que já vem na máquina)
+        working-directory: .
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKM="$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
+          if [ -n "$SDKM" ]; then yes | "$SDKM" --licenses > /dev/null 2>&1 || true; fi
+          ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools" || true
+
+      - name: Dependências
+        run: npm install --no-audit --no-fund
+
+      - name: Projeto Android (sincroniza, aplica permissões/nome/ícone/versão)
+        env:
+          # A Play recusa uma versão repetida. O número da execução nunca volta.
+          APP_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          set -x
+          npx cap sync android
+          node scripts/patch-android.mjs
+          chmod +x android/gradlew
+
+      - name: Compilar APK de teste
+        run: cd android && ./gradlew assembleDebug --no-daemon
+
+      - name: Renomear
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk MotelliEquipe.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MotelliEquipe-apk
+          path: app-equipe/MotelliEquipe.apk
+
+      # ---------------------------------------------------------------------
+      # O pacote da loja. Só acontece quando a chave de assinatura existe.
+      # ---------------------------------------------------------------------
+      - name: Tem chave de assinatura?
+        id: chave
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "tem=sim" >> "$GITHUB_OUTPUT"
+          else
+            echo "tem=nao" >> "$GITHUB_OUTPUT"
+            echo "Sem ANDROID_KEYSTORE_BASE64 nos segredos: pulando o pacote da loja."
+          fi
+
+      - name: Montar o .aab assinado
+        if: steps.chave.outputs.tem == 'sim'
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/chave.jks"
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/chave.jks"
+          cd android && ./gradlew bundleRelease --no-daemon
+          cd .. && cp android/app/build/outputs/bundle/release/app-release.aab MotelliEquipe.aab
+          # A chave não fica na máquina depois do build.
+          rm -f "$RUNNER_TEMP/chave.jks"
+
+      # O .aab NÃO vai pro release público: é o pacote que sobe na Play Console,
+      # e fica guardado como artefato da execução, pra baixar de dentro do Actions.
+      - uses: actions/upload-artifact@v4
+        if: steps.chave.outputs.tem == 'sim'
+        with:
+          name: MotelliEquipe-aab
+          path: app-equipe/MotelliEquipe.aab
+          retention-days: 30
+
+      # Link fixo: https://github.com/<org>/<repo>/releases/download/app-equipe/MotelliEquipe.apk
+      - name: Publicar no release "app-equipe"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-equipe
+          name: Motelli Equipe (Android)
+          body: "APK mais recente do Motelli Equipe. Baixe no celular e instale (permitir 'fontes desconhecidas')."
+          files: app-equipe/MotelliEquipe.apk

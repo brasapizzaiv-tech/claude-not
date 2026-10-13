@@ -68,6 +68,8 @@ export type Colaborador = {
   dias_dia?: number[];
   dias_noite?: number[];
   criado_em: string;
+  /** Código de 6 números pra entrar no app Motelli Equipe (migration 0232). */
+  codigo?: string | null;
 };
 
 export type StatusContagem = "rascunho" | "finalizada";

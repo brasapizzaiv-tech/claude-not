@@ -10,9 +10,9 @@ const HOST_MOTELLI = /(^|\.)motelli\.com\.br$/i;
 export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").split(":")[0];
   if (HOST_MOTELLI.test(host)) {
-    // O app do entregador pergunta aqui pelo código de entrada (é o único
+    // Os apps Motelli (Entregador e Equipe) perguntam aqui pelo código de entrada (é o único
     // endereço fixo que ele conhece): essas rotas passam direto, sem login.
-    if (request.nextUrl.pathname.startsWith("/api/entrega/")) return NextResponse.next();
+    if (request.nextUrl.pathname.startsWith("/api/entrega/") || request.nextUrl.pathname.startsWith("/api/equipe/")) return NextResponse.next();
     const url = request.nextUrl.clone();
     if (!url.pathname.startsWith("/motelli")) url.pathname = `/motelli${url.pathname === "/" ? "" : url.pathname}`;
     return NextResponse.rewrite(url);

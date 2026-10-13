@@ -59,6 +59,8 @@ export async function updateSession(request: NextRequest) {
     // O app do entregador pergunta aqui se este endereço é um sistema nosso,
     // antes de existir qualquer login.
     path.startsWith("/api/entrega/") ||
+    // Idem pro app Motelli Equipe (código de entrada e "é sistema nosso?").
+    path.startsWith("/api/equipe/") ||
     path.startsWith("/garcom") ||
     path.startsWith("/folga/") ||
     path.startsWith("/balanca-teste") ||
