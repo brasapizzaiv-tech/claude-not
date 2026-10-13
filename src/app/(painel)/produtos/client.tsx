@@ -486,7 +486,9 @@ export function ProdutosClient({
 
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-6">
+          {/* Rola por dentro: o formulário passa da altura de telas comuns e o
+              botão Salvar sumia embaixo (12/10/2026). */}
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-cartao bg-painel-cartao p-6">
             <h2 className="mb-4 text-lg font-semibold text-texto">
               {editando ? "Editar produto" : "Novo produto"}
             </h2>
@@ -707,7 +709,7 @@ export function ProdutosClient({
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="sticky -bottom-6 -mx-6 -mb-6 flex justify-end gap-2 border-t border-borda bg-painel-cartao px-6 py-3">
                 <button
                   type="button"
                   onClick={() => setAberto(false)}
