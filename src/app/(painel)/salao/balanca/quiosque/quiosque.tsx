@@ -41,15 +41,21 @@ type Resultado = {
 const AGENTE_URL = "http://localhost:8543";
 
 // QR da comanda (mesmo das comandas normais — aponta para a página da comanda).
+// Leitura no caixa estava lenta (13/10/2026). Três ajustes: desenho vetorial
+// (SVG) em vez de PNG esticado — a térmica imprime bordas retas, sem borrão;
+// margem de 4 módulos (a norma do QR; com 1 o leitor demorava a achar o
+// código); e correção de erro L, que deixa o QR menos denso (módulos maiores)
+// — o cupom sai na hora e não fica gasto como uma etiqueta.
 function CupomQR({ id }: { id: string }) {
-  const [src, setSrc] = useState("");
+  const [svg, setSvg] = useState("");
   useEffect(() => {
     const url = (typeof window !== "undefined" ? window.location.origin : "") + `/salao/comandas/${id}`;
-    QRCode.toDataURL(url, { width: 220, margin: 1 }).then(setSrc).catch(() => {});
+    QRCode.toString(url, { type: "svg", margin: 4, errorCorrectionLevel: "L" })
+      .then((s) => setSvg(s.replace("<svg ", '<svg width="100%" height="100%" ')))
+      .catch(() => {});
   }, [id]);
-  if (!src) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="QR da comanda" style={{ width: "40mm", height: "40mm", margin: "2mm auto 0" }} />;
+  if (!svg) return null;
+  return <div role="img" aria-label="QR da comanda" style={{ width: "44mm", height: "44mm", margin: "1mm auto 0" }} dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
 export function QuiosqueBalanca({
