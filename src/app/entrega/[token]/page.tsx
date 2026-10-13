@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { lerMarca } from "@/lib/marca";
 import { empresaAtual } from "@/lib/empresa";
 import { SemZoom } from "@/components/sem-zoom";
+import { SairDoAparelho } from "@/components/sair-do-aparelho";
 import { minhasEntregas, sessaoEntregador } from "./entrega-actions";
 import { EntregaClient } from "./entrega-client";
 
@@ -36,6 +37,7 @@ export default async function EntregaPage({ params }: { params: Promise<{ token:
         <div>
           <p className="text-2xl font-bold">Link inválido</p>
           <p className="mt-2 text-sm">Peça o seu link de entregador pra gerência.</p>
+          <div className="mt-6"><SairDoAparelho /></div>
         </div>
       </div>
     );

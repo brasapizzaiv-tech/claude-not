@@ -119,11 +119,18 @@
 
   function irPara(url) { window.location.replace(url); }
 
-  // Já entrou antes neste aparelho: vai direto, sem perguntar nada.
-  try {
-    var guardado = localStorage.getItem(CHAVE);
-    if (guardado && guardado.indexOf("https://") === 0) { irPara(guardado); return; }
-  } catch (e) { /* aparelho sem armazenamento: segue pedindo */ }
+  // "Sair deste aparelho" (botão dentro do app) volta pra cá com ?sair=1:
+  // esquece o endereço e mostra a entrada de novo.
+  if (/[?&]sair=1/.test(location.search)) {
+    try { localStorage.removeItem(CHAVE); } catch (e) { /* sem armazenamento */ }
+    try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ }
+  } else {
+    // Já entrou antes neste aparelho: vai direto, sem perguntar nada.
+    try {
+      var guardado = localStorage.getItem(CHAVE);
+      if (guardado && guardado.indexOf("https://") === 0) { irPara(guardado); return; }
+    } catch (e) { /* aparelho sem armazenamento: segue pedindo */ }
+  }
 
   /** O link tem que ser https e apontar pro app da equipe (/eu/código). */
   function separar(texto) {

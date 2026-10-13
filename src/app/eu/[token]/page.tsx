@@ -12,6 +12,7 @@ import { PainelVencimentos } from "@/components/etiqueta-ui";
 import { contarFaixas, hojeSP } from "@/lib/etiqueta-vencimentos";
 import { lembretesDoColaborador } from "@/lib/lembretes-server";
 import { LembretesHoje } from "./lembretes-hoje";
+import { SairEu } from "./sair-eu";
 import { EntregaObrigatoria } from "./entrega-obrigatoria";
 
 const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
@@ -53,6 +54,7 @@ async function Moldura({ children }: { children: React.ReactNode }) {
           </p>
         </div>
         {children}
+        <SairEu />
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { Icone, type NomeIcone } from "@/components/icone";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import jsQR from "jsqr";
 import { historicoEntregas, marcarEntregue, meusGanhos, minhasEntregas, pegarEntrega, registrarPosicao, sairComEntregas, type Boy, type EntregaBoy } from "./entrega-actions";
+import { SairDoAparelho } from "@/components/sair-do-aparelho";
 
 const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -463,6 +464,8 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
             <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Longitude</div><div className="font-bold">{gps ? gps.lng.toFixed(5) : "—"}</div></div>
             <div className="col-span-2 rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-fraco">Última atualização</div><div className="font-bold">{gps ? new Date(gps.em).toLocaleTimeString("pt-BR") : "—"}</div></div>
           </div>
+          {/* Voltar pra tela do código (celular emprestado, código errado). */}
+          <div className="pt-4 text-center"><SairDoAparelho aoSair={async () => { ligarGps(false); await new Promise((r) => setTimeout(r, 800)); }} /></div>
         </main>
       )}
 

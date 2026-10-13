@@ -116,3 +116,11 @@ export async function entrarPin(token: string, pinRaw: string) {
   await gravarCookie(token, pin);
   return { ok: true };
 }
+
+// "Sair deste aparelho": esquece o PIN guardado neste celular (o cookie). O
+// app nativo ainda volta pra tela do código (src/components/sair-do-aparelho.tsx).
+export async function sairDoAparelhoColab(token: string) {
+  const jar = await cookies();
+  jar.delete({ name: `eu_${token}`, path: `/eu/${token}` });
+  return { ok: true };
+}
