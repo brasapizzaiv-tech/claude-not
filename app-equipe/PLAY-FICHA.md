@@ -83,7 +83,7 @@ NÃO marcar: localização, fotos/vídeos (a câmera só lê QR, nada é gravado
 
 ## 4. Versão de teste interno → produção
 
-Subir `MotelliEquipe-v1.aab` (Testar e lançar → Produção → Criar nova versão),
+Subir o `MotelliEquipe-vN.aab` mais novo da pasta (Testar e lançar → Produção → Criar nova versão),
 notas da versão:
 
 ```
