@@ -7,7 +7,8 @@ import sharp from "sharp";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
-const PASTA = "C:/Users/NeoTech/OneDrive/Desktop/Motelli Entregador - enviar pra Play";
+// A pasta pode vir do ambiente (PASTA=...) pra servir os dois apps.
+const PASTA = process.env.PASTA || "C:/Users/NeoTech/OneDrive/Desktop/Motelli Entregador - enviar pra Play";
 const TAMANHOS = { "App Store 6.9": [1320, 2868], "App Store 6.5": [1284, 2778] };
 const arquivos = process.argv.slice(2);
 if (!arquivos.length) { console.error("passe os arquivos na ordem da loja"); process.exit(1); }
