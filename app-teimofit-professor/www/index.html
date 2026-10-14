@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>TeimoFit Professor</title>
+<!--
+  A PORTA DO APP DO PROFESSOR
+
+  O painel de qualquer academia mora em teimofit.com.br: a academia vem do
+  login, não do endereço. Então esta tela só abre o painel — e só aparece de
+  verdade quando não há internet, para dizer isso em vez de mostrar um erro
+  do sistema. Escrita em HTML puro, com o estilo colado: precisa aparecer
+  sem conexão.
+-->
+<style>
+  :root { --fundo: #0b0d0c; --texto: #f2f5f3; --apoio: #9ba5a0; --destaque: #bef264; --sobre: #0b0d0c; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 28px 20px;
+    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 12px;
+    background: var(--fundo); color: var(--texto);
+    font-family: system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  .marca { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+  .marca b { color: var(--destaque); }
+  p { margin: 0; color: var(--apoio); font-size: 15px; line-height: 1.5; max-width: 22rem; }
+  button {
+    margin-top: 12px; min-height: 54px; padding: 0 28px; font-size: 16px; font-weight: 800;
+    color: var(--sobre); background: var(--destaque); border: 0; border-radius: 15px;
+  }
+  .escondido { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="marca">TeimoFit<b>.</b></div>
+  <p id="abrindo">Abrindo o painel…</p>
+  <div id="semInternet" class="escondido">
+    <p>Sem internet agora. O painel precisa da conexão para mostrar a agenda e os alunos.</p>
+    <button id="denovo" type="button">Tentar de novo</button>
+  </div>
+<script>
+(function () {
+  "use strict";
+  var PAINEL = "https://teimofit.com.br/painel";
+  function abrir() {
+    if (navigator.onLine === false) {
+      document.getElementById("abrindo").classList.add("escondido");
+      document.getElementById("semInternet").classList.remove("escondido");
+      return;
+    }
+    window.location.replace(PAINEL);
+  }
+  document.getElementById("denovo").addEventListener("click", function () {
+    document.getElementById("semInternet").classList.add("escondido");
+    document.getElementById("abrindo").classList.remove("escondido");
+    setTimeout(abrir, 300);
+  });
+  window.addEventListener("online", abrir);
+  abrir();
+})();
+</script>
+</body>
+</html>

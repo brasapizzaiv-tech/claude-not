@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>TeimoFit</title>
+<!--
+  A PORTA DE ENTRADA DO APP DO ALUNO
+
+  Esta tela mora DENTRO do app (não é do site), e é o que faz um app só servir
+  qualquer academia: o app não nasce sabendo de que academia ele é.
+
+    - Quem já entrou uma vez: celular + PIN. O teimofit.com.br descobre a
+      academia e devolve um passe para o endereço dela.
+    - A primeira vez: o código de 6 números (ou o QR, ou o link) que a
+      professora mostrou. É lá que o aluno cria o PIN.
+
+  Antes de abrir qualquer endereço, o app confere que ali roda mesmo o
+  TeimoFit (/api/aluno/identidade). Depois guarda a academia e, nas próximas
+  vezes, abre direto nela.
+
+  Escrita em HTML puro, com o estilo colado: precisa aparecer antes de existir
+  qualquer conexão. As cores são as da paleta do app (fundo #0B0D0C, destaque
+  #BEF264).
+-->
+<style>
+  :root { --fundo: #0b0d0c; --cartao: #15181a; --borda: rgba(255,255,255,.10); --texto: #f2f5f3; --apoio: #9ba5a0; --destaque: #bef264; --sobre: #0b0d0c; --erro: #f87171; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 28px 20px;
+    /* iPhone: fora da barra de status e do risco de início */
+    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; justify-content: center;
+    background: var(--fundo); color: var(--texto);
+    font-family: system-ui, -apple-system, Roboto, Arial, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  .marca { font-size: 15px; font-weight: 800; letter-spacing: -.01em; margin-bottom: 26px; }
+  .marca b { color: var(--destaque); }
+  h1 { font-size: 26px; margin: 0 0 8px; letter-spacing: -.01em; }
+  p.sub { margin: 0 0 22px; color: var(--apoio); font-size: 15px; line-height: 1.5; }
+  label { display: block; font-size: 12px; color: var(--apoio); margin: 14px 0 6px; font-weight: 600; }
+  input {
+    width: 100%; min-height: 54px; padding: 14px; font-size: 16px; /* 16px: menos que isso o celular dá zoom */
+    color: var(--texto); background: rgba(255,255,255,.04);
+    border: 1px solid var(--borda); border-radius: 13px;
+  }
+  input:focus { outline: 2px solid var(--destaque); outline-offset: 2px; }
+  input.grande { font-size: 26px; font-weight: 700; letter-spacing: .3em; text-align: center; }
+  button {
+    width: 100%; min-height: 54px; margin-top: 16px; padding: 14px; font-size: 16px; font-weight: 800; letter-spacing: .02em;
+    color: var(--sobre); background: var(--destaque); border: 0; border-radius: 15px;
+  }
+  button[disabled] { opacity: .5; }
+  button.sec { background: transparent; border: 1px solid var(--borda); color: var(--texto); font-weight: 700; letter-spacing: 0; }
+  button.texto { background: none; color: var(--destaque); font-weight: 700; font-size: 15px; letter-spacing: 0; min-height: 44px; margin-top: 8px; }
+  .aviso { margin-top: 14px; font-size: 14px; line-height: 1.45; min-height: 20px; }
+  .erro { color: var(--erro); }
+  .ok { color: var(--apoio); }
+  .escondido { display: none !important; }
+  .divisor { margin: 26px 0 4px; border-top: 1px solid var(--borda); padding-top: 18px; color: var(--apoio); font-size: 14px; line-height: 1.5; }
+  #camera { position: fixed; inset: 0; z-index: 10; background: #000; display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  #camera video { flex: 1; width: 100%; min-height: 0; object-fit: cover; }
+  #camera .topo { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-weight: 700; }
+  #camera .topo button { width: auto; min-height: 44px; margin: 0; padding: 8px 14px; font-size: 15px; }
+  .cartao { margin: auto 20px; background: var(--cartao); border: 1px solid var(--borda); border-radius: 20px; padding: 20px; }
+  .cartao h2 { margin: 0 0 8px; font-size: 19px; }
+  .cartao p { margin: 0 0 8px; font-size: 15px; line-height: 1.5; }
+  .opcao { text-align: left; background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); font-weight: 700; letter-spacing: 0; }
+</style>
+</head>
+<body>
+  <div class="marca">TeimoFit<b>.</b></div>
+
+  <!-- Quem já entrou uma vez: celular + PIN -->
+  <div id="porCelular">
+    <h1 id="titulo">Entrar</h1>
+    <p class="sub">Já entrou antes? Digite o seu celular e o PIN de 4 números que você criou.</p>
+    <label for="celular">Seu celular, com DDD</label>
+    <input id="celular" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(51) 99999-8888" />
+    <label for="pin">Seu PIN</label>
+    <input id="pin" class="grande" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="••••" />
+    <button id="entrarCelular" type="button">ENTRAR</button>
+    <p class="divisor">Primeira vez? Use o código ou o QR code que a sua professora mostrou.</p>
+    <button id="irCodigo" type="button" class="sec">Tenho um código</button>
+    <button id="lerQr" type="button" class="sec">Ler QR code</button>
+  </div>
+
+  <!-- A primeira vez: o código de 6 números -->
+  <div id="porCodigo" class="escondido">
+    <h1>Primeiro acesso</h1>
+    <p class="sub">Digite o código de 6 números que a sua professora mostrou. Depois você escolhe o seu PIN.</p>
+    <label for="codigo">Código</label>
+    <input id="codigo" class="grande" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000 000" />
+    <button id="entrarCodigo" type="button">CONTINUAR</button>
+    <button id="irLink" type="button" class="texto">Tenho um link</button>
+    <button id="voltarCelular1" type="button" class="texto">Já tenho PIN — entrar com o celular</button>
+  </div>
+
+  <!-- Ou o link que veio no WhatsApp -->
+  <div id="porLink" class="escondido">
+    <h1>Entrar com o link</h1>
+    <p class="sub">Cole o link que a sua professora mandou no WhatsApp.</p>
+    <label for="link">Link</label>
+    <input id="link" type="url" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="https://…/a/…" />
+    <button id="entrarLink" type="button">ENTRAR COM O LINK</button>
+    <button id="voltarCelular2" type="button" class="texto">Voltar</button>
+  </div>
+
+  <!-- O mesmo celular em duas academias -->
+  <div id="escolher" class="escondido">
+    <h1>Qual academia?</h1>
+    <p class="sub">Você tem cadastro em mais de um lugar. Escolha onde quer entrar.</p>
+    <div id="opcoes"></div>
+    <button id="voltarCelular3" type="button" class="texto">Voltar</button>
+  </div>
+
+  <p class="aviso" id="aviso" role="status" aria-live="polite"></p>
+
+  <!-- Leitor do QR. Começa pelo aviso da câmera (política da Play: o aviso vem
+       antes da permissão do sistema); só o botão "Abrir câmera" pede a câmera. -->
+  <div id="camera" class="escondido">
+    <div class="topo"><span id="cameraTitulo">Ler QR code</span><button id="fecharCamera" type="button" class="sec">Fechar</button></div>
+    <div id="cameraAviso" class="cartao">
+      <h2>Câmera</h2>
+      <p>O app usa a <b>câmera</b> só para ler o QR code de entrada que a sua professora mostra. Nenhuma foto ou vídeo é guardado ou enviado.</p>
+      <p style="color: var(--apoio)">Na próxima tela, permita o acesso à câmera. Se preferir, feche e digite o código.</p>
+      <button id="abrirCamera" type="button">ABRIR CÂMERA</button>
+    </div>
+    <video id="video" class="escondido" muted playsinline autoplay></video>
+    <canvas id="quadro" class="escondido"></canvas>
+  </div>
+
+<script src="jsQR.js"></script>
+<script>
+(function () {
+  "use strict";
+  var CHAVE = "teimofit_endereco";
+  // O único endereço fixo que o app conhece: o site da marca, que traduz o
+  // código e o celular no endereço da academia do aluno.
+  var CENTRAL = "https://teimofit.com.br";
+  var $ = function (id) { return document.getElementById(id); };
+  var aviso = $("aviso");
+
+  function diz(texto, ruim) {
+    aviso.textContent = texto || "";
+    aviso.className = "aviso" + (ruim ? " erro" : " ok");
+  }
+  function irPara(url) { window.location.replace(url); }
+
+  // "?sair=1": esquece a academia e mostra a entrada de novo.
+  if (/[?&]sair=1/.test(location.search)) {
+    try { localStorage.removeItem(CHAVE); } catch (e) { /* sem armazenamento */ }
+    try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ }
+  } else {
+    // Já entrou antes neste aparelho: abre direto o Início da academia. Se o
+    // login tiver vencido, a própria academia pede o celular e o PIN de novo.
+    try {
+      var guardado = localStorage.getItem(CHAVE);
+      if (guardado && guardado.indexOf("https://") === 0) { irPara(guardado + "/aluno/inicio"); return; }
+    } catch (e) { /* aparelho sem armazenamento: segue pedindo */ }
+  }
+
+  function mostrar(qual) {
+    ["porCelular", "porCodigo", "porLink", "escolher"].forEach(function (id) {
+      $(id).classList.toggle("escondido", id !== qual);
+    });
+    diz("");
+  }
+
+  /**
+   * Um endereço que o app aceita abrir: https, e o link pessoal (/a/…) ou o
+   * passe do login (/entrar/passe?p=…) de uma academia.
+   */
+  function separar(texto) {
+    var t = String(texto || "").trim();
+    if (!t) return null;
+    if (t.indexOf("http") !== 0) t = "https://" + t.replace(/^\/+/, "");
+    var m = t.match(/^https:\/\/([^\/\s?#]+)(\/a\/[0-9a-f]{32}\/?|\/entrar\/passe\?p=[^\s#]+)$/i);
+    if (!m) return null;
+    return { origem: "https://" + m[1], url: "https://" + m[1] + m[2] };
+  }
+
+  /** Ali roda mesmo o TeimoFit? Sem isso, um link qualquer abriria um site estranho dentro do app. */
+  function conferir(origem) {
+    return fetch(origem + "/api/aluno/identidade", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { return j && j.sistema === "teimofit-aluno" ? j : null; })
+      .catch(function () { return null; });
+  }
+
+  var ocupado = false;
+  function abrir(texto) {
+    var alvo = separar(texto);
+    if (!alvo) { diz("Esse link não parece o certo. Precisa ser o endereço inteiro que a professora mandou.", true); return; }
+    ocupado = true;
+    diz("Conferindo a academia…", false);
+    conferir(alvo.origem).then(function (id) {
+      ocupado = false;
+      if (!id) { diz("Não consegui falar com a academia. Confira a internet do celular.", true); return; }
+      try { localStorage.setItem(CHAVE, alvo.origem); } catch (e) { /* segue sem lembrar */ }
+      irPara(alvo.url);
+    });
+  }
+
+  function perguntar(rota, corpo) {
+    return fetch(CENTRAL + rota, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(corpo), cache: "no-store",
+    }).then(function (r) { return r.json().catch(function () { return {}; }); });
+  }
+
+  // ---- celular + PIN ----
+  $("entrarCelular").addEventListener("click", function () {
+    if (ocupado) return;
+    var celular = $("celular").value, pin = $("pin").value.replace(/\D/g, "");
+    if (celular.replace(/\D/g, "").length < 10) { diz("Digite o celular com o DDD.", true); return; }
+    if (pin.length !== 4) { diz("O PIN tem 4 números.", true); return; }
+    ocupado = true;
+    diz("Entrando…", false);
+    perguntar("/api/aluno/entrar", { celular: celular, pin: pin }).then(function (j) {
+      ocupado = false;
+      if (j && j.url) { abrir(j.url); return; }
+      if (j && j.opcoes && j.opcoes.length) { escolherAcademia(j.opcoes); return; }
+      diz((j && j.erro) || "Não deu certo. Tente de novo.", true);
+    }).catch(function () { ocupado = false; diz("Sem internet agora. Confira a conexão do celular.", true); });
+  });
+  $("pin").addEventListener("keydown", function (e) { if (e.key === "Enter") $("entrarCelular").click(); });
+
+  function escolherAcademia(opcoes) {
+    var lista = $("opcoes");
+    lista.innerHTML = "";
+    opcoes.forEach(function (o) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opcao";
+      b.textContent = o.academia;
+      b.addEventListener("click", function () { if (!ocupado) abrir(o.url); });
+      lista.appendChild(b);
+    });
+    mostrar("escolher");
+  }
+
+  // ---- código de 6 números ----
+  var campo = $("codigo");
+  campo.addEventListener("input", function () {
+    var d = campo.value.replace(/\D/g, "").slice(0, 6);
+    campo.value = d.length > 3 ? d.slice(0, 3) + " " + d.slice(3) : d;
+  });
+  function entrarCodigo() {
+    if (ocupado) return;
+    var codigo = campo.value.replace(/\D/g, "");
+    if (codigo.length !== 6) { diz("O código tem 6 números.", true); return; }
+    ocupado = true;
+    diz("Procurando o código…", false);
+    perguntar("/api/aluno/ativar", { codigo: codigo }).then(function (j) {
+      ocupado = false;
+      if (j && j.url) { abrir(j.url); return; }
+      diz((j && j.erro) || "Não deu certo. Tente de novo.", true);
+    }).catch(function () { ocupado = false; diz("Sem internet agora. Confira a conexão do celular.", true); });
+  }
+  $("entrarCodigo").addEventListener("click", entrarCodigo);
+  campo.addEventListener("keydown", function (e) { if (e.key === "Enter") entrarCodigo(); });
+
+  // ---- navegação entre as formas ----
+  $("irCodigo").addEventListener("click", function () { mostrar("porCodigo"); });
+  $("irLink").addEventListener("click", function () { mostrar("porLink"); });
+  ["voltarCelular1", "voltarCelular2", "voltarCelular3"].forEach(function (id) {
+    $(id).addEventListener("click", function () { mostrar("porCelular"); });
+  });
+  $("entrarLink").addEventListener("click", function () { if (!ocupado) abrir($("link").value); });
+  $("link").addEventListener("keydown", function (e) { if (e.key === "Enter" && !ocupado) abrir($("link").value); });
+
+  // ---- QR code ----
+  var video = $("video"), canvas = $("quadro"), stream = null, timer = null;
+  function pararCamera() {
+    if (timer) { clearInterval(timer); timer = null; }
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    video.srcObject = null;
+  }
+  function fecharCamera() { pararCamera(); $("camera").classList.add("escondido"); }
+  $("lerQr").addEventListener("click", function () {
+    diz("");
+    $("cameraAviso").classList.remove("escondido");
+    video.classList.add("escondido");
+    $("cameraTitulo").textContent = "Ler QR code";
+    $("camera").classList.remove("escondido");
+  });
+  $("fecharCamera").addEventListener("click", fecharCamera);
+  $("abrirCamera").addEventListener("click", function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fecharCamera(); diz("Este celular não abriu a câmera. Digite o código.", true); return; }
+    $("cameraAviso").classList.add("escondido");
+    video.classList.remove("escondido");
+    $("cameraTitulo").textContent = "Aponte para o QR da professora";
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }).then(function (s) {
+      stream = s;
+      video.srcObject = s;
+      video.setAttribute("playsinline", "true");
+      return video.play();
+    }).then(function () {
+      var ctx = canvas.getContext("2d", { willReadFrequently: true });
+      timer = setInterval(function () {
+        if (!stream || video.readyState < 2 || !video.videoWidth) return;
+        var esc = Math.min(1, 640 / video.videoWidth);
+        canvas.width = Math.round(video.videoWidth * esc); canvas.height = Math.round(video.videoHeight * esc);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var lido = window.jsQR && window.jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+        if (lido && lido.data) {
+          if (navigator.vibrate) navigator.vibrate(80);
+          fecharCamera();
+          if (separar(lido.data)) abrir(lido.data);
+          else diz("Esse QR não é o de entrada do TeimoFit. Peça para a professora mostrar o seu, em Alunos → Código e QR.", true);
+        }
+      }, 250);
+    }).catch(function (e) {
+      fecharCamera();
+      diz(e && e.name === "NotAllowedError" ? "Sem permissão da câmera. Libere nas configurações do app ou digite o código." : "Não consegui abrir a câmera. Digite o código.", true);
+    });
+  });
+})();
+</script>
+</body>
+</html>
