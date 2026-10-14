@@ -75,7 +75,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
   const idxAtual = ETAPAS.findIndex((e) => e.key === p.status);
   const mapaUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([p.endereco.logradouro, p.endereco.numero, p.endereco.bairro, p.endereco.cidade].filter(Boolean).join(", "))}`;
 
-  const act = (fn: () => Promise<unknown>) => start(async () => { const r = (await fn()) as { ok?: boolean; mensagem?: string } | undefined; if (r && r.ok === false && r.mensagem) void avisar(r.mensagem); router.refresh(); });
+  const act = (fn: () => Promise<unknown>) => start(async () => { const r = (await fn()) as { ok?: boolean; mensagem?: string; aviso?: string } | undefined; if (r && r.ok === false && r.mensagem) void avisar(r.mensagem); if (r?.ok && r.aviso) void avisar(r.aviso); router.refresh(); });
 
   return (
     <div className="mt-3">
@@ -86,6 +86,19 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
         <div className="ml-auto flex gap-2">
           {PROX[p.status] && !cancelado && (
             <button onClick={() => act(() => definirStatusDelivery(p.id, PROX[p.status]))} disabled={proc} className="rounded-cartao bg-texto px-4 py-2 font-semibold text-fundo disabled:opacity-50">→ {ETAPAS.find((e) => e.key === PROX[p.status])?.label}</button>
+          )}
+          {/* Pular direto pra qualquer etapa (ex.: Kern de "aceito" pra "entregue"). */}
+          {!cancelado && (
+            <select
+              value=""
+              onChange={(e) => { const v = e.target.value; if (v) act(() => definirStatusDelivery(p.id, v)); }}
+              disabled={proc}
+              aria-label="Mudar a etapa direto"
+              className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2 text-sm"
+            >
+              <option value="">Mudar etapa…</option>
+              {ETAPAS.filter((e) => e.key !== p.status && e.key !== "pendente").map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
+            </select>
           )}
           <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="rounded-cartao border border-borda-forte px-3 py-2 text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>
           {p.comandaId && (

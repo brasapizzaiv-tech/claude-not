@@ -60,6 +60,8 @@ export function FechamentoZ({
           setImpresso(r.impressoras ?? 0);
           if (!r.impressoras) setTimeout(() => { try { window.print(); } catch {} }, 400);
           router.refresh();
+        } else if ("mensagem" in r && r.mensagem) {
+          void avisar(r.mensagem);
         } else {
           void avisar("Não consegui fechar o caixa — ele pode já ter sido fechado em outra tela. Atualize a página.");
           router.refresh();

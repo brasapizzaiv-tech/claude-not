@@ -68,6 +68,10 @@ const ST: Record<string, { label: string; cor: string; bg: string; proximo?: str
   entregue: { label: "Entregue", cor: "text-texto-suave", bg: "bg-superficie-suave" },
   cancelado: { label: "Cancelado", cor: "text-texto-fraco", bg: "bg-superficie-suave" },
 };
+// Pular etapa (14/10/2026): qualquer status dá pra escolher direto — o Kern,
+// por exemplo, vai de "aceito" pra "entregue" sem passar pelo meio.
+const PULAR = ["aceito", "em_preparo", "pronto", "saiu", "entregue"] as const;
+
 const ORIGEM: Record<string, { label: string; icone: NomeIcone }> = {
   app: { label: "App", icone: "celular" },
   whatsapp: { label: "WhatsApp", icone: "zap" },
@@ -90,13 +94,14 @@ function hora(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEntregador, imprimir }: {
+function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, trocarEntregador, imprimir }: {
   p: PedidoBoard;
   nowMs: number;
   proc: boolean;
   entregadores: EntregadorOpt[];
   atrasado: (p: PedidoBoard) => boolean;
   avancar: (p: PedidoBoard, extra?: { tempoMin?: number; motivo?: string }) => void;
+  irPara: (p: PedidoBoard, status: string) => void;
   trocarEntregador: (p: PedidoBoard, id: string) => void;
   imprimir: (p: PedidoBoard) => void;
 }) {
@@ -158,7 +163,20 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, trocarEnt
             <button onClick={recusar} disabled={proc} title="Recusar com motivo" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-2 text-xs text-erro"><Icone nome="fechar" tamanho={13} titulo="Recusar" /></button>
           </>
         ) : st.proximo ? (
-          <button onClick={() => avancar(p)} disabled={proc} className="min-h-11 flex-1 rounded-controle bg-texto text-xs font-bold text-fundo transition hover:opacity-90 disabled:opacity-50">{ST[st.proximo].label}</button>
+          <>
+            <button onClick={() => avancar(p)} disabled={proc} className="min-h-11 flex-1 rounded-controle bg-texto text-xs font-bold text-fundo transition hover:opacity-90 disabled:opacity-50">{ST[st.proximo].label}</button>
+            <select
+              value=""
+              onChange={(e) => { if (e.target.value) irPara(p, e.target.value); }}
+              disabled={proc}
+              title="Pular direto pra outra etapa"
+              aria-label="Pular direto pra outra etapa"
+              className="min-h-11 w-11 rounded-controle border border-borda-forte bg-transparent px-1 text-xs text-texto"
+            >
+              <option value="">⋯</option>
+              {PULAR.filter((k) => k !== p.status).map((k) => <option key={k} value={k}>{ST[k].label}</option>)}
+            </select>
+          </>
         ) : (
           <span className="flex-1 text-center text-xs text-texto-fraco">{p.status === "entregue" ? "Concluído" : "—"}</span>
         )}
@@ -272,6 +290,15 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     start(async () => {
       const r = await definirStatusDelivery(p.id, prox, extra);
       if (!r.ok && "mensagem" in r && r.mensagem) void avisar(r.mensagem);
+      if (r.ok && "aviso" in r && r.aviso) void avisar(r.aviso);
+      router.refresh();
+    });
+  }
+  function irPara(p: PedidoBoard, status: string) {
+    start(async () => {
+      const r = await definirStatusDelivery(p.id, status);
+      if (!r.ok && "mensagem" in r && r.mensagem) void avisar(r.mensagem);
+      if (r.ok && "aviso" in r && r.aviso) void avisar(r.aviso);
       router.refresh();
     });
   }
@@ -284,7 +311,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
 
   const contagem = (s: string) => pedidos.filter((p) => (s === "ativos" ? p.status !== "entregue" && p.status !== "cancelado" : p.status === s)).length;
 
-  const cardProps = { nowMs, proc, entregadores, atrasado, avancar, trocarEntregador, imprimir };
+  const cardProps = { nowMs, proc, entregadores, atrasado, avancar, irPara, trocarEntregador, imprimir };
   const ativos = base.filter((p) => p.status !== "entregue" && p.status !== "cancelado");
   const pinos = ativos
     .filter((p) => p.tipo === "entrega" && p.lat != null && p.lng != null)

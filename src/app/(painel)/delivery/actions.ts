@@ -34,8 +34,9 @@ const CARIMBO: Record<string, string> = {
 export async function definirStatusDelivery(id: string, status: string, extra?: { tempoMin?: number; motivo?: string }) {
   const supabase = await createClient();
   if (!(status in CARIMBO) && status !== "pendente") return { ok: false as const };
-  const { data: ped } = await supabase.from("delivery_pedidos").select("entregador_id, comanda_id, status, agendado_para").eq("id", id).single();
-  if (status === "saiu" && !ped?.entregador_id) return { ok: false as const, mensagem: "Escolha o entregador antes de despachar." };
+  const { data: ped } = await supabase.from("delivery_pedidos").select("entregador_id, comanda_id, status, agendado_para, pago, forma_pagamento").eq("id", id).single();
+  // Motoboy não é mais obrigatório pra despachar (14/10/2026): convênio como o
+  // Kern é levado por quem a casa mandar, sem entregador cadastrado.
   if (status === "cancelado" && !(extra?.motivo || "").trim()) return { ok: false as const, mensagem: "Informe o motivo do cancelamento." };
 
   const patch: Record<string, unknown> = { status };
@@ -69,9 +70,19 @@ export async function definirStatusDelivery(id: string, status: string, extra?: 
       await supabase.from("pdv_comandas").update({ status: "aberta", fechada_em: null }).eq("id", ped.comanda_id);
     }
   }
+  // Convênio / fiado ("Saldo cliente", ex.: Kern): ao ENTREGAR já é venda do
+  // dia — lança no caixa aberto e na conta a receber do cliente, sem esperar
+  // alguém clicar em Receber (antes os pedidos do Kern ficavam entregues e
+  // nunca recebidos, fora do caixa e do faturamento).
+  let aviso: string | undefined;
+  if (status === "entregue" && ped && !ped.pago && ped.forma_pagamento && tipoDe(ped.forma_pagamento, await formasParaTipo()) === "saldo") {
+    const r = await receberDelivery(id, { forma: ped.forma_pagamento });
+    if (!r.ok) aviso = `Entregue, mas não lançou no caixa: ${r.mensagem} Use "Receber" no pedido quando resolver.`;
+  }
+
   revalidatePath("/delivery");
   revalidatePath(`/delivery/${id}`);
-  return { ok: true as const };
+  return { ok: true as const, aviso };
 }
 
 export async function definirEntregador(id: string, entregadorId: string | null) {

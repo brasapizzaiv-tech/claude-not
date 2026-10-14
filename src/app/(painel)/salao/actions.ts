@@ -1753,6 +1753,28 @@ export async function fecharCaixa(formData: FormData) {
   revalidatePath("/salao/caixa");
 }
 
+// Pedidos de delivery do dia do caixa que impedem o fechamento: não
+// cancelados e (não entregues OU entregues sem receber).
+async function deliveryEmAberto(supabase: Awaited<ReturnType<typeof createClient>>, abertoEm: string) {
+  const dia = new Date(abertoEm).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const inicio = `${dia}T00:00:00-03:00`;
+  const fim = `${dia}T23:59:59-03:00`;
+  const { data } = await supabase
+    .from("delivery_pedidos")
+    .select("nome, status, pago, agendado_para, pdv_comandas(numero)")
+    .neq("status", "cancelado")
+    .gte("criado_em", inicio)
+    .or("status.neq.entregue,pago.is.false")
+    .limit(200);
+  type Row = { nome: string; status: string; pago: boolean; agendado_para: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
+  return ((data as Row[]) ?? [])
+    .filter((p) => !p.agendado_para || p.agendado_para <= fim)
+    .map((p) => {
+      const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
+      return { numero: com?.numero ?? null, nome: p.nome, motivo: p.status === "entregue" ? "entregue, falta receber" : p.status.replace("_", " ") };
+    });
+}
+
 // Fechamento Z: confere o dinheiro contado x esperado, grava a quebra e o
 // resumo por forma de pagamento, e fecha o caixa.
 export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs: string) {
@@ -1760,10 +1782,22 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
   await exigirAcesso("/salao");
   const { data: caixa } = await supabase
     .from("pdv_caixas")
-    .select("saldo_inicial")
+    .select("saldo_inicial, aberto_em")
     .eq("id", caixaId)
     .single();
   if (!caixa) return { ok: false as const };
+
+  // Trava (14/10/2026): não fecha com delivery do dia em aberto — nem pedido
+  // ainda não entregue, nem entregue sem receber (o Kern ficava assim e o
+  // valor nunca entrava no caixa). Agendado pra outro dia não conta.
+  const pendentes = await deliveryEmAberto(supabase, String(caixa.aberto_em));
+  if (pendentes.length > 0) {
+    const lista = pendentes.slice(0, 6).map((p) => `#${p.numero ?? "?"} ${p.nome} (${p.motivo})`).join("; ");
+    return {
+      ok: false as const,
+      mensagem: `Não dá pra fechar o caixa: ${pendentes.length} pedido(s) de delivery em aberto — ${lista}${pendentes.length > 6 ? "…" : ""}. Entregue e receba (ou cancele) no Delivery e tente de novo.`,
+    };
+  }
 
   const { data: movs } = await supabase
     .from("pdv_caixa_mov")
