@@ -18,13 +18,17 @@ type Mov = {
   comanda_ids: string[] | null;
 };
 
+const semDinheiroTipo = (tipo: string) => tipo === "cortesia" || tipo === "vale_presente";
 const cor = (tipo: string) =>
   tipo === "sangria"
     ? "text-red-600"
     : tipo === "suprimento"
       ? "text-blue-600"
-      : "text-emerald-600";
-const sinal = (tipo: string, valor = 0) => (tipo === "sangria" || valor < 0 ? "−" : "+");
+      : semDinheiroTipo(tipo)
+        ? "text-texto-fraco"
+        : "text-emerald-600";
+// Cortesia e vale-presente não somam no caixa: sem sinal de "+".
+const sinal = (tipo: string, valor = 0) => (semDinheiroTipo(tipo) ? "" : tipo === "sangria" || valor < 0 ? "−" : "+");
 // Uma venda pode quitar várias comandas: mostra um link por comanda, com o
 // número. Movimento antigo (antes da 0180) cai no id único.
 const comandasDo = (m: Mov) => (m.comanda_ids?.length ? m.comanda_ids : m.comanda_id ? [m.comanda_id] : []);
@@ -66,10 +70,11 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
   const saldoInicial = Number(caixa.saldo_inicial);
   const abertoHora = hora(caixa.aberto_em as string);
 
-  let vendas = 0, suprimentos = 0, sangrias = 0;
+  let vendas = 0, suprimentos = 0, sangrias = 0, semDinheiro = 0;
   for (const m of movs) {
     const v = Number(m.valor);
     if (m.tipo === "venda") vendas += v;
+    else if (m.tipo === "cortesia" || m.tipo === "vale_presente") semDinheiro += v;
     else if (m.tipo === "suprimento") suprimentos += v;
     else if (m.tipo === "sangria") sangrias += v;
   }
@@ -91,6 +96,7 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
           <span className="text-texto-suave">Vendas <b className="text-emerald-600">{brl(vendas)}</b></span>
           <span className="text-texto-suave">Suprimentos <b className="text-blue-600">{brl(suprimentos)}</b></span>
           <span className="text-texto-suave">Sangrias <b className="text-red-600">{brl(sangrias)}</b></span>
+          {semDinheiro > 0 && <Link href="/salao/caixa/cortesias" className="text-texto-suave hover:underline">Cortesias e vales <b className="text-texto">{brl(semDinheiro)}</b></Link>}
         </div>
       </div>
 

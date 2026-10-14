@@ -4,7 +4,7 @@
 // formas-pagamento-server.ts); "saldo" e "equipe" são fluxos fixos do caixa.
 import type { NomeIcone } from "@/components/icone";
 
-export type TipoForma = "dinheiro" | "pix" | "pix_maquina" | "credito" | "debito" | "cartao" | "vale" | "outro" | "saldo" | "equipe";
+export type TipoForma = "dinheiro" | "pix" | "pix_maquina" | "credito" | "debito" | "cartao" | "vale" | "cortesia" | "vale_presente" | "outro" | "saldo" | "equipe";
 /** Tipos que o dono escolhe na tela de cadastro (os fixos ficam de fora). */
 export type TipoFormaCadastro = Exclude<TipoForma, "saldo" | "equipe">;
 
@@ -38,6 +38,8 @@ export const TIPOS_FORMA: { id: TipoFormaCadastro; label: string; explica: strin
   { id: "debito", label: "Cartão de débito", explica: "passa no pinpad (TEF) como débito; nota automática" },
   { id: "cartao", label: "Cartão (sem dizer qual)", explica: "não passa no pinpad; pede a bandeira à mão; nota automática" },
   { id: "vale", label: "Vale refeição / alimentação", explica: "passa no pinpad como voucher; nota automática" },
+  { id: "cortesia", label: "Cortesia (a casa paga)", explica: "fecha a conta sem receber; pede o motivo; não entra no caixa nem no faturamento; sem nota" },
+  { id: "vale_presente", label: "Vale-presente já pago", explica: "fecha a conta com um vale vendido antes; pede o nº/observação; não entra no caixa nem no faturamento; sem nota" },
   { id: "outro", label: "Outro", explica: "só registra; não dá troco, não passa no pinpad, sem nota automática" },
 ];
 
@@ -55,6 +57,9 @@ export function tipoPeloNome(nome: string | null | undefined): TipoForma {
   const f = (nome ?? "").toLowerCase();
   if (!f) return "outro";
   if (f.includes("dinheiro")) return "dinheiro";
+  // Antes de "vale" e "pix": "Vale-presente" não é vale-refeição.
+  if (f.includes("cortesia")) return "cortesia";
+  if (f.includes("presente")) return "vale_presente";
   if (f.includes("pix")) return f.includes("maquin") || f.includes("máquin") || f.includes("pinpad") ? "pix_maquina" : "pix";
   if (f.includes("créd") || f.includes("cred")) return "credito";
   if (f.includes("déb") || f.includes("deb")) return "debito";
@@ -74,6 +79,17 @@ export function tipoDe(nome: string | null | undefined, formas?: FormaOpcao[]): 
 }
 
 export const daTroco = (tipo: TipoForma) => tipo === "dinheiro";
+
+/**
+ * Cortesia e vale-presente (pedido do Rafael, 14/10/2026): fecham a conta mas
+ * não é dinheiro entrando — a cortesia a casa paga, o vale foi pago quando foi
+ * vendido. No caixa viram movimento do tipo próprio (não "venda"), então ficam
+ * fora do caixa, do faturamento e da nota, e aparecem em Cortesias e vales.
+ */
+export const naoEntraNoCaixa = (tipo: TipoForma) => tipo === "cortesia" || tipo === "vale_presente";
+/** Tipo do movimento do caixa pra essas formas ("cortesia" | "vale_presente"); "venda" no resto. */
+export const tipoDoMovimento = (tipo: TipoForma): "venda" | "cortesia" | "vale_presente" =>
+  tipo === "cortesia" || tipo === "vale_presente" ? tipo : "venda";
 export const ehCartaoTipo = (tipo: TipoForma) => tipo === "credito" || tipo === "debito" || tipo === "cartao";
 
 /** O que o pinpad (TEF) precisa saber; null = não passa no pinpad. */
@@ -115,6 +131,8 @@ export function iconeDoTipo(tipo: TipoForma): NomeIcone {
     case "debito":
     case "cartao": return "cartao";
     case "vale": return "cupom";
+    case "cortesia":
+    case "vale_presente": return "presente";
     case "saldo": return "salao";
     case "equipe": return "cracha";
     default: return "moedas";
@@ -131,6 +149,8 @@ export function atalhoDoTipo(tipo: TipoForma): string | null {
     case "debito": return "B";
     case "cartao": return "T";
     case "vale": return "R";
+    case "cortesia": return "O";
+    case "vale_presente": return "V";
     case "saldo": return "F";
     case "equipe": return "E";
     default: return null;

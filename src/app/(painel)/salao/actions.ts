@@ -11,6 +11,7 @@ import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 import { fecharTefNoBanco } from "@/lib/tef-venda-server";
+import { naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -1095,6 +1096,11 @@ export async function pagarSelecao(
   const fator = 1 + servicoAgora(cfg) / 100;
   const caixaId = await caixaAberto(supabase);
   if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
+  // Tipo de cada forma (cadastro): cortesia e vale-presente pedem o motivo e
+  // não entram como venda (migration 0233).
+  const formasT = await formasParaTipo();
+  const semMotivo = pagamentos.find((p) => p.valor > 0 && naoEntraNoCaixa(tipoDe(p.forma, formasT)) && !(p.observacao ?? "").trim());
+  if (semMotivo) return { ok: false as const, mensagem: `Escreva na observação o motivo da ${semMotivo.forma} (ex.: aniversário, nº do vale).` };
 
   // Produtos avulsos inseridos no caixa: cria o item na comanda já pago.
   for (const e of extras) {
@@ -1181,7 +1187,7 @@ export async function pagarSelecao(
     rotulo: `comandas ${numeros.map((n) => `#${n}`).join(", ")}`,
     comandaId: sel[0]?.comandaId ?? extras[0]?.comandaId ?? null,
     caixaId,
-    formas: await formasParaTipo(),
+    formas: formasT,
   });
   if (!especiais.ok) return { ok: false as const, mensagem: especiais.mensagem };
   revalidatePath("/retiradas");
@@ -1208,7 +1214,8 @@ export async function pagarSelecao(
         .from("pdv_caixa_mov")
         .insert({
           caixa_id: caixaId,
-          tipo: "venda",
+          // Cortesia / vale-presente: movimento próprio, fora do caixa e do faturamento.
+          tipo: tipoDoMovimento(tipoDe(p.forma, formasT)),
           descricao: desc,
           forma_pagamento: p.forma,
           valor: p.valor,
@@ -1261,7 +1268,7 @@ export async function pagarSelecao(
   let pendenteId: string | null = null;
   try {
     const eletronico = pagamentos.some(
-      (p) => p.valor > 0 && /pix|cart|créd|cred|déb|deb|vale/i.test(p.forma),
+      (p) => p.valor > 0 && !naoEntraNoCaixa(tipoDe(p.forma, formasT)) && /pix|cart|créd|cred|déb|deb|vale/i.test(p.forma),
     );
     if (eletronico) {
       const { data: cfgN } = await supabase

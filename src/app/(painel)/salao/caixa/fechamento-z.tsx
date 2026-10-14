@@ -21,6 +21,7 @@ export function FechamentoZ({
   sangrias,
   totalVendas,
   esperado,
+  semDinheiro = [],
 }: {
   caixaId: string;
   nome: string;
@@ -31,6 +32,8 @@ export function FechamentoZ({
   sangrias: number;
   totalVendas: number;
   esperado: number; // dinheiro esperado na gaveta
+  /** Cortesias e vales-presente: fecham conta sem dinheiro (fora do caixa). */
+  semDinheiro?: [string, number][];
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -105,6 +108,12 @@ export function FechamentoZ({
                 <span>Suprimentos</span>
                 <span>+ {brl(suprimentos)}</span>
               </div>
+              {semDinheiro.map(([f, v]) => (
+                <div key={`sd${f}`} className="flex justify-between text-texto-fraco">
+                  <span>{f} (sem dinheiro)</span>
+                  <span>{brl(v)}</span>
+                </div>
+              ))}
               <div className="flex justify-between text-red-600">
                 <span>Sangrias</span>
                 <span>− {brl(sangrias)}</span>
@@ -235,6 +244,12 @@ export function FechamentoZ({
           {vendasPorForma.map(([f, v]) => (
             <div key={f} style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Vendas {f}</span>
+              <span>{brl(v)}</span>
+            </div>
+          ))}
+          {semDinheiro.map(([f, v]) => (
+            <div key={`sd${f}`} style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>{f} (sem dinheiro)</span>
               <span>{brl(v)}</span>
             </div>
           ))}

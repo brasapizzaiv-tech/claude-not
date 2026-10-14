@@ -8,7 +8,7 @@ import { buscarClientesPdv, cashbackClientePdv, finalizarVendaPdv } from "./acti
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
-import { FORMAS_PADRAO, emiteNotaAuto, iconeDoTipo, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { FORMAS_PADRAO, emiteNotaAuto, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import type { TefDados } from "@/lib/tef-client";
 
@@ -42,7 +42,10 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     if (c) cashbackClientePdv(c.id).then(setCb).catch(() => setCb(null));
   };
   const tipoForma = tipoDe(forma, formas);
-  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente);
+  // Cortesia / vale-presente: pedem o motivo (vai pro relatório de cortesias e vales).
+  const [motivo, setMotivo] = useState("");
+  const semDinheiro = naoEntraNoCaixa(tipoForma);
+  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente) || (semDinheiro && !motivo.trim());
   const [feito, setFeito] = useState<Feito | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   // Trava contra finalizar duas vezes (toque duplo, ou o QR Pix caindo no mesmo instante do clique).
@@ -113,8 +116,9 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     const nomeCliente = cliente?.nome;
     start(async () => {
       try {
-        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento, local);
+        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento ? { ...pagamento, observacao: motivo.trim() || null } : null, local);
         if (r.ok) {
+          setMotivo("");
           concluir(r, pagamento, trocoAtual, ehViagem, nomeCliente);
         } else {
           setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
@@ -260,6 +264,13 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 <label className="text-sm text-texto-suave">Valor recebido</label>
                 <input value={recebido} onChange={(e) => setRecebido(e.target.value)} inputMode="decimal" placeholder="Ex.: 50" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-lg " />
                 <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
+              </div>
+            )}
+            {semDinheiro && (
+              <div className="mb-3">
+                <label className="text-sm text-texto-suave">Motivo (obrigatório)</label>
+                <input value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 200))} placeholder={tipoForma === "cortesia" ? "ex.: aniversário, cortesia da casa" : "ex.: vale nº 123"} className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
+                <p className="mt-1 text-xs text-texto-fraco">Não entra no caixa nem no faturamento e não sai nota.</p>
               </div>
             )}
             {tipoForma === "equipe" && (

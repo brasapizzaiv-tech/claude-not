@@ -250,6 +250,7 @@ export default async function CaixaPage({
   const vendasPorForma = new Map<string, number>();
   let suprimentos = 0;
   let sangrias = 0;
+  const semDinheiro = new Map<string, number>();
   for (const m of movs) {
     const v = Number(m.valor);
     if (m.tipo === "venda") {
@@ -257,6 +258,11 @@ export default async function CaixaPage({
       vendasPorForma.set(f, (vendasPorForma.get(f) || 0) + v);
     } else if (m.tipo === "suprimento") suprimentos += v;
     else if (m.tipo === "sangria") sangrias += v;
+    // Cortesia / vale-presente (0233): fecham conta sem dinheiro — listados à parte.
+    else if (m.tipo === "cortesia" || m.tipo === "vale_presente") {
+      const f = m.forma_pagamento || (m.tipo === "cortesia" ? "Cortesia" : "Vale-presente");
+      semDinheiro.set(f, (semDinheiro.get(f) || 0) + v);
+    }
   }
   const totalVendas = [...vendasPorForma.values()].reduce((s, v) => s + v, 0);
   const vendasDinheiro = vendasPorForma.get("Dinheiro") || 0;
@@ -301,6 +307,7 @@ export default async function CaixaPage({
             suprimentos={suprimentos}
             sangrias={sangrias}
             totalVendas={totalVendas}
+            semDinheiro={[...semDinheiro.entries()]}
             esperado={dinheiroEmCaixa}
           />
         </div>
@@ -377,6 +384,18 @@ export default async function CaixaPage({
               <span>{brl(dinheiroEmCaixa)}</span>
             </div>
           </div>
+          {semDinheiro.size > 0 && (
+            <div className="space-y-1 border-t border-borda pt-2 text-sm">
+              <p className="text-xs text-texto-fraco">Fechadas sem dinheiro (fora do caixa e do faturamento)</p>
+              {[...semDinheiro.entries()].map(([forma, v]) => (
+                <div key={forma} className="flex justify-between text-texto-suave">
+                  <span className="inline-flex items-center gap-1.5"><Icone nome="presente" tamanho={13} /> {forma}</span>
+                  <span>{brl(v)}</span>
+                </div>
+              ))}
+              <Link href="/salao/caixa/cortesias" className="inline-block text-xs text-orange-600 hover:underline">ver cortesias e vales com o motivo →</Link>
+            </div>
+          )}
         </div>
       </details>
 

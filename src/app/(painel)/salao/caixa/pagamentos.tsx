@@ -7,7 +7,7 @@
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { tefConfirmar, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
-import { atalhoDoTipo, ehCartaoTipo, iconeDoTipo, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
+import { atalhoDoTipo, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
 import { Icone } from "@/components/icone";
 
 export type Pagamento = {
@@ -42,6 +42,8 @@ function testesDeForma(formas: FormaOpcao[]) {
     pix: (f: string) => tipo(f) === "pix",
     fiado: (f: string) => tipo(f) === "saldo",
     equipe: (f: string) => tipo(f) === "equipe",
+    // Cortesia / vale-presente: fecham a conta sem dinheiro e pedem o motivo.
+    semDinheiro: (f: string) => naoEntraNoCaixa(tipo(f)),
     tef: (f: string) => tefDoTipo(tipo(f)),
     icone: (f: string) => iconeDoTipo(tipo(f)),
     // Tecla de atalho (a letra é mostrada no botão).
@@ -257,6 +259,7 @@ export function PainelPagamentos({
     if (!(aplica > 0.005)) { setAviso("Informe o valor."); return; }
     if (T.fiado(forma) && !fiado) { setAviso("Vincule o cliente antes de usar o Saldo cliente."); return; }
     if (T.equipe(forma) && !colabId) { setAviso("Escolha o funcionário."); return; }
+    if (T.semDinheiro(forma) && !obs.trim()) { setAviso("Escreva o motivo na observação (ex.: aniversário, nº do vale)."); return; }
     if (fiadoEstoura) {
       setAviso(`Passa do limite: ${fiado?.nome} já deve ${brl(fiadoEstoura.saldo)} e o limite é ${brl(fiadoEstoura.limite)}.`);
       return;
@@ -525,13 +528,18 @@ export function PainelPagamentos({
             <div className="mt-3">{qrPix(cent(aplica), salvar)}</div>
           )}
 
+          {T.semDinheiro(forma) && (
+            <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+              Fecha a conta sem entrar dinheiro: não conta no caixa nem no faturamento e não sai nota. Fica no relatório de cortesias e vales.
+            </p>
+          )}
           <label className="mt-3 block text-mini text-texto-fraco">
-            Observação
+            {T.semDinheiro(forma) ? "Motivo (obrigatório)" : "Observação"}
             <input
               value={obs}
               onChange={(e) => setObs(e.target.value.slice(0, 200))}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); salvar(); } }}
-              placeholder="opcional"
+              placeholder={T.semDinheiro(forma) ? (T.tipo(forma) === "cortesia" ? "ex.: aniversário do cliente, cortesia da casa" : "ex.: vale nº 123, presente do João") : "opcional"}
               className={`${campo} mt-1 normal-case`}
             />
           </label>

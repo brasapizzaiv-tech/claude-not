@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { lancarPedidoGarcom } from "@/app/(garcom)/garcom/actions";
 import { exigirAcesso } from "@/lib/permissoes-server";
-import { tipoDe } from "@/lib/formas-pagamento";
+import { naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
@@ -19,12 +19,16 @@ export async function finalizarVendaPdv(
   itens: ItemVenda[],
   obs: string,
   // `tef`: já cobrado no pinpad (Pix na maquininha ou cartão), no valor `valorTef`.
-  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number } | null,
+  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number; observacao?: string | null } | null,
   local: "aqui" | "viagem" = "aqui",
 ) {
   // O rótulo da "mesa" vira o cabeçalho grande da comanda na cozinha — então
   // "VIAGEM" aparece bem visível pra saberem que é pra embalar.
   const mesa = local === "viagem" ? "Balcão · VIAGEM" : "Balcão";
+  // Cortesia / vale-presente pedem o motivo antes de mandar pra cozinha.
+  if (pagamento && naoEntraNoCaixa(tipoDe(pagamento.forma, await formasParaTipo())) && !(pagamento.observacao ?? "").trim()) {
+    return { ok: false as const, mensagem: `Escreva o motivo da ${pagamento.forma} (ex.: aniversário, nº do vale).` };
+  }
   const r = await lancarPedidoGarcom(mesa, itens, obs);
   if (!r.ok || !r.comandaId) return r;
 
@@ -113,7 +117,8 @@ export async function finalizarVendaPdv(
   if (cx?.id) {
     const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
       caixa_id: cx.id,
-      tipo: "venda",
+      tipo: tipoDoMovimento(tipo),
+      observacao: (pagamento.observacao ?? "").trim().slice(0, 200) || null,
       descricao: `PDV Balcão #${r.numero}${cashbackUsado > 0 ? ` · cashback ${cashbackUsado.toFixed(2).replace(".", ",")}` : ""}`,
       forma_pagamento: pagamento.forma,
       valor: cobrar,
@@ -139,7 +144,7 @@ export async function finalizarVendaPdv(
   // Cashback ganho nesta venda: itens (sem os em promoção, se a config manda),
   // tirando a parte paga com cashback.
   let cashbackGanho = 0;
-  if (clienteId && cashbackNoPdv && tipo !== "equipe" && total > 0) {
+  if (clienteId && cashbackNoPdv && tipo !== "equipe" && !naoEntraNoCaixa(tipo) && total > 0) {
     let elegivel = total;
     if (cbCfg?.sem_promos !== false) {
       const ids = [...new Set(itens.map((i) => i.itemId).filter(Boolean))];
