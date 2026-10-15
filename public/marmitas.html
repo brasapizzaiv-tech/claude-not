@@ -560,6 +560,26 @@ async function carregarDia(){
     renderPedidos(); renderProducao();
   }catch(e){ toast(e.message,true); }
 }
+// Só os pedidos do dia, sem refazer o resto da tela (não apaga o formulário
+// de lançar pedido pela metade). Devolve quantos pedidos novos apareceram.
+// A tela do admin fica aberta horas: sem isso, "Imprimir todos" mandava a lista
+// de quando a tela abriu (15/10/2026: pedido das 08:29 ficou fora da impressão
+// das 08:41 da Matriz).
+async function atualizarPedidosDia(){
+  const data=$('#dataDia').value||hoje();
+  const antes=new Set(PEDIDOS_DIA.map(p=>p.id));
+  const lista=arr(await api('/api/marmitas/pedidos?data='+data)); lista.forEach(p=>{ p.pratos=arr(p.pratos); p.salada=(p.salada===true||p.salada===1)?'Salada':(p.salada||''); });
+  if(($('#dataDia').value||hoje())!==data) return 0;
+  PEDIDOS_DIA=lista; renderPedidos(); renderProducao();
+  return antes.size?lista.filter(p=>!antes.has(p.id)).length:0;
+}
+function telaPedidosAberta(){ return location.hash==='#admin'&&USER&&document.visibilityState==='visible'&&$('#tab-dia')&&!$('#tab-dia').classList.contains('hidden'); }
+async function recargaPedidos(){
+  if(!telaPedidosAberta()) return;
+  try{ const n=await atualizarPedidosDia(); if(n) toast(n===1?'Entrou 1 pedido novo':`Entraram ${n} pedidos novos`,false,5000); }catch(e){}
+}
+setInterval(recargaPedidos,60000);
+document.addEventListener('visibilitychange',recargaPedidos);
 function addBuscar(){
   const q=($('#addBusca').value||'').toLowerCase().trim();
   if(!q){ $('#addResultados').innerHTML=''; return; }
@@ -637,9 +657,12 @@ function etiquetaHTML(p){
    Uma folha por filial, pedidos em ordem de número (o mesmo nº que sai na
    etiqueta), com quadradinho pra marcar na entrega. Abre numa aba nova e
    chama a impressão do navegador. */
-function listaConferencia(){
+async function listaConferencia(){
+  const w=window.open('','_blank'); if(!w){ toast('O navegador bloqueou a janela. Libere pop-ups pra este site.',true); return; }
+  w.document.write('<p style="font-family:Arial;padding:20px">Atualizando a lista…</p>');
+  try{ await atualizarPedidosDia(); }catch(e){ w.close(); toast('Não consegui atualizar a lista: '+e.message,true); return; }
   const f=$('#filtroFilial').value; const base=f?PEDIDOS_DIA.filter(p=>p.filial===f):PEDIDOS_DIA;
-  if(!base.length){ toast('Nenhum pedido pra listar',true); return; }
+  if(!base.length){ w.close(); toast('Nenhum pedido pra listar',true); return; }
   const dataIso=$('#dataDia').value||hoje(); const data=formatarData(dataIso);
   const dia=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][new Date(dataIso+'T12:00:00').getDay()];
   const filiais=[]; base.forEach(p=>{ if(!filiais.includes(p.filial)) filiais.push(p.filial); }); filiais.sort((a,b)=>a.localeCompare(b));
@@ -659,7 +682,6 @@ function listaConferencia(){
     th{background:#eee} td.n,th.n{width:34px;text-align:center;font-weight:bold;font-size:15px} td.c,th.c{width:64px;text-align:center;font-size:18px} td.d{color:#333;font-size:12px}
     .ass{margin-top:16px;font-size:12px} @media print{body{padding:8mm}}
   </style></head><body>${paginas}<scr${""}ipt>window.onload=function(){window.print();}</scr${""}ipt></body></html>`;
-  const w=window.open('','_blank'); if(!w){ toast('O navegador bloqueou a janela. Libere pop-ups pra este site.',true); return; }
   w.document.open(); w.document.write(html); w.document.close();
 }
 function imprimirEtiquetas(lista){
@@ -686,9 +708,12 @@ async function enviarImpressao(lista){
   }catch(e){ toast(e.message,true); }
 }
 function imprimirPedido(id){ const p=PEDIDOS_DIA.find(x=>x.id===id); if(!p) return; if(IMPRESSORA&&IMPRESSORA.ok) enviarImpressao([p]); else imprimirEtiquetas([p]); }
-function imprimirTodos(navegador){
+async function imprimirTodos(navegador){
+  let novos=0;
+  try{ novos=await atualizarPedidosDia(); }catch(e){ toast('Não consegui atualizar a lista: '+e.message,true); return; }
   const f=$('#filtroFilial').value; const lista=f?PEDIDOS_DIA.filter(p=>p.filial===f):PEDIDOS_DIA;
-  if(!navegador&&IMPRESSORA&&IMPRESSORA.ok){ if(confirm(`Imprimir ${lista.length} etiqueta(s) na ${IMPRESSORA.nome}?`)) enviarImpressao(lista); }
+  const aviso=novos?`\n\n(Lista atualizada agora: entrou ${novos} pedido${novos===1?'':'s'} novo${novos===1?'':'s'} desde que a tela abriu.)`:'';
+  if(!navegador&&IMPRESSORA&&IMPRESSORA.ok){ if(confirm(`Imprimir ${lista.length} etiqueta(s) na ${IMPRESSORA.nome}?${aviso}`)) enviarImpressao(lista); }
   else imprimirEtiquetas(lista);
 }
 
