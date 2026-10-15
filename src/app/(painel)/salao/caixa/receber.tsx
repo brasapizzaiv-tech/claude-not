@@ -380,7 +380,7 @@ export function ReceberComandas({
     }));
     const pagamentos = pagos
       .filter((x) => x.valor > 0)
-      .map((x) => ({ forma: x.forma, valor: x.valor, bandeira: x.bandeira ?? null, observacao: x.observacao ?? null, tef: x.tef ?? null }));
+      .map((x) => ({ forma: x.forma, valor: x.valor, bandeira: x.bandeira ?? null, observacao: x.observacao ?? null, tef: x.tef ?? null, valeCodigo: x.valeCodigo ?? null }));
     const comTef = pagos.filter((x) => x.tef?.idAgente);
     // Se a venda não gravar, o cartão NÃO pode ficar cobrado: desfaz no pinpad.
     // Cartão que já foi CONFIRMADO (a conta tinha dois: o primeiro é confirmado

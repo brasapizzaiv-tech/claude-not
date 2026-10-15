@@ -10,6 +10,7 @@ import { gerarComprovanteTefEscPos } from "@/lib/tef-comprovante-escpos";
 import { baixarXmlNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
 import { gerarNfceCupomPdf } from "@/lib/nfce-cupom-pdf";
 import { gerarNfceCupomEscPos } from "@/lib/nfce-cupom-escpos";
+import { gerarValeEscPos, gerarValePdf } from "@/lib/vale-cupom";
 
 export const runtime = "nodejs";
 
@@ -182,6 +183,30 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return new Response(new Uint8Array(bytes), { headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store" } });
     }
     pdf = await gerarComprovanteTefPdf(comprovante, largT);
+  } else if (job.tipo === "vale") {
+    // Vale-presente (ref_id = vales_presente.id), pra entregar em mãos.
+    const [{ data: v }, { data: impV }] = await Promise.all([
+      admin.from("vales_presente").select("codigo, valor, saldo, para_nome, de_nome, mensagem, validade").eq("id", job.ref_id).eq("empresa_id", empresaId).maybeSingle(),
+      job.impressora_id
+        ? admin.from("impressoras").select("comanda_config").eq("id", job.impressora_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    if (!v) return new Response("vale nao encontrado", { status: 404 });
+    const vale = {
+      codigo: v.codigo as string,
+      valor: Number(v.valor),
+      saldo: Number(v.saldo),
+      para: (v.para_nome as string) || null,
+      de: (v.de_nome as string) || null,
+      mensagem: (v.mensagem as string) || null,
+      validade: v.validade as string,
+    };
+    const largV = larguraUtil(((impV as { comanda_config?: { largura?: number } | null } | null)?.comanda_config?.largura) ?? 80);
+    if (formato === "escpos") {
+      const bytes = gerarValeEscPos(vale, largV <= 48 ? 32 : 48, await logoDaBrasa(baseUrl));
+      return new Response(new Uint8Array(bytes), { headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store" } });
+    }
+    pdf = await gerarValePdf(vale, largV, await logoDaBrasa(baseUrl));
   } else if (job.tipo === "fechamento") {
     // Cupom do fechamento de caixa (ref_id = pdv_caixas.id).
     const [{ data: cx }, { data: imp }, { data: cfgRows }] = await Promise.all([

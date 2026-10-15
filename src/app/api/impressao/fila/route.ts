@@ -65,7 +65,7 @@ export async function GET(req: Request) {
       // o cupom da balança). O agente 1.1.4+ pede "?formato=escpos" e manda os
       // bytes crus pro spooler; o agente antigo ignora e imprime o PDF.
       // O comprovante do cartão (tef) também: pelo PDF saía cinza (08/10/2026).
-      formato: e.tipo === "nfce" || e.tipo === "tef" ? ("escpos" as const) : ("pdf" as const),
+      formato: e.tipo === "nfce" || e.tipo === "tef" || e.tipo === "vale" ? ("escpos" as const) : ("pdf" as const),
     };
   });
   if (jobs.length > 0) {

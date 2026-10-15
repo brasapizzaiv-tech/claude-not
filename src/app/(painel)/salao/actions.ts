@@ -12,6 +12,7 @@ import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 import { fecharTefNoBanco } from "@/lib/tef-venda-server";
 import { naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
+import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -1085,7 +1086,7 @@ export async function buscarClientesCaixa(termo: string) {
 
 export async function pagarSelecao(
   sel: { comandaId: string; itemIds: string[]; buffet: boolean }[],
-  pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null; tef?: TefPagamento | null; colaboradorId?: string | null; colaboradorNome?: string | null }[],
+  pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null; tef?: TefPagamento | null; colaboradorId?: string | null; colaboradorNome?: string | null; valeCodigo?: string | null }[],
   extras: { comandaId: string; itemId: string; qtd: number }[] = [],
   clienteId?: string | null,
 ) {
@@ -1099,8 +1100,22 @@ export async function pagarSelecao(
   // Tipo de cada forma (cadastro): cortesia e vale-presente pedem o motivo e
   // não entram como venda (migration 0233).
   const formasT = await formasParaTipo();
-  const semMotivo = pagamentos.find((p) => p.valor > 0 && naoEntraNoCaixa(tipoDe(p.forma, formasT)) && !(p.observacao ?? "").trim());
+  // Vale-presente com código (migration 0235) dispensa o motivo: o código é o registro.
+  const semMotivo = pagamentos.find((p) => p.valor > 0 && naoEntraNoCaixa(tipoDe(p.forma, formasT)) && !(p.observacao ?? "").trim() && !(p.valeCodigo ?? "").trim());
   if (semMotivo) return { ok: false as const, mensagem: `Escreva na observação o motivo da ${semMotivo.forma} (ex.: aniversário, nº do vale).` };
+
+  // Baixa nos vales ANTES de marcar a conta como paga: sem saldo (ou vencido),
+  // nada é lançado. Se a conta não fechar depois, o saldo volta pro vale.
+  const baixas = new Map<number, BaixaVale>();
+  for (const [i, p] of pagamentos.entries()) {
+    if (!(p.valor > 0) || !(p.valeCodigo ?? "").trim() || tipoDe(p.forma, formasT) !== "vale_presente") continue;
+    const b = await debitarVale(supabase, p.valeCodigo!, p.valor, "caixa", sel[0]?.comandaId ?? extras[0]?.comandaId ?? null);
+    if (!b.ok) {
+      await estornarBaixas(supabase, [...baixas.values()], "conta não fechou");
+      return { ok: false as const, mensagem: b.mensagem };
+    }
+    baixas.set(i, b.baixa);
+  }
 
   // Produtos avulsos inseridos no caixa: cria o item na comanda já pago.
   for (const e of extras) {
@@ -1189,12 +1204,16 @@ export async function pagarSelecao(
     caixaId,
     formas: formasT,
   });
-  if (!especiais.ok) return { ok: false as const, mensagem: especiais.mensagem };
+  if (!especiais.ok) {
+    await estornarBaixas(supabase, [...baixas.values()], "conta não fechou");
+    return { ok: false as const, mensagem: especiais.mensagem };
+  }
   revalidatePath("/retiradas");
 
   const totalPago =
     Math.round(pagamentos.reduce((a, p) => a + (p.valor > 0 ? p.valor : 0), 0) * 100) / 100;
   if (sel.length > 0 && quitadosAgora === 0 && extras.length === 0) {
+    await estornarBaixas(supabase, [...baixas.values()], "conta já recebida");
     revalidatePath("/salao/caixa");
     return { ok: false as const, mensagem: "Essa conta já tinha sido recebida (outro caixa?). Nada foi lançado de novo — atualize a tela." };
   }
@@ -1207,9 +1226,10 @@ export async function pagarSelecao(
   if (caixaId && primeiraComanda) {
     const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
     const { data: quem } = await supabase.auth.getUser();
-    for (const p of pagamentos) {
+    for (const [i, p] of pagamentos.entries()) {
       if (!(p.valor > 0)) continue;
       const t = p.tef ?? null;
+      const baixa = baixas.get(i);
       const { data: mov } = await supabase
         .from("pdv_caixa_mov")
         .insert({
@@ -1222,7 +1242,7 @@ export async function pagarSelecao(
           comanda_id: primeiraComanda,
           comanda_ids: comandasDaVenda,
           bandeira: ((t?.bandeira || p.bandeira) || "").trim().slice(0, 30) || null,
-          observacao: (p.observacao || "").trim().slice(0, 200) || null,
+          observacao: ((baixa ? obsDaBaixa(baixa) : "") || (p.observacao || "").trim()).slice(0, 200) || null,
           tef_nsu: t?.nsu ?? null,
           tef_autorizacao: t?.autorizacao ?? null,
           tef_rede: t?.rede ?? null,
@@ -1230,6 +1250,7 @@ export async function pagarSelecao(
         })
         .select("id")
         .maybeSingle();
+      if (baixa) await ligarBaixaAoMov(supabase, baixa, (mov as { id?: string } | null)?.id ?? null);
       if (t) {
         const { data: tr } = await supabase
           .from("tef_transacoes")

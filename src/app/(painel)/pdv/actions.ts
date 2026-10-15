@@ -7,6 +7,8 @@ import { naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
+import { debitarVale, ligarBaixaAoMov, obsDaBaixa } from "@/lib/vale-presente-server";
+import { normalizarCodigo } from "@/lib/vale-presente";
 
 type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number };
 
@@ -19,15 +21,28 @@ export async function finalizarVendaPdv(
   itens: ItemVenda[],
   obs: string,
   // `tef`: já cobrado no pinpad (Pix na maquininha ou cartão), no valor `valorTef`.
-  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number; observacao?: string | null } | null,
+  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number; observacao?: string | null; valeCodigo?: string | null } | null,
   local: "aqui" | "viagem" = "aqui",
 ) {
   // O rótulo da "mesa" vira o cabeçalho grande da comanda na cozinha — então
   // "VIAGEM" aparece bem visível pra saberem que é pra embalar.
   const mesa = local === "viagem" ? "Balcão · VIAGEM" : "Balcão";
   // Cortesia / vale-presente pedem o motivo antes de mandar pra cozinha.
-  if (pagamento && naoEntraNoCaixa(tipoDe(pagamento.forma, await formasParaTipo())) && !(pagamento.observacao ?? "").trim()) {
+  if (pagamento && naoEntraNoCaixa(tipoDe(pagamento.forma, await formasParaTipo())) && !(pagamento.observacao ?? "").trim() && !(pagamento.valeCodigo ?? "").trim()) {
     return { ok: false as const, mensagem: `Escreva o motivo da ${pagamento.forma} (ex.: aniversário, nº do vale).` };
+  }
+  // Vale-presente com código: o saldo tem que cobrir a venda toda (no PDV é
+  // um pagamento só). Confere ANTES de mandar pra cozinha; dividir em duas
+  // formas é no caixa do salão.
+  if (pagamento && (pagamento.valeCodigo ?? "").trim()) {
+    const sb = await createClient();
+    const { data: vs } = await sb.from("vales_presente").select("saldo").eq("codigo", normalizarCodigo(pagamento.valeCodigo)).maybeSingle();
+    const saldoVale = Number((vs as { saldo?: number } | null)?.saldo ?? 0);
+    const estimado = Math.round(itens.reduce((t, i) => t + Number(i.preco) * Number(i.qtd), 0) * 100) / 100;
+    if (!vs) return { ok: false as const, mensagem: "Código de vale não encontrado." };
+    if (saldoVale < estimado - 0.005) {
+      return { ok: false as const, mensagem: `O vale tem ${saldoVale.toFixed(2).replace(".", ",")} de saldo e a venda dá ${estimado.toFixed(2).replace(".", ",")}. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.` };
+    }
   }
   const r = await lancarPedidoGarcom(mesa, itens, obs);
   if (!r.ok || !r.comandaId) return r;
@@ -109,6 +124,17 @@ export async function finalizarVendaPdv(
     }
   }
 
+  // Vale-presente com código: baixa no saldo antes de marcar pago. Se não
+  // passar (saldo mudou entre a conferência e agora), a comanda fica aberta.
+  let baixaVale: Awaited<ReturnType<typeof debitarVale>> | null = null;
+  if (tipo === "vale_presente" && (pagamento.valeCodigo ?? "").trim()) {
+    baixaVale = await debitarVale(supabase, pagamento.valeCodigo!, cobrar, "pdv", r.comandaId);
+    if (!baixaVale.ok) {
+      if (cashbackUsado > 0) await supabase.rpc("cashback_estornar_resgate_comanda", { p_comanda: r.comandaId });
+      return { ok: false as const, mensagem: `${baixaVale.mensagem} A comanda #${r.numero} foi pra cozinha e ficou aberta pra receber no caixa.` };
+    }
+  }
+
   for (const p of payables) {
     await supabase.from("pdv_comanda_itens").update({ valor_pago: p.payable, pago: true }).eq("id", p.id);
   }
@@ -118,7 +144,7 @@ export async function finalizarVendaPdv(
     const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
       caixa_id: cx.id,
       tipo: tipoDoMovimento(tipo),
-      observacao: (pagamento.observacao ?? "").trim().slice(0, 200) || null,
+      observacao: ((baixaVale?.ok ? obsDaBaixa(baixaVale.baixa) : "") || (pagamento.observacao ?? "").trim()).slice(0, 200) || null,
       descricao: `PDV Balcão #${r.numero}${cashbackUsado > 0 ? ` · cashback ${cashbackUsado.toFixed(2).replace(".", ",")}` : ""}`,
       forma_pagamento: pagamento.forma,
       valor: cobrar,
@@ -126,6 +152,7 @@ export async function finalizarVendaPdv(
       ...camposTefDoMov(tef),
     }).select("id").maybeSingle();
     movId = (mov as { id?: string } | null)?.id ?? null;
+    if (baixaVale?.ok) await ligarBaixaAoMov(supabase, baixaVale.baixa, movId);
   }
   // Pinpad: a transação nasce "aprovada"; a tela confirma no pinpad e fecha.
   const tefTransacaoId = tef ? await registrarTefDaVenda(supabase, { caixaId: cx?.id ?? null, movId, comandaIds: [r.comandaId], valor: cobrar, tef }) : null;

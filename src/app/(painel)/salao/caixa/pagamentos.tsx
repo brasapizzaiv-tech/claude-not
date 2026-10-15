@@ -9,6 +9,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { tefConfirmar, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
 import { atalhoDoTipo, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
 import { Icone } from "@/components/icone";
+import { CampoVale } from "@/components/campo-vale";
+import type { ValeConsulta } from "@/app/(painel)/salao/caixa/vales/actions";
+import { formatarCodigo } from "@/lib/vale-presente";
 
 export type Pagamento = {
   uid: string;
@@ -18,6 +21,8 @@ export type Pagamento = {
   bandeira?: string | null;
   observacao?: string | null;
   tef?: TefDados | null;  // preenchido quando o cartão passou pelo pinpad (TEF)
+  // Vale-presente com código (migration 0235): o servidor dá baixa no saldo.
+  valeCodigo?: string | null;
   // "Compra da equipe": vai pra conta do funcionário em Compras internas.
   colaboradorId?: string | null;
   colaboradorNome?: string | null;
@@ -91,6 +96,8 @@ export function PainelPagamentos({
   const [obs, setObs] = useState("");
   const [colabId, setColabId] = useState("");
   const [buscaColab, setBuscaColab] = useState("");
+  const [vale, setVale] = useState<ValeConsulta | null>(null);
+  const [valeSemCodigo, setValeSemCodigo] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [parcelas, setParcelas] = useState(1); // só no crédito com pinpad; volta a 1 ao fechar
   const campoRef = useRef<HTMLInputElement>(null);
@@ -108,6 +115,8 @@ export function PainelPagamentos({
     setBandeira("");
     setObs("");
     setAviso(null);
+    setVale(null);
+    setValeSemCodigo(false);
   }
   function fechar() {
     setForma(null);
@@ -118,6 +127,8 @@ export function PainelPagamentos({
     setParcelas(1);
     setColabId("");
     setBuscaColab("");
+    setVale(null);
+    setValeSemCodigo(false);
   }
 
   // Foco no valor assim que o passo abre (o caixa já digita por cima).
@@ -259,7 +270,10 @@ export function PainelPagamentos({
     if (!(aplica > 0.005)) { setAviso("Informe o valor."); return; }
     if (T.fiado(forma) && !fiado) { setAviso("Vincule o cliente antes de usar o Saldo cliente."); return; }
     if (T.equipe(forma) && !colabId) { setAviso("Escolha o funcionário."); return; }
-    if (T.semDinheiro(forma) && !obs.trim()) { setAviso("Escreva o motivo na observação (ex.: aniversário, nº do vale)."); return; }
+    const comCodigo = T.tipo(forma) === "vale_presente" && !valeSemCodigo;
+    if (comCodigo && !vale) { setAviso("Digite o código do vale e toque em Conferir."); return; }
+    if (comCodigo && vale && aplica > vale.saldo + 0.005) { setAviso(`O vale só tem ${brl(vale.saldo)}. Lance esse valor e o resto em outra forma.`); return; }
+    if (T.semDinheiro(forma) && !comCodigo && !obs.trim()) { setAviso("Escreva o motivo na observação (ex.: aniversário, nº do vale)."); return; }
     if (fiadoEstoura) {
       setAviso(`Passa do limite: ${fiado?.nome} já deve ${brl(fiadoEstoura.saldo)} e o limite é ${brl(fiadoEstoura.limite)}.`);
       return;
@@ -271,7 +285,8 @@ export function PainelPagamentos({
       valor: cent(aplica),
       recebido: T.dinheiro(forma) ? cent(entregue) : undefined,
       bandeira: bandeira || null,
-      observacao: obs.trim() || null,
+      observacao: comCodigo && vale ? `Vale ${formatarCodigo(vale.codigo)}${obs.trim() ? ` · ${obs.trim()}` : ""}` : obs.trim() || null,
+      valeCodigo: comCodigo && vale ? vale.codigo : null,
       colaboradorId: T.equipe(forma) ? colabId : null,
       colaboradorNome: T.equipe(forma) ? (colaboradores.find((c) => c.id === colabId)?.nome ?? null) : null,
     });
@@ -528,18 +543,27 @@ export function PainelPagamentos({
             <div className="mt-3">{qrPix(cent(aplica), salvar)}</div>
           )}
 
+          {T.tipo(forma) === "vale_presente" && (
+            <CampoVale
+              vale={vale}
+              onVale={(v) => { setVale(v); if (v) setValor(cent(Math.min(falta, v.saldo)).toFixed(2).replace(".", ",")); }}
+              semCodigo={valeSemCodigo}
+              onSemCodigo={setValeSemCodigo}
+              campoCls={campo}
+            />
+          )}
           {T.semDinheiro(forma) && (
             <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
               Fecha a conta sem entrar dinheiro: não conta no caixa nem no faturamento e não sai nota. Fica no relatório de cortesias e vales.
             </p>
           )}
           <label className="mt-3 block text-mini text-texto-fraco">
-            {T.semDinheiro(forma) ? "Motivo (obrigatório)" : "Observação"}
+            {T.semDinheiro(forma) && !(T.tipo(forma) === "vale_presente" && !valeSemCodigo) ? "Motivo (obrigatório)" : "Observação"}
             <input
               value={obs}
               onChange={(e) => setObs(e.target.value.slice(0, 200))}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); salvar(); } }}
-              placeholder={T.semDinheiro(forma) ? (T.tipo(forma) === "cortesia" ? "ex.: aniversário do cliente, cortesia da casa" : "ex.: vale nº 123, presente do João") : "opcional"}
+              placeholder={T.semDinheiro(forma) && !(T.tipo(forma) === "vale_presente" && !valeSemCodigo) ? (T.tipo(forma) === "cortesia" ? "ex.: aniversário do cliente, cortesia da casa" : "ex.: vale nº 123, presente do João") : "opcional"}
               className={`${campo} mt-1 normal-case`}
             />
           </label>

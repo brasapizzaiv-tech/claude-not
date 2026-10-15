@@ -65,6 +65,9 @@ export default async function CaixaPage({
           <Link href="/salao/caixa/fiado" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
             <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
           </Link>
+          <Link href="/salao/caixa/vales" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+            <Icone nome="presente" tamanho={15} className="mr-1.5" /> Vales-presente
+          </Link>
         </div>
 
         <form
@@ -296,6 +299,9 @@ export default async function CaixaPage({
           </Link>
           <Link href="/salao/caixa/fiado" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
             <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
+          </Link>
+          <Link href="/salao/caixa/vales" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+            <Icone nome="presente" tamanho={15} className="mr-1.5" /> Vales-presente
           </Link>
           <CaixaAcoes caixaId={caixa.id} />
           <FechamentoZ

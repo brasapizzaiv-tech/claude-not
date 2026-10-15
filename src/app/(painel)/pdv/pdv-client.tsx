@@ -11,6 +11,8 @@ import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { FORMAS_PADRAO, emiteNotaAuto, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import type { TefDados } from "@/lib/tef-client";
+import { CampoVale } from "@/components/campo-vale";
+import type { ValeConsulta } from "../salao/caixa/vales/actions";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
@@ -45,7 +47,10 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   // Cortesia / vale-presente: pedem o motivo (vai pro relatório de cortesias e vales).
   const [motivo, setMotivo] = useState("");
   const semDinheiro = naoEntraNoCaixa(tipoForma);
-  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente) || (semDinheiro && !motivo.trim());
+  // Vale-presente com código (migration 0235): o código substitui o motivo.
+  const [vale, setVale] = useState<ValeConsulta | null>(null);
+  const [valeSemCodigo, setValeSemCodigo] = useState(false);
+  const valeComCodigo = tipoForma === "vale_presente" && !valeSemCodigo;
   const [feito, setFeito] = useState<Feito | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   // Trava contra finalizar duas vezes (toque duplo, ou o QR Pix caindo no mesmo instante do clique).
@@ -70,6 +75,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     ? Math.round(Math.max(0, Math.min(cb.saldo, cb.maxResgate ?? Infinity, total)) * 100) / 100
     : 0;
   const cobrar = Math.round((total - cbUsado) * 100) / 100;
+  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente) || (semDinheiro && !valeComCodigo && !motivo.trim()) || (valeComCodigo && (!vale || vale.saldo < cobrar - 0.005));
   const recebidoNum = Number(recebido.replace(",", ".")) || 0;
   const troco = tipoDe(forma, formas) === "dinheiro" && recebidoNum > cobrar ? Math.round((recebidoNum - cobrar) * 100) / 100 : 0;
 
@@ -116,9 +122,11 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     const nomeCliente = cliente?.nome;
     start(async () => {
       try {
-        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento ? { ...pagamento, observacao: motivo.trim() || null } : null, local);
+        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento ? { ...pagamento, observacao: motivo.trim() || null, valeCodigo: valeComCodigo && vale ? vale.codigo : null } : null, local);
         if (r.ok) {
           setMotivo("");
+          setVale(null);
+          setValeSemCodigo(false);
           concluir(r, pagamento, trocoAtual, ehViagem, nomeCliente);
         } else {
           setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
@@ -266,7 +274,15 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
               </div>
             )}
-            {semDinheiro && (
+            {tipoForma === "vale_presente" && (
+              <div className="mb-3">
+                <CampoVale vale={vale} onVale={setVale} semCodigo={valeSemCodigo} onSemCodigo={setValeSemCodigo} campoCls="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
+                {vale && vale.saldo < cobrar - 0.005 && (
+                  <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">O saldo não cobre a venda toda. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.</p>
+                )}
+              </div>
+            )}
+            {semDinheiro && !valeComCodigo && (
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">Motivo (obrigatório)</label>
                 <input value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 200))} placeholder={tipoForma === "cortesia" ? "ex.: aniversário, cortesia da casa" : "ex.: vale nº 123"} className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
