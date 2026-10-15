@@ -27,7 +27,7 @@ export type ConfigHorarios = {
 export const HORARIOS_PADRAO: ConfigHorarios = {
   turnos: [
     { id: "almoco", nome: "Almoço", dias: [1, 2, 3, 4, 5, 6], agendaAbre: "08:30", livreAbre: "11:15", livreFecha: "13:20" },
-    { id: "noite", nome: "Noite", dias: [3, 4, 5, 6], agendaAbre: "15:00", livreAbre: "18:30", livreFecha: "22:00" },
+    { id: "noite", nome: "Noite", dias: [5, 6], agendaAbre: "15:00", livreAbre: "18:30", livreFecha: "22:00" },
   ],
   intervaloMin: 15,
   maxPorHorario: 4,
