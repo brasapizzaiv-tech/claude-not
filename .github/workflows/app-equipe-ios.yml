@@ -66,6 +66,23 @@ jobs:
           npx cap sync ios
           node scripts/patch-ios.mjs
 
+      # Avisos no celular: configuração do Firebase (dos segredos) entra no
+      # projeto, e o arquivo de permissões (push) passa a valer na assinatura.
+      - name: Firebase (avisos no celular)
+        if: steps.chave.outputs.tem == 'true'
+        env:
+          FB_PLIST_B64: ${{ secrets.FIREBASE_IOS_PLIST_B64 }}
+        run: |
+          set -e
+          if [ -n "$FB_PLIST_B64" ]; then
+            echo "$FB_PLIST_B64" | base64 --decode > ios/App/App/GoogleService-Info.plist
+            echo "ok GoogleService-Info.plist"
+          else
+            echo "Sem FIREBASE_IOS_PLIST_B64: app sem notificações."
+          fi
+          gem list -i xcodeproj > /dev/null || sudo gem install xcodeproj --no-document
+          ruby scripts/firebase-ios.rb
+
       - name: Certificado e perfil no Mac
         if: steps.chave.outputs.tem == 'true'
         env:

@@ -7,6 +7,8 @@ import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/e
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { aplicarRecebimentoFiado, planejarRecebimentoFiado, type PlanoFiado } from "@/lib/retiradas-quitar";
+import { after } from "next/server";
+import { avisarPagamentosSemana } from "@/lib/push-avisos";
 
 export type Turno = "dia" | "noite";
 
@@ -159,6 +161,8 @@ export async function lancarPagamentosSemana(
   const rotulo = rotuloSemana(segunda);
   let n = 0;
   let totalDesc = 0;
+  // Pro aviso no celular: o que cada um leva em mãos.
+  const avisos: { colaboradorId: string; valor: number }[] = [];
   for (const it of validos) {
     // Adiantamento: dinheiro dado antes do acerto. Sai PRIMEIRO (a regra dele
     // é voltar na semana seguinte); o fiado, se marcado, no que sobrar.
@@ -231,7 +235,9 @@ export async function lancarPagamentosSemana(
       totalDesc += descFiado;
     }
     n++;
+    avisos.push({ colaboradorId: it.colaboradorId, valor: emMaos });
   }
+  after(() => avisarPagamentosSemana(avisos, rotulo));
   revalidatePath("/colaboradores/semana");
   revalidatePath("/financeiro/contas");
   revalidatePath("/financeiro");

@@ -61,6 +61,19 @@ jobs:
           node scripts/patch-android.mjs
           chmod +x android/gradlew
 
+      # Avisos no celular: a configuração do Firebase (projeto "motelli") vem
+      # dos segredos. Sem ela o app compila igual, só não recebe notificação.
+      - name: Firebase (avisos no celular)
+        env:
+          FB_JSON_B64: ${{ secrets.FIREBASE_ANDROID_JSON_B64 }}
+        run: |
+          if [ -n "$FB_JSON_B64" ]; then
+            echo "$FB_JSON_B64" | base64 -d > android/app/google-services.json
+            echo "ok google-services.json"
+          else
+            echo "Sem FIREBASE_ANDROID_JSON_B64: app sem notificações."
+          fi
+
       - name: Compilar APK de teste
         run: cd android && ./gradlew assembleDebug --no-daemon
 

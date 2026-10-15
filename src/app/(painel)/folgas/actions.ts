@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { after } from "next/server";
+import { avisarFolgaDecidida } from "@/lib/push-avisos";
 
 function ok() {
   revalidatePath("/folgas");
@@ -25,6 +27,7 @@ export async function decidirPedido(id: number, aprovar: boolean, motivoNeg?: st
       decidido_em: new Date().toISOString(),
     })
     .eq("id", id);
+  if (!error) after(() => avisarFolgaDecidida(id));
   return error ? erro(error.message) : ok();
 }
 

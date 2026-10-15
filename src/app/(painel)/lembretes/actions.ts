@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { after } from "next/server";
+import { avisarLembrete } from "@/lib/push-avisos";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -50,8 +52,11 @@ export async function salvarLembrete(fd: FormData) {
     if (error) return { ok: false as const, erro: error.message };
   } else {
     const { data: auth } = await supabase.auth.getUser();
-    const { error } = await supabase.from("lembretes").insert({ ...row, criado_por: auth.user?.id ?? null });
+    const { data: novo, error } = await supabase.from("lembretes").insert({ ...row, criado_por: auth.user?.id ?? null }).select("id").single();
     if (error) return { ok: false as const, erro: error.message };
+    // Celular de quem o lembrete pega (só se vale hoje), depois da resposta.
+    const novoId = (novo as { id: string } | null)?.id;
+    if (novoId) after(() => avisarLembrete(novoId));
   }
   revalidatePath("/lembretes");
   return { ok: true as const };

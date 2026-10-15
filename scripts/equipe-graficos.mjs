@@ -80,3 +80,11 @@ console.log("ok public/play/motelli-equipe-capa-1024x500.png");
     .toFile("public/play/motelli-equipe-cabecalho-3840x1646.png");
   console.log("ok public/play/motelli-equipe-cabecalho-3840x1646.png");
 }
+
+// Ícone pequeno da notificação no Android: só a silhueta, branca sobre
+// transparente (o Android pinta da cor do app; ícone colorido vira um quadrado).
+{
+  const branco = Buffer.from(grupo("#ffffff").replace(/stroke="[^"]*"/, 'stroke="#000000" stroke-opacity="0"'));
+  await sharp(branco).resize(96, 96).png().toFile("public/icons/motelli-equipe-notificacao-96.png");
+  console.log("ok public/icons/motelli-equipe-notificacao-96.png");
+}

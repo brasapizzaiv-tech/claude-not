@@ -124,3 +124,19 @@ export async function sairDoAparelhoColab(token: string) {
   jar.delete({ name: `eu_${token}`, path: `/eu/${token}` });
   return { ok: true };
 }
+
+// Celular registrado pra receber avisos (app Motelli Equipe, migration 0234).
+export async function registrarPushColab(token: string, push: string, plataforma: "android" | "ios") {
+  const jar = await cookies();
+  const pin = jar.get(`eu_${token}`)?.value ?? "";
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("colaborador_registrar_push", { p_token: token, p_pin: pin, p_push: push, p_plataforma: plataforma });
+  return { ok: !!(data as { ok?: boolean } | null)?.ok };
+}
+
+// "Sair deste aparelho": este celular para de receber os avisos da pessoa.
+export async function removerPushColab(token: string, push: string) {
+  const supabase = await createClient();
+  await supabase.rpc("colaborador_remover_push", { p_token: token, p_push: push });
+  return { ok: true };
+}

@@ -33,6 +33,10 @@ for (const [k, v] of Object.entries(chaves)) {
   const linha = `<key>${k}</key>\n\t<string>${esc(v)}</string>`;
   p = re.test(p) ? p.replace(re, linha) : p.replace("</dict>\n</plist>", `\t${linha}\n</dict>\n</plist>`);
 }
+// Avisos no celular: deixa o iOS acordar o app pra entregar a notificação.
+if (!p.includes("<key>UIBackgroundModes</key>")) {
+  p = p.replace("</dict>\n</plist>", "\t<key>UIBackgroundModes</key>\n\t<array>\n\t\t<string>remote-notification</string>\n\t</array>\n</dict>\n</plist>");
+}
 // "Sem criptografia própria" (evita a pergunta de exportação a cada envio).
 if (!p.includes("<key>ITSAppUsesNonExemptEncryption</key>")) {
   p = p.replace("</dict>\n</plist>", "\t<key>ITSAppUsesNonExemptEncryption</key>\n\t<false/>\n</dict>\n</plist>");

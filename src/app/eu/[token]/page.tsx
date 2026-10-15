@@ -13,6 +13,7 @@ import { contarFaixas, hojeSP } from "@/lib/etiqueta-vencimentos";
 import { lembretesDoColaborador } from "@/lib/lembretes-server";
 import { LembretesHoje } from "./lembretes-hoje";
 import { SairEu } from "./sair-eu";
+import { AvisosCelular } from "./avisos-celular";
 import { EntregaObrigatoria } from "./entrega-obrigatoria";
 
 const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
@@ -210,6 +211,7 @@ export default async function AppColaboradorPage({
   return (
     <Moldura>
       {saudacao}
+      <AvisosCelular token={token} />
       <LembretesHoje token={token} itens={lembretes} />
       {fazContagem && <EntregaObrigatoria token={token} pedidos={entregasObrigatorias(pedidos, hojeSP())} produtos={produtos} hoje={hojeSP()} />}
       {temFolga && (

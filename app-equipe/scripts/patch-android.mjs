@@ -71,6 +71,25 @@ if (fs.existsSync(icone)) {
   console.log("ícone não encontrado, mantém o padrão");
 }
 
+// 3b) Avisos no celular: ícone pequeno da notificação (silhueta branca; o
+// Android pinta da cor do app) e a cor dele. Sem isso aparece um quadrado.
+const iconeNotif = path.join(raiz, "..", "public", "icons", "motelli-equipe-notificacao-96.png");
+if (fs.existsSync(iconeNotif)) {
+  const drawable = path.join(android, "app/src/main/res/drawable");
+  fs.mkdirSync(drawable, { recursive: true });
+  fs.copyFileSync(iconeNotif, path.join(drawable, "ic_stat_notificacao.png"));
+  let mm = fs.readFileSync(manifest, "utf8");
+  const metas = [
+    '<meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_notificacao" />',
+    '<meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/ic_launcher_background" />',
+  ];
+  for (const meta of metas) {
+    if (!mm.includes(meta.split('"')[1])) mm = mm.replace("</application>", `    ${meta}\n    </application>`);
+  }
+  fs.writeFileSync(manifest, mm);
+  console.log("ok ícone da notificação");
+}
+
 // ---------------------------------------------------------------------------
 // 4) IDENTIDADE E ASSINATURA — o que separa um APK de teste de um app na loja
 //
