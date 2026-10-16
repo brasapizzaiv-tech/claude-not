@@ -69,6 +69,10 @@ export const GATILHOS: GatilhoDef[] = [
     descricao: "Mensagem no aniversário do cliente (só de quem informou a data e aceitou receber).",
     variaveisSugeridas: ["nome", "cupom", "link"],
     exemplo: "Parabéns, {{1}}! Pra comemorar, use o cupom {{2}} no seu pedido: {{3}}" },
+  { chave: "carrinho_abandonado", titulo: "Carrinho abandonado", icone: "compras", marketing: true,
+    descricao: "Mensagem pra quem montou o carrinho no app (com telefone) e não fechou o pedido. O tempo de espera é o da Vitrine do app (padrão 20 min). Só vai pra quem aceitou promoções.",
+    variaveisSugeridas: ["nome", "cupom", "link"],
+    exemplo: "{{1}}, seu pedido ficou esperando! Termine com o cupom {{2}}: {{3}}" },
 ];
 
 export const PUBLICOS = {

@@ -6,6 +6,7 @@ import { pixConfigurado } from "@/lib/pix";
 import { listarFormas } from "@/lib/formas-pagamento-server";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { PedirClient } from "./pedir-client";
+import { carregarVitrine } from "@/lib/vitrine";
 
 export const metadata: Metadata = {
   title: "Peça online · Brasa Pizzaria e Restaurante",
@@ -111,6 +112,8 @@ export default async function PedirPage() {
   const comItens = new Set(itens.map((i) => i.categoria));
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
+  // Vitrine do app (destaques, sugestões e cupons dos gatilhos) — /delivery/vitrine.
+  const vitrine = await carregarVitrine(admin, empresaId, new Set(itens.map((i) => i.id)));
   const comComplemento = new Set(((gruposItem as { item_id: string }[]) ?? []).map((g) => g.item_id));
 
   return (
@@ -137,6 +140,7 @@ export default async function PedirPage() {
       maisVendidos={maisVendidos}
       pixAtivo={pixConfigurado()}
       formas={await listarFormas("app")}
+      vitrine={vitrine}
     />
   );
 }

@@ -337,6 +337,9 @@ export async function enviarPedidoPublico(d: {
 
   // Pix online: cria a cobrança e devolve o copia-e-cola pro QR na tela.
   let pix: { copiaECola: string } | null = null;
+  // Virou pedido: o carrinho deste telefone não conta mais como abandonado.
+  await admin.from("vitrine_carrinhos").update({ fechado_em: new Date().toISOString() }).eq("empresa_id", empresaId).eq("telefone", fone);
+
   if (d.formaPagamento === "Pix online" && pixConfigurado() && (r.total ?? 0) > 0) {
     try {
       const cob = await criarCobrancaPix({

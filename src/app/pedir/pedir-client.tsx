@@ -10,6 +10,14 @@ import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
 } from "@/components/delivery-pedido-ui";
+import type { CupomVitrine, VitrineApp } from "@/lib/vitrine";
+import { registrarEventoVitrine, salvarCarrinhoPublico } from "./vitrine-actions";
+import { ChaveDeOuro, CupomGatilho, DestaquesTopo, SheetQuerAdicionar, textoCupom } from "./vitrine-ui";
+
+const VITRINE_VAZIA: VitrineApp = { destaques: [], sugestoesProduto: {}, sugestoesCarrinho: [], gatilhos: { boasVindas: null, parado: null, abandonado: null } };
+const lerLS = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+const gravarLS = (k: string, v: string | null) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* sem storage */ } };
+const hojeLocal = () => new Date().toLocaleDateString("en-CA");
 
 const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
 const ESCURO = "var(--marca-escuro)"; // vem do cadastro da empresa
@@ -45,6 +53,7 @@ export type HorarioPedir = {
 
 export function PedirClient({
   itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo, horario, taxaBase = 0, formas = FORMAS_PADRAO.app,
+  vitrine = VITRINE_VAZIA,
 }: {
   itens: Item[];
   categorias: string[];
@@ -59,6 +68,7 @@ export function PedirClient({
   pixAtivo?: boolean;
   formas?: FormaOpcao[];
   horario: HorarioPedir;
+  vitrine?: VitrineApp;
 }) {
   const [proc, start] = useTransition();
   const [fase, setFase] = useState<"menu" | "checkout" | "historico">("menu");
@@ -113,6 +123,14 @@ export function PedirClient({
   const [histLista, setHistLista] = useState<Awaited<ReturnType<typeof meusPedidos>> | null>(null);
   const [histBuscando, setHistBuscando] = useState(false);
 
+  // ---------- Vitrine (migration 0236): sugestões e cupons dos gatilhos ----------
+  const sessaoRef = useRef("");
+  const [sugerir, setSugerir] = useState<Item[] | null>(null);
+  type Gatilho = { tipo: "boas_vindas" | "parado" | "abandonado"; cupom: CupomVitrine; ate: number | null };
+  const [gatilho, setGatilho] = useState<Gatilho | null>(null);
+  const [cupomAte, setCupomAte] = useState<number | null>(null); // cupom "parado" vale até
+  const carregouCarrinho = useRef(false);
+
   // Preenche nome/telefone salvos do último pedido (fora do corpo do effect
   // pra não causar render em cascata).
   useEffect(() => {
@@ -140,9 +158,64 @@ export function PedirClient({
           }).catch(() => { /* sem rede */ });
         }
       } catch { /* sem URL */ }
+
+      // Vitrine: sessão anônima (só pra contar quem abriu e chegou ao carrinho).
+      let sess = lerLS("pedir_sessao") || "";
+      if (!/^[a-z0-9]{16,40}$/.test(sess)) {
+        sess = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(36).padStart(2, "0")).join("").slice(0, 24);
+        gravarLS("pedir_sessao", sess);
+      }
+      sessaoRef.current = sess;
+      void registrarEventoVitrine(sess, "abriu").catch(() => {});
+
+      // Carrinho que ficou no aparelho (fechou o app sem pedir).
+      let largadoHaMin = 0;
+      try {
+        const salvo = JSON.parse(lerLS("pedir_carrinho") || "null") as { cart: CartLine[]; em: number } | null;
+        if (salvo?.cart?.length && Date.now() - salvo.em < 24 * 3600000) {
+          setCart(salvo.cart);
+          largadoHaMin = (Date.now() - salvo.em) / 60000;
+        }
+      } catch { /* carrinho inválido: ignora */ }
+      carregouCarrinho.current = true;
+
+      const jaTemCupom = !!(new URLSearchParams(window.location.search).get("cupom"));
+      const ab = vitrine.gatilhos.abandonado;
+      const bv = vitrine.gatilhos.boasVindas;
+      if (!jaTemCupom && ab && largadoHaMin >= ab.minutos && lerLS("pedir_gat_abandonado") !== hojeLocal()) {
+        setGatilho({ tipo: "abandonado", cupom: ab, ate: null });
+        gravarLS("pedir_gat_abandonado", hojeLocal());
+      } else if (!jaTemCupom && bv && !lerLS("pedir_visitou") && !lerLS("pedir_tel")) {
+        setGatilho({ tipo: "boas_vindas", cupom: bv, ate: null });
+      }
+      gravarLS("pedir_visitou", "1");
     }, 0);
     return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // O carrinho fica guardado no aparelho (base do "carrinho abandonado").
+  useEffect(() => {
+    if (!carregouCarrinho.current) return;
+    gravarLS("pedir_carrinho", cart.length ? JSON.stringify({ cart, em: Date.now() }) : null);
+  }, [cart]);
+
+  // "Ficou parado sem escolher": N minutos com o carrinho vazio no cardápio.
+  useEffect(() => {
+    const pa = vitrine.gatilhos.parado;
+    if (!pa || cart.length > 0 || fase !== "menu" || cupom || gatilho || lerLS("pedir_gat_parado") === hojeLocal()) return;
+    const t = setTimeout(() => {
+      setGatilho({ tipo: "parado", cupom: pa, ate: Date.now() + pa.validadeMin * 60000 });
+      gravarLS("pedir_gat_parado", hojeLocal());
+    }, pa.minutos * 60000);
+    return () => clearTimeout(t);
+  }, [vitrine.gatilhos.parado, cart.length, fase, cupom, gatilho]);
+
+  // Contagem: cupom mostrado.
+  useEffect(() => {
+    if (gatilho && sessaoRef.current) void registrarEventoVitrine(sessaoRef.current, "cupom_mostrado", gatilho.tipo).catch(() => {});
+  }, [gatilho]);
+
 
   const comComplSet = useMemo(() => new Set(comComplemento), [comComplemento]);
   const gruposDe = (itemId: string) => complementos.grupos.filter((g) => g.item_id === itemId);
@@ -193,13 +266,34 @@ export function PedirClient({
   }
 
   function addLinha(l: CartLine) { setCart((c) => [...c, l]); }
+  // Adiciona o que o cliente escolheu e, se a vitrine tiver, oferece "Quer adicionar?".
+  function addComSugestao(l: CartLine, categoria: string) {
+    addLinha(l);
+    const ids = vitrine.sugestoesProduto[categoria] ?? [];
+    const noCarrinho = new Set(cart.map((x) => ("itemId" in x.payload ? x.payload.itemId : "")));
+    const lista = ids.map((id) => itemDe.get(id)).filter((i): i is Item => !!i && !noCarrinho.has(i.id));
+    if (lista.length) setSugerir(lista.slice(0, 4));
+  }
+  // Item sugerido: com complemento abre o montador; sem, entra direto.
+  function addSugerido(i: Item) {
+    if (comComplSet.has(i.id) && gruposDe(i.id).length) { setSugerir(null); setComboItem(i); return; }
+    addLinha({ uid: novoUid(), descricao: i.nome, preco: i.preco, qtd: 1, payload: { kind: "item", itemId: i.id, qtd: 1 } });
+  }
+  function aplicarCupomVitrine(g: Gatilho) {
+    setCupom({ codigo: g.cupom.codigo, tipo: g.cupom.tipo, valor: g.cupom.valor, minimo: g.cupom.minimo });
+    setCupomCodigo(g.cupom.codigo);
+    setCupomMsg(`Cupom ${g.cupom.codigo} aplicado: ${textoCupom(g.cupom)}${g.cupom.minimo != null ? ` em pedidos acima de ${brl(g.cupom.minimo)}` : ""}.`);
+    setCupomAte(g.ate);
+    setGatilho(null);
+    if (g.tipo === "abandonado") setFase("checkout");
+  }
   function setQtd(uid: string, q: number) { setCart((c) => c.map((l) => (l.uid === uid ? { ...l, qtd: q } : l)).filter((l) => l.qtd > 0)); }
   function setObsLinha(uid: string, v: string) {
     setCart((c) => c.map((l) => (l.uid === uid ? { ...l, payload: { ...l.payload, obs: v || undefined } } : l)));
   }
   function clicarItem(i: Item) {
     if (comComplSet.has(i.id) && gruposDe(i.id).length) { setComboItem(i); return; }
-    addLinha({ uid: novoUid(), descricao: i.nome, preco: i.preco, qtd: 1, payload: { kind: "item", itemId: i.id, qtd: 1 } });
+    addComSugestao({ uid: novoUid(), descricao: i.nome, preco: i.preco, qtd: 1, payload: { kind: "item", itemId: i.id, qtd: 1 } }, i.categoria);
   }
 
   async function calcularTaxa() {
@@ -258,6 +352,11 @@ export function PedirClient({
     if (horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo) { setErro(`Pedido mínimo é ${brl(horario.pedidoMinimo)} (sem contar a entrega).`); return; }
     if (quando === "agendar" && !slot) { setErro("Escolha o horário do agendamento."); return; }
     if (quando === "agora" && !aberto) { setErro("Estamos fechados agora — agende um horário."); return; }
+    if (cupom && cupomAte && Date.now() > cupomAte) {
+      setCupom(null); setCupomAte(null);
+      setCupomMsg(`O cupom ${cupom.codigo} valia só por alguns minutos e venceu. Confira o total antes de enviar.`);
+      return;
+    }
     const trocoN = tipoDe(forma, formas) === "dinheiro" ? Number(trocoPara.replace(",", ".")) || 0 : 0;
     start(async () => {
       const r = await enviarPedidoPublico({
@@ -289,6 +388,20 @@ export function PedirClient({
     setHistLista(lista);
     setHistCashback(cb);
   }
+
+  // Vitrine: contar quem chegou ao carrinho e guardar o carrinho com telefone
+  // (2 s depois de parar de digitar) pro WhatsApp de carrinho abandonado.
+  useEffect(() => {
+    if (fase === "checkout" && sessaoRef.current) void registrarEventoVitrine(sessaoRef.current, "carrinho").catch(() => {});
+  }, [fase]);
+  useEffect(() => {
+    if (fase !== "checkout" || cart.length === 0 || telefone.replace(/\D/g, "").length < 10) return;
+    const t = setTimeout(() => {
+      const resumo = cart.map((l) => `${l.qtd > 1 ? `${l.qtd}× ` : ""}${l.descricao.split("\n")[0]}`).join(", ");
+      void salvarCarrinhoPublico(telefone, resumo, subtotal).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [fase, cart, telefone, subtotal]);
 
   // Fica de olho no Pix: quando cair, confirma sozinho na tela.
   useEffect(() => {
@@ -392,6 +505,8 @@ export function PedirClient({
   }
 
   if (fase === "checkout") {
+    const naoNoCarrinho = new Set(cart.map((x) => ("itemId" in x.payload ? x.payload.itemId : "")));
+    const chaveDeOuro = vitrine.sugestoesCarrinho.map((id) => itemDe.get(id)).filter((i): i is Item => !!i && !naoNoCarrinho.has(i.id)).slice(0, 6);
     return (
       <Casca onMeusPedidos={() => setFase("historico")}>
         <div className="p-4 pb-44">
@@ -423,6 +538,8 @@ export function PedirClient({
             ))}
             {cart.length === 0 && <p className="py-6 text-center text-sm text-texto-fraco">Carrinho vazio — volte pro cardápio.</p>}
           </div>
+
+          <ChaveDeOuro itens={chaveDeOuro} onAdd={addSugerido} />
 
           <h2 className="mb-2 font-bold">Seus dados</h2>
           <div className="mb-4 space-y-2">
@@ -579,6 +696,8 @@ export function PedirClient({
         )}
       </div>
 
+      {!busca && <DestaquesTopo destaques={vitrine.destaques} itemDe={itemDe} onPedir={clicarItem} />}
+
       {/* Novidades: os sabores marcados como "novo" no cardápio, com os
           ingredientes — é o que uma pizzaria tem pra mostrar na vitrine.
           Toca e abre o montador já com o sabor marcado. */}
@@ -666,8 +785,26 @@ export function PedirClient({
         </div>
       )}
 
-      {pzTamanho && <PizzaModal pizza={pizza} tamanhoInicial={pzTamanho} saborInicial={pzSabor ?? undefined} comObs onClose={() => { setPzTamanho(null); setPzSabor(null); }} onAdd={(l) => { addLinha(l); setPzTamanho(null); setPzSabor(null); }} />}
-      {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} comObs onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
+      {pzTamanho && <PizzaModal pizza={pizza} tamanhoInicial={pzTamanho} saborInicial={pzSabor ?? undefined} comObs onClose={() => { setPzTamanho(null); setPzSabor(null); }} onAdd={(l) => { addComSugestao(l, "__pizzas__"); setPzTamanho(null); setPzSabor(null); }} />}
+      {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} comObs onClose={() => setComboItem(null)} onAdd={(l) => { addComSugestao(l, comboItem.categoria); setComboItem(null); }} />}
+      {sugerir && <SheetQuerAdicionar itens={sugerir} onAdd={(i) => { addSugerido(i); setSugerir((s) => (s ?? []).filter((x) => x.id !== i.id).length ? (s ?? []).filter((x) => x.id !== i.id) : null); }} onFechar={() => setSugerir(null)} />}
+      {/* Cupom dos gatilhos — regras: nunca no checkout, nunca com cupom já
+          aplicado, nunca com produto em promoção no carrinho. */}
+      {gatilho && !cupom && !sugerir && !cart.some((l) => "itemId" in l.payload && itemDe.get(l.payload.itemId)?.preco_antigo != null) && (
+        <CupomGatilho
+          cupom={gatilho.cupom}
+          rotulo={gatilho.tipo === "boas_vindas" ? "Um presente de boas-vindas" : gatilho.tipo === "parado" ? "Um presente pra decidir" : "Seu pedido ficou esperando"}
+          titulo={`${textoCupom(gatilho.cupom)} no seu pedido`}
+          texto={[
+            gatilho.cupom.minimo != null ? `Pedidos acima de ${brl(gatilho.cupom.minimo)}.` : null,
+            gatilho.tipo === "parado" ? "Vale pelos próximos minutos." : gatilho.tipo === "abandonado" ? "Seus itens continuam no carrinho." : "É só aplicar e escolher.",
+          ].filter(Boolean).join(" ")}
+          ate={gatilho.ate}
+          botao={gatilho.tipo === "abandonado" ? "Aplicar e ver meu pedido" : "Aplicar e continuar escolhendo"}
+          onAplicar={() => aplicarCupomVitrine(gatilho)}
+          onFechar={() => setGatilho(null)}
+        />
+      )}
     </Casca>
   );
 }
