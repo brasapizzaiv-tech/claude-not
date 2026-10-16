@@ -17,7 +17,6 @@ import type { ValeConsulta } from "../salao/caixa/vales/actions";
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const CORES = ["#6366f1", "#10b981", "#ec4899", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e", "#84cc16", "#8b5cf6"];
 type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean; cliente?: string; cashbackUsado?: number; cashbackGanho?: number };
 
 export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false }, formas = FORMAS_PADRAO.pdv, colaboradores = [] }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean }; formas?: FormaOpcao[]; colaboradores?: { id: string; nome: string }[] }) {
@@ -59,8 +58,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const agenteTef = useAgenteTef();
 
   const abas = ["Todos", ...categorias];
-  const corDe = (c: string) => (c === "Todos" ? "#3b82f6" : CORES[categorias.indexOf(c) % CORES.length]);
-
+  
   const visiveis = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return itens.filter((i) => (aba === "Todos" || i.categoria === aba) && (!q || i.nome.toLowerCase().includes(q)));
@@ -187,21 +185,21 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
       {/* Cardápio */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="flex items-center gap-2 border-b border-borda p-3">
-          <h1 className="flex items-center gap-2 text-lg font-bold"><Icone nome="cupom" tamanho={18} /> PDV — Balcão</h1>
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="ml-auto w-64 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+          <h1 className="font-numero text-[22px] font-bold tracking-apertada text-texto">PDV · balcão</h1>
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto…" aria-label="Buscar produto" className="ml-auto h-11 w-64 rounded-controle bg-painel-fundo px-4 text-sm text-texto placeholder:text-texto-fraco" />
         </div>
         <div className="flex flex-wrap gap-1.5 border-b border-borda p-2">
           {abas.map((c) => (
-            <button key={c} onClick={() => setAba(c)} style={{ borderColor: corDe(c) }} className={`rounded-controle border-l-4 px-3 py-1.5 text-sm font-medium ${aba === c ? "bg-superficie-suave" : "text-texto-suave"}`}>{c}</button>
+            <button key={c} onClick={() => setAba(c)} aria-pressed={aba === c} className={`min-h-11 shrink-0 rounded-full px-4 text-[13.5px] ${aba === c ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo" : "bg-painel-fundo text-texto hover:bg-superficie-suave"}`}>{c}</button>
           ))}
         </div>
         <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-3 sm:grid-cols-3 lg:grid-cols-4">
           {visiveis.map((i) => {
             const q = cart[i.id] || 0;
             return (
-              <button key={i.id} onClick={() => add(i.id)} className={`flex min-h-[76px] flex-col justify-between rounded-cartao border p-2.5 text-left ${q > 0 ? "border-emerald-500 bg-emerald-500/5" : "border-borda hover:bg-superficie-suave  "}`}>
+              <button key={i.id} onClick={() => add(i.id)} className={`flex min-h-[76px] flex-col justify-between rounded-controle p-3 text-left transition ${q > 0 ? "bg-destaque shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo hover:bg-superficie-suave"}`}>
                 <span className="text-sm font-medium leading-tight">{i.nome}{q > 0 ? ` (${q})` : ""}</span>
-                <span className="text-sm text-emerald-600">{i.preco > 0 ? brl(i.preco) : "—"}</span>
+                <span className="font-numero text-sm font-bold text-texto">{i.preco > 0 ? brl(i.preco) : "—"}</span>
               </button>
             );
           })}
@@ -212,7 +210,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
       {/* Carrinho / Pagamento */}
       <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="border-b border-borda p-3 font-bold">
-          {fase === "pagar" ? <button onClick={() => setFase("menu")} className="text-emerald-600">← Voltar</button> : <span className="inline-flex items-center gap-1.5"><Icone nome="compras" tamanho={14} /> Pedido {cartCount > 0 ? `(${cartCount})` : ""}</span>}
+          {fase === "pagar" ? <button onClick={() => setFase("menu")} className="font-semibold text-texto-marca">← Voltar</button> : <span className="inline-flex items-center gap-1.5"><Icone nome="compras" tamanho={14} /> Pedido {cartCount > 0 ? `(${cartCount})` : ""}</span>}
         </div>
 
         {fase === "menu" ? (
@@ -226,12 +224,12 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                     <div key={x.item.id} className="flex items-center justify-between gap-2 rounded-controle border border-borda p-2">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium">{x.item.nome}</div>
-                        <div className="text-xs text-emerald-600">{brl(x.item.preco * x.qtd)}</div>
+                        <div className="font-numero text-xs font-semibold text-texto-suave">{brl(x.item.preco * x.qtd)}</div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button onClick={() => setQtd(x.item.id, x.qtd - 1)} className="h-7 w-7 rounded border border-borda-forte">{x.qtd === 1 ? <Icone nome="lixeira" tamanho={14} titulo="Tirar do pedido" /> : "−"}</button>
                         <span className="w-5 text-center font-bold">{x.qtd}</span>
-                        <button onClick={() => setQtd(x.item.id, x.qtd + 1)} className="h-7 w-7 rounded border border-borda-forte text-emerald-600">+</button>
+                        <button onClick={() => setQtd(x.item.id, x.qtd + 1)} className="h-9 w-9 rounded-mesa bg-destaque font-bold text-texto-marca-pilula" aria-label="Mais um">+</button>
                       </div>
                     </div>
                   ))}
@@ -240,14 +238,14 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             </div>
             <div className="border-t border-borda p-3">
               <div className="mb-2 grid grid-cols-2 gap-2">
-                <button onClick={() => setLocal("aqui")} className={`rounded-controle border py-2 text-sm font-semibold ${local === "aqui" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="salao" tamanho={14} /> Comer aqui</span></button>
-                <button onClick={() => setLocal("viagem")} className={`rounded-controle border py-2 text-sm font-semibold ${local === "viagem" ? "border-amber-500 bg-amber-500/10 text-amber-600" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="viagem" tamanho={14} /> Viagem</span></button>
+                <button onClick={() => setLocal("aqui")} className={`min-h-11 rounded-controle py-2 text-sm font-semibold ${local === "aqui" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto-suave"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="salao" tamanho={14} /> Comer aqui</span></button>
+                <button onClick={() => setLocal("viagem")} className={`min-h-11 rounded-controle py-2 text-sm font-semibold ${local === "viagem" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto-suave"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="viagem" tamanho={14} /> Viagem</span></button>
               </div>
               <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
               <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
               {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
-              <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="mb-2 w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo disabled:opacity-50"><span className="inline-flex items-center justify-center gap-2"><Icone nome="dinheiro" tamanho={18} /> Cobrar e finalizar</span></button>
-              <button onClick={() => finalizar(null)} disabled={proc || cartLista.length === 0} className="w-full rounded-cartao border border-borda-forte py-2.5 text-sm font-semibold disabled:opacity-50">{proc ? "Enviando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="panela" tamanho={14} /> Só enviar pra cozinha (pago no caixa)</span>}</button>
+              <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="btn-principal mb-2 w-full text-base"><span className="inline-flex items-center justify-center gap-2"><Icone nome="dinheiro" tamanho={18} /> Cobrar e finalizar</span></button>
+              <button onClick={() => finalizar(null)} disabled={proc || cartLista.length === 0} className="btn-secundario w-full text-sm">{proc ? "Enviando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="panela" tamanho={14} /> Só enviar pra cozinha (pago no caixa)</span>}</button>
             </div>
           </>
         ) : (
@@ -260,7 +258,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             <div className="mb-2 flex justify-end"><NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} compacto /></div>
             <div className="mb-3 grid grid-cols-3 gap-2">
               {FORMAS.map((f) => (
-                <button key={f.id} onClick={() => setForma(f.id)} className={`rounded-cartao border py-3 text-sm font-semibold ${forma === f.id ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-borda"}`}>
+                <button key={f.id} onClick={() => setForma(f.id)} className={`min-h-11 rounded-controle py-3 text-sm font-semibold ${forma === f.id ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto"}`}>
                   <span className="inline-flex items-center justify-center gap-1.5">
                     <Icone nome={f.icone} tamanho={16} /> {f.label}
                   </span>
