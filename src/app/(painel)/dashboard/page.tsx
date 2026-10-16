@@ -103,7 +103,7 @@ export default async function DashboardPage({
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_comandas")
-      .select("id, numero, mesa, criado_em, conta_pedida_em, conta_pedida_por")
+      .select("id, numero, mesa, aberta_em, conta_pedida_em, conta_pedida_por")
       .eq("status", "aberta"),
     supabase.from("pdv_caixas").select("id, saldo_inicial, aberto_em").eq("status", "aberto").maybeSingle(),
     // Movimentos dos últimos 7 dias + o dia da semana anterior, numa consulta só.
@@ -128,7 +128,7 @@ export default async function DashboardPage({
     Promise.all(
       [...Array.from({ length: 7 }, (_, i) => somarDias(dia, i - 6)), semanaAtras].map(async (d) => {
         const jj = janelaDoDia(d);
-        const { count } = await supabase.from("pdv_comandas").select("id", { count: "exact", head: true }).gte("criado_em", jj.de).lt("criado_em", jj.ate);
+        const { count } = await supabase.from("pdv_comandas").select("id", { count: "exact", head: true }).gte("aberta_em", jj.de).lt("aberta_em", jj.ate);
         return count ?? 0;
       }),
     ),
@@ -166,10 +166,11 @@ export default async function DashboardPage({
 
   // ---------- Salão ----------
   type Com = {
-    id: string; numero: number; mesa: string | null; criado_em: string;
+    id: string; numero: number; mesa: string | null; aberta_em: string;
     conta_pedida_em: string | null; conta_pedida_por: string | null;
   };
-  const abertas = ((comandasAbertas as Com[]) ?? []).filter((c) => c.mesa);
+  // Salão, balcão e balança; as do delivery ("Nome · ENTREGA/RETIRADA") têm o painel delas.
+  const abertas = ((comandasAbertas as Com[]) ?? []).filter((c) => c.mesa && !/·\s*(ENTREGA|RETIRADA)\b/i.test(c.mesa));
   const porMesa = new Map<number, Com>();
   for (const c of abertas) {
     const n = Number(String(c.mesa).replace(/\D/g, ""));
@@ -194,11 +195,15 @@ export default async function DashboardPage({
   const nConta = todasMesas.filter((m) => m.estado === "conta").length;
 
   const agora = agoraMs();
-  const maisVelha = [...abertas].sort((a, b) => a.criado_em.localeCompare(b.criado_em))[0];
+  const maisVelha = [...abertas].sort((a, b) => a.aberta_em.localeCompare(b.aberta_em))[0];
   const maisAntiga = maisVelha
     ? {
         numero: Number(String(maisVelha.mesa).replace(/\D/g, "")) || maisVelha.numero,
-        minutos: Math.max(0, Math.round((agora - new Date(maisVelha.criado_em).getTime()) / 60000)),
+        // "mesa 14" quando é mesa; senão "Balança nº 212".
+        rotulo: /^mesa\s*\d+/i.test(String(maisVelha.mesa))
+          ? `mesa ${String(maisVelha.mesa).replace(/\D/g, "")}`
+          : `${maisVelha.mesa} nº ${maisVelha.numero}`,
+        minutos: Math.max(0, Math.round((agora - new Date(maisVelha.aberta_em).getTime()) / 60000)),
         comandaId: maisVelha.id,
       }
     : null;
@@ -240,12 +245,25 @@ export default async function DashboardPage({
   const presencas = ((presencasHoje as { colaborador_id: string; turno: string }[]) ?? []).filter(
     (p) => p.turno === turnoAgora,
   );
+  // E quem bateu ponto neste turno: a presença só é lançada pra quem está
+  // marcado "bate ponto", mas na casa está todo mundo que bateu.
+  const { data: batidasTurno } = await supabase
+    .from("ponto_batidas")
+    .select("colaborador_id")
+    .eq("data", dia)
+    .eq("turno", turnoAgora)
+    .eq("desconsiderada", false)
+    .not("colaborador_id", "is", null);
+  const naCasaIds = [...new Set([
+    ...presencas.map((p) => p.colaborador_id),
+    ...((batidasTurno as { colaborador_id: string }[]) ?? []).map((b) => b.colaborador_id),
+  ])];
   let pessoasTurno: string[] = [];
-  if (presencas.length) {
+  if (naCasaIds.length) {
     const { data: colabs } = await supabase
       .from("colaboradores")
       .select("id, nome")
-      .in("id", presencas.map((p) => p.colaborador_id));
+      .in("id", naCasaIds);
     pessoasTurno = ((colabs as { id: string; nome: string }[]) ?? [])
       .map((c) => c.nome.split(" ")[0])
       .sort();

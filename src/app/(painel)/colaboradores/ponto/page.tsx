@@ -5,8 +5,10 @@ import { Icone } from "@/components/icone";
 import { diasEntre } from "@/lib/assiduidade-core";
 import { hojeSP, lerConfig } from "@/lib/assiduidade-server";
 import { carregarBasePonto } from "@/lib/ponto-dados";
+import { acharPorNome } from "@/lib/ponto-core";
 import { duracao, espelho, hhmm, porSemana, type LinhaEspelho } from "@/lib/ponto-relatorio-core";
 import { AjustarDia, BatidaMenu, ImportarAfd, Imprimir } from "./client";
+import { BatidasSemColaborador, type CpfSemDono } from "./sem-colaborador";
 
 export const metadata = { title: "Relatórios de ponto · Brasa" };
 export const dynamic = "force-dynamic";
@@ -74,8 +76,37 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
   };
   const CAB = "px-2 py-2 text-left text-xs font-medium text-texto-fraco";
 
+  // Batidas com CPF fora do cadastro (não viram presença até alguém dizer de quem são).
+  // (de 1000 em 1000: o Supabase corta cada consulta em 1000 linhas)
+  const semDonoMap = new Map<string, string[]>();
+  const nomeRelogio = new Map<string, string>();
+  for (let de = 0; de < 20000; de += 1000) {
+    const { data: pagina } = await supabase.from("ponto_batidas").select("cpf, nome, data_hora").is("colaborador_id", null).eq("desconsiderada", false)
+      .order("data_hora", { ascending: false }).order("id").range(de, de + 999);
+    const linhas = (pagina as { cpf: string; nome: string | null; data_hora: string }[]) ?? [];
+    for (const b of linhas) {
+      semDonoMap.set(b.cpf, [...(semDonoMap.get(b.cpf) ?? []), b.data_hora]);
+      if (b.nome?.trim() && !nomeRelogio.has(b.cpf)) nomeRelogio.set(b.cpf, b.nome.trim());
+    }
+    if (linhas.length < 1000) break;
+  }
+  // "Qui 16/10 08:03" no fuso de Brasília.
+  const quandoCurto = (iso: string) => {
+    const local = new Date(new Date(iso).getTime() - 3 * 3600000);
+    return `${DOW[local.getUTCDay()]} ${local.toISOString().slice(8, 10)}/${local.toISOString().slice(5, 7)} ${local.toISOString().slice(11, 16)}`;
+  };
+  const { data: colsRows } = semDonoMap.size ? await supabase.from("colaboradores").select("id, nome, cpf").eq("ativo", true).order("nome") : { data: [] };
+  const colsLista = ((colsRows as { id: string; nome: string; cpf: string | null }[]) ?? []).map((c) => ({ id: c.id, nome: c.nome, temCpf: String(c.cpf ?? "").replace(/\D/g, "").length === 11 }));
+  // O nome que está no relógio já sugere de quem é (só entre quem ainda não tem CPF).
+  const semCpfLista = colsLista.filter((c) => !c.temCpf);
+  const semDono: CpfSemDono[] = [...semDonoMap.entries()].filter(([cpf]) => /^\d{11}$/.test(cpf)).map(([cpf, horas]) => {
+    const nome = nomeRelogio.get(cpf) ?? null;
+    return { cpf, nome, sugestao: nome ? acharPorNome(nome, semCpfLista)?.id ?? null : null, batidas: horas.length, ultimas: horas.slice(0, 4).map(quandoCurto) };
+  });
+
   return (
     <div className="w-full max-w-6xl p-4 sm:p-6">
+      <div className="print:hidden"><BatidasSemColaborador lista={semDono} colaboradores={colsLista} /></div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div>
           <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Relatórios de ponto</h1>

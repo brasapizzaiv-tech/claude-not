@@ -149,3 +149,33 @@ export async function moverBatidaDia(id: string, delta: 1 | -1) {
   const turno = delta < 0 ? "noite" : hora < 16 ? "dia" : "noite";
   return ajustar(id, { data: novoDia, turno, deslocamento: 0 });
 }
+
+/**
+ * Batida do relógio com CPF que não está em nenhum cadastro: diz de quem é.
+ * Grava o CPF no colaborador (as próximas batidas já chegam ligadas), liga as
+ * batidas que já vieram e marca as presenças desses dias (mesma regra do relógio).
+ */
+export async function vincularCpfPonto(cpf: string, colaboradorId: string) {
+  await exigirAcesso("/colaboradores");
+  const empresaId = await empresaAtualId();
+  const c = String(cpf || "").replace(/\D/g, "");
+  if (!empresaId || c.length !== 11) return { ok: false as const, erro: "CPF inválido." };
+  if (!colaboradorId) return { ok: false as const, erro: "Escolha o colaborador." };
+  const supabase = await createClient();
+  const { data: col } = await supabase.from("colaboradores").select("id, nome, cpf").eq("id", colaboradorId).maybeSingle();
+  if (!col) return { ok: false as const, erro: "Colaborador não encontrado." };
+  const atual = String((col as { cpf: string | null }).cpf ?? "").replace(/\D/g, "");
+  if (atual && atual !== c) return { ok: false as const, erro: `${(col as { nome: string }).nome} já tem outro CPF no cadastro. Confira em Colaboradores.` };
+  const { data: outro } = await supabase.from("colaboradores").select("nome").eq("cpf", c).neq("id", colaboradorId).limit(1).maybeSingle();
+  if (outro) return { ok: false as const, erro: `Esse CPF já é de ${(outro as { nome: string }).nome}.` };
+  const { error } = await supabase.from("colaboradores").update({ cpf: c }).eq("id", colaboradorId);
+  if (error) return { ok: false as const, erro: error.message };
+  const { data: ligadas, error: e2 } = await supabase.from("ponto_batidas").update({ colaborador_id: colaboradorId })
+    .eq("cpf", c).is("colaborador_id", null).select("data");
+  if (e2) return { ok: false as const, erro: e2.message };
+  const dias = [...new Set(((ligadas ?? []) as { data: string }[]).map((b) => String(b.data).slice(0, 10)))];
+  const presencas = await marcarPresencasDoPonto(empresaId, dias.map((data) => ({ colaboradorId, data })));
+  revalidar();
+  revalidatePath("/dashboard");
+  return { ok: true as const, batidas: ligadas?.length ?? 0, presencas };
+}

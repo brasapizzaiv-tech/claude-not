@@ -43,7 +43,7 @@ export type DadosInicio = {
     ocupadas: number;
     livres: number;
     conta: number;
-    maisAntiga: { numero: number; minutos: number; comandaId: string } | null;
+    maisAntiga: { numero: number; rotulo: string; minutos: number; comandaId: string } | null;
     rodizioDia: number;
   };
   delivery: { aberto: boolean; cozinha: number; rua: number; entregues: number; tempoMedio: number | null };
@@ -288,7 +288,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
               <Icone nome="relogio" tamanho={18} className="shrink-0 text-texto-marca" />
               {d.salao.maisAntiga ? (
                 <Link href={`/salao/comandas/${d.salao.maisAntiga.comandaId}`} className="flex-1 text-[13.5px] text-texto-suave hover:underline">
-                  Comanda mais antiga: <span className="font-semibold text-texto">mesa {d.salao.maisAntiga.numero}, há {duracao(d.salao.maisAntiga.minutos)}</span>
+                  Comanda mais antiga: <span className="font-semibold text-texto">{d.salao.maisAntiga.rotulo}, há {duracao(d.salao.maisAntiga.minutos)}</span>
                 </Link>
               ) : (
                 <span className="flex-1 text-[13.5px] text-texto-suave">Nenhuma comanda aberta.</span>
@@ -359,7 +359,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
         <section className="cartao flex flex-col px-5 py-[18px]">
           <h2 className={`text-[17px] ${TITULO}`}>Na casa agora</h2>
           {d.turno.pessoas.length === 0 ? (
-            <p className="mt-3 text-sm text-texto-suave">Ninguém marcado no turno da {d.turno.rotulo}.</p>
+            <p className="mt-3 text-sm text-texto-suave">Ninguém marcado no turno {d.turno.rotulo === "noite" ? "da noite" : "do dia"}.</p>
           ) : (
             <div className="mt-4 flex flex-wrap gap-2.5">
               {d.turno.pessoas.map((p, i) => (
@@ -374,7 +374,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
           )}
           <div className="mt-auto flex items-center justify-between pt-4">
             <span className="text-[13px] text-texto-suave">
-              {d.turno.pessoas.length} {d.turno.pessoas.length === 1 ? "pessoa" : "pessoas"} no turno da {d.turno.rotulo}
+              {d.turno.pessoas.length} {d.turno.pessoas.length === 1 ? "pessoa" : "pessoas"} no turno {d.turno.rotulo === "noite" ? "da noite" : "do dia"}
             </span>
             <Link href="/colaboradores/semana" className="text-[13px] font-bold text-texto-marca hover:underline">Escala</Link>
           </div>
