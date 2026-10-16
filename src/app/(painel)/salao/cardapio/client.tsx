@@ -23,6 +23,13 @@ import {
 import { salvarFotoCardapio, removerFotoCardapio, salvarDetalheCardapio, salvarFatias, adicionarSabor, desativarSabor } from "../../delivery/actions";
 import { resumoHorarios, disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 
+/** As ações de excluir recebem FormData (vieram de formulário). */
+function comId(id: string) {
+  const fd = new FormData();
+  fd.set("id", id);
+  return fd;
+}
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const inputCls =
@@ -495,15 +502,17 @@ function CategoriaCard({
               {cat.disponivel ? "✓ Disponível" : "✕ Indisponível"}
             </Enviar>
           </form>
-          <form
-            action={excluirCategoria}
-            onSubmit={async (e) => {
-              if (!await confirmar(`Excluir a categoria "${cat.nome}"? Os produtos não são apagados.`)) e.preventDefault();
+          {/* Pergunta ANTES de excluir (o onSubmit assíncrono não segurava o envio). */}
+          <BotaoAcao
+            aoClicar={async () => {
+              if (!(await confirmar(`Excluir a categoria "${cat.nome}"? Os produtos não são apagados.`, { perigo: true, okTexto: "Excluir" }))) return;
+              await excluirCategoria(comId(cat.id));
             }}
+            className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+            aria-label="Excluir categoria"
           >
-            <input type="hidden" name="id" value={cat.id} />
-            <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600" aria-label="Excluir categoria"><Icone nome="lixeira" tamanho={15} /></Enviar>
-          </form>
+            <Icone nome="lixeira" tamanho={15} />
+          </BotaoAcao>
         </div>
       </div>
 
@@ -617,14 +626,15 @@ function ItensTabela({
                       </Link>
                     )}
                     <button onClick={() => onEditar(i)} className="mr-3 text-orange-600 hover:underline">Editar</button>
-                    <form
-                      action={excluirItem}
-                      className="inline"
-                      onSubmit={async (e) => { if (!await confirmar(`Remover "${i.nome}"?`)) e.preventDefault(); }}
+                    <BotaoAcao
+                      aoClicar={async () => {
+                        if (!(await confirmar(`Remover "${i.nome}"?`, { perigo: true, okTexto: "Remover" }))) return;
+                        await excluirItem(comId(i.id));
+                      }}
+                      className="text-texto-fraco hover:text-red-600"
                     >
-                      <input type="hidden" name="id" value={i.id} />
-                      <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
-                    </form>
+                      Remover
+                    </BotaoAcao>
                   </td>
                 </tr>
               );
