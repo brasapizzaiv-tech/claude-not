@@ -775,7 +775,7 @@ export function QuiosqueBalanca({
     estado === "resultado"
       ? "bg-green-500 text-white"
       : estado === "pesando" || estado === "processando"
-        ? "bg-orange-500 text-white"
+        ? "bg-orange-500 text-marca-sobre-primaria"
         : "bg-marca-escuro text-white shadow-md";
 
   return (
@@ -1014,7 +1014,7 @@ export function QuiosqueBalanca({
                     setNumeroVirar((v) => (v.replace(/\D/g, "") + t).slice(0, 5));
                   }}
                   className={`rounded-2xl py-4 text-3xl font-black active:brightness-90 disabled:opacity-40 ${
-                    t === "OK" ? "bg-orange-500 text-white" : t === "⌫" ? "bg-marca-escuro/10 text-marca-escuro" : "border-2 border-marca-escuro/15 bg-white text-marca-escuro"
+                    t === "OK" ? "bg-orange-500 text-marca-sobre-primaria" : t === "⌫" ? "bg-marca-escuro/10 text-marca-escuro" : "border-2 border-marca-escuro/15 bg-white text-marca-escuro"
                   }`}
                 >
                   {t === "OK" && virando ? "..." : t}
@@ -1034,7 +1034,7 @@ export function QuiosqueBalanca({
           </p>
           <button
             onClick={conectar}
-            className="rounded-3xl bg-orange-500 px-[clamp(2rem,7vw,4rem)] py-[clamp(1rem,3vh,2rem)] text-[clamp(1.25rem,4vw,2.5rem)] font-bold text-white shadow-lg hover:brightness-110"
+            className="rounded-3xl bg-orange-500 px-[clamp(2rem,7vw,4rem)] py-[clamp(1rem,3vh,2rem)] text-[clamp(1.25rem,4vw,2.5rem)] font-bold text-marca-sobre-primaria shadow-lg hover:brightness-110"
           >
             Conectar balança
           </button>
@@ -1099,7 +1099,7 @@ export function QuiosqueBalanca({
               <div className="nao-imprimir mt-6 flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={() => voltarAguardando()}
-                  className="rounded-xl bg-orange-500 px-8 py-3 text-xl font-bold text-white hover:brightness-110"
+                  className="rounded-xl bg-orange-500 px-8 py-3 text-xl font-bold text-marca-sobre-primaria hover:brightness-110"
                 >
                   <Icone nome="avancar" tamanho={24} className="mr-2" /> Próximo cliente
                 </button>
@@ -1140,7 +1140,7 @@ export function QuiosqueBalanca({
                 {buffetLivre > 0 && liq <= LIMIAR && (
                   <button
                     onClick={livreDireto}
-                    className="min-w-[16rem] flex-1 rounded-3xl bg-orange-500 px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-white shadow-lg active:brightness-90"
+                    className="min-w-[16rem] flex-1 rounded-3xl bg-orange-500 px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-marca-sobre-primaria shadow-lg active:brightness-90"
                   >
                     <Icone nome="salao" tamanho={30} className="mr-3" /> QUERO O BUFFET LIVRE
                     <span className="block text-[clamp(1.1rem,2.8vw,2.2rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>

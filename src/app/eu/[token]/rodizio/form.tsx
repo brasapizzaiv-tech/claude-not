@@ -77,7 +77,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
   return (
     <div className="space-y-3">
       {/* mesa */}
-      <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+      <div className="cartao p-3">
         <label className="mb-1 block text-xs font-semibold text-texto-fraco">Mesa</label>
         <input
           inputMode="numeric"
@@ -92,7 +92,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       </div>
 
       {/* sabor */}
-      <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+      <div className="cartao p-3">
         <label className="mb-1 block text-xs font-semibold text-texto-fraco">Sabor</label>
         {sabor ? (
           <div className="flex items-center justify-between rounded-cartao bg-orange-500 px-3 py-3 text-marca-sobre-primaria">
@@ -137,7 +137,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       </div>
 
       {/* fração + quantidade + obs */}
-      <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+      <div className="cartao p-3">
         <div className="grid grid-cols-3 gap-2">
           <button type="button" onClick={() => setFracao("inteira")} className={btnFr("inteira")}>Inteira</button>
           <button type="button" onClick={() => setFracao("meia")} className={btnFr("meia")}>Meia</button>
@@ -171,7 +171,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
 
       {/* pedidos abertos da mesa */}
       {mesaOk && (
-        <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+        <div className="cartao p-3">
           <p className="mb-2 text-xs font-semibold text-texto-fraco">Mesa {mesaNum} · na cozinha</p>
           {lista.length === 0 ? (
             <p className="text-sm text-texto-fraco">Nenhum pedido aberto.</p>

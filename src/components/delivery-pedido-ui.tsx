@@ -114,7 +114,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
       )}
       <div className="flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>
-        <button onClick={adicionar} disabled={usados.length === 0} className="rounded-xl bg-emerald-600 px-5 py-2.5 font-bold text-white disabled:opacity-50">Adicionar</button>
+        <button onClick={adicionar} disabled={usados.length === 0} className="btn-principal text-sm">Adicionar</button>
       </div>
     </Overlay>
   );
@@ -185,7 +185,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
       )}
       <div className="mt-3 flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
         <span className="text-lg font-bold">{brl(preco)}</span>
-        <button onClick={adicionar} disabled={!okMin} className="rounded-xl bg-emerald-600 px-5 py-2.5 font-bold text-white disabled:opacity-50">Adicionar</button>
+        <button onClick={adicionar} disabled={!okMin} className="btn-principal text-sm">Adicionar</button>
       </div>
     </Overlay>
   );

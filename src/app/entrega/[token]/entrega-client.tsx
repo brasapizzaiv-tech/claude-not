@@ -11,7 +11,6 @@ import jsQR from "jsqr";
 import { historicoEntregas, marcarEntregue, meusGanhos, minhasEntregas, pegarEntrega, registrarPosicao, sairComEntregas, type Boy, type EntregaBoy } from "./entrega-actions";
 import { SairDoAparelho } from "@/components/sair-do-aparelho";
 
-const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hhmm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) : "");
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -298,7 +297,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
           <div className="text-xs text-texto-fraco">{empresa} · Entregas</div>
           <div className="font-bold">{boy.nome}</div>
         </div>
-        <button onClick={() => setScan(true)} className="rounded-cartao px-3 py-2 text-sm font-bold text-white" style={{ background: LARANJA }}><span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={14} /> Ler cupom</span></button>
+        <button onClick={() => setScan(true)} className="btn-principal text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={14} /> Ler cupom</span></button>
       </header>
 
       {msg && <div className="mx-4 mt-3 rounded-cartao bg-superficie-suave px-3 py-2 text-sm">{msg}</div>}
@@ -333,7 +332,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
               ))}
             </div>
             {esperando.length > 0 && (
-              <button onClick={sair} disabled={proc || sel.size === 0} className="mt-3 w-full rounded-cartao py-3 text-base font-bold text-white disabled:opacity-40" style={{ background: LARANJA }}>
+              <button onClick={sair} disabled={proc || sel.size === 0} className="btn-principal mt-3 w-full text-base disabled:opacity-40">
                 <Icone nome="entrega" tamanho={16} className="mr-1.5" /> Saí com {sel.size || ""} entrega{sel.size === 1 ? "" : "s"}
               </button>
             )}
@@ -452,7 +451,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button onClick={() => { setAvisoGps(false); ligarGps(false); }} className="rounded-cartao bg-superficie-suave py-3 font-semibold text-texto">Agora não</button>
-                  <button onClick={aceitarAvisoGps} className="rounded-cartao py-3 font-bold text-white" style={{ background: LARANJA }}>Aceitar e ligar</button>
+                  <button onClick={aceitarAvisoGps} className="btn-principal">Aceitar e ligar</button>
                 </div>
               </div>
             </div>
@@ -472,7 +471,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
       {/* barra de abas */}
       <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-borda bg-painel-fundo text-xs" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {([["entregas", "entrega", "Entregas"], ["ganhos", "dinheiro", "Ganhos"], ["historico", "relogio", "Histórico"], ["gps", "local", "GPS"]] as [Aba, NomeIcone, string][]).map(([k, i, l]) => (
-          <button key={k} onClick={() => setAba(k)} className={`flex flex-col items-center py-2.5 ${aba === k ? "text-white" : "text-texto-fraco"}`} style={aba === k ? { color: LARANJA } : {}}>
+          <button key={k} onClick={() => setAba(k)} className={`flex min-h-11 flex-col items-center py-2.5 ${aba === k ? "font-semibold text-texto-marca" : "text-texto-fraco"}`}>
             <Icone nome={i} tamanho={21} />
             <span className="mt-0.5">{l}</span>
           </button>
@@ -573,7 +572,7 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
               <div className="mb-2 flex items-center gap-2 text-lg font-bold"><Icone nome="camera" tamanho={18} /> Câmera</div>
               <p className="text-sm">O app usa a <b>câmera</b> só para ler o QR code do cupom do pedido. Nenhuma foto ou vídeo é guardado ou enviado.</p>
               <p className="mt-2 text-sm text-texto-suave">Na próxima tela, permita o acesso à câmera. Se preferir, digite o número do pedido aqui embaixo.</p>
-              <button onClick={() => setLiberado(true)} className="mt-4 w-full rounded-cartao py-3 font-bold text-white" style={{ background: LARANJA }}>Abrir câmera</button>
+              <button onClick={() => setLiberado(true)} className="btn-principal mt-4 w-full">Abrir câmera</button>
             </div>
           </div>
         )}
@@ -584,7 +583,7 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
       {erro && <p className="px-4 py-2 text-sm text-rose-400">{erro}</p>}
       <div className="flex gap-2 p-3">
         <input value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="flex-1 rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-lg text-white" />
-        <button onClick={() => onLido(refManual)} className="rounded-cartao px-4 font-bold text-white" style={{ background: LARANJA }}>Pegar</button>
+        <button onClick={() => onLido(refManual)} className="btn-principal">Pegar</button>
       </div>
     </div>
   );

@@ -6,8 +6,6 @@ import { AutoRefresh } from "./auto-refresh";
 export const metadata = { title: "Seu pedido · Brasa" };
 export const dynamic = "force-dynamic";
 
-const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
-const ESCURO = "var(--marca-escuro)"; // vem do cadastro da empresa
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hhmm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) : null);
 
@@ -60,18 +58,21 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
     : "Pedido entregue. Bom apetite!";
 
   return (
-    <div className="min-h-screen bg-painel-cartao text-texto">
+    <div className="min-h-screen bg-painel-fundo text-texto">
       <AutoRefresh ativo={!cancelado && status !== "entregue"} />
-      <header className="px-4 py-3 text-white" style={{ background: ESCURO }}>
-        <div className="mx-auto max-w-lg">
-          <div className="text-lg font-bold" style={{ color: LARANJA }}>Brasa Pizzaria e Restaurante</div>
-          <div className="text-xs text-zinc-300">Acompanhamento do pedido</div>
+      <header className="px-4 pb-1 pt-4">
+        <div className="mx-auto flex max-w-lg items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-controle bg-marca-escuro font-numero text-lg font-bold text-primaria" aria-hidden>B</span>
+          <div>
+            <div className="font-numero text-lg font-bold leading-tight tracking-apertada text-texto">Brasa Pizzaria e Restaurante</div>
+            <div className="text-xs text-texto-suave">Acompanhamento do pedido</div>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-lg p-4">
         <div className="mb-1 text-sm text-texto-suave">Pedido {com?.numero ? `nº ${com.numero}` : ""} · {p.nome as string}</div>
-        <div className={`mb-5 rounded-cartao px-4 py-3 font-semibold ${cancelado ? "bg-rose-500/10 text-rose-600" : "text-white"}`} style={cancelado ? {} : { background: LARANJA }}>
+        <div className={`mb-5 rounded-cartao px-5 py-4 font-semibold ${cancelado ? "bg-urgente-fundo text-urgente-texto" : "cartao-foco"}`}>
           {msgAtual}
         </div>
 
@@ -83,11 +84,11 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
               return (
                 <div key={e.key} className="flex gap-3">
                   <div className="flex flex-col items-center">
-                    <div className={`flex h-9 w-9 items-center justify-center rounded-full text-base ${feito ? "text-white" : "bg-superficie-suave"}`} style={feito ? { background: LARANJA } : {}}><Icone nome={e.icone} tamanho={17} /></div>
-                    {i < ETAPAS.length - 1 && <div className="h-6 w-0.5" style={{ background: i < idx ? LARANJA : "rgb(212 212 216 / 0.5)" }} />}
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-full text-base ${feito ? "bg-primaria text-marca-sobre-primaria" : "bg-superficie-suave text-texto-fraco"}`}><Icone nome={e.icone} tamanho={17} /></div>
+                    {i < ETAPAS.length - 1 && <div className={`h-6 w-0.5 ${i < idx ? "bg-primaria" : "bg-borda"}`} />}
                   </div>
                   <div className="pb-2">
-                    <div className={`font-semibold ${atual ? "" : feito ? "" : "text-texto-fraco"}`} style={atual ? { color: LARANJA } : {}}>{e.label}</div>
+                    <div className={`font-semibold ${atual ? "text-texto-marca" : feito ? "text-texto" : "text-texto-fraco"}`}>{e.label}</div>
                     {e.hora && <div className="text-xs text-texto-fraco">{e.hora}</div>}
                   </div>
                 </div>
@@ -96,8 +97,8 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
           </div>
         )}
 
-        <h2 className="mb-2 font-bold">Resumo</h2>
-        <div className="space-y-1.5 rounded-cartao border border-borda p-3">
+        <h2 className="mb-2 font-numero text-base font-bold text-texto">Resumo</h2>
+        <div className="cartao space-y-1.5 p-4">
           {linhas.map((i, k) => (
             <div key={k} className="flex justify-between gap-2 text-sm">
               <span className="whitespace-pre-line"><b>{Number(i.qtd)}x</b> {i.descricao}</span>

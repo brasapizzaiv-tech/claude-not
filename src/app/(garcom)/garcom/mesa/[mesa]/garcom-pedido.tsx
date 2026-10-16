@@ -26,7 +26,6 @@ export type Comanda = {
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 // Cores da barrinha lateral das categorias (estilo Suitable).
-const CORES = ["#6366f1", "#10b981", "#ec4899", "#f59e0b", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e", "#84cc16", "#8b5cf6"];
 
 export function GarcomPedido({
   mesa,
@@ -125,7 +124,6 @@ export function GarcomPedido({
   const [trocaMesa, setTrocaMesa] = useState<string>("");
 
   const abas = ["Todos", ...categorias];
-  const corDe = (c: string) => (c === "Todos" ? "#3b82f6" : CORES[(categorias.indexOf(c) + CORES.length) % CORES.length]);
 
   const visiveis = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -304,8 +302,8 @@ export function GarcomPedido({
             <button
               key={c}
               onClick={() => setAba(c)}
-              style={{ borderLeftColor: corDe(c) }}
-              className={`mb-1.5 w-full rounded-controle border-l-4 px-2 py-3 text-xs font-medium ${aba === c ? "bg-zinc-700 text-white" : "bg-superficie-suave/60 text-texto-suave"}`}
+              aria-pressed={aba === c}
+              className={`mb-1.5 min-h-11 w-full rounded-controle px-2 py-3 text-xs font-medium ${aba === c ? "bg-destaque font-semibold text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-superficie-suave text-texto-suave"}`}
             >
               {c}
             </button>
@@ -387,7 +385,7 @@ export function GarcomPedido({
             <button
               onClick={lancar}
               disabled={proc || cart.length === 0}
-              className="w-full rounded-cartao bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
+              className="btn-principal w-full text-base"
             >
               {proc ? "Lançando..." : "✓ Lançar pedido"}
             </button>
@@ -503,7 +501,7 @@ export function GarcomPedido({
               <button
                 onClick={transferir}
                 disabled={proc || !trocaComanda || !trocaMesa}
-                className="w-full rounded-cartao bg-blue-600 py-3 text-base font-bold text-white disabled:opacity-50"
+                className="btn-principal w-full text-base"
               >
                 {proc ? "Movendo..." : trocaMesa ? `⇄ Mover para ${trocaMesa}` : "Escolha a mesa"}
               </button>

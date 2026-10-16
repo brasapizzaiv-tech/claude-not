@@ -142,7 +142,7 @@ export function ChecklistApp({
                 <button
                   key={l.modelo.id}
                   onClick={() => setAberta(l.modelo.id)}
-                  className="flex w-full items-center justify-between gap-3 rounded-cartao border border-borda bg-painel-cartao p-4 text-left"
+                  className="flex w-full items-center justify-between gap-3 cartao p-4 text-left"
                 >
                   <span className="min-w-0">
                     <span className="block text-base font-bold text-texto">{l.modelo.nome}</span>

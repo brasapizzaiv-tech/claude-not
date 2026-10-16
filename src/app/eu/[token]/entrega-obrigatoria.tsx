@@ -77,7 +77,7 @@ export function EntregaObrigatoria({
 
         {modo === "pergunta" && (
           <>
-            <div className="mt-4 rounded-cartao border border-borda bg-painel-cartao p-3">
+            <div className="mt-4 cartao p-3">
               <p className="mb-1 text-xs text-texto-fraco">Pedido de {dataBR(p.data)} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"}</p>
               <ul className="space-y-0.5 text-sm text-texto-suave">
                 {p.itens.slice(0, 8).map((i) => (
@@ -108,7 +108,7 @@ export function EntregaObrigatoria({
         )}
 
         {modo === "nao_veio" && (
-          <div className="mt-4 rounded-cartao border border-borda bg-painel-cartao p-3">
+          <div className="mt-4 cartao p-3">
             <p className="text-sm text-texto">O escritório vai ser avisado pra falar com o fornecedor.</p>
             <label htmlFor="obs-nao-veio" className="mt-3 block text-xs text-texto-fraco">Alguma observação? (opcional)</label>
             <textarea

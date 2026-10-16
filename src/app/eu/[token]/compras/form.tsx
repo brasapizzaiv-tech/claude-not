@@ -55,7 +55,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
 
   return (
     <div className="space-y-4">
-      <div className="rounded-cartao border border-borda bg-painel-cartao p-4">
+      <div className="cartao p-4">
         <div className="mb-3 grid grid-cols-2 gap-2">
           {(["compra", "manutencao"] as const).map((t) => (
             <button
@@ -103,7 +103,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
           <p className="mb-1.5 text-mini font-semibold text-texto-fraco">Aguardando</p>
           <ul className="space-y-2">
             {pendentes.map((s) => (
-              <li key={s.id} className="rounded-cartao border border-borda bg-painel-cartao p-3">
+              <li key={s.id} className="cartao p-3">
                 <Linha s={s} />
                 <button onClick={() => cancelar(s.id)} disabled={proc} className="mt-2 text-xs text-texto-suave underline">
                   desistir do pedido
@@ -119,7 +119,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
           <p className="mb-1.5 text-mini font-semibold text-texto-fraco">Respondidos</p>
           <ul className="space-y-2">
             {outras.map((s) => (
-              <li key={s.id} className="rounded-cartao border border-borda bg-painel-cartao p-3">
+              <li key={s.id} className="cartao p-3">
                 <Linha s={s} />
               </li>
             ))}

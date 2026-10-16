@@ -5,7 +5,6 @@
 import { useEffect, useState } from "react";
 
 const CHAVE = "entrega_token";
-const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
 
 export function EntradaEntrega() {
   const [valor, setValor] = useState("");
@@ -47,7 +46,7 @@ export function EntradaEntrega() {
         className="w-full max-w-md rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-base focus:border-orange-500"
       />
       {erro && <p className="mt-2 text-sm text-rose-400">{erro}</p>}
-      <button onClick={entrar} className="mt-4 w-full max-w-md rounded-cartao py-3.5 text-base font-bold text-white" style={{ background: LARANJA }}>Entrar</button>
+      <button onClick={entrar} className="btn-principal mt-4 w-full max-w-md text-base">Entrar</button>
     </div>
   );
 }

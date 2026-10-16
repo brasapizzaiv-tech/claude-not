@@ -223,7 +223,7 @@ export function EtiquetaColabForm({
           </div>
           {!livre && <CamposExtras value={extras} onChange={setExtras} />}
 
-          <div className="rounded-cartao border border-borda bg-superficie-suave p-3">
+          <div className="cartao bg-superficie-suave p-3">
             <p className="mb-2 text-center text-mini font-semibold text-texto-fraco">Assim vai sair</p>
             <PreviewEtiqueta d={preview} config={config} />
             <div className="mt-3 flex justify-center">

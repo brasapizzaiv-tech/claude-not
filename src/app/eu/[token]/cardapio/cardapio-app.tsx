@@ -143,7 +143,7 @@ export function CardapioApp({
       </div>
 
       {/* status */}
-      <div className="mt-3 rounded-cartao border border-borda bg-painel-cartao p-3 text-center">
+      <div className="mt-3 cartao p-3 text-center">
         {status === "publicado" && <p className="text-base font-bold text-green-700 dark:text-green-400">● Publicado</p>}
         {status === "alterado" && <p className="text-base font-bold text-amber-700 dark:text-amber-300">● Publicado — com alterações não publicadas</p>}
         {status === "rascunho" && <p className="text-base font-bold text-texto-suave">○ Rascunho (não está no site)</p>}
@@ -165,7 +165,7 @@ export function CardapioApp({
       {aba === "buffet" && (
         <div className="mt-3 space-y-4">
           {GRUPOS.map((g) => (
-            <div key={g} className="rounded-cartao border border-borda bg-painel-cartao p-3">
+            <div key={g} className="cartao p-3">
               <p className="mb-2 text-xs font-bold text-orange-600">{TITULO[g]} <span className="text-texto-fraco">({sel[g].length})</span></p>
               <ul className="space-y-1.5">
                 {sel[g].map((nome, i) => (
@@ -184,7 +184,7 @@ export function CardapioApp({
                   placeholder="+ buscar ou digitar novo"
                   className={input}
                 />
-                <button type="button" onClick={() => addItem(g, busca[g])} disabled={!busca[g].trim()} className="h-12 shrink-0 rounded-cartao bg-zinc-900 px-5 text-base font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-zinc-900">Add</button>
+                <button type="button" onClick={() => addItem(g, busca[g])} disabled={!busca[g].trim()} className="btn-principal h-12 shrink-0 text-base">Add</button>
               </div>
               {sugestoes(g).length > 0 && (
                 <div className="mt-2 space-y-1.5">
@@ -212,7 +212,7 @@ export function CardapioApp({
           ))}
 
           <div className="sticky bottom-3 space-y-2">
-            <button type="button" onClick={() => salvarBuffet(false)} disabled={proc || !sujoBuffet} className="h-14 w-full rounded-cartao bg-zinc-900 text-lg font-bold text-white disabled:opacity-40 dark:bg-white dark:text-zinc-900">
+            <button type="button" onClick={() => salvarBuffet(false)} disabled={proc || !sujoBuffet} className="btn-principal h-14 w-full text-lg">
               {proc ? "Salvando…" : "Salvar"}
             </button>
             {sujoBuffet ? (
@@ -236,7 +236,7 @@ export function CardapioApp({
             {temExcecao ? <span className="text-amber-600">seleção própria deste dia</span> : <>seguindo o padrão de {DIA_NOME[dow]}</>}
           </p>
           {porCategoria.map((g) => (
-            <div key={g.categoria} className="rounded-cartao border border-borda bg-painel-cartao p-3">
+            <div key={g.categoria} className="cartao p-3">
               <p className="mb-2 text-xs font-bold text-green-700">{g.categoria}</p>
               <div className="flex flex-wrap gap-2">
                 {g.itens.map((s) => (
@@ -262,14 +262,14 @@ export function CardapioApp({
 
       {/* ---- MARMITAS */}
       {aba === "marmitas" && (
-        <div className="mt-3 rounded-cartao border border-borda bg-painel-cartao p-3">
+        <div className="mt-3 cartao p-3">
           <p className="mb-2 text-xs font-bold text-orange-600">Marmitas {kern?.nomeConvenio ?? "Kern"}</p>
           <MarmitaDiaForm dia={dia} kern={kern} pode={podeMarmita} salvar={(d, dados) => salvarMarmitaApp(token, d, dados)} grande />
         </div>
       )}
 
       {/* histórico do dia */}
-      <div className="mt-6 rounded-cartao border border-borda bg-painel-cartao p-3">
+      <div className="mt-6 cartao p-3">
         <p className="mb-1 text-xs font-bold text-texto-fraco">Histórico deste dia</p>
         <CardapioHistorico itens={historico} mostrarDia={false} />
       </div>

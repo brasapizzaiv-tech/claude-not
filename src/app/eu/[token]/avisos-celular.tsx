@@ -89,7 +89,7 @@ export function AvisosCelular({ token }: { token: string }) {
 
   if (estado === "pedir" || estado === "erro") {
     return (
-      <div className="mb-3 rounded-cartao border border-borda bg-superficie-suave p-3">
+      <div className="mb-3 cartao bg-superficie-suave p-3">
         <p className="flex items-center gap-1.5 text-sm font-semibold text-texto"><Icone nome="campainha" tamanho={15} /> Avisos no celular</p>
         <p className="mt-1 text-xs text-texto-suave">Receba lembretes, resposta de folga, pedidos pra conferir e o pagamento da semana, mesmo com o app fechado.</p>
         <button type="button" onClick={ativar} disabled={proc} className="mt-2 w-full rounded-cartao bg-texto py-2.5 text-sm font-semibold text-fundo disabled:opacity-50">

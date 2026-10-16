@@ -84,13 +84,13 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
       )}
 
       {linhas.length === 0 ? (
-        <div className="rounded-cartao border border-borda p-6 text-center text-sm text-texto-suave">
+        <div className="cartao p-6 text-center text-sm text-texto-suave">
           Nenhuma semana fechada ainda.
         </div>
       ) : (
         <ul className="space-y-3">
           {linhas.map((l) => (
-            <li key={l.segunda} className="rounded-cartao border border-borda bg-painel-cartao p-4">
+            <li key={l.segunda} className="cartao p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="font-semibold text-texto">Semana {rotuloSemana(l.segunda)}</div>

@@ -10,17 +10,17 @@
 // num salão com luz forte o preto puro vira um buraco na parede, e o grafite
 // segura melhor o laranja.
 export const TV = {
-  fundo: "#211915",   // grafite da marca
-  bloco: "#2b211b",   // as caixas em cima do fundo
-  borda: "#3d2f26",   // contorno e divisórias
-  texto: "#f4ece4",   // o que se lê de longe
-  suave: "#c9b6a5",   // segunda linha
-  fraco: "#9b8878",   // rótulo, legenda
-  laranja: "#C78340", // a marca — o acento principal
+  fundo: "#140d09",   // grafite da marca (paleta escura do layout novo, out/2026)
+  bloco: "#1f1611",   // as caixas em cima do fundo
+  borda: "#3a2a20",   // contorno e divisórias
+  texto: "#fff6ec",   // o que se lê de longe
+  suave: "#b8a595",   // segunda linha
+  fraco: "#9c8878",   // rótulo, legenda
+  laranja: "#E57A2C", // a marca — o acento principal
   areia: "#e0bd85",   // marmitas
   verde: "#9dbd7c",   // saladas
-  atencao: "#e8836c", // pontos de atenção
-  atencaoFundo: "#3a1d18",
+  atencao: "#ff8a66", // pontos de atenção
+  atencaoFundo: "#3a1a12",
   recadoFundo: "#3a2712",
   rosa: "#e0919c",    // doces, no quadro do rodízio
 } as const;

@@ -68,7 +68,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
         <button
           onClick={() => abrir(codigo)}
           disabled={proc || !codigo.trim()}
-          className="h-11 rounded-controle bg-blue-600 px-4 text-sm font-bold text-white disabled:opacity-40"
+          className="btn-principal !min-h-11 text-sm"
         >
           {proc ? "..." : "Abrir"}
         </button>

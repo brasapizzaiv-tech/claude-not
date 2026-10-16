@@ -19,8 +19,6 @@ const lerLS = (k: string) => { try { return localStorage.getItem(k); } catch { r
 const gravarLS = (k: string, v: string | null) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* sem storage */ } };
 const hojeLocal = () => new Date().toLocaleDateString("en-CA");
 
-const LARANJA = "var(--marca-primaria)"; // vem do cadastro da empresa
-const ESCURO = "var(--marca-escuro)"; // vem do cadastro da empresa
 // QR do Pix gerado na hora a partir do copia-e-cola.
 function QrPix({ codigo }: { codigo: string }) {
   const [src, setSrc] = useState("");
@@ -427,15 +425,14 @@ export function PedirClient({
             O restaurante vai confirmar em instantes — tempo estimado de preparo: ~{tempoPreparo} min.
           </p>
           {feito.pix && !pixPago && (
-            <div className="mx-auto mt-6 max-w-sm rounded-cartao border-2 p-4" style={{ borderColor: LARANJA }}>
+            <div className="cartao mx-auto mt-6 max-w-sm p-5">
               <p className="mb-3 flex items-center justify-center gap-1.5 font-bold"><Icone nome="rapido" tamanho={14} /> Pague agora com Pix</p>
               <QrPix codigo={feito.pix.copiaECola} />
               <button
                 onClick={() => {
                   try { navigator.clipboard.writeText(feito.pix!.copiaECola); setPixCopiado(true); setTimeout(() => setPixCopiado(false), 2500); } catch { /* sem clipboard */ }
                 }}
-                className="mt-3 w-full rounded-cartao border-2 py-2.5 font-bold"
-                style={{ borderColor: LARANJA, color: LARANJA }}
+                className="btn-secundario mt-3 w-full text-sm"
               >
                 {pixCopiado ? <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="ok" tamanho={14} /> Código copiado!</span> : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="copiar" tamanho={14} /> Copiar código Pix</span>}
               </button>
@@ -450,7 +447,7 @@ export function PedirClient({
               <span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={14} /> Pagamento confirmado! Seu pedido já está como PAGO.</span>
             </div>
           )}
-          <a href={`/pedir/acompanhar/${feito.id}`} className="mt-6 inline-block rounded-cartao px-6 py-3.5 font-bold text-white" style={{ background: LARANJA }}>
+          <a href={`/pedir/acompanhar/${feito.id}`} className="btn-principal mt-6 text-base">
             Acompanhar meu pedido →
           </a>
           <p className="mt-4 text-xs text-texto-fraco">Guarde esse link pra ver o andamento.</p>
@@ -463,17 +460,17 @@ export function PedirClient({
     return (
       <Casca onMeusPedidos={() => setFase("menu")}>
         <div className="p-4">
-          <button onClick={() => setFase("menu")} className="mb-3 text-sm font-semibold" style={{ color: LARANJA }}>← Voltar pro cardápio</button>
+          <button onClick={() => setFase("menu")} className="mb-3 min-h-11 text-sm font-semibold text-texto-marca">← Voltar pro cardápio</button>
           <h1 className="mb-3 flex items-center gap-2 text-xl font-bold"><Icone nome="lista" tamanho={19} /> Meus pedidos</h1>
           <div className="mb-4 flex gap-2">
-            <input value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
-            <button onClick={buscarHistorico} disabled={histBuscando} className="rounded-cartao px-4 font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>{histBuscando ? "..." : "Buscar"}</button>
+            <input value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <button onClick={buscarHistorico} disabled={histBuscando} className="btn-principal text-sm">{histBuscando ? "…" : "Buscar"}</button>
           </div>
           {histCashback && (
-            <div className="mb-4 rounded-cartao border-2 p-3" style={{ borderColor: LARANJA }}>
+            <div className="cartao mb-4 p-4">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 font-bold"><Icone nome="presente" tamanho={17} /> Seu cashback</span>
-                <span className="text-lg font-bold" style={{ color: LARANJA }}>{brl(histCashback.saldo)}</span>
+                <span className="font-numero text-lg font-bold text-texto-marca">{brl(histCashback.saldo)}</span>
               </div>
               <p className="mt-1 text-xs text-texto-suave">
                 Você ganha {String(histCashback.percentual).replace(".", ",")}% de volta em cada pedido entregue{histCashback.maxResgate != null ? ` e pode usar até ${brl(histCashback.maxResgate)} por pedido` : ""}.
@@ -485,10 +482,10 @@ export function PedirClient({
             histLista.length === 0 ? <p className="py-8 text-center text-sm text-texto-fraco">Nenhum pedido encontrado pra esse telefone.</p> : (
               <div className="space-y-2">
                 {histLista.map((h) => (
-                  <a key={h.id} href={`/pedir/acompanhar/${h.id}`} className="block rounded-cartao border border-borda p-3">
+                  <a key={h.id} href={`/pedir/acompanhar/${h.id}`} className="cartao block p-4">
                     <div className="flex items-center justify-between">
                       <span className="font-bold">Pedido nº {h.numero ?? "—"}</span>
-                      <span className="text-sm font-semibold" style={{ color: LARANJA }}>{brl(h.total)}</span>
+                      <span className="font-numero text-sm font-bold text-texto">{brl(h.total)}</span>
                     </div>
                     <div className="mt-0.5 flex items-center justify-between text-xs text-texto-suave">
                       <span>{new Date(h.criadoEm).toLocaleDateString("pt-BR")} · {h.tipo === "retirada" ? "Retirada" : "Entrega"}</span>
@@ -510,21 +507,21 @@ export function PedirClient({
     return (
       <Casca onMeusPedidos={() => setFase("historico")}>
         <div className="p-4 pb-44">
-          <button onClick={() => setFase("menu")} className="mb-3 text-sm font-semibold" style={{ color: LARANJA }}>← Voltar pro cardápio</button>
-          <h1 className="mb-3 text-xl font-bold">Seu pedido</h1>
+          <button onClick={() => setFase("menu")} className="mb-3 min-h-11 text-sm font-semibold text-texto-marca">← Voltar pro cardápio</button>
+          <h1 className="mb-3 font-numero text-2xl font-bold tracking-apertada text-texto">Seu pedido</h1>
 
           <div className="mb-4 space-y-1.5">
             {cart.map((l) => (
-              <div key={l.uid} className="rounded-cartao border border-borda p-2.5 dark:border-borda-forte">
+              <div key={l.uid} className="cartao p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
-                    <div className="text-xs" style={{ color: LARANJA }}>{brl(l.preco * l.qtd)}</div>
+                    <div className="font-numero text-xs font-semibold text-texto-suave">{brl(l.preco * l.qtd)}</div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => setQtd(l.uid, l.qtd - 1)} className="h-7 w-7 rounded-controle border border-borda-forte">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={14} titulo="Tirar do pedido" /> : "−"}</button>
+                    <button onClick={() => setQtd(l.uid, l.qtd - 1)} aria-label="Um a menos" className="flex h-9 w-9 items-center justify-center rounded-mesa bg-superficie-suave text-texto-suave">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={14} titulo="Tirar do pedido" /> : "−"}</button>
                     <span className="w-5 text-center font-bold">{l.qtd}</span>
-                    <button onClick={() => setQtd(l.uid, l.qtd + 1)} className="h-7 w-7 rounded-controle border border-borda-forte font-bold" style={{ color: LARANJA }}>+</button>
+                    <button onClick={() => setQtd(l.uid, l.qtd + 1)} aria-label="Mais um" className="h-9 w-9 rounded-mesa bg-destaque font-bold text-texto-marca-pilula">+</button>
                   </div>
                 </div>
                 <input
@@ -532,7 +529,7 @@ export function PedirClient({
                   onChange={(e) => setObsLinha(l.uid, e.target.value)}
                   maxLength={200}
                   placeholder="Observação deste item (ex.: sem cebola)"
-                  className="mt-2 w-full rounded-controle border border-borda bg-transparent px-2.5 py-1.5 text-xs "
+                  className="mt-2 min-h-10 w-full rounded-mesa bg-painel-fundo px-3 text-xs text-texto placeholder:text-texto-fraco"
                 />
               </div>
             ))}
@@ -541,30 +538,30 @@ export function PedirClient({
 
           <ChaveDeOuro itens={chaveDeOuro} onAdd={addSugerido} />
 
-          <h2 className="mb-2 font-bold">Seus dados</h2>
+          <h2 className="mb-2 font-numero text-base font-bold text-texto">Seus dados</h2>
           <div className="mb-4 space-y-2">
-            <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
-            <input value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
-            <label className="flex cursor-pointer items-start gap-3 rounded-cartao border border-borda p-3 text-sm">
-              <input type="checkbox" checked={aceitaPromo} onChange={(e) => { setAceitaPromo(e.target.checked); setPromoMexeu(true); }} className="mt-0.5 h-5 w-5" style={{ accentColor: LARANJA }} />
+            <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <label className="cartao flex cursor-pointer items-start gap-3 p-4 text-sm">
+              <input type="checkbox" checked={aceitaPromo} onChange={(e) => { setAceitaPromo(e.target.checked); setPromoMexeu(true); }} className="mt-0.5 h-5 w-5" style={{ accentColor: "var(--marca-primaria)" }} />
               <span><span className="font-semibold">Quero receber promoções pelo WhatsApp</span><span className="block text-xs text-texto-suave">Pode parar quando quiser respondendo SAIR.</span></span>
             </label>
             {aceitaPromo && !temAniversario && (
               <label className="block text-sm">
                 <span className="text-xs text-texto-suave">Seu aniversário (opcional): no seu dia você ganha uma promoção</span>
-                <input type="date" value={nascimento} onChange={(e) => setNascimento(e.target.value)} className="mt-1 w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5" />
+                <input type="date" value={nascimento} onChange={(e) => setNascimento(e.target.value)} className="mt-1 w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco" />
               </label>
             )}
           </div>
 
-          <h2 className="mb-2 font-bold">Pra quando?</h2>
+          <h2 className="mb-2 font-numero text-base font-bold text-texto">Pra quando?</h2>
           <div className="mb-2 grid grid-cols-2 gap-2">
-            <button onClick={() => setQuando("agora")} disabled={!aberto} className={`rounded-cartao border py-2.5 font-semibold disabled:opacity-40 ${quando === "agora" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={quando === "agora" ? { background: LARANJA, borderColor: LARANJA } : {}}><Icone nome="rapido" tamanho={14} className="mr-1" /> Agora{aberto && horario.fechaEm ? <span className="block text-mini font-normal opacity-80">até {horario.fechaEm}</span> : !aberto ? <span className="block text-mini font-normal opacity-80">fechado</span> : null}</button>
-            <button onClick={() => setQuando("agendar")} disabled={!horario.podeAgendar} className={`rounded-cartao border py-2.5 font-semibold disabled:opacity-40 ${quando === "agendar" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={quando === "agendar" ? { background: LARANJA, borderColor: LARANJA } : {}}><Icone nome="agenda" tamanho={14} className="mr-1" /> Agendar{!horario.podeAgendar ? <span className="block text-mini font-normal opacity-80">indisponível</span> : null}</button>
+            <button onClick={() => setQuando("agora")} disabled={!aberto} className={`min-h-11 rounded-controle py-2.5 font-semibold disabled:opacity-40 ${quando === "agora" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><Icone nome="rapido" tamanho={14} className="mr-1" /> Agora{aberto && horario.fechaEm ? <span className="block text-mini font-normal opacity-80">até {horario.fechaEm}</span> : !aberto ? <span className="block text-mini font-normal opacity-80">fechado</span> : null}</button>
+            <button onClick={() => setQuando("agendar")} disabled={!horario.podeAgendar} className={`min-h-11 rounded-controle py-2.5 font-semibold disabled:opacity-40 ${quando === "agendar" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><Icone nome="agenda" tamanho={14} className="mr-1" /> Agendar{!horario.podeAgendar ? <span className="block text-mini font-normal opacity-80">indisponível</span> : null}</button>
           </div>
           {quando === "agendar" && horario.podeAgendar && (
             <div className="mb-4">
-              <select value={slot} onChange={(e) => setSlot(e.target.value)} className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 dark:bg-zinc-950">
+              <select value={slot} onChange={(e) => setSlot(e.target.value)} className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco dark:bg-zinc-950">
                 <option value="">Escolha o horário…</option>
                 {horario.slots.map((s) => (
                   <option key={s.iso} value={s.iso} disabled={s.lotado}>{s.turno} · {s.label}{s.lotado ? " — lotado" : ""}</option>
@@ -577,26 +574,26 @@ export function PedirClient({
             <p className="mb-4 rounded-cartao bg-rose-500/10 px-3 py-2 text-sm text-rose-600">Estamos fechados{horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : ""}.</p>
           )}
 
-          <h2 className="mb-2 font-bold">Como você quer receber?</h2>
+          <h2 className="mb-2 font-numero text-base font-bold text-texto">Como você quer receber?</h2>
           <div className="mb-3 grid grid-cols-2 gap-2">
-            <button onClick={() => setTipo("entrega")} className={`rounded-cartao border py-2.5 font-semibold ${tipo === "entrega" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={tipo === "entrega" ? { background: LARANJA, borderColor: LARANJA } : {}}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={15} /> Entrega</span></button>
-            <button onClick={() => setTipo("retirada")} className={`rounded-cartao border py-2.5 font-semibold ${tipo === "retirada" ? "text-white" : "border-borda-forte text-texto-suave "}`} style={tipo === "retirada" ? { background: LARANJA, borderColor: LARANJA } : {}}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={15} /> Retirar no balcão</span></button>
+            <button onClick={() => setTipo("entrega")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "entrega" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={15} /> Entrega</span></button>
+            <button onClick={() => setTipo("retirada")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "retirada" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={15} /> Retirar no balcão</span></button>
           </div>
 
           {tipo === "entrega" && (
             <div className="mb-4 space-y-2">
               {lembrado && <p className="text-xs text-emerald-600">{lembrado}</p>}
               <div className="grid grid-cols-3 gap-2">
-                <input value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
-                <input value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+                <input value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
-                <input value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+                <input value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               </div>
-              <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
-              <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência (opcional)" className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
-              <button onClick={calcularTaxa} disabled={calculando} className="w-full rounded-cartao border-2 py-2.5 font-bold disabled:opacity-50" style={{ borderColor: LARANJA, color: LARANJA }}>
+              <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+              <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência (opcional)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+              <button onClick={calcularTaxa} disabled={calculando} className="btn-secundario w-full text-sm">
                 {calculando ? "Calculando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="local" tamanho={14} /> Calcular entrega</span>}
               </button>
               {calcMsg && <p className="text-sm text-texto-suave">{calcMsg}</p>}
@@ -608,25 +605,25 @@ export function PedirClient({
             </div>
           )}
 
-          <h2 className="mb-2 font-bold">Pagamento (na {tipo === "entrega" ? "entrega" : "retirada"})</h2>
+          <h2 className="mb-2 font-numero text-base font-bold text-texto">Pagamento (na {tipo === "entrega" ? "entrega" : "retirada"})</h2>
           <div className="mb-3 grid grid-cols-3 gap-2">
             {FORMAS.map((f) => (
-              <button key={f.id} onClick={() => setForma(f.id)} className={`rounded-cartao border px-1 py-2.5 text-xs font-semibold ${forma === f.id ? "text-white" : "border-borda-forte text-texto-suave "}`} style={forma === f.id ? { background: LARANJA, borderColor: LARANJA } : {}}>
+              <button key={f.id} onClick={() => setForma(f.id)} className={`min-h-11 rounded-controle px-1 py-2.5 text-xs font-semibold ${forma === f.id ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}>
                 <span className="inline-flex items-center justify-center gap-1"><Icone nome={f.icone} tamanho={13} /> {f.label}</span>
               </button>
             ))}
           </div>
           {tipoDe(forma, formas) === "dinheiro" && (
-            <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+            <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
           )}
           <div className="mb-3 flex gap-2">
-            <input value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 uppercase " />
-            <button onClick={aplicarCupom} disabled={cupomProc || !cupomCodigo.trim()} className="rounded-cartao border-2 px-4 font-bold disabled:opacity-50" style={{ borderColor: LARANJA, color: LARANJA }}>{cupomProc ? "..." : "Aplicar"}</button>
+            <input value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco uppercase " />
+            <button onClick={aplicarCupom} disabled={cupomProc || !cupomCodigo.trim()} className="btn-secundario text-sm">{cupomProc ? "..." : "Aplicar"}</button>
           </div>
           {cupomMsg && <p className="mb-3 text-sm text-texto-suave">{cupomMsg}</p>}
           {cashback && cashback.saldo > 0 && (
-            <label className="mb-3 flex cursor-pointer items-start gap-3 rounded-cartao border-2 p-3" style={{ borderColor: LARANJA }}>
-              <input type="checkbox" checked={usarCashback} onChange={(e) => setUsarCashback(e.target.checked)} className="mt-1 h-5 w-5" style={{ accentColor: LARANJA }} />
+            <label className="mb-3 flex cursor-pointer items-start gap-3 rounded-controle bg-destaque p-4">
+              <input type="checkbox" checked={usarCashback} onChange={(e) => setUsarCashback(e.target.checked)} className="mt-1 h-5 w-5" style={{ accentColor: "var(--marca-primaria)" }} />
               <span className="text-sm">
                 <span className="font-bold">Usar meu cashback</span> — você tem {brl(cashback.saldo)}
                 {cashback.maxResgate != null && cashback.saldo > cashback.maxResgate ? ` (até ${brl(cashback.maxResgate)} por pedido)` : ""}.
@@ -637,21 +634,21 @@ export function PedirClient({
           {cashback && cashback.saldo <= 0 && (
             <p className="mb-3 flex items-center gap-1.5 text-xs text-texto-suave"><Icone nome="presente" tamanho={14} /> Este pedido te dá {String(cashback.percentual).replace(".", ",")}% de volta em cashback quando for entregue.</p>
           )}
-          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 border-t border-borda bg-painel-cartao p-4">
+        <div className="fixed inset-x-0 bottom-0 rounded-t-[24px] bg-painel-cartao p-4 shadow-cartao">
           <div className="mx-auto max-w-lg">
             <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
             {tipo === "entrega" && <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Entrega</span><span>{taxa == null ? "—" : brl(taxaN)}</span></div>}
             {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
             {cashbackUsado > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cashback</span><span>− {brl(cashbackUsado)}</span></div>}
-            <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
+            <div className="mb-2 flex items-baseline justify-between"><span className="font-semibold text-texto">Total</span><span className="numero-grande text-[24px] text-texto">{brl(total)}</span></div>
             {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
             {horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo && cart.length > 0 && (
               <p className="mb-2 text-xs text-amber-600">Pedido mínimo {brl(horario.pedidoMinimo)} — faltam {brl(horario.pedidoMinimo - subtotal)}.</p>
             )}
-            <button onClick={enviar} disabled={proc || (!aberto && !horario.podeAgendar)} className="w-full rounded-cartao py-3.5 text-base font-bold text-white disabled:opacity-50" style={{ background: LARANJA }}>
+            <button onClick={enviar} disabled={proc || (!aberto && !horario.podeAgendar)} className="btn-principal w-full text-base">
               {proc ? "Enviando..." : !aberto && !horario.podeAgendar ? "Delivery fechado agora" : quando === "agendar" ? <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="agenda" tamanho={17} /> Agendar pedido</span> : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="certo" tamanho={17} /> Enviar pedido</span>}
             </button>
           </div>
@@ -671,26 +668,30 @@ export function PedirClient({
   return (
     <Casca onMeusPedidos={() => setFase("historico")} linha={linhaInfo}>
       {!aberto && (
-        <div className={`px-4 py-2 text-center text-sm font-bold text-white ${horario.podeAgendar ? "bg-sky-700" : "bg-rose-600"}`}>
+        <div className={`mx-3 mt-3 rounded-controle px-4 py-2.5 text-center text-sm font-semibold ${horario.podeAgendar ? "bg-info-fundo text-info-texto" : "bg-urgente-fundo text-urgente-texto"}`}>
           {horario.podeAgendar
             ? `Fechado agora${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : ""}. Mas você já pode AGENDAR seu pedido!`
             : `Estamos fechados${horario.proximaAbertura ? ` — abrimos ${horario.proximaAbertura}` : " agora"}. Pode olhar o cardápio à vontade.`}
         </div>
       )}
       {aviso && (
-        <div className="px-4 py-2 text-center text-sm font-semibold text-white" style={{ background: LARANJA }}>
+        <div className="mx-3 mt-3 rounded-controle bg-destaque px-4 py-2.5 text-center text-sm font-semibold text-texto-marca-pilula">
             <span className="inline-flex items-center gap-1.5"><Icone nome="megafone" tamanho={14} /> {aviso}</span>
           </div>
       )}
-      <div className="sticky top-0 z-10 border-b border-borda bg-white/95 p-3 backdrop-blur dark:bg-zinc-950/95">
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar no cardápio..." className="w-full rounded-cartao border border-borda-forte bg-transparent px-3 py-2.5 " />
+      <div className="sticky top-0 z-10 bg-painel-fundo/95 px-3 pb-2 pt-3 backdrop-blur">
+        <label className="flex h-[46px] items-center gap-2.5 rounded-controle bg-painel-cartao px-4 shadow-controle">
+          <Icone nome="buscar" tamanho={18} className="shrink-0 text-texto-fraco" />
+          <span className="sr-only">Buscar no cardápio</span>
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pizza, lanche, bebida…" className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-texto placeholder:text-texto-fraco" />
+        </label>
         {!busca && (
           <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
             {pizza.tamanhos.length > 0 && (
-              <button onClick={() => setAba("__pizzas__")} className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-bold ${aba === "__pizzas__" ? "text-white" : ""}`} style={aba === "__pizzas__" ? { background: LARANJA } : { color: LARANJA, background: "color-mix(in srgb, var(--marca-primaria) 12%, transparent)" }}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pizza" tamanho={14} /> Pizzas</span></button>
+              <button onClick={() => setAba("__pizzas__")} aria-pressed={aba === "__pizzas__"} className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${aba === "__pizzas__" ? "bg-marca-escuro text-painel-foco-texto" : "bg-painel-cartao text-texto shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pizza" tamanho={14} /> Pizzas</span></button>
             )}
             {categorias.map((c) => (
-              <button key={c} onClick={() => setAba(c)} className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium ${aba === c ? "text-white" : "bg-superficie-suave text-texto-suave  "}`} style={aba === c ? { background: ESCURO } : {}}>{c}</button>
+              <button key={c} onClick={() => setAba(c)} aria-pressed={aba === c} className={`min-h-11 shrink-0 rounded-full px-4 text-sm ${aba === c ? "bg-marca-escuro font-semibold text-painel-foco-texto" : "bg-painel-cartao text-texto shadow-controle"}`}>{c}</button>
             ))}
           </div>
         )}
@@ -703,18 +704,18 @@ export function PedirClient({
           Toca e abre o montador já com o sabor marcado. */}
       {!busca && novidades.length > 0 && (
         <div className="pt-3">
-          <h2 className="flex items-center gap-1.5 px-3 font-bold"><Icone nome="pizza" tamanho={16} className="text-orange-500" /> Novidades</h2>
+          <h2 className="flex items-center gap-1.5 px-3 font-numero text-lg font-bold text-texto"><Icone nome="pizza" tamanho={16} className="text-orange-500" /> Novidades</h2>
           <div className="flex gap-2 overflow-x-auto p-3">
             {novidades.map((s) => {
               const menor = Math.min(...pizza.saborPrecos.filter((p) => p.sabor_id === s.id && pizza.tamanhos.some((t) => t.id === p.tamanho_id && (t.max_sabores ?? 1) >= 1)).map((p) => Number(p.preco)).filter((v) => v > 0));
               const tamGrande = [...pizza.tamanhos].sort((a, b) => (b.max_sabores ?? 1) - (a.max_sabores ?? 1))[0];
               return (
-                <button key={s.id} onClick={() => { setPzSabor(s.id); setPzTamanho(tamGrande?.id ?? pizza.tamanhos[0]?.id ?? null); }} className="w-48 shrink-0 overflow-hidden rounded-cartao border border-borda text-left">
+                <button key={s.id} onClick={() => { setPzSabor(s.id); setPzTamanho(tamGrande?.id ?? pizza.tamanhos[0]?.id ?? null); }} className="cartao w-48 shrink-0 overflow-hidden text-left">
                   {s.foto_url ? <FotoItem url={s.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "color-mix(in srgb, var(--marca-primaria) 10%, transparent)" }}><Icone nome="pizza" tamanho={30} className="text-orange-500/70" /></div>}
                   <div className="p-2.5">
                     <div className="flex items-center gap-1.5 font-semibold leading-tight"><span className="truncate">{s.nome}</span><span className="shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-500">novo</span></div>
                     {s.descricao && <div className="mt-1 line-clamp-2 text-xs leading-snug text-texto-suave">{s.descricao}</div>}
-                    {Number.isFinite(menor) && <div className="mt-1.5 text-sm font-bold" style={{ color: LARANJA }}>a partir de {brl(menor)}</div>}
+                    {Number.isFinite(menor) && <div className="mt-1.5 font-numero text-sm font-bold text-texto-marca">a partir de {brl(menor)}</div>}
                   </div>
                 </button>
               );
@@ -726,14 +727,14 @@ export function PedirClient({
       {/* Os mais vendidos */}
       {!busca && destaque.length > 0 && aba !== "__pizzas__" && (
         <div className="pt-3">
-          <h2 className="flex items-center gap-1.5 px-3 font-bold"><Icone nome="fogo" tamanho={16} className="text-orange-500" /> Os mais vendidos</h2>
+          <h2 className="flex items-center gap-1.5 px-3 font-numero text-lg font-bold text-texto"><Icone nome="fogo" tamanho={16} className="text-orange-500" /> Os mais vendidos</h2>
           <div className="flex gap-2 overflow-x-auto p-3">
             {destaque.map((i) => (
-              <button key={i.id} onClick={() => clicarItem(i)} className="w-40 shrink-0 overflow-hidden rounded-cartao border border-borda text-left">
+              <button key={i.id} onClick={() => clicarItem(i)} className="cartao w-40 shrink-0 overflow-hidden text-left">
                 {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "color-mix(in srgb, var(--marca-primaria) 10%, transparent)" }}><Icone nome={iconeDaCategoria(i.categoria)} tamanho={30} className="text-orange-500/70" /></div>}
                 <div className="p-2">
                   <div className="truncate text-sm font-medium">{i.nome}</div>
-                  <div className="text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
+                  <div className="font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="mr-1 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
                 </div>
               </button>
             ))}
@@ -746,11 +747,11 @@ export function PedirClient({
         {!busca && aba === "__pizzas__" && pizza.tamanhos.map((t) => {
           const min = aPartirDe.get(t.id);
           return (
-            <button key={t.id} onClick={() => setPzTamanho(t.id)} className="flex w-full items-center justify-between rounded-cartao border border-borda p-3 text-left">
+            <button key={t.id} onClick={() => setPzTamanho(t.id)} className="cartao flex w-full items-center justify-between p-4 text-left">
               <div>
-                <div className="font-bold">{t.nome}</div>
+                <div className="font-numero text-base font-bold text-texto">{t.nome}</div>
                 <div className="text-xs text-texto-suave">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}{t.fatias ? `, ${t.fatias} fatia${t.fatias > 1 ? "s" : ""}` : ""}</div>
-                {min != null && <div className="mt-0.5 text-sm font-semibold text-emerald-600">A partir de {brl(min)}</div>}
+                {min != null && <div className="mt-1 font-numero text-sm font-bold text-texto-marca">a partir de {brl(min)}</div>}
               </div>
               <Icone nome="pizza" tamanho={30} className="text-orange-500" />
             </button>
@@ -761,13 +762,13 @@ export function PedirClient({
         {(busca || aba !== "__pizzas__") && visiveis.map((i) => {
           const noCarrinho = cart.filter((l) => l.payload.kind !== "pizza" && "itemId" in l.payload && l.payload.itemId === i.id).reduce((s, l) => s + l.qtd, 0);
           return (
-            <button key={i.id} onClick={() => clicarItem(i)} className={`flex w-full items-center justify-between gap-3 rounded-cartao border p-3 text-left ${noCarrinho > 0 ? "" : "border-borda"}`} style={noCarrinho > 0 ? { borderColor: LARANJA, background: "color-mix(in srgb, var(--marca-primaria) 6%, transparent)" } : {}}>
+            <button key={i.id} onClick={() => clicarItem(i)} className={`cartao flex w-full items-center justify-between gap-3 p-3.5 text-left ${noCarrinho > 0 ? "!bg-destaque shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : ""}`}>
               <div className="min-w-0 flex-1">
-                <div className="font-medium leading-tight">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</div>
+                <div className="font-semibold leading-tight text-texto">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</div>
                 {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-texto-suave">{i.descricao}</div>}
-                <div className="mt-0.5 text-sm font-semibold" style={{ color: LARANJA }}>{i.preco_antigo != null && <span className="mr-1.5 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="ml-1.5 rounded bg-rose-500/10 px-1 text-mini font-bold text-rose-500">PROMO</span>}</div>
+                <div className="mt-1 flex items-center gap-1.5 font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="pilula pilula-urgente">promo</span>}</div>
               </div>
-              {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white" style={{ background: LARANJA }}>+</span>}
+              {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-mesa bg-primaria text-lg font-bold text-marca-sobre-primaria" aria-hidden>+</span>}
             </button>
           );
         })}
@@ -777,9 +778,9 @@ export function PedirClient({
       {qtdItens > 0 && (
         <div className="fixed inset-x-0 bottom-0 p-4">
           <div className="mx-auto max-w-lg">
-            <button onClick={() => setFase("checkout")} className="flex w-full items-center justify-between rounded-cartao px-5 py-3.5 text-white" style={{ background: ESCURO }}>
-              <span className="inline-flex items-center gap-1.5 font-bold"><Icone nome="compras" tamanho={16} /> Ver pedido ({qtdItens})</span>
-              <span className="font-bold">{brl(subtotal)}</span>
+            <button onClick={() => setFase("checkout")} className="btn-principal w-full justify-between text-base">
+              <span className="inline-flex items-center gap-1.5"><Icone nome="compras" tamanho={17} /> Ver pedido ({qtdItens})</span>
+              <span className="font-numero">{brl(subtotal)}</span>
             </button>
           </div>
         </div>
@@ -822,16 +823,16 @@ function iconeDaCategoria(cat: string | null | undefined): "pizza" | "bebida" | 
 
 function Casca({ children, onMeusPedidos, linha }: { children: React.ReactNode; onMeusPedidos?: () => void; linha?: string }) {
   return (
-    <div className="min-h-screen bg-painel-cartao text-texto">
-      <header className="px-4 py-3 text-white" style={{ background: ESCURO }}>
-        <div className="mx-auto flex max-w-lg items-center gap-2">
-          <Icone nome="pizza" tamanho={22} className="text-orange-500" />
+    <div className="min-h-screen bg-painel-fundo text-texto">
+      <header className="px-4 pb-1 pt-4">
+        <div className="mx-auto flex max-w-lg items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-controle bg-marca-escuro font-numero text-lg font-bold text-primaria" aria-hidden>B</span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-lg font-bold" style={{ color: LARANJA }}>Brasa Pizzaria e Restaurante</div>
-            <div className="text-xs text-zinc-300">{linha ?? "Peça online · entrega ou retirada"}</div>
+            <div className="truncate font-numero text-lg font-bold leading-tight tracking-apertada text-texto">Brasa Pizzaria e Restaurante</div>
+            <div className="truncate text-xs text-texto-suave">{linha ?? "Peça online · entrega ou retirada"}</div>
           </div>
           {onMeusPedidos && (
-            <button onClick={onMeusPedidos} className="shrink-0 rounded-cartao border border-zinc-600 px-3 py-1.5 text-xs font-semibold text-zinc-200"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lista" tamanho={13} /> Meus pedidos</span></button>
+            <button onClick={onMeusPedidos} className="btn-secundario !min-h-11 shrink-0 !px-3 text-xs"><Icone nome="lista" tamanho={14} /> Meus pedidos</button>
           )}
         </div>
       </header>
