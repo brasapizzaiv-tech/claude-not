@@ -2,12 +2,13 @@ import type { Metadata, Viewport } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dadosDoMural, empresaDaChaveMural } from "@/lib/mural-server";
 import { MuralTv } from "./mural-tv";
+import { TV } from "@/lib/tv-cores";
 
 export const metadata: Metadata = {
   title: "Mural do escritório",
   robots: { index: false, follow: false },
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#211915" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: TV.fundo };
 export const dynamic = "force-dynamic";
 
 // O MURAL NUMA TV
@@ -41,8 +42,8 @@ export default async function MuralTvPage({
           width: "100%",
           height: "100%",
           boxSizing: "border-box",
-          background: "#211915",
-          color: "#9b8878",
+          background: TV.fundo,
+          color: TV.fraco,
           fontFamily: "system-ui, -apple-system, Roboto, Arial, sans-serif",
           display: "flex",
           alignItems: "center",
@@ -52,7 +53,7 @@ export default async function MuralTvPage({
         }}
       >
         <div>
-          <div style={{ fontSize: "3vw", fontWeight: 700, color: "#e8ded5" }}>Mural do escritório</div>
+          <div style={{ fontSize: "3vw", fontWeight: 700, color: TV.texto }}>Mural do escritório</div>
           <div style={{ fontSize: "1.6vw", marginTop: "1vw" }}>
             Abra pelo link completo, com a chave no fim do endereço.
           </div>

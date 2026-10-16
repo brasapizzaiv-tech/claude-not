@@ -2,6 +2,7 @@ import { DIAS, GRUPOS } from "@/lib/folgas";
 import type { Feriado } from "@/lib/feriados";
 import { agendaDaTv, type Evento } from "@/lib/eventos";
 import type { AniversarioMural, EntregaMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
+import { TV } from "@/lib/tv-cores";
 
 // O MURAL PARA O NAVEGADOR DE UMA TV
 //
@@ -17,13 +18,15 @@ import type { AniversarioMural, EntregaMural, FolgaMural, PedidoCompraMural } fr
 // encher qualquer TV, de 32" a 50", sem ninguém medir nada: quem faz a conta é
 // o próprio navegador, e até os antigos sabem fazer essa.
 
-const FUNDO = "#211915";
-const CARTAO = "#2b211b";
-const BORDA = "#3d2f26";
-const TEXTO = "#e8ded5";
-const FRACO = "#9b8878";
-const LARANJA = "#C78340";
-const CREME = "#ece3da";
+// Cores da TV num lugar só (src/lib/tv-cores.ts) — antes eram escritas aqui e
+// o mural ficou com a paleta antiga quando a da cozinha mudou.
+const FUNDO = TV.fundo;
+const CARTAO = TV.bloco;
+const BORDA = TV.borda;
+const TEXTO = TV.texto;
+const FRACO = TV.fraco;
+const LARANJA = TV.laranja;
+const CREME = "#fff6ec";
 const ATENCAO = "#e0a04a";
 
 /** De quanto em quanto tempo a TV se recarrega sozinha, em segundos. Sem

@@ -126,6 +126,25 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
     };
   }, [canal]);
 
+  // Versão nova publicada: a TV fica aberta dias sem recarregar, e só os DADOS
+  // se atualizavam — o desenho (cores, letras) ficava o da versão em que foi
+  // aberta. A cada 5 min confere a versão do site; mudou, recarrega a página.
+  useEffect(() => {
+    let inicial: string | null = null;
+    const olhar = async () => {
+      try {
+        const r = await fetch("/api/versao", { cache: "no-store", signal: AbortSignal.timeout(5000) });
+        const v = String(((await r.json()) as { versao?: string }).versao ?? "");
+        if (!v) return;
+        if (inicial === null) inicial = v;
+        else if (v !== inicial) window.location.reload();
+      } catch { /* sem rede: tenta na próxima */ }
+    };
+    void olhar();
+    const t = setInterval(olhar, 5 * 60000);
+    return () => clearInterval(t);
+  }, []);
+
   // Relógio de 1 s pro tempo de espera e pra sumir os "pronto" no prazo.
   useEffect(() => {
     const t = setInterval(() => setAgora(Date.now()), 1000);
