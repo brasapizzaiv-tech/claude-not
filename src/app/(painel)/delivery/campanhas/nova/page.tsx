@@ -17,8 +17,8 @@ export default async function NovaCampanhaPage() {
   const c = cfg as { limite_dia: number; preco_marketing: number | null; preco_utilidade: number | null } | null;
   return (
     <div className="w-full max-w-3xl p-4">
-      <Link href="/delivery/campanhas" className="text-sm text-emerald-600">← Voltar pras campanhas</Link>
-      <h1 className="mb-4 mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="megafone" tamanho={19} /> Nova campanha</h1>
+      <Link href="/delivery/campanhas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pras campanhas</Link>
+      <h1 className="mb-4 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="megafone" tamanho={19} /> Nova campanha</h1>
       {!mods.ok && <p className="mb-3 rounded-controle bg-red-500/10 px-3 py-2 text-sm text-red-600">Não consegui ler os modelos na Meta: {mods.erro}</p>}
       <NovaCampanha
         modelos={mods.ok ? mods.modelos : []}

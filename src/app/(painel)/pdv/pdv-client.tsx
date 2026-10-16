@@ -147,7 +147,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 className={feito.pago ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}
               />
             </div>
-        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Venda nº {feito.numero} {feito.pago ? "paga!" : "enviada!"}</h1>
+        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Venda nº {feito.numero} {feito.pago ? "paga!" : "enviada!"}</h1>
         {feito.viagem && <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-amber-600"><Icone nome="viagem" tamanho={14} /> Viagem</div>}
         <p className="mt-1 text-texto-suave">
           {feito.pago ? <>Pagou em <b>{feito.forma}</b> e o pedido foi pra cozinha.</> : "O pedido foi pra cozinha. Receba o pagamento no caixa."}

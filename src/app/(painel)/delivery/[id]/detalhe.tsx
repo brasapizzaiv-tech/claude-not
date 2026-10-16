@@ -81,11 +81,11 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
     <div className="mt-3">
       {/* Cabeçalho + status */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">Pedido #{p.numero ?? "—"}</h1>
+        <h1 className="font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Pedido #{p.numero ?? "—"}</h1>
         <span className="text-sm text-texto-suave">{ORIGEM[p.origem] ?? p.origem} · {new Date(p.carimbos.criado_em).toLocaleString("pt-BR")}</span>
         <div className="ml-auto flex gap-2">
           {PROX[p.status] && !cancelado && (
-            <button onClick={() => act(() => definirStatusDelivery(p.id, PROX[p.status]))} disabled={proc} className="rounded-cartao bg-texto px-4 py-2 font-semibold text-fundo disabled:opacity-50">→ {ETAPAS.find((e) => e.key === PROX[p.status])?.label}</button>
+            <button onClick={() => act(() => definirStatusDelivery(p.id, PROX[p.status]))} disabled={proc} className="btn-principal text-sm">→ {ETAPAS.find((e) => e.key === PROX[p.status])?.label}</button>
           )}
           {/* Pular direto pra qualquer etapa (ex.: Kern de "aceito" pra "entregue"). */}
           {!cancelado && (
@@ -94,13 +94,13 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
               onChange={(e) => { const v = e.target.value; if (v) act(() => definirStatusDelivery(p.id, v)); }}
               disabled={proc}
               aria-label="Mudar a etapa direto"
-              className="rounded-cartao border border-borda-forte bg-transparent px-3 py-2 text-sm"
+              className="min-h-[46px] rounded-controle bg-painel-cartao px-3 text-sm text-texto shadow-controle"
             >
               <option value="">Mudar etapa…</option>
               {ETAPAS.filter((e) => e.key !== p.status && e.key !== "pendente").map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
             </select>
           )}
-          <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="rounded-cartao border border-borda-forte px-3 py-2 text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>
+          <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="btn-secundario text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>
           {p.comandaId && (
             <button
               onClick={async () => {
@@ -117,14 +117,14 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                 });
               }}
               disabled={proc}
-              className="rounded-cartao border border-borda-forte px-3 py-2 text-sm"
+              className="btn-secundario text-sm"
               title="Emitir a nota fiscal do consumidor deste pedido"
             >
               <Icone nome="cupom" tamanho={15} className="mr-1.5" /> NFC-e
             </button>
           )}
           {!cancelado && p.status !== "entregue" && (
-            <button onClick={async () => { const m = await perguntar("Motivo do cancelamento (o cliente vai ver):", ""); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="rounded-cartao border border-rose-300 px-3 py-2 text-sm text-rose-600 dark:border-rose-800">Cancelar</button>
+            <button onClick={async () => { const m = await perguntar("Motivo do cancelamento (o cliente vai ver):", ""); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="btn-secundario text-sm !text-urgente-texto">Cancelar</button>
           )}
         </div>
       </div>
@@ -133,17 +133,17 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
       {cancelado ? (
         <div className="mb-4 rounded-cartao bg-rose-500/10 px-4 py-3 font-semibold text-rose-600">Pedido cancelado {p.carimbos.cancelado_em ? `às ${hhmm(p.carimbos.cancelado_em)}` : ""}{p.canceladoMotivo ? <span className="block text-sm font-normal">Motivo: {p.canceladoMotivo}</span> : null}</div>
       ) : (
-        <div className="mb-4 flex items-center gap-1 overflow-x-auto rounded-cartao border border-borda p-3">
+        <div className="cartao mb-4 flex items-center gap-1 overflow-x-auto p-4">
           {ETAPAS.map((e, i) => {
             const feito = p.carimbos[e.carimbo];
             const atual = i === idxAtual;
             return (
               <div key={e.key} className="flex items-center gap-1">
                 <div className="text-center">
-                  <div className={`rounded-full px-3 py-1 text-xs font-bold ${atual ? "bg-texto text-fundo" : feito ? "bg-emerald-500/15 text-emerald-600" : "bg-superficie-suave text-texto-fraco "}`}>{e.label}</div>
+                  <div className={`rounded-full px-3 py-1 text-xs font-bold ${atual ? "bg-marca-escuro text-painel-foco-rotulo dark:bg-painel-foco-fundo" : feito ? "bg-destaque text-texto-marca-pilula" : "bg-superficie-suave text-texto-fraco"}`}>{e.label}</div>
                   <div className="mt-1 text-mini text-texto-fraco">{hhmm(feito)}</div>
                 </div>
-                {i < ETAPAS.length - 1 && <div className={`h-0.5 w-6 ${feito ? "bg-emerald-400" : "bg-zinc-200 dark:bg-zinc-700"}`} />}
+                {i < ETAPAS.length - 1 && <div className={`h-0.5 w-6 ${feito ? "bg-primaria" : "bg-borda"}`} />}
               </div>
             );
           })}
@@ -153,7 +153,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Esquerda: cliente + entrega */}
         <div className="space-y-4">
-          <div className="rounded-cartao border border-borda p-4">
+          <div className="cartao p-5">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="flex items-center gap-1.5 font-bold"><Icone nome="pessoa" tamanho={15} /> {p.nome}</h2>
               {p.historicoCliente > 0 && <span className="rounded-full bg-superficie-suave px-2 py-0.5 text-xs text-texto-suave">{p.historicoCliente} pedido(s) antes</span>}
@@ -165,7 +165,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                 {p.endereco.complemento && <div className="text-texto-suave">{p.endereco.complemento}</div>}
                 <div className="text-texto-suave">Bairro: {p.endereco.bairro || "—"} · {p.endereco.cidade || "—"}</div>
                 {p.endereco.referencia && <div className="text-texto-suave">Ref.: {p.endereco.referencia}</div>}
-                <a href={mapaUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-emerald-600 hover:underline">Ver no mapa →</a>
+                <a href={mapaUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block font-semibold text-texto-marca hover:underline">Ver no mapa →</a>
               </div>
             ) : (
               <div className="mt-2 flex items-center gap-1.5 font-medium text-texto-suave"><Icone nome="loja" tamanho={14} /> Retirada no balcão</div>
@@ -173,7 +173,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
           </div>
 
           {p.tipo === "entrega" && (
-            <div className="rounded-cartao border border-borda p-4">
+            <div className="cartao p-5">
               <h2 className="mb-2 flex items-center gap-1.5 font-bold"><Icone nome="entrega" tamanho={15} /> Entregador</h2>
               <select value={p.entregadorId ?? ""} onChange={(e) => act(() => definirEntregador(p.id, e.target.value || null))} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm">
                 <option value="">Não informado</option>
@@ -190,7 +190,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
           )}
 
           {p.historico.length > 0 && (
-            <div className="rounded-cartao border border-borda p-4">
+            <div className="cartao p-5">
               <h2 className="mb-2 flex items-center gap-1.5 font-bold"><Icone nome="relogio" tamanho={15} /> Últimos pedidos do cliente</h2>
               <div className="space-y-1">
                 {p.historico.map((h, i) => (
@@ -205,7 +205,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
         </div>
 
         {/* Direita: valores + pagamento */}
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-5">
           <h2 className="mb-3 font-bold">Resumo de valores</h2>
           <div className="space-y-1.5">
             {p.itens.map((i, idx) => (
@@ -260,7 +260,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                     aoTerminar={() => router.refresh()}
                   />
                 ) : (
-                  <button onClick={() => act(() => receberDelivery(p.id, { forma: formaSel, colaboradorId: colabId || null }))} disabled={proc || faltaQuem} className="w-full rounded-full bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
+                  <button onClick={() => act(() => receberDelivery(p.id, { forma: formaSel, colaboradorId: colabId || null }))} disabled={proc || faltaQuem} className="btn-principal w-full text-sm">
                     {proc ? "Recebendo..." : `Receber ${brl(total)}`}
                   </button>
                 )}

@@ -22,7 +22,7 @@ export default async function CardapioPage() {
 
   return (
     <div className="w-full p-8">
-      <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Cardápio</h1>
+      <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Cardápio</h1>
       <p className="mb-6 mt-1 text-texto-suave">
         Um cardápio só, para tudo: salão, garçom, PDV e o app do cliente. Em cada produto você escolhe os canais, a foto e a disponibilidade.
       </p>

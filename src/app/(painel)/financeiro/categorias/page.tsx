@@ -82,7 +82,7 @@ export default async function CategoriasDrePage() {
       <Link href="/financeiro" className="text-sm text-texto-suave hover:underline">
         Financeiro
       </Link>
-      <h1 className="mt-1 font-numero text-2xl font-semibold tracking-apertada text-texto">
+      <h1 className="mt-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Categorias do DRE
       </h1>
       <p className="mt-0.5 mb-5 max-w-[70ch] text-sm text-texto-suave">

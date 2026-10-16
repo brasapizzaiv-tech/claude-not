@@ -24,7 +24,7 @@ export default async function FormasPagamentoPage() {
   return (
     <div className="w-full p-4 sm:p-8">
       <div className="mb-6">
-        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Formas de pagamento</h1>
+        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Formas de pagamento</h1>
         <p className="mt-1 max-w-2xl text-texto-suave">
           O que o caixa, o PDV, o delivery, o app do cliente e o fiado oferecem na hora de receber.
           O <b>tipo</b> decide o comportamento: troco, pinpad (TEF), nota automática e o código fiscal da NFC-e.

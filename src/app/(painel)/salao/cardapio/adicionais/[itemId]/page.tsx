@@ -44,10 +44,9 @@ export default async function AdicionaisPage({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <Link href="/salao/cardapio" className="text-sm text-texto-suave hover:text-orange-600">
-        ← Cardápio
+      <Link href="/salao/cardapio" className="text-sm font-semibold text-texto-marca hover:underline">← Cardápio
       </Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Adicionais — {item.nome}
       </h1>
       <p className="mb-5 mt-1 text-sm text-texto-suave">

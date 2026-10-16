@@ -69,7 +69,7 @@ export function RetiradasClient({
   return (
     <div className="w-full p-3 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="compras" tamanho={19} /> Compras internas</h1>
+        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="compras" tamanho={19} /> Compras internas</h1>
         <button onClick={() => setNovo(true)} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-marca-sobre-primaria hover:brightness-105">
           + Nova compra
         </button>

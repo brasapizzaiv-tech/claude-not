@@ -150,7 +150,7 @@ export function MesaDetalhe({
     <div className="mx-auto max-w-2xl p-4">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-texto">Detalhes da mesa · {mesa}</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Detalhes da mesa · {mesa}</h1>
           <p className="text-sm text-texto-suave">Comandas, itens e o que está pago/pendente da mesa.</p>
         </div>
         <div className="flex gap-2">

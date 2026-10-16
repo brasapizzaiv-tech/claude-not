@@ -92,10 +92,9 @@ export function NovoPedidoClient({
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <Link href="/conferencia" className="text-sm text-texto-suave hover:text-orange-600">
-        ← Conferência
+      <Link href="/conferencia" className="text-sm font-semibold text-texto-marca hover:underline">← Conferência
       </Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Novo pedido manual
       </h1>
       <p className="mt-1 text-sm text-texto-suave">

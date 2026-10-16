@@ -129,7 +129,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     <div className="p-4 md:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-texto">
+          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
             <Icone nome="ferramenta" tamanho={22} className="text-orange-600 dark:text-orange-400" /> Pedidos da equipe
           </h1>
           <p className="text-sm text-texto-suave">Compras pra repor e manutenções que o pessoal pediu pelo app. Marque comprado/feito ou rejeite.</p>

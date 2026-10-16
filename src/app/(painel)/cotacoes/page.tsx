@@ -24,7 +24,7 @@ export default async function CotacoesPage() {
     <div className="w-full p-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
             Cotações
           </h1>
           <p className="mt-1 text-texto-suave">

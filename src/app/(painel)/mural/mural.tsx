@@ -158,7 +158,7 @@ export function Mural({
       {/* ---------- Cabeçalho ---------- */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
             Mural do escritório
           </h1>
           <p className="mt-0.5 text-sm text-texto-suave">

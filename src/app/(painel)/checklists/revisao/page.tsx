@@ -48,7 +48,7 @@ export default async function RevisaoPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="w-full p-8">
-      <Link href="/checklists" className="text-sm text-texto-suave hover:text-orange-600">← Checklists de hoje</Link>
+      <Link href="/checklists" className="text-sm font-semibold text-texto-marca hover:underline">← Checklists de hoje</Link>
       <RevisaoClient
         dia={dia}
         hoje={hoje}

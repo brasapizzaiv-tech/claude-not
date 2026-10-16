@@ -132,7 +132,7 @@ export function NovoPedido({
       {/* Cardápio */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="flex items-center gap-2 border-b border-borda p-3">
-          <Link href="/delivery" className="text-emerald-600">← Voltar</Link>
+          <Link href="/delivery" className="font-semibold text-texto-marca hover:underline">← Voltar</Link>
           <h1 className="text-lg font-bold">Novo pedido</h1>
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="ml-auto w-64 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
         </div>

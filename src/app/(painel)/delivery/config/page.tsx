@@ -32,8 +32,8 @@ export default async function DeliveryConfigPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-4">
-      <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <h1 className="mb-1 mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="ajustes" tamanho={19} /> Config do delivery</h1>
+      <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
+      <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="ajustes" tamanho={19} /> Config do delivery</h1>
       <p className="mb-4 text-sm text-texto-suave">Taxa de entrega: por <Link href="/delivery/areas" className="font-semibold text-emerald-600">áreas desenhadas no mapa</Link> quando houver áreas cadastradas; senão, pela distância até o restaurante (abaixo).</p>
 
       <div className={`mb-4 rounded-cartao px-4 py-3 text-sm ${temChave ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/10 text-amber-700 dark:text-amber-400"}`}>

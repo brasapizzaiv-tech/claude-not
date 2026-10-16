@@ -75,7 +75,7 @@ export function RevisaoClient({
     <div>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-texto"><Icone nome="buscar" tamanho={20} /> Revisar checklists</h1>
+          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="buscar" tamanho={20} /> Revisar checklists</h1>
           <p className="mt-1 text-texto-suave">
             {dia === addDiasIso(hoje, -1) ? "Ontem" : dia === hoje ? "Hoje" : ""} {dataCurta(dia)} · veja o que ficou e aponte as correções.
           </p>

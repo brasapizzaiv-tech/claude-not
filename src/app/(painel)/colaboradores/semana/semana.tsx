@@ -502,7 +502,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     <div className="w-full p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Semana e 10%</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Semana e 10%</h1>
           <p className="mt-1 text-sm text-texto-suave">
             Marque quem trabalhou em cada dia (dia ou noite). O 10% de cada noite é dividido por quem trabalhou naquela noite e entra no acerto da semana seguinte.
             {" "}<Link href="/colaboradores" className="text-orange-600 hover:underline">Cadastro da equipe</Link>

@@ -135,7 +135,7 @@ export function Scanner() {
   return (
     <div className="mx-auto max-w-md p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-texto">
+        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
           Leitor de etiquetas
         </h1>
         <Link href="/etiquetas" className="text-sm text-orange-600 hover:underline">

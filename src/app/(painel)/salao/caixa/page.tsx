@@ -46,10 +46,9 @@ export default async function CaixaPage({
   if (!caixa) {
     return (
       <div className="mx-auto max-w-lg p-6">
-        <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
-          ← Salão
+        <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão
         </Link>
-        <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Frente de Caixa</h1>
+        <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Frente de Caixa</h1>
         <p className="mt-1 text-texto-suave">Nenhum caixa aberto. Abra um para começar a receber.</p>
         {/* Histórico não depende de caixa aberto: consultar não é movimentar. */}
         <div className="mt-3 flex flex-wrap gap-2">

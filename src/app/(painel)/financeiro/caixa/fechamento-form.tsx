@@ -85,10 +85,9 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
 
   return (
     <div className="mx-auto max-w-3xl p-6 sm:p-8">
-      <Link href="/financeiro/caixa" className="text-sm text-texto-suave hover:text-orange-600">
-        ← Fechamentos de caixa
+      <Link href="/financeiro/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Fechamentos de caixa
       </Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         {inicial.id ? "Editar fechamento" : "Novo fechamento de caixa"}
       </h1>
 

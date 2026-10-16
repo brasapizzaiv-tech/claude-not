@@ -43,7 +43,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
     <div className="w-full p-8">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>
           <p className="mt-1 text-texto-suave">
             {dia === hoje ? "Hoje" : core.dataCurta(dia)} · o que cada setor já fez.
           </p>

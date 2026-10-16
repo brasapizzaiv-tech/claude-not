@@ -50,7 +50,7 @@ export function CentralImpressao({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-1 text-2xl font-bold text-texto">🖨️ Central de Impressões</h1>
+      <h1 className="mb-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">🖨️ Central de Impressões</h1>
       <p className="mb-5 text-sm text-texto-suave">
         Aqui ficam <b>todas as impressoras</b> (etiquetas hoje; comandas e cupons no futuro). As impressões saem por um
         <b> PC central</b> com o <b>Agente</b> instalado.

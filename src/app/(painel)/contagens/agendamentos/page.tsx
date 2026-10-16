@@ -17,7 +17,7 @@ export default async function AgendamentosPage() {
     <div className="mx-auto max-w-3xl p-8">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
             Agendamentos de contagem
           </h1>
           <p className="mt-1 text-texto-suave">

@@ -84,7 +84,7 @@ export default async function FechamentoRelatorio({
           >
             ← Fechamentos
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-texto">
+          <h1 className="mt-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
             Caixa de {dataBR(r.data)}
           </h1>
           {r.observacao && (

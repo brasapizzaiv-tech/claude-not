@@ -44,9 +44,9 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="w-full p-4">
-      <Link href="/delivery/entregadores" className="text-sm text-emerald-600">← Entregadores</Link>
+      <Link href="/delivery/entregadores" className="text-sm font-semibold text-texto-marca hover:underline">← Entregadores</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="dinheiro" tamanho={19} /> Acerto dos entregadores</h1>
+        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="dinheiro" tamanho={19} /> Acerto dos entregadores</h1>
         <form className="ml-auto flex items-center gap-2">
           <Link href={`?data=${addDias(data, -1)}`} className="rounded-controle border border-borda-forte px-2 py-1 text-sm">‹</Link>
           <input type="date" name="data" defaultValue={data} className="rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />

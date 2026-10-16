@@ -164,8 +164,8 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="w-full p-6">
-      <Link href="/financeiro" className="text-sm text-texto-suave hover:text-orange-600">← Financeiro</Link>
-      <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-texto"><Icone nome="compras" tamanho={20} /> Produtos vendidos</h1>
+      <Link href="/financeiro" className="text-sm font-semibold text-texto-marca hover:underline">← Financeiro</Link>
+      <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="compras" tamanho={20} /> Produtos vendidos</h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">Tudo que saiu no salão, balcão, balança e delivery, pelo que foi lançado nas comandas. Noite começa às {VIRADA_NOITE}h.</p>
 
       {/* Período e filtros (links: sem JS) */}

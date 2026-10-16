@@ -18,9 +18,9 @@ export default async function ModelosChecklistPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-8">
-      <Link href="/checklists" className="text-sm text-texto-suave hover:text-orange-600">← Checklists de hoje</Link>
+      <Link href="/checklists" className="text-sm font-semibold text-texto-marca hover:underline">← Checklists de hoje</Link>
       <div className="mt-2 mb-6">
-        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="editar" tamanho={20} className="mr-2" /> Modelos de checklist</h1>
+        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="editar" tamanho={20} className="mr-2" /> Modelos de checklist</h1>
         <p className="mt-1 text-texto-suave">
           As listas que a equipe vê no app. Cada uma tem um setor e um momento (abertura, durante o turno, fechamento).
         </p>

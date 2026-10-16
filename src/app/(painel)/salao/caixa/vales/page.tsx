@@ -52,8 +52,8 @@ export default async function ValesPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
-      <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">← Voltar ao caixa</Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Vales-presente</h1>
+      <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa</Link>
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Vales-presente</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">
         O cliente compra aqui (o dinheiro entra no caixa do dia) e recebe um código. Quando alguém usa, o caixa escolhe a forma
         <b> Vale-presente</b> e digita o código: a baixa sai do saldo, que pode ser usado aos poucos até a validade.

@@ -52,8 +52,8 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/cozinha" className="text-sm text-texto-suave hover:text-orange-600">← Tablet da cozinha</Link>
-      <h1 className="mt-2 mb-3 text-2xl font-bold text-texto"><Icone nome="pizza" tamanho={20} className="mr-2" /> Rodízio · relatório</h1>
+      <Link href="/cozinha" className="text-sm font-semibold text-texto-marca hover:underline">← Tablet da cozinha</Link>
+      <h1 className="mt-2 mb-3 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="pizza" tamanho={20} className="mr-2" /> Rodízio · relatório</h1>
 
       <form className="mb-4 flex flex-wrap items-end gap-2">
         <div>

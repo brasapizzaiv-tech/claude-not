@@ -68,7 +68,7 @@ export default async function EtiquetasPage({
     <div className="w-full p-8">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Etiquetas</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Etiquetas</h1>
           <p className="mt-1 text-texto-suave">Gere etiquetas de manipulação e controle a validade dos insumos.</p>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">

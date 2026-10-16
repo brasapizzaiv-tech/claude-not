@@ -26,8 +26,8 @@ export default async function ImpressasPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="w-full p-8">
-      <Link href="/etiquetas" className="text-sm text-texto-suave hover:text-orange-600">← Etiquetas</Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">📈 Etiquetas impressas</h1>
+      <Link href="/etiquetas" className="text-sm font-semibold text-texto-marca hover:underline">← Etiquetas</Link>
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">📈 Etiquetas impressas</h1>
       <p className="mt-1 mb-5 text-texto-suave">Quantas etiquetas saíram, em que horário e por quem.</p>
       <ImpressasClient rows={(data as EtImp[]) ?? []} periodo={p} ini={ini} fim={fim} />
     </div>

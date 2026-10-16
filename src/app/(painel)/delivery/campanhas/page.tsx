@@ -53,10 +53,10 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
   const cartao = "rounded-cartao bg-painel-cartao p-3 text-center";
   return (
     <div className="w-full p-4">
-      <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
+      <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-end gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="megafone" tamanho={19} /> Campanhas</h1>
+          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="megafone" tamanho={19} /> Campanhas</h1>
           <p className="text-sm text-texto-suave">Mensagens pelo WhatsApp oficial pra grupos de clientes. Saem em lotes, no horário que você marcar.</p>
         </div>
         <div className="ml-auto flex flex-wrap gap-2 text-sm">

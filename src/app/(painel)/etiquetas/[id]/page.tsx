@@ -32,7 +32,7 @@ export default async function EtiquetaPage({
       >
         ← Voltar para etiquetas
       </Link>
-      <h1 className="mt-2 mb-6 text-2xl font-bold text-texto print:hidden">
+      <h1 className="mt-2 mb-6 print:hidden font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Etiqueta #{data.numero}
       </h1>
       <EtiquetaImpressao

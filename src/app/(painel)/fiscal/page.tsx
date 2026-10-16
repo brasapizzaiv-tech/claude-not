@@ -26,8 +26,8 @@ export default async function FiscalPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <Link href="/dashboard" className="text-sm text-texto-suave hover:text-orange-600">← Início</Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Configuração fiscal (NF-e / NFC-e)</h1>
+      <Link href="/dashboard" className="text-sm font-semibold text-texto-marca hover:underline">← Início</Link>
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Configuração fiscal (NF-e / NFC-e)</h1>
       <p className="mt-1 text-sm text-texto-suave">
         Dados da empresa e do emissor. O <b>certificado digital</b> fica no painel do emissor
         (você sobe lá) — aqui guardamos só o <b>token de API</b>.

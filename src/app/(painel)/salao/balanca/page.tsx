@@ -25,12 +25,11 @@ export default async function BalancaPage() {
 
   return (
     <div className="mx-auto max-w-lg p-6">
-      <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
-        ← Salão
+      <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão
       </Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-texto"><Icone nome="balanca" tamanho={20} /> Balança / Buffet</h1>
+          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="balanca" tamanho={20} /> Balança / Buffet</h1>
           <p className="mt-1 text-texto-suave">
             Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido no Cardápio"}.
           </p>

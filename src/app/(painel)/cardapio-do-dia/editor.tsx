@@ -165,7 +165,7 @@ export function EditorCardapio({
 
   return (
     <div className="mx-auto max-w-6xl p-8">
-      <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
+      <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Cardápio do dia
       </h1>
       <p className="mt-1 text-texto-suave">

@@ -77,10 +77,10 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
 
   return (
     <div className="w-full p-6">
-      <Link href="/dashboard" className="text-sm text-texto-suave hover:text-orange-600">← Início</Link>
+      <Link href="/dashboard" className="text-sm font-semibold text-texto-marca hover:underline">← Início</Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Clientes</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Clientes</h1>
           <p className="mt-1 text-sm text-texto-suave">Para emitir NF-e com o cliente (CNPJ/CPF).</p>
         </div>
         <button

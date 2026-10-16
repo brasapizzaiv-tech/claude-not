@@ -14,8 +14,8 @@ export default async function ItensEtiquetaPage() {
 
   return (
     <div className="w-full p-8">
-      <Link href="/etiquetas" className="text-sm text-texto-suave hover:text-orange-600">← Etiquetas</Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Itens e categorias de etiqueta</h1>
+      <Link href="/etiquetas" className="text-sm font-semibold text-texto-marca hover:underline">← Etiquetas</Link>
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Itens e categorias de etiqueta</h1>
       <p className="mt-1 mb-6 text-texto-suave">
         As preparações da cozinha que ganham etiqueta, agrupadas em categorias (botões no app), com a validade em dias por conservação.
       </p>

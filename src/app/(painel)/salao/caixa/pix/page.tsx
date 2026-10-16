@@ -77,10 +77,10 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
 
   return (
     <div className="w-full p-6">
-      <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">← Caixa</Link>
+      <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Caixa</Link>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="rapido" tamanho={20} className="mr-2" /> Pix recebidos</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="rapido" tamanho={20} className="mr-2" /> Pix recebidos</h1>
           <p className="mt-1 text-sm text-texto-suave">
             Cobranças com QR na tela (caixa, balcão e app). Banco: {diag.banco === "sicoob" ? "Sicoob" : "Sicredi"}
             {diag.ambiente !== "producao" && <span className="ml-2 rounded bg-amber-100 px-1.5 text-xs text-amber-700">SANDBOX</span>}

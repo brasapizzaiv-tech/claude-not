@@ -78,7 +78,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
     <div className="w-full max-w-6xl p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-texto"><Icone nome="relogio" tamanho={22} /> Relatórios de ponto</h1>
+          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Relatórios de ponto</h1>
           <p className="mt-1 max-w-2xl text-sm text-texto-suave">
             Batidas do relógio de quem bate ponto. Horário previsto: o das regras em <Link href="/colaboradores/assiduidade" className="text-orange-600 hover:underline">Assiduidade</Link>. Relatório gerencial; o ponto oficial continua sendo o do RHiD.
           </p>

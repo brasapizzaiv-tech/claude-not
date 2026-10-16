@@ -35,8 +35,8 @@ export default async function GatilhosPage() {
 
   return (
     <div className="w-full max-w-5xl p-4">
-      <Link href="/delivery/campanhas" className="text-sm text-emerald-600">← Voltar pras campanhas</Link>
-      <h1 className="mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="rapido" tamanho={19} /> Gatilhos automáticos</h1>
+      <Link href="/delivery/campanhas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pras campanhas</Link>
+      <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="rapido" tamanho={19} /> Gatilhos automáticos</h1>
       <p className="mb-1 text-sm text-texto-suave">Mensagens que saem sozinhas quando algo acontece com o cliente. Cada uma usa um modelo aprovado pela Meta.</p>
       <p className="mb-4 text-sm text-texto-suave">
         Saem das {c?.auto_hora_ini?.slice(0, 5) ?? "10:00"} às {c?.auto_hora_fim?.slice(0, 5) ?? "20:00"}

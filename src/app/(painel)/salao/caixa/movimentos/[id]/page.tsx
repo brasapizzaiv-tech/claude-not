@@ -66,8 +66,8 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <Link href="/salao/caixa/movimentos" className="text-sm text-texto-suave hover:text-orange-600">← Movimentações</Link>
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">Recebimento</h1>
+      <Link href="/salao/caixa/movimentos" className="text-sm font-semibold text-texto-marca hover:underline">← Movimentações</Link>
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Recebimento</h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">
         {mov.descricao ?? "Venda"} · {dataHora(mov.criado_em)}
       </p>

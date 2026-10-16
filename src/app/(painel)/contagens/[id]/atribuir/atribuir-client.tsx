@@ -86,7 +86,7 @@ export function AtribuirClient({
         ← Voltar para a contagem
       </Link>
 
-      <h1 className="mt-2 font-numero text-2xl font-semibold tracking-apertada text-texto">
+      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Dividir contagem por categoria
       </h1>
       <p className="mt-1 text-texto-suave">

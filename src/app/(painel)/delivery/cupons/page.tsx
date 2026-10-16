@@ -22,8 +22,8 @@ export default async function CuponsPage() {
 
   return (
     <div className="w-full p-4">
-      <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <h1 className="mb-1 mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="etiqueta" tamanho={19} /> Cupons de desconto</h1>
+      <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
+      <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="etiqueta" tamanho={19} /> Cupons de desconto</h1>
       <p className="mb-5 text-sm text-texto-suave">O cliente digita o código no carrinho do app (/pedir) e o desconto entra no pedido.</p>
 
       <form action={criarCupom} className="mb-6 flex flex-wrap items-end gap-2 rounded-cartao border border-borda p-4">

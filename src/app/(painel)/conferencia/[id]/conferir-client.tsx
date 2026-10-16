@@ -165,7 +165,7 @@ export function ConferirClient({
 
       <div className="mt-2 mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
             {fornecedor}
           </h1>
           <p className="mt-1 text-sm text-texto-suave">

@@ -83,9 +83,9 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
 
   return (
     <div className="p-4">
-      <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
+      <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="grafico" tamanho={19} /> Relatórios do delivery</h1>
+        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="grafico" tamanho={19} /> Relatórios do delivery</h1>
         <div className="ml-auto flex gap-1">
           {[[1, "Hoje"], [7, "7 dias"], [30, "30 dias"]].map(([d, lbl]) => (
             <Link key={d} href={`/delivery/relatorios?dias=${d}`} className={`rounded-controle px-3 py-1.5 text-sm font-medium ${nDias === d ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-superficie-suave text-texto-suave "}`}>{lbl}</Link>

@@ -51,7 +51,7 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
   if (!caixa) {
     return (
       <div className="p-4 md:p-6">
-        <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">← Voltar ao caixa</Link>
+        <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa</Link>
         <p className="mt-4 text-texto-suave">Nenhum caixa foi aberto ainda.</p>
       </div>
     );
@@ -81,12 +81,11 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/salao/caixa" className="text-sm text-texto-suave hover:text-orange-600">
-        ← Voltar ao caixa
+      <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa
       </Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">Movimentações do caixa</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Movimentações do caixa</h1>
           <p className="text-sm text-texto-suave">
             Caixa <b>{caixa.nome}</b> de {diaBR(caixa.aberto_em)}, aberto às {abertoHora}
             {caixa.fechado_em ? <> e <b>fechado</b> às {hora(caixa.fechado_em)}</> : null} · {movs.length} lançamento(s)

@@ -52,8 +52,8 @@ export default async function CashbackPage() {
 
   return (
     <div className="w-full max-w-3xl p-4">
-      <Link href="/delivery" className="text-sm text-emerald-600">← Voltar pro painel</Link>
-      <h1 className="mb-1 mt-2 flex items-center gap-2 text-xl font-bold"><Icone nome="presente" tamanho={19} /> Cashback</h1>
+      <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
+      <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="presente" tamanho={19} /> Cashback</h1>
       <p className="mb-4 text-sm text-texto-suave">
         O cliente ganha uma parte do pedido de volta como saldo quando o pedido é entregue, e usa esse saldo no próximo pedido pelo app.
         O valor usado entra como desconto no pedido.

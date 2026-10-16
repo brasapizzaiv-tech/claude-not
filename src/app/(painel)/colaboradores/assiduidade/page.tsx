@@ -56,7 +56,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
     <div className="w-full max-w-5xl p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-texto"><Icone nome="relogio" tamanho={22} /> Prêmio assiduidade</h1>
+          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Prêmio assiduidade</h1>
           <p className="mt-1 max-w-2xl text-sm text-texto-suave">
             {brl(cfg.valor_mes)} por mês pra quem bate ponto e fecha o mês sem falta, sem folga pedida, sem atestado e com até {cfg.tolerancia_min} min de atraso somados. Paga a cada 3 meses no acerto da semana.
             {" "}<Link href="/colaboradores/semana" className="text-orange-600 hover:underline">Semana e 10%</Link>

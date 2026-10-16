@@ -93,7 +93,7 @@ export default async function CotacaoFornecedoresPage({
       </Link>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-numero text-2xl font-semibold tracking-apertada text-texto">
+        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
           Escolher fornecedores
         </h1>
         <Link
