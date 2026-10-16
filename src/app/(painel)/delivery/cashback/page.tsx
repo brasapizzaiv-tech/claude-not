@@ -127,7 +127,7 @@ export default async function CashbackPage() {
       <h2 className="mb-2 mt-8 text-sm font-semibold text-texto-suave">Últimos movimentos</h2>
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[520px] text-sm">
-          <thead className="text-left text-xs text-texto-fraco">
+          <thead className="rotulo text-left">
             <tr><th className="px-3 py-2">Quando</th><th className="px-3 py-2">Cliente</th><th className="px-3 py-2">Movimento</th><th className="px-3 py-2 text-right">Valor</th></tr>
           </thead>
           <tbody className="divide-y divide-borda">

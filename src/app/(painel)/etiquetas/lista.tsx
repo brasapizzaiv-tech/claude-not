@@ -159,7 +159,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
       ) : (
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="min-w-[720px] w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-3 py-3">Nº</th>
                 <th className="px-3 py-3">Produto</th>

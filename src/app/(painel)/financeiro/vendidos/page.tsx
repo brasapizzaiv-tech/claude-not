@@ -221,7 +221,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
             {excluidas.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="min-w-[560px] w-full text-sm">
-                  <thead className="text-left text-xs font-medium text-texto-fraco"><tr><th className="py-1">Comanda excluída</th><th className="py-1">Mesa</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
+                  <thead className="rotulo text-left"><tr><th className="py-1">Comanda excluída</th><th className="py-1">Mesa</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
                   <tbody className="divide-y divide-borda">
                     {excluidas.map((e, i) => (
                       <tr key={i}><td className="py-1">nº {e.comanda_numero ?? "—"}</td><td className="py-1 text-texto-suave">{e.mesa ?? "—"}</td><td className="py-1 text-texto-suave">{e.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(e.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(e.excluido_em)}</td></tr>
@@ -233,7 +233,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
             {cancelados.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="min-w-[560px] w-full text-sm">
-                  <thead className="text-left text-xs font-medium text-texto-fraco"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
+                  <thead className="rotulo text-left"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
                   <tbody className="divide-y divide-borda">
                     {cancelados.map((c, i) => (
                       <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("\n")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-texto-suave">{c.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(c.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(c.cancelado_em)}</td></tr>

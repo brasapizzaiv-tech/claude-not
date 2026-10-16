@@ -684,7 +684,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-[720px] w-full text-sm">
-              <thead className="text-left text-xs font-medium text-texto-fraco">
+              <thead className="rotulo text-left">
                 <tr>
                   <th className="px-2 py-1">Noite</th>
                   <th className="px-2 py-1 text-right">10% arrecadado</th>
@@ -754,7 +754,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
       {modo === "grade" ? (
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="bg-superficie-suave text-xs text-texto-suave">
+            <thead className="rotulo">
               <tr>
                 <th className="sticky left-0 z-10 bg-superficie-suave px-3 py-2 text-left">Pessoa</th>
                 {dias.map((d) => (
@@ -894,7 +894,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           )}
           <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] text-sm">
-            <thead className="bg-superficie-suave text-left text-mini text-texto-suave">
+            <thead className="rotulo text-left">
               <tr>
                 {turnoFiltro === "todos" && (() => {
                   // Marcar/desmarcar todo mundo que pode ser lançado (tem valor e ainda não foi pago).

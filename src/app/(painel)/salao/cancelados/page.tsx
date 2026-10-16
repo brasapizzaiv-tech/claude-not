@@ -71,7 +71,7 @@ export default async function CanceladosPage() {
 
       <div className="mt-4 overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="min-w-[560px] w-full text-sm">
-          <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+          <thead className="rotulo text-left">
             <tr>
               <th className="px-4 py-2 font-medium">O quê</th>
               <th className="px-4 py-2 font-medium">Motivo</th>

@@ -150,7 +150,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-2">Forma</th>
                 <th className="px-4 py-2 text-right">Pedidos</th>

@@ -154,7 +154,7 @@ export function NovoPedidoClient({
         <div className="mt-4 overflow-hidden rounded-cartao bg-painel-cartao">
           <div className="overflow-x-auto">
             <table className="min-w-[560px] w-full text-sm">
-              <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+              <thead className="rotulo text-left">
                 <tr>
                   <th className="px-3 py-2">Produto</th>
                   <th className="px-3 py-2 text-right">Qtd</th>

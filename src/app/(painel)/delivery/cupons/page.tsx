@@ -60,7 +60,7 @@ export default async function CuponsPage() {
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="overflow-x-auto">
           <table className="min-w-[560px] w-full text-sm">
-            <thead className="bg-superficie-suave text-left text-xs text-texto-suave">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-3">Código</th>
                 <th className="px-4 py-3">Desconto</th>

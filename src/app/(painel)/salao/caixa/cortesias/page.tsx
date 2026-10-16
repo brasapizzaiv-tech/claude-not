@@ -74,7 +74,7 @@ export default async function CortesiasPage({ searchParams }: { searchParams: Pr
           <p className="p-8 text-center text-sm text-texto-suave">Nenhuma cortesia ou vale nesse período.</p>
         ) : (
           <table className="w-full min-w-[560px] text-sm">
-            <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-2 font-medium">Quando</th>
                 <th className="px-4 py-2 font-medium">Forma</th>

@@ -73,7 +73,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
 
       <section className="mb-6 overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="text-left text-xs text-texto-fraco">
+          <thead className="rotulo text-left">
             <tr><th className="px-3 py-2">Pessoa</th><th className="px-3 py-2 text-right">Dias na escala</th><th className="px-3 py-2 text-right">Atraso somado</th><th className="px-3 py-2">Faltas · folgas · atestados</th><th className="px-3 py-2">Mês</th></tr>
           </thead>
           <tbody className="divide-y divide-borda">
@@ -117,7 +117,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] text-sm">
-            <thead className="text-left text-xs text-texto-fraco"><tr><th className="py-1">Pessoa</th>{mesesTri.map((m) => <th key={m} className="py-1">{rotuloMes(m)}</th>)}<th className="py-1 text-right">A receber</th></tr></thead>
+            <thead className="rotulo text-left"><tr><th className="py-1">Pessoa</th>{mesesTri.map((m) => <th key={m} className="py-1">{rotuloMes(m)}</th>)}<th className="py-1 text-right">A receber</th></tr></thead>
             <tbody className="divide-y divide-borda">
               {doMes.pessoas.map((p) => {
                 const res = doTri.map((a) => a.pessoas.find((x) => x.id === p.id)?.resultado.ganhou ?? null);

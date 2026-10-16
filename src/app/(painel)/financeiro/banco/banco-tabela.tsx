@@ -247,7 +247,7 @@ export function BancoTabela({
           <table className="min-w-[560px] w-full text-sm">
             {/* Fica no topo enquanto a lista rola: com 225 linhas, sem isso
                 não dá pra saber qual coluna é qual no meio da tela. */}
-            <thead className="sticky top-0 z-10 bg-painel-cartao text-left text-xs font-medium text-texto-fraco shadow-[0_1px_0_var(--borda)]">
+            <thead className="rotulo sticky top-0 z-10 bg-painel-cartao text-left shadow-[0_1px_0_var(--borda)]">
               <tr>
                 <th className="w-8 px-3 py-3">
                   {selecionaveis.length > 0 && (

@@ -136,7 +136,7 @@ export default async function VendasPage({
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="overflow-x-auto">
           <table className="min-w-[560px] w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-3">Dia</th>
                 <th className="px-4 py-3 text-right">Notas</th>

@@ -342,7 +342,7 @@ export function CmvTabela({
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[900px] text-sm">
-          <thead className="text-left text-xs font-medium text-texto-fraco">
+          <thead className="rotulo text-left">
             <tr>
               <th className="px-3 py-3">CMV?</th>
               <th className="px-4 py-3">Produto</th>

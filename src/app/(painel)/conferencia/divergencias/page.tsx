@@ -106,7 +106,7 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
         <div className="mb-6 overflow-hidden rounded-cartao bg-painel-cartao">
           <div className="overflow-x-auto">
             <table className="min-w-[720px] w-full text-sm">
-              <thead className="text-left text-xs font-medium text-texto-fraco">
+              <thead className="rotulo text-left">
                 <tr><th className="px-4 py-2">Fornecedor</th><th className="px-4 py-2 text-right">Pedidos c/ problema</th><th className="px-4 py-2 text-right">Divergências</th><th className="px-4 py-2 text-right">Qtd/falta</th><th className="px-4 py-2 text-right">Preço acima</th><th className="px-4 py-2 text-right">Cobrado a mais</th></tr>
               </thead>
               <tbody className="divide-y divide-borda">

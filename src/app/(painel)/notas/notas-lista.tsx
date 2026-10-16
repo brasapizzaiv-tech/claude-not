@@ -82,7 +82,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
       ) : (
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full min-w-[820px] text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-3">Fornecedor</th>
                 <th className="px-4 py-3">Nº</th>

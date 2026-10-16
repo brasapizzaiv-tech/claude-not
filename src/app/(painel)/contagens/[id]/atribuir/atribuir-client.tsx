@@ -136,7 +136,7 @@ export function AtribuirClient({
       <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Produtos</th>

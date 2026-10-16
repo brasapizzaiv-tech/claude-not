@@ -321,7 +321,7 @@ export function ContarClient({
       <form ref={formRef}>
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Un.</th>

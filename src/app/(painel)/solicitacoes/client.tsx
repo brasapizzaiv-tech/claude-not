@@ -185,7 +185,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
       ) : (
         <div className="overflow-x-auto cartao">
           <table className="min-w-[720px] w-full text-sm">
-            <thead className="bg-superficie-suave text-left text-xs font-medium text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="w-8 px-3 py-2">
                   {pendentesVisiveis.length > 0 && (

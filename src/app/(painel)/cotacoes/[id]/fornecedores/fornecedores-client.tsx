@@ -185,7 +185,7 @@ export function FornecedoresClient({
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs font-medium text-texto-fraco">
+              <thead className="rotulo text-left">
                 <tr>
                   <th className="px-4 py-3">Fornecedor</th>
                   <th className="px-4 py-3 text-right">Fornece</th>
@@ -316,7 +316,7 @@ export function FornecedoresClient({
 
           <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
             <table className="min-w-[560px] w-full text-sm">
-              <thead className="text-left text-xs font-medium text-texto-fraco">
+              <thead className="rotulo text-left">
                 <tr>
                   <th className="px-4 py-3">Fornecedor</th>
                   <th className="px-4 py-3">Contato</th>

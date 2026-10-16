@@ -356,7 +356,7 @@ function ResumoTab({ retiradas, proc, run }: {
         <h2 className="mb-2 font-bold">Por funcionário</h2>
         <div className="overflow-x-auto">
           <table className="min-w-[560px] w-full text-sm">
-            <thead className="text-left text-xs text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="py-1 pr-2">Nome</th>
                 <th className="py-1 pr-2 text-right">Comprado</th>
@@ -424,7 +424,7 @@ function ResumoTab({ retiradas, proc, run }: {
         <h2 className="mb-2 font-bold">Por mês</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 <th className="py-1 pr-2">Mês</th>
                 <th className="py-1 pr-2 text-right">Comprado</th>

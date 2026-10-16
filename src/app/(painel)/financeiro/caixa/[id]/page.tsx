@@ -185,7 +185,7 @@ export default async function FechamentoRelatorio({
           </h2>
           <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
             <table className="w-full min-w-[460px] text-sm">
-              <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+              <thead className="rotulo text-left">
                 <tr>
                   <th className="px-4 py-2">Forma de pag.</th>
                   <th className="px-4 py-2 text-right">Pedidos</th>

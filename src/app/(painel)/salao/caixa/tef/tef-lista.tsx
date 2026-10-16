@@ -191,7 +191,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="min-w-[720px] w-full text-sm">
-          <thead className="bg-superficie-suave text-left text-xs text-texto-suave">
+          <thead className="rotulo text-left">
             <tr>
               <th className="px-3 py-2">Quando</th>
               <th className="px-3 py-2">Cartão</th>

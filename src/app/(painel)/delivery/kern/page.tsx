@@ -102,7 +102,7 @@ export default async function KernDeliveryPage() {
         <h2 className="mb-2 font-semibold">Últimos 15 dias</h2>
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full min-w-[480px] text-sm">
-            <thead className="text-left text-xs text-texto-fraco"><tr><th className="px-3 py-2">Dia</th><th className="px-3 py-2">Filial</th><th className="px-3 py-2 text-right">Marmitas</th><th className="px-3 py-2 text-right">Valor</th><th className="px-3 py-2">Pedido</th></tr></thead>
+            <thead className="rotulo text-left"><tr><th className="px-3 py-2">Dia</th><th className="px-3 py-2">Filial</th><th className="px-3 py-2 text-right">Marmitas</th><th className="px-3 py-2 text-right">Valor</th><th className="px-3 py-2">Pedido</th></tr></thead>
             <tbody className="divide-y divide-borda">
               {historico.map((h) => {
                 const p = Array.isArray(h.delivery_pedidos) ? h.delivery_pedidos[0] : h.delivery_pedidos;

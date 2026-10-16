@@ -101,7 +101,7 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="min-w-[560px] w-full text-sm">
-          <thead className="bg-superficie-suave text-left text-xs text-texto-fraco">
+          <thead className="rotulo text-left">
             <tr>
               <th className="px-4 py-2 font-medium">Descrição</th>
               <th className="px-4 py-2 font-medium">Forma</th>

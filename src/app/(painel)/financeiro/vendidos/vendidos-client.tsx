@@ -57,7 +57,7 @@ export function VendidosClient({ linhas, total, agrupar, periodo }: { linhas: Li
       ) : (
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-medium text-texto-fraco">
+            <thead className="rotulo text-left">
               <tr>
                 {th("nome", ROTULO[agrupar])}
                 {agrupar === "produto" && <th className="px-3 py-2">Categoria</th>}

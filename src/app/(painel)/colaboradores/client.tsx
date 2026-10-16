@@ -335,7 +335,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
           <div className="overflow-x-auto">
             <table className="min-w-[560px] w-full text-sm">
-              <thead className="text-left text-xs font-medium text-texto-fraco">
+              <thead className="rotulo text-left">
                 <tr>
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">Folga / Contagem</th>

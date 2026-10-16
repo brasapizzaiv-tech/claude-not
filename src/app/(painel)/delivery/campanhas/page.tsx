@@ -80,7 +80,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="text-left text-xs text-texto-fraco">
+          <thead className="rotulo text-left">
             <tr><th className="px-3 py-2">Situação</th><th className="px-3 py-2">Nome</th><th className="px-3 py-2">Público</th><th className="px-3 py-2">Criação</th><th className="px-3 py-2 text-right">Clientes</th><th className="px-3 py-2 text-right">Enviadas</th></tr>
           </thead>
           <tbody className="divide-y divide-borda">

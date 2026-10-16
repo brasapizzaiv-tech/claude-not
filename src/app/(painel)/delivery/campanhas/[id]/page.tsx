@@ -101,7 +101,7 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
       <h2 className="mb-2 font-semibold">Últimos envios</h2>
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[520px] text-sm">
-          <thead className="text-left text-xs text-texto-fraco"><tr><th className="px-3 py-2">Cliente</th><th className="px-3 py-2">WhatsApp</th><th className="px-3 py-2">Situação</th><th className="px-3 py-2">Quando</th></tr></thead>
+          <thead className="rotulo text-left"><tr><th className="px-3 py-2">Cliente</th><th className="px-3 py-2">WhatsApp</th><th className="px-3 py-2">Situação</th><th className="px-3 py-2">Quando</th></tr></thead>
           <tbody className="divide-y divide-borda">
             {((recentes ?? []) as { id: string; nome: string | null; telefone: string; status: string; enviado_em: string | null; erro: string | null }[]).map((e) => (
               <tr key={e.id}>
