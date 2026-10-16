@@ -107,12 +107,17 @@ export default async function GarcomPage() {
   return (
     <div className="min-h-screen bg-painel-fundo p-2 text-texto">
       <div className="flex items-center justify-between px-1 py-2">
-        <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="garcom" tamanho={19} /> Mesas</h1>
+        <h1 className="flex items-center gap-2 font-numero text-2xl font-bold tracking-apertada"><Icone nome="garcom" tamanho={19} /> Mesas</h1>
         {sessao.viaColab && sessao.token && (
           <Link href={`/eu/${sessao.token}`} className="text-xs text-texto-suave">{sessao.nome} · voltar pro meu app</Link>
         )}
       </div>
       <BuscaComanda mesas={nomes} />
+      {/* Mesmo código de cor do painel: laranja = ocupada, neutra = livre. */}
+      <div className="mb-2 flex gap-4 px-1 text-xs text-texto-suave">
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-[5px] bg-primaria" /> Ocupada</span>
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-[5px] bg-superficie-suave shadow-[inset_0_0_0_1px_var(--borda)]" /> Livre</span>
+      </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {nomes.map((nome) => {
           const comandas = porMesa.get(nome) ?? [];
@@ -121,15 +126,15 @@ export default async function GarcomPage() {
             <Link
               key={nome}
               href={`/garcom/mesa/${encodeURIComponent(nome)}`}
-              className="flex min-h-[84px] flex-col rounded-controle border border-borda bg-painel-cartao p-2"
+              className="cartao flex min-h-[84px] flex-col p-2"
             >
-              <span className={`rounded px-2 py-1 text-center text-sm font-bold ${ocupada ? "bg-red-400/90 text-red-950" : "bg-emerald-400/90 text-emerald-950"}`}>
+              <span className={`rounded-mesa px-2 py-1.5 text-center text-sm font-bold ${ocupada ? "bg-primaria text-marca-sobre-primaria shadow-brilho" : "bg-superficie-suave text-texto-suave"}`}>
                 {nome}
               </span>
               {ocupada && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {comandas.map((n) => (
-                    <span key={n} className="rounded bg-zinc-700 px-1.5 text-mini text-texto">{n}</span>
+                    <span key={n} className="pilula">#{n}</span>
                   ))}
                 </div>
               )}
@@ -145,7 +150,7 @@ export default async function GarcomPage() {
       ) : (
         <div className="space-y-2 pb-6">
           {historico.map((g) => (
-            <div key={g.key} className="rounded-controle border border-borda bg-painel-cartao p-2.5">
+            <div key={g.key} className="cartao p-3">
               <div className="mb-1 flex items-center justify-between gap-2 text-xs">
                 <span className="font-semibold text-texto">
                   {g.mesa}
@@ -165,7 +170,7 @@ export default async function GarcomPage() {
                 ))}
               </div>
               {g.total > 0 && (
-                <div className="mt-1 border-t border-borda pt-1 text-right text-xs font-semibold text-emerald-400">
+                <div className="mt-1 border-t border-borda pt-1 text-right font-numero text-sm font-bold text-texto">
                   {brl(g.total)}
                 </div>
               )}

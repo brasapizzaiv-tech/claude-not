@@ -9,7 +9,7 @@ export default function GarcomErro({ reset }: { error: Error; reset: () => void 
       <div className="flex justify-center"><Icone nome="alerta" tamanho={52} className="text-amber-500" /></div>
       <p className="text-lg font-bold">Deu um erro aqui</p>
       <p className="text-sm text-texto-suave">Pode ser a internet. Tente de novo; se continuar, avise o caixa.</p>
-      <button onClick={reset} className="rounded-cartao bg-emerald-600 px-6 py-3 font-semibold text-white">Tentar de novo</button>
+      <button onClick={reset} className="btn-principal">Tentar de novo</button>
       <a href="/garcom" className="text-sm text-blue-400">Voltar pro início</a>
     </div>
   );
