@@ -9,6 +9,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // No app (iPhone) a página vai até a borda: o espaço da barra do relógio e
+  // do traço de baixo é reservado no invólucro abaixo (env(safe-area-inset-*)).
+  viewportFit: "cover",
 };
 
 export default function EuLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +20,10 @@ export default function EuLayout({ children }: { children: React.ReactNode }) {
       <CoresDaEmpresa />
       <Dialogos />
       <SemZoom />
-      {children}
+      {/* Sem isto o topo da tela ficava por baixo do relógio e da bateria no app do iPhone. */}
+      <div style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        {children}
+      </div>
     </>
   );
 }

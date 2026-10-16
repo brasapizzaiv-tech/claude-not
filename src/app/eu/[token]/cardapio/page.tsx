@@ -48,9 +48,9 @@ export default async function CardapioColabPage({
   ]);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-superficie-suave p-4 pb-24">
+    <div className="mx-auto min-h-screen max-w-md bg-painel-fundo p-4 pb-24">
       <div className="flex items-center justify-between">
-        <Link href={`/eu/${token}`} className="text-sm text-texto-suave">← Voltar</Link>
+        <Link href={`/eu/${token}`} className="flex min-h-11 items-center text-sm font-semibold text-texto-marca">← Voltar</Link>
         <span className="text-xs text-texto-fraco">{colab.nome.split(" ")[0]}</span>
       </div>
       <CardapioApp

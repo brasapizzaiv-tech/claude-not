@@ -211,16 +211,16 @@ export function CardapioApp({
             </div>
           ))}
 
-          <div className="sticky bottom-3 space-y-2">
+          <div className="sticky bottom-0 -mx-4 space-y-2 bg-painel-fundo/95 px-4 pb-3 pt-2 backdrop-blur">
             <button type="button" onClick={() => salvarBuffet(false)} disabled={proc || !sujoBuffet} className="btn-principal h-14 w-full text-lg">
               {proc ? "Salvando…" : "Salvar"}
             </button>
             {sujoBuffet ? (
-              <button type="button" onClick={() => salvarBuffet(true)} disabled={proc} className="h-14 w-full rounded-cartao bg-texto text-lg font-bold text-fundo disabled:opacity-40">
+              <button type="button" onClick={() => salvarBuffet(true)} disabled={proc} className="btn-secundario h-14 w-full text-lg">
                 Salvar e publicar
               </button>
             ) : status === "alterado" || status === "rascunho" ? (
-              <button type="button" onClick={publicarSo} disabled={proc} className="h-14 w-full rounded-cartao bg-texto text-lg font-bold text-fundo disabled:opacity-40">
+              <button type="button" onClick={publicarSo} disabled={proc} className="btn-secundario h-14 w-full text-lg">
                 Publicar
               </button>
             ) : null}
@@ -247,8 +247,8 @@ export function CardapioApp({
               </div>
             </div>
           ))}
-          <div className="sticky bottom-3 space-y-2">
-            <button type="button" onClick={() => salvarSaladas([...selSal])} disabled={proc || !sujoSal} className="h-14 w-full rounded-cartao bg-texto text-lg font-bold text-fundo disabled:opacity-40">
+          <div className="sticky bottom-0 -mx-4 space-y-2 bg-painel-fundo/95 px-4 pb-3 pt-2 backdrop-blur">
+            <button type="button" onClick={() => salvarSaladas([...selSal])} disabled={proc || !sujoSal} className="btn-secundario h-14 w-full text-lg">
               {proc ? "Salvando…" : "Salvar saladas deste dia"}
             </button>
             {temExcecao && (

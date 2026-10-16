@@ -523,7 +523,8 @@ optgroup {
     transition: filter 0.15s;
   }
   .btn-principal:hover { filter: brightness(1.05); }
-  .btn-principal:disabled { opacity: 0.45; box-shadow: none; cursor: not-allowed; }
+  /* Desligado: cinza claro, não laranja apagado (no escuro virava marrom borrado). */
+  .btn-principal:disabled { background: var(--superficie-suave); color: var(--texto-fraco); box-shadow: none; filter: none; cursor: not-allowed; }
   /* Botão secundário: superfície com a sombra do cartão (no escuro, contorno). */
   .btn-secundario {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
