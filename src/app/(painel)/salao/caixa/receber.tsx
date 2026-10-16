@@ -552,7 +552,7 @@ export function ReceberComandas({
   return (
     <div>
       {/* Topo: comandas selecionadas + busca para adicionar mais + cliente */}
-      <div className="mb-3 rounded-cartao border border-borda p-3">
+      <div className="cartao mb-3 p-4">
         <div className="mb-1 flex items-center justify-between">
           <p className="text-xs font-semibold text-texto-fraco">Comandas</p>
           <div className="relative">
@@ -677,7 +677,7 @@ export function ReceberComandas({
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Coluna 1 — Consumo */}
-          <div className="flex min-h-[320px] flex-col rounded-cartao border border-borda p-3">
+          <div className="cartao flex min-h-[320px] flex-col p-4">
             <p className={titulo}>Consumo</p>
             <div className="mt-3 flex-1 space-y-1">
               {linhas.length === 0 ? (
@@ -750,7 +750,7 @@ export function ReceberComandas({
           </div>
 
           {/* Coluna 2 — Resumo de Pagamento */}
-          <div className="flex min-h-[320px] flex-col rounded-cartao border border-borda p-3">
+          <div className="cartao flex min-h-[320px] flex-col p-4">
             <p className={titulo}>Resumo de Pagamento</p>
             <div className="mt-3 flex-1 space-y-1">
               {!temAlgo ? (
@@ -844,10 +844,10 @@ export function ReceberComandas({
                 </div>
                 <button
                   onClick={() => setEtapa("pagamento")}
-                  className="mt-3 w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
+                  className="btn-principal mt-3 w-full text-base"
                 >
                   Receber {brl(subtotalBruto)} →
-                  <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-mini font-semibold">Enter</span>
+                  <span className="ml-2 rounded bg-marca-escuro/10 px-1.5 py-0.5 text-mini font-semibold">Enter</span>
                 </button>
               </>
             )}
@@ -877,7 +877,7 @@ export function ReceberComandas({
               </button>
             </div>
             <div className="p-4">
-            <div className="flex min-h-[320px] flex-col rounded-cartao border border-borda p-3">
+            <div className="cartao flex min-h-[320px] flex-col p-4">
               <p className={titulo}>Pagamento</p>
   
               {!temAlgo ? (
@@ -1047,7 +1047,7 @@ export function ReceberComandas({
               <button
                 onClick={() => emitirNota(docNota)}
                 disabled={notaProc || !docNota.trim()}
-                className="rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90 disabled:opacity-40"
+                className="btn-principal w-full text-base"
               >
                 <span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Sim, com CPF/CNPJ</span>
               </button>
@@ -1061,7 +1061,7 @@ export function ReceberComandas({
               <button
                 onClick={fecharNota}
                 disabled={notaProc}
-                className="rounded-cartao border border-borda-forte py-3 text-base font-semibold text-texto-suave disabled:opacity-40 dark:border-borda-forte"
+                className="btn-secundario w-full text-base"
               >
                 Não precisa
               </button>
@@ -1085,7 +1085,7 @@ export function ReceberComandas({
 
       {/* Após receber: recibo (sem valor fiscal) e NFC-e */}
       {recibo && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-cartao border border-borda p-3 text-sm">
+        <div className="cartao mt-3 flex flex-wrap items-center gap-2 p-3 text-sm">
           <span className="text-texto-suave">Recebido {brl(recibo.total)}{recibo.troco > 0 ? ` · troco ${brl(recibo.troco)}` : ""}</span>
           <button
             type="button"

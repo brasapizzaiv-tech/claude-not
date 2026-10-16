@@ -583,3 +583,9 @@ optgroup {
     --superficie-suave: #fbf2e8; --texto-suave: #6e635b;
   }
 }
+
+/* Cartão do painel da Etapa 4 (`rounded-cartao bg-painel-cartao`, ~250 lugares)
+   ganha a sombra quente do layout novo sem precisar mexer em cada tela. */
+.rounded-cartao.bg-painel-cartao {
+  box-shadow: var(--sombra-cartao);
+}

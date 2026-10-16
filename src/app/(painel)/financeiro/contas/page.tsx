@@ -83,7 +83,7 @@ export default async function ContasPagarPage({
           </a>
           <Link
             href="/financeiro"
-            className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
+            className="btn-secundario text-sm"
           >
             Lançamentos
           </Link>

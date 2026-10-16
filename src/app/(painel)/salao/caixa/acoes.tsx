@@ -23,7 +23,7 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
     <>
       <button
         onClick={() => setAberto(true)}
-        className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
+        className="btn-secundario text-sm"
       >
         <Icone nome="dinheiro" tamanho={15} className="mr-1.5" /> Movimentar caixa
       </button>
@@ -71,7 +71,7 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
                 />
               </div>
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setAberto(false)} className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+                <button type="button" onClick={() => setAberto(false)} className="btn-secundario text-sm">
                   Cancelar
                 </button>
                 <Enviar

@@ -52,7 +52,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               else if (r.adicionados === 0) aviso("Todas as datas do calendário já estão aqui.");
               else aviso(`${r.adicionados} data(s) trazida(s) — agora é só dizer o que a casa faz em cada uma.`);
             }}
-            className="min-h-11 rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
+            className="btn-secundario text-sm"
           >
             <Icone nome="agenda" tamanho={16} /> Trazer os feriados do calendário
           </BotaoAcao>

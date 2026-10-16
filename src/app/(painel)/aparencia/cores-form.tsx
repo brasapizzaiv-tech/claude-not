@@ -147,7 +147,7 @@ export function CoresForm({
           {mudou && (
             <button
               onClick={desfazer}
-              className="min-h-11 rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
+              className="btn-secundario text-sm"
             >
               Desfazer
             </button>

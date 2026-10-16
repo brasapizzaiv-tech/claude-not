@@ -53,19 +53,19 @@ export default async function CaixaPage({
         <p className="mt-1 text-texto-suave">Nenhum caixa aberto. Abra um para começar a receber.</p>
         {/* Histórico não depende de caixa aberto: consultar não é movimentar. */}
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link href="/salao/caixa/movimentos" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/movimentos" className="btn-secundario text-sm">
             <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
           </Link>
-          <Link href="/salao/caixa/tef" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/tef" className="btn-secundario text-sm">
             <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Cartões (TEF)
           </Link>
-          <Link href="/salao/caixa/pix" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/pix" className="btn-secundario text-sm">
             <Icone nome="rapido" tamanho={15} className="mr-1.5" /> Pix recebidos
           </Link>
-          <Link href="/salao/caixa/fiado" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/fiado" className="btn-secundario text-sm">
             <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
           </Link>
-          <Link href="/salao/caixa/vales" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/vales" className="btn-secundario text-sm">
             <Icone nome="presente" tamanho={15} className="mr-1.5" /> Vales-presente
           </Link>
         </div>
@@ -281,26 +281,23 @@ export default async function CaixaPage({
   const formasPgto = [...(await listarFormas("caixa")), ...FORMAS_FIXAS_VENDA];
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className="mx-auto max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
-            ← Salão
-          </Link>
-          <h1 className="mt-1 font-numero text-2xl font-semibold tracking-apertada text-texto">Frente de Caixa</h1>
-          <p className="mt-1 text-sm text-texto-suave">
-            {caixa.nome} · <span className="font-medium text-emerald-600">Aberto</span> às {abertoHora}
-          </p>
+          <p className="rotulo"><Link href="/salao" className="hover:text-texto">Salão</Link> · caixa {caixa.nome}</p>
+          <h1 className="mt-1 flex flex-wrap items-center gap-3 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">
+            Frente de caixa <span className="pilula pilula-ok">aberto às {abertoHora.replace(":", "h")}</span>
+          </h1>
         </div>
         <div className="flex flex-wrap items-start gap-2">
           <NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} />
-          <Link href="/salao/caixa/pix" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/pix" className="btn-secundario text-sm">
             <Icone nome="rapido" tamanho={15} className="mr-1.5" /> Pix recebidos
           </Link>
-          <Link href="/salao/caixa/fiado" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/fiado" className="btn-secundario text-sm">
             <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
           </Link>
-          <Link href="/salao/caixa/vales" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave">
+          <Link href="/salao/caixa/vales" className="btn-secundario text-sm">
             <Icone nome="presente" tamanho={15} className="mr-1.5" /> Vales-presente
           </Link>
           <CaixaAcoes caixaId={caixa.id} />
@@ -340,13 +337,13 @@ export default async function CaixaPage({
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href="/salao/caixa/movimentos"
-          className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
+          className="btn-secundario text-sm"
         >
           <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
         </Link>
         <Link
           href="/salao/caixa/tef"
-          className="flex min-h-11 items-center rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
+          className="btn-secundario text-sm"
         >
           <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Cartões (TEF)
         </Link>

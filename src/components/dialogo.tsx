@@ -154,7 +154,7 @@ export function Dialogos() {
           {pedido.tipo !== "avisar" && (
             <button
               onClick={() => fechar(pedido.tipo === "confirmar" ? false : null)}
-              className="min-h-11 rounded-controle border border-borda-forte px-4 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave"
+              className="btn-secundario text-sm"
             >
               Cancelar
             </button>
