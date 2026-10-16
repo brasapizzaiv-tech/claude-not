@@ -3,6 +3,7 @@ import { Icone } from "@/components/icone";
 import { avisar } from "@/components/dialogo";
 
 import { siteUrl } from "@/lib/site-url";
+import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
@@ -401,12 +402,13 @@ export function MontarPizza({
     return q ? saboresDoTam.filter((s) => s.nome.toLowerCase().includes(q)) : saboresDoTam;
   }, [saboresDoTam, busca]);
 
-  function toggle(id: string) {
-    setSel((s) => {
-      if (s.includes(id)) return s.filter((x) => x !== id);
-      if (s.length >= max) return s; // já no limite
-      return [...s, id];
-    });
+  // Tocar acrescenta uma parte; o sabor pode repetir (2/3 de um e 1/3 de
+  // outro). O "−" tira uma parte. Tamanho de 1 sabor: tocar troca.
+  function mais(id: string) {
+    setSel((s) => (max === 1 ? (s[0] === id ? [] : [id]) : s.length < max ? [...s, id] : s));
+  }
+  function menos(id: string) {
+    setSel((s) => { const i = s.lastIndexOf(id); return i < 0 ? s : [...s.slice(0, i), ...s.slice(i + 1)]; });
   }
 
   const bordaPreco = bordaId ? bordas.find((b) => b.id === bordaId)?.precos[tamId] ?? 0 : 0;
@@ -475,29 +477,45 @@ export function MontarPizza({
               className="w-40 rounded-controle border border-borda-forte bg-white px-2 py-1 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
             />
           </div>
+          {sel.length > 0 && (
+            <p className="mb-1.5 text-sm font-semibold text-texto">
+              {nomesDosSabores(sel, (id) => sabores.find((s) => s.id === id)?.nome ?? "?")}
+            </p>
+          )}
           <div className="max-h-60 space-y-1 overflow-y-auto rounded-controle border border-borda p-1">
             {filtrados.map((s) => {
-              const on = sel.includes(s.id);
-              const bloqueado = !on && sel.length >= max;
+              const n = sel.filter((x) => x === s.id).length;
+              const on = n > 0;
+              const bloqueado = max > 1 && sel.length >= max;
               return (
-                <button
-                  key={s.id}
-                  onClick={() => toggle(s.id)}
-                  disabled={bloqueado}
-                  className={`flex w-full items-center justify-between rounded-controle px-2 py-1.5 text-left text-sm ${
-                    on
-                      ? "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
-                      : bloqueado
-                        ? "text-zinc-300 dark:text-zinc-600"
-                        : "text-texto-suave hover:bg-superficie-suave  "
-                  }`}
-                >
-                  <span>
-                    {on ? "✓ " : ""}
-                    {s.nome}
-                  </span>
-                  <span className="text-xs text-texto-fraco">{brl(s.precos[tamId] ?? 0)}</span>
-                </button>
+                <div key={s.id} className="flex items-center gap-1">
+                  <button
+                    onClick={() => mais(s.id)}
+                    disabled={bloqueado && !on}
+                    className={`flex min-w-0 flex-1 items-center justify-between rounded-controle px-2 py-1.5 text-left text-sm ${
+                      on
+                        ? "bg-destaque font-semibold text-texto-marca-pilula"
+                        : bloqueado
+                          ? "text-texto-fraco opacity-60"
+                          : "text-texto-suave hover:bg-superficie-suave"
+                    }`}
+                  >
+                    <span>
+                      {on ? (n > 1 ? `${n}× ` : "✓ ") : ""}
+                      {s.nome}
+                    </span>
+                    <span className="text-xs text-texto-fraco">{brl(s.precos[tamId] ?? 0)}</span>
+                  </button>
+                  {on && max > 1 && (
+                    <button
+                      onClick={() => menos(s.id)}
+                      aria-label={`${s.nome}: tirar uma parte`}
+                      className="flex h-8 w-9 shrink-0 items-center justify-center rounded-controle text-base font-bold text-texto-suave hover:bg-superficie-suave"
+                    >
+                      −
+                    </button>
+                  )}
+                </div>
               );
             })}
             {filtrados.length === 0 && (

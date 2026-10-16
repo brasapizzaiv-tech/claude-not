@@ -13,6 +13,7 @@ import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 import { fecharTefNoBanco } from "@/lib/tef-venda-server";
 import { naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
+import { nomesDosSabores } from "@/lib/pizza-sabores";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -773,7 +774,7 @@ export async function adicionarPizzaComanda(
   }
 
   const preco = Math.round((media + bordaPreco) * 100) / 100;
-  const nomes = usados.map((id) => nomeDe.get(id) || "?").join(" / ");
+  const nomes = nomesDosSabores(usados, (id) => nomeDe.get(id) || "?");
   const descricao =
     `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : "");
 

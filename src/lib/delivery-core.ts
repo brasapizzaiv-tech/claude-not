@@ -4,6 +4,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { geocodificar, distanciaKm, temChaveMapa } from "@/lib/geo";
 import { areaDoPonto, aplicarPromoTele, promosPossiveisHoje, type AreaEntrega, type PromoTele } from "@/lib/delivery-areas";
+import { nomesDosSabores } from "@/lib/pizza-sabores";
 
 // Aceita tanto o client do servidor (cookies/RLS) quanto o admin client.
 // Tipagem estrutural mínima pra os dois passarem.
@@ -72,7 +73,7 @@ async function resolverPizza(db: Db, tamanhoId: string, saborIds: string[], bord
     bordaPreco = Number(bp?.preco ?? 0);
   }
   const preco = r2(media + bordaPreco);
-  const nomes = usados.map((id) => nomeDe.get(id) || "?").join(" / ");
+  const nomes = nomesDosSabores(usados, (id) => nomeDe.get(id) || "?");
   return { descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : ""), qtd: 1, preco, itemId: null };
 }
 

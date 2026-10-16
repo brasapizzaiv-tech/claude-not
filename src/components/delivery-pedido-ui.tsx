@@ -6,6 +6,7 @@
 // (tamanho, meio a meio, borda) e modal de complementos/combos.
 import { useMemo, useState } from "react";
 import type { LinhaPedido } from "@/lib/delivery-core";
+import { nomesDosSabores } from "@/lib/pizza-sabores";
 
 export type Item = { id: string; nome: string; categoria: string; preco: number; preco_antigo?: number | null; foto_url?: string | null; descricao?: string | null };
 export type Tam = { id: string; nome: string; max_sabores: number; fatias?: number | null };
@@ -47,12 +48,17 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
   const media = usados.length ? usados.reduce((s, id) => s + precoSabor(id), 0) / usados.length : 0;
   const preco = Math.round((media + (bordaId ? precoBorda(bordaId) : 0)) * 100) / 100;
 
-  function toggleSabor(id: string) {
-    setSabIds((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length < max ? [...c, id] : c));
+  // Tocar acrescenta uma parte do sabor; o mesmo sabor pode repetir (2/3 de um
+  // e 1/3 de outro). O "−" tira uma parte. Tamanho de 1 sabor: tocar troca.
+  function maisSabor(id: string) {
+    setSabIds((c) => (max === 1 ? (c[0] === id ? [] : [id]) : c.length < max ? [...c, id] : c));
+  }
+  function menosSabor(id: string) {
+    setSabIds((c) => { const i = c.lastIndexOf(id); return i < 0 ? c : [...c.slice(0, i), ...c.slice(i + 1)]; });
   }
   function adicionar() {
     if (!tam || usados.length === 0) return;
-    const nomes = usados.map((id) => pizza.sabores.find((s) => s.id === id)?.nome ?? "?").join(" / ");
+    const nomes = nomesDosSabores(usados, (id) => pizza.sabores.find((s) => s.id === id)?.nome ?? "?");
     const bordaNome = bordaId ? pizza.bordas.find((b) => b.id === bordaId)?.nome : "";
     const o = obs.trim();
     onAdd({
@@ -74,13 +80,17 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
         </div>
       </div>
       <div className="mb-3">
-        <div className="mb-1 text-xs font-semibold text-zinc-500">Sabores ({usados.length}/{max})</div>
+        <div className="mb-1 text-xs font-semibold text-zinc-500">Sabores ({usados.length}/{max}){max > 1 && usados.length === 0 ? " · pode repetir o sabor" : ""}</div>
+        {/* Como vai sair na comanda (mostra a fração quando repete). */}
+        {usados.length > 0 && <div className="mb-1.5 text-sm font-semibold">{nomesDosSabores(usados, (id) => pizza.sabores.find((s) => s.id === id)?.nome ?? "?")}</div>}
         <div className="max-h-64 space-y-1.5 overflow-y-auto">
           {pizza.sabores.map((s) => {
-            const on = sabIds.includes(s.id);
+            const n = sabIds.filter((x) => x === s.id).length;
+            const on = n > 0;
             const p = precoSabor(s.id);
             return (
-              <button key={s.id} onClick={() => toggleSabor(s.id)} className={`flex w-full items-center gap-2.5 rounded-xl border p-2 text-left ${on ? "border-emerald-500 bg-emerald-500/10" : "border-zinc-200 dark:border-zinc-800"}`}>
+              <div key={s.id} className="flex items-stretch gap-1.5">
+              <button onClick={() => maisSabor(s.id)} aria-label={on && max > 1 ? `${s.nome}: mais uma parte` : undefined} className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border p-2 text-left ${on ? "border-emerald-500 bg-emerald-500/10" : "border-zinc-200 dark:border-zinc-800"}`}>
                 {s.foto_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={s.foto_url} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
@@ -92,8 +102,13 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
                   </span>
                   {s.descricao && <span className="block text-xs leading-tight text-zinc-500">{s.descricao}</span>}
                 </span>
+                {n > 1 && <span className="shrink-0 rounded-full bg-emerald-700 px-2 py-0.5 text-xs font-bold text-white">{n}×</span>}
                 <span className="shrink-0 text-xs text-zinc-400">{p ? brl(p) : ""}</span>
               </button>
+              {on && max > 1 && (
+                <button onClick={() => menosSabor(s.id)} aria-label={`${s.nome}: tirar uma parte`} className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-lg font-bold text-zinc-500 dark:border-zinc-800">−</button>
+              )}
+              </div>
             );
           })}
         </div>
