@@ -17,7 +17,7 @@ env:
   # O identificador do app é PRA SEMPRE depois de publicado na loja.
   APP_ID: br.com.motelli.equipe
   APP_NOME: Motelli Equipe
-  APP_VERSION_NAME: "1.0.0"
+  APP_VERSION_NAME: "1.0.1"
 
 jobs:
   apk:

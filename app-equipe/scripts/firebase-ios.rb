@@ -23,3 +23,14 @@ end
 alvo.build_configurations.each { |c| c.build_settings["CODE_SIGN_ENTITLEMENTS"] = "App/App.entitlements" }
 puts "ok App.entitlements"
 projeto.save
+
+# Gesto de voltar do iPhone (deslizar da borda esquerda): a tela principal é a
+# MainViewController.swift, que precisa estar entre os arquivos compilados.
+arquivo = "MainViewController.swift"
+if File.exist?(File.join(__dir__, "..", "ios", "App", "App", arquivo)) &&
+   grupo.files.none? { |f| f.path == arquivo }
+  ref = grupo.new_reference(arquivo)
+  alvo.source_build_phase.add_file_reference(ref)
+  projeto.save
+  puts "ok #{arquivo} no projeto"
+end
