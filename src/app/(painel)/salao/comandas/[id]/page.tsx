@@ -161,116 +161,93 @@ export default async function ComandaPage({
   const total = subtotal + servico;
 
   return (
-    <div className="mx-auto max-w-xl p-6">
-      <Link href="/salao" className="text-sm text-texto-suave hover:text-orange-600">
-        ← Salão
-      </Link>
+    <div className="mx-auto max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+      {/* Topo: rótulo + número grande, como as outras telas do layout novo. */}
+      <p className="rotulo">
+        <Link href="/salao" className="hover:text-texto">Salão</Link> · comanda{comanda.mesa ? ` · ${comanda.mesa}` : ""}
+      </p>
+      <h1 className="mt-1 flex flex-wrap items-center gap-3 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">
+        #{comanda.numero}
+        {fechada ? <span className="pilula pilula-neutra">fechada</span> : comanda.conta_pedida_em ? <span className="pilula pilula-urgente">pediu a conta</span> : <span className="pilula">aberta</span>}
+        {comanda.livre && <span className="pilula pilula-grafite">buffet livre</span>}
+      </h1>
 
-      {/* Cabeçalho simples da comanda */}
-      <div className="mt-3 flex items-center justify-between rounded-cartao border border-borda bg-painel-cartao p-4">
-        <div>
-          <p className="text-xs text-texto-fraco">
-            Comanda {comanda.mesa ? `· ${comanda.mesa}` : ""} {fechada ? "· fechada" : ""}
-          </p>
-          <p className="text-3xl font-black text-texto">#{comanda.numero}</p>
-        </div>
-        {temBuffet && (
-          <div className="text-right">
-            <p className="text-mini text-texto-fraco">Buffet</p>
-            <p className="text-lg font-bold text-texto">
-              {moeda(Number(comanda.valor_buffet))}
-            </p>
-            {comanda.livre && <p className="text-mini font-semibold text-orange-600">BUFFET LIVRE</p>}
-          </div>
-        )}
-      </div>
-
-      {/* Itens */}
-      <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-borda">
-              {temBuffet && (
-                <tr className="">
-                  <td className="px-4 py-2 font-medium text-texto">
-                    Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}
-                  </td>
-                  <td className="px-4 py-2 text-right text-texto-suave">
-                    {moeda(Number(comanda.valor_buffet))}
-                  </td>
-                  <td className="px-4 py-2" />
-                </tr>
-              )}
-              {lista.map((i) => (
-                <tr key={i.id} className="">
-                  <td className="whitespace-pre-line px-4 py-2 text-texto">
-                    {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}
-                    {i.descricao}
-                  </td>
-                  <td className="px-4 py-2 text-right align-top text-texto-suave">
-                    {moeda(Number(i.qtd) * Number(i.preco_unit))}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    {!fechada && (
+      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          {/* Itens */}
+          <section className="cartao p-2" aria-label="Itens da comanda">
+            <p className="rotulo px-3 pb-1 pt-2">Itens</p>
+            {!temBuffet && lista.length === 0 ? (
+              <p className="px-3 pb-4 pt-2 text-sm text-texto-suave">Nenhum item ainda. Lance abaixo.</p>
+            ) : (
+              <ul className="flex flex-col">
+                {temBuffet && (
+                  <li className="flex items-center gap-3 rounded-controle px-3 py-2.5">
+                    <span className="flex-1 text-sm font-medium text-texto">Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}</span>
+                    <span className="font-numero text-[15px] font-bold text-texto">{moeda(Number(comanda.valor_buffet))}</span>
+                    <span className="w-11" />
+                  </li>
+                )}
+                {lista.map((i) => (
+                  <li key={i.id} className="flex items-center gap-3 rounded-controle px-3 py-1.5 hover:bg-painel-fundo">
+                    <span className="min-w-0 flex-1 whitespace-pre-line text-sm text-texto">
+                      {Number(i.qtd) > 1 ? <span className="font-semibold">{i.qtd}× </span> : null}
+                      {i.descricao}
+                    </span>
+                    <span className="font-numero text-[15px] font-bold text-texto">{moeda(Number(i.qtd) * Number(i.preco_unit))}</span>
+                    {!fechada ? (
                       <form action={removerItemComanda} className="inline">
                         <input type="hidden" name="id" value={i.id} />
                         <input type="hidden" name="comanda_id" value={comanda.id} />
-                        <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">
+                        <Enviar className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-fraco hover:bg-urgente-fundo hover:text-urgente-texto" aria-label={`Tirar ${i.descricao}`}>
                           ×
                         </Enviar>
                       </form>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    ) : <span className="w-11" />}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-      {!fechada && (
-        <div className="mt-3">
-          <LancarItens
-            comandaId={comanda.id}
-            itens={cardapioDisp}
-            categoriasOrdenadas={categoriasOrdenadas}
-            complementos={complementos}
-            pizzaTamanhos={pizzaTamanhos}
-            pizzaSabores={pizzaSabores}
-            pizzaBordas={pizzaBordas}
-          />
+          {!fechada && (
+            <LancarItens
+              comandaId={comanda.id}
+              itens={cardapioDisp}
+              categoriasOrdenadas={categoriasOrdenadas}
+              complementos={complementos}
+              pizzaTamanhos={pizzaTamanhos}
+              pizzaSabores={pizzaSabores}
+              pizzaBordas={pizzaBordas}
+            />
+          )}
         </div>
-      )}
 
-      {/* Totais */}
-      <div className="mt-6 space-y-1 rounded-cartao border border-borda p-4 text-sm">
-        <div className="flex justify-between text-texto-suave">
-          <span>Subtotal</span>
-          <span>{moeda(subtotal)}</span>
-        </div>
-        {servico > 0 && (
-          <div className="flex justify-between text-texto-suave">
-            <span>Serviço ({Math.round(perc)}%)</span>
-            <span>{moeda(servico)}</span>
+        {/* Cartão de foco: o total e o que fazer com ele. */}
+        <aside className="flex flex-col gap-3">
+          <div className="cartao-foco flex flex-col gap-2 p-5" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
+            <span className="rotulo !text-painel-foco-rotulo">Total da comanda</span>
+            <p className="numero-grande text-[36px]">{moeda(total)}</p>
+            <div className="flex flex-col gap-1 border-t border-painel-foco-linha pt-2 text-sm">
+              <div className="flex justify-between text-painel-foco-suave"><span>Subtotal</span><span className="font-numero">{moeda(subtotal)}</span></div>
+              {servico > 0 && (
+                <div className="flex justify-between text-painel-foco-suave"><span>Serviço ({Math.round(perc)}%)</span><span className="font-numero">{moeda(servico)}</span></div>
+              )}
+            </div>
+            {!fechada && (
+              <Link href={`/salao/caixa?abrir=${comanda.id}`} className="btn-principal mt-2 w-full text-sm">Receber no caixa</Link>
+            )}
+            <p className="text-center text-xs text-painel-foco-suave">O pagamento é feito no caixa. Aqui você adiciona ou retira itens.</p>
           </div>
-        )}
-        <div className="flex justify-between border-t border-borda pt-1 text-lg font-bold text-texto">
-          <span>Total</span>
-          <span>{moeda(total)}</span>
-        </div>
+          {!fechada && <AcoesComanda
+              comandaId={comanda.id}
+              livre={!!comanda.livre}
+              temBuffet={temBuffet}
+              contaPedida={!!comanda.conta_pedida_em}
+              contaPedidaPor={comanda.conta_pedida_por as string | null}
+            />}
+        </aside>
       </div>
-
-      <p className="mt-3 text-center text-xs text-texto-fraco">
-        O pagamento é feito no caixa. Aqui você só adiciona ou retira itens.
-      </p>
-
-      {!fechada && <AcoesComanda
-          comandaId={comanda.id}
-          livre={!!comanda.livre}
-          temBuffet={temBuffet}
-          contaPedida={!!comanda.conta_pedida_em}
-          contaPedidaPor={comanda.conta_pedida_por as string | null}
-        />}
     </div>
   );
 }

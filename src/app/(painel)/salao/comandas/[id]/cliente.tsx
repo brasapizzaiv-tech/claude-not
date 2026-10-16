@@ -102,7 +102,7 @@ export function LancarItens({
   const mostrarPizza = temPizza && !q && aba === PIZZAS;
 
   return (
-    <div className="rounded-cartao border border-borda p-3">
+    <div className="cartao p-4">
       {/* Busca */}
       <input
         value={busca}

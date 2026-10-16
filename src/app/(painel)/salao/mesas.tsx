@@ -83,8 +83,8 @@ export function MesasGrid({
         <div className="mb-4">
           {/* Cartão de foco: a ação principal desta tela. Chama atenção
               invertendo o fundo, não colorindo. */}
-          <div className="flex items-center gap-2 rounded-cartao bg-painel-foco-fundo px-4 py-3 text-painel-foco-texto">
-            <Icone nome="cartao" tamanho={22} />
+          <div className="cartao-foco flex items-center gap-3 px-5 py-4" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
+            <Icone nome="cartao" tamanho={22} className="shrink-0 text-painel-foco-rotulo" />
             <input
               ref={pgtoRef}
               value={pgto}
@@ -97,11 +97,11 @@ export function MesasGrid({
               }}
               autoFocus
               placeholder="Pagamento rápido — digite o nº da comanda ou leia o QR e tecle Enter"
-              className="min-w-0 flex-1 bg-transparent text-lg font-medium placeholder:opacity-60"
+              className="min-w-0 flex-1 bg-transparent text-lg font-medium placeholder:text-painel-foco-suave"
             />
             <button
               onClick={irPagamento}
-              className="min-h-11 shrink-0 rounded-controle bg-painel-foco-texto px-5 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90"
+              className="btn-principal shrink-0 text-sm"
             >
               Ir ao caixa
             </button>
@@ -111,27 +111,33 @@ export function MesasGrid({
       )}
 
       {/* Filtros */}
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        {([["todas", "Todas"], ["livres", "Só livres"], ["ocupadas", "Só ocupadas"]] as const).map(([v, rot]) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setSituacao(v)}
-            className={`min-h-11 rounded-controle px-4 text-sm font-medium transition ${
-              situacao === v
-                ? "bg-texto text-fundo"
-                : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"
-            }`}
-          >
-            {rot}
-          </button>
-        ))}
-        <input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por mesa..."
-          className="min-h-11 min-w-56 flex-1 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
-        />
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        {([["todas", "Todas"], ["ocupadas", "Ocupadas"], ["livres", "Livres"]] as const).map(([v, rot]) => {
+          const ativo = situacao === v;
+          const n = v === "todas" ? mesas.length : mesas.filter((m) => (m.comandas.length > 0) === (v === "ocupadas")).length;
+          return (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setSituacao(v)}
+              aria-pressed={ativo}
+              className={`flex min-h-11 items-center gap-2 rounded-full pl-4 pr-2 text-[13.5px] ${ativo ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}
+            >
+              {rot}
+              <span className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold ${ativo ? "bg-primaria text-marca-sobre-primaria" : "bg-superficie-suave text-texto-suave"}`}>{n}</span>
+            </button>
+          );
+        })}
+        <label className="ml-auto flex h-[46px] w-full max-w-[360px] items-center gap-2.5 rounded-controle bg-painel-cartao px-4 shadow-controle">
+          <Icone nome="buscar" tamanho={18} className="shrink-0 text-texto-fraco" />
+          <span className="sr-only">Buscar por mesa</span>
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por mesa…"
+            className="h-full min-w-0 flex-1 bg-transparent text-sm text-texto placeholder:text-texto-fraco"
+          />
+        </label>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -156,11 +162,26 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
 
   return (
     <div
-      className={`flex flex-col rounded-cartao bg-painel-cartao p-3 ${
+      className={`cartao flex flex-col p-3.5 ${
         pediuConta ? "ring-2 ring-primaria" : ""
       }`}
     >
-      <div className="mb-2 flex items-center gap-1">
+      <div className="mb-2 flex items-center gap-2">
+        {/* Quadradinho com o número: cheio = ocupada, contorno = conta pedida, neutro = livre. */}
+        {mesa.tipo === "mesa" && (
+          <span
+            aria-hidden
+            className={`flex h-[30px] min-w-[30px] items-center justify-center rounded-mesa px-1 font-numero text-[13px] font-bold ${
+              pediuConta
+                ? "bg-painel-cartao text-texto shadow-[inset_0_0_0_2px_var(--marca-primaria)]"
+                : ocupada
+                  ? "bg-primaria text-marca-sobre-primaria shadow-brilho"
+                  : "bg-superficie-suave text-texto-fraco"
+            }`}
+          >
+            {mesa.nome.replace(/\D/g, "") || "·"}
+          </span>
+        )}
         {ocupada && mesa.tipo !== "balanca" ? (
           <Link
             href={`/salao/mesa/${encodeURIComponent(mesa.nome)}`}
@@ -182,9 +203,7 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
       </div>
 
       {pediuConta && (
-        <p className="mb-1.5 text-mini font-semibold text-primaria">
-          pediu a conta{quemMarcou ? ` · ${quemMarcou}` : ""}
-        </p>
+        <p className="mb-1.5"><span className="pilula">pediu a conta{quemMarcou ? ` · ${quemMarcou}` : ""}</span></p>
       )}
 
       <div className="mb-2 min-h-[2.5rem] space-y-1">
@@ -195,7 +214,7 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
             <Link
               key={c.id}
               href={`${base}/${c.id}`}
-              className="flex min-h-11 items-center justify-between rounded-controle bg-superficie-suave px-2 text-xs transition hover:bg-borda"
+              className="flex min-h-11 items-center justify-between rounded-mesa bg-painel-fundo px-2.5 text-xs transition hover:bg-destaque"
             >
               <span className="font-medium text-texto">#{c.numero}</span>
               <span className="font-numero tracking-apertada text-texto-suave">{brl(c.total)}</span>
@@ -207,7 +226,7 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
       {mesa.tipo === "balanca" ? (
         <Link
           href="/salao/balanca"
-          className="mt-auto flex min-h-11 items-center justify-center rounded-controle bg-superficie-suave px-2 text-xs font-semibold text-texto transition hover:bg-borda"
+          className="mt-auto flex min-h-11 items-center justify-center rounded-controle bg-superficie-suave px-2 text-xs font-semibold text-texto transition hover:bg-destaque"
         >
           <Icone nome="balanca" tamanho={15} className="mr-1.5" /> Pesar
         </Link>
@@ -215,7 +234,7 @@ function MesaCard({ mesa, base, destino }: { mesa: Mesa; base: string; destino: 
         <form action={criarComandaMesa} className="mt-auto">
           <input type="hidden" name="mesa" value={mesa.nome} />
           <input type="hidden" name="destino" value={destino} />
-          <Enviar className="min-h-11 w-full rounded-controle bg-superficie-suave px-2 text-xs font-semibold text-texto transition hover:bg-borda">
+          <Enviar className="min-h-11 w-full rounded-controle bg-superficie-suave px-2 text-xs font-semibold text-texto transition hover:bg-destaque">
             + Comanda
           </Enviar>
         </form>

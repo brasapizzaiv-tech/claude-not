@@ -79,9 +79,16 @@ export default async function SalaoPage() {
     }
   }
 
+  const nOcupadas = mesas.filter((m) => m.comandas.length > 0).length;
+  const nConta = mesas.filter((m) => m.comandas.some((c) => c.contaPedida)).length;
   return (
-    <div className="mx-auto max-w-[1500px] p-5">
-      <h1 className="mb-4 font-numero text-2xl font-semibold tracking-apertada text-texto">Salão</h1>
+    <div className="mx-auto max-w-[1500px] px-4 py-5 md:px-[30px] md:py-[26px]">
+      <p className="rotulo">Operação</p>
+      <h1 className="mb-4 mt-1 flex flex-wrap items-center gap-3 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">
+        Salão
+        <span className="pilula">{nOcupadas} {nOcupadas === 1 ? "ocupada" : "ocupadas"}</span>
+        {nConta > 0 && <span className="pilula pilula-urgente">{nConta} pediu a conta</span>}
+      </h1>
       <MesasGrid mesas={mesas} />
     </div>
   );

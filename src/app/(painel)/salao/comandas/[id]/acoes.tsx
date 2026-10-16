@@ -54,7 +54,7 @@ export function AcoesComanda({
   };
 
   return (
-    <div className="nao-imprimir mt-4 flex flex-wrap gap-2">
+    <div className="nao-imprimir flex flex-wrap gap-2">
       <button
         onClick={conta}
         disabled={p}
