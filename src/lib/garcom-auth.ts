@@ -46,6 +46,13 @@ export async function sessaoGarcom(): Promise<SessaoGarcom | null> {
     const { data: prof } = await supabase.from("profiles").select("papel, permissoes, nome").eq("id", user.id).maybeSingle();
     const admin = prof?.papel === "dono";
     const permissoes = (prof?.permissoes as string[] | null) ?? [];
+    // Celular logado no sistema com um usuário SEM garçom (ex.: "Forno") e a
+    // pessoa entrou pelo "Modo garçom" do app dela: vale o cookie do app.
+    // Antes o login de outro usuário ganhava e mandava pra tela inicial.
+    if (!podeAcessar("/garcom", admin, permissoes)) {
+      const colab = await colaboradorGarcom();
+      if (colab) return { db: createAdminClient(), uid: null, colabId: colab.id, nome: colab.nome, token: colab.token, viaColab: true, podeGarcom: true };
+    }
     return {
       db: supabase as unknown as ReturnType<typeof createAdminClient>,
       uid: user.id,

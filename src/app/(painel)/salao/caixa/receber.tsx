@@ -49,6 +49,7 @@ type Linha = {
   nome: string;
   qtd: number;
   valor: number; // restante a pagar (já com serviço)
+  valorSem: number; // o mesmo restante SEM o serviço
 };
 
 export type ItemMenu = { id: string; nome: string; preco: number };
@@ -172,7 +173,11 @@ export function ReceberComandas({
     pagamentos: { forma: string; valor: number }[];
     troco: number;
     quando: string;
+    servico: number; // 10% cobrado neste pagamento
+    servicoTirado: number; // 10% que o cliente não quis pagar
   } | null>(null);
+  // Cobrar os 10% NESTE pagamento (numa conta dividida um paga e o outro não).
+  const [cobrarServico, setCobrarServico] = useState(true);
 
   // Comandas escolhidas no topo.
   const selComandas = comandas.filter((c) => sel.has(c.id));
@@ -214,6 +219,7 @@ export function ReceberComandas({
           nome: "Buffet",
           qtd: 1,
           valor: buffetRem,
+          valorSem: c.buffetValorPago > 0 ? Math.round((buffetRem / fator) * 100) / 100 : Math.round(c.buffet * 100) / 100,
         });
       }
       for (const i of c.itens) {
@@ -229,6 +235,7 @@ export function ReceberComandas({
             nome: i.nome,
             qtd: i.qtd,
             valor: rem,
+            valorSem: i.valorPago > 0 ? Math.round((rem / fator) * 100) / 100 : Math.round(i.qtd * i.preco * 100) / 100,
           });
         }
       }
@@ -237,9 +244,19 @@ export function ReceberComandas({
   }, [selComandas, fator, excluidos]);
 
   const linhasCarrinho = linhas.filter((l) => carrinho.has(l.key));
-  const extraValor = Math.round(extras.reduce((s, e) => s + e.preco * e.qtd * fator, 0) * 100) / 100;
-  const subtotalBruto =
-    Math.round((linhasCarrinho.reduce((s, l) => s + l.valor, 0) + extraValor) * 100) / 100;
+  // Itens sem os 10% e com os 10%: a diferença é o serviço, que aparece
+  // separado (o cliente às vezes quer saber só o valor dos 10%) e pode ficar
+  // de fora deste pagamento.
+  const extraSem = Math.round(extras.reduce((s, e) => s + e.preco * e.qtd, 0) * 100) / 100;
+  const extraCom = Math.round(extras.reduce((s, e) => s + e.preco * e.qtd * fator, 0) * 100) / 100;
+  const baseCarrinho = Math.round((linhasCarrinho.reduce((s, l) => s + l.valorSem, 0) + extraSem) * 100) / 100;
+  const comServCarrinho = Math.round((linhasCarrinho.reduce((s, l) => s + l.valor, 0) + extraCom) * 100) / 100;
+  const servicoCarrinho = Math.max(0, Math.round((comServCarrinho - baseCarrinho) * 100) / 100);
+  const extraValor = cobrarServico ? extraCom : extraSem;
+  const subtotalBruto = cobrarServico ? comServCarrinho : baseCarrinho;
+  // Consumo (o que falta nas comandas escolhidas), separado do serviço.
+  const faltaSem = Math.round(linhas.reduce((s, l) => s + l.valorSem, 0) * 100) / 100;
+  const faltaCom = Math.round(linhas.reduce((s, l) => s + l.valor, 0) * 100) / 100;
   const temAlgo = linhasCarrinho.length > 0 || extras.length > 0;
   // Desconto em % vira R$ sobre o subtotal (ex.: 5% no dinheiro).
   const desc = descontoPct ? Math.round(subtotalBruto * num(desconto)) / 100 : num(desconto);
@@ -412,7 +429,7 @@ export function ReceberComandas({
     const totPorCom = new Map<string, { numero: number; total: number }>();
     for (const l of linhasCarrinho) {
       const t = totPorCom.get(l.comandaId) ?? { numero: l.numero, total: 0 };
-      t.total = Math.round((t.total + l.valor) * 100) / 100;
+      t.total = Math.round((t.total + (cobrarServico ? l.valor : l.valorSem)) * 100) / 100;
       totPorCom.set(l.comandaId, t);
     }
     if (extraValor > 0 && comandaExtra) {
@@ -426,7 +443,7 @@ export function ReceberComandas({
     start(async () => {
       let r: Awaited<ReturnType<typeof pagarSelecao>>;
       try {
-        r = await pagarSelecao(payload, pagamentos, extrasPayload, clienteSel?.id ?? null);
+        r = await pagarSelecao(payload, pagamentos, extrasPayload, clienteSel?.id ?? null, cobrarServico);
       } catch {
         confirmandoRef.current = false;
         const presos = await desfazerTefs("sem conexão ao gravar a venda");
@@ -461,7 +478,10 @@ export function ReceberComandas({
           pagamentos,
           troco: troco > 0.005 ? troco : 0,
           quando: new Date().toLocaleString("pt-BR"),
+          servico: cobrarServico ? servicoCarrinho : 0,
+          servicoTirado: cobrarServico ? 0 : servicoCarrinho,
         });
+        setCobrarServico(true);
         const pagasAgora = [...totPorCom.entries()].map(([id, t]) => ({ id, numero: t.numero }));
         setPagas(pagasAgora);
         // Pix/cartão com o interruptor ligado → nota sai sozinha.
@@ -698,7 +718,7 @@ export function ReceberComandas({
                         <span className="ml-1 text-mini text-texto-fraco">#{l.numero}</span>
                       </span>
                       <span className={`${noCarrinho ? "line-through" : ""} text-texto-suave`}>
-                        {brl(l.valor)}
+                        {brl(l.valorSem)}
                       </span>
                       <button
                         onClick={() => mover(l.key)}
@@ -734,11 +754,21 @@ export function ReceberComandas({
               )}
             </div>
             <div className="mt-3 border-t border-borda pt-3">
+              {servPercent > 0 && faltaCom - faltaSem > 0.005 && (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-texto-suave">Consumo</span>
+                    <span className="text-texto">{brl(faltaSem)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-texto-suave">Serviço ({servPercent}%)</span>
+                    <span className="text-texto">{brl(Math.round((faltaCom - faltaSem) * 100) / 100)}</span>
+                  </div>
+                </>
+              )}
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-texto-suave">Subtotal (falta)</span>
-                <span className="font-bold text-texto">
-                  {brl(Math.round(linhas.reduce((s, l) => s + l.valor, 0) * 100) / 100)}
-                </span>
+                <span className="text-texto-suave">Falta (com serviço)</span>
+                <span className="font-bold text-texto">{brl(faltaCom)}</span>
               </div>
               <button
                 onClick={pagarTudo}
@@ -766,7 +796,7 @@ export function ReceberComandas({
                         {l.nome}
                         <span className="ml-1 text-mini text-texto-fraco">#{l.numero}</span>
                       </span>
-                      <span className="text-texto-suave">{brl(l.valor)}</span>
+                      <span className="text-texto-suave">{brl(l.valorSem)}</span>
                       <button
                         onClick={() => tirar(l.key)}
                         title="Remover"
@@ -785,7 +815,7 @@ export function ReceberComandas({
                           avulso
                         </span>
                       </span>
-                      <span className="text-texto-suave">{brl(e.preco * e.qtd * fator)}</span>
+                      <span className="text-texto-suave">{brl(e.preco * e.qtd)}</span>
                       <button
                         onClick={() => tirarExtra(e.uid)}
                         title="Remover"
@@ -836,6 +866,29 @@ export function ReceberComandas({
 
             {temAlgo && (
               <>
+                {servPercent > 0 && servicoCarrinho > 0.005 && (
+                  <div className="mt-2 border-t border-borda pt-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-texto-suave">Consumo</span>
+                      <span className="text-texto">{brl(baseCarrinho)}</span>
+                    </div>
+                    <label className="mt-1 flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-controle bg-superficie-suave px-3 text-sm">
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={cobrarServico}
+                          onChange={(e) => setCobrarServico(e.target.checked)}
+                          className="h-5 w-5 accent-[var(--marca-primaria)]"
+                        />
+                        <span className="text-texto">Cobrar serviço ({servPercent}%)</span>
+                      </span>
+                      <span className={cobrarServico ? "font-semibold text-texto" : "text-texto-fraco line-through"}>
+                        {brl(servicoCarrinho)}
+                      </span>
+                    </label>
+                    {!cobrarServico && <p className="mt-1 text-xs text-texto-suave">Cliente não quis pagar os {servPercent}%: este pagamento sai sem o serviço.</p>}
+                  </div>
+                )}
                 <div className="mt-2 flex items-center justify-between border-t border-borda pt-2 text-sm">
                   <button onClick={limparCarrinho} className="text-xs text-texto-fraco hover:text-red-600">
                     Limpar itens
@@ -922,6 +975,12 @@ export function ReceberComandas({
                   </div>
   
                   <div className="rounded-controle bg-superficie-suave p-2">
+                    {servPercent > 0 && servicoCarrinho > 0.005 && (
+                      <div className="flex items-center justify-between text-sm text-texto-suave">
+                        <span>{cobrarServico ? `Serviço (${servPercent}%) incluso` : `Sem o serviço (${servPercent}%)`}</span>
+                        <span className={cobrarServico ? "" : "line-through"}>{brl(servicoCarrinho)}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-sm text-texto-suave">
                       <span>Subtotal</span>
                       <span>{brl(subtotalBruto)}</span>
@@ -1117,6 +1176,13 @@ export function ReceberComandas({
             </div>
           ))}
           <div style={{ borderTop: "1px dashed #000", margin: "2mm 0" }} />
+          {recibo.servico > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Serviço incluso</span>
+              <span>{brl(recibo.servico)}</span>
+            </div>
+          )}
+          {recibo.servicoTirado > 0 && <div>Serviço não cobrado</div>}
           {(recibo.desconto > 0 || recibo.acrescimo > 0) && (
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Subtotal</span>

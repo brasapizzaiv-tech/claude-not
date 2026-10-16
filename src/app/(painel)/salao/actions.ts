@@ -898,12 +898,30 @@ async function calcTotalComanda(
   return { numero: com?.numero as number | undefined, servico, total: subtotal + servico };
 }
 
+// Serviço que de fato foi cobrado: o que os itens/buffet receberam acima do
+// preço. No caixa cada pagamento escolhe cobrar ou não os 10% (numa conta
+// dividida um paga e o outro não), então não dá mais pra calcular pelo
+// percentual do horário. É isso que vai pros 10% da equipe.
+async function servicoCobrado(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  comandaId: string,
+) {
+  const [{ data: com }, { data: itens }] = await Promise.all([
+    supabase.from("pdv_comandas").select("valor_buffet, buffet_valor_pago").eq("id", comandaId).single(),
+    supabase.from("pdv_comanda_itens").select("qtd, preco_unit, valor_pago").eq("comanda_id", comandaId),
+  ]);
+  const preco =
+    Number(com?.valor_buffet ?? 0) + (itens ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  const pago =
+    Number(com?.buffet_valor_pago ?? 0) + (itens ?? []).reduce((s, i) => s + Number(i.valor_pago ?? 0), 0);
+  return Math.max(0, Math.round((pago - preco) * 100) / 100);
+}
+
 // O que ainda falta pagar de uma comanda (itens e buffet não pagos + serviço).
 // Fecha a comanda quando não sobra nada a pagar (itens + buffet quitados).
 async function fecharSeQuitou(
   supabase: Awaited<ReturnType<typeof createClient>>,
   comandaId: string,
-  cfg: Record<string, string>,
 ) {
   const [{ data: itens }, { data: c2 }] = await Promise.all([
     supabase.from("pdv_comanda_itens").select("pago").eq("comanda_id", comandaId),
@@ -912,7 +930,7 @@ async function fecharSeQuitou(
   const temBuffet = Number(c2?.valor_buffet ?? 0) > 0;
   const quitou = (itens ?? []).every((i) => i.pago) && (!temBuffet || !!c2?.buffet_pago);
   if (quitou) {
-    const { servico } = await calcTotalComanda(supabase, comandaId, cfg);
+    const servico = await servicoCobrado(supabase, comandaId);
     await supabase
       .from("pdv_comandas")
       .update({
@@ -1019,7 +1037,7 @@ export async function pagarValores(
     }
   }
 
-  const quitou = await fecharSeQuitou(supabase, comandaId, cfg);
+  const quitou = await fecharSeQuitou(supabase, comandaId);
   revalidatePath("/salao/caixa");
   revalidatePath("/salao");
   return { ok: true as const, quitou };
@@ -1090,12 +1108,14 @@ export async function pagarSelecao(
   pagamentos: { forma: string; valor: number; bandeira?: string | null; observacao?: string | null; tef?: TefPagamento | null; colaboradorId?: string | null; colaboradorNome?: string | null; valeCodigo?: string | null }[],
   extras: { comandaId: string; itemId: string; qtd: number }[] = [],
   clienteId?: string | null,
+  /** Cliente não quis pagar os 10%: este pagamento sai sem serviço. */
+  cobrarServico = true,
 ) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
   if (sel.length === 0 && extras.length === 0) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
-  const fator = 1 + servicoAgora(cfg) / 100;
+  const fator = 1 + (cobrarServico ? servicoAgora(cfg) : 0) / 100;
   const caixaId = await caixaAberto(supabase);
   if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
   // Tipo de cada forma (cadastro): cortesia e vale-presente pedem o motivo e
@@ -1175,7 +1195,7 @@ export async function pagarSelecao(
     }
     const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", s.comandaId).single();
     if (com?.numero != null) numeros.push(com.numero);
-    await fecharSeQuitou(supabase, s.comandaId, cfg);
+    await fecharSeQuitou(supabase, s.comandaId);
   }
 
   // Comandas que receberam SÓ produtos avulsos (fora do "sel") também fecham.
@@ -1184,7 +1204,7 @@ export async function pagarSelecao(
   for (const id of soExtras) {
     const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", id).single();
     if (com?.numero != null) numeros.push(com.numero);
-    await fecharSeQuitou(supabase, id, cfg);
+    await fecharSeQuitou(supabase, id);
   }
 
   // Vincula o cliente às comandas envolvidas (destinatário de uma NF-e futura).

@@ -2,6 +2,9 @@ import { sessaoGarcom } from "@/lib/garcom-auth";
 import { redirect } from "next/navigation";
 import { GarcomPedido, type ItemMenu } from "./garcom-pedido";
 
+// (fora do componente por causa da regra de pureza do React)
+const trintaDiasAtras = () => new Date(Date.now() - 30 * 86400000).toISOString();
+
 export default async function GarcomMesaPage({
   params,
   searchParams,
@@ -82,6 +85,26 @@ export default async function GarcomMesaPage({
       preco: Number(i.promo_preco ?? 0) > 0 ? Number(i.promo_preco) : Number(i.preco) || 0,
     }));
 
+  // "Mais pedidos": quanto cada produto saiu nos últimos 30 dias (de 1000 em
+  // 1000 — o banco corta cada consulta em 1000 linhas e são ~1.500 por mês).
+  const desde = trintaDiasAtras();
+  const vendidos = new Map<string, number>();
+  for (let de = 0; de < 20000; de += 1000) {
+    const { data: pag } = await supabase
+      .from("pdv_comanda_itens")
+      .select("item_id, qtd")
+      .gte("criado_em", desde)
+      .not("item_id", "is", null)
+      .order("id")
+      .range(de, de + 999);
+    const linhas = (pag as { item_id: string; qtd: number }[]) ?? [];
+    for (const l of linhas) vendidos.set(l.item_id, (vendidos.get(l.item_id) ?? 0) + Number(l.qtd || 0));
+    if (linhas.length < 1000) break;
+  }
+  const maisPedidos = [...itens]
+    .sort((a, b) => (vendidos.get(b.id) ?? 0) - (vendidos.get(a.id) ?? 0) || a.nome.localeCompare(b.nome, "pt-BR"))
+    .map((i) => i.id);
+
   // Ordem das categorias: as do cardápio (com itens) + as que sobraram.
   const comItens = new Set(itens.map((i) => i.categoria));
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
@@ -92,6 +115,7 @@ export default async function GarcomMesaPage({
       mesa={mesa}
       itens={itens}
       categorias={categorias}
+      maisPedidos={maisPedidos}
       comandas={comandas}
       mesas={mesas}
       comandaInicial={comandas.some((c) => c.id === comandaInicial) ? comandaInicial : undefined}

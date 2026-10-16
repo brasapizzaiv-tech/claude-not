@@ -27,10 +27,14 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 // Cores da barrinha lateral das categorias (estilo Suitable).
 
+// Primeira aba: todos os produtos em ordem do que mais sai (no lugar de "Todos").
+const MAIS_PEDIDOS = "Mais pedidos";
+
 export function GarcomPedido({
   mesa,
   itens,
   categorias,
+  maisPedidos,
   comandas,
   mesas,
   comandaInicial,
@@ -41,6 +45,8 @@ export function GarcomPedido({
   mesa: string;
   itens: ItemMenu[];
   categorias: string[];
+  /** Ids dos produtos do que mais saiu (30 dias) pro que menos saiu. */
+  maisPedidos: string[];
   comandas: Comanda[];
   mesas: string[];
   comandaInicial?: string;
@@ -53,7 +59,7 @@ export function GarcomPedido({
   // Id do lançamento atual: o mesmo carrinho reenviado (depois de falha de rede)
   // chega ao servidor com a mesma chave e não duplica o pedido.
   const lancIdRef = useRef("");
-  const [aba, setAba] = useState<string>("Todos");
+  const [aba, setAba] = useState<string>(MAIS_PEDIDOS);
   const [busca, setBusca] = useState("");
   const [buscaOn, setBuscaOn] = useState(false);
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -123,16 +129,20 @@ export function GarcomPedido({
   const [trocaComanda, setTrocaComanda] = useState<string>(comandas[0]?.id ?? "");
   const [trocaMesa, setTrocaMesa] = useState<string>("");
 
-  const abas = ["Todos", ...categorias];
+  const abas = [MAIS_PEDIDOS, ...categorias];
+  const posicao = useMemo(() => new Map(maisPedidos.map((id, i) => [id, i])), [maisPedidos]);
 
   const visiveis = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    return itens.filter((i) => {
-      if (aba !== "Todos" && i.categoria !== aba) return false;
+    const lista = itens.filter((i) => {
+      if (aba !== MAIS_PEDIDOS && i.categoria !== aba) return false;
       if (q && !i.nome.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [itens, aba, busca]);
+    // "Mais pedidos" mostra tudo, do que mais sai pro que menos sai.
+    if (aba === MAIS_PEDIDOS) lista.sort((a, b) => (posicao.get(a.id) ?? 1e9) - (posicao.get(b.id) ?? 1e9));
+    return lista;
+  }, [itens, aba, busca, posicao]);
 
   const comComplSet = useMemo(() => new Set(comComplemento), [comComplemento]);
   const gruposDe = (itemId: string) => complementos.grupos.filter((g) => g.item_id === itemId);
