@@ -232,11 +232,11 @@ export function BancoTabela({
       )}
 
       <div className="mb-6 grid grid-cols-2 gap-4">
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Conciliadas</p>
           <p className="mt-1 text-xl font-bold text-green-600">{conciliadas}</p>
         </div>
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">A conciliar</p>
           <p className="mt-1 text-xl font-bold text-amber-600">{aConciliar}</p>
         </div>
@@ -405,7 +405,7 @@ export function BancoTabela({
                         <td colSpan={6} className="px-4 py-3">
                           <div className="grid gap-4 sm:grid-cols-2">
                             {/* Gerar novo */}
-                            <div className="rounded-cartao border border-borda p-3">
+                            <div className="cartao p-3">
                               <p className="mb-2 text-xs font-semibold text-texto-suave">
                                 Criar lançamento novo ({entrada ? "receita" : "despesa"})
                               </p>
@@ -517,7 +517,7 @@ export function BancoTabela({
                               </button>
                             </div>
                             {/* Procurar existente */}
-                            <div className="rounded-cartao border border-borda p-3">
+                            <div className="cartao p-3">
                               <p className="mb-2 text-xs font-semibold text-texto-suave">
                                 Vincular a um lançamento existente
                               </p>

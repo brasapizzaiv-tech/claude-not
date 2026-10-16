@@ -43,7 +43,7 @@ export function NovoAtestado({ pessoas, hoje }: { pessoas: { id: string; nome: s
       <label className="flex flex-col text-xs text-texto-fraco">De<input type="date" name="inicio" required defaultValue={hoje} className={CAMPO} /></label>
       <label className="flex flex-col text-xs text-texto-fraco">Até<input type="date" name="fim" defaultValue={hoje} className={CAMPO} /></label>
       <label className="flex flex-col text-xs text-texto-fraco">Motivo (opcional)<input name="motivo" maxLength={200} className={`${CAMPO} w-40`} /></label>
-      <Enviar className="min-h-10 rounded-controle bg-texto px-3 font-semibold text-fundo">Registrar</Enviar>
+      <Enviar className="btn-principal min-h-10">Registrar</Enviar>
       {erro && <p className="w-full text-sm text-red-600">{erro}</p>}
     </form>
   );

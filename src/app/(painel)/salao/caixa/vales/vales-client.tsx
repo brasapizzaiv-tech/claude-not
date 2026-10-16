@@ -88,7 +88,7 @@ export function ValesClient({ vales, formas, caixaAberto, buscaInicial }: { vale
         </label>
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-cartao border border-borda bg-painel-cartao">
+      <div className="mt-3 overflow-hidden cartao">
         {lista.length === 0 ? (
           <p className="p-6 text-center text-sm text-texto-suave">
             {busca ? "Nenhum vale com essa busca." : "Nenhum vale valendo agora. Toque em Vender vale-presente pra criar o primeiro."}

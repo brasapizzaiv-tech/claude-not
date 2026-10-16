@@ -96,15 +96,15 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
       </div>
 
       <div className="my-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-cartao border border-borda p-3">
+        <div className="cartao p-3">
           <p className="text-xs text-texto-suave">Pagos</p>
           <p className="text-xl font-bold">{pagos.length}</p>
         </div>
-        <div className="rounded-cartao border border-borda p-3">
+        <div className="cartao p-3">
           <p className="text-xs text-texto-suave">Recebido</p>
           <p className="text-xl font-bold text-emerald-600">{totalPago.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
         </div>
-        <div className="rounded-cartao border border-borda p-3">
+        <div className="cartao p-3">
           <p className="text-xs text-texto-suave">Devolvido</p>
           <p className="text-xl font-bold text-amber-600">{totalDev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
         </div>

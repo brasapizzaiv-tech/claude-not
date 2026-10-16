@@ -62,7 +62,7 @@ export function NovaCampanha({ modelos, cupons, limiteDia, precoMarketing, preco
   // Funções de desenho (não componentes): componente criado dentro do render
   // remontaria os campos a cada tecla e o cursor sairia do lugar.
   const bloco = (n: number, titulo: string, resumo: string, children: React.ReactNode) => (
-    <div className="rounded-cartao border border-borda">
+    <div className="cartao">
       <button type="button" onClick={() => setPasso(n)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
         <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${passo > n ? "bg-emerald-600 text-white" : passo === n ? "bg-texto text-fundo" : "bg-superficie-suave text-texto-suave"}`}>
           {passo > n ? <Icone nome="certo" tamanho={13} /> : n}

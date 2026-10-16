@@ -184,7 +184,7 @@ export function CardapioClient({
           <label className="mb-1 block text-xs text-texto-suave">Nova categoria</label>
           <input name="nome" required placeholder="Ex.: Bebidas" className={inputCls} />
         </div>
-        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+        <Enviar className="btn-principal text-sm">
           + Adicionar categoria
         </Enviar>
       </form>
@@ -238,7 +238,7 @@ export function CardapioClient({
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="disponivel" defaultChecked={editando.disponivel} className="h-4 w-4" /> <Icone nome="certo" tamanho={14} /> Disponível (desmarque se esgotou)</label>
             </div>
             <div className="flex gap-2">
-              <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">Salvar</Enviar>
+              <Enviar className="btn-principal min-h-11 text-sm">Salvar</Enviar>
               <button type="button" onClick={() => setEditando(null)} className="rounded-controle px-3 py-2 text-sm text-texto-suave hover:bg-superficie-suave">Cancelar</button>
             </div>
           </form>
@@ -284,13 +284,13 @@ export function CardapioClient({
           <div className="space-y-4 border-t border-borda p-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {tamanhos.map((t) => (
-                <form key={t.id} action={salvarFatias} className="rounded-cartao border border-borda p-3">
+                <form key={t.id} action={salvarFatias} className="cartao p-3">
                   <input type="hidden" name="id" value={t.id} />
                   <div className="text-sm font-semibold text-texto">{t.nome}</div>
                   <div className="mb-2 text-xs text-texto-suave">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}</div>
                   <div className="flex items-center gap-1.5">
                     <input name="fatias" defaultValue={t.fatias ?? ""} inputMode="numeric" placeholder="Fatias" className={`${inputCls} w-20`} />
-                    <Enviar className="rounded-controle bg-texto px-2.5 py-1.5 text-xs font-semibold text-fundo">Ok</Enviar>
+                    <Enviar className="btn-principal text-xs">Ok</Enviar>
                   </div>
                 </form>
               ))}
@@ -318,7 +318,7 @@ export function CardapioClient({
                 placeholder="Descrição (ingredientes) — aparece no app do cliente"
                 className={`${inputCls} mt-2 w-full`}
               />
-              <Enviar className="mt-2 rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+              <Enviar className="btn-principal mt-2 text-sm">
                 + Adicionar sabor
               </Enviar>
             </form>
@@ -335,7 +335,7 @@ export function CardapioClient({
                 {sabores
                   .filter((s) => !buscaSabor.trim() || s.nome.toLowerCase().includes(buscaSabor.trim().toLowerCase()))
                   .map((s) => (
-                    <div key={s.id} className="rounded-cartao border border-borda p-3">
+                    <div key={s.id} className="cartao p-3">
                     <form action={salvarDetalheCardapio}>
                       <input type="hidden" name="tipo" value="sabor" />
                       <input type="hidden" name="id" value={s.id} />
@@ -361,7 +361,7 @@ export function CardapioClient({
                           <input type="checkbox" name="rodizio" defaultChecked={s.rodizio !== false} /> rodízio
                         </label>
                         <UploadFoto tipo="sabor" id={s.id} temFoto={!!s.foto_url} />
-                        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+                        <Enviar className="btn-principal text-sm">
                           Salvar
                         </Enviar>
                       </div>
@@ -449,7 +449,7 @@ function CategoriaCard({
   const [canaisAberto, setCanaisAberto] = useState(false);
   const nCanais = [cat.canal_app, cat.canal_garcom, cat.canal_pdv].filter(Boolean).length;
   return (
-    <div className="rounded-cartao border border-borda p-4">
+    <div className="cartao p-4">
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <div className="flex flex-col">
           <form action={moverCategoria}>
@@ -510,14 +510,14 @@ function CategoriaCard({
       {canaisAberto && (
         <form
           action={async (fd) => { await salvarCanaisCategoria(fd); setCanaisAberto(false); }}
-          className="mb-3 flex flex-wrap items-center gap-4 rounded-cartao border border-borda bg-superficie-suave p-3 dark:border-borda-forte"
+          className="mb-3 flex flex-wrap items-center gap-4 cartao bg-superficie-suave p-3"
         >
           <input type="hidden" name="id" value={cat.id} />
           <span className="text-xs font-semibold text-texto-fraco">Onde essa categoria aparece:</span>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_app" defaultChecked={cat.canal_app} className="h-4 w-4" /> <Icone nome="celular" tamanho={14} /> App</label>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_garcom" defaultChecked={cat.canal_garcom} className="h-4 w-4" /> <Icone nome="garcom" tamanho={14} /> Garçom</label>
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_pdv" defaultChecked={cat.canal_pdv} className="h-4 w-4" /> <Icone nome="cupom" tamanho={14} /> PDV</label>
-          <Enviar className="rounded-controle bg-texto px-3 py-1.5 text-xs font-semibold text-fundo">Salvar</Enviar>
+          <Enviar className="btn-principal text-xs">Salvar</Enviar>
         </form>
       )}
 

@@ -33,7 +33,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
   }
 
   return (
-    <div className="mt-6 rounded-cartao border border-borda p-5">
+    <div className="mt-6 cartao p-5">
       <h2 className="font-semibold text-texto">
         Baixar nota completa
       </h2>

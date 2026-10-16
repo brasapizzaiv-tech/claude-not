@@ -90,7 +90,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
       {msg && <div className="rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">{msg}</div>}
 
       {/* Categorias */}
-      <details className="rounded-cartao border border-borda p-4">
+      <details className="cartao p-4">
         <summary className="cursor-pointer font-semibold text-texto">Categorias ({categorias.length})</summary>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {categorias.map((c) => {

@@ -146,7 +146,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
     <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
       <div className="space-y-4">
         {/* área em edição */}
-        <div className="rounded-cartao border border-borda p-3">
+        <div className="cartao p-3">
           <div className="mb-2 text-sm font-bold">{rasc.id ? "Editando área" : "Nova área"} <span className="font-normal text-texto-suave">— clique no mapa pra marcar os cantos; arraste um canto pra mover, a bolinha do meio do lado vira canto novo, botão direito apaga ({rasc.pontos.length} ponto{rasc.pontos.length === 1 ? "" : "s"})</span></div>
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <input value={rasc.nome} onChange={(e) => setRasc({ ...rasc, nome: e.target.value })} placeholder="Nome (ex.: Ivoti Central)" className={inp} />
@@ -166,7 +166,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
         </div>
 
         {/* lista */}
-        <div className="divide-y divide-zinc-100 rounded-cartao border border-borda dark:divide-zinc-800">
+        <div className="divide-y divide-zinc-100 cartao dark:divide-zinc-800">
           {areasIniciais.length === 0 && <p className="p-4 text-center text-sm text-texto-fraco">Nenhuma área ainda — a taxa segue por km.</p>}
           {areasIniciais.map((a) => (
             <div key={a.id} className={`flex items-center gap-2 p-2.5 ${a.ativo ? "" : "opacity-50"}`}>
@@ -182,7 +182,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
         </div>
 
         {/* promoções */}
-        <div className="rounded-cartao border border-borda p-3">
+        <div className="cartao p-3">
           <div className="mb-2 flex items-center gap-1.5 text-sm font-bold"><Icone nome="etiqueta" tamanho={14} /> Promoções da tele</div>
           <div className="space-y-2">
             <input value={pNome} onChange={(e) => setPNome(e.target.value)} placeholder="Nome (ex.: Quarta tele grátis)" className={`${inp} w-full`} />

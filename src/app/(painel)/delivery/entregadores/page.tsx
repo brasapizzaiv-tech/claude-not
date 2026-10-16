@@ -40,7 +40,7 @@ export default async function EntregadoresPage() {
       <form action={criarEntregador} className="mb-6 flex flex-wrap gap-2">
         <input name="nome" required placeholder="Nome" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
         <input name="telefone" placeholder="Telefone (opcional)" className="w-44 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
-        <Enviar className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo">Adicionar</Enviar>
+        <Enviar className="btn-principal">Adicionar</Enviar>
       </form>
 
       <div className="space-y-3">

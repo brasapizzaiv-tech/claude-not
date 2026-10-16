@@ -106,7 +106,7 @@ export function AtribuirClient({
 
       {/* Atalho: contagem inteira para um colaborador */}
       {colaboradores.length > 0 && (
-        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-cartao border border-borda bg-superficie-suave p-4">
+        <div className="mt-6 flex flex-wrap items-center gap-2 cartao bg-superficie-suave p-4">
           <span className="text-sm font-medium text-texto-suave">
             Dar a contagem inteira a um colaborador:
           </span>
@@ -207,7 +207,7 @@ export function AtribuirClient({
               return (
                 <div
                   key={colabId}
-                  className="rounded-cartao border border-borda p-4"
+                  className="cartao p-4"
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <span className="font-medium text-texto">

@@ -242,7 +242,7 @@ export function FornecedoresClient({
               </div>
 
               {/* Padrão das notas: já vem preenchido ao vincular/importar uma nota dele */}
-              <div className="rounded-cartao border border-borda p-3">
+              <div className="cartao p-3">
                 <p className="mb-2 text-xs font-bold text-texto-fraco">Padrão das notas deste fornecedor</p>
                 <div className="grid gap-2 sm:grid-cols-[1fr_11rem]">
                   <div>
@@ -279,7 +279,7 @@ export function FornecedoresClient({
                   Cancelar
                 </button>
                 <Enviar
-                  className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+                  className="btn-principal min-h-11 text-sm"
                 >
                   Salvar
                 </Enviar>

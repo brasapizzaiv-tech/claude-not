@@ -74,7 +74,7 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
           ["Tempo médio até pronto", mediaMin != null ? `${mediaMin.toFixed(1)} min` : "—"],
           ["Cancelados", String(cancelados)],
         ].map(([r, v]) => (
-          <div key={r} className="rounded-cartao border border-borda p-4">
+          <div key={r} className="cartao p-4">
             <p className="text-xs text-texto-suave">{r}</p>
             <p className="mt-1 text-2xl font-black text-texto">{v}</p>
           </div>

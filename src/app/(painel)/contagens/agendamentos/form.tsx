@@ -85,7 +85,7 @@ export function AgendamentosClient({
           {ags.map((a) => (
             <div
               key={a.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-cartao border border-borda bg-painel-cartao p-4"
+              className="flex flex-wrap items-center justify-between gap-3 cartao p-4"
             >
               <div>
                 <p className="font-medium text-texto">
@@ -236,7 +236,7 @@ function AgendamentoForm({
       </div>
 
       {modo === "personalizado" && (
-        <div className="rounded-cartao border border-borda bg-painel-cartao p-4">
+        <div className="cartao p-4">
           <p className="mb-3 text-sm text-texto-suave">
             Escolha quem conta cada seção. Deixe em <b>— não contar —</b> as que
             não entram.
@@ -265,7 +265,7 @@ function AgendamentoForm({
       )}
 
       <div className="flex gap-2">
-        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+        <Enviar className="btn-principal text-sm">
           {editar ? "Salvar alterações" : "Salvar"}
         </Enviar>
         <button type="button" onClick={onClose} className="rounded-controle px-3 py-2 text-sm text-texto-suave hover:bg-superficie-suave">

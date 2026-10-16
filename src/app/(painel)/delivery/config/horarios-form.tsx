@@ -12,7 +12,7 @@ export function HorariosConfig({ cfg }: { cfg: ConfigHorarios }) {
     cfg.turnos.find((t) => t.id === "noite") ?? { id: "noite", nome: "Noite", dias: [] as number[], agendaAbre: "15:00", livreAbre: "18:30", livreFecha: "22:00" },
   ];
   return (
-    <div className="rounded-cartao border border-borda p-4">
+    <div className="cartao p-4">
       <h2 className="flex items-center gap-1.5 font-bold"><Icone nome="relogio" tamanho={16} /> Horários e agendamento</h2>
       <p className="mb-3 text-xs text-texto-suave">
         Pedidos <b>pra agora</b> só dentro da janela “livre”. O <b>agendamento</b> abre mais cedo: o cliente escolhe um horário exato dentro da janela livre do mesmo dia.

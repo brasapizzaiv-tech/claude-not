@@ -157,7 +157,7 @@ export function LancarItens({
               key={i.id}
               onClick={() => add(i)}
               disabled={p && addId === i.id}
-              className="flex flex-col justify-between rounded-cartao border border-borda bg-white p-2.5 text-left hover:border-orange-300 hover:bg-orange-50 disabled:opacity-50 dark:border-borda-forte dark:bg-zinc-950 dark:hover:border-orange-500/50 dark:hover:bg-orange-950/30"
+              className="flex flex-col justify-between cartao p-2.5 text-left hover:border-orange-300 hover:bg-orange-50 disabled:opacity-50 dark:hover:border-orange-500/50 dark:hover:bg-orange-950/30"
             >
               <span className="text-sm font-medium leading-tight text-texto">
                 {i.nome}

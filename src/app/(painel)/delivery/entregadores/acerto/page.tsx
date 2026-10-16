@@ -59,7 +59,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
       {linhas.length === 0 && <p className="py-10 text-center text-texto-suave">Nenhuma entrega concluída nesse dia.</p>}
       <div className="space-y-3">
         {linhas.map(({ b, meus, teles, fixo, fezDia, fezNoite, total, rec, feito }) => (
-          <div key={b.id} className="rounded-cartao border border-borda p-4">
+          <div key={b.id} className="cartao p-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="text-lg font-bold">{b.nome}</div>
               <span className="text-xs text-texto-suave">{fezDia && <span className="mr-1.5 inline-flex items-center gap-1"><Icone nome="dia" tamanho={12} /> almoço</span>}
@@ -99,7 +99,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
                   <label className="text-xs text-texto-suave">Fixo (R$)</label>
                   <input name="fixo" defaultValue={fixo} inputMode="decimal" className="w-24 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
                   <input name="obs" placeholder="obs (opcional)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
-                  <Enviar className="rounded-controle bg-texto px-4 py-1.5 text-sm font-semibold text-fundo">Registrar acerto</Enviar>
+                  <Enviar className="btn-principal text-sm">Registrar acerto</Enviar>
                 </form>
               )}
             </div>

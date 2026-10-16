@@ -118,7 +118,7 @@ export function EtiquetaForm({
   }
 
   return (
-    <div className="rounded-cartao border border-borda p-5">
+    <div className="cartao p-5">
       <h2 className="mb-4 font-semibold text-texto">Nova etiqueta</h2>
       <div className="grid gap-5 md:grid-cols-[1fr_auto]">
         <div className="grid gap-3 sm:grid-cols-2">

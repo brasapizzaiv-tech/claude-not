@@ -183,7 +183,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           {aba === "pendente" ? "Nenhum pedido pendente." : "Nada por aqui."}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-cartao border border-borda bg-painel-cartao">
+        <div className="overflow-x-auto cartao">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="bg-superficie-suave text-left text-xs font-medium text-texto-fraco">
               <tr>
@@ -288,7 +288,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
   }
 
   return (
-    <div className="mb-4 grid gap-2 rounded-cartao border border-borda bg-painel-cartao p-4 md:grid-cols-[1fr_1fr_2fr_1fr]">
+    <div className="mb-4 grid gap-2 cartao p-4 md:grid-cols-[1fr_1fr_2fr_1fr]">
       <select className={inp} value={tipoNovo} onChange={(e) => setTipoNovo(e.target.value as "compra" | "manutencao")}>
         <option value="compra">Compra</option>
         <option value="manutencao">Manutenção</option>

@@ -129,7 +129,7 @@ export default async function ConferirPage({
             Vai chegar em
             <input type="date" name="dia" required min={hoje} defaultValue={dia && dia >= hoje ? dia : ""} className="mt-0.5 block rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm" />
           </label>
-          <Enviar className="rounded-controle bg-texto px-3 py-1.5 font-semibold text-fundo">Remarcar entrega</Enviar>
+          <Enviar className="btn-principal">Remarcar entrega</Enviar>
         </form>
         {!ped.aviso_encerrado_em && (
           <form action={encerrarAvisoEntrega}>

@@ -118,7 +118,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               ))}
             </select>
           </div>
-          <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+          <Enviar className="btn-principal min-h-11 text-sm">
             <Icone nome="novo" tamanho={16} /> Acrescentar
           </Enviar>
         </form>

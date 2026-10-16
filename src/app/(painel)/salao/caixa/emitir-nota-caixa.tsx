@@ -58,7 +58,7 @@ export function EmitirNotaCaixa({
   if (comandas.length === 0) return null;
 
   return (
-    <div className="mt-3 rounded-cartao border border-borda p-3">
+    <div className="mt-3 cartao p-3">
       <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100"><Icone nome="cupom" tamanho={14} className="mr-1.5" /> {autoIds.length > 0 ? "CPF ou CNPJ na nota?" : "Emitir NFC-e"} {autoIds.length > 0 && <span className="ml-1 text-xs font-normal text-emerald-600">(nota automática: Pix/cartão)</span>}</p>
       <div className="space-y-2">
         {grupos.map((g) => {

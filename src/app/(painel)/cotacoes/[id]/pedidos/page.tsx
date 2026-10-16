@@ -90,7 +90,7 @@ export default async function PedidosPage({
             return (
               <div
                 key={ped.id}
-                className="rounded-cartao border border-borda p-5"
+                className="cartao p-5"
               >
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="font-semibold text-texto">

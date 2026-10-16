@@ -125,7 +125,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
         <p className="mb-2 text-sm text-texto-suave">Escolha o perfil de cada categoria: todos os itens dela passam a usar esse perfil (a não ser que o item tenha exceção abaixo).</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {categorias.map((c) => (
-            <div key={c.id} className="flex items-center gap-2 rounded-cartao border border-borda px-3 py-2">
+            <div key={c.id} className="flex items-center gap-2 cartao px-3 py-2">
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{c.nome}</div>
                 <div className="text-mini text-texto-fraco">{contagemCat.get(c.nome) ?? 0} itens</div>

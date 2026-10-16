@@ -168,7 +168,7 @@ export function Scanner() {
       </div>
 
       {/* Câmera */}
-      <div className="relative overflow-hidden rounded-cartao border border-borda bg-black">
+      <div className="relative overflow-hidden cartao bg-black">
         <video
           ref={videoRef}
           playsInline

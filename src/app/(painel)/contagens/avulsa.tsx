@@ -81,7 +81,7 @@ export function AvulsaForm({
             <label className="mb-1 block text-sm font-medium text-texto-suave">
               Categorias a contar
             </label>
-            <div className="mb-4 max-h-56 space-y-1 overflow-y-auto rounded-cartao border border-borda p-3">
+            <div className="mb-4 max-h-56 space-y-1 overflow-y-auto cartao p-3">
               {categorias.map((c) => (
                 <label
                   key={c.id}

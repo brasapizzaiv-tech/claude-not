@@ -85,10 +85,10 @@ export default async function KernDeliveryPage() {
           </div>
           <p className="mt-2 text-xs text-texto-fraco">Os clientes da Kern estão sem rua e número no cadastro. Completando em Clientes, o entregador recebe o endereço inteiro.</p>
         </div>
-        <Enviar className="min-h-11 self-start rounded-controle bg-texto px-5 text-sm font-semibold text-fundo">Salvar</Enviar>
+        <Enviar className="btn-principal min-h-11 self-start text-sm">Salvar</Enviar>
       </form>
 
-      <section className="mb-6 rounded-cartao border border-borda p-4">
+      <section className="mb-6 cartao p-4">
         <h2 className="mb-2 font-semibold">Hoje</h2>
         <p className="mb-3 text-sm text-texto-suave">
           Marmitas pedidas até agora: {filiais.map((f) => `${f} ${contHoje.get(f) ?? 0}`).join(" · ")}

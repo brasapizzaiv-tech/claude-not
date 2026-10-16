@@ -139,7 +139,7 @@ export function SefazPainel({
   return (
     <div className="space-y-6">
       {/* Certificado */}
-      <div className="rounded-cartao border border-borda p-5">
+      <div className="cartao p-5">
         <h2 className="mb-1 font-semibold text-texto">
           Certificado A1
         </h2>
@@ -213,7 +213,7 @@ export function SefazPainel({
       </div>
 
       {/* Buscar */}
-      <div className="rounded-cartao border border-borda p-5">
+      <div className="cartao p-5">
         <h2 className="mb-1 font-semibold text-texto">
           Buscar notas na SEFAZ
         </h2>

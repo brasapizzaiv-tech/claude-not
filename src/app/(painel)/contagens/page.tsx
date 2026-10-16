@@ -44,7 +44,7 @@ export default async function ContagensPage() {
             <Icone nome="relogio" tamanho={15} className="mr-1.5" /> Agendamentos
           </Link>
           <form action={criarContagem}>
-            <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+            <Enviar className="btn-principal min-h-11 text-sm">
               + Nova contagem
             </Enviar>
           </form>

@@ -103,7 +103,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
       })}
 
       {aberta && (
-        <div className="mt-6 rounded-cartao border border-borda p-4">
+        <div className="mt-6 cartao p-4">
           <div className="mb-2 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-texto">{aberta.modelo.nome}</h2>

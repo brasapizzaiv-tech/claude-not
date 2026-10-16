@@ -54,7 +54,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
       ) : (
         <div className="space-y-2">
           {lista.map((c) => (
-            <div key={c.id} className="rounded-cartao border border-borda bg-painel-cartao p-3">
+            <div key={c.id} className="cartao p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="font-semibold text-texto">{c.nome}</p>

@@ -9,7 +9,7 @@ const ORIGEM: Record<string, string> = { app: "App", whatsapp: "WhatsApp", insta
 
 function Tabela({ titulo, linhas }: { titulo: string; linhas: { k: string; qtd: number; valor: number }[] }) {
   return (
-    <div className="rounded-cartao border border-borda p-4">
+    <div className="cartao p-4">
       <h2 className="mb-2 font-bold">{titulo}</h2>
       {linhas.length === 0 ? <p className="text-sm text-texto-fraco">Sem dados.</p> : (
         <div className="space-y-1">
@@ -100,7 +100,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
           { t: "Ticket médio", v: brl(ticket) },
           { t: "A receber", v: String(aReceber), sub: `${cancelados} cancelado(s)` },
         ].map((c, i) => (
-          <div key={i} className="rounded-cartao border border-borda p-4">
+          <div key={i} className="cartao p-4">
             <div className="text-xs text-texto-suave">{c.t}</div>
             <div className="text-2xl font-bold">{c.v}</div>
             {c.sub && <div className="text-xs text-texto-fraco">{c.sub}</div>}

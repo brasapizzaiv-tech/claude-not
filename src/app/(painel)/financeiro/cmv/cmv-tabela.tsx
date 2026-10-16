@@ -191,7 +191,7 @@ export function CmvTabela({
   }
 
   const card = (titulo: string, valor: string, cor?: string, sub?: string) => (
-    <div className="rounded-cartao border border-borda p-4">
+    <div className="cartao p-4">
       <p className="text-xs text-texto-suave">{titulo}</p>
       <p className={`mt-1 text-xl font-bold ${cor || "text-texto"}`}>{valor}</p>
       {sub ? <p className="text-xs text-texto-fraco">{sub}</p> : null}
@@ -227,7 +227,7 @@ export function CmvTabela({
       )}
 
       {/* Faturamento diário livre (por turno) */}
-      <div className="mb-6 rounded-cartao border border-borda p-4">
+      <div className="mb-6 cartao p-4">
         <div className="mb-1 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-texto">
             Faturamento da semana

@@ -187,7 +187,7 @@ export function MesaDetalhe({
       )}
 
       {/* Conteúdo */}
-      <div className="mt-3 rounded-cartao border border-borda p-3">
+      <div className="mt-3 cartao p-3">
         {todasLinhas.length === 0 ? (
           <p className="py-8 text-center text-sm text-texto-fraco">Nenhuma comanda aberta nesta mesa.</p>
         ) : aba === "produtos" ? (

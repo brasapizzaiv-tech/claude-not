@@ -92,19 +92,19 @@ export default async function VendasPage({
 
       {/* Resumo */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Notas emitidas</p>
           <p className="mt-1 text-xl font-bold text-texto">
             {totalNotas}
           </p>
         </div>
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Valor emitido</p>
           <p className="mt-1 text-xl font-bold text-texto">
             {moeda(totalEmitido)}
           </p>
         </div>
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Faturamento</p>
           <p className="mt-1 text-xl font-bold text-green-600">
             {moeda(faturamentoLancado)}
@@ -113,7 +113,7 @@ export default async function VendasPage({
             {[somaFat.diasPlanilha ? `${somaFat.diasPlanilha} dias da planilha` : "", somaFat.diasSistema ? `${somaFat.diasSistema} do caixa do sistema` : ""].filter(Boolean).join(" · ") || "sem dias"}
           </p>
         </div>
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Diferença</p>
           <p
             className={`mt-1 text-xl font-bold ${

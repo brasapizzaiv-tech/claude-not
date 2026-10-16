@@ -130,7 +130,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
     "rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm text-texto   ";
 
   return (
-    <div className="space-y-4 rounded-cartao border border-borda p-5">
+    <div className="space-y-4 cartao p-5">
       <div className="flex items-center justify-between">
         <p className="font-semibold text-texto"><Icone nome="balanca" tamanho={15} className="mr-1.5" /> Balança (leitura automática)</p>
         {conectado ? (
@@ -259,7 +259,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
             className="w-24 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm dark:text-zinc-100"
           />
         </div>
-        <Enviar className="rounded-controle bg-texto px-5 py-2 text-sm font-semibold text-fundo hover:opacity-90">
+        <Enviar className="btn-principal text-sm">
           Gerar comanda
         </Enviar>
       </form>

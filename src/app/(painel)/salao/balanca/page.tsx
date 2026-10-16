@@ -66,7 +66,7 @@ export default async function BalancaPage() {
       <p className="mt-6 mb-2 text-xs font-medium text-texto-fraco">Ou digitar na mão</p>
       <form
         action={criarComandaBuffet}
-        className="flex flex-wrap items-end gap-3 rounded-cartao border border-borda p-5"
+        className="flex flex-wrap items-end gap-3 cartao p-5"
       >
         <input type="hidden" name="mesa" value="Balança" />
         <div>

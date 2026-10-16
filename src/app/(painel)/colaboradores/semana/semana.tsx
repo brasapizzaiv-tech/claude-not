@@ -857,7 +857,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
               <div className="text-lg font-semibold">{brl(calc.turnoNoite.diarias + calc.turnoNoite.dez + calc.turnoNoite.extras)}</div>
               <div className="text-xs text-texto-suave">{calc.turnoNoite.presencas} presença{calc.turnoNoite.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoNoite.diarias)} + 10% {brl(calc.turnoNoite.dez)}{calc.turnoNoite.extras > 0 ? ` + extras ${brl(calc.turnoNoite.extras)}` : ""}</div>
             </div>
-            <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
+            <div className="cartao p-3">
               <div className="text-xs font-bold text-texto-suave">Semana</div>
               <div className="text-lg font-semibold">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras)}</div>
               <div className="text-xs text-texto-suave">diárias {brl(calc.totalDiarias)} + 10% {brl(calc.totalDez)}{calc.totalExtras > 0 ? ` + extras ${brl(calc.totalExtras)}` : ""}</div>

@@ -109,7 +109,7 @@ export function FaturaClient({
     <div className="space-y-4">
       {/* ---------- upload ---------- */}
       {!compras && (
-        <form action={enviar} className="rounded-cartao border border-borda p-4">
+        <form action={enviar} className="cartao p-4">
           <p className="mb-1 font-semibold text-texto">Fatura do cartão de crédito</p>
           <p className="mb-3 text-sm text-texto-suave">
             Baixe a fatura no aplicativo do banco (PDF ou CSV) e solte aqui. O sistema lista cada compra
@@ -150,7 +150,7 @@ export function FaturaClient({
       {/* ---------- conferência ---------- */}
       {compras && (
         <>
-          <div className="flex flex-wrap items-end gap-3 rounded-cartao border border-borda p-4">
+          <div className="flex flex-wrap items-end gap-3 cartao p-4">
             <div>
               <label className="mb-1 block text-xs text-texto-suave">Competência</label>
               <input type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className={input} />

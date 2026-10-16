@@ -260,7 +260,7 @@ export default async function DrePage({
           { l: "CMO", v: pct(cmo) },
           { l: "Prime Cost (CMV+CMO)", v: pct(cmv + cmo) },
         ].map((i) => (
-          <div key={i.l} className="rounded-cartao border border-borda p-4">
+          <div key={i.l} className="cartao p-4">
             <p className="text-xs text-texto-suave">{i.l}</p>
             <p className="mt-1 text-xl font-bold text-texto">{i.v}</p>
           </div>
@@ -268,7 +268,7 @@ export default async function DrePage({
       </div>
 
       {naoOper !== 0 && (
-        <div className="mt-6 rounded-cartao border border-borda p-4 text-sm">
+        <div className="mt-6 cartao p-4 text-sm">
           <div className="flex justify-between text-texto-suave">
             <span>Não operacional (investimentos, sócios, empréstimos)</span>
             <span>{moeda(naoOper)}</span>

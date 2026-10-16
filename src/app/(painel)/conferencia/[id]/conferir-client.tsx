@@ -199,7 +199,7 @@ export function ConferirClient({
       )}
 
       {/* Nota fiscal ligada ao pedido */}
-      <div className="mb-4 rounded-cartao border border-borda p-4">
+      <div className="mb-4 cartao p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"><Icone nome="cupom" tamanho={14} className="mr-1.5" /> Nota fiscal do fornecedor</p>

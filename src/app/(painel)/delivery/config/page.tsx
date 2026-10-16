@@ -54,7 +54,7 @@ export default async function DeliveryConfigPage() {
             {geocodificado ? "Localizado no mapa — confira abaixo se o pino está no lugar certo." : "Ao salvar, o sistema localiza o endereço no mapa (ponto de partida das entregas)."}
           </p>
           {geocodificado && (
-            <div className="mt-2 overflow-hidden rounded-cartao border border-borda dark:border-borda-forte">
+            <div className="mt-2 overflow-hidden cartao">
               <iframe
                 title="Localização do restaurante"
                 className="h-64 w-full"
@@ -116,7 +116,7 @@ export default async function DeliveryConfigPage() {
           <b>Exemplo:</b> taxa base R$ 4,00 + R$ 1,50/km. Um endereço a 2 km fica <b>R$ 7,00</b>.
         </div>
 
-        <Enviar className="rounded-cartao bg-texto px-5 py-2.5 font-semibold text-fundo">Salvar</Enviar>
+        <Enviar className="btn-principal">Salvar</Enviar>
       </form>
     </div>
   );

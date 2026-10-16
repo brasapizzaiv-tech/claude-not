@@ -39,7 +39,7 @@ export function RecadosClient({ inicial }: { inicial: RecadoTvLinha[] }) {
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-6 rounded-cartao border border-borda p-4">
+      <div className="mb-6 cartao p-4">
         <p className="mb-2 text-sm font-semibold">{editando ? "Editar recado" : "Novo recado"}</p>
         <textarea
           value={texto}
@@ -64,7 +64,7 @@ export function RecadosClient({ inicial }: { inicial: RecadoTvLinha[] }) {
         {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
       </div>
 
-      <div className="divide-y divide-zinc-100 rounded-cartao border border-borda dark:divide-zinc-800">
+      <div className="divide-y divide-zinc-100 cartao dark:divide-zinc-800">
         {inicial.length === 0 && <p className="p-6 text-center text-sm text-texto-fraco">Nenhum recado. A TV mostra só o relógio.</p>}
         {inicial.map((r) => {
           const vencido = !!r.ate && r.ate < new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });

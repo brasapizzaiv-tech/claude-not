@@ -160,17 +160,17 @@ export default async function FinanceiroPage({
 
       {/* Resumo */}
       <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Receitas</p>
           <p className="mt-1 text-xl font-bold text-green-600">
             {moeda(receitas)}
           </p>
         </div>
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Despesas</p>
           <p className="mt-1 text-xl font-bold text-red-600">{moeda(saidas)}</p>
         </div>
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Resultado</p>
           <p
             className={`mt-1 text-xl font-bold ${
@@ -185,7 +185,7 @@ export default async function FinanceiroPage({
       {/* Novo lançamento */}
       <form
         action={criarLancamento}
-        className="mb-6 flex flex-wrap items-end gap-2 rounded-cartao border border-borda p-4"
+        className="mb-6 flex flex-wrap items-end gap-2 cartao p-4"
       >
         <div>
           <label className="mb-1 block text-xs text-texto-suave" title="Mês em que a despesa aconteceu — é por aqui que ela entra no DRE.">

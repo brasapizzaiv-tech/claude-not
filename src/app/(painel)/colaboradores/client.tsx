@@ -132,7 +132,7 @@ function CardApp({ c }: { c: Colaborador }) {
   const [copiado, setCopiado] = useState(false);
   if (!c.token)
     return (
-      <div className="rounded-cartao border border-borda p-3">
+      <div className="cartao p-3">
         <div className="mb-2 truncate font-medium text-texto">{c.nome}</div>
         <GerarLink id={c.id} />
       </div>
@@ -146,7 +146,7 @@ function CardApp({ c }: { c: Colaborador }) {
       (c.codigo ? `\nNo app Motelli Equipe, o seu código de entrada é ${codigoFmt(c.codigo)}.` : ""),
   );
   return (
-    <div className="rounded-cartao border border-borda p-3">
+    <div className="cartao p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="truncate font-medium text-texto">{c.nome}</span>
         <span className={`text-xs ${c.pin ? "text-texto-fraco" : "text-amber-600"}`}>{c.pin ? "PIN ok" : "sem PIN"}</span>
@@ -309,7 +309,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
       </div>
 
       {verLinks && (
-        <div className="mb-6 rounded-cartao border border-borda p-5">
+        <div className="mb-6 cartao p-5">
           <p className="mb-4 text-sm text-texto-suave">
             Envie o <b>app pessoal</b> (um link só por pessoa). Ela abre, cria um PIN e adiciona à tela do celular.
             Aparecem lá as contagens e/ou folgas dela.
@@ -458,7 +458,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
           </div>
 
           {/* Quadro / pagamento */}
-          <div className="space-y-3 rounded-cartao border border-borda p-3">
+          <div className="space-y-3 cartao p-3">
             <p className="text-xs font-bold text-texto-fraco">Turno e pagamento</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
@@ -603,7 +603,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> <Icone nome="salao" tamanho={14} /> Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
           </label>
           {setoresChecklist.length > 0 && (
-            <div className="rounded-cartao border border-borda p-3">
+            <div className="cartao p-3">
               <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-texto-suave"><Icone nome="checklist" tamanho={14} /> Checklists — setores que esta pessoa executa</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                 {setoresChecklist.map((s) => (
@@ -627,7 +627,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
           </label>
 
           {temFolga && (
-            <div className="space-y-3 rounded-cartao border border-borda p-3">
+            <div className="space-y-3 cartao p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <select name="grupo" defaultValue={f?.grupo ?? "almoco"} className={inputCls}>
                   {GRUPO_KEYS.map((g) => <option key={g} value={g}>{GRUPOS[g].nome}</option>)}
@@ -666,7 +666,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             <button type="button" onClick={onClose} className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave dark:text-texto-fraco">
               Cancelar
             </button>
-            <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+            <Enviar className="btn-principal min-h-11 text-sm">
               Salvar
             </Enviar>
           </div>

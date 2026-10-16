@@ -166,7 +166,7 @@ export function LancamentoNota({
   const faltaCategoria = ehServico && !catSel;
 
   return (
-    <div className="mt-4 space-y-4 rounded-cartao border border-borda p-4">
+    <div className="mt-4 space-y-4 cartao p-4">
       <h2 className="text-sm font-semibold text-texto">
         Lançar no financeiro
       </h2>

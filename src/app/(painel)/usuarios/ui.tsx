@@ -36,7 +36,7 @@ function EditorPermissoes({
         Acesso total (dono) — enxerga e edita tudo
       </label>
       {!dono && (
-        <div className="grid grid-cols-2 gap-1.5 rounded-cartao border border-borda p-3">
+        <div className="grid grid-cols-2 gap-1.5 cartao p-3">
           {MODULOS.map((m) => (
             <label
               key={m.key}
@@ -109,7 +109,7 @@ export function NovoUsuario() {
   }
 
   return (
-    <div className="mb-6 rounded-cartao border border-borda bg-painel-cartao p-5">
+    <div className="mb-6 cartao p-5">
       <h2 className="mb-4 text-lg font-semibold text-texto">
         Novo usuário
       </h2>
@@ -232,7 +232,7 @@ export function UsuarioLinha({
           .join(", ");
 
   return (
-    <div className="rounded-cartao border border-borda bg-painel-cartao p-4">
+    <div className="cartao p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-medium text-texto">

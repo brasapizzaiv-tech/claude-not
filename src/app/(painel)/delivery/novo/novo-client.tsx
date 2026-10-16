@@ -148,7 +148,7 @@ export function NovoPedido({
         )}
         <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-3 sm:grid-cols-3 lg:grid-cols-4">
           {visiveis.map((i) => (
-            <button key={i.id} onClick={() => clicarItem(i)} className="flex min-h-[72px] flex-col justify-between rounded-cartao border border-borda p-2.5 text-left hover:bg-superficie-suave">
+            <button key={i.id} onClick={() => clicarItem(i)} className="flex min-h-[72px] flex-col justify-between cartao p-2.5 text-left hover:bg-superficie-suave">
               <span className="text-sm font-medium leading-tight">{i.nome}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</span>
               <span className="text-sm text-emerald-600">{i.preco > 0 ? brl(i.preco) : "—"}</span>
             </button>

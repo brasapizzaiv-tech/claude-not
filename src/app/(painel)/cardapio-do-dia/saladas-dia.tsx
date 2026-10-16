@@ -79,7 +79,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
 
   return (
     <div className="mx-auto max-w-6xl px-8 pb-10">
-      <div className="rounded-cartao border border-borda p-5">
+      <div className="cartao p-5">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-bold text-texto"><Icone nome="salada" tamanho={17} className="mr-1.5" /> Saladas do dia</h2>
           <button onClick={() => setGerenciar((g) => !g)} className="text-xs text-texto-suave underline">

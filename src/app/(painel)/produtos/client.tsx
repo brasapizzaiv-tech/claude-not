@@ -666,7 +666,7 @@ export function ProdutosClient({
               </div>
 
               {/* Dados fiscais (NF-e / NFC-e) */}
-              <details className="rounded-cartao border border-borda p-3">
+              <details className="cartao p-3">
                 <summary className="cursor-pointer text-sm font-medium text-texto-suave">
                   Dados fiscais (NF-e / NFC-e) — o contador informa
                 </summary>
@@ -718,7 +718,7 @@ export function ProdutosClient({
                   Cancelar
                 </button>
                 <Enviar
-                  className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+                  className="btn-principal min-h-11 text-sm"
                 >
                   Salvar
                 </Enviar>

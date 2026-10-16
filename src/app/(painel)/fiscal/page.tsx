@@ -43,7 +43,7 @@ export default async function FiscalPage() {
           <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full bg-red-500 align-middle" /> <b>PRODUÇÃO ligada</b>: toda NFC-e emitida no caixa vale de verdade na SEFAZ (série {v("nfce_serie") || "padrão do Focus"}).
         </div>
       ) : (
-        <div className="mt-4 rounded-cartao border border-borda bg-superficie-suave px-4 py-3 text-sm">
+        <div className="mt-4 cartao bg-superficie-suave px-4 py-3 text-sm">
           <p className="font-semibold">Checklist pra ligar a produção</p>
           <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-texto-suave">
             <li>Nota de teste em homologação <b>autorizada</b> (botão lá embaixo).</li>
@@ -57,7 +57,7 @@ export default async function FiscalPage() {
 
       <form action={salvarConfigFiscal} className="mt-6 space-y-6">
         {/* Empresa */}
-        <section className="rounded-cartao border border-borda p-4">
+        <section className="cartao p-4">
           <h2 className="mb-3 text-sm font-semibold text-texto">Empresa</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Campo nome="razao_social" def={v("razao_social")} label="Razão social" />
@@ -88,7 +88,7 @@ export default async function FiscalPage() {
         </section>
 
         {/* Emissor */}
-        <section className="rounded-cartao border border-borda p-4">
+        <section className="cartao p-4">
           <h2 className="mb-3 text-sm font-semibold text-texto">Emissor (API)</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
@@ -120,7 +120,7 @@ export default async function FiscalPage() {
         </section>
 
         {/* Padrões fiscais (para o buffet, que não tem item) */}
-        <section className="rounded-cartao border border-borda p-4">
+        <section className="cartao p-4">
           <h2 className="mb-3 text-sm font-semibold text-texto">Padrões (buffet / serviço)</h2>
           <div className="grid grid-cols-3 gap-3">
             <Campo nome="ncm_buffet" def={v("ncm_buffet")} label="NCM do buffet" ph="Ex.: 21069090" />

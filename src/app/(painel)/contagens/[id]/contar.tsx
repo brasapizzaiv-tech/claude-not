@@ -451,7 +451,7 @@ export function ContarClient({
             <p className="mt-1 text-sm text-texto-suave">
               Na última contagem tinha menos, e o que deu entrada depois não fecha com o número digitado. Pode ser erro de digitação, ou mercadoria que chegou e cuja nota ainda não foi lançada. Conte de novo antes de seguir.
             </p>
-            <div className="mt-3 max-h-56 overflow-y-auto rounded-cartao border border-borda p-2 text-sm">
+            <div className="mt-3 max-h-56 overflow-y-auto cartao p-2 text-sm">
               {avisoSusp.nomes.map((n) => (
                 <div key={n} className="px-1 py-0.5 text-texto-suave">• {n}</div>
               ))}
@@ -492,7 +492,7 @@ export function ContarClient({
                 <>Esses produtos ficaram em branco. Se algum realmente zerou, use o botão <b>0</b> nele. Se não for contar agora, pode salvar assim mesmo.</>
               )}
             </p>
-            <div className="mt-3 max-h-56 overflow-y-auto rounded-cartao border border-borda p-2 text-sm">
+            <div className="mt-3 max-h-56 overflow-y-auto cartao p-2 text-sm">
               {aviso.faltam.map((n) => (
                 <div key={n} className="px-1 py-0.5 text-texto-suave">
                   • {n}

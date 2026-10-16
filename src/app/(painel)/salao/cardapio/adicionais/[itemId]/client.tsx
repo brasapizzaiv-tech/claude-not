@@ -52,7 +52,7 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
       </div>
 
       {gruposFiltrados.map((g) => (
-        <div key={g.id} className="rounded-cartao border border-borda p-4">
+        <div key={g.id} className="cartao p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold text-texto">{g.nome}</h2>
             <span className="text-xs text-texto-fraco">

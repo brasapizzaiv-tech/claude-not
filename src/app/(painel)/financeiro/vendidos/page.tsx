@@ -204,10 +204,10 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
 
       {/* Cards */}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Valor total</p><p className="text-2xl font-bold text-texto">{brl(totalValor)}</p></div>
-        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Itens vendidos</p><p className="text-2xl font-bold text-texto">{totalQtd.toLocaleString("pt-BR")}</p></div>
-        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Buffet</p><p className="text-2xl font-bold text-texto">{brl(buffetValor)}</p><p className="text-xs text-texto-suave">{buffetPratos} pratos · {buffetKg.toFixed(1).replace(".", ",")} kg</p></div>
-        <div className="rounded-cartao border border-borda p-4"><p className="text-xs text-texto-suave">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-texto-suave">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
+        <div className="cartao p-4"><p className="text-xs text-texto-suave">Valor total</p><p className="text-2xl font-bold text-texto">{brl(totalValor)}</p></div>
+        <div className="cartao p-4"><p className="text-xs text-texto-suave">Itens vendidos</p><p className="text-2xl font-bold text-texto">{totalQtd.toLocaleString("pt-BR")}</p></div>
+        <div className="cartao p-4"><p className="text-xs text-texto-suave">Buffet</p><p className="text-2xl font-bold text-texto">{brl(buffetValor)}</p><p className="text-xs text-texto-suave">{buffetPratos} pratos · {buffetKg.toFixed(1).replace(".", ",")} kg</p></div>
+        <div className="cartao p-4"><p className="text-xs text-texto-suave">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-texto-suave">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
       </div>
 
       <VendidosClient linhas={linhas} total={totalValor} agrupar={agrupar} periodo={`${de} a ${ate}`} />

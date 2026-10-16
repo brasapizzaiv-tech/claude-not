@@ -197,7 +197,7 @@ export function RevisaoClient({
       )}
 
       {/* O que está na TV agora */}
-      <div className="mt-6 rounded-cartao border border-borda p-4">
+      <div className="mt-6 cartao p-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"><span className="inline-flex items-center gap-1.5"><Icone nome="tv" tamanho={14} /> Na TV agora ({naTv.length})</span></p>
           <a href="/checklists/apontamentos" className="text-xs text-texto-suave underline">histórico de apontamentos</a>

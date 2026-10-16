@@ -622,7 +622,7 @@ export function CompararClient({
       )}
 
       {produtos.length > 0 && (
-      <div className="max-h-[75vh] overflow-auto rounded-cartao border border-borda bg-painel-cartao">
+      <div className="max-h-[75vh] overflow-auto cartao">
         <table className="min-w-[560px] w-full text-sm">
           <thead className="text-left text-xs text-texto-suave">
             <tr>
@@ -965,7 +965,7 @@ export function CompararClient({
           </p>
           <div className="space-y-3">
             {[...exclusivosPorForn.entries()].map(([forn, itens]) => (
-              <div key={forn} className="rounded-cartao border border-borda bg-painel-cartao p-3">
+              <div key={forn} className="cartao p-3">
                 <p className="mb-1 text-sm font-semibold text-texto">
                   {forn}
                   <span className="ml-2 text-xs font-normal text-texto-fraco">

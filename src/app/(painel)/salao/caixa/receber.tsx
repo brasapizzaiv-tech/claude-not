@@ -573,7 +573,7 @@ export function ReceberComandas({
               </button>
             )}
             {abrirCli && !clienteSel && (
-              <div className="absolute right-0 z-30 mt-1 w-72 rounded-cartao border border-borda bg-painel-cartao p-2 dark:border-borda-forte">
+              <div className="absolute right-0 z-30 mt-1 w-72 cartao p-2">
                 <input
                   autoFocus
                   value={buscaCli}

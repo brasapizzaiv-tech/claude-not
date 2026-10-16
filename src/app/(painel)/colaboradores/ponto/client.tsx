@@ -29,7 +29,7 @@ export function ImportarAfd() {
         Arquivo AFD do RHiD
         <input type="file" name="arquivo" accept=".txt,text/plain" className="ml-2 max-w-48 text-xs" />
       </label>
-      <Enviar className="min-h-10 rounded-controle bg-texto px-3 font-semibold text-fundo">Importar</Enviar>
+      <Enviar className="btn-principal min-h-10">Importar</Enviar>
       {msg && <span className={`w-full text-xs ${msg.ok ? "text-emerald-600" : "text-red-600"}`}>{msg.t}</span>}
     </form>
   );
@@ -70,7 +70,7 @@ export function AjustarDia({ colaboradorId, nome, dia }: { colaboradorId: string
           <input name="motivo" placeholder="Motivo (opcional)" maxLength={200} className={`${CAMPO} w-full`} />
           <label className="block">Arquivo (foto ou PDF, opcional)<input type="file" name="arquivo" accept="image/*,application/pdf" className="mt-0.5 w-full" /></label>
           <div className="flex gap-2">
-            <Enviar className="min-h-8 rounded-controle bg-texto px-3 font-semibold text-fundo">Salvar</Enviar>
+            <Enviar className="btn-principal min-h-8">Salvar</Enviar>
             <button type="button" onClick={() => setAberto("")} className="text-texto-suave">cancelar</button>
           </div>
         </form>

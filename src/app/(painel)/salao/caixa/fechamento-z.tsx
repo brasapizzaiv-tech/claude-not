@@ -126,7 +126,7 @@ export function FechamentoZ({
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between rounded-cartao border border-borda p-3 text-sm">
+            <div className="mt-3 flex items-center justify-between cartao p-3 text-sm">
               <span className="font-medium text-texto-suave"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Dinheiro esperado na gaveta</span></span>
               <span className="text-lg font-bold text-texto">{brl(esperado)}</span>
             </div>

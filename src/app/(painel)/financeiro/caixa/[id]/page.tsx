@@ -109,7 +109,7 @@ export default async function FechamentoRelatorio({
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">
         {/* Detalhes do caixa */}
-        <div className="rounded-cartao border border-borda p-4">
+        <div className="cartao p-4">
           <h2 className="mb-1 font-semibold text-texto">
             Detalhes do caixa
           </h2>
@@ -159,20 +159,20 @@ export default async function FechamentoRelatorio({
         {/* Estatísticas + por forma */}
         <div>
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="rounded-cartao border border-borda p-4">
+            <div className="cartao p-4">
               <p className="text-xs text-texto-suave">Ticket médio</p>
               <p className="mt-1 text-lg font-bold text-texto">
                 {moeda(c.ticket_medio)}
               </p>
             </div>
-            <div className="rounded-cartao border border-borda p-4">
+            <div className="cartao p-4">
               <p className="text-xs text-texto-suave">Pedidos pagos</p>
               <p className="mt-1 text-lg font-bold text-texto">
                 {subPedidos}
               </p>
               <p className="text-xs text-texto-fraco">{moeda(subTotal)}</p>
             </div>
-            <div className="rounded-cartao border border-borda p-4">
+            <div className="cartao p-4">
               <p className="text-xs text-texto-suave">Total pedidos</p>
               <p className="mt-1 text-lg font-bold text-orange-600">
                 {moeda(c.total_pedidos)}

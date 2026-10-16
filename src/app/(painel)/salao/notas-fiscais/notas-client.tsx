@@ -31,7 +31,7 @@ const dataHora = (iso: string | null) =>
 
 function Card({ titulo, valor, cor }: { titulo: string; valor: string; cor?: string }) {
   return (
-    <div className="rounded-cartao border border-borda p-4">
+    <div className="cartao p-4">
       <p className="text-xs text-texto-suave">{titulo}</p>
       <p className={`mt-1 text-2xl font-bold ${cor ?? "text-texto"}`}>{valor}</p>
     </div>

@@ -67,7 +67,7 @@ export default async function WhatsappPage() {
         <div className="space-y-6">
           <NovoModelo />
 
-          <form action={salvarConfigWpp} className="space-y-3 rounded-cartao border border-borda p-4 text-sm">
+          <form action={salvarConfigWpp} className="space-y-3 cartao p-4 text-sm">
             <h2 className="font-semibold">Limites</h2>
             <p className="text-xs text-texto-suave">Enviadas hoje: <b>{hoje ?? 0}</b> de {c.limite_dia ?? 250}.</p>
             <label className="flex items-center justify-between gap-2">Máximo de mensagens por dia
@@ -90,7 +90,7 @@ export default async function WhatsappPage() {
             <label className="flex items-center justify-between gap-2">Utilidade (R$)
               <input name="preco_utilidade" defaultValue={preco(c.preco_utilidade)} inputMode="decimal" placeholder="ex.: 0,05" className={`${inp} w-24 text-right`} />
             </label>
-            <Enviar className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo">Salvar limites</Enviar>
+            <Enviar className="btn-principal">Salvar limites</Enviar>
           </form>
         </div>
       </div>

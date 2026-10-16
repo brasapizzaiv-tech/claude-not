@@ -56,7 +56,7 @@ export function ApontamentosClient({
       {lista.length === 0 ? (
         <p className="rounded-cartao bg-painel-cartao p-10 text-center text-texto-fraco">Nada por aqui.</p>
       ) : (
-        <ul className="divide-y divide-zinc-100 rounded-cartao border border-borda dark:divide-zinc-800">
+        <ul className="divide-y divide-zinc-100 cartao dark:divide-zinc-800">
           {lista.map((a) => (
             <li key={a.id} className="flex flex-wrap items-start gap-2 p-3 text-sm">
               <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-mini font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>

@@ -324,7 +324,7 @@ export function PainelPagamentos({
       )}
 
       {/* ---------- total pago / falta pagar ---------- */}
-      <div className="grid grid-cols-2 gap-2 rounded-cartao border border-borda p-2.5">
+      <div className="grid grid-cols-2 gap-2 cartao p-2.5">
         <div>
           <p className="text-mini text-texto-fraco">Total pago</p>
           <p className="text-xl font-black tabular-nums text-texto">{brl(somaPagos)}</p>

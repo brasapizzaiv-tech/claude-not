@@ -245,7 +245,7 @@ function Formulario({ inicial, hoje, setores, pessoas, erro, aoSalvar, aoCancela
 
       {erro && <p className="text-sm text-red-600">{erro}</p>}
       <div>
-        <Enviar className="min-h-11 rounded-controle bg-texto px-5 text-sm font-semibold text-fundo">{inicial ? "Salvar" : "Criar lembrete"}</Enviar>
+        <Enviar className="btn-principal min-h-11 text-sm">{inicial ? "Salvar" : "Criar lembrete"}</Enviar>
       </div>
     </form>
   );

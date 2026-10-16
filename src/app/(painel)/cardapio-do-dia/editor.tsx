@@ -251,7 +251,7 @@ export function EditorCardapio({
           </div>
 
           {/* Preços e ações */}
-          <div className="mt-4 rounded-cartao border border-borda p-4">
+          <div className="mt-4 cartao p-4">
             <div className="flex flex-wrap gap-3">
               <div>
                 <label className={rotulo}>LIVRE (R$)</label>
@@ -338,7 +338,7 @@ export function EditorCardapio({
 
         {/* Coluna da direita */}
         <div className="space-y-5">
-          <div className="rounded-cartao border border-borda p-4">
+          <div className="cartao p-4">
             <h2 className="mb-3 text-sm font-semibold text-texto">
               Próximos dias
             </h2>
@@ -471,7 +471,7 @@ function BlocoItens({
     !escolhidos.some((e) => norm(e) === norm(busca.trim()));
 
   return (
-    <div className="rounded-cartao border border-borda p-4">
+    <div className="cartao p-4">
       <div className="mb-2 flex items-baseline justify-between">
         <span className="inline-block bg-orange-500 px-2 py-0.5 text-mini font-bold text-marca-sobre-primaria">
           {titulo}
@@ -580,7 +580,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
   }, [itens, grupo, busca]);
 
   return (
-    <details className="rounded-cartao border border-borda p-4">
+    <details className="cartao p-4">
       <summary className="cursor-pointer text-sm font-semibold text-texto">
         Catálogo de pratos ({itens.length})
       </summary>

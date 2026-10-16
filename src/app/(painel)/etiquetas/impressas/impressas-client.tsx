@@ -71,7 +71,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
 
   return (
     <div className="space-y-5">
-      <div className="rounded-cartao border border-borda p-4">
+      <div className="cartao p-4">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {tab("ontem", "Ontem", periodo === "ontem")}
           {tab("hoje", "Hoje", periodo === "hoje")}

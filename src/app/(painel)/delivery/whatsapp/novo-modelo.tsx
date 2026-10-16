@@ -46,7 +46,7 @@ export function NovoModelo() {
   }
 
   return (
-    <div className="space-y-3 rounded-cartao border border-borda p-4 text-sm">
+    <div className="space-y-3 cartao p-4 text-sm">
       <h2 className="font-semibold">Novo modelo</h2>
       <label className="block">
         <span className="text-xs text-texto-suave">Começar de um texto sugerido</span>

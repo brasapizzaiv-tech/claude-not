@@ -110,7 +110,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
         <p className="px-3 pb-2 text-xs text-texto-fraco">Período {dm(doMes.de)} a {dm(doMes.ate)}{cfg.inicio ? ` · conta desde ${dm(cfg.inicio)}` : ""}. Falta só conta em dia que já passou.</p>
       </section>
 
-      <section className="mb-6 rounded-cartao border border-borda p-4">
+      <section className="mb-6 cartao p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-semibold">Trimestre {tri.replace("-T", " · T")} ({mesesTri.map(rotuloMes).join(", ")})</h2>
           {triAcabou ? <LancarTrimestre trimestre={tri} /> : <span className="text-xs text-texto-fraco">paga depois de {dm(fimTri)}</span>}
@@ -137,7 +137,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-cartao border border-borda p-4">
+        <section className="cartao p-4">
           <h2 className="mb-2 font-semibold">Atestados</h2>
           <NovoAtestado pessoas={((todosCols ?? []) as { id: string; nome: string }[])} hoje={hoje} />
           <ul className="mt-3 divide-y divide-borda text-sm">
@@ -154,7 +154,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
           </ul>
         </section>
 
-        <section className="rounded-cartao border border-borda p-4">
+        <section className="cartao p-4">
           <h2 className="mb-2 font-semibold">Regras</h2>
           <form action={salvarConfigAssiduidade} className="space-y-3 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" name="ativo" defaultChecked={cfg.ativo} className="h-4 w-4" /> Prêmio ligado</label>
@@ -178,7 +178,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
                 ))}
               </div>
             </div>
-            <Enviar className="min-h-10 rounded-controle bg-texto px-4 font-semibold text-fundo">Salvar regras</Enviar>
+            <Enviar className="btn-principal min-h-10">Salvar regras</Enviar>
           </form>
         </section>
       </div>

@@ -47,7 +47,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
       {msg && <p className="rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{msg}</p>}
 
       {/* Setores */}
-      <div className="rounded-cartao border border-borda p-4">
+      <div className="cartao p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Setores</p>
           <button onClick={() => setVerSetores((v) => !v)} className="text-xs text-texto-suave underline">

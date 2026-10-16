@@ -137,7 +137,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                 </div>
                 <div className="space-y-2">
                   {its.map((r) => (
-                    <div key={r.id} className="rounded-cartao border border-borda bg-painel-cartao p-2.5 text-sm">
+                    <div key={r.id} className="cartao p-2.5 text-sm">
                       <div className="font-medium text-texto">{r.produto_nome}{badgeTipo(r.tipo)}</div>
                       <div className="text-xs text-texto-fraco">
                         #{r.numero}{r.categoria_nome ? ` · ${r.categoria_nome}` : ""}{r.conservacao ? ` · ${r.conservacao}` : ""}

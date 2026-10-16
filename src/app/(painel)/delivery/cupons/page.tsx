@@ -26,7 +26,7 @@ export default async function CuponsPage() {
       <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="etiqueta" tamanho={19} /> Cupons de desconto</h1>
       <p className="mb-5 text-sm text-texto-suave">O cliente digita o código no carrinho do app (/pedir) e o desconto entra no pedido.</p>
 
-      <form action={criarCupom} className="mb-6 flex flex-wrap items-end gap-2 rounded-cartao border border-borda p-4">
+      <form action={criarCupom} className="mb-6 flex flex-wrap items-end gap-2 cartao p-4">
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Código</label>
           <input name="codigo" required placeholder="BRASA10" className={`${inputCls} w-32 `} />
@@ -54,7 +54,7 @@ export default async function CuponsPage() {
           <label className="mb-1 block text-xs text-texto-suave">Limite de usos</label>
           <input name="max_usos" inputMode="numeric" placeholder="—" className={`${inputCls} w-20`} />
         </div>
-        <Enviar className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo">+ Criar cupom</Enviar>
+        <Enviar className="btn-principal text-sm">+ Criar cupom</Enviar>
       </form>
 
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">

@@ -75,7 +75,7 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
                   Cancelar
                 </button>
                 <Enviar
-                  className="min-h-11 rounded-controle bg-texto px-5 text-sm font-semibold text-fundo transition hover:opacity-90"
+                  className="btn-principal min-h-11 text-sm"
                 >
                   {entrada ? "Lançar entrada" : "Lançar saída"}
                 </Enviar>

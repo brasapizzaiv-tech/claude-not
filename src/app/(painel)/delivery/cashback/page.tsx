@@ -65,7 +65,7 @@ export default async function CashbackPage() {
         <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-suave">Situação</div><div className={`text-lg font-semibold ${c.ativo ? "text-emerald-600" : "text-texto-suave"}`}>{c.ativo ? "Ligado" : "Desligado"}</div></div>
       </div>
 
-      <form action={salvarCashback} className="rounded-cartao border border-borda px-4">
+      <form action={salvarCashback} className="cartao px-4">
         <div className={secao}>
           <div className={titulo}>Ativar cashback</div>
           <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" name="ativo" defaultChecked={c.ativo} className="h-4 w-4" /> Cashback ligado</label>
@@ -120,7 +120,7 @@ export default async function CashbackPage() {
         </div>
 
         <div className="flex justify-end pb-4">
-          <Enviar className="rounded-controle bg-texto px-5 py-2 text-sm font-semibold text-fundo">Salvar</Enviar>
+          <Enviar className="btn-principal text-sm">Salvar</Enviar>
         </div>
       </form>
 

@@ -147,7 +147,7 @@ export function EventosClient({ eventos, hoje }: { eventos: Evento[]; hoje: stri
           </div>
 
           <div>
-            <Enviar className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+            <Enviar className="btn-principal min-h-11 text-sm">
               <Icone nome="certo" tamanho={16} /> {editando ? "Salvar" : "Marcar"}
             </Enviar>
           </div>
