@@ -228,10 +228,18 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
   const [fStatus, setFStatus] = useState<string>("ativos");
   const [fTipo, setFTipo] = useState<string>("todos");
   const [fOrigem, setFOrigem] = useState<string>("todos");
-  // Turno (numeração recomeça a cada um): abre no de agora, se tiver pedido nele.
+  // Turno (numeração recomeça a cada um). O filtro SEGUE o turno de agora:
+  // abrir ou recarregar a página volta pra ele, e quando o turno vira (16h) ele
+  // passa sozinho pro novo. Só fica em outro turno se a pessoa escolher — e
+  // essa escolha vale enquanto a página estiver aberta.
   const chaveTurno = (p: PedidoBoard) => (p.turno && p.turno_data ? `${p.turno_data}|${p.turno}` : "");
-  const turnos = useMemo(() => [...new Set(pedidos.map(chaveTurno).filter(Boolean))].sort().reverse(), [pedidos]);
-  const [fTurno, setFTurno] = useState<string>(() => (turnoAtual && pedidos.some((p) => chaveTurno(p) === turnoAtual) ? turnoAtual : "todos"));
+  const turnos = useMemo(
+    () => [...new Set([...(turnoAtual ? [turnoAtual] : []), ...pedidos.map(chaveTurno).filter(Boolean)])].sort().reverse(),
+    [pedidos, turnoAtual],
+  );
+  const [turnoEscolhido, setTurnoEscolhido] = useState<string | null>(null);
+  const fTurno = turnoEscolhido ?? turnoAtual ?? "todos";
+  const setFTurno = (v: string) => setTurnoEscolhido(v === turnoAtual ? null : v);
   const nomeTurno = (k: string) => { const [d, t] = k.split("|"); return `${t} · ${d.slice(8, 10)}/${d.slice(5, 7)}${k === turnoAtual ? " (agora)" : ""}`; };
   const [busca, setBusca] = useState("");
   const [nowMs, setNowMs] = useState(() => new Date().getTime());
