@@ -49,8 +49,8 @@ function F({
   );
 }
 
-export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
-  const [busca, setBusca] = useState("");
+export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Cliente[]; buscaInicial?: string }) {
+  const [busca, setBusca] = useState(buscaInicial);
   const [editando, setEditando] = useState<Cliente | null>(null);
   const [aberto, setAberto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -205,7 +205,7 @@ export function ClientesClient({ clientes }: { clientes: Cliente[] }) {
               <button type="button" onClick={() => setAberto(false)} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">
                 Cancelar
               </button>
-              <Enviar disabled={salvando} className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+              <Enviar disabled={salvando} className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50">
                 {salvando ? "Salvando..." : "Salvar"}
               </Enviar>
             </div>

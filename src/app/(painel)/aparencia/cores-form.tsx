@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Icone } from "@/components/icone";
 import { salvarCoresEmpresa } from "./actions";
+import { paletaDaEmpresa, sobre } from "@/lib/paleta";
 
 // Escolha das cores da empresa, com prévia ao vivo.
 //
@@ -11,18 +12,6 @@ import { salvarCoresEmpresa } from "./actions";
 // caixa que redefine as variáveis da marca. Enquanto você mexe no seletor, ela
 // já mostra como o botão, o cartão de foco e o mapa do salão vão ficar — com a
 // escala inteira derivada da cor, igual ao sistema faz.
-
-/** A letra por cima da cor. MESMA conta do servidor (src/lib/marca.ts): fica
- *  branca enquanto der 3:1 de contraste, e só vira escura quando não der. */
-function sobre(cor: string): string {
-  const n = parseInt(cor.slice(1), 16);
-  const canais = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
-    const s = c / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  });
-  const brilho = 0.2126 * canais[0] + 0.7152 * canais[1] + 0.0722 * canais[2];
-  return 1.05 / (brilho + 0.05) >= 3 ? "#ffffff" : "#18181b";
-}
 
 function Campo({
   rotulo, ajuda, valor, onChange,
@@ -68,7 +57,7 @@ export function CoresForm({
   const DEGRAUS: [number, number, "white" | "black"][] = [
     [50, 10, "white"], [100, 22, "white"], [200, 44, "white"], [300, 64, "white"],
     [400, 82, "white"], [500, 100, "white"],
-    [600, 88, "black"], [700, 72, "black"], [800, 54, "black"], [900, 38, "black"], [950, 21, "black"],
+    [600, 88, "black"], [700, 72, "black"], // 600/700 da tela de verdade vêm do --texto-marca [800, 54, "black"], [900, 38, "black"], [950, 21, "black"],
   ];
   const escala = Object.fromEntries(
     DEGRAUS.map(([g, pct, com]) => [
@@ -77,11 +66,20 @@ export function CoresForm({
     ]),
   );
 
+  // A paleta inteira girada pro tom escolhido — a MESMA conta do servidor
+  // (src/lib/paleta.ts), no tema que a pessoa está usando agora.
+  const escuroAgora = useSyncExternalStore(
+    () => () => {},
+    () => document.documentElement.dataset.tema === "escuro",
+    () => false,
+  );
+  const pal = paletaDaEmpresa(primaria);
   const previa = {
     "--marca-primaria": primaria,
     "--marca-escuro": escuro,
     "--marca-sobre-escuro": sobreEscuro,
-    "--marca-sobre-primaria": sobre(primaria),
+    "--marca-sobre-primaria": sobre(primaria, escuro),
+    ...Object.fromEntries(Object.entries(escuroAgora ? pal.escura : pal.clara).map(([k, v]) => [`--${k}`, v])),
     ...escala,
   } as React.CSSProperties;
 

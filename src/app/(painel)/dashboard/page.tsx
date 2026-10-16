@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { moedaBR } from "@/lib/format";
-import { type NomeIcone } from "@/components/icone";
+import { tipoDe } from "@/lib/formas-pagamento";
+import { formasParaTipo } from "@/lib/formas-pagamento-server";
+import { pedidoAtrasado } from "@/lib/delivery-atraso";
 import { Inicio, type DadosInicio, type Mesa } from "./inicio";
 
 // Tela inicial do painel (Etapa 4 do design).
@@ -94,6 +96,9 @@ export default async function DashboardPage({
     { data: deliveryDia },
     { data: etiquetasVencidas },
     { data: presencasHoje },
+    { data: cfgDelivery },
+    contagemComandas,
+    formasT,
   ] = await Promise.all([
     supabase.from("pdv_config").select("chave, valor"),
     supabase
@@ -104,19 +109,30 @@ export default async function DashboardPage({
     // Movimentos dos últimos 7 dias + o dia da semana anterior, numa consulta só.
     supabase
       .from("pdv_caixa_mov")
-      .select("tipo, valor, criado_em")
+      .select("tipo, valor, forma_pagamento, criado_em")
       .gte("criado_em", jAntes.de < inicioSerie ? jAntes.de : inicioSerie)
       .lt("criado_em", j.ate),
     supabase.from("pedidos_rodizio").select("status, quantidade, criado_em").gte("criado_em", j.de).lt("criado_em", j.ate),
     supabase
       .from("delivery_pedidos")
-      .select("status, criado_em, previsao_em, saiu_em, entregue_em")
+      .select("status, criado_em, previsao_em, saiu_em, entregue_em, agendado_para")
       .gte("criado_em", j.de)
       .lt("criado_em", j.ate),
     pode("etiquetas")
       ? supabase.from("etiquetas").select("id").eq("status", "ativa").lt("validade", dia)
       : Promise.resolve({ data: [] as { id: string }[] }),
     supabase.from("presencas").select("colaborador_id, turno").eq("data", dia),
+    supabase.from("delivery_config").select("aberto").maybeSingle(),
+    // Comandas abertas em cada um dos 7 dias + o mesmo dia da semana passada
+    // (contagem pelo banco, sem trazer linhas: passa fácil de 1000 na semana).
+    Promise.all(
+      [...Array.from({ length: 7 }, (_, i) => somarDias(dia, i - 6)), semanaAtras].map(async (d) => {
+        const jj = janelaDoDia(d);
+        const { count } = await supabase.from("pdv_comandas").select("id", { count: "exact", head: true }).gte("criado_em", jj.de).lt("criado_em", jj.ate);
+        return count ?? 0;
+      }),
+    ),
+    formasParaTipo(),
   ]);
 
   const cfg: Record<string, string> = {};
@@ -125,12 +141,22 @@ export default async function DashboardPage({
   const grupos = lerGrupos(cfg.mesa_grupos, qtdMesas);
 
   // ---------- Faturamento: do dia, do mesmo dia da semana passada, e a série ----------
-  type Mov = { tipo: string; valor: number; criado_em: string };
+  type Mov = { tipo: string; valor: number; forma_pagamento: string | null; criado_em: string };
   const movs = ((movSerie as Mov[]) ?? []).filter((m) => m.tipo === "venda");
   const somaEntre = (de: string, ate: string) =>
     movs.filter((m) => m.criado_em >= de && m.criado_em < ate).reduce((s, m) => s + Number(m.valor || 0), 0);
 
   const fatDia = somaEntre(j.de, j.ate);
+  // Divisão do dia em Pix / cartão / dinheiro (o resto — vale, outros — fica
+  // só no total). O tipo vem do cadastro de formas de pagamento.
+  const porTipo = { pix: 0, cartao: 0, dinheiro: 0 };
+  for (const m of movs) {
+    if (m.criado_em < j.de || m.criado_em >= j.ate) continue;
+    const t = tipoDe(m.forma_pagamento, formasT);
+    if (t === "pix" || t === "pix_maquina") porTipo.pix += Number(m.valor || 0);
+    else if (t === "credito" || t === "debito" || t === "cartao") porTipo.cartao += Number(m.valor || 0);
+    else if (t === "dinheiro") porTipo.dinheiro += Number(m.valor || 0);
+  }
   const fatAntes = somaEntre(jAntes.de, jAntes.ate);
   const serieFat: number[] = [];
   for (let i = 6; i >= 0; i--) {
@@ -188,7 +214,7 @@ export default async function DashboardPage({
   ).length;
 
   // ---------- Delivery ----------
-  type Del = { status: string; criado_em: string; previsao_em: string | null; saiu_em: string | null; entregue_em: string | null };
+  type Del = { status: string; criado_em: string; previsao_em: string | null; saiu_em: string | null; entregue_em: string | null; agendado_para: string | null };
   const dels = (deliveryDia as Del[]) ?? [];
   const delCozinha = dels.filter((p) => p.status === "em_preparo" || p.status === "aceito").length;
   const delRua = dels.filter((p) => p.status === "saiu").length;
@@ -197,9 +223,9 @@ export default async function DashboardPage({
     .map((p) => (new Date(p.entregue_em!).getTime() - new Date(p.criado_em).getTime()) / 60000)
     .filter((n) => n > 0 && n < 240);
   const tempoMedio = tempos.length ? Math.round(tempos.reduce((s, n) => s + n, 0) / tempos.length) : null;
-  const delAtrasados = dels.filter(
-    (p) => p.previsao_em && !p.entregue_em && p.status !== "cancelado" && agora > new Date(p.previsao_em).getTime(),
-  ).length;
+  // Atrasado = passou de 45 min desde que entrou e ainda não foi entregue
+  // (meta do delivery, a mesma da lista de pedidos).
+  const delAtrasados = dels.filter((p) => pedidoAtrasado(p, agora)).length;
 
   // ---------- Itens em atraso ----------
   // O Rafael pediu um número só juntando os três. Como um número só esconde o
@@ -226,38 +252,40 @@ export default async function DashboardPage({
   }
 
   // ---------- Precisa de você ----------
-  const pendencias: { rotulo: string; n: number; href: string; icone: NomeIcone }[] = [];
+  const pendencias: DadosInicio["pendencias"] = [];
   if (pode("checklists")) {
     const { count } = await supabase
       .from("checklist_execucoes")
       .select("id", { count: "exact", head: true })
       .eq("data", dia)
       .is("concluido_em", null);
-    if (count) pendencias.push({ rotulo: "Checklist não concluído", n: count, href: "/checklists", icone: "checklist" });
+    if (count) pendencias.push({ rotulo: count === 1 ? "Checklist de hoje ainda não foi concluído" : `${count} checklists de hoje não foram concluídos`, n: count, nota: count === 1 ? "checklist" : `${count} listas`, urgente: true, href: "/checklists", icone: "checklist" });
   }
   if (pode("cotacoes")) {
     const { count } = await supabase
       .from("cotacao_fornecedores")
       .select("id", { count: "exact", head: true })
       .eq("status", "enviado");
-    if (count) pendencias.push({ rotulo: "Cotação sem resposta", n: count, href: "/cotacoes", icone: "moedas" });
+    if (count) pendencias.push({ rotulo: count === 1 ? "Uma cotação aguarda resposta do fornecedor" : `Cotações aguardam resposta de ${count} fornecedores`, n: count, nota: `${count} sem resposta`, urgente: false, href: "/cotacoes", icone: "moedas" });
   }
   if (pode("cardapio_dia")) {
     const { data: card } = await supabase.from("cardapio_dia").select("publicado").eq("data", dia).maybeSingle();
     if (!card?.publicado) {
-      pendencias.push({ rotulo: "Cardápio do dia não publicado", n: 1, href: "/cardapio-do-dia", icone: "salao" });
+      pendencias.push({ rotulo: "Cardápio do dia ainda não publicado", n: 1, nota: "cardápio", urgente: false, href: "/cardapio-do-dia", icone: "salao" });
     }
   }
   if (delAtrasados) {
-    pendencias.push({ rotulo: "Entrega atrasada", n: delAtrasados, href: "/delivery", icone: "entrega" });
+    pendencias.unshift({ rotulo: delAtrasados === 1 ? "Um pedido do delivery está atrasado" : `${delAtrasados} pedidos do delivery estão atrasados`, n: delAtrasados, nota: "delivery", urgente: true, href: "/delivery", icone: "entrega" });
   }
 
   const dados: DadosInicio = {
     nome: (profile?.nome ?? user?.email ?? "").split(" ")[0] || "por aqui",
+    saudacao: horaAgora < 12 ? "Bom dia" : horaAgora < 18 ? "Boa tarde" : "Boa noite",
     dia,
-    diaLegivel: new Date(dia + "T12:00:00Z").toLocaleDateString("pt-BR", {
-      weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
-    }),
+    diaLegivel: (() => {
+      const t = new Date(dia + "T12:00:00Z").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    })(),
     ehHoje,
     indicadores: [
       {
@@ -272,7 +300,8 @@ export default async function DashboardPage({
         rotulo: "Comandas abertas",
         valor: String(abertas.length),
         variacao: null,
-        serie: [],
+        diferenca: contagemComandas[6] - contagemComandas[7],
+        serie: contagemComandas.slice(0, 7),
       },
       {
         chave: "atraso",
@@ -290,6 +319,9 @@ export default async function DashboardPage({
     caixa: {
       aberto: !!caixaAberto,
       valor: moedaBR(fatDia),
+      pix: moedaBR(porTipo.pix),
+      cartao: moedaBR(porTipo.cartao),
+      dinheiro: moedaBR(porTipo.dinheiro),
       desde: caixaAberto?.aberto_em
         ? new Date(caixaAberto.aberto_em as string).toLocaleTimeString("pt-BR", {
             hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo",
@@ -304,9 +336,9 @@ export default async function DashboardPage({
       maisAntiga,
       rodizioDia: rodizioTotal,
     },
-    delivery: { cozinha: delCozinha, rua: delRua, entregues: entregues.length, tempoMedio },
+    delivery: { aberto: !!(cfgDelivery as { aberto?: boolean } | null)?.aberto, cozinha: delCozinha, rua: delRua, entregues: entregues.length, tempoMedio },
     pendencias,
-    turno: { rotulo: turnoAgora === "noite" ? "à noite" : "de dia", pessoas: pessoasTurno },
+    turno: { rotulo: turnoAgora === "noite" ? "noite" : "dia", pessoas: pessoasTurno },
   };
 
   return <Inicio d={dados} />;

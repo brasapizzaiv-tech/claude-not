@@ -27,7 +27,7 @@ export function BotaoConciliar({
       }
       className={`rounded-controle px-3 py-1.5 text-xs font-medium disabled:opacity-60 ${
         vincular
-          ? "bg-orange-500 text-white hover:bg-orange-600"
+          ? "bg-orange-500 text-marca-sobre-primaria hover:brightness-105"
           : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
       }`}
     >

@@ -20,7 +20,7 @@ const btnSec = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs f
 // Etapa 3: passa a vir da cor da empresa.
 const COR_PRIMARIA = "#c78340"; // <input type="color"> não aceita variável de CSS; é só o valor inicial do seletor
 const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1 text-xs font-medium ${on ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`;
+  `rounded-full border px-3 py-1 text-xs font-medium ${on ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-borda-forte text-texto-suave  "}`;
 
 export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; modelos: Modelo[]; itens: ModeloItem[] }) {
   const router = useRouter();
@@ -304,7 +304,7 @@ function ModeloModal({
           <button
             onClick={() => onSalvar({ id: modelo?.id, nome, setor_id: setorId, momento, dias, servicos })}
             disabled={proc || nome.trim().length < 2 || !setorId}
-            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50"
           >
             Salvar
           </button>
@@ -352,7 +352,7 @@ function ItemModal({
           <button
             onClick={() => onSalvar({ id: item?.id, texto, instrucao: instrucao || null, secao: secao || null, tipo, exige_foto: foto, obrigatorio: obrig })}
             disabled={proc || texto.trim().length < 2}
-            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50"
           >
             Salvar
           </button>

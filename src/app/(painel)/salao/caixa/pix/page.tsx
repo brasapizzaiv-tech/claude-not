@@ -88,7 +88,7 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
         </div>
         <div className="flex gap-1 text-sm">
           {[1, 7, 30].map((d) => (
-            <Link key={d} href={`/salao/caixa/pix?dias=${d}`} className={`rounded-controle px-3 py-1.5 ${dias === d ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>
+            <Link key={d} href={`/salao/caixa/pix?dias=${d}`} className={`rounded-controle px-3 py-1.5 ${dias === d ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`}>
               {d === 1 ? "Hoje" : `${d} dias`}
             </Link>
           ))}

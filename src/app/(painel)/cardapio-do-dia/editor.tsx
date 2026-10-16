@@ -473,7 +473,7 @@ function BlocoItens({
   return (
     <div className="rounded-cartao border border-borda p-4">
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="inline-block bg-orange-500 px-2 py-0.5 text-mini font-bold text-white">
+        <span className="inline-block bg-orange-500 px-2 py-0.5 text-mini font-bold text-marca-sobre-primaria">
           {titulo}
         </span>
         <span className="text-mini text-texto-fraco">
@@ -593,7 +593,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
               onClick={() => setGrupo(b.grupo)}
               className={`rounded-controle px-3 py-1.5 text-xs font-medium ${
                 grupo === b.grupo
-                  ? "bg-orange-500 text-white"
+                  ? "bg-orange-500 text-marca-sobre-primaria"
                   : "border border-borda-forte text-texto-suave  "
               }`}
             >

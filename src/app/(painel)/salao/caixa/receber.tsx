@@ -614,12 +614,12 @@ export function ReceberComandas({
             >
               Comanda {c.numero}
               {c.mesa ? ` · ${c.mesa}` : ""}
-              {c.livre && <span className="ml-1 rounded bg-orange-500 px-1.5 text-mini font-bold text-white">LIVRE</span>}
+              {c.livre && <span className="ml-1 rounded bg-orange-500 px-1.5 text-mini font-bold text-marca-sobre-primaria">LIVRE</span>}
               {c.pesada && !c.livre && !c.buffetPago && (
                 <button
                   onClick={() => virarLivre(c)}
                   title="Cliente vai comer à vontade: troca o valor do peso pelo buffet livre do dia"
-                  className="ml-1 rounded-full bg-orange-500 px-2 py-0.5 text-mini font-bold text-white hover:bg-orange-600"
+                  className="ml-1 rounded-full bg-orange-500 px-2 py-0.5 text-mini font-bold text-marca-sobre-primaria hover:brightness-105"
                 >
                   <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> Virar livre</span>
                 </button>
@@ -889,8 +889,8 @@ export function ReceberComandas({
                       <div className="mb-1 flex items-center justify-between">
                         <label className="text-xs text-texto-suave">Desconto</label>
                         <span className="flex overflow-hidden rounded-controle border border-borda-forte text-mini">
-                          <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-white" : "text-texto-suave"}`}>R$</button>
-                          <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-white" : "text-texto-suave"}`}>%</button>
+                          <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-marca-sobre-primaria" : "text-texto-suave"}`}>R$</button>
+                          <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-marca-sobre-primaria" : "text-texto-suave"}`}>%</button>
                         </span>
                       </div>
                       <input
@@ -941,7 +941,7 @@ export function ReceberComandas({
                         onClick={() => setPessoas(String(n))}
                         className={`rounded px-2 py-0.5 font-medium ${
                           num(pessoas) === n
-                            ? "bg-orange-500 text-white"
+                            ? "bg-orange-500 text-marca-sobre-primaria"
                             : "border border-borda-forte text-texto-suave  "
                         }`}
                       >

@@ -176,7 +176,7 @@ export function RevisaoClient({
                   <button
                     key={p.rotulo}
                     onClick={() => { setPrazoDias(p.dias); setPrazoData(""); }}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium ${!prazoData && prazoDias === p.dias ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${!prazoData && prazoDias === p.dias ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-borda-forte text-texto-suave  "}`}
                   >
                     {p.rotulo}
                   </button>
@@ -188,7 +188,7 @@ export function RevisaoClient({
             <button
               onClick={() => agir(() => publicarNaTv(naoPublicados.map((a) => a.id), prazoEscolhido()), `Publicado na TV até ${dataCurta(prazoEscolhido())}.`)}
               disabled={proc}
-              className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-50"
+              className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-bold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50"
             >
               <Icone nome="tv" tamanho={15} className="mr-1.5" /> Publicar na TV ({naoPublicados.length}) até {dataCurta(prazoEscolhido())}
             </button>
@@ -296,7 +296,7 @@ function ApontarModal({
                   key={p.rotulo}
                   type="button"
                   onClick={() => { setPrazo(p.dias); setPrazoData(""); }}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-medium ${!prazoData && prazo === p.dias ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium ${!prazoData && prazo === p.dias ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-borda-forte text-texto-suave  "}`}
                 >
                   {p.rotulo}
                 </button>
@@ -324,7 +324,7 @@ function ApontarModal({
               pessoa_nome: pessoa, na_tv: naTv, ate: naTv ? ate : null, mostrar_nome: mostrarNome,
             })}
             disabled={proc || texto.trim().length < 3}
-            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50"
           >
             {naTv ? "Apontar e publicar" : "Apontar"}
           </button>

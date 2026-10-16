@@ -205,7 +205,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         <button
           onClick={() => start(async () => { await salvarFechamento(f); })}
           disabled={proc || !f.data}
-          className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
         >
           {proc ? "Salvando..." : "Salvar fechamento"}
         </button>

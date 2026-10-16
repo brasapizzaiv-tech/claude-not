@@ -39,11 +39,12 @@
 
 :root {
   /* ---------- 1. Marca ---------- */
-  /* Brasa: laranja #C78340 e grafite #211915. Na Etapa 3 estes três valores
-     passam a vir do cadastro da empresa; o resto do arquivo não muda. */
-  --marca-primaria: #c78340;
-  --marca-escuro: #211915;   /* fundo escuro da marca (cardápio, cupons, site) */
-  --marca-sobre-escuro: #e8ded5; /* texto por cima do grafite */
+  /* Brasa: laranja #E57A2C e grafite #1C120C (layout novo, out/2026; antes
+     #C78340 e #211915). Os valores de verdade vêm do cadastro da empresa
+     (src/lib/marca.ts); estes são a reserva. */
+  --marca-primaria: #e57a2c;
+  --marca-escuro: #1c120c;   /* grafite da marca: texto forte e cartão de foco */
+  --marca-sobre-escuro: #fff6ec; /* texto por cima do grafite */
 
   /* ---------- 2. Escalas derivadas da marca ---------- */
   /* Remapeia o laranja padrão do Tailwind pro tom da marca: todos os
@@ -62,8 +63,11 @@
   --color-orange-200: color-mix(in srgb, var(--marca-primaria) 44%, white);
   --color-orange-300: color-mix(in srgb, var(--marca-primaria) 64%, white);
   --color-orange-400: color-mix(in srgb, var(--marca-primaria) 82%, white);
-  --color-orange-600: color-mix(in srgb, var(--marca-primaria) 88%, black);
-  --color-orange-700: color-mix(in srgb, var(--marca-primaria) 72%, black);
+  /* 600 e 700 são os tons de TEXTO laranja (link, destaque): saem do token
+     --texto-marca, que tem contraste garantido sobre o creme (5:1). Antes eram
+     mistura com preto e ficavam em 3,7:1 — pouco pra letra. */
+  --color-orange-600: var(--texto-marca);
+  --color-orange-700: color-mix(in srgb, var(--texto-marca) 80%, black);
   --color-orange-800: color-mix(in srgb, var(--marca-primaria) 54%, black);
   --color-orange-900: color-mix(in srgb, var(--marca-primaria) 38%, black);
   --color-orange-950: color-mix(in srgb, var(--marca-primaria) 21%, black);
@@ -72,7 +76,7 @@
      preciso medir o brilho da cor), então quem calcula é o servidor, em
      src/lib/marca.ts. Se a empresa escolher um tom claro, isto vira escuro
      sozinho e o botão continua legível. Este valor aqui é a reserva. */
-  --marca-sobre-primaria: #ffffff;
+  --marca-sobre-primaria: #1c120c;
 
   /* ---------- 2b. As cores de estado ----------
      Vêm da cozinha em vez do verde, vermelho e amarelo de fábrica, que
@@ -150,17 +154,59 @@
   --color-sky-900: #2a4452;
   --color-sky-950: #182c37;
 
+  /* ---------- 2c. Cinza quente ----------
+     O cinza frio do Tailwind (zinc, ~990 usos) vira o cinza quente da paleta
+     nova, pra tela que ainda não foi convertida já sair no tom certo. Os
+     degraus seguem a mesma luz do zinc original, então o contraste de quem já
+     escreveu text-zinc-500 continua o mesmo. */
+  --color-zinc-50:  #fbf2e8;
+  --color-zinc-100: #f6eadd;
+  --color-zinc-200: #f1e2d2;
+  --color-zinc-300: #e3cdb8;
+  --color-zinc-400: #a8968a;
+  --color-zinc-500: #7a6a5d;
+  --color-zinc-600: #5e534b;
+  --color-zinc-700: #463c35;
+  --color-zinc-800: #2e241e;
+  --color-zinc-900: #1c120c;
+  --color-zinc-950: #140d09;
+
   /* ---------- 3. Semânticos (tema claro) ---------- */
   color-scheme: light;        /* barra de rolagem e campos do navegador */
 
-  --fundo: #ffffff;           /* fundo da página */
-  --superficie: #ffffff;      /* cartões, barras, modais */
-  --superficie-suave: #fafafa;/* faixas e cabeçalhos de tabela (zinc-50) */
-  --borda: #e4e4e7;           /* zinc-200 */
-  --borda-forte: #d4d4d8;     /* zinc-300 — contorno de campo e botão */
-  --texto: #18181b;           /* zinc-900 */
-  --texto-suave: #71717a;     /* zinc-500 — legendas e apoio */
-  --texto-fraco: #a1a1aa;     /* zinc-400 — vazio e desabilitado */
+  --fundo: #ffffff;           /* fundo das telas públicas (o painel usa --painel-fundo) */
+
+  /* A PALETA (src/lib/paleta.ts). Estes valores são a reserva com o laranja
+     do Brasa; o CSS da empresa (src/lib/marca.ts) repete a lista girada pro
+     tom dela. Mudou um valor aqui? Mude lá também. */
+  --painel-fundo: #fff8ef;
+  --painel-cartao: #ffffff;
+  --superficie: #ffffff;
+  --superficie-suave: #fbf2e8;
+  --destaque: #ffe7d1;
+  --borda: #f1e2d2;
+  --borda-forte: #e3cdb8;
+  --texto: #1c120c;
+  --texto-suave: #6e635b;
+  --texto-fraco: #7a6a5d;
+  --texto-marca: #b44d14;
+  --texto-marca-pilula: #a3440f;
+  --ok-fundo: #d9f2e2;
+  --ok-texto: #1e7a43;
+  --urgente-fundo: #fde1da;
+  --urgente-texto: #b42a18;
+  --urgente-solido: #d63a22;
+  --info-fundo: #e3ecfb;
+  --info-texto: #2b58a8;
+  --painel-foco-fundo: var(--marca-escuro);
+  --painel-foco-texto: #fff6ec;
+  --painel-foco-suave: #c9b8a8;
+  --painel-foco-rotulo: #ffb25e;
+  --painel-foco-linha: #4a3e36;
+  --sombra-cartao: 0 2px 4px rgba(120, 60, 20, 0.05), 0 10px 24px rgba(120, 60, 20, 0.08);
+  --sombra-controle: 0 1px 3px rgba(120, 60, 20, 0.05), 0 6px 18px rgba(120, 60, 20, 0.06);
+  --sombra-foco-cartao: 0 14px 30px rgba(28, 18, 12, 0.24);
+  --brilho-primaria: 0 6px 16px rgba(229, 122, 44, 0.32);
 
   --primaria: var(--marca-primaria);
   --sucesso: var(--color-emerald-600);
@@ -176,20 +222,16 @@
      O cartão de FOCO é invertido em relação ao fundo: no tema claro ele é
      grafite, no escuro ele é claro. É onde ficam as ações principais da tela —
      uma por tela, pra não competir com nada. */
-  --painel-fundo: #f4f4f5;        /* a mesa onde os cartões se apoiam */
-  --painel-cartao: #ffffff;       /* o cartão, um degrau acima */
-  --painel-foco-fundo: #211915;   /* grafite da marca */
-  --painel-foco-texto: #e8ded5;
 
-  /* ---------- 3b. Formas (Etapa 4) ----------
-     Só DOIS raios no sistema, pra parar com a mistura de rounded-lg,
-     rounded-xl e rounded-2xl espalhada pelas telas:
-       cartão   → o que agrupa conteúdo
-       controle → botão, campo, etiqueta e quadradinho de mesa
-     Viram as classes rounded-cartao e rounded-controle. As telas que ainda não
-     foram convertidas seguem com os raios antigos até chegar a vez delas. */
-  --raio-cartao: 16px;
-  --raio-controle: 10px;
+  /* ---------- 3b. Formas (layout novo, out/2026) ----------
+     Três raios e a pílula, no lugar da mistura de rounded-lg/xl/2xl:
+       cartão   20px → o que agrupa conteúdo        (rounded-cartao)
+       controle 14px → botão, campo, busca           (rounded-controle)
+       mesa     10px → quadradinho de mesa e ícone   (rounded-mesa)
+       pílula        → etiqueta, filtro, contador    (rounded-full) */
+  --raio-cartao: 20px;
+  --raio-controle: 14px;
+  --raio-mesa: 10px;
 
   /* Número e título grande ficam um pouco mais apertados. */
   --letra-apertada: -0.03em;
@@ -230,28 +272,43 @@
 
     /* Grafite da marca como fundo, com superfícies e bordas em tons quentes
        derivados dele — combinam com o laranja. */
-    --color-zinc-950: #211915; /* fundo principal / linhas */
-    --color-zinc-900: #2b211b; /* superfícies (sidebar, cabeçalhos, cartões) */
-    --color-zinc-800: #3d2f26; /* bordas e hover — mais visíveis */
-    --color-zinc-700: #4d3b2f; /* bordas de inputs/botões */
+    --color-zinc-950: #140d09; /* fundo principal / linhas */
+    --color-zinc-900: #1f1611; /* superfícies (sidebar, cabeçalhos, cartões) */
+    --color-zinc-800: #3a2a20; /* bordas e hover — mais visíveis */
+    --color-zinc-700: #4a3a2e; /* bordas de inputs/botões */
 
-    --fundo: var(--marca-escuro);
-    --superficie: #2b211b;
-    /* Um degrau ACIMA da superfície, e não igual a ela como era antes: no
-       escuro, ficha e cabeçalho de tabela sumiam dentro do cartão. */
-    --superficie-suave: #362a21;
-    --borda: #3d2f26;
-    --borda-forte: #4d3b2f;
-    --texto: #ececec;
-    --texto-suave: #a1a1aa;    /* zinc-400 */
-    --texto-fraco: #71717a;    /* zinc-500 */
+    --fundo: #140d09;
+    --marca-sobre-primaria: #140d09;
 
-    /* Painel: o cartão continua um degrau acima da mesa, e o cartão de foco
-       inverte — aqui ele é o claro. */
-    --painel-fundo: #211915;
-    --painel-cartao: #2b211b;
-    --painel-foco-fundo: #ece3da;
-    --painel-foco-texto: #211915;
+    /* A paleta escura (src/lib/paleta.ts). O cartão de foco inverte: creme. */
+    --painel-fundo: #140d09;
+    --painel-cartao: #1f1611;
+    --superficie: #1f1611;
+    --superficie-suave: #2a1e17;
+    --destaque: rgba(229, 122, 44, 0.16);
+    --borda: #3a2a20;
+    --borda-forte: #4a3a2e;
+    --texto: #fff6ec;
+    --texto-suave: #b8a595;
+    --texto-fraco: #9c8878;
+    --texto-marca: #ffb25e;
+    --texto-marca-pilula: #ffb25e;
+    --ok-fundo: rgba(63, 217, 140, 0.14);
+    --ok-texto: #5fe3a1;
+    --urgente-fundo: rgba(255, 116, 72, 0.16);
+    --urgente-texto: #ff8a66;
+    --urgente-solido: #ff7448;
+    --info-fundo: rgba(98, 150, 255, 0.16);
+    --info-texto: #8fb4ff;
+    --painel-foco-fundo: #fff6ec;
+    --painel-foco-texto: #1c120c;
+    --painel-foco-suave: #6e635b;
+    --painel-foco-rotulo: #b44d14;
+    --painel-foco-linha: #d9c7b5;
+    --sombra-cartao: inset 0 0 0 1px #2a1e17, 0 10px 26px rgba(0, 0, 0, 0.35);
+    --sombra-controle: inset 0 0 0 1px #3a2a20;
+    --sombra-foco-cartao: 0 14px 30px rgba(0, 0, 0, 0.4);
+    --brilho-primaria: 0 6px 16px rgba(229, 122, 44, 0.28);
 
     /* Sobre o grafite, o foco clareia em vez de escurecer. */
     --foco: color-mix(in srgb, var(--marca-primaria) 78%, white);
@@ -312,9 +369,28 @@
   --color-painel-cartao: var(--painel-cartao);
   --color-painel-foco-fundo: var(--painel-foco-fundo);
   --color-painel-foco-texto: var(--painel-foco-texto);
+  --color-painel-foco-suave: var(--painel-foco-suave);
+  --color-painel-foco-rotulo: var(--painel-foco-rotulo);
+  --color-painel-foco-linha: var(--painel-foco-linha);
+  --color-destaque: var(--destaque);
+  --color-texto-marca: var(--texto-marca);
+  --color-texto-marca-pilula: var(--texto-marca-pilula);
+  --color-ok-fundo: var(--ok-fundo);
+  --color-ok-texto: var(--ok-texto);
+  --color-urgente-fundo: var(--urgente-fundo);
+  --color-urgente-texto: var(--urgente-texto);
+  --color-urgente-solido: var(--urgente-solido);
+  --color-info-fundo: var(--info-fundo);
+  --color-info-texto: var(--info-texto);
+
+  --shadow-cartao: var(--sombra-cartao);
+  --shadow-controle: var(--sombra-controle);
+  --shadow-foco-cartao: var(--sombra-foco-cartao);
+  --shadow-brilho: var(--brilho-primaria);
 
   --radius-cartao: var(--raio-cartao);
   --radius-controle: var(--raio-controle);
+  --radius-mesa: var(--raio-mesa);
   --tracking-apertada: var(--letra-apertada);
 
   --font-sans: var(--fonte-interface), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -415,5 +491,95 @@ optgroup {
   ):focus-visible {
     outline: 2px solid var(--foco);
     outline-offset: 2px;
+  }
+}
+
+/* ---------- PEÇAS PRONTAS DO LAYOUT NOVO (out/2026) ----------
+   Regras em CLAUDE.md, seção "Layout do painel". Tudo sai dos tokens: nada de
+   cor escrita na tela. */
+@layer components {
+  /* Cartão: sem borda, raio 20, sombra quente (no escuro, contorno + sombra). */
+  .cartao {
+    background: var(--painel-cartao);
+    border-radius: var(--raio-cartao);
+    box-shadow: var(--sombra-cartao);
+  }
+  /* Cartão de foco: um por tela, invertido (grafite no claro, creme no escuro). */
+  .cartao-foco {
+    background: var(--painel-foco-fundo);
+    color: var(--painel-foco-texto);
+    border-radius: var(--raio-cartao);
+    box-shadow: var(--sombra-foco-cartao);
+  }
+  /* Botão principal: laranja, letra grafite em negrito, 46px, brilho embaixo. */
+  .btn-principal {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 46px; padding: 0 20px;
+    border-radius: var(--raio-controle);
+    background: var(--marca-primaria);
+    color: var(--marca-sobre-primaria);
+    font-weight: 700;
+    box-shadow: var(--brilho-primaria);
+    transition: filter 0.15s;
+  }
+  .btn-principal:hover { filter: brightness(1.05); }
+  .btn-principal:disabled { opacity: 0.45; box-shadow: none; cursor: not-allowed; }
+  /* Botão secundário: superfície com a sombra do cartão (no escuro, contorno). */
+  .btn-secundario {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 46px; padding: 0 18px;
+    border-radius: var(--raio-controle);
+    background: var(--painel-cartao);
+    color: var(--texto);
+    font-weight: 600;
+    box-shadow: var(--sombra-controle);
+  }
+  .btn-secundario:hover { background: var(--superficie-suave); }
+  .btn-secundario:disabled { opacity: 0.45; cursor: not-allowed; }
+  /* Botão secundário DENTRO do cartão de foco: contorno, fundo transparente. */
+  .btn-foco {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px; padding: 0 16px;
+    border-radius: var(--raio-controle);
+    border: 1px solid var(--painel-foco-linha);
+    color: var(--painel-foco-texto);
+    font-weight: 600;
+  }
+  /* Rótulo de cartão e de seção: maiúsculas, 11px, espaçado, texto fraco. */
+  .rotulo {
+    font-size: 11px; line-height: 1.3;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 600; color: var(--texto-fraco);
+  }
+  /* Etiqueta em pílula. Variações: pêssego (normal), urgente, ok, info, sólido. */
+  .pilula {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 700; line-height: 1.2; white-space: nowrap;
+    background: var(--destaque); color: var(--texto-marca-pilula);
+  }
+  .pilula-urgente { background: var(--urgente-fundo); color: var(--urgente-texto); }
+  .pilula-urgente-solido { background: var(--urgente-solido); color: var(--marca-escuro); }
+  .pilula-ok { background: var(--ok-fundo); color: var(--ok-texto); }
+  .pilula-info { background: var(--info-fundo); color: var(--info-texto); }
+  .pilula-neutra { background: var(--superficie-suave); color: var(--texto-suave); }
+  .pilula-grafite { background: var(--marca-escuro); color: var(--painel-foco-rotulo); }
+  [data-tema="escuro"] .pilula-grafite { background: var(--painel-foco-fundo); color: var(--painel-foco-rotulo); }
+  /* Número grande: Space Grotesk 700, apertado. */
+  .numero-grande {
+    font-family: var(--fonte-numero), var(--fonte-interface), system-ui, sans-serif;
+    font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;
+  }
+}
+
+/* No escuro o cartão de foco é CREME: as etiquetas dentro dele usam as cores
+   do tema claro, senão o verde/vermelho translúcido do escuro some no creme. */
+@media screen {
+  [data-tema="escuro"] .cartao-foco {
+    --ok-fundo: #d9f2e2; --ok-texto: #1e7a43;
+    --urgente-fundo: #fde1da; --urgente-texto: #b42a18;
+    --info-fundo: #e3ecfb; --info-texto: #2b58a8;
+    --destaque: #ffe7d1; --texto-marca-pilula: #a3440f;
+    --superficie-suave: #fbf2e8; --texto-suave: #6e635b;
   }
 }

@@ -176,7 +176,7 @@ export function DividirConta({
                       onClick={() => setFormaSel(f)}
                       className={`rounded-controle px-3 py-1.5 text-xs font-medium ${
                         formaSel === f
-                          ? "bg-orange-500 text-white"
+                          ? "bg-orange-500 text-marca-sobre-primaria"
                           : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
                       }`}
                     >

@@ -159,7 +159,7 @@ export function LancamentoNota({
   const btnTipo = (ativo: boolean) =>
     `rounded-controle px-4 py-2 text-sm font-medium ${
       ativo
-        ? "bg-orange-500 text-white"
+        ? "bg-orange-500 text-marca-sobre-primaria"
         : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
     }`;
 

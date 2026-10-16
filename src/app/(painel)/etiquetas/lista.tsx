@@ -106,7 +106,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex overflow-hidden rounded-controle border border-borda-forte">
           {(["lista", "kanban"] as const).map((v) => (
-            <button key={v} onClick={() => mudarVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-white" : "text-texto-suave"}`}>
+            <button key={v} onClick={() => mudarVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-marca-sobre-primaria" : "text-texto-suave"}`}>
               {v === "lista" ? "☰ Lista" : "▦ Kanban"}
             </button>
           ))}

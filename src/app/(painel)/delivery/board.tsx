@@ -9,6 +9,8 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, reimprimirDelivery } from "./actions";
 import { createClient } from "@/lib/supabase/client";
+import { META_DELIVERY_MIN, pedidoAtrasado } from "@/lib/delivery-atraso";
+import { ListaPedidos } from "./lista";
 
 // Alerta sonoro de pedido novo (WebAudio, sem arquivo). O navegador só toca
 // depois de um clique na página — por isso o botão de som no topo.
@@ -38,6 +40,8 @@ export type PedidoBoard = {
   telefone: string | null;
   tipo: "entrega" | "retirada";
   logradouro: string | null;
+  numero_casa: string | null;
+  complemento: string | null;
   bairro: string | null;
   cidade: string | null;
   status: string;
@@ -49,6 +53,12 @@ export type PedidoBoard = {
   criado_em: string;
   previsao_em: string | null;
   agendado_para: string | null;
+  aceito_em: string | null;
+  preparo_em: string | null;
+  pronto_em: string | null;
+  saiu_em: string | null;
+  entregue_em: string | null;
+  itens: { descricao: string; qtd: number; preco: number }[];
   entregador_id: string | null;
   entregadorNome: string | null;
   subtotal: number;
@@ -203,12 +213,14 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
-  const [visao, setVisao] = useState<"cards" | "kanban" | "mapa">(() => {
-    if (typeof window === "undefined") return "cards";
+  // Abre na LISTA (layout novo, out/2026); quadro de colunas e mapa ficam a um
+  // botão. A escolha fica lembrada neste navegador.
+  const [visao, setVisao] = useState<"lista" | "kanban" | "mapa">(() => {
+    if (typeof window === "undefined") return "lista";
     try {
-      const v = localStorage.getItem("delivery_visao");
-      return v === "kanban" || v === "mapa" ? v : "cards";
-    } catch { return "cards"; }
+      const v = localStorage.getItem("delivery_visao2");
+      return v === "kanban" || v === "mapa" ? v : "lista";
+    } catch { return "lista"; }
   });
   const [fStatus, setFStatus] = useState<string>("ativos");
   const [fTipo, setFTipo] = useState<string>("todos");
@@ -252,9 +264,9 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     return () => { document.title = antes; };
   }, [pendentes]);
 
-  function mudarVisao(v: "cards" | "kanban" | "mapa") {
+  function mudarVisao(v: "lista" | "kanban" | "mapa") {
     setVisao(v);
-    try { localStorage.setItem("delivery_visao", v); } catch { /* sem storage */ }
+    try { localStorage.setItem("delivery_visao2", v); } catch { /* sem storage */ }
   }
 
   // relógio p/ "há Xmin" e atraso, e auto-refresh do servidor
@@ -274,14 +286,37 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     });
   }, [pedidos, fTipo, fOrigem, busca]);
 
-  const lista = useMemo(() => base.filter((p) => {
-    if (fStatus === "ativos") return p.status !== "entregue" && p.status !== "cancelado";
-    if (fStatus === "todos") return true;
-    return p.status === fStatus;
-  }), [base, fStatus]);
+  // Filtros em pílula da lista. "Na cozinha" junta aceito e em preparo.
+  const FILTROS: { k: string; rotulo: string; casa: (p: PedidoBoard) => boolean }[] = [
+    { k: "ativos", rotulo: "Em andamento", casa: (p) => p.status !== "entregue" && p.status !== "cancelado" },
+    { k: "pendente", rotulo: "Novos", casa: (p) => p.status === "pendente" },
+    { k: "cozinha", rotulo: "Na cozinha", casa: (p) => p.status === "aceito" || p.status === "em_preparo" },
+    { k: "pronto", rotulo: "Prontos", casa: (p) => p.status === "pronto" },
+    { k: "saiu", rotulo: "Na rua", casa: (p) => p.status === "saiu" },
+    { k: "entregue", rotulo: "Entregues", casa: (p) => p.status === "entregue" },
+  ];
+  const filtroAtual = FILTROS.find((x) => x.k === fStatus) ?? FILTROS[0];
+  const lista = useMemo(() => base.filter(filtroAtual.casa)
+    // Atrasados primeiro, depois novos, depois o mais antigo em cima.
+    .sort((a, b) => Number(pedidoAtrasado(b, nowMs)) - Number(pedidoAtrasado(a, nowMs)) || Number(b.status === "pendente") - Number(a.status === "pendente") || (fStatus === "entregue" ? b.criado_em.localeCompare(a.criado_em) : a.criado_em.localeCompare(b.criado_em))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  [base, fStatus, nowMs]);
 
-  const atrasado = (p: PedidoBoard) =>
-    !!p.previsao_em && p.status !== "entregue" && p.status !== "cancelado" && nowMs > new Date(p.previsao_em).getTime();
+  const atrasado = (p: PedidoBoard) => pedidoAtrasado(p, nowMs);
+
+  // Tempo médio do dia (entregues hoje): entrou → entregue.
+  const hojeSP = new Date(nowMs).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const temposHoje = pedidos
+    .filter((p) => p.entregue_em && new Date(p.criado_em).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) === hojeSP)
+    .map((p) => (new Date(p.entregue_em!).getTime() - new Date(p.criado_em).getTime()) / 60000)
+    .filter((n) => n > 0 && n < 240);
+  const tempoMedio = temposHoje.length ? Math.round(temposHoje.reduce((s, n) => s + n, 0) / temposHoje.length) : null;
+  const turnoTexto = (() => {
+    const d = new Date(nowMs);
+    const dia = d.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" }).replace("-feira", "");
+    const h = Number(d.toLocaleTimeString("en-GB", { hour: "2-digit", hour12: false, timeZone: "America/Sao_Paulo" }));
+    return `${h < 17 ? "almoço" : "noite"} de ${dia}`;
+  })();
 
   function avancar(p: PedidoBoard, extra?: { tempoMin?: number; motivo?: string }) {
     // status "__cancelar" = recusa com motivo (vinda do card)
@@ -309,7 +344,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     start(async () => { await reimprimirDelivery(p.id); });
   }
 
-  const contagem = (s: string) => pedidos.filter((p) => (s === "ativos" ? p.status !== "entregue" && p.status !== "cancelado" : p.status === s)).length;
+  const contagem = (k: string) => base.filter((FILTROS.find((x) => x.k === k) ?? FILTROS[0]).casa).length;
 
   const cardProps = { nowMs, proc, entregadores, atrasado, avancar, irPara, trocarEntregador, imprimir };
   const ativos = base.filter((p) => p.status !== "entregue" && p.status !== "cancelado");
@@ -318,38 +353,90 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     .map((p) => ({ id: p.id, numero: p.numero, nome: p.nome, status: p.status, lat: Number(p.lat), lng: Number(p.lng), entregadorNome: p.entregadorNome, bairro: p.bairro }));
 
   return (
-    <div>
-      {/* Filtros */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button onClick={alternarSom} title={som ? "Som de pedido novo ligado — clique pra desligar" : "Ligar som de pedido novo"} className={`min-h-11 rounded-controle px-3 text-sm font-semibold transition ${som ? "bg-texto text-fundo" : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}>
-          {som
-            ? <span className="inline-flex items-center gap-1.5"><Icone nome="campainha" tamanho={14} /> Som ligado</span>
-            : <span className="inline-flex items-center gap-1.5"><Icone nome="mudo" tamanho={14} /> Som</span>}
-        </button>
-        <div className="flex gap-1 rounded-controle bg-superficie-suave p-0.5">
-          {([["cards", "Cards", "cards"], ["kanban", "Kanban", "colunas"], ["mapa", "Mapa", "mapa"]] as [string, string, NomeIcone][]).map(([k, lbl, ico]) => (
-            <button key={k} onClick={() => mudarVisao(k as "cards" | "kanban" | "mapa")} className={`min-h-11 rounded-controle px-3 text-sm font-medium transition ${visao === k ? "bg-painel-cartao text-texto" : "text-texto-suave"}`}>
-              <span className="inline-flex items-center gap-1.5"><Icone nome={ico} tamanho={14} /> {lbl}</span>
-            </button>
-          ))}
+    <div className="flex flex-col gap-4 px-4 py-5 md:px-[30px] md:py-[26px]">
+      {/* ---------- topo ---------- */}
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+        <div className="shrink-0">
+          <p className="rotulo">Delivery · {turnoTexto}</p>
+          <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Pedidos</h1>
         </div>
-        {visao === "cards" && (
-          <div className="flex flex-wrap gap-1">
-            {[["ativos", `Ativos (${contagem("ativos")})`], ["pendente", "Pendentes"], ["em_preparo", "Em preparo"], ["pronto", "Prontos"], ["saiu", "Saíram"], ["entregue", "Entregues"], ["todos", "Todos"]].map(([k, lbl]) => (
-              <button key={k} onClick={() => setFStatus(k)} className={`min-h-11 rounded-controle px-3 text-sm font-medium transition ${fStatus === k ? "bg-texto text-fundo" : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}>{lbl}</button>
-            ))}
-          </div>
-        )}
-        <select value={fTipo} onChange={(e) => setFTipo(e.target.value)} className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-2 text-sm text-texto">
+        <label className="flex h-[46px] w-full max-w-[420px] flex-1 items-center gap-2.5 rounded-controle bg-painel-cartao px-4 shadow-controle">
+          <Icone nome="buscar" tamanho={18} className="shrink-0 text-texto-fraco" />
+          <span className="sr-only">Buscar pedido, cliente ou telefone</span>
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pedido, cliente, telefone…" className="h-full min-w-0 flex-1 bg-transparent text-[14.5px] text-texto placeholder:text-texto-fraco" />
+        </label>
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={alternarSom}
+            aria-pressed={som}
+            title={som ? "Som de pedido novo ligado — clique pra desligar" : "Ligar som de pedido novo"}
+            className="btn-secundario w-[46px] !px-0"
+          >
+            <Icone nome={som ? "campainha" : "mudo"} tamanho={17} titulo={som ? "Som ligado" : "Som desligado"} />
+          </button>
+          <button type="button" onClick={() => mudarVisao(visao === "kanban" ? "lista" : "kanban")} className="btn-secundario text-sm">
+            {visao === "kanban" ? "Ver em lista" : "Ver em quadro"}
+          </button>
+          <button type="button" onClick={() => mudarVisao(visao === "mapa" ? "lista" : "mapa")} className="btn-secundario text-sm">
+            {visao === "mapa" ? "Ver em lista" : "Ver no mapa"}
+          </button>
+          <Link href="/delivery/novo" className="btn-principal text-sm">
+            <Icone nome="novo" tamanho={16} /> Pedido por telefone
+          </Link>
+          <details className="relative">
+            <summary className="btn-secundario w-[46px] cursor-pointer list-none !px-0" aria-label="Ajustes do delivery">
+              <Icone nome="ajustes" tamanho={17} />
+            </summary>
+            <div className="cartao absolute right-0 z-30 mt-2 flex w-56 flex-col p-2">
+              {([
+                ["/salao/cardapio", "Cardápio", "caderno"], ["/delivery/vitrine", "Vitrine do app", "loja"], ["/delivery/areas", "Áreas e tele", "mapa"],
+                ["/delivery/cupons", "Cupons", "etiqueta"], ["/delivery/cashback", "Cashback", "presente"], ["/delivery/campanhas", "Campanhas", "megafone"],
+                ["/delivery/kern", "Kern", "empresa"], ["/delivery/relatorios", "Relatórios", "grafico"], ["/delivery/entregadores", "Entregadores", "entrega"],
+                ["/delivery/config", "Configurações", "ajustes"],
+              ] as [string, string, NomeIcone][]).map(([href, rotulo, ico]) => (
+                <Link key={href} href={href} className="flex min-h-11 items-center gap-2.5 rounded-controle px-2.5 text-sm text-texto-suave hover:bg-superficie-suave hover:text-texto">
+                  <Icone nome={ico} tamanho={16} /> {rotulo}
+                </Link>
+              ))}
+            </div>
+          </details>
+        </div>
+      </div>
+
+      {/* ---------- filtros em pílula ---------- */}
+      <div className="flex flex-wrap items-center gap-2">
+        {FILTROS.map((x) => {
+          const ativo = fStatus === x.k || (x.k === "ativos" && !FILTROS.some((y) => y.k === fStatus));
+          const n = contagem(x.k);
+          const urgente = x.k === "pendente" && n > 0;
+          return (
+            <button
+              key={x.k}
+              type="button"
+              onClick={() => setFStatus(x.k)}
+              aria-pressed={ativo}
+              className={`flex min-h-11 items-center gap-2 rounded-full pl-4 pr-2 text-[13.5px] ${ativo ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}
+            >
+              {x.rotulo}
+              <span className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold ${ativo ? "bg-primaria text-marca-sobre-primaria" : urgente ? "bg-urgente-solido text-marca-escuro" : "bg-superficie-suave text-texto-suave"}`}>
+                {n}
+              </span>
+            </button>
+          );
+        })}
+        <select value={fTipo} onChange={(e) => setFTipo(e.target.value)} aria-label="Entrega ou retirada" className="min-h-11 rounded-full bg-painel-cartao px-3 text-[13.5px] text-texto shadow-controle">
           <option value="todos">Entrega e retirada</option>
           <option value="entrega">Só entrega</option>
           <option value="retirada">Só retirada</option>
         </select>
-        <select value={fOrigem} onChange={(e) => setFOrigem(e.target.value)} className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-2 text-sm text-texto">
+        <select value={fOrigem} onChange={(e) => setFOrigem(e.target.value)} aria-label="Origem do pedido" className="min-h-11 rounded-full bg-painel-cartao px-3 text-[13.5px] text-texto shadow-controle">
           <option value="todos">Todas as origens</option>
           {Object.entries(ORIGEM).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nº / nome / telefone" className="ml-auto min-h-11 w-56 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria" />
+        <span className="ml-auto text-[13px] text-texto-suave">
+          Tempo médio <span className="font-bold text-texto">{tempoMedio == null ? "—" : `${tempoMedio} min`}</span> · meta {META_DELIVERY_MIN} min
+        </span>
       </div>
 
       {visao === "mapa" ? (
@@ -373,30 +460,9 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
             );
           })}
         </div>
-      ) : lista.length === 0 ? (
-        <p className="py-16 text-center text-sm text-texto-fraco">Nenhum pedido aqui.</p>
-      ) : (() => {
-        // Agendados pra mais tarde ficam numa faixa própria, em ordem de horário;
-        // quando chega a 45 min do horário, o pedido desce pra lista normal.
-        const ehFuturo = (p: PedidoBoard) => !!p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && nowMs < new Date(p.agendado_para).getTime() - 45 * 60000;
-        const futuros = lista.filter(ehFuturo).sort((a, b) => new Date(a.agendado_para!).getTime() - new Date(b.agendado_para!).getTime());
-        const agora = lista.filter((p) => !ehFuturo(p));
-        return (
-          <>
-            {futuros.length > 0 && (
-              <div className="mb-4">
-                <div className="mb-2 flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-300"><Icone nome="agenda" tamanho={15} /> Agendados pra mais tarde ({futuros.length})</div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {futuros.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {agora.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
-            </div>
-          </>
-        );
-      })()}
+      ) : (
+        <ListaPedidos pedidos={lista} todos={pedidos} {...cardProps} />
+      )}
     </div>
   );
 }

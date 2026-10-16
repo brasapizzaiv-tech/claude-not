@@ -61,7 +61,7 @@ export function AcoesComanda({
         title={contaPedidaPor ? `Marcado por ${contaPedidaPor}` : undefined}
         className={`min-h-11 rounded-controle px-4 text-sm font-medium transition disabled:opacity-60 ${
           contaPedida
-            ? "bg-primaria text-white hover:opacity-90"
+            ? "bg-primaria text-marca-sobre-primaria hover:opacity-90"
             : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"
         }`}
       >

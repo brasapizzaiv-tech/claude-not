@@ -7,7 +7,7 @@ import { definirPin, entrarPin } from "./actions";
 const box =
   "w-full rounded-cartao border border-borda-forte bg-white px-4 py-3 text-center text-2xl tracking-[0.5em] text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 const btn =
-  "w-full rounded-cartao bg-orange-500 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-60";
+  "w-full rounded-cartao bg-orange-500 py-3 font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60";
 
 export function CriarPin({ token }: { token: string }) {
   const router = useRouter();

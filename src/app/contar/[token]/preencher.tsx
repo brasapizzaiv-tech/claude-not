@@ -250,7 +250,7 @@ export function PreencherClient({
           <button
             type="button"
             onClick={() => responderSimNao(id, true)}
-            className={`${base} ${r === true ? "bg-orange-500 text-white ring-orange-500" : "bg-white text-zinc-700 ring-zinc-300 dark:bg-zinc-950 dark:text-zinc-200 dark:ring-zinc-700"}`}
+            className={`${base} ${r === true ? "bg-orange-500 text-marca-sobre-primaria ring-orange-500" : "bg-white text-zinc-700 ring-zinc-300 dark:bg-zinc-950 dark:text-zinc-200 dark:ring-zinc-700"}`}
           >
             Precisa comprar
           </button>
@@ -445,7 +445,7 @@ export function PreencherClient({
               <button
                 type="button"
                 onClick={() => filtrarFaltam(true)}
-                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${soFaltam ? "bg-orange-500 text-white" : "bg-white text-orange-600 ring-1 ring-orange-300 dark:bg-zinc-900 dark:ring-orange-800"}`}
+                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${soFaltam ? "bg-orange-500 text-marca-sobre-primaria" : "bg-white text-orange-600 ring-1 ring-orange-300 dark:bg-zinc-900 dark:ring-orange-800"}`}
               >
                 Faltam ({faltamAgora})
               </button>
@@ -590,7 +590,7 @@ export function PreencherClient({
                         placeholder="Nome do item (ex.: vinagre)"
                         className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950"
                       />
-                      <button onClick={buscarAdd} disabled={addBuscando || addBusca.trim().length < 2} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                      <button onClick={buscarAdd} disabled={addBuscando || addBusca.trim().length < 2} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50">
                         {addBuscando ? "..." : "Buscar"}
                       </button>
                       <button onClick={() => { setAddAberto(false); setAddBusca(""); setAddResultados([]); }} className="text-zinc-400">✕</button>
@@ -623,7 +623,7 @@ export function PreencherClient({
             <button
               onClick={salvar}
               disabled={salvando}
-              className="w-full rounded-xl bg-orange-500 px-4 py-3 text-base font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+              className="w-full rounded-xl bg-orange-500 px-4 py-3 text-base font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
             >
               {salvando ? "Enviando..." : `Enviar contagem (${preenchidos})`}
             </button>

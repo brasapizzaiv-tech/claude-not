@@ -690,7 +690,7 @@ export function CompararClient({
                             onClick={() => adiantar(f.id, f.nome)}
                             disabled={salvando}
                             title="Gerar só o pedido deste fornecedor agora (sem esperar os outros)"
-                            className="rounded bg-orange-500 px-2 py-0.5 text-mini font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+                            className="rounded bg-orange-500 px-2 py-0.5 text-mini font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50"
                           >
                             {adiantando === f.id ? "..." : <span className="inline-flex items-center gap-1"><Icone nome="rapido" tamanho={13} /> Adiantar</span>}
                           </button>
@@ -853,7 +853,7 @@ export function CompararClient({
                                 onClick={() => escolherOferta(p.produto_id, f.id, "main")}
                                 className={`w-full rounded-controle px-2 py-1 text-right transition ${
                                   escolhido && ofSel === "main"
-                                    ? "bg-orange-500 font-semibold text-white"
+                                    ? "bg-orange-500 font-semibold text-marca-sobre-primaria"
                                     : melhor
                                       ? "font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/60 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
                                       : "text-texto-suave hover:bg-superficie-suave"
@@ -874,7 +874,7 @@ export function CompararClient({
                                   title={ex.obs ?? ""}
                                   className={`flex w-full items-center justify-between gap-1 rounded-controle px-2 py-1 text-mini transition ${
                                     escolhido && ofSel === ex.id
-                                      ? "bg-orange-500 font-semibold text-white"
+                                      ? "bg-orange-500 font-semibold text-marca-sobre-primaria"
                                       : "bg-superficie-suave text-texto-suave hover:text-texto"
                                   }`}
                                 >

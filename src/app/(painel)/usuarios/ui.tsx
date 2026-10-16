@@ -101,7 +101,7 @@ export function NovoUsuario() {
     return (
       <button
         onClick={() => setAberto(true)}
-        className="mb-6 rounded-cartao bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+        className="mb-6 rounded-cartao bg-orange-500 px-4 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105"
       >
         + Novo usuário
       </button>

@@ -100,7 +100,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
               <div key={c.id} className="flex items-center gap-2">
                 <input value={e.ordem} onChange={(ev) => setCatEdit((s) => ({ ...s, [c.id]: { ...e, ordem: ev.target.value } }))} className={`${input} w-14 text-center`} title="ordem" />
                 <input value={e.nome} onChange={(ev) => setCatEdit((s) => ({ ...s, [c.id]: { ...e, nome: ev.target.value } }))} className={input} />
-                <button onClick={() => salvarCat(c)} disabled={!mudou || salvando} className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">Salvar</button>
+                <button onClick={() => salvarCat(c)} disabled={!mudou || salvando} className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-semibold text-marca-sobre-primaria disabled:opacity-40">Salvar</button>
               </div>
             );
           })}
@@ -123,7 +123,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
           <input inputMode="numeric" value={novo.resf} onChange={(e) => setNovo({ ...novo, resf: e.target.value })} placeholder="Resfriado (dias)" className={input} />
           <input inputMode="numeric" value={novo.cong} onChange={(e) => setNovo({ ...novo, cong: e.target.value })} placeholder="Congelado (dias)" className={input} />
           <input inputMode="numeric" value={novo.amb} onChange={(e) => setNovo({ ...novo, amb: e.target.value })} placeholder="Ambiente (dias)" className={input} />
-          <button onClick={criar} disabled={!novo.nome.trim() || salvando} className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-40">Criar</button>
+          <button onClick={criar} disabled={!novo.nome.trim() || salvando} className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-40">Criar</button>
         </div>
       </div>
 
@@ -171,7 +171,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
                     <td className="px-3 py-1.5"><input inputMode="numeric" value={e.amb} onChange={(ev) => set({ amb: ev.target.value })} className={`${input} w-16 text-center`} /></td>
                     <td className="px-3 py-1.5 text-center"><input type="checkbox" checked={e.ativo} onChange={(ev) => set({ ativo: ev.target.checked })} /></td>
                     <td className="px-3 py-1.5 text-right whitespace-nowrap">
-                      <button onClick={() => salvar(i)} disabled={!alterado(i) || salvando} className="rounded-controle bg-orange-500 px-3 py-1 text-xs font-semibold text-white disabled:opacity-30">Salvar</button>
+                      <button onClick={() => salvar(i)} disabled={!alterado(i) || salvando} className="rounded-controle bg-orange-500 px-3 py-1 text-xs font-semibold text-marca-sobre-primaria disabled:opacity-30">Salvar</button>
                       <button onClick={() => excluir(i)} disabled={salvando} className="ml-2 text-zinc-300 hover:text-red-600 dark:text-zinc-600" title="Excluir">×</button>
                     </td>
                   </tr>

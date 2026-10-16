@@ -70,7 +70,7 @@ export function RetiradasClient({
     <div className="w-full p-3 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icone nome="compras" tamanho={19} /> Compras internas</h1>
-        <button onClick={() => setNovo(true)} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600">
+        <button onClick={() => setNovo(true)} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-marca-sobre-primaria hover:brightness-105">
           + Nova compra
         </button>
       </div>
@@ -304,7 +304,7 @@ function NovaCompra({
                 item, valor: Number(String(valor).replace(",", ".")) || 0,
                 peso: peso ? Number(String(peso).replace(",", ".")) : null, data, observacao: obs,
               })}
-              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-marca-sobre-primaria disabled:opacity-50"
             >
               Lançar
             </button>
@@ -459,7 +459,7 @@ function ProdutosTab({ produtos, proc, run }: {
     <div className={card}>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-bold">Produtos e preços</h2>
-        <button onClick={() => setEdit("novo")} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white">+ Produto</button>
+        <button onClick={() => setEdit("novo")} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">+ Produto</button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -511,7 +511,7 @@ function ProdutoModal({ alvo, proc, run, onClose }: {
             <button
               disabled={proc || !nome.trim()}
               onClick={() => { run(() => salvarProduto({ id: novo ? null : (p as Produto).id, nome, categoria, preco: Number(String(preco).replace(",", ".")) || 0, ativo })); onClose(); }}
-              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-marca-sobre-primaria disabled:opacity-50"
             >
               Salvar
             </button>

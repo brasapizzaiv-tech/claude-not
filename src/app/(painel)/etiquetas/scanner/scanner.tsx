@@ -179,7 +179,7 @@ export function Scanner() {
           <div className="absolute inset-0 flex items-center justify-center">
             <button
               onClick={ligar}
-              className="rounded-cartao bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600"
+              className="rounded-cartao bg-orange-500 px-6 py-3 font-semibold text-marca-sobre-primaria hover:brightness-105"
             >
               Ligar câmera
             </button>

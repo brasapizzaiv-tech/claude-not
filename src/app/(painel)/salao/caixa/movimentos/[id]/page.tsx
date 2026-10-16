@@ -115,7 +115,7 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
                 <p className="font-semibold text-texto">
                   Comanda #{c.numero}
                   {c.mesa ? <span className="ml-2 text-sm font-normal text-texto-suave">{c.mesa}</span> : null}
-                  {c.livre && <span className="ml-2 rounded bg-orange-500 px-1.5 py-0.5 text-mini font-bold text-white">LIVRE</span>}
+                  {c.livre && <span className="ml-2 rounded bg-orange-500 px-1.5 py-0.5 text-mini font-bold text-marca-sobre-primaria">LIVRE</span>}
                   <span className={`ml-2 rounded-full px-2 py-0.5 text-mini font-medium ${c.status === "fechada" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
                     {c.status}
                   </span>

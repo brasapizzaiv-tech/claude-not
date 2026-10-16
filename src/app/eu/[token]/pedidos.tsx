@@ -68,7 +68,7 @@ export function PedidosColab({
   const tab = (ativo: boolean) =>
     `flex-1 rounded-controle px-3 py-2 text-sm font-medium transition ${
       ativo
-        ? "bg-orange-500 text-white"
+        ? "bg-orange-500 text-marca-sobre-primaria"
         : "bg-superficie-suave text-texto-suave hover:bg-zinc-200  "
     }`;
 
@@ -309,7 +309,7 @@ export function PedidoCard({
           <button
             onClick={confirmar}
             disabled={salvando}
-            className="w-full rounded-cartao bg-orange-500 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            className="w-full rounded-cartao bg-orange-500 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
           >
             {salvando ? "Salvando..." : feito ? "Atualizar conferência" : "Confirmar recebimento"}
           </button>

@@ -146,7 +146,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           <button
             key={a.k}
             onClick={() => { setAba(a.k); setMarcadas(new Set()); }}
-            className={`rounded-full px-3 py-1.5 text-sm font-semibold ${aba === a.k ? "bg-orange-500 text-white" : "bg-superficie-suave text-texto-suave hover:bg-zinc-200  "}`}
+            className={`rounded-full px-3 py-1.5 text-sm font-semibold ${aba === a.k ? "bg-orange-500 text-marca-sobre-primaria" : "bg-superficie-suave text-texto-suave hover:bg-zinc-200  "}`}
           >
             {a.rotulo}{a.n != null ? ` (${a.n})` : ""}
           </button>
@@ -304,7 +304,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
         <label className="flex items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> urgente
         </label>
-        <button onClick={salvar} disabled={proc || item.trim().length < 2} className="rounded-cartao bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+        <button onClick={salvar} disabled={proc || item.trim().length < 2} className="rounded-cartao bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50">
           {proc ? "Salvando…" : "Salvar"}
         </button>
       </div>

@@ -64,7 +64,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Link href={`/colaboradores/assiduidade?mes=${mesAnterior(mes, -1)}`} className="rounded-controle border border-borda-forte px-3 py-2">←</Link>
-          <span className="rounded-controle bg-orange-500 px-3 py-2 font-semibold text-white">{rotuloMes(mes)}</span>
+          <span className="rounded-controle bg-orange-500 px-3 py-2 font-semibold text-marca-sobre-primaria">{rotuloMes(mes)}</span>
           <Link href={`/colaboradores/assiduidade?mes=${mesAnterior(mes, 1)}`} className="rounded-controle border border-borda-forte px-3 py-2">→</Link>
         </div>
       </div>

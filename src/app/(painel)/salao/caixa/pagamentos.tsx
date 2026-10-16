@@ -469,7 +469,7 @@ export function PainelPagamentos({
                     onClick={() => { setBandeira(b.nome); setAviso(null); }}
                     className={`rounded-controle px-2.5 py-1.5 text-xs font-semibold ${
                       bandeira === b.nome
-                        ? "bg-orange-500 text-white"
+                        ? "bg-orange-500 text-marca-sobre-primaria"
                         : "border border-borda-forte text-texto-suave hover:border-orange-500  "
                     }`}
                   >
@@ -524,7 +524,7 @@ export function PainelPagamentos({
                           key={c.id}
                           type="button"
                           onClick={() => setColabId(c.id === colabId ? "" : c.id)}
-                          className={`flex w-full items-center justify-between px-2 py-1.5 text-left text-sm ${c.id === colabId ? "bg-orange-500 text-white" : "hover:bg-superficie-suave "}`}
+                          className={`flex w-full items-center justify-between px-2 py-1.5 text-left text-sm ${c.id === colabId ? "bg-orange-500 text-marca-sobre-primaria" : "hover:bg-superficie-suave "}`}
                         >
                           <span>{c.nome}</span>
                           <span className={`text-xs ${c.id === colabId ? "text-white/80" : "text-texto-fraco"}`}>

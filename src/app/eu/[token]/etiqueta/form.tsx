@@ -172,7 +172,7 @@ export function EtiquetaColabForm({
                       key={v}
                       type="button"
                       onClick={() => { setConservacao(v); recalc(itemId, v); }}
-                      className={`rounded-cartao border py-2.5 text-sm font-semibold ${conservacao === v ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte bg-painel-cartao text-texto-suave   "}`}
+                      className={`rounded-cartao border py-2.5 text-sm font-semibold ${conservacao === v ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-borda-forte bg-painel-cartao text-texto-suave   "}`}
                     >
                       {lab}
                     </button>
@@ -234,7 +234,7 @@ export function EtiquetaColabForm({
           <button
             onClick={gerar}
             disabled={proc || !pronto}
-            className="w-full rounded-cartao bg-orange-500 py-3 text-base font-bold text-white disabled:opacity-50"
+            className="w-full rounded-cartao bg-orange-500 py-3 text-base font-bold text-marca-sobre-primaria disabled:opacity-50"
           >
             {proc ? "Gerando..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="imprimir" tamanho={16} /> {copias > 1 ? `Imprimir ${copias} etiquetas` : "Imprimir etiqueta"}</span>}
           </button>

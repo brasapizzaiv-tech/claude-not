@@ -86,6 +86,7 @@ export default async function PainelLayout({
         pedidosCompra={pedidosCompra}
         tema={tema}
         logoUrl={marca.logoUrl}
+        empresaNome={marca.nome}
       />
       <main id="conteudo" className="flex-1 overflow-auto bg-painel-fundo">
         {children}

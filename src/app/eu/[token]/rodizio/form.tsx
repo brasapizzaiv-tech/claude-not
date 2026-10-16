@@ -72,7 +72,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
 
   const cx = "w-full rounded-cartao border border-borda-forte bg-white px-3 py-3 text-base text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
   const btnFr = (f: FracaoRodizio) =>
-    `rounded-cartao py-3 text-base font-bold ${fracao === f ? "bg-orange-500 text-white" : "bg-superficie-suave text-texto-suave  "}`;
+    `rounded-cartao py-3 text-base font-bold ${fracao === f ? "bg-orange-500 text-marca-sobre-primaria" : "bg-superficie-suave text-texto-suave  "}`;
 
   return (
     <div className="space-y-3">
@@ -95,7 +95,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
         <label className="mb-1 block text-xs font-semibold text-texto-fraco">Sabor</label>
         {sabor ? (
-          <div className="flex items-center justify-between rounded-cartao bg-orange-500 px-3 py-3 text-white">
+          <div className="flex items-center justify-between rounded-cartao bg-orange-500 px-3 py-3 text-marca-sobre-primaria">
             <span className="inline-flex items-center gap-1.5 font-bold"><Icone nome={sabor.tipo === "doce" ? "bolo" : "pizza"} tamanho={14} /> {sabor.nome}</span>
             <button type="button" onClick={() => { setSabor(null); setTimeout(() => buscaRef.current?.focus(), 30); }} className="text-sm underline">trocar</button>
           </div>

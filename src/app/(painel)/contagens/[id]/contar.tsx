@@ -379,7 +379,7 @@ export function ContarClient({
                                       type="button"
                                       disabled={finalizada}
                                       onClick={() => { setSimNao((m) => ({ ...m, [p.id]: v })); marcar(p.id, true); }}
-                                      className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${simNao[p.id] === v ? (v ? "bg-orange-500 text-white" : "bg-emerald-600 text-white") : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}
+                                      className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${simNao[p.id] === v ? (v ? "bg-orange-500 text-marca-sobre-primaria" : "bg-emerald-600 text-white") : "border border-borda-forte text-texto-suave hover:bg-superficie-suave"}`}
                                     >
                                       {rot}
                                     </button>

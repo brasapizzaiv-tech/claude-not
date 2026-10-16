@@ -62,7 +62,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
               key={t}
               type="button"
               onClick={() => setTipo(t)}
-              className={`rounded-cartao px-3 py-2.5 text-sm font-semibold ${tipo === t ? "bg-orange-500 text-white" : "bg-superficie-suave text-texto-suave  "}`}
+              className={`rounded-cartao px-3 py-2.5 text-sm font-semibold ${tipo === t ? "bg-orange-500 text-marca-sobre-primaria" : "bg-superficie-suave text-texto-suave  "}`}
             >
               <span className="inline-flex items-center justify-center gap-1.5">
                 <Icone nome={t === "compra" ? "compras" : "ferramenta"} tamanho={14} /> {t === "compra" ? "Comprar" : "Manutenção"}
@@ -91,7 +91,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
         <button
           onClick={enviar}
           disabled={proc || item.trim().length < 2}
-          className="mt-3 w-full rounded-cartao bg-orange-500 p-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+          className="mt-3 w-full rounded-cartao bg-orange-500 p-3 font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50"
         >
           {proc ? "Enviando…" : "Enviar pedido"}
         </button>

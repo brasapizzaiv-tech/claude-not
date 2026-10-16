@@ -53,7 +53,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
           {dia !== hoje && <Link href="/checklists" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">hoje</Link>}
           <Link href="/checklists/revisao" className="rounded-controle border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300"><Icone nome="buscar" tamanho={14} className="mr-1.5" /> Revisar e apontar</Link>
           <Link href="/checklists/historico" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">Histórico</Link>
-          <Link href="/checklists/modelos" className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600">Modelos</Link>
+          <Link href="/checklists/modelos" className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105">Modelos</Link>
         </div>
       </div>
 

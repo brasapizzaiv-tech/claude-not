@@ -120,7 +120,7 @@ export function LancarItens({
               onClick={() => setAba(c)}
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 aba === c
-                  ? "bg-orange-500 text-white"
+                  ? "bg-orange-500 text-marca-sobre-primaria"
                   : "bg-superficie-suave text-texto-suave hover:bg-zinc-200   dark:hover:bg-zinc-700"
               }`}
             >
@@ -132,7 +132,7 @@ export function LancarItens({
               onClick={() => setAba(PIZZAS)}
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 aba === PIZZAS
-                  ? "bg-orange-500 text-white"
+                  ? "bg-orange-500 text-marca-sobre-primaria"
                   : "bg-superficie-suave text-texto-suave hover:bg-zinc-200   dark:hover:bg-zinc-700"
               }`}
             >
@@ -310,7 +310,7 @@ function MontarCombo({
                             <button
                               onClick={() => inc(g, o.id)}
                               disabled={cheio}
-                              className="h-6 w-6 rounded bg-orange-500 text-white disabled:opacity-30"
+                              className="h-6 w-6 rounded bg-orange-500 text-marca-sobre-primaria disabled:opacity-30"
                             >
                               +
                             </button>
@@ -348,7 +348,7 @@ function MontarCombo({
           <button
             onClick={confirmar}
             disabled={p || faltaMin}
-            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50"
           >
             {faltaMin ? "Escolha as opções" : "Adicionar"}
           </button>
@@ -449,7 +449,7 @@ export function MontarPizza({
                 onClick={() => trocarTamanho(t.id, t.max)}
                 className={`rounded-controle border px-3 py-1.5 text-sm ${
                   t.id === tamId
-                    ? "border-orange-500 bg-orange-500 text-white"
+                    ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria"
                     : "border-borda-forte text-texto-suave  "
                 }`}
               >
@@ -531,7 +531,7 @@ export function MontarPizza({
           <button
             onClick={add}
             disabled={p || !tamId || sel.length === 0}
-            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
           >
             Adicionar pizza
           </button>

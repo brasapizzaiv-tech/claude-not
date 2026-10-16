@@ -213,7 +213,7 @@ export default async function DrePage({
             href={`/financeiro/dre?mes=${mes}${mostrarTodas ? "" : "&todas=1"}`}
             className={`ml-2 rounded-controle border px-3 py-2 text-sm font-medium ${
               mostrarTodas
-                ? "border-orange-500 bg-orange-500 text-white"
+                ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria"
                 : "border-borda-forte text-texto-suave hover:bg-superficie-suave   "
             }`}
             title="Inclui as categorias sem valor no mês"

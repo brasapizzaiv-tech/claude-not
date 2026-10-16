@@ -510,7 +510,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/colaboradores/semana?s=${somarDias(segunda, -7)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">← anterior</Link>
-          <span className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-white">{rotuloSemana(segunda)}</span>
+          <span className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria">{rotuloSemana(segunda)}</span>
           <Link href={`/colaboradores/semana?s=${somarDias(segunda, 7)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">próxima →</Link>
         </div>
       </div>
@@ -525,8 +525,8 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <div className="flex overflow-hidden rounded-controle border border-borda-forte">
-          <button onClick={() => setModo("grade")} className={`px-3 py-1.5 ${modo === "grade" ? "bg-orange-500 text-white" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="horario" tamanho={14} /> Grade</span></button>
-          <button onClick={() => setModo("resumo")} className={`px-3 py-1.5 ${modo === "resumo" ? "bg-orange-500 text-white" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Resumo pra pagar</span></button>
+          <button onClick={() => setModo("grade")} className={`px-3 py-1.5 ${modo === "grade" ? "bg-orange-500 text-marca-sobre-primaria" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="horario" tamanho={14} /> Grade</span></button>
+          <button onClick={() => setModo("resumo")} className={`px-3 py-1.5 ${modo === "resumo" ? "bg-orange-500 text-marca-sobre-primaria" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Resumo pra pagar</span></button>
         </div>
         <button
           onClick={() => start(async () => { const r = await preencherEscalaFixa(segunda); if (r.erro) setErro(r.erro); else router.refresh(); })}
@@ -581,7 +581,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             <input value={adiantValor} onChange={(e) => setAdiantValor(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="R$ valor" inputMode="decimal" className={`${inputCls} w-28`} />
             <input type="date" value={adiantData} onChange={(e) => setAdiantData(e.target.value)} className={inputCls} />
             <input value={adiantMotivo} onChange={(e) => setAdiantMotivo(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="motivo (opcional)" className={`${inputCls} w-48`} />
-            <button onClick={registrarAdiant} disabled={pending} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-40">
+            <button onClick={registrarAdiant} disabled={pending} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-40">
               Registrar adiantamento
             </button>
           </div>
@@ -654,7 +654,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                   router.refresh();
                 })
               }
-              className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600"
+              className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105"
             >
               Cadastrar e trazer
             </button>
@@ -1146,7 +1146,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             <button
               onClick={lancar}
               disabled={pending || aLancar.length === 0}
-              className="rounded-controle bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600 disabled:opacity-40"
+              className="rounded-controle bg-orange-500 px-4 py-2 font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-40"
             >
               <Icone nome="dinheiro" tamanho={16} className="mr-1.5" /> Lançar {aLancar.length} pagamento{aLancar.length === 1 ? "" : "s"} · {brl(totalALancar)} no Contas a pagar
             </button>

@@ -40,7 +40,7 @@ function GerarLink({ id, small }: { id: string; small?: boolean }) {
         className={
           small
             ? "rounded border border-orange-500 px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-            : "w-full rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600"
+            : "w-full rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105"
         }
       >
         Gerar link

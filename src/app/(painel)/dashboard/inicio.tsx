@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Icone, type NomeIcone } from "@/components/icone";
+import { buscarRapido } from "./actions";
 
-// Tela inicial do painel (Etapa 4 do design).
+// Tela inicial do painel — layout novo (out/2026), protótipo aprovado em
+// docs/referencia-layout/painel-claro.html e painel-escuro.html.
 //
-// Só desenho: os dados chegam prontos de page.tsx. É o que permite conferir a
-// tela sem precisar do banco, e o que deixa a página do servidor enxuta.
+// Só desenho: os dados chegam prontos de page.tsx.
 //
-// A regra de cor: o laranja da marca aparece em UM lugar só nesta tela, que é o
-// mapa do salão. Ele é o assunto aqui. Todo o resto é neutro, senão nada se
-// destaca. O cartão de foco chama atenção invertendo o fundo, não colorindo.
+// Regras de cor (CLAUDE.md, "Layout do painel"): laranja forte só no botão
+// principal, nas mesas ocupadas e na linha do faturamento. O resto do destaque
+// é pêssego. Um cartão de foco por tela — aqui, o caixa do dia.
 
 export type Mesa = {
   numero: number;
@@ -22,18 +24,20 @@ export type Mesa = {
 
 export type DadosInicio = {
   nome: string;
+  saudacao: string;   // "Boa noite"
   dia: string;        // AAAA-MM-DD
-  diaLegivel: string; // "sexta, 19 de setembro"
+  diaLegivel: string; // "Sexta-feira, 19 de setembro"
   ehHoje: boolean;
   indicadores: {
     chave: string;
     rotulo: string;
     valor: string;
-    variacao: number | null;
+    variacao: number | null;     // % contra o mesmo dia da semana passada
+    diferenca?: number;          // ou diferença em unidades
     serie: number[];
     detalhe?: { rotulo: string; n: number; href: string }[];
   }[];
-  caixa: { aberto: boolean; valor: string; desde: string | null };
+  caixa: { aberto: boolean; valor: string; desde: string | null; pix: string; cartao: string; dinheiro: string };
   salao: {
     grupos: { nome: string; mesas: Mesa[] }[];
     ocupadas: number;
@@ -42,262 +46,339 @@ export type DadosInicio = {
     maisAntiga: { numero: number; minutos: number; comandaId: string } | null;
     rodizioDia: number;
   };
-  delivery: { cozinha: number; rua: number; entregues: number; tempoMedio: number | null };
-  pendencias: { rotulo: string; n: number; href: string; icone: NomeIcone }[];
+  delivery: { aberto: boolean; cozinha: number; rua: number; entregues: number; tempoMedio: number | null };
+  pendencias: { rotulo: string; n: number; nota: string; urgente: boolean; href: string; icone: NomeIcone }[];
   turno: { rotulo: string; pessoas: string[] };
 };
 
-const CARTAO = "rounded-cartao bg-painel-cartao p-4";
-const ROTULO = "text-xs font-medium text-texto-fraco";
-const NUMERO = "font-numero tracking-apertada text-texto";
+const TITULO = "font-numero font-bold tracking-apertada text-texto";
 
-/** Linha de tendência do rodapé do cartão. Discreta de propósito: serve pra
- *  dar o sentido do movimento, não pra ler valor. */
-function Tendencia({ serie }: { serie: number[] }) {
-  if (serie.length < 2) return <div className="h-8" />;
+/** Tempo legível: "47 min", "1h42". */
+function duracao(min: number) {
+  if (min < 60) return `${min} min`;
+  return `${Math.floor(min / 60)}h${String(min % 60).padStart(2, "0")}`;
+}
+
+/** Linha de tendência no rodapé do cartão, com a área embaixo bem clara. */
+function Tendencia({ serie, forte }: { serie: number[]; forte: boolean }) {
+  if (serie.length < 2) return <div className="h-[38px]" />;
   const max = Math.max(...serie);
   const min = Math.min(...serie);
   const faixa = max - min || 1;
-  const pontos = serie
-    .map((v, i) => `${(i / (serie.length - 1)) * 100},${28 - ((v - min) / faixa) * 24}`)
-    .join(" ");
+  const pts = serie.map((v, i) => `${(i / (serie.length - 1)) * 200},${33 - ((v - min) / faixa) * 27}`);
+  const linha = pts.join(" ");
+  const cor = forte ? "var(--marca-primaria)" : "color-mix(in srgb, var(--marca-primaria) 50%, var(--painel-cartao))";
   return (
-    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="mt-3 h-8 w-full" aria-hidden>
-      <polyline points={pontos} fill="none" stroke="currentColor" strokeWidth="1.5"
-        vectorEffect="non-scaling-stroke" className="text-borda-forte" />
+    <svg viewBox="0 0 200 38" preserveAspectRatio="none" className="mt-auto block h-[38px] w-full" aria-hidden>
+      <polygon points={`0,38 ${linha} 200,38`} fill="color-mix(in srgb, var(--marca-primaria) 12%, transparent)" />
+      <polyline points={linha} fill="none" stroke={cor} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
 
-/** Etiqueta de variação contra o mesmo dia da semana anterior. */
-function Variacao({ pct }: { pct: number | null }) {
-  if (pct == null) return <span className={ROTULO}>sem comparação</span>;
-  const subiu = pct >= 0;
+function Indicador({ i }: { i: DadosInicio["indicadores"][number] }) {
+  let pilula: { texto: string; cls: string } | null = null;
+  if (i.chave === "atraso") {
+    pilula = Number(i.valor) > 0 ? { texto: "atenção", cls: "pilula pilula-urgente" } : { texto: "em dia", cls: "pilula pilula-ok" };
+  } else if (i.variacao != null) {
+    pilula = { texto: `${i.variacao >= 0 ? "+" : ""}${i.variacao}%`, cls: i.variacao >= 0 ? "pilula pilula-ok" : "pilula pilula-urgente" };
+  } else if (i.diferenca != null) {
+    pilula = { texto: `${i.diferenca >= 0 ? "+" : ""}${i.diferenca}`, cls: "pilula" };
+  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-controle bg-superficie-suave px-1.5 py-0.5 text-xs font-medium text-texto-suave">
-      <Icone nome={subiu ? "subindo" : "descendo"} tamanho={12} />
-      {subiu ? "+" : ""}{pct}%
-    </span>
+    <div className="cartao flex min-h-[150px] flex-col px-5 pt-[18px]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="rotulo">{i.rotulo}</span>
+        {pilula && <span className={pilula.cls} title="Comparado ao mesmo dia da semana passada">{pilula.texto}</span>}
+      </div>
+      <p className={`mt-2 text-[34px] leading-[1.1] ${TITULO}`}>{i.valor}</p>
+      {/* Quando o número junta coisas diferentes, a divisão fica aqui. */}
+      {i.detalhe && i.detalhe.length > 0 ? (
+        <div className="mt-auto flex flex-wrap gap-1.5 pb-4">
+          {i.detalhe.map((x) => (
+            <Link key={x.rotulo} href={x.href} className="pilula pilula-urgente hover:opacity-80">
+              {x.n} {x.rotulo}
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <Tendencia serie={i.serie} forte={i.chave === "faturamento"} />
+      )}
+    </div>
   );
 }
 
+function Busca() {
+  const router = useRouter();
+  const [q, setQ] = useState("");
+  const [indo, start] = useTransition();
+  return (
+    <form
+      role="search"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!q.trim()) return;
+        start(async () => { const r = await buscarRapido(q); router.push(r.href); });
+      }}
+      className="flex h-[46px] w-full max-w-[420px] flex-1 items-center gap-2.5 rounded-controle bg-painel-cartao px-4 shadow-controle"
+    >
+      <Icone nome={indo ? "esperando" : "buscar"} tamanho={18} className={`shrink-0 text-texto-fraco ${indo ? "animate-spin" : ""}`} />
+      <label htmlFor="busca-inicio" className="sr-only">Buscar mesa, comanda ou cliente</label>
+      <input
+        id="busca-inicio"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Buscar mesa, comanda, cliente…"
+        className="h-full min-w-0 flex-1 bg-transparent text-[14.5px] text-texto placeholder:text-texto-fraco"
+      />
+    </form>
+  );
+}
+
+const CORES_AVATAR = [
+  "bg-[linear-gradient(135deg,color-mix(in_srgb,var(--marca-primaria)_60%,white)_0%,var(--marca-primaria)_100%)] text-marca-escuro",
+  "bg-destaque text-texto-marca-pilula",
+  "bg-marca-escuro text-painel-foco-rotulo dark:bg-painel-foco-fundo",
+];
+
 export function Inicio({ d }: { d: DadosInicio }) {
   const router = useRouter();
+  const [grupo, setGrupo] = useState<string | null>(null);
+  const gruposVisiveis = grupo ? d.salao.grupos.filter((g) => g.nome === grupo) : d.salao.grupos;
 
   return (
-    <div className="mx-auto flex max-w-[1400px] flex-col gap-4 p-5">
-      {/* ---------- 1. Saudação ---------- */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className={`text-2xl font-semibold ${NUMERO}`}>Olá, {d.nome}</h1>
-          <p className="mt-0.5 text-sm text-texto-suave">
-            {d.ehHoje ? "Hoje, " : ""}{d.diaLegivel}
-          </p>
+    <div className="mx-auto flex max-w-[1500px] flex-col gap-[18px] px-4 py-5 md:px-[30px] md:py-[26px]">
+      {/* ---------- 1. Topo ---------- */}
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+        <div className="shrink-0">
+          <p className="rotulo">{d.ehHoje ? d.diaLegivel : `${d.diaLegivel} · outro dia`}</p>
+          <h1 className={`mt-1 text-[30px] leading-[1.05] ${TITULO}`}>{d.saudacao}, {d.nome}</h1>
         </div>
-        <label className="flex items-center gap-2 rounded-controle bg-painel-cartao px-3 py-2 text-sm text-texto-suave">
-          <Icone nome="agenda" tamanho={16} />
-          <span className="sr-only">Ver outro dia</span>
-          <input
-            type="date"
-            value={d.dia}
-            onChange={(e) => router.push(`/dashboard?dia=${e.target.value}`)}
-            className="bg-transparent font-numero text-texto "
-          />
-        </label>
-      </div>
-
-      {/* ---------- 2. Indicadores + 3. Cartão de foco ---------- */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        {d.indicadores.map((i) => (
-          <div key={i.chave} className={`${CARTAO} lg:col-span-2`}>
-            <div className="flex items-center justify-between gap-2">
-              <p className={ROTULO}>{i.rotulo}</p>
-              <Variacao pct={i.variacao} />
-            </div>
-            <p className={`mt-2 text-2xl font-semibold ${NUMERO}`}>{i.valor}</p>
-            {/* Quando o número junta coisas diferentes, a divisão fica aqui —
-                senão não dá pra saber o que está atrasado sem clicar. */}
-            {i.detalhe && i.detalhe.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                {i.detalhe.map((x) => (
-                  <Link key={x.rotulo} href={x.href} className="text-xs text-texto-suave hover:text-texto hover:underline">
-                    {x.n} {x.rotulo}
-                  </Link>
-                ))}
-              </div>
-            )}
-            <Tendencia serie={i.serie} />
-          </div>
-        ))}
-
-        {/* O cartão de foco: invertido em relação ao fundo. Uma por tela. */}
-        <div
-          className="rounded-cartao bg-painel-foco-fundo p-4 text-painel-foco-texto lg:col-span-4"
-          style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}
-        >
-          <p className="text-xs font-medium opacity-70">Caixa do dia</p>
-          <p className={`mt-2 text-3xl font-semibold font-numero tracking-apertada`}>{d.caixa.valor}</p>
-          <p className="mt-0.5 text-xs opacity-70">
-            {d.caixa.aberto ? `aberto${d.caixa.desde ? ` desde ${d.caixa.desde}` : ""}` : "fechado"}
-          </p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <Link
-              href="/pdv"
-              className="flex min-h-11 items-center justify-center gap-2 rounded-controle bg-painel-foco-texto px-3 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90"
-            >
-              <Icone nome="novo" tamanho={16} /> Novo pedido
-            </Link>
-            <Link
-              href="/salao/caixa"
-              className="flex min-h-11 items-center justify-center gap-2 rounded-controle border border-current/30 px-3 text-sm font-medium transition hover:bg-painel-foco-texto/10"
-            >
-              <Icone nome="cadeado" tamanho={16} /> Fechar caixa
-            </Link>
-          </div>
+        <Busca />
+        <div className="flex shrink-0 items-center gap-2.5">
+          {/* "Ver outro dia": o seletor de data por baixo do botão. */}
+          <label className="btn-secundario relative cursor-pointer text-sm">
+            {d.ehHoje ? "Ver outro dia" : "Outro dia"}
+            <input
+              type="date"
+              value={d.dia}
+              onChange={(e) => router.push(`/dashboard?dia=${e.target.value}`)}
+              aria-label="Ver outro dia"
+              className="absolute inset-0 cursor-pointer opacity-0"
+            />
+          </label>
+          {!d.ehHoje && <Link href="/dashboard" className="btn-secundario text-sm">Hoje</Link>}
+          <Link href="/pdv" className="btn-principal text-sm">
+            <Icone nome="novo" tamanho={16} /> Novo pedido
+          </Link>
         </div>
       </div>
 
-      {/* ---------- 4. Mapa do salão ---------- */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        <div className={`${CARTAO} lg:col-span-8`}>
-          <p className={`${ROTULO} mb-3`}>Mapa do salão</p>
-          <div className="flex flex-col gap-4">
-            {d.salao.grupos.map((g) => (
-              <div key={g.nome}>
-                <p className="mb-2 text-xs font-semibold text-texto-suave">{g.nome}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {g.mesas.map((m) => {
-                    const base =
-                      "flex h-11 w-11 items-center justify-center rounded-controle font-numero text-sm transition";
-                    const cor =
-                      m.estado === "ocupada"
-                        ? "bg-primaria text-marca-sobre-primaria"
-                        : m.estado === "conta"
-                          ? "border-2 border-primaria bg-transparent text-primaria font-semibold"
-                          : "border border-borda bg-painel-fundo text-texto-suave";
-                    const titulo =
-                      m.estado === "ocupada"
-                        ? `Mesa ${m.numero} — ocupada`
-                        : m.estado === "conta"
-                          ? `Mesa ${m.numero} — pediu a conta${m.contaPor ? ` (marcou: ${m.contaPor})` : ""}`
-                          : `Mesa ${m.numero} — livre`;
-                    return m.comandaId ? (
-                      <Link key={m.numero} href={`/salao/comandas/${m.comandaId}`} title={titulo} aria-label={titulo} className={`${base}  ${cor}`}>
-                        {m.numero}
-                      </Link>
-                    ) : (
-                      <Link key={m.numero} href={`/salao/mesa/${m.numero}`} title={titulo} aria-label={titulo} className={`${base}  ${cor}`}>
-                        {m.numero}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* ---------- 2. Indicadores + cartão de foco (caixa) ---------- */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_330px]">
+        {d.indicadores.map((i) => <Indicador key={i.chave} i={i} />)}
 
-        <div className={`${CARTAO} lg:col-span-4`}>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { r: "Ocupadas", n: d.salao.ocupadas },
-              { r: "Livres", n: d.salao.livres },
-              { r: "Conta pedida", n: d.salao.conta },
-            ].map((x) => (
-              <div key={x.r}>
-                <p className={`text-3xl font-semibold ${NUMERO}`}>{x.n}</p>
-                <p className={ROTULO}>{x.r}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 flex flex-col gap-1.5 border-t border-borda pt-3 text-xs text-texto-suave">
-            <span className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-[3px] bg-primaria" /> ocupada
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-[3px] border-2 border-primaria" /> pediu a conta
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-[3px] border border-borda bg-painel-fundo" /> livre
+        <div className="cartao-foco flex min-h-[150px] flex-col px-5 py-[18px]" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
+          <div className="flex items-center justify-between gap-2">
+            <span className="rotulo !text-painel-foco-rotulo">Caixa do dia</span>
+            <span className="rounded-full bg-painel-foco-texto/10 px-2.5 py-1 text-[11.5px] font-semibold">
+              {d.caixa.aberto ? `aberto${d.caixa.desde ? ` às ${d.caixa.desde.replace(":", "h")}` : ""}` : "fechado"}
             </span>
           </div>
-
-          <div className="mt-4 border-t border-borda pt-3">
-            <p className={ROTULO}>Aberta há mais tempo</p>
-            {d.salao.maisAntiga ? (
-              <Link href={`/salao/comandas/${d.salao.maisAntiga.comandaId}`} className="mt-1 block hover:underline">
-                <span className={`text-lg font-semibold ${NUMERO}`}>Mesa {d.salao.maisAntiga.numero}</span>
-                <span className="ml-2 text-sm text-texto-suave">há {d.salao.maisAntiga.minutos} min</span>
-              </Link>
+          <p className="numero-grande mt-1.5 text-[36px]">{d.caixa.valor}</p>
+          <p className="mt-0.5 text-[12.5px] text-painel-foco-suave">
+            Pix {d.caixa.pix} · cartão {d.caixa.cartao} · dinheiro {d.caixa.dinheiro}
+          </p>
+          <div className="mt-auto flex gap-2 pt-3">
+            {d.caixa.aberto ? (
+              <>
+                <Link href="/salao/caixa" className="btn-principal min-h-11 flex-1 text-[13.5px]">Fechar caixa</Link>
+                <Link href="/salao/caixa?acao=sangria" className="btn-foco flex-1 text-[13.5px]">Sangria</Link>
+              </>
             ) : (
-              <p className="mt-1 text-sm text-texto-fraco">nenhuma comanda aberta</p>
+              <Link href="/salao/caixa" className="btn-principal min-h-11 flex-1 text-[13.5px]">Abrir o caixa</Link>
             )}
-          </div>
-
-          <div className="mt-3 border-t border-borda pt-3">
-            <p className={ROTULO}>Rodízio no dia</p>
-            <p className={`mt-1 text-lg font-semibold ${NUMERO}`}>
-              {d.salao.rodizioDia} <span className="text-sm font-normal text-texto-suave">pedidos de sabor</span>
-            </p>
           </div>
         </div>
       </div>
 
-      {/* ---------- 5. Rodapé em três cartões ---------- */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className={CARTAO}>
-          <p className={`${ROTULO} mb-3`}>Delivery</p>
-          <div className="grid grid-cols-4 gap-2">
+      {/* ---------- 3. Salão ---------- */}
+      <section className="cartao flex flex-col gap-6 px-6 py-5 lg:flex-row lg:gap-9">
+        <div className="min-w-0 lg:w-[560px] lg:shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className={`text-[19px] ${TITULO}`}>Salão agora</h2>
+            {d.salao.grupos.length > 1 && (
+              <div className="flex gap-1.5" role="group" aria-label="Filtrar mesas">
+                {[null, ...d.salao.grupos.map((g) => g.nome)].map((nome) => {
+                  const ativo = grupo === nome;
+                  return (
+                    <button
+                      key={nome ?? "tudo"}
+                      type="button"
+                      onClick={() => setGrupo(nome)}
+                      aria-pressed={ativo}
+                      className={`flex min-h-11 items-center rounded-full px-4 text-[13px] ${
+                        ativo ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo dark:text-painel-foco-texto" : "bg-painel-fundo text-texto shadow-[inset_0_0_0_1px_var(--borda)]"
+                      }`}
+                    >
+                      {nome ?? "Tudo"}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {gruposVisiveis.map((g) => (
+            <div key={g.nome}>
+              <p className="rotulo mb-2 mt-4">{g.nome}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {g.mesas.map((m) => {
+                  const cor =
+                    m.estado === "ocupada"
+                      ? "bg-primaria font-bold text-marca-sobre-primaria shadow-brilho"
+                      : m.estado === "conta"
+                        ? "bg-painel-cartao font-bold text-texto shadow-[inset_0_0_0_2px_var(--marca-primaria)]"
+                        : "bg-superficie-suave text-texto-fraco";
+                  const titulo =
+                    m.estado === "ocupada"
+                      ? `Mesa ${m.numero} — ocupada`
+                      : m.estado === "conta"
+                        ? `Mesa ${m.numero} — pediu a conta${m.contaPor ? ` (marcou: ${m.contaPor})` : ""}`
+                        : `Mesa ${m.numero} — livre`;
+                  return (
+                    <Link
+                      key={m.numero}
+                      href={m.comandaId ? `/salao/comandas/${m.comandaId}` : `/salao/mesa/${m.numero}`}
+                      title={titulo}
+                      aria-label={titulo}
+                      className={`flex h-[38px] w-[38px] items-center justify-center rounded-mesa font-numero text-[13px] transition hover:-translate-y-px ${cor}`}
+                    >
+                      {m.numero}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { r: "Na cozinha", n: String(d.delivery.cozinha) },
-              { r: "Na rua", n: String(d.delivery.rua) },
-              { r: "Entregues", n: String(d.delivery.entregues) },
-              { r: "Tempo médio", n: d.delivery.tempoMedio == null ? "—" : `${d.delivery.tempoMedio}m` },
+              { r: "ocupadas", n: d.salao.ocupadas, destaque: true },
+              { r: "livres", n: d.salao.livres, destaque: false },
+              { r: "conta pedida", n: d.salao.conta, destaque: false },
             ].map((x) => (
-              <div key={x.r}>
-                <p className={`text-xl font-semibold ${NUMERO}`}>{x.n}</p>
-                <p className="text-mini text-texto-fraco">{x.r}</p>
+              <div key={x.r} className={`rounded-[16px] px-4 py-3.5 ${x.destaque ? "bg-destaque" : "bg-painel-fundo"}`}>
+                <p className="numero-grande text-[38px] leading-none text-texto">{x.n}</p>
+                <p className={`mt-1.5 text-[13px] ${x.destaque ? "font-semibold text-texto-marca-pilula" : "text-texto-suave"}`}>{x.r}</p>
               </div>
             ))}
           </div>
-        </div>
 
-        <div className={CARTAO}>
-          <p className={`${ROTULO} mb-3`}>Precisa de você</p>
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-texto-suave">
+            <span className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-[5px] bg-primaria" /> Ocupada</span>
+            <span className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-[5px] border-2 border-primaria" /> Conta pedida</span>
+            <span className="flex items-center gap-2"><span className="h-3.5 w-3.5 rounded-[5px] bg-superficie-suave shadow-[inset_0_0_0_1px_var(--borda)]" /> Livre</span>
+          </div>
+
+          <div className="mt-auto flex flex-col gap-3 pt-4">
+            <div className="flex items-center gap-3 rounded-controle bg-painel-fundo px-3.5 py-3">
+              <Icone nome="relogio" tamanho={18} className="shrink-0 text-texto-marca" />
+              {d.salao.maisAntiga ? (
+                <Link href={`/salao/comandas/${d.salao.maisAntiga.comandaId}`} className="flex-1 text-[13.5px] text-texto-suave hover:underline">
+                  Comanda mais antiga: <span className="font-semibold text-texto">mesa {d.salao.maisAntiga.numero}, há {duracao(d.salao.maisAntiga.minutos)}</span>
+                </Link>
+              ) : (
+                <span className="flex-1 text-[13.5px] text-texto-suave">Nenhuma comanda aberta.</span>
+              )}
+              {d.salao.rodizioDia > 0 && <span className="pilula">rodízio {d.salao.rodizioDia}</span>}
+            </div>
+            <Link
+              href="/salao"
+              className="flex min-h-11 items-center justify-center rounded-controle bg-marca-escuro text-sm font-semibold text-painel-foco-texto transition hover:opacity-90 dark:bg-painel-foco-fundo"
+            >
+              Abrir o salão
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- 4. Rodapé em três cartões ---------- */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr_1fr]">
+        <section className="cartao flex flex-col px-5 py-[18px]">
+          <div className="flex items-center justify-between">
+            <h2 className={`text-[17px] ${TITULO}`}>Delivery</h2>
+            <span className={d.delivery.aberto ? "pilula pilula-ok" : "pilula pilula-neutra"}>{d.delivery.aberto ? "aberto" : "fechado"}</span>
+          </div>
+          <div className="mt-3.5 grid grid-cols-3 gap-2">
+            {[
+              { r: "na cozinha", n: d.delivery.cozinha, destaque: true },
+              { r: "na rua", n: d.delivery.rua, destaque: false },
+              { r: "entregues", n: d.delivery.entregues, destaque: false },
+            ].map((x) => (
+              <div key={x.r} className={`rounded-controle px-3 py-2.5 ${x.destaque ? "bg-destaque" : "bg-painel-fundo"}`}>
+                <p className="numero-grande text-2xl leading-none text-texto">{x.n}</p>
+                <p className={`mt-1 text-xs ${x.destaque ? "font-semibold text-texto-marca-pilula" : "text-texto-suave"}`}>{x.r}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-auto flex items-center justify-between pt-4">
+            <span className="text-[13px] text-texto-suave">
+              Tempo médio <span className="font-semibold text-texto">{d.delivery.tempoMedio == null ? "—" : `${d.delivery.tempoMedio} min`}</span>
+            </span>
+            <Link href="/delivery" className="text-[13px] font-bold text-texto-marca hover:underline">Ver pedidos</Link>
+          </div>
+        </section>
+
+        <section className="cartao flex flex-col px-5 py-[18px]">
+          <div className="flex items-center justify-between">
+            <h2 className={`text-[17px] ${TITULO}`}>Precisa de você</h2>
+            {d.pendencias.length > 0 && <span className="pilula pilula-urgente-solido">{d.pendencias.length}</span>}
+          </div>
           {d.pendencias.length === 0 ? (
-            <p className="text-sm text-texto-fraco">Nada esperando. Bom trabalho.</p>
+            <p className="mt-3 text-sm text-texto-suave">Nada esperando por você agora.</p>
           ) : (
-            <div className="flex flex-col gap-1">
+            <div className="mt-2 flex flex-col">
               {d.pendencias.map((p) => (
                 <Link
                   key={p.rotulo}
                   href={p.href}
-                  className="flex min-h-11 items-center gap-2.5 rounded-controle px-2 text-sm text-texto-suave transition hover:bg-superficie-suave hover:text-texto"
+                  className="flex min-h-11 items-center gap-3 border-b border-borda py-2 text-texto last:border-0 hover:opacity-80"
                 >
-                  <Icone nome={p.icone} tamanho={16} />
-                  <span className="flex-1">{p.rotulo}</span>
-                  <span className={`font-semibold ${NUMERO}`}>{p.n}</span>
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${p.urgente ? "bg-urgente-solido" : "bg-primaria"}`} />
+                  <span className="min-w-0 flex-1 truncate text-[13.5px]">{p.rotulo}</span>
+                  <span className={p.urgente ? "pilula pilula-urgente" : "pilula"}>{p.nota}</span>
                 </Link>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        <div className={CARTAO}>
-          <p className={`${ROTULO} mb-3`}>Na casa {d.turno.rotulo}</p>
+        <section className="cartao flex flex-col px-5 py-[18px]">
+          <h2 className={`text-[17px] ${TITULO}`}>Na casa agora</h2>
           {d.turno.pessoas.length === 0 ? (
-            <p className="text-sm text-texto-fraco">Ninguém marcado neste turno.</p>
+            <p className="mt-3 text-sm text-texto-suave">Ninguém marcado no turno da {d.turno.rotulo}.</p>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {d.turno.pessoas.map((p) => (
-                <span key={p} className="rounded-controle bg-superficie-suave px-2 py-1 text-sm text-texto-suave">
-                  {p}
-                </span>
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              {d.turno.pessoas.map((p, i) => (
+                <div key={p} className="flex w-12 flex-col items-center gap-1.5">
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-full text-[12.5px] font-bold ${CORES_AVATAR[i % CORES_AVATAR.length]}`}>
+                    {p.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="w-full truncate text-center text-xs text-texto-suave">{p}</span>
+                </div>
               ))}
             </div>
           )}
-        </div>
+          <div className="mt-auto flex items-center justify-between pt-4">
+            <span className="text-[13px] text-texto-suave">
+              {d.turno.pessoas.length} {d.turno.pessoas.length === 1 ? "pessoa" : "pessoas"} no turno da {d.turno.rotulo}
+            </span>
+            <Link href="/colaboradores/semana" className="text-[13px] font-bold text-texto-marca hover:underline">Escala</Link>
+          </div>
+        </section>
       </div>
     </div>
   );

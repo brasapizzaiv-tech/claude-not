@@ -928,7 +928,7 @@ function FornecedoresModal({
                     : "text-texto-suave hover:bg-superficie-suave  "
                 }`}
               >
-                <span className={`flex h-4 w-4 items-center justify-center rounded border text-mini ${on ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte"}`}>
+                <span className={`flex h-4 w-4 items-center justify-center rounded border text-mini ${on ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-borda-forte"}`}>
                   {on ? "✓" : ""}
                 </span>
                 {f.nome}

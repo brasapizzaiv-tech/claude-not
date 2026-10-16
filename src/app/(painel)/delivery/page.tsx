@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 
@@ -8,6 +6,9 @@ export const metadata = { title: "Delivery · Brasa" };
 // (fora do componente por causa da regra de pureza do React)
 const agoraMs = () => Date.now();
 
+// Pedidos do delivery — layout novo (out/2026, protótipo em
+// docs/referencia-layout/pedidos-delivery.html): abre na LISTA com o painel
+// do pedido ao lado; o quadro de colunas e o mapa ficam a um botão.
 export default async function DeliveryPage() {
   const agora = agoraMs();
   const supabase = await createClient();
@@ -16,7 +17,7 @@ export default async function DeliveryPage() {
     supabase
       .from("delivery_pedidos")
       .select(
-        "id, comanda_id, nome, telefone, tipo, logradouro, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, agendado_para, entregador_id, lat, lng, pdv_comandas(numero)",
+        "id, comanda_id, nome, telefone, tipo, logradouro, numero_casa:numero, complemento, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, agendado_para, aceito_em, preparo_em, pronto_em, saiu_em, entregue_em, entregador_id, lat, lng, pdv_comandas(numero)",
       )
       .order("criado_em", { ascending: false })
       .limit(120),
@@ -28,62 +29,50 @@ export default async function DeliveryPage() {
     ? { lat: Number(cfgM.origem_lat), lng: Number(cfgM.origem_lng) }
     : null;
 
-  const linhas = (pedidosRaw as unknown as (Omit<PedidoBoard, "numero" | "subtotal" | "entregadorNome"> & {
+  const linhas = (pedidosRaw as unknown as (Omit<PedidoBoard, "numero" | "subtotal" | "entregadorNome" | "itens"> & {
     comanda_id: string | null;
     pdv_comandas: { numero: number } | { numero: number }[] | null;
   })[]) ?? [];
 
-  // Subtotais (soma dos itens por comanda) numa consulta só.
+  // Itens (pra lista mostrar o resumo e o painel a conta) numa consulta só.
   const comandaIds = [...new Set(linhas.map((l) => l.comanda_id).filter(Boolean))] as string[];
-  const somaDe = new Map<string, number>();
-  if (comandaIds.length) {
+  const itensDe = new Map<string, PedidoBoard["itens"]>();
+  for (let i = 0; i < comandaIds.length; i += 200) {
     const { data: itens } = await supabase
       .from("pdv_comanda_itens")
-      .select("comanda_id, qtd, preco_unit")
-      .in("comanda_id", comandaIds);
+      .select("comanda_id, descricao, qtd, preco_unit")
+      .in("comanda_id", comandaIds.slice(i, i + 200))
+      .order("criado_em")
+      .limit(5000);
     for (const it of itens ?? []) {
-      const v = Number(it.qtd) * Number(it.preco_unit || 0);
-      somaDe.set(it.comanda_id as string, (somaDe.get(it.comanda_id as string) ?? 0) + v);
+      const lista = itensDe.get(it.comanda_id as string) ?? [];
+      lista.push({ descricao: it.descricao as string, qtd: Number(it.qtd), preco: Number(it.preco_unit || 0) });
+      itensDe.set(it.comanda_id as string, lista);
     }
   }
 
   const entrMap = new Map((entregadores ?? []).map((e) => [e.id, e.nome]));
   const pedidos: PedidoBoard[] = linhas.map((l) => {
     const c = Array.isArray(l.pdv_comandas) ? l.pdv_comandas[0] : l.pdv_comandas;
+    const itens = itensDe.get(l.comanda_id ?? "") ?? [];
     return {
       ...l,
       numero: c?.numero ?? null,
-      subtotal: Math.round((somaDe.get(l.comanda_id ?? "") ?? 0) * 100) / 100,
+      itens,
+      subtotal: Math.round(itens.reduce((s, i) => s + i.qtd * i.preco, 0) * 100) / 100,
       entregadorNome: l.entregador_id ? entrMap.get(l.entregador_id) ?? null : null,
     };
   });
 
   return (
-    <div className="p-4">
-      <div className="mb-4 flex items-center gap-3">
-        <h1 className="flex items-center gap-2 font-numero text-2xl font-semibold tracking-apertada text-texto"><Icone nome="entrega" tamanho={20} /> Delivery</h1>
-        <Link href="/delivery/novo" className="rounded-cartao bg-texto px-4 py-2 font-semibold text-fundo">+ Novo pedido</Link>
-        <div className="ml-auto flex gap-3 text-sm text-texto-suave">
-          <Link href="/salao/cardapio" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="caderno" tamanho={14} /> Cardápio</Link>
-          <Link href="/delivery/areas" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="mapa" tamanho={14} /> Áreas e tele</Link>
-          <Link href="/delivery/cupons" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="etiqueta" tamanho={14} /> Cupons</Link>
-          <Link href="/delivery/cashback" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="presente" tamanho={14} /> Cashback</Link>
-          <Link href="/delivery/campanhas" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="megafone" tamanho={14} /> Campanhas</Link>
-          <Link href="/delivery/kern" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="empresa" tamanho={14} /> Kern</Link>
-          <Link href="/delivery/relatorios" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="grafico" tamanho={14} /> Relatórios</Link>
-          <Link href="/delivery/entregadores" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="entrega" tamanho={14} /> Entregadores</Link>
-          <Link href="/delivery/config" className="inline-flex items-center gap-1.5 hover:underline"><Icone nome="ajustes" tamanho={14} /> Config</Link>
-        </div>
-      </div>
-      <Board
-        pedidos={pedidos}
-        entregadores={((entregadores ?? []) as { id: string; nome: string }[]).map((e) => ({ id: e.id, nome: e.nome })) as EntregadorOpt[]}
-        boys={((entregadores ?? []) as { id: string; nome: string; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[])
-          .filter((e) => e.ultima_lat != null && e.ultima_lng != null && e.ultima_pos_em && agora - new Date(e.ultima_pos_em).getTime() < 20 * 60000)
-          .map((e) => ({ id: e.id, nome: e.nome, lat: Number(e.ultima_lat), lng: Number(e.ultima_lng), em: e.ultima_pos_em as string }))}
-        origemMapa={origemMapa}
-        googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null}
-      />
-    </div>
+    <Board
+      pedidos={pedidos}
+      entregadores={((entregadores ?? []) as { id: string; nome: string }[]).map((e) => ({ id: e.id, nome: e.nome })) as EntregadorOpt[]}
+      boys={((entregadores ?? []) as { id: string; nome: string; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[])
+        .filter((e) => e.ultima_lat != null && e.ultima_lng != null && e.ultima_pos_em && agora - new Date(e.ultima_pos_em).getTime() < 20 * 60000)
+        .map((e) => ({ id: e.id, nome: e.nome, lat: Number(e.ultima_lat), lng: Number(e.ultima_lng), em: e.ultima_pos_em as string }))}
+      origemMapa={origemMapa}
+      googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null}
+    />
   );
 }

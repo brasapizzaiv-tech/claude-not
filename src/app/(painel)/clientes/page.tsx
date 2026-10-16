@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { ClientesClient, type Cliente } from "./client";
 
-export default async function ClientesPage() {
+export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
   const supabase = await createClient();
   // O PostgREST devolve no máximo 1000 linhas por consulta e já são 3.000+
   // clientes: sem paginar, quem estava depois do 1000º na ordem alfabética
@@ -13,5 +14,5 @@ export default async function ClientesPage() {
     todos.push(...lote);
     if (lote.length < 1000) break;
   }
-  return <ClientesClient clientes={todos} />;
+  return <ClientesClient clientes={todos} buscaInicial={(q ?? "").slice(0, 80)} />;
 }

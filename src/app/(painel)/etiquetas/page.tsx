@@ -117,10 +117,10 @@ export default async function EtiquetasPage({
       {/* Abas */}
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Link href="/etiquetas" className={`rounded-controle px-3 py-1.5 text-sm font-medium ${!historico ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>
+          <Link href="/etiquetas" className={`rounded-controle px-3 py-1.5 text-sm font-medium ${!historico ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`}>
             Ativas
           </Link>
-          <Link href="/etiquetas?ver=historico" className={`rounded-controle px-3 py-1.5 text-sm font-medium ${historico ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>
+          <Link href="/etiquetas?ver=historico" className={`rounded-controle px-3 py-1.5 text-sm font-medium ${historico ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`}>
             Histórico (baixadas)
           </Link>
           {filtroAtivo && (

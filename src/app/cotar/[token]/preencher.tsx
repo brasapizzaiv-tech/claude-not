@@ -855,7 +855,7 @@ export function CotarPreencher({
             <button
               onClick={enviar}
               disabled={enviando}
-              className="w-full rounded-xl bg-orange-500 py-3 text-center font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+              className="w-full rounded-xl bg-orange-500 py-3 text-center font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
             >
               {enviando ? "Enviando..." : "Enviar preços"}
             </button>

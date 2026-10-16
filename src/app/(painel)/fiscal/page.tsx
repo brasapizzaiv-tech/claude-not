@@ -132,7 +132,7 @@ export default async function FiscalPage() {
           </p>
         </section>
 
-        <Enviar className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
+        <Enviar className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105">
           Salvar configuração fiscal
         </Enviar>
       </form>

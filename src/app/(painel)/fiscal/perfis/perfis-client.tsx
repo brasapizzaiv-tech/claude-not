@@ -68,7 +68,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold">1. Perfis fiscais</h2>
-          <button onClick={() => setEditando({ ...VAZIO })} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white">+ Novo perfil</button>
+          <button onClick={() => setEditando({ ...VAZIO })} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">+ Novo perfil</button>
         </div>
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="w-full min-w-[760px] text-sm">
@@ -304,7 +304,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
             </label>
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setEditando(null)} className="rounded-controle px-4 py-2 text-sm text-texto-suave">Cancelar</button>
-              <button type="submit" disabled={pend} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Salvar</button>
+              <button type="submit" disabled={pend} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-marca-sobre-primaria disabled:opacity-50">Salvar</button>
             </div>
           </form>
         </div>

@@ -222,7 +222,7 @@ export function NovoPedidoClient({
         <button
           onClick={criar}
           disabled={salvando || !fornecedorId || itens.length === 0}
-          className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
         >
           {salvando ? "Criando..." : "Criar pedido e conferir →"}
         </button>

@@ -676,7 +676,7 @@ function NovaReserva({
             if (r.ok) setD({ ...vazio, data: d.data });
           });
         }}
-        className="mt-3 w-full rounded-controle bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+        className="mt-3 w-full rounded-controle bg-orange-500 px-4 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
       >
         {proc ? "Salvando..." : "Salvar reserva"}
       </button>

@@ -157,7 +157,7 @@ export function BancoTabela({
             onClick={() => { setMes(m); setSel(new Set()); }}
             className={`rounded-controle px-3 py-1.5 text-sm font-medium capitalize transition ${
               mes === m
-                ? "bg-orange-500 text-white"
+                ? "bg-orange-500 text-marca-sobre-primaria"
                 : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
             }`}
           >
@@ -168,7 +168,7 @@ export function BancoTabela({
           onClick={() => { setMes("todos"); setSel(new Set()); }}
           className={`rounded-controle px-3 py-1.5 text-sm font-medium transition ${
             mes === "todos"
-              ? "bg-orange-500 text-white"
+              ? "bg-orange-500 text-marca-sobre-primaria"
               : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
           }`}
         >
@@ -200,7 +200,7 @@ export function BancoTabela({
               onClick={() => setFiltro(b)}
               className={`rounded-controle px-3 py-1.5 text-sm font-medium transition ${
                 filtro === b
-                  ? "bg-orange-500 text-white"
+                  ? "bg-orange-500 text-marca-sobre-primaria"
                   : "border border-borda-forte text-texto-suave hover:bg-superficie-suave   "
               }`}
             >
@@ -370,7 +370,7 @@ export function BancoTabela({
                                   run(() => lancarNotaEConciliar(t.id, t.notaSugeridaId!))
                                 }
                                 title={t.notaSugeridaLabel ?? ""}
-                                className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+                                className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
                               >
                                 Lançar nota e conciliar
                               </button>
@@ -509,7 +509,7 @@ export function BancoTabela({
                                     ),
                                   )
                                 }
-                                className="mt-2 rounded-controle bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+                                className="mt-2 rounded-controle bg-orange-500 px-3 py-2 text-xs font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
                               >
                                 {partes.length > 0
                                   ? `Gerar ${partes.length} lançamentos e conciliar`

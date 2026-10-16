@@ -86,3 +86,6 @@ app-equipe/*.apk
 **/google-services.json
 **/GoogleService-Info.plist
 *firebase-adminsdk*.json
+
+# Prints do layout com dados reais (faturamento, clientes): só local — o repositório é público
+docs/referencia-layout/prints/

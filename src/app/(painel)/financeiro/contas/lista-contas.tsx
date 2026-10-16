@@ -86,7 +86,7 @@ function ValorConta({ l }: { l: LinhaConta }) {
         className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
       />
       <Enviar
-        className="rounded-controle bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600"
+        className="rounded-controle bg-orange-500 px-2 py-1 text-xs font-medium text-marca-sobre-primaria hover:brightness-105"
         title="Salvar o valor do boleto"
       >
         ✓

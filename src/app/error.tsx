@@ -23,7 +23,7 @@ export default function Erro({ error, reset }: { error: Error & { digest?: strin
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105"
           >
             Atualizar a página
           </button>

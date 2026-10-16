@@ -52,7 +52,7 @@ export default function Home() {
           </p>
           <a
             href="/login"
-            className="mt-6 inline-block rounded-lg bg-orange-500 px-6 py-2.5 font-medium text-white transition hover:bg-orange-600"
+            className="mt-6 inline-block rounded-lg bg-orange-500 px-6 py-2.5 font-medium text-marca-sobre-primaria transition hover:brightness-105"
           >
             Entrar
           </a>
@@ -73,7 +73,7 @@ export default function Home() {
                   {m.fase}
                 </span>
                 {m.ativo && (
-                  <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-medium text-white">
+                  <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-medium text-marca-sobre-primaria">
                     Em desenvolvimento
                   </span>
                 )}

@@ -6,14 +6,17 @@ import { Enviar } from "@/components/enviar";
 // troco) e sangria (retirada) eram dois blocos abertos lado a lado e ocupavam
 // meia tela. Agora é "Movimentar caixa" → escolhe entrada ou saída.
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { suprimento, sangria } from "../actions";
 
 const inputCls =
   "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
 export function CaixaAcoes({ caixaId }: { caixaId: string }) {
-  const [aberto, setAberto] = useState(false);
-  const [tipo, setTipo] = useState<"suprimento" | "sangria">("suprimento");
+  // ?acao=sangria (botão Sangria da tela inicial) já abre na saída.
+  const pediuSangria = useSearchParams().get("acao") === "sangria";
+  const [aberto, setAberto] = useState(pediuSangria);
+  const [tipo, setTipo] = useState<"suprimento" | "sangria">(pediuSangria ? "sangria" : "suprimento");
   const entrada = tipo === "suprimento";
 
   return (

@@ -110,7 +110,7 @@ export function VigiaVersao() {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="rounded-md bg-orange-500 px-3 py-1 font-semibold text-white hover:bg-orange-600"
+        className="rounded-md bg-orange-500 px-3 py-1 font-semibold text-marca-sobre-primaria hover:brightness-105"
       >
         Atualizar a página
       </button>

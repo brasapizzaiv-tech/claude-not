@@ -192,7 +192,7 @@ export function SeletorItem({
                 ))}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={salvarNovo} disabled={salvando || !nNome.trim()} className="flex-1 rounded-lg bg-orange-500 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                <button type="button" onClick={salvarNovo} disabled={salvando || !nNome.trim()} className="flex-1 rounded-lg bg-orange-500 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50">
                   {salvando ? "Salvando..." : "Salvar e usar"}
                 </button>
                 <button type="button" onClick={() => setNovo(false)} className="rounded-lg border border-zinc-300 px-3 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">Cancelar</button>
@@ -246,7 +246,7 @@ export function TipoSelector({ value, onChange }: { value: TipoEtiqueta; onChang
           onClick={() => onChange(t.key)}
           title={t.dica}
           className={`min-w-0 overflow-hidden rounded-xl border px-1 py-2 text-center text-[11px] font-semibold leading-tight ${
-            value === t.key ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+            value === t.key ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
           }`}
         >
           <div className="text-base">{t.icone}</div>
@@ -404,7 +404,7 @@ export function ValidadePresets({ value, onChange }: { value: string; onChange: 
             key={n}
             type="button"
             onClick={() => onChange(iso)}
-            className={`rounded-lg border py-2 text-sm font-semibold ${sel ? "border-orange-500 bg-orange-500 text-white" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+            className={`rounded-lg border py-2 text-sm font-semibold ${sel ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
           >
             {n} dias
           </button>

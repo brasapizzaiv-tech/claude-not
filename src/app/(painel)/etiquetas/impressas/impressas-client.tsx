@@ -64,7 +64,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
   const grupos = [...porProduto.entries()].sort((a, b) => b[1].n - a[1].n);
 
   const tab = (v: string, lab: string, ativo: boolean) => (
-    <Link key={v} href={`/etiquetas/impressas?p=${v}`} className={`rounded-controle px-3 py-1.5 text-sm font-medium ${ativo ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>
+    <Link key={v} href={`/etiquetas/impressas?p=${v}`} className={`rounded-controle px-3 py-1.5 text-sm font-medium ${ativo ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`}>
       {lab}
     </Link>
   );
@@ -96,7 +96,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
               <button
                 key={nome}
                 onClick={() => setUsuario(usuario === nome ? "" : nome)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${usuario === nome ? "border-orange-500 bg-orange-500 text-white" : "border-borda-forte text-texto-suave  "}`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${usuario === nome ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-borda-forte text-texto-suave  "}`}
               >
                 {nome} · {n}
               </button>
@@ -108,7 +108,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex overflow-hidden rounded-controle border border-borda-forte">
           {(["lista", "agrupado"] as const).map((v) => (
-            <button key={v} onClick={() => setVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-white" : "text-texto-suave"}`}>
+            <button key={v} onClick={() => setVisao(v)} className={`px-3 py-1.5 text-sm font-medium ${visao === v ? "bg-orange-500 text-marca-sobre-primaria" : "text-texto-suave"}`}>
               {v === "lista" ? "☰ Lista" : "▤ Agrupado por produto"}
             </button>
           ))}

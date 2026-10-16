@@ -126,7 +126,7 @@ export function CentralImpressao({
             {editId === im.id ? (
               <div className="flex flex-wrap items-center gap-2">
                 <input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
-                <button disabled={proc} onClick={() => { run(() => renomearImpressora(im.id, editNome)); setEditId(null); }} className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-medium text-white">Salvar</button>
+                <button disabled={proc} onClick={() => { run(() => renomearImpressora(im.id, editNome)); setEditId(null); }} className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-medium text-marca-sobre-primaria">Salvar</button>
                 <button onClick={() => setEditId(null)} className="rounded-controle px-3 py-2 text-sm text-texto-suave">Cancelar</button>
               </div>
             ) : (
@@ -175,7 +175,7 @@ export function CentralImpressao({
 
       <div className="mt-5 flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao p-3">
         <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
-        <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+        <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-marca-sobre-primaria disabled:opacity-50">
           + Adicionar impressora
         </button>
       </div>
@@ -231,7 +231,7 @@ function EtiquetaFormato({ im, proc, run }: {
         </label>
         <label className="flex items-center gap-1.5">Letra:
           {[["Pequena", 85], ["Normal", 100], ["Grande", 115]].map(([lbl, v]) => (
-            <button key={v} disabled={proc} onClick={() => salvar({ ...c, escala: v as number })} className={`rounded-controle px-2.5 py-1 text-xs font-medium ${c.escala === v ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>{lbl}</button>
+            <button key={v} disabled={proc} onClick={() => salvar({ ...c, escala: v as number })} className={`rounded-controle px-2.5 py-1 text-xs font-medium ${c.escala === v ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`}>{lbl}</button>
           ))}
         </label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.qr} disabled={proc} onChange={(e) => salvar({ ...c, qr: e.target.checked })} /> QR code</label>
@@ -274,7 +274,7 @@ function ViaFormato({ im, proc, run }: {
   const def: ComandaConfig = { largura: 80, precos: false, garcom: true, hora: true, agrupar: false, qtdCat: false, destObs: false };
   const [c, setC] = useState<ComandaConfig>({ ...def, ...(im.comanda_config ?? {}) });
   function salvar(novo: ComandaConfig) { setC(novo); run(() => definirComandaConfig(im.id, novo)); }
-  const wbtn = (mm: number) => `rounded-controle px-3 py-1 text-sm font-medium ${c.largura === mm ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`;
+  const wbtn = (mm: number) => `rounded-controle px-3 py-1 text-sm font-medium ${c.largura === mm ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`;
   return (
     <div className="mt-2 rounded-controle bg-superficie-suave p-2">
       <div className="mb-1.5 text-xs text-texto-suave">Formato da impressão:</div>

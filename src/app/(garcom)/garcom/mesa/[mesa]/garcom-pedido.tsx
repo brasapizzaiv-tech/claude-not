@@ -295,7 +295,7 @@ export function GarcomPedido({
           {pizza.tamanhos.length > 0 && (
             <button
               onClick={() => setPzOpen(true)}
-              className="mb-1.5 w-full rounded-controle bg-orange-500 px-2 py-3 text-xs font-bold text-white"
+              className="mb-1.5 w-full rounded-controle bg-orange-500 px-2 py-3 text-xs font-bold text-marca-sobre-primaria"
             >
               <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Montar pizza
             </button>

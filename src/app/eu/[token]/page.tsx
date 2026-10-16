@@ -277,7 +277,7 @@ export default async function AppColaboradorPage({
       )}
       {fazEtiquetas && (
         <div className="mb-3 grid grid-cols-2 gap-3">
-          <Link href={`/eu/${token}/etiqueta`} className="rounded-cartao bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600">
+          <Link href={`/eu/${token}/etiqueta`} className="rounded-cartao bg-orange-500 p-4 text-center font-semibold text-marca-sobre-primaria hover:brightness-105">
             <Icone nome="etiqueta" tamanho={17} className="mr-1.5" /> Nova etiqueta
           </Link>
           <Link href={`/eu/${token}/baixa`} className="rounded-cartao bg-zinc-800 p-4 text-center font-semibold text-white hover:bg-zinc-700">
@@ -348,7 +348,7 @@ export default async function AppColaboradorPage({
                 <Link
                   key={c.token}
                   href={`/contar/${c.token}`}
-                  className="block rounded-cartao bg-orange-500 p-4 text-center font-semibold text-white hover:bg-orange-600"
+                  className="block rounded-cartao bg-orange-500 p-4 text-center font-semibold text-marca-sobre-primaria hover:brightness-105"
                 >
                   <Icone nome="pacote" tamanho={15} className="mr-1.5" /> {c.descricao || "Contagem"}
                   {c.data && (

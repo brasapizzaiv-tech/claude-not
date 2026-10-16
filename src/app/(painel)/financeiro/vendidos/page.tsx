@@ -181,10 +181,10 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
           <label className="mb-1 block text-xs text-texto-suave">Até</label>
           <input type="date" name="ate" defaultValue={ate} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm" />
         </div>
-        <button className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-white">Aplicar</button>
+        <button className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">Aplicar</button>
         <div className="ml-1 flex flex-wrap gap-1">
           {atalhos.map((a) => (
-            <Link key={a.r} href={link({ de: a.de, ate: a.ate })} className={`rounded-controle px-2.5 py-1.5 text-xs ${de === a.de && ate === a.ate ? "bg-orange-500 text-white" : "border border-borda-forte text-texto-suave  "}`}>{a.r}</Link>
+            <Link key={a.r} href={link({ de: a.de, ate: a.ate })} className={`rounded-controle px-2.5 py-1.5 text-xs ${de === a.de && ate === a.ate ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`}>{a.r}</Link>
           ))}
         </div>
       </form>

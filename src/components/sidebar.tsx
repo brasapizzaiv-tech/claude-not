@@ -17,6 +17,10 @@ import { SeletorTema } from "@/components/seletor-tema";
 //
 // No celular continua o menu que desliza por cima, porque já existia e dá conta
 // das 40 telas melhor que uma barra embaixo com 5 lugares.
+//
+// Layout novo (out/2026): logo num quadrado (grafite com a inicial em laranja
+// no claro, laranja no escuro), item ativo em pêssego com o ícone no laranja de
+// texto, avatar da pessoa embaixo — que abre tema e sair.
 
 type Item = { href: string; label: string; icon: NomeIcone; external?: boolean; aviso?: number };
 type Grupo = { key: string; label: string; icon: NomeIcone; itens: Item[]; aviso?: number };
@@ -65,14 +69,14 @@ function BotaoRail({
 }) {
   // 44 px de alvo, que é o mínimo confortável pro dedo.
   const cls = `group relative flex h-11 w-11 items-center justify-center rounded-controle transition ${
-      ativo ? "bg-superficie-suave text-primaria" : "text-texto-suave hover:bg-superficie-suave hover:text-texto"
+      ativo ? "bg-destaque text-texto-marca" : "text-texto-fraco hover:bg-superficie-suave hover:text-texto"
     }`;
   const dentro = (
     <>
-      <Icone nome={icone} tamanho={21} />
+      <Icone nome={icone} tamanho={20} />
       {!!aviso && <Badge n={aviso} canto />}
       {/* O nome aparece ao lado quando o mouse passa. */}
-      <span className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded-controle bg-texto px-2 py-1 text-xs font-medium text-fundo group-hover:block">
+      <span className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded-mesa bg-painel-foco-fundo px-2.5 py-1.5 text-xs font-semibold text-painel-foco-texto shadow-controle group-hover:block group-focus-visible:block">
         {rotulo}
       </span>
     </>
@@ -89,7 +93,7 @@ function BotaoRail({
 function Badge({ n, canto = false }: { n: number; canto?: boolean }) {
   return (
     <span
-      className={`flex h-4 min-w-4 items-center justify-center rounded-full bg-erro px-1 text-mini font-bold text-white ${
+      className={`flex h-4 min-w-4 items-center justify-center rounded-full bg-urgente-solido px-1 text-mini font-bold text-marca-escuro ${
         canto ? "absolute -right-0.5 -top-0.5" : ""
       }`}
     >
@@ -107,6 +111,7 @@ export function Sidebar({
   pedidosCompra = 0,
   tema = TEMA_PADRAO,
   logoUrl = "/logo-brasa.png",
+  empresaNome = "Brasa",
 }: {
   nome: string;
   papel: string;
@@ -117,7 +122,11 @@ export function Sidebar({
   tema?: Tema;
   /** Logo da empresa. Vem do cadastro (Etapa 3); o padrão é o da Brasa. */
   logoUrl?: string;
+  /** Nome da empresa: a inicial vai no quadrado do topo da barra. */
+  empresaNome?: string;
 }) {
+  const [contaAberta, setContaAberta] = useState(false);
+  const iniciais = (nome || "U").trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "U";
   const pathname = usePathname();
   const abertosRaw = useSyncExternalStore(subscribe, lerAbertosRaw, () => "{}");
   // O que está aberto guarda TAMBÉM em qual tela abriu. Assim, quando a pessoa
@@ -271,10 +280,13 @@ export function Sidebar({
   // ---------- Botão da barra estreita ----------
   // ---------- A barra estreita (computador) ----------
   const rail = (
-    <div className="flex h-full flex-col items-center gap-1 border-r border-borda bg-painel-cartao py-3">
-      <Link href="/dashboard" aria-label="Início" className="mb-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoUrl} alt="" className="h-10 w-10 rounded-controle object-contain" />
+    <div className="flex h-full flex-col items-center gap-2 bg-painel-cartao py-5" style={{ boxShadow: "1px 0 0 var(--borda), 6px 0 24px color-mix(in srgb, var(--marca-escuro) 5%, transparent)" }}>
+      <Link
+        href="/dashboard"
+        aria-label={`${empresaNome} — início`}
+        className="mb-3 flex h-10 w-10 items-center justify-center rounded-controle bg-marca-escuro font-numero text-lg font-bold text-primaria dark:bg-primaria dark:text-marca-sobre-primaria"
+      >
+        {(empresaNome.trim()[0] ?? "B").toUpperCase()}
       </Link>
 
       <BotaoRail icone="inicio" rotulo="Início" ativo={noInicio} href="/dashboard" />
@@ -292,23 +304,37 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="flex flex-col items-center gap-1 border-t border-borda pt-2">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-superficie-suave text-sm font-semibold text-texto"
-          title={`${nome} · ${papel}`}
+      {/* Avatar: abre o menu da conta (tema e sair). */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setContaAberta((v) => !v)}
+          aria-label={`${nome} — conta, tema e sair`}
+          aria-expanded={contaAberta}
+          className="flex h-11 w-11 items-center justify-center rounded-full"
         >
-          {(nome?.[0] ?? "U").toUpperCase()}
-        </div>
-        <SeletorTema inicial={tema} />
-        <form action="/auth/signout" method="post">
-          <button
-            aria-label="Sair"
-            title="Sair"
-            className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-suave transition hover:bg-superficie-suave hover:text-texto"
-          >
-            <Icone nome="sair" tamanho={19} />
-          </button>
-        </form>
+          <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full text-[12.5px] font-bold text-marca-escuro" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--marca-primaria) 60%, white) 0%, var(--marca-primaria) 100%)" }}>
+            {iniciais}
+          </span>
+        </button>
+        {contaAberta && (
+          <>
+            <button aria-label="Fechar" className="fixed inset-0 z-40 cursor-default" onClick={() => setContaAberta(false)} />
+            <div className="cartao absolute bottom-0 left-full z-50 ml-3 w-60 p-3">
+              <p className="truncate text-sm font-semibold text-texto">{nome}</p>
+              <p className="rotulo mt-0.5">{papel}</p>
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-borda pt-3">
+                <span className="text-sm text-texto-suave">Tema</span>
+                <SeletorTema inicial={tema} />
+              </div>
+              <form action="/auth/signout" method="post" className="mt-2">
+                <button className="flex min-h-11 w-full items-center gap-2 rounded-controle px-2 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave hover:text-texto">
+                  <Icone nome="sair" tamanho={17} /> Sair
+                </button>
+              </form>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -319,12 +345,12 @@ export function Sidebar({
       {g.itens.map((it) => {
         const ehAtivo = ativo?.href === it.href;
         const cls = `flex items-center gap-2.5 rounded-controle px-2.5 py-2 text-sm transition ${
-          ehAtivo ? "bg-superficie-suave font-semibold text-texto" : "text-texto-suave hover:bg-superficie-suave hover:text-texto"
+          ehAtivo ? "bg-destaque font-semibold text-texto" : "text-texto-suave hover:bg-superficie-suave hover:text-texto"
         }`;
         const dentro = (
           <>
             <span className="relative flex h-5 w-5 items-center justify-center">
-              <Icone nome={it.icon} tamanho={17} className={ehAtivo ? "text-primaria" : ""} />
+              <Icone nome={it.icon} tamanho={17} className={ehAtivo ? "text-texto-marca" : ""} />
             </span>
             <span className="truncate">{it.label}</span>
             {!!it.aviso && <Badge n={it.aviso} />}
@@ -360,7 +386,7 @@ export function Sidebar({
           <span className="font-semibold text-texto">Brasa</span>
         </Link>
         {!!reservasNovas && (
-          <span className="ml-auto rounded-full bg-erro px-2 py-0.5 text-xs font-bold text-white">
+          <span className="pilula pilula-urgente-solido ml-auto">
             {reservasNovas} reservas
           </span>
         )}
@@ -394,10 +420,10 @@ export function Sidebar({
               <Link
                 href="/dashboard"
                 className={`mb-1 flex items-center gap-2.5 rounded-controle px-2.5 py-2 text-sm ${
-                  noInicio ? "bg-superficie-suave font-semibold text-texto" : "text-texto-suave"
+                  noInicio ? "bg-destaque font-semibold text-texto" : "text-texto-suave"
                 }`}
               >
-                <Icone nome="inicio" tamanho={18} className={noInicio ? "text-primaria" : ""} /> Início
+                <Icone nome="inicio" tamanho={18} className={noInicio ? "text-texto-marca" : ""} /> Início
               </Link>
               {grupos.map((g) => (
                 <div key={g.key} className="mt-1">
@@ -406,7 +432,7 @@ export function Sidebar({
                     onClick={() => alternar(g.key)}
                     className="flex w-full items-center gap-2.5 rounded-controle px-2.5 py-2 text-sm font-semibold text-texto"
                   >
-                    <Icone nome={g.icon} tamanho={18} className={g.key === grupoAtivo ? "text-primaria" : "text-texto-suave"} />
+                    <Icone nome={g.icon} tamanho={18} className={g.key === grupoAtivo ? "text-texto-marca" : "text-texto-suave"} />
                     <span className="flex-1 text-left">{g.label}</span>
                     {!!g.aviso && !estaAberto(g.key) && <Badge n={g.aviso} />}
                     <Icone
@@ -461,12 +487,10 @@ export function Sidebar({
             onClick={() => abrirFlyout(null)}
           />
           <div
-            className="fixed inset-y-0 z-40 hidden w-60 border-r border-borda bg-painel-cartao p-2 md:block"
+            className="fixed inset-y-0 z-40 hidden w-64 bg-painel-cartao p-3 shadow-cartao md:block"
             style={{ left: RAIL }}
           >
-            <p className="px-2.5 pb-2 pt-1 text-xs font-semibold tracking-apertada text-texto-fraco">
-              {grupoAberto.label}
-            </p>
+            <p className="rotulo px-2.5 pb-3 pt-3">{grupoAberto.label}</p>
             {listaDoGrupo(grupoAberto, () => abrirFlyout(null))}
           </div>
         </>

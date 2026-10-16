@@ -125,7 +125,7 @@ export function AtribuirClient({
           <BotaoAcao
             aoClicar={darTudo}
             disabled={!todosPara}
-            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
           >
             Atribuir tudo
           </BotaoAcao>
