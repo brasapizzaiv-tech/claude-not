@@ -18,7 +18,7 @@ export default async function MesaPage({
 
   const { data: comandas } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, aberta_em, valor_buffet, buffet_pago, buffet_valor_pago")
+    .select("id, numero, aberta_em, valor_buffet, buffet_pago, buffet_valor_pago, buffet_base_pago")
     .eq("mesa", mesa)
     .eq("status", "aberta")
     .order("numero");
@@ -28,7 +28,7 @@ export default async function MesaPage({
   if (comIds.length) {
     const { data: itc } = await supabase
       .from("pdv_comanda_itens")
-      .select("id, comanda_id, descricao, qtd, preco_unit, pago, valor_pago")
+      .select("id, comanda_id, descricao, qtd, preco_unit, pago, valor_pago, base_pago")
       .in("comanda_id", comIds)
       .order("criado_em");
     for (const i of itc ?? []) {
@@ -40,6 +40,7 @@ export default async function MesaPage({
         preco: Number(i.preco_unit),
         pago: !!i.pago,
         valorPago: Number(i.valor_pago ?? 0),
+        basePago: i.pago ? Number(i.qtd) * Number(i.preco_unit) : Number(i.base_pago ?? 0),
       });
       itensPorCom.set(i.comanda_id as string, arr);
     }
@@ -51,7 +52,7 @@ export default async function MesaPage({
     abertaEm: (c.aberta_em as string) ?? null,
     buffet:
       Number(c.valor_buffet ?? 0) > 0
-        ? { valor: Number(c.valor_buffet), pago: !!c.buffet_pago, valorPago: Number(c.buffet_valor_pago ?? 0) }
+        ? { valor: Number(c.valor_buffet), pago: !!c.buffet_pago, valorPago: Number(c.buffet_valor_pago ?? 0), basePago: c.buffet_pago ? Number(c.valor_buffet) : Number(c.buffet_base_pago ?? 0) }
         : null,
     itens: itensPorCom.get(c.id as string) ?? [],
   }));

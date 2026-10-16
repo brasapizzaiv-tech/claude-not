@@ -5,6 +5,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
+import { aplicarParte, faltasDaComanda, r2, servicoCobrado } from "@/lib/comanda-parte";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
@@ -898,24 +899,6 @@ async function calcTotalComanda(
   return { numero: com?.numero as number | undefined, servico, total: subtotal + servico };
 }
 
-// Serviço que de fato foi cobrado: o que os itens/buffet receberam acima do
-// preço. No caixa cada pagamento escolhe cobrar ou não os 10% (numa conta
-// dividida um paga e o outro não), então não dá mais pra calcular pelo
-// percentual do horário. É isso que vai pros 10% da equipe.
-async function servicoCobrado(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  comandaId: string,
-) {
-  const [{ data: com }, { data: itens }] = await Promise.all([
-    supabase.from("pdv_comandas").select("valor_buffet, buffet_valor_pago").eq("id", comandaId).single(),
-    supabase.from("pdv_comanda_itens").select("qtd, preco_unit, valor_pago").eq("comanda_id", comandaId),
-  ]);
-  const preco =
-    Number(com?.valor_buffet ?? 0) + (itens ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
-  const pago =
-    Number(com?.buffet_valor_pago ?? 0) + (itens ?? []).reduce((s, i) => s + Number(i.valor_pago ?? 0), 0);
-  return Math.max(0, Math.round((pago - preco) * 100) / 100);
-}
 
 // O que ainda falta pagar de uma comanda (itens e buffet não pagos + serviço).
 // Fecha a comanda quando não sobra nada a pagar (itens + buffet quitados).
@@ -1110,14 +1093,26 @@ export async function pagarSelecao(
   clienteId?: string | null,
   /** Cliente não quis pagar os 10%: este pagamento sai sem serviço. */
   cobrarServico = true,
+  /** "Pagar parte": dinheiro (já com ou sem os 10%) que cobre um pedaço da comanda. */
+  partes: { comandaId: string; valor: number }[] = [],
 ) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
+  partes = partes.filter((p) => p.comandaId && p.valor > 0);
+  // Comanda paga em parte entra na lista como as outras (número, nota, cliente…).
+  sel = [...sel, ...partes.filter((p) => !sel.some((s) => s.comandaId === p.comandaId)).map((p) => ({ comandaId: p.comandaId, itemIds: [], buffet: false }))];
   if (sel.length === 0 && extras.length === 0) return { ok: false as const };
   const cfg = await pdvCfg(supabase);
   const fator = 1 + (cobrarServico ? servicoAgora(cfg) : 0) / 100;
   const caixaId = await caixaAberto(supabase);
   if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
+  // A parte não pode passar do que falta (tela desatualizada, outro caixa recebeu).
+  for (const p of partes) {
+    const falta = (await faltasDaComanda(supabase, p.comandaId)).reduce((a, l) => a + l.falta, 0);
+    if (p.valor / fator > falta + 0.02) {
+      return { ok: false as const, mensagem: `A parte (${p.valor.toFixed(2).replace(".", ",")}) é maior do que falta nessa comanda. Atualize a tela.` };
+    }
+  }
   // Tipo de cada forma (cadastro): cortesia e vale-presente pedem o motivo e
   // não entram como venda (migration 0233).
   const formasT = await formasParaTipo();
@@ -1155,6 +1150,7 @@ export async function pagarSelecao(
       qtd: e.qtd,
       preco_unit: precoVenda(prod),
       valor_pago: payable,
+      base_pago: r2(precoVenda(prod) * e.qtd),
       pago: true,
     });
   }
@@ -1167,32 +1163,37 @@ export async function pagarSelecao(
     for (const itemId of s.itemIds) {
       const { data: row } = await supabase
         .from("pdv_comanda_itens")
-        .select("qtd, preco_unit, pago")
+        .select("qtd, preco_unit, pago, base_pago, valor_pago")
         .eq("id", itemId)
         .single();
       if (!row || row.pago) continue;
-      const payable = Math.round(Number(row.qtd) * Number(row.preco_unit) * fator * 100) / 100;
+      // Paga o que falta do preço (pode já ter recebido uma parte antes).
+      const preco = r2(Number(row.qtd) * Number(row.preco_unit));
+      const falta = Math.max(0, preco - Number(row.base_pago ?? 0));
       await supabase
         .from("pdv_comanda_itens")
-        .update({ valor_pago: payable, pago: true })
+        .update({ valor_pago: r2(Number(row.valor_pago ?? 0) + falta * fator), base_pago: preco, pago: true })
         .eq("id", itemId);
       quitadosAgora++;
     }
     if (s.buffet) {
       const { data: c } = await supabase
         .from("pdv_comandas")
-        .select("valor_buffet, buffet_pago")
+        .select("valor_buffet, buffet_pago, buffet_base_pago, buffet_valor_pago")
         .eq("id", s.comandaId)
         .single();
       if (c && !c.buffet_pago) {
-        const payable = Math.round(Number(c.valor_buffet ?? 0) * fator * 100) / 100;
+        const preco = r2(Number(c.valor_buffet ?? 0));
+        const falta = Math.max(0, preco - Number(c.buffet_base_pago ?? 0));
         await supabase
           .from("pdv_comandas")
-          .update({ buffet_valor_pago: payable, buffet_pago: true })
+          .update({ buffet_valor_pago: r2(Number(c.buffet_valor_pago ?? 0) + falta * fator), buffet_base_pago: preco, buffet_pago: true })
           .eq("id", s.comandaId);
         quitadosAgora++;
       }
     }
+    const parte = partes.find((p) => p.comandaId === s.comandaId);
+    if (parte && (await aplicarParte(supabase, s.comandaId, parte.valor, fator)) > 0) quitadosAgora++;
     const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", s.comandaId).single();
     if (com?.numero != null) numeros.push(com.numero);
     await fecharSeQuitou(supabase, s.comandaId);

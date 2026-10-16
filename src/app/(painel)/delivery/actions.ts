@@ -497,7 +497,7 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
 
   for (const i of itens) {
     if (i.pago) continue;
-    await supabase.from("pdv_comanda_itens").update({ valor_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), pago: true }).eq("id", i.id);
+    await supabase.from("pdv_comanda_itens").update({ valor_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), base_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), pago: true }).eq("id", i.id);
   }
   const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
     caixa_id: cx.id,

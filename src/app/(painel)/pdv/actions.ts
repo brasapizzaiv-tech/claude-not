@@ -136,7 +136,7 @@ export async function finalizarVendaPdv(
   }
 
   for (const p of payables) {
-    await supabase.from("pdv_comanda_itens").update({ valor_pago: p.payable, pago: true }).eq("id", p.id);
+    await supabase.from("pdv_comanda_itens").update({ valor_pago: p.payable, base_pago: p.payable, pago: true }).eq("id", p.id);
   }
 
   let movId: string | null = null;

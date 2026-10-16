@@ -114,7 +114,7 @@ export default async function CaixaPage({
 
   const { data: comAbertas } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, mesa, valor_buffet, buffet_pago, buffet_valor_pago, livre, peso")
+    .select("id, numero, mesa, valor_buffet, buffet_pago, buffet_valor_pago, buffet_base_pago, livre, peso")
     .eq("status", "aberta")
     .order("numero", { ascending: false });
   const abertas =
@@ -125,6 +125,7 @@ export default async function CaixaPage({
       valor_buffet: number;
       buffet_pago: boolean;
       buffet_valor_pago: number;
+      buffet_base_pago: number | null;
       livre: boolean | null;
       peso: number | null;
     }[]) ?? [];
@@ -137,12 +138,13 @@ export default async function CaixaPage({
     preco: number;
     pago: boolean;
     valorPago: number;
+    basePago: number;
   };
   const itensPorCom = new Map<string, ItemCom[]>();
   if (abertas.length > 0) {
     const { data: itc } = await supabase
       .from("pdv_comanda_itens")
-      .select("id, comanda_id, qtd, preco_unit, pago, valor_pago, descricao")
+      .select("id, comanda_id, qtd, preco_unit, pago, valor_pago, base_pago, descricao")
       .in("comanda_id", abertas.map((c) => c.id));
     for (const i of (itc as unknown as {
       id: string;
@@ -151,6 +153,7 @@ export default async function CaixaPage({
       preco_unit: number;
       pago: boolean;
       valor_pago: number;
+      base_pago: number | null;
       descricao: string | null;
     }[]) ?? []) {
       const arr = itensPorCom.get(i.comanda_id) ?? [];
@@ -161,6 +164,8 @@ export default async function CaixaPage({
         preco: Number(i.preco_unit),
         pago: !!i.pago,
         valorPago: Number(i.valor_pago ?? 0),
+        // Pago (inclusive por versão antiga, sem base_pago) = preço todo coberto.
+        basePago: i.pago ? Number(i.qtd) * Number(i.preco_unit) : Number(i.base_pago ?? 0),
       });
       itensPorCom.set(i.comanda_id, arr);
     }
@@ -172,10 +177,11 @@ export default async function CaixaPage({
     const total = Math.round(sub * fator * 100) / 100;
     // Restante = o que falta de cada linha (com serviço) menos o já pago.
     const restItens = itens.reduce(
-      (s, i) => s + Math.max(0, i.qtd * i.preco * fator - i.valorPago),
+      (s, i) => s + Math.max(0, i.qtd * i.preco - i.basePago) * fator,
       0,
     );
-    const restBuffet = Math.max(0, Number(c.valor_buffet ?? 0) * fator - Number(c.buffet_valor_pago ?? 0));
+    const buffetCoberto = c.buffet_pago ? Number(c.valor_buffet ?? 0) : Number(c.buffet_base_pago ?? 0);
+    const restBuffet = Math.max(0, Number(c.valor_buffet ?? 0) - buffetCoberto) * fator;
     return {
       id: c.id,
       numero: c.numero,
@@ -185,6 +191,7 @@ export default async function CaixaPage({
       buffet: Number(c.valor_buffet ?? 0),
       buffetPago: !!c.buffet_pago,
       buffetValorPago: Number(c.buffet_valor_pago ?? 0),
+      buffetBasePago: buffetCoberto,
       livre: !!c.livre,
       pesada: Number(c.peso ?? 0) > 0,
       itens,

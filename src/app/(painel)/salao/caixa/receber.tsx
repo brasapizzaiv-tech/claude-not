@@ -10,6 +10,7 @@ import { PixQr } from "@/components/pix-qr";
 import { emiteNotaAuto, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { PainelPagamentos, type ColabMini, type Pagamento } from "./pagamentos";
 import { Icone } from "@/components/icone";
+import { PagarParte, type ParteEscolhida } from "./pagar-parte";
 import { emitirNotaPendenteAgora } from "./pendentes-actions";
 import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
 
@@ -23,7 +24,8 @@ export type ItemComanda = {
   qtd: number;
   preco: number;
   pago: boolean;
-  valorPago: number;
+  valorPago: number; // dinheiro que já entrou
+  basePago: number; // quanto do preço esse dinheiro já cobriu (migration 0238)
 };
 export type Comanda = {
   id: string;
@@ -34,6 +36,7 @@ export type Comanda = {
   buffet: number;
   buffetPago: boolean;
   buffetValorPago: number;
+  buffetBasePago: number;
   livre: boolean;   // já é buffet livre
   pesada: boolean;  // veio da balança (tem peso)
   itens: ItemComanda[];
@@ -178,6 +181,9 @@ export function ReceberComandas({
   } | null>(null);
   // Cobrar os 10% NESTE pagamento (numa conta dividida um paga e o outro não).
   const [cobrarServico, setCobrarServico] = useState(true);
+  // "Pagar parte": um valor (por pessoas ou digitado) no lugar dos itens.
+  const [parte, setParte] = useState<ParteEscolhida | null>(null);
+  const [parteAberta, setParteAberta] = useState(false);
 
   // Comandas escolhidas no topo.
   const selComandas = comandas.filter((c) => sel.has(c.id));
@@ -209,7 +215,9 @@ export function ReceberComandas({
   const linhas: Linha[] = useMemo(() => {
     const out: Linha[] = [];
     for (const c of selComandas) {
-      const buffetRem = Math.round((c.buffet * fator - c.buffetValorPago) * 100) / 100;
+      // O que falta do PREÇO; com serviço é isso × 1,10.
+      const buffetBase = Math.max(0, Math.round((c.buffet - c.buffetBasePago) * 100) / 100);
+      const buffetRem = Math.round(buffetBase * fator * 100) / 100;
       if (buffetRem > 0.005) {
         out.push({
           key: `${c.id}|buffet`,
@@ -219,12 +227,13 @@ export function ReceberComandas({
           nome: "Buffet",
           qtd: 1,
           valor: buffetRem,
-          valorSem: c.buffetValorPago > 0 ? Math.round((buffetRem / fator) * 100) / 100 : Math.round(c.buffet * 100) / 100,
+          valorSem: buffetBase,
         });
       }
       for (const i of c.itens) {
         if (excluidos.has(i.id)) continue;
-        const rem = Math.round((i.qtd * i.preco * fator - i.valorPago) * 100) / 100;
+        const remBase = Math.max(0, Math.round((i.qtd * i.preco - i.basePago) * 100) / 100);
+        const rem = Math.round(remBase * fator * 100) / 100;
         if (rem > 0.005) {
           out.push({
             key: `${c.id}|item|${i.id}`,
@@ -235,7 +244,7 @@ export function ReceberComandas({
             nome: i.nome,
             qtd: i.qtd,
             valor: rem,
-            valorSem: i.valorPago > 0 ? Math.round((rem / fator) * 100) / 100 : Math.round(i.qtd * i.preco * 100) / 100,
+            valorSem: remBase,
           });
         }
       }
@@ -253,11 +262,34 @@ export function ReceberComandas({
   const comServCarrinho = Math.round((linhasCarrinho.reduce((s, l) => s + l.valor, 0) + extraCom) * 100) / 100;
   const servicoCarrinho = Math.max(0, Math.round((comServCarrinho - baseCarrinho) * 100) / 100);
   const extraValor = cobrarServico ? extraCom : extraSem;
-  const subtotalBruto = cobrarServico ? comServCarrinho : baseCarrinho;
+  const fatorParte = parte?.comServico ? fator : 1;
+  // Parte com serviço: o serviço é o que passa do preço coberto (valor ÷ 1,10).
+  const servicoParte = parte?.comServico ? Math.round((parte.valor - parte.valor / fatorParte) * 100) / 100 : 0;
+  const subtotalBruto = parte ? parte.valor : cobrarServico ? comServCarrinho : baseCarrinho;
   // Consumo (o que falta nas comandas escolhidas), separado do serviço.
   const faltaSem = Math.round(linhas.reduce((s, l) => s + l.valorSem, 0) * 100) / 100;
   const faltaCom = Math.round(linhas.reduce((s, l) => s + l.valor, 0) * 100) / 100;
-  const temAlgo = linhasCarrinho.length > 0 || extras.length > 0;
+  const temAlgo = linhasCarrinho.length > 0 || extras.length > 0 || !!parte;
+  // Pra janela "Pagar parte": preço de tudo, dinheiro que já entrou e o que falta.
+  const totalBaseSel = Math.round(selComandas.reduce((a, c) => a + c.buffet + c.itens.reduce((b, i) => b + i.qtd * i.preco, 0), 0) * 100) / 100;
+  const pagoDinheiroSel = Math.round(selComandas.reduce((a, c) => a + c.buffetValorPago + c.itens.reduce((b, i) => b + i.valorPago, 0), 0) * 100) / 100;
+  // Divide o valor da parte entre as comandas escolhidas, na ordem, até o que falta em cada uma.
+  function partesPorComanda(p: ParteEscolhida) {
+    const fp = p.comServico ? fator : 1;
+    let resta = p.valor;
+    const out: { comandaId: string; numero: number; valor: number }[] = [];
+    for (const c of selComandas) {
+      if (resta <= 0.004) break;
+      const faltaC = Math.round(linhas.filter((l) => l.comandaId === c.id).reduce((a, l) => a + l.valorSem, 0) * fp * 100) / 100;
+      if (faltaC <= 0.004) continue;
+      const v = Math.min(resta, faltaC);
+      out.push({ comandaId: c.id, numero: c.numero, valor: Math.round(v * 100) / 100 });
+      resta = Math.round((resta - v) * 100) / 100;
+    }
+    // Sobra de centavo (arredondamento da divisão) fica na primeira.
+    if (resta > 0.004 && out[0]) out[0].valor = Math.round((out[0].valor + resta) * 100) / 100;
+    return out;
+  }
   // Desconto em % vira R$ sobre o subtotal (ex.: 5% no dinheiro).
   const desc = descontoPct ? Math.round(subtotalBruto * num(desconto)) / 100 : num(desconto);
   const acr = num(acrescimo);
@@ -313,6 +345,7 @@ export function ReceberComandas({
     const p = menu.find((m) => m.id === novoProd);
     const q = Math.max(1, Math.round(num(novoQtd) || 1));
     if (!p) return;
+    setParte(null);
     setExtras((s) => [
       ...s,
       { uid: `${p.id}-${new Date().getTime()}`, produtoId: p.id, nome: p.nome, preco: p.preco, qtd: q },
@@ -356,6 +389,7 @@ export function ReceberComandas({
     });
   }
   function mover(key: string) {
+    setParte(null);
     setCarrinho((c) => new Set(c).add(key));
     setMsg(null);
   }
@@ -367,11 +401,13 @@ export function ReceberComandas({
     });
   }
   function pagarTudo() {
+    setParte(null);
     setCarrinho(new Set(linhas.map((l) => l.key)));
     setMsg(null);
   }
   function limparCarrinho() {
     setCarrinho(new Set());
+    setParte(null);
   }
 
   function confirmar() {
@@ -427,6 +463,8 @@ export function ReceberComandas({
 
     // recibo: total por comanda no carrinho (+ extras na primeira comanda)
     const totPorCom = new Map<string, { numero: number; total: number }>();
+    const partesPayload = parte ? partesPorComanda(parte) : [];
+    for (const p of partesPayload) totPorCom.set(p.comandaId, { numero: p.numero, total: p.valor });
     for (const l of linhasCarrinho) {
       const t = totPorCom.get(l.comandaId) ?? { numero: l.numero, total: 0 };
       t.total = Math.round((t.total + (cobrarServico ? l.valor : l.valorSem)) * 100) / 100;
@@ -443,7 +481,14 @@ export function ReceberComandas({
     start(async () => {
       let r: Awaited<ReturnType<typeof pagarSelecao>>;
       try {
-        r = await pagarSelecao(payload, pagamentos, extrasPayload, clienteSel?.id ?? null, cobrarServico);
+        r = await pagarSelecao(
+          payload,
+          pagamentos,
+          extrasPayload,
+          clienteSel?.id ?? null,
+          parte ? parte.comServico : cobrarServico,
+          partesPayload.map((p) => ({ comandaId: p.comandaId, valor: p.valor })),
+        );
       } catch {
         confirmandoRef.current = false;
         const presos = await desfazerTefs("sem conexão ao gravar a venda");
@@ -478,10 +523,11 @@ export function ReceberComandas({
           pagamentos,
           troco: troco > 0.005 ? troco : 0,
           quando: new Date().toLocaleString("pt-BR"),
-          servico: cobrarServico ? servicoCarrinho : 0,
-          servicoTirado: cobrarServico ? 0 : servicoCarrinho,
+          servico: parte ? servicoParte : cobrarServico ? servicoCarrinho : 0,
+          servicoTirado: parte ? 0 : cobrarServico ? 0 : servicoCarrinho,
         });
         setCobrarServico(true);
+        setParte(null);
         const pagasAgora = [...totPorCom.entries()].map(([id, t]) => ({ id, numero: t.numero }));
         setPagas(pagasAgora);
         // Pix/cartão com o interruptor ligado → nota sai sozinha.
@@ -570,6 +616,23 @@ export function ReceberComandas({
   const titulo = "text-center text-base font-bold text-zinc-800 dark:text-zinc-100";
 
   return (
+    <>
+    {parteAberta && (
+      <PagarParte
+        totalBase={totalBaseSel}
+        pagoDinheiro={pagoDinheiroSel}
+        faltaBase={Math.round(linhas.reduce((a, l) => a + l.valorSem, 0) * 100) / 100}
+        servPercent={servPercent}
+        onCancelar={() => setParteAberta(false)}
+        onSalvar={(p) => {
+          setParteAberta(false);
+          setCarrinho(new Set());
+          setExtras([]);
+          setParte(p);
+          setMsg(null);
+        }}
+      />
+    )}
     <div>
       {/* Topo: comandas selecionadas + busca para adicionar mais + cliente */}
       <div className="cartao mb-3 p-4">
@@ -770,12 +833,22 @@ export function ReceberComandas({
                 <span className="text-texto-suave">Falta (com serviço)</span>
                 <span className="font-bold text-texto">{brl(faltaCom)}</span>
               </div>
-              <button
-                onClick={pagarTudo}
-                className="w-full rounded-controle bg-texto py-2 text-sm font-semibold text-fundo hover:opacity-90"
-              >
-                Pagar tudo
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setParteAberta(true)}
+                  disabled={linhas.length === 0}
+                  title="Dividir por pessoas ou pagar um valor (cada parte escolhe os 10%)"
+                  className="btn-secundario min-h-11 text-sm disabled:opacity-40"
+                >
+                  Pagar parte
+                </button>
+                <button
+                  onClick={pagarTudo}
+                  className="min-h-11 rounded-controle bg-texto py-2 text-sm font-semibold text-fundo hover:opacity-90"
+                >
+                  Pagar tudo
+                </button>
+              </div>
             </div>
           </div>
 
@@ -789,6 +862,24 @@ export function ReceberComandas({
                 </p>
               ) : (
                 <>
+                  {parte && (
+                    <div className="rounded-controle bg-destaque px-3 py-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1 font-semibold text-texto">
+                          Parte da conta{parte.pessoas ? ` (1 de ${parte.pessoas} pessoas)` : ""}
+                        </span>
+                        <span className="font-numero font-bold text-texto">{brl(parte.valor)}</span>
+                        <button onClick={() => setParte(null)} title="Tirar" className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40">
+                          <Icone nome="lixeira" tamanho={15} titulo="Tirar a parte" />
+                        </button>
+                      </div>
+                      <p className="mt-0.5 text-xs text-texto-suave">
+                        {parte.comServico && servPercent > 0
+                          ? `Inclui ${servPercent}% de serviço: ${brl(servicoParte)}`
+                          : servPercent > 0 ? `Sem os ${servPercent}% de serviço` : ""}
+                      </p>
+                    </div>
+                  )}
                   {linhasCarrinho.map((l) => (
                     <div key={l.key} className="flex items-center gap-2 rounded-controle px-2 py-1.5 text-sm">
                       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">
@@ -866,7 +957,7 @@ export function ReceberComandas({
 
             {temAlgo && (
               <>
-                {servPercent > 0 && servicoCarrinho > 0.005 && (
+                {!parte && servPercent > 0 && servicoCarrinho > 0.005 && (
                   <div className="mt-2 border-t border-borda pt-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-texto-suave">Consumo</span>
@@ -975,7 +1066,14 @@ export function ReceberComandas({
                   </div>
   
                   <div className="rounded-controle bg-superficie-suave p-2">
-                    {servPercent > 0 && servicoCarrinho > 0.005 && (
+                    {parte ? (
+                      servPercent > 0 && (
+                        <div className="flex items-center justify-between text-sm text-texto-suave">
+                          <span>{parte.comServico ? `Parte da conta · serviço (${servPercent}%) incluso` : `Parte da conta · sem o serviço`}</span>
+                          <span>{parte.comServico ? brl(servicoParte) : ""}</span>
+                        </div>
+                      )
+                    ) : servPercent > 0 && servicoCarrinho > 0.005 && (
                       <div className="flex items-center justify-between text-sm text-texto-suave">
                         <span>{cobrarServico ? `Serviço (${servPercent}%) incluso` : `Sem o serviço (${servPercent}%)`}</span>
                         <span className={cobrarServico ? "" : "line-through"}>{brl(servicoCarrinho)}</span>
@@ -1237,5 +1335,6 @@ export function ReceberComandas({
         }
       `}</style>
     </div>
+    </>
   );
 }

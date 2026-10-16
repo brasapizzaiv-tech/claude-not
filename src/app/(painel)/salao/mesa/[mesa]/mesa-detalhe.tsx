@@ -11,8 +11,9 @@ export type ComandaMesa = {
   id: string;
   numero: number;
   abertaEm: string | null;
-  buffet: { valor: number; pago: boolean; valorPago: number } | null;
-  itens: { id: string; descricao: string; qtd: number; preco: number; pago: boolean; valorPago: number }[];
+  buffet: { valor: number; pago: boolean; valorPago: number; basePago: number } | null;
+  // valorPago = dinheiro que entrou; basePago = quanto do preço ele cobriu (migration 0238)
+  itens: { id: string; descricao: string; qtd: number; preco: number; pago: boolean; valorPago: number; basePago: number }[];
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -64,7 +65,7 @@ export function MesaDetalhe({
           qtd: 1,
           payable,
           pago,
-          pendente: Math.max(0, Math.round((payable - pago) * 100) / 100),
+          pendente: c.buffet.pago ? 0 : Math.max(0, Math.round((c.buffet.valor - c.buffet.basePago) * fator * 100) / 100),
           quitado: c.buffet.pago,
         });
       }
@@ -79,7 +80,7 @@ export function MesaDetalhe({
           qtd: i.qtd,
           payable,
           pago,
-          pendente: Math.max(0, Math.round((payable - pago) * 100) / 100),
+          pendente: i.pago ? 0 : Math.max(0, Math.round((i.qtd * i.preco - i.basePago) * fator * 100) / 100),
           quitado: i.pago,
         });
       }
