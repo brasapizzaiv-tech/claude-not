@@ -285,7 +285,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     const primeiro = itens[0];
     // Pedido de delivery (entrega): QR com o id do pedido pro app do motoboy.
-    const { data: dp } = await admin.from("delivery_pedidos").select("id, tipo, pdv_comandas(numero)").eq("comanda_id", primeiro.comanda_id).maybeSingle();
+    const { data: dp } = await admin.from("delivery_pedidos").select("id, tipo, numero_turno, pdv_comandas(numero)").eq("comanda_id", primeiro.comanda_id).maybeSingle();
     const entrega = dp && (dp as { tipo: string }).tipo === "entrega" ? (dp as { id: string }) : null;
     const [{ data: com }, { data: prof }] = await Promise.all([
       admin.from("pdv_comandas").select("numero, mesa").eq("id", primeiro.comanda_id).maybeSingle(),
@@ -302,13 +302,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       {
         via: (imp?.nome as string) ?? null,
         mesa: (com?.mesa as string) || "Balcão",
-        numero: (com?.numero as number) ?? null,
+        // Delivery sai com o nº do turno (o mesmo do painel e do cliente).
+        numero: ((dp as { numero_turno?: number | null } | null)?.numero_turno ?? (com?.numero as number)) ?? null,
         hora,
         garcom: (prof?.nome as string) ?? null,
         observacao: null,
         itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: i.preco_unit != null ? Number(i.preco_unit) : undefined, categoria: catDe(i) })),
         qr: entrega ? `ENTREGA:${entrega.id}` : null,
-        qrRotulo: entrega ? `ENTREGA #${(com?.numero as number) ?? ""} — motoboy: leia no app pra pegar` : null,
+        qrRotulo: entrega ? `ENTREGA #${(dp as { numero_turno?: number | null } | null)?.numero_turno ?? (com?.numero as number) ?? ""} — motoboy: leia no app pra pegar` : null,
       },
       config,
     );

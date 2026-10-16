@@ -27,12 +27,12 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
       : Promise.resolve({ data: [] as { descricao: string; qtd: number; preco_unit: number | null }[] }),
     supabase.from("entregadores").select("id, nome").eq("ativo", true).order("nome"),
     supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome"),
-    supabase.from("delivery_pedidos").select("id, criado_em, status, tipo, pdv_comandas(numero)", { count: "exact" }).eq("telefone", tel).neq("id", id).order("criado_em", { ascending: false }).limit(5),
+    supabase.from("delivery_pedidos").select("id, criado_em, status, tipo, numero_turno, pdv_comandas(numero)", { count: "exact" }).eq("telefone", tel).neq("id", id).order("criado_em", { ascending: false }).limit(5),
   ]);
 
-  const historico = ((histRows as unknown as { criado_em: string; status: string; tipo: string; pdv_comandas: { numero: number } | { numero: number }[] | null }[]) ?? []).map((h) => {
+  const historico = ((histRows as unknown as { criado_em: string; status: string; tipo: string; numero_turno: number | null; pdv_comandas: { numero: number } | { numero: number }[] | null }[]) ?? []).map((h) => {
     const hc = Array.isArray(h.pdv_comandas) ? h.pdv_comandas[0] : h.pdv_comandas;
-    return { numero: hc?.numero ?? null, criado_em: h.criado_em, status: h.status, tipo: h.tipo };
+    return { numero: h.numero_turno ?? hc?.numero ?? null, criado_em: h.criado_em, status: h.status, tipo: h.tipo };
   });
 
   const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
@@ -42,7 +42,8 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
 
   const pedido: PedidoDetalhe = {
     id,
-    numero: com?.numero ?? null,
+    // Nº do delivery é por turno (migration 0237); pedido antigo cai no da comanda.
+    numero: (p.numero_turno as number | null) ?? com?.numero ?? null,
     comandaId: p.comanda_id,
     clienteId: (p.cliente_id as string) ?? null,
     nome: (p.nome as string) ?? "",

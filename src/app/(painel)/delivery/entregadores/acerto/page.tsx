@@ -20,12 +20,12 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
   const supabase = await createClient();
   const [{ data: boys }, { data: peds }, { data: acertos }] = await Promise.all([
     supabase.from("entregadores").select("id, nome, valor_fixo_dia, valor_fixo_noite, valor_tele").eq("ativo", true).order("nome"),
-    supabase.from("delivery_pedidos").select("id, entregador_id, status, taxa_motoboy, recebido_forma, recebido_valor, saiu_em, entregue_em, pdv_comandas(numero)")
+    supabase.from("delivery_pedidos").select("id, entregador_id, status, taxa_motoboy, recebido_forma, recebido_valor, saiu_em, entregue_em, numero_turno, pdv_comandas(numero)")
       .eq("tipo", "entrega").not("entregador_id", "is", null)
       .gte("entregue_em", `${data}T00:00:00-03:00`).lte("entregue_em", `${data}T23:59:59-03:00`).eq("status", "entregue"),
     supabase.from("entregador_acertos").select("entregador_id, total, fixo, teles_qtd, teles_valor, recebido_dinheiro, recebido_cartao, recebido_pix").eq("data", data),
   ]);
-  type Ped = { id: string; entregador_id: string; status: string; taxa_motoboy: number | null; recebido_forma: string | null; recebido_valor: number | null; saiu_em: string | null; entregue_em: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
+  type Ped = { id: string; entregador_id: string; status: string; taxa_motoboy: number | null; recebido_forma: string | null; recebido_valor: number | null; saiu_em: string | null; entregue_em: string | null; numero_turno: number | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
   const pedidos = (peds as unknown as Ped[]) ?? [];
   const jaFeito = new Map(((acertos as { entregador_id: string; total: number; fixo: number; teles_qtd: number; teles_valor: number; recebido_dinheiro: number; recebido_cartao: number; recebido_pix: number }[]) ?? []).map((a) => [a.entregador_id, a]));
   const addDias = (iso: string, n: number) => { const [a, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10); };
@@ -80,7 +80,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
               <summary className="cursor-pointer">ver as {meus.length} entregas</summary>
               <ul className="mt-1 space-y-0.5">
                 {meus.map((p) => { const c = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas; return (
-                  <li key={p.id}>#{c?.numero ?? "—"} · tele {brl(Number(p.taxa_motoboy ?? 0))} · {p.recebido_forma ?? "—"} {p.recebido_valor ? brl(Number(p.recebido_valor)) : ""}</li>
+                  <li key={p.id}>#{p.numero_turno ?? c?.numero ?? "—"} · tele {brl(Number(p.taxa_motoboy ?? 0))} · {p.recebido_forma ?? "—"} {p.recebido_valor ? brl(Number(p.recebido_valor)) : ""}</li>
                 ); })}
               </ul>
             </details>

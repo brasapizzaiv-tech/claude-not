@@ -106,7 +106,7 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
     const admin = createAdminClient();
     const { data } = await admin
       .from("delivery_pedidos")
-      .select("id, nome, telefone, tipo, previsao_em, agendado_para, wpp_avisos, entregador_id, pdv_comandas(numero), entregadores(nome)")
+      .select("id, nome, telefone, tipo, previsao_em, agendado_para, wpp_avisos, entregador_id, numero_turno, pdv_comandas(numero), entregadores(nome)")
       .eq("id", pedidoId)
       .maybeSingle();
     if (!data) return;
@@ -119,7 +119,7 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
     if (!p.telefone) return;
     const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
     const boy = Array.isArray(p.entregadores) ? p.entregadores[0] : p.entregadores;
-    const numero = String(com?.numero ?? "");
+    const numero = String((p as { numero_turno?: number | null }).numero_turno ?? com?.numero ?? "");
     const link = `${SITE}/pedir/acompanhar/${p.id}`;
     const primeiroNome = (p.nome || "").trim().split(/\s+/)[0] || "cliente";
     let r: Resultado;

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
+import { empresaAtualId } from "@/lib/empresa";
 
 export const metadata = { title: "Delivery · Brasa" };
 
@@ -17,7 +18,7 @@ export default async function DeliveryPage() {
     supabase
       .from("delivery_pedidos")
       .select(
-        "id, comanda_id, nome, telefone, tipo, logradouro, numero_casa:numero, complemento, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, agendado_para, aceito_em, preparo_em, pronto_em, saiu_em, entregue_em, entregador_id, lat, lng, pdv_comandas(numero)",
+        "id, comanda_id, nome, telefone, tipo, logradouro, numero_casa:numero, complemento, bairro, cidade, status, origem, forma_pagamento, pago, taxa_entrega, desconto, criado_em, previsao_em, agendado_para, aceito_em, preparo_em, pronto_em, saiu_em, entregue_em, entregador_id, lat, lng, turno, turno_data, numero_turno, pdv_comandas(numero)",
       )
       .order("criado_em", { ascending: false })
       .limit(120),
@@ -52,12 +53,19 @@ export default async function DeliveryPage() {
   }
 
   const entrMap = new Map((entregadores ?? []).map((e) => [e.id, e.nome]));
+  // Turno de agora (pro filtro já abrir nele).
+  const empresaId = await empresaAtualId();
+  const { data: agoraT } = empresaId ? await supabase.rpc("delivery_turno_de", { p_empresa: empresaId, p_quando: new Date(agora).toISOString() }) : { data: null };
+  const t0 = ((agoraT as { turno: string; turno_data: string }[] | null) ?? [])[0];
+  const turnoAtual = t0 ? `${t0.turno_data}|${t0.turno}` : null;
+
   const pedidos: PedidoBoard[] = linhas.map((l) => {
     const c = Array.isArray(l.pdv_comandas) ? l.pdv_comandas[0] : l.pdv_comandas;
     const itens = itensDe.get(l.comanda_id ?? "") ?? [];
     return {
       ...l,
-      numero: c?.numero ?? null,
+      // Nº do delivery por turno (migration 0237); pedido antigo cai no da comanda.
+      numero: (l as { numero_turno?: number | null }).numero_turno ?? c?.numero ?? null,
       itens,
       subtotal: Math.round(itens.reduce((s, i) => s + i.qtd * i.preco, 0) * 100) / 100,
       entregadorNome: l.entregador_id ? entrMap.get(l.entregador_id) ?? null : null,
@@ -73,6 +81,7 @@ export default async function DeliveryPage() {
         .map((e) => ({ id: e.id, nome: e.nome, lat: Number(e.ultima_lat), lng: Number(e.ultima_lng), em: e.ultima_pos_em as string }))}
       origemMapa={origemMapa}
       googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null}
+      turnoAtual={turnoAtual}
     />
   );
 }

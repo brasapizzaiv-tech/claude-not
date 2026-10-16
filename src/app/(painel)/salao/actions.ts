@@ -1782,17 +1782,17 @@ async function deliveryEmAberto(supabase: Awaited<ReturnType<typeof createClient
   const fim = `${dia}T23:59:59-03:00`;
   const { data } = await supabase
     .from("delivery_pedidos")
-    .select("nome, status, pago, agendado_para, pdv_comandas(numero)")
+    .select("nome, status, pago, agendado_para, numero_turno, pdv_comandas(numero)")
     .neq("status", "cancelado")
     .gte("criado_em", inicio)
     .or("status.neq.entregue,pago.is.false")
     .limit(200);
-  type Row = { nome: string; status: string; pago: boolean; agendado_para: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
+  type Row = { nome: string; status: string; pago: boolean; agendado_para: string | null; numero_turno: number | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
   return ((data as Row[]) ?? [])
     .filter((p) => !p.agendado_para || p.agendado_para <= fim)
     .map((p) => {
       const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
-      return { numero: com?.numero ?? null, nome: p.nome, motivo: p.status === "entregue" ? "entregue, falta receber" : p.status.replace("_", " ") };
+      return { numero: p.numero_turno ?? com?.numero ?? null, nome: p.nome, motivo: p.status === "entregue" ? "entregue, falta receber" : p.status.replace("_", " ") };
     });
 }
 

@@ -16,7 +16,7 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
 
   const { data: ped } = await admin
     .from("delivery_pedidos")
-    .select("nome, tipo, status, taxa_entrega, desconto, criado_em, aceito_em, preparo_em, pronto_em, saiu_em, entregue_em, cancelado_em, previsao_em, agendado_para, cancelado_motivo, comanda_id, forma_pagamento, pdv_comandas(numero)")
+    .select("nome, tipo, status, taxa_entrega, desconto, criado_em, aceito_em, preparo_em, pronto_em, saiu_em, entregue_em, cancelado_em, previsao_em, agendado_para, cancelado_motivo, comanda_id, forma_pagamento, numero_turno, pdv_comandas(numero)")
     .eq("id", id)
     .maybeSingle();
   if (!ped) notFound();
@@ -71,7 +71,7 @@ export default async function AcompanharPage({ params }: { params: Promise<{ id:
       </header>
 
       <main className="mx-auto max-w-lg p-4">
-        <div className="mb-1 text-sm text-texto-suave">Pedido {com?.numero ? `nº ${com.numero}` : ""} · {p.nome as string}</div>
+        <div className="mb-1 text-sm text-texto-suave">Pedido {(p.numero_turno as number | null) ?? com?.numero ? `nº ${(p.numero_turno as number | null) ?? com?.numero}` : ""} · {p.nome as string}</div>
         <div className={`mb-5 rounded-cartao px-5 py-4 font-semibold ${cancelado ? "bg-urgente-fundo text-urgente-texto" : "cartao-foco"}`}>
           {msgAtual}
         </div>

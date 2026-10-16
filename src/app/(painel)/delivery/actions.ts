@@ -440,14 +440,14 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
 
   const { data: ped } = await supabase
     .from("delivery_pedidos")
-    .select("id, comanda_id, cliente_id, nome, tipo, taxa_entrega, desconto, pago, pdv_comandas(numero)")
+    .select("id, comanda_id, cliente_id, nome, tipo, taxa_entrega, desconto, pago, numero_turno, pdv_comandas(numero)")
     .eq("id", id)
     .maybeSingle();
   if (!ped) return { ok: false as const, mensagem: "Pedido não encontrado." };
-  const p = ped as { comanda_id: string | null; cliente_id: string | null; nome: string; tipo: string; taxa_entrega: number | null; desconto: number | null; pago: boolean; pdv_comandas: { numero: number } | { numero: number }[] | null };
+  const p = ped as { comanda_id: string | null; cliente_id: string | null; nome: string; tipo: string; taxa_entrega: number | null; desconto: number | null; pago: boolean; numero_turno: number | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
   if (p.pago) return { ok: false as const, mensagem: "Este pedido já está pago." };
   const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
-  const numero = com?.numero ?? null;
+  const numero = p.numero_turno ?? com?.numero ?? null;
   const r2 = (n: number) => Math.round(n * 100) / 100;
 
   const { data: itensRaw } = p.comanda_id

@@ -9,6 +9,8 @@ import { whatsappConfigurado } from "@/lib/whatsapp";
 import { PixTeste } from "./pix-teste";
 import { WhatsappTeste } from "./whatsapp-teste";
 import { HorariosConfig } from "./horarios-form";
+import { TurnosNumeracao } from "./turnos-numeracao";
+import { empresaAtualId } from "@/lib/empresa";
 import { lerConfigHorarios } from "@/lib/delivery-horarios";
 
 export const metadata = { title: "Config · Delivery" };
@@ -29,6 +31,13 @@ export default async function DeliveryConfigPage() {
   const temChave = temChaveMapa();
   const geocodificado = c.origem_lat != null && c.origem_lng != null;
   const pix = pixDiagnostico();
+  // Turnos da numeração do delivery (migration 0237) e qual é o de agora.
+  const { data: turnosRows } = await supabase.from("delivery_turnos").select("nome, inicio, fim").order("ordem").order("inicio");
+  const turnos = ((turnosRows as { nome: string; inicio: string; fim: string }[]) ?? []).map((t) => ({ nome: t.nome, inicio: t.inicio.slice(0, 5), fim: t.fim.slice(0, 5) }));
+  const empresaId = await empresaAtualId();
+  const { data: agoraT } = empresaId ? await supabase.rpc("delivery_turno_de", { p_empresa: empresaId, p_quando: new Date().toISOString() }) : { data: null };
+  const t0 = ((agoraT as { turno: string; turno_data: string }[] | null) ?? [])[0];
+  const turnoAgora = t0 ? `${t0.turno} de ${t0.turno_data.slice(8, 10)}/${t0.turno_data.slice(5, 7)}` : null;
 
   return (
     <div className="mx-auto max-w-2xl p-4">
@@ -118,6 +127,8 @@ export default async function DeliveryConfigPage() {
 
         <Enviar className="btn-principal">Salvar</Enviar>
       </form>
+
+      <TurnosNumeracao inicial={turnos} agora={turnoAgora} />
     </div>
   );
 }

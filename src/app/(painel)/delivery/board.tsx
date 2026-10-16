@@ -59,6 +59,8 @@ export type PedidoBoard = {
   saiu_em: string | null;
   entregue_em: string | null;
   itens: { descricao: string; qtd: number; preco: number }[];
+  turno: string | null;
+  turno_data: string | null;
   entregador_id: string | null;
   entregadorNome: string | null;
   subtotal: number;
@@ -204,12 +206,13 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
 
 export type BoyNoMapa = { id: string; nome: string; lat: number; lng: number; em: string };
 
-export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey = null }: {
+export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey = null, turnoAtual = null }: {
   pedidos: PedidoBoard[];
   entregadores: EntregadorOpt[];
   boys?: BoyNoMapa[]; // posição dos entregadores (GPS do app), últimos 20 min
   origemMapa: { lat: number; lng: number } | null;
   googleKey?: string | null; // chave de navegador do Google Maps; sem ela, OpenStreetMap
+  turnoAtual?: string | null; // "AAAA-MM-DD|Noite" — o filtro de turno abre nele
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -225,6 +228,11 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
   const [fStatus, setFStatus] = useState<string>("ativos");
   const [fTipo, setFTipo] = useState<string>("todos");
   const [fOrigem, setFOrigem] = useState<string>("todos");
+  // Turno (numeração recomeça a cada um): abre no de agora, se tiver pedido nele.
+  const chaveTurno = (p: PedidoBoard) => (p.turno && p.turno_data ? `${p.turno_data}|${p.turno}` : "");
+  const turnos = useMemo(() => [...new Set(pedidos.map(chaveTurno).filter(Boolean))].sort().reverse(), [pedidos]);
+  const [fTurno, setFTurno] = useState<string>(() => (turnoAtual && pedidos.some((p) => chaveTurno(p) === turnoAtual) ? turnoAtual : "todos"));
+  const nomeTurno = (k: string) => { const [d, t] = k.split("|"); return `${t} · ${d.slice(8, 10)}/${d.slice(5, 7)}${k === turnoAtual ? " (agora)" : ""}`; };
   const [busca, setBusca] = useState("");
   const [nowMs, setNowMs] = useState(() => new Date().getTime());
   // Som de pedido novo (lembrado neste navegador).
@@ -281,10 +289,11 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     return pedidos.filter((p) => {
       if (fTipo !== "todos" && p.tipo !== fTipo) return false;
       if (fOrigem !== "todos" && p.origem !== fOrigem) return false;
+      if (fTurno !== "todos" && chaveTurno(p) !== fTurno) return false;
       if (q && !(`${p.numero} ${p.nome} ${p.telefone ?? ""}`.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [pedidos, fTipo, fOrigem, busca]);
+  }, [pedidos, fTipo, fOrigem, fTurno, busca]);
 
   // Filtros em pílula da lista. "Na cozinha" junta aceito e em preparo.
   const FILTROS: { k: string; rotulo: string; casa: (p: PedidoBoard) => boolean }[] = [
@@ -425,6 +434,10 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
             </button>
           );
         })}
+        <select value={fTurno} onChange={(e) => setFTurno(e.target.value)} aria-label="Turno" className="min-h-11 rounded-full bg-painel-cartao px-3 text-[13.5px] font-semibold text-texto shadow-controle">
+          <option value="todos">Todos os turnos</option>
+          {turnos.map((k) => <option key={k} value={k}>{nomeTurno(k)}</option>)}
+        </select>
         <select value={fTipo} onChange={(e) => setFTipo(e.target.value)} aria-label="Entrega ou retirada" className="min-h-11 rounded-full bg-painel-cartao px-3 text-[13.5px] text-texto shadow-controle">
           <option value="todos">Entrega e retirada</option>
           <option value="entrega">Só entrega</option>

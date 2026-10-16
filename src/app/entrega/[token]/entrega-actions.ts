@@ -36,7 +36,7 @@ export type EntregaBoy = {
   entregador_id: string | null; area_nome: string | null;
 };
 
-const CAMPOS = "id, comanda_id, nome, telefone, logradouro, numero, complemento, bairro, cidade, referencia, lat, lng, status, forma_pagamento, troco_para, pago, taxa_entrega, taxa_motoboy, desconto, previsao_em, agendado_para, saiu_em, entregue_em, observacao, recebido_forma, recebido_valor, entregador_id, area_nome, pdv_comandas(numero)";
+const CAMPOS = "id, comanda_id, nome, telefone, logradouro, numero, complemento, bairro, cidade, referencia, lat, lng, status, forma_pagamento, troco_para, pago, taxa_entrega, taxa_motoboy, desconto, previsao_em, agendado_para, saiu_em, entregue_em, observacao, recebido_forma, recebido_valor, entregador_id, area_nome, numero_turno, pdv_comandas(numero)";
 
 type Row = Record<string, unknown> & { comanda_id: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
 
@@ -56,7 +56,7 @@ async function montar(rows: Row[]): Promise<EntregaBoy[]> {
     const g = (k: string) => r[k];
     return {
       id: g("id") as string,
-      numero: c?.numero ?? null,
+      numero: (r.numero_turno as number | null) ?? c?.numero ?? null,
       nome: g("nome") as string,
       telefone: (g("telefone") as string) ?? null,
       endereco: [g("logradouro"), g("numero")].filter(Boolean).join(", ") + [g("complemento"), g("bairro"), g("cidade")].filter(Boolean).map((x) => ` · ${x}`).join(""),
@@ -116,6 +116,11 @@ export async function pegarEntrega(token: string, ref: string) {
     const { data } = await admin.from("delivery_pedidos").select("id").or(`id.eq.${uuid},comanda_id.eq.${uuid}`).limit(1).maybeSingle();
     pedidoId = (data as { id: string } | null)?.id ?? null;
   } else if (/^\d{1,6}$/.test(txt)) {
+    // Nº do delivery (por turno): o pedido mais recente com esse nº ainda em andamento.
+    const { data: dt } = await admin.from("delivery_pedidos").select("id").eq("numero_turno", Number(txt)).in("status", ["aceito", "em_preparo", "pronto"]).order("criado_em", { ascending: false }).limit(1).maybeSingle();
+    pedidoId = (dt as { id: string } | null)?.id ?? null;
+  }
+  if (!pedidoId && /^\d{1,6}$/.test(txt)) {
     const { data: com } = await admin.from("pdv_comandas").select("id").eq("numero", Number(txt)).eq("status", "aberta").order("aberta_em", { ascending: false }).limit(1).maybeSingle();
     if (com) {
       const { data } = await admin.from("delivery_pedidos").select("id").eq("comanda_id", (com as { id: string }).id).limit(1).maybeSingle();

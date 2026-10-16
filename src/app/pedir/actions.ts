@@ -52,13 +52,13 @@ export async function meusPedidos(telefone: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("delivery_pedidos")
-    .select("id, criado_em, status, tipo, taxa_entrega, desconto, comanda_id, pdv_comandas(numero)")
+    .select("id, criado_em, status, tipo, taxa_entrega, desconto, comanda_id, numero_turno, pdv_comandas(numero)")
     .eq("telefone", fone)
     .order("criado_em", { ascending: false })
     .limit(10);
   const rows = (data as unknown as {
     id: string; criado_em: string; status: string; tipo: string; taxa_entrega: number; desconto: number;
-    comanda_id: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null;
+    comanda_id: string | null; numero_turno: number | null; pdv_comandas: { numero: number } | { numero: number }[] | null;
   }[]) ?? [];
 
   const comandaIds = rows.map((r) => r.comanda_id).filter(Boolean) as string[];
@@ -74,7 +74,7 @@ export async function meusPedidos(telefone: string) {
     const taxa = r.tipo === "retirada" ? 0 : Number(r.taxa_entrega || 0);
     return {
       id: r.id,
-      numero: c?.numero ?? null,
+      numero: r.numero_turno ?? c?.numero ?? null,
       criadoEm: r.criado_em,
       status: r.status,
       tipo: r.tipo,

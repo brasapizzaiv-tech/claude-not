@@ -365,7 +365,7 @@ export async function criarPedidoDeliveryCore(
       atendente_id: opts.atendenteId,
       observacao: obs || null,
     })
-    .select("id")
+    .select("id, numero_turno")
     .single();
 
   // Cashback usado: consome do saldo agora (o que vence antes primeiro). Se
@@ -395,7 +395,8 @@ export async function criarPedidoDeliveryCore(
   return {
     ok: true as const,
     id: (ped as { id: string } | null)?.id as string,
-    numero: (com as { numero?: number } | null)?.numero as number | undefined,
+    // Nº do delivery é o do turno (migration 0237); o da comanda é a reserva.
+    numero: ((ped as { numero_turno?: number | null } | null)?.numero_turno ?? (com as { numero?: number } | null)?.numero) as number | undefined,
     taxa: taxaFinal,
     taxaMotivo,
     desconto,
