@@ -150,9 +150,23 @@ export async function abrirComanda(mesa: string, cartao?: string) {
   const raw = (cartao || "").trim();
   const ehUrlOuUuid = /https?:\/\//i.test(raw) || /[0-9a-f]{8}-[0-9a-f]{4}-/i.test(raw);
   const card = raw && !ehUrlOuUuid ? raw : null;
+  // Cartão numerado da recepção (1 a 200, migration 0239): o número digitado
+  // É o número da comanda. A numeração automática começa no 500 e pula os
+  // abertos, então não briga com cartão.
+  const numeroCartao = card && /^\d{1,4}$/.test(card) && Number(card) > 0 ? Number(card) : null;
+  if (numeroCartao) {
+    const { data: ja } = await supabase
+      .from("pdv_comandas")
+      .select("mesa")
+      .eq("numero", numeroCartao)
+      .eq("status", "aberta")
+      .limit(1)
+      .maybeSingle();
+    if (ja) return { ok: false as const, mensagem: `A comanda ${numeroCartao} já está aberta${ja.mesa ? ` (${ja.mesa})` : ""}.` };
+  }
   const { data: com, error } = await supabase
     .from("pdv_comandas")
-    .insert({ mesa: m, peso: 0, tara: 0, valor_buffet: 0, livre: false, cartao: card })
+    .insert({ mesa: m, peso: 0, tara: 0, valor_buffet: 0, livre: false, cartao: card, ...(numeroCartao ? { numero: numeroCartao } : {}) })
     .select("id, numero")
     .single();
   if (error || !com) return { ok: false as const, mensagem: error?.message || "Não foi possível abrir a comanda." };

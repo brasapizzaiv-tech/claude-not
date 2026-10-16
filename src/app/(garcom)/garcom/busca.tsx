@@ -92,8 +92,11 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <p className="mb-3 text-sm text-texto-suave">
-              Não existe comanda aberta com <span className="font-semibold text-texto">{abrirCod}</span>.
-              Escolha a mesa para abrir uma nova:
+              {/^\d{1,4}$/.test(abrirCod) ? (
+                <>A comanda <span className="font-semibold text-texto">{abrirCod}</span> não está aberta. Escolha a mesa para abrir a comanda {abrirCod}:</>
+              ) : (
+                <>Não existe comanda aberta com <span className="font-semibold text-texto">{abrirCod}</span>. Escolha a mesa para abrir uma nova:</>
+              )}
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {mesas.map((m) => (
