@@ -6,7 +6,7 @@
 // botão de "auto preencher o que falta", cédulas (Shift soma), observação e,
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { tefConfirmar, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { agenteAceitaModalidade, tefConfirmar, tefDisponivel, tefPix, tefVenda, type ModalidadeDebito, type TefDados, type TefStatus } from "@/lib/tef-client";
 import { atalhoDoTipo, codigoDaForma, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
 import { Icone } from "@/components/icone";
 import { CampoVale } from "@/components/campo-vale";
@@ -105,7 +105,9 @@ export function PainelPagamentos({
   const [vale, setVale] = useState<ValeConsulta | null>(null);
   const [valeSemCodigo, setValeSemCodigo] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
-  const [parcelas, setParcelas] = useState(1); // só no crédito com pinpad; volta a 1 ao fechar
+  const [parcelas, setParcelas] = useState(1); // crédito (e débito parcelado) com pinpad; volta a 1 ao fechar
+  // Débito do Banricompras: à vista, pré-datado ou parcelado pela loja.
+  const [modDebito, setModDebito] = useState<ModalidadeDebito>("avista");
   const campoRef = useRef<HTMLInputElement>(null);
 
 
@@ -133,6 +135,7 @@ export function PainelPagamentos({
     setObs("");
     setAviso(null);
     setParcelas(1);
+    setModDebito("avista");
     setColabId("");
     setBuscaColab("");
     setVale(null);
@@ -229,7 +232,12 @@ export function PainelPagamentos({
       // o cliente paga (ou cancela). Daí pra frente é igual ao cartão.
       const r = tipo === "pix"
         ? await tefPix({ valor: cent(aplica) })
-        : await tefVenda({ valor: cent(aplica), tipo, parcelas: tipo === "credito" ? parcelas : 1 });
+        : await tefVenda({
+            valor: cent(aplica),
+            tipo,
+            parcelas: tipo === "credito" || (tipo === "debito" && modDebito === "parcelado") ? parcelas : 1,
+            ...(tipo === "debito" && modDebito !== "avista" ? { modalidade: modDebito } : {}),
+          });
       if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
       if (!r.aprovada) { setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`); return; }
       const dados: TefDados = {
@@ -455,13 +463,35 @@ export function PainelPagamentos({
                       {parcelas > 1 && <span className="text-mini text-emerald-800/70 dark:text-emerald-400/70">parcelado pela loja (sem juros)</span>}
                     </div>
                   )}
+                  {T.tef(forma) === "debito" && agenteAceitaModalidade(tef?.versao) && (
+                    <div className="mb-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {([["avista", "À vista"], ["predatado", "Pré-datado"], ["parcelado", "Parcelado"]] as [ModalidadeDebito, string][]).map(([m, rot]) => (
+                          <button key={m} type="button" onClick={() => { setModDebito(m); setParcelas(m === "parcelado" ? 2 : 1); }} aria-pressed={modDebito === m}
+                            className={`min-h-9 rounded-full px-3 text-xs font-semibold ${modDebito === m ? "bg-texto text-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}>
+                            {rot}
+                          </button>
+                        ))}
+                        {modDebito === "parcelado" && (
+                          <select value={parcelas} onChange={(e) => setParcelas(Number(e.target.value))} className="rounded-controle border border-emerald-600/40 bg-painel-cartao px-2 py-1.5 text-sm text-texto">
+                            {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => <option key={n} value={n}>{`${n}x de ${brl(cent(aplica / n))}`}</option>)}
+                          </select>
+                        )}
+                      </div>
+                      {modDebito !== "avista" && (
+                        <p className="mt-1 text-mini text-emerald-800/80 dark:text-emerald-300/80">
+                          Só cartão <b>Banrisul (Banricompras)</b>.{modDebito === "predatado" ? " A data (ex.: 30 dias) o gerenciador pede na tela dele." : ""}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <button
                     onClick={passarNoCartao}
                     className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo hover:opacity-90"
                   >
                     {T.tef(forma) === "pix"
                       ? <><Icone nome="rapido" tamanho={15} className="mr-1.5" /> Mostrar QR na maquininha · {brl(cent(aplica))}</>
-                      : <><Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && T.tef(forma) === "credito" ? ` em ${parcelas}x` : ""}</>}
+                      : <><Icone nome="cartao" tamanho={15} className="mr-1.5" /> Passar no cartão · {brl(cent(aplica))}{parcelas > 1 && (T.tef(forma) === "credito" || modDebito === "parcelado") ? ` em ${parcelas}x` : ""}{T.tef(forma) === "debito" && modDebito === "predatado" ? " pré-datado" : ""}</>}
                     <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-mini font-semibold">Enter</span>
                   </button>
                   <p className="mt-1.5 text-center text-mini text-emerald-800/70 dark:text-emerald-400/70">

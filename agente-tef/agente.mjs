@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.13"; // 0.9.13: a ativacao do Hub manda sobre o terminal do config.json (o config antigo de homologacao derrubou a ativacao de producao em 07/10); 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
+const VERSAO = "0.9.14"; // 0.9.14: debito pre-datado (011-000=21) e parcelado pela loja (22) - Banricompras; 0.9.13: a ativacao do Hub manda sobre o terminal do config.json (o config antigo de homologacao derrubou a ativacao de producao em 07/10); 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -211,8 +211,8 @@ async function executar(conteudoReq, { esperaResp = true, timeoutMs = timeoutVen
 async function venda(p) {
   resolverTerminal();
   const id = proximoId();
-  const req = requisicaoVenda({ id, valor: p.valor, tipo: p.tipo, parcelas: p.parcelas, rede: p.rede, terminal, docFiscal: p.docFiscal });
-  log(`Venda #${id}: R$ ${Number(p.valor).toFixed(2)} ${p.tipo || "qualquer"}${p.rede ? " · rede " + p.rede : ""}${p.parcelas > 1 ? " · " + p.parcelas + "x" : ""}`);
+  const req = requisicaoVenda({ id, valor: p.valor, tipo: p.tipo, parcelas: p.parcelas, rede: p.rede, terminal, docFiscal: p.docFiscal, modalidade: p.modalidade });
+  log(`Venda #${id}: R$ ${Number(p.valor).toFixed(2)} ${p.tipo || "qualquer"}${p.modalidade && p.modalidade !== "avista" ? " " + p.modalidade : ""}${p.rede ? " · rede " + p.rede : ""}${p.parcelas > 1 ? " · " + p.parcelas + "x" : ""}`);
   const r = await executar(req);
   if (r.aprovada && r.requerConfirmacao) {
     estado.pendente = { id, finalizacao: r.finalizacao, valor: p.valor, nsu: r.nsu, desde: Date.now() };

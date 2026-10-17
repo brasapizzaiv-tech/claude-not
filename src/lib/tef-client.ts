@@ -36,6 +36,8 @@ export type TefVenda = {
   panMascarado?: string | null;
   data?: string | null;
   hora?: string | null;
+  /** Débito pré-datado (Banricompras): dia em que cai, DDMMAAAA. */
+  dataPredatado?: string | null;
   requerConfirmacao?: boolean;
   viaCliente?: string[];
   viaLoja?: string[];
@@ -87,7 +89,14 @@ export async function tefDisponivel(): Promise<TefStatus | null> {
 }
 
 // Manda o valor pro pinpad e espera o cliente passar o cartão (até 2 min).
-export function tefVenda(p: { valor: number; tipo: "credito" | "debito" | "voucher"; parcelas?: number; rede?: string | null }) {
+/** Débito: à vista (padrão), pré-datado ou parcelado pela loja — Banricompras (agente 0.9.14+). */
+export type ModalidadeDebito = "avista" | "predatado" | "parcelado";
+/** O agente entende pré-datado/parcelado no débito? (versões antigas cobrariam à vista.) */
+export function agenteAceitaModalidade(versao: string | null | undefined) {
+  const [a, b, c] = String(versao ?? "0").split(".").map((n) => Number(n) || 0);
+  return a > 0 || b > 9 || (b === 9 && c >= 14);
+}
+export function tefVenda(p: { valor: number; tipo: "credito" | "debito" | "voucher"; parcelas?: number; rede?: string | null; modalidade?: ModalidadeDebito }) {
   return chamar<TefVenda>("/venda", p, 150000);
 }
 // Pix pelo pinpad: o gerenciador desenha o QR na tela do pinpad e só responde

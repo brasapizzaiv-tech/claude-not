@@ -21,6 +21,7 @@ export const CHAVES = {
   TIPO_PARCELAMENTO: "017-000", // 0 loja · 1 emissor
   PARCELAS: "018-000",
   DATA: "022-000",              // DDMMAAAA
+  DATA_PREDATADO: "024-000",    // saída: data em que o débito pré-datado cai (DDMMAAAA)
   HORA: "023-000",              // HHMMSS
   NSU_ORIGINAL: "025-000",
   FINALIZACAO: "027-000",       // devolvido na CNF/NCN
@@ -68,7 +69,7 @@ export function ler(texto) {
 }
 
 // Venda: valor em REAIS, tipo "credito" | "debito" | "voucher" | "qualquer".
-export function requisicaoVenda({ id, valor, tipo = "qualquer", parcelas = 1, rede, terminal, docFiscal }) {
+export function requisicaoVenda({ id, valor, tipo = "qualquer", parcelas = 1, rede, terminal, docFiscal, modalidade = "avista" }) {
   const centavos = Math.round(Number(valor) * 100);
   const tipoCartao = { credito: 1, debito: 2, voucher: 3 }[tipo] ?? 0;
   const pares = [
@@ -88,6 +89,13 @@ export function requisicaoVenda({ id, valor, tipo = "qualquer", parcelas = 1, re
     pares.push([CHAVES.COD_TRANSACAO, 11], [CHAVES.TIPO_PARCELAMENTO, 0], [CHAVES.PARCELAS, parcelas]);
   } else if (tipo === "credito") {
     pares.push([CHAVES.COD_TRANSACAO, 10]);
+  } else if (tipo === "debito" && modalidade === "predatado") {
+    // 21 = débito pré-datado (Banricompras). A data quem pede é o gerenciador
+    // e volta em 024-000. Só o cartão Banrisul (rede Vero) aceita.
+    pares.push([CHAVES.COD_TRANSACAO, 21]);
+  } else if (tipo === "debito" && modalidade === "parcelado" && Number(parcelas) > 1) {
+    // 22 = débito parcelado pela loja (Banricompras parcelado).
+    pares.push([CHAVES.COD_TRANSACAO, 22], [CHAVES.TIPO_PARCELAMENTO, 0], [CHAVES.PARCELAS, parcelas]);
   } else if (tipo === "debito") {
     pares.push([CHAVES.COD_TRANSACAO, 20]);
   }
@@ -182,6 +190,7 @@ export function interpretar(texto) {
     tipoCartao: c[CHAVES.TIPO_CARTAO] || null,
     parcelas: c[CHAVES.PARCELAS] || null,
     data: c[CHAVES.DATA] || null,
+    dataPredatado: c[CHAVES.DATA_PREDATADO] || null,
     hora: c[CHAVES.HORA] || null,
     valor: c[CHAVES.VALOR] ? Number(c[CHAVES.VALOR]) / 100 : null,
     panMascarado: c[CHAVES.PAN_MASCARADO] || null,
