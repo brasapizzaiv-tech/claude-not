@@ -146,6 +146,9 @@ export function ReceberComandas({
   }
   const [desconto, setDesconto] = useState("");
   const [descontoPct, setDescontoPct] = useState(false); // false = R$, true = %
+  // 5% de desconto no dinheiro: só na parte do consumo paga em dinheiro, nunca
+  // nos 10% dos garçons. Liga sozinho; o caixa desliga se não for o caso.
+  const [descDinheiroOn, setDescDinheiroOn] = useState(true);
   const [acrescimo, setAcrescimo] = useState("");
   // A conta aceita vários pagamentos até "Falta pagar" zerar.
   const [pagos, setPagos] = useState<Pagamento[]>([]);
@@ -290,10 +293,26 @@ export function ReceberComandas({
     if (resta > 0.004 && out[0]) out[0].valor = Math.round((out[0].valor + resta) * 100) / 100;
     return out;
   }
-  // Desconto em % vira R$ sobre o subtotal (ex.: 5% no dinheiro).
-  const desc = descontoPct ? Math.round(subtotalBruto * num(desconto)) / 100 : num(desconto);
+  // Serviço deste pagamento (0 quando o cliente não paga os 10%).
+  const servFrac = (parte ? parte.comServico : cobrarServico) ? servPercent / 100 : 0;
+  // Consumo sem os 10%: é sobre ele que vale qualquer desconto.
+  const consumoBase = parte ? Math.round((parte.valor / (1 + servFrac)) * 100) / 100 : baseCarrinho;
+  // Desconto digitado em % vale sobre o consumo, nunca sobre os 10%.
+  const desc = descontoPct ? Math.round(consumoBase * num(desconto)) / 100 : num(desconto);
   const acr = num(acrescimo);
-  const totalPagar = Math.max(0, Math.round((subtotalBruto - desc + acr) * 100) / 100);
+  // Desconto do dinheiro, PROPORCIONAL: cada real em dinheiro paga consumo
+  // (com 5% a menos) + os 10% desse consumo. R$ 100 numa conta com serviço
+  // cobrem R$ 95,24 de consumo + R$ 9,52 de serviço → desconto R$ 4,76.
+  const PCT_DINHEIRO = 0.05;
+  const dDin = descDinheiroOn ? PCT_DINHEIRO : 0;
+  const fatorDinheiro = (1 - dDin + servFrac) / (1 + servFrac);
+  const pagoDinheiro = Math.round(pagos.filter((x) => tipoDe(x.forma, formas) === "dinheiro").reduce((s, x) => s + x.valor, 0) * 100) / 100;
+  const descDinheiroBruto = dDin > 0 ? Math.round(((pagoDinheiro * dDin) / (1 - dDin + servFrac)) * 100) / 100 : 0;
+  // Arredondamento: quando o dinheiro fecha a conta e sobra ±1–2 centavos, o
+  // desconto absorve (senão o "Pagar" não libera por um centavo).
+  const sobraCent = Math.round((subtotalBruto - desc - descDinheiroBruto + acr - pagos.reduce((s, x) => s + x.valor, 0)) * 100) / 100;
+  const descDinheiro = descDinheiroBruto > 0 && Math.abs(sobraCent) <= 0.02 ? Math.round((descDinheiroBruto + sobraCent) * 100) / 100 : descDinheiroBruto;
+  const totalPagar = Math.max(0, Math.round((subtotalBruto - desc - descDinheiro + acr) * 100) / 100);
 
   const somaPagos = Math.round(pagos.reduce((s, x) => s + x.valor, 0) * 100) / 100;
   const falta = Math.round((totalPagar - somaPagos) * 100) / 100;
@@ -517,7 +536,7 @@ export function ReceberComandas({
         setRecibo({
           itens: [...totPorCom.values()],
           subtotal: subtotalBruto,
-          desconto: desc,
+          desconto: Math.round((desc + descDinheiro) * 100) / 100,
           acrescimo: acr,
           total: totalPagar,
           pagamentos,
@@ -1044,13 +1063,10 @@ export function ReceberComandas({
                         placeholder={descontoPct ? "0" : "0,00"}
                         className={`${inputCls} w-full text-right`}
                       />
-                      <button
-                        type="button"
-                        onClick={() => { setDescontoPct(true); setDesconto("5"); }}
-                        className="mt-1 w-full rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
-                      >
-                        <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> 5% no dinheiro</span>
-                      </button>
+                      <label className="mt-1 flex min-h-11 cursor-pointer items-center gap-2 rounded-controle bg-superficie-suave px-2 text-xs text-texto">
+                        <input type="checkbox" checked={descDinheiroOn} onChange={(e) => setDescDinheiroOn(e.target.checked)} className="h-4 w-4 accent-[var(--marca-primaria)]" />
+                        <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> 5% no dinheiro (só no consumo)</span>
+                      </label>
                       {descontoPct && desc > 0 && <p className="mt-0.5 text-right text-mini text-texto-suave">= {brl(desc)}</p>}
                     </div>
                     <div>
@@ -1083,6 +1099,12 @@ export function ReceberComandas({
                       <span>Subtotal</span>
                       <span>{brl(subtotalBruto)}</span>
                     </div>
+                    {descDinheiro > 0.005 && (
+                      <div className="flex items-center justify-between text-sm text-texto-suave">
+                        <span>Desconto do dinheiro (5% do consumo pago em dinheiro)</span>
+                        <span>− {brl(descDinheiro)}</span>
+                      </div>
+                    )}
                     <div className="mt-1 flex items-center justify-between text-lg font-black text-texto">
                       <span>Total</span>
                       <span>{brl(totalPagar)}</span>
@@ -1142,6 +1164,7 @@ export function ReceberComandas({
                       setPagos((l) => l.map((p) => (p.uid === uid && p.tef ? { ...p, tef: { ...p.tef, confirmado: true } } : p)))
                     }
                     ativo={temAlgo && selComandas.length > 0}
+                    fatorDinheiro={fatorDinheiro}
                     fiado={fiadoCli}
                     colaboradores={colaboradores}
                     qrPix={

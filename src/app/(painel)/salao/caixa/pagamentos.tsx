@@ -75,6 +75,7 @@ export function PainelPagamentos({
   fiado,
   qrPix,
   colaboradores = [],
+  fatorDinheiro = 1,
 }: {
   formas: FormaOpcao[];
   total: number;
@@ -88,6 +89,9 @@ export function PainelPagamentos({
   fiado?: { nome: string; saldo: number; limite: number | null } | null;
   qrPix?: (valor: number, aoPagar: () => void) => React.ReactNode;
   colaboradores?: ColabMini[];
+  /** Desconto do dinheiro (5% só no consumo, nunca nos 10%): o que falta, se
+   *  for pago em dinheiro, é o "falta" × este fator. 1 = sem desconto. */
+  fatorDinheiro?: number;
 }) {
   const T = useMemo(() => testesDeForma(formas), [formas]);
   const [forma, setForma] = useState<string | null>(null); // forma sendo lançada
@@ -105,13 +109,15 @@ export function PainelPagamentos({
 
   const somaPagos = cent(pagos.reduce((s, p) => s + p.valor, 0));
   const falta = cent(total - somaPagos);
+  // No dinheiro o que falta já vem com o desconto (o caixa recalcula o resto).
+  const faltaNo = (f: string | null) => (f && T.dinheiro(f) ? cent(falta * fatorDinheiro) : falta);
   const trocoTotal = cent(pagos.reduce((s, p) => s + Math.max(0, (p.recebido ?? p.valor) - p.valor), 0));
 
   // Abre o passo de uma forma com o que falta já preenchido.
   function abrir(f: string) {
     if (!ativo || falta <= 0.005) return;
     setForma(f);
-    setValor(falta.toFixed(2).replace(".", ","));
+    setValor(faltaNo(f).toFixed(2).replace(".", ","));
     setBandeira("");
     setObs("");
     setAviso(null);
@@ -167,8 +173,8 @@ export function PainelPagamentos({
   // Quanto o cliente entregou (dinheiro) x quanto entra na conta.
   const entregue = num(valor);
   // Nunca lança mais do que falta; no dinheiro a diferença vira troco.
-  const aplica = cent(Math.min(entregue, falta));
-  const troco = forma && T.dinheiro(forma) ? Math.max(0, cent(entregue - falta)) : 0;
+  const aplica = cent(Math.min(entregue, faltaNo(forma)));
+  const troco = forma && T.dinheiro(forma) ? Math.max(0, cent(entregue - faltaNo(forma))) : 0;
 
   const fiadoEstoura = useMemo(() => {
     if (!forma || !T.fiado(forma) || !fiado || fiado.limite == null) return null;
@@ -334,6 +340,9 @@ export function PainelPagamentos({
           <p className={`text-xl font-black tabular-nums ${falta > 0.005 ? "text-amber-600" : "text-emerald-600"}`}>
             {falta > 0.005 ? brl(falta) : "✓"}
           </p>
+          {falta > 0.005 && fatorDinheiro < 0.9999 && (
+            <p className="text-mini text-texto-suave">no dinheiro: <b className="text-texto">{brl(cent(falta * fatorDinheiro))}</b></p>
+          )}
         </div>
         {trocoTotal > 0.005 && (
           <p className="col-span-2 text-right text-sm font-semibold text-emerald-600">Troco: {brl(trocoTotal)}</p>
@@ -388,10 +397,10 @@ export function PainelPagamentos({
           />
 
           <button
-            onClick={() => cedula(falta, false)}
+            onClick={() => cedula(faltaNo(forma), false)}
             className="mt-2 w-full rounded-controle border border-borda-forte px-3 py-2 text-sm text-texto-suave hover:border-orange-500"
           >
-            <b>{brl(falta)}</b> <span className="text-texto-fraco">(faltando)</span>
+            <b>{brl(faltaNo(forma))}</b> <span className="text-texto-fraco">(faltando{forma && T.dinheiro(forma) && fatorDinheiro < 0.9999 ? ", já com o desconto" : ""})</span>
           </button>
 
           {T.dinheiro(forma) && (
