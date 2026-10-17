@@ -907,12 +907,17 @@ async function fecharSeQuitou(
   comandaId: string,
 ) {
   const [{ data: itens }, { data: c2 }] = await Promise.all([
-    supabase.from("pdv_comanda_itens").select("pago").eq("comanda_id", comandaId),
+    supabase.from("pdv_comanda_itens").select("id, pago, qtd, preco_unit").eq("comanda_id", comandaId),
     supabase.from("pdv_comandas").select("valor_buffet, buffet_pago").eq("id", comandaId).single(),
   ]);
   const temBuffet = Number(c2?.valor_buffet ?? 0) > 0;
-  const quitou = (itens ?? []).every((i) => i.pago) && (!temBuffet || !!c2?.buffet_pago);
+  // Item de preço zero (refri do rodízio) nunca aparece pra pagar: não pode
+  // segurar a comanda aberta (16/10/2026 três comandas pagas ficaram abertas).
+  const gratis = (i: { qtd: number; preco_unit: number }) => Math.abs(Number(i.qtd) * Number(i.preco_unit)) < 0.005;
+  const quitou = (itens ?? []).every((i) => i.pago || gratis(i)) && (!temBuffet || !!c2?.buffet_pago);
   if (quitou) {
+    const zerados = (itens ?? []).filter((i) => !i.pago && gratis(i)).map((i) => i.id as string);
+    if (zerados.length) await supabase.from("pdv_comanda_itens").update({ pago: true }).in("id", zerados);
     const servico = await servicoCobrado(supabase, comandaId);
     await supabase
       .from("pdv_comandas")
