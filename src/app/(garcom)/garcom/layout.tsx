@@ -21,6 +21,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // No app do iPhone a página vai até a borda; cada tela cheia reserva o
+  // espaço do relógio e do traço com a classe area-segura (globals.css).
+  viewportFit: "cover",
 };
 
 export default async function GarcomLayout({ children }: { children: React.ReactNode }) {

@@ -85,7 +85,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
         <Scanner onClose={() => setScan(false)} onLido={onLido} />
       )}
       {abrirCod !== null && (
-        <div className="fixed inset-0 z-[65] flex flex-col bg-painel-fundo text-texto">
+        <div className="area-segura fixed inset-0 z-[65] flex flex-col bg-painel-fundo text-texto">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Abrir comanda</span>
             <button onClick={() => setAbrirCod(null)} className="text-texto-suave">✕</button>
@@ -166,7 +166,7 @@ function Scanner({ onClose, onLido }: { onClose: () => void; onLido: (v: string)
   }, [onLido]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-black">
+    <div className="area-segura fixed inset-0 z-[70] flex flex-col bg-black">
       <div className="flex items-center justify-between p-3 text-texto">
         <span className="font-bold">Ler comanda</span>
         <button onClick={onClose} className="text-2xl leading-none text-texto-suave">✕</button>

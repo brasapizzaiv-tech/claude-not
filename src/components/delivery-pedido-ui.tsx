@@ -142,7 +142,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
         role="dialog"
         aria-modal="true"
         aria-label="Montar pizza"
-        className="flex h-full w-full max-w-lg flex-col bg-painel-fundo text-texto sm:h-[90vh] sm:rounded-cartao"
+        className="area-segura flex h-full w-full max-w-lg flex-col bg-painel-fundo text-texto sm:h-[90vh] sm:rounded-cartao sm:pb-0 sm:pt-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Topo */}
@@ -273,7 +273,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
         </div>
 
         {/* Rodapé: total + Voltar/Próximo */}
-        <div className="border-t border-borda px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="border-t border-borda px-4 pb-4 pt-3">
           <div className="mb-3 flex items-baseline justify-between">
             <span className="text-texto-suave">Total do pedido</span>
             <span className="font-numero text-2xl font-bold">{brl(preco)}</span>

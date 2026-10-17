@@ -105,7 +105,7 @@ export default async function GarcomPage() {
   const historico = grupos.slice(0, 40);
 
   return (
-    <div className="min-h-screen bg-painel-fundo p-2 text-texto">
+    <div className="area-segura min-h-screen bg-painel-fundo p-2 text-texto">
       <div className="flex items-center justify-between px-1 py-2">
         <h1 className="flex items-center gap-2 font-numero text-2xl font-bold tracking-apertada"><Icone nome="garcom" tamanho={19} /> Mesas</h1>
         {sessao.viaColab && sessao.token && (

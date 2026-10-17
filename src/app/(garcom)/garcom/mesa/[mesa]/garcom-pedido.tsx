@@ -240,7 +240,7 @@ export function GarcomPedido({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-painel-fundo text-texto">
+    <div className="area-segura fixed inset-0 z-40 flex flex-col bg-painel-fundo text-texto">
       {/* Topo */}
       <div className="flex items-center justify-between border-b border-borda px-3 py-3">
         <div className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export function GarcomPedido({
 
       {/* Carrinho */}
       {cartOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-painel-fundo">
+        <div className="area-segura fixed inset-0 z-50 flex flex-col bg-painel-fundo">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Carrinho · {mesa}</span>
             <button onClick={() => setCartOpen(false)} className="text-texto-suave">✕</button>
@@ -420,7 +420,7 @@ export function GarcomPedido({
 
       {/* Conta / histórico do que foi lançado */}
       {contaOpen && (
-        <div className="fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
+        <div className="area-segura fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Conta · {mesa}</span>
             <button onClick={() => setContaOpen(false)} className="text-texto-suave">✕</button>
@@ -480,7 +480,7 @@ export function GarcomPedido({
 
       {/* Trocar mesa: mover a comanda para outra mesa */}
       {trocaOpen && (
-        <div className="fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
+        <div className="area-segura fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Trocar mesa</span>
             <button onClick={() => setTrocaOpen(false)} className="text-texto-suave">✕</button>
@@ -541,7 +541,7 @@ export function GarcomPedido({
 
       {/* Toast */}
       {toast && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+        <div className="area-segura fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
           <div className="rounded-cartao bg-superficie-suave px-8 py-6 text-center">
             <div className="mb-2 flex justify-center"><Icone nome="certo" tamanho={42} className="text-emerald-500" /></div>
             <p className="font-semibold">{toast}</p>

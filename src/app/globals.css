@@ -590,3 +590,10 @@ optgroup {
 .rounded-cartao.bg-painel-cartao {
   box-shadow: var(--sombra-cartao);
 }
+
+/* Tela cheia em app de celular (garçom, montador de pizza): reserva o espaço
+   do relógio/ilha e do traço de baixo do iPhone. Fora do app, env() = 0. */
+.area-segura {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
