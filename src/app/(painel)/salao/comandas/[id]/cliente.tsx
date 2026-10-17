@@ -11,7 +11,9 @@ import {
   adicionarItemComanda,
   adicionarPizzaComanda,
   adicionarComboComanda,
+  reimprimirPedidoComanda,
 } from "../../actions";
+import { BotaoAcao } from "@/components/enviar";
 
 export function QRComanda({ id }: { id: string }) {
   const [src, setSrc] = useState("");
@@ -556,5 +558,21 @@ export function MontarPizza({
         </div>
       </div>
     </details>
+  );
+}
+
+// "Reimprimir na cozinha" de um pedido da comanda (lançamento). Itens lançados
+// aqui no caixa (sem pedido) vão juntos como um pedido novo.
+export function ReimprimirCozinha({ comandaId, lancamentoId }: { comandaId: string; lancamentoId: string | null }) {
+  return (
+    <BotaoAcao
+      aoClicar={async () => {
+        const r = await reimprimirPedidoComanda(comandaId, lancamentoId);
+        void avisar(r.ok ? `Mandado de novo pra cozinha (${r.vias} via${r.vias === 1 ? "" : "s"}).` : r.mensagem);
+      }}
+      className="inline-flex min-h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold text-texto-marca hover:bg-destaque"
+    >
+      <Icone nome="imprimir" tamanho={13} /> Reimprimir na cozinha
+    </BotaoAcao>
   );
 }

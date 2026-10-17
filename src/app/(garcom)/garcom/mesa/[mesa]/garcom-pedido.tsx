@@ -8,7 +8,8 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { pareceVersaoVelha, recarregarUmaVez } from "@/components/vigia-versao";
-import { lancarPedidoGarcomLinhas, transferirComanda } from "../../actions";
+import { lancarPedidoGarcomLinhas, reimprimirPedidoGarcom, transferirComanda } from "../../actions";
+import { BotaoAcao } from "@/components/enviar";
 import {
   PizzaModal, ComboModal, novoUid,
   type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -20,8 +21,20 @@ export type Comanda = {
   numero: number;
   buffet: number;
   total: number;
-  itens: { descricao: string; qtd: number; preco: number }[];
+  // lanc = o pedido (lançamento) que foi junto pra cozinha; hora = quando.
+  itens: { descricao: string; qtd: number; preco: number; lanc: string | null; hora: string }[];
 };
+
+// Junta os itens da comanda por pedido, na ordem em que foram lançados.
+function porPedido(itens: Comanda["itens"]) {
+  const grupos: { lanc: string | null; hora: string; itens: Comanda["itens"] }[] = [];
+  for (const it of itens) {
+    const g = grupos.find((x) => x.lanc === it.lanc);
+    if (g) g.itens.push(it);
+    else grupos.push({ lanc: it.lanc, hora: it.hora, itens: [it] });
+  }
+  return grupos;
+}
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -456,12 +469,29 @@ export function GarcomPedido({
                       {c.itens.length === 0 && c.buffet === 0 ? (
                         <p className="px-3 py-2 text-sm text-texto-fraco">Nada lançado ainda.</p>
                       ) : (
-                        c.itens.map((it, idx) => (
-                          <div key={idx} className="flex justify-between px-3 py-1.5 text-sm">
-                            <span className="min-w-0 flex-1 truncate whitespace-pre-line text-texto">
-                              {it.qtd}× {it.descricao}
-                            </span>
-                            <span className="ml-2 shrink-0">{it.preco > 0 ? brl(it.qtd * it.preco) : "—"}</span>
+                        porPedido(c.itens).map((g, gi) => (
+                          <div key={g.lanc ?? `solto-${gi}`}>
+                            {/* Cada pedido que foi pra cozinha, com o botão de mandar de novo. */}
+                            <div className="flex items-center justify-between gap-2 bg-superficie-suave px-3 py-1">
+                              <span className="text-xs font-semibold text-texto-suave">{g.lanc ? `Pedido das ${g.hora}` : "Lançado no caixa"}</span>
+                              <BotaoAcao
+                                aoClicar={async () => {
+                                  const r = await reimprimirPedidoGarcom(c.id, g.lanc);
+                                  void avisar(r.ok ? `Mandado de novo pra cozinha (${r.vias} via${r.vias === 1 ? "" : "s"}).` : r.mensagem);
+                                }}
+                                className="inline-flex min-h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold text-texto-marca"
+                              >
+                                <Icone nome="imprimir" tamanho={13} /> Reimprimir na cozinha
+                              </BotaoAcao>
+                            </div>
+                            {g.itens.map((it, idx) => (
+                              <div key={idx} className="flex justify-between px-3 py-1.5 text-sm">
+                                <span className="min-w-0 flex-1 truncate whitespace-pre-line text-texto">
+                                  {it.qtd}× {it.descricao}
+                                </span>
+                                <span className="ml-2 shrink-0">{it.preco > 0 ? brl(it.qtd * it.preco) : "—"}</span>
+                              </div>
+                            ))}
                           </div>
                         ))
                       )}

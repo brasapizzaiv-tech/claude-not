@@ -3,7 +3,7 @@ import { Enviar } from "@/components/enviar";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
-import { LancarItens } from "./cliente";
+import { LancarItens, ReimprimirCozinha } from "./cliente";
 import type { PizzaOpcao, ComboGrupo } from "./cliente";
 import { AcoesComanda } from "./acoes";
 import { removerItemComanda } from "../../actions";
@@ -34,7 +34,7 @@ export default async function ComandaPage({
   ] = await Promise.all([
     supabase
       .from("pdv_comanda_itens")
-      .select("id, descricao, qtd, preco_unit")
+      .select("id, descricao, qtd, preco_unit, lancamento_id, criado_em")
       .eq("comanda_id", id)
       .order("criado_em"),
     supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("disponivel", true).order("nome"),
@@ -145,7 +145,14 @@ export default async function ComandaPage({
   );
 
   const lista =
-    (itens as { id: string; descricao: string; qtd: number; preco_unit: number }[]) ?? [];
+    (itens as { id: string; descricao: string; qtd: number; preco_unit: number; lancamento_id: string | null; criado_em: string }[]) ?? [];
+  // Itens juntos por pedido (o que foi pra cozinha de uma vez), na ordem.
+  const pedidos: { lanc: string | null; hora: string; itens: typeof lista }[] = [];
+  for (const i of lista) {
+    const g = pedidos.find((p) => p.lanc === i.lancamento_id);
+    if (g) g.itens.push(i);
+    else pedidos.push({ lanc: i.lancamento_id, hora: new Date(i.criado_em).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }), itens: [i] });
+  }
   const fechada = comanda.status === "fechada";
   const temBuffet = Number(comanda.valor_buffet) > 0 || Number(comanda.peso ?? 0) > 0;
 
@@ -188,7 +195,12 @@ export default async function ComandaPage({
                     <span className="w-11" />
                   </li>
                 )}
-                {lista.map((i) => (
+                {pedidos.map((p) => [
+                  <li key={`p-${p.lanc ?? "solto"}`} className="mt-1 flex items-center justify-between gap-2 px-3 pt-1">
+                    <span className="rotulo">{p.lanc ? `Pedido das ${p.hora}` : "Lançado no caixa"}</span>
+                    {!fechada && <ReimprimirCozinha comandaId={comanda.id} lancamentoId={p.lanc} />}
+                  </li>,
+                  ...p.itens.map((i) => (
                   <li key={i.id} className="flex items-center gap-3 rounded-controle px-3 py-1.5 hover:bg-painel-fundo">
                     <span className="min-w-0 flex-1 whitespace-pre-line text-sm text-texto">
                       {Number(i.qtd) > 1 ? <span className="font-semibold">{i.qtd}× </span> : null}
@@ -205,7 +217,8 @@ export default async function ComandaPage({
                       </form>
                     ) : <span className="w-11" />}
                   </li>
-                ))}
+                  )),
+                ])}
               </ul>
             )}
           </section>

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { sessaoGarcom } from "@/lib/garcom-auth";
-import { resolverLinhas, enfileirarCozinha, type LinhaPedido } from "@/lib/delivery-core";
+import { resolverLinhas, enfileirarCozinha, reimprimirNaCozinha, type LinhaPedido } from "@/lib/delivery-core";
 
 // Lança um pedido com PIZZA/COMBO/itens (Fase C): as linhas chegam como ids e
 // os preços/descrições são resolvidos no servidor (mesmo motor do delivery).
@@ -194,4 +194,12 @@ export async function transferirComanda(comandaId: string, novaMesa: string) {
   revalidatePath("/garcom");
   revalidatePath("/salao");
   return { ok: true as const };
+}
+
+// "Reimprimir na cozinha" na Conta: manda de novo um pedido já lançado (a
+// impressora estava desligada, a via se perdeu...).
+export async function reimprimirPedidoGarcom(comandaId: string, lancamentoId: string | null) {
+  const sessao = await sessaoGarcom();
+  if (!sessao) return { ok: false as const, mensagem: "Sem acesso. Abra o app de novo." };
+  return reimprimirNaCozinha(sessao.db, comandaId, lancamentoId);
 }

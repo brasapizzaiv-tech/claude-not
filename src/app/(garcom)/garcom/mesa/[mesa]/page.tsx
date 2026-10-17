@@ -41,16 +41,17 @@ export default async function GarcomMesaPage({
 
   // Itens lançados de cada comanda (histórico) + total (itens + buffet).
   const comandaIds = comRaw.map((c) => c.id);
-  const itensPorComanda = new Map<string, { descricao: string; qtd: number; preco: number }[]>();
+  const itensPorComanda = new Map<string, { descricao: string; qtd: number; preco: number; lanc: string | null; hora: string }[]>();
   if (comandaIds.length > 0) {
     const { data: itRows } = await supabase
       .from("pdv_comanda_itens")
-      .select("comanda_id, descricao, qtd, preco_unit, criado_em")
+      .select("comanda_id, descricao, qtd, preco_unit, criado_em, lancamento_id")
       .in("comanda_id", comandaIds)
       .order("criado_em", { ascending: true });
-    for (const it of (itRows as { comanda_id: string; descricao: string; qtd: number; preco_unit: number }[]) ?? []) {
+    for (const it of (itRows as { comanda_id: string; descricao: string; qtd: number; preco_unit: number; criado_em: string; lancamento_id: string | null }[]) ?? []) {
       const lista = itensPorComanda.get(it.comanda_id) ?? [];
-      lista.push({ descricao: it.descricao, qtd: Number(it.qtd), preco: Number(it.preco_unit) });
+      const hora = new Date(it.criado_em).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+      lista.push({ descricao: it.descricao, qtd: Number(it.qtd), preco: Number(it.preco_unit), lanc: it.lancamento_id, hora });
       itensPorComanda.set(it.comanda_id, lista);
     }
   }

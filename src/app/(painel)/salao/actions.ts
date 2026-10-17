@@ -13,6 +13,7 @@ import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 import { fecharTefNoBanco } from "@/lib/tef-venda-server";
 import { codigoDaForma, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
+import { reimprimirNaCozinha } from "@/lib/delivery-core";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 
@@ -2010,4 +2011,13 @@ export async function removerItemCaixa(itemId: string, motivo: string) {
   revalidatePath(`/salao/comandas/${it.comanda_id}`);
   revalidatePath(`/garcom/comanda/${it.comanda_id}`);
   return { ok: true as const };
+}
+
+// "Reimprimir na cozinha" na tela da comanda.
+export async function reimprimirPedidoComanda(comandaId: string, lancamentoId: string | null) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const r = await reimprimirNaCozinha(supabase, comandaId, lancamentoId);
+  revalidatePath(`/salao/comandas/${comandaId}`);
+  return r;
 }

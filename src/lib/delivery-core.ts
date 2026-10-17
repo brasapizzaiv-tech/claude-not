@@ -186,10 +186,37 @@ export async function imprimirComandaDoPedido(db: Db, pedidoId: string) {
     .from("pdv_comanda_itens").select("lancamento_id").eq("comanda_id", comandaId).order("criado_em").limit(1).maybeSingle();
   const lanc = (item as { lancamento_id: string | null } | null)?.lancamento_id;
   if (!lanc) return 0;
+  return enfileirarLancamento(db, lanc);
+}
+
+// Manda (de novo) um pedido pra cozinha: cada impressora recebe só o que é
+// dela (produtos marcados, pizzas). Devolve quantas vias entraram na fila.
+export async function enfileirarLancamento(db: Db, lanc: string) {
   const { data: itens } = await db.from("pdv_comanda_itens").select("item_id").eq("lancamento_id", lanc);
   const todos = (itens ?? []) as { item_id: string | null }[];
+  if (todos.length === 0) return 0;
   const itemIds = todos.map((i) => i.item_id).filter(Boolean) as string[];
   return enfileirarCozinha(db, lanc, itemIds, todos.some((i) => i.item_id === null));
+}
+
+// "Reimprimir na cozinha" (garçom e comanda do caixa). Item lançado pela tela
+// da comanda no caixa não tem lançamento (nunca foi pra cozinha): ganha um
+// agora, juntando os soltos daquela comanda, e vai.
+export async function reimprimirNaCozinha(db: Db, comandaId: string, lancamentoId: string | null) {
+  let lanc = lancamentoId;
+  if (!lanc) {
+    const { data: soltos } = await db.from("pdv_comanda_itens").select("id").eq("comanda_id", comandaId).is("lancamento_id", null);
+    const ids = ((soltos as { id: string }[]) ?? []).map((x) => x.id);
+    if (ids.length === 0) return { ok: false as const, mensagem: "Nada pra mandar pra cozinha." };
+    lanc = crypto.randomUUID();
+    await db.from("pdv_comanda_itens").update({ lancamento_id: lanc }).in("id", ids);
+  } else {
+    const { data: dono } = await db.from("pdv_comanda_itens").select("id").eq("lancamento_id", lanc).eq("comanda_id", comandaId).limit(1).maybeSingle();
+    if (!dono) return { ok: false as const, mensagem: "Esse pedido não é desta comanda." };
+  }
+  const vias = await enfileirarLancamento(db, lanc);
+  if (vias === 0) return { ok: false as const, mensagem: "Nenhuma impressora da cozinha recebe esses itens (confira em Impressoras)." };
+  return { ok: true as const, vias };
 }
 
 // Resolve as linhas do pedido (item simples / pizza / combo) com preço do
