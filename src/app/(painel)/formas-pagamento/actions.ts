@@ -29,6 +29,8 @@ export type DadosForma = {
   no_delivery: boolean;
   no_app: boolean;
   no_fiado: boolean;
+  /** Texto do código obrigatório (ex.: "Código do cupom"); vazio = não pede. */
+  pede_codigo?: string | null;
 };
 
 export async function salvarForma(d: DadosForma): Promise<{ ok: boolean; erro?: string }> {
@@ -46,6 +48,7 @@ export async function salvarForma(d: DadosForma): Promise<{ ok: boolean; erro?: 
       no_delivery: !!d.no_delivery,
       no_app: !!d.no_app,
       no_fiado: !!d.no_fiado,
+      pede_codigo: d.pede_codigo?.trim().slice(0, 40) || null,
     };
     if (d.id) {
       const { error } = await supabase.from("formas_pagamento").update(linha).eq("id", d.id);

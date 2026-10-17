@@ -6,7 +6,7 @@ import { avisar, perguntar } from "@/components/dialogo";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, definirPagoDelivery, receberDelivery, reimprimirDelivery } from "../actions";
-import { tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { codigoDaForma, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import { emitirNfceComanda } from "../../salao/fiscal-actions";
 
@@ -59,8 +59,11 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
   // (ex.: funcionário pediu pelo app → Compra da equipe).
   const [formaSel, setFormaSel] = useState(() => (p.formaPagamento && formas.some((f) => f.nome === p.formaPagamento) ? p.formaPagamento : (formas[0]?.nome ?? "Dinheiro")));
   const [colabId, setColabId] = useState("");
+  // Forma que exige código (ex.: cupom do Juntos Sicredi).
+  const [codigo, setCodigo] = useState("");
   const tipoSel = tipoDe(formaSel, formas);
-  const faltaQuem = (tipoSel === "equipe" && !colabId) || (tipoSel === "saldo" && !p.clienteId);
+  const pedeCodigo = codigoDaForma(formaSel, formas);
+  const faltaQuem = (tipoSel === "equipe" && !colabId) || (tipoSel === "saldo" && !p.clienteId) || (!!pedeCodigo && !codigo.trim());
   const router = useRouter();
   const [proc, start] = useTransition();
   // Pinpad neste PC: Pix na maquininha e cartão passam direto (o cliente que
@@ -244,6 +247,9 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                     {colaboradores.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                 )}
+                {pedeCodigo && (
+                  <input value={codigo} onChange={(e) => setCodigo(e.target.value.slice(0, 120))} placeholder={`${pedeCodigo} (obrigatório)`} aria-label={pedeCodigo} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                )}
                 {tipoSel === "saldo" && !p.clienteId && (
                   <p className="text-xs text-amber-600">Este pedido não está ligado a um cliente cadastrado. Receba no caixa do salão, vinculando o cliente.</p>
                 )}
@@ -260,7 +266,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                     aoTerminar={() => router.refresh()}
                   />
                 ) : (
-                  <button onClick={() => act(() => receberDelivery(p.id, { forma: formaSel, colaboradorId: colabId || null }))} disabled={proc || faltaQuem} className="btn-principal w-full text-sm">
+                  <button onClick={() => act(() => receberDelivery(p.id, { forma: formaSel, colaboradorId: colabId || null, codigo: codigo || null }))} disabled={proc || faltaQuem} className="btn-principal w-full text-sm">
                     {proc ? "Recebendo..." : `Receber ${brl(total)}`}
                   </button>
                 )}

@@ -12,7 +12,7 @@ import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 import { fecharTefNoBanco } from "@/lib/tef-venda-server";
-import { naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
+import { codigoDaForma, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 
@@ -1124,6 +1124,9 @@ export async function pagarSelecao(
   // Vale-presente com código (migration 0235) dispensa o motivo: o código é o registro.
   const semMotivo = pagamentos.find((p) => p.valor > 0 && naoEntraNoCaixa(tipoDe(p.forma, formasT)) && !(p.observacao ?? "").trim() && !(p.valeCodigo ?? "").trim());
   if (semMotivo) return { ok: false as const, mensagem: `Escreva na observação o motivo da ${semMotivo.forma} (ex.: aniversário, nº do vale).` };
+  // Forma que exige código (ex.: cupom do Juntos Sicredi): sem ele, não recebe.
+  const semCodigo = pagamentos.find((p) => p.valor > 0 && codigoDaForma(p.forma, formasT) && !(p.observacao ?? "").trim());
+  if (semCodigo) return { ok: false as const, mensagem: `Preencha o ${(codigoDaForma(semCodigo.forma, formasT) ?? "código").toLowerCase()} do ${semCodigo.forma}.` };
 
   // Compra da equipe / Saldo cliente: confere ANTES de marcar qualquer coisa
   // como paga (antes a comanda fechava e só depois vinha o erro).

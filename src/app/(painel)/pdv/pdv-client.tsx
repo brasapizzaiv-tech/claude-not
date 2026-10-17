@@ -8,7 +8,7 @@ import { buscarClientesPdv, cashbackClientePdv, finalizarVendaPdv } from "./acti
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
-import { FORMAS_PADRAO, emiteNotaAuto, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { FORMAS_PADRAO, codigoDaForma, emiteNotaAuto, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import type { TefDados } from "@/lib/tef-client";
 import { CampoVale } from "@/components/campo-vale";
@@ -46,6 +46,8 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   // Cortesia / vale-presente: pedem o motivo (vai pro relatório de cortesias e vales).
   const [motivo, setMotivo] = useState("");
   const semDinheiro = naoEntraNoCaixa(tipoForma);
+  // Forma que exige código (ex.: cupom do Juntos Sicredi): usa o mesmo campo.
+  const pedeCodigo = codigoDaForma(forma, formas);
   // Vale-presente com código (migration 0235): o código substitui o motivo.
   const [vale, setVale] = useState<ValeConsulta | null>(null);
   const [valeSemCodigo, setValeSemCodigo] = useState(false);
@@ -73,7 +75,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     ? Math.round(Math.max(0, Math.min(cb.saldo, cb.maxResgate ?? Infinity, total)) * 100) / 100
     : 0;
   const cobrar = Math.round((total - cbUsado) * 100) / 100;
-  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente) || (semDinheiro && !valeComCodigo && !motivo.trim()) || (valeComCodigo && (!vale || vale.saldo < cobrar - 0.005));
+  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente) || (semDinheiro && !valeComCodigo && !motivo.trim()) || (!!pedeCodigo && !motivo.trim()) || (valeComCodigo && (!vale || vale.saldo < cobrar - 0.005));
   const recebidoNum = Number(recebido.replace(",", ".")) || 0;
   const troco = tipoDe(forma, formas) === "dinheiro" && recebidoNum > cobrar ? Math.round((recebidoNum - cobrar) * 100) / 100 : 0;
 
@@ -120,7 +122,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     const nomeCliente = cliente?.nome;
     start(async () => {
       try {
-        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento ? { ...pagamento, observacao: motivo.trim() || null, valeCodigo: valeComCodigo && vale ? vale.codigo : null } : null, local);
+        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento ? { ...pagamento, observacao: pedeCodigo && motivo.trim() ? `${pedeCodigo}: ${motivo.trim()}` : motivo.trim() || null, valeCodigo: valeComCodigo && vale ? vale.codigo : null } : null, local);
         if (r.ok) {
           setMotivo("");
           setVale(null);
@@ -278,6 +280,12 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 {vale && vale.saldo < cobrar - 0.005 && (
                   <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">O saldo não cobre a venda toda. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.</p>
                 )}
+              </div>
+            )}
+            {pedeCodigo && (
+              <div className="mb-3">
+                <label className="text-sm text-texto-suave">{pedeCodigo} (obrigatório)</label>
+                <input value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 200))} placeholder="digite o código" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
               </div>
             )}
             {semDinheiro && !valeComCodigo && (

@@ -17,6 +17,7 @@ const VAZIA: DadosForma = {
   no_delivery: false,
   no_app: false,
   no_fiado: false,
+  pede_codigo: "",
 };
 
 const rotuloTipo = (t: TipoFormaCadastro) => TIPOS_FORMA.find((x) => x.id === t)?.label ?? t;
@@ -67,6 +68,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
                     {f.nome}
                   </div>
                   {f.nome_app && <div className="text-mini text-texto-fraco">no app: {f.nome_app}</div>}
+                  {f.pede_codigo && <div className="text-mini text-texto-fraco">pede: {f.pede_codigo}</div>}
                 </td>
                 <td className="px-4 py-3 text-texto-suave">{rotuloTipo(f.tipo)}</td>
                 <td className="px-4 py-3">
@@ -112,7 +114,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
                     </BotaoAcao>
                     <button
                       type="button"
-                      onClick={() => { setErro(null); setEditando({ id: f.id, nome: f.nome, tipo: f.tipo, nome_app: f.nome_app ?? "", no_caixa: f.no_caixa, no_pdv: f.no_pdv, no_delivery: f.no_delivery, no_app: f.no_app, no_fiado: f.no_fiado }); }}
+                      onClick={() => { setErro(null); setEditando({ id: f.id, nome: f.nome, tipo: f.tipo, nome_app: f.nome_app ?? "", no_caixa: f.no_caixa, no_pdv: f.no_pdv, no_delivery: f.no_delivery, no_app: f.no_app, no_fiado: f.no_fiado, pede_codigo: f.pede_codigo ?? "" }); }}
                       className="rounded-controle px-2 py-1 text-xs font-medium text-texto-suave hover:text-orange-600"
                     >
                       Editar
@@ -204,6 +206,11 @@ function Formulario({
         <div>
           <label className="mb-1 block text-xs text-texto-suave" htmlFor="forma-app">Nome no app do cliente (opcional)</label>
           <input id="forma-app" value={d.nome_app ?? ""} onChange={(e) => setD({ ...d, nome_app: e.target.value })} placeholder='Ex.: "Cartão na entrega"' className={inputCls} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-texto-suave" htmlFor="forma-codigo">Pede código no pagamento (opcional)</label>
+          <input id="forma-codigo" value={d.pede_codigo ?? ""} onChange={(e) => setD({ ...d, pede_codigo: e.target.value.slice(0, 40) })} placeholder='Ex.: "Código do cupom"' className={inputCls} />
+          <p className="mt-1 text-mini text-texto-fraco">Preenchido, o caixa só aceita esse pagamento com o código digitado (fica na observação do lançamento).</p>
         </div>
         <div>
           <span className="mb-1 block text-xs text-texto-suave">Aparece em</span>

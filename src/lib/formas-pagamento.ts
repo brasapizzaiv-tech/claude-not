@@ -14,6 +14,8 @@ export type FormaOpcao = {
   tipo: TipoForma;
   /** Texto mostrado quando difere do nome (app do cliente: "Pix na entrega"). */
   label?: string;
+  /** Exige um código no pagamento (ex.: "Código do cupom" do Juntos Sicredi). */
+  pedeCodigo?: string | null;
 };
 
 export type FormaPagamento = {
@@ -28,6 +30,8 @@ export type FormaPagamento = {
   no_fiado: boolean;
   ativo: boolean;
   ordem: number;
+  /** Texto do campo obrigatório (ex.: "Código do cupom"); vazio = não pede (migration 0240). */
+  pede_codigo: string | null;
 };
 
 export const TIPOS_FORMA: { id: TipoFormaCadastro; label: string; explica: string }[] = [
@@ -199,3 +203,10 @@ export const FORMAS_FIXAS_VENDA: FormaOpcao[] = [
   { nome: "Saldo cliente", tipo: "saldo" },
   { nome: "Compra da equipe", tipo: "equipe" },
 ];
+
+/** Texto do código que a forma exige (ex.: "Código do cupom"), ou null. */
+export function codigoDaForma(nome: string | null | undefined, formas?: FormaOpcao[]): string | null {
+  if (!nome || !formas) return null;
+  const alvo = nome.trim().toLowerCase();
+  return formas.find((f) => f.nome.trim().toLowerCase() === alvo)?.pedeCodigo?.trim() || null;
+}

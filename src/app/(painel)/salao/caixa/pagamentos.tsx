@@ -7,7 +7,7 @@
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { tefConfirmar, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
-import { atalhoDoTipo, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
+import { atalhoDoTipo, codigoDaForma, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
 import { Icone } from "@/components/icone";
 import { CampoVale } from "@/components/campo-vale";
 import type { ValeConsulta } from "@/app/(painel)/salao/caixa/vales/actions";
@@ -49,6 +49,8 @@ function testesDeForma(formas: FormaOpcao[]) {
     equipe: (f: string) => tipo(f) === "equipe",
     // Cortesia / vale-presente: fecham a conta sem dinheiro e pedem o motivo.
     semDinheiro: (f: string) => naoEntraNoCaixa(tipo(f)),
+    // Forma que exige código (ex.: cupom do Juntos Sicredi, migration 0240).
+    codigo: (f: string) => codigoDaForma(f, formas),
     tef: (f: string) => tefDoTipo(tipo(f)),
     icone: (f: string) => iconeDoTipo(tipo(f)),
     // Tecla de atalho (a letra é mostrada no botão).
@@ -280,6 +282,8 @@ export function PainelPagamentos({
     if (comCodigo && !vale) { setAviso("Digite o código do vale e toque em Conferir."); return; }
     if (comCodigo && vale && aplica > vale.saldo + 0.005) { setAviso(`O vale só tem ${brl(vale.saldo)}. Lance esse valor e o resto em outra forma.`); return; }
     if (T.semDinheiro(forma) && !comCodigo && !obs.trim()) { setAviso("Escreva o motivo na observação (ex.: aniversário, nº do vale)."); return; }
+    const pedeCodigo = T.codigo(forma);
+    if (pedeCodigo && !obs.trim()) { setAviso(`Preencha o ${pedeCodigo.toLowerCase()}.`); return; }
     if (fiadoEstoura) {
       setAviso(`Passa do limite: ${fiado?.nome} já deve ${brl(fiadoEstoura.saldo)} e o limite é ${brl(fiadoEstoura.limite)}.`);
       return;
@@ -291,7 +295,7 @@ export function PainelPagamentos({
       valor: cent(aplica),
       recebido: T.dinheiro(forma) ? cent(entregue) : undefined,
       bandeira: bandeira || null,
-      observacao: comCodigo && vale ? `Vale ${formatarCodigo(vale.codigo)}${obs.trim() ? ` · ${obs.trim()}` : ""}` : obs.trim() || null,
+      observacao: comCodigo && vale ? `Vale ${formatarCodigo(vale.codigo)}${obs.trim() ? ` · ${obs.trim()}` : ""}` : pedeCodigo ? `${pedeCodigo}: ${obs.trim()}` : obs.trim() || null,
       valeCodigo: comCodigo && vale ? vale.codigo : null,
       colaboradorId: T.equipe(forma) ? colabId : null,
       colaboradorNome: T.equipe(forma) ? (colaboradores.find((c) => c.id === colabId)?.nome ?? null) : null,
@@ -567,12 +571,12 @@ export function PainelPagamentos({
             </p>
           )}
           <label className="mt-3 block text-mini text-texto-fraco">
-            {T.semDinheiro(forma) && !(T.tipo(forma) === "vale_presente" && !valeSemCodigo) ? "Motivo (obrigatório)" : "Observação"}
+            {T.codigo(forma) ? `${T.codigo(forma)} (obrigatório)` : T.semDinheiro(forma) && !(T.tipo(forma) === "vale_presente" && !valeSemCodigo) ? "Motivo (obrigatório)" : "Observação"}
             <input
               value={obs}
               onChange={(e) => setObs(e.target.value.slice(0, 200))}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); salvar(); } }}
-              placeholder={T.semDinheiro(forma) && !(T.tipo(forma) === "vale_presente" && !valeSemCodigo) ? (T.tipo(forma) === "cortesia" ? "ex.: aniversário do cliente, cortesia da casa" : "ex.: vale nº 123, presente do João") : "opcional"}
+              placeholder={T.codigo(forma) ? "digite o código" : T.semDinheiro(forma) && !(T.tipo(forma) === "vale_presente" && !valeSemCodigo) ? (T.tipo(forma) === "cortesia" ? "ex.: aniversário do cliente, cortesia da casa" : "ex.: vale nº 123, presente do João") : "opcional"}
               className={`${campo} mt-1 normal-case`}
             />
           </label>

@@ -22,7 +22,7 @@ export const todasFormas = cache(async (): Promise<FormaPagamento[]> => {
   if (!empresaId) return [];
   const { data } = await createAdminClient()
     .from("formas_pagamento")
-    .select("id, nome, tipo, nome_app, no_caixa, no_pdv, no_delivery, no_app, no_fiado, ativo, ordem")
+    .select("id, nome, tipo, nome_app, no_caixa, no_pdv, no_delivery, no_app, no_fiado, ativo, ordem, pede_codigo")
     .eq("empresa_id", empresaId)
     .order("ordem")
     .order("criado_em");
@@ -41,11 +41,12 @@ export async function listarFormas(canal: CanalForma): Promise<FormaOpcao[]> {
       nome: f.nome,
       tipo: f.tipo,
       ...(canal === "app" && f.nome_app ? { label: f.nome_app } : {}),
+      ...(f.pede_codigo?.trim() ? { pedeCodigo: f.pede_codigo.trim() } : {}),
     }));
 }
 
 /** Nome + tipo de tudo que está cadastrado (pra achar o tipo de um pagamento
  *  antigo pelo nome, ex.: código fiscal da nota). */
 export async function formasParaTipo(): Promise<FormaOpcao[]> {
-  return (await todasFormas()).map((f) => ({ nome: f.nome, tipo: f.tipo }));
+  return (await todasFormas()).map((f) => ({ nome: f.nome, tipo: f.tipo, pedeCodigo: f.pede_codigo?.trim() || null }));
 }

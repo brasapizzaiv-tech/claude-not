@@ -3,7 +3,7 @@
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { tipoDe } from "@/lib/formas-pagamento";
+import { codigoDaForma, tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { avisarPedido, enviarTemplate, listarModelos, whatsappConfigurado } from "@/lib/whatsapp";
@@ -432,11 +432,15 @@ export async function modelosWhatsappDelivery() {
 // funcionário pede com "Pix" e o operador recebe como "Compra da equipe"
 // (vai pra Compras internas); "Saldo cliente" usa o cliente ligado ao pedido.
 // Comanda que o caixa do salão já recebeu só ganha a marca de pago.
-export async function receberDelivery(id: string, dados: { forma: string; colaboradorId?: string | null; tef?: TefDaVenda | null; valorTef?: number }) {
+export async function receberDelivery(id: string, dados: { forma: string; colaboradorId?: string | null; tef?: TefDaVenda | null; valorTef?: number; codigo?: string | null }) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
   const forma = (dados.forma || "").trim();
   if (!forma) return { ok: false as const, mensagem: "Escolha a forma de pagamento." };
+  // Forma que exige código (ex.: cupom do Juntos Sicredi).
+  const pedeCodigo = codigoDaForma(forma, await formasParaTipo());
+  const codigo = (dados.codigo ?? "").trim().slice(0, 120);
+  if (pedeCodigo && !codigo) return { ok: false as const, mensagem: `Preencha o ${pedeCodigo.toLowerCase()}.` };
 
   const { data: ped } = await supabase
     .from("delivery_pedidos")
@@ -506,6 +510,7 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
     forma_pagamento: forma,
     valor: total,
     comanda_id: p.comanda_id,
+    ...(pedeCodigo && codigo ? { observacao: `${pedeCodigo}: ${codigo}` } : {}),
     ...camposTefDoMov(tef),
   }).select("id").maybeSingle();
   const tefTransacaoId = tef

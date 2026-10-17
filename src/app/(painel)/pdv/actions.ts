@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { lancarPedidoGarcom } from "@/app/(garcom)/garcom/actions";
 import { exigirAcesso } from "@/lib/permissoes-server";
-import { naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
+import { codigoDaForma, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
@@ -30,6 +30,10 @@ export async function finalizarVendaPdv(
   // Cortesia / vale-presente pedem o motivo antes de mandar pra cozinha.
   if (pagamento && naoEntraNoCaixa(tipoDe(pagamento.forma, await formasParaTipo())) && !(pagamento.observacao ?? "").trim() && !(pagamento.valeCodigo ?? "").trim()) {
     return { ok: false as const, mensagem: `Escreva o motivo da ${pagamento.forma} (ex.: aniversário, nº do vale).` };
+  }
+  // Forma que exige código (ex.: cupom do Juntos Sicredi).
+  if (pagamento && codigoDaForma(pagamento.forma, await formasParaTipo()) && !(pagamento.observacao ?? "").trim()) {
+    return { ok: false as const, mensagem: `Preencha o código do ${pagamento.forma}.` };
   }
   // Vale-presente com código: o saldo tem que cobrir a venda toda (no PDV é
   // um pagamento só). Confere ANTES de mandar pra cozinha; dividir em duas
