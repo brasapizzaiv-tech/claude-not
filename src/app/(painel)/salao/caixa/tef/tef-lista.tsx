@@ -203,7 +203,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
           </thead>
           <tbody className="divide-y divide-borda">
             {linhas.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-8 text-center text-texto-fraco">Nenhum cartão passado no pinpad nos últimos 7 dias.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-texto-fraco">Nenhum cartão nesse período.</td></tr>
             )}
             {linhas.map((l) => {
               const st = STATUS[l.status] ?? { rotulo: l.status, cls: "bg-superficie-suave text-texto-suave" };
