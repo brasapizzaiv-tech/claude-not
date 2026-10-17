@@ -29,6 +29,8 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 // Primeira aba: todos os produtos em ordem do que mais sai (no lugar de "Todos").
 const MAIS_PEDIDOS = "Mais pedidos";
+// Aba das pizzas: lista os tamanhos ("a partir de"); tocar abre o montador em etapas.
+const PIZZAS = "__pizzas__";
 
 export function GarcomPedido({
   mesa,
@@ -64,7 +66,7 @@ export function GarcomPedido({
   const [buscaOn, setBuscaOn] = useState(false);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [pzOpen, setPzOpen] = useState(false);
+  const [pzTam, setPzTam] = useState<string | null>(null);
   const [comboItem, setComboItem] = useState<ItemMenu | null>(null);
   const [obs, setObs] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -267,7 +269,19 @@ export function GarcomPedido({
       {/* Conteúdo: produtos (esq) + categorias (dir) */}
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-2">
-          {visiveis.length === 0 ? (
+          {aba === PIZZAS && !busca.trim() ? (
+            <div className="space-y-2">
+              {pizza.tamanhos.map((t) => {
+                const ps = pizza.saborPrecos.filter((p) => p.tamanho_id === t.id).map((p) => Number(p.preco));
+                return (
+                  <button key={t.id} type="button" onClick={() => setPzTam(t.id)} className="flex w-full flex-col rounded-controle border border-borda bg-painel-cartao p-3 text-left">
+                    <span className="font-medium">{t.nome}</span>
+                    <span className="text-sm text-emerald-400">{ps.length ? `A partir de ${brl(Math.min(...ps))}` : ""} <span className="text-texto-fraco">· {t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}</span></span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : visiveis.length === 0 ? (
             <p className="py-10 text-center text-sm text-texto-fraco">Nenhum produto.</p>
           ) : (
             <div className="space-y-2">
@@ -302,10 +316,11 @@ export function GarcomPedido({
         <div className="w-28 shrink-0 overflow-y-auto border-l border-borda bg-painel-cartao/50 p-1.5">
           {pizza.tamanhos.length > 0 && (
             <button
-              onClick={() => setPzOpen(true)}
-              className="mb-1.5 w-full rounded-controle bg-orange-500 px-2 py-3 text-xs font-bold text-marca-sobre-primaria"
+              onClick={() => setAba(PIZZAS)}
+              aria-pressed={aba === PIZZAS}
+              className={`mb-1.5 min-h-11 w-full rounded-controle px-2 py-3 text-xs font-bold ${aba === PIZZAS ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-orange-500 text-marca-sobre-primaria"}`}
             >
-              <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Montar pizza
+              <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Pizzas
             </button>
           )}
           {abas.map((c) => (
@@ -521,7 +536,7 @@ export function GarcomPedido({
       )}
 
       {/* Montador de pizza / combos (compartilhados com o delivery) */}
-      {pzOpen && <PizzaModal pizza={pizza} comObs onClose={() => setPzOpen(false)} onAdd={(l) => { addLinha(l); setPzOpen(false); }} />}
+      {pzTam && <PizzaModal pizza={pizza} tamanhoInicial={pzTam} comObs onClose={() => setPzTam(null)} onAdd={(l) => { addLinha(l); setPzTam(null); }} />}
       {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} comObs onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
 
       {/* Toast */}
