@@ -16,6 +16,38 @@ export type PagamentoEspecial = {
   colaboradorId?: string | null;
 };
 
+// Confere ANTES de mexer na conta se as formas especiais têm o que precisam
+// (funcionário da Compra da equipe; cliente e limite do Saldo cliente). Sem
+// isso o caixa do salão fechava a comanda e só depois descobria o erro: a
+// comanda sumia sem lançamento no caixa nem em Compras internas (16/10/2026).
+export async function conferirFormasEspeciais(
+  supabase: Db,
+  opts: { pagamentos: PagamentoEspecial[]; clienteId?: string | null; formas?: FormaOpcao[] },
+): Promise<{ ok: true } | { ok: false; mensagem: string }> {
+  const tipo = (f: string) => tipoDe(f, opts.formas);
+  const daEquipe = opts.pagamentos.filter((p) => tipo(p.forma) === "equipe" && p.valor > 0);
+  for (const p of daEquipe) {
+    if (!p.colaboradorId) return { ok: false, mensagem: "Escolha o funcionário pra lançar a compra da equipe." };
+    const { data: colab } = await supabase.from("colaboradores").select("ativo").eq("id", p.colaboradorId).maybeSingle();
+    if (!colab || !colab.ativo) return { ok: false, mensagem: "Funcionário não encontrado (ou desligado)." };
+  }
+  const fiado = Math.round(opts.pagamentos.filter((p) => tipo(p.forma) === "saldo" && p.valor > 0).reduce((a, p) => a + p.valor, 0) * 100) / 100;
+  if (fiado > 0) {
+    if (!opts.clienteId) return { ok: false, mensagem: "Pra receber como Saldo cliente, vincule o cliente antes." };
+    const { data: cliLim } = await supabase.from("clientes").select("nome, limite_credito").eq("id", opts.clienteId).maybeSingle();
+    const limite = cliLim?.limite_credito == null ? null : Number(cliLim.limite_credito);
+    if (limite != null && limite >= 0) {
+      const { data: mov } = await supabase.from("cliente_fiado").select("tipo, valor").eq("cliente_id", opts.clienteId);
+      const saldo = ((mov as { tipo: string; valor: number }[]) ?? []).reduce((a, r) => a + (r.tipo === "debito" ? Number(r.valor) : -Number(r.valor)), 0);
+      if (saldo + fiado > limite + 0.005) {
+        const brlS = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        return { ok: false, mensagem: `${cliLim?.nome ?? "O cliente"} passaria do limite de crédito (${brlS(limite)}). Receba de outra forma ou aumente o limite no cadastro do cliente.` };
+      }
+    }
+  }
+  return { ok: true };
+}
+
 export async function lancarFormasEspeciais(
   supabase: Db,
   opts: {

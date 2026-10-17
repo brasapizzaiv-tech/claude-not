@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
 import { aplicarParte, faltasDaComanda, r2, servicoCobrado } from "@/lib/comanda-parte";
 import { exigirAcesso } from "@/lib/permissoes-server";
-import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
+import { conferirFormasEspeciais, lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
@@ -1119,6 +1119,11 @@ export async function pagarSelecao(
   // Vale-presente com código (migration 0235) dispensa o motivo: o código é o registro.
   const semMotivo = pagamentos.find((p) => p.valor > 0 && naoEntraNoCaixa(tipoDe(p.forma, formasT)) && !(p.observacao ?? "").trim() && !(p.valeCodigo ?? "").trim());
   if (semMotivo) return { ok: false as const, mensagem: `Escreva na observação o motivo da ${semMotivo.forma} (ex.: aniversário, nº do vale).` };
+
+  // Compra da equipe / Saldo cliente: confere ANTES de marcar qualquer coisa
+  // como paga (antes a comanda fechava e só depois vinha o erro).
+  const conferencia = await conferirFormasEspeciais(supabase, { pagamentos, clienteId: clienteId ?? null, formas: formasT });
+  if (!conferencia.ok) return { ok: false as const, mensagem: conferencia.mensagem };
 
   // Baixa nos vales ANTES de marcar a conta como paga: sem saldo (ou vencido),
   // nada é lançado. Se a conta não fechar depois, o saldo volta pro vale.
