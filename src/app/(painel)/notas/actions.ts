@@ -664,7 +664,8 @@ export async function definirUnidadeProduto(produtoId: string, unidade: string) 
 export async function definirFatorItemNota(itemId: string, fator: number) {
   await exigirAcesso("/notas");
   const supabase = await createClient();
-  const f = Number(fator) > 0 ? Math.round(Number(fator) * 1000) / 1000 : 1;
+  // 6 casas: com o total digitado (100 un em 3 fardos) o fator é 33,333…
+  const f = Number(fator) > 0 ? Math.round(Number(fator) * 1e6) / 1e6 : 1;
   const { data: it } = await supabase
     .from("nota_itens")
     .select("nota_id, produto_id, valor_unit, notas_fiscais(situacao)")

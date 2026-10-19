@@ -28,6 +28,9 @@ export function ItemFator({
   const router = useRouter();
   const [salvando, start] = useTransition();
   const [txt, setTxt] = useState(fator && fator !== 1 ? String(fator).replace(".", ",") : "");
+  // "Total manual": quando a divisão por fardo não fecha, digita direto quantas
+  // unidades vieram (10 fardos = 120 un) e o fator sai dele (Rafael, 19/10/2026).
+  const [totalTxt, setTotalTxt] = useState("");
   const f = Number(txt.replace(",", ".")) > 0 ? Number(txt.replace(",", ".")) : 1;
   const unidades = qtd * f;
   const precoUn = valorTotal != null && unidades > 0 ? Number(valorTotal) / unidades : null;
@@ -37,6 +40,18 @@ export function ItemFator({
   function salvar() {
     start(async () => {
       await definirFatorItemNota(itemId, f);
+      router.refresh();
+    });
+  }
+  function salvarTotal() {
+    // "1.200,5" → 1200.5 (ponto de milhar fora, vírgula decimal vira ponto).
+    const total = Number(totalTxt.trim().replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+    if (!(total > 0) || !(qtd > 0)) { setTotalTxt(""); return; }
+    const novo = total / qtd;
+    setTxt(String(Math.round(novo * 1e6) / 1e6).replace(".", ","));
+    setTotalTxt("");
+    start(async () => {
+      await definirFatorItemNota(itemId, novo);
       router.refresh();
     });
   }
@@ -78,6 +93,23 @@ export function ItemFator({
           <span>un</span>
         )}
       </label>
+      {temProduto && (
+        <label className="flex items-center gap-1 text-mini text-texto-suave" title={`Ou digite o TOTAL que veio, em ${un} (ex.: 10 fardos = 120 ${un}). O sistema calcula o resto.`}>
+          ou total:
+          <input
+            value={totalTxt}
+            onChange={(e) => setTotalTxt(e.target.value)}
+            onBlur={salvarTotal}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+            inputMode="decimal"
+            placeholder={unidades.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}
+            disabled={salvando}
+            aria-label={`Total que veio, em ${un}`}
+            className="w-16 rounded border border-borda-forte px-1.5 py-0.5 text-right text-xs focus:border-orange-500 dark:bg-zinc-950"
+          />
+          {un}
+        </label>
+      )}
       {f !== 1 ? (
         <span className="text-mini text-orange-600">
           = {unidades.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} {un}{precoUn != null ? ` · ${moeda(precoUn)}/${un}` : ""}
