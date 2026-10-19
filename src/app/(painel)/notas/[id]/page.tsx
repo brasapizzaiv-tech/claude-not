@@ -9,6 +9,7 @@ import { ManifestarNota } from "./manifestar";
 import { ItemProduto } from "./item-produto";
 import { ItemFator } from "./item-fator";
 import { ItemDestino } from "./item-destino";
+import { ItemTamanho } from "./item-tamanho";
 import { EntradaNota } from "./entrada-nota";
 import { LancamentoNota } from "./lancamento";
 import { ParcelasEditor } from "./parcelas-editor";
@@ -62,11 +63,12 @@ export default async function NotaDetalhePage({
     itens.length > 0
       ? await supabase
           .from("produtos")
-          .select("id, nome, unidade")
+          .select("id, nome, unidade, tamanhos, medida")
           .eq("ativo", true)
           .order("nome")
       : { data: [] };
-  const produtos = (prodData as { id: string; nome: string; unidade: string }[]) ?? [];
+  const produtos = (prodData as { id: string; nome: string; unidade: string; tamanhos?: number[] | null; medida?: string | null }[]) ?? [];
+  const tamanhosDe = new Map(produtos.filter((p) => (p.tamanhos?.length ?? 0) > 0).map((p) => [p.id, { tamanhos: (p.tamanhos ?? []).map(Number), medida: p.medida ?? null }] as const));
   const unidadeDe = new Map(produtos.map((p) => [p.id, p.unidade] as const));
   // Pra quem é o item (sócios / funcionário) — lista de quem pode receber.
   const { data: colsData } = itens.length > 0
@@ -233,6 +235,15 @@ export default async function NotaDetalhePage({
                         produtoId={i.produto_id}
                         produtos={produtos}
                       />
+                      {i.produto_id && tamanhosDe.has(i.produto_id) && (
+                        <ItemTamanho
+                          produtoId={i.produto_id}
+                          descricao={i.descricao ?? ""}
+                          unidades={Number(i.qtd) * (Number(i.fator) > 0 ? Number(i.fator) : 1)}
+                          tamanhos={tamanhosDe.get(i.produto_id)!.tamanhos}
+                          medida={tamanhosDe.get(i.produto_id)!.medida}
+                        />
+                      )}
                       <ItemDestino
                         itemId={i.id}
                         destino={(i as { destino?: string | null }).destino ?? null}

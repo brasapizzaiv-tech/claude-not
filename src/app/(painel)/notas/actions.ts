@@ -809,3 +809,18 @@ export async function definirDestinoItemNota(
   revalidatePath("/retiradas");
   return { ok: true as const, notaLancada: nf?.situacao === "lancada" };
 }
+
+// Tamanho lido na descrição da nota ("1,04KG") que ainda não está no cadastro
+// do produto com vários tamanhos (migration 0245): guarda com um toque.
+export async function adicionarTamanhoProduto(produtoId: string, tamanho: number) {
+  await exigirAcesso("/notas");
+  if (!(tamanho > 0)) return { ok: false as const };
+  const supabase = await createClient();
+  const { data: p } = await supabase.from("produtos").select("tamanhos").eq("id", produtoId).maybeSingle();
+  const atuais = ((p?.tamanhos as number[] | null) ?? []).map(Number);
+  if (atuais.some((t) => Math.abs(t - tamanho) < 0.0001)) return { ok: true as const };
+  const novos = [...atuais, Math.round(tamanho * 10000) / 10000].sort((a, b) => a - b);
+  const { error } = await supabase.from("produtos").update({ tamanhos: novos }).eq("id", produtoId);
+  revalidatePath("/produtos");
+  return error ? { ok: false as const } : { ok: true as const };
+}
