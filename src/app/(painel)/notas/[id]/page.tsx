@@ -69,12 +69,15 @@ export default async function NotaDetalhePage({
   const unidadeDe = new Map(produtos.map((p) => [p.id, p.unidade] as const));
 
   // Fornecedores para vincular/corrigir na revisão do lançamento.
+  // Inativos também: comprar de quem saiu das cotações ainda tem nota pra
+  // lançar (e a nota ligada a um inativo perdia o nome). Ativos primeiro.
   const { data: fornsData } = await supabase
     .from("fornecedores")
-    .select("id, nome")
-    .eq("ativo", true)
+    .select("id, nome, ativo")
     .order("nome");
-  const fornecedores = (fornsData as { id: string; nome: string }[]) ?? [];
+  const fornecedores = ((fornsData as { id: string; nome: string; ativo: boolean }[]) ?? [])
+    .sort((a, b) => Number(b.ativo) - Number(a.ativo))
+    .map((f) => ({ id: f.id, nome: f.ativo ? f.nome : `${f.nome} (inativo)` }));
   const fornecedorNome =
     fornecedores.find((f) => f.id === nota.fornecedor_id)?.nome ?? null;
 
