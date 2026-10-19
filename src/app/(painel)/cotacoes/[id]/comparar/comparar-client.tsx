@@ -7,6 +7,14 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransit
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dataBR } from "@/lib/format";
+import { lerTamanho } from "@/lib/embalagens";
+
+// Preço por kg (ou L) quando o fornecedor disse o tamanho da embalagem
+// ("1kg", "1,7 kg", "500 g"): compara de verdade quem vende tamanhos diferentes.
+function porMedida(preco: number | null, tam: string | null) {
+  const t = lerTamanho(tam);
+  return preco != null && t ? { v: preco / t.v, medida: t.medida } : null;
+}
 import { gerarPedidos, novaCotacaoDosFaltantes, adiantarPedidoFornecedor, salvarComparacao, type EstadoComparacao } from "../../actions";
 
 export type FornecedorCol = {
@@ -60,6 +68,8 @@ export type ProdutoLinha = {
   unidade: string;
   categoria: string;
   qtd: number;
+  /** Produto cadastrado com vários tamanhos: o preço é por unidade e dá pra comparar por kg. */
+  porTamanho?: boolean;
   precos: Record<string, Cel>;
   melhorForn: string | null;
 };
@@ -769,6 +779,15 @@ export function CompararClient({
                   const l = linhaEscolha(p);
                   const ult = ultimaCompra[p.produto_id];
                   const menor = menorPreco[p.produto_id];
+                  // Mais barato POR KG na linha (só conta quem disse o tamanho).
+                  const kgs = colunas
+                    .map((f) => { const c = p.precos[f.id]; return c && c.disp ? porMedida(c.preco, c.tam) : null; })
+                    .filter((x): x is { v: number; medida: "kg" | "L" } => !!x);
+                  const menorKg = p.porTamanho && kgs.length >= 2 ? Math.min(...kgs.map((k) => k.v)) : null;
+                  // Só vale mostrar "por kg" se alguém vende tamanho diferente de 1 kg/L.
+                  // Só em produto cadastrado com vários tamanhos: em carne o fornecedor
+                  // cobra por kg e escreve o tamanho da CAIXA ("10kg") — dividir mentiria.
+                  const mostrarKg = !!p.porTamanho && colunas.some((f) => { const t = lerTamanho(p.precos[f.id]?.tam ?? null); return !!t && Math.abs(t.v - 1) > 0.0001; });
                   const rowBg = conferido ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-painel-cartao";
                   return (
                   <tr
@@ -904,6 +923,16 @@ export function CompararClient({
                                 title={detalhe || (melhor ? "Mais barato" : "")}
                               >
                                 <span className="block text-sm">{moeda(cel.preco)}</span>
+                                {(() => {
+                                  const k = mostrarKg ? porMedida(cel.preco, cel.tam) : null;
+                                  if (!k) return null;
+                                  const melhorKg = menorKg != null && Math.abs(k.v - menorKg) < 0.0001;
+                                  return (
+                                    <span className={`block text-mini font-normal ${escolhido && ofSel === "main" ? "text-white/80" : melhorKg ? "font-semibold text-emerald-700 dark:text-emerald-300" : "text-texto-fraco"}`}>
+                                      {moeda(k.v)}/{k.medida}{melhorKg ? " · melhor por " + k.medida : ""}
+                                    </span>
+                                  );
+                                })()}
                                 {acima >= 0.005 ? (
                                   <span className={`block text-mini font-normal ${escolhido && ofSel === "main" ? "text-white/80" : "text-texto-fraco"}`}>+{(acima * 100).toFixed(0)}%</span>
                                 ) : melhor ? (
@@ -922,7 +951,10 @@ export function CompararClient({
                                   }`}
                                 >
                                   <span className="truncate">{ex.marca ?? "outra marca"}</span>
-                                  <span>{ex.preco != null ? moeda(ex.preco) : "—"}</span>
+                                  <span>
+                                    {ex.preco != null ? moeda(ex.preco) : "—"}
+                                    {(() => { const k = p.porTamanho ? porMedida(ex.preco, ex.tam) : null; return k ? <span className="ml-1 opacity-80">({moeda(k.v)}/{k.medida})</span> : null; })()}
+                                  </span>
                                 </button>
                               ))}
                             </div>

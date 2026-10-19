@@ -46,7 +46,7 @@ export default async function CompararPage({
     await Promise.all([
       supabase
         .from("cotacao_itens")
-        .select("produto_id, qtd, produtos(nome, unidade, tem_st, categorias(nome))")
+        .select("produto_id, qtd, produtos(nome, unidade, tem_st, tamanhos, categorias(nome))")
         .eq("cotacao_id", id)
         .gt("qtd", 0),
       supabase
@@ -158,6 +158,7 @@ export default async function CompararPage({
       const prod = i.produtos as {
         nome?: string;
         unidade?: string;
+        tamanhos?: number[] | null;
         categorias?: { nome?: string } | null;
       } | null;
       const produtoId = i.produto_id as string;
@@ -187,6 +188,8 @@ export default async function CompararPage({
         unidade: prod?.unidade ?? "",
         categoria: prod?.categorias?.nome ?? "Sem categoria",
         qtd: Number(i.qtd) || 0,
+        // Vem em vários tamanhos (cadastro, migration 0245): compara por kg.
+        porTamanho: (prod?.tamanhos?.length ?? 0) > 0,
         precos: precosDoProduto,
         melhorForn,
       };
