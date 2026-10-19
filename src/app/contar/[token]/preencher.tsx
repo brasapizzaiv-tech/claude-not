@@ -52,10 +52,18 @@ export function PreencherClient({
   const [salvando, startSave] = useTransition();
   // Conferência: "tinha X na última contagem + chegou Y" = máximo possível.
   const refs = useMemo(() => mapaReferencia(referencia), [referencia]);
-  const [confirmados, setConfirmados] = useState<Set<string>>(new Set()); // "contei de novo, está certo"
+  // "Contei de novo, está certo": guarda o NÚMERO confirmado de cada item, no
+  // aparelho (junto do rascunho). Recarregar a página não perde, e o envio só
+  // pergunta de novo se o número mudar depois de confirmado.
+  const [confirmados, setConfirmados] = useState<Record<string, number>>({});
   const [msg, setMsg] = useState<string | null>(null);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
+  // "Avulsa: A, B, C (19/10/2026)" → "Contagem avulsa · 19/10/2026".
+  const mAvulsa = descricao.match(/^Avulsa:\s*(.+?)\s*\((\d{2}\/\d{2}\/\d{4})\)\s*$/);
+  const tituloCurto = mAvulsa ? `Contagem avulsa · ${mAvulsa[2]}` : descricao;
+  const categoriasAvulsa = mAvulsa ? mAvulsa[1] : null;
+  const [verCategorias, setVerCategorias] = useState(false);
 
   // Itens que o contador ADICIONOU (não estavam na lista dele, mas existem no estoque).
   const [extras, setExtras] = useState<ExtraProduto[]>([]);
@@ -90,10 +98,22 @@ export function PreencherClient({
   const [soFaltam, setSoFaltam] = useState<Set<string> | null>(null);
 
   const chaveRascunho = `contagem_rascunho_${token}`;
+  const chaveConfirmados = `contagem_conferidos_${token}`;
+  function confirmar(id: string, total: number) {
+    setConfirmados((atual) => {
+      const novo = { ...atual, [id]: total };
+      try { localStorage.setItem(chaveConfirmados, JSON.stringify(novo)); } catch { /* sem storage */ }
+      return novo;
+    });
+  }
 
   // Restaura o rascunho salvo no aparelho (proteção contra recarregar a página).
   useEffect(() => {
     const id = setTimeout(() => {
+      try {
+        const conf = JSON.parse(localStorage.getItem(chaveConfirmados) || "{}");
+        if (conf && typeof conf === "object") setConfirmados(conf as Record<string, number>);
+      } catch { /* sem storage */ }
       try {
         const raw = localStorage.getItem(chaveRascunho);
         if (!raw) return;
@@ -118,7 +138,7 @@ export function PreencherClient({
       } catch { /* sem storage */ }
     }, 0);
     return () => clearTimeout(id);
-  }, [chaveRascunho]);
+  }, [chaveRascunho, chaveConfirmados]);
 
   function gravarRascunho(v: Record<string, Caixa[]>, x: ExtraProduto[], sn: Record<string, boolean> = simNao) {
     try { localStorage.setItem(chaveRascunho, JSON.stringify({ v, x, s: sn })); } catch { /* sem storage */ }
@@ -198,7 +218,9 @@ export function PreencherClient({
   }
   // Digitou mais do que podia ter e ainda não confirmou que contou de novo.
   const ehSuspeito = (produtoId: string) => suspeito(totalDe(produtoId), refs.get(produtoId));
-  const precisaConferir = (produtoId: string) => !ehSimNao(produtoId) && ehSuspeito(produtoId) && !confirmados.has(produtoId);
+  const jaConfirmado = (produtoId: string) =>
+    produtoId in confirmados && Math.abs(confirmados[produtoId] - totalDe(produtoId)) < 1e-9;
+  const precisaConferir = (produtoId: string) => !ehSimNao(produtoId) && ehSuspeito(produtoId) && !jaConfirmado(produtoId);
 
   function AvisoRef({ id }: { id: string }) {
     const r = refs.get(id);
@@ -211,7 +233,7 @@ export function PreencherClient({
         </div>
       );
     }
-    if (confirmados.has(id)) {
+    if (jaConfirmado(id)) {
       return <div className="mt-1 text-mini text-emerald-600">✓ Conferido: você contou de novo e confirmou {f(totalDe(id))}.</div>;
     }
     return (
@@ -220,7 +242,7 @@ export function PreencherClient({
         <div className="mt-1.5 flex gap-2">
           <button
             type="button"
-            onClick={() => setConfirmados((s) => new Set(s).add(id))}
+            onClick={() => confirmar(id, totalDe(id))}
             className="rounded-md bg-amber-600 px-2 py-1 font-semibold text-white"
           >
             Contei de novo, está certo
@@ -375,7 +397,7 @@ export function PreencherClient({
         }));
       const r = await salvarContagemPublica(token, payload);
       if (r.ok) {
-        try { localStorage.removeItem(chaveRascunho); } catch { /* sem storage */ }
+        try { localStorage.removeItem(chaveRascunho); localStorage.removeItem(chaveConfirmados); } catch { /* sem storage */ }
         setMsg(`Contagem enviada! ${r.gravados} de ${todosItens.length} itens gravados. Obrigado, ${colaborador}.`);
       } else {
         setMsg(r.erro ?? "Não foi possível salvar. Tente de novo — o que você digitou está guardado neste aparelho.");
@@ -387,10 +409,20 @@ export function PreencherClient({
   return (
     <div className="min-h-screen bg-zinc-50 pb-32 dark:bg-zinc-950">
       <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+        {/* Avulsa com várias categorias: o nome inteiro ocupava meia tela. Fica
+            "Contagem avulsa · 19/10/2026"; as categorias abrem num toque. */}
         <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-          {descricao}
+          {tituloCurto}
         </h1>
-        <p className="text-sm text-zinc-500">Contagem de {colaborador}</p>
+        <p className="text-sm text-zinc-500">
+          Contagem de {colaborador}
+          {categoriasAvulsa && (
+            <button type="button" onClick={() => setVerCategorias((v) => !v)} className="ml-2 font-semibold text-orange-600 underline-offset-2 hover:underline">
+              {verCategorias ? "esconder categorias" : "ver categorias"}
+            </button>
+          )}
+        </p>
+        {categoriasAvulsa && verCategorias && <p className="mt-1 text-xs text-zinc-500">{categoriasAvulsa}</p>}
       </header>
 
       <div className="mx-auto max-w-xl px-4">
@@ -419,12 +451,24 @@ export function PreencherClient({
               Preencha <b>quanto tem em estoque</b> de cada item. Em cada caixa dá pra dizer se está no congelado, resfriado ou ambiente.
             </p>
             <div className="mt-3 flex gap-2">
-              <input
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar item..."
-                className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-              />
+              <div className="relative min-w-0 flex-1">
+                <input
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar item..."
+                  className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-3 pr-11 text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                />
+                {busca && (
+                  <button
+                    type="button"
+                    onClick={() => setBusca("")}
+                    aria-label="Limpar a busca"
+                    className="absolute right-0 top-0 flex h-full w-11 items-center justify-center text-xl text-zinc-400"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
               {/* Lê o QR das etiquetas: cada uma soma no item dela, com o "onde" impresso. */}
               <button
                 type="button"

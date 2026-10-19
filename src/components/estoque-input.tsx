@@ -27,6 +27,9 @@ export function normalizarCaixas(cs?: (string | Caixa)[] | null): Caixa[] {
   return cs.map((c) => (typeof c === "string" ? { v: c, onde: null } : { v: c.v ?? "", onde: c.onde ?? null, etiqueta: c.etiqueta ?? null }));
 }
 
+// Resultado com vírgula, sem zeros sobrando (61 · 2,5 · 0,333).
+const formatar = (n: number) => String(Math.round(n * 1000) / 1000).replace(".", ",");
+
 const TECLAS = ["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "−", "C", "0", ".", "+"];
 const MAPA: Record<string, string> = { "÷": "/", "×": "*", "−": "-" };
 
@@ -72,8 +75,21 @@ export function EstoqueInput({
     setCaixas((cs) => (cs.length > 1 ? cs.filter((_, idx) => idx !== i) : cs));
   const tecla = (t: string) => {
     if (t === "C") return setCaixa(ativo, { v: "" });
+    // "=": a conta vira o resultado (48+12+1 → 61), que é o que fica no campo.
+    if (t === "=") {
+      const atual = caixas[ativo]?.v ?? "";
+      return setCaixa(ativo, { v: atual.trim() ? formatar(calcular(atual)) : "" });
+    }
+    if (t === "⌫") return setCaixas((cs) => cs.map((c, idx) => (idx === ativo ? { ...c, v: c.v.slice(0, -1) } : c)));
     setCaixas((cs) => cs.map((c, idx) => (idx === ativo ? { ...c, v: c.v + (MAPA[t] ?? t) } : c)));
   };
+  // Tem conta no campo (não só um número)? Mostra o resultado embaixo.
+  const temConta = (v: string) => /[0-9.,]\s*[-+*/]\s*[0-9.,(]/.test(v);
+  function abrirCalc() {
+    // Fecha o teclado do celular: com a calculadora aberta ele só atrapalha.
+    if (!calc && typeof document !== "undefined") (document.activeElement as HTMLElement | null)?.blur?.();
+    setCalc((v) => !v);
+  }
 
   return (
     <div>
@@ -93,7 +109,10 @@ export function EstoqueInput({
               value={c.v}
               onChange={(e) => setCaixa(i, { v: e.target.value })}
               onFocus={() => setAtivo(i)}
-              inputMode="decimal"
+              // Calculadora aberta: o teclado do celular não abre por cima dela.
+              inputMode={calc ? "none" : "decimal"}
+              readOnly={calc}
+              onClick={() => setAtivo(i)}
               disabled={disabled}
               placeholder={caixas.length > 1 ? `lugar ${i + 1}` : "0"}
               className={boxCls}
@@ -135,7 +154,7 @@ export function EstoqueInput({
         </button>
         <button
           type="button"
-          onClick={() => setCalc((v) => !v)}
+          onClick={abrirCalc}
           disabled={disabled}
           title="Calculadora"
           className={`rounded-lg border px-3 py-1.5 text-base disabled:opacity-60 ${
@@ -153,6 +172,12 @@ export function EstoqueInput({
         )}
       </div>
 
+      {calc && caixas.some((c) => temConta(c.v)) && (
+        <p className="mt-1 text-right text-sm text-zinc-500">
+          = <b className="text-zinc-800 dark:text-zinc-200">{formatar(calcular(caixas[ativo]?.v ?? ""))}</b>
+          <span className="ml-1 text-xs">(toque em = pra ficar só o resultado)</span>
+        </p>
+      )}
       {calc && !disabled && (
         <div className="mt-2 grid grid-cols-4 gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900">
           {TECLAS.map((t) => (
@@ -171,6 +196,8 @@ export function EstoqueInput({
               {t}
             </button>
           ))}
+          <button type="button" onClick={() => tecla("⌫")} aria-label="Apagar o último" className="rounded-lg bg-white py-3 text-lg font-medium text-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">⌫</button>
+          <button type="button" onClick={() => tecla("=")} className="col-span-3 rounded-lg bg-orange-500 py-3 text-lg font-bold text-marca-sobre-primaria">=</button>
         </div>
       )}
     </div>
