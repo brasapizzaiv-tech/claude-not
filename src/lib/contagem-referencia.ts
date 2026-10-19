@@ -6,11 +6,22 @@ export type Referencia = {
   ultima_qtd: number;
   ultima_data: string; // YYYY-MM-DD
   comprado: number;
+  /** Consumo médio por semana (últimas 8 semanas; migration 0244). */
+  consumo_semana?: number | null;
 };
+
+// "~12 por semana" (arredonda conforme o tamanho).
+export function textoConsumo(n: number | null | undefined) {
+  if (n == null || !isFinite(Number(n))) return null;
+  const v = Number(n);
+  if (v < 0.05) return null; // "gasta ~0" não diz nada
+  const f = v >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
+  return `gasta ~${f.toLocaleString("pt-BR")} por semana`;
+}
 
 export function mapaReferencia(lista: Referencia[] | null | undefined) {
   const m = new Map<string, Referencia>();
-  for (const r of lista ?? []) m.set(r.produto_id, { ...r, ultima_qtd: Number(r.ultima_qtd) || 0, comprado: Number(r.comprado) || 0 });
+  for (const r of lista ?? []) m.set(r.produto_id, { ...r, ultima_qtd: Number(r.ultima_qtd) || 0, comprado: Number(r.comprado) || 0, consumo_semana: r.consumo_semana == null ? null : Number(r.consumo_semana) });
   return m;
 }
 

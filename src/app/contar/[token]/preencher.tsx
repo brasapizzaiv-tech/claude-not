@@ -7,7 +7,7 @@ import type { Produto } from "@/lib/types";
 import { EstoqueInput, calcular, normalizarCaixas, type Caixa } from "@/components/estoque-input";
 import { LeitorQr } from "@/components/leitor-qr";
 import { salvarContagemPublica, buscarProdutosContagem, consultarEtiquetaContagem, type EtiquetaContagem } from "./actions";
-import { mapaReferencia, suspeito, explicacao, type Referencia } from "@/lib/contagem-referencia";
+import { mapaReferencia, suspeito, explicacao, textoConsumo, type Referencia } from "@/lib/contagem-referencia";
 import { ONDE_ROTULO, ehOnde, lerParcelas, type Parcela } from "@/lib/contagem-parcelas";
 
 type ExtraProduto = { id: string; nome: string; unidade: string; categoria: string; sim_nao?: boolean };
@@ -229,7 +229,7 @@ export function PreencherClient({
     if (!ehSuspeito(id)) {
       return (
         <div className="mt-1 text-mini text-zinc-400">
-          última contagem: {f(r.ultima_qtd)}{r.comprado > 0 ? ` · chegou depois: ${f(r.comprado)}` : ""}
+          última contagem: {f(r.ultima_qtd)}{r.comprado > 0 ? ` · chegou depois: ${f(r.comprado)}` : ""}{textoConsumo(r.consumo_semana) ? ` · ${textoConsumo(r.consumo_semana)}` : ""}
         </div>
       );
     }

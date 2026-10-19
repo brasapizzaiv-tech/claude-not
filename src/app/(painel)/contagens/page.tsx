@@ -38,6 +38,12 @@ export default async function ContagensPage() {
         <div className="flex flex-wrap items-center gap-2">
           <AvulsaForm categorias={categorias} colaboradores={colaboradores} />
           <Link
+            href="/contagens/consumo"
+            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+          >
+            <Icone nome="grafico" tamanho={15} className="mr-1.5" /> Consumo
+          </Link>
+          <Link
             href="/contagens/agendamentos"
             className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
           >

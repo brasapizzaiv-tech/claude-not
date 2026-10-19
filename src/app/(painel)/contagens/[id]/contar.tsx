@@ -11,7 +11,7 @@ import {
   finalizarContagem,
   reabrirContagem,
 } from "../actions";
-import { mapaReferencia, suspeito, explicacao, type Referencia } from "@/lib/contagem-referencia";
+import { mapaReferencia, suspeito, explicacao, type Referencia, textoConsumo } from "@/lib/contagem-referencia";
 import { lerParcelas, resumoParcelas, somaParcelas } from "@/lib/contagem-parcelas";
 
 type ItemInicial = {
@@ -426,7 +426,7 @@ export function ContarClient({
                               ) : (
                                 <div className="mt-0.5 text-right text-mini text-texto-fraco">
                                   {confirmados.has(p.id) && ehSuspeito(p.id) ? "✓ conferido · " : ""}
-                                  última: {refs.get(p.id)!.ultima_qtd}{refs.get(p.id)!.comprado > 0 ? ` · chegou: ${refs.get(p.id)!.comprado}` : ""}
+                                  última: {refs.get(p.id)!.ultima_qtd}{refs.get(p.id)!.comprado > 0 ? ` · chegou: ${refs.get(p.id)!.comprado}` : ""}{textoConsumo(refs.get(p.id)!.consumo_semana) ? ` · ${textoConsumo(refs.get(p.id)!.consumo_semana)}` : ""}
                                 </div>
                               )
                             )}
