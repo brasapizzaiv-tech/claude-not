@@ -8,6 +8,7 @@ import { BotaoConciliar } from "./conciliar";
 import { ManifestarNota } from "./manifestar";
 import { ItemProduto } from "./item-produto";
 import { ItemFator } from "./item-fator";
+import { ItemDestino } from "./item-destino";
 import { EntradaNota } from "./entrada-nota";
 import { LancamentoNota } from "./lancamento";
 import { ParcelasEditor } from "./parcelas-editor";
@@ -67,6 +68,11 @@ export default async function NotaDetalhePage({
       : { data: [] };
   const produtos = (prodData as { id: string; nome: string; unidade: string }[]) ?? [];
   const unidadeDe = new Map(produtos.map((p) => [p.id, p.unidade] as const));
+  // Pra quem é o item (sócios / funcionário) — lista de quem pode receber.
+  const { data: colsData } = itens.length > 0
+    ? await supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome")
+    : { data: [] };
+  const colaboradores = (colsData as { id: string; nome: string }[]) ?? [];
 
   // Fornecedores para vincular/corrigir na revisão do lançamento.
   // Inativos também: comprar de quem saiu das cotações ainda tem nota pra
@@ -226,6 +232,12 @@ export default async function NotaDetalhePage({
                         itemId={i.id}
                         produtoId={i.produto_id}
                         produtos={produtos}
+                      />
+                      <ItemDestino
+                        itemId={i.id}
+                        destino={(i as { destino?: string | null }).destino ?? null}
+                        colaboradorId={(i as { destino_colaborador_id?: string | null }).destino_colaborador_id ?? null}
+                        colaboradores={colaboradores}
                       />
                     </td>
                     <td className="px-4 py-2 text-right text-texto-suave">

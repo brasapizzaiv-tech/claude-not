@@ -314,10 +314,11 @@ export async function lancarNota(
   // Itens da nota (com o produto vinculado → conta do DRE).
   const { data: itensData } = await supabase
     .from("nota_itens")
-    .select("valor_total, produtos(categorias(dre_categoria_id))")
+    .select("valor_total, destino, produtos(categorias(dre_categoria_id))")
     .eq("nota_id", notaId);
   type IN = {
     valor_total: number | null;
+    destino: string | null;
     produtos: { categorias: { dre_categoria_id: string | null } | null } | null;
   };
   const itens = (itensData as unknown as IN[]) ?? [];
@@ -331,8 +332,19 @@ export async function lancarNota(
       fallbackId;
     porConta.set(contaServico, Number(nota.valor));
   } else if (itens.length > 0) {
+    // Item que não é da casa (migration 0243): Ana/Rafa → "Consumo dos
+    // sócios"; funcionário → "Outras despesas com pessoal" (volta descontado
+    // pela Compra interna dele).
+    const contaDestino = new Map<string, string | null>();
+    if (itens.some((i) => i.destino)) {
+      const { data: cs } = await supabase.from("dre_categorias").select("id, nome").in("nome", ["Consumo dos sócios", "Outras despesas com pessoal"]);
+      const porNome = new Map(((cs as { id: string; nome: string }[]) ?? []).map((c) => [c.nome, c.id]));
+      contaDestino.set("socios", porNome.get("Consumo dos sócios") ?? null);
+      contaDestino.set("funcionario", porNome.get("Outras despesas com pessoal") ?? null);
+    }
     for (const i of itens) {
       const contaId =
+        (i.destino ? contaDestino.get(i.destino) : null) ??
         i.produtos?.categorias?.dre_categoria_id ?? fallbackId;
       porConta.set(contaId, (porConta.get(contaId) ?? 0) + (Number(i.valor_total) || 0));
     }
@@ -428,10 +440,10 @@ export async function lancarNota(
   // (usado nas contagens/CMV e nas próximas cotações).
   const { data: itensRef } = await supabase
     .from("nota_itens")
-    .select("produto_id, valor_unit, fator")
+    .select("produto_id, valor_unit, fator, destino")
     .eq("nota_id", notaId);
-  for (const i of (itensRef as { produto_id: string | null; valor_unit: number | null; fator: number | null }[]) ?? []) {
-    if (i.produto_id && i.valor_unit != null && Number(i.valor_unit) > 0) {
+  for (const i of (itensRef as { produto_id: string | null; valor_unit: number | null; fator: number | null; destino: string | null }[]) ?? []) {
+    if (i.produto_id && !i.destino && i.valor_unit != null && Number(i.valor_unit) > 0) {
       // Nota em caixa (fator > 1) → preço por UNIDADE do produto.
       const fator = Number(i.fator) > 0 ? Number(i.fator) : 1;
       await supabase
@@ -733,4 +745,67 @@ export async function excluirNota(formData: FormData) {
   await supabase.from("notas_fiscais").delete().eq("id", id);
   revalidatePath("/notas");
   revalidatePath("/financeiro/contas");
+}
+
+// Item da nota que não é da casa (migration 0243): "socios" (Ana e Rafa) ou
+// "funcionario" (vira Compra interna da pessoa, pra descontar no acerto).
+// Sai do estoque, do CMV, do preço de referência e da conferência; no
+// financeiro cai em "Consumo dos sócios" / "Outras despesas com pessoal"
+// quando a nota é lançada.
+export async function definirDestinoItemNota(
+  itemId: string,
+  destino: "socios" | "funcionario" | null,
+  colaboradorId?: string | null,
+) {
+  await exigirAcesso("/notas");
+  const supabase = await createClient();
+  const { data: it } = await supabase
+    .from("nota_itens")
+    .select("id, nota_id, descricao, valor_total, destino_retirada_id, notas_fiscais(numero, emit_nome, situacao)")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!it) return { ok: false as const, mensagem: "Item não encontrado." };
+  if (destino === "funcionario" && !colaboradorId) return { ok: false as const, mensagem: "Escolha o funcionário." };
+  const nf = (Array.isArray(it.notas_fiscais) ? it.notas_fiscais[0] : it.notas_fiscais) as { numero?: string | null; emit_nome?: string | null; situacao?: string | null } | null;
+
+  // A Compra interna de antes sai — se ainda não foi acertada.
+  if (it.destino_retirada_id) {
+    const { data: ret } = await supabase.from("retiradas").select("status").eq("id", it.destino_retirada_id).maybeSingle();
+    if (ret && ret.status !== "aberto") {
+      return { ok: false as const, mensagem: "A Compra interna desse item já foi acertada com o funcionário. Ajuste por Compras internas." };
+    }
+    await supabase.from("retiradas").delete().eq("id", it.destino_retirada_id);
+  }
+
+  let retiradaId: number | null = null;
+  if (destino === "funcionario" && colaboradorId) {
+    const { data: col } = await supabase.from("colaboradores").select("nome, ativo").eq("id", colaboradorId).maybeSingle();
+    if (!col || !col.ativo) return { ok: false as const, mensagem: "Funcionário não encontrado (ou desligado)." };
+    const { data: userEq } = await supabase.auth.getUser();
+    const { data: ret, error } = await supabase
+      .from("retiradas")
+      .insert({
+        colaborador_id: colaboradorId,
+        nome: col.nome as string,
+        item: `${String(it.descricao ?? "Item").slice(0, 80)} (NF ${nf?.numero ?? ""})`,
+        valor: Math.round(Number(it.valor_total ?? 0) * 100) / 100,
+        data: hojeSP(),
+        status: "aberto",
+        observacao: `Comprado junto na nota de ${nf?.emit_nome ?? "fornecedor"}`.slice(0, 200),
+        criado_por: userEq.user?.id ?? null,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false as const, mensagem: `Não lancei a Compra interna: ${error.message}` };
+    retiradaId = Number((ret as { id: number }).id);
+  }
+
+  const { error } = await supabase
+    .from("nota_itens")
+    .update({ destino, destino_colaborador_id: destino === "funcionario" ? colaboradorId : null, destino_retirada_id: retiradaId })
+    .eq("id", itemId);
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath(`/notas/${it.nota_id}`);
+  revalidatePath("/retiradas");
+  return { ok: true as const, notaLancada: nf?.situacao === "lancada" };
 }

@@ -61,7 +61,7 @@ export async function calcularDivergencias(db: Db, pedidoId: string): Promise<Re
   const [{ data: ped }, { data: itens }, { data: nota }] = await Promise.all([
     db.from("pedidos").select("id, status, conf_colab_em, conferido_em").eq("id", pedidoId).maybeSingle(),
     db.from("pedido_itens").select("id, produto_id, qtd, preco_unit, qtd_recebida, preco_recebido, qtd_conf_colab, produtos(nome)").eq("pedido_id", pedidoId),
-    db.from("notas_fiscais").select("id, nota_itens(produto_id, descricao, qtd, valor_unit, fator)").eq("pedido_id", pedidoId).limit(1).maybeSingle(),
+    db.from("notas_fiscais").select("id, nota_itens(produto_id, descricao, qtd, valor_unit, fator, destino)").eq("pedido_id", pedidoId).limit(1).maybeSingle(),
   ]);
   const p = ped as { status: string; conf_colab_em: string | null; conferido_em: string | null } | null;
   const pis = (itens as unknown as PedItem[]) ?? [];
@@ -77,6 +77,8 @@ export async function calcularDivergencias(db: Db, pedidoId: string): Promise<Re
   const notaPorProduto = new Map<string, { qtd: number; valor: number }>();
   const notaSemProduto: NotaItem[] = [];
   for (const ni of nis) {
+    // Item pra sócios/funcionário (migration 0243): não é do pedido.
+    if ((ni as { destino?: string | null }).destino) continue;
     if (!ni.produto_id) { notaSemProduto.push(ni); continue; }
     const f = Number(ni.fator ?? 1) || 1;
     const a = notaPorProduto.get(ni.produto_id) ?? { qtd: 0, valor: 0 };
