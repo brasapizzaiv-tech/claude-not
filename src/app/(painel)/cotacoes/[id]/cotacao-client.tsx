@@ -2,7 +2,7 @@
 import { Icone } from "@/components/icone";
 import { confirmar } from "@/components/dialogo";
 
-import { Fragment, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Cotacao } from "@/lib/types";
 import { dataBR } from "@/lib/format";
@@ -93,9 +93,32 @@ export function CotacaoClient({
     setTimeout(() => setMsg(null), 4000);
   }
 
+  // Salva sozinho 1,5 s depois de parar de digitar: dá pra começar num PC e
+  // terminar em outro sem ter apertado "Salvar" (Rafael, 19/10/2026). O
+  // primeiro salvamento da visita guarda o backup do "Desfazer".
+  const [autoMsg, setAutoMsg] = useState<string | null>(null);
+  const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const backupFeito = useRef(false);
+  function aoDigitar() {
+    if (fechada) return;
+    if (autoTimer.current) clearTimeout(autoTimer.current);
+    autoTimer.current = setTimeout(async () => {
+      setAutoMsg("Salvando…");
+      try {
+        await salvarCotacaoItens(cotacao.id, montarItens(), backupFeito.current);
+        backupFeito.current = true;
+        setAutoMsg("Salvo sozinho");
+      } catch {
+        setAutoMsg("Não salvou — confira a internet e aperte Salvar");
+      }
+    }, 1500);
+  }
+  useEffect(() => () => { if (autoTimer.current) clearTimeout(autoTimer.current); }, []);
+
   function salvar() {
     startSave(async () => {
-      const r = await salvarCotacaoItens(cotacao.id, montarItens());
+      const r = await salvarCotacaoItens(cotacao.id, montarItens(), backupFeito.current);
+      backupFeito.current = true;
       setMsg(`Salvo! (${r?.gravados ?? 0} itens para cotar)`);
       setTimeout(() => setMsg(null), 4000);
     });
@@ -104,7 +127,8 @@ export function CotacaoClient({
   function gerarExclusivos() {
     startSave(async () => {
       // Salva as quantidades atuais antes de gerar os pedidos.
-      await salvarCotacaoItens(cotacao.id, montarItens());
+      await salvarCotacaoItens(cotacao.id, montarItens(), backupFeito.current);
+      backupFeito.current = true;
       const ex = await gerarPedidosExclusivos(cotacao.id);
       if (ex.ok && ex.gerados > 0)
         setMsg(`✓ ${ex.gerados} fornecedor(es) exclusivo(s) com pedido pronto — envie em “Ver pedidos”.`);
@@ -254,7 +278,8 @@ export function CotacaoClient({
         </select>
       </div>
 
-      <form ref={formRef}>
+      {autoMsg && <p className="mb-1 text-right text-xs text-texto-suave" aria-live="polite">{autoMsg}</p>}
+      <form ref={formRef} onInput={aoDigitar}>
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="rotulo text-left">

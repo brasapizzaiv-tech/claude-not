@@ -123,14 +123,19 @@ export async function gerarPedidosExclusivos(cotacaoId: string) {
 export async function salvarCotacaoItens(
   cotacaoId: string,
   itens: ItemCotacao[],
+  /** Salvamento automático enquanto digita: só o primeiro da visita guarda o
+   *  backup do "Desfazer" (senão cada tecla virava um backup). */
+  semBackup = false,
 ) {
   const supabase = await createClient();
 
   // Backup do estado ATUAL antes de sobrescrever (para "Desfazer").
-  const { data: atuais } = await supabase
-    .from("cotacao_itens")
-    .select("produto_id, qtd")
-    .eq("cotacao_id", cotacaoId);
+  const { data: atuais } = semBackup
+    ? { data: null }
+    : await supabase
+        .from("cotacao_itens")
+        .select("produto_id, qtd")
+        .eq("cotacao_id", cotacaoId);
   if (atuais && atuais.length > 0) {
     await supabase
       .from("cotacao_itens_backup")
@@ -484,4 +489,25 @@ export async function excluirCotacao(formData: FormData) {
   const id = formData.get("id") as string;
   await supabase.from("cotacoes").delete().eq("id", id);
   revalidatePath("/cotacoes");
+}
+
+// Tela Comparar: o que foi escolhido (fornecedor por item, oferta, quantidade,
+// divisão, conferidos) fica no sistema, pra continuar em outro PC (migration
+// 0241). Antes ficava só no navegador. A tela chama isto sozinha ao mexer.
+export type EstadoComparacao = {
+  conf?: string[];
+  sel?: Record<string, string>;
+  of?: Record<string, string>;
+  qtd?: Record<string, number>;
+  div?: Record<string, Record<string, number>>;
+  dividindo?: string[];
+};
+export async function salvarComparacao(cotacaoId: string, estado: EstadoComparacao) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const };
+  const { error } = await supabase
+    .from("cotacao_comparacao")
+    .upsert({ cotacao_id: cotacaoId, estado, atualizado_em: new Date().toISOString(), atualizado_por: user.id }, { onConflict: "cotacao_id" });
+  return error ? { ok: false as const } : { ok: true as const };
 }

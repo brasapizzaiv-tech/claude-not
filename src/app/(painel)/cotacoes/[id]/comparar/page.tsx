@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
 import type { Cotacao } from "@/lib/types";
+import type { EstadoComparacao } from "../../actions";
 import { custoComSt } from "@/lib/st";
 import {
   CompararClient,
@@ -28,6 +29,9 @@ export default async function CompararPage({
   if (!cotData) notFound();
   const cotacao = cotData as Cotacao;
   const travada = !!(cotData as { pedidos_gerados_em?: string | null }).pedidos_gerados_em;
+  // O que já foi escolhido nesta tela (em qualquer PC), salvo no sistema.
+  const { data: cmp } = await supabase.from("cotacao_comparacao").select("estado").eq("cotacao_id", id).maybeSingle();
+  const estadoSalvo = ((cmp as { estado?: EstadoComparacao } | null)?.estado ?? null) as EstadoComparacao | null;
 
   // Fornecedores que já tiveram pedido adiantado nesta cotação.
   const { data: pedidosExist } = await supabase
@@ -333,6 +337,7 @@ export default async function CompararPage({
           ultimaCompra={ultimaCompra}
           travada={travada}
           fornecedoresComPedido={fornecedoresComPedido}
+          estadoSalvo={estadoSalvo}
         />
       )}
     </div>

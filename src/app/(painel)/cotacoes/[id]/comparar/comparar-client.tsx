@@ -3,11 +3,11 @@
 import { Icone } from "@/components/icone";
 import { avisar, confirmar } from "@/components/dialogo";
 
-import { Fragment, useCallback, useMemo, useState, useTransition } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dataBR } from "@/lib/format";
-import { gerarPedidos, novaCotacaoDosFaltantes, adiantarPedidoFornecedor } from "../../actions";
+import { gerarPedidos, novaCotacaoDosFaltantes, adiantarPedidoFornecedor, salvarComparacao, type EstadoComparacao } from "../../actions";
 
 export type FornecedorCol = {
   id: string;
@@ -79,6 +79,7 @@ export function CompararClient({
   ultimaCompra,
   travada,
   fornecedoresComPedido,
+  estadoSalvo,
 }: {
   cotacaoId: string;
   produtos: ProdutoLinha[];
@@ -87,6 +88,8 @@ export function CompararClient({
   ultimaCompra: Record<string, { forn: string; preco: number | null; data: string }>;
   travada: boolean;
   fornecedoresComPedido: string[];
+  /** O que já foi escolhido aqui, salvo no sistema (vale em qualquer PC). */
+  estadoSalvo?: EstadoComparacao | null;
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
@@ -98,6 +101,7 @@ export function CompararClient({
   // Fica guardado no próprio navegador (não perde ao recarregar).
   const confKey = `cmp_conf_${cotacaoId}`;
   const [conf, setConf] = useState<Set<string>>(() => {
+    if (estadoSalvo) return new Set(estadoSalvo.conf ?? []);
     if (typeof window === "undefined") return new Set();
     try {
       return new Set(JSON.parse(localStorage.getItem(confKey) || "[]"));
@@ -123,6 +127,7 @@ export function CompararClient({
     const base = Object.fromEntries(
       produtos.map((p) => [p.produto_id, p.melhorForn ?? ""]),
     );
+    if (estadoSalvo) return { ...base, ...(estadoSalvo.sel ?? {}) };
     if (typeof window === "undefined") return base;
     try {
       const salvo = JSON.parse(localStorage.getItem(selKey) || "{}");
@@ -134,6 +139,7 @@ export function CompararClient({
   // Oferta escolhida por produto: "main" (marca principal) ou id da oferta extra.
   const ofertaKey = `cmp_of_${cotacaoId}`;
   const [oferta, setOferta] = useState<Record<string, string>>(() => {
+    if (estadoSalvo) return estadoSalvo.of ?? {};
     if (typeof window === "undefined") return {};
     try {
       return JSON.parse(localStorage.getItem(ofertaKey) || "{}");
@@ -164,6 +170,7 @@ export function CompararClient({
   const qtdKey = `cmp_qtd_${cotacaoId}`;
   const [qtds, setQtds] = useState<Record<string, number>>(() => {
     const base = Object.fromEntries(produtos.map((p) => [p.produto_id, p.qtd]));
+    if (estadoSalvo) return { ...base, ...(estadoSalvo.qtd ?? {}) };
     if (typeof window === "undefined") return base;
     try {
       return { ...base, ...JSON.parse(localStorage.getItem(qtdKey) || "{}") };
@@ -184,6 +191,7 @@ export function CompararClient({
   // Dividir um item entre vários fornecedores.
   const divKey = `cmp_div_${cotacaoId}`;
   const [divisao, setDivisao] = useState<Record<string, Record<string, number>>>(() => {
+    if (estadoSalvo) return estadoSalvo.div ?? {};
     if (typeof window === "undefined") return {};
     try {
       return JSON.parse(localStorage.getItem(divKey) || "{}");
@@ -193,6 +201,7 @@ export function CompararClient({
   });
   const dividKey = `cmp_dividindo_${cotacaoId}`;
   const [dividindo, setDividindo] = useState<Set<string>>(() => {
+    if (estadoSalvo) return new Set(estadoSalvo.dividindo ?? []);
     if (typeof window === "undefined") return new Set();
     try {
       return new Set(JSON.parse(localStorage.getItem(dividKey) || "[]"));
@@ -226,6 +235,35 @@ export function CompararClient({
       if (fid) setDivQty(pid, fid, qtds[pid] ?? 0);
     }
   }
+
+  // Tudo o que foi escolhido aqui vai pro sistema (migration 0241), pra
+  // continuar em outro PC. Salva sozinho, 0,8 s depois da última mexida.
+  const estadoAtual = useMemo(
+    () => JSON.stringify({ conf: [...conf], sel: escolha, of: oferta, qtd: qtds, div: divisao, dividindo: [...dividindo] }),
+    [conf, escolha, oferta, qtds, divisao, dividindo],
+  );
+  // Primeira vez aberta num PC que já tinha escolhas guardadas no navegador
+  // (antes da mudança): sobe tudo pro sistema logo de cara.
+  const [veioDoNavegador] = useState(() => {
+    if (estadoSalvo || typeof window === "undefined") return false;
+    try {
+      return [confKey, selKey, ofertaKey, qtdKey, divKey, dividKey].some((k) => !!localStorage.getItem(k));
+    } catch {
+      return false;
+    }
+  });
+  const ultimoSalvo = useRef<string>(veioDoNavegador ? "" : estadoAtual);
+  const [salvoNoSistema, setSalvoNoSistema] = useState<"" | "salvando" | "salvo" | "erro">(estadoSalvo ? "salvo" : "");
+  useEffect(() => {
+    if (travada || estadoAtual === ultimoSalvo.current) return;
+    const t = setTimeout(async () => {
+      setSalvoNoSistema("salvando");
+      const r = await salvarComparacao(cotacaoId, JSON.parse(estadoAtual) as EstadoComparacao).catch(() => ({ ok: false as const }));
+      if (r.ok) ultimoSalvo.current = estadoAtual;
+      setSalvoNoSistema(r.ok ? "salvo" : "erro");
+    }, 800);
+    return () => clearTimeout(t);
+  }, [estadoAtual, cotacaoId, travada]);
 
   // Alocação final por produto: {fornecedor_id: qtd}.
   const alocacaoDe = useCallback(
@@ -487,6 +525,11 @@ export function CompararClient({
 
   return (
     <div className="mt-6">
+      {!travada && salvoNoSistema && (
+        <p className="mb-2 text-right text-xs text-texto-suave" aria-live="polite">
+          {salvoNoSistema === "salvando" ? "Salvando…" : salvoNoSistema === "erro" ? "Não consegui salvar as escolhas — confira a internet." : "Escolhas salvas no sistema (abrem em qualquer PC)."}
+        </p>
+      )}
       {travada && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-cartao border border-green-300 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30">
           <p className="text-sm font-medium text-green-800 dark:text-green-300">
