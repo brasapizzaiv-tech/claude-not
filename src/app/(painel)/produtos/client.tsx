@@ -571,6 +571,27 @@ export function ProdutosClient({
                   />
                 </div>
               </div>
+              {/* Vários tamanhos (migration 0245): continua em unidade, mas a
+                  contagem diz quantas de cada tamanho e mostra o total real. */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-texto-suave" htmlFor="prod-tamanhos">
+                  Tamanhos da embalagem <span className="font-normal text-texto-fraco">(se vem em vários, ex.: extrato de tomate)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="prod-tamanhos"
+                    name="tamanhos"
+                    defaultValue={(editando?.tamanhos ?? []).map((n) => String(n).replace(".", ",")).join("; ")}
+                    placeholder="ex.: 1; 1,04; 1,7 — vazio = um tamanho só"
+                    className={inputCls}
+                  />
+                  <select name="medida" defaultValue={editando?.medida ?? "kg"} aria-label="Medida dos tamanhos" className={`${inputCls} max-w-[90px]`}>
+                    <option value="kg">kg</option>
+                    <option value="L">L</option>
+                  </select>
+                </div>
+                <p className="mt-1 text-xs text-texto-fraco">Na contagem cada caixa diz o tamanho e aparece quanto dá de verdade (ex.: 3 de 1 kg + 2 de 1,7 kg = 6,4 kg).</p>
+              </div>
               <p className="-mt-1 text-xs text-texto-fraco">
                 Estoque ideal = quanto você quer ter sempre. Na cotação, a
                 sugestão de compra será: ideal − o que foi contado, arredondado

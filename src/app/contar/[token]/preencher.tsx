@@ -29,6 +29,7 @@ function caixasDoItem(i: ItemInicial): Caixa[] {
     v: String(p.qtd),
     onde: p.onde,
     etiqueta: p.etiqueta_id && p.etiqueta_numero != null ? { id: p.etiqueta_id, numero: p.etiqueta_numero } : null,
+    tam: p.tam ?? null,
   }));
 }
 
@@ -393,6 +394,7 @@ export function PreencherClient({
               onde: c.onde,
               etiqueta_id: c.etiqueta?.id ?? null,
               etiqueta_numero: c.etiqueta?.numero ?? null,
+              tam: c.tam ?? null,
             })),
         }));
       const r = await salvarContagemPublica(token, payload);
@@ -562,6 +564,8 @@ export function PreencherClient({
                                       caixas={valores[p.id] ?? [{ v: "", onde: null }]}
                                       onCaixasChange={(cs) => setCaixas(p.id, cs)}
                                       comLocal
+                                      tamanhos={p.tamanhos}
+                                      medida={p.medida}
                                     />
                                   </div>
                                 </label>

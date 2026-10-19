@@ -1,5 +1,6 @@
 "use server";
 
+import { lerListaTamanhos } from "@/lib/embalagens";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
@@ -16,6 +17,10 @@ export async function salvarProduto(formData: FormData) {
   const estoque_minimo = Number(estoqueMinimoRaw.replace(",", ".")) || 0;
   const estoqueIdealRaw = (formData.get("estoque_ideal") as string) || "0";
   const estoque_ideal = Number(estoqueIdealRaw.replace(",", ".")) || 0;
+  // Vários tamanhos de embalagem (migration 0245): "1; 1,04; 1,7" em kg ou L.
+  const tamanhosLidos = lerListaTamanhos((formData.get("tamanhos") as string) || "");
+  const medidaRaw = (formData.get("medida") as string) || "";
+  const medida = tamanhosLidos.length ? (medidaRaw === "L" ? "L" : "kg") : null;
   const fardoRaw = (formData.get("fardo") as string) || "0";
   const fardo = Number(fardoRaw.replace(",", ".")) || 0;
   const observacoes =
@@ -39,6 +44,8 @@ export async function salvarProduto(formData: FormData) {
     estoque_minimo,
     estoque_ideal,
     fardo,
+    medida,
+    tamanhos: tamanhosLidos.length ? tamanhosLidos : null,
     validade_congelado: dias("validade_congelado"),
     validade_resfriado: dias("validade_resfriado"),
     validade_ambiente: dias("validade_ambiente"),

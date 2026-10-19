@@ -3,6 +3,7 @@ import { Icone } from "@/components/icone";
 
 import { useState } from "react";
 import { ONDES, ONDE_ROTULO, type Onde } from "@/lib/contagem-parcelas";
+import { textoTamanho, totalReal } from "@/lib/embalagens";
 
 // Calcula uma expressão simples (+ - * /), aceitando vírgula decimal.
 // Só permite números e operadores — nada de código.
@@ -19,12 +20,12 @@ export function calcular(raw: string): number {
 
 // Uma CAIXA do campo: o número digitado, onde aquela parte está (congelado,
 // resfriado, ambiente — ou sem dizer) e, se veio de uma etiqueta lida, qual.
-export type Caixa = { v: string; onde: Onde | null; etiqueta?: { id: string; numero: number } | null };
+export type Caixa = { v: string; onde: Onde | null; etiqueta?: { id: string; numero: number } | null; tam?: number | null };
 
 // Aceita o formato antigo (só o texto) e o novo.
 export function normalizarCaixas(cs?: (string | Caixa)[] | null): Caixa[] {
   if (!cs || cs.length === 0) return [{ v: "", onde: null }];
-  return cs.map((c) => (typeof c === "string" ? { v: c, onde: null } : { v: c.v ?? "", onde: c.onde ?? null, etiqueta: c.etiqueta ?? null }));
+  return cs.map((c) => (typeof c === "string" ? { v: c, onde: null } : { v: c.v ?? "", onde: c.onde ?? null, etiqueta: c.etiqueta ?? null, tam: c.tam ?? null }));
 }
 
 // Resultado com vírgula, sem zeros sobrando (61 · 2,5 · 0,333).
@@ -48,6 +49,8 @@ export function EstoqueInput({
   caixas: caixasProp,
   onCaixasChange,
   comLocal,
+  tamanhos,
+  medida,
 }: {
   name: string;
   defaultValue?: string;
@@ -55,6 +58,9 @@ export function EstoqueInput({
   caixas?: (string | Caixa)[];
   onCaixasChange?: (caixas: Caixa[]) => void;
   comLocal?: boolean;
+  /** Produto em vários tamanhos (migration 0245): cada caixa diz o tamanho. */
+  tamanhos?: number[] | null;
+  medida?: string | null;
 }) {
   const [caixasInterno, setCaixasInterno] = useState<Caixa[]>([{ v: defaultValue ?? "", onde: null }]);
   const controlado = caixasProp !== undefined;
@@ -67,6 +73,8 @@ export function EstoqueInput({
   const [ativo, setAtivo] = useState(0);
 
   const total = Math.round(caixas.reduce((s, b) => s + calcular(b.v), 0) * 1000) / 1000;
+  const comTamanhos = (tamanhos?.length ?? 0) > 0;
+  const real = comTamanhos ? totalReal(caixas.map((c) => ({ qtd: calcular(c.v), tam: c.tam }))) : null;
 
   const setCaixa = (i: number, patch: Partial<Caixa>) =>
     setCaixas((cs) => cs.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
@@ -117,6 +125,19 @@ export function EstoqueInput({
               placeholder={caixas.length > 1 ? `lugar ${i + 1}` : "0"}
               className={boxCls}
             />
+            {comTamanhos && (
+              <select
+                value={c.tam ?? ""}
+                onChange={(e) => setCaixa(i, { tam: e.target.value ? Number(e.target.value) : null })}
+                disabled={disabled}
+                title="Tamanho de cada unidade"
+                aria-label="Tamanho"
+                className={`shrink-0 rounded-lg border px-2 py-2 text-sm ${c.tam ? "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200" : "border-amber-400 text-amber-700 dark:text-amber-300"} bg-white dark:bg-zinc-950`}
+              >
+                <option value="">tamanho?</option>
+                {(tamanhos ?? []).map((t) => <option key={t} value={t}>{textoTamanho(t, medida)}</option>)}
+              </select>
+            )}
             {comLocal && (
               <select
                 value={c.onde ?? ""}
@@ -171,6 +192,15 @@ export function EstoqueInput({
           </span>
         )}
       </div>
+      {real && real.total > 0 && (
+        <p className="mt-1 text-sm text-zinc-500">
+          Dá <b className="text-zinc-800 dark:text-zinc-200">{textoTamanho(real.total, medida)}</b> no total
+          {real.semTamanho > 0 ? <span className="text-amber-600"> (+ {real.semTamanho} sem tamanho — escolha o tamanho)</span> : null}
+        </p>
+      )}
+      {comTamanhos && caixas.length === 1 && !real?.total && (
+        <p className="mt-1 text-xs text-zinc-500">Vem em vários tamanhos: escolha o tamanho; tem de mais de um? toque em “+ caixa” pra cada tamanho.</p>
+      )}
 
       {calc && caixas.some((c) => temConta(c.v)) && (
         <p className="mt-1 text-right text-sm text-zinc-500">

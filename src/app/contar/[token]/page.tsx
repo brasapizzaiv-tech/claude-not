@@ -9,6 +9,8 @@ type RpcProduto = {
   unidade: string;
   categoria: string | null;
   sim_nao?: boolean;
+  medida?: "kg" | "L" | null;
+  tamanhos?: number[] | null;
 };
 
 export default async function ContarPublicoPage({
@@ -47,6 +49,8 @@ export default async function ContarPublicoPage({
         unidade: p.unidade,
         categorias: p.categoria ? { nome: p.categoria } : null,
         contagem_sim_nao: !!p.sim_nao,
+        medida: p.medida ?? null,
+        tamanhos: (p.tamanhos ?? []).map(Number).filter((n) => n > 0),
       }) as Produto,
   );
 

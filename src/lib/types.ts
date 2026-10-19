@@ -125,6 +125,8 @@ export type Produto = {
   criado_em: string;
   // Vem do join com categorias.
   categorias?: { nome: string } | null;
+  medida?: "kg" | "L" | null; // tamanhos da embalagem (migration 0245)
+  tamanhos?: number[] | null;
 };
 
 export type StatusCotacao = "aberta" | "fechada";

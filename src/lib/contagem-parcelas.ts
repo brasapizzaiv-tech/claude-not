@@ -10,6 +10,8 @@ export type Parcela = {
   onde: Onde | null;
   etiqueta_id?: string | null;
   etiqueta_numero?: number | null;
+  /** Tamanho da unidade (kg/L) quando o produto vem em vários (migration 0245). */
+  tam?: number | null;
 };
 
 export const ONDE_ROTULO: Record<Onde, string> = {
@@ -38,6 +40,7 @@ export function lerParcelas(raw: unknown): Parcela[] {
       onde: ehOnde(o.onde) ? o.onde : null,
       etiqueta_id: typeof o.etiqueta_id === "string" ? o.etiqueta_id : null,
       etiqueta_numero: Number.isFinite(Number(o.etiqueta_numero)) && o.etiqueta_numero != null ? Number(o.etiqueta_numero) : null,
+      tam: Number(o.tam) > 0 ? Number(o.tam) : null,
     });
   }
   return out;
@@ -56,5 +59,10 @@ export function resumoParcelas(ps: Parcela[]): string {
   }
   const partes = [...porOnde.entries()].map(([k, v]) => `${f(v)} ${k}`);
   const etiq = ps.filter((p) => p.etiqueta_numero != null).map((p) => p.etiqueta_numero);
-  return partes.join(" · ") + (etiq.length ? ` (etiq. ${etiq.join(", ")})` : "");
+  // Por tamanho: "3 × 1 kg + 2 × 1,7 kg".
+  const comTam = ps.filter((p) => p.tam);
+  const tams = comTam.length
+    ? " · " + [...new Set(comTam.map((p) => p.tam as number))].map((t) => `${f(comTam.filter((p) => p.tam === t).reduce((s, p) => s + p.qtd, 0))} × ${f(t)}`).join(" + ")
+    : "";
+  return partes.join(" · ") + tams + (etiq.length ? ` (etiq. ${etiq.join(", ")})` : "");
 }
