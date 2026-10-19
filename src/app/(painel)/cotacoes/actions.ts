@@ -511,3 +511,32 @@ export async function salvarComparacao(cotacaoId: string, estado: EstadoComparac
     .upsert({ cotacao_id: cotacaoId, estado, atualizado_em: new Date().toISOString(), atualizado_por: user.id }, { onConflict: "cotacao_id" });
   return error ? { ok: false as const } : { ok: true as const };
 }
+
+// "Enviado" do WhatsApp na tela de fornecedores da cotação (migration 0242):
+// fica no sistema, não mais só no navegador.
+export async function marcarEnviadoCotacao(cotacaoId: string, fornecedorIds: string[]) {
+  if (fornecedorIds.length === 0) return { ok: true as const };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("cotacao_fornecedores")
+    .update({ enviado_em: new Date().toISOString() })
+    .eq("cotacao_id", cotacaoId)
+    .in("fornecedor_id", fornecedorIds)
+    .is("enviado_em", null);
+  return error ? { ok: false as const } : { ok: true as const };
+}
+export async function limparEnviadosCotacao(cotacaoId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("cotacao_fornecedores").update({ enviado_em: null }).eq("cotacao_id", cotacaoId);
+  return error ? { ok: false as const } : { ok: true as const };
+}
+
+// Texto da mensagem do WhatsApp da cotação (vale pra todas, em qualquer PC).
+export async function salvarMsgCotacao(texto: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("wpp_config")
+    .update({ msg_cotacao: (texto || "").slice(0, 2000) })
+    .not("empresa_id", "is", null);
+  return error ? { ok: false as const } : { ok: true as const };
+}

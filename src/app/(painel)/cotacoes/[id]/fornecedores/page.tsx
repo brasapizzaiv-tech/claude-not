@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { randomUUID } from "crypto";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
@@ -33,6 +34,11 @@ export default async function CotacaoFornecedoresPage({
   const produtoIds = (itens ?? []).map((i) => i.produto_id);
 
   let linhas: FornecedorLinha[] = [];
+  // Quem entrou sozinho agora pela marca "Sempre convidar" (pra avisar na tela).
+  const autoConvidados: string[] = [];
+  // Texto da mensagem do WhatsApp, salvo no sistema (vale em qualquer PC).
+  const { data: wcfg } = await supabase.from("wpp_config").select("msg_cotacao").maybeSingle();
+  const msgSalva = ((wcfg as { msg_cotacao?: string | null } | null)?.msg_cotacao ?? null) || null;
 
   if (produtoIds.length > 0) {
     // Quais fornecedores fornecem esses produtos (e quantos deles).
@@ -56,17 +62,35 @@ export default async function CotacaoFornecedoresPage({
       fornIds.length
         ? supabase
             .from("fornecedores")
-            .select("id, nome, whatsapp, contato")
+            .select("id, nome, whatsapp, contato, cotacao_padrao")
             .in("id", fornIds)
             .eq("ativo", true)
         : Promise.resolve({
-            data: [] as { id: string; nome: string; whatsapp: string | null; contato: string | null }[],
+            data: [] as { id: string; nome: string; whatsapp: string | null; contato: string | null; cotacao_padrao: boolean }[],
           }),
       supabase
         .from("cotacao_fornecedores")
-        .select("fornecedor_id, status, token")
+        .select("fornecedor_id, status, token, enviado_em")
         .eq("cotacao_id", id),
     ]);
+
+    // "Sempre convidar" (migration 0242): na primeira vez que a cotação tem
+    // itens e abre aqui, os marcados que vendem algo dela entram convidados.
+    // Uma vez só (padrao_convidados_em) — quem foi tirado à mão não volta.
+    const extra = cotData as { padrao_convidados_em?: string | null; pedidos_gerados_em?: string | null; status?: string };
+    const jaConv = new Set((convidados ?? []).map((c) => c.fornecedor_id as string));
+    const sempre = ((forns ?? []) as { id: string; nome: string; cotacao_padrao?: boolean }[]).filter((f) => f.cotacao_padrao && !jaConv.has(f.id));
+    if (!extra.padrao_convidados_em && !extra.pedidos_gerados_em && extra.status !== "fechada" && sempre.length > 0) {
+      const { data: novos } = await supabase
+        .from("cotacao_fornecedores")
+        .insert(sempre.map((f) => ({ cotacao_id: id, fornecedor_id: f.id, token: randomUUID().replace(/-/g, "") })))
+        .select("fornecedor_id, status, token, enviado_em");
+      if (novos) {
+        (convidados ?? []).push(...novos);
+        autoConvidados.push(...sempre.map((f) => f.nome));
+        await supabase.from("cotacoes").update({ padrao_convidados_em: new Date().toISOString() }).eq("id", id);
+      }
+    }
 
     const convidadoPor = new Map(
       (convidados ?? []).map((c) => [c.fornecedor_id, c]),
@@ -84,6 +108,8 @@ export default async function CotacaoFornecedoresPage({
           convidado: !!conv,
           token: conv?.token ?? null,
           respondido: conv?.status === "respondido",
+          enviado: !!(conv as { enviado_em?: string | null } | undefined)?.enviado_em,
+          sempre: !!(f as { cotacao_padrao?: boolean }).cotacao_padrao,
         };
       })
       .sort((a, b) => b.cobertura - a.cobertura || a.nome.localeCompare(b.nome));
@@ -129,6 +155,8 @@ export default async function CotacaoFornecedoresPage({
           cotacaoId={cotacao.id}
           totalItens={produtoIds.length}
           linhas={linhas}
+          msgSalva={msgSalva}
+          autoConvidados={autoConvidados}
         />
       )}
     </div>

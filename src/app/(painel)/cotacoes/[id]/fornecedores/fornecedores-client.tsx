@@ -4,12 +4,15 @@ import { Icone } from "@/components/icone";
 import { BotaoAcao } from "@/components/enviar";
 
 import { siteUrl } from "@/lib/site-url";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   convidarFornecedor,
   convidarVarios,
   removerFornecedor,
+  marcarEnviadoCotacao,
+  limparEnviadosCotacao,
+  salvarMsgCotacao,
 } from "../../actions";
 
 export type FornecedorLinha = {
@@ -21,6 +24,8 @@ export type FornecedorLinha = {
   convidado: boolean;
   token: string | null;
   respondido: boolean;
+  enviado: boolean; // link já mandado pelo WhatsApp (salvo no sistema)
+  sempre: boolean; // marcado "Sempre convidar" no cadastro
 };
 
 const EMPRESA = "Brasa Pizzaria e Restaurante";
@@ -33,10 +38,16 @@ export function FornecedoresClient({
   cotacaoId,
   totalItens,
   linhas,
+  msgSalva = null,
+  autoConvidados = [],
 }: {
   cotacaoId: string;
   totalItens: number;
   linhas: FornecedorLinha[];
+  /** Texto da mensagem salvo no sistema (null = nunca personalizado). */
+  msgSalva?: string | null;
+  /** Quem entrou sozinho agora pela marca "Sempre convidar". */
+  autoConvidados?: string[];
 }) {
   const router = useRouter();
   // Extensão "Brasa WhatsApp Sender": depois de enviar pelo WhatsApp Web ela
@@ -54,6 +65,7 @@ export function FornecedoresClient({
   const origin = siteUrl();
   const [convidandoTodos, setConvidandoTodos] = useState(false);
   const [template, setTemplate] = useState<string>(() => {
+    if (msgSalva) return msgSalva;
     if (typeof window === "undefined") return MSG_PADRAO;
     try {
       const salvo = localStorage.getItem("cot_msg_template");
@@ -65,34 +77,43 @@ export function FornecedoresClient({
     }
   });
   const [enviados, setEnviados] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
+    const doSistema = linhas.filter((l) => l.enviado).map((l) => l.id);
+    if (typeof window === "undefined") return new Set(doSistema);
     try {
-      return new Set(JSON.parse(localStorage.getItem(`cot_env_${cotacaoId}`) || "[]"));
+      return new Set([...doSistema, ...JSON.parse(localStorage.getItem(`cot_env_${cotacaoId}`) || "[]")]);
     } catch {
-      return new Set();
+      return new Set(doSistema);
     }
   });
+  // Enviados marcados só neste navegador (antes da mudança) sobem pro sistema;
+  // o texto personalizado daqui também, se o sistema ainda não tiver um.
+  useEffect(() => {
+    const soAqui = linhas.filter((l) => l.convidado && !l.enviado && enviados.has(l.id)).map((l) => l.id);
+    if (soAqui.length) void marcarEnviadoCotacao(cotacaoId, soAqui);
+    if (!msgSalva && template !== MSG_PADRAO) void salvarMsgCotacao(template);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Texto da mensagem: salva no sistema 1 s depois de parar de digitar.
+  const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function salvarTemplate(v: string) {
     setTemplate(v);
     try {
       localStorage.setItem("cot_msg_template", v);
     } catch {}
+    if (msgTimer.current) clearTimeout(msgTimer.current);
+    msgTimer.current = setTimeout(() => { void salvarMsgCotacao(v); }, 1000);
   }
   function marcarEnviado(id: string) {
-    setEnviados((s) => {
-      const n = new Set(s).add(id);
-      try {
-        localStorage.setItem(`cot_env_${cotacaoId}`, JSON.stringify([...n]));
-      } catch {}
-      return n;
-    });
+    setEnviados((s) => new Set(s).add(id));
+    void marcarEnviadoCotacao(cotacaoId, [id]);
   }
   function resetarEnviados() {
     setEnviados(new Set());
     try {
       localStorage.removeItem(`cot_env_${cotacaoId}`);
     } catch {}
+    void limparEnviadosCotacao(cotacaoId);
   }
 
   async function convidar(fornecedorId: string) {
@@ -164,6 +185,11 @@ export function FornecedoresClient({
 
   return (
     <div className="mt-6 space-y-8">
+      {autoConvidados.length > 0 && (
+        <p className="rounded-controle bg-destaque px-4 py-3 text-sm text-texto" role="status">
+          Já convidei sozinho os de sempre: <b>{autoConvidados.join(", ")}</b>. Pra mudar quem entra sozinho, use <b>Sempre convidar</b> em Fornecedores.
+        </p>
+      )}
       {/* Fornecedores disponíveis */}
       <div>
         <div className="mb-2 flex items-center justify-between gap-2">
@@ -197,6 +223,7 @@ export function FornecedoresClient({
                   <tr key={l.id} className="">
                     <td className="px-4 py-2 font-medium text-texto">
                       {l.nome}
+                      {l.sempre && <span className="pilula ml-2 align-middle">sempre</span>}
                       {!l.whatsapp && (
                         <span className="ml-2 text-mini text-amber-500">sem WhatsApp</span>
                       )}

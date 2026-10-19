@@ -19,6 +19,8 @@ function dados(formData: FormData) {
     // Padrão das notas desse fornecedor (preenche sozinho ao vincular/importar).
     dre_categoria_id: get("dre_categoria_id"),
     tipo_nota: (() => { const t = get("tipo_nota"); return t === "mercadoria" || t === "servico" ? t : null; })(),
+    // "Sempre convidar" pras cotações (migration 0242).
+    cotacao_padrao: formData.get("cotacao_padrao") === "on",
   };
 }
 
@@ -79,4 +81,20 @@ export async function excluirFornecedor(formData: FormData) {
   // Exclusão "suave": marca como inativo para preservar histórico.
   await supabase.from("fornecedores").update({ ativo: false }).eq("id", id);
   revalidatePath("/fornecedores");
+}
+
+// Inativar (some das cotações, guarda o histórico) e reativar depois.
+export async function alternarAtivoFornecedor(id: string, ativo: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("fornecedores").update({ ativo }).eq("id", id);
+  revalidatePath("/fornecedores");
+  return { ok: !error };
+}
+
+// "Sempre convidar": entra sozinho em toda cotação nova que tenha item dele.
+export async function alternarPadraoFornecedor(id: string, padrao: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("fornecedores").update({ cotacao_padrao: padrao }).eq("id", id);
+  revalidatePath("/fornecedores");
+  return { ok: !error };
 }

@@ -23,6 +23,7 @@ export type Fornecedor = {
   dre_categoria_id?: string | null; // categoria padrão das notas desse fornecedor
   tipo_nota?: "mercadoria" | "servico" | null;
   categoria_ids?: string[]; // categorias de produto que ele fornece (cotação)
+  cotacao_padrao?: boolean; // "Sempre convidar" pras cotações (migration 0242)
 };
 
 export type Categoria = {

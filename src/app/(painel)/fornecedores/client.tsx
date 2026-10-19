@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Enviar } from "@/components/enviar";
 import type { Fornecedor } from "@/lib/types";
-import { salvarFornecedor, excluirFornecedor } from "./actions";
+import { salvarFornecedor, alternarAtivoFornecedor, alternarPadraoFornecedor } from "./actions";
+import { BotaoAcao } from "@/components/enviar";
 
 const inputCls =
   "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
@@ -25,6 +26,12 @@ export function FornecedoresClient({
   const grupos = [...new Set(categorias.map((c) => c.grupo))];
   const [editando, setEditando] = useState<Fornecedor | null>(null);
   const [aberto, setAberto] = useState(false);
+  // Ativos / inativos (inativo não aparece nas cotações; dá pra reativar).
+  const [verInativos, setVerInativos] = useState(false);
+  const ativos = fornecedores.filter((f) => f.ativo);
+  const inativos = fornecedores.filter((f) => !f.ativo);
+  const lista = verInativos ? inativos : ativos;
+  const padroes = ativos.filter((f) => f.cotacao_padrao).length;
 
   function abrirNovo() {
     setEditando(null);
@@ -43,8 +50,8 @@ export function FornecedoresClient({
             Fornecedores
           </h1>
           <p className="mt-1 text-texto-suave">
-            {fornecedores.length}{" "}
-            {fornecedores.length === 1 ? "cadastrado" : "cadastrados"}
+            {ativos.length} {ativos.length === 1 ? "ativo" : "ativos"}
+            {padroes > 0 ? ` · ${padroes} sempre convidado${padroes === 1 ? "" : "s"} nas cotações` : ""}
           </p>
         </div>
         <button
@@ -55,10 +62,18 @@ export function FornecedoresClient({
         </button>
       </div>
 
-      {fornecedores.length === 0 ? (
+      <div className="mb-4 flex flex-wrap gap-2">
+        {([[false, `Ativos`, ativos.length], [true, `Inativos`, inativos.length]] as [boolean, string, number][]).map(([v, rot, n]) => (
+          <button key={rot} type="button" onClick={() => setVerInativos(v)} aria-pressed={verInativos === v}
+            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold ${verInativos === v ? "bg-texto text-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}>
+            {rot} <span className="font-numero">{n}</span>
+          </button>
+        ))}
+      </div>
+
+      {lista.length === 0 ? (
         <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
-          Nenhum fornecedor ainda. Clique em <b>+ Adicionar</b> para cadastrar o
-          primeiro.
+          {verInativos ? "Nenhum fornecedor inativo." : <>Nenhum fornecedor ainda. Clique em <b>+ Adicionar</b> para cadastrar o primeiro.</>}
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
@@ -74,13 +89,14 @@ export function FornecedoresClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">
-                {fornecedores.map((f) => (
+                {lista.map((f) => (
                   <tr
                     key={f.id}
                     className="transition hover:bg-superficie-suave"
                   >
                     <td className="px-4 py-3 font-medium text-texto">
                       {f.nome}
+                      {f.ativo && f.cotacao_padrao && <span className="pilula ml-2 align-middle">sempre convidado</span>}
                       {f.cnpj && (
                         <span className="block text-xs font-normal text-texto-fraco">
                           {f.cnpj}
@@ -112,14 +128,21 @@ export function FornecedoresClient({
                       >
                         Editar
                       </button>
-                      <form action={excluirFornecedor} className="inline">
-                        <input type="hidden" name="id" value={f.id} />
-                        <Enviar
-                          className="text-texto-fraco hover:text-red-600"
+                      {f.ativo && (
+                        <BotaoAcao
+                          aoClicar={() => alternarPadraoFornecedor(f.id, !f.cotacao_padrao)}
+                          title={f.cotacao_padrao ? "Deixar de convidar sempre" : "Entra sozinho em toda cotação nova que tenha item dele"}
+                          className="mr-3 text-texto-suave hover:underline"
                         >
-                          Remover
-                        </Enviar>
-                      </form>
+                          {f.cotacao_padrao ? "Não convidar sempre" : "Sempre convidar"}
+                        </BotaoAcao>
+                      )}
+                      <BotaoAcao
+                        aoClicar={() => alternarAtivoFornecedor(f.id, !f.ativo)}
+                        className={f.ativo ? "text-texto-fraco hover:text-red-600" : "font-semibold text-texto-marca hover:underline"}
+                      >
+                        {f.ativo ? "Inativar" : "Reativar"}
+                      </BotaoAcao>
                     </td>
                   </tr>
                 ))}
@@ -223,6 +246,10 @@ export function FornecedoresClient({
 
               {/* Categorias de produto que ele fornece → cotação já sugere/envia pra ele */}
               <div className="rounded-cartao border border-orange-200 bg-orange-50/40 p-3 dark:border-orange-900 dark:bg-orange-950/10">
+                <label className="mb-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-controle bg-painel-cartao px-3 text-sm text-texto">
+                  <input type="checkbox" name="cotacao_padrao" defaultChecked={!!editando?.cotacao_padrao} className="h-5 w-5 accent-[var(--marca-primaria)]" />
+                  Sempre convidar pras cotações <span className="text-xs text-texto-suave">(entra sozinho quando a cotação tem item dele)</span>
+                </label>
                 <p className="mb-1 text-xs font-bold text-texto-fraco">O que este fornecedor vende (categorias de produto)</p>
                 <p className="mb-2 text-mini text-texto-suave">
                   Ao salvar, ele fica vinculado a todos os produtos dessas categorias — a cotação já sugere ele e manda os itens. Produto novo na categoria entra sozinho.
