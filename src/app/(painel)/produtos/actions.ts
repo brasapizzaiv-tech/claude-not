@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export async function salvarProduto(formData: FormData) {
   const supabase = await createClient();
@@ -127,16 +128,10 @@ export async function marcarExclusivosEmLote(produtoIds: string[]) {
   if (produtoIds.length === 0) return { ok: true as const, marcados: [] as string[], pulados: 0 };
   const cont = new Map<string, number>();
   // Conta fornecedores por produto (paginando por segurança).
-  for (let de = 0; ; de += 1000) {
-    const { data: pg } = await supabase
-      .from("fornecedor_produto")
-      .select("produto_id")
-      .in("produto_id", produtoIds)
-      .range(de, de + 999);
-    if (!pg || pg.length === 0) break;
-    for (const r of pg) cont.set(r.produto_id, (cont.get(r.produto_id) ?? 0) + 1);
-    if (pg.length < 1000) break;
-  }
+  const vinc = await buscarTodas<{ produto_id: string }>((de, ate) =>
+    supabase.from("fornecedor_produto").select("produto_id").in("produto_id", produtoIds).order("id").range(de, ate),
+  );
+  for (const r of vinc) cont.set(r.produto_id, (cont.get(r.produto_id) ?? 0) + 1);
   const marcados = produtoIds.filter((id) => (cont.get(id) ?? 0) <= 1);
   if (marcados.length > 0) {
     await supabase.from("produtos").update({ exclusivo: true }).in("id", marcados);
@@ -193,8 +188,12 @@ export async function vincularSemFornecedorNaFeira() {
 
   // produtos ativos sem nenhum vínculo
   const { data: prods } = await supabase.from("produtos").select("id").eq("ativo", true);
-  const { data: vinc } = await supabase.from("fornecedor_produto").select("produto_id");
-  const comForn = new Set((vinc ?? []).map((v) => v.produto_id));
+  // Todos os vínculos (2,3 mil em out/2026) em páginas: com o corte de 1000
+  // do banco, produto que TEM fornecedor parecia sem e ia pra feira também.
+  const vinc = await buscarTodas<{ produto_id: string }>((de, ate) =>
+    supabase.from("fornecedor_produto").select("produto_id").order("id").range(de, ate),
+  );
+  const comForn = new Set(vinc.map((v) => v.produto_id));
   const semForn = (prods ?? []).map((p) => p.id).filter((id) => !comForn.has(id));
 
   if (semForn.length > 0) {

@@ -18,18 +18,29 @@ function trintaDiasAtras() {
 export default async function GatilhosPage() {
   const supabase = await createClient();
   const desde = trintaDiasAtras();
-  const [mods, { data: gRows }, { data: cupRows }, { data: cfg }, { data: envRows }, { data: ultimos }] = await Promise.all([
+  const [mods, { data: gRows }, { data: cupRows }, { data: cfg }, contagens, { data: ultimos }] = await Promise.all([
     listarModelosCompletos(),
     supabase.from("wpp_gatilhos").select("chave, ativo, modelo, idioma, variaveis, dias, cupom, imagem_url"),
     supabase.from("cupons").select("codigo").eq("ativo", true).order("codigo"),
     supabase.from("wpp_config").select("intervalo_auto_dias, auto_hora_ini, auto_hora_fim").maybeSingle(),
-    supabase.from("wpp_envios").select("gatilho").not("gatilho", "is", null).in("status", ["enviada", "entregue", "lida"]).gte("enviado_em", desde).limit(5000),
+    // Enviadas em 30 dias: só a contagem de cada gatilho. Antes baixava as
+    // linhas (.limit(5000)), mas o banco corta em 1000 — o número travaria ali.
+    Promise.all(
+      GATILHOS.map((g) =>
+        supabase
+          .from("wpp_envios")
+          .select("id", { count: "exact", head: true })
+          .eq("gatilho", g.chave)
+          .in("status", ["enviada", "entregue", "lida"])
+          .gte("enviado_em", desde)
+          .then(({ count }) => [g.chave, count ?? 0] as const),
+      ),
+    ),
     supabase.from("wpp_envios").select("id, gatilho, nome, telefone, status, enviado_em, criado_em, erro").not("gatilho", "is", null).order("criado_em", { ascending: false }).limit(40),
   ]);
   const salvos: Record<string, GatilhoSalvo> = {};
   for (const g of (gRows ?? []) as (GatilhoSalvo & { chave: string })[]) salvos[g.chave] = g;
-  const enviados30: Record<string, number> = {};
-  for (const e of (envRows ?? []) as { gatilho: string }[]) enviados30[e.gatilho] = (enviados30[e.gatilho] ?? 0) + 1;
+  const enviados30: Record<string, number> = Object.fromEntries(contagens.filter(([, n]) => n > 0));
   const c = cfg as { intervalo_auto_dias: number; auto_hora_ini: string; auto_hora_fim: string } | null;
   const titulo = Object.fromEntries(GATILHOS.map((g) => [g.chave, g.titulo]));
 

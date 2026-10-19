@@ -6,6 +6,7 @@
 // (dentro da janela de horário dos automáticos) e manda as campanhas em lotes,
 // sem passar do limite diário do número na Meta.
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buscarTodas } from "@/lib/supabase/todas";
 import { enviarModeloWpp, whatsappConfigurado } from "@/lib/whatsapp";
 
 export const SITE = "https://www.brasarestaurante.com.br";
@@ -128,8 +129,12 @@ export async function rodarDisparos() {
       if (!c.dias.includes(dow) || !dentroDaJanela(c.hora_ini, c.hora_fim, hhmm)) continue;
       if (!c.montada_em) {
         // Monta a lista de quem recebe (uma vez, na primeira janela).
-        const { data: pub } = await admin.rpc("wpp_publico", { p_empresa: emp, p_tipo: c.publico?.tipo ?? "todos", p_dias: c.publico?.dias ?? null, p_min: c.publico?.min ?? null });
-        const linhas = ((pub ?? []) as { cliente_id: string; nome: string; telefone: string }[]).map((p) => ({
+        // Em páginas: o banco corta cada consulta em 1000 e "todos" já tem
+        // 3,2 mil clientes — o resto ficaria sem a mensagem.
+        const pub = await buscarTodas<{ cliente_id: string; nome: string; telefone: string }>((de, ate) =>
+          admin.rpc("wpp_publico", { p_empresa: emp, p_tipo: c.publico?.tipo ?? "todos", p_dias: c.publico?.dias ?? null, p_min: c.publico?.min ?? null }).order("cliente_id").range(de, ate),
+        );
+        const linhas = pub.map((p) => ({
           empresa_id: emp, campanha_id: c.id, cliente_id: p.cliente_id, telefone: p.telefone, nome: p.nome, modelo: c.modelo, status: "fila",
         }));
         // Índice único (campanha, cliente): se uma rodada anterior caiu no meio, o

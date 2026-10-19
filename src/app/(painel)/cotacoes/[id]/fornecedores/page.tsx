@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 import type { Cotacao } from "@/lib/types";
 import {
   FornecedoresClient,
@@ -35,13 +36,18 @@ export default async function CotacaoFornecedoresPage({
 
   if (produtoIds.length > 0) {
     // Quais fornecedores fornecem esses produtos (e quantos deles).
-    const { data: vinculos } = await supabase
-      .from("fornecedor_produto")
-      .select("fornecedor_id, produto_id")
-      .in("produto_id", produtoIds);
+    // Em páginas: cotação grande passa de 1000 vínculos (o banco corta em 1000).
+    const vinculos = await buscarTodas<{ fornecedor_id: string; produto_id: string }>((de, ate) =>
+      supabase
+        .from("fornecedor_produto")
+        .select("fornecedor_id, produto_id")
+        .in("produto_id", produtoIds)
+        .order("id")
+        .range(de, ate),
+    );
 
     const cobertura = new Map<string, number>();
-    for (const v of vinculos ?? [])
+    for (const v of vinculos)
       cobertura.set(v.fornecedor_id, (cobertura.get(v.fornecedor_id) ?? 0) + 1);
 
     const fornIds = [...cobertura.keys()];

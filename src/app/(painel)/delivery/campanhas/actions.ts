@@ -17,8 +17,15 @@ export async function contarPublico(tipo: string, dias: number | null, min: numb
   const empresaId = await empresaAtualId();
   if (!empresaId || !(tipo in PUBLICOS)) return 0;
   const supabase = await createClient();
-  const { data } = await supabase.rpc("wpp_publico", { p_empresa: empresaId, p_tipo: tipo, p_dias: dias, p_min: min });
-  return ((data as unknown[]) ?? []).length;
+  // Só a contagem (o banco cortaria a lista em 1000 — com 3,2 mil clientes,
+  // "todos" mostrava 1000). Sem lista, os parâmetros vão no endereço: vazio
+  // fica de fora (usa o padrão da função) em vez de virar o texto "null".
+  const { count } = await supabase.rpc(
+    "wpp_publico",
+    { p_empresa: empresaId, p_tipo: tipo, p_dias: dias ?? undefined, p_min: min ?? undefined },
+    { count: "exact", head: true },
+  );
+  return count ?? 0;
 }
 
 // Imagem da campanha (modelo com imagem no topo): vai pro armazenamento público.

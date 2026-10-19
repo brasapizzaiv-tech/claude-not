@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export async function criarCotacao(formData: FormData) {
   const supabase = await createClient();
@@ -50,12 +51,18 @@ export async function gerarPedidosExclusivos(cotacaoId: string) {
   const produtoIds = itens.map((i) => i.produto_id as string);
   const qtdDe = new Map(itens.map((i) => [i.produto_id as string, Number(i.qtd)]));
 
-  const { data: vinc } = await supabase
-    .from("fornecedor_produto")
-    .select("produto_id, fornecedor_id")
-    .in("produto_id", produtoIds);
+  // Em páginas: uma cotação grande já passa de 1000 vínculos e o banco corta
+  // em 1000 — um produto com 2 fornecedores podia parecer exclusivo.
+  const vinc = await buscarTodas<{ produto_id: string; fornecedor_id: string }>((de, ate) =>
+    supabase
+      .from("fornecedor_produto")
+      .select("produto_id, fornecedor_id")
+      .in("produto_id", produtoIds)
+      .order("id")
+      .range(de, ate),
+  );
   const sups = new Map<string, string[]>();
-  for (const v of vinc ?? []) {
+  for (const v of vinc) {
     const arr = sups.get(v.produto_id as string) ?? [];
     arr.push(v.fornecedor_id as string);
     sups.set(v.produto_id as string, arr);

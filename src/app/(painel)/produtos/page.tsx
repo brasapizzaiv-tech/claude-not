@@ -27,6 +27,7 @@ export default async function ProdutosPage({
     const { data: pagina } = await supabase
       .from("fornecedor_produto")
       .select("produto_id, fornecedor_id")
+      .order("id") // desempate: sem ordem, a página seguinte pode repetir ou pular linhas
       .range(de, de + 999);
     if (!pagina || pagina.length === 0) break;
     vinculos.push(...(pagina as { produto_id: string; fornecedor_id: string }[]));

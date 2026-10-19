@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 import { dataBR } from "@/lib/format";
 import { UploadOfx } from "./upload";
 import { BancoTabela } from "./banco-tabela";
@@ -7,37 +8,32 @@ import { BancoTabela } from "./banco-tabela";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// O PostgREST devolve no máximo 1000 linhas por requisição — com quase 3000
-// lançamentos, os mais antigos nunca chegavam aqui e nunca viravam sugestão.
-// Busca em páginas até acabar.
-async function lancamentosTodos(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const tudo: unknown[] = [];
-  for (let de = 0; de < 20000; de += 1000) {
-    const { data } = await supabase
-      .from("lancamentos")
-      .select("id, data, vencimento, pago_em, valor, descricao, nota_id, grupo_id, dre_categorias(tipo, nome), fornecedores(nome)")
-      .order("data", { ascending: false })
-      .range(de, de + 999);
-    const pagina = (data as unknown[]) ?? [];
-    tudo.push(...pagina);
-    if (pagina.length < 1000) break;
-  }
-  return { data: tudo };
-}
-
 export default async function BancoPage() {
   const supabase = await createClient();
 
-  const [{ data: transData }, { data: lancData }, { data: catData }] =
+  // O banco devolve no máximo 1000 linhas por consulta. O extrato (1,5 mil
+  // linhas em out/2026, ~400/mês) pedia .limit(5000) e vinham só 1000: as
+  // mais antigas sumiam da tela e da conciliação sem aviso. Os lançamentos
+  // (3,4 mil) já vinham em páginas, mas sem desempate na ordem. Agora os dois
+  // vêm em páginas de 1000, com ordem estável.
+  const [transData, lancData, { data: catData }] =
     await Promise.all([
-      supabase
-        .from("transacoes_banco")
-        .select("id, data, valor, descricao, banco, lancamento_id, lancamentos(descricao)")
-        .order("data", { ascending: false })
-        // O extrato cresce ~400 linhas/mês; com 1000 as mais antigas sumiam da
-        // tela (e da conciliação) sem aviso.
-        .limit(5000),
-      lancamentosTodos(supabase),
+      buscarTodas((de, ate) =>
+        supabase
+          .from("transacoes_banco")
+          .select("id, data, valor, descricao, banco, lancamento_id, lancamentos(descricao)")
+          .order("data", { ascending: false })
+          .order("id")
+          .range(de, ate),
+      ),
+      buscarTodas((de, ate) =>
+        supabase
+          .from("lancamentos")
+          .select("id, data, vencimento, pago_em, valor, descricao, nota_id, grupo_id, dre_categorias(tipo, nome), fornecedores(nome)")
+          .order("data", { ascending: false })
+          .order("id")
+          .range(de, ate),
+      ),
       supabase
         .from("dre_categorias")
         .select("id, nome, tipo, grupo")

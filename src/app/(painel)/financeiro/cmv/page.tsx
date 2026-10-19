@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 import { dataBR } from "@/lib/format";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { segundaDe, somarDias } from "@/lib/equipe";
@@ -126,11 +127,17 @@ export default async function CmvPage({
     ...new Set([...eiContagens, ...efContagens].map((c) => c.id)),
   ];
 
-  const [{ data: ciData }, { data: prodData }, fatDias] = await Promise.all([
-    supabase
-      .from("contagem_itens")
-      .select("contagem_id, produto_id, qtd_estoque, precisa_comprar")
-      .in("contagem_id", idsContagem.length ? idsContagem : ["00000000-0000-0000-0000-000000000000"]),
+  const [ciData, { data: prodData }, fatDias] = await Promise.all([
+    // Em páginas: as contagens do início + fim da semana já somam ~870 linhas
+    // (o banco corta em 1000; passando disso o estoque sairia incompleto).
+    buscarTodas<{ contagem_id: string; produto_id: string; qtd_estoque: number; precisa_comprar: boolean | null }>((ini, fim) =>
+      supabase
+        .from("contagem_itens")
+        .select("contagem_id, produto_id, qtd_estoque, precisa_comprar")
+        .in("contagem_id", idsContagem.length ? idsContagem : ["00000000-0000-0000-0000-000000000000"])
+        .order("id")
+        .range(ini, fim),
+    ),
     supabase
       .from("produtos")
       .select("id, nome, unidade, preco_referencia, entra_cmv, categoria_id, estoque_minimo, estoque_ideal, categorias(nome)")
@@ -151,7 +158,7 @@ export default async function CmvPage({
   const qtdEF = new Map<string, number>();
   const qDataEI = new Map<string, string>();
   const qDataEF = new Map<string, string>();
-  for (const r of (ciData as { contagem_id: string; produto_id: string; qtd_estoque: number; precisa_comprar: boolean | null }[]) ?? []) {
+  for (const r of ciData) {
     // Item "precisa comprar?" não tem quantidade contada: não entra no estoque.
     if (typeof r.precisa_comprar === "boolean") continue;
     const d = dataDe.get(r.contagem_id) ?? "";

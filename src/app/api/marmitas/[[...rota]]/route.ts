@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 // Login unificado: quem está logado no ERP como "dono" é admin das marmitas.
 async function erpDono(): Promise<boolean> {
@@ -501,8 +502,11 @@ async function handle(req: NextRequest, rota: string[]) {
     if (mes && !de) { de = mes + "-01"; ate = mes + "-31"; }
     if (!de) de = agoraBR().data;
     if (!ate) ate = de;
-    const { data: rows } = await db.from("mkt_pedidos").select("filial,cliente,matricula,pratos,proteina,salada").gte("data", de).lte("data", ate);
-    const lst = (rows as Row[]) || [];
+    // Em páginas: um mês passa de 1000 marmitas (1,4 mil em set/2026) e o banco
+    // corta cada consulta em 1000 — o relatório do mês vinha incompleto.
+    const lst = await buscarTodas<Row>((ini, fim) =>
+      db.from("mkt_pedidos").select("filial,cliente,matricula,pratos,proteina,salada").gte("data", de).lte("data", ate).order("id").range(ini, fim),
+    );
     const fMap = new Map<string, Map<string, { cliente: string; matricula: string; quantidade: number }>>();
     const cPratos: Record<string, number> = {}, cProt: Record<string, number> = {}, cSalada: Record<string, number> = {};
     for (const p of lst) {

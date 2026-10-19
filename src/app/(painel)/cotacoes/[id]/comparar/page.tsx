@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 import type { Cotacao } from "@/lib/types";
 import { custoComSt } from "@/lib/st";
 import {
@@ -198,12 +199,17 @@ export default async function CompararPage({
   const supsPorProduto = new Map<string, string[]>();
   const nomeForn = new Map<string, string>(fornecedores.map((f) => [f.id, f.nome]));
   if (produtoIds.length) {
-    const { data: vinc } = await supabase
-      .from("fornecedor_produto")
-      .select("fornecedor_id, produto_id")
-      .in("produto_id", produtoIds);
+    // Em páginas: cotação grande passa de 1000 vínculos (o banco corta em 1000).
+    const vinc = await buscarTodas<{ fornecedor_id: string; produto_id: string }>((de, ate) =>
+      supabase
+        .from("fornecedor_produto")
+        .select("fornecedor_id, produto_id")
+        .in("produto_id", produtoIds)
+        .order("id")
+        .range(de, ate),
+    );
     const idsForaLista = new Set<string>();
-    for (const v of vinc ?? []) {
+    for (const v of vinc) {
       const arr = supsPorProduto.get(v.produto_id) ?? [];
       arr.push(v.fornecedor_id);
       supsPorProduto.set(v.produto_id, arr);
@@ -240,7 +246,7 @@ export default async function CompararPage({
       if (!pag || pag.length < 1000) break;
     }
     const maisRecente: Record<string, string> = {};
-    for (const row of (hist as unknown as {
+    for (const row of (hist as {
       produto_id: string;
       preco_unit: number | null;
       preco_recebido: number | null;
@@ -249,7 +255,7 @@ export default async function CompararPage({
         cotacao_id: string;
         fornecedores: { nome: string } | null;
       } | null;
-    }[]) ?? []) {
+    }[])) {
       const ped = row.pedidos;
       if (!ped || ped.cotacao_id === id) continue;
       const quando = ped.criado_em || "";

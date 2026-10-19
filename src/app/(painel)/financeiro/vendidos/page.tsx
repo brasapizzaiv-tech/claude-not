@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
+import { buscarPorLotes, buscarTodas } from "@/lib/supabase/todas";
 import { hojeSP, somarDias } from "@/lib/etiqueta-vencimentos";
 import { VendidosClient, type Linha, type Agrupar } from "./vendidos-client";
 
@@ -34,25 +35,28 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
 
   const supabase = await createClient();
 
-  // Itens do período (pagina de 1000 em 1000).
-  const itens: ItemRow[] = [];
-  for (let from = 0; ; from += 1000) {
-    const { data } = await supabase
+  // O banco devolve no máximo 1000 linhas por consulta: tudo que pode passar
+  // disso num período longo vem em páginas (ou em lotes, quando é por id).
+  // Antes as comandas de buffet cortavam em 1000 — um mês tem 2,4 mil.
+  const itens = await buscarTodas<ItemRow>((i, f) =>
+    supabase
       .from("pdv_comanda_itens")
       .select("id, comanda_id, item_id, descricao, qtd, preco_unit, criado_em, pago, criado_por, criado_colab_id")
       .gte("criado_em", iniIso)
       .lte("criado_em", fimIso)
       .order("criado_em")
-      .range(from, from + 999);
-    const pg = (data as ItemRow[]) ?? [];
-    itens.push(...pg);
-    if (pg.length < 1000) break;
-  }
+      .order("id")
+      .range(i, f),
+  );
 
   const comIds = [...new Set(itens.map((i) => i.comanda_id))];
-  const [{ data: comsItens }, { data: comsBuffet }, { data: cancel }, { data: pdvItens }, { data: delivs }, { data: excl }] = await Promise.all([
-    comIds.length ? supabase.from("pdv_comandas").select("id, numero, mesa, status, forma_pagamento, valor_buffet, peso, aberta_em, livre").in("id", comIds) : Promise.resolve({ data: [] as ComandaRow[] }),
-    supabase.from("pdv_comandas").select("id, numero, mesa, status, forma_pagamento, valor_buffet, peso, aberta_em, livre, buffet_pago").gt("valor_buffet", 0).gte("aberta_em", iniIso).lte("aberta_em", fimIso),
+  const [comsItens, comsBuffet, { data: cancel }, { data: pdvItens }, { data: delivs }, { data: excl }] = await Promise.all([
+    buscarPorLotes<ComandaRow>(comIds, (lote) =>
+      supabase.from("pdv_comandas").select("id, numero, mesa, status, forma_pagamento, valor_buffet, peso, aberta_em, livre").in("id", lote),
+    ),
+    buscarTodas<ComandaRow & { buffet_pago: boolean | null }>((i, f) =>
+      supabase.from("pdv_comandas").select("id, numero, mesa, status, forma_pagamento, valor_buffet, peso, aberta_em, livre, buffet_pago").gt("valor_buffet", 0).gte("aberta_em", iniIso).lte("aberta_em", fimIso).order("aberta_em").order("id").range(i, f),
+    ),
     supabase.from("pdv_itens_cancelados").select("descricao, qtd, valor, motivo, cancelado_em").gte("cancelado_em", iniIso).lte("cancelado_em", fimIso),
     supabase.from("pdv_itens").select("id, nome, categoria"),
     supabase.from("delivery_pedidos").select("comanda_id").gte("criado_em", iniIso).lte("criado_em", fimIso),

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 import { moedaBR } from "@/lib/format";
 import { tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
@@ -106,12 +107,17 @@ export default async function DashboardPage({
       .select("id, numero, mesa, aberta_em, conta_pedida_em, conta_pedida_por")
       .eq("status", "aberta"),
     supabase.from("pdv_caixas").select("id, saldo_inicial, aberto_em").eq("status", "aberto").maybeSingle(),
-    // Movimentos dos últimos 7 dias + o dia da semana anterior, numa consulta só.
-    supabase
-      .from("pdv_caixa_mov")
-      .select("tipo, valor, forma_pagamento, criado_em")
-      .gte("criado_em", jAntes.de < inicioSerie ? jAntes.de : inicioSerie)
-      .lt("criado_em", j.ate),
+    // Movimentos dos últimos 7 dias + o dia da semana anterior. Em páginas:
+    // uma semana cheia já tem ~500 e o banco corta cada consulta em 1000.
+    buscarTodas((de, ate) =>
+      supabase
+        .from("pdv_caixa_mov")
+        .select("tipo, valor, forma_pagamento, criado_em")
+        .gte("criado_em", jAntes.de < inicioSerie ? jAntes.de : inicioSerie)
+        .lt("criado_em", j.ate)
+        .order("id")
+        .range(de, ate),
+    ).then((data) => ({ data })),
     supabase.from("pedidos_rodizio").select("status, quantidade, criado_em").gte("criado_em", j.de).lt("criado_em", j.ate),
     supabase
       .from("delivery_pedidos")
