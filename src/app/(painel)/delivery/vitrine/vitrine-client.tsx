@@ -15,11 +15,13 @@ import { adicionarSugestao, removerDestaque, removerSugestao, salvarDestaque, sa
 
 export type DadosVitrine = {
   numeros: { abriram: number; carrinho: number; ticket: number | null; pedidosApp: number; descontoCupom: number; pedidosComCupom: number };
-  destaques: { id: string; titulo: string; subtitulo: string | null; item_id: string | null; preco_de: number | null; preco_por: number | null; foto_url: string | null; selo: string | null; inicio: string | null; fim: string | null; ativo: boolean }[];
+  destaques: { id: string; titulo: string; subtitulo: string | null; item_id: string | null; pizza_tamanho_id: string | null; pizza_sabor_id: string | null; preco_de: number | null; preco_por: number | null; foto_url: string | null; selo: string | null; inicio: string | null; fim: string | null; ativo: boolean }[];
   sugestoes: { id: string; momento: "produto" | "carrinho"; categoria: string | null; item_id: string }[];
   gatilhos: { chave: string; ativo: boolean; cupom: string | null; minutos: number | null; validade_min: number | null }[];
   cupons: { codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; ativo: boolean }[];
   itens: { id: string; nome: string; categoria: string; preco: number }[];
+  pizzaTamanhos: { id: string; nome: string }[];
+  pizzaSabores: { id: string; nome: string }[];
   categorias: { valor: string; rotulo: string }[];
 };
 
@@ -34,6 +36,8 @@ export function VitrineClient({ d }: { d: DadosVitrine }) {
   const router = useRouter();
   const [editando, setEditando] = useState<DestaqueForm | null>(null);
   const itemDe = new Map(d.itens.map((i) => [i.id, i]));
+  const tamanhoDe = new Map(d.pizzaTamanhos.map((t) => [t.id, t.nome]));
+  const saborDe = new Map(d.pizzaSabores.map((s) => [s.id, s.nome]));
   const agora = new Date().toISOString();
   const taxaCarrinho = d.numeros.abriram ? Math.round((d.numeros.carrinho / d.numeros.abriram) * 100) : null;
 
@@ -44,7 +48,7 @@ export function VitrineClient({ d }: { d: DadosVitrine }) {
     return x.ok;
   }
 
-  const novoDestaque = (): DestaqueForm => ({ id: null, titulo: "", subtitulo: "", itemId: "", selo: "", fotoUrl: "", precoDe: "", precoPor: "", inicio: "", fim: "", ativo: true });
+  const novoDestaque = (): DestaqueForm => ({ id: null, titulo: "", subtitulo: "", itemId: "", pizzaSaborId: "", selo: "", fotoUrl: "", precoDe: "", precoPor: "", inicio: "", fim: "", ativo: true });
 
   return (
     <div className="flex flex-col gap-4 px-4 py-5 md:px-[30px] md:py-[26px]">
@@ -111,14 +115,14 @@ export function VitrineClient({ d }: { d: DadosVitrine }) {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-texto">{x.titulo}</p>
                       <p className="truncate text-xs text-texto-suave">
-                        {item?.nome ?? "sem produto"}
+                        {item?.nome ?? (x.pizza_tamanho_id ? `Pizza ${tamanhoDe.get(x.pizza_tamanho_id) ?? ""}${x.pizza_sabor_id ? ` · ${saborDe.get(x.pizza_sabor_id) ?? ""}` : ""}` : "sem produto")}
                         {x.inicio ? ` · de ${dataHoraBR(x.inicio)}` : ""}{x.fim ? ` até ${dataHoraBR(x.fim)}` : ""}
                       </p>
                     </div>
                     <span className={situacao.c}>{situacao.t}</span>
                     <button
                       type="button"
-                      onClick={() => setEditando({ id: x.id, titulo: x.titulo, subtitulo: x.subtitulo ?? "", itemId: x.item_id ?? "", selo: x.selo ?? "", fotoUrl: x.foto_url ?? "", precoDe: x.preco_de != null ? String(x.preco_de).replace(".", ",") : "", precoPor: x.preco_por != null ? String(x.preco_por).replace(".", ",") : "", inicio: paraInput(x.inicio), fim: paraInput(x.fim), ativo: x.ativo })}
+                      onClick={() => setEditando({ id: x.id, titulo: x.titulo, subtitulo: x.subtitulo ?? "", itemId: x.item_id ?? (x.pizza_tamanho_id ? `pz:${x.pizza_tamanho_id}` : ""), pizzaSaborId: x.pizza_sabor_id ?? "", selo: x.selo ?? "", fotoUrl: x.foto_url ?? "", precoDe: x.preco_de != null ? String(x.preco_de).replace(".", ",") : "", precoPor: x.preco_por != null ? String(x.preco_por).replace(".", ",") : "", inicio: paraInput(x.inicio), fim: paraInput(x.fim), ativo: x.ativo })}
                       aria-label={`Editar ${x.titulo}`}
                       className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-suave hover:bg-superficie-suave"
                     >
@@ -169,6 +173,8 @@ export function VitrineClient({ d }: { d: DadosVitrine }) {
         <FormDestaque
           inicial={editando}
           itens={d.itens}
+          pizzaTamanhos={d.pizzaTamanhos}
+          pizzaSabores={d.pizzaSabores}
           onFechar={() => setEditando(null)}
           onSalvar={async (f) => { if (await executar(salvarDestaque(f))) setEditando(null); }}
           onRemover={editando.id ? async () => {
@@ -297,9 +303,11 @@ function Gatilho({ chave, titulo, explica, d, executar, comMinutos, comValidade,
   );
 }
 
-function FormDestaque({ inicial, itens, onFechar, onSalvar, onRemover }: {
+function FormDestaque({ inicial, itens, pizzaTamanhos, pizzaSabores, onFechar, onSalvar, onRemover }: {
   inicial: DestaqueForm;
   itens: DadosVitrine["itens"];
+  pizzaTamanhos: DadosVitrine["pizzaTamanhos"];
+  pizzaSabores: DadosVitrine["pizzaSabores"];
   onFechar: () => void;
   onSalvar: (f: DestaqueForm) => Promise<void>;
   onRemover?: () => Promise<void>;
@@ -323,9 +331,24 @@ function FormDestaque({ inicial, itens, onFechar, onSalvar, onRemover }: {
           <label className="text-xs text-texto-suave">Produto do botão &quot;Pedir agora&quot;
             <select value={f.itemId} onChange={(e) => set("itemId", e.target.value)} className={`${campo} mt-1`}>
               <option value="">— escolher —</option>
-              {itens.map((i) => <option key={i.id} value={i.id}>{i.nome} · {i.categoria}</option>)}
+              {pizzaTamanhos.length > 0 && (
+                <optgroup label="Pizza (abre o montador)">
+                  {pizzaTamanhos.map((t) => <option key={t.id} value={`pz:${t.id}`}>Pizza {t.nome}</option>)}
+                </optgroup>
+              )}
+              <optgroup label="Produtos">
+                {itens.map((i) => <option key={i.id} value={i.id}>{i.nome} · {i.categoria}</option>)}
+              </optgroup>
             </select>
           </label>
+          {f.itemId.startsWith("pz:") && (
+            <label className="text-xs text-texto-suave">Sabor já marcado (opcional)
+              <select value={f.pizzaSaborId ?? ""} onChange={(e) => set("pizzaSaborId", e.target.value)} className={`${campo} mt-1`}>
+                <option value="">Qualquer sabor (o cliente escolhe)</option>
+                {pizzaSabores.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+              </select>
+            </label>
+          )}
           <label className="text-xs text-texto-suave">Selo (opcional)
             <input value={f.selo} onChange={(e) => set("selo", e.target.value)} placeholder="Só hoje" className={`${campo} mt-1`} />
           </label>

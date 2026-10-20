@@ -5,7 +5,7 @@
 // dos gatilhos. Desenho do layout novo (out/2026), tudo por token.
 import { useEffect, useState } from "react";
 import { Icone } from "@/components/icone";
-import { brl, type Item } from "@/components/delivery-pedido-ui";
+import { brl, type Item, type PizzaData } from "@/components/delivery-pedido-ui";
 import type { CupomVitrine, VitrineApp } from "@/lib/vitrine";
 
 export const textoCupom = (c: CupomVitrine) =>
@@ -24,23 +24,35 @@ function Foto({ url, className }: { url: string | null | undefined; className: s
 }
 
 /** Destaques do topo: um cartão grande por destaque, com "Pedir agora". */
-export function DestaquesTopo({ destaques, itemDe, onPedir }: {
+export function DestaquesTopo({ destaques, itemDe, onPedir, pizza, onPizza }: {
   destaques: VitrineApp["destaques"];
   itemDe: Map<string, Item>;
   onPedir: (i: Item) => void;
+  /** Destaque de pizza (migration 0246): abre o montador no tamanho/sabor. */
+  pizza?: PizzaData;
+  onPizza?: (tamanhoId: string, saborId: string | null) => void;
 }) {
   if (destaques.length === 0) return null;
   return (
     <div className="flex snap-x gap-3 overflow-x-auto px-3 pb-1 pt-3" aria-label="Destaques">
       {destaques.map((d) => {
         const item = d.itemId ? itemDe.get(d.itemId) : undefined;
+        const tam = d.pizzaTamanhoId && pizza ? pizza.tamanhos.find((t) => t.id === d.pizzaTamanhoId) : undefined;
+        const sabor = tam && d.pizzaSaborId ? pizza?.sabores.find((s) => s.id === d.pizzaSaborId) : undefined;
+        // Pizza: preço do sabor nesse tamanho; sem sabor, "a partir de" o mais barato.
+        const precosPizza = tam
+          ? (pizza?.saborPrecos ?? [])
+              .filter((p) => p.tamanho_id === tam.id && (sabor ? p.sabor_id === sabor.id : pizza?.sabores.some((s) => s.id === p.sabor_id)))
+              .map((p) => Number(p.preco)).filter((v) => v > 0)
+          : [];
+        const aPartir = !!tam && !sabor;
         // Sempre o preço do cardápio: é o que o carrinho cobra.
-        const por = item?.preco ?? null;
+        const por = item?.preco ?? (precosPizza.length ? Math.min(...precosPizza) : null);
         const de = item?.preco_antigo ?? null;
         return (
           <div key={d.id} className="cartao w-[88%] max-w-sm shrink-0 snap-start overflow-hidden">
             <div className="relative">
-              <Foto url={d.foto ?? item?.foto_url} className="h-36 w-full" />
+              <Foto url={d.foto ?? item?.foto_url ?? sabor?.foto_url} className="h-36 w-full" />
               {d.selo && <span className="pilula pilula-grafite absolute left-3 top-3">{d.selo}</span>}
             </div>
             <div className="p-4">
@@ -49,10 +61,13 @@ export function DestaquesTopo({ destaques, itemDe, onPedir }: {
               <div className="mt-3 flex items-center justify-between gap-3">
                 {item ? (
                   <button type="button" onClick={() => onPedir(item)} className="btn-principal flex-1 text-sm">Pedir agora</button>
+                ) : tam && onPizza ? (
+                  <button type="button" onClick={() => onPizza(tam.id, sabor?.id ?? null)} className="btn-principal flex-1 text-sm">Pedir agora</button>
                 ) : <span />}
                 {por != null && por > 0 && (
                   <span className="text-right">
                     {de != null && de > por && <span className="block text-xs text-texto-fraco line-through">{brl(de)}</span>}
+                    {aPartir && <span className="block text-xs text-texto-suave">a partir de</span>}
                     <span className="font-numero text-lg font-bold text-texto-marca">{brl(por)}</span>
                   </span>
                 )}

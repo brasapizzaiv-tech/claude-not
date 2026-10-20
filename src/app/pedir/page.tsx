@@ -113,7 +113,10 @@ export default async function PedirPage() {
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
   // Vitrine do app (destaques, sugestões e cupons dos gatilhos) — /delivery/vitrine.
-  const vitrine = await carregarVitrine(admin, empresaId, new Set(itens.map((i) => i.id)));
+  const vitrine = await carregarVitrine(admin, empresaId, new Set(itens.map((i) => i.id)), {
+    tamanhos: new Set(((tamanhos as { id: string }[]) ?? []).map((t) => t.id)),
+    sabores: new Set(((sabores as { id: string }[]) ?? []).map((t) => t.id)),
+  });
   const comComplemento = new Set(((gruposItem as { item_id: string }[]) ?? []).map((g) => g.item_id));
 
   return (

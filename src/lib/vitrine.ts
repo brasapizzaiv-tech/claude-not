@@ -10,6 +10,8 @@ export type CupomVitrine = { codigo: string; tipo: "percent" | "valor"; valor: n
 export type VitrineApp = {
   destaques: {
     id: string; titulo: string; subtitulo: string | null; itemId: string | null;
+    /** Destaque de pizza (migration 0246): abre o montador nesse tamanho/sabor. */
+    pizzaTamanhoId: string | null; pizzaSaborId: string | null;
     precoDe: number | null; precoPor: number | null; foto: string | null; selo: string | null;
   }[];
   /** categoria ('__pizzas__' = pizza montada) → itens sugeridos */
@@ -36,21 +38,28 @@ async function cupomValido(admin: Admin, empresaId: string, codigo: string | nul
   return { codigo: c.codigo, tipo: c.tipo, valor: Number(c.valor), minimo: c.minimo != null ? Number(c.minimo) : null };
 }
 
-export async function carregarVitrine(admin: Admin, empresaId: string, itensDisponiveis: Set<string>): Promise<VitrineApp> {
+export async function carregarVitrine(
+  admin: Admin, empresaId: string, itensDisponiveis: Set<string>,
+  pizzaDisponivel?: { tamanhos: Set<string>; sabores: Set<string> },
+): Promise<VitrineApp> {
   const agora = new Date().toISOString();
   const [{ data: dRows }, { data: sRows }, { data: gRows }] = await Promise.all([
-    admin.from("vitrine_destaques").select("id, titulo, subtitulo, item_id, preco_de, preco_por, foto_url, selo, inicio, fim").eq("empresa_id", empresaId).eq("ativo", true).order("ordem").order("criado_em"),
+    admin.from("vitrine_destaques").select("id, titulo, subtitulo, item_id, pizza_tamanho_id, pizza_sabor_id, preco_de, preco_por, foto_url, selo, inicio, fim").eq("empresa_id", empresaId).eq("ativo", true).order("ordem").order("criado_em"),
     admin.from("vitrine_sugestoes").select("momento, categoria, item_id").eq("empresa_id", empresaId).order("ordem").order("criado_em"),
     admin.from("vitrine_gatilhos").select("chave, ativo, cupom, minutos, validade_min").eq("empresa_id", empresaId),
   ]);
 
-  type D = { id: string; titulo: string; subtitulo: string | null; item_id: string | null; preco_de: number | null; preco_por: number | null; foto_url: string | null; selo: string | null; inicio: string | null; fim: string | null };
+  type D = { id: string; titulo: string; subtitulo: string | null; item_id: string | null; pizza_tamanho_id: string | null; pizza_sabor_id: string | null; preco_de: number | null; preco_por: number | null; foto_url: string | null; selo: string | null; inicio: string | null; fim: string | null };
   const destaques = ((dRows as D[]) ?? [])
     .filter((d) => (!d.inicio || d.inicio <= agora) && (!d.fim || d.fim > agora))
     // Produto fora do cardápio agora (fora do horário, esgotado): o destaque some.
     .filter((d) => !d.item_id || itensDisponiveis.has(d.item_id))
+    // Pizza: o tamanho tem que existir; sabor desligado volta a "qualquer sabor".
+    .filter((d) => !d.pizza_tamanho_id || !pizzaDisponivel || pizzaDisponivel.tamanhos.has(d.pizza_tamanho_id))
     .map((d) => ({
       id: d.id, titulo: d.titulo, subtitulo: d.subtitulo, itemId: d.item_id,
+      pizzaTamanhoId: d.pizza_tamanho_id,
+      pizzaSaborId: d.pizza_sabor_id && (!pizzaDisponivel || pizzaDisponivel.sabores.has(d.pizza_sabor_id)) ? d.pizza_sabor_id : null,
       precoDe: d.preco_de != null ? Number(d.preco_de) : null, precoPor: d.preco_por != null ? Number(d.preco_por) : null,
       foto: d.foto_url, selo: d.selo,
     }));

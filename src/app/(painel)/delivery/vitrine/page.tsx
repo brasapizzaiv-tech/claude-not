@@ -15,9 +15,9 @@ export default async function VitrinePage() {
 
   const [
     { data: destaques }, { data: sugestoes }, { data: gatilhos }, { data: cupons }, { data: itens }, { data: cats },
-    { count: abriram }, { count: carrinho }, { data: pedidos }, { data: tamanhos },
+    { count: abriram }, { count: carrinho }, { data: pedidos }, { data: tamanhos }, { data: sabores },
   ] = await Promise.all([
-    supabase.from("vitrine_destaques").select("id, titulo, subtitulo, item_id, preco_de, preco_por, foto_url, selo, inicio, fim, ativo").order("ordem").order("criado_em"),
+    supabase.from("vitrine_destaques").select("id, titulo, subtitulo, item_id, pizza_tamanho_id, pizza_sabor_id, preco_de, preco_por, foto_url, selo, inicio, fim, ativo").order("ordem").order("criado_em"),
     supabase.from("vitrine_sugestoes").select("id, momento, categoria, item_id").order("ordem").order("criado_em"),
     supabase.from("vitrine_gatilhos").select("chave, ativo, cupom, minutos, validade_min"),
     supabase.from("cupons").select("codigo, tipo, valor, minimo, ativo").order("codigo"),
@@ -26,7 +26,8 @@ export default async function VitrinePage() {
     supabase.from("vitrine_eventos").select("id", { count: "exact", head: true }).eq("tipo", "abriu").gte("dia", seteDias),
     supabase.from("vitrine_eventos").select("id", { count: "exact", head: true }).eq("tipo", "carrinho").gte("dia", seteDias),
     supabase.from("delivery_pedidos").select("comanda_id, taxa_entrega, desconto, desconto_motivo").eq("origem", "app").neq("status", "cancelado").gte("criado_em", desde).limit(1000),
-    supabase.from("pdv_pizza_tamanhos").select("id").limit(1),
+    supabase.from("pdv_pizza_tamanhos").select("id, nome").order("ordem"),
+    supabase.from("pdv_pizza_sabores").select("id, nome").eq("ativo", true).order("nome"),
   ]);
 
   // Ticket médio do app e desconto dado em cupom (7 dias).
@@ -66,6 +67,8 @@ export default async function VitrinePage() {
     gatilhos: (gatilhos as DadosVitrine["gatilhos"]) ?? [],
     cupons: ((cupons as DadosVitrine["cupons"]) ?? []).map((c) => ({ ...c, valor: Number(c.valor), minimo: c.minimo != null ? Number(c.minimo) : null })),
     itens: listaItens,
+    pizzaTamanhos: (tamanhos as { id: string; nome: string }[]) ?? [],
+    pizzaSabores: (sabores as { id: string; nome: string }[]) ?? [],
     categorias,
   };
   return <VitrineClient d={dados} />;

@@ -697,7 +697,7 @@ export function PedirClient({
         )}
       </div>
 
-      {!busca && <DestaquesTopo destaques={vitrine.destaques} itemDe={itemDe} onPedir={clicarItem} />}
+      {!busca && <DestaquesTopo destaques={vitrine.destaques} itemDe={itemDe} onPedir={clicarItem} pizza={pizza} onPizza={(t, s) => { setPzSabor(s); setPzTamanho(t); }} />}
 
       {/* Novidades: os sabores marcados como "novo" no cardápio, com os
           ingredientes — é o que uma pizzaria tem pra mostrar na vitrine.

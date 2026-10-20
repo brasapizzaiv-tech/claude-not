@@ -15,7 +15,8 @@ const dataHora = (v: unknown) => {
 
 export type DestaqueForm = {
   id?: string | null;
-  titulo: string; subtitulo: string; itemId: string; selo: string; fotoUrl: string;
+  /** id do produto, ou "pz:<tamanho>" quando o destaque é pizza (migration 0246). */
+  titulo: string; subtitulo: string; itemId: string; pizzaSaborId?: string; selo: string; fotoUrl: string;
   precoDe: string; precoPor: string; inicio: string; fim: string; ativo: boolean;
 };
 
@@ -23,10 +24,14 @@ export async function salvarDestaque(d: DestaqueForm) {
   await exigirAcesso("/delivery");
   const titulo = (d.titulo || "").trim();
   if (titulo.length < 2) return erro("Dê um título pro destaque.");
+  const pz = (d.itemId || "").startsWith("pz:") ? d.itemId.slice(3) : "";
+  const pizzaTamanhoId = /^[0-9a-f-]{36}$/i.test(pz) ? pz : null;
   const linha = {
     titulo: titulo.slice(0, 80),
     subtitulo: (d.subtitulo || "").trim().slice(0, 140) || null,
     item_id: /^[0-9a-f-]{36}$/i.test(d.itemId || "") ? d.itemId : null,
+    pizza_tamanho_id: pizzaTamanhoId,
+    pizza_sabor_id: pizzaTamanhoId && /^[0-9a-f-]{36}$/i.test(d.pizzaSaborId || "") ? d.pizzaSaborId : null,
     selo: (d.selo || "").trim().slice(0, 20) || null,
     foto_url: /^https?:\/\//.test((d.fotoUrl || "").trim()) ? d.fotoUrl.trim() : null,
     // Preço do banner = preço do produto (o que o carrinho cobra); não se digita.
@@ -36,7 +41,7 @@ export async function salvarDestaque(d: DestaqueForm) {
     fim: dataHora(d.fim),
     ativo: !!d.ativo,
   };
-  if (!linha.item_id) return erro("Escolha o produto que o botão \"Pedir agora\" coloca no carrinho.");
+  if (!linha.item_id && !linha.pizza_tamanho_id) return erro("Escolha o produto que o botão \"Pedir agora\" coloca no carrinho.");
   if (linha.inicio && linha.fim && linha.fim <= linha.inicio) return erro("O fim tem que ser depois do início.");
   const supabase = await createClient();
   const { error } = d.id
