@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { PrazoCotacao } from "../prazo-cotacao";
 import { confirmar } from "@/components/dialogo";
 
 import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -249,6 +250,10 @@ export function CotacaoClient({
             {fechada ? "Reabrir" : "Fechar"}
           </button>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <PrazoCotacao cotacaoId={cotacao.id} respostasAte={cotacao.respostas_ate ?? null} fechada={fechada} />
       </div>
 
       {msg && (

@@ -45,11 +45,15 @@ export async function salvarPrecosPublico(token: string, dados: DadosCotacao) {
     p_dados: dados,
   });
   if (error) {
+    // Prazo da cotação terminou (migration 0247): o banco recusa a gravação.
+    if (/cotacao_fechada/.test(error.message)) {
+      return { ok: false, fechada: true, erro: "O prazo pra responder esta cotação terminou. Se ainda quiser mandar preço, fale com o comprador." };
+    }
     // Loga o motivo real (ex.: valor que não é número/data) para diagnóstico.
     console.error("cotar_fornecedor_salvar erro:", error.message, error.details ?? "");
     return { ok: false, erro: "Não foi possível salvar. Confira preços/valores e tente de novo." };
   }
-  return data as { ok: boolean; gravados?: number; erro?: string };
+  return data as { ok: boolean; gravados?: number; erro?: string; fechada?: boolean };
 }
 
 // "Não trabalho com este item": remove o vínculo (some das próximas cotações).

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
 import type { Cotacao } from "@/lib/types";
+import { PrazoCotacao } from "../../prazo-cotacao";
 import {
   FornecedoresClient,
   type FornecedorLinha,
@@ -17,6 +18,8 @@ export default async function CotacaoFornecedoresPage({
   const { id } = await params;
   const supabase = await createClient();
 
+  // Prazo vencido (migration 0247): fecha antes de mostrar.
+  await supabase.rpc("cotacoes_fechar_vencidas");
   const { data: cotData } = await supabase
     .from("cotacoes")
     .select("*")
@@ -37,8 +40,9 @@ export default async function CotacaoFornecedoresPage({
   // Quem entrou sozinho agora pela marca "Sempre convidar" (pra avisar na tela).
   const autoConvidados: string[] = [];
   // Texto da mensagem do WhatsApp, salvo no sistema (vale em qualquer PC).
-  const { data: wcfg } = await supabase.from("wpp_config").select("msg_cotacao").maybeSingle();
+  const { data: wcfg } = await supabase.from("wpp_config").select("msg_cotacao, cotacao_prazo_horas").maybeSingle();
   const msgSalva = ((wcfg as { msg_cotacao?: string | null } | null)?.msg_cotacao ?? null) || null;
+  const prazoPadraoHoras = Number((wcfg as { cotacao_prazo_horas?: number | null } | null)?.cotacao_prazo_horas ?? 0) || null;
 
   if (produtoIds.length > 0) {
     // Quais fornecedores fornecem esses produtos (e quantos deles).
@@ -139,6 +143,16 @@ export default async function CotacaoFornecedoresPage({
         Convide os fornecedores e envie o link para cada um preencher os preços.
       </p>
 
+      <div className="mt-4">
+        <PrazoCotacao
+          cotacaoId={cotacao.id}
+          respostasAte={cotacao.respostas_ate ?? null}
+          fechada={cotacao.status === "fechada"}
+          padraoHoras={prazoPadraoHoras}
+          comPadrao
+        />
+      </div>
+
       {produtoIds.length === 0 ? (
         <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhum item para cotar ainda.{" "}
@@ -157,6 +171,8 @@ export default async function CotacaoFornecedoresPage({
           linhas={linhas}
           msgSalva={msgSalva}
           autoConvidados={autoConvidados}
+          respostasAte={cotacao.status === "fechada" ? null : cotacao.respostas_ate ?? null}
+          prazoPadraoHoras={cotacao.status === "fechada" ? null : prazoPadraoHoras}
         />
       )}
     </div>

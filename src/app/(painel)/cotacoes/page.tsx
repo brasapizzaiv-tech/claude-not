@@ -3,11 +3,14 @@ import { Enviar } from "@/components/enviar";
 import { createClient } from "@/lib/supabase/server";
 import type { Cotacao, Contagem } from "@/lib/types";
 import { dataBR } from "@/lib/format";
+import { textoPrazo } from "@/lib/cotacao-prazo";
 import { criarCotacao, excluirCotacao } from "./actions";
 
 export default async function CotacoesPage() {
   const supabase = await createClient();
 
+  // Prazo vencido (migration 0247): fecha antes de listar.
+  await supabase.rpc("cotacoes_fechar_vencidas");
   const [{ data: cotData }, { data: contData }] = await Promise.all([
     supabase.from("cotacoes").select("*").order("criado_em", { ascending: false }),
     supabase
@@ -93,6 +96,9 @@ export default async function CotacoesPage() {
                         <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
                           Aberta
                         </span>
+                      )}
+                      {c.status !== "fechada" && c.respostas_ate && (
+                        <span className="mt-0.5 block text-xs text-texto-suave">até {textoPrazo(c.respostas_ate)}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">

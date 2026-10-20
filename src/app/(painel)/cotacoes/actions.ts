@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
+import { prazoPadraoDesde } from "@/lib/cotacao-prazo";
 
 export async function criarCotacao(formData: FormData) {
   const supabase = await createClient();
@@ -480,8 +481,39 @@ export async function reabrirCotacao(formData: FormData) {
     .from("cotacoes")
     .update({ status: "aberta", ...((count ?? 0) === 0 ? { pedidos_gerados_em: null } : {}) })
     .eq("id", id);
+  // Prazo vencido fecharia de novo na hora: reabrir sem dizer até quando = sem prazo.
+  await supabase.from("cotacoes").update({ respostas_ate: null }).eq("id", id).lte("respostas_ate", new Date().toISOString());
   revalidatePath(`/cotacoes/${id}`);
   revalidatePath("/cotacoes");
+}
+
+// Prazo pra responder (migration 0247). `ate` null = sem prazo. Prazo no
+// futuro numa cotação fechada = reabrir por mais tempo.
+export async function definirPrazoCotacao(id: string, ate: string | null) {
+  const supabase = await createClient();
+  const quando = ate ? new Date(ate) : null;
+  if (quando && !(quando.getTime() > Date.now())) return { ok: false as const, mensagem: "Escolha um horário que ainda não passou." };
+  const { data: c } = await supabase.from("cotacoes").select("status").eq("id", id).maybeSingle();
+  if (!c) return { ok: false as const, mensagem: "Cotação não encontrada." };
+  const { error } = await supabase.from("cotacoes").update({ respostas_ate: quando ? quando.toISOString() : null }).eq("id", id);
+  if (error) return { ok: false as const, mensagem: error.message };
+  if (c.status === "fechada") {
+    const fd = new FormData();
+    fd.set("id", id);
+    await reabrirCotacao(fd);
+  }
+  revalidatePath(`/cotacoes/${id}`);
+  revalidatePath(`/cotacoes/${id}/fornecedores`);
+  revalidatePath("/cotacoes");
+  return { ok: true as const };
+}
+
+// Prazo padrão (horas a partir do primeiro envio do link); null = sem prazo.
+export async function salvarPrazoPadraoCotacao(horas: number | null) {
+  const supabase = await createClient();
+  const h = horas && horas > 0 ? Math.min(720, Math.round(horas)) : null;
+  const { error } = await supabase.from("wpp_config").update({ cotacao_prazo_horas: h }).not("empresa_id", "is", null);
+  return error ? { ok: false as const } : { ok: true as const };
 }
 
 export async function excluirCotacao(formData: FormData) {
@@ -523,6 +555,16 @@ export async function marcarEnviadoCotacao(cotacaoId: string, fornecedorIds: str
     .eq("cotacao_id", cotacaoId)
     .in("fornecedor_id", fornecedorIds)
     .is("enviado_em", null);
+  if (!error) {
+    const [{ data: c }, { data: cfg }] = await Promise.all([
+      supabase.from("cotacoes").select("status, respostas_ate").eq("id", cotacaoId).maybeSingle(),
+      supabase.from("wpp_config").select("cotacao_prazo_horas").maybeSingle(),
+    ]);
+    const horas = Number((cfg as { cotacao_prazo_horas?: number | null } | null)?.cotacao_prazo_horas ?? 0);
+    if (c && c.status === "aberta" && !c.respostas_ate && horas > 0) {
+      await supabase.from("cotacoes").update({ respostas_ate: prazoPadraoDesde(horas) }).eq("id", cotacaoId).is("respostas_ate", null);
+    }
+  }
   return error ? { ok: false as const } : { ok: true as const };
 }
 export async function limparEnviadosCotacao(cotacaoId: string) {

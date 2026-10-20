@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dataBR } from "@/lib/format";
 import { salvarPrecosPublico, removerItemPublico, type DadosCotacao } from "./actions";
+import { textoFalta, textoPrazo, venceu } from "@/lib/cotacao-prazo";
 
 export type LinhaPreco = {
   produto_id: string;
@@ -66,7 +67,8 @@ export function CotarPreencher({
   descricao,
   fornecedor,
   prazo,
-  fechada,
+  fechada: fechadaInicial,
+  respostasAte = null,
   produtos,
   outros,
   meta,
@@ -77,6 +79,8 @@ export function CotarPreencher({
   fornecedor: string;
   prazo: string | null;
   fechada: boolean;
+  /** Prazo pra responder (migration 0247). */
+  respostasAte?: string | null;
   produtos: LinhaPreco[];
   outros: LinhaPreco[];
   meta: Meta;
@@ -88,6 +92,15 @@ export function CotarPreencher({
   const [enviando, startSend] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // Fecha na tela quando o prazo passa com a página aberta (migration 0247).
+  const [fechada, setFechada] = useState(fechadaInicial);
+  useEffect(() => {
+    if (fechada || !respostasAte) return;
+    const ms = new Date(respostasAte).getTime() - Date.now();
+    if (ms > 2147483647) return;
+    const t = setTimeout(() => setFechada(true), Math.max(0, ms));
+    return () => clearTimeout(t);
+  }, [fechada, respostasAte]);
   const [salvo, setSalvo] = useState<"idle" | "salvando" | "ok">("idle");
   const [indisp, setIndisp] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(todos.map((p) => [p.produto_id, !p.disponivel])),
@@ -226,6 +239,7 @@ export function CotarPreencher({
       try {
         const r = await salvarPrecosPublico(token, payloadRef.current());
         setSalvo(r?.ok ? "ok" : "idle");
+        if (r?.fechada) setFechada(true);
       } catch {
         // Rede caiu ou a página ficou aberta durante uma atualização do sistema.
         // Não trava — o fornecedor tenta de novo (ou o próximo autosave resolve).
@@ -304,6 +318,7 @@ export function CotarPreencher({
           setTimeout(() => setMsg(null), 6000);
         } else {
           setMsg(null);
+          if (r?.fechada) setFechada(true);
           setErro(r?.erro ?? "Não foi possível enviar. Tente de novo.");
         }
       } catch {
@@ -387,7 +402,15 @@ export function CotarPreencher({
 
         {fechada && (
           <div className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-            Esta cotação está fechada. Os preços não podem mais ser alterados.
+            {respostasAte && venceu(respostasAte)
+              ? <>O prazo pra responder terminou <b>{textoPrazo(respostasAte)}</b>. Os preços não podem mais ser alterados — se ainda quiser mandar, fale com o comprador.</>
+              : "Esta cotação está fechada. Os preços não podem mais ser alterados."}
+          </div>
+        )}
+        {!fechada && respostasAte && (
+          <div className="mt-4 rounded-lg bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:bg-orange-950 dark:text-orange-200">
+            <Icone nome="relogio" tamanho={15} className="mr-1.5" />
+            Responda até <b>{textoPrazo(respostasAte)}</b>{textoFalta(respostasAte) ? ` (${textoFalta(respostasAte)})` : ""}. Depois disso o link fecha.
           </div>
         )}
 

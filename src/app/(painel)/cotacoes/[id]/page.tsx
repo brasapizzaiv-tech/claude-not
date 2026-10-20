@@ -11,6 +11,8 @@ export default async function CotacaoDetalhePage({
   const { id } = await params;
   const supabase = await createClient();
 
+  // Prazo vencido (migration 0247): fecha antes de mostrar.
+  await supabase.rpc("cotacoes_fechar_vencidas");
   const { data: cotData } = await supabase
     .from("cotacoes")
     .select("*")

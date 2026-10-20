@@ -6,6 +6,7 @@ import { BotaoAcao } from "@/components/enviar";
 import { siteUrl } from "@/lib/site-url";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { prazoPadraoDesde, textoPrazo } from "@/lib/cotacao-prazo";
 import {
   convidarFornecedor,
   convidarVarios,
@@ -40,6 +41,8 @@ export function FornecedoresClient({
   linhas,
   msgSalva = null,
   autoConvidados = [],
+  respostasAte = null,
+  prazoPadraoHoras = null,
 }: {
   cotacaoId: string;
   totalItens: number;
@@ -48,6 +51,9 @@ export function FornecedoresClient({
   msgSalva?: string | null;
   /** Quem entrou sozinho agora pela marca "Sempre convidar". */
   autoConvidados?: string[];
+  /** Prazo pra responder (migration 0247); sem prazo ainda, o padrão começa no 1º envio. */
+  respostasAte?: string | null;
+  prazoPadraoHoras?: number | null;
 }) {
   const router = useRouter();
   // Extensão "Brasa WhatsApp Sender": depois de enviar pelo WhatsApp Web ela
@@ -153,11 +159,16 @@ export function FornecedoresClient({
   // Texto da mensagem (com o link) para um fornecedor.
   function textoMsg(l: FornecedorLinha) {
     const url = l.token ? `${origin}/cotar/${l.token}` : "";
-    return template
+    // Prazo: o da cotação, ou o padrão que vai começar a contar neste envio.
+    const ate = respostasAte ?? (prazoPadraoHoras ? prazoPadraoDesde(prazoPadraoHoras) : null);
+    const prazoTxt = ate ? textoPrazo(ate) : "";
+    const base = template
       .replaceAll("{itens}", String(l.cobertura))
       .replaceAll("{nome}", l.nome)
       .replaceAll("{empresa}", EMPRESA)
       .replaceAll("{link}", url);
+    if (template.includes("{prazo}")) return base.replaceAll("{prazo}", prazoTxt);
+    return ate ? `${base}\nPode responder até ${prazoTxt}.` : base;
   }
   // Link do WhatsApp Web (abre no navegador, não no app instalado).
   function apiHref(l: FornecedorLinha) {
@@ -329,7 +340,7 @@ export function FornecedoresClient({
               />
               <p className="mt-1 text-mini text-texto-fraco">
                 Use <b>{"{link}"}</b> (o link), <b>{"{itens}"}</b> (qtd de itens),{" "}
-                <b>{"{nome}"}</b> (nome do fornecedor) e <b>{"{empresa}"}</b> (nossa empresa). A mensagem fica salva.
+                <b>{"{nome}"}</b> (nome do fornecedor), <b>{"{empresa}"}</b> (nossa empresa) e <b>{"{prazo}"}</b> (até quando responder — se não usar, ele vai no fim sozinho quando a cotação tem prazo). A mensagem fica salva.
               </p>
             </div>
           </details>

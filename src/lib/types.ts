@@ -139,6 +139,8 @@ export type Cotacao = {
   prazo: string | null;
   status: StatusCotacao;
   criado_em: string;
+  /** Prazo pra responder (migration 0247): passou, o link trava e fecha sozinha. */
+  respostas_ate?: string | null;
 };
 
 export type CotacaoItem = {
