@@ -21,6 +21,13 @@ const RESET_MS = 6000; // após mostrar a comanda, volta sozinho p/ o próximo c
 // prato — libera e pesa (antes a tela travava no resultado do cliente anterior).
 const NOVO_PRATO_MS = 1200;   // parado por 1,2 s
 const NOVO_PRATO_DIF = 0.03;  // 30 g: só pra ficar acima do ruído (oscilação é 20 g)
+// Balança esquecida sem tara (21/10/2026: da 200 à 215 o prato foi cobrado junto,
+// tudo virou livre). Enquanto o dia não estiver conferido, prato a partir de
+// 0,9 kg para e pergunta. Um prato abaixo de 0,65 kg prova que a tara está feita
+// (só o prato vazio já pesa ~0,7 kg) e confere o dia sozinho.
+const PESO_SUSPEITO = 0.9;
+const PESO_PROVA_TARA = 0.65;
+const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const MUDA_MS = 2000;         // silêncio da balança (prato fora) = libera
 const PARADA_PRATO_MS = 800;  // balança calada 0,8 s entre leituras = prato saiu
 
@@ -70,8 +77,18 @@ export function QuiosqueBalanca({
   cupom: { nome: string; endereco: string; telefone: string; msg: string };
 }) {
   const [estado, setEstado] = useState<
-    "conectar" | "aguardando" | "pesando" | "processando" | "resultado"
+    "conectar" | "aguardando" | "pesando" | "processando" | "resultado" | "conferirTara" | "tarando"
   >("conectar");
+  // Tara conferida hoje? (guardado neste PC; vale até virar o dia)
+  const taraOkDiaRef = useRef("");
+  const [suspeito, setSuspeito] = useState(0);
+  useEffect(() => {
+    try { taraOkDiaRef.current = localStorage.getItem("quiosque_tara_ok_dia") ?? ""; } catch { /* sem storage */ }
+  }, []);
+  function marcarTaraOk() {
+    taraOkDiaRef.current = hojeSP();
+    try { localStorage.setItem("quiosque_tara_ok_dia", taraOkDiaRef.current); } catch { /* sem storage */ }
+  }
   const [pesoBruto, setPesoBruto] = useState(0);
   const [erro, setErro] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
@@ -193,12 +210,24 @@ export function QuiosqueBalanca({
     setEst("aguardando");
   }
 
-  async function capturar(bruto: number) {
+  async function capturar(bruto: number, taraConfirmada = false) {
     setEst("processando");
     // O que vai pro sistema é o peso LÍQUIDO já resolvido (marmita = leitura + tara).
     const liquido = Math.round(netDe(bruto, taraBalancaRef.current, soKgRef.current) * 1000) / 1000;
     // Pesando de novo: some nesta comanda em vez de abrir outra.
     const somarEm = alvoRef.current;
+    // Balança sem tara? Só no modo "tarada com o prato", fora marmita/repesagem.
+    if (balancaTaradaRef.current && !somarEm && !soKgRef.current && !taraConfirmada && taraOkDiaRef.current !== hojeSP()) {
+      if (liquido >= PESO_SUSPEITO) {
+        capturaRef.current = { bruto, liquido, ts: Date.now() };
+        viuPratoSair.current = false;
+        precisaZerar.current = true;
+        setSuspeito(liquido);
+        setEst("conferirTara");
+        return;
+      }
+      if (liquido < PESO_PROVA_TARA) marcarTaraOk();
+    }
     if (somarEm) {
       capturaRef.current = { bruto, liquido, ts: Date.now() };
       viuPratoSair.current = false;
@@ -647,7 +676,7 @@ export function QuiosqueBalanca({
     }
     const liquido = netDe(bruto, taraBalancaRef.current, soKgRef.current);
     const est = estadoRef.current;
-    if (est === "processando") return;
+    if (est === "processando" || est === "conferirTara" || est === "tarando") return;
     if (est === "resultado") {
       // Retirou o prato/marmita? Líquido zerou OU a leitura crua caiu pelo menos
       // o peso capturado (cobre a marmita, que a balança lê negativo com a tara).
@@ -768,6 +797,22 @@ export function QuiosqueBalanca({
     } catch {
       /* leitura cancelada */
     }
+  }
+
+  // Aviso da tara: "está tarada, pode cobrar" ou "vou tarar e pesar de novo".
+  function taraConfirmadaCobrar() {
+    marcarTaraOk();
+    const cap = capturaRef.current;
+    if (cap) void capturar(cap.bruto, true);
+    else voltarAguardando();
+  }
+  // Pausa as pesagens enquanto tara (senão o prato vazio em cima da balança,
+  // antes de apertar TARA, virava comanda). Volta no "Pronto, tarei".
+  function vouTararAgora() {
+    setEst("tarando");
+  }
+  function tarei() {
+    voltarAguardando();
   }
 
   // ---- UI ----
@@ -1113,6 +1158,50 @@ export function QuiosqueBalanca({
               {erroImpressao && (
                 <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira nos ajustes.</p>
               )}
+            </div>
+          ) : estado === "tarando" ? (
+            <div className="mx-auto max-w-4xl text-center">
+              <div className="rounded-3xl border-4 border-amber-400 bg-amber-50 px-8 py-6 text-left">
+                <p className="text-center text-[clamp(1.6rem,5vw,3.25rem)] font-black text-amber-700">TARAR A BALANÇA</p>
+                <ol className="mt-4 list-decimal space-y-2 pl-8 text-[clamp(1.1rem,3vw,2rem)] text-marca-escuro/80">
+                  <li>Tire o prato de comida da balança.</li>
+                  <li>Coloque um prato vazio e aperte <b>TARA</b> na balança.</li>
+                  <li>Tire o prato vazio e toque em <b>Pronto</b>.</li>
+                </ol>
+                <p className="mt-3 text-[clamp(0.95rem,2.3vw,1.4rem)] text-marca-escuro/60">Enquanto isso o quiosque não pesa nada. Depois, o cliente pesa o prato de novo.</p>
+              </div>
+              <button
+                onClick={tarei}
+                className="mt-6 rounded-2xl bg-orange-500 px-10 py-5 text-[clamp(1.2rem,3vw,2rem)] font-black text-marca-sobre-primaria hover:brightness-110"
+              >
+                Pronto, tarei
+              </button>
+            </div>
+          ) : estado === "conferirTara" ? (
+            <div className="mx-auto max-w-4xl text-center" role="alert">
+              <div className="rounded-3xl border-4 border-red-500 bg-red-50 px-8 py-6">
+                <p className="text-[clamp(1.75rem,5.5vw,3.75rem)] font-black leading-tight text-red-700">
+                  <span className="inline-flex items-center justify-center gap-3"><Icone nome="alerta" tamanho={44} /> A BALANÇA ESTÁ TARADA?</span>
+                </p>
+                <p className="mt-3 text-[clamp(1.1rem,3vw,2rem)] text-marca-escuro/80">
+                  Este prato deu <b>{suspeito.toFixed(3).replace(".", ",")} kg</b>. Parece que o peso do prato não foi descontado.
+                </p>
+                <p className="mt-1 text-[clamp(1rem,2.5vw,1.6rem)] text-marca-escuro/60">Chame um atendente.</p>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+                <button
+                  onClick={vouTararAgora}
+                  className="rounded-2xl bg-red-600 px-8 py-5 text-[clamp(1.1rem,2.6vw,1.8rem)] font-black text-white hover:brightness-110"
+                >
+                  Não estava · vou tarar e pesar de novo
+                </button>
+                <button
+                  onClick={taraConfirmadaCobrar}
+                  className="rounded-2xl border-2 border-marca-escuro/30 bg-white px-8 py-5 text-[clamp(1.1rem,2.6vw,1.8rem)] font-bold text-marca-escuro hover:bg-marca-escuro/5"
+                >
+                  Está tarada · pode cobrar
+                </button>
+              </div>
             </div>
           ) : (
             <>
