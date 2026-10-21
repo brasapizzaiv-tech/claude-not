@@ -37,7 +37,7 @@ export type DadosInicio = {
     serie: number[];
     detalhe?: { rotulo: string; n: number; href: string }[];
   }[];
-  caixa: { aberto: boolean; valor: string; desde: string | null; pix: string; cartao: string; dinheiro: string };
+  caixa: { aberto: boolean; valor: string; desde: string | null; pix: string; cartao: string; dinheiro: string; outras: { nome: string; valor: string }[] };
   salao: {
     grupos: { nome: string; mesas: Mesa[] }[];
     ocupadas: number;
@@ -188,6 +188,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
           <p className="numero-grande mt-1.5 text-[36px]">{d.caixa.valor}</p>
           <p className="mt-0.5 text-[12.5px] text-painel-foco-suave">
             Pix {d.caixa.pix} · cartão {d.caixa.cartao} · dinheiro {d.caixa.dinheiro}
+            {d.caixa.outras.map((o) => ` · ${o.nome} ${o.valor}`).join("")}
           </p>
           <div className="mt-auto flex gap-2 pt-3">
             {d.caixa.aberto ? (

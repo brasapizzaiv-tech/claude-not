@@ -153,15 +153,21 @@ export default async function DashboardPage({
     movs.filter((m) => m.criado_em >= de && m.criado_em < ate).reduce((s, m) => s + Number(m.valor || 0), 0);
 
   const fatDia = somaEntre(j.de, j.ate);
-  // Divisão do dia em Pix / cartão / dinheiro (o resto — vale, outros — fica
-  // só no total). O tipo vem do cadastro de formas de pagamento.
+  // Divisão do dia em Pix / cartão / dinheiro; o resto (saldo cliente do
+  // convênio Kern, vale refeição…) aparece pelo nome da forma, senão parecia
+  // que não entrava na soma. O tipo vem do cadastro de formas de pagamento.
   const porTipo = { pix: 0, cartao: 0, dinheiro: 0 };
+  const outras = new Map<string, number>();
   for (const m of movs) {
     if (m.criado_em < j.de || m.criado_em >= j.ate) continue;
     const t = tipoDe(m.forma_pagamento, formasT);
     if (t === "pix" || t === "pix_maquina") porTipo.pix += Number(m.valor || 0);
     else if (t === "credito" || t === "debito" || t === "cartao") porTipo.cartao += Number(m.valor || 0);
     else if (t === "dinheiro") porTipo.dinheiro += Number(m.valor || 0);
+    else {
+      const nome = (m.forma_pagamento || "outros").toLowerCase();
+      outras.set(nome, (outras.get(nome) ?? 0) + Number(m.valor || 0));
+    }
   }
   const fatAntes = somaEntre(jAntes.de, jAntes.ate);
   const serieFat: number[] = [];
@@ -346,6 +352,7 @@ export default async function DashboardPage({
       pix: moedaBR(porTipo.pix),
       cartao: moedaBR(porTipo.cartao),
       dinheiro: moedaBR(porTipo.dinheiro),
+      outras: [...outras].filter(([, v]) => Math.abs(v) >= 0.01).sort((a, b) => b[1] - a[1]).map(([nome, v]) => ({ nome, valor: moedaBR(v) })),
       desde: caixaAberto?.aberto_em
         ? new Date(caixaAberto.aberto_em as string).toLocaleTimeString("pt-BR", {
             hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo",
