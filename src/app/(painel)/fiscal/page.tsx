@@ -116,7 +116,7 @@ export default async function FiscalPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs text-texto-suave">Série da NF-e (nota pra empresa)</label>
-              <input name="nfe_serie" defaultValue={v("nfe_serie")} placeholder="Ex.: 11 (o Suitable usa 10)" inputMode="numeric" className={campo} />
+              <input name="nfe_serie" defaultValue={v("nfe_serie")} placeholder="vazio = a do painel do Focus" inputMode="numeric" className={campo} />
             </div>
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs text-texto-suave">Token de HOMOLOGAÇÃO (opcional, pra nota de teste na Nota avulsa)</label>

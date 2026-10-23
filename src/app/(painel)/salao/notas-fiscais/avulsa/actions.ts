@@ -161,7 +161,8 @@ export async function emitirNotaAvulsa(input: EmitirAvulsa) {
 
   let r: FocusResposta;
   if (input.modelo === "nfe") {
-    const serie = (cfg.nfe_serie || cfg.nfce_serie || "").trim() || undefined;
+    // Série da NF-e: a da Config fiscal se tiver; vazio = a configurada no painel do Focus.
+    const serie = (cfg.nfe_serie || "").trim() || undefined;
     const payload = montarNfe({ dest: input.dest, linhas, perfilDe, pad, forma: input.forma, observacao: input.observacao, cnpjEmitente: cfg.cnpj, serie, homologacao: ambiente === "homologacao" });
     r = await emitirNfe(cfgFocus, ref, payload);
     if (r.ok) r = await aguardarNfe(cfgFocus, ref, r);
