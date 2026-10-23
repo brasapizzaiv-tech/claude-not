@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { diasDaSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { SemanaClient, type Pessoa } from "./semana";
+import { sincronizarDezDoCaixa } from "@/lib/dez-caixa";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,9 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
   const fim = somarDias(segunda, 6);
 
   const supabase = await createClient();
+
+  // 10% da noite puxado do CAIXA (migration 0250) — ver src/lib/dez-caixa.ts.
+  const servicoCaixa = await sincronizarDezDoCaixa(supabase, segunda, fim);
   const [{ data: colabs }, { data: dez }, { data: pagos }, { data: fiado }, { data: extras }, { data: adiantamentos }] = await Promise.all([
     supabase
       .from("colaboradores")
@@ -21,7 +25,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     // 10%: noites pagas NESTA semana (normalmente da semana passada) + noites desta semana (pagas na próxima).
     supabase
       .from("dez_por_cento_noites")
-      .select("data, valor, pagar_em")
+      .select("data, valor, pagar_em, origem")
       .or(`pagar_em.eq.${segunda},and(data.gte.${segunda},data.lte.${fim})`)
       .order("data"),
     supabase.from("semana_pagamentos").select("colaborador_id, valor, lancamento_id, desconto").eq("segunda", segunda),
@@ -98,7 +102,8 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       dias={dias}
       pessoas={pessoasDaSemana}
       presencasIniciais={[...(presSemana ?? []), ...(presExtras ?? [])] as { colaborador_id: string; data: string; turno: "dia" | "noite" }[]}
-      dezIniciais={(dez ?? []) as { data: string; valor: number; pagar_em: string }[]}
+      dezIniciais={(dez ?? []) as { data: string; valor: number; pagar_em: string; origem?: string }[]}
+      servicoCaixa={servicoCaixa}
       pagos={(pagos ?? []) as { colaborador_id: string; valor: number; lancamento_id: string | null; desconto: number }[]}
       fiadoPor={fiadoPor}
       extrasIniciais={(extras ?? []) as { colaborador_id: string; valor: number; motivo: string | null; turno: "dia" | "noite"; desconto: number; desconto_motivo: string | null }[]}

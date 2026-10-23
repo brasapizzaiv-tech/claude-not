@@ -30,9 +30,9 @@ export type Pessoa = {
 };
 
 type Presenca = { colaborador_id: string; data: string; turno: Turno };
-type Dez = { data: string; valor: number; pagar_em: string };
+type Dez = { data: string; valor: number; pagar_em: string; origem?: string };
 // Linha do painel de 10%: valor como texto (digitação) + em que semana é pago.
-type DezLinha = { data: string; valor: string; pagar_em: string };
+type DezLinha = { data: string; valor: string; pagar_em: string; origem?: string };
 
 const chave = (id: string, data: string, turno: Turno) => `${id}|${data}|${turno}`;
 
@@ -60,7 +60,7 @@ type Pago = { colaborador_id: string; valor: number; lancamento_id: string | nul
 type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [],
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [],
 }: {
   /** Batidas do relógio de ponto da semana (migration 0221). */
   batidasPonto?: { colaborador_id: string; data: string; turno: Turno; hora: string }[];
@@ -73,6 +73,8 @@ export function SemanaClient({
   pessoas: Pessoa[];
   presencasIniciais: Presenca[];
   dezIniciais: Dez[];
+  /** 10% cobrado no caixa por noite (data → valor), migration 0250. */
+  servicoCaixa?: Record<string, number>;
   pagos: Pago[];
   fiadoPor: Record<string, { valor: number; n: number }>;
   extrasIniciais: { colaborador_id: string; valor: number; motivo: string | null; turno: Turno; desconto?: number; desconto_motivo?: string | null }[];
@@ -189,7 +191,7 @@ export function SemanaClient({
     () => new Set(presencasIniciais.map((p) => chave(p.colaborador_id, p.data, p.turno))),
   );
   const [dez, setDez] = useState<DezLinha[]>(() =>
-    dezIniciais.map((d) => ({ data: d.data, valor: Number(d.valor) ? fmtNum(Number(d.valor)) : "", pagar_em: d.pagar_em })),
+    dezIniciais.map((d) => ({ data: d.data, valor: Number(d.valor) ? fmtNum(Number(d.valor)) : "", pagar_em: d.pagar_em, origem: d.origem })),
   );
   const [novaNoite, setNovaNoite] = useState("");
   const [extras, setExtras] = useState<Set<string>>(new Set()); // esporádicos trazidos pra semana
@@ -310,9 +312,13 @@ export function SemanaClient({
 
   function salvarDez(data: string, valorTxt: string, pagarEm: string) {
     const v = numBRtxt(valorTxt);
-    setDez((lista) => lista.map((e) => (e.data === data ? { ...e, valor: v ? fmtNum(v) : "", pagar_em: pagarEm } : e)));
+    // Igual ao do caixa = continua "do caixa" (acompanha comanda fechada depois);
+    // diferente = digitado à mão, o caixa não troca mais.
+    const cx = servicoCaixa[data];
+    const origem = cx != null && Math.abs(cx - v) < 0.01 ? "caixa" : "manual";
+    setDez((lista) => lista.map((e) => (e.data === data ? { ...e, valor: v ? fmtNum(v) : "", pagar_em: pagarEm, origem } : e)));
     start(async () => {
-      const r = await salvarDezPorCento(data, v, pagarEm);
+      const r = await salvarDezPorCento(data, v, pagarEm, origem);
       if (r.erro) setErro(r.erro);
     });
   }
@@ -714,6 +720,18 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                           placeholder="0,00"
                           className={`${inputCls} w-28 text-right font-semibold`}
                         />
+                        {servicoCaixa[n.data] != null && (() => {
+                          const cx = servicoCaixa[n.data];
+                          const igual = Math.abs(cx - numBRtxt(e.valor)) < 0.01;
+                          return (
+                            <div className={`mt-0.5 text-mini ${igual ? "text-texto-fraco" : "text-amber-600"}`}>
+                              caixa {brl(cx)}
+                              {!igual && (
+                                <button type="button" onClick={() => salvarDez(n.data, fmtNum(cx), e.pagar_em)} className="ml-1 font-semibold underline">usar</button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-2 py-1">
                         <select

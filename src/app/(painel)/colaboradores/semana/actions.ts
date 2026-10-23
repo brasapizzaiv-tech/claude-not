@@ -35,7 +35,7 @@ export async function marcarPresenca(colaboradorId: string, data: string, turno:
 
 // Valor do 10% arrecadado na noite (digitado à mão por enquanto).
 // pagarEm = segunda da semana em que entra no acerto (padrão: semana seguinte).
-export async function salvarDezPorCento(data: string, valor: number, pagarEm?: string) {
+export async function salvarDezPorCento(data: string, valor: number, pagarEm?: string, origem: "manual" | "caixa" = "manual") {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
@@ -44,7 +44,8 @@ export async function salvarDezPorCento(data: string, valor: number, pagarEm?: s
   const { error } = await supabase
     .from("dez_por_cento_noites")
     .upsert(
-      { empresa_id: empresaId, data, valor: Math.max(0, valor || 0), pagar_em },
+      // Digitado na tela = manual: o caixa não troca mais esse valor (migration 0250).
+      { empresa_id: empresaId, data, valor: Math.max(0, valor || 0), pagar_em, origem: origem === "caixa" ? "caixa" : "manual" },
       { onConflict: "empresa_id,data" },
     );
   if (error) return { erro: error.message };
