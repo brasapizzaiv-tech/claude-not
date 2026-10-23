@@ -7,8 +7,8 @@ import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { addDiasIso, diaSemanaIso, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import {
-  CATEGORIAS_SALADA, GRUPOS, PRECOS_SUGERIDOS, chaveNome, limparNomePrato, linhas, statusCardapio,
-  type CardapioDia, type EstatPrato, type Grupo, type ItemCatalogo, type Publicacao, type SaladaBase,
+  CATEGORIAS_SALADA, GRUPOS, chaveNome, limparNomePrato, linhas, statusCardapio,
+  type CardapioDia, type EstatPrato, type Grupo, type ItemCatalogo, type PrecosBuffet, type Publicacao, type SaladaBase,
 } from "@/lib/cardapio-dia-core";
 import type { KernDia } from "@/lib/marmitas-cardapio";
 import { MarmitaDiaForm, type PodeMarmita } from "@/components/marmita-dia-form";
@@ -30,18 +30,20 @@ const quando = (ts: string | null) =>
 const norm = chaveNome;
 
 export function CardapioApp({
-  token, dia, cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat,
+  token, dia, cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat, precos,
 }: {
   token: string; dia: string; cardapio: CardapioDia | null; itens: ItemCatalogo[]; base: SaladaBase[];
   marcadas: string[]; padrao: string[]; historico: Publicacao[]; kern: KernDia | null; podeMarmita: PodeMarmita;
   estat: Record<string, EstatPrato>;
+  /** Tabela de preços do buffet (a mesma da balança e do caixa). */
+  precos: PrecosBuffet;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
   const [aba, setAba] = useState<Aba>("buffet");
   const [msg, setMsg] = useState<string | null>(null);
   const dow = diaSemanaIso(dia);
-  const sugerido = PRECOS_SUGERIDOS[dow];
+  const sugerido = precos[dow];
 
   // ---- buffet
   const [sel, setSel] = useState<Record<Grupo, string[]>>({
@@ -52,7 +54,7 @@ export function CardapioApp({
   const status = statusCardapio(cardapio);
   const dados = () => ({
     proteinas: sel.proteinas.join("\n"), carboidratos: sel.carboidratos.join("\n"), especial: sel.especial.join("\n"),
-    preco_livre: cardapio?.preco_livre ?? sugerido?.livre ?? null, preco_kg: cardapio?.preco_kg ?? sugerido?.kg ?? null,
+    preco_livre: sugerido?.livre ?? cardapio?.preco_livre ?? null, preco_kg: sugerido?.kg ?? cardapio?.preco_kg ?? null,
   });
   function addItem(g: Grupo, nome: string) {
     const n = limparNomePrato(nome);

@@ -26,7 +26,7 @@ export default async function CardapioDoDiaPage({
   const supabase = await createClient();
   const db = supabase as unknown as core.Db;
   const dowDia = diaSemanaIso(dia);
-  const [dias, itens, base, marcadas, padrao, historico, kern, podeMarmita] = await Promise.all([
+  const [dias, itens, base, marcadas, padrao, historico, kern, podeMarmita, precos] = await Promise.all([
     core.listarCardapios(db, addDiasIso(hoje, -21), addDiasIso(hoje, 21)),
     core.listarCatalogo(db),
     core.listarSaladasBase(db),
@@ -35,6 +35,7 @@ export default async function CardapioDoDiaPage({
     core.historicoPublicacoes(db, { limite: 40 }),
     kernDoDia(dia).catch(() => null),
     podeEditarMarmita(dia).catch(() => ({ ok: false as const, motivo: "Não consegui ler o cadastro das marmitas.", abreEm: { data: dia, hora: "" } })),
+    core.precosBuffet(db),
   ]);
 
   return (
@@ -46,6 +47,7 @@ export default async function CardapioDoDiaPage({
         dias={dias}
         atual={dias.find((c) => c.data === dia) ?? null}
         itens={itens}
+        precos={precos}
       />
       <SaladasDoDia key={"sal-" + dia} dia={dia} dow={dowDia} base={base} marcadas={marcadas} padrao={padrao} />
 

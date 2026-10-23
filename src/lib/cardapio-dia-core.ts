@@ -39,16 +39,24 @@ export type StatusCardapio = "vazio" | "rascunho" | "publicado" | "alterado";
 export type ItemCatalogo = { id: string; grupo: string; nome: string; usos: number };
 export type Publicacao = { id: string; data: string; acao: string; detalhe: string | null; por_nome: string | null; em: string };
 
-// Preços do buffet por dia da semana (os mesmos da tabela de valores do site);
-// um dia novo nasce com eles sugeridos.
-export const PRECOS_SUGERIDOS: Record<number, { livre: number; kg: number }> = {
-  1: { livre: 40.9, kg: 94.9 },
-  2: { livre: 40.9, kg: 94.9 },
-  3: { livre: 40.9, kg: 94.9 },
-  4: { livre: 40.9, kg: 94.9 },
-  5: { livre: 45.9, kg: 99.9 },
-  6: { livre: 67.9, kg: 149.9 },
-};
+// Preços do buffet por dia da semana (0 = domingo): os MESMOS que a balança e
+// o caixa cobram (pdv_config buffet_livre_N / preco_kg_N, com o geral de
+// reserva). Antes ficavam escritos aqui e desatualizaram: em 23/10/2026 o site
+// mostrou o livre de sexta a R$ 45,90 com o caixa cobrando R$ 46,90.
+export type PrecosBuffet = Record<number, { livre: number | null; kg: number | null }>;
+export async function precosBuffet(db: Db, empresaId?: string | null): Promise<PrecosBuffet> {
+  let q = db.from("pdv_config").select("chave, valor").or("chave.like.buffet_livre%,chave.like.preco_kg%");
+  if (empresaId) q = q.eq("empresa_id", empresaId);
+  const { data } = await q;
+  const cfg: Record<string, string> = {};
+  for (const r of (data as { chave: string; valor: string }[] | null) ?? []) cfg[r.chave] = r.valor;
+  const num = (v: string | undefined) => (v != null && v !== "" && Number(v) > 0 ? Number(v) : null);
+  const out: PrecosBuffet = {};
+  for (let d = 0; d <= 6; d++) {
+    out[d] = { livre: num(cfg[`buffet_livre_${d}`]) ?? num(cfg.buffet_livre), kg: num(cfg[`preco_kg_${d}`]) ?? num(cfg.preco_kg) };
+  }
+  return out;
+}
 
 // A cozinha escrevia "Frango assado M" pra marcar marmita. Marmita agora é
 // bloco próprio na TV, então o "M" no fim do nome sai antes de gravar.

@@ -13,7 +13,7 @@ import {
   salvarCardapio,
   type Grupo,
 } from "./actions";
-import { PRECOS_SUGERIDOS, statusCardapio, type CardapioDia, type ItemCatalogo } from "@/lib/cardapio-dia-core";
+import { statusCardapio, type CardapioDia, type ItemCatalogo, type PrecosBuffet } from "@/lib/cardapio-dia-core";
 
 export type Cardapio = CardapioDia;
 export type ItemCat = ItemCatalogo;
@@ -30,7 +30,6 @@ const SEMANA = [
   "sexta-feira",
   "sábado",
 ];
-const PRECOS = PRECOS_SUGERIDOS;
 const BLOCOS: { grupo: Grupo; titulo: string }[] = [
   { grupo: "proteinas", titulo: "Proteínas" },
   { grupo: "carboidratos", titulo: "Carboidratos" },
@@ -78,12 +77,15 @@ export function EditorCardapio({
   dias,
   atual,
   itens,
+  precos: PRECOS,
 }: {
   dia: string;
   hoje: string;
   dias: Cardapio[];
   atual: Cardapio | null;
   itens: ItemCat[];
+  /** Tabela de preços do buffet (a mesma da balança e do caixa). */
+  precos: PrecosBuffet;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -97,8 +99,8 @@ export function EditorCardapio({
     especial: paraLinhas(atual?.especial ?? null),
   });
   const [precos, setPrecos] = useState({
-    livre: texto(atual?.preco_livre ?? sugerido?.livre ?? null),
-    kg: texto(atual?.preco_kg ?? sugerido?.kg ?? null),
+    livre: texto(sugerido?.livre ?? atual?.preco_livre ?? null),
+    kg: texto(sugerido?.kg ?? atual?.preco_kg ?? null),
   });
 
   const irPara = (v: string) => router.push(`/cardapio-do-dia?dia=${v}`);
@@ -272,8 +274,8 @@ export function EditorCardapio({
                 />
               </div>
               <p className="self-end pb-2 text-mini text-texto-fraco">
-                Sugeridos pelo dia da semana ({moeda(sugerido?.livre ?? null)} e{" "}
-                {moeda(sugerido?.kg ?? null)}).
+                Da tabela de preços do buffet, a mesma da balança e do caixa ({moeda(sugerido?.livre ?? null)} e{" "}
+                {moeda(sugerido?.kg ?? null)}). O site e a TV mostram sempre a tabela.
               </p>
             </div>
 

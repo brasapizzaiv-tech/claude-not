@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import * as core from "@/lib/cardapio-dia-core";
 import { kernDoDia, podeEditarMarmita } from "@/lib/marmitas-cardapio";
 import { diaDoCardapio, diaSemanaIso } from "@/lib/dia-cardapio";
+import { empresaAtualId } from "@/lib/empresa";
 import { colabCardapio } from "./actions";
 import { CardapioApp } from "./cardapio-app";
 
@@ -35,7 +36,7 @@ export default async function CardapioColabPage({
   const dia = /^\d{4}-\d{2}-\d{2}$/.test(diaParam) ? diaParam : diaDoCardapio();
   const db = createAdminClient() as core.Db;
   const dow = diaSemanaIso(dia);
-  const [cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat] = await Promise.all([
+  const [cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat, precos] = await Promise.all([
     core.lerCardapioDia(db, dia),
     core.listarCatalogo(db),
     core.listarSaladasBase(db),
@@ -45,6 +46,7 @@ export default async function CardapioColabPage({
     kernDoDia(dia).catch(() => null),
     podeEditarMarmita(dia).catch(() => ({ ok: false as const, motivo: "Não consegui ler o cadastro das marmitas.", abreEm: { data: dia, hora: "" } })),
     core.estatisticasPratos(db, dia),
+    empresaAtualId().catch(() => null).then((e) => core.precosBuffet(db, e)),
   ]);
 
   return (
@@ -66,6 +68,7 @@ export default async function CardapioColabPage({
         kern={kern}
         podeMarmita={podeMarmita}
         estat={estat}
+        precos={precos}
       />
     </div>
   );

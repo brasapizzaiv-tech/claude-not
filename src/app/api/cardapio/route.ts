@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
+import { precosBuffet, type Db } from "@/lib/cardapio-dia-core";
 
 // Cardápio do dia para o site público (a página é estática, então quem lê o
 // banco é o servidor). Devolve o de hoje; se hoje ainda não foi publicado,
@@ -43,6 +45,12 @@ export async function GET() {
 
   if (!c) return NextResponse.json({ tem: false }, semCache);
 
+  // Preço = o que a balança e o caixa cobram nesse dia da semana (o gravado no
+  // cardápio só vale se a tabela não tiver o dia).
+  const tabela = await precosBuffet(supabase as unknown as Db, await empresaAtualId().catch(() => null)).catch(() => null);
+  const dow = new Date(`${c.data}T12:00:00-03:00`).getUTCDay();
+  const p = tabela?.[dow];
+
   return NextResponse.json({
     tem: true,
     hoje: c.data === hoje,
@@ -50,7 +58,7 @@ export async function GET() {
     proteinas: linhas(c.proteinas),
     carboidratos: linhas(c.carboidratos),
     especial: linhas(c.especial),
-    preco_livre: c.preco_livre,
-    preco_kg: c.preco_kg,
+    preco_livre: p?.livre ?? c.preco_livre,
+    preco_kg: p?.kg ?? c.preco_kg,
   }, semCache);
 }
