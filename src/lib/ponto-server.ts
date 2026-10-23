@@ -1,6 +1,20 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { acharPorNome, lerAfd, soDigitos, turnoDaBatida } from "@/lib/ponto-core";
 
+/** Remove as batidas do RHiD (origem afd) repetidas de uma batida do relógio da MESMA pessoa (até 90 s). */
+export async function apagarAfdRepetidas(empresaId: string, colaboradorId: string): Promise<number> {
+  const admin = createAdminClient();
+  const { data } = await admin.from("ponto_batidas").select("id, origem, data_hora").eq("empresa_id", empresaId).eq("colaborador_id", colaboradorId).limit(20000);
+  const lista = (data ?? []) as { id: string; origem: string; data_hora: string }[];
+  // O RHiD arredonda o minuto diferente do relógio: até 90 s de diferença é a mesma batida.
+  const doRelogio = lista.filter((b) => b.origem === "relogio").map((b) => new Date(b.data_hora).getTime());
+  const repetidas = lista
+    .filter((b) => b.origem === "afd" && doRelogio.some((t) => Math.abs(t - new Date(b.data_hora).getTime()) <= 90_000))
+    .map((b) => b.id);
+  if (repetidas.length) await admin.from("ponto_batidas").delete().in("id", repetidas);
+  return repetidas.length;
+}
+
 // Recebe as batidas do relógio (via agente do PC central) — migration 0221.
 // Liga cada batida a um colaborador pelo CPF; na primeira vez, se o
 // colaborador ainda não tem CPF no cadastro, tenta pelo nome cadastrado no
@@ -26,9 +40,11 @@ export async function receberAfd(
   if (batidas.length === 0) return { recebidas: 0, novas: 0, presencas: 0, semColaborador: 0 };
 
   // Colaboradores da empresa (ativos e inativos: a batida antiga de quem saiu ainda é dele).
-  const { data: cols } = await admin.from("colaboradores").select("id, nome, cpf, bate_ponto, ativo").eq("empresa_id", empresaId);
-  const colaboradores = (cols ?? []) as { id: string; nome: string; cpf: string | null; bate_ponto: boolean; ativo: boolean }[];
+  const { data: cols } = await admin.from("colaboradores").select("id, nome, cpf, pis, bate_ponto, ativo").eq("empresa_id", empresaId);
+  const colaboradores = (cols ?? []) as { id: string; nome: string; cpf: string | null; pis: string | null; bate_ponto: boolean; ativo: boolean }[];
+  // O número da batida é o CPF — ou o PIS, pra quem foi cadastrado no relógio pelo PIS (migration 0251).
   const porCpf = new Map(colaboradores.filter((c) => soDigitos(c.cpf).length === 11).map((c) => [soDigitos(c.cpf), c]));
+  for (const c of colaboradores) if (soDigitos(c.pis).length === 11 && !porCpf.has(soDigitos(c.pis))) porCpf.set(soDigitos(c.pis), c);
   const nomeDoCpf = new Map(usuarios.map((u) => [soDigitos(u.cpf).slice(-11), (u.nome || "").trim()]));
 
   // CPF novo: tenta ligar pelo nome (só entre ativos sem CPF) e grava no cadastro.
@@ -47,14 +63,23 @@ export async function receberAfd(
   // A mesma batida pode chegar por dois caminhos (relógio pelo agente e AFD
   // importado do RHiD, com NSR diferente): pessoa + hora igual = repetida.
   const horas = batidas.map((b) => new Date(b.dataHora).getTime());
-  const { data: jaTem } = await admin.from("ponto_batidas").select("cpf, data_hora").eq("empresa_id", empresaId)
+  const { data: jaTem } = await admin.from("ponto_batidas").select("cpf, colaborador_id, data_hora").eq("empresa_id", empresaId)
     .gte("data_hora", new Date(Math.min(...horas)).toISOString()).lte("data_hora", new Date(Math.max(...horas)).toISOString()).limit(50000);
-  const existe = new Set(((jaTem ?? []) as { cpf: string; data_hora: string }[]).map((x) => `${x.cpf}|${new Date(x.data_hora).getTime()}`));
+  const existe = new Set<string>();
+  for (const x of (jaTem ?? []) as { cpf: string; colaborador_id: string | null; data_hora: string }[]) {
+    const t = new Date(x.data_hora).getTime();
+    existe.add(`${x.cpf}|${t}`);
+    if (x.colaborador_id) existe.add(`p:${x.colaborador_id}|${t}`);
+  }
   const vistas = new Set<string>();
   const unicas = batidas.filter((b) => {
-    const k = `${b.cpf}|${new Date(b.dataHora).getTime()}`;
-    if (existe.has(k) || vistas.has(k)) return false;
+    const t = new Date(b.dataHora).getTime();
+    const k = `${b.cpf}|${t}`;
+    const pessoa = porCpf.get(b.cpf);
+    const kp = pessoa ? `p:${pessoa.id}|${t}` : null;
+    if (existe.has(k) || vistas.has(k) || (kp && (existe.has(kp) || vistas.has(kp)))) return false;
     vistas.add(k);
+    if (kp) vistas.add(kp);
     return true;
   });
   if (unicas.length === 0) return { recebidas: batidas.length, novas: 0, presencas: 0, semColaborador: 0 };

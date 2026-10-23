@@ -26,7 +26,7 @@ export function BatidasSemColaborador({ lista, colaboradores }: { lista: CpfSemD
     <section className="cartao mb-4 p-5">
       <h2 className="font-numero text-lg font-bold text-texto">Batidas sem colaborador <span className="pilula pilula-urgente ml-1 align-middle">{lista.length}</span></h2>
       <p className="mt-1 text-sm text-texto-suave">
-        O relógio mandou batidas de CPFs que não estão no cadastro. Sem isso a batida não vira presença. Diga de quem é cada um (uma vez só): o CPF vai pro cadastro e as batidas antigas e as próximas já ficam ligadas.
+        O relógio mandou batidas de CPFs (ou PIS, pra quem foi cadastrado no relógio pelo PIS) que não estão no cadastro. Sem isso a batida não vira presença. Diga de quem é cada um (uma vez só): o CPF vai pro cadastro e as batidas antigas e as próximas já ficam ligadas.
       </p>
       <ul className="mt-3 flex flex-col gap-2">
         {lista.map((x) => (

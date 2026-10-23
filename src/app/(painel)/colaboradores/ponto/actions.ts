@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { empresaAtualId } from "@/lib/empresa";
-import { marcarPresencasDoPonto, receberAfd } from "@/lib/ponto-server";
-import { turnoDaBatida } from "@/lib/ponto-core";
+import { apagarAfdRepetidas, marcarPresencasDoPonto, receberAfd } from "@/lib/ponto-server";
+import { pisValido, turnoDaBatida } from "@/lib/ponto-core";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -165,14 +165,19 @@ export async function vincularCpfPonto(cpf: string, colaboradorId: string) {
   const { data: col } = await supabase.from("colaboradores").select("id, nome, cpf").eq("id", colaboradorId).maybeSingle();
   if (!col) return { ok: false as const, erro: "Colaborador não encontrado." };
   const atual = String((col as { cpf: string | null }).cpf ?? "").replace(/\D/g, "");
-  if (atual && atual !== c) return { ok: false as const, erro: `${(col as { nome: string }).nome} já tem outro CPF no cadastro. Confira em Colaboradores.` };
-  const { data: outro } = await supabase.from("colaboradores").select("nome").eq("cpf", c).neq("id", colaboradorId).limit(1).maybeSingle();
-  if (outro) return { ok: false as const, erro: `Esse CPF já é de ${(outro as { nome: string }).nome}.` };
-  const { error } = await supabase.from("colaboradores").update({ cpf: c }).eq("id", colaboradorId);
+  // O relógio manda o PIS de quem foi cadastrado nele pelo PIS (migration 0251):
+  // número que é PIS válido (e não é o CPF da pessoa) vai pro campo PIS.
+  const ehPis = pisValido(c) && c !== atual;
+  if (!ehPis && atual && atual !== c) return { ok: false as const, erro: `${(col as { nome: string }).nome} já tem outro CPF no cadastro. Confira em Colaboradores.` };
+  const { data: outro } = await supabase.from("colaboradores").select("nome").or(`cpf.eq.${c},pis.eq.${c}`).neq("id", colaboradorId).limit(1).maybeSingle();
+  if (outro) return { ok: false as const, erro: `Esse número já é de ${(outro as { nome: string }).nome}.` };
+  const { error } = await supabase.from("colaboradores").update(ehPis ? { pis: c } : { cpf: c }).eq("id", colaboradorId);
   if (error) return { ok: false as const, erro: error.message };
   const { data: ligadas, error: e2 } = await supabase.from("ponto_batidas").update({ colaborador_id: colaboradorId })
     .eq("cpf", c).is("colaborador_id", null).select("data");
   if (e2) return { ok: false as const, erro: e2.message };
+  // Histórico que veio duas vezes (RHiD com o CPF, relógio com o PIS): fica a do relógio.
+  await apagarAfdRepetidas(empresaId, colaboradorId);
   const dias = [...new Set(((ligadas ?? []) as { data: string }[]).map((b) => String(b.data).slice(0, 10)))];
   const presencas = await marcarPresencasDoPonto(empresaId, dias.map((data) => ({ colaboradorId, data })));
   revalidar();

@@ -74,3 +74,12 @@ export function acharPorNome<T extends { nome: string }>(nomeRelogio: string, ca
 }
 
 export const soDigitos = (s: string | null | undefined) => (s ?? "").replace(/\D/g, "");
+
+/** PIS/PASEP válido (dígito verificador). O relógio manda o PIS de quem foi cadastrado nele pelo PIS. */
+export function pisValido(s: string | null | undefined): boolean {
+  const d = soDigitos(s);
+  if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;
+  const pesos = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const r = 11 - (pesos.reduce((acc, p, i) => acc + p * Number(d[i]), 0) % 11);
+  return (r >= 10 ? 0 : r) === Number(d[10]);
+}
