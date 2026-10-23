@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
-import { AvulsaClient, type ClienteNota, type ItemCardapio, type PerfilOpcao } from "./avulsa-client";
+import { AvulsaClient, type ItemCardapio, type PerfilOpcao } from "./avulsa-client";
 
 export const metadata = { title: "Nota avulsa · Notas fiscais" };
 export const dynamic = "force-dynamic";
@@ -11,8 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function NotaAvulsaPage() {
   await exigirAcesso(["/salao", "/financeiro"]);
   const db = await createClient();
-  const [{ data: clientes }, { data: itens }, { data: perfis }, { data: cfgRows }] = await Promise.all([
-    db.from("clientes").select("id, nome, cpf_cnpj, ie, indicador_ie, logradouro, numero, complemento, bairro, municipio, uf, cep, email, telefone").eq("ativo", true).order("nome").limit(3000),
+  const [{ data: itens }, { data: perfis }, { data: cfgRows }] = await Promise.all([
     db.from("pdv_itens").select("id, nome, preco, categoria").eq("ativo", true).order("nome").limit(2000),
     db.from("perfis_fiscais").select("id, nome, cfop, csosn, ncm").eq("ativo", true).order("nome"),
     db.from("config_fiscal").select("chave, valor"),
@@ -32,7 +31,6 @@ export default async function NotaAvulsaPage() {
         NF-e pra empresa (Kern e outras) ou NFC-e pra consumidor, fora do caixa. Puxe o que o cliente comprou no período ou digite os itens.
       </p>
       <AvulsaClient
-        clientes={(clientes as ClienteNota[]) ?? []}
         itens={((itens as { id: string; nome: string; preco: number; categoria: string | null }[]) ?? []).map((i) => ({ ...i, preco: Number(i.preco) || 0 })) as ItemCardapio[]}
         perfis={(perfis as PerfilOpcao[]) ?? []}
         producao={producao}

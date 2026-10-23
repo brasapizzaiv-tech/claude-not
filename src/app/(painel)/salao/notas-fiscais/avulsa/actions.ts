@@ -227,3 +227,26 @@ export async function consultarNotaAvulsa(id: string) {
   revalidatePath("/salao/notas-fiscais");
   return { ok: r.status === "autorizado", status: r.status ?? null, numero: r.numero ?? null, urlDanfe: r.urlDanfe ?? null, mensagem: r.mensagem ?? null };
 }
+
+// Busca de cliente na hora (no banco, em TODOS os clientes — a lista inteira
+// passava de 1000 e o banco só devolvia os primeiros em ordem alfabética).
+export async function buscarClientesNota(termo: string) {
+  await exigirAcesso(ACESSO);
+  const q = termo.trim();
+  if (q.length < 2) return [];
+  const db = await createClient();
+  const d = soDigitos(q);
+  const nome = q.replace(/[%_,()]/g, " ").trim();
+  let consulta = db
+    .from("clientes")
+    .select("id, nome, cpf_cnpj, ie, indicador_ie, logradouro, numero, complemento, bairro, municipio, uf, cep, email, telefone")
+    .eq("ativo", true)
+    .order("nome")
+    .limit(25);
+  consulta = d.length >= 3 ? consulta.or(`nome.ilike.%${nome}%,cpf_cnpj.ilike.%${d}%`) : consulta.ilike("nome", `%${nome}%`);
+  const { data } = await consulta;
+  const lista = (data as import("./avulsa-client").ClienteNota[]) ?? [];
+  // Quem começa com o que foi digitado vem primeiro.
+  const ini = q.toLowerCase();
+  return lista.sort((a, b) => Number(!a.nome.toLowerCase().startsWith(ini)) - Number(!b.nome.toLowerCase().startsWith(ini)));
+}

@@ -3,13 +3,13 @@
 // Tela da nota avulsa (migration 0248). Quatro passos numa coluna: tipo de nota,
 // quem compra (com busca do CNPJ na Receita), itens (ou "puxar compras do
 // período", que no Kern traz as marmitas do convênio) e pagamento + emitir.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BotaoAcao } from "@/components/enviar";
 import { avisar, confirmar } from "@/components/dialogo";
 import { Icone } from "@/components/icone";
 import { FORMAS_NOTA, conferirNota, totalLinhas, type DestNota, type LinhaNota, type ModeloNota } from "@/lib/fiscal/avulsa";
-import { buscarCnpjNota, comprasDoCliente, consultarNotaAvulsa, emitirNotaAvulsa, salvarClienteNota } from "./actions";
+import { buscarClientesNota, buscarCnpjNota, comprasDoCliente, consultarNotaAvulsa, emitirNotaAvulsa, salvarClienteNota } from "./actions";
 
 export type ClienteNota = {
   id: string; nome: string; cpf_cnpj: string | null; ie: string | null; indicador_ie: "1" | "2" | "9" | null;
@@ -51,8 +51,8 @@ type Resultado = {
   urlDanfe: string | null; urlXml: string | null; ambiente: string | null; mensagem: string | null; erros: string | null;
 };
 
-export function AvulsaClient({ clientes, itens, perfis, producao, podeTeste }: {
-  clientes: ClienteNota[]; itens: ItemCardapio[]; perfis: PerfilOpcao[]; producao: boolean; podeTeste: boolean;
+export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
+  itens: ItemCardapio[]; perfis: PerfilOpcao[]; producao: boolean; podeTeste: boolean;
 }) {
   const router = useRouter();
   const [modelo, setModelo] = useState<ModeloNota>("nfe");
@@ -71,12 +71,16 @@ export function AvulsaClient({ clientes, itens, perfis, producao, podeTeste }: {
 
   const setD = (k: keyof DestNota, v: string) => setDest((d) => ({ ...d, [k]: v }));
   const itemPorNome = useMemo(() => new Map(itens.map((i) => [i.nome.toLowerCase(), i])), [itens]);
-  const sugestoesCli = useMemo(() => {
-    const q = buscaCli.trim().toLowerCase();
-    if (q.length < 2) return [];
-    const d = dig(q);
-    return clientes.filter((c) => c.nome.toLowerCase().includes(q) || (d.length >= 3 && dig(c.cpf_cnpj).includes(d))).slice(0, 8);
-  }, [buscaCli, clientes]);
+  // Busca no banco (todos os clientes), um instante depois de parar de digitar.
+  const [sugestoesCli, setSugestoesCli] = useState<ClienteNota[]>([]);
+  useEffect(() => {
+    const q = buscaCli.trim();
+    if (q.length < 2) return;
+    let vivo = true;
+    const t = setTimeout(() => { void buscarClientesNota(q).then((r) => { if (vivo) setSugestoesCli(r); }); }, 250);
+    return () => { vivo = false; clearTimeout(t); };
+  }, [buscaCli]);
+  const mostrarSugestoes = buscaCli.trim().length >= 2 && sugestoesCli.length > 0;
 
   const linhasNota: LinhaNota[] = linhas.map(({ itemId, descricao, qtd, valorUnit, perfilId }) => ({ itemId, descricao, qtd, valorUnit, perfilId }));
   const total = totalLinhas(linhasNota);
@@ -182,13 +186,13 @@ export function AvulsaClient({ clientes, itens, perfis, producao, podeTeste }: {
         <p className="rotulo mb-3">2 · Quem compra {modelo === "nfce" && <span className="normal-case tracking-normal">(opcional na NFC-e)</span>}</p>
         <div className="relative">
           <input value={buscaCli} onChange={(e) => setBuscaCli(e.target.value)} placeholder="Buscar cliente cadastrado (nome ou CNPJ)…" aria-label="Buscar cliente" className={campo} />
-          {sugestoesCli.length > 0 && (
+          {mostrarSugestoes && (
             <ul className="cartao absolute z-20 mt-1 w-full overflow-hidden p-1">
               {sugestoesCli.map((c) => (
                 <li key={c.id}>
                   <button type="button" onClick={() => escolherCliente(c)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-controle px-3 text-left text-sm hover:bg-superficie-suave">
                     <span className="font-medium text-texto">{c.nome}</span>
-                    <span className="text-xs text-texto-fraco">{c.cpf_cnpj || "sem CNPJ"}</span>
+                    <span className="shrink-0 text-xs text-texto-fraco">{c.cpf_cnpj || "sem CNPJ"}{c.bairro ? ` · ${c.bairro}` : ""}</span>
                   </button>
                 </li>
               ))}
