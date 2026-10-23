@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { codigoFiscalDoTipo } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
-import { emitirNfce, cancelarNfce, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
+import { emitirNfce, cancelarNfce, cancelarNfe, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
 const FORMA_FOCUS: Record<string, string> = {
@@ -305,20 +305,20 @@ export async function cancelarNfceEmitida(id: string, justificativa: string) {
 
   const { data: nota } = await supabase
     .from("nfce_emitidas")
-    .select("ref, ambiente, status")
+    .select("ref, ambiente, status, modelo")
     .eq("id", id)
     .maybeSingle();
   if (!nota) return { ok: false, mensagem: "Nota não encontrada." };
   if (nota.status !== "autorizado") return { ok: false, mensagem: "Só dá pra cancelar nota autorizada." };
 
   const cfg = await cfgFiscal(supabase);
-  if (!cfg.emissor_token) return { ok: false, mensagem: "Falta o token do emissor." };
+  // Nota de teste (homologação) feita com o caixa em produção usa o token de homologação.
+  const amb = (nota.ambiente as FocusAmbiente) || "homologacao";
+  const token = amb === "homologacao" && (cfg.emissor_ambiente || "homologacao") !== "homologacao" ? cfg.emissor_token_homologacao : cfg.emissor_token;
+  if (!token) return { ok: false, mensagem: "Falta o token do emissor." };
 
-  const r = await cancelarNfce(
-    { token: cfg.emissor_token, ambiente: (nota.ambiente as FocusAmbiente) || "homologacao" },
-    nota.ref as string,
-    just,
-  );
+  // NF-e (nota avulsa pra empresa) cancela por outro endereço do Focus.
+  const r = await (nota.modelo === "nfe" ? cancelarNfe : cancelarNfce)({ token, ambiente: amb }, nota.ref as string, just);
   if (r.ok) {
     await supabase.from("nfce_emitidas").update({ status: "cancelado", mensagem: just }).eq("id", id);
   }

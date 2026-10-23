@@ -190,3 +190,107 @@ export async function cancelarNfce(cfg: CfgFocus, ref: string, justificativa: st
     bruto: r,
   };
 }
+
+// ---------- NF-e (modelo 55) ----------
+// Diferente da NFC-e, a NF-e é ASSÍNCRONA no Focus: a emissão volta
+// "processando_autorizacao" e o resultado sai na consulta (GET /v2/nfe/{ref}).
+
+export type FocusItemNfe = FocusItem & {
+  unidade_tributavel: string;
+  quantidade_tributavel: string;
+  valor_unitario_tributavel: string;
+  inclui_no_total?: string; // "1"
+};
+
+export type FocusNfePayload = {
+  natureza_operacao: string;
+  data_emissao: string;
+  data_entrada_saida?: string;
+  tipo_documento: string; // "1" saída
+  finalidade_emissao: string; // "1" normal
+  local_destino: string; // "1" interna, "2" interestadual
+  consumidor_final: string; // "1" sim
+  presenca_comprador: string; // "9" outros (não presencial)
+  modalidade_frete: string; // "9" sem frete
+  cnpj_emitente?: string;
+  serie?: string;
+  nome_destinatario: string;
+  cnpj_destinatario?: string;
+  cpf_destinatario?: string;
+  inscricao_estadual_destinatario?: string;
+  indicador_inscricao_estadual_destinatario: string; // "1" | "2" | "9"
+  logradouro_destinatario: string;
+  numero_destinatario: string;
+  complemento_destinatario?: string;
+  bairro_destinatario: string;
+  municipio_destinatario: string;
+  uf_destinatario: string;
+  cep_destinatario?: string;
+  telefone_destinatario?: string;
+  email_destinatario?: string;
+  informacoes_adicionais_contribuinte?: string;
+  items: FocusItemNfe[];
+  formas_pagamento: FocusPagamento[];
+};
+
+function respostaFocus(amb: FocusAmbiente, ref: string, statusHttp: number, r: Record<string, unknown>, okSe: string[]): FocusResposta {
+  const status = r.status as string | undefined;
+  const { urlDanfe, urlXml } = montaUrls(amb, r);
+  return {
+    ok: statusHttp < 400 && !!status && okSe.includes(status),
+    status,
+    statusHttp,
+    ref,
+    numero: r.numero as string | undefined,
+    serie: r.serie as string | undefined,
+    chave: (r.chave_nfe as string) || (r.chave as string) || undefined,
+    caminho_danfe: r.caminho_danfe as string | undefined,
+    caminho_xml: (r.caminho_xml_nota_fiscal as string) || (r.caminho_xml as string) || undefined,
+    urlDanfe,
+    urlXml: urlXml ?? (r.caminho_xml_nota_fiscal ? baseUrl(amb) + (r.caminho_xml_nota_fiscal as string) : undefined),
+    mensagem: (r.mensagem_sefaz as string) || (r.mensagem as string) || (r.erros ? "Erro de validação — confira os dados." : undefined),
+    erros: r.erros,
+    bruto: r,
+  };
+}
+
+export async function emitirNfe(cfg: CfgFocus, ref: string, payload: FocusNfePayload): Promise<FocusResposta> {
+  const url = `${baseUrl(cfg.ambiente)}/v2/nfe?ref=${encodeURIComponent(ref)}`;
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: authHeader(cfg.token), "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    return { ok: false, statusHttp: 0, ref, mensagem: "Falha de conexão com o Focus: " + (e instanceof Error ? e.message : String(e)) };
+  }
+  let r: Record<string, unknown> = {};
+  try { r = await resp.json(); } catch { /* corpo vazio */ }
+  return respostaFocus(cfg.ambiente, ref, resp.status, r, ["autorizado", "processando_autorizacao"]);
+}
+
+export async function consultarNfe(cfg: CfgFocus, ref: string): Promise<FocusResposta> {
+  const url = `${baseUrl(cfg.ambiente)}/v2/nfe/${encodeURIComponent(ref)}`;
+  try {
+    const resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) } });
+    let r: Record<string, unknown> = {};
+    try { r = await resp.json(); } catch { /* corpo vazio */ }
+    return respostaFocus(cfg.ambiente, ref, resp.status, r, ["autorizado"]);
+  } catch (e) {
+    return { ok: false, statusHttp: 0, ref, mensagem: "Falha de conexão com o Focus: " + (e instanceof Error ? e.message : String(e)) };
+  }
+}
+
+export async function cancelarNfe(cfg: CfgFocus, ref: string, justificativa: string): Promise<FocusResposta> {
+  const url = `${baseUrl(cfg.ambiente)}/v2/nfe/${encodeURIComponent(ref)}`;
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: { Authorization: authHeader(cfg.token), "Content-Type": "application/json" },
+    body: JSON.stringify({ justificativa }),
+  });
+  let r: Record<string, unknown> = {};
+  try { r = await resp.json(); } catch { /* corpo vazio */ }
+  return respostaFocus(cfg.ambiente, ref, resp.status, r, ["cancelado", "processando_cancelamento"]);
+}

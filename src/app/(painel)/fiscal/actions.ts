@@ -31,6 +31,8 @@ export async function salvarConfigFiscal(formData: FormData) {
     "csosn_padrao",
     "ncm_buffet",
     "nfce_serie",
+    "nfe_serie",
+    "emissor_token_homologacao",
   ];
   // A chave desta tabela virou o par empresa + nome (migration 0189), então
   // o upsert precisa dizer os dois — senão ele tentaria bater só pelo nome e

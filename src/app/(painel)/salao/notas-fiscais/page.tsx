@@ -58,7 +58,10 @@ export default async function NotasFiscaisPage() {
   return (
     <div className="w-full p-6">
       <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão</Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Notas fiscais</h1>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Notas fiscais</h1>
+        <Link href="/salao/notas-fiscais/avulsa" className="btn-principal text-sm">+ Nota avulsa (NF-e / NFC-e)</Link>
+      </div>
       <p className="mt-1 text-sm text-texto-suave">
         Notas geradas pelo sistema (NFC-e/NF-e). Ambiente atual das últimas emissões destacado nos cartões.
       </p>

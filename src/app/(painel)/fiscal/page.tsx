@@ -114,6 +114,15 @@ export default async function FiscalPage() {
               <input name="emissor_token" defaultValue={v("emissor_token")} placeholder="token do Focus" className={campo} />
               <p className="mt-1 text-mini text-texto-fraco">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto.</p>
             </div>
+            <div>
+              <label className="mb-1 block text-xs text-texto-suave">Série da NF-e (nota pra empresa)</label>
+              <input name="nfe_serie" defaultValue={v("nfe_serie")} placeholder="Ex.: 11 (o Suitable usa 10)" inputMode="numeric" className={campo} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs text-texto-suave">Token de HOMOLOGAÇÃO (opcional, pra nota de teste na Nota avulsa)</label>
+              <input name="emissor_token_homologacao" type="password" autoComplete="off" defaultValue={v("emissor_token_homologacao")} placeholder="token de homologação do Focus" className={campo} />
+              <p className="mt-1 text-mini text-texto-fraco">Com ele, a Nota avulsa pode emitir uma nota de teste, sem valor fiscal, mesmo com o caixa em produção.</p>
+            </div>
             <Campo nome="csc" def={v("csc")} label="CSC (código do QR)" />
             <Campo nome="csc_id" def={v("csc_id")} label="ID do CSC" />
           </div>
