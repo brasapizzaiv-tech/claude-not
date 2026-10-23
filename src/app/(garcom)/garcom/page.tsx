@@ -108,7 +108,8 @@ export default async function GarcomPage() {
     <div className="area-segura min-h-screen bg-painel-fundo p-2 text-texto">
       <div className="flex items-center justify-between px-1 py-2">
         <h1 className="flex items-center gap-2 font-numero text-2xl font-bold tracking-apertada"><Icone nome="garcom" tamanho={19} /> Mesas</h1>
-        {sessao.viaColab && sessao.token && (
+        {sessao.viaColab && sessao.avulso && <span className="text-xs text-texto-suave">{sessao.nome}</span>}
+        {sessao.viaColab && !sessao.avulso && sessao.token && (
           <Link href={`/eu/${sessao.token}`} className="text-xs text-texto-suave">{sessao.nome} · voltar pro meu app</Link>
         )}
       </div>

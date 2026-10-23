@@ -17,24 +17,27 @@ export type SessaoGarcom = {
   nome: string | null;
   token: string | null; // token do colaborador (pra voltar pro /eu)
   viaColab: boolean;
+  avulso?: boolean; // garçom avulso (link da noite): não tem app pessoal pra voltar
   podeGarcom: boolean; // pode abrir as TELAS do garçom
 };
 
 // Colaborador válido pelo cookie (ou null).
-export async function colaboradorGarcom(): Promise<{ id: string; nome: string; token: string } | null> {
+export async function colaboradorGarcom(): Promise<{ id: string; nome: string; token: string; avulso: boolean } | null> {
   const jar = await cookies();
   const token = jar.get(COOKIE_GARCOM)?.value ?? "";
   if (!token) return null;
   const admin = createAdminClient();
   const { data } = await admin
     .from("colaboradores")
-    .select("id, nome, token")
+    .select("id, nome, token, garcom_ate")
     .eq("token", token)
     .eq("ativo", true)
     .eq("faz_garcom", true)
     .maybeSingle();
-  const c = data as { id: string; nome: string; token: string } | null;
-  return c ? { id: c.id, nome: c.nome, token: c.token } : null;
+  const c = data as { id: string; nome: string; token: string; garcom_ate: string | null } | null;
+  // Garçom avulso (link da noite, migration 0249): só até o fim do link.
+  if (c?.garcom_ate && new Date(c.garcom_ate).getTime() <= Date.now()) return null;
+  return c ? { id: c.id, nome: c.nome, token: c.token, avulso: !!c.garcom_ate } : null;
 }
 
 export async function sessaoGarcom(): Promise<SessaoGarcom | null> {
@@ -51,7 +54,7 @@ export async function sessaoGarcom(): Promise<SessaoGarcom | null> {
     // Antes o login de outro usuário ganhava e mandava pra tela inicial.
     if (!podeAcessar("/garcom", admin, permissoes)) {
       const colab = await colaboradorGarcom();
-      if (colab) return { db: createAdminClient(), uid: null, colabId: colab.id, nome: colab.nome, token: colab.token, viaColab: true, podeGarcom: true };
+      if (colab) return { db: createAdminClient(), uid: null, colabId: colab.id, nome: colab.nome, token: colab.token, viaColab: true, avulso: colab.avulso, podeGarcom: true };
     }
     return {
       db: supabase as unknown as ReturnType<typeof createAdminClient>,
@@ -65,7 +68,7 @@ export async function sessaoGarcom(): Promise<SessaoGarcom | null> {
   }
   const colab = await colaboradorGarcom();
   if (!colab) return null;
-  return { db: createAdminClient(), uid: null, colabId: colab.id, nome: colab.nome, token: colab.token, viaColab: true, podeGarcom: true };
+  return { db: createAdminClient(), uid: null, colabId: colab.id, nome: colab.nome, token: colab.token, viaColab: true, avulso: colab.avulso, podeGarcom: true };
 }
 
 // Client de banco pra ações que o garçom (logado OU por cookie) pode usar.

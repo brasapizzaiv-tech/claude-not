@@ -185,3 +185,43 @@ export async function reativarColaborador(formData: FormData) {
   await supabase.from("colaboradores").update({ ativo: true, desligado_em: null, desligado_motivo: null }).eq("id", id);
   revalidatePath("/colaboradores");
 }
+
+// ---------- Garçom avulso (migration 0249) ----------
+// Link da noite: quem abre digita o nome e entra no app do garçom até o fim
+// do link, sem cadastro. Um link ativo por vez.
+export async function linkGarcomAvulso() {
+  await exigirAcesso(["/colaboradores", "/salao"]);
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("garcom_convites")
+    .select("token, valido_ate")
+    .eq("ativo", true)
+    .gt("valido_ate", new Date().toISOString())
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as { token: string; valido_ate: string } | null) ?? null;
+}
+
+export async function gerarLinkGarcomAvulso() {
+  await exigirAcesso(["/colaboradores", "/salao"]);
+  const supabase = await createClient();
+  const { fimDaNoite, tokenConvite } = await import("@/lib/garcom-avulso");
+  await supabase.from("garcom_convites").update({ ativo: false }).eq("ativo", true);
+  const { data: { user } } = await supabase.auth.getUser();
+  const linha = { token: tokenConvite(), valido_ate: fimDaNoite(), criado_por: user?.id ?? null };
+  const { error } = await supabase.from("garcom_convites").insert(linha);
+  if (error) return { ok: false as const, mensagem: error.message };
+  return { ok: true as const, token: linha.token, valido_ate: linha.valido_ate };
+}
+
+// Encerra o link e tira na hora quem entrou por ele.
+export async function encerrarLinkGarcomAvulso() {
+  await exigirAcesso(["/colaboradores", "/salao"]);
+  const supabase = await createClient();
+  const agora = new Date().toISOString();
+  await supabase.from("garcom_convites").update({ ativo: false }).eq("ativo", true);
+  await supabase.from("colaboradores").update({ garcom_ate: agora }).gt("garcom_ate", agora);
+  revalidatePath("/colaboradores");
+  return { ok: true as const };
+}

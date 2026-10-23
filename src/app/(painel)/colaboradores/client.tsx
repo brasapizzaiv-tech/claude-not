@@ -8,6 +8,7 @@ import { siteUrl } from "@/lib/site-url";
 import { useEffect, useState, useTransition } from "react";
 import QRCode from "qrcode";
 import Link from "next/link";
+import { GarcomAvulso } from "./garcom-avulso";
 import type { Colaborador } from "@/lib/types";
 import { GRUPOS, GRUPO_KEYS, DIAS, type GrupoKey } from "@/lib/folgas";
 import { TURNOS, aniversarioBR, vinculoDoTurno } from "@/lib/equipe";
@@ -293,6 +294,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
             placeholder="Buscar…"
             className="w-36 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm"
           />
+          <GarcomAvulso />
           <button
             onClick={() => setVerLinks((v) => !v)}
             className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
