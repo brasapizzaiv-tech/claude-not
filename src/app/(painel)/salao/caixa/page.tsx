@@ -57,6 +57,9 @@ export default async function CaixaPage({
           <Link href="/salao/caixa/movimentos" className="btn-secundario text-sm">
             <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
           </Link>
+          <Link href="/salao/caixa/fechamentos" className="btn-secundario text-sm">
+            <Icone nome="grafico" tamanho={15} className="mr-1.5" /> Fechamentos
+          </Link>
           <Link href="/salao/caixa/tef" className="btn-secundario text-sm">
             <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Cartões (TEF)
           </Link>
@@ -348,6 +351,9 @@ export default async function CaixaPage({
           className="btn-secundario text-sm"
         >
           <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
+        </Link>
+        <Link href="/salao/caixa/fechamentos" className="btn-secundario text-sm">
+          <Icone nome="grafico" tamanho={15} className="mr-1.5" /> Fechamentos
         </Link>
         <Link
           href="/salao/caixa/tef"

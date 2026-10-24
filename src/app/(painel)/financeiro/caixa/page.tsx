@@ -37,10 +37,11 @@ export default async function CaixaListaPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
-            Fechamento de caixa
+            Fechamento de caixa <span className="pilula pilula-neutra ml-1 align-middle text-xs">sistema antigo</span>
           </h1>
           <p className="mt-1 text-texto-suave">
-            Faturamento real do dia, por forma de pagamento.
+            Fechamentos digitados do sistema antigo. Os caixas do sistema novo (almoço e noite) estão em{" "}
+            <Link href="/salao/caixa/fechamentos" className="font-semibold text-texto-marca hover:underline">Salão → Caixa → Fechamentos</Link>.
           </p>
         </div>
         <div className="flex items-center gap-2">
