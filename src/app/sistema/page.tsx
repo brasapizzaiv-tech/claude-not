@@ -45,7 +45,7 @@ export default function Home() {
             Em construção
           </span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
-            Sistema de Cotação
+            Motelli
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-zinc-600 dark:text-zinc-400">
             Do estoque à compra: conte, cote, compare e peça — tudo em um lugar.

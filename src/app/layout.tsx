@@ -35,8 +35,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sistema de Cotação",
-  description: "Compras, cotação de fornecedores, conferência e financeiro.",
+  // Era "Sistema de Cotação" (o começo do projeto). O sistema se chama Motelli;
+  // no painel a aba mostra o nome do restaurante (layout do painel).
+  title: "Motelli",
+  description: "Gestão do restaurante: salão, caixa, delivery, compras, equipe e financeiro.",
   manifest: "/manifest.webmanifest",
 };
 

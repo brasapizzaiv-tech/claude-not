@@ -4,11 +4,18 @@ import { Sidebar } from "@/components/sidebar";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 import { Dialogos } from "@/components/dialogo";
 import { lerMarca } from "@/lib/marca";
+import { empresaAtual } from "@/lib/empresa";
 import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
 function hojeBR() {
   return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// Aba do navegador: o nome do restaurante (quem tem título próprio na página continua com o dele).
+export async function generateMetadata() {
+  const empresa = await empresaAtual().catch(() => null);
+  return { title: empresa?.nome ?? "Motelli" };
 }
 
 export default async function PainelLayout({
