@@ -9,7 +9,7 @@ import type { BatidaDia } from "@/lib/ponto-relatorio-core";
 
 type Db = SupabaseClient<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export type PessoaPonto = { id: string; nome: string; escala: number[]; ativo: boolean; cpf: string | null; admissao: string | null };
+export type PessoaPonto = { id: string; nome: string; escala: number[]; ativo: boolean; cpf: string | null; admissao: string | null; desligamento: string | null };
 export type BasePonto = {
   pessoas: PessoaPonto[];
   /** colaborador → dia → batidas (minutos desde 00:00 do dia; madrugada = 1440+), com os ajustes. */
@@ -44,7 +44,7 @@ function minutosNoDia(iso: string, dia: string) {
 }
 
 export async function carregarBasePonto(db: Db, de: string, ate: string, opts: { incluirInativos?: boolean; pessoaId?: string } = {}): Promise<BasePonto> {
-  let qCols = db.from("colaboradores").select("id, nome, dias_dia, ativo, cpf, admissao").eq("bate_ponto", true).order("nome");
+  let qCols = db.from("colaboradores").select("id, nome, dias_dia, ativo, cpf, admissao, desligado_em").eq("bate_ponto", true).order("nome");
   if (!opts.incluirInativos) qCols = qCols.eq("ativo", true);
   if (opts.pessoaId) qCols = qCols.eq("id", opts.pessoaId);
   const [{ data: cols }, bats, { data: fol }, { data: ats }, { data: fer }] = await Promise.all([
@@ -94,7 +94,7 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
   for (const f of (fer ?? []) as { data: string; data_fim: string | null }[]) {
     for (const d of diasEntre(String(f.data).slice(0, 10), String(f.data_fim ?? f.data).slice(0, 10))) fechados.add(d);
   }
-  const pessoas = ((cols ?? []) as { id: string; nome: string; dias_dia: number[] | null; ativo: boolean; cpf: string | null; admissao: string | null }[])
-    .map((c) => ({ id: c.id, nome: c.nome, escala: c.dias_dia ?? [], ativo: c.ativo, cpf: c.cpf, admissao: c.admissao ? String(c.admissao).slice(0, 10) : null }));
+  const pessoas = ((cols ?? []) as { id: string; nome: string; dias_dia: number[] | null; ativo: boolean; cpf: string | null; admissao: string | null; desligado_em: string | null }[])
+    .map((c) => ({ id: c.id, nome: c.nome, escala: c.dias_dia ?? [], ativo: c.ativo, cpf: c.cpf, admissao: c.admissao ? String(c.admissao).slice(0, 10) : null, desligamento: c.desligado_em ? String(c.desligado_em).slice(0, 10) : null }));
   return { pessoas, batidas, batidasDia, folgas, atestados, abonos, fechados };
 }

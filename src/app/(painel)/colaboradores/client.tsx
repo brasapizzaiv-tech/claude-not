@@ -228,7 +228,7 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
         <p className="mt-1 text-sm text-texto-suave">
           A pessoa sai das listas e perde o acesso ao app na hora (o link e o PIN são apagados). O histórico de pagamentos, folgas e compras fica guardado. Dá pra reativar depois.
         </p>
-        <label className="mt-4 mb-1 block text-xs font-medium text-texto-suave">Data do desligamento</label>
+        <label className="mt-4 mb-1 block text-xs font-medium text-texto-suave">Último dia trabalhado (depois dele o ponto não conta falta)</label>
         <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputCls} />
         <label className="mt-3 mb-1 block text-xs font-medium text-texto-suave">Motivo (obrigatório)</label>
         <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Ex.: pediu demissão / dispensado / parou de vir…" className={inputCls} autoFocus />
