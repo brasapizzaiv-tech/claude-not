@@ -1789,13 +1789,19 @@ export async function sangria(formData: FormData) {
   const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
   const valor = valorNum(formData.get("valor"));
   if (!caixaId || valor <= 0) return;
-  await supabase.from("pdv_caixa_mov").insert({
+  const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
     caixa_id: caixaId,
     tipo: "sangria",
     descricao: ((formData.get("descricao") as string) || "Sangria").trim(),
     forma_pagamento: "Dinheiro",
     valor,
-  });
+  }).select("id").single();
+  // Pagamento com categoria = despesa paga no financeiro (migration 0252).
+  const categoriaId = ((formData.get("categoria_id") as string) || "").trim();
+  if (mov?.id && /^[0-9a-f-]{36}$/i.test(categoriaId)) {
+    const { lancarSangriaNoFinanceiro } = await import("@/lib/sangria-financeiro");
+    await lancarSangriaNoFinanceiro(supabase, mov.id as string, categoriaId);
+  }
   revalidatePath("/salao/caixa");
 }
 

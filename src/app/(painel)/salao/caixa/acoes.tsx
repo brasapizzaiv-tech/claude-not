@@ -8,11 +8,14 @@ import { Enviar } from "@/components/enviar";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { suprimento, sangria } from "../actions";
+import Link from "next/link";
+import type { CategoriaSangria } from "@/lib/sangria-financeiro";
 
 const inputCls =
   "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
-export function CaixaAcoes({ caixaId }: { caixaId: string }) {
+export function CaixaAcoes({ caixaId, categorias = [] }: { caixaId: string; categorias?: CategoriaSangria[] }) {
+  const maisUsadas = [...categorias].filter((c) => c.usos > 0).sort((a, b) => b.usos - a.usos).slice(0, 6);
   // ?acao=sangria (botão Sangria da tela inicial) já abre na saída.
   const pediuSangria = useSearchParams().get("acao") === "sangria";
   const [aberto, setAberto] = useState(pediuSangria);
@@ -70,6 +73,26 @@ export function CaixaAcoes({ caixaId }: { caixaId: string }) {
                   className={`${inputCls} w-full`}
                 />
               </div>
+              {!entrada && (
+                <div>
+                  <label className="mb-1 block text-xs text-texto-suave">É um pagamento? Categoria (vai pro financeiro como despesa paga)</label>
+                  <select name="categoria_id" defaultValue="" className={`${inputCls} w-full`}>
+                    <option value="">Não — só retirada (cofre, troco)</option>
+                    {maisUsadas.length > 0 && (
+                      <optgroup label="Mais usadas">
+                        {maisUsadas.map((c) => <option key={"m" + c.id} value={c.id}>{c.nome}</option>)}
+                      </optgroup>
+                    )}
+                    <optgroup label="Todas">
+                      {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                    </optgroup>
+                  </select>
+                  <p className="mt-1 text-mini text-texto-fraco">
+                    No motivo, escreva pra quem foi (ex.: “Dani motoboy”). O acerto da semana dos funcionários continua pela tela Semana e 10%, não marque aqui.
+                    {" "}<Link href="/salao/caixa/sangrias" className="font-semibold text-texto-marca hover:underline">Classificar sangrias antigas</Link>
+                  </p>
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setAberto(false)} className="btn-secundario text-sm">
                   Cancelar

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { abrirCaixa } from "../actions";
 import { servicoAgora } from "../util";
 import { CaixaAcoes } from "./acoes";
+import { categoriasDeSangria } from "@/lib/sangria-financeiro";
 import { FechamentoZ } from "./fechamento-z";
 import { ReceberComandas } from "./receber";
 import { NotasPendentes, type Pendente } from "./notas-pendentes";
@@ -34,6 +35,7 @@ export default async function CaixaPage({
 }) {
   const { abrir } = await searchParams;
   const supabase = await createClient();
+  const categoriasSangria = await categoriasDeSangria(supabase);
   const { data: caixa } = await supabase
     .from("pdv_caixas")
     .select("id, nome, saldo_inicial, aberto_em, status")
@@ -306,7 +308,7 @@ export default async function CaixaPage({
           <Link href="/salao/caixa/vales" className="btn-secundario text-sm">
             <Icone nome="presente" tamanho={15} className="mr-1.5" /> Vales-presente
           </Link>
-          <CaixaAcoes caixaId={caixa.id} />
+          <CaixaAcoes caixaId={caixa.id} categorias={categoriasSangria} />
           <FechamentoZ
             caixaId={caixa.id}
             nome={caixa.nome}
