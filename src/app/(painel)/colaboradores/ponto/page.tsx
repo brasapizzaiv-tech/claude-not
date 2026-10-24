@@ -60,7 +60,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
       dias, hoje, escala: p.escala, entradas: cfg.entradas, saidas: cfg.saidas,
       batidas: base.batidas.get(id) ?? new Map(), folgas: base.folgas.get(id) ?? new Set(),
       atestados: base.atestados.get(id) ?? new Set(), abonos: base.abonos.get(id) ?? new Set(), fechados: base.fechados,
-      tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min,
+      tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min, admissao: p.admissao,
     });
   };
   const idxPessoa = Math.max(0, ativos.findIndex((p) => p.id === sp.p));

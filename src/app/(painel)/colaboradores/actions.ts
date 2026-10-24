@@ -34,6 +34,8 @@ export async function salvarColaborador(formData: FormData) {
   const diasDe = (k: string) => formData.getAll(k).map(Number).filter((n) => n >= 0 && n <= 6);
   const quadro = {
     nascimento: parseAniversario((formData.get("nascimento") as string) ?? ""),
+    // Admissão (migration 0253): antes dela o ponto não conta falta.
+    admissao: /^\d{4}-\d{2}-\d{2}$/.test(String(formData.get("admissao") ?? "")) ? String(formData.get("admissao")) : null,
     turno,
     vinculo: (formData.get("vinc") as string) === "clt" ? "clt" : "freelance",
     vinculo_noite:

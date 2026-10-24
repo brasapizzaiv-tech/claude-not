@@ -51,6 +51,7 @@ export type Colaborador = {
   desligado_motivo?: string | null;
   // Quadro de funcionários (migration 0126)
   nascimento?: string | null;
+  admissao?: string | null;
   turno?: "dia" | "noite" | "ambos" | "proprietario";
   vinculo?: "clt" | "freelance";
   vinculo_noite?: "clt" | "freelance" | null; // só quando turno = ambos (dia com carteira, noite free…)

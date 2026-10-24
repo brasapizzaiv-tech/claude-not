@@ -98,6 +98,8 @@ export function espelho(p: {
   fechados: Set<string>;
   tolerancia?: number; // por batida (RHiD: 5)
   limite?: number;     // por dia (RHiD: 10)
+  /** Antes da admissão o dia é "fora da escala" (não é falta). */
+  admissao?: string | null;
 }): { linhas: LinhaEspelho[]; totais: TotaisEspelho } {
   const tol = p.tolerancia ?? 0, lim = p.limite ?? 0;
   const linhas: LinhaEspelho[] = [];
@@ -109,7 +111,7 @@ export function espelho(p: {
     const ignoradas = todas.filter((b) => b.ignorada);
     const bs = colunas.filter((b): b is BatidaDia => b != null).map((b) => b.min);
     const ent = p.entradas[String(dow)], sai = p.saidas[String(dow)];
-    const naEscala = !!ent && p.escala.includes(dow) && !p.fechados.has(dia);
+    const naEscala = !!ent && p.escala.includes(dow) && !p.fechados.has(dia) && (!p.admissao || dia >= p.admissao);
     const ausenciaJustificada = p.atestados.has(dia) || p.folgas.has(dia) || !!p.abonos?.has(dia);
     const previsto = naEscala && !ausenciaJustificada && sai ? Math.max(0, min(sai) - min(ent)) : 0;
     const { trabalhado, incompleto } = horasDoDia(colunas.map((b) => (b ? b.min : null)));

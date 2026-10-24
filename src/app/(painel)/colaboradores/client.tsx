@@ -444,7 +444,7 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
           className="space-y-3"
         >
           {editando && <input type="hidden" name="id" value={editando.id} />}
-          <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
+          <div className="grid gap-3 sm:grid-cols-[1fr_9rem_10rem]">
             <div>
               <label className="mb-1 block text-sm font-medium text-texto-suave">Nome *</label>
               <input name="nome" required autoFocus defaultValue={editando?.nome ?? ""} className={inputCls} />
@@ -452,6 +452,10 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
             <div>
               <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-texto-suave"><Icone nome="bolo" tamanho={14} /> Aniversário</label>
               <input name="nascimento" placeholder="dd/mm" defaultValue={aniversarioBR(editando?.nascimento)} className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-texto-suave">Admissão</label>
+              <input name="admissao" type="date" defaultValue={editando?.admissao ? String(editando.admissao).slice(0, 10) : ""} className={inputCls} />
             </div>
           </div>
           <div>
