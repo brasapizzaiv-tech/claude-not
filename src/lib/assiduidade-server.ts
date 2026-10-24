@@ -20,8 +20,11 @@ export function hojeSP() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
 
-export async function lerConfig(db: Db): Promise<ConfigAssiduidade> {
-  const { data } = await db.from("assiduidade_config").select("ativo, valor_mes, tolerancia_min, entradas, saidas, dia_inicio_mes, inicio, tolerancia_batida_min, limite_diario_min").maybeSingle();
+/** `empresaId` só com o cliente admin (app da equipe), que não passa pelo RLS. */
+export async function lerConfig(db: Db, empresaId?: string): Promise<ConfigAssiduidade> {
+  let q = db.from("assiduidade_config").select("ativo, valor_mes, tolerancia_min, entradas, saidas, dia_inicio_mes, inicio, tolerancia_batida_min, limite_diario_min");
+  if (empresaId) q = q.eq("empresa_id", empresaId);
+  const { data } = await q.maybeSingle();
   const c = data as ConfigAssiduidade | null;
   return {
     ativo: c?.ativo ?? true,

@@ -43,8 +43,11 @@ function minutosNoDia(iso: string, dia: string) {
   return difDias * 1440 + hh * 60 + mm;
 }
 
-export async function carregarBasePonto(db: Db, de: string, ate: string, opts: { incluirInativos?: boolean; pessoaId?: string } = {}): Promise<BasePonto> {
-  let qCols = db.from("colaboradores").select("id, nome, dias_dia, ativo, cpf, admissao, desligado_em").eq("bate_ponto", true).order("nome");
+export async function carregarBasePonto(db: Db, de: string, ate: string, opts: { incluirInativos?: boolean; pessoaId?: string; empresaId?: string } = {}): Promise<BasePonto> {
+  // Com o cliente admin (app da equipe) não há RLS: filtra a empresa à mão.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const daEmpresa = <Q,>(q: Q): Q => (opts.empresaId ? (q as any).eq("empresa_id", opts.empresaId) : q);
+  let qCols = daEmpresa(db.from("colaboradores").select("id, nome, dias_dia, ativo, cpf, admissao, desligado_em").eq("bate_ponto", true).order("nome"));
   if (!opts.incluirInativos) qCols = qCols.eq("ativo", true);
   if (opts.pessoaId) qCols = qCols.eq("id", opts.pessoaId);
   const [{ data: cols }, bats, { data: fol }, { data: ats }, { data: fer }] = await Promise.all([
@@ -52,11 +55,11 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
     todas<{ id: string; colaborador_id: string; data: string; turno: string; data_hora: string; origem: string; desconsiderada: boolean; deslocamento: number }>(() => {
       let q = db.from("ponto_batidas").select("id, colaborador_id, data, turno, data_hora, origem, desconsiderada, deslocamento").not("colaborador_id", "is", null).gte("data", de).lte("data", ate);
       if (opts.pessoaId) q = q.eq("colaborador_id", opts.pessoaId);
-      return q.order("data_hora").order("id");
+      return daEmpresa(q).order("data_hora").order("id");
     }),
-    db.from("folgas_pedidos").select("data, folgas_funcionarios(colaborador_id)").eq("status", "Aprovado").gte("data", de).lte("data", ate),
-    db.from("atestados").select("colaborador_id, inicio, fim, tipo").lte("inicio", ate).gte("fim", de),
-    db.from("feriados").select("data, data_fim").eq("situacao", "fecha").lte("data", ate),
+    daEmpresa(db.from("folgas_pedidos").select("data, folgas_funcionarios(colaborador_id)").eq("status", "Aprovado").gte("data", de).lte("data", ate)),
+    daEmpresa(db.from("atestados").select("colaborador_id, inicio, fim, tipo").lte("inicio", ate).gte("fim", de)),
+    daEmpresa(db.from("feriados").select("data, data_fim").eq("situacao", "fecha").lte("data", ate)),
   ]);
 
   const batidas = new Map<string, Map<string, BatidaDia[]>>();

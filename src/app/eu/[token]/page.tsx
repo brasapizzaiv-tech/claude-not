@@ -15,6 +15,7 @@ import { LembretesHoje } from "./lembretes-hoje";
 import { SairEu } from "./sair-eu";
 import { AvisosCelular } from "./avisos-celular";
 import { EntregaObrigatoria } from "./entrega-obrigatoria";
+import { pontoAResponder } from "@/lib/ponto-espelho";
 
 const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
 
@@ -134,7 +135,7 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio, checklist_setores").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio, checklist_setores, bate_ponto, empresa_id").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
@@ -203,6 +204,8 @@ export default async function AppColaboradorPage({
       .eq("status", "pendente");
     pedidosCompra = count ?? 0;
   }
+  // Meu ponto: o mês fechado sem resposta, ou que mudou depois dela (migration 0254).
+  const pontoPendente = colab?.id && colab.bate_ponto ? await pontoAResponder(admin, colab.id as string, colab.empresa_id as string) : null;
   // Lembretes da gestão pra hoje (Visto / Feito).
   const lembretes = colab?.id ? await lembretesDoColaborador(colab.id as string) : [];
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -284,6 +287,15 @@ export default async function AppColaboradorPage({
             <Icone nome="camera" tamanho={17} className="mr-1.5" /> Dar baixa
           </Link>
         </div>
+      )}
+      {colab?.bate_ponto && (
+        <Link
+          href={`/eu/${token}/ponto`}
+          className="cartao mb-3 flex min-h-[64px] items-center justify-between gap-3 p-4 font-semibold text-texto transition hover:bg-superficie-suave"
+        >
+          <span className="inline-flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-controle bg-destaque text-texto-marca-pilula"><Icone nome="relogio" tamanho={18} /></span> Meu ponto</span>
+          {pontoPendente ? <span className="pilula pilula-urgente">assinar {pontoPendente}</span> : <span className="text-xs font-normal text-texto-suave">batidas e horas</span>}
+        </Link>
       )}
       <Link
         href={`/eu/${token}/pagamentos`}

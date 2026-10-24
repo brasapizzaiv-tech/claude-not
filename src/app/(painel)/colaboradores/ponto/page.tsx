@@ -9,6 +9,7 @@ import { acharPorNome } from "@/lib/ponto-core";
 import { duracao, espelho, hhmm, porSemana, type LinhaEspelho } from "@/lib/ponto-relatorio-core";
 import { AjustarDia, BatidaMenu, ImportarAfd, Imprimir } from "./client";
 import { BatidasSemColaborador, type CpfSemDono } from "./sem-colaborador";
+import { ASSINATURA_DESDE, assinaturasDoCiclo, cicloDoDia, resumoParaAssinar } from "@/lib/ponto-espelho";
 
 export const metadata = { title: "Relatórios de ponto · Brasa" };
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ function cicloPadrao(hoje: string) {
 // RELATÓRIOS DE PONTO (migrations 0221–0223), no jeito dos do RHiD:
 // Espelho (dia a dia de uma pessoa, pra imprimir e assinar), Horas e extras
 // (extrato do período por pessoa e semana) e Atrasos e faltas (apuração).
-// Gerencial: o ponto oficial (assinatura legal) continua sendo o do RHiD.
+// Cada um assina o mês fechado no app da equipe (Meu ponto, migration 0254).
 export default async function PontoPage({ searchParams }: { searchParams: Promise<{ aba?: string; de?: string; ate?: string; p?: string; inc?: string }> }) {
   await exigirAcesso("/colaboradores");
   const sp = await searchParams;
@@ -63,6 +64,19 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
       tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min, admissao: p.admissao, desligamento: p.desligamento,
     });
   };
+  // Assinaturas do app: só quando a busca é um ciclo inteiro (21 a 20) a partir de ASSINATURA_DESDE.
+  const ciclo = cicloDoDia(de);
+  const cicloInteiro = ciclo.de === de && ciclo.ate === ate && de >= ASSINATURA_DESDE;
+  const assinaturas = cicloInteiro ? await assinaturasDoCiclo(supabase, de, ate, ativos.map((p) => p.id)) : null;
+  const situacaoAssinatura = (id: string) => {
+    if (!assinaturas) return null;
+    const a = assinaturas.get(id);
+    if (!a) return ate < hoje ? { rot: "Não respondeu", cls: "pilula-neutra", a: null } : { rot: "Mês aberto", cls: "pilula-neutra", a: null };
+    if (a.hash !== resumoParaAssinar(espelhoDe(id)).hash) return { rot: "Mudou depois da resposta", cls: "pilula-urgente", a };
+    return a.resposta === "assinado" ? { rot: "Assinou", cls: "pilula-ok", a } : { rot: "Não concorda", cls: "pilula-urgente", a };
+  };
+  const quandoAss = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const fechadoAnterior = cicloDoDia(new Date(Date.UTC(+padrao.de.slice(0, 4), +padrao.de.slice(5, 7) - 1, 20)).toISOString().slice(0, 10));
   const idxPessoa = Math.max(0, ativos.findIndex((p) => p.id === sp.p));
   const pessoa = ativos[idxPessoa];
   const q = (o: Record<string, string | undefined>) => {
@@ -111,7 +125,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         <div>
           <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Relatórios de ponto</h1>
           <p className="mt-1 max-w-2xl text-sm text-texto-suave">
-            Batidas do relógio de quem bate ponto. Horário previsto: o das regras em <Link href="/colaboradores/assiduidade" className="text-orange-600 hover:underline">Assiduidade</Link>. Relatório gerencial; o ponto oficial continua sendo o do RHiD.
+            Batidas do relógio de quem bate ponto. Horário previsto: o das regras em <Link href="/colaboradores/assiduidade" className="text-orange-600 hover:underline">Assiduidade</Link>. Cada um confere e assina o mês fechado no app da equipe (Meu ponto).
           </p>
         </div>
         <ImportarAfd />
@@ -124,6 +138,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         <label className="flex flex-col text-xs text-texto-fraco">Fim<input type="date" name="ate" defaultValue={ate} className="min-h-10 rounded-controle border border-borda-forte bg-transparent px-2 text-sm text-texto" /></label>
         <button className="min-h-10 rounded-controle bg-texto px-4 font-semibold text-fundo">Buscar</button>
         <Link href={q({ de: padrao.de, ate: padrao.ate })} className="min-h-10 content-center px-2 text-xs text-texto-suave hover:underline">ciclo da folha (21 a 20)</Link>
+        <Link href={q({ de: fechadoAnterior.de, ate: fechadoAnterior.ate })} className="min-h-10 content-center px-2 text-xs text-texto-suave hover:underline">mês fechado ({dm(fechadoAnterior.de)} a {dm(fechadoAnterior.ate)})</Link>
       </form>
 
       <div className="mb-4 flex gap-1 border-b border-borda text-sm print:hidden">
@@ -131,6 +146,24 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
           <Link key={k} href={q({ aba: k })} className={`-mb-px border-b-2 px-3 py-2 ${aba === k ? "border-orange-500 font-semibold text-texto" : "border-transparent text-texto-suave"}`}>{r}</Link>
         ))}
       </div>
+
+      {assinaturas && ativos.length > 0 && (
+        <section className="cartao mb-4 p-4 print:hidden">
+          <p className="rotulo mb-2">Assinaturas no app · {dm(de)} a {dm(ate)}</p>
+          <ul className="flex flex-wrap gap-2">
+            {ativos.map((p) => {
+              const st = situacaoAssinatura(p.id)!;
+              return (
+                <li key={p.id}>
+                  <Link href={q({ aba: "espelho", p: p.id })} title={st.a?.comentario ?? undefined} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-superficie-suave px-3 text-sm text-texto hover:bg-destaque">
+                    {p.nome.split(" ")[0]} <span className={`pilula ${st.cls}`}>{st.rot}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {ativos.length === 0 && <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-fraco">Ninguém marcado &quot;Bate ponto no relógio&quot; em Colaboradores.</p>}
 
@@ -208,6 +241,17 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                 </tr></tfoot>
               </table>
             </div>
+            {(() => {
+              const st = situacaoAssinatura(pessoa.id);
+              if (!st?.a) return st ? <p className="mt-3 text-sm text-texto-suave">Assinatura no app: {st.rot.toLowerCase()}.</p> : null;
+              return (
+                <p className="mt-3 text-sm text-texto">
+                  <span className={`pilula ${st.cls} mr-2 print:hidden`}>{st.rot}</span>
+                  {st.a.resposta === "assinado" ? "Assinado eletronicamente" : "Respondeu que não concorda"} no app da equipe em {quandoAss(st.a.criado_em)}
+                  {st.a.comentario ? <> — “{st.a.comentario}”</> : null}
+                </p>
+              );
+            })()}
             <div className="mt-12 hidden grid-cols-2 gap-16 text-center text-sm print:grid">
               <div className="border-t border-black pt-1">{pessoa.nome}</div>
               <div className="border-t border-black pt-1">Brasa Pizza Ivoti</div>
