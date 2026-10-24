@@ -20,6 +20,7 @@ export type BasePonto = {
   atestados: Map<string, Set<string>>;
   /** Ausência abonada pela casa: não é falta e não tira o prêmio. */
   abonos: Map<string, Set<string>>;
+  /** Feriados (abre, fecha ou a definir): fora da escala no ponto. */
   fechados: Set<string>;
 };
 
@@ -59,7 +60,9 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
     }),
     daEmpresa(db.from("folgas_pedidos").select("data, folgas_funcionarios(colaborador_id)").eq("status", "Aprovado").gte("data", de).lte("data", ate)),
     daEmpresa(db.from("atestados").select("colaborador_id, inicio, fim, tipo").lte("inicio", ate).gte("fim", de)),
-    daEmpresa(db.from("feriados").select("data, data_fim").eq("situacao", "fecha").lte("data", ate)),
+    // Feriado é feriado no ponto mesmo com a casa aberta (Rafael, 24/10/2026, igual ao RHiD):
+    // ninguém leva falta e quem trabalha fica com as horas do dia como extra.
+    daEmpresa(db.from("feriados").select("data, data_fim").lte("data", ate)),
   ]);
 
   const batidas = new Map<string, Map<string, BatidaDia[]>>();
