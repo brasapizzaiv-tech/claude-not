@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hojeSP } from "@/lib/assiduidade-server";
-import { ASSINATURA_DESDE, cicloDoDia, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
+import { ASSINATURA_DESDE, cicloDoDia, fechamentosDoCiclo, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -25,6 +25,7 @@ export async function responderPonto(token: string, de: string, resposta: "assin
   const ciclo = cicloDoDia(de);
   if (ciclo.de !== de || de < ASSINATURA_DESDE) return { ok: false as const, erro: "Ciclo inválido." };
   if (ciclo.ate >= hojeSP()) return { ok: false as const, erro: "Esse mês ainda não fechou. Dá pra assinar a partir do dia 21." };
+  if (!(await fechamentosDoCiclo(admin, ciclo.de, [colab.id], colab.empresa_id)).has(colab.id)) return { ok: false as const, erro: "A gestão ainda está conferindo esse mês. Quando fechar, você assina aqui." };
   const motivo = comentario.trim().slice(0, 500);
   if (resposta === "discorda" && motivo.length < 3) return { ok: false as const, erro: "Escreva o que está errado." };
 

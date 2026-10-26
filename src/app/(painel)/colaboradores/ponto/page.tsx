@@ -6,10 +6,10 @@ import { diasEntre } from "@/lib/assiduidade-core";
 import { hojeSP, lerConfig } from "@/lib/assiduidade-server";
 import { carregarBasePonto } from "@/lib/ponto-dados";
 import { acharPorNome } from "@/lib/ponto-core";
-import { duracao, espelho, hhmm, porSemana, type LinhaEspelho } from "@/lib/ponto-relatorio-core";
-import { AjustarDia, BatidaMenu, ImportarAfd, Imprimir } from "./client";
+import { duracao, espelho, hhmm, inconsistenciasDia, porSemana, type LinhaEspelho } from "@/lib/ponto-relatorio-core";
+import { AjustarDia, BatidaMenu, FechamentoMes, ImportarAfd, Imprimir, type TipoJustOpcao } from "./client";
 import { BatidasSemColaborador, type CpfSemDono } from "./sem-colaborador";
-import { ASSINATURA_DESDE, assinaturasDoCiclo, cicloDoDia, resumoParaAssinar } from "@/lib/ponto-espelho";
+import { ASSINATURA_DESDE, assinaturasDoCiclo, cicloDoDia, fechamentosDoCiclo, resumoParaAssinar } from "@/lib/ponto-espelho";
 
 export const metadata = { title: "Relatórios de ponto · Brasa" };
 export const dynamic = "force-dynamic";
@@ -64,12 +64,19 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
       batidas: base.batidas.get(id) ?? new Map(), folgas: base.folgas.get(id) ?? new Set(),
       atestados: base.atestados.get(id) ?? new Set(), abonos: base.abonos.get(id) ?? new Set(), fechados: base.fechados,
       tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min, admissao: p.admissao, desligamento: p.desligamento,
+      justificativas: base.justificativas.get(id), ajustes: base.ajustes.get(id),
     });
   };
   // Assinaturas do app: só quando a busca é um ciclo inteiro (21 a 20) a partir de ASSINATURA_DESDE.
   const ciclo = cicloDoDia(de);
   const cicloInteiro = ciclo.de === de && ciclo.ate === ate && de >= ASSINATURA_DESDE;
-  const assinaturas = cicloInteiro ? await assinaturasDoCiclo(supabase, de, ate, ativos.map((p) => p.id)) : null;
+  const [assinaturas, fechamentos, { data: tiposRows }] = await Promise.all([
+    cicloInteiro ? assinaturasDoCiclo(supabase, de, ate, ativos.map((p) => p.id)) : Promise.resolve(null),
+    cicloInteiro ? fechamentosDoCiclo(supabase, de, ativos.map((p) => p.id)) : Promise.resolve(null),
+    supabase.from("justificativa_tipos").select("id, nome, efeito, tira_premio").eq("ativo", true).order("nome"),
+  ]);
+  const tiposJust = (tiposRows ?? []) as TipoJustOpcao[];
+  const regras = cfg.inconsistencias;
   const situacaoAssinatura = (id: string) => {
     if (!assinaturas) return null;
     const a = assinaturas.get(id);
@@ -135,6 +142,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/colaboradores/ponto/horarios" className="btn-secundario"><Icone nome="relogio" tamanho={16} /> Horários</Link>
+          <Link href="/colaboradores/ponto/regras" className="btn-secundario">Justificativas e inconsistências</Link>
           <ImportarAfd />
         </div>
       </div>
@@ -153,23 +161,32 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         {([["espelho", "Espelho"], ["horas", "Horas e extras"], ["atrasos", "Atrasos e faltas"]] as const).map(([k, r]) => (
           <Link key={k} href={q({ aba: k })} className={`-mb-px border-b-2 px-3 py-2 ${aba === k ? "border-orange-500 font-semibold text-texto" : "border-transparent text-texto-suave"}`}>{r}</Link>
         ))}
+        <Link href="/colaboradores/ponto/diario" className="-mb-px border-b-2 border-transparent px-3 py-2 text-texto-suave">Ponto diário</Link>
       </div>
 
-      {assinaturas && ativos.length > 0 && (
+      {assinaturas && fechamentos && ativos.length > 0 && (
         <section className="cartao mb-4 p-4 print:hidden">
-          <p className="rotulo mb-2">Assinaturas no app · {dm(de)} a {dm(ate)}</p>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="rotulo">Fechamento e assinaturas · {dm(de)} a {dm(ate)}</p>
+            {ate < hoje && (
+              <FechamentoMes de={de} ate={ate} pessoas={ativos.filter((p) => !fechamentos.has(p.id)).map((p) => p.id)} rotulo={`Fechar o mês de todos (${ativos.filter((p) => !fechamentos.has(p.id)).length})`} />
+            )}
+          </div>
           <ul className="flex flex-wrap gap-2">
             {ativos.map((p) => {
-              const st = situacaoAssinatura(p.id)!;
+              const fechou = fechamentos.has(p.id);
+              const st = fechou ? situacaoAssinatura(p.id)! : { rot: ate < hoje ? "Conferir e fechar" : "Mês aberto", cls: "pilula-neutra", a: null };
               return (
-                <li key={p.id}>
-                  <Link href={q({ aba: "espelho", p: p.id })} title={st.a?.comentario ?? undefined} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-superficie-suave px-3 text-sm text-texto hover:bg-destaque">
-                    {p.nome.split(" ")[0]} <span className={`pilula ${st.cls}`}>{st.rot}</span>
+                <li key={p.id} className="inline-flex items-center gap-1 rounded-full bg-superficie-suave pl-3">
+                  <Link href={q({ aba: "espelho", p: p.id })} title={st.a?.comentario ?? undefined} className="inline-flex min-h-11 items-center gap-2 text-sm text-texto hover:underline">
+                    {p.nome.split(" ")[0]} <span className={`pilula ${st.cls}`}>{fechou ? `fechado · ${st.rot}` : st.rot}</span>
                   </Link>
+                  {ate < hoje && <FechamentoMes de={de} ate={ate} pessoas={[p.id]} reabrir={fechou} rotulo={fechou ? "reabrir" : "fechar"} pequeno />}
                 </li>
               );
             })}
           </ul>
+          <p className="mt-2 text-xs text-texto-suave">Confira o espelho de cada um e feche o mês. Fechado, ninguém mexe nas batidas nem nas justificativas, e o mês aparece no app da pessoa pra assinar. Pra corrigir depois, reabra.</p>
         </section>
       )}
 
@@ -177,7 +194,8 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
 
       {aba === "espelho" && pessoa && (() => {
         const { linhas, totais } = espelhoDe(pessoa.id);
-        const visiveis = soInconsistencias ? linhas.filter((l) => ["falta", "incompleto"].includes(l.situacao) || l.atrasoMin > 0) : linhas;
+        const visiveis = soInconsistencias ? linhas.filter((l) => inconsistenciasDia(l, regras).length > 0) : linhas;
+        const mesFechado = !!fechamentos?.has(pessoa.id);
         const maxBat = Math.max(4, ...linhas.map((l) => l.colunas.length + (l.colunas.length % 2)));
         return (
           <section>
@@ -237,11 +255,15 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                         <td className={`px-2 py-1.5 text-right ${falta ? "text-red-600" : ""}`}>{falta ? duracao(falta) : ""}</td>
                         <td className={`px-2 py-1.5 text-right ${extra ? "text-emerald-700 dark:text-emerald-400" : ""}`}>{extra ? duracao(extra) : ""}</td>
                         {totais.noturno > 0 && <td className="px-2 py-1.5 text-right">{l.noturnoMin ? duracao(l.noturnoMin) : ""}</td>}
-                        <td className={`px-2 py-1.5 text-xs ${s.cor}`}>
-                          {s.rot}{l.atrasoMin > 0 ? `${s.rot ? " · " : ""}atraso ${l.atrasoMin} min` : ""}
+                        <td className={`px-2 py-1.5 text-xs ${l.justificativa ? "text-sky-700 dark:text-sky-400" : s.cor}`}>
+                          {(() => {
+                            const rot = l.justificativa ?? s.rot;
+                            const inc = inconsistenciasDia(l, regras).filter((r) => r.campo === "atraso" || r.campo === "extra");
+                            return <>{rot}{l.atrasoMin > 0 ? `${rot ? " · " : ""}atraso ${l.atrasoMin} min` : ""}{inc.length > 0 && <span className="ml-1 font-semibold text-urgente-texto" title={inc.map((r) => r.nome).join(", ")}>!</span>}</>;
+                          })()}
                           {l.ignoradas.map((b) => <span key={b.id} className="ml-1"><BatidaMenu id={b.id} hora={hhmm(b.min)} ignorada /></span>)}
                         </td>
-                        <td className="px-2 py-1.5 print:hidden"><AjustarDia colaboradorId={pessoa.id} nome={pessoa.nome} dia={l.dia} /></td>
+                        <td className="px-2 py-1.5 print:hidden">{mesFechado ? <span className="text-xs text-texto-fraco">fechado</span> : <AjustarDia colaboradorId={pessoa.id} nome={pessoa.nome} dia={l.dia} tipos={tiposJust} />}</td>
                       </tr>
                     );
                   })}
@@ -305,7 +327,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                   </tr>,
                   ...porSemana(linhas).map((s) => (
                     <tr key={`${p.id}|${s.segunda}`} className="text-xs text-texto-suave">
-                      <td className="px-2 py-1 pl-6">semana de {dm(s.segunda)}</td><td></td>
+                      <td className="px-2 py-1 pl-6">semana de {dm(s.segunda)}{s.faltas > 0 && <span className="pilula pilula-urgente ml-2" title="Falta sem justificativa na semana: perde o descanso semanal remunerado (DSR)">perde DSR</span>}</td><td></td>
                       <td className="px-2 py-1 text-right">{duracao(s.previsto)}</td>
                       <td className="px-2 py-1 text-right">{duracao(s.trabalhado)}</td>
                       <td className="px-2 py-1 text-right">{duracao(s.extra)}</td>

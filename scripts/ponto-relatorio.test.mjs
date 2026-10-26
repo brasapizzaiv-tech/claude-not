@@ -153,3 +153,35 @@ test("hoje com uma batida só = ainda trabalhando, sem falta", () => {
   assert.equal(linhas[0].faltaMin, 0);
   assert.equal(totais.incompletos, 0);
 });
+
+// ---------- Justificativas em minutos e inconsistências (migration 0258) ----------
+const { inconsistenciasDia } = await import("../src/lib/ponto-relatorio-core.ts");
+
+test("abonar horas tira só a falta; ajuste soma ou tira", () => {
+  const b = new Map([["2026-10-12", [m("08:00"), m("12:00")]], ["2026-10-13", [m("08:00"), m("14:00")]]]);
+  const ajustes = new Map([
+    ["2026-10-12", { abono: 90, ajuste: 0, rotulo: "Abonar quantidade de horas 1h30" }], // faltou 2h, abona 1h30
+    ["2026-10-13", { abono: 0, ajuste: -30, rotulo: "Ajuste quantidade de horas -0h30" }],
+  ]);
+  const { linhas } = espelho(base({ dias: ["2026-10-12", "2026-10-13"], batidas: b, ajustes }));
+  assert.equal(linhas[0].faltaMin, 30);
+  assert.equal(linhas[0].abonadoMin, 90);
+  assert.equal(linhas[0].justificativa, "Abonar quantidade de horas 1h30");
+  assert.equal(linhas[1].faltaMin, 30);
+});
+
+test("justificativa de dia inteiro mostra o nome do tipo", () => {
+  const { linhas } = espelho(base({ dias: ["2026-10-12"], abonos: new Set(["2026-10-12"]), justificativas: new Map([["2026-10-12", "Férias"]]) }));
+  assert.equal(linhas[0].situacao, "abono");
+  assert.equal(linhas[0].justificativa, "Férias");
+  assert.equal(linhas[0].faltaMin, 0);
+});
+
+test("inconsistências pelas regras e DSR da semana", () => {
+  const b = new Map([["2026-10-12", [m("08:12"), m("14:00")]], ["2026-10-13", [m("08:00"), m("14:20")]]]);
+  const { linhas } = espelho(base({ dias: ["2026-10-12", "2026-10-13", "2026-10-14"], batidas: b, tolerancia: 5, limite: 10 }));
+  assert.deepEqual(inconsistenciasDia(linhas[0]).map((r) => r.nome), ["Atraso acima de 10 min"]);
+  assert.deepEqual(inconsistenciasDia(linhas[1]).map((r) => r.nome), ["Extra acima de 10 min"]);
+  assert.deepEqual(inconsistenciasDia(linhas[2]).map((r) => r.nome), ["Falta"]);
+  assert.equal(porSemana(linhas)[0].faltas, 1);
+});

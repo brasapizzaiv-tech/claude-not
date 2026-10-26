@@ -49,7 +49,31 @@ export type LinhaEspelho = {
   tipo: TipoDia;
   /** "08:00–14:00" ou "14:00–17:00 18:00–23:00" (vazio = sem horário no dia). */
   horario: string;
+  /** Falta abonada por justificativa em horas (min). */
+  abonadoMin?: number;
+  /** Nome da justificativa do dia (Férias, Atestado médico, Abonar quantidade de horas 1h00...). */
+  justificativa?: string;
 };
+/** Justificativa em minutos num dia (migration 0258). */
+export type AjusteDia = { abono: number; ajuste: number; rotulo: string };
+
+/** Regra de inconsistência (como no RHiD): campo e a partir de quanto marca. */
+export type RegraInconsistencia = { nome: string; campo: "falta" | "atraso" | "extra" | "incompleto"; a_partir: number; ativo: boolean };
+export const INCONSISTENCIAS_PADRAO: RegraInconsistencia[] = [
+  { nome: "Falta", campo: "falta", a_partir: 1, ativo: true },
+  { nome: "Atraso acima de 10 min", campo: "atraso", a_partir: 10, ativo: true },
+  { nome: "Extra acima de 10 min", campo: "extra", a_partir: 10, ativo: true },
+  { nome: "Batida faltando", campo: "incompleto", a_partir: 1, ativo: true },
+];
+/** As inconsistências do dia pelas regras (falta = dia sem batida; atraso = falta e atraso do dia em min; extra = extra do dia em min). */
+export function inconsistenciasDia(l: Pick<LinhaEspelho, "situacao" | "faltaMin" | "extraMin">, regras: RegraInconsistencia[] = INCONSISTENCIAS_PADRAO) {
+  return regras.filter((r) => r.ativo && (
+    (r.campo === "falta" && l.situacao === "falta") ||
+    (r.campo === "incompleto" && l.situacao === "incompleto") ||
+    (r.campo === "atraso" && l.situacao !== "falta" && l.faltaMin >= Math.max(1, r.a_partir)) ||
+    (r.campo === "extra" && l.extraMin >= Math.max(1, r.a_partir))
+  ));
+}
 export type TotaisEspelho = {
   previsto: number; trabalhado: number; extra: number; faltante: number; atraso: number; faltas: number; diasTrabalhados: number; incompletos: number;
   noturno: number;
@@ -157,6 +181,10 @@ export function espelho(p: {
   admissao?: string | null;
   /** Depois do desligamento (último dia) o dia também é "fora da escala". */
   desligamento?: string | null;
+  /** Nome do tipo de justificativa do dia (Férias, Atestado médico...), migration 0258. */
+  justificativas?: Map<string, string>;
+  /** Justificativa em minutos no dia: abona falta ("horas") ou soma/tira ("ajuste"). */
+  ajustes?: Map<string, AjusteDia>;
 }): { linhas: LinhaEspelho[]; totais: TotaisEspelho } {
   const horarioDoDia = p.horarioDoDia ?? horarioAntigo(p.escala ?? [], p.entradas ?? {}, p.saidas ?? {}, p.tolerancia ?? 0, p.limite ?? 0);
   const linhas: LinhaEspelho[] = [];
@@ -219,10 +247,20 @@ export function espelho(p: {
     } else {
       extra = trabalhado; // fora da escala, feriado, compensado ou dia justificado em que trabalhou: tudo é extra
     }
+    // Justificativa em minutos (migration 0258): abona parte da falta, ou soma/tira tempo à mão.
+    const aj = p.ajustes?.get(dia);
+    let abonado = 0;
+    if (aj && situacao !== "hoje" && situacao !== "neutro") {
+      abonado = Math.min(falta, Math.max(0, aj.abono));
+      falta -= abonado;
+      if (aj.ajuste > 0) extra += aj.ajuste;
+      else falta += -aj.ajuste;
+    }
     const contaPrevisto = situacao === "hoje" ? 0 : previsto;
     linhas.push({
       dia, dow, batidas: bs, colunas, ignoradas, previstoMin: contaPrevisto, trabalhadoMin: trabalhado, atrasoMin: atraso,
       extraMin: extra, faltaMin: falta, saldoMin: extra - falta, situacao, noturnoMin: noturno, tipo, horario: naContratacao ? rotuloHorario(h) : "",
+      abonadoMin: abonado, justificativa: [p.justificativas?.get(dia), aj?.rotulo].filter(Boolean).join(" · ") || undefined,
     });
     t.previsto += contaPrevisto;
     t.trabalhado += trabalhado;
@@ -248,12 +286,14 @@ export function segundaDaSemana(dia: string) {
 
 /** Totais por semana (segunda a domingo) a partir das linhas do espelho. */
 export function porSemana(linhas: LinhaEspelho[]) {
-  const m = new Map<string, { previsto: number; trabalhado: number; extra: number; faltante: number }>();
+  const m = new Map<string, { previsto: number; trabalhado: number; extra: number; faltante: number; faltas: number }>();
   for (const l of linhas) {
     const k = segundaDaSemana(l.dia);
-    const s = m.get(k) ?? { previsto: 0, trabalhado: 0, extra: 0, faltante: 0 };
+    const s = m.get(k) ?? { previsto: 0, trabalhado: 0, extra: 0, faltante: 0, faltas: 0 };
     s.previsto += l.previstoMin; s.trabalhado += l.trabalhadoMin;
     s.extra += l.extraMin; s.faltante += l.faltaMin;
+    // Falta sem justificativa na semana = perde o DSR (descanso remunerado) daquela semana.
+    if (l.situacao === "falta") s.faltas++;
     m.set(k, s);
   }
   return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([segunda, s]) => ({ segunda, ...s }));

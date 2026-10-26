@@ -6,6 +6,15 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { empresaAtualId } from "@/lib/empresa";
 import { apagarAfdRepetidas, marcarPresencasDoPonto, receberAfd } from "@/lib/ponto-server";
 import { pisValido, turnoDaBatida } from "@/lib/ponto-core";
+import { AVISO_FECHADO, diaFechado } from "@/lib/ponto-espelho";
+
+/** Mês fechado (migration 0258): a batida desse dia não muda mais. */
+async function batidaTravada(supabase: Awaited<ReturnType<typeof createClient>>, id: string, outroDia?: string) {
+  const { data } = await supabase.from("ponto_batidas").select("colaborador_id, data").eq("id", id).maybeSingle();
+  const b = data as { colaborador_id: string | null; data: string } | null;
+  if (!b?.colaborador_id) return false;
+  return diaFechado(supabase, b.colaborador_id, [String(b.data).slice(0, 10), ...(outroDia ? [outroDia] : [])]);
+}
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -41,6 +50,7 @@ export async function incluirBatida(colaboradorId: string, dia: string, hora: st
   const { data: c } = await supabase.from("colaboradores").select("id, cpf, nome, bate_ponto").eq("id", colaboradorId).maybeSingle();
   const col = c as { id: string; cpf: string | null; nome: string; bate_ponto: boolean } | null;
   if (!col) return { ok: false as const, erro: "Pessoa não encontrada." };
+  if (await diaFechado(supabase, col.id, [dia])) return { ok: false as const, erro: AVISO_FECHADO };
   const madrugada = Number(hora.slice(0, 2)) < 5;
   const [a, m, d] = dia.split("-").map(Number);
   const diaCivil = madrugada ? new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10) : dia;
@@ -62,6 +72,8 @@ export async function incluirBatida(colaboradorId: string, dia: string, hora: st
 export async function apagarBatidaManual(colaboradorId: string, dataHoraIso: string) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
+  const { data: b } = await supabase.from("ponto_batidas").select("data").eq("colaborador_id", colaboradorId).eq("origem", "manual").eq("data_hora", dataHoraIso).maybeSingle();
+  if (b && (await diaFechado(supabase, colaboradorId, [String((b as { data: string }).data).slice(0, 10)]))) return { ok: false as const, erro: AVISO_FECHADO };
   await supabase.from("ponto_batidas").delete().eq("colaborador_id", colaboradorId).eq("origem", "manual").eq("data_hora", dataHoraIso);
   revalidar();
 }
@@ -72,9 +84,23 @@ export async function justificar(fd: FormData) {
   const colaborador = String(fd.get("colaborador_id") ?? "");
   const inicio = String(fd.get("inicio") ?? "");
   const fim = String(fd.get("fim") ?? "") || inicio;
-  const tipo = fd.get("tipo") === "abono" ? "abono" : "atestado";
   if (!colaborador || !DATA.test(inicio) || !DATA.test(fim) || fim < inicio) return { ok: false as const, erro: "Escolha a pessoa e as datas." };
   const supabase = await createClient();
+  // Tipo de justificativa (migration 0258): diz o que faz no ponto e se tira o prêmio.
+  const tipoId = String(fd.get("tipo_id") ?? "");
+  const { data: tj } = tipoId ? await supabase.from("justificativa_tipos").select("id, efeito, tira_premio").eq("id", tipoId).maybeSingle() : { data: null };
+  const tipoJ = tj as { id: string; efeito: "dia" | "horas" | "ajuste"; tira_premio: boolean } | null;
+  if (!tipoJ) return { ok: false as const, erro: "Escolha o tipo de justificativa." };
+  const tipo = tipoJ.tira_premio ? "atestado" : "abono";
+  let minutos: number | null = null;
+  if (tipoJ.efeito !== "dia") {
+    const txt = String(fd.get("minutos") ?? "").trim();
+    const m = txt.match(/^(-)?(\d{1,2}):([0-5]\d)$/);
+    minutos = m ? (Number(m[2]) * 60 + Number(m[3])) * (m[1] ? -1 : 1) : NaN;
+    if (!Number.isFinite(minutos) || minutos === 0) return { ok: false as const, erro: "Diga quanto tempo (hh:mm, ex.: 01:30; no ajuste, -00:30 tira)." };
+    if (tipoJ.efeito === "horas") minutos = Math.abs(minutos);
+  }
+  if (await diaFechado(supabase, colaborador, [inicio, fim])) return { ok: false as const, erro: AVISO_FECHADO };
   const empresaId = await empresaAtualId();
   let arquivo: string | null = null;
   const f = fd.get("arquivo");
@@ -89,7 +115,7 @@ export async function justificar(fd: FormData) {
   }
   const { data: auth } = await supabase.auth.getUser();
   const { error } = await supabase.from("atestados").insert({
-    colaborador_id: colaborador, inicio, fim, tipo, arquivo_url: arquivo,
+    colaborador_id: colaborador, inicio, fim, tipo, tipo_id: tipoJ.id, minutos, arquivo_url: arquivo,
     motivo: String(fd.get("motivo") ?? "").trim().slice(0, 200) || null, criado_por: auth.user?.id ?? null,
   });
   if (error) return { ok: false as const, erro: error.message };
@@ -121,6 +147,7 @@ async function ajustar(id: string, campos: Record<string, unknown>) {
 /** Desconsiderar marcação (ou considerar de novo). */
 export async function desconsiderarBatida(id: string, desconsiderar: boolean) {
   await exigirAcesso("/colaboradores");
+  if (await batidaTravada(await createClient(), id)) return { ok: false as const, erro: AVISO_FECHADO };
   return ajustar(id, { desconsiderada: desconsiderar });
 }
 
@@ -128,6 +155,7 @@ export async function desconsiderarBatida(id: string, desconsiderar: boolean) {
 export async function deslocarBatida(id: string, direcao: 1 | -1) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
+  if (await batidaTravada(supabase, id)) return { ok: false as const, erro: AVISO_FECHADO };
   const { data } = await supabase.from("ponto_batidas").select("deslocamento").eq("id", id).maybeSingle();
   const atual = Number((data as { deslocamento: number } | null)?.deslocamento ?? 0);
   const novo = Math.max(0, Math.min(6, atual + direcao));
@@ -144,6 +172,7 @@ export async function moverBatidaDia(id: string, delta: 1 | -1) {
   if (!b) return { ok: false as const, erro: "Batida não encontrada." };
   const [a, m, d] = String(b.data).slice(0, 10).split("-").map(Number);
   const novoDia = new Date(Date.UTC(a, m - 1, d + delta)).toISOString().slice(0, 10);
+  if (await batidaTravada(supabase, id, novoDia)) return { ok: false as const, erro: AVISO_FECHADO };
   // Indo pro dia anterior é saída de madrugada: noite. Indo pro seguinte, pela hora.
   const hora = Number(new Date(b.data_hora).toLocaleTimeString("en-GB", { hour: "2-digit", hour12: false, timeZone: "America/Sao_Paulo" }).slice(0, 2));
   const turno = delta < 0 ? "noite" : hora < 16 ? "dia" : "noite";
@@ -183,4 +212,67 @@ export async function vincularCpfPonto(cpf: string, colaboradorId: string) {
   revalidar();
   revalidatePath("/dashboard");
   return { ok: true as const, batidas: ligadas?.length ?? 0, presencas };
+}
+
+// ---------- Fechamento do mês (migration 0258, "Arquivar cálculos" do RHiD) ----------
+
+/** Fecha o ciclo de uma ou mais pessoas: trava os ajustes e libera a assinatura no app. */
+export async function fecharMes(de: string, ate: string, pessoaIds: string[]) {
+  await exigirAcesso("/colaboradores");
+  if (!DATA.test(de) || !DATA.test(ate) || ate < de || !pessoaIds.length) return { ok: false as const, erro: "Período inválido." };
+  const supabase = await createClient();
+  const { data: ja } = await supabase.from("ponto_fechamentos").select("colaborador_id").eq("de", de).is("reaberto_em", null).in("colaborador_id", pessoaIds);
+  const fechadas = new Set(((ja ?? []) as { colaborador_id: string }[]).map((x) => x.colaborador_id));
+  const { data: auth } = await supabase.auth.getUser();
+  const novas = pessoaIds.filter((p) => !fechadas.has(p)).map((p) => ({ colaborador_id: p, de, ate, fechado_por: auth.user?.id ?? null }));
+  if (novas.length) {
+    const { error } = await supabase.from("ponto_fechamentos").insert(novas);
+    if (error) return { ok: false as const, erro: error.message };
+  }
+  revalidar();
+  return { ok: true as const, fechadas: novas.length };
+}
+
+/** Reabre o ciclo de uma pessoa (fica registrado quem e quando); depois de corrigir, fecha de novo e ela assina de novo. */
+export async function reabrirMes(de: string, pessoaId: string) {
+  await exigirAcesso("/colaboradores");
+  if (!DATA.test(de)) return { ok: false as const, erro: "Período inválido." };
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const { error } = await supabase.from("ponto_fechamentos").update({ reaberto_em: new Date().toISOString(), reaberto_por: auth.user?.id ?? null })
+    .eq("colaborador_id", pessoaId).eq("de", de).is("reaberto_em", null);
+  if (error) return { ok: false as const, erro: error.message };
+  revalidar();
+  return { ok: true as const };
+}
+
+/** Grava as regras de inconsistência (o que marca um dia como "tem problema"). */
+export async function salvarInconsistencias(regras: { nome: string; campo: string; a_partir: number; ativo: boolean }[]) {
+  await exigirAcesso("/colaboradores");
+  const campos = new Set(["falta", "atraso", "extra", "incompleto"]);
+  const limpas = regras.filter((r) => campos.has(r.campo) && String(r.nome ?? "").trim())
+    .map((r) => ({ nome: String(r.nome).trim().slice(0, 60), campo: r.campo, a_partir: Math.max(1, Math.min(600, Math.round(Number(r.a_partir) || 1))), ativo: !!r.ativo }));
+  const supabase = await createClient();
+  const { data: cfg } = await supabase.from("assiduidade_config").select("id").maybeSingle();
+  if (!cfg) return { ok: false as const, erro: "Configuração do ponto não encontrada." };
+  const { error } = await supabase.from("assiduidade_config").update({ inconsistencias: limpas }).eq("id", (cfg as { id: string }).id);
+  if (error) return { ok: false as const, erro: error.message };
+  revalidar();
+  revalidatePath("/colaboradores/ponto/regras");
+  return { ok: true as const };
+}
+
+/** Cria ou altera um tipo de justificativa. */
+export async function salvarTipoJustificativa(t: { id?: string; nome: string; efeito: string; tira_premio: boolean; ativo: boolean }) {
+  await exigirAcesso("/colaboradores");
+  const nome = String(t.nome ?? "").trim().slice(0, 60);
+  if (nome.length < 2) return { ok: false as const, erro: "Escreva o nome." };
+  if (!["dia", "horas", "ajuste"].includes(t.efeito)) return { ok: false as const, erro: "Escolha o que o tipo faz." };
+  const linha = { nome, efeito: t.efeito, tira_premio: !!t.tira_premio, ativo: !!t.ativo };
+  const supabase = await createClient();
+  const { error } = t.id ? await supabase.from("justificativa_tipos").update(linha).eq("id", t.id) : await supabase.from("justificativa_tipos").insert(linha);
+  if (error) return { ok: false as const, erro: error.message.includes("duplicate") ? "Já existe um tipo com esse nome." : error.message };
+  revalidatePath("/colaboradores/ponto/regras");
+  revalidar();
+  return { ok: true as const };
 }

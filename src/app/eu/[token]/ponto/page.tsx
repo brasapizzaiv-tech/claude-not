@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hojeSP } from "@/lib/assiduidade-server";
-import { ASSINATURA_DESDE, assinaturasDoCiclo, cicloDoDia, ciclosRecentes, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
+import { ASSINATURA_DESDE, assinaturasDoCiclo, fechamentosDoCiclo, cicloDoDia, ciclosRecentes, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
 import { duracao, hhmm, type SituacaoDia } from "@/lib/ponto-relatorio-core";
 import { AssinarPonto } from "./assinar";
 
@@ -46,9 +46,10 @@ export default async function MeuPontoPage({ params, searchParams }: { params: P
   const assina = ciclo.de >= ASSINATURA_DESDE;
   const periodo = `${dm(ciclo.de)} a ${dm(ciclo.ate)}`;
 
-  const [e, assinaturas, { data: ult }] = await Promise.all([
+  const [e, assinaturas, fechamentos, { data: ult }] = await Promise.all([
     espelhoDaPessoa(admin, colab.id, ciclo.de, ciclo.ate, colab.empresa_id),
     assinaturasDoCiclo(admin, ciclo.de, ciclo.ate, [colab.id], colab.empresa_id),
+    fechamentosDoCiclo(admin, ciclo.de, [colab.id], colab.empresa_id),
     admin.from("ponto_batidas").select("data_hora, nsr, origem, desconsiderada").eq("colaborador_id", colab.id)
       .order("data_hora", { ascending: false }).limit(8),
   ]);
@@ -68,7 +69,8 @@ export default async function MeuPontoPage({ params, searchParams }: { params: P
   const { hash } = resumoParaAssinar(e);
   const mudou = !!assinatura && assinatura.hash !== hash;
   const assinado = assinatura?.resposta === "assinado" && !mudou;
-  const precisaResponder = fechado && assina && !assinado;
+  const conferido = fechamentos.has(colab.id); // a gestão fechou o mês (migration 0258)
+  const precisaResponder = fechado && assina && conferido && !assinado;
   // Do mais novo pro mais antigo; dia sem batida e fora da escala não aparece, nem os que ainda vêm.
   const dias = linhas.filter((l) => l.dia <= hoje && (l.batidas.length || l.situacao !== "fora")).reverse();
 
@@ -104,6 +106,7 @@ export default async function MeuPontoPage({ params, searchParams }: { params: P
         {fechado && !mudou && assinatura?.resposta === "discorda" && (
           <p className="mt-3 text-sm opacity-90">Você disse que não concorda: “{assinatura.comentario}”. A gestão vai conferir. Se já está resolvido, pode assinar.</p>
         )}
+        {fechado && assina && !conferido && <p className="mt-3 text-sm opacity-90">A gestão está conferindo o mês. Quando fechar, você confere e assina aqui.</p>}
         {precisaResponder && !assinatura && <p className="mt-3 text-sm opacity-90">Confira os dias abaixo. Está tudo certo?</p>}
         {precisaResponder && <AssinarPonto token={token} de={ciclo.de} periodo={periodo} />}
       </section>
@@ -129,7 +132,7 @@ export default async function MeuPontoPage({ params, searchParams }: { params: P
         <ul className="divide-y divide-borda">
           {dias.map((l) => {
             const saldo = l.extraMin - l.faltaMin;
-            const rot = SIT[l.situacao];
+            const rot = l.justificativa ?? SIT[l.situacao];
             return (
               <li key={l.dia} className="flex items-center justify-between gap-3 px-4 py-2.5">
                 <div className="min-w-0">

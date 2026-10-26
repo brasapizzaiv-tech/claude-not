@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Enviar } from "@/components/enviar";
-import { desconsiderarBatida, deslocarBatida, importarAfdRhid, incluirBatida, justificar, moverBatidaDia } from "./actions";
+import { BotaoAcao, Enviar } from "@/components/enviar";
+import { avisar, confirmar } from "@/components/dialogo";
+import { useRouter } from "next/navigation";
+import { desconsiderarBatida, deslocarBatida, fecharMes, importarAfdRhid, incluirBatida, justificar, moverBatidaDia, reabrirMes } from "./actions";
 
 const CAMPO = "min-h-9 rounded-controle border border-borda-forte bg-transparent px-2 text-sm";
 
@@ -36,8 +38,12 @@ export function ImportarAfd() {
 }
 
 /** "Ajustar" de um dia do espelho: justificar (atestado/abono) ou incluir batida esquecida. */
-export function AjustarDia({ colaboradorId, nome, dia }: { colaboradorId: string; nome: string; dia: string }) {
+export type TipoJustOpcao = { id: string; nome: string; efeito: "dia" | "horas" | "ajuste"; tira_premio: boolean };
+
+export function AjustarDia({ colaboradorId, nome, dia, tipos = [] }: { colaboradorId: string; nome: string; dia: string; tipos?: TipoJustOpcao[] }) {
   const [aberto, setAberto] = useState<"" | "justificar" | "batida">("");
+  const [tipoId, setTipoId] = useState("");
+  const tipoSel = tipos.find((t) => t.id === tipoId);
   const [erro, setErro] = useState<string | null>(null);
   const [hora, setHora] = useState("");
   const [obs, setObs] = useState("");
@@ -59,10 +65,13 @@ export function AjustarDia({ colaboradorId, nome, dia }: { colaboradorId: string
           className="space-y-1.5"
         >
           <input type="hidden" name="colaborador_id" value={colaboradorId} />
-          <select name="tipo" className={`${CAMPO} w-full`} defaultValue="atestado">
-            <option value="atestado">Atestado (tira o prêmio)</option>
-            <option value="abono">Abonar ausência (não tira o prêmio)</option>
+          <select name="tipo_id" value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={`${CAMPO} w-full`} required>
+            <option value="">Tipo de justificativa…</option>
+            {tipos.map((t) => <option key={t.id} value={t.id}>{t.nome}{t.tira_premio ? " (tira o prêmio)" : ""}</option>)}
           </select>
+          {tipoSel && tipoSel.efeito !== "dia" && (
+            <input name="minutos" placeholder={tipoSel.efeito === "horas" ? "Quanto abona (hh:mm, ex.: 01:30)" : "Quanto soma (hh:mm) ou tira (-00:30)"} className={`${CAMPO} w-full`} required />
+          )}
           <div className="flex gap-1">
             <input type="date" name="inicio" defaultValue={dia} className={`${CAMPO} w-1/2`} aria-label="De" />
             <input type="date" name="fim" defaultValue={dia} className={`${CAMPO} w-1/2`} aria-label="Até" />
@@ -138,5 +147,24 @@ export function BatidaMenu({ id, hora, manual, ignorada, destaque }: { id?: stri
         </span>
       )}
     </span>
+  );
+}
+
+/** Fechar (ou reabrir) o mês de uma ou mais pessoas (migration 0258). */
+export function FechamentoMes({ de, ate, pessoas, reabrir, rotulo, pequeno }: { de: string; ate: string; pessoas: string[]; reabrir?: boolean; rotulo: string; pequeno?: boolean }) {
+  const router = useRouter();
+  if (!pessoas.length) return null;
+  async function fazer() {
+    const pergunta = reabrir ? "Reabrir o mês dessa pessoa?" : pessoas.length > 1 ? `Fechar o mês de ${pessoas.length} pessoas?` : "Fechar o mês dessa pessoa?";
+    const detalhe = reabrir ? "Volta a dar pra mexer nas batidas e justificativas. Depois de corrigir, feche de novo; a pessoa assina de novo no app." : "Confira o espelho antes. Fechado, ninguém mexe nas batidas nem nas justificativas desses dias, e o mês vai pro app pra pessoa assinar.";
+    if (!(await confirmar(pergunta, { detalhe, okTexto: reabrir ? "Reabrir" : "Fechar o mês" }))) return;
+    const r = reabrir ? await reabrirMes(de, pessoas[0]) : await fecharMes(de, ate, pessoas);
+    if (!r.ok) { void avisar(r.erro); return; }
+    router.refresh();
+  }
+  return (
+    <BotaoAcao aoClicar={fazer} className={pequeno ? "min-h-11 rounded-full px-3 text-xs font-semibold text-texto-marca hover:underline" : "btn-principal !min-h-11 text-sm"}>
+      {rotulo}
+    </BotaoAcao>
   );
 }

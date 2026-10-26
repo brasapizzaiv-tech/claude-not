@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { diasEntre } from "@/lib/assiduidade-core";
-import type { BatidaDia, DiaHorario } from "@/lib/ponto-relatorio-core";
+import type { AjusteDia, BatidaDia, DiaHorario } from "@/lib/ponto-relatorio-core";
 import { diaDoHorario, horarioIdNoDia, type HorarioPonto, type VinculoHorario } from "@/lib/ponto-horarios-core";
 
 // Tudo o que os relatórios de ponto e o prêmio assiduidade precisam de um
@@ -26,7 +26,13 @@ export type BasePonto = {
   /** Horário de cada dia da pessoa (migration 0255); undefined = sem horário, vale o jeito antigo. */
   horarioDe: (pessoaId: string) => ((dia: string, dow: number) => DiaHorario | null) | undefined;
   horarios: Map<string, HorarioPonto>;
+  /** colaborador → dia → nome da justificativa de dia inteiro (Férias, Atestado médico...). */
+  justificativas: Map<string, Map<string, string>>;
+  /** colaborador → dia → minutos abonados / ajustados. */
+  ajustes: Map<string, Map<string, AjusteDia>>;
 };
+/** Tipo de justificativa (migration 0258). */
+export type TipoJustificativa = { id: string; nome: string; efeito: "dia" | "horas" | "ajuste"; tira_premio: boolean; ativo: boolean };
 
 async function todas<T>(montar: () => { range: (a: number, b: number) => PromiseLike<{ data: unknown }> }): Promise<T[]> {
   const out: T[] = [];
@@ -55,7 +61,7 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
   let qCols = daEmpresa(db.from("colaboradores").select("id, nome, dias_dia, ativo, cpf, admissao, desligado_em").eq("bate_ponto", true).order("nome"));
   if (!opts.incluirInativos) qCols = qCols.eq("ativo", true);
   if (opts.pessoaId) qCols = qCols.eq("id", opts.pessoaId);
-  const [{ data: cols }, bats, { data: fol }, { data: ats }, { data: fer }] = await Promise.all([
+  const [{ data: cols }, bats, { data: fol }, { data: ats }, { data: tjs }, { data: fer }] = await Promise.all([
     qCols,
     todas<{ id: string; colaborador_id: string; data: string; turno: string; data_hora: string; origem: string; desconsiderada: boolean; deslocamento: number }>(() => {
       let q = db.from("ponto_batidas").select("id, colaborador_id, data, turno, data_hora, origem, desconsiderada, deslocamento").not("colaborador_id", "is", null).gte("data", de).lte("data", ate);
@@ -63,7 +69,8 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
       return daEmpresa(q).order("data_hora").order("id");
     }),
     daEmpresa(db.from("folgas_pedidos").select("data, folgas_funcionarios(colaborador_id)").eq("status", "Aprovado").gte("data", de).lte("data", ate)),
-    daEmpresa(db.from("atestados").select("colaborador_id, inicio, fim, tipo").lte("inicio", ate).gte("fim", de)),
+    daEmpresa(db.from("atestados").select("colaborador_id, inicio, fim, tipo, tipo_id, minutos").lte("inicio", ate).gte("fim", de)),
+    daEmpresa(db.from("justificativa_tipos").select("id, nome, efeito, tira_premio, ativo")),
     // Feriado é feriado no ponto mesmo com a casa aberta (Rafael, 24/10/2026, igual ao RHiD):
     // ninguém leva falta e quem trabalha fica com as horas do dia como extra.
     daEmpresa(db.from("feriados").select("data, data_fim").lte("data", ate)),
@@ -92,13 +99,36 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
     s.add(String(f.data).slice(0, 10));
     folgas.set(ff.colaborador_id, s);
   }
+  // Justificativas (migration 0258): pelo tipo — dia inteiro (tira ou não o
+  // prêmio), minutos abonados ou ajuste de minutos. Sem tipo = jeito antigo.
+  const tiposJust = new Map(((tjs ?? []) as TipoJustificativa[]).map((t) => [t.id, t]));
   const atestados = new Map<string, Set<string>>();
   const abonos = new Map<string, Set<string>>();
-  for (const a of (ats ?? []) as { colaborador_id: string; inicio: string; fim: string; tipo: string | null }[]) {
-    const alvo = a.tipo === "abono" ? abonos : atestados;
+  const justificativas = new Map<string, Map<string, string>>();
+  const ajustes = new Map<string, Map<string, AjusteDia>>();
+  const fmtMin = (n: number) => `${n < 0 ? "-" : ""}${Math.floor(Math.abs(n) / 60)}h${String(Math.abs(n) % 60).padStart(2, "0")}`;
+  for (const a of (ats ?? []) as { colaborador_id: string; inicio: string; fim: string; tipo: string | null; tipo_id: string | null; minutos: number | null }[]) {
+    const t = a.tipo_id ? tiposJust.get(a.tipo_id) : undefined;
+    const dias = diasEntre(String(a.inicio).slice(0, 10), String(a.fim).slice(0, 10));
+    if (t && t.efeito !== "dia") {
+      const m = ajustes.get(a.colaborador_id) ?? new Map<string, AjusteDia>();
+      for (const d of dias) {
+        const x = m.get(d) ?? { abono: 0, ajuste: 0, rotulo: "" };
+        const min = Number(a.minutos) || 0;
+        if (t.efeito === "horas") x.abono += Math.abs(min); else x.ajuste += min;
+        x.rotulo = [x.rotulo, `${t.nome} ${fmtMin(min)}`].filter(Boolean).join(" · ");
+        m.set(d, x);
+      }
+      ajustes.set(a.colaborador_id, m);
+      continue;
+    }
+    const tira = t ? t.tira_premio : a.tipo !== "abono";
+    const alvo = tira ? atestados : abonos;
     const s = alvo.get(a.colaborador_id) ?? new Set<string>();
-    for (const d of diasEntre(String(a.inicio).slice(0, 10), String(a.fim).slice(0, 10))) s.add(d);
+    const nomes = justificativas.get(a.colaborador_id) ?? new Map<string, string>();
+    for (const d of dias) { s.add(d); nomes.set(d, t?.nome ?? (tira ? "Atestado" : "Abonado")); }
     alvo.set(a.colaborador_id, s);
+    justificativas.set(a.colaborador_id, nomes);
   }
   const fechados = new Set<string>();
   for (const f of (fer ?? []) as { data: string; data_fim: string | null }[]) {
@@ -137,5 +167,5 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
       return h ? diaDoHorario(h, dow) : null;
     };
   };
-  return { pessoas, batidas, batidasDia, folgas, atestados, abonos, fechados, horarioDe, horarios };
+  return { pessoas, batidas, batidasDia, folgas, atestados, abonos, fechados, horarioDe, horarios, justificativas, ajustes };
 }

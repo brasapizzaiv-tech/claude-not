@@ -55,6 +55,7 @@ export async function espelhoDaPessoa(db: Db, pessoaId: string, de: string, ate:
     batidas: base.batidas.get(pessoa.id) ?? new Map(), folgas: base.folgas.get(pessoa.id) ?? new Set(),
     atestados: base.atestados.get(pessoa.id) ?? new Set(), abonos: base.abonos.get(pessoa.id) ?? new Set(), fechados: base.fechados,
     tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min, admissao: pessoa.admissao, desligamento: pessoa.desligamento,
+    justificativas: base.justificativas.get(pessoa.id), ajustes: base.ajustes.get(pessoa.id),
   });
   return { pessoa, linhas, totais, entradas: cfg.entradas, saidas: cfg.saidas };
 }
@@ -94,6 +95,8 @@ export async function assinaturasDoCiclo(db: Db, de: string, ate: string, pessoa
 export async function pontoAResponder(db: Db, colaboradorId: string, empresaId: string): Promise<string | null> {
   const fechou = ciclosRecentes(hojeSP(), 2)[1];
   if (fechou.de < ASSINATURA_DESDE) return null;
+  // Só depois que a gestão fecha o mês (migration 0258).
+  if (!(await fechamentosDoCiclo(db, fechou.de, [colaboradorId], empresaId)).has(colaboradorId)) return null;
   const a = (await assinaturasDoCiclo(db, fechou.de, fechou.ate, [colaboradorId], empresaId)).get(colaboradorId);
   if (a) {
     const e = await espelhoDaPessoa(db, colaboradorId, fechou.de, fechou.ate, empresaId);
@@ -101,3 +104,29 @@ export async function pontoAResponder(db: Db, colaboradorId: string, empresaId: 
   }
   return `${fechou.de.slice(8, 10)}/${fechou.de.slice(5, 7)} a ${fechou.ate.slice(8, 10)}/${fechou.ate.slice(5, 7)}`;
 }
+
+// ---------- Fechamento do mês (migration 0258, "Arquivar cálculos" do RHiD) ----------
+
+export type Fechamento = { id: string; colaborador_id: string; de: string; ate: string; fechado_em: string };
+
+/** Fechamentos ativos (não reabertos) do ciclo, por pessoa. */
+export async function fechamentosDoCiclo(db: Db, de: string, pessoaIds: string[], empresaId?: string) {
+  const mapa = new Map<string, Fechamento>();
+  if (!pessoaIds.length) return mapa;
+  let q = db.from("ponto_fechamentos").select("id, colaborador_id, de, ate, fechado_em").eq("de", de).is("reaberto_em", null).in("colaborador_id", pessoaIds);
+  if (empresaId) q = q.eq("empresa_id", empresaId);
+  const { data } = await q;
+  for (const f of (data ?? []) as Fechamento[]) mapa.set(f.colaborador_id, f);
+  return mapa;
+}
+
+/** O dia está num mês fechado dessa pessoa? (aí não se mexe em batida nem justificativa) */
+export async function diaFechado(db: Db, colaboradorId: string, dias: string[]) {
+  const validos = dias.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+  if (!validos.length) return false;
+  const min = validos.reduce((a, b) => (a < b ? a : b)), max = validos.reduce((a, b) => (a > b ? a : b));
+  const { count } = await db.from("ponto_fechamentos").select("id", { count: "exact", head: true })
+    .eq("colaborador_id", colaboradorId).is("reaberto_em", null).lte("de", max).gte("ate", min);
+  return (count ?? 0) > 0;
+}
+export const AVISO_FECHADO = "Esse mês já foi fechado. Reabra o mês (Relatórios de ponto → Fechamento) pra mexer.";

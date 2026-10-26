@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { apurarMes, diasEntre, periodoMes, type ResultadoMes } from "@/lib/assiduidade-core";
 import { carregarBasePonto } from "@/lib/ponto-dados";
-import { hhmm } from "@/lib/ponto-relatorio-core";
+import { hhmm, INCONSISTENCIAS_PADRAO, type RegraInconsistencia } from "@/lib/ponto-relatorio-core";
 
 // Apura o prêmio assiduidade de cada pessoa que bate ponto num mês (regra em
 // src/lib/assiduidade-core.ts; dados em src/lib/ponto-dados.ts). Migration 0222.
@@ -13,6 +13,8 @@ export type ConfigAssiduidade = {
   entradas: Record<string, string>; saidas: Record<string, string>;
   dia_inicio_mes: number; inicio: string | null;
   tolerancia_batida_min: number; limite_diario_min: number;
+  /** Tipos de inconsistência (migration 0258). */
+  inconsistencias: RegraInconsistencia[];
 };
 export type PessoaAssiduidade = { id: string; nome: string; escala: number[]; resultado: ResultadoMes };
 
@@ -22,7 +24,7 @@ export function hojeSP() {
 
 /** `empresaId` só com o cliente admin (app da equipe), que não passa pelo RLS. */
 export async function lerConfig(db: Db, empresaId?: string): Promise<ConfigAssiduidade> {
-  let q = db.from("assiduidade_config").select("ativo, valor_mes, tolerancia_min, entradas, saidas, dia_inicio_mes, inicio, tolerancia_batida_min, limite_diario_min");
+  let q = db.from("assiduidade_config").select("ativo, valor_mes, tolerancia_min, entradas, saidas, dia_inicio_mes, inicio, tolerancia_batida_min, limite_diario_min, inconsistencias");
   if (empresaId) q = q.eq("empresa_id", empresaId);
   const { data } = await q.maybeSingle();
   const c = data as ConfigAssiduidade | null;
@@ -36,6 +38,7 @@ export async function lerConfig(db: Db, empresaId?: string): Promise<ConfigAssid
     inicio: c?.inicio ? String(c.inicio).slice(0, 10) : null,
     tolerancia_batida_min: Number(c?.tolerancia_batida_min ?? 5),
     limite_diario_min: Number(c?.limite_diario_min ?? 10),
+    inconsistencias: Array.isArray(c?.inconsistencias) && c.inconsistencias.length ? c.inconsistencias : INCONSISTENCIAS_PADRAO,
   };
 }
 
