@@ -9,7 +9,14 @@ import { empresaAtualId } from "@/lib/empresa";
 import { segundaDe, somarDias } from "@/lib/equipe";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
-type LinhaDez = { data: string; valor: number; pagar_em: string; origem: string };
+type LinhaDez = { data: string; valor: number; pagar_em: string; origem: string; desconto_pct?: number };
+
+/** % do 10% que fica com a casa pros custos de nota e cartão nas noites novas (pdv_config, migration 0256). */
+export async function descontoDezPadrao(supabase: Db): Promise<number> {
+  const { data } = await supabase.from("pdv_config").select("valor").eq("chave", "dez_desconto_pct").maybeSingle();
+  const n = Number((data as { valor: string | null } | null)?.valor);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
 
 /** Grava o 10% das noites encerradas que vieram do caixa e devolve o do caixa por noite. */
 export async function sincronizarDezDoCaixa(supabase: Db, segunda: string, fim: string, agora = Date.now()): Promise<Record<string, number>> {
@@ -22,7 +29,7 @@ export async function sincronizarDezDoCaixa(supabase: Db, segunda: string, fim: 
   if (encerradas.length === 0) return servicoCaixa;
 
   const [{ data: jaDez }, { data: lancados }] = await Promise.all([
-    supabase.from("dez_por_cento_noites").select("data, valor, pagar_em, origem").in("data", encerradas),
+    supabase.from("dez_por_cento_noites").select("data, valor, pagar_em, origem, desconto_pct").in("data", encerradas),
     supabase.from("semana_pagamentos").select("segunda").not("lancamento_id", "is", null).gte("segunda", deCaixa),
   ]);
   // Semana com um ou outro acerto adiantado ainda não conta como paga.
@@ -33,6 +40,7 @@ export async function sincronizarDezDoCaixa(supabase: Db, segunda: string, fim: 
   }
   const existente = new Map(((jaDez as LinhaDez[]) ?? []).map((x) => [String(x.data).slice(0, 10), x]));
   const empresaId = await empresaAtualId();
+  const pctNovas = await descontoDezPadrao(supabase);
 
   const gravar: (LinhaDez & { empresa_id: string | null })[] = [];
   for (const d of encerradas) {
@@ -41,7 +49,8 @@ export async function sincronizarDezDoCaixa(supabase: Db, segunda: string, fim: 
     if ((acertos.get(pagarEm) ?? 0) > 3) continue;
     const v = servicoCaixa[d];
     const atualiza = !e || !(Number(e.valor) > 0) || (e.origem === "caixa" && Math.abs(Number(e.valor) - v) > 0.009);
-    if (atualiza) gravar.push({ empresa_id: empresaId, data: d, valor: v, pagar_em: pagarEm, origem: "caixa" });
+    // Noite nova leva o desconto padrão; a que já existe mantém o dela.
+    if (atualiza) gravar.push({ empresa_id: empresaId, data: d, valor: v, pagar_em: pagarEm, origem: "caixa", desconto_pct: e ? Number(e.desconto_pct) || 0 : pctNovas });
   }
   if (gravar.length) await supabase.from("dez_por_cento_noites").upsert(gravar, { onConflict: "empresa_id,data" });
   return servicoCaixa;

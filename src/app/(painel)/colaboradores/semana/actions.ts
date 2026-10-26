@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { descontoDezPadrao } from "@/lib/dez-caixa";
 import { aplicarRecebimentoFiado, planejarRecebimentoFiado, type PlanoFiado } from "@/lib/retiradas-quitar";
 import { after } from "next/server";
 import { avisarPagamentosSemana } from "@/lib/push-avisos";
@@ -41,11 +42,13 @@ export async function salvarDezPorCento(data: string, valor: number, pagarEm?: s
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
   const pagar_em = pagarEm && /^\d{4}-\d{2}-\d{2}$/.test(pagarEm) ? segundaDe(pagarEm) : somarDias(segundaDe(data), 7);
   const empresaId = await empresaAtualId();
+  // Noite nova leva o desconto padrão de custos (migration 0256); a que já existe mantém o dela.
+  const { data: ja } = await supabase.from("dez_por_cento_noites").select("data").eq("data", data).maybeSingle();
   const { error } = await supabase
     .from("dez_por_cento_noites")
     .upsert(
       // Digitado na tela = manual: o caixa não troca mais esse valor (migration 0250).
-      { empresa_id: empresaId, data, valor: Math.max(0, valor || 0), pagar_em, origem: origem === "caixa" ? "caixa" : "manual" },
+      { empresa_id: empresaId, data, valor: Math.max(0, valor || 0), pagar_em, origem: origem === "caixa" ? "caixa" : "manual", ...(ja ? {} : { desconto_pct: await descontoDezPadrao(supabase) }) },
       { onConflict: "empresa_id,data" },
     );
   if (error) return { erro: error.message };
@@ -345,4 +348,27 @@ export async function criarEsporadico(nome: string, valorDia: number | null, val
   if (error) return { erro: error.message };
   revalidatePath("/colaboradores");
   return { ok: true, id: data.id as string };
+}
+
+/**
+ * Muda o % do 10% que fica com a casa (custos de nota e cartão, migration 0256):
+ * vale pras noites novas e pras noites pagas desta semana em diante que ainda
+ * não estão em semana com acerto lançado. Semana já paga não muda.
+ */
+export async function salvarDescontoDez(pct: number, segunda: string) {
+  await exigirAcesso("/colaboradores");
+  if (!Number.isFinite(pct) || pct < 0 || pct > 50) return { erro: "Use um percentual entre 0 e 50." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(segunda)) return { erro: "Semana inválida." };
+  const supabase = await createClient();
+  const empresaId = await empresaAtualId();
+  const { error } = await supabase.from("pdv_config").upsert({ empresa_id: empresaId, chave: "dez_desconto_pct", valor: String(pct) }, { onConflict: "empresa_id,chave" });
+  if (error) return { erro: error.message };
+  const { data: pagas } = await supabase.from("semana_pagamentos").select("segunda").not("lancamento_id", "is", null).gte("segunda", segunda);
+  const conta = new Map<string, number>();
+  for (const x of (pagas as { segunda: string }[]) ?? []) conta.set(String(x.segunda).slice(0, 10), (conta.get(String(x.segunda).slice(0, 10)) ?? 0) + 1);
+  const { data: noites } = await supabase.from("dez_por_cento_noites").select("data, pagar_em").gte("pagar_em", segunda);
+  const mudar = ((noites as { data: string; pagar_em: string }[]) ?? []).filter((n) => (conta.get(String(n.pagar_em).slice(0, 10)) ?? 0) <= 3).map((n) => n.data);
+  if (mudar.length) await supabase.from("dez_por_cento_noites").update({ desconto_pct: pct }).in("data", mudar);
+  revalidatePath("/colaboradores/semana");
+  return { ok: true };
 }

@@ -1,13 +1,13 @@
 "use client";
 
 import { Icone } from "@/components/icone";
-import { confirmar } from "@/components/dialogo";
+import { avisar, confirmar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
-import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
+import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
   id: string;
@@ -30,9 +30,9 @@ export type Pessoa = {
 };
 
 type Presenca = { colaborador_id: string; data: string; turno: Turno };
-type Dez = { data: string; valor: number; pagar_em: string; origem?: string };
+type Dez = { data: string; valor: number; pagar_em: string; origem?: string; desconto_pct?: number };
 // Linha do painel de 10%: valor como texto (digitação) + em que semana é pago.
-type DezLinha = { data: string; valor: string; pagar_em: string; origem?: string };
+type DezLinha = { data: string; valor: string; pagar_em: string; origem?: string; desconto_pct: number };
 
 const chave = (id: string, data: string, turno: Turno) => `${id}|${data}|${turno}`;
 
@@ -60,7 +60,7 @@ type Pago = { colaborador_id: string; valor: number; lancamento_id: string | nul
 type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [],
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, descontoDezPadrao = 0, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [],
 }: {
   /** Batidas do relógio de ponto da semana (migration 0221). */
   batidasPonto?: { colaborador_id: string; data: string; turno: Turno; hora: string }[];
@@ -75,6 +75,8 @@ export function SemanaClient({
   dezIniciais: Dez[];
   /** 10% cobrado no caixa por noite (data → valor), migration 0250. */
   servicoCaixa?: Record<string, number>;
+  /** % do 10% que fica pra casa (custos de nota e cartão) nas noites novas, migration 0256. */
+  descontoDezPadrao?: number;
   pagos: Pago[];
   fiadoPor: Record<string, { valor: number; n: number }>;
   extrasIniciais: { colaborador_id: string; valor: number; motivo: string | null; turno: Turno; desconto?: number; desconto_motivo?: string | null }[];
@@ -191,7 +193,7 @@ export function SemanaClient({
     () => new Set(presencasIniciais.map((p) => chave(p.colaborador_id, p.data, p.turno))),
   );
   const [dez, setDez] = useState<DezLinha[]>(() =>
-    dezIniciais.map((d) => ({ data: d.data, valor: Number(d.valor) ? fmtNum(Number(d.valor)) : "", pagar_em: d.pagar_em, origem: d.origem })),
+    dezIniciais.map((d) => ({ data: d.data, valor: Number(d.valor) ? fmtNum(Number(d.valor)) : "", pagar_em: d.pagar_em, origem: d.origem, desconto_pct: Number(d.desconto_pct) || 0 })),
   );
   const [novaNoite, setNovaNoite] = useState("");
   const [extras, setExtras] = useState<Set<string>>(new Set()); // esporádicos trazidos pra semana
@@ -231,14 +233,17 @@ export function SemanaClient({
   // semana passada). As diárias são só dos dias desta semana.
   const calc = useMemo(() => {
     const porNoite = dez.map((e) => {
-      const pool = numBRtxt(e.valor);
+      // Do arrecadado sai a parte da casa pros custos de nota e cartão (migration 0256); o resto é dividido.
+      const arrecadado = numBRtxt(e.valor);
+      const custo = Math.round(arrecadado * (Number(e.desconto_pct) || 0)) / 100;
+      const pool = Math.round((arrecadado - custo) * 100) / 100;
       const presentes = [
         ...pessoas.filter((p) => p.recebe_10),
         ...inativos10, // desativados depois: a parte deles já foi paga, não sobra pros outros
       ].filter((p) => marcadas.has(chave(p.id, e.data, "noite")));
       const pesoTotal = presentes.reduce((s, p) => s + (Number(p.peso_10) || 1), 0);
       const unit = pesoTotal > 0 ? pool / pesoTotal : 0;
-      return { data: e.data, pagar_em: e.pagar_em, pool, presentes: presentes.length, pesoTotal, unit, nestaSemana: e.pagar_em === segunda };
+      return { data: e.data, pagar_em: e.pagar_em, arrecadado, custo, pct: Number(e.desconto_pct) || 0, pool, presentes: presentes.length, pesoTotal, unit, nestaSemana: e.pagar_em === segunda };
     });
     const noitesPagas = porNoite.filter((n) => n.nestaSemana);
     const porPessoa = naGrade.map((p) => {
@@ -278,6 +283,8 @@ export function SemanaClient({
       return { p, nDias, nNoites, nFree, diarias, diariasDia, diariasNoite, dez10, extra, extraMotivo, extraTurno, extraDia, extraNoite, descontoSem: Math.min(descontoSem, bruto), descontoMotivo, total, clt, cltDia, cltNoite, rotuloVinculo };
     });
     const totalPool = noitesPagas.reduce((s, n) => s + n.pool, 0);
+    const totalArrecadado = noitesPagas.reduce((s, n) => s + n.arrecadado, 0);
+    const totalCusto = noitesPagas.reduce((s, n) => s + n.custo, 0);
     const totalDiarias = porPessoa.reduce((s, x) => s + x.diarias, 0);
     const totalDez = porPessoa.reduce((s, x) => s + x.dez10, 0);
     const totalExtras = porPessoa.reduce((s, x) => s + x.extra, 0);
@@ -294,7 +301,7 @@ export function SemanaClient({
       dez: totalDez,
       extras: porPessoa.reduce((s, x) => s + x.extraNoite, 0),
     };
-    return { porNoite, noitesPagas, porPessoa, totalPool, totalDiarias, totalDez, totalExtras, totalDescontosSem, turnoDia, turnoNoite };
+    return { porNoite, noitesPagas, porPessoa, totalPool, totalArrecadado, totalCusto, totalDiarias, totalDez, totalExtras, totalDescontosSem, turnoDia, turnoNoite };
   }, [dias, dez, naGrade, pessoas, marcadas, segunda, extrasSem, inativos10]);
 
   function toggle(p: Pessoa, d: string, turno: Turno) {
@@ -326,7 +333,7 @@ export function SemanaClient({
     if (!/^\d{4}-\d{2}-\d{2}$/.test(novaNoite)) return;
     if (dez.some((e) => e.data === novaNoite)) { setErro("Essa noite já está na lista."); return; }
     const pagarEm = somarDias(segundaDe(novaNoite), 7);
-    setDez((l) => [...l, { data: novaNoite, valor: "", pagar_em: pagarEm }].sort((a, b) => (a.data < b.data ? -1 : 1)));
+    setDez((l) => [...l, { data: novaNoite, valor: "", pagar_em: pagarEm, desconto_pct: descontoDezPadrao }].sort((a, b) => (a.data < b.data ? -1 : 1)));
     setNovaNoite("");
     start(async () => {
       const r = await salvarDezPorCento(novaNoite, 0, pagarEm);
@@ -358,8 +365,8 @@ export function SemanaClient({
       ["Dia", String(calc.turnoDia.presencas), fmtNum(calc.turnoDia.diarias), "0,00", fmtNum(calc.turnoDia.extras), fmtNum(calc.turnoDia.diarias + calc.turnoDia.extras)],
       ["Noite", String(calc.turnoNoite.presencas), fmtNum(calc.turnoNoite.diarias), fmtNum(calc.turnoNoite.dez), fmtNum(calc.turnoNoite.extras), fmtNum(calc.turnoNoite.diarias + calc.turnoNoite.dez + calc.turnoNoite.extras)],
       [],
-      ["Noite (10% pago nesta semana)", "10% arrecadado", "Presentes", "Cada um"],
-      ...calc.noitesPagas.map((n) => [rotuloDia(n.data), fmtNum(n.pool), String(n.presentes), fmtNum(n.unit)]),
+      ["Noite (10% pago nesta semana)", "10% arrecadado", "Custos nota e cartão", "A dividir", "Presentes", "Cada um"],
+      ...calc.noitesPagas.map((n) => [rotuloDia(n.data), fmtNum(n.arrecadado), n.custo > 0 ? `${fmtNum(n.custo)} (${n.pct}%)` : "", fmtNum(n.pool), String(n.presentes), fmtNum(n.unit)]),
     ];
     const csv = linhas.map((l) => l.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
@@ -420,7 +427,7 @@ export function SemanaClient({
       })
       .join("");
     const noites = calc.noitesPagas
-      .map((x) => `<tr><td>${esc(rotuloDia(x.data))}</td><td class="r">${fmtNum(x.pool)}</td><td class="c">${x.presentes}</td><td class="r">${fmtNum(x.unit)}</td></tr>`)
+      .map((x) => `<tr><td>${esc(rotuloDia(x.data))}</td><td class="r">${fmtNum(x.arrecadado)}</td><td class="r neg">${x.custo > 0 ? `− ${fmtNum(x.custo)}` : ""}</td><td class="r">${fmtNum(x.pool)}</td><td class="c">${x.presentes}</td><td class="r">${fmtNum(x.unit)}</td></tr>`)
       .join("");
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Pagamentos ${esc(rotuloSemana(segunda))}</title>
 <style>
@@ -453,9 +460,10 @@ export function SemanaClient({
 <tr><td>Noite</td><td class="c">${calc.turnoNoite.presencas}</td><td class="r">${fmtNum(calc.turnoNoite.diarias)}</td><td class="r">${fmtNum(calc.turnoNoite.dez)}</td><td class="r">${fmtNum(calc.turnoNoite.extras)}</td><td class="r b">${fmtNum(calc.turnoNoite.diarias + calc.turnoNoite.dez + calc.turnoNoite.extras)}</td></tr>
 </tbody></table></div>
 <div class="peq"><h2>10% que entra neste acerto</h2>
-<table><thead><tr><th>Noite</th><th class="r">Arrecadado</th><th class="c">Presentes</th><th class="r">Cada um</th></tr></thead>
-<tbody>${noites || `<tr><td colspan="4">Nenhuma noite de 10% neste acerto.</td></tr>`}</tbody>
-<tfoot><tr><td>Total</td><td class="r">${fmtNum(calc.totalPool)}</td><td></td><td></td></tr></tfoot></table>
+<table><thead><tr><th>Noite</th><th class="r">Arrecadado</th><th class="r">Custos</th><th class="r">A dividir</th><th class="c">Presentes</th><th class="r">Cada um</th></tr></thead>
+<tbody>${noites || `<tr><td colspan="6">Nenhuma noite de 10% neste acerto.</td></tr>`}</tbody>
+<tfoot><tr><td>Total</td><td class="r">${fmtNum(calc.totalArrecadado)}</td><td class="r neg">${calc.totalCusto > 0 ? `− ${fmtNum(calc.totalCusto)}` : ""}</td><td class="r">${fmtNum(calc.totalPool)}</td><td></td><td></td></tr></tfoot></table>
+${calc.totalCusto > 0 ? `<div class="mini" style="margin-top:4px">Custos = parte da casa pra nota fiscal e taxa do cartão.</div>` : ""}
 ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="margin-top:4px">${fmtNum(calc.totalPool - calc.totalDez)} do 10% sem ninguém marcado pra receber.</div>` : ""}
 </div></div>
 </body></html>`;
@@ -677,6 +685,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             <p className="text-xs text-texto-suave">
               Digite o arrecadado de cada noite. Entra no acerto desta semana ({rotuloSemana(segunda)}) o que está marcado como <b>paga nesta semana</b> — normalmente as noites da semana passada.
             </p>
+            <DescontoDez pct={descontoDezPadrao} segunda={segunda} />
           </div>
           <div className="flex items-center gap-2 text-sm">
             <input type="date" value={novaNoite} onChange={(e) => setNovaNoite(e.target.value)} className={inputCls} />
@@ -720,6 +729,9 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                           placeholder="0,00"
                           className={`${inputCls} w-28 text-right font-semibold`}
                         />
+                        {n.pct > 0 && n.arrecadado > 0 && (
+                          <div className="mt-0.5 text-mini text-texto-suave">− {brl(n.custo)} custos ({n.pct}%) · divide {brl(n.pool)}</div>
+                        )}
                         {servicoCaixa[n.data] != null && (() => {
                           const cx = servicoCaixa[n.data];
                           const igual = Math.abs(cx - numBRtxt(e.valor)) < 0.01;
@@ -758,7 +770,10 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                 })}
                 <tr className="border-t border-indigo-200 font-semibold dark:border-indigo-900">
                   <td className="px-2 py-1" colSpan={1}>Entra nesta semana</td>
-                  <td className="px-2 py-1 text-right">{brl(calc.totalPool)}</td>
+                  <td className="px-2 py-1 text-right">
+                    {brl(calc.totalPool)}
+                    {calc.totalCusto > 0 && <div className="text-mini font-normal text-texto-suave">arrecadado {brl(calc.totalArrecadado)} − custos {brl(calc.totalCusto)}</div>}
+                  </td>
                   <td className="px-2 py-1 text-xs font-normal text-texto-suave" colSpan={4}>
                     {calc.noitesPagas.length} noite{calc.noitesPagas.length === 1 ? "" : "s"} · quem trabalhou nelas recebe no acerto desta semana, mesmo sem trabalhar agora
                   </td>
@@ -1183,5 +1198,29 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         </div>
       )}
     </div>
+  );
+}
+
+/** % do 10% que fica com a casa pros custos de nota e cartão (migration 0256). Muda as noites ainda não pagas. */
+function DescontoDez({ pct, segunda }: { pct: number; segunda: string }) {
+  const router = useRouter();
+  const [valor, setValor] = useState(String(pct));
+  const [salvando, start] = useTransition();
+  function salvar() {
+    const n = Number(valor.replace(",", "."));
+    if (!Number.isFinite(n) || n < 0 || n > 50 || n === pct) { setValor(String(pct)); return; }
+    start(async () => {
+      const r = await salvarDescontoDez(n, segunda);
+      if (r.erro) { void avisar(r.erro); setValor(String(pct)); return; }
+      router.refresh();
+    });
+  }
+  return (
+    <label className="mt-1 inline-flex items-center gap-1.5 text-xs text-texto-suave">
+      Custos de nota e cartão (fica com a casa):
+      <input value={valor} onChange={(e) => setValor(e.target.value)} onBlur={salvar} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+        inputMode="decimal" aria-label="Percentual dos custos de nota e cartão" disabled={salvando} className="min-h-9 w-14 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-right text-sm text-texto" />
+      % do 10%
+    </label>
   );
 }
