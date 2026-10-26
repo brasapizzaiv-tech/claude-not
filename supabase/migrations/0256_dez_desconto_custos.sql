@@ -7,9 +7,8 @@
 alter table public.dez_por_cento_noites
   add column if not exists desconto_pct numeric not null default 0;
 
--- Vale pras noites que ainda não foram pagas (acerto de 19/10 em diante; o de
--- 19/10 só tinha 3 adiantamentos lançados, sem o 10%).
-update public.dez_por_cento_noites set desconto_pct = 10 where pagar_em >= date '2026-10-19';
+-- Vale a partir do 10% das noites de 23 e 24/10 (Rafael); as de antes ficam inteiras.
+update public.dez_por_cento_noites set desconto_pct = 10 where data >= date '2026-10-23';
 
 -- Padrão das noites novas (Semana e 10% muda).
 insert into public.pdv_config (empresa_id, chave, valor)
