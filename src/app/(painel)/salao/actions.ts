@@ -16,6 +16,7 @@ import { codigoDaForma, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/f
 import { reimprimirNaCozinha } from "@/lib/delivery-core";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
+import { fmtKg } from "@/lib/peso-kg";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -143,6 +144,7 @@ export async function salvarItem(formData: FormData) {
     extras.canal_garcom = formData.get("canal_garcom") === "on";
     extras.canal_pdv = formData.get("canal_pdv") === "on";
     extras.disponivel = formData.get("disponivel") === "on";
+    extras.por_kg = formData.get("por_kg") === "on"; // migration 0259
   }
 
   if (id)
@@ -705,20 +707,23 @@ export async function juntarComandas(formData: FormData) {
   revalidatePath("/salao");
 }
 
-export async function adicionarItemComanda(comandaId: string, itemId: string) {
+// pesoKg: item vendido por kg (migration 0259) — a quantidade é o peso.
+export async function adicionarItemComanda(comandaId: string, itemId: string, pesoKg?: number) {
   const supabase = await dbGarcomOuUsuario();
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
   const { data: item } = await supabase
     .from("pdv_itens")
-    .select("nome, preco, promo_preco")
+    .select("nome, preco, promo_preco, por_kg")
     .eq("id", itemId)
     .single();
   if (!item) return { ok: false as const, mensagem: "Produto não encontrado." };
+  const kg = item.por_kg ? Math.round(Math.min(20, Math.max(0, Number(pesoKg) || 0)) * 1000) / 1000 : 0;
+  if (item.por_kg && kg <= 0) return { ok: false as const, mensagem: "Digite o peso (ex.: 0,452)." };
   const { error } = await supabase.from("pdv_comanda_itens").insert({
     comanda_id: comandaId,
     item_id: itemId,
-    descricao: item.nome,
-    qtd: 1,
+    descricao: item.por_kg ? `${item.nome} (${fmtKg(kg)})` : item.nome,
+    qtd: item.por_kg ? kg : 1,
     preco_unit: precoVenda(item),
   });
   if (error) return { ok: false as const, mensagem: "Não consegui adicionar. Tente de novo." };

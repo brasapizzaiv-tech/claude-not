@@ -1,7 +1,8 @@
 "use client";
 
 import { Icone } from "@/components/icone";
-import { avisar } from "@/components/dialogo";
+import { avisar, perguntar } from "@/components/dialogo";
+import { fmtKg, lerPesoKg } from "@/lib/peso-kg";
 import { alternarContaPedida } from "@/app/(painel)/salao/actions";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -15,7 +16,7 @@ import {
   type Grupo, type Opcao, type PizzaData, type CartLine,
 } from "@/components/delivery-pedido-ui";
 
-export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
+export type ItemMenu = { id: string; nome: string; categoria: string; preco: number; porKg?: boolean };
 export type Comanda = {
   id: string;
   numero: number;
@@ -163,20 +164,29 @@ export function GarcomPedido({
   const gruposDe = (itemId: string) => complementos.grupos.filter((g) => g.item_id === itemId);
   const opcoesDe = (grupoId: string) => complementos.opcoes.filter((o) => o.grupo_id === grupoId);
 
-  const cartCount = cart.reduce((s, l) => s + l.qtd, 0);
+  const cartCount = cart.reduce((s, l) => s + (l.porKg ? 1 : l.qtd), 0);
   const cartTotal = cart.reduce((s, l) => s + l.preco * l.qtd, 0);
 
   // Quantidade daquele produto no carrinho (itens simples e combos dele).
   const qtdDoItem = (id: string) =>
-    cart.filter((l) => "itemId" in l.payload && l.payload.itemId === id).reduce((s, l) => s + l.qtd, 0);
+    cart.filter((l) => "itemId" in l.payload && l.payload.itemId === id).reduce((s, l) => s + (l.porKg ? 1 : l.qtd), 0);
 
   const addLinha = (l: CartLine) => setCart((c) => [...c, l]);
   const setQtdLinha = (uid: string, q: number) =>
     setCart((c) => c.map((l) => (l.uid === uid ? { ...l, qtd: q } : l)).filter((l) => l.qtd > 0));
 
   // Toque no produto: com complementos abre o montador; simples soma 1.
-  const add = (i: ItemMenu) => {
+  const add = async (i: ItemMenu) => {
     if (comComplSet.has(i.id) && gruposDe(i.id).length) { setComboItem(i); return; }
+    // Vendido por kg (migration 0259): pede o peso; cada pesagem é uma linha.
+    if (i.porKg) {
+      const txt = await perguntar(`Peso — ${i.nome}`, "", { detalhe: "Em kg (ex.: 0,452) ou em gramas (452).", obrigatorio: true });
+      if (txt == null) return;
+      const kg = lerPesoKg(txt);
+      if (!kg) { void avisar("Peso inválido. Ex.: 0,452 ou 452."); return; }
+      setCart((c) => [...c, { uid: novoUid(), descricao: `${i.nome} (${fmtKg(kg)})`, preco: i.preco, qtd: kg, porKg: true, payload: { kind: "item", itemId: i.id, qtd: kg } }]);
+      return;
+    }
     setCart((c) => {
       const simples = c.find((l) => l.payload.kind === "item" && l.payload.itemId === i.id);
       if (simples) return c.map((l) => (l.uid === simples.uid ? { ...l, qtd: l.qtd + 1 } : l));
@@ -379,11 +389,15 @@ export function GarcomPedido({
                       <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
                       <div className="mt-0.5 text-sm text-emerald-400">{brl(l.preco * l.qtd)}</div>
                     </div>
+                    {l.porKg ? (
+                      <button onClick={() => setQtdLinha(l.uid, 0)} className="ml-2 flex min-h-11 items-center rounded-controle border border-borda-forte px-3" aria-label="Tirar"><Icone nome="lixeira" tamanho={16} titulo="Tirar" /></button>
+                    ) : (
                     <div className="ml-2 flex items-center gap-3 rounded-controle border border-borda-forte px-2 py-1">
                       <button onClick={() => setQtdLinha(l.uid, l.qtd - 1)} className="text-lg">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={16} titulo="Tirar" /> : "−"}</button>
                       <span className="w-5 text-center font-bold">{l.qtd}</span>
                       <button onClick={() => setQtdLinha(l.uid, l.qtd + 1)} className="text-lg text-blue-400">+</button>
                     </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -487,7 +501,7 @@ export function GarcomPedido({
                             {g.itens.map((it, idx) => (
                               <div key={idx} className="flex justify-between px-3 py-1.5 text-sm">
                                 <span className="min-w-0 flex-1 truncate whitespace-pre-line text-texto">
-                                  {it.qtd}× {it.descricao}
+                                  {Number.isInteger(Number(it.qtd)) ? `${it.qtd}× ` : ""}{it.descricao}
                                 </span>
                                 <span className="ml-2 shrink-0">{it.preco > 0 ? brl(it.qtd * it.preco) : "—"}</span>
                               </div>

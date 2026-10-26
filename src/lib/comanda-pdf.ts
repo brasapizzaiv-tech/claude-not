@@ -79,12 +79,12 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
     if (valor != null) total += valor;
     doc.font("Helvetica-Bold").fontSize(fItem);
     if (valor != null) {
-      doc.text(`${it.qtd}x  ${linhas[0]}`, pad, y, { width: contentW - 60 });
+      doc.text(`${Number.isInteger(Number(it.qtd)) ? `${it.qtd}x  ` : ""}${linhas[0]}`, pad, y, { width: contentW - 60 });
       doc.font("Helvetica").fontSize(11).text(brl(valor), W - pad - 60, y, { width: 60, align: "right" });
       doc.font("Helvetica-Bold").fontSize(fItem);
       y = doc.y;
     } else {
-      doc.text(`${it.qtd}x  ${linhas[0]}`, pad, y, { width: contentW });
+      doc.text(`${Number.isInteger(Number(it.qtd)) ? `${it.qtd}x  ` : ""}${linhas[0]}`, pad, y, { width: contentW });
       y = doc.y;
     }
     for (let i = 1; i < linhas.length; i++) {

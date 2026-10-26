@@ -165,7 +165,7 @@ export default async function GarcomPage() {
               <div className="space-y-0.5 text-sm text-texto">
                 {g.itens.map((it, i) => (
                   <div key={i} className="flex justify-between gap-2">
-                    <span className="min-w-0 flex-1 whitespace-pre-line">{it.qtd}× {it.desc}</span>
+                    <span className="min-w-0 flex-1 whitespace-pre-line">{Number.isInteger(Number(it.qtd)) ? `${it.qtd}× ` : ""}{it.desc}</span>
                     {it.preco > 0 && <span className="shrink-0 text-texto-suave">{brl(it.qtd * it.preco)}</span>}
                   </div>
                 ))}

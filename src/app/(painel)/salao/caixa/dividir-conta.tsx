@@ -37,7 +37,7 @@ export function DividirConta({
         key: i.id,
         tipo: "item" as const,
         id: i.id,
-        nome: `${i.qtd}× ${i.nome}`,
+        nome: Number.isInteger(Number(i.qtd)) ? `${i.qtd}× ${i.nome}` : i.nome,
         restante: r2(i.qtd * i.preco * fator - i.valorPago),
       }))
       .filter((l) => l.restante > 0.005),

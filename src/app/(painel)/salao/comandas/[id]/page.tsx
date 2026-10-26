@@ -37,7 +37,7 @@ export default async function ComandaPage({
       .select("id, descricao, qtd, preco_unit, lancamento_id, criado_em")
       .eq("comanda_id", id)
       .order("criado_em"),
-    supabase.from("pdv_itens").select("id, nome, categoria, preco").eq("ativo", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, por_kg").eq("ativo", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_categorias")
@@ -49,7 +49,7 @@ export default async function ComandaPage({
   const catDisp = new Set(categoriasOrdenadas);
   // só itens de categorias disponíveis (ou sem categoria)
   const cardapioDisp = (
-    (cardapio as { id: string; nome: string; categoria: string | null; preco: number }[]) ?? []
+    (cardapio as { id: string; nome: string; categoria: string | null; preco: number; por_kg?: boolean }[]) ?? []
   ).filter((i) => !i.categoria || catDisp.has(i.categoria));
 
   // Complementos (marmitas): grupos + opções ativas dos itens do cardápio disponível

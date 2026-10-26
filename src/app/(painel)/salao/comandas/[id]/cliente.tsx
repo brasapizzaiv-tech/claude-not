@@ -1,6 +1,7 @@
 "use client";
 import { Icone } from "@/components/icone";
-import { avisar } from "@/components/dialogo";
+import { avisar, perguntar } from "@/components/dialogo";
+import { lerPesoKg } from "@/lib/peso-kg";
 
 import { siteUrl } from "@/lib/site-url";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
@@ -28,7 +29,7 @@ export function QRComanda({ id }: { id: string }) {
   return <img src={src} alt="QR" className="h-28 w-28" />;
 }
 
-type Item = { id: string; nome: string; categoria: string | null; preco: number };
+type Item = { id: string; nome: string; categoria: string | null; preco: number; por_kg?: boolean };
 
 export type ComboOpcao = { id: string; nome: string; preco: number };
 export type ComboGrupo = {
@@ -83,16 +84,25 @@ export function LancarItens({
     return itens.filter((i) => (i.categoria || "Outros") === aba);
   }, [itens, q, aba]);
 
-  function add(item: Item) {
+  async function add(item: Item) {
     // item com complementos abre o montador
     if (complementos[item.id]?.length) {
       setCombo(item);
       return;
     }
+    // Vendido por kg (migration 0259): pede o peso; a quantidade é os kg.
+    let kg: number | undefined;
+    if (item.por_kg) {
+      const txt = await perguntar(`Peso — ${item.nome}`, "", { detalhe: "Em kg (ex.: 0,452) ou em gramas (452).", obrigatorio: true });
+      if (txt == null) return;
+      const v = lerPesoKg(txt);
+      if (!v) { void avisar("Peso inválido. Ex.: 0,452 ou 452."); return; }
+      kg = v;
+    }
     setAddId(item.id);
     start(async () => {
       try {
-        const r = await adicionarItemComanda(comandaId, item.id);
+        const r = await adicionarItemComanda(comandaId, item.id, kg);
         if (!r.ok) void avisar(r.mensagem);
       } catch {
         void avisar("Sem conexão. Confira se o item entrou antes de tentar de novo.");

@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { geocodificar, distanciaKm, temChaveMapa } from "@/lib/geo";
 import { areaDoPonto, aplicarPromoTele, promosPossiveisHoje, type AreaEntrega, type PromoTele } from "@/lib/delivery-areas";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
+import { fmtKg } from "@/lib/peso-kg";
 
 // Aceita tanto o client do servidor (cookies/RLS) quanto o admin client.
 // Tipagem estrutural mínima pra os dois passarem.
@@ -228,9 +229,14 @@ export async function resolverLinhas(db: Db, itens: LinhaPedido[]): Promise<Linh
     const obsItem = ((it as { obs?: string }).obs || "").trim().slice(0, 200);
     const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\nObs: ${obsItem}` } : l);
     if (it.kind === "item") {
-      const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", it.itemId).single();
+      const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco, por_kg").eq("id", it.itemId).single();
       if (!prod) continue;
-      linhas.push(comObs({ descricao: (prod as { nome: string }).nome, qtd: q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId, promo: Number((prod as { promo_preco?: number | null }).promo_preco ?? 0) > 0 }));
+      // Vendido por kg (migration 0259): a quantidade é o peso (0,452) e a descrição leva os kg.
+      const porKg = !!(prod as { por_kg?: boolean }).por_kg;
+      const kg = porKg ? Math.round(Math.min(20, Math.max(0, Number((it as { qtd?: number }).qtd) || 0)) * 1000) / 1000 : 0;
+      if (porKg && kg <= 0) continue;
+      const nome = (prod as { nome: string }).nome;
+      linhas.push(comObs({ descricao: porKg ? `${nome} (${fmtKg(kg)})` : nome, qtd: porKg ? kg : q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId, promo: Number((prod as { promo_preco?: number | null }).promo_preco ?? 0) > 0 }));
     } else if (it.kind === "pizza") {
       const l = await resolverPizza(db, it.tamanhoId, it.saborIds, it.bordaId);
       if (l) linhas.push(comObs({ ...l, qtd: q }));

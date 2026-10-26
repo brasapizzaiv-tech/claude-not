@@ -1,6 +1,8 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { avisar, perguntar } from "@/components/dialogo";
+import { fmtKg, lerPesoKg } from "@/lib/peso-kg";
 
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
@@ -14,7 +16,7 @@ import type { TefDados } from "@/lib/tef-client";
 import { CampoVale } from "@/components/campo-vale";
 import type { ValeConsulta } from "../salao/caixa/vales/actions";
 
-export type ItemMenu = { id: string; nome: string; categoria: string; preco: number };
+export type ItemMenu = { id: string; nome: string; categoria: string; preco: number; porKg?: boolean };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean; cliente?: string; cashbackUsado?: number; cashbackGanho?: number };
@@ -69,7 +71,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const itemDe = useMemo(() => new Map(itens.map((i) => [i.id, i])), [itens]);
   const cartLista = Object.entries(cart).filter(([, q]) => q > 0).map(([id, q]) => ({ item: itemDe.get(id)!, qtd: q })).filter((x) => x.item);
   const total = Math.round(cartLista.reduce((s, x) => s + x.item.preco * x.qtd, 0) * 100) / 100;
-  const cartCount = cartLista.reduce((s, x) => s + x.qtd, 0);
+  const cartCount = cartLista.reduce((s, x) => s + (x.item.porKg ? 1 : x.qtd), 0);
   // Cashback usado sai do valor a cobrar (o servidor confere e tem a palavra final).
   const cbUsado = cliente && cb && usarCb && cb.saldo > 0 && tipoDe(forma, formas) !== "equipe"
     ? Math.round(Math.max(0, Math.min(cb.saldo, cb.maxResgate ?? Infinity, total)) * 100) / 100
@@ -80,7 +82,19 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const troco = tipoDe(forma, formas) === "dinheiro" && recebidoNum > cobrar ? Math.round((recebidoNum - cobrar) * 100) / 100 : 0;
 
   const setQtd = (id: string, q: number) => setCart((c) => { const n = { ...c }; if (q <= 0) delete n[id]; else n[id] = q; return n; });
-  const add = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
+  const add = async (id: string) => {
+    // Vendido por kg (migration 0259): pede o peso; pesar de novo soma.
+    const it = itemDe.get(id);
+    if (it?.porKg) {
+      const txt = await perguntar(`Peso — ${it.nome}`, "", { detalhe: "Em kg (ex.: 0,452) ou em gramas (452).", obrigatorio: true });
+      if (txt == null) return;
+      const kg = lerPesoKg(txt);
+      if (!kg) { void avisar("Peso inválido. Ex.: 0,452 ou 452."); return; }
+      setCart((c) => ({ ...c, [id]: Math.round(((c[id] || 0) + kg) * 1000) / 1000 }));
+      return;
+    }
+    setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
+  };
 
   const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd }));
 
@@ -225,13 +239,17 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                   {cartLista.map((x) => (
                     <div key={x.item.id} className="flex items-center justify-between gap-2 rounded-controle border border-borda p-2">
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">{x.item.nome}</div>
+                        <div className="truncate text-sm font-medium">{x.item.nome}{x.item.porKg ? ` · ${fmtKg(x.qtd)}` : ""}</div>
                         <div className="font-numero text-xs font-semibold text-texto-suave">{brl(x.item.preco * x.qtd)}</div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {x.item.porKg ? (
+                          <button onClick={() => setQtd(x.item.id, 0)} className="flex h-9 w-9 items-center justify-center rounded border border-borda-forte" aria-label="Tirar do pedido"><Icone nome="lixeira" tamanho={14} titulo="Tirar do pedido" /></button>
+                        ) : (<>
                         <button onClick={() => setQtd(x.item.id, x.qtd - 1)} className="h-7 w-7 rounded border border-borda-forte">{x.qtd === 1 ? <Icone nome="lixeira" tamanho={14} titulo="Tirar do pedido" /> : "−"}</button>
                         <span className="w-5 text-center font-bold">{x.qtd}</span>
                         <button onClick={() => setQtd(x.item.id, x.qtd + 1)} className="h-9 w-9 rounded-mesa bg-destaque font-bold text-texto-marca-pilula" aria-label="Mais um">+</button>
+                        </>)}
                       </div>
                     </div>
                   ))}

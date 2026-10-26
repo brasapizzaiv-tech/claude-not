@@ -38,7 +38,7 @@ const inputCls =
 type Item = {
   id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; ativo: boolean;
   delivery: boolean; canal_garcom: boolean; canal_pdv: boolean; disponivel: boolean;
-  horarios: Horarios; foto_url: string | null; descricao: string | null;
+  horarios: Horarios; foto_url: string | null; descricao: string | null; por_kg?: boolean;
 };
 type Categoria = { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios; canal_app: boolean; canal_garcom: boolean; canal_pdv: boolean };
 type Tam = { id: string; nome: string; max_sabores: number; fatias: number | null };
@@ -243,6 +243,7 @@ export function CardapioClient({
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="canal_pdv" defaultChecked={editando.canal_pdv} className="h-4 w-4" /> <Icone nome="cupom" tamanho={14} /> PDV</label>
               <span className="mx-2 text-zinc-300">|</span>
               <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="disponivel" defaultChecked={editando.disponivel} className="h-4 w-4" /> <Icone nome="certo" tamanho={14} /> Disponível (desmarque se esgotou)</label>
+              <label className="flex items-center gap-1.5 text-sm" title="O preço é do kg; ao escolher no garçom, no PDV ou na comanda, pede o peso."><input type="checkbox" name="por_kg" defaultChecked={!!editando.por_kg} className="h-4 w-4" /> Vendido por kg (pede o peso)</label>
             </div>
             <div className="flex gap-2">
               <Enviar className="btn-principal min-h-11 text-sm">Salvar</Enviar>

@@ -20,7 +20,8 @@ export type PizzaData = {
   saborPrecos: { sabor_id: string; tamanho_id: string; preco: number }[];
   bordas: Borda[]; bordaPrecos: { borda_id: string; tamanho_id: string; preco: number }[];
 };
-export type CartLine = { uid: string; descricao: string; preco: number; qtd: number; payload: LinhaPedido };
+/** porKg: item vendido por kg (migration 0259) — qtd é o peso. */
+export type CartLine = { uid: string; descricao: string; preco: number; qtd: number; payload: LinhaPedido; porKg?: boolean };
 
 export const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

@@ -8,7 +8,7 @@ export default async function CardapioPage() {
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_itens")
-      .select("id, nome, categoria, preco, promo_preco, ativo, delivery, canal_garcom, canal_pdv, disponivel, horarios, foto_url, descricao")
+      .select("id, nome, categoria, preco, promo_preco, ativo, delivery, canal_garcom, canal_pdv, disponivel, horarios, foto_url, descricao, por_kg")
       .order("nome"),
     supabase.from("pdv_categorias").select("id, nome, ordem, disponivel, horarios, canal_app, canal_garcom, canal_pdv").order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),

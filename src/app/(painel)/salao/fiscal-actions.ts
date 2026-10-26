@@ -182,7 +182,8 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
       codigo_produto: (it.item_id as string | null)?.slice(0, 8) ?? `ITEM${n}`,
       descricao: ((it.descricao as string) || "Item").split("\n")[0].slice(0, 120),
       cfop: pf?.cfop || CFOP,
-      unidade_comercial: pf?.unidade || "UN",
+      // Item vendido por kg (migration 0259): quantidade quebrada = peso, sai em KG.
+      unidade_comercial: Number.isInteger(qtd) ? pf?.unidade || "UN" : "KG",
       quantidade_comercial: qtd.toFixed(4),
       valor_unitario_comercial: preco.toFixed(2),
       valor_bruto: bruto.toFixed(2),
