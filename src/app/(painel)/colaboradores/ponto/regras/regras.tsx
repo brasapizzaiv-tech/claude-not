@@ -37,7 +37,9 @@ export function TiposJustificativa({ tipos }: { tipos: TipoJustificativa[] }) {
               <span className="block text-xs text-texto-suave">{EFEITOS[t.efeito]}{t.tira_premio ? " · tira o prêmio" : ""}{t.ativo ? "" : " · desativado"}</span>
             </span>
             <span className="flex gap-1">
-              <BotaoAcao aoClicar={() => salvar({ ...t, tira_premio: !t.tira_premio })} className="min-h-11 px-2 text-xs text-texto-marca hover:underline">{t.tira_premio ? "não tira prêmio" : "tira prêmio"}</BotaoAcao>
+              <label className="flex min-h-11 cursor-pointer items-center gap-1.5 px-2 text-xs text-texto">
+                <input type="checkbox" checked={t.tira_premio} onChange={() => void salvar({ ...t, tira_premio: !t.tira_premio })} className="h-5 w-5" /> Tira o prêmio
+              </label>
               <BotaoAcao aoClicar={() => salvar({ ...t, ativo: !t.ativo })} className="min-h-11 px-2 text-xs text-texto-fraco hover:text-texto">{t.ativo ? "desativar" : "ativar"}</BotaoAcao>
             </span>
           </li>

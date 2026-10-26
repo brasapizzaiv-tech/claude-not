@@ -70,7 +70,7 @@ export function inconsistenciasDia(l: Pick<LinhaEspelho, "situacao" | "faltaMin"
   return regras.filter((r) => r.ativo && (
     (r.campo === "falta" && l.situacao === "falta") ||
     (r.campo === "incompleto" && l.situacao === "incompleto") ||
-    (r.campo === "atraso" && l.situacao !== "falta" && l.faltaMin >= Math.max(1, r.a_partir)) ||
+    (r.campo === "atraso" && l.situacao !== "falta" && l.situacao !== "incompleto" && l.faltaMin >= Math.max(1, r.a_partir)) ||
     (r.campo === "extra" && l.extraMin >= Math.max(1, r.a_partir))
   ));
 }

@@ -214,7 +214,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             const q = cart[i.id] || 0;
             return (
               <button key={i.id} onClick={() => add(i.id)} className={`flex min-h-[76px] flex-col justify-between rounded-controle p-3 text-left transition ${q > 0 ? "bg-destaque shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo hover:bg-superficie-suave"}`}>
-                <span className="text-sm font-medium leading-tight">{i.nome}{q > 0 ? ` (${q})` : ""}</span>
+                <span className="text-sm font-medium leading-tight">{i.nome}{q > 0 ? ` (${i.porKg ? fmtKg(q) : q})` : ""}</span>
                 <span className="font-numero text-sm font-bold text-texto">{i.preco > 0 ? brl(i.preco) : "—"}</span>
               </button>
             );
