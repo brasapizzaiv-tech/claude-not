@@ -189,7 +189,8 @@ export function espelho(p: {
     else if (p.abonos?.has(dia) && !bs.length) situacao = "abono";
     else if (p.folgas.has(dia)) situacao = "folga";
     else if (h?.neutro && temHorario && naContratacao) situacao = "neutro";
-    else if (bs.length) situacao = incompleto ? "incompleto" : "ok";
+    // Hoje com batida ímpar = ainda está trabalhando: não é "batida faltando" nem falta.
+    else if (bs.length) situacao = incompleto ? (dia >= p.hoje ? "hoje" : "incompleto") : "ok";
     else if (feriado && temHorario && naContratacao) situacao = "feriado";
     else if (h?.compensado && temHorario && naContratacao) situacao = "compensado";
     else if (!naEscala) situacao = "fora";
@@ -232,7 +233,7 @@ export function espelho(p: {
     t.noturno += noturno;
     if (situacao === "falta") t.faltas++;
     if (bs.length) t.diasTrabalhados++;
-    if (incompleto) t.incompletos++;
+    if (situacao === "incompleto") t.incompletos++;
   }
   return { linhas, totais: t };
 }

@@ -145,3 +145,11 @@ test("resumo, total da semana e horário do dia pelo histórico", () => {
   assert.equal(horarioIdNoDia("2025-12-31", v), undefined);
   assert.equal(horarioIdNoDia("2026-10-11", v, new Map([["2026-10-11", null]])), null);
 });
+
+test("hoje com uma batida só = ainda trabalhando, sem falta", () => {
+  const b = new Map([["2026-10-14", [m("08:03")]]]);
+  const { linhas, totais } = espelho(base({ dias: ["2026-10-14"], hoje: "2026-10-14", batidas: b }));
+  assert.equal(linhas[0].situacao, "hoje");
+  assert.equal(linhas[0].faltaMin, 0);
+  assert.equal(totais.incompletos, 0);
+});
