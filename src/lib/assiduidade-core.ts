@@ -40,6 +40,8 @@ export function apurarMes(p: {
   tolerancia: number;
   /** Atraso de até isso no dia não conta; passou, conta inteiro (Rafael, 10/10/2026: 5). */
   toleranciaBatida?: number;
+  /** Entrada do dia pelo horário da pessoa (migration 0255); null = não trabalha. Sem ela, vale escala + entradas. */
+  entradaDoDia?: (dia: string, dow: number) => string | null;
 }): ResultadoMes {
   const r: ResultadoMes = { esperados: 0, atrasoTotal: 0, atrasos: [], faltas: [], folgas: [], atestados: [], ganhou: null, motivos: [] };
   for (const dia of p.dias) {
@@ -47,8 +49,8 @@ export function apurarMes(p: {
     if (p.atestados.has(dia)) { r.atestados.push(dia); continue; }
     if (p.folgas.has(dia)) { r.folgas.push(dia); continue; }
     const dow = diaDaSemana(dia);
-    const entrada = p.entradas[String(dow)];
-    if (!entrada || !p.escala.includes(dow) || p.fechados.has(dia)) continue;
+    const entrada = p.entradaDoDia ? p.entradaDoDia(dia, dow) : p.escala.includes(dow) ? p.entradas[String(dow)] : null;
+    if (!entrada || p.fechados.has(dia)) continue;
     r.esperados++;
     const chegou = p.primeiraBatida.get(dia);
     if (chegou) {

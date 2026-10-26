@@ -27,6 +27,8 @@ const SIT: Record<string, { rot: string; cor: string }> = {
   feriado: { rot: "Feriado", cor: "text-texto-suave" },
   fora: { rot: "", cor: "text-texto-fraco" },
   hoje: { rot: "Hoje", cor: "text-texto-fraco" },
+  compensado: { rot: "Compensado", cor: "text-texto-suave" },
+  neutro: { rot: "Neutro", cor: "text-texto-suave" },
 };
 
 /** Ciclo da folha do RHiD: de 21 do mês anterior até hoje (ou do dia 21 deste mês). */
@@ -58,7 +60,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
   const espelhoDe = (id: string) => {
     const p = ativos.find((x) => x.id === id)!;
     return espelho({
-      dias, hoje, escala: p.escala, entradas: cfg.entradas, saidas: cfg.saidas,
+      dias, hoje, horarioDoDia: base.horarioDe(id), escala: p.escala, entradas: cfg.entradas, saidas: cfg.saidas,
       batidas: base.batidas.get(id) ?? new Map(), folgas: base.folgas.get(id) ?? new Set(),
       atestados: base.atestados.get(id) ?? new Set(), abonos: base.abonos.get(id) ?? new Set(), fechados: base.fechados,
       tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min, admissao: p.admissao, desligamento: p.desligamento,
@@ -84,10 +86,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
     for (const [k, v] of Object.entries(o)) { if (v == null) u.delete(k); else u.set(k, v); }
     return `/colaboradores/ponto?${u.toString()}`;
   };
-  const horario = (l: LinhaEspelho) => {
-    const e = cfg.entradas[String(l.dow)], s = cfg.saidas[String(l.dow)];
-    return l.situacao === "fora" || !e || !pessoa?.escala.includes(l.dow) ? "" : `${e}–${s ?? "?"}`;
-  };
+  const horario = (l: LinhaEspelho) => l.horario;
   const CAB = "px-2 py-2 text-left text-xs font-medium text-texto-fraco";
 
   // Batidas com CPF fora do cadastro (não viram presença até alguém dizer de quem são).
@@ -125,10 +124,13 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         <div>
           <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Relatórios de ponto</h1>
           <p className="mt-1 max-w-2xl text-sm text-texto-suave">
-            Batidas do relógio de quem bate ponto. Horário previsto: o das regras em <Link href="/colaboradores/assiduidade" className="text-orange-600 hover:underline">Assiduidade</Link>. Cada um confere e assina o mês fechado no app da equipe (Meu ponto).
+            Batidas do relógio de quem bate ponto. O previsto vem do <Link href="/colaboradores/ponto/horarios" className="font-semibold text-texto-marca hover:underline">horário de cada pessoa</Link>. Cada um confere e assina o mês fechado no app da equipe (Meu ponto).
           </p>
         </div>
-        <ImportarAfd />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/colaboradores/ponto/horarios" className="btn-secundario"><Icone nome="relogio" tamanho={16} /> Horários</Link>
+          <ImportarAfd />
+        </div>
       </div>
 
       <form className="mb-4 flex flex-wrap items-end gap-2 text-sm print:hidden">
@@ -199,7 +201,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                 <thead><tr>
                   <th className={CAB}>Dia</th><th className={CAB}>Horário</th>
                   {Array.from({ length: maxBat }, (_, i) => <th key={i} className={CAB}>{i % 2 === 0 ? `Ent. ${i / 2 + 1}` : `Saí. ${(i + 1) / 2}`}</th>)}
-                  <th className={`${CAB} text-right`}>Normais</th><th className={`${CAB} text-right`}>Falta e atraso</th><th className={`${CAB} text-right`}>Extra</th><th className={CAB}></th><th className={`${CAB} print:hidden`}></th>
+                  <th className={`${CAB} text-right`}>Normais</th><th className={`${CAB} text-right`}>Falta e atraso</th><th className={`${CAB} text-right`}>Extra</th>{totais.noturno > 0 && <th className={`${CAB} text-right`} title="Horas trabalhadas das 22h às 5h (hora de relógio)">Noturno</th>}<th className={CAB}></th><th className={`${CAB} print:hidden`}></th>
                 </tr></thead>
                 <tbody className="divide-y divide-borda">
                   {visiveis.map((l) => {
@@ -223,6 +225,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                         <td className="px-2 py-1.5 text-right">{normais ? duracao(normais) : ""}</td>
                         <td className={`px-2 py-1.5 text-right ${falta ? "text-red-600" : ""}`}>{falta ? duracao(falta) : ""}</td>
                         <td className={`px-2 py-1.5 text-right ${extra ? "text-emerald-700 dark:text-emerald-400" : ""}`}>{extra ? duracao(extra) : ""}</td>
+                        {totais.noturno > 0 && <td className="px-2 py-1.5 text-right">{l.noturnoMin ? duracao(l.noturnoMin) : ""}</td>}
                         <td className={`px-2 py-1.5 text-xs ${s.cor}`}>
                           {s.rot}{l.atrasoMin > 0 ? `${s.rot ? " · " : ""}atraso ${l.atrasoMin} min` : ""}
                           {l.ignoradas.map((b) => <span key={b.id} className="ml-1"><BatidaMenu id={b.id} hora={hhmm(b.min)} ignorada /></span>)}
@@ -237,6 +240,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                   <td className="px-2 py-2 text-right">{duracao(Math.max(0, totais.previsto - totais.faltante))}</td>
                   <td className="px-2 py-2 text-right text-red-600">{duracao(totais.faltante)}</td>
                   <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400">{duracao(totais.extra)}</td>
+                  {totais.noturno > 0 && <td className="px-2 py-2 text-right">{duracao(totais.noturno)}</td>}
                   <td colSpan={2}></td>
                 </tr></tfoot>
               </table>
@@ -276,7 +280,15 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                     <td className="px-2 py-2 text-right">{totais.diasTrabalhados}</td>
                     <td className="px-2 py-2 text-right">{duracao(totais.previsto)}</td>
                     <td className="px-2 py-2 text-right">{duracao(totais.trabalhado)}</td>
-                    <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400">{duracao(totais.extra)}</td>
+                    <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400">
+                      {duracao(totais.extra)}
+                      {(totais.extraPor.sabado > 0 || totais.extraPor.domingo > 0 || totais.extraPor.feriado > 0 || totais.noturno > 0) && (
+                        <span className="block text-xs font-normal text-texto-suave">
+                          {[["dia útil", totais.extraPor.normal], ["sábado", totais.extraPor.sabado], ["domingo", totais.extraPor.domingo], ["feriado", totais.extraPor.feriado]].filter(([, v]) => Number(v) > 0).map(([k, v]) => `${k} ${duracao(Number(v))}`).join(" · ")}
+                          {totais.noturno > 0 ? ` · noturno ${duracao(totais.noturno)}` : ""}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-2 py-2 text-right text-red-600">{duracao(totais.faltante)}</td>
                     <td className={`px-2 py-2 text-right ${saldo < 0 ? "text-red-600" : ""}`}>{duracao(saldo)}</td>
                   </tr>,
@@ -294,7 +306,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
               })}
             </tbody>
           </table>
-          <p className="px-2 py-2 text-xs text-texto-fraco">Extra = tempo além do horário previsto; dia fora da escala conta todo como extra. Tolerância como a do RHiD: até {cfg.tolerancia_batida_min} min antes ou depois não conta; se o dia somar mais de {cfg.limite_diario_min} min, conta tudo.</p>
+          <p className="px-2 py-2 text-xs text-texto-fraco">Extra = tempo além do horário previsto; dia fora da escala conta todo como extra. Tolerância de cada horário (como no RHiD): até 5 min antes ou depois não conta; se o dia somar mais de 10 min, conta tudo. As extras aparecem separadas por dia útil, sábado, domingo e feriado, pra pagar com o percentual de cada um.</p>
         </section>
       )}
 

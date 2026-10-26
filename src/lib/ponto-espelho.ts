@@ -51,7 +51,7 @@ export async function espelhoDaPessoa(db: Db, pessoaId: string, de: string, ate:
   const pessoa = base.pessoas[0];
   if (!pessoa) return null;
   const { linhas, totais } = espelho({
-    dias: diasEntre(de, ate), hoje: hojeSP(), escala: pessoa.escala, entradas: cfg.entradas, saidas: cfg.saidas,
+    dias: diasEntre(de, ate), hoje: hojeSP(), horarioDoDia: base.horarioDe(pessoa.id), escala: pessoa.escala, entradas: cfg.entradas, saidas: cfg.saidas,
     batidas: base.batidas.get(pessoa.id) ?? new Map(), folgas: base.folgas.get(pessoa.id) ?? new Set(),
     atestados: base.atestados.get(pessoa.id) ?? new Set(), abonos: base.abonos.get(pessoa.id) ?? new Set(), fechados: base.fechados,
     tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min, admissao: pessoa.admissao, desligamento: pessoa.desligamento,

@@ -14,7 +14,7 @@ const DOW = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const dm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 const SIT: Partial<Record<SituacaoDia, string>> = {
   falta: "Falta", incompleto: "Batida faltando", folga: "Folga", atestado: "Atestado",
-  abono: "Abonado", feriado: "Feriado", hoje: "Hoje",
+  abono: "Abonado", feriado: "Feriado", hoje: "Hoje", compensado: "Compensado", neutro: "Neutro",
 };
 const quando = (iso: string) => {
   const l = new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { diasEntre } from "@/lib/assiduidade-core";
-import type { BatidaDia } from "@/lib/ponto-relatorio-core";
+import type { BatidaDia, DiaHorario } from "@/lib/ponto-relatorio-core";
+import { diaDoHorario, horarioIdNoDia, type HorarioPonto, type VinculoHorario } from "@/lib/ponto-horarios-core";
 
 // Tudo o que os relatórios de ponto e o prêmio assiduidade precisam de um
 // período: quem bate ponto, as batidas de cada dia, folgas aprovadas,
@@ -22,6 +23,9 @@ export type BasePonto = {
   abonos: Map<string, Set<string>>;
   /** Feriados (abre, fecha ou a definir): fora da escala no ponto. */
   fechados: Set<string>;
+  /** Horário de cada dia da pessoa (migration 0255); undefined = sem horário, vale o jeito antigo. */
+  horarioDe: (pessoaId: string) => ((dia: string, dow: number) => DiaHorario | null) | undefined;
+  horarios: Map<string, HorarioPonto>;
 };
 
 async function todas<T>(montar: () => { range: (a: number, b: number) => PromiseLike<{ data: unknown }> }): Promise<T[]> {
@@ -102,5 +106,36 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
   }
   const pessoas = ((cols ?? []) as { id: string; nome: string; dias_dia: number[] | null; ativo: boolean; cpf: string | null; admissao: string | null; desligado_em: string | null }[])
     .map((c) => ({ id: c.id, nome: c.nome, escala: c.dias_dia ?? [], ativo: c.ativo, cpf: c.cpf, admissao: c.admissao ? String(c.admissao).slice(0, 10) : null, desligamento: c.desligado_em ? String(c.desligado_em).slice(0, 10) : null }));
-  return { pessoas, batidas, batidasDia, folgas, atestados, abonos, fechados };
+
+  // Horários (migration 0255): em qual horário cada um está em cada dia, e as exceções do período.
+  const ids = pessoas.map((p) => p.id);
+  const [{ data: vincs }, { data: hors }, { data: excs }] = ids.length
+    ? await Promise.all([
+        db.from("colaborador_horarios").select("colaborador_id, horario_id, de, ate").in("colaborador_id", ids).lte("de", ate),
+        daEmpresa(db.from("ponto_horarios").select("id, nome, ativo, dias, tolerancia_extra, tolerancia_falta, limite_extra, limite_falta, noturno_inicio, noturno_fim")),
+        db.from("ponto_horario_excecoes").select("colaborador_id, data, horario_id").in("colaborador_id", ids).gte("data", de).lte("data", ate),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
+  const horarios = new Map(((hors ?? []) as HorarioPonto[]).map((h) => [h.id, h]));
+  const vinculos = new Map<string, VinculoHorario[]>();
+  for (const v of (vincs ?? []) as { colaborador_id: string; horario_id: string; de: string; ate: string | null }[]) {
+    vinculos.set(v.colaborador_id, [...(vinculos.get(v.colaborador_id) ?? []), { horario_id: v.horario_id, de: String(v.de).slice(0, 10), ate: v.ate ? String(v.ate).slice(0, 10) : null }]);
+  }
+  const excecoes = new Map<string, Map<string, string | null>>();
+  for (const x of (excs ?? []) as { colaborador_id: string; data: string; horario_id: string | null }[]) {
+    const m = excecoes.get(x.colaborador_id) ?? new Map<string, string | null>();
+    m.set(String(x.data).slice(0, 10), x.horario_id);
+    excecoes.set(x.colaborador_id, m);
+  }
+  const horarioDe = (pessoaId: string) => {
+    const vs = vinculos.get(pessoaId);
+    if (!vs?.length) return undefined; // sem horário: segue as regras antigas
+    const ex = excecoes.get(pessoaId);
+    return (dia: string, dow: number): DiaHorario | null => {
+      const id = horarioIdNoDia(dia, vs, ex);
+      const h = id ? horarios.get(id) : undefined;
+      return h ? diaDoHorario(h, dow) : null;
+    };
+  };
+  return { pessoas, batidas, batidasDia, folgas, atestados, abonos, fechados, horarioDe, horarios };
 }

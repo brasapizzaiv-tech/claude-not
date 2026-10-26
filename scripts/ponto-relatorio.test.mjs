@@ -87,3 +87,61 @@ test("alterações: desconsiderar e deslocar pra direita", async () => {
   assert.equal(linhas[0].ignoradas.length, 1);
   assert.equal(linhas[0].situacao, "ok");
 });
+
+// ---------- Horários (migration 0255) ----------
+// "Horário início 14h" do RHiD: qua a sáb 14:00–17:00 e 18:00–23:00, almoço livre; dom 16:30–22:30.
+const H14 = { id: "h", nome: "Horário início 14h", ativo: true, tolerancia_extra: 5, tolerancia_falta: 5, limite_extra: 10, limite_falta: 10, noturno_inicio: "22:00", noturno_fim: "05:00",
+  dias: { 0: { p: [["16:30", "22:30"]] }, 3: { p: [["14:00", "17:00"], ["18:00", "23:00"]], almoco_livre: true } } };
+const { diaDoHorario, resumoHorario, totalSemana, horarioIdNoDia } = await import("../src/lib/ponto-horarios-core.ts");
+const comH = (o) => base({ horarioDoDia: (_d, dow) => diaDoHorario(H14, dow), ...o });
+
+test("dois períodos e almoço livre: vale a duração do intervalo", () => {
+  // Quarta 14/10: parou das 17:20 às 18:20 (1h, igual ao previsto) → nada de falta nem extra.
+  const b = new Map([["2026-10-14", [m("14:00"), m("17:20"), m("18:20"), m("23:00")]]]);
+  const { linhas } = espelho(comH({ dias: ["2026-10-14"], batidas: b }));
+  assert.equal(linhas[0].previstoMin, 480);
+  assert.equal(linhas[0].faltaMin, 0);
+  assert.equal(linhas[0].extraMin, 0);
+  assert.equal(linhas[0].horario, "14:00–17:00 18:00–23:00");
+});
+
+test("intervalo maior é falta, pular o almoço é extra", () => {
+  const b = new Map([
+    ["2026-10-14", [m("14:00"), m("17:00"), m("18:30"), m("23:00")]], // parou 1h30 → 30 min de falta
+    ["2026-10-21", [m("14:00"), m("23:00")]],                          // não parou → 1h de extra
+  ]);
+  const { linhas } = espelho(comH({ dias: ["2026-10-14", "2026-10-21"], batidas: b }));
+  assert.equal(linhas[0].faltaMin, 30);
+  assert.equal(linhas[1].extraMin, 60);
+});
+
+test("noturno: das 22h em diante, e segunda (folga no horário) é toda extra", () => {
+  const b = new Map([
+    ["2026-10-14", [m("14:00"), m("17:00"), m("18:00"), m("23:30")]],
+    ["2026-10-12", [m("18:00"), 1440 + m("00:30")]],
+  ]);
+  const { linhas, totais } = espelho(comH({ dias: ["2026-10-12", "2026-10-14"], batidas: b }));
+  assert.equal(linhas[1].noturnoMin, 90);
+  assert.equal(linhas[1].extraMin, 30);
+  assert.equal(linhas[0].situacao, "ok");
+  assert.equal(linhas[0].extraMin, 390);
+  assert.equal(linhas[0].noturnoMin, 150);
+  assert.equal(totais.extraPor.normal, 420);
+});
+
+test("feriado com a casa aberta: sem falta, quem trabalha faz extra de feriado", () => {
+  const b = new Map([["2026-10-14", [m("14:00"), m("23:00")]]]);
+  const { linhas, totais } = espelho(comH({ dias: ["2026-10-14", "2026-10-15"], batidas: b, fechados: new Set(["2026-10-14"]) }));
+  assert.equal(linhas[0].extraMin, 540);
+  assert.equal(totais.extraPor.feriado, 540);
+});
+
+test("resumo, total da semana e horário do dia pelo histórico", () => {
+  assert.equal(resumoHorario(H14), "Qua: 14:00-17:00 18:00-23:00 · Dom: 16:30-22:30 · Seg Ter Qui Sex Sáb: Folga");
+  assert.equal(totalSemana(H14), 480 + 360);
+  const v = [{ horario_id: "a", de: "2026-01-01", ate: "2026-10-10" }, { horario_id: "b", de: "2026-10-11", ate: null }];
+  assert.equal(horarioIdNoDia("2026-10-10", v), "a");
+  assert.equal(horarioIdNoDia("2026-10-11", v), "b");
+  assert.equal(horarioIdNoDia("2025-12-31", v), undefined);
+  assert.equal(horarioIdNoDia("2026-10-11", v, new Map([["2026-10-11", null]])), null);
+});

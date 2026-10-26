@@ -6,6 +6,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { marcarPresencasDoPonto } from "@/lib/ponto-server";
 import { numBR, parseAniversario } from "@/lib/equipe";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { definirHorarioPessoa } from "./ponto/horarios/actions";
 
 function novoToken() {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
@@ -100,6 +101,14 @@ export async function salvarColaborador(formData: FormData) {
     if (empresaId && soltas?.length) {
       await marcarPresencasDoPonto(empresaId, (soltas as { data: string }[]).map((x) => ({ colaboradorId: colaboradorId as string, data: String(x.data).slice(0, 10) })));
     }
+  }
+
+  // Horário de trabalho (migration 0255): trocou no cadastro = vale a partir da data escolhida.
+  const horarioId = String(formData.get("horario_id") ?? "");
+  const horarioDe = String(formData.get("horario_de") ?? "");
+  if (quadro.bate_ponto && horarioId && /^\d{4}-\d{2}-\d{2}$/.test(horarioDe)) {
+    const r = await definirHorarioPessoa(colaboradorId, horarioId, horarioDe);
+    if (!r.ok) return { erro: `Salvou, mas o horário não: ${r.erro}` };
   }
 
   // perfil de folga

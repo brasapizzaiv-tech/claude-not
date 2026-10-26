@@ -51,6 +51,10 @@ export async function apurarAssiduidade(db: Db, mes: string, cfg?: ConfigAssidui
   const noPeriodo = (s: Set<string> | undefined) => new Set([...(s ?? [])].filter((d) => dias.includes(d)));
 
   const pessoas = base.pessoas.map((p) => {
+    const doDia = base.horarioDe(p.id);
+    const entradaDoDia = doDia
+      ? (dia: string, dow: number) => { const h = doDia(dia, dow); return h && !h.compensado && !h.neutro ? hhmm(h.periodos[0][0]) : null; }
+      : undefined;
     const primeira = new Map<string, string>();
     for (const [dia, mins] of base.batidasDia.get(p.id) ?? []) primeira.set(dia, hhmm(Math.min(...mins)));
     return {
@@ -60,7 +64,7 @@ export async function apurarAssiduidade(db: Db, mes: string, cfg?: ConfigAssidui
       resultado: apurarMes({
         dias, hoje, escala: p.escala, entradas: config.entradas, primeiraBatida: primeira,
         folgas: noPeriodo(base.folgas.get(p.id)), atestados: noPeriodo(base.atestados.get(p.id)), abonos: noPeriodo(base.abonos.get(p.id)),
-        fechados: base.fechados, tolerancia: config.tolerancia_min, toleranciaBatida: config.tolerancia_batida_min,
+        fechados: base.fechados, tolerancia: config.tolerancia_min, toleranciaBatida: config.tolerancia_batida_min, entradaDoDia,
       }),
     };
   });

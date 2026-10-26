@@ -31,7 +31,9 @@ export type FolgaPerfil = {
   gerente: boolean;
   ativo: boolean;
 };
-export type Row = Colaborador & { folga: FolgaPerfil | null };
+export type Row = Colaborador & { folga: FolgaPerfil | null; horario?: { id: string; nome: string } | null };
+/** Horário de trabalho (migration 0255) pra escolher no cadastro de quem bate ponto. */
+export type HorarioOpcao = { id: string; nome: string; resumo: string };
 
 function GerarLink({ id, small }: { id: string; small?: boolean }) {
   return (
@@ -255,7 +257,7 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
 
 export type SetorChecklist = { id: string; nome: string; cor: string | null };
 
-export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row[]; setoresChecklist?: SetorChecklist[] }) {
+export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = [] }: { rows: Row[]; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[] }) {
   const [editando, setEditando] = useState<Row | null>(null);
   const [aberto, setAberto] = useState(false);
   const [verLinks, setVerLinks] = useState(false);
@@ -402,13 +404,16 @@ export function ColaboradoresClient({ rows, setoresChecklist = [] }: { rows: Row
         </div>
       )}
 
-      {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} setoresChecklist={setoresChecklist} />}
+      {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} setoresChecklist={setoresChecklist} horarios={horarios} />}
       {desligando && <DesligarModal c={desligando} onClose={() => setDesligando(null)} />}
     </div>
   );
 }
 
-function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row | null; onClose: () => void; setoresChecklist?: SetorChecklist[] }) {
+function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: { editando: Row | null; onClose: () => void; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[] }) {
+  const [batePonto, setBatePonto] = useState(editando ? !!editando.bate_ponto : false);
+  const [horarioId, setHorarioId] = useState(editando?.horario?.id ?? "");
+  const [hojeLocal] = useState(() => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
   const f = editando?.folga ?? null;
   const [temFolga, setTemFolga] = useState(!!f);
   const [grupo2, setGrupo2] = useState<string>(f?.grupo2 ?? "");
@@ -585,13 +590,31 @@ function EditModal({ editando, onClose, setoresChecklist = [] }: { editando: Row
           <p className="pt-1 text-xs font-bold text-texto-fraco">Ponto</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="bate_ponto" defaultChecked={editando ? !!editando.bate_ponto : false} /> <Icone nome="relogio" tamanho={14} /> Bate ponto no relógio (a presença vem das batidas)
+              <input type="checkbox" name="bate_ponto" checked={batePonto} onChange={(e) => setBatePonto(e.target.checked)} /> <Icone nome="relogio" tamanho={14} /> Bate ponto no relógio (a presença vem das batidas)
             </label>
             <label className="flex items-center gap-2 text-sm">
               CPF
               <input name="cpf" inputMode="numeric" defaultValue={editando?.cpf ? editando.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4") : ""} placeholder="000.000.000-00" className="min-h-9 w-40 rounded-controle border border-borda-forte bg-transparent px-2 text-sm" />
             </label>
           </div>
+          {batePonto && horarios.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-[1fr_11rem]">
+              <div>
+                <label className={lbl}>Horário de trabalho</label>
+                <select name="horario_id" value={horarioId} onChange={(e) => setHorarioId(e.target.value)} className={inputCls}>
+                  <option value="">{editando?.horario ? "—" : "Escolha o horário…"}</option>
+                  {horarios.map((h) => <option key={h.id} value={h.id}>{h.nome}</option>)}
+                </select>
+                {horarioId && <p className="mt-1 text-xs text-texto-suave">{horarios.find((h) => h.id === horarioId)?.resumo}</p>}
+              </div>
+              {horarioId && horarioId !== (editando?.horario?.id ?? "") && (
+                <div>
+                  <label className={lbl}>{editando?.horario ? "Troca a partir de" : "Vale a partir de"}</label>
+                  <input type="date" name="horario_de" defaultValue={editando?.horario ? hojeLocal : (editando?.admissao ? String(editando.admissao).slice(0, 10) : hojeLocal)} required className={inputCls} />
+                </div>
+              )}
+            </div>
+          )}
           <p className="pt-1 text-xs font-bold text-texto-fraco">App pessoal</p>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_contagem" defaultChecked={editando ? editando.faz_contagem : false} /> Faz contagem de estoque
