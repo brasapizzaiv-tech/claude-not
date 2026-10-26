@@ -206,6 +206,13 @@ export default async function AppColaboradorPage({
   }
   // Meu ponto: o mês fechado sem resposta, ou que mudou depois dela (migration 0254).
   const pontoPendente = colab?.id && colab.bate_ponto ? await pontoAResponder(admin, colab.id as string, colab.empresa_id as string) : null;
+  // Documentos pra assinar (migration 0257).
+  let docsPendentes = 0, docsTotal = 0;
+  if (colab?.id) {
+    const { data: ds } = await admin.from("colaborador_documentos").select("assinado_em").eq("colaborador_id", colab.id).eq("pedir_assinatura", true);
+    docsTotal = ds?.length ?? 0;
+    docsPendentes = ((ds ?? []) as { assinado_em: string | null }[]).filter((d) => !d.assinado_em).length;
+  }
   // Lembretes da gestão pra hoje (Visto / Feito).
   const lembretes = colab?.id ? await lembretesDoColaborador(colab.id as string) : [];
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -287,6 +294,15 @@ export default async function AppColaboradorPage({
             <Icone nome="camera" tamanho={17} className="mr-1.5" /> Dar baixa
           </Link>
         </div>
+      )}
+      {docsTotal > 0 && (
+        <Link
+          href={`/eu/${token}/documentos`}
+          className="cartao mb-3 flex min-h-[64px] items-center justify-between gap-3 p-4 font-semibold text-texto transition hover:bg-superficie-suave"
+        >
+          <span className="inline-flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-controle bg-destaque text-texto-marca-pilula"><Icone nome="checklist" tamanho={18} /></span> Meus documentos</span>
+          {docsPendentes > 0 ? <span className="pilula pilula-urgente">{docsPendentes} pra assinar</span> : <span className="text-xs font-normal text-texto-suave">assinados</span>}
+        </Link>
       )}
       {colab?.bate_ponto && (
         <Link

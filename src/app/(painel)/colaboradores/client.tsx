@@ -217,8 +217,9 @@ function resumoQuadro(c: Colaborador): string {
 const dataBRcurta = (iso: string | null | undefined) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "");
 
 // Desligar com motivo (obrigatório) e data.
-function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
+function DesligarModal({ c, onClose, motivos = [] }: { c: Row; onClose: () => void; motivos?: { id: string; nome: string }[] }) {
   const [motivo, setMotivo] = useState("");
+  const [motivoId, setMotivoId] = useState("");
   const [data, setData] = useState(() => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10));
   const [msg, setMsg] = useState<string | null>(null);
   const [proc, start] = useTransition();
@@ -232,16 +233,26 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
         </p>
         <label className="mt-4 mb-1 block text-xs font-medium text-texto-suave">Último dia trabalhado (depois dele o ponto não conta falta)</label>
         <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputCls} />
-        <label className="mt-3 mb-1 block text-xs font-medium text-texto-suave">Motivo (obrigatório)</label>
-        <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Ex.: pediu demissão / dispensado / parou de vir…" className={inputCls} autoFocus />
+        {motivos.length > 0 && (
+          <>
+            <label className="mt-3 mb-1 block text-xs font-medium text-texto-suave">Motivo</label>
+            <select value={motivoId} onChange={(e) => setMotivoId(e.target.value)} className={inputCls}>
+              <option value="">Escolha…</option>
+              {motivos.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+            </select>
+          </>
+        )}
+        <label className="mt-3 mb-1 block text-xs font-medium text-texto-suave">{motivos.length ? "Observação" : "Motivo (obrigatório)"}</label>
+        <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder={motivos.length ? "Opcional" : "Ex.: pediu demissão / dispensado / parou de vir…"} className={inputCls} />
         {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">Cancelar</button>
           <button
             type="button"
-            disabled={proc || motivo.trim().length < 3}
+            disabled={proc || (!motivoId && motivo.trim().length < 3)}
             onClick={() => start(async () => {
-              const r = await desligarColaborador(c.id, motivo, data);
+              const nomeMotivo = motivos.find((m) => m.id === motivoId)?.nome ?? "";
+              const r = await desligarColaborador(c.id, [nomeMotivo, motivo.trim()].filter(Boolean).join(" — "), data, motivoId || undefined);
               if (!r.ok) { setMsg(r.mensagem); return; }
               onClose();
             })}
@@ -257,7 +268,7 @@ function DesligarModal({ c, onClose }: { c: Row; onClose: () => void }) {
 
 export type SetorChecklist = { id: string; nome: string; cor: string | null };
 
-export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = [] }: { rows: Row[]; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[] }) {
+export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = [], motivos = [] }: { rows: Row[]; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[]; motivos?: { id: string; nome: string }[] }) {
   const [editando, setEditando] = useState<Row | null>(null);
   const [aberto, setAberto] = useState(false);
   const [verLinks, setVerLinks] = useState(false);
@@ -287,6 +298,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
               </button></>
             )}.
             {" "}<Link href="/colaboradores/semana" className="inline-flex items-center gap-1.5 text-orange-600 hover:underline"><Icone nome="horario" tamanho={14} /> Semana e 10%</Link>
+            {" · "}<Link href="/colaboradores/cadastros" className="text-orange-600 hover:underline">Cadastros</Link>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -351,7 +363,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
                 {visiveis.map((c) => (
                   <tr key={c.id} className="transition hover:bg-superficie-suave">
                     <td className="px-4 py-3 font-medium text-texto">
-                      {c.nome}
+                      <Link href={`/colaboradores/${c.id}`} className="hover:underline" title="Abrir a ficha">{c.nome}</Link>
                       {c.nascimento && (
                         <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-pink-600">
                           <Icone nome="bolo" tamanho={12} /> {aniversarioBR(c.nascimento)}
@@ -405,7 +417,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
       )}
 
       {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} setoresChecklist={setoresChecklist} horarios={horarios} />}
-      {desligando && <DesligarModal c={desligando} onClose={() => setDesligando(null)} />}
+      {desligando && <DesligarModal c={desligando} onClose={() => setDesligando(null)} motivos={motivos} />}
     </div>
   );
 }

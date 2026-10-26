@@ -170,7 +170,7 @@ export async function zerarPinColaborador(formData: FormData) {
 // data e motivo, sai das listas e PERDE O ACESSO AO APP na hora — o link
 // pessoal (token) e o PIN são apagados, então nenhum atalho salvo no celular
 // abre mais (o app e todas as telas conferem token + ativo no servidor).
-export async function desligarColaborador(id: string, motivo: string, data: string) {
+export async function desligarColaborador(id: string, motivo: string, data: string, motivoId?: string) {
   await exigirAcesso("/colaboradores");
   const mot = (motivo || "").trim();
   if (mot.length < 3) return { ok: false as const, mensagem: "Escreva o motivo do desligamento." };
@@ -178,7 +178,7 @@ export async function desligarColaborador(id: string, motivo: string, data: stri
   const supabase = await createClient();
   const { error } = await supabase
     .from("colaboradores")
-    .update({ ativo: false, desligado_em: dt, desligado_motivo: mot, token: null, pin: null })
+    .update({ ativo: false, desligado_em: dt, desligado_motivo: mot, token: null, pin: null, ...(motivoId && /^[0-9a-f-]{36}$/i.test(motivoId) ? { motivo_demissao_id: motivoId } : {}) })
     .eq("id", id);
   if (error) return { ok: false as const, mensagem: error.message };
   await supabase.from("folgas_funcionarios").update({ ativo: false }).eq("colaborador_id", id);

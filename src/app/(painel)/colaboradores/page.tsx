@@ -7,7 +7,7 @@ import { hojeSP } from "@/lib/assiduidade-server";
 export default async function ColaboradoresPage() {
   const supabase = await createClient();
   const hoje = hojeSP();
-  const [{ data: colabs }, { data: folgas }, { data: setoresCk }, { data: hors }, { data: vincs }] = await Promise.all([
+  const [{ data: colabs }, { data: folgas }, { data: setoresCk }, { data: hors }, { data: vincs }, { data: motivos }] = await Promise.all([
     supabase.from("colaboradores").select("*").order("nome"),
     supabase
       .from("folgas_funcionarios")
@@ -17,6 +17,7 @@ export default async function ColaboradoresPage() {
     // Horários de trabalho (migration 0255) e em qual cada um está hoje.
     supabase.from("ponto_horarios").select("id, nome, ativo, dias").order("nome"),
     supabase.from("colaborador_horarios").select("colaborador_id, horario_id, de, ate").lte("de", hoje),
+    supabase.from("motivos_demissao").select("id, nome").eq("ativo", true).order("nome"),
   ]);
   const horarios = (hors ?? []) as Pick<HorarioPonto, "id" | "nome" | "ativo" | "dias">[];
   const nomeHorario = new Map(horarios.map((h) => [h.id, h.nome]));
@@ -37,5 +38,5 @@ export default async function ColaboradoresPage() {
     horario: horarioHoje.has(c.id) ? { id: horarioHoje.get(c.id) as string, nome: nomeHorario.get(horarioHoje.get(c.id) as string) ?? "" } : null,
   }));
 
-  return <ColaboradoresClient rows={rows} setoresChecklist={(setoresCk as { id: string; nome: string; cor: string | null }[]) ?? []} horarios={opcoes} />;
+  return <ColaboradoresClient rows={rows} setoresChecklist={(setoresCk as { id: string; nome: string; cor: string | null }[]) ?? []} horarios={opcoes} motivos={(motivos ?? []) as { id: string; nome: string }[]} />;
 }

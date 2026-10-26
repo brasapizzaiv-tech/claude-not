@@ -81,6 +81,12 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
   const fechadoAnterior = cicloDoDia(new Date(Date.UTC(+padrao.de.slice(0, 4), +padrao.de.slice(5, 7) - 1, 20)).toISOString().slice(0, 10));
   const idxPessoa = Math.max(0, ativos.findIndex((p) => p.id === sp.p));
   const pessoa = ativos[idxPessoa];
+  // Cabeçalho do espelho como o cartão do RHiD: matrícula, cargo, departamento, PIS, admissão e observações (ficha, migration 0257).
+  const { data: fichaRow } = pessoa && aba === "espelho"
+    ? await supabase.from("colaboradores").select("matricula, pis, funcao, obs_cartao_ponto, departamentos(nome)").eq("id", pessoa.id).maybeSingle()
+    : { data: null };
+  const ficha = fichaRow as { matricula: string | null; pis: string | null; funcao: string | null; obs_cartao_ponto: string | null; departamentos: { nome: string } | { nome: string }[] | null } | null;
+  const depFicha = ficha ? (Array.isArray(ficha.departamentos) ? ficha.departamentos[0]?.nome : ficha.departamentos?.nome) ?? null : null;
   const q = (o: Record<string, string | undefined>) => {
     const u = new URLSearchParams({ aba, de, ate, ...(pessoa ? { p: pessoa.id } : {}), ...(soInconsistencias ? { inc: "1" } : {}) });
     for (const [k, v] of Object.entries(o)) { if (v == null) u.delete(k); else u.set(k, v); }
@@ -193,8 +199,13 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
               <Imprimir />
             </div>
             <div className="mb-2">
-              <h2 className="text-lg font-semibold">Espelho de ponto · {pessoa.nome}</h2>
+              <h2 className="text-lg font-semibold">Espelho de ponto · <Link href={`/colaboradores/${pessoa.id}`} className="hover:underline print:no-underline">{pessoa.nome}</Link></h2>
               <p className="text-sm text-texto-suave">De {dm(de)}/{de.slice(0, 4)} a {dm(ate)}/{ate.slice(0, 4)}{pessoa.cpf ? ` · CPF ${pessoa.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}` : ""}</p>
+              <p className="text-sm text-texto-suave">
+                {[ficha?.matricula ? `Matrícula ${ficha.matricula}` : null, ficha?.pis ? `PIS ${ficha.pis}` : null, ficha?.funcao, depFicha,
+                  pessoa.admissao ? `Admissão ${dm(pessoa.admissao)}/${pessoa.admissao.slice(0, 4)}` : null].filter(Boolean).join(" · ")}
+              </p>
+              {ficha?.obs_cartao_ponto && <p className="mt-1 text-sm text-texto">{ficha.obs_cartao_ponto}</p>}
             </div>
             <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
               <table className="w-full min-w-[760px] text-sm tabular-nums">
