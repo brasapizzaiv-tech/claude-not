@@ -19,6 +19,7 @@ type ComandaRow = { id: string; numero: number; mesa: string | null; status: str
 function horaSP(iso: string) {
   return Number(new Date(iso).toLocaleString("en-US", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }));
 }
+const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 export default async function VendidosPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
@@ -58,13 +59,14 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
       supabase.from("pdv_comandas").select("id, numero, mesa, status, forma_pagamento, valor_buffet, peso, aberta_em, livre, buffet_pago").gt("valor_buffet", 0).gte("aberta_em", iniIso).lte("aberta_em", fimIso).order("aberta_em").order("id").range(i, f),
     ),
     supabase.from("pdv_itens_cancelados").select("descricao, qtd, valor, motivo, cancelado_em").gte("cancelado_em", iniIso).lte("cancelado_em", fimIso),
-    supabase.from("pdv_itens").select("id, nome, categoria"),
+    supabase.from("pdv_itens").select("id, nome, categoria, por_kg"),
     supabase.from("delivery_pedidos").select("comanda_id").gte("criado_em", iniIso).lte("criado_em", fimIso),
     supabase.from("pdv_comandas_excluidas").select("comanda_numero, mesa, valor, motivo, excluido_em").gte("excluido_em", iniIso).lte("excluido_em", fimIso).order("excluido_em", { ascending: false }),
   ]);
   const comMap = new Map(((comsItens as ComandaRow[]) ?? []).map((c) => [c.id, c]));
   const catDe = new Map(((pdvItens as { id: string; nome: string; categoria: string | null }[]) ?? []).map((p) => [p.id, p.categoria || "Outros"]));
   const nomeItemDe = new Map(((pdvItens as { id: string; nome: string }[]) ?? []).map((p) => [p.id, p.nome]));
+  const porKgIds = new Set(((pdvItens as { id: string; por_kg?: boolean }[]) ?? []).filter((p) => p.por_kg).map((p) => p.id));
   const deliveryComandas = new Set(((delivs as { comanda_id: string | null }[]) ?? []).map((d) => d.comanda_id).filter(Boolean) as string[]);
 
   // Nomes de quem lançou (usuários e colaboradores).
@@ -86,6 +88,8 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
   };
 
   // Linhas "cruas": cada item (e cada buffet) com todas as dimensões.
+  // Buffet separado (Rafael, 26/10): a kg, livre que pesou o prato e livre direto (sem pesar).
+  let kgPratos = 0, kgPeso = 0;
   type Cru = { produto: string; categoria: string; turno: string; forma: string; garcom: string; origem: string; qtd: number; valor: number; pago: boolean };
   const crus: Cru[] = [];
   for (const it of itens) {
@@ -96,6 +100,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
     if (turno !== "todos" && t !== turno) continue;
     if (soPagos && !it.pago) continue;
     const valor = Math.round(Number(it.qtd) * Number(it.preco_unit ?? 0) * 100) / 100;
+    if (it.item_id && porKgIds.has(it.item_id)) { kgPratos++; kgPeso += Number(it.qtd) || 0; }
     const nome = (it.item_id && nomeItemDe.get(it.item_id)) || (it.descricao || "Item").split("\n")[0].trim();
     crus.push({
       produto: it.item_id ? nome : nome.slice(0, 80),
@@ -110,7 +115,9 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
     });
   }
   // Buffet (balança): uma "venda" por comanda com buffet.
-  let buffetPratos = 0, buffetKg = 0, buffetValor = 0;
+  let buffetPratos = 0, buffetValor = 0;
+  let livrePesou = 0, livrePeso = 0, livreDireto = 0;
+  const livrePorDia = new Map<string, { n: number; kg: number; diretos: number }>();
   for (const c of ((comsBuffet as (ComandaRow & { buffet_pago: boolean | null })[]) ?? [])) {
     if (c.status === "excluida") continue;
     const h = horaSP(c.aberta_em);
@@ -118,7 +125,20 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
     if (turno !== "todos" && t !== turno) continue;
     if (soPagos && !c.buffet_pago) continue;
     const v = Number(c.valor_buffet) || 0;
-    buffetPratos++; buffetKg += Number(c.peso) || 0; buffetValor += v;
+    buffetPratos++; buffetValor += v;
+    const peso = Number(c.peso) || 0;
+    if (!c.livre) { kgPratos++; kgPeso += peso; }
+    else if (peso > 0) {
+      livrePesou++; livrePeso += peso;
+      const d = diaSP(c.aberta_em);
+      const x = livrePorDia.get(d) ?? { n: 0, kg: 0, diretos: 0 };
+      x.n++; x.kg += peso; livrePorDia.set(d, x);
+    } else {
+      livreDireto++;
+      const d = diaSP(c.aberta_em);
+      const x = livrePorDia.get(d) ?? { n: 0, kg: 0, diretos: 0 };
+      x.diretos++; livrePorDia.set(d, x);
+    }
     crus.push({
       produto: c.livre ? "Buffet livre" : "Buffet a kg",
       categoria: "Buffet",
@@ -131,6 +151,15 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
       pago: !!c.buffet_pago,
     });
   }
+
+  // Livre direto não tem peso: estima pela média do livre que pesou no mesmo dia
+  // (dia sem ninguém pesando o livre usa a média do período).
+  const mediaLivre = livrePesou > 0 ? livrePeso / livrePesou : 0;
+  let livreEstimado = 0;
+  for (const x of livrePorDia.values()) livreEstimado += x.diretos * (x.n > 0 ? x.kg / x.n : mediaLivre);
+  const totalKgEstimado = kgPeso + livrePeso + livreEstimado;
+  const kgTxt = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const gTxt = (kg: number) => `${Math.round(kg * 1000)} g`;
 
   // Agrupa pela dimensão escolhida.
   const grupos = new Map<string, Linha>();
@@ -210,9 +239,24 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="cartao p-4"><p className="text-xs text-texto-suave">Valor total</p><p className="text-2xl font-bold text-texto">{brl(totalValor)}</p></div>
         <div className="cartao p-4"><p className="text-xs text-texto-suave">Itens vendidos</p><p className="text-2xl font-bold text-texto">{totalQtd.toLocaleString("pt-BR")}</p></div>
-        <div className="cartao p-4"><p className="text-xs text-texto-suave">Buffet</p><p className="text-2xl font-bold text-texto">{brl(buffetValor)}</p><p className="text-xs text-texto-suave">{buffetPratos} pratos · {buffetKg.toFixed(1).replace(".", ",")} kg</p></div>
+        <div className="cartao p-4"><p className="text-xs text-texto-suave">Buffet</p><p className="text-2xl font-bold text-texto">{brl(buffetValor)}</p><p className="text-xs text-texto-suave">{buffetPratos} pratos · ~{kgTxt(totalKgEstimado)} kg de comida</p></div>
         <div className="cartao p-4"><p className="text-xs text-texto-suave">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-texto-suave">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
       </div>
+
+      {(kgPratos > 0 || livrePesou > 0 || livreDireto > 0) && (
+        <section className="cartao mb-4 overflow-x-auto p-4">
+          <p className="rotulo mb-2">Comida do buffet no período</p>
+          <table className="w-full min-w-[520px] text-sm">
+            <thead className="rotulo text-left"><tr><th className="py-1.5">Tipo</th><th className="text-right">Pratos</th><th className="text-right">Kg</th><th className="text-right">Média por prato</th></tr></thead>
+            <tbody className="divide-y divide-borda">
+              <tr><td className="py-1.5 font-semibold text-texto">Buffet a kg</td><td className="text-right font-numero">{kgPratos}</td><td className="text-right font-numero">{kgTxt(kgPeso)}</td><td className="text-right font-numero">{kgPratos ? gTxt(kgPeso / kgPratos) : "—"}</td></tr>
+              <tr><td className="py-1.5 font-semibold text-texto">Livre que pesou o prato</td><td className="text-right font-numero">{livrePesou}</td><td className="text-right font-numero">{kgTxt(livrePeso)}</td><td className="text-right font-numero">{livrePesou ? gTxt(mediaLivre) : "—"}</td></tr>
+              <tr><td className="py-1.5 font-semibold text-texto">Livre direto (sem pesar)<span className="block text-xs font-normal text-texto-suave">peso estimado pela média do livre que pesou no mesmo dia</span></td><td className="text-right font-numero">{livreDireto}</td><td className="text-right font-numero">~{kgTxt(livreEstimado)}</td><td className="text-right font-numero">{livreDireto && livreEstimado ? `~${gTxt(livreEstimado / livreDireto)}` : "—"}</td></tr>
+            </tbody>
+            <tfoot><tr className="border-t-2 border-borda-forte font-semibold"><td className="py-1.5">Total</td><td className="text-right font-numero">{kgPratos + livrePesou + livreDireto}</td><td className="text-right font-numero">~{kgTxt(totalKgEstimado)}</td><td></td></tr></tfoot>
+          </table>
+        </section>
+      )}
 
       <VendidosClient linhas={linhas} total={totalValor} agrupar={agrupar} periodo={`${de} a ${ate}`} />
 
