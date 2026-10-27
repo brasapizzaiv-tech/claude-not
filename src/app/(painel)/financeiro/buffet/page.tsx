@@ -89,7 +89,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
       {!dias.length ? (
         <p className="cartao p-6 text-sm text-texto-suave">Nenhum prato pesado no almoço neste período.</p>
       ) : (<>
-        <div className="mb-4 grid gap-4 lg:grid-cols-[340px_1fr]">
+        <div className="mb-4 grid gap-4 xl:grid-cols-[340px_1fr]">
           <div className="cartao-foco flex flex-col px-5 py-[18px]" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
             <span className="rotulo !text-painel-foco-rotulo">Se fosse tudo por quilo</span>
             <p className="numero-grande mt-1.5 text-[36px]">{mais(difSoKg)}</p>
@@ -102,7 +102,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Bloco destaque rotulo="Pratos no livre" valor={pct(pratosTotal ? total.livrePratos / pratosTotal : 0)}
               linha={`${total.livrePratos} de ${pratosTotal} pratos · ${total.livreDiretos} sem pesar`} />
             <Bloco rotulo="Prato médio" valor={total.livrePesou ? gramas(total.livrePeso / total.livrePratos) : "—"}
@@ -116,7 +116,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
 
         <section className="cartao mb-4 overflow-x-auto p-4">
           <p className="rotulo mb-2">Semana a semana</p>
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full min-w-[900px] text-sm [&_td]:pl-3 [&_th]:whitespace-nowrap [&_th]:pl-3 [&_tr>*:first-child]:pl-0">
             <thead className="rotulo text-left">
               <tr>
                 <th className="py-1.5">Semana</th>
@@ -143,7 +143,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
             Quanto o buffet teria faturado no período com o livre mais caro, cada pessoa comendo o mesmo prato.
             Quem pesou menos que o teto continua pagando o quilo.
           </p>
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[760px] text-sm [&_td]:pl-3 [&_th]:whitespace-nowrap [&_th]:pl-3 [&_tr>*:first-child]:pl-0">
             <thead className="rotulo text-left">
               <tr>
                 <th className="py-1.5">Dia</th>
@@ -192,7 +192,7 @@ function Bloco({ rotulo, valor, linha, destaque }: { rotulo: string; valor: stri
   return (
     <div className={`rounded-cartao p-4 ${destaque ? "bg-destaque" : "bg-superficie-suave"}`}>
       <p className="rotulo">{rotulo}</p>
-      <p className="numero-grande mt-1 text-[26px] text-texto">{valor}</p>
+      <p className="numero-grande mt-1 text-[24px] text-texto">{valor}</p>
       <p className="mt-0.5 text-xs text-texto-suave">{linha}</p>
     </div>
   );
