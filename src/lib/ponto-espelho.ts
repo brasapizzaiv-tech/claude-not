@@ -60,6 +60,27 @@ export async function espelhoDaPessoa(db: Db, pessoaId: string, de: string, ate:
   return { pessoa, linhas, totais, entradas: cfg.entradas, saidas: cfg.saidas };
 }
 
+/** Espelho de todo mundo que bate ponto no período (relatórios e impressão em lote).
+ *  Entra quem estava contratado em algum dia do período ou tem batida nele. */
+export async function espelhosDoPeriodo(db: Db, de: string, ate: string): Promise<EspelhoPessoa[]> {
+  const [cfg, base] = await Promise.all([lerConfig(db), carregarBasePonto(db, de, ate, { incluirInativos: true })]);
+  const hoje = hojeSP();
+  const dias = diasEntre(de, ate);
+  return base.pessoas
+    .filter((p) => (base.batidas.get(p.id)?.size ?? 0) > 0 || (p.ativo && (!p.admissao || p.admissao <= ate))
+      || (!p.ativo && p.desligamento && p.desligamento >= de && (!p.admissao || p.admissao <= ate)))
+    .map((pessoa) => {
+      const { linhas, totais } = espelho({
+        dias, hoje, horarioDoDia: base.horarioDe(pessoa.id), escala: pessoa.escala, entradas: cfg.entradas, saidas: cfg.saidas,
+        batidas: base.batidas.get(pessoa.id) ?? new Map(), folgas: base.folgas.get(pessoa.id) ?? new Set(),
+        atestados: base.atestados.get(pessoa.id) ?? new Set(), abonos: base.abonos.get(pessoa.id) ?? new Set(), fechados: base.fechados,
+        tolerancia: cfg.tolerancia_batida_min, limite: cfg.limite_diario_min, admissao: pessoa.admissao, desligamento: pessoa.desligamento,
+        justificativas: base.justificativas.get(pessoa.id), ajustes: base.ajustes.get(pessoa.id),
+      });
+      return { pessoa, linhas, totais, entradas: cfg.entradas, saidas: cfg.saidas };
+    });
+}
+
 /**
  * O que a pessoa viu e assinou: cada dia com batidas, situação, falta e extra,
  * e os totais. O hash é dessa lista (sem hora de geração), pra comparar depois.

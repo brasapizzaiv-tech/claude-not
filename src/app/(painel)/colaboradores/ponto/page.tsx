@@ -141,6 +141,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/colaboradores/ponto/relatorios" className="btn-secundario"><Icone nome="documento" tamanho={16} /> Relatórios e contador</Link>
           <Link href="/colaboradores/ponto/horarios" className="btn-secundario"><Icone nome="relogio" tamanho={16} /> Horários</Link>
           <Link href="/colaboradores/ponto/regras" className="btn-secundario">Justificativas e inconsistências</Link>
           <ImportarAfd />

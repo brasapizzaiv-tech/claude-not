@@ -38,6 +38,8 @@ export type LinhaEspelho = {
   colunas: (BatidaDia | null)[]; // Ent.1, Saí.1, Ent.2... (null = coluna vazia, após deslocar)
   ignoradas: BatidaDia[]; // desconsideradas (aparecem riscadas)
   previstoMin: number;
+  /** Minutos do horário no dia mesmo com atestado/folga/abono (pro absenteísmo); 0 fora da escala. */
+  escalaMin: number;
   trabalhadoMin: number;
   atrasoMin: number;      // atraso que conta (passou da tolerância)
   extraMin: number;
@@ -258,7 +260,8 @@ export function espelho(p: {
     }
     const contaPrevisto = situacao === "hoje" ? 0 : previsto;
     linhas.push({
-      dia, dow, batidas: bs, colunas, ignoradas, previstoMin: contaPrevisto, trabalhadoMin: trabalhado, atrasoMin: atraso,
+      dia, dow, batidas: bs, colunas, ignoradas, previstoMin: contaPrevisto,
+      escalaMin: naEscala && situacao !== "hoje" ? periodos.reduce((a, [e, s2]) => a + (s2 - e), 0) : 0, trabalhadoMin: trabalhado, atrasoMin: atraso,
       extraMin: extra, faltaMin: falta, saldoMin: extra - falta, situacao, noturnoMin: noturno, tipo, horario: naContratacao ? rotuloHorario(h) : "",
       abonadoMin: abonado, justificativa: [p.justificativas?.get(dia), aj?.rotulo].filter(Boolean).join(" · ") || undefined,
     });
