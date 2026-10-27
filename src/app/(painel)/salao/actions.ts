@@ -304,6 +304,16 @@ export async function gerarComandaLivreKiosk() {
 
 // Leitor QR do quiosque: pessoa pesou antes e decidiu virar LIVRE — o valor da
 // comanda é SUBSTITUÍDO pelo livre do dia (regra do Rafael).
+// "A balança está tarada com o prato" do quiosque, guardado no sistema (27/10/2026):
+// só no navegador, o PC perdeu a marca e o quiosque parou de pesar sozinho.
+export async function salvarBalancaTaradaKiosk(tarada: boolean) {
+  const supabase = await createClient();
+  const empresaId = await empresaAtualId();
+  const { error } = await supabase.from("pdv_config")
+    .upsert({ empresa_id: empresaId, chave: "balanca_tarada", valor: tarada ? "1" : "0" }, { onConflict: "empresa_id,chave" });
+  return { ok: !error };
+}
+
 export async function virarLivreKiosk(comandaId: string) {
   const supabase = await createClient();
   const cid = (comandaId || "").trim();

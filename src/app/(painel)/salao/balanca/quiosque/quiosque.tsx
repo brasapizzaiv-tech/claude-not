@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useVoz, valorFalado } from "./voz";
-import { buscarComandaBalancaKiosk, gerarComandaBuffetKiosk, gerarComandaLivreKiosk, repesarKiosk, virarLivreKiosk, virarLivrePorNumeroKiosk } from "../../actions";
+import { buscarComandaBalancaKiosk, gerarComandaBuffetKiosk, gerarComandaLivreKiosk, repesarKiosk, salvarBalancaTaradaKiosk, virarLivreKiosk, virarLivrePorNumeroKiosk } from "../../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -69,11 +69,14 @@ export function QuiosqueBalanca({
   precoKg,
   buffetLivre,
   taraPadrao,
+  taradaSalva,
   cupom,
 }: {
   precoKg: number;
   buffetLivre: number;
   taraPadrao: number; // peso do prato, usado SÓ quando a balança NÃO está tarada
+  /** "Tarada com o prato" guardado no sistema (null = nunca salvo, vale o deste PC). */
+  taradaSalva: boolean | null;
   cupom: { nome: string; endereco: string; telefone: string; msg: string };
 }) {
   const [estado, setEstado] = useState<
@@ -95,24 +98,35 @@ export function QuiosqueBalanca({
   const [diag, setDiag] = useState<{ bytes: number; raw: string }>({ bytes: 0, raw: "" });
   const [taraBalanca, setTaraBalanca] = useState(0); // tara feita NA balança (campo TARA)
   const taraBalancaRef = useRef(0);
-  // "A balança está tarada com o prato?" — lembrado neste PC, no botão de ajustes. Necessário
-  // quando o protocolo não manda o valor da tara (Prot F): a tara vale a padrão.
+  // "A balança está tarada com o prato?" — no botão de ajustes. Necessário quando o
+  // protocolo não manda o valor da tara (Prot F): a tara vale a padrão. Vale o que
+  // está salvo no SISTEMA; o deste PC é só reserva (em 27/10 o navegador perdeu a
+  // marca e o quiosque parou de pesar sozinho: o prato descontava a tara duas vezes).
   const [balancaTarada, setBalancaTarada] = useState(false);
   const balancaTaradaRef = useRef(false);
   useEffect(() => {
     const t = setTimeout(() => {
       try {
-        const v = localStorage.getItem("quiosque_balanca_tarada") === "1";
+        let v = taradaSalva;
+        if (v === null) {
+          v = localStorage.getItem("quiosque_balanca_tarada") === "1";
+          if (v) void salvarBalancaTaradaKiosk(true).catch(() => {}); // leva a marca deste PC pro sistema
+        }
         balancaTaradaRef.current = v;
         setBalancaTarada(v);
-      } catch { /* sem storage */ }
+        localStorage.setItem("quiosque_balanca_tarada", v ? "1" : "0");
+      } catch {
+        balancaTaradaRef.current = !!taradaSalva;
+        setBalancaTarada(!!taradaSalva);
+      }
     }, 0);
     return () => clearTimeout(t);
-  }, []);
+  }, [taradaSalva]);
   function definirBalancaTarada(v: boolean) {
     balancaTaradaRef.current = v;
     setBalancaTarada(v);
     try { localStorage.setItem("quiosque_balanca_tarada", v ? "1" : "0"); } catch { /* sem storage */ }
+    void salvarBalancaTaradaKiosk(v).catch(() => {});
   }
   // Tara do prato aprendida da própria balança (leitura com ela vazia e tarada =
   // −tara). Vale mais que a tara padrão do sistema. Guardada neste PC.
@@ -1275,8 +1289,11 @@ export function QuiosqueBalanca({
                   {soKg ? " · marmita: leitura + tara" : " · peso já líquido"}
                 </p>
               ) : (taraPrato ?? taraPadrao) > 0 ? (
-                <p className="mt-2 text-sm text-marca-escuro/40">
-                  {soKg ? "Marmita: cobra o peso inteiro (sem descontar prato)" : `Prato: desconta ${(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg`}
+                // Sem a marca de tarada, o prato desconta a tara aqui: se a balança
+                // também foi tarada, desconta duas vezes e nada pesa. Aviso visível.
+                <p className="mt-3 max-w-xl rounded-xl bg-amber-100 px-4 py-2 text-center text-base font-semibold text-amber-900">
+                  {soKg ? "Marmita: cobra o peso inteiro (sem descontar prato)" : `Balança marcada como SEM tara: o prato desconta ${(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg.`}
+                  <span className="block text-sm font-normal">Se apertaram T com o prato na balança, toque na engrenagem e marque “A balança está tarada com o prato”.</span>
                 </p>
               ) : null}
               {/* Botão manual — garante gerar a comanda se a balança oscilar muito */}
