@@ -236,6 +236,7 @@ export function Sidebar({
             { href: "/financeiro/fatura", label: "Fatura do cartão", icon: "cartao" },
             { href: "/financeiro/vendas", label: "Vendas", icon: "compras" },
             { href: "/financeiro/vendidos", label: "Produtos vendidos", icon: "pizza" },
+            { href: "/financeiro/buffet", label: "Buffet: livre × quilo", icon: "balanca" },
             { href: "/financeiro/dre", label: "DRE", icon: "subindo" },
           ]
         : so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "documento" }),

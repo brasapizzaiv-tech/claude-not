@@ -245,7 +245,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
 
       {(kgPratos > 0 || livrePesou > 0 || livreDireto > 0) && (
         <section className="cartao mb-4 overflow-x-auto p-4">
-          <p className="rotulo mb-2">Comida do buffet no período</p>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><p className="rotulo">Comida do buffet no período</p><Link href="/financeiro/buffet" className="text-sm font-semibold text-texto-marca hover:underline">Livre × quilo, semana a semana</Link></div>
           <table className="w-full min-w-[520px] text-sm">
             <thead className="rotulo text-left"><tr><th className="py-1.5">Tipo</th><th className="text-right">Pratos</th><th className="text-right">Kg</th><th className="text-right">Média por prato</th></tr></thead>
             <tbody className="divide-y divide-borda">
