@@ -5,7 +5,7 @@ import { Icone } from "@/components/icone";
 import { diasEntre } from "@/lib/assiduidade-core";
 import { hojeSP } from "@/lib/assiduidade-server";
 import { duracao } from "@/lib/ponto-relatorio-core";
-import { ciclosRecentes, espelhosDoPeriodo, fechamentosDoCiclo, cicloDoDia } from "@/lib/ponto-espelho";
+import { ASSINATURA_DESDE, ciclosRecentes, espelhosDoPeriodo, fechamentosDoCiclo, cicloDoDia } from "@/lib/ponto-espelho";
 import { absenteismo, resumoMes, turnover, type PessoaTurnover } from "@/lib/ponto-relatorios-core";
 import { BaixarCsv, ImprimirRelatorio } from "./baixar";
 
@@ -102,7 +102,8 @@ async function Contador({ de, ate, hoje, nomeArquivo, supabase }: P & { hoje: st
   const espelhos = await espelhosDoPeriodo(supabase, de, ate);
   const ids = espelhos.map((e) => e.pessoa.id);
   const ciclo = cicloDoDia(de);
-  const cicloInteiro = ciclo.de === de && ciclo.ate === ate;
+  // Fechar o mês vale do ciclo em que começou a assinatura no app (o de setembro foi no papel).
+  const cicloInteiro = ciclo.de === de && ciclo.ate === ate && de >= ASSINATURA_DESDE;
   const [{ data: fichas }, fechamentos] = await Promise.all([
     ids.length ? supabase.from("colaboradores").select("id, matricula, numero_folha, funcao, pis").in("id", ids) : Promise.resolve({ data: [] }),
     cicloInteiro ? fechamentosDoCiclo(supabase, de, ids) : Promise.resolve(null),
@@ -333,10 +334,11 @@ async function Afastamentos({ de, ate, nomeArquivo, supabase }: P) {
 // ---------- Admissões e desligamentos (turnover) ----------
 async function TurnoverRel({ de, ate, nomeArquivo, supabase }: P) {
   // Equipe registrada: carteira assinada ou quem bate ponto (bate ponto = CLT).
-  const { data } = await supabase.from("colaboradores").select("id, nome, admissao, desligado_em, desligado_motivo, funcao, vinculo, bate_ponto, motivos_demissao(nome)")
+  const { data } = await supabase.from("colaboradores").select("id, nome, ativo, admissao, desligado_em, desligado_motivo, funcao, vinculo, bate_ponto, motivos_demissao(nome)")
     .or("vinculo.eq.clt,bate_ponto.eq.true").order("nome");
-  type C = { id: string; nome: string; admissao: string | null; desligado_em: string | null; desligado_motivo: string | null; funcao: string | null; motivos_demissao: { nome: string } | { nome: string }[] | null };
-  const cs = (data ?? []) as C[];
+  type C = { id: string; nome: string; ativo: boolean; admissao: string | null; desligado_em: string | null; desligado_motivo: string | null; funcao: string | null; motivos_demissao: { nome: string } | { nome: string }[] | null };
+  // Inativo sem data de desligamento não dá pra saber quando saiu: fica de fora.
+  const cs = ((data ?? []) as C[]).filter((c) => c.ativo || c.desligado_em);
   const pessoas: PessoaTurnover[] = cs.map((c) => ({ id: c.id, nome: c.nome, admissao: c.admissao ? String(c.admissao).slice(0, 10) : null, desligamento: c.desligado_em ? String(c.desligado_em).slice(0, 10) : null }));
   const t = turnover(pessoas, de, ate);
   const extra = new Map(cs.map((c) => [c.id, c]));
