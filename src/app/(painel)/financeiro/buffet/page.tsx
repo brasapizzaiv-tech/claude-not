@@ -116,7 +116,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
 
         <section className="cartao mb-4 overflow-x-auto p-4">
           <p className="rotulo mb-2">Semana a semana</p>
-          <table className="w-full min-w-[900px] text-sm [&_td]:pl-3 [&_th]:whitespace-nowrap [&_th]:pl-3 [&_tr>*:first-child]:pl-0">
+          <table className="w-full min-w-[900px] text-sm [&_td]:pl-3 [&_th]:whitespace-nowrap [&_td:not(:first-child)]:whitespace-nowrap [&_th]:pl-3 [&_tr>*:first-child]:pl-0">
             <thead className="rotulo text-left">
               <tr>
                 <th className="py-1.5">Semana</th>
@@ -143,7 +143,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
             Quanto o buffet teria faturado no período com o livre mais caro, cada pessoa comendo o mesmo prato.
             Quem pesou menos que o teto continua pagando o quilo.
           </p>
-          <table className="w-full min-w-[760px] text-sm [&_td]:pl-3 [&_th]:whitespace-nowrap [&_th]:pl-3 [&_tr>*:first-child]:pl-0">
+          <table className="w-full min-w-[760px] text-sm [&_td]:pl-3 [&_th]:whitespace-nowrap [&_td:not(:first-child)]:whitespace-nowrap [&_th]:pl-3 [&_tr>*:first-child]:pl-0">
             <thead className="rotulo text-left">
               <tr>
                 <th className="py-1.5">Dia</th>
