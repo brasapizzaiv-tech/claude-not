@@ -21,7 +21,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
   const data = /^\d{4}-\d{2}-\d{2}$/.test(sp.data ?? "") ? sp.data! : hojeSP();
   const supabase = await createClient();
   const [{ data: boys }, { data: peds }, { data: acertos }, { data: areas }] = await Promise.all([
-    supabase.from("entregadores").select("id, nome, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia").eq("ativo", true).order("nome"),
+    supabase.from("entregadores").select("id, nome, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite").eq("ativo", true).order("nome"),
     supabase.from("delivery_pedidos").select("id, entregador_id, status, taxa_entrega, area_id, taxa_motoboy, recebido_forma, recebido_valor, saiu_em, entregue_em, numero_turno, pdv_comandas(numero)")
       .eq("tipo", "entrega").not("entregador_id", "is", null)
       .gte("entregue_em", `${data}T00:00:00-03:00`).lte("entregue_em", `${data}T23:59:59-03:00`).eq("status", "entregue"),
@@ -34,12 +34,12 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
   const jaFeito = new Map(((acertos as { entregador_id: string; total: number; fixo: number; teles_qtd: number; teles_valor: number; recebido_dinheiro: number; recebido_cartao: number; recebido_pix: number }[]) ?? []).map((a) => [a.entregador_id, a]));
   const addDias = (iso: string, n: number) => { const [a, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10); };
 
-  type Boy = { id: string; nome: string; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null };
+  type Boy = { id: string; nome: string; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean };
   const linhas = ((boys as Boy[]) ?? []).map((b) => {
     const meus = pedidos.filter((p) => p.entregador_id === b.id);
     // Turno: entregou antes das 15h = almoço; depois = noite (pode ser os dois).
     const a = acertoDoDia(
-      { fixoDia: b.valor_fixo_dia, fixoNoite: b.valor_fixo_noite, valorTele: b.valor_tele, gratisIncluidasDia: b.gratis_incluidas_dia, valorGratisExtraDia: b.valor_gratis_extra_dia },
+      { fixoDia: b.valor_fixo_dia, fixoNoite: b.valor_fixo_noite, valorTele: b.valor_tele, gratisIncluidasDia: b.gratis_incluidas_dia, valorGratisExtraDia: b.valor_gratis_extra_dia, trabalhaDia: b.trabalha_dia, trabalhaNoite: b.trabalha_noite },
       meus.map((p) => {
         const quando = p.entregue_em ?? p.saiu_em ?? "";
         return { id: p.id, quando, hora: horaSP(quando), gratis: Number(p.taxa_entrega ?? 0) === 0, valorArea: p.taxa_motoboy != null ? Number(p.taxa_motoboy) : p.area_id ? areaBoy.get(p.area_id) ?? null : null };
@@ -63,7 +63,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
           <Link href={`?data=${addDias(data, 1)}`} className="rounded-controle border border-borda-forte px-2 py-1 text-sm">›</Link>
         </form>
       </div>
-      <p className="mb-4 text-xs text-texto-suave">Fixo = valor do turno (almoço se entregou antes das 15h, noite se depois). Teles = valor da área de cada entrega; no almoço, quem tem a regra dos fixos tem as primeiras teles grátis cobertas pelo fixo e ganha o valor combinado pelas grátis seguintes. “Recebido” é o que ele trouxe da rua: confira com o caixa antes de acertar.</p>
+      <p className="mb-4 text-xs text-texto-suave">Fixo = valor do turno marcado no entregador (almoço se entregou antes das 15h, noite se depois); tele fora do turno dele paga só a área. Teles = valor da área de cada entrega; no almoço, quem tem a regra dos fixos tem as primeiras teles grátis (10) cobertas pelo fixo e ganha o valor combinado pelas grátis seguintes; tele cobrada paga a área e não conta. “Recebido” é o que ele trouxe da rua: confira com o caixa antes de acertar.</p>
 
       {linhas.length === 0 && <p className="py-10 text-center text-texto-suave">Nenhuma entrega concluída nesse dia.</p>}
       <div className="space-y-3">

@@ -22,12 +22,12 @@ async function ganhoPorEntrega(boyId: string, peds: PedGanho[]) {
   const admin = createAdminClient();
   const areaIds = [...new Set(peds.map((p) => p.area_id).filter(Boolean))] as string[];
   const [{ data: b }, { data: areas }] = await Promise.all([
-    admin.from("entregadores").select("valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia").eq("id", boyId).maybeSingle(),
+    admin.from("entregadores").select("valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite").eq("id", boyId).maybeSingle(),
     areaIds.length ? admin.from("delivery_areas").select("id, taxa_motoboy, valor").in("id", areaIds) : Promise.resolve({ data: [] }),
   ]);
-  const r = b as { valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null } | null;
+  const r = b as { valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean } | null;
   const areaBoy = new Map(((areas ?? []) as { id: string; taxa_motoboy: number | null; valor: number }[]).map((a) => [a.id, Number(a.taxa_motoboy ?? a.valor)]));
-  const regra = { fixoDia: r?.valor_fixo_dia ?? null, fixoNoite: r?.valor_fixo_noite ?? null, valorTele: r?.valor_tele ?? null, gratisIncluidasDia: r?.gratis_incluidas_dia ?? null, valorGratisExtraDia: r?.valor_gratis_extra_dia ?? null };
+  const regra = { fixoDia: r?.valor_fixo_dia ?? null, fixoNoite: r?.valor_fixo_noite ?? null, valorTele: r?.valor_tele ?? null, gratisIncluidasDia: r?.gratis_incluidas_dia ?? null, valorGratisExtraDia: r?.valor_gratis_extra_dia ?? null, trabalhaDia: r?.trabalha_dia ?? true, trabalhaNoite: r?.trabalha_noite ?? true };
   const porDia = new Map<string, EntregaAcerto[]>();
   for (const p of peds) {
     const quando = p.entregue_em ?? p.saiu_em;

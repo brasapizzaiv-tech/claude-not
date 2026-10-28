@@ -13,6 +13,17 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
 const inp = "rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm ";
 
+// Caixinhas dos turnos (migration 0261): o fixo só vale no turno marcado.
+function Turnos({ dia = true, noite = true }: { dia?: boolean; noite?: boolean }) {
+  return (
+    <div className="flex flex-wrap gap-2 text-sm">
+      <span className="self-center text-xs text-texto-suave">Trabalha:</span>
+      <label className="inline-flex min-h-11 items-center gap-2 rounded-controle border border-borda-forte px-3"><input type="checkbox" name="trabalha_dia" value="1" defaultChecked={dia} className="h-4 w-4" /> <Icone nome="dia" tamanho={14} /> Almoço</label>
+      <label className="inline-flex min-h-11 items-center gap-2 rounded-controle border border-borda-forte px-3"><input type="checkbox" name="trabalha_noite" value="1" defaultChecked={noite} className="h-4 w-4" /> <Icone nome="noite" tamanho={14} /> Noite</label>
+    </div>
+  );
+}
+
 // Entregadores: cadastro, link pessoal do app (/entrega/{token}), valores
 // (fixo por turno + por tele + regra do almoço) e onde está agora (GPS do app).
 // Os fixos vêm de Colaboradores; os eventuais são cadastrados aqui.
@@ -22,11 +33,11 @@ export default async function EntregadoresPage() {
   const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "www.brasarestaurante.com.br"}`;
   const [{ data }, { data: cols }] = await Promise.all([
     supabase.from("entregadores")
-      .select("id, nome, telefone, ativo, token, codigo, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, ultima_lat, ultima_lng, ultima_pos_em")
+      .select("id, nome, telefone, ativo, token, codigo, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite, ultima_lat, ultima_lng, ultima_pos_em")
       .order("nome"),
     supabase.from("colaboradores").select("id, nome, nome_social").eq("ativo", true).order("nome"),
   ]);
-  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; colaborador_id: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
+  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; colaborador_id: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
   const ligados = new Set(lista.map((e) => e.colaborador_id).filter(Boolean));
   const livres = ((cols ?? []) as { id: string; nome: string; nome_social: string | null }[]).filter((c) => !ligados.has(c.id));
   const agora = agoraMs();
@@ -49,13 +60,15 @@ export default async function EntregadoresPage() {
             <option value="" disabled>Escolha o colaborador…</option>
             {livres.map((c) => <option key={c.id} value={c.id}>{c.nome_social || c.nome}</option>)}
           </select>
-          <p className="text-xs text-texto-suave">Nome e WhatsApp vêm da ficha. Já entra com a regra dos fixos (almoço R$ 70 com 3 teles grátis, depois R$ 3; noite R$ 50 + área), dá pra mudar depois.</p>
+          <Turnos />
+          <p className="text-xs text-texto-suave">Nome e WhatsApp vêm da ficha. Já entra com a regra dos fixos (almoço R$ 70 com 10 teles grátis, da 11ª em diante R$ 3; noite R$ 50 + área), dá pra mudar depois.</p>
           <Enviar className="btn-principal">Adicionar fixo</Enviar>
         </form>
         <form action={criarEntregador} className="cartao flex flex-col gap-2 p-4">
           <div className="rotulo">Eventual · só no delivery</div>
           <input name="nome" required placeholder="Nome" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
           <input name="telefone" placeholder="Telefone (opcional)" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
+          <Turnos />
           <Enviar className="btn-secundario">Adicionar eventual</Enviar>
         </form>
       </div>
@@ -69,7 +82,8 @@ export default async function EntregadoresPage() {
             <div key={e.id} className={`rounded-cartao border p-3 ${e.ativo ? "border-borda" : "border-borda opacity-50 "}`}>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 font-bold">{e.nome}<span className={e.colaborador_id ? "pilula" : "pilula pilula-neutra"}>{e.colaborador_id ? "fixo · Colaboradores" : "eventual"}</span></div>
+                  <div className="flex flex-wrap items-center gap-2 font-bold">{e.nome}<span className={e.colaborador_id ? "pilula" : "pilula pilula-neutra"}>{e.colaborador_id ? "fixo · Colaboradores" : "eventual"}</span>
+                    <span className="pilula pilula-neutra">{e.trabalha_dia && e.trabalha_noite ? "almoço e noite" : e.trabalha_dia ? "só almoço" : "só noite"}</span></div>
                   <div className="text-xs text-texto-suave">
                     {e.telefone ?? "sem telefone"}
                     {posMin != null && (
@@ -130,16 +144,21 @@ O código é seu, não passe pra ninguém.`)}`} target="_blank" rel="noreferrer"
 
               <form action={salvarValoresEntregador} className="mt-2 flex flex-wrap items-end gap-2 text-xs">
                 <input type="hidden" name="id" value={e.id} />
+                <div className="w-full"><Turnos dia={e.trabalha_dia} noite={e.trabalha_noite} /></div>
                 <div><label className="block text-mini text-texto-suave">Fixo almoço (R$)</label><input name="valor_fixo_dia" defaultValue={e.valor_fixo_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Fixo noite (R$)</label><input name="valor_fixo_noite" defaultValue={e.valor_fixo_noite ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Por tele (R$)</label><input name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" placeholder="da área" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Almoço: grátis no fixo</label><input name="gratis_incluidas_dia" defaultValue={e.gratis_incluidas_dia ?? ""} inputMode="numeric" placeholder="sem regra" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Grátis depois (R$)</label><input name="valor_gratis_extra_dia" defaultValue={e.valor_gratis_extra_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
-                <Enviar className="rounded-controle border border-borda-forte px-3 py-1.5 font-semibold">Salvar valores</Enviar>
+                <Enviar className="rounded-controle border border-borda-forte px-3 py-1.5 font-semibold">Salvar</Enviar>
                 <span className="w-full text-texto-fraco">
-                  {e.gratis_incluidas_dia != null
-                    ? `Almoço: ${brl(Number(e.valor_fixo_dia ?? 0))} cobre ${e.gratis_incluidas_dia} teles grátis, depois ${brl(Number(e.valor_gratis_extra_dia ?? 0))} cada; tele cobrada paga a área. Noite: ${brl(Number(e.valor_fixo_noite ?? 0))} + área de todas.`
-                    : e.valor_tele != null ? `Toda tele: valor da área (sem área, ${brl(Number(e.valor_tele))}).` : "Toda tele paga o valor da área."}
+                  {[
+                    e.trabalha_dia && (e.gratis_incluidas_dia != null
+                      ? `Almoço: ${brl(Number(e.valor_fixo_dia ?? 0))} cobre ${e.gratis_incluidas_dia} teles grátis, da ${e.gratis_incluidas_dia + 1}ª em diante ${brl(Number(e.valor_gratis_extra_dia ?? 0))} cada; tele cobrada paga a área e não conta.`
+                      : `Almoço: ${brl(Number(e.valor_fixo_dia ?? 0))} + área de todas.`),
+                    e.trabalha_noite && `Noite: ${brl(Number(e.valor_fixo_noite ?? 0))} + área de todas.`,
+                    `Fora do turno dele: só a área${e.valor_tele != null ? ` (sem área, ${brl(Number(e.valor_tele))})` : ""}.`,
+                  ].filter(Boolean).join(" ")}
                 </span>
               </form>
             </div>

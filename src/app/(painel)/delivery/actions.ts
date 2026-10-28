@@ -115,6 +115,13 @@ export async function reimprimirDelivery(id: string) {
 }
 
 // ---------- Entregadores ----------
+// Turnos em que o entregador trabalha (migration 0261): caixinhas "almoço" e
+// "noite"; sem nenhuma marcada vale os dois.
+function turnosDoForm(formData: FormData) {
+  const dia = formData.get("trabalha_dia") === "1", noite = formData.get("trabalha_noite") === "1";
+  return dia || noite ? { trabalha_dia: dia, trabalha_noite: noite } : { trabalha_dia: true, trabalha_noite: true };
+}
+
 export async function criarEntregador(formData: FormData) {
   const supabase = await createClient();
   const nome = ((formData.get("nome") as string) || "").trim();
@@ -122,13 +129,13 @@ export async function criarEntregador(formData: FormData) {
   if (!nome) return;
   // Link pessoal do app do entregador (/entrega/{token}).
   const token = Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, "0")).join("");
-  await supabase.from("entregadores").insert({ nome, telefone: telefone || null, token });
+  await supabase.from("entregadores").insert({ nome, telefone: telefone || null, token, ...turnosDoForm(formData) });
   revalidatePath("/delivery/entregadores");
 }
 
 // Puxa um boy fixo de Colaboradores (migration 0260): nome e WhatsApp vêm de
-// lá e já nasce com a regra dos fixos (almoço 70 com 3 grátis, depois R$ 3;
-// noite 50 + área). Os valores ficam editáveis no cartão dele.
+// lá e já nasce com a regra dos fixos (almoço 70 com 10 grátis, da 11ª em
+// diante R$ 3; noite 50 + área) nos turnos marcados. Os valores ficam editáveis no cartão dele.
 export async function criarEntregadorDoColaborador(formData: FormData) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
@@ -142,7 +149,7 @@ export async function criarEntregadorDoColaborador(formData: FormData) {
   const token = Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, "0")).join("");
   await supabase.from("entregadores").insert({
     nome: (col.nome_social || col.nome).trim(), telefone: col.whatsapp || col.telefone || null, token, colaborador_id: col.id,
-    valor_fixo_dia: 70, valor_fixo_noite: 50, gratis_incluidas_dia: 3, valor_gratis_extra_dia: 3,
+    valor_fixo_dia: 70, valor_fixo_noite: 50, gratis_incluidas_dia: 10, valor_gratis_extra_dia: 3, ...turnosDoForm(formData),
   });
   revalidatePath("/delivery/entregadores");
 }
@@ -414,6 +421,7 @@ export async function salvarValoresEntregador(formData: FormData) {
   await supabase.from("entregadores").update({
     valor_fixo_dia: num("valor_fixo_dia"), valor_fixo_noite: num("valor_fixo_noite"), valor_tele: num("valor_tele"),
     gratis_incluidas_dia: incl == null ? null : Math.round(incl), valor_gratis_extra_dia: incl == null ? null : num("valor_gratis_extra_dia"),
+    ...turnosDoForm(formData),
   }).eq("id", id);
   revalidatePath("/delivery/entregadores");
 }

@@ -1,9 +1,12 @@
 // Quanto o entregador ganha num dia (acerto do painel e "Meus ganhos" no app).
-// Regra do Rafael (28/10/2026), migration 0260:
+// Regra do Rafael (28/10/2026), migrations 0260/0261:
+// - cada entregador marca os turnos em que trabalha (almoço, noite ou os dois);
+//   o fixo só vale no turno marcado.
 // - almoço: fixo do dia, que já cobre as primeiras N teles GRÁTIS (entrega
 //   grátis pro cliente); da N+1ª grátis em diante, um valor fixo por tele.
-//   Tele cobrada do cliente paga o valor da área.
+//   Tele cobrada do cliente paga o valor da área e não conta nas N.
 // - noite: fixo da noite + o valor da área de todas as teles.
+// - tele fora do turno dele (cobrindo alguém): só o valor da área.
 // Sem regra do almoço (nulos), toda tele paga o valor da área, como antes.
 
 export const HORA_FIM_ALMOCO = 15;
@@ -14,6 +17,8 @@ export type RegraEntregador = {
   valorTele: number | null; // sem área: o valor por tele do entregador
   gratisIncluidasDia: number | null;
   valorGratisExtraDia: number | null;
+  trabalhaDia?: boolean; // ausente = trabalha (como antes da 0261)
+  trabalhaNoite?: boolean;
 };
 
 export type EntregaAcerto = {
@@ -28,7 +33,8 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function acertoDoDia(regra: RegraEntregador, entregas: EntregaAcerto[]) {
   const ordenadas = [...entregas].sort((a, b) => a.quando.localeCompare(b.quando));
-  const temRegra = regra.gratisIncluidasDia != null;
+  const noDia = regra.trabalhaDia !== false, naNoite = regra.trabalhaNoite !== false;
+  const temRegra = regra.gratisIncluidasDia != null && noDia;
   const incluidas = Math.max(0, regra.gratisIncluidasDia ?? 0);
   const porEntrega = new Map<string, number>();
   let gratisDia = 0, fezDia = false, fezNoite = false;
@@ -45,6 +51,6 @@ export function acertoDoDia(regra: RegraEntregador, entregas: EntregaAcerto[]) {
     porEntrega.set(e.id, r2(valor));
   }
   const teles = r2([...porEntrega.values()].reduce((s, v) => s + v, 0));
-  const fixo = r2((fezDia ? Number(regra.fixoDia ?? 0) : 0) + (fezNoite ? Number(regra.fixoNoite ?? 0) : 0));
+  const fixo = r2((fezDia && noDia ? Number(regra.fixoDia ?? 0) : 0) + (fezNoite && naNoite ? Number(regra.fixoNoite ?? 0) : 0));
   return { porEntrega, teles, fixo, total: r2(teles + fixo), fezDia, fezNoite, gratisDia, gratisIncluidas: temRegra ? incluidas : null };
 }
