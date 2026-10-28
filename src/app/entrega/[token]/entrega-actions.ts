@@ -5,11 +5,40 @@
 // pedidos de entrega que dizem respeito a ele.
 import { createAdminClient } from "@/lib/supabase/admin";
 import { avisarPedido } from "@/lib/whatsapp";
+import { acertoDoDia, type EntregaAcerto } from "@/lib/entregador-pagamento";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const inicioDiaSP = (iso: string) => `${iso}T00:00:00-03:00`;
 const fimDiaSP = (iso: string) => `${iso}T23:59:59-03:00`;
+
+const horaSP = (iso: string) => Number(new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).slice(0, 2));
+const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+
+// Quanto o boy ganha em cada entrega pela regra dele (a mesma do acerto do
+// painel): no almoço, as primeiras teles grátis ficam no fixo.
+type PedGanho = { id: string; entregue_em: string | null; saiu_em: string | null; taxa_entrega: number | null; area_id: string | null; taxa_motoboy: number | null };
+async function ganhoPorEntrega(boyId: string, peds: PedGanho[]) {
+  const admin = createAdminClient();
+  const areaIds = [...new Set(peds.map((p) => p.area_id).filter(Boolean))] as string[];
+  const [{ data: b }, { data: areas }] = await Promise.all([
+    admin.from("entregadores").select("valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia").eq("id", boyId).maybeSingle(),
+    areaIds.length ? admin.from("delivery_areas").select("id, taxa_motoboy, valor").in("id", areaIds) : Promise.resolve({ data: [] }),
+  ]);
+  const r = b as { valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null } | null;
+  const areaBoy = new Map(((areas ?? []) as { id: string; taxa_motoboy: number | null; valor: number }[]).map((a) => [a.id, Number(a.taxa_motoboy ?? a.valor)]));
+  const regra = { fixoDia: r?.valor_fixo_dia ?? null, fixoNoite: r?.valor_fixo_noite ?? null, valorTele: r?.valor_tele ?? null, gratisIncluidasDia: r?.gratis_incluidas_dia ?? null, valorGratisExtraDia: r?.valor_gratis_extra_dia ?? null };
+  const porDia = new Map<string, EntregaAcerto[]>();
+  for (const p of peds) {
+    const quando = p.entregue_em ?? p.saiu_em;
+    if (!quando) continue;
+    const e = { id: p.id, quando, hora: horaSP(quando), gratis: Number(p.taxa_entrega ?? 0) === 0, valorArea: p.taxa_motoboy != null ? Number(p.taxa_motoboy) : p.area_id ? areaBoy.get(p.area_id) ?? null : null };
+    porDia.set(diaSP(quando), [...(porDia.get(diaSP(quando)) ?? []), e]);
+  }
+  const valor = new Map<string, number>();
+  for (const lista of porDia.values()) for (const [id, v] of acertoDoDia(regra, lista).porEntrega) valor.set(id, v);
+  return valor;
+}
 
 export type Boy = { id: string; nome: string; valor_tele: number | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null };
 
@@ -36,7 +65,7 @@ export type EntregaBoy = {
   entregador_id: string | null; area_nome: string | null;
 };
 
-const CAMPOS = "id, comanda_id, nome, telefone, logradouro, numero, complemento, bairro, cidade, referencia, lat, lng, status, forma_pagamento, troco_para, pago, taxa_entrega, taxa_motoboy, desconto, previsao_em, agendado_para, saiu_em, entregue_em, observacao, recebido_forma, recebido_valor, entregador_id, area_nome, numero_turno, pdv_comandas(numero)";
+const CAMPOS = "id, comanda_id, nome, telefone, logradouro, numero, complemento, bairro, cidade, referencia, lat, lng, status, forma_pagamento, troco_para, pago, taxa_entrega, taxa_motoboy, desconto, previsao_em, agendado_para, saiu_em, entregue_em, observacao, recebido_forma, recebido_valor, entregador_id, area_id, area_nome, numero_turno, pdv_comandas(numero)";
 
 type Row = Record<string, unknown> & { comanda_id: string | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
 
@@ -214,14 +243,15 @@ export async function meusGanhos(token: string, ano: number, mes: number) {
   const ini = `${ano}-${String(mes).padStart(2, "0")}-01`;
   const fim = new Date(Date.UTC(ano, mes, 0)).toISOString().slice(0, 10);
   const [{ data: peds }, { data: acertos }] = await Promise.all([
-    admin.from("delivery_pedidos").select("taxa_motoboy, recebido_forma, recebido_valor, entregue_em").eq("entregador_id", b.id).eq("status", "entregue").gte("entregue_em", inicioDiaSP(ini)).lte("entregue_em", fimDiaSP(fim)),
+    admin.from("delivery_pedidos").select("id, taxa_motoboy, taxa_entrega, area_id, saiu_em, recebido_forma, recebido_valor, entregue_em").eq("entregador_id", b.id).eq("status", "entregue").gte("entregue_em", inicioDiaSP(ini)).lte("entregue_em", fimDiaSP(fim)),
     admin.from("entregador_acertos").select("data, fixo, teles_qtd, teles_valor, total, obs").eq("entregador_id", b.id).gte("data", ini).lte("data", fim).order("data", { ascending: false }),
   ]);
-  const rows = (peds as { taxa_motoboy: number | null; recebido_forma: string | null; recebido_valor: number | null }[]) ?? [];
+  const rows = (peds as (PedGanho & { recebido_forma: string | null; recebido_valor: number | null })[]) ?? [];
+  const ganho = await ganhoPorEntrega(b.id, rows);
   const porForma = { Dinheiro: 0, Cartão: 0, Pix: 0 } as Record<string, number>;
   let teles = 0;
   for (const r of rows) {
-    teles += Number(r.taxa_motoboy ?? 0);
+    teles += ganho.get(r.id) ?? 0;
     if (r.recebido_forma && r.recebido_forma in porForma) porForma[r.recebido_forma] += Number(r.recebido_valor ?? 0);
   }
   const ac = (acertos as { data: string; fixo: number; teles_qtd: number; teles_valor: number; total: number; obs: string | null }[]) ?? [];
@@ -243,5 +273,7 @@ export async function historicoEntregas(token: string, data: string) {
     .eq("entregador_id", b.id)
     .or(`and(entregue_em.gte.${inicioDiaSP(data)},entregue_em.lte.${fimDiaSP(data)}),and(saiu_em.gte.${inicioDiaSP(data)},saiu_em.lte.${fimDiaSP(data)})`)
     .order("entregue_em", { ascending: false });
-  return montar((rows as Row[]) ?? []);
+  const lista = await montar((rows as Row[]) ?? []);
+  const ganho = await ganhoPorEntrega(b.id, ((rows ?? []) as unknown as PedGanho[]).filter((p) => p.entregue_em));
+  return lista.map((p) => (ganho.has(p.id) ? { ...p, taxa_motoboy: ganho.get(p.id)! } : p));
 }

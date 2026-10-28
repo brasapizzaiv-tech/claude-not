@@ -126,6 +126,27 @@ export async function criarEntregador(formData: FormData) {
   revalidatePath("/delivery/entregadores");
 }
 
+// Puxa um boy fixo de Colaboradores (migration 0260): nome e WhatsApp vêm de
+// lá e já nasce com a regra dos fixos (almoço 70 com 3 grátis, depois R$ 3;
+// noite 50 + área). Os valores ficam editáveis no cartão dele.
+export async function criarEntregadorDoColaborador(formData: FormData) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const colaboradorId = String(formData.get("colaborador_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(colaboradorId)) return;
+  const { data: c } = await supabase.from("colaboradores").select("id, nome, nome_social, whatsapp, telefone").eq("id", colaboradorId).maybeSingle();
+  const col = c as { id: string; nome: string; nome_social: string | null; whatsapp: string | null; telefone: string | null } | null;
+  if (!col) return;
+  const { data: ja } = await supabase.from("entregadores").select("id").eq("colaborador_id", col.id).maybeSingle();
+  if (ja) return;
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, "0")).join("");
+  await supabase.from("entregadores").insert({
+    nome: (col.nome_social || col.nome).trim(), telefone: col.whatsapp || col.telefone || null, token, colaborador_id: col.id,
+    valor_fixo_dia: 70, valor_fixo_noite: 50, gratis_incluidas_dia: 3, valor_gratis_extra_dia: 3,
+  });
+  revalidatePath("/delivery/entregadores");
+}
+
 // Troca o código de entrada no app (vazou, ou o entregador saiu). Quem já
 // entrou continua entrando: o app guarda o link, não o código.
 export async function novoCodigoEntregador(formData: FormData) {
@@ -382,13 +403,18 @@ export async function testarPixDelivery() {
   return testarPix();
 }
 
-// Valores do entregador: fixo por turno e por tele (a área pode ter a dela).
+// Valores do entregador: fixo por turno, por tele (a área pode ter a dela) e
+// a regra do almoço (teles grátis cobertas pelo fixo; vazio = sem regra).
 export async function salvarValoresEntregador(formData: FormData) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const num = (k: string) => { const t = String(formData.get(k) ?? "").trim().replace(",", "."); if (!t) return null; const v = Number(t); return Number.isFinite(v) ? Math.max(0, v) : null; };
-  await supabase.from("entregadores").update({ valor_fixo_dia: num("valor_fixo_dia"), valor_fixo_noite: num("valor_fixo_noite"), valor_tele: num("valor_tele") }).eq("id", id);
+  const incl = num("gratis_incluidas_dia");
+  await supabase.from("entregadores").update({
+    valor_fixo_dia: num("valor_fixo_dia"), valor_fixo_noite: num("valor_fixo_noite"), valor_tele: num("valor_tele"),
+    gratis_incluidas_dia: incl == null ? null : Math.round(incl), valor_gratis_extra_dia: incl == null ? null : num("valor_gratis_extra_dia"),
+  }).eq("id", id);
   revalidatePath("/delivery/entregadores");
 }
 
