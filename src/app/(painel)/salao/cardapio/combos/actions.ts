@@ -16,14 +16,15 @@ export async function criarCombo(formData: FormData) {
   const supabase = await createClient();
   const nome = String(formData.get("nome") ?? "").trim().slice(0, 100);
   if (!nome) return;
-  // Categoria "Combo" (fora do garçom e do PDV) nasce na primeira vez.
+  // Categoria "Combo" (fora do garçom e do PDV) nasce na primeira vez. O combo
+  // nasce indisponível: só aparece no app quando ligar, com as etapas prontas.
   const { data: cat } = await supabase.from("pdv_categorias").select("id").eq("nome", "Combo").maybeSingle();
   if (!cat) {
     const { data: max } = await supabase.from("pdv_categorias").select("ordem").order("ordem", { ascending: false }).limit(1).maybeSingle();
     await supabase.from("pdv_categorias").insert({ nome: "Combo", ordem: Number((max as { ordem?: number } | null)?.ordem ?? 0) + 1, canal_app: true, canal_garcom: false, canal_pdv: false });
   }
   const { data: item } = await supabase.from("pdv_itens").insert({
-    nome, categoria: "Combo", preco: 0, combo: true, ativo: true, disponivel: true, delivery: true, canal_garcom: false, canal_pdv: false,
+    nome, categoria: "Combo", preco: 0, combo: true, ativo: true, disponivel: false, delivery: true, canal_garcom: false, canal_pdv: false,
   }).select("id").single();
   revalidatePath("/salao/cardapio");
   if (item) redirect(`/salao/cardapio/combos/${(item as { id: string }).id}`);
