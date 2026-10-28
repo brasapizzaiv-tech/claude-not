@@ -11,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
+import { contaDoMotoboy, formasDoMotoboy, pedidosComMotoboy } from "@/lib/caixa-motoboy";
 
 export type { LinhaPedido, DadosPedidoDelivery } from "@/lib/delivery-core";
 
@@ -422,6 +423,7 @@ export async function salvarValoresEntregador(formData: FormData) {
     valor_fixo_dia: num("valor_fixo_dia"), valor_fixo_noite: num("valor_fixo_noite"), valor_tele: num("valor_tele"),
     gratis_incluidas_dia: incl == null ? null : Math.round(incl), valor_gratis_extra_dia: incl == null ? null : num("valor_gratis_extra_dia"),
     ...turnosDoForm(formData),
+    ...(num("troco_inicial") != null ? { troco_inicial: num("troco_inicial") } : {}),
   }).eq("id", id);
   revalidatePath("/delivery/entregadores");
 }
@@ -596,4 +598,47 @@ export async function salvarCashback(formData: FormData) {
   if (atual) await supabase.from("cashback_config").update(row).eq("empresa_id", (atual as { empresa_id: string }).empresa_id);
   else await supabase.from("cashback_config").insert(row);
   revalidatePath("/delivery/cashback");
+}
+
+// Fecha o caixa do motoboy (migration 0262): o caixa conferiu o dinheiro que
+// ele devolveu (troco + teles em dinheiro) e os comprovantes da maquininha;
+// cada pedido que estava com ele entra no caixa aberto pela forma conferida
+// (receberDelivery) e a conferência fica gravada com as diferenças.
+export async function fecharCaixaMotoboy(dados: { entregadorId: string; troco: number; contado: number; maquina: number; obs?: string; formas: Record<string, string> }) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const { data: cx } = await supabase.from("pdv_caixas").select("id").eq("status", "aberto").order("aberto_em", { ascending: false }).limit(1).maybeSingle();
+  if (!cx?.id) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de fechar o do motoboy." };
+  const pendentes = await pedidosComMotoboy(supabase, dados.entregadorId);
+  const escolhidos = pendentes.filter((p) => dados.formas[p.id]);
+  if (escolhidos.length === 0) return { ok: false as const, mensagem: "Nenhum pedido com esse motoboy. Atualize a tela." };
+  if (escolhidos.length < pendentes.length) return { ok: false as const, mensagem: "Chegou entrega nova desse motoboy. Atualize a tela e confira de novo." };
+  const formas = await formasDoMotoboy();
+  const nomes = new Set(formas.map((f) => f.nome));
+  if (escolhidos.some((p) => !nomes.has(dados.formas[p.id]))) return { ok: false as const, mensagem: "Forma de pagamento inválida." };
+  const ehDinheiro = (n: string) => formas.find((f) => f.nome === n)?.tipo === "dinheiro";
+  const num = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.round(v * 100) / 100) : 0);
+  const troco = num(dados.troco), contado = num(dados.contado), maquina = num(dados.maquina);
+  const conta = contaDoMotoboy(troco, escolhidos.map((p) => ({ total: p.total, forma: dados.formas[p.id] })), ehDinheiro, contado, maquina);
+
+  const falhas: string[] = [];
+  for (const p of escolhidos) {
+    const r = await receberDelivery(p.id, { forma: dados.formas[p.id] });
+    if (!r.ok) falhas.push(`#${p.numero ?? "?"} ${p.nome}: ${r.mensagem}`);
+  }
+  const { data: authU } = await supabase.auth.getUser();
+  let quem: string | null = null;
+  if (authU.user?.id) {
+    const { data: perf } = await supabase.from("profiles").select("nome").eq("id", authU.user.id).maybeSingle();
+    quem = (perf?.nome as string) || authU.user.email || null;
+  }
+  await supabase.from("entregador_fechamentos").insert({
+    entregador_id: dados.entregadorId, caixa_id: cx.id, troco,
+    esperado_dinheiro: conta.esperadoDinheiro, contado_dinheiro: contado,
+    esperado_maquina: conta.esperadoMaquina, conferido_maquina: maquina,
+    pedidos: escolhidos.map((p) => p.id), obs: (dados.obs ?? "").trim().slice(0, 300) || null, fechado_por: quem,
+  });
+  revalidatePath("/delivery/entregadores/caixa");
+  if (falhas.length) return { ok: false as const, mensagem: `Fechado, mas ${falhas.length} pedido(s) não entraram no caixa: ${falhas.join("; ")}` };
+  return { ok: true as const, ...conta };
 }

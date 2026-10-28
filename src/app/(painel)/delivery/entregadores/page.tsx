@@ -33,11 +33,11 @@ export default async function EntregadoresPage() {
   const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "www.brasarestaurante.com.br"}`;
   const [{ data }, { data: cols }] = await Promise.all([
     supabase.from("entregadores")
-      .select("id, nome, telefone, ativo, token, codigo, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite, ultima_lat, ultima_lng, ultima_pos_em")
+      .select("id, nome, telefone, ativo, token, codigo, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite, troco_inicial, ultima_lat, ultima_lng, ultima_pos_em")
       .order("nome"),
     supabase.from("colaboradores").select("id, nome, nome_social").eq("ativo", true).order("nome"),
   ]);
-  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; colaborador_id: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
+  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; colaborador_id: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean; troco_inicial: number; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
   const ligados = new Set(lista.map((e) => e.colaborador_id).filter(Boolean));
   const livres = ((cols ?? []) as { id: string; nome: string; nome_social: string | null }[]).filter((c) => !ligados.has(c.id));
   const agora = agoraMs();
@@ -50,7 +50,8 @@ export default async function EntregadoresPage() {
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
         <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="entrega" tamanho={19} /> Entregadores</h1>
-        <Link href="/delivery/entregadores/acerto" className="ml-auto rounded-controle bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-white dark:bg-zinc-700"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Acerto do dia</span></Link>
+        <Link href="/delivery/entregadores/caixa" className="ml-auto btn-principal px-3 text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="carteira" tamanho={14} /> Caixa dos motoboys</span></Link>
+        <Link href="/delivery/entregadores/acerto" className=" rounded-controle bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-white dark:bg-zinc-700"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Acerto do dia</span></Link>
       </div>
 
       <div className="mb-6 grid gap-3 md:grid-cols-2">
@@ -150,6 +151,7 @@ O código é seu, não passe pra ninguém.`)}`} target="_blank" rel="noreferrer"
                 <div><label className="block text-mini text-texto-suave">Por tele (R$)</label><input name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" placeholder="da área" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Almoço: grátis no fixo</label><input name="gratis_incluidas_dia" defaultValue={e.gratis_incluidas_dia ?? ""} inputMode="numeric" placeholder="sem regra" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Grátis depois (R$)</label><input name="valor_gratis_extra_dia" defaultValue={e.valor_gratis_extra_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
+                <div><label className="block text-mini text-texto-suave">Troco que leva (R$)</label><input name="troco_inicial" defaultValue={e.troco_inicial ?? 63} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <Enviar className="rounded-controle border border-borda-forte px-3 py-1.5 font-semibold">Salvar</Enviar>
                 <span className="w-full text-texto-fraco">
                   {[

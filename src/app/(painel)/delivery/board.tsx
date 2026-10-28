@@ -145,7 +145,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
           </span>
           <span>·</span>
           <span>{p.forma_pagamento ?? "—"}</span>
-          {!p.pago && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-600">a receber</span>}
+          {!p.pago && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-600">{p.status === "entregue" && p.entregadorNome ? `com ${p.entregadorNome}` : "a receber"}</span>}
         </div>
         <div className="mt-1.5 text-sm">
           {p.tipo === "retirada" ? (

@@ -198,7 +198,9 @@ export async function sairComEntregas(token: string, ids: string[]) {
   return { ok: true as const, n };
 }
 
-// "Entreguei": fecha o pedido com o que foi recebido na porta.
+// "Entreguei": fecha o pedido com o que foi recebido na porta. Não marca
+// pago (migration 0262): o pedido fica "com o motoboy" até o caixa conferir
+// o dinheiro e as maquininhas e fechar o caixa dele.
 export async function marcarEntregue(token: string, id: string, recebido: { forma: string; valor: number }) {
   const b = await boyDoToken(token);
   if (!b) return { ok: false as const, mensagem: "Link inválido." };
@@ -212,7 +214,7 @@ export async function marcarEntregue(token: string, id: string, recebido: { form
   const agora = new Date().toISOString();
   await admin.from("delivery_pedidos").update({
     status: "entregue", entregue_em: agora, saiu_em: ped.status === "saiu" ? undefined : agora,
-    pago: true, recebido_forma: forma, recebido_valor: valor,
+    recebido_forma: forma, recebido_valor: valor,
     ...(forma !== "Já pago" && !ped.pago ? { forma_pagamento: forma } : {}),
   }).eq("id", ped.id);
   if (ped.comanda_id) await admin.from("pdv_comandas").update({ status: "fechada", fechada_em: agora }).eq("id", ped.comanda_id);
