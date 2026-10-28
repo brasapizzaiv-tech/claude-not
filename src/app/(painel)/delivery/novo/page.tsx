@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NovoPedido } from "./novo-client";
 import { listarFormas } from "@/lib/formas-pagamento-server";
+import { buscarTodas } from "@/lib/supabase/todas";
+import { aPartirDosCombos, type EtapaPreco } from "@/lib/combo-preco";
 
 export const metadata = { title: "Novo pedido · Delivery" };
 
@@ -12,7 +14,7 @@ export default async function NovoPedidoPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg },
   ] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, canal_app").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, ordem").order("ordem"),
@@ -20,8 +22,8 @@ export default async function NovoPedidoPage() {
     supabase.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco"),
     supabase.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem"),
     supabase.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco"),
-    supabase.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem"),
-    supabase.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem"),
+    supabase.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, media, ordem").order("ordem"),
+    buscarTodas((de, ate) => supabase.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem").order("id").range(de, ate)).then((data) => ({ data })),
     supabase.from("delivery_config").select("taxa_base, preco_km, tempo_preparo_min").maybeSingle(),
   ]);
 
@@ -29,11 +31,13 @@ export default async function NovoPedidoPage() {
   const catBloqueada = new Set(
     (((catRows as { nome: string; canal_app?: boolean }[]) ?? [])).filter((c) => c.canal_app === false).map((c) => c.nome),
   );
-  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco?: number | null }[]) ?? [])
+  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco?: number | null; combo?: boolean }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
     .map((i) => ({
-      id: i.id, nome: i.nome, categoria: i.categoria || "Outros", preco: Number(i.promo_preco ?? 0) > 0 ? Number(i.promo_preco) : Number(i.preco) || 0,
+      id: i.id, nome: i.nome, categoria: i.categoria || "Outros", preco: Number(i.promo_preco ?? 0) > 0 ? Number(i.promo_preco) : Number(i.preco) || 0, combo: !!i.combo,
     }));
+  const aPartir = aPartirDosCombos(itens, (grupos as (EtapaPreco & { item_id: string })[]) ?? [], (opcoes as { grupo_id: string; preco: number }[]) ?? []);
+  for (const i of itens as (typeof itens[number] & { a_partir?: number | null })[]) if (aPartir.has(i.id)) i.a_partir = aPartir.get(i.id);
   const comItens = new Set(itens.map((i) => i.categoria));
   const ordenadas = ((catRows as { nome: string }[]) ?? []).map((c) => c.nome).filter((c) => comItens.has(c));
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];

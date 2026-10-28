@@ -150,7 +150,7 @@ export function NovoPedido({
           {visiveis.map((i) => (
             <button key={i.id} onClick={() => clicarItem(i)} className="flex min-h-[72px] flex-col justify-between cartao p-2.5 text-left hover:bg-superficie-suave">
               <span className="text-sm font-medium leading-tight">{i.nome}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</span>
-              <span className="text-sm text-emerald-600">{i.preco > 0 ? brl(i.preco) : "—"}</span>
+              <span className="text-sm text-emerald-600">{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "—"}</span>
             </button>
           ))}
           {visiveis.length === 0 && <p className="col-span-full py-10 text-center text-sm text-texto-suave">Nenhum produto.</p>}

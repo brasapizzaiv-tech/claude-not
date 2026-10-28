@@ -13,7 +13,7 @@ import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 import { fecharTefNoBanco } from "@/lib/tef-venda-server";
 import { codigoDaForma, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
-import { reimprimirNaCozinha } from "@/lib/delivery-core";
+import { reimprimirNaCozinha, resolverCombo } from "@/lib/delivery-core";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
@@ -815,47 +815,10 @@ export async function adicionarComboComanda(
 ) {
   const supabase = await dbGarcomOuUsuario();
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
-  const { data: item } = await supabase
-    .from("pdv_itens")
-    .select("nome, preco, promo_preco")
-    .eq("id", itemId)
-    .single();
-  if (!item) return { ok: false as const, mensagem: "Produto não encontrado." };
-
-  const nomes: string[] = [];
-  let extra = 0;
-  if (opcaoIds.length > 0) {
-    // conta repetições (opcaoIds pode ter ids repetidos)
-    const cont = new Map<string, number>();
-    for (const id of opcaoIds) cont.set(id, (cont.get(id) || 0) + 1);
-
-    // só opções que realmente pertencem aos grupos deste item
-    const { data: grupos } = await supabase
-      .from("pdv_item_grupos")
-      .select("id")
-      .eq("item_id", itemId);
-    const grupoIds = (grupos ?? []).map((g) => g.id);
-    if (grupoIds.length) {
-      const { data: ops } = await supabase
-        .from("pdv_item_opcoes")
-        .select("id, nome, preco")
-        .in("id", [...cont.keys()])
-        .in("grupo_id", grupoIds);
-      for (const o of ops ?? []) {
-        const qtd = cont.get(o.id) || 0;
-        const preco = Number(o.preco);
-        extra += preco * qtd;
-        const prefixo = qtd > 1 ? `${qtd}× ` : "";
-        nomes.push(preco > 0 ? `${prefixo}${o.nome} (+${preco})` : `${prefixo}${o.nome}`);
-      }
-    }
-  }
-
-  const preco = Math.round((precoVenda(item) + extra) * 100) / 100;
-  // Cada opção numa linha (fica um embaixo do outro na tela e na impressão).
-  const descricao = nomes.length
-    ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}`
-    : item.nome;
+  // Mesma conta do delivery/garçom (etapas, média da pizza, mínimo/máximo).
+  const linha = await resolverCombo(supabase, itemId, opcaoIds);
+  if (!linha) return { ok: false as const, mensagem: "Confira as escolhas desse produto." };
+  const { descricao, preco } = linha;
 
   const { error } = await supabase.from("pdv_comanda_itens").insert({
     comanda_id: comandaId,

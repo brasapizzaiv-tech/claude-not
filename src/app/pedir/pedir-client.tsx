@@ -734,7 +734,7 @@ export function PedirClient({
                 {i.foto_url ? <FotoItem url={i.foto_url} size="h-24 w-full" /> : <div className="flex h-24 w-full items-center justify-center" style={{ background: "color-mix(in srgb, var(--marca-primaria) 10%, transparent)" }}><Icone nome={iconeDaCategoria(i.categoria)} tamanho={30} className="text-orange-500/70" /></div>}
                 <div className="p-2">
                   <div className="truncate text-sm font-medium">{i.nome}</div>
-                  <div className="font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="mr-1 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}</div>
+                  <div className="font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="mr-1 text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "consulte"}</div>
                 </div>
               </button>
             ))}
@@ -766,7 +766,7 @@ export function PedirClient({
               <div className="min-w-0 flex-1">
                 <div className="font-semibold leading-tight text-texto">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</div>
                 {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-texto-suave">{i.descricao}</div>}
-                <div className="mt-1 flex items-center gap-1.5 font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="pilula pilula-urgente">promo</span>}</div>
+                <div className="mt-1 flex items-center gap-1.5 font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="pilula pilula-urgente">promo</span>}</div>
               </div>
               {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-mesa bg-primaria text-lg font-bold text-marca-sobre-primaria" aria-hidden>+</span>}
             </button>

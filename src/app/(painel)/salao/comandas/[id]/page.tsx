@@ -37,7 +37,7 @@ export default async function ComandaPage({
       .select("id, descricao, qtd, preco_unit, lancamento_id, criado_em")
       .eq("comanda_id", id)
       .order("criado_em"),
-    supabase.from("pdv_itens").select("id, nome, categoria, preco, por_kg").eq("ativo", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, por_kg").eq("ativo", true).eq("disponivel", true).eq("combo", false).order("nome"),
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_categorias")
@@ -58,7 +58,7 @@ export default async function ComandaPage({
   if (itemIds.length) {
     const { data: gruposRows } = await supabase
       .from("pdv_item_grupos")
-      .select("id, item_id, nome, min, max, permite_repetir, ordem")
+      .select("id, item_id, nome, min, max, permite_repetir, media, ordem")
       .in("item_id", itemIds)
       .order("ordem");
     const grupos = (gruposRows as {

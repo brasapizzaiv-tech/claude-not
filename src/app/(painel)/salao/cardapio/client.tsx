@@ -22,6 +22,7 @@ import {
 } from "../actions";
 import { salvarFotoCardapio, removerFotoCardapio, salvarDetalheCardapio, salvarFatias, adicionarSabor, desativarSabor } from "../../delivery/actions";
 import { resumoHorarios, disponivelAgora, type Horarios } from "@/lib/disponibilidade";
+import { criarCombo } from "./combos/actions";
 
 /** As ações de excluir recebem FormData (vieram de formulário). */
 function comId(id: string) {
@@ -38,7 +39,7 @@ const inputCls =
 type Item = {
   id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; ativo: boolean;
   delivery: boolean; canal_garcom: boolean; canal_pdv: boolean; disponivel: boolean;
-  horarios: Horarios; foto_url: string | null; descricao: string | null; por_kg?: boolean;
+  horarios: Horarios; foto_url: string | null; descricao: string | null; por_kg?: boolean; combo?: boolean;
 };
 type Categoria = { id: string; nome: string; ordem: number; disponivel: boolean; horarios: Horarios; canal_app: boolean; canal_garcom: boolean; canal_pdv: boolean };
 type Tam = { id: string; nome: string; max_sabores: number; fatias: number | null };
@@ -71,13 +72,13 @@ function PrecosPorTamanho({ tamanhos, valorDe }: { tamanhos: Tam[]; valorDe?: (t
 type Sabor = { id: string; nome: string; foto_url: string | null; descricao: string | null; tipo?: "salgada" | "doce" | null; rodizio?: boolean | null };
 
 // ---------- foto ----------
-function Foto({ url, tam = "h-12 w-12" }: { url: string | null; tam?: string }) {
+export function Foto({ url, tam = "h-12 w-12" }: { url: string | null; tam?: string }) {
   if (!url) return <div className={`flex ${tam} shrink-0 items-center justify-center rounded-controle bg-superficie-suave text-texto-fraco `}><Icone nome="salao" tamanho={18} /></div>;
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={url} alt="" className={`${tam} shrink-0 rounded-controle object-cover`} />;
 }
 
-function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: string; temFoto: boolean }) {
+export function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: string; temFoto: boolean }) {
   const ref = useRef<HTMLInputElement>(null);
   const [proc, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
@@ -114,7 +115,7 @@ function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: string;
 
 // ---------- horários (dias + turnos) ----------
 const DIAS = ["D", "S", "T", "Q", "Q", "S", "S"];
-function HorariosEditor({ inicial }: { inicial: Horarios }) {
+export function HorariosEditor({ inicial }: { inicial: Horarios }) {
   const [modo, setModo] = useState<"sempre" | "especifico">(inicial && ((inicial.dias?.length ?? 0) > 0 || (inicial.turnos?.length ?? 0) > 0) ? "especifico" : "sempre");
   const [dias, setDias] = useState<number[]>(inicial?.dias ?? []);
   const [turnos, setTurnos] = useState<{ ini: string; fim: string }[]>(inicial?.turnos?.length ? inicial.turnos : [{ ini: "00:00", fim: "23:59" }]);
@@ -194,6 +195,15 @@ export function CardapioClient({
         <Enviar className="btn-principal text-sm">
           + Adicionar categoria
         </Enviar>
+      </form>
+
+      {/* Combo em etapas, como no Suitable (migration 0263): só delivery e app. */}
+      <form action={criarCombo} className="flex flex-wrap items-end gap-2">
+        <div>
+          <label className="mb-1 block text-xs text-texto-suave">Novo combo (delivery e app)</label>
+          <input name="nome" required maxLength={100} placeholder="Ex.: Pizza Grande + Broto Doce" className={`${inputCls} w-72 max-w-full`} />
+        </div>
+        <Enviar className="btn-secundario text-sm">+ Criar combo</Enviar>
       </form>
 
       {/* Editor completo do item */}
@@ -621,7 +631,12 @@ function ItensTabela({
                         {i.ativo ? "Ocultar" : "Mostrar"}
                       </Enviar>
                     </form>
-                    {comAdicionais.has(i.id) && (
+                    {i.combo && (
+                      <Link href={`/salao/cardapio/combos/${i.id}`} className="mr-3 font-semibold text-texto-marca hover:underline">
+                        Etapas do combo
+                      </Link>
+                    )}
+                    {!i.combo && comAdicionais.has(i.id) && (
                       <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-3 text-emerald-600 hover:underline">
                         Adicionais
                       </Link>

@@ -34,7 +34,7 @@ export default async function GarcomMesaPage({
     supabase.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco"),
     supabase.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem"),
     supabase.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco"),
-    supabase.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem"),
+    supabase.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, media, ordem").order("ordem"),
     supabase.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem"),
   ]);
   const comRaw = (comRows as { id: string; numero: number; valor_buffet: number | null }[]) ?? [];

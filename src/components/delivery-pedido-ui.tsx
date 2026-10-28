@@ -8,12 +8,14 @@ import { useMemo, useState } from "react";
 import type { LinhaPedido } from "@/lib/delivery-core";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { Icone } from "@/components/icone";
+import { precoComEtapas, problemaDasEscolhas } from "@/lib/combo-preco";
 
-export type Item = { id: string; nome: string; categoria: string; preco: number; preco_antigo?: number | null; foto_url?: string | null; descricao?: string | null };
+// combo (migration 0263): item com etapas; a_partir = menor preço possível (o card mostra "a partir de").
+export type Item = { id: string; nome: string; categoria: string; preco: number; preco_antigo?: number | null; foto_url?: string | null; descricao?: string | null; combo?: boolean; a_partir?: number | null };
 export type Tam = { id: string; nome: string; max_sabores: number; fatias?: number | null };
 export type Sabor = { id: string; nome: string; foto_url?: string | null; descricao?: string | null; novo?: boolean };
 export type Borda = { id: string; nome: string };
-export type Grupo = { id: string; item_id: string; nome: string; min: number; max: number; permite_repetir: boolean };
+export type Grupo = { id: string; item_id: string; nome: string; min: number; max: number; permite_repetir: boolean; media?: boolean };
 export type Opcao = { id: string; grupo_id: string; nome: string; preco: number };
 export type PizzaData = {
   tamanhos: Tam[]; sabores: Sabor[];
@@ -291,6 +293,9 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
   );
 }
 
+// Montador de item com etapas: combo do delivery (cada opção com o valor no
+// combo; etapa de pizza cobra a média) ou marmita com complementos (+extras).
+// Etapa que deixa repetir tem contador (−/+); as outras, toque liga/desliga.
 export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
   item: Item;
   grupos: Grupo[];
@@ -301,29 +306,44 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
 }) {
   const [sel, setSel] = useState<Record<string, string[]>>({});
   const [obs, setObs] = useState("");
-  const escolhidas = Object.values(sel).flat();
+  const escolhidas = grupos.flatMap((g) => sel[g.id] ?? []);
   const opcaoById = useMemo(() => new Map(grupos.flatMap((g) => opcoesDe(g.id)).map((o) => [o.id, o])), [grupos, opcoesDe]);
-  const extra = escolhidas.reduce((s, id) => s + (opcaoById.get(id)?.preco ?? 0), 0);
-  const preco = Math.round((item.preco + extra) * 100) / 100;
+  const preco = precoComEtapas(item.preco, grupos, Object.fromEntries(grupos.map((g) => [g.id, (sel[g.id] ?? []).map((id) => opcaoById.get(id)?.preco ?? 0)])));
+  const problema = problemaDasEscolhas(grupos, sel);
+  const combo = !!item.combo;
 
-  function toggle(g: Grupo, opId: string) {
+  function tocar(g: Grupo, opId: string) {
     setSel((c) => {
       const atual = c[g.id] ?? [];
-      if (atual.includes(opId) && !g.permite_repetir) return { ...c, [g.id]: atual.filter((x) => x !== opId) };
-      if (atual.length >= g.max && g.max > 0 && !g.permite_repetir) {
-        if (g.max === 1) return { ...c, [g.id]: [opId] };
-        return c;
-      }
+      if (atual.includes(opId)) return { ...c, [g.id]: atual.filter((x) => x !== opId) };
+      if (g.max === 1) return { ...c, [g.id]: [opId] };
+      if (g.max > 0 && atual.length >= g.max) return c;
       return { ...c, [g.id]: [...atual, opId] };
     });
   }
-  const okMin = grupos.every((g) => (sel[g.id]?.length ?? 0) >= (g.min ?? 0));
+  function mais(g: Grupo, opId: string) {
+    setSel((c) => { const atual = c[g.id] ?? []; return g.max > 0 && atual.length >= g.max ? c : { ...c, [g.id]: [...atual, opId] }; });
+  }
+  function menos(g: Grupo, opId: string) {
+    setSel((c) => { const atual = [...(c[g.id] ?? [])]; const i = atual.lastIndexOf(opId); if (i >= 0) atual.splice(i, 1); return { ...c, [g.id]: atual }; });
+  }
 
   function adicionar() {
-    const nomes: string[] = [];
-    for (const g of grupos) for (const id of sel[g.id] ?? []) { const o = opcaoById.get(id); if (o) nomes.push(o.preco > 0 ? `${o.nome} (+${o.preco})` : o.nome); }
+    const linhas: string[] = [];
+    for (const g of grupos) {
+      const ids = sel[g.id] ?? [];
+      if (ids.length === 0) continue;
+      const cont = new Map<string, number>();
+      for (const id of ids) cont.set(id, (cont.get(id) || 0) + 1);
+      const nomes = [...cont].map(([id, n]) => {
+        const o = opcaoById.get(id);
+        const nome = `${n > 1 ? `${n}× ` : ""}${o?.nome ?? "?"}`;
+        return !combo && o && o.preco > 0 ? `${nome} (+${o.preco})` : nome;
+      });
+      if (combo) linhas.push(`${g.nome}: ${nomes.join(" / ")}`); else linhas.push(...nomes);
+    }
     const o = obs.trim();
-    const base = nomes.length ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}` : item.nome;
+    const base = linhas.length ? `${item.nome}\n${linhas.map((n) => `- ${n}`).join("\n")}` : item.nome;
     onAdd({
       uid: novoUid(),
       descricao: base + (o ? `\nObs: ${o}` : ""),
@@ -332,31 +352,53 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
     });
   }
 
+  const regra = (g: Grupo) => g.max === 1 ? (g.min >= 1 ? "escolha 1" : "opcional, até 1")
+    : g.min === g.max ? `escolha ${g.min}` : g.min > 0 ? `escolha de ${g.min} até ${g.max}` : `opcional, até ${g.max}`;
+
   return (
     <Overlay onClose={onClose} titulo={item.nome}>
-      <div className="max-h-[60vh] space-y-3 overflow-y-auto">
-        {grupos.map((g) => (
-          <div key={g.id}>
-            <div className="mb-1 text-xs font-semibold text-zinc-500">{g.nome} {g.min > 0 && <span className="text-rose-500">(escolha {g.min}{g.max > g.min ? `–${g.max}` : ""})</span>}</div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {opcoesDe(g.id).map((o) => {
-                const on = (sel[g.id] ?? []).includes(o.id);
-                return (
-                  <button key={o.id} onClick={() => toggle(g, o.id)} className={`flex justify-between rounded-lg border px-2 py-1.5 text-left text-sm ${on ? "border-emerald-500 bg-emerald-500/10" : "border-zinc-200 dark:border-zinc-800"}`}>
-                    <span className="truncate">{o.nome}</span>{o.preco > 0 && <span className="text-xs text-zinc-400">+{brl(o.preco)}</span>}
-                  </button>
-                );
-              })}
+      {item.descricao && <p className="-mt-2 mb-3 text-sm text-texto-suave">{item.descricao}</p>}
+      <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+        {grupos.map((g, gi) => {
+          const n = (sel[g.id] ?? []).length;
+          return (
+            <div key={g.id}>
+              <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2 text-sm font-semibold text-texto">
+                {combo && <span className="font-numero text-texto-marca">{gi + 1}.</span>} {g.nome}
+                <span className={`text-xs font-normal ${n < g.min ? "text-texto-marca" : "text-texto-suave"}`}>({regra(g)}{g.max > 1 ? ` · ${n}/${g.max}` : ""}{g.media && g.max > 1 ? " · cobra a média dos sabores" : ""})</span>
+              </div>
+              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {opcoesDe(g.id).map((o) => {
+                  const qtd = (sel[g.id] ?? []).filter((x) => x === o.id).length;
+                  const valor = combo ? (o.preco > 0 ? brl(o.preco) : "") : o.preco > 0 ? `+${brl(o.preco)}` : "";
+                  if (g.permite_repetir && g.max !== 1) return (
+                    <div key={o.id} className={`flex min-h-11 items-center gap-2 rounded-controle border px-2 text-sm ${qtd ? "border-primaria bg-destaque" : "border-borda"}`}>
+                      <span className="min-w-0 flex-1 truncate">{o.nome}{valor && <span className="ml-1 text-xs text-texto-suave">{valor}</span>}</span>
+                      {qtd > 0 && <button type="button" onClick={() => menos(g, o.id)} aria-label={`Tirar ${o.nome}`} className="h-9 w-9 rounded-full border border-borda-forte font-bold">−</button>}
+                      {qtd > 0 && <span className="w-4 text-center font-numero font-bold">{qtd}</span>}
+                      <button type="button" onClick={() => mais(g, o.id)} disabled={g.max > 0 && n >= g.max} aria-label={`Pôr ${o.nome}`} className="h-9 w-9 rounded-full border border-borda-forte font-bold disabled:opacity-40">+</button>
+                    </div>
+                  );
+                  return (
+                    <button key={o.id} type="button" onClick={() => tocar(g, o.id)} aria-pressed={qtd > 0} className={`flex min-h-11 items-center justify-between gap-2 rounded-controle border px-3 text-left text-sm ${qtd ? "border-primaria bg-destaque" : "border-borda"}`}>
+                      <span className="truncate">{o.nome}</span>{valor && <span className="shrink-0 text-xs text-texto-suave">{valor}</span>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {comObs && (
-        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700" />
+        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
       )}
-      <div className="mt-3 flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
-        <span className="text-lg font-bold">{brl(preco)}</span>
-        <button onClick={adicionar} disabled={!okMin} className="btn-principal text-sm">Adicionar</button>
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-borda pt-3">
+        <div>
+          <div className="font-numero text-lg font-bold">{brl(preco)}</div>
+          {problema && <div className="text-xs text-texto-suave">{problema}</div>}
+        </div>
+        <button onClick={adicionar} disabled={!!problema} className="btn-principal text-sm">Adicionar</button>
       </div>
     </Overlay>
   );

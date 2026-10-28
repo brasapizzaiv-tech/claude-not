@@ -6,6 +6,7 @@ import { geocodificar, distanciaKm, temChaveMapa } from "@/lib/geo";
 import { areaDoPonto, aplicarPromoTele, promosPossiveisHoje, type AreaEntrega, type PromoTele } from "@/lib/delivery-areas";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
+import { precoComEtapas, problemaDasEscolhas } from "@/lib/combo-preco";
 
 // Aceita tanto o client do servidor (cookies/RLS) quanto o admin client.
 // Tipagem estrutural mínima pra os dois passarem.
@@ -78,30 +79,49 @@ async function resolverPizza(db: Db, tamanhoId: string, saborIds: string[], bord
   return { descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : ""), qtd: 1, preco, itemId: null };
 }
 
-async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]): Promise<Linha | null> {
-  const { data: item } = await db.from("pdv_itens").select("nome, preco, promo_preco").eq("id", itemId).single();
+// Item com etapas: combo do delivery ou marmita com complementos (migration
+// 0263). Preço = item + etapas (src/lib/combo-preco.ts): etapa comum soma,
+// etapa de pizza cobra a média dos sabores. Confere mínimo/máximo/repetição.
+// No combo a cozinha recebe uma linha por etapa ("Grande: Calabresa / Brasa");
+// nos complementos, uma linha por opção, como sempre foi.
+export async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]): Promise<Linha | null> {
+  const { data: item } = await db.from("pdv_itens").select("nome, preco, promo_preco, combo").eq("id", itemId).single();
   if (!item) return null;
-  const nomes: string[] = [];
-  let extra = 0;
-  if (opcaoIds.length > 0) {
-    const cont = new Map<string, number>();
-    for (const id of opcaoIds) cont.set(id, (cont.get(id) || 0) + 1);
-    const { data: grupos } = await db.from("pdv_item_grupos").select("id").eq("item_id", itemId);
-    const grupoIds = ((grupos ?? []) as { id: string }[]).map((g) => g.id);
-    if (grupoIds.length) {
-      const { data: ops } = await db.from("pdv_item_opcoes").select("id, nome, preco").in("id", [...cont.keys()]).in("grupo_id", grupoIds);
-      for (const o of (ops ?? []) as { id: string; nome: string; preco: number }[]) {
-        const qtd = cont.get(o.id) || 0;
-        const preco = Number(o.preco);
-        extra += preco * qtd;
-        const prefixo = qtd > 1 ? `${qtd}× ` : "";
-        nomes.push(preco > 0 ? `${prefixo}${o.nome} (+${preco})` : `${prefixo}${o.nome}`);
-      }
+  const ehCombo = !!(item as { combo?: boolean }).combo;
+  const { data: gs } = await db.from("pdv_item_grupos").select("id, nome, min, max, permite_repetir, media, ordem, pdv_pizza_tamanhos(nome)").eq("item_id", itemId).order("ordem");
+  type G = { id: string; nome: string; min: number; max: number; permite_repetir: boolean; media: boolean; pdv_pizza_tamanhos: { nome: string } | { nome: string }[] | null };
+  const grupos = (gs as G[] | null) ?? [];
+  const ops = opcaoIds.length && grupos.length
+    ? (((await db.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").in("id", [...new Set(opcaoIds)]).in("grupo_id", grupos.map((g) => g.id)).eq("ativo", true)).data) as { id: string; grupo_id: string; nome: string; preco: number }[] | null) ?? []
+    : [];
+  const opDe = new Map(ops.map((o) => [o.id, o]));
+  const porGrupo: Record<string, string[]> = {};
+  for (const id of opcaoIds) { const o = opDe.get(id); if (o) (porGrupo[o.grupo_id] ??= []).push(id); }
+  if (problemaDasEscolhas(grupos, porGrupo)) return null;
+  const preco = precoComEtapas(precoVenda(item), grupos, Object.fromEntries(Object.entries(porGrupo).map(([g, ids]) => [g, ids.map((id) => Number(opDe.get(id)!.preco))])));
+  const linhas: string[] = [];
+  for (const g of grupos) {
+    const ids = porGrupo[g.id] ?? [];
+    if (ids.length === 0) continue;
+    if (ehCombo) {
+      const tam = Array.isArray(g.pdv_pizza_tamanhos) ? g.pdv_pizza_tamanhos[0] : g.pdv_pizza_tamanhos;
+      const nomes = g.media ? nomesDosSabores(ids, (id) => opDe.get(id)?.nome ?? "?") : contarNomes(ids, (id) => opDe.get(id)?.nome ?? "?");
+      linhas.push(`${tam?.nome ?? g.nome}: ${nomes}`);
+    } else {
+      const cont = new Map<string, number>();
+      for (const id of ids) cont.set(id, (cont.get(id) || 0) + 1);
+      for (const [id, n] of cont) { const o = opDe.get(id)!; const p = Number(o.preco); linhas.push(`${n > 1 ? `${n}× ` : ""}${o.nome}${p > 0 ? ` (+${p})` : ""}`); }
     }
   }
-  const preco = r2(precoVenda(item) + extra);
-  const descricao = nomes.length ? `${item.nome}\n${nomes.map((n) => `- ${n}`).join("\n")}` : item.nome;
+  const descricao = linhas.length ? `${item.nome}\n${linhas.map((n) => `- ${n}`).join("\n")}` : item.nome;
   return { descricao, qtd: 1, preco, itemId, combo: true, promo: Number(item.promo_preco ?? 0) > 0 };
+}
+
+// "2× Guaraná / Coca" (uma etapa de lista no combo).
+function contarNomes(ids: string[], nomeDe: (id: string) => string) {
+  const cont = new Map<string, number>();
+  for (const id of ids) cont.set(id, (cont.get(id) || 0) + 1);
+  return [...cont].map(([id, n]) => `${n > 1 ? `${n}× ` : ""}${nomeDe(id)}`).join(" / ");
 }
 
 // Áreas ativas e promoções ativas (carregadas juntas; poucas linhas).

@@ -7,6 +7,8 @@ import { listarFormas } from "@/lib/formas-pagamento-server";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { PedirClient } from "./pedir-client";
 import { carregarVitrine } from "@/lib/vitrine";
+import { buscarTodas } from "@/lib/supabase/todas";
+import { aPartirDosCombos, type EtapaPreco } from "@/lib/combo-preco";
 
 export const metadata: Metadata = {
   title: "Peça online · Brasa Pizzaria e Restaurante",
@@ -36,7 +38,7 @@ export default async function PedirPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg }, { data: vendidos },
   ] = await Promise.all([
-    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, descricao, horarios").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome").eq("empresa_id", empresaId),
+    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, descricao, horarios, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome").eq("empresa_id", empresaId),
     admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app").eq("disponivel", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_item_grupos").select("item_id").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem").eq("empresa_id", empresaId),
@@ -44,8 +46,9 @@ export default async function PedirPage() {
     admin.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco").eq("empresa_id", empresaId),
-    admin.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, ordem").order("ordem").eq("empresa_id", empresaId),
-    admin.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_item_grupos").select("id, item_id, nome, min, max, permite_repetir, media, ordem").order("ordem").eq("empresa_id", empresaId),
+    // Em blocos: com os combos as opções passam de 1000 (o PostgREST corta).
+    buscarTodas((de, ate) => admin.from("pdv_item_opcoes").select("id, grupo_id, nome, preco").eq("ativo", true).order("ordem").order("id").eq("empresa_id", empresaId).range(de, ate)).then((data) => ({ data })),
     admin.from("delivery_config").select("aberto, tempo_preparo_min, aviso, config, taxa_base").eq("empresa_id", empresaId).maybeSingle(),
     admin.from("pdv_comanda_itens").select("item_id").not("item_id", "is", null).gte("criado_em", desde).order("criado_em", { ascending: false }).limit(1000).eq("empresa_id", empresaId),
   ]);
@@ -57,7 +60,7 @@ export default async function PedirPage() {
   const catHorarios = new Map(cats.map((c) => [c.nome, c.horarios]));
   // Categoria cadastrada mas desligada pro App esconde os produtos dela.
   const catBloqueada = new Set(cats.filter((c) => c.canal_app === false).map((c) => c.nome));
-  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; foto_url: string | null; descricao: string | null; horarios: Horarios }[]) ?? [])
+  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; foto_url: string | null; descricao: string | null; horarios: Horarios; combo: boolean }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
     .filter((i) => disponivelAgora(i.horarios, agora))
     .filter((i) => disponivelAgora(catHorarios.get(i.categoria || "Outros") ?? null, agora))
@@ -67,9 +70,12 @@ export default async function PedirPage() {
         id: i.id, nome: i.nome, categoria: i.categoria || "Outros",
         preco: promo > 0 ? promo : Number(i.preco) || 0,
         preco_antigo: promo > 0 ? Number(i.preco) || 0 : null,
-        foto_url: i.foto_url, descricao: i.descricao,
+        foto_url: i.foto_url, descricao: i.descricao, combo: !!i.combo,
       };
     });
+  // Combo (migration 0263): o card mostra "a partir de" (o mais barato de cada etapa).
+  const aPartir = aPartirDosCombos(itens, (grupos as (EtapaPreco & { item_id: string })[]) ?? [], (opcoes as { grupo_id: string; preco: number }[]) ?? []);
+  for (const i of itens as (typeof itens[number] & { a_partir?: number | null })[]) if (aPartir.has(i.id)) i.a_partir = aPartir.get(i.id);
 
   // Horários: aberto pra agora? dá pra agendar? quais horários (e quais lotaram)?
   const ligado = (cfg as { aberto?: boolean } | null)?.aberto !== false;

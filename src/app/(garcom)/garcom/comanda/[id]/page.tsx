@@ -68,7 +68,7 @@ export default async function GarcomComandaPage({
   if (itemIds.length) {
     const { data: gruposRows } = await supabase
       .from("pdv_item_grupos")
-      .select("id, item_id, nome, min, max, permite_repetir, ordem")
+      .select("id, item_id, nome, min, max, permite_repetir, media, ordem")
       .in("item_id", itemIds)
       .order("ordem");
     const grupos =

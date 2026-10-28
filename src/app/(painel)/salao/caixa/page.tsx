@@ -214,7 +214,7 @@ export default async function CaixaPage({
   // (buscarClientesCaixa): a tela não baixa mais os 3.2 mil clientes a cada
   // carregamento — era isso que travava o caixa depois de cada recebimento.
   const { data: menuRows } = await supabase
-    .from("pdv_itens").select("id, nome, preco, promo_preco, ativo").order("nome");
+    .from("pdv_itens").select("id, nome, preco, promo_preco, ativo").eq("combo", false).order("nome");
   const menu =
     ((menuRows as { id: string; nome: string; preco: number; promo_preco: number | null; ativo: boolean | null }[]) ?? [])
       .filter((m) => m.ativo !== false)
