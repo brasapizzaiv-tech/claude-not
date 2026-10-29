@@ -22,6 +22,7 @@ import {
 } from "../actions";
 import { salvarFotoCardapio, removerFotoCardapio, salvarDetalheCardapio, salvarFatias, adicionarSabor, desativarSabor } from "../../delivery/actions";
 import { resumoHorarios, disponivelAgora, type Horarios } from "@/lib/disponibilidade";
+import { comprimirFoto } from "@/lib/comprimir-foto";
 import { criarCombo } from "./combos/actions";
 
 /** As ações de excluir recebem FormData (vieram de formulário). */
@@ -89,11 +90,16 @@ export function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: 
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (!f) return;
-          const fd = new FormData();
-          fd.set("tipo", tipo); fd.set("id", id); fd.set("foto", f);
           start(async () => {
-            const r = await salvarFotoCardapio(fd);
-            setMsg(r.ok ? null : r.mensagem ?? "Falhou");
+            // Reduz antes de mandar (o envio pro servidor aceita até 1MB).
+            const fd = new FormData();
+            fd.set("tipo", tipo); fd.set("id", id); fd.set("foto", await comprimirFoto(f));
+            try {
+              const r = await salvarFotoCardapio(fd);
+              setMsg(r.ok ? null : r.mensagem ?? "Falhou");
+            } catch {
+              setMsg("Não consegui enviar a foto. Tente uma imagem menor.");
+            }
             if (ref.current) ref.current.value = "";
           });
         }}
