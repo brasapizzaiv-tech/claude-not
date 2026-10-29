@@ -176,6 +176,30 @@ export async function salvarHorarios(formData: FormData) {
   revalidatePath("/salao/cardapio");
 }
 
+// Horário e disponível das pizzas no app do cliente (pdv_config, src/lib/pizzas-horario.ts).
+export async function salvarPizzasDisponibilidade(formData: FormData) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return;
+  const raw = String(formData.get("horarios") ?? "").trim();
+  let horarios = "";
+  if (raw) {
+    try {
+      const p = JSON.parse(raw) as { dias?: number[]; turnos?: { ini: string; fim: string }[] };
+      const dias = (Array.isArray(p.dias) ? p.dias : []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+      const turnos = (Array.isArray(p.turnos) ? p.turnos : []).filter((t) => /^\d{2}:\d{2}$/.test(t?.ini ?? "") && /^\d{2}:\d{2}$/.test(t?.fim ?? "")).slice(0, 4);
+      horarios = dias.length === 0 && turnos.length === 0 ? "" : JSON.stringify({ dias, turnos });
+    } catch { horarios = ""; }
+  }
+  await supabase.from("pdv_config").upsert([
+    { empresa_id: empresaId, chave: "pizzas_horarios", valor: horarios },
+    { empresa_id: empresaId, chave: "pizzas_disponivel", valor: formData.get("disponivel") === "on" ? "1" : "0" },
+  ], { onConflict: "empresa_id,chave" });
+  revalidatePath("/salao/cardapio");
+  revalidatePath("/pedir");
+}
+
 // Canais onde a categoria aparece (App/Garçom/PDV).
 export async function salvarCanaisCategoria(formData: FormData) {
   const supabase = await createClient();

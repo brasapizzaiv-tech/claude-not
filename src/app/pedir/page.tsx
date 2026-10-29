@@ -9,6 +9,7 @@ import { PedirClient } from "./pedir-client";
 import { carregarVitrine } from "@/lib/vitrine";
 import { buscarTodas } from "@/lib/supabase/todas";
 import { garantirMarmitasDeHoje } from "@/lib/marmitas-do-cardapio";
+import { lerConfigPizzas, pizzasAgora } from "@/lib/pizzas-horario";
 import { aPartirDosCombos, type EtapaPreco } from "@/lib/combo-preco";
 
 export const metadata: Metadata = {
@@ -80,6 +81,12 @@ export default async function PedirPage() {
   const aPartir = aPartirDosCombos(itens, (grupos as (EtapaPreco & { item_id: string })[]) ?? [], (opcoes as { grupo_id: string; preco: number }[]) ?? []);
   for (const i of itens as (typeof itens[number] & { a_partir?: number | null })[]) if (aPartir.has(i.id)) i.a_partir = aPartir.get(i.id);
 
+  // Pizzas fora do horário (ou desligadas): somem a seção, as Novidades e os destaques.
+  const { data: cfgPizzas } = await admin.from("pdv_config").select("chave, valor").eq("empresa_id", empresaId).like("chave", "pizzas_%");
+  const temPizzas = pizzasAgora(lerConfigPizzas(Object.fromEntries(((cfgPizzas as { chave: string; valor: string }[] | null) ?? []).map((r) => [r.chave, r.valor]))), agora);
+  const pizzaTam = temPizzas ? ((tamanhos as { id: string; nome: string; max_sabores: number; fatias: number | null }[]) ?? []) : [];
+  const pizzaSab = temPizzas ? ((sabores as { id: string; nome: string; foto_url: string | null; descricao: string | null; novo: boolean | null }[]) ?? []) : [];
+
   // Horários: aberto pra agora? dá pra agendar? quais horários (e quais lotaram)?
   const ligado = (cfg as { aberto?: boolean } | null)?.aberto !== false;
   const hcfg = lerConfigHorarios((cfg as { config?: unknown } | null)?.config);
@@ -123,8 +130,8 @@ export default async function PedirPage() {
   const categorias = [...ordenadas, ...[...comItens].filter((c) => !ordenadas.includes(c)).sort()];
   // Vitrine do app (destaques, sugestões e cupons dos gatilhos) — /delivery/vitrine.
   const vitrine = await carregarVitrine(admin, empresaId, new Set(itens.map((i) => i.id)), {
-    tamanhos: new Set(((tamanhos as { id: string }[]) ?? []).map((t) => t.id)),
-    sabores: new Set(((sabores as { id: string }[]) ?? []).map((t) => t.id)),
+    tamanhos: new Set(pizzaTam.map((t) => t.id)),
+    sabores: new Set(pizzaSab.map((t) => t.id)),
   });
   const comComplemento = new Set(((gruposItem as { item_id: string }[]) ?? []).map((g) => g.item_id));
 
@@ -134,8 +141,8 @@ export default async function PedirPage() {
       categorias={categorias}
       comComplemento={[...comComplemento]}
       pizza={{
-        tamanhos: ((tamanhos as { id: string; nome: string; max_sabores: number; fatias: number | null }[]) ?? []),
-        sabores: ((sabores as { id: string; nome: string; foto_url: string | null; descricao: string | null; novo: boolean | null }[]) ?? []).map((s) => ({ ...s, novo: !!s.novo })),
+        tamanhos: pizzaTam,
+        sabores: pizzaSab.map((s) => ({ ...s, novo: !!s.novo })),
         saborPrecos: ((saborPrecos as { sabor_id: string; tamanho_id: string; preco: number }[]) ?? []).map((p) => ({ ...p, preco: Number(p.preco) })),
         bordas: ((bordas as { id: string; nome: string }[]) ?? []),
         bordaPrecos: ((bordaPrecos as { borda_id: string; tamanho_id: string; preco: number }[]) ?? []).map((p) => ({ ...p, preco: Number(p.preco) })),

@@ -16,6 +16,7 @@ import {
   salvarHorarios,
   salvarCanaisCategoria,
   adicionarCategoria,
+  salvarPizzasDisponibilidade,
   toggleCategoria,
   moverCategoria,
   excluirCategoria,
@@ -23,6 +24,7 @@ import {
 import { salvarFotoCardapio, removerFotoCardapio, salvarDetalheCardapio, salvarFatias, adicionarSabor, desativarSabor } from "../../delivery/actions";
 import { resumoHorarios, disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { comprimirFoto } from "@/lib/comprimir-foto";
+import { lerConfigPizzas, pizzasAgora } from "@/lib/pizzas-horario";
 import { criarCombo } from "./combos/actions";
 
 /** As ações de excluir recebem FormData (vieram de formulário). */
@@ -180,6 +182,7 @@ export function CardapioClient({
   const [buscaSabor, setBuscaSabor] = useState("");
   const [horariosCat, setHorariosCat] = useState<Categoria | null>(null);
   const setAdic = new Set(comAdicionais);
+  const pizzasCfg = lerConfigPizzas(config);
   const precoDe = new Map(precos.map((p) => [`${p.sabor_id}|${p.tamanho_id}`, Number(p.preco)]));
 
   const grupos = new Map<string, Item[]>();
@@ -306,6 +309,20 @@ export function CardapioClient({
             <Icone nome="pizza" tamanho={16} className="mr-1.5" /> Pizzas — tamanhos e sabores <span className="font-normal text-texto-fraco">({sabores.length} sabores)</span>
           </summary>
           <div className="space-y-4 border-t border-borda p-4">
+            {/* Quando as pizzas aparecem no app do cliente */}
+            <form action={salvarPizzasDisponibilidade} className="cartao space-y-2 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-texto"><Icone nome="relogio" tamanho={14} /> Quando as pizzas aparecem no app</span>
+                {pizzasCfg.disponivel && !pizzasAgora(pizzasCfg, new Date().getTime()) && <span className="pilula pilula-neutra">fora do horário agora</span>}
+                {!pizzasCfg.disponivel && <span className="pilula pilula-urgente">desligadas</span>}
+              </div>
+              <HorariosEditor inicial={pizzasCfg.horarios} />
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" name="disponivel" defaultChecked={pizzasCfg.disponivel} className="h-4 w-4" /> Pizzas disponíveis (desmarque se acabou, por exemplo)</label>
+                <Enviar className="btn-secundario ml-auto text-sm">Salvar horário das pizzas</Enviar>
+              </div>
+              <p className="text-xs text-texto-fraco">Fora do horário somem do app a seção Pizzas, as Novidades e os destaques de pizza. Os combos com pizza seguem o horário de cada combo.</p>
+            </form>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {tamanhos.map((t) => (
                 <form key={t.id} action={salvarFatias} className="cartao p-3">

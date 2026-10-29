@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
+import { lerConfigPizzas, pizzasAgora } from "@/lib/pizzas-horario";
 import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { avisarPedido } from "@/lib/whatsapp";
@@ -205,6 +206,14 @@ export async function enviarPedidoPublico(d: {
     if (!estado.livre) {
       return { ok: false as const, mensagem: estado.proximaAbertura ? `Estamos fechados agora — abrimos ${estado.proximaAbertura.texto}. Você pode agendar!` : "Estamos fechados agora." };
     }
+  }
+
+  // Pizza fora do horário das pizzas (ou desligadas) não entra.
+  if (d.itens.some((i) => i.kind === "pizza")) {
+    const { data: cfgPizzas } = await admin.from("pdv_config").select("chave, valor").eq("empresa_id", empresaId).like("chave", "pizzas_%");
+    const cfgP = lerConfigPizzas(Object.fromEntries(((cfgPizzas as { chave: string; valor: string }[] | null) ?? []).map((r) => [r.chave, r.valor])));
+    // Agendado: vale o horário marcado.
+    if (!pizzasAgora(cfgP, d.agendadoPara ? new Date(d.agendadoPara).getTime() : new Date().getTime())) return { ok: false as const, mensagem: "As pizzas não estão disponíveis agora — tire do carrinho e tente de novo." };
   }
 
   // Confere se todos os itens ainda estão à venda no app (canal, esgotado, horário).
