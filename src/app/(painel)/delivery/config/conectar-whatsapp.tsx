@@ -21,14 +21,14 @@ declare global { interface Window { FB?: FB; fbAsyncInit?: () => void } }
 export type ContaWpp = { telefone: string | null; nome: string | null; conectadoEm: string } | null;
 
 export function ConectarWhatsapp({ conta }: { conta: ContaWpp }) {
-  const [pronto, setPronto] = useState(false);
+  const [pronto, setPronto] = useState(() => typeof window !== "undefined" && !!window.FB);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [proc, start] = useTransition();
   const codigo = useRef<string | null | undefined>(undefined); // undefined = ainda não veio
   const ids = useRef<{ wabaId: string; phoneId: string } | null>(null);
 
   useEffect(() => {
-    if (window.FB) { setPronto(true); return; }
+    if (window.FB) return;
     window.fbAsyncInit = () => {
       window.FB?.init({ appId: APP_ID, autoLogAppEvents: true, xfbml: false, version: "v23.0" });
       setPronto(true);
@@ -41,26 +41,7 @@ export function ConectarWhatsapp({ conta }: { conta: ContaWpp }) {
     }
   }, []);
 
-  useEffect(() => {
-    function ouvir(ev: MessageEvent) {
-      if (!ev.origin.endsWith("facebook.com")) return;
-      let d: { type?: string; event?: string; data?: { phone_number_id?: string; waba_id?: string; current_step?: string; error_message?: string } };
-      try { d = typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data; } catch { return; }
-      if (d?.type !== "WA_EMBEDDED_SIGNUP") return;
-      if (d.event?.startsWith("FINISH") && d.data?.waba_id && d.data?.phone_number_id) {
-        ids.current = { wabaId: d.data.waba_id, phoneId: d.data.phone_number_id };
-        talvezGravar();
-      } else if (d.event === "CANCEL") {
-        setMsg({ ok: false, texto: `Conexão interrompida${d.data?.current_step ? ` (na etapa ${d.data.current_step})` : ""}. Pode tentar de novo.` });
-      } else if (d.event === "ERROR") {
-        setMsg({ ok: false, texto: `A Meta deu erro: ${d.data?.error_message ?? "sem detalhe"}` });
-      }
-    }
-    window.addEventListener("message", ouvir);
-    return () => window.removeEventListener("message", ouvir);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  const gravarRef = useRef<() => void>(() => {});
   function talvezGravar() {
     if (!ids.current || codigo.current === undefined) return;
     const dados = { code: codigo.current, ...ids.current };
@@ -74,6 +55,8 @@ export function ConectarWhatsapp({ conta }: { conta: ContaWpp }) {
       });
     });
   }
+
+  useEffect(() => { gravarRef.current = talvezGravar; });
 
   function conectar() {
     setMsg(null);
@@ -89,6 +72,25 @@ export function ConectarWhatsapp({ conta }: { conta: ContaWpp }) {
       extras: { setup: {}, featureType: "whatsapp_business_app_onboarding", sessionInfoVersion: "3" },
     });
   }
+
+  useEffect(() => {
+    function ouvir(ev: MessageEvent) {
+      if (!ev.origin.endsWith("facebook.com")) return;
+      let d: { type?: string; event?: string; data?: { phone_number_id?: string; waba_id?: string; current_step?: string; error_message?: string } };
+      try { d = typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data; } catch { return; }
+      if (d?.type !== "WA_EMBEDDED_SIGNUP") return;
+      if (d.event?.startsWith("FINISH") && d.data?.waba_id && d.data?.phone_number_id) {
+        ids.current = { wabaId: d.data.waba_id, phoneId: d.data.phone_number_id };
+        gravarRef.current();
+      } else if (d.event === "CANCEL") {
+        setMsg({ ok: false, texto: `Conexão interrompida${d.data?.current_step ? ` (na etapa ${d.data.current_step})` : ""}. Pode tentar de novo.` });
+      } else if (d.event === "ERROR") {
+        setMsg({ ok: false, texto: `A Meta deu erro: ${d.data?.error_message ?? "sem detalhe"}` });
+      }
+    }
+    window.addEventListener("message", ouvir);
+    return () => window.removeEventListener("message", ouvir);
+  }, []);
 
   const quando = conta ? new Date(conta.conectadoEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : null;
   return (
