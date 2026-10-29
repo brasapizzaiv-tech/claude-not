@@ -2,12 +2,18 @@ import { createClient } from "@/lib/supabase/server";
 import { NovoPedido } from "./novo-client";
 import { listarFormas } from "@/lib/formas-pagamento-server";
 import { buscarTodas } from "@/lib/supabase/todas";
+import { garantirMarmitasDeHoje } from "@/lib/marmitas-do-cardapio";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { aPartirDosCombos, type EtapaPreco } from "@/lib/combo-preco";
 
 export const metadata = { title: "Novo pedido · Delivery" };
 
 export default async function NovoPedidoPage() {
   const supabase = await createClient();
+  // 1º acesso do dia: as marmitas passam a oferecer os pratos do cardápio de hoje.
+  const empresaId = await empresaAtualId();
+  if (empresaId) await garantirMarmitasDeHoje(createAdminClient(), empresaId);
 
   const [
     { data: itensRows }, { data: catRows }, { data: gruposItem },

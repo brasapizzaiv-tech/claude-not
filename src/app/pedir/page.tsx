@@ -8,6 +8,7 @@ import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/deliv
 import { PedirClient } from "./pedir-client";
 import { carregarVitrine } from "@/lib/vitrine";
 import { buscarTodas } from "@/lib/supabase/todas";
+import { garantirMarmitasDeHoje } from "@/lib/marmitas-do-cardapio";
 import { aPartirDosCombos, type EtapaPreco } from "@/lib/combo-preco";
 
 export const metadata: Metadata = {
@@ -32,6 +33,8 @@ export default async function PedirPage() {
     );
   }
 
+  // 1º acesso do dia: as marmitas passam a oferecer os pratos do cardápio de hoje.
+  await garantirMarmitasDeHoje(admin, empresaId);
   const desde = new Date(new Date().getTime() - 60 * 86400000).toISOString();
   const [
     { data: itensRows }, { data: catRows }, { data: gruposItem },

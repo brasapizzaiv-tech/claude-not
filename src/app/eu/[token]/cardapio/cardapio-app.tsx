@@ -13,6 +13,7 @@ import {
 import type { KernDia } from "@/lib/marmitas-cardapio";
 import { MarmitaDiaForm, type PodeMarmita } from "@/components/marmita-dia-form";
 import { CardapioHistorico } from "@/components/cardapio-historico";
+import { MARMITAS, marcarPratoNovo, marcasDoDia, type QualMarmita } from "@/lib/marmitas-marcas";
 import { publicarApp, salvarBuffetApp, salvarEPublicarApp, salvarMarmitaApp, salvarSaladasApp } from "./actions";
 
 const TITULO: Record<Grupo, string> = { proteinas: "Proteínas", carboidratos: "Acompanhamentos", especial: "Especial do dia" };
@@ -50,21 +51,31 @@ export function CardapioApp({
     proteinas: linhas(cardapio?.proteinas), carboidratos: linhas(cardapio?.carboidratos), especial: linhas(cardapio?.especial),
   });
   const [sujoBuffet, setSujoBuffet] = useState(false);
+  // Em quais marmitas do delivery vai cada prato (botões do lado do prato; 0265).
+  const [marcas, setMarcas] = useState(() => marcasDoDia(cardapio?.marmitas, [...linhas(cardapio?.proteinas), ...linhas(cardapio?.carboidratos)], dow));
+  const alternarMarca = (k: QualMarmita, nome: string) => {
+    setMarcas((m) => ({ ...m, [k]: m[k].includes(nome) ? m[k].filter((n) => n !== nome) : [...m[k], nome] }));
+    setSujoBuffet(true);
+  };
   const [busca, setBusca] = useState<Record<Grupo, string>>({ proteinas: "", carboidratos: "", especial: "" });
   const status = statusCardapio(cardapio);
   const dados = () => ({
     proteinas: sel.proteinas.join("\n"), carboidratos: sel.carboidratos.join("\n"), especial: sel.especial.join("\n"),
     preco_livre: sugerido?.livre ?? cardapio?.preco_livre ?? null, preco_kg: sugerido?.kg ?? cardapio?.preco_kg ?? null,
+    marmitas: marcas,
   });
   function addItem(g: Grupo, nome: string) {
     const n = limparNomePrato(nome);
     if (!n || sel[g].some((x) => norm(x) === norm(n))) return;
     setSel((s) => ({ ...s, [g]: [...s[g], n] }));
+    if (g !== "especial") setMarcas((m) => marcarPratoNovo(m, n, dow));
     setBusca((b) => ({ ...b, [g]: "" }));
     setSujoBuffet(true);
   }
   function tirarItem(g: Grupo, i: number) {
+    const nome = sel[g][i];
     setSel((s) => ({ ...s, [g]: s[g].filter((_, j) => j !== i) }));
+    setMarcas((m) => ({ tradicional: m.tradicional.filter((n) => n !== nome), dia: m.dia.filter((n) => n !== nome), premium: m.premium.filter((n) => n !== nome) }));
     setSujoBuffet(true);
   }
   // Sugestões: antes de digitar, os mais usados do grupo; digitando, filtra.
@@ -171,9 +182,25 @@ export function CardapioApp({
               <p className="mb-2 text-xs font-bold text-orange-600">{TITULO[g]} <span className="text-texto-fraco">({sel[g].length})</span></p>
               <ul className="space-y-1.5">
                 {sel[g].map((nome, i) => (
-                  <li key={i} className="flex items-center justify-between gap-2 rounded-cartao bg-superficie-suave px-3 py-2 text-base text-texto">
-                    <span>{nome}</span>
-                    <button type="button" onClick={() => tirarItem(g, i)} className="h-9 w-9 shrink-0 rounded-controle text-lg text-red-500" aria-label="tirar">✕</button>
+                  <li key={i} className="rounded-cartao bg-superficie-suave px-3 py-2 text-base text-texto">
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{nome}</span>
+                      <button type="button" onClick={() => tirarItem(g, i)} className="h-9 w-9 shrink-0 rounded-controle text-lg text-red-500" aria-label="tirar">✕</button>
+                    </div>
+                    {g !== "especial" && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs text-texto-fraco">marmita:</span>
+                        {MARMITAS.filter((m) => !m.soSabado || dow === 6).map((m) => {
+                          const on = marcas[m.k].includes(nome);
+                          return (
+                            <button key={m.k} type="button" onClick={() => alternarMarca(m.k, nome)} aria-pressed={on}
+                              className={`min-h-11 rounded-full px-3 text-sm font-semibold ${on ? "bg-primaria text-marca-sobre-primaria" : "border border-borda-forte text-texto-fraco"}`}>
+                              {on ? "✓ " : ""}{m.rotulo}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </li>
                 ))}
                 {sel[g].length === 0 && <li className="text-sm text-texto-fraco">nenhum item</li>}

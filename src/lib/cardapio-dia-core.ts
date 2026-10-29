@@ -7,6 +7,8 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { addDiasIso, diaSemanaIso } from "@/lib/dia-cardapio";
 import type { KernDia } from "@/lib/marmitas-cardapio";
+import { hojeSP, sincronizarMarmitas } from "@/lib/marmitas-do-cardapio";
+import type { Marmitas } from "@/lib/marmitas-marcas";
 
 export type Db = ReturnType<typeof createAdminClient>;
 export type Ator = { nome: string; userId?: string | null; colabId?: string | null };
@@ -20,6 +22,9 @@ export type DadosCardapio = {
   especial: string;
   preco_livre: number | null;
   preco_kg: number | null;
+  // Em quais marmitas do delivery vai cada prato (migration 0265). Ausente =
+  // não mexe no que estava gravado.
+  marmitas?: Marmitas | null;
 };
 
 export type CardapioDia = {
@@ -34,6 +39,7 @@ export type CardapioDia = {
   publicado_por: string | null;
   alterado_em: string | null;
   alterado_por: string | null;
+  marmitas?: Marmitas | null;
 };
 export type StatusCardapio = "vazio" | "rascunho" | "publicado" | "alterado";
 export type ItemCatalogo = { id: string; grupo: string; nome: string; usos: number };
@@ -108,6 +114,7 @@ export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, 
       especial: linhas(d.especial).join("\n") || null,
       preco_livre: d.preco_livre,
       preco_kg: d.preco_kg,
+      ...(d.marmitas !== undefined ? { marmitas: marmitasDoDia(d) } : {}),
       publicado: atual?.publicado ?? false,
       atualizado_em: agora,
       alterado_em: agora,
@@ -119,7 +126,16 @@ export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, 
   // Garante os itens no catálogo (pra busca); os USOS só contam na publicação.
   await garantirNoCatalogo(db, { proteinas: linhas(d.proteinas), carboidratos: linhas(d.carboidratos), especial: linhas(d.especial) });
   await registrarPublicacao(db, data, "salvo", ator);
+  if (data === hojeSP()) await sincronizarMarmitas(db, data, empresaId);
   return { ok: true as const };
+}
+
+// Só fica marcado pras marmitas o que está nas proteínas/acompanhamentos do dia.
+function marmitasDoDia(d: DadosCardapio): Marmitas | null {
+  if (!d.marmitas) return null;
+  const no = new Set([...linhas(d.proteinas), ...linhas(d.carboidratos)]);
+  const so = (l?: string[]) => (l ?? []).filter((n) => no.has(n));
+  return { tradicional: so(d.marmitas.tradicional), dia: so(d.marmitas.dia), premium: so(d.marmitas.premium) };
 }
 
 // Publica o que está gravado (salve antes). Site e TV passam a mostrar.
@@ -137,6 +153,8 @@ export async function publicarCardapioDia(db: Db, data: string, ator: Ator) {
   if (error) return { ok: false as const, mensagem: "Não consegui publicar." };
   await recalcularUsos(db);
   await registrarPublicacao(db, data, "publicado", ator);
+  // Publicou o de hoje: as marmitas do delivery já passam a oferecer esses pratos.
+  if (data === hojeSP()) await sincronizarMarmitas(db, data, (atual as { empresa_id?: string }).empresa_id ?? null);
   return { ok: true as const };
 }
 

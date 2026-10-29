@@ -14,6 +14,7 @@ import {
   type Grupo,
 } from "./actions";
 import { statusCardapio, type CardapioDia, type ItemCatalogo, type PrecosBuffet } from "@/lib/cardapio-dia-core";
+import { MARMITAS, marcarPratoNovo, marcasDoDia, type QualMarmita } from "@/lib/marmitas-marcas";
 
 export type Cardapio = CardapioDia;
 export type ItemCat = ItemCatalogo;
@@ -98,6 +99,22 @@ export function EditorCardapio({
     carboidratos: paraLinhas(atual?.carboidratos ?? null),
     especial: paraLinhas(atual?.especial ?? null),
   });
+  // Em quais marmitas do delivery vai cada prato (do lado do prato; 0265).
+  const [marcas, setMarcas] = useState(() => marcasDoDia(atual?.marmitas, [...paraLinhas(atual?.proteinas ?? null), ...paraLinhas(atual?.carboidratos ?? null)], dow));
+  function mudarBloco(g: Grupo, novos: string[]) {
+    const antes = sel[g];
+    setSel((s) => ({ ...s, [g]: novos }));
+    if (g === "especial") return;
+    setMarcas((m) => {
+      let r = m;
+      for (const n of novos) if (!antes.includes(n)) r = marcarPratoNovo(r, n, dow);
+      const fora = antes.filter((n) => !novos.includes(n));
+      if (fora.length) r = { tradicional: r.tradicional.filter((n) => !fora.includes(n)), dia: r.dia.filter((n) => !fora.includes(n)), premium: r.premium.filter((n) => !fora.includes(n)) };
+      return r;
+    });
+  }
+  const alternarMarca = (k: QualMarmita, nome: string) =>
+    setMarcas((m) => ({ ...m, [k]: m[k].includes(nome) ? m[k].filter((n) => n !== nome) : [...m[k], nome] }));
   const [precos, setPrecos] = useState({
     livre: texto(sugerido?.livre ?? atual?.preco_livre ?? null),
     kg: texto(sugerido?.kg ?? atual?.preco_kg ?? null),
@@ -121,6 +138,7 @@ export function EditorCardapio({
           especial: sel.especial.join("\n"),
           preco_livre: numero(precos.livre),
           preco_kg: numero(precos.kg),
+          marmitas: marcas,
         },
         publicar,
       );
@@ -154,6 +172,7 @@ export function EditorCardapio({
       carboidratos: paraLinhas(origem.carboidratos),
       especial: paraLinhas(origem.especial),
     });
+    setMarcas(marcasDoDia(origem.marmitas, [...paraLinhas(origem.proteinas), ...paraLinhas(origem.carboidratos)], dow));
     setPrecos({
       livre: texto(p?.livre ?? origem.preco_livre ?? null),
       kg: texto(p?.kg ?? origem.preco_kg ?? null),
@@ -247,9 +266,23 @@ export function EditorCardapio({
                 grupo={b.grupo}
                 catalogo={itens.filter((i) => i.grupo === b.grupo)}
                 escolhidos={sel[b.grupo]}
-                aoMudar={(novos) => setSel((s) => ({ ...s, [b.grupo]: novos }))}
+                aoMudar={(novos) => mudarBloco(b.grupo, novos)}
+                marmitas={b.grupo === "especial" ? undefined : { marcas, alternar: alternarMarca, sabado: dow === 6 }}
               />
             ))}
+          </div>
+
+          {/* Marmitas do delivery: quantos pratos vão em cada uma */}
+          <div className="mt-4 cartao p-4 text-sm">
+            <div className="rotulo mb-1">Marmitas do delivery</div>
+            <p className="text-xs text-texto-suave">Do lado de cada prato, marque em quais marmitas ele vai. Ao publicar o cardápio de hoje, as marmitas do app e do delivery já mostram esses pratos.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {MARMITAS.filter((m) => !m.soSabado || dow === 6).map((m) => {
+                const n = marcas[m.k].length;
+                const naoMarcado = m.k === "dia" && n === 0 && !atual?.marmitas;
+                return <span key={m.k} className={n === 0 && !naoMarcado ? "pilula pilula-urgente" : "pilula pilula-neutra"}>{m.rotulo}: {naoMarcado ? "ainda não marcado (fica como estava)" : n === 0 ? "nenhum prato (não dá pra pedir)" : `${n} prato${n > 1 ? "s" : ""}`}</span>;
+              })}
+            </div>
           </div>
 
           {/* Preços e ações */}
@@ -433,12 +466,15 @@ function BlocoItens({
   catalogo,
   escolhidos,
   aoMudar,
+  marmitas,
 }: {
   titulo: string;
   grupo: Grupo;
   catalogo: ItemCat[];
   escolhidos: string[];
   aoMudar: (novos: string[]) => void;
+  /** Proteínas e acompanhamentos: em quais marmitas do delivery o prato vai. */
+  marmitas?: { marcas: Record<QualMarmita, string[]>; alternar: (k: QualMarmita, nome: string) => void; sabado: boolean };
 }) {
   const [busca, setBusca] = useState("");
 
@@ -492,6 +528,15 @@ function BlocoItens({
               className="flex items-center gap-2 rounded-controle bg-superficie-suave px-2.5 py-1.5 text-sm text-zinc-800 dark:text-zinc-200"
             >
               <span className="flex-1">{nome}</span>
+              {marmitas && MARMITAS.filter((m) => !m.soSabado || marmitas.sabado).map((m) => {
+                const on = marmitas.marcas[m.k].includes(nome);
+                return (
+                  <button key={m.k} type="button" onClick={() => marmitas.alternar(m.k, nome)} aria-pressed={on} title={`${on ? "Vai" : "Não vai"} na marmita ${m.rotulo}`}
+                    className={`min-h-8 rounded-full px-2 text-mini font-semibold ${on ? "bg-primaria text-marca-sobre-primaria" : "border border-borda-forte text-texto-fraco"}`}>
+                    {m.rotulo}
+                  </button>
+                );
+              })}
               <button
                 onClick={() => mover(i, -1)}
                 title="Subir"
