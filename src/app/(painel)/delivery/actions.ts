@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { codigoDaForma, tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
-import { avisarPedido, enviarTemplate, listarModelos, whatsappConfigurado } from "@/lib/whatsapp";
+import { API as GRAPH, avisarPedido, enviarTemplate, esquecerCredWpp, listarModelos, whatsappConfigurado } from "@/lib/whatsapp";
+import { empresaAtualId } from "@/lib/empresa";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
@@ -456,6 +457,61 @@ export async function testarWhatsappDelivery(telefone: string) {
   const r2 = await enviarTemplate(telefone, "hello_world", [], null, "en_US");
   if (r2.ok) return { ok: true as const };
   return { ok: false as const, mensagem: `${r.erro} — o modelo pedido_recebido ainda não existe/foi aprovado na Meta? Cadastre os 4 modelos e tente de novo.` };
+}
+
+// Botão "Conectar WhatsApp" (cadastro incorporado da Meta, coexistência com o
+// WhatsApp Business do celular — migration 0268). Recebe o código (vale 30 s)
+// e os IDs que a Meta devolveu; troca o código pelo token da empresa (precisa
+// do segredo do app, WHATSAPP_APP_SECRET; sem ele usa o WHATSAPP_TOKEN do
+// usuário do sistema), inscreve o app nos webhooks da conta e grava em
+// whatsapp_conta. O token nunca volta pra tela.
+export async function conectarWhatsappMeta(d: { code: string | null; wabaId: string; phoneId: string }) {
+  await exigirAcesso("/delivery");
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, mensagem: "Empresa não encontrada." };
+  const wabaId = String(d.wabaId ?? "").replace(/\D/g, "");
+  const phoneId = String(d.phoneId ?? "").replace(/\D/g, "");
+  if (!wabaId || !phoneId) return { ok: false as const, mensagem: "A Meta não devolveu o número conectado. Tente de novo." };
+  const appId = process.env.NEXT_PUBLIC_META_APP_ID || "2564086317384633";
+  const segredo = (process.env.WHATSAPP_APP_SECRET || "").trim();
+  let token: string | null = null;
+  if (segredo && d.code) {
+    try {
+      const r = await fetch(`${GRAPH}/oauth/access_token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ client_id: appId, client_secret: segredo, code: d.code }),
+        signal: AbortSignal.timeout(10000),
+      });
+      const j = (await r.json().catch(() => ({}))) as { access_token?: string };
+      if (r.ok && j.access_token) token = j.access_token;
+    } catch { /* cai no token do usuário do sistema */ }
+  }
+  const usar = token || process.env.WHATSAPP_TOKEN || "";
+  if (!usar) return { ok: false as const, mensagem: "Falta o WHATSAPP_APP_SECRET (ou o WHATSAPP_TOKEN) na Vercel." };
+  const auth = { Authorization: `Bearer ${usar}` };
+  try {
+    const pr = await fetch(`${GRAPH}/${phoneId}?fields=display_phone_number,verified_name`, { headers: auth, signal: AbortSignal.timeout(10000), cache: "no-store" });
+    const pj = (await pr.json().catch(() => ({}))) as { display_phone_number?: string; verified_name?: string; error?: { message?: string } };
+    if (!pr.ok) return { ok: false as const, mensagem: `A Meta não deixou ler o número: ${pj.error?.message ?? `HTTP ${pr.status}`}` };
+    // Webhooks da conta (status das mensagens, respostas dos clientes e o que
+    // sai do celular) chegam no /api/whatsapp/webhook.
+    const sr = await fetch(`${GRAPH}/${wabaId}/subscribed_apps`, { method: "POST", headers: auth, signal: AbortSignal.timeout(10000) });
+    const sj = (await sr.json().catch(() => ({}))) as { error?: { message?: string } };
+    const supabase = await createClient();
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await createAdminClient().from("whatsapp_conta").upsert({
+      empresa_id: empresaId, waba_id: wabaId, phone_id: phoneId,
+      telefone: pj.display_phone_number ?? null, nome: pj.verified_name ?? null,
+      token, modo: "coexistencia", conectado_em: new Date().toISOString(), conectado_por: u.user?.id ?? null,
+    }, { onConflict: "empresa_id" });
+    if (error) return { ok: false as const, mensagem: `Não consegui gravar: ${error.message}` };
+    esquecerCredWpp();
+    revalidatePath("/delivery/config");
+    return { ok: true as const, telefone: pj.display_phone_number ?? null, nome: pj.verified_name ?? null, avisoWebhook: sr.ok ? null : (sj.error?.message ?? `HTTP ${sr.status}`) };
+  } catch (e) {
+    return { ok: false as const, mensagem: e instanceof Error ? e.message : "falha de rede" };
+  }
 }
 
 export async function modelosWhatsappDelivery() {

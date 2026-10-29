@@ -8,6 +8,8 @@ import { pixDiagnostico } from "@/lib/pix";
 import { whatsappConfigurado } from "@/lib/whatsapp";
 import { PixTeste } from "./pix-teste";
 import { WhatsappTeste } from "./whatsapp-teste";
+import { ConectarWhatsapp, type ContaWpp } from "./conectar-whatsapp";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { HorariosConfig } from "./horarios-form";
 import { TurnosNumeracao } from "./turnos-numeracao";
 import { empresaAtualId } from "@/lib/empresa";
@@ -37,6 +39,12 @@ export default async function DeliveryConfigPage() {
   const empresaId = await empresaAtualId();
   const { data: agoraT } = empresaId ? await supabase.rpc("delivery_turno_de", { p_empresa: empresaId, p_quando: new Date().toISOString() }) : { data: null };
   const t0 = ((agoraT as { turno: string; turno_data: string }[] | null) ?? [])[0];
+  // Número conectado pelo botão (whatsapp_conta só é lida pelo servidor; o token não sai daqui).
+  const { data: contaRow } = empresaId
+    ? await createAdminClient().from("whatsapp_conta").select("telefone, nome, conectado_em").eq("empresa_id", empresaId).maybeSingle()
+    : { data: null };
+  const cw = contaRow as { telefone: string | null; nome: string | null; conectado_em: string } | null;
+  const contaWpp: ContaWpp = cw ? { telefone: cw.telefone, nome: cw.nome, conectadoEm: cw.conectado_em } : null;
   const turnoAgora = t0 ? `${t0.turno} de ${t0.turno_data.slice(8, 10)}/${t0.turno_data.slice(5, 7)}` : null;
 
   return (
@@ -53,7 +61,8 @@ export default async function DeliveryConfigPage() {
 
       <PixTeste banco={pix.banco} ambiente={pix.ambiente} configurado={pix.configurado} faltando={pix.faltando} />
 
-      <WhatsappTeste configurado={whatsappConfigurado()} />
+      <ConectarWhatsapp conta={contaWpp} />
+      <WhatsappTeste configurado={whatsappConfigurado() || !!contaWpp} />
 
       <form action={salvarConfigDelivery} className="space-y-4">
         <div>

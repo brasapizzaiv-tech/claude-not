@@ -8,11 +8,32 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const TOKEN = process.env.WHATSAPP_TOKEN || "";
 const PHONE_ID = process.env.WHATSAPP_PHONE_ID || "";
-const API = "https://graph.facebook.com/v21.0";
+const WABA_ENV = (process.env.WHATSAPP_WABA_ID || "1173523463104133").trim();
+export const API = "https://graph.facebook.com/v21.0";
 const SITE = "https://www.brasarestaurante.com.br";
 
 export function whatsappConfigurado() {
   return !!(TOKEN && PHONE_ID);
+}
+
+// Número em uso: o conectado pelo botão "Conectar WhatsApp" (whatsapp_conta,
+// migration 0268, coexistência com o app do celular); sem ele, as variáveis da
+// Vercel. Token da linha vazio = usa o WHATSAPP_TOKEN (usuário do sistema).
+// Cache curto pra não ler o banco a cada mensagem de uma campanha.
+type Cred = { token: string; phoneId: string; waba: string };
+let cacheCred: { em: number; c: Cred | null } | null = null;
+export function esquecerCredWpp() { cacheCred = null; }
+async function cred(): Promise<Cred | null> {
+  if (cacheCred && Date.now() - cacheCred.em < 60_000) return cacheCred.c;
+  let c: Cred | null = null;
+  try {
+    const { data } = await createAdminClient().from("whatsapp_conta").select("token, phone_id, waba_id").order("conectado_em", { ascending: false }).limit(1).maybeSingle();
+    const r = data as { token: string | null; phone_id: string; waba_id: string } | null;
+    if (r?.phone_id && (r.token || TOKEN)) c = { token: r.token || TOKEN, phoneId: r.phone_id, waba: r.waba_id };
+  } catch { /* sem a tabela: segue com a Vercel */ }
+  if (!c && TOKEN && PHONE_ID) c = { token: TOKEN, phoneId: PHONE_ID, waba: WABA_ENV };
+  cacheCred = { em: Date.now(), c };
+  return c;
 }
 
 // 55 + DDD + número. Celular brasileiro tem 9 dígitos depois do DDD; se vier
@@ -32,7 +53,8 @@ export async function enviarTemplate(telefone: string, template: string, params:
   const admin = createAdminClient();
   const to = telefoneWa(telefone);
   if (!to) return { ok: false, erro: "telefone inválido" };
-  if (!whatsappConfigurado()) return { ok: false, erro: "WhatsApp não configurado" };
+  const c = await cred();
+  if (!c) return { ok: false, erro: "WhatsApp não configurado" };
   const corpo = {
     messaging_product: "whatsapp",
     to,
@@ -44,9 +66,9 @@ export async function enviarTemplate(telefone: string, template: string, params:
     },
   };
   try {
-    const r = await fetch(`${API}/${PHONE_ID}/messages`, {
+    const r = await fetch(`${API}/${c.phoneId}/messages`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${c.token}`, "Content-Type": "application/json" },
       body: JSON.stringify(corpo),
       signal: AbortSignal.timeout(10000),
     });
@@ -70,11 +92,12 @@ export async function enviarTexto(telefone: string, texto: string, pedidoId?: st
   const admin = createAdminClient();
   const to = telefoneWa(telefone);
   if (!to) return { ok: false, erro: "telefone inválido" };
-  if (!whatsappConfigurado()) return { ok: false, erro: "WhatsApp não configurado" };
+  const c = await cred();
+  if (!c) return { ok: false, erro: "WhatsApp não configurado" };
   try {
-    const r = await fetch(`${API}/${PHONE_ID}/messages`, {
+    const r = await fetch(`${API}/${c.phoneId}/messages`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${c.token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body: texto.slice(0, 4000) } }),
       signal: AbortSignal.timeout(10000),
     });
@@ -136,11 +159,12 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
 // Modelos cadastrados na conta (nome, idioma, categoria, status de aprovação).
 // Usa WHATSAPP_WABA_ID; sem ela, o ID da conta da Brasa.
 export async function listarModelos(): Promise<{ ok: true; modelos: { nome: string; idioma: string; categoria: string; status: string; motivo: string | null }[] } | { ok: false; erro: string }> {
-  if (!TOKEN) return { ok: false, erro: "WhatsApp não configurado" };
-  const waba = (process.env.WHATSAPP_WABA_ID || "1173523463104133").trim();
+  const c = await cred();
+  if (!c) return { ok: false, erro: "WhatsApp não configurado" };
+  const waba = c.waba;
   try {
     const r = await fetch(`${API}/${waba}/message_templates?fields=name,language,category,status,rejected_reason&limit=100`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }, signal: AbortSignal.timeout(10000),
+      headers: { Authorization: `Bearer ${c.token}` }, signal: AbortSignal.timeout(10000),
     });
     const j = (await r.json().catch(() => ({}))) as { data?: { name: string; language: string; category: string; status: string; rejected_reason?: string }[]; error?: { message?: string } };
     if (!r.ok) return { ok: false, erro: j.error?.message ?? `HTTP ${r.status}` };
@@ -159,13 +183,12 @@ export type ModeloWpp = {
   rodape: string | null;
 };
 
-const WABA = () => (process.env.WHATSAPP_WABA_ID || "1173523463104133").trim();
-
 export async function listarModelosCompletos(): Promise<{ ok: true; modelos: ModeloWpp[] } | { ok: false; erro: string }> {
-  if (!TOKEN) return { ok: false, erro: "WhatsApp não configurado" };
+  const c = await cred();
+  if (!c) return { ok: false, erro: "WhatsApp não configurado" };
   try {
-    const r = await fetch(`${API}/${WABA()}/message_templates?fields=name,language,category,status,rejected_reason,components&limit=200`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }, signal: AbortSignal.timeout(10000), cache: "no-store",
+    const r = await fetch(`${API}/${c.waba}/message_templates?fields=name,language,category,status,rejected_reason,components&limit=200`, {
+      headers: { Authorization: `Bearer ${c.token}` }, signal: AbortSignal.timeout(10000), cache: "no-store",
     });
     type Comp = { type: string; format?: string; text?: string };
     const j = (await r.json().catch(() => ({}))) as { data?: { name: string; language: string; category: string; status: string; rejected_reason?: string; components?: Comp[] }[]; error?: { message?: string } };
@@ -193,7 +216,8 @@ export async function listarModelosCompletos(): Promise<{ ok: true; modelos: Mod
 // Cria um modelo de texto na Meta (vai pra aprovação). Nome: minúsculas e _.
 // As variáveis {{1}}, {{2}}... precisam de exemplo — a Meta recusa sem.
 export async function criarModeloWpp(input: { nome: string; categoria: "MARKETING" | "UTILITY"; corpo: string; rodape?: string | null; exemplos: string[] }) {
-  if (!TOKEN) return { ok: false as const, erro: "WhatsApp não configurado" };
+  const c = await cred();
+  if (!c) return { ok: false as const, erro: "WhatsApp não configurado" };
   const nome = input.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
   if (!nome) return { ok: false as const, erro: "Dê um nome ao modelo." };
   const corpo = input.corpo.trim();
@@ -205,9 +229,9 @@ export async function criarModeloWpp(input: { nome: string; categoria: "MARKETIN
   }];
   if (input.rodape?.trim()) components.push({ type: "FOOTER", text: input.rodape.trim().slice(0, 60) });
   try {
-    const r = await fetch(`${API}/${WABA()}/message_templates`, {
+    const r = await fetch(`${API}/${c.waba}/message_templates`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${c.token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ name: nome, language: "pt_BR", category: input.categoria, components }),
       signal: AbortSignal.timeout(15000),
     });
@@ -223,14 +247,15 @@ export async function criarModeloWpp(input: { nome: string; categoria: "MARKETIN
 export async function enviarModeloWpp(telefone: string, modelo: string, idioma: string, params: string[], imagemUrl?: string | null): Promise<Resultado> {
   const to = telefoneWa(telefone);
   if (!to) return { ok: false, erro: "telefone inválido" };
-  if (!whatsappConfigurado()) return { ok: false, erro: "WhatsApp não configurado" };
+  const c = await cred();
+  if (!c) return { ok: false, erro: "WhatsApp não configurado" };
   const components: Record<string, unknown>[] = [];
   if (imagemUrl) components.push({ type: "header", parameters: [{ type: "image", image: { link: imagemUrl } }] });
   if (params.length) components.push({ type: "body", parameters: params.map((p) => ({ type: "text", text: (String(p).trim() || "-").slice(0, 1000) })) });
   try {
-    const r = await fetch(`${API}/${PHONE_ID}/messages`, {
+    const r = await fetch(`${API}/${c.phoneId}/messages`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${c.token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ messaging_product: "whatsapp", to, type: "template", template: { name: modelo, language: { code: idioma || "pt_BR" }, components } }),
       signal: AbortSignal.timeout(10000),
     });
