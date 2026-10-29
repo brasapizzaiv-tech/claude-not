@@ -39,7 +39,7 @@ export default async function PedirPage() {
     { data: grupos }, { data: opcoes }, { data: cfg }, { data: vendidos },
   ] = await Promise.all([
     admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, descricao, horarios, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome").eq("empresa_id", empresaId),
-    admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app").eq("disponivel", true).order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app, disponivel").order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_item_grupos").select("item_id").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao, novo").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
@@ -56,10 +56,10 @@ export default async function PedirPage() {
   // Horários de disponibilidade (categoria e item) — só o que está no horário
   // aparece pro cliente agora.
   const agora = new Date().getTime();
-  const cats = ((catRows as { nome: string; horarios: Horarios; canal_app: boolean }[]) ?? []);
+  const cats = ((catRows as { nome: string; horarios: Horarios; canal_app: boolean; disponivel: boolean }[]) ?? []);
   const catHorarios = new Map(cats.map((c) => [c.nome, c.horarios]));
-  // Categoria cadastrada mas desligada pro App esconde os produtos dela.
-  const catBloqueada = new Set(cats.filter((c) => c.canal_app === false).map((c) => c.nome));
+  // Categoria desligada pro App ou indisponível esconde os produtos dela.
+  const catBloqueada = new Set(cats.filter((c) => c.canal_app === false || c.disponivel === false).map((c) => c.nome));
   const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; foto_url: string | null; descricao: string | null; horarios: Horarios; combo: boolean }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
     .filter((i) => disponivelAgora(i.horarios, agora))

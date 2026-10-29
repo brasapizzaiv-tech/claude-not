@@ -15,7 +15,7 @@ export default async function NovoPedidoPage() {
     { data: grupos }, { data: opcoes }, { data: cfg },
   ] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome"),
-    supabase.from("pdv_categorias").select("nome, ordem, canal_app").eq("disponivel", true).order("ordem"),
+    supabase.from("pdv_categorias").select("nome, ordem, canal_app, disponivel").order("ordem"),
     supabase.from("pdv_item_grupos").select("item_id"),
     supabase.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, ordem").order("ordem"),
     supabase.from("pdv_pizza_sabores").select("id, nome").eq("ativo", true).order("ordem"),
@@ -29,7 +29,7 @@ export default async function NovoPedidoPage() {
 
   // Categoria desligada pro canal App também some aqui (mesmo cardápio do app).
   const catBloqueada = new Set(
-    (((catRows as { nome: string; canal_app?: boolean }[]) ?? [])).filter((c) => c.canal_app === false).map((c) => c.nome),
+    (((catRows as { nome: string; canal_app?: boolean; disponivel?: boolean }[]) ?? [])).filter((c) => c.canal_app === false || c.disponivel === false).map((c) => c.nome),
   );
   const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco?: number | null; combo?: boolean }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))

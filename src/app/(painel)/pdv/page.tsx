@@ -11,12 +11,12 @@ export default async function PdvPage() {
   const supabase = await createClient();
   const [{ data: itensRows }, { data: catRows }] = await Promise.all([
     supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, por_kg").eq("ativo", true).eq("canal_pdv", true).eq("disponivel", true).order("nome"),
-    supabase.from("pdv_categorias").select("nome, ordem, disponivel, canal_pdv").eq("disponivel", true).order("ordem"),
+    supabase.from("pdv_categorias").select("nome, ordem, disponivel, canal_pdv").order("ordem"),
   ]);
 
   // Categoria desligada pro canal PDV esconde os produtos dela.
   const catBloqueada = new Set(
-    (((catRows as { nome: string; canal_pdv?: boolean }[]) ?? [])).filter((c) => c.canal_pdv === false).map((c) => c.nome),
+    (((catRows as { nome: string; canal_pdv?: boolean; disponivel?: boolean }[]) ?? [])).filter((c) => c.canal_pdv === false || c.disponivel === false).map((c) => c.nome),
   );
   const itens: ItemMenu[] = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco?: number | null; por_kg?: boolean }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))

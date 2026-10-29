@@ -213,11 +213,11 @@ export async function enviarPedidoPublico(d: {
     const agora = new Date().getTime();
     const [{ data: its }, { data: cats }] = await Promise.all([
       admin.from("pdv_itens").select("id, nome, ativo, delivery, disponivel, horarios, categoria").in("id", idsPedidos).eq("empresa_id", empresaId),
-      admin.from("pdv_categorias").select("nome, horarios, canal_app").eq("empresa_id", empresaId),
+      admin.from("pdv_categorias").select("nome, horarios, canal_app, disponivel").eq("empresa_id", empresaId),
     ]);
-    const catRows = ((cats ?? []) as { nome: string; horarios: Horarios; canal_app: boolean }[]);
+    const catRows = ((cats ?? []) as { nome: string; horarios: Horarios; canal_app: boolean; disponivel: boolean }[]);
     const catH = new Map(catRows.map((c) => [c.nome, c.horarios]));
-    const catBloqueada = new Set(catRows.filter((c) => c.canal_app === false).map((c) => c.nome));
+    const catBloqueada = new Set(catRows.filter((c) => c.canal_app === false || c.disponivel === false).map((c) => c.nome));
     for (const it of (its ?? []) as { id: string; nome: string; ativo: boolean; delivery: boolean; disponivel: boolean; horarios: Horarios; categoria: string | null }[]) {
       const ok = it.ativo && it.delivery && it.disponivel
         && !catBloqueada.has(it.categoria || "Outros")
