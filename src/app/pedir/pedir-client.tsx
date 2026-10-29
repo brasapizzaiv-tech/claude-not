@@ -220,10 +220,50 @@ export function PedirClient({
   const opcoesDe = (grupoId: string) => complementos.opcoes.filter((o) => o.grupo_id === grupoId);
   const itemDe = useMemo(() => new Map(itens.map((i) => [i.id, i])), [itens]);
 
+  // Busca: só os itens que batem. Sem busca, o cardápio inteiro rola numa
+  // página só, uma seção por categoria (pedido do Rafael, 28/10/2026).
   const visiveis = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    return itens.filter((i) => (!q ? i.categoria === aba : i.nome.toLowerCase().includes(q)));
-  }, [itens, aba, busca]);
+    return q ? itens.filter((i) => i.nome.toLowerCase().includes(q)) : [];
+  }, [itens, busca]);
+  const porCategoria = useMemo(() => categorias.map((c) => ({ c, itens: itens.filter((i) => i.categoria === c) })).filter((s) => s.itens.length > 0), [itens, categorias]);
+
+  // Barra de categorias: tocar leva até a seção; rolar a página acende a
+  // categoria que está na tela (e a barra anda junto pra ela ficar visível).
+  const secoes = useRef(new Map<string, HTMLElement>());
+  const barraRef = useRef<HTMLDivElement>(null);
+  const topoRef = useRef<HTMLDivElement>(null);
+  const indoAte = useRef(0); // enquanto rola até a seção tocada, a rolagem não troca a categoria
+  const altTopo = () => (topoRef.current?.getBoundingClientRect().height ?? 0) + 8;
+  function irPara(c: string) {
+    const el = secoes.current.get(c);
+    setAba(c);
+    if (!el) return;
+    indoAte.current = Date.now() + 900;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - altTopo(), behavior: "smooth" });
+  }
+  useEffect(() => {
+    if (fase !== "menu" || busca) return;
+    let quadro = 0;
+    const olhar = () => {
+      quadro = 0;
+      if (Date.now() < indoAte.current) return;
+      const limite = altTopo() + 4;
+      let atual: string | null = null;
+      for (const [c, el] of secoes.current) if (el.isConnected && el.getBoundingClientRect().top <= limite) atual = c;
+      const primeira = secoes.current.keys().next().value ?? null;
+      const nova = atual ?? primeira;
+      if (nova) setAba((a) => (a === nova ? a : nova));
+    };
+    const rolou = () => { if (!quadro) quadro = requestAnimationFrame(olhar); };
+    window.addEventListener("scroll", rolou, { passive: true });
+    return () => { window.removeEventListener("scroll", rolou); if (quadro) cancelAnimationFrame(quadro); };
+  }, [fase, busca]);
+  useEffect(() => {
+    const barra = barraRef.current;
+    const chip = barra?.querySelector<HTMLElement>(`[data-cat="${CSS.escape(aba)}"]`);
+    if (barra && chip) barra.scrollTo({ left: chip.offsetLeft - barra.clientWidth / 2 + chip.clientWidth / 2, behavior: "smooth" });
+  }, [aba]);
 
   // menor preço de sabor por tamanho ("a partir de")
   const aPartirDe = useMemo(() => {
@@ -658,6 +698,19 @@ export function PedirClient({
   }
 
   // fase "menu"
+  const cardItem = (i: Item) => {
+    const noCarrinho = cart.filter((l) => l.payload.kind !== "pizza" && "itemId" in l.payload && l.payload.itemId === i.id).reduce((s, l) => s + l.qtd, 0);
+    return (
+      <button key={i.id} onClick={() => clicarItem(i)} className={`cartao flex w-full items-center justify-between gap-3 p-3.5 text-left ${noCarrinho > 0 ? "!bg-destaque shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : ""}`}>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold leading-tight text-texto">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</div>
+          {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-texto-suave">{i.descricao}</div>}
+          <div className="mt-1 flex items-center gap-1.5 font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="pilula pilula-urgente">promo</span>}</div>
+        </div>
+        {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-mesa bg-primaria text-lg font-bold text-marca-sobre-primaria" aria-hidden>+</span>}
+      </button>
+    );
+  };
   const destaque = maisVendidos.map((id) => itemDe.get(id)).filter(Boolean) as Item[];
   const novidades = pizza.sabores.filter((s) => s.novo);
   const linhaInfo = [
@@ -679,19 +732,19 @@ export function PedirClient({
             <span className="inline-flex items-center gap-1.5"><Icone nome="megafone" tamanho={14} /> {aviso}</span>
           </div>
       )}
-      <div className="sticky top-0 z-10 bg-painel-fundo/95 px-3 pb-2 pt-3 backdrop-blur">
+      <div ref={topoRef} className="sticky top-0 z-10 bg-painel-fundo/95 px-3 pb-2 pt-3 backdrop-blur">
         <label className="flex h-[46px] items-center gap-2.5 rounded-controle bg-painel-cartao px-4 shadow-controle">
           <Icone nome="buscar" tamanho={18} className="shrink-0 text-texto-fraco" />
           <span className="sr-only">Buscar no cardápio</span>
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pizza, lanche, bebida…" className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-texto placeholder:text-texto-fraco" />
         </label>
         {!busca && (
-          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+          <div ref={barraRef} className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
             {pizza.tamanhos.length > 0 && (
-              <button onClick={() => setAba("__pizzas__")} aria-pressed={aba === "__pizzas__"} className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${aba === "__pizzas__" ? "bg-marca-escuro text-painel-foco-texto" : "bg-painel-cartao text-texto shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pizza" tamanho={14} /> Pizzas</span></button>
+              <button data-cat="__pizzas__" onClick={() => irPara("__pizzas__")} aria-pressed={aba === "__pizzas__"} className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${aba === "__pizzas__" ? "bg-painel-foco-fundo text-painel-foco-texto" : "bg-painel-cartao text-texto shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="pizza" tamanho={14} /> Pizzas</span></button>
             )}
-            {categorias.map((c) => (
-              <button key={c} onClick={() => setAba(c)} aria-pressed={aba === c} className={`min-h-11 shrink-0 rounded-full px-4 text-sm ${aba === c ? "bg-marca-escuro font-semibold text-painel-foco-texto" : "bg-painel-cartao text-texto shadow-controle"}`}>{c}</button>
+            {porCategoria.map(({ c }) => (
+              <button key={c} data-cat={c} onClick={() => irPara(c)} aria-pressed={aba === c} className={`min-h-11 shrink-0 rounded-full px-4 text-sm ${aba === c ? "bg-painel-foco-fundo font-semibold text-painel-foco-texto" : "bg-painel-cartao text-texto shadow-controle"}`}>{c}</button>
             ))}
           </div>
         )}
@@ -725,7 +778,7 @@ export function PedirClient({
       )}
 
       {/* Os mais vendidos */}
-      {!busca && destaque.length > 0 && aba !== "__pizzas__" && (
+      {!busca && destaque.length > 0 && (
         <div className="pt-3">
           <h2 className="flex items-center gap-1.5 px-3 font-numero text-lg font-bold text-texto"><Icone nome="fogo" tamanho={16} className="text-orange-500" /> Os mais vendidos</h2>
           <div className="flex gap-2 overflow-x-auto p-3">
@@ -742,37 +795,41 @@ export function PedirClient({
         </div>
       )}
 
-      <div className="space-y-2 p-3 pb-28">
-        {/* Pizzas por tamanho */}
-        {!busca && aba === "__pizzas__" && pizza.tamanhos.map((t) => {
-          const min = aPartirDe.get(t.id);
-          return (
-            <button key={t.id} onClick={() => setPzTamanho(t.id)} className="cartao flex w-full items-center justify-between p-4 text-left">
-              <div>
-                <div className="font-numero text-base font-bold text-texto">{t.nome}</div>
-                <div className="text-xs text-texto-suave">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}{t.fatias ? `, ${t.fatias} fatia${t.fatias > 1 ? "s" : ""}` : ""}</div>
-                {min != null && <div className="mt-1 font-numero text-sm font-bold text-texto-marca">a partir de {brl(min)}</div>}
-              </div>
-              <Icone nome="pizza" tamanho={30} className="text-orange-500" />
-            </button>
-          );
-        })}
-
-        {/* Itens */}
-        {(busca || aba !== "__pizzas__") && visiveis.map((i) => {
-          const noCarrinho = cart.filter((l) => l.payload.kind !== "pizza" && "itemId" in l.payload && l.payload.itemId === i.id).reduce((s, l) => s + l.qtd, 0);
-          return (
-            <button key={i.id} onClick={() => clicarItem(i)} className={`cartao flex w-full items-center justify-between gap-3 p-3.5 text-left ${noCarrinho > 0 ? "!bg-destaque shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : ""}`}>
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold leading-tight text-texto">{i.nome}{noCarrinho > 0 ? ` (${noCarrinho})` : ""}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</div>
-                {i.descricao && <div className="mt-0.5 line-clamp-2 text-xs leading-tight text-texto-suave">{i.descricao}</div>}
-                <div className="mt-1 flex items-center gap-1.5 font-numero text-sm font-bold text-texto">{i.preco_antigo != null && <span className="text-xs font-normal text-texto-fraco line-through">{brl(i.preco_antigo)}</span>}{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "consulte"}{i.preco_antigo != null && <span className="pilula pilula-urgente">promo</span>}</div>
-              </div>
-              {i.foto_url ? <FotoItem url={i.foto_url} /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-mesa bg-primaria text-lg font-bold text-marca-sobre-primaria" aria-hidden>+</span>}
-            </button>
-          );
-        })}
-        {(busca || aba !== "__pizzas__") && visiveis.length === 0 && <p className="py-10 text-center text-sm text-texto-fraco">Nada encontrado.</p>}
+      <div className="p-3 pb-28">
+        {busca ? (
+          <div className="space-y-2">
+            {visiveis.map((i) => cardItem(i))}
+            {visiveis.length === 0 && <p className="py-10 text-center text-sm text-texto-fraco">Nada encontrado.</p>}
+          </div>
+        ) : (
+          <>
+            {/* Pizzas por tamanho */}
+            {pizza.tamanhos.length > 0 && (
+              <section ref={(el) => { if (el) secoes.current.set("__pizzas__", el); else secoes.current.delete("__pizzas__"); }} className="space-y-2 pb-4">
+                <h2 className="flex items-center gap-1.5 pt-1 font-numero text-lg font-bold text-texto"><Icone nome="pizza" tamanho={16} className="text-orange-500" /> Pizzas</h2>
+                {pizza.tamanhos.map((t) => {
+                  const min = aPartirDe.get(t.id);
+                  return (
+                    <button key={t.id} onClick={() => setPzTamanho(t.id)} className="cartao flex w-full items-center justify-between p-4 text-left">
+                      <div>
+                        <div className="font-numero text-base font-bold text-texto">{t.nome}</div>
+                        <div className="text-xs text-texto-suave">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}{t.fatias ? `, ${t.fatias} fatia${t.fatias > 1 ? "s" : ""}` : ""}</div>
+                        {min != null && <div className="mt-1 font-numero text-sm font-bold text-texto-marca">a partir de {brl(min)}</div>}
+                      </div>
+                      <Icone nome="pizza" tamanho={30} className="text-orange-500" />
+                    </button>
+                  );
+                })}
+              </section>
+            )}
+            {porCategoria.map(({ c, itens: daCat }) => (
+              <section key={c} ref={(el) => { if (el) secoes.current.set(c, el); else secoes.current.delete(c); }} className="space-y-2 pb-4">
+                <h2 className="flex items-center gap-1.5 pt-1 font-numero text-lg font-bold text-texto"><Icone nome={iconeDaCategoria(c)} tamanho={16} className="text-orange-500" /> {c}</h2>
+                {daCat.map((i) => cardItem(i))}
+              </section>
+            ))}
+          </>
+        )}
       </div>
 
       {qtdItens > 0 && (
