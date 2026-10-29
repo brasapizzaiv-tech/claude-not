@@ -3,7 +3,7 @@ import { CONTATO_EMAIL, CORES, FONTE_TITULO } from "../marca";
 
 export const metadata: Metadata = {
   title: "Política de privacidade · Motelli",
-  description: "O que o Motelli e o app Motelli Entregador coletam, por quê, por quanto tempo e como pedir seus dados.",
+  description: "O que o Motelli, o app Motelli Entregador e a conexão com o WhatsApp coletam, por quê, por quanto tempo e como pedir ou apagar seus dados.",
 };
 
 // A empresa responsável só aparece aqui, porque a LGPD manda dizer quem
@@ -14,16 +14,16 @@ const RESPONSAVEL = {
   cnpj: "67.140.718/0001-54",
 };
 
-const ATUALIZADA_EM = "30 de setembro de 2026";
+const ATUALIZADA_EM = "29 de outubro de 2026";
 
 // A política é escrita como conversa, não como contrato: quem lê é o
 // entregador ou o dono do restaurante, no celular. Cada seção responde uma
 // pergunta que essa pessoa faria.
-const SECOES: { titulo: string; paragrafos: (string | string[])[] }[] = [
+const SECOES: { titulo: string; id?: string; paragrafos: (string | string[])[] }[] = [
   {
     titulo: "Do que esta política trata",
     paragrafos: [
-      "Do aplicativo Motelli Entregador, disponível na Google Play, e das telas do sistema Motelli que o entregador abre por ele. O Motelli é um sistema de gestão para restaurantes; cada restaurante que o usa é responsável pelos dados das pessoas que trabalham com ele, e o Motelli guarda e processa esses dados em nome do restaurante.",
+      "Do aplicativo Motelli Entregador, disponível na Google Play, das telas do sistema Motelli que o entregador abre por ele e da conexão do Motelli com o WhatsApp Business do restaurante. O Motelli é um sistema de gestão para restaurantes; cada restaurante que o usa é responsável pelos dados das pessoas que trabalham com ele, e o Motelli guarda e processa esses dados em nome do restaurante.",
     ],
   },
   {
@@ -50,9 +50,19 @@ const SECOES: { titulo: string; paragrafos: (string | string[])[] }[] = [
     ],
   },
   {
+    titulo: "WhatsApp do restaurante",
+    id: "whatsapp",
+    paragrafos: [
+      "O restaurante pode conectar o número de WhatsApp Business dele ao Motelli, pelo login oficial da Meta. A conexão é sempre feita pelo próprio restaurante e pode ser desfeita por ele a qualquer momento nas configurações do WhatsApp Business ou no Gerenciador de Negócios da Meta.",
+      "Com a conexão, o Motelli recebe da Meta a identificação da conta e do número do WhatsApp Business, o status das mensagens enviadas (enviada, entregue, lida, falhou) e as mensagens que os clientes mandam para esse número. Guarda também o telefone do cliente e o texto das mensagens que o sistema envia.",
+      "Esses dados servem só para o restaurante falar com os próprios clientes: avisar que o pedido foi recebido, confirmado, saiu para entrega ou foi entregue, e mandar as promoções que o restaurante criar. Quem responde \"SAIR\" deixa de receber promoções na hora; os avisos dos pedidos continuam.",
+      "As mensagens não são lidas pelo Motelli para outro fim, não são usadas para publicidade de terceiros e não são vendidas nem cedidas. O registro das mensagens fica guardado enquanto o restaurante usar o Motelli e é apagado quando ele pedir ou deixar de usar o sistema.",
+    ],
+  },
+  {
     titulo: "Quem vê os dados",
     paragrafos: [
-      "O restaurante que cadastrou o entregador, pelas telas de gestão dele. O Motelli, para hospedar e manter o sistema. Os provedores de nuvem onde o sistema roda, que guardam os dados em nome do Motelli e não os usam para nada mais. Autoridades, quando a lei obrigar.",
+      "O restaurante que cadastrou o entregador ou que conectou o WhatsApp, pelas telas de gestão dele. O Motelli, para hospedar e manter o sistema. A Meta, que transmite as mensagens de WhatsApp. Os provedores de nuvem onde o sistema roda, que guardam os dados em nome do Motelli e não os usam para nada mais. Autoridades, quando a lei obrigar.",
     ],
   },
   {
@@ -66,6 +76,14 @@ const SECOES: { titulo: string; paragrafos: (string | string[])[] }[] = [
     paragrafos: [
       "Pela Lei Geral de Proteção de Dados (Lei 13.709/2018), você pode pedir para saber quais dados existem sobre você, corrigi-los, pedir que sejam apagados e revogar o consentimento. Peça primeiro ao restaurante, que é o responsável; se preferir, escreva para o Motelli no e-mail acima e a gente encaminha.",
       "Você também pode desligar a localização a qualquer momento nas configurações do celular ou desinstalar o app. Nesse caso o restaurante deixa de receber a sua posição e pode não conseguir distribuir entregas para você.",
+    ],
+  },
+  {
+    titulo: "Como pedir a exclusão dos seus dados",
+    id: "exclusao",
+    paragrafos: [
+      `Escreva para ${CONTATO_EMAIL} com o assunto "Excluir meus dados", dizendo o seu nome, o telefone e o restaurante. Em até 15 dias apagamos o seu cadastro, as mensagens de WhatsApp e as posições ligadas a ele, e respondemos confirmando. Só fica o que a lei obriga a guardar (por exemplo, nota fiscal e registros de pagamento), pelo prazo que ela manda.`,
+      "O restaurante que desconectar o WhatsApp do Motelli pode pedir pelo mesmo e-mail a exclusão de todos os dados que vieram da Meta; o acesso do Motelli à conta dele é removido na hora da desconexão.",
     ],
   },
   {
@@ -93,10 +111,10 @@ export default function PrivacidadePage() {
         Política de privacidade
       </h1>
       <p style={{ color: CORES.suave, fontSize: 17, lineHeight: 1.5, margin: "0 0 36px" }}>
-        Do Motelli e do app Motelli Entregador. Escrita para ser lida, não só aceita.
+        Do Motelli, do app Motelli Entregador e da conexão com o WhatsApp. Escrita para ser lida, não só aceita.
       </p>
       {SECOES.map((s) => (
-        <section key={s.titulo} style={{ padding: "22px 0", borderTop: `1px solid ${CORES.linha}` }}>
+        <section key={s.titulo} id={s.id} style={{ padding: "22px 0", borderTop: `1px solid ${CORES.linha}` }}>
           <h2 style={{ fontFamily: FONTE_TITULO, fontSize: 21, letterSpacing: "-0.02em", margin: "0 0 10px" }}>{s.titulo}</h2>
           {s.paragrafos.map((p, i) => (
             <p key={i} style={{ margin: "0 0 10px", lineHeight: 1.6, fontSize: 16.5 }}>{p}</p>
