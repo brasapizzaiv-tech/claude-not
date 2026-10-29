@@ -8,6 +8,7 @@ import { MarmitaDiaForm } from "@/components/marmita-dia-form";
 import { EditorCardapio } from "./editor";
 import { SaladasDoDia } from "./saladas-dia";
 import { salvarMarmitaDia } from "./actions";
+import { pratosComPrecoAdicional } from "@/lib/marmitas-do-cardapio";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
 function hojeBR() {
@@ -26,7 +27,7 @@ export default async function CardapioDoDiaPage({
   const supabase = await createClient();
   const db = supabase as unknown as core.Db;
   const dowDia = diaSemanaIso(dia);
-  const [dias, itens, base, marcadas, padrao, historico, kern, podeMarmita, precos] = await Promise.all([
+  const [dias, itens, base, marcadas, padrao, historico, kern, podeMarmita, precos, comPrecoAdicional] = await Promise.all([
     core.listarCardapios(db, addDiasIso(hoje, -21), addDiasIso(hoje, 21)),
     core.listarCatalogo(db),
     core.listarSaladasBase(db),
@@ -36,6 +37,7 @@ export default async function CardapioDoDiaPage({
     kernDoDia(dia).catch(() => null),
     podeEditarMarmita(dia).catch(() => ({ ok: false as const, motivo: "Não consegui ler o cadastro das marmitas.", abreEm: { data: dia, hora: "" } })),
     core.precosBuffet(db),
+    pratosComPrecoAdicional(db),
   ]);
 
   return (
@@ -48,6 +50,7 @@ export default async function CardapioDoDiaPage({
         atual={dias.find((c) => c.data === dia) ?? null}
         itens={itens}
         precos={precos}
+        comPrecoAdicional={comPrecoAdicional}
       />
       <SaladasDoDia key={"sal-" + dia} dia={dia} dow={dowDia} base={base} marcadas={marcadas} padrao={padrao} />
 

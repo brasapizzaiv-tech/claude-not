@@ -7,7 +7,7 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { addDiasIso, diaSemanaIso } from "@/lib/dia-cardapio";
 import type { KernDia } from "@/lib/marmitas-cardapio";
-import { hojeSP, sincronizarMarmitas } from "@/lib/marmitas-do-cardapio";
+import { hojeSP, prepararAdicionais, sincronizarMarmitas } from "@/lib/marmitas-do-cardapio";
 import type { Marmitas } from "@/lib/marmitas-marcas";
 
 export type Db = ReturnType<typeof createAdminClient>;
@@ -126,6 +126,7 @@ export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, 
   // Garante os itens no catálogo (pra busca); os USOS só contam na publicação.
   await garantirNoCatalogo(db, { proteinas: linhas(d.proteinas), carboidratos: linhas(d.carboidratos), especial: linhas(d.especial) });
   await registrarPublicacao(db, data, "salvo", ator);
+  await prepararAdicionais(db, [...linhas(d.proteinas), ...linhas(d.carboidratos)]);
   if (data === hojeSP()) await sincronizarMarmitas(db, data, empresaId);
   return { ok: true as const };
 }

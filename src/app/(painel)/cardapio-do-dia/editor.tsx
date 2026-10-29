@@ -79,6 +79,7 @@ export function EditorCardapio({
   atual,
   itens,
   precos: PRECOS,
+  comPrecoAdicional = {},
 }: {
   dia: string;
   hoje: string;
@@ -87,6 +88,8 @@ export function EditorCardapio({
   itens: ItemCat[];
   /** Tabela de preços do buffet (a mesma da balança e do caixa). */
   precos: PrecosBuffet;
+  /** Pratos com preço nos Adicionais de cada marmita (nome sem acento/caixa). */
+  comPrecoAdicional?: Partial<Record<QualMarmita, string[]>>;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -284,6 +287,18 @@ export function EditorCardapio({
               })}
             </div>
           </div>
+
+          {/* Adicionais das marmitas: prato do dia sem preço não entra */}
+          {(["tradicional", "premium"] as const).filter((k) => k === "tradicional" || dow === 6).map((k) => {
+            const tem = new Set(comPrecoAdicional[k] ?? []);
+            const falta = [...sel.proteinas, ...sel.carboidratos].filter((n) => !tem.has(norm(n).replace(/\s+/g, " ").trim()));
+            if (!comPrecoAdicional[k] || falta.length === 0) return null;
+            return (
+              <p key={k} className="mt-2 rounded-controle bg-superficie-suave px-3 py-2 text-xs text-texto-suave">
+                <b className="text-texto">Adicionais da {k === "tradicional" ? "Tradicional" : "Premium"}:</b> {falta.join(", ")} {falta.length > 1 ? "estão" : "está"} sem preço e não {falta.length > 1 ? "entram" : "entra"} como adicional. Ponha o preço em Salão → Cardápio → Marmita {k === "tradicional" ? "Tradicional" : "Premium"} → Adicionais e clique em Mostrar.
+              </p>
+            );
+          })}
 
           {/* Preços e ações */}
           <div className="mt-4 cartao p-4">

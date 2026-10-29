@@ -29,7 +29,9 @@ export async function sincronizarMarmitas(db: Db, data: string, empresaId?: stri
   let qg = db.from("pdv_item_grupos").select("id, empresa_id, cardapio_fonte, cardapio_marmita").not("cardapio_fonte", "is", null).not("cardapio_marmita", "is", null);
   if (empresaId) qg = qg.eq("empresa_id", empresaId);
   const { data: gs } = await qg;
-  for (const g of (gs as { id: string; empresa_id: string; cardapio_fonte: "proteinas" | "carboidratos"; cardapio_marmita: QualMarmita }[] | null) ?? []) {
+  const dow = dowDe(data);
+  for (const g of (gs as { id: string; empresa_id: string; cardapio_fonte: "proteinas" | "carboidratos" | "todos"; cardapio_marmita: QualMarmita }[] | null) ?? []) {
+    if (g.cardapio_fonte === "todos") { await sincronizarAdicionais(db, g.id, g.cardapio_marmita === "premium" && dow !== 6 ? [] : [...dia.proteinas, ...dia.carboidratos]); continue; }
     // Dia que ninguém marcou ainda: a Marmita do Dia fica como estava (não
     // trava o pedido); Tradicional e Premium seguem o padrão (tudo).
     if (!c.marmitas && g.cardapio_marmita === "dia") continue;
@@ -50,6 +52,49 @@ export async function sincronizarMarmitas(db: Db, data: string, empresaId?: stri
   }
   return { ok: true as const };
 }
+
+// Adicionais (cardapio_fonte "todos"): todos os pratos do dia, cada um com o
+// preço que já tem na lista do grupo. Prato sem preço fica desligado (não sai
+// de graça) — o editor do cardápio mostra quais faltam (adicionaisSemPreco).
+async function sincronizarAdicionais(db: Db, grupoId: string, pratos: string[]) {
+  const { data: ops } = await db.from("pdv_item_opcoes").select("id, nome, preco, ativo").eq("grupo_id", grupoId);
+  const lista = (ops as { id: string; nome: string; preco: number; ativo: boolean }[] | null) ?? [];
+  const existentes = new Map(lista.map((o) => [norm(o.nome), o]));
+  const { data: g } = await db.from("pdv_item_grupos").select("empresa_id").eq("id", grupoId).single();
+  const usados = new Set<string>();
+  for (const [ordem, nome] of pratos.entries()) {
+    const ja = existentes.get(norm(nome));
+    if (ja) { usados.add(ja.id); await db.from("pdv_item_opcoes").update({ ativo: Number(ja.preco) > 0, ordem }).eq("id", ja.id); }
+    else await db.from("pdv_item_opcoes").insert({ grupo_id: grupoId, empresa_id: (g as { empresa_id: string } | null)?.empresa_id, nome, preco: 0, ativo: false, ordem });
+  }
+  const desligar = lista.filter((o) => o.ativo && !usados.has(o.id)).map((o) => o.id);
+  if (desligar.length) await db.from("pdv_item_opcoes").update({ ativo: false }).in("id", desligar);
+}
+
+/** Prato novo em qualquer dia salvo já aparece (desligado, sem preço) nos
+ *  Adicionais das marmitas, pra dar o preço antes do dia chegar. */
+export async function prepararAdicionais(db: Db, pratos: string[]) {
+  const { data: gs } = await db.from("pdv_item_grupos").select("id, empresa_id").eq("cardapio_fonte", "todos");
+  for (const g of (gs as { id: string; empresa_id: string }[] | null) ?? []) {
+    const { data: ops } = await db.from("pdv_item_opcoes").select("nome").eq("grupo_id", g.id);
+    const tem = new Set(((ops as { nome: string }[] | null) ?? []).map((o) => norm(o.nome)));
+    const novos = [...new Set(pratos)].filter((p) => !tem.has(norm(p)));
+    if (novos.length) await db.from("pdv_item_opcoes").insert(novos.map((nome) => ({ grupo_id: g.id, empresa_id: g.empresa_id, nome, preco: 0, ativo: false, ordem: 999 })));
+  }
+}
+
+/** Nomes (sem acento/caixa) com preço nos Adicionais de cada marmita — o editor
+ *  do cardápio avisa qual prato do dia ficou sem preço de adicional. */
+export async function pratosComPrecoAdicional(db: Db) {
+  const { data: gs } = await db.from("pdv_item_grupos").select("id, cardapio_marmita").eq("cardapio_fonte", "todos");
+  const out: Partial<Record<QualMarmita, string[]>> = {};
+  for (const g of (gs as { id: string; cardapio_marmita: QualMarmita }[] | null) ?? []) {
+    const { data: ops } = await db.from("pdv_item_opcoes").select("nome").eq("grupo_id", g.id).gt("preco", 0);
+    out[g.cardapio_marmita] = ((ops as { nome: string }[] | null) ?? []).map((o) => norm(o.nome));
+  }
+  return out;
+}
+export const normPrato = norm;
 
 // Uma vez por dia (o 1º que abrir o app do cliente ou o Novo pedido).
 export async function garantirMarmitasDeHoje(db: Db, empresaId: string) {
