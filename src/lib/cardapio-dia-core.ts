@@ -7,10 +7,14 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { addDiasIso, diaSemanaIso } from "@/lib/dia-cardapio";
 import type { KernDia } from "@/lib/marmitas-cardapio";
-import { hojeSP, prepararAdicionais, sincronizarMarmitas } from "@/lib/marmitas-do-cardapio";
 import type { Marmitas } from "@/lib/marmitas-marcas";
 
 export type Db = ReturnType<typeof createAdminClient>;
+
+// Marmitas do delivery (marmitas-do-cardapio.ts) só no servidor: este arquivo
+// também é importado por telas do navegador (tipos e listas), e a sincronia
+// usa o cliente administrativo. Importado na hora, quando salva/publica.
+const marmitas = () => import("@/lib/marmitas-do-cardapio");
 export type Ator = { nome: string; userId?: string | null; colabId?: string | null };
 
 export const GRUPOS = ["proteinas", "carboidratos", "especial"] as const;
@@ -126,8 +130,9 @@ export async function salvarCardapioDia(db: Db, data: string, d: DadosCardapio, 
   // Garante os itens no catálogo (pra busca); os USOS só contam na publicação.
   await garantirNoCatalogo(db, { proteinas: linhas(d.proteinas), carboidratos: linhas(d.carboidratos), especial: linhas(d.especial) });
   await registrarPublicacao(db, data, "salvo", ator);
-  await prepararAdicionais(db, [...linhas(d.proteinas), ...linhas(d.carboidratos)]);
-  if (data === hojeSP()) await sincronizarMarmitas(db, data, empresaId);
+  const m = await marmitas();
+  await m.prepararAdicionais(db, [...linhas(d.proteinas), ...linhas(d.carboidratos)]);
+  if (data === m.hojeSP()) await m.sincronizarMarmitas(db, data, empresaId);
   return { ok: true as const };
 }
 
@@ -155,7 +160,8 @@ export async function publicarCardapioDia(db: Db, data: string, ator: Ator) {
   await recalcularUsos(db);
   await registrarPublicacao(db, data, "publicado", ator);
   // Publicou o de hoje: as marmitas do delivery já passam a oferecer esses pratos.
-  if (data === hojeSP()) await sincronizarMarmitas(db, data, (atual as { empresa_id?: string }).empresa_id ?? null);
+  const m = await marmitas();
+  if (data === m.hojeSP()) await m.sincronizarMarmitas(db, data, (atual as { empresa_id?: string }).empresa_id ?? null);
   return { ok: true as const };
 }
 

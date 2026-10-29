@@ -8,6 +8,7 @@
 // no 1º acesso do dia ao app/delivery, pelo garantirMarmitasDeHoje.
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { marcasDoDia, type Marmitas, type QualMarmita } from "@/lib/marmitas-marcas";
+import { kernDoDia } from "@/lib/marmitas-cardapio";
 
 type Db = ReturnType<typeof createAdminClient>;
 
@@ -30,7 +31,14 @@ export async function sincronizarMarmitas(db: Db, data: string, empresaId?: stri
   if (empresaId) qg = qg.eq("empresa_id", empresaId);
   const { data: gs } = await qg;
   const dow = dowDe(data);
-  for (const g of (gs as { id: string; empresa_id: string; cardapio_fonte: "proteinas" | "carboidratos" | "todos"; cardapio_marmita: QualMarmita }[] | null) ?? []) {
+  // Salada do dia das marmitas do convênio (a mesma pra todas; lida uma vez).
+  let salada: string | null | undefined;
+  const saladaConvenio = async () => {
+    if (salada === undefined) salada = (await kernDoDia(data).catch(() => null))?.salada?.trim() || null;
+    return salada;
+  };
+  for (const g of (gs as { id: string; empresa_id: string; cardapio_fonte: "proteinas" | "carboidratos" | "todos" | "salada"; cardapio_marmita: QualMarmita }[] | null) ?? []) {
+    if (g.cardapio_fonte === "salada") { await sincronizarSalada(db, g.id, await saladaConvenio()); continue; }
     if (g.cardapio_fonte === "todos") { await sincronizarAdicionais(db, g.id, g.cardapio_marmita === "premium" && dow !== 6 ? [] : [...dia.proteinas, ...dia.carboidratos]); continue; }
     // Dia que ninguém marcou ainda: a Marmita do Dia fica como estava (não
     // trava o pedido); Tradicional e Premium seguem o padrão (tudo).
@@ -69,6 +77,21 @@ async function sincronizarAdicionais(db: Db, grupoId: string, pratos: string[]) 
   }
   const desligar = lista.filter((o) => o.ativo && !usados.has(o.id)).map((o) => o.id);
   if (desligar.length) await db.from("pdv_item_opcoes").update({ ativo: false }).in("id", desligar);
+}
+
+// "Deseja salada?": uma opção só, com a salada do convênio do dia. Sem salada
+// cadastrada pro dia (domingo, feriado), fica como estava.
+async function sincronizarSalada(db: Db, grupoId: string, salada: string | null) {
+  if (!salada) return;
+  const nome = `SALADA: ${salada}`;
+  const { data: ops } = await db.from("pdv_item_opcoes").select("id").eq("grupo_id", grupoId).order("ordem");
+  const lista = (ops as { id: string }[] | null) ?? [];
+  if (lista.length) await db.from("pdv_item_opcoes").update({ nome, ativo: true, ordem: 0 }).eq("id", lista[0].id);
+  else {
+    const { data: g } = await db.from("pdv_item_grupos").select("empresa_id").eq("id", grupoId).single();
+    await db.from("pdv_item_opcoes").insert({ grupo_id: grupoId, empresa_id: (g as { empresa_id: string } | null)?.empresa_id, nome, preco: 0, ativo: true, ordem: 0 });
+  }
+  if (lista.length > 1) await db.from("pdv_item_opcoes").update({ ativo: false }).in("id", lista.slice(1).map((o) => o.id));
 }
 
 /** Prato novo em qualquer dia salvo já aparece (desligado, sem preço) nos
