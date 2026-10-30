@@ -191,7 +191,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
 
         <div className="cartao-foco flex min-h-[150px] flex-col px-5 py-[18px]" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
           <div className="flex items-center justify-between gap-2">
-            <span className="rotulo !text-painel-foco-rotulo">Caixa do dia</span>
+            <span className="rotulo !text-painel-foco-rotulo">{d.caixa.aberto ? "Caixa atual" : "Caixa do dia"}</span>
             <span className="rounded-full bg-painel-foco-texto/10 px-2.5 py-1 text-[11.5px] font-semibold">
               {d.caixa.aberto ? `aberto${d.caixa.desde ? ` às ${d.caixa.desde.replace(":", "h")}` : ""}` : "fechado"}
             </span>

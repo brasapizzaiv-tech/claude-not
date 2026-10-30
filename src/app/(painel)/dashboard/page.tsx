@@ -112,7 +112,7 @@ export default async function DashboardPage({
     buscarTodas((de, ate) =>
       supabase
         .from("pdv_caixa_mov")
-        .select("tipo, valor, forma_pagamento, criado_em")
+        .select("tipo, valor, forma_pagamento, criado_em, caixa_id")
         .gte("criado_em", jAntes.de < inicioSerie ? jAntes.de : inicioSerie)
         .lt("criado_em", j.ate)
         .order("id")
@@ -147,19 +147,23 @@ export default async function DashboardPage({
   const grupos = lerGrupos(cfg.mesa_grupos, qtdMesas);
 
   // ---------- Faturamento: do dia, do mesmo dia da semana passada, e a série ----------
-  type Mov = { tipo: string; valor: number; forma_pagamento: string | null; criado_em: string };
+  type Mov = { tipo: string; valor: number; forma_pagamento: string | null; criado_em: string; caixa_id: string };
   const movs = ((movSerie as Mov[]) ?? []).filter((m) => m.tipo === "venda");
   const somaEntre = (de: string, ate: string) =>
     movs.filter((m) => m.criado_em >= de && m.criado_em < ate).reduce((s, m) => s + Number(m.valor || 0), 0);
 
   const fatDia = somaEntre(j.de, j.ate);
-  // Divisão do dia em Pix / cartão / dinheiro; o resto (saldo cliente do
-  // convênio Kern, vale refeição…) aparece pelo nome da forma, senão parecia
-  // que não entrava na soma. O tipo vem do cadastro de formas de pagamento.
+  // Cartão do caixa: com caixa aberto (hoje), só o que entrou NESSE caixa — o
+  // da noite começa do zero quando é aberto. Sem caixa aberto, o dia todo.
+  const caixaAbertoId = ehHoje ? ((caixaAberto as { id: string } | null)?.id ?? null) : null;
+  const movsCaixa = caixaAbertoId ? movs.filter((m) => m.caixa_id === caixaAbertoId) : movs.filter((m) => m.criado_em >= j.de && m.criado_em < j.ate);
+  const fatCaixa = movsCaixa.reduce((s, m) => s + Number(m.valor || 0), 0);
+  // Divisão em Pix / cartão / dinheiro; o resto (saldo cliente do convênio
+  // Kern, vale refeição…) aparece pelo nome da forma, senão parecia que não
+  // entrava na soma. O tipo vem do cadastro de formas de pagamento.
   const porTipo = { pix: 0, cartao: 0, dinheiro: 0 };
   const outras = new Map<string, number>();
-  for (const m of movs) {
-    if (m.criado_em < j.de || m.criado_em >= j.ate) continue;
+  for (const m of movsCaixa) {
     const t = tipoDe(m.forma_pagamento, formasT);
     if (t === "pix" || t === "pix_maquina") porTipo.pix += Number(m.valor || 0);
     else if (t === "credito" || t === "debito" || t === "cartao") porTipo.cartao += Number(m.valor || 0);
@@ -357,7 +361,7 @@ export default async function DashboardPage({
     ],
     caixa: {
       aberto: !!caixaAberto,
-      valor: moedaBR(fatDia),
+      valor: moedaBR(fatCaixa),
       pix: moedaBR(porTipo.pix),
       cartao: moedaBR(porTipo.cartao),
       dinheiro: moedaBR(porTipo.dinheiro),
