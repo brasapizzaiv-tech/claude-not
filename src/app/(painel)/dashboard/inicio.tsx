@@ -36,6 +36,7 @@ export type DadosInicio = {
     diferenca?: number;          // ou diferença em unidades
     serie: number[];
     detalhe?: { rotulo: string; n: number; href: string }[];
+    turnos?: { rotulo: string; valor: string }[]; // faturamento: dia (até 16h) e noite
   }[];
   caixa: { aberto: boolean; valor: string; desde: string | null; pix: string; cartao: string; dinheiro: string; outras: { nome: string; valor: string }[] };
   salao: {
@@ -92,6 +93,16 @@ function Indicador({ i }: { i: DadosInicio["indicadores"][number] }) {
         {pilula && <span className={pilula.cls} title="Comparado ao mesmo dia da semana passada">{pilula.texto}</span>}
       </div>
       <p className={`mt-2 text-[34px] leading-[1.1] ${TITULO}`}>{i.valor}</p>
+      {i.turnos && (
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
+          {i.turnos.map((t) => (
+            <div key={t.rotulo} className="rounded-mesa bg-superficie-suave px-2.5 py-1.5">
+              <span className="rotulo block">{t.rotulo}</span>
+              <span className="font-numero text-[15px] font-bold tracking-apertada text-texto">{t.valor}</span>
+            </div>
+          ))}
+        </div>
+      )}
       {/* Quando o número junta coisas diferentes, a divisão fica aqui. */}
       {i.detalhe && i.detalhe.length > 0 ? (
         <div className="mt-auto flex flex-wrap gap-1.5 pb-4">

@@ -169,6 +169,11 @@ export default async function DashboardPage({
       outras.set(nome, (outras.get(nome) ?? 0) + Number(m.valor || 0));
     }
   }
+  // Dia × noite: a noite começa às 16h, o mesmo corte do 10% (servico_noites,
+  // migration 0250). Tudo dentro da janela do dia, então dia + noite = total.
+  const corteNoite = `${dia}T19:00:00.000Z`; // 16h em Brasília
+  const fatTurnoDia = somaEntre(j.de, corteNoite);
+  const fatTurnoNoite = somaEntre(corteNoite, j.ate);
   const fatAntes = somaEntre(jAntes.de, jAntes.ate);
   const serieFat: number[] = [];
   for (let i = 6; i >= 0; i--) {
@@ -324,6 +329,10 @@ export default async function DashboardPage({
         valor: moedaBR(fatDia),
         variacao: porcentagem(fatDia, fatAntes),
         serie: serieFat,
+        turnos: [
+          { rotulo: "Dia", valor: moedaBR(fatTurnoDia) },
+          { rotulo: "Noite", valor: moedaBR(fatTurnoNoite) },
+        ],
       },
       {
         chave: "comandas",
