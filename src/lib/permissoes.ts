@@ -14,6 +14,7 @@ export type ModuloKey =
   | "notas"
   | "financeiro"
   | "contas"
+  | "cofre"
   | "etiquetas"
   | "garcom"
   | "salao"
@@ -52,6 +53,7 @@ export const MODULOS: {
   // para /financeiro/contas ser controlada por esta permissão (mais específica).
   { key: "contas", label: "Contas a pagar (só baixa de boletos)", icon: "documento", rotas: ["/financeiro/contas"] },
   { key: "financeiro", label: "Financeiro (completo)", icon: "grafico", rotas: ["/financeiro"] },
+  { key: "cofre", label: "Cofre (dinheiro em espécie)", icon: "cofre", rotas: ["/cofre"] },
   { key: "etiquetas", label: "Etiquetas", icon: "etiqueta", rotas: ["/etiquetas"] },
   // Garçom: só o app do garçom (/garcom). Vem ANTES de "salao" para que /garcom
   // seja controlado por esta permissão (mais específica).

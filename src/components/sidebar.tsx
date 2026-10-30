@@ -225,8 +225,8 @@ export function Sidebar({
     },
     {
       key: "financeiro", label: "Financeiro", icon: "grafico",
-      itens: has("financeiro")
-        ? [
+      itens: [...(has("financeiro")
+        ? ([
             { href: "/financeiro", label: "Movimentações", icon: "dinheiro" },
             { href: "/financeiro/caixa", label: "Fechamento de caixa", icon: "calculadora" },
             { href: "/financeiro/cmv", label: "CMV / Consumo", icon: "descendo" },
@@ -238,8 +238,10 @@ export function Sidebar({
             { href: "/financeiro/vendidos", label: "Produtos vendidos", icon: "pizza" },
             { href: "/financeiro/buffet", label: "Buffet: livre × quilo", icon: "balanca" },
             { href: "/financeiro/dre", label: "DRE", icon: "subindo" },
-          ]
-        : so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "documento" }),
+          ] as Item[])
+        : so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "documento" })),
+        ...so(has("cofre"), { href: "/cofre", label: "Cofre", icon: "cofre" }),
+      ],
     },
     {
       key: "site", label: "Site e apps", icon: "internet", aviso: reservasNovas || undefined,
