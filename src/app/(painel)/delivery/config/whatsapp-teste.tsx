@@ -33,7 +33,7 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
               setMsg(null);
               start(async () => {
                 const r = await testarWhatsappDelivery(tel);
-                setMsg(r.ok ? "✓ Enviado — olha o WhatsApp (mensagem “Hello World” em inglês, é o modelo de teste da Meta)." : `Falhou: ${r.mensagem}`);
+                setMsg(r.ok ? "✓ Enviado — olha o WhatsApp desse número." : `Falhou: ${r.mensagem}`);
               });
             }}
             disabled={proc || tel.replace(/\D/g, "").length < 10}

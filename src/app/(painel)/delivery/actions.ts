@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { codigoDaForma, tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
-import { API as GRAPH, avisarPedido, enviarTemplate, esquecerCredWpp, listarModelos, whatsappConfigurado } from "@/lib/whatsapp";
+import { API as GRAPH, avisarPedido, enviarTemplate, enviarTexto, esquecerCredWpp, listarModelos, whatsappConfigurado } from "@/lib/whatsapp";
 import { empresaAtualId } from "@/lib/empresa";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
@@ -451,6 +451,10 @@ export async function registrarAcertoEntregador(formData: FormData) {
 export async function testarWhatsappDelivery(telefone: string) {
   await exigirAcesso("/delivery");
   if (!whatsappConfigurado()) return { ok: false as const, mensagem: "Faltam WHATSAPP_TOKEN e/ou WHATSAPP_PHONE_ID na Vercel (e um redeploy)." };
+  // Texto livre primeiro: vale quando o número de teste mandou mensagem pro
+  // nosso nas últimas 24 h (não precisa de modelo nem de pagamento na conta).
+  const t = await enviarTexto(telefone, "Brasa: seu pedido #123 foi recebido! Acompanhe em brasarestaurante.com.br/pedir");
+  if (t.ok) return { ok: true as const };
   // Usa o nosso modelo pedido_recebido (pt_BR); se ainda não foi aprovado, tenta o hello_world da Meta.
   const r = await enviarTemplate(telefone, "pedido_recebido", ["Teste", "0", "https://www.brasarestaurante.com.br/pedir"], null, "pt_BR");
   if (r.ok) return { ok: true as const };
