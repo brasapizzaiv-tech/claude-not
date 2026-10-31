@@ -66,6 +66,9 @@ export type TefDados = {
   // primeiro de dois cartões na mesma conta. Não tem mais "desfazer": se a
   // venda não gravar, esse cartão só sai por cancelamento em Cartões (TEF).
   confirmado?: boolean;
+  // Veio de "Recebido sem conta" (src/lib/tef-guarda.ts): a linha de
+  // tef_transacoes que a venda liga, em vez de criar outra.
+  semContaId?: string | null;
 };
 
 async function chamar<T>(rota: string, body?: unknown, timeoutMs = 8000): Promise<T> {

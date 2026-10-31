@@ -10,9 +10,9 @@
 // fecha a transação; não gravou → DESFAZ no pinpad, pra não ficar cobrado.
 import { useEffect, useState } from "react";
 import { Icone } from "@/components/icone";
-import { tefConfirmar, tefDesfazer, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { tefConfirmar, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
 import { fecharTef } from "@/app/(painel)/salao/actions";
-import { anotarAprovada, anotarCobranca, esquecerCobranca, resgatarPendente } from "@/lib/tef-guarda";
+import { anotarAprovada, anotarCobranca, desfazerNoPinpad, esquecerCobranca, resgatarPendente } from "@/lib/tef-guarda";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -67,11 +67,14 @@ export function CobrarPinpad({
     try {
       // Pagamento aprovado de outra tela que saiu no meio: guarda em "Recebido
       // sem conta" antes, senão o agente desfaz ao receber esta cobrança.
-      const guardado = await resgatarPendente();
-      if (guardado) setAviso(guardado);
+      const guarda = await resgatarPendente();
+      if (guarda.bloquear) { setAviso(guarda.bloquear); return; }
+      if (guarda.recado) setAviso(guarda.recado);
       anotarCobranca(tipo, valor, conta);
       const r = ehPix ? await tefPix({ valor }) : await tefVenda({ valor, tipo, parcelas: 1 });
-      if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
+      if (!r.ok) { esquecerCobranca(); setAviso(r.erro || "O TEF não respondeu."); return; }
+      // O agente desfez um pagamento de outra tela que estava sem lançamento.
+      if (r.desfeitaAnterior) setAviso(`Atenção: o pinpad desfez um pagamento anterior de ${brl(r.desfeitaAnterior.valor)} (NSU ${r.desfeitaAnterior.nsu ?? "?"}) que estava sem lançamento. Esse valor volta pro cliente.`);
       if (!r.aprovada) { esquecerCobranca(); setAviso(`${ehPix ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`); return; }
       const dados: TefDados = {
         idAgente: r.idAgente || "",
@@ -99,8 +102,7 @@ export function CobrarPinpad({
         g = { ok: false, mensagem: "Sem conexão ao gravar a venda." };
       }
       if (!g.ok) {
-        try { await tefDesfazer(dados.idAgente, g.mensagem || "a venda não gravou"); } catch { /* o agente desfaz sozinho na próxima */ }
-        esquecerCobranca(dados.idAgente);
+        await desfazerNoPinpad(dados.idAgente, g.mensagem || "a venda não gravou");
         setAviso(`${g.mensagem || "A venda não gravou."} A cobrança no ${ehPix ? "Pix" : "cartão"} foi DESFEITA.`);
         return;
       }

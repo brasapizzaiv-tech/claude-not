@@ -1054,6 +1054,8 @@ export type TefPagamento = {
   viaCliente: string[];
   viaLoja: string[];
   requerConfirmacao: boolean;
+  /** Veio de "Recebido sem conta": a linha de tef_transacoes que esta venda liga. */
+  semContaId?: string | null;
 };
 
 // "Vincular Cliente" do caixa: busca no servidor, poucas linhas por vez.
@@ -1130,6 +1132,17 @@ export async function pagarSelecao(
   // Forma que exige código (ex.: cupom do Juntos Sicredi): sem ele, não recebe.
   const semCodigo = pagamentos.find((p) => p.valor > 0 && codigoDaForma(p.forma, formasT) && !(p.observacao ?? "").trim());
   if (semCodigo) return { ok: false as const, mensagem: `Preencha o ${(codigoDaForma(semCodigo.forma, formasT) ?? "código").toLowerCase()} do ${semCodigo.forma}.` };
+
+  // "Recebido sem conta": o pagamento guardado ainda está livre? (Outra conta
+  // ou outra tela pode ter usado depois que a lista abriu.) Senão contaria
+  // duas vezes o mesmo dinheiro.
+  const semContaIds = pagamentos.map((p) => p.tef?.semContaId).filter((x): x is string => !!x);
+  if (semContaIds.length > 0) {
+    const { data: livres } = await supabase.from("tef_transacoes").select("id").in("id", semContaIds).is("mov_id", null);
+    if (((livres as { id: string }[] | null) ?? []).length < new Set(semContaIds).size) {
+      return { ok: false as const, mensagem: "Um pagamento de \"Recebido sem conta\" já foi usado em outra venda. Tire ele desta conta e confira a lista." };
+    }
+  }
 
   // Compra da equipe / Saldo cliente: confere ANTES de marcar qualquer coisa
   // como paga (antes a comanda fechava e só depois vinha o erro).
@@ -1312,11 +1325,14 @@ export async function pagarSelecao(
           criado_por: quem.user?.id ?? null,
         };
         // Veio de "Recebido sem conta" (ou outra tela já guardou): liga aquela
-        // linha a esta venda em vez de nascer outra pro mesmo NSU.
-        const existente = await transacaoSemConta(supabase, t);
-        const { data: tr } = existente
-          ? await supabase.from("tef_transacoes").update({ ...campos, mensagem: null }).eq("id", existente).select("id").maybeSingle()
-          : await supabase.from("tef_transacoes").insert(campos).select("id").maybeSingle();
+        // linha a esta venda em vez de nascer outra pro mesmo NSU. Só liga se
+        // ainda estiver livre (mov_id nulo) — ligar por cima tiraria o
+        // pagamento de outra venda.
+        const existente = t.semContaId ?? (await transacaoSemConta(supabase, t));
+        const ligada = existente
+          ? (await supabase.from("tef_transacoes").update({ ...campos, mensagem: null }).eq("id", existente).is("mov_id", null).select("id").maybeSingle()).data
+          : null;
+        const tr = ligada ?? (await supabase.from("tef_transacoes").insert(campos).select("id").maybeSingle()).data;
         const transacaoId = (tr as { id?: string } | null)?.id;
         if (transacaoId) tefRegistros.push({ idAgente: t.idAgente, transacaoId });
       }
@@ -1547,13 +1563,21 @@ export async function registrarTefAvulso(
   if (t.idAgente && t.nsu) {
     let q = supabase
       .from("tef_transacoes")
-      .select("id")
+      .select("id, status")
       .eq("id_agente", t.idAgente)
       .eq("nsu", t.nsu)
       .gte("criado_em", new Date(Date.now() - 7 * 86400000).toISOString());
     if (t.terminal) q = q.eq("terminal", t.terminal);
     const { data: ja } = await q.limit(1).maybeSingle();
-    if (ja) return { ok: true as const };
+    if (ja) {
+      // A guarda acabou de confirmar no pinpad: se a linha ficou "aprovada" ou
+      // "desfeita" (o caixa não conseguiu o CNF na hora), passa a valer.
+      const linha = ja as { id: string; status: string };
+      if (linha.status === "aprovada" || linha.status === "desfeita") {
+        await supabase.from("tef_transacoes").update({ status: "confirmada", atualizado_em: new Date().toISOString() }).eq("id", linha.id);
+      }
+      return { ok: true as const };
+    }
   }
   const { data: userData } = await supabase.auth.getUser();
   const { error } = await supabase.from("tef_transacoes").insert({

@@ -92,9 +92,11 @@ export async function registrarTefDaVenda(
     id_agente: t.idAgente,
     criado_por: quem.user?.id ?? null,
   };
-  const { data } = existente
-    ? await supabase.from("tef_transacoes").update({ ...campos, mensagem: null }).eq("id", existente).select("id").maybeSingle()
-    : await supabase.from("tef_transacoes").insert(campos).select("id").maybeSingle();
+  // Só liga se ainda estiver livre (mov_id nulo); senão nasce a linha desta venda.
+  const ligada = existente
+    ? (await supabase.from("tef_transacoes").update({ ...campos, mensagem: null }).eq("id", existente).is("mov_id", null).select("id").maybeSingle()).data
+    : null;
+  const data = ligada ?? (await supabase.from("tef_transacoes").insert(campos).select("id").maybeSingle()).data;
   return (data as { id?: string } | null)?.id ?? null;
 }
 

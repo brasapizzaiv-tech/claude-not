@@ -145,8 +145,8 @@ export function PainelPagamentos({
       // agente sem dono. Guarda já, sem esperar a próxima cobrança.
       if (comSemConta) {
         const daConta = pagos.filter((p) => p.tef?.idAgente && !p.tef.confirmado).map((p) => p.tef!.idAgente);
-        const guardado = await resgatarPendente(daConta).catch(() => null);
-        if (guardado) setRecadoGuarda(guardado);
+        const g = await resgatarPendente(daConta).catch(() => null);
+        if (g?.recado) setRecadoGuarda(g.recado);
       }
       void recarregarSemConta();
     }, 0);
@@ -292,8 +292,9 @@ export function PainelPagamentos({
       // O que ainda estiver aprovado no agente não é desta conta (os desta
       // acabaram de ser confirmados): é de uma tela que saiu no meio. O agente
       // desfaria ao receber a cobrança nova — então guarda antes (BUG-001).
-      const guardado = await resgatarPendente();
-      if (guardado) { setRecadoGuarda(guardado); void recarregarSemConta(); }
+      const g = await resgatarPendente();
+      if (g.bloquear) { setAviso(g.bloquear); return; }
+      if (g.recado) { setRecadoGuarda(g.recado); void recarregarSemConta(); }
       anotarCobranca(tipo, cent(aplica), conta);
       setTefEtapa("pinpad");
       // Pix na maquininha: o QR aparece no pinpad e o agente só responde quando
@@ -306,7 +307,7 @@ export function PainelPagamentos({
             parcelas: tipo === "credito" || (tipo === "debito" && modDebito === "parcelado") ? parcelas : 1,
             ...(tipo === "debito" && modDebito !== "avista" ? { modalidade: modDebito } : {}),
           });
-      if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
+      if (!r.ok) { esquecerCobranca(); setAviso(r.erro || "O TEF não respondeu."); return; }
       if (!r.aprovada) { esquecerCobranca(); setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`); return; }
       const dados: TefDados = {
         idAgente: r.idAgente || "",
@@ -350,6 +351,9 @@ export function PainelPagamentos({
         setAviso(`O agente DESFEZ o cartão anterior (NSU ${r.desfeitaAnterior.nsu ?? "?"}, ${brl(r.desfeitaAnterior.valor)}) porque estava sem confirmação. Esse pagamento saiu da conta — passe o cartão de novo.`);
         return;
       }
+      if (r.desfeitaAnterior) {
+        setRecadoGuarda(`Atenção: o pinpad desfez um pagamento anterior de ${brl(r.desfeitaAnterior.valor)} (NSU ${r.desfeitaAnterior.nsu ?? "?"}) que não era desta conta e estava sem lançamento. Esse valor volta pro cliente.`);
+      }
       fechar();
     } catch {
       setAviso("O agente TEF não respondeu. Confira o ícone na bandeja.");
@@ -373,9 +377,10 @@ export function PainelPagamentos({
       valor: sc.valor,
       bandeira: sc.tef.bandeira,
       observacao: null,
-      tef: { ...sc.tef, tipo, requerConfirmacao: false, confirmado: true },
+      tef: { ...sc.tef, tipo, requerConfirmacao: false, confirmado: true, semContaId: sc.id },
     });
-    if (aceito !== false) setSemConta((l) => l.filter((x) => x.id !== sc.id));
+    // Some da lista enquanto estiver na conta (semContaFora); tirou da conta, volta.
+    if (aceito === false) setAvisoSemConta("A tela não está pronta. Feche o pagamento e abra de novo.");
   }
   async function resolverSemConta(sc: TefSemConta) {
     const ok = await perguntarSeOk(`Tirar o ${nomeTef(sc.tef.tipo)} de ${brl(sc.valor)} da lista?`, {
