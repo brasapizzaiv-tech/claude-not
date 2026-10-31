@@ -5,6 +5,7 @@ import { avisar, confirmar as perguntarSeOk, perguntar } from "@/components/dial
 import { useRouter } from "next/navigation";
 import { pagarSelecao, fecharTef, registrarTefAvulso, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
 import { tefConfirmar, tefDesfazer } from "@/lib/tef-client";
+import { esquecerCobranca, guardarSemConta } from "@/lib/tef-guarda";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
 import { emiteNotaAuto, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
@@ -190,6 +191,39 @@ export function ReceberComandas({
 
   // Comandas escolhidas no topo.
   const selComandas = comandas.filter((c) => sel.has(c.id));
+  const contaTexto = selComandas.length > 0 ? `Comanda${selComandas.length > 1 ? "s" : ""} ${selComandas.map((c) => `#${c.numero}`).join(", ")}` : "";
+
+  // Guarda do pinpad (BUG-001, comanda 238 em 31/10): Pix/cartão aprovado que
+  // está na conta mas a venda ainda não gravou não pode sumir se o caixa sair
+  // da tela. Saiu → confirma no pinpad e guarda em "Recebido sem conta"; antes,
+  // o agente desfazia na venda seguinte e o cliente recebia o dinheiro de volta.
+  const [pinpadOcupado, setPinpadOcupado] = useState(false);
+  const montadoRef = useRef(true);
+  const pagosRef = useRef(pagos);
+  const contaRef = useRef(contaTexto);
+  useEffect(() => {
+    pagosRef.current = pagos;
+    contaRef.current = contaTexto;
+  }, [pagos, contaTexto]);
+  useEffect(() => {
+    montadoRef.current = true;
+    return () => {
+      montadoRef.current = false;
+      const conta = contaRef.current;
+      for (const x of pagosRef.current) {
+        if (x.tef?.idAgente) void guardarSemConta(x.tef, x.valor, `o caixa saiu da tela sem gravar a venda${conta ? ` · ${conta}` : ""}`);
+      }
+    };
+  }, []);
+  // Com pagamento do pinpad na conta (ou o pinpad esperando), fechar ou
+  // recarregar a aba pergunta antes.
+  const temTefNaConta = pinpadOcupado || pagos.some((x) => !!x.tef?.idAgente);
+  useEffect(() => {
+    if (!temTefNaConta) return;
+    const segurar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", segurar);
+    return () => window.removeEventListener("beforeunload", segurar);
+  }, [temTefNaConta]);
 
   // Sugestões para adicionar comandas (as abertas ainda não escolhidas).
   // O número EXATO vem primeiro: digitando "1" com trezentas comandas da
@@ -468,6 +502,7 @@ export function ReceberComandas({
           continue;
         }
         try { await tefDesfazer(x.tef!.idAgente, motivo); } catch { /* o agente desfaz sozinho na próxima venda */ }
+        esquecerCobranca(x.tef!.idAgente);
       }
       return presos.length > 0
         ? ` O cartão NSU ${presos.join(" e ")} já tinha sido confirmado no pinpad e continua cobrado: ficou em Cartões (TEF), cancele por lá.`
@@ -527,6 +562,7 @@ export function ReceberComandas({
         for (const reg of registros) {
           let confirmou = false;
           try { confirmou = (await tefConfirmar(reg.idAgente)).ok; } catch { confirmou = false; }
+          esquecerCobranca(reg.idAgente);
           try { await fecharTef(reg.transacaoId, confirmou, confirmou ? undefined : "o agente não confirmou (CNF)"); } catch { /* registrado depois */ }
         }
         setMsg(
@@ -1034,7 +1070,9 @@ export function ReceberComandas({
               </div>
               <button
                 onClick={() => setEtapa("conta")}
-                className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm text-texto-suave"
+                disabled={pinpadOcupado}
+                title={pinpadOcupado ? "O pinpad está esperando o cliente. Espere terminar, ou cancele na maquininha." : undefined}
+                className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm text-texto-suave disabled:opacity-40"
               >
                 ← Voltar
               </button>
@@ -1145,7 +1183,15 @@ export function ReceberComandas({
                     formas={formas}
                     total={totalPagar}
                     pagos={pagos}
-                    onAdicionar={(x) => { setPagos((l) => [...l, x]); setMsg(null); }}
+                    onAdicionar={(x) => {
+                      if (!montadoRef.current) return false;
+                      setPagos((l) => [...l, x]);
+                      setMsg(null);
+                      return true;
+                    }}
+                    conta={contaTexto}
+                    onOcupado={setPinpadOcupado}
+                    comSemConta
                     onRemover={(uid) => {
                       const x = pagos.find((y) => y.uid === uid);
                       if (x?.tef?.idAgente) {
@@ -1156,6 +1202,7 @@ export function ReceberComandas({
                           setMsg(`O cartão NSU ${x.tef.nsu ?? "?"} (${brl(x.valor)}) já tinha sido confirmado no pinpad e continua cobrado. Ficou em Cartões (TEF) — cancele por lá.`);
                         } else {
                           tefDesfazer(x.tef.idAgente, "pagamento removido pelo caixa").catch(() => {});
+                          esquecerCobranca(x.tef.idAgente);
                         }
                       }
                       setPagos((l) => l.filter((y) => y.uid !== uid));

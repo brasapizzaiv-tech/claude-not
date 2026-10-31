@@ -5,8 +5,12 @@
 // tecla de atalho; ao escolher a forma abre um passo com o valor já selecionado,
 // botão de "auto preencher o que falta", cédulas (Shift soma), observação e,
 // no cartão, a bandeira. Enter salva, Esc volta.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { agenteAceitaModalidade, tefConfirmar, tefDisponivel, tefPix, tefVenda, type ModalidadeDebito, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { anotarAprovada, anotarCobranca, esquecerCobranca, guardarSemConta, resgatarPendente } from "@/lib/tef-guarda";
+import { listarTefSemConta, resolverTefSemConta, type TefSemConta } from "@/app/(painel)/salao/actions";
+import { BotaoAcao } from "@/components/enviar";
+import { confirmar as perguntarSeOk } from "@/components/dialogo";
 import { atalhoDoTipo, codigoDaForma, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
 import { Icone } from "@/components/icone";
 import { CampoVale } from "@/components/campo-vale";
@@ -35,6 +39,10 @@ const cent = (n: number) => Math.round(n * 100) / 100;
 // Identificador local de um pagamento lançado (fora do componente: o compilador
 // do React não deixa chamar Date.now/Math.random dentro do render).
 const novoUid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const nomeTef = (t: TefDados["tipo"] | null) =>
+  t === "pix" ? "Pix" : t === "credito" ? "Crédito" : t === "debito" ? "Débito" : t === "voucher" ? "Vale" : "Pagamento";
+const horaCurta = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 // Comportamento de cada forma vem do TIPO (cadastro em /formas-pagamento);
 // forma antiga ou fixa cai na regra pelo nome.
@@ -78,11 +86,16 @@ export function PainelPagamentos({
   qrPix,
   colaboradores = [],
   fatorDinheiro = 1,
+  conta = "",
+  onOcupado,
+  comSemConta = false,
 }: {
   formas: FormaOpcao[];
   total: number;
   pagos: Pagamento[];
-  onAdicionar: (p: Pagamento) => void;
+  /** false = a tela que ia receber não existe mais (o caixa saiu): o pinpad
+   *  aprovado depois disso vai pra "Recebido sem conta" em vez de sumir. */
+  onAdicionar: (p: Pagamento) => boolean | void;
   onRemover: (uid: string) => void;
   // Um cartão já lançado foi confirmado (CNF) no pinpad antes de passar o
   // próximo — o dono da lista marca `tef.confirmado` nele.
@@ -94,6 +107,12 @@ export function PainelPagamentos({
   /** Desconto do dinheiro (5% só no consumo, nunca nos 10%): o que falta, se
    *  for pago em dinheiro, é o "falta" × este fator. 1 = sem desconto. */
   fatorDinheiro?: number;
+  /** De que conta é (ex.: "Comandas #238, #239"): vai junto se o pagamento ficar sem conta. */
+  conta?: string;
+  /** O pinpad está esperando o cliente: o dono da tela trava a saída. */
+  onOcupado?: (ocupado: boolean) => void;
+  /** Mostra os pagamentos do pinpad que ficaram sem conta, pra usar nesta. */
+  comSemConta?: boolean;
 }) {
   const T = useMemo(() => testesDeForma(formas), [formas]);
   const [forma, setForma] = useState<string | null>(null); // forma sendo lançada
@@ -109,9 +128,47 @@ export function PainelPagamentos({
   // Débito do Banricompras: à vista, pré-datado ou parcelado pela loja.
   const [modDebito, setModDebito] = useState<ModalidadeDebito>("avista");
   const campoRef = useRef<HTMLInputElement>(null);
+  // Agente TEF neste PC (pinpad integrado) e em que pé está a cobrança.
+  const [tef, setTef] = useState<TefStatus | null>(null);
+  const [tefEtapa, setTefEtapa] = useState<"" | "enviando" | "pinpad">("");
+  // Pagamentos do pinpad que ficaram sem conta (BUG-001) e o recado da guarda.
+  const [semConta, setSemConta] = useState<TefSemConta[]>([]);
+  const [recadoGuarda, setRecadoGuarda] = useState<string | null>(null);
+  const [avisoSemConta, setAvisoSemConta] = useState<string | null>(null);
+  const recarregarSemConta = useCallback(async () => {
+    if (!comSemConta) return;
+    try { setSemConta(await listarTefSemConta()); } catch { /* sem conexão: tenta na próxima */ }
+  }, [comSemConta]);
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      // Aba recarregada com o pinpad esperando: o pagamento ficou aprovado no
+      // agente sem dono. Guarda já, sem esperar a próxima cobrança.
+      if (comSemConta) {
+        const daConta = pagos.filter((p) => p.tef?.idAgente && !p.tef.confirmado).map((p) => p.tef!.idAgente);
+        const guardado = await resgatarPendente(daConta).catch(() => null);
+        if (guardado) setRecadoGuarda(guardado);
+      }
+      void recarregarSemConta();
+    }, 0);
+    return () => clearTimeout(t);
+    // Só ao abrir o pagamento.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recarregarSemConta]);
+
+  // Enquanto o pinpad espera o cliente, o dono da tela trava a saída da conta
+  // e o navegador pergunta antes de fechar ou recarregar a aba.
+  useEffect(() => {
+    onOcupado?.(!!tefEtapa);
+    if (!tefEtapa) return;
+    const segurar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", segurar);
+    return () => window.removeEventListener("beforeunload", segurar);
+  }, [tefEtapa, onOcupado]);
+  useEffect(() => () => onOcupado?.(false), [onOcupado]);
 
 
   const somaPagos = cent(pagos.reduce((s, p) => s + p.valor, 0));
+  const semContaFora = semConta.filter((sc) => !pagos.some((p) => p.tef?.idAgente === sc.tef.idAgente && p.tef?.nsu === sc.tef.nsu));
   const falta = cent(total - somaPagos);
   // No dinheiro o que falta já vem com o desconto (o caixa recalcula o resto).
   const faltaNo = (f: string | null) => (f && T.dinheiro(f) ? cent(falta * fatorDinheiro) : falta);
@@ -121,6 +178,7 @@ export function PainelPagamentos({
   function abrir(f: string) {
     if (!ativo || falta <= 0.005) return;
     setForma(f);
+    setRecadoGuarda(null);
     setValor(faltaNo(f).toFixed(2).replace(".", ","));
     setBandeira("");
     setObs("");
@@ -156,7 +214,7 @@ export function PainelPagamentos({
       const alvo = e.target as HTMLElement | null;
       const digitando = !!alvo && (alvo.tagName === "INPUT" || alvo.tagName === "TEXTAREA" || alvo.tagName === "SELECT" || alvo.isContentEditable);
       if (forma) {
-        if (e.key === "Escape") { e.preventDefault(); fechar(); }
+        if (e.key === "Escape") { e.preventDefault(); if (!tefEtapa) fechar(); }
         // Bandeira por tecla, mas só com o foco no campo do valor (senão a letra
         // sumiria de dentro da observação).
         if (T.cartao(forma) && campoRef.current && document.activeElement === campoRef.current) {
@@ -173,7 +231,7 @@ export function PainelPagamentos({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [forma, formas, ativo, falta]);
+  }, [forma, formas, ativo, falta, tefEtapa]);
 
   // Quanto o cliente entregou (dinheiro) x quanto entra na conta.
   const entregue = num(valor);
@@ -189,8 +247,6 @@ export function PainelPagamentos({
 
   // Agente TEF neste PC? (pinpad integrado). Procura ao abrir a tela e de
   // tempos em tempos — se o programa for ligado depois, o botão aparece sozinho.
-  const [tef, setTef] = useState<TefStatus | null>(null);
-  const [tefEtapa, setTefEtapa] = useState<"" | "enviando" | "pinpad">("");
   useEffect(() => {
     let vivo = true;
     const olhar = async () => { const s = await tefDisponivel(); if (vivo) setTef(s); };
@@ -222,11 +278,23 @@ export function PainelPagamentos({
         const c = await tefConfirmar(p.tef.idAgente);
         if (!c.ok) { setAviso(`Não consegui confirmar o cartão anterior (NSU ${p.tef.nsu ?? "?"}): ${c.erro || "o agente não respondeu"}.`); return; }
         if (c.aviso) {
+          // Outra tela pode ter guardado este em "Recebido sem conta" (a guarda
+          // confirma antes de guardar): aí ele vale, e a venda liga aquela linha.
+          const guardado = comSemConta
+            ? (await listarTefSemConta().catch(() => [])).some((x) => x.tef.idAgente === p.tef!.idAgente && x.tef.nsu === p.tef!.nsu)
+            : false;
+          if (guardado) { onTefConfirmado?.(p.uid); continue; }
           setAviso(`O cartão anterior (NSU ${p.tef.nsu ?? "?"}) não está mais em aberto no agente — deve ter sido desfeito. Tire esse pagamento da conta e passe o cartão de novo.`);
           return;
         }
         onTefConfirmado?.(p.uid);
       }
+      // O que ainda estiver aprovado no agente não é desta conta (os desta
+      // acabaram de ser confirmados): é de uma tela que saiu no meio. O agente
+      // desfaria ao receber a cobrança nova — então guarda antes (BUG-001).
+      const guardado = await resgatarPendente();
+      if (guardado) { setRecadoGuarda(guardado); void recarregarSemConta(); }
+      anotarCobranca(tipo, cent(aplica), conta);
       setTefEtapa("pinpad");
       // Pix na maquininha: o QR aparece no pinpad e o agente só responde quando
       // o cliente paga (ou cancela). Daí pra frente é igual ao cartão.
@@ -239,7 +307,7 @@ export function PainelPagamentos({
             ...(tipo === "debito" && modDebito !== "avista" ? { modalidade: modDebito } : {}),
           });
       if (!r.ok) { setAviso(r.erro || "O TEF não respondeu."); return; }
-      if (!r.aprovada) { setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`); return; }
+      if (!r.aprovada) { esquecerCobranca(); setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`); return; }
       const dados: TefDados = {
         idAgente: r.idAgente || "",
         terminal: r.terminal ?? null,
@@ -257,7 +325,8 @@ export function PainelPagamentos({
         requerConfirmacao: !!r.requerConfirmacao,
         confirmado: false,
       };
-      onAdicionar({
+      anotarAprovada(dados);
+      const aceito = onAdicionar({
         uid: novoUid(),
         forma,
         valor: cent(aplica),
@@ -265,11 +334,19 @@ export function PainelPagamentos({
         observacao: obs.trim() || null,
         tef: dados,
       });
-      // Rede de segurança: se mesmo assim o agente desfez um cartão anterior,
-      // o caixa fica sabendo e aquele pagamento sai da conta.
-      if (r.desfeitaAnterior) {
-        const antigo = pagos.find((p) => p.tef?.idAgente === r.desfeitaAnterior?.id);
-        if (antigo) onRemover(antigo.uid);
+      // O cliente pagou depois que o caixa saiu da conta (comanda 238, 31/10):
+      // não tem mais onde pôr. Confirma e guarda em "Recebido sem conta" — antes
+      // isso ficava pendente e o agente devolvia o dinheiro na venda seguinte.
+      if (aceito === false) {
+        await guardarSemConta(dados, cent(aplica), `aprovado depois que o caixa saiu da conta${conta ? ` · ${conta}` : ""}`);
+        return;
+      }
+      // Rede de segurança: se mesmo assim o agente desfez um cartão anterior
+      // DESTA conta, o caixa fica sabendo e aquele pagamento sai da conta.
+      // (Antes o aviso aparecia na conta de outro cliente, sem nada a ver.)
+      const antigo = r.desfeitaAnterior ? pagos.find((p) => p.tef?.idAgente === r.desfeitaAnterior?.id) : undefined;
+      if (r.desfeitaAnterior && antigo) {
+        onRemover(antigo.uid);
         setAviso(`O agente DESFEZ o cartão anterior (NSU ${r.desfeitaAnterior.nsu ?? "?"}, ${brl(r.desfeitaAnterior.valor)}) porque estava sem confirmação. Esse pagamento saiu da conta — passe o cartão de novo.`);
         return;
       }
@@ -279,6 +356,36 @@ export function PainelPagamentos({
     } finally {
       setTefEtapa("");
     }
+  }
+
+  // Pagamento do pinpad que ficou sem conta entra nesta, já confirmado: a venda
+  // liga aquela transação (não cobra de novo nem cria outra).
+  function usarSemConta(sc: TefSemConta) {
+    setAvisoSemConta(null);
+    if (!ativo) { setAvisoSemConta("Escolha os itens da conta antes."); return; }
+    if (sc.valor > falta + 0.005) { setAvisoSemConta(`Esse pagamento é de ${brl(sc.valor)} e nesta conta falta ${brl(falta)}.`); return; }
+    const f = (sc.tef.tipo ? formas.find((x) => T.tef(x.nome) === sc.tef.tipo)?.nome : undefined) ?? (forma && T.tef(forma) ? forma : null);
+    const tipo = sc.tef.tipo ?? (f ? T.tef(f) : null);
+    if (!f || !tipo) { setAvisoSemConta("Não ficou anotado se foi Pix ou cartão: abra a forma certa (ex.: Pix na máquina) e toque de novo em Usar nesta conta."); return; }
+    const aceito = onAdicionar({
+      uid: novoUid(),
+      forma: f,
+      valor: sc.valor,
+      bandeira: sc.tef.bandeira,
+      observacao: null,
+      tef: { ...sc.tef, tipo, requerConfirmacao: false, confirmado: true },
+    });
+    if (aceito !== false) setSemConta((l) => l.filter((x) => x.id !== sc.id));
+  }
+  async function resolverSemConta(sc: TefSemConta) {
+    const ok = await perguntarSeOk(`Tirar o ${nomeTef(sc.tef.tipo)} de ${brl(sc.valor)} da lista?`, {
+      detalhe: "Só se ele já foi lançado à mão, ou se não era de nenhuma conta daqui. Pra devolver o dinheiro ao cliente, cancele em Cartões (TEF).",
+      okTexto: "Tirar da lista",
+    });
+    if (!ok) return;
+    const r = await resolverTefSemConta(sc.id);
+    if (!r.ok) { setAvisoSemConta(r.mensagem); return; }
+    setSemConta((l) => l.filter((x) => x.id !== sc.id));
   }
 
   function salvar() {
@@ -323,6 +430,36 @@ export function PainelPagamentos({
 
   return (
     <div className="space-y-3">
+      {/* ---------- recebido na maquininha sem conta (BUG-001) ---------- */}
+      {recadoGuarda && <p className="rounded-controle bg-destaque px-3 py-2 text-sm text-texto">{recadoGuarda}</p>}
+      {semContaFora.length > 0 && (
+        <div className="rounded-cartao bg-destaque p-3">
+          <p className="text-sm font-bold text-texto">Recebido na maquininha sem conta</p>
+          <p className="mt-0.5 text-xs text-texto-suave">
+            O cliente pagou, mas a venda não foi lançada. Se for desta conta, use aqui. Se não for de nenhuma, cancele em Cartões (TEF) pra devolver.
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {semContaFora.map((sc) => (
+              <li key={sc.id} className="flex flex-wrap items-center gap-2 rounded-controle bg-painel-cartao px-3 py-2">
+                <span className="min-w-0 flex-1 text-sm text-texto">
+                  <span className="font-semibold">{nomeTef(sc.tef.tipo)}</span> · {horaCurta(sc.criadoEm)}
+                  {sc.tef.nsu ? <span className="text-texto-fraco"> · NSU {sc.tef.nsu}</span> : null}
+                  {sc.motivo && <span className="block truncate text-mini text-texto-fraco" title={sc.motivo}>{sc.motivo}</span>}
+                </span>
+                <span className="font-numero font-semibold tabular-nums text-texto">{brl(sc.valor)}</span>
+                <button type="button" onClick={() => usarSemConta(sc)} disabled={!!tefEtapa} className="btn-principal !min-h-11 px-4 text-sm">
+                  Usar nesta conta
+                </button>
+                <BotaoAcao aoClicar={() => resolverSemConta(sc)} disabled={!!tefEtapa} className="btn-secundario !min-h-11 px-4 text-sm">
+                  Já resolvido
+                </BotaoAcao>
+              </li>
+            ))}
+          </ul>
+          {avisoSemConta && <p className="mt-2 text-sm font-medium text-urgente-texto">{avisoSemConta}</p>}
+        </div>
+      )}
+
       {/* ---------- pagamentos já lançados ---------- */}
       {pagos.length > 0 && (
         <ul className="space-y-1">
@@ -614,7 +751,7 @@ export function PainelPagamentos({
           {aviso && <p className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
 
           <div className="mt-3 flex gap-2">
-            <button onClick={fechar} className={`${btn} flex-1 border-borda-forte text-texto-suave `}>
+            <button onClick={fechar} disabled={!!tefEtapa} className={`${btn} flex-1 border-borda-forte text-texto-suave disabled:opacity-40`}>
               Voltar
             </button>
             {tefAplica(forma) ? (

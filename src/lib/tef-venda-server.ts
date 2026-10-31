@@ -35,6 +35,34 @@ export function camposTefDoMov(t: TefDaVenda | null | undefined, bandeira?: stri
   };
 }
 
+/** Começo da mensagem do pagamento aprovado no pinpad que ficou sem venda
+ *  (registrarTefAvulso). É o que a lista "Recebido sem conta" do caixa procura. */
+export const PREFIXO_SEM_CONTA = "Cobrado no pinpad sem venda";
+
+/**
+ * Pagamento guardado como "recebido sem conta" (o caixa saiu da conta com o
+ * pinpad aprovado — BUG-001, comanda 238 em 31/10) que agora entrou numa venda:
+ * devolve a linha pra ser LIGADA à venda, em vez de nascer outra transação pro
+ * mesmo NSU.
+ */
+export async function transacaoSemConta(
+  supabase: Db,
+  t: { idAgente: string; nsu: string | null; terminal: string | null },
+): Promise<string | null> {
+  if (!t.idAgente || !t.nsu) return null;
+  let q = supabase
+    .from("tef_transacoes")
+    .select("id")
+    .is("mov_id", null)
+    .eq("id_agente", t.idAgente)
+    .eq("nsu", t.nsu)
+    .in("status", ["aprovada", "confirmada"])
+    .gte("criado_em", new Date(Date.now() - 7 * 86400000).toISOString());
+  if (t.terminal) q = q.eq("terminal", t.terminal);
+  const { data } = await q.order("criado_em", { ascending: false }).limit(1).maybeSingle();
+  return (data as { id?: string } | null)?.id ?? null;
+}
+
 /** Grava a transação (status "aprovada") e devolve o id pra confirmar depois. */
 export async function registrarTefDaVenda(
   supabase: Db,
@@ -42,31 +70,31 @@ export async function registrarTefDaVenda(
 ): Promise<string | null> {
   const { data: quem } = await supabase.auth.getUser();
   const t = d.tef;
-  const { data } = await supabase
-    .from("tef_transacoes")
-    .insert({
-      caixa_id: d.caixaId,
-      comanda_ids: d.comandaIds,
-      mov_id: d.movId,
-      terminal: t.terminal,
-      tipo: t.tipo,
-      valor: d.valor,
-      parcelas: Math.max(1, Number(t.parcelas) || 1),
-      rede: t.rede,
-      bandeira: t.bandeira,
-      produto: t.produto,
-      nsu: t.nsu,
-      nsu_host: t.nsuHost,
-      autorizacao: t.autorizacao,
-      pan_mascarado: t.panMascarado,
-      status: "aprovada",
-      via_cliente: t.viaCliente ?? [],
-      via_loja: t.viaLoja ?? [],
-      id_agente: t.idAgente,
-      criado_por: quem.user?.id ?? null,
-    })
-    .select("id")
-    .maybeSingle();
+  const existente = await transacaoSemConta(supabase, t);
+  const campos = {
+    caixa_id: d.caixaId,
+    comanda_ids: d.comandaIds,
+    mov_id: d.movId,
+    terminal: t.terminal,
+    tipo: t.tipo,
+    valor: d.valor,
+    parcelas: Math.max(1, Number(t.parcelas) || 1),
+    rede: t.rede,
+    bandeira: t.bandeira,
+    produto: t.produto,
+    nsu: t.nsu,
+    nsu_host: t.nsuHost,
+    autorizacao: t.autorizacao,
+    pan_mascarado: t.panMascarado,
+    status: "aprovada",
+    via_cliente: t.viaCliente ?? [],
+    via_loja: t.viaLoja ?? [],
+    id_agente: t.idAgente,
+    criado_por: quem.user?.id ?? null,
+  };
+  const { data } = existente
+    ? await supabase.from("tef_transacoes").update({ ...campos, mensagem: null }).eq("id", existente).select("id").maybeSingle()
+    : await supabase.from("tef_transacoes").insert(campos).select("id").maybeSingle();
   return (data as { id?: string } | null)?.id ?? null;
 }
 

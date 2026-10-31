@@ -377,6 +377,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 agente={agenteTef}
                 desabilitado={proc || faltaQuem || cartLista.length === 0}
                 aoAprovar={finalizarComTef}
+                conta="PDV balcão"
               />
             ) : tipoDe(forma, formas) === "pix" && pixAtivo && cobrar > 0 ? (
               // Com QR na tela, a venda fecha sozinha quando o Pix cai (ou por "Vi que caiu").

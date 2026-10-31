@@ -281,6 +281,7 @@ function VenderVale({ formas, onFechar, onVendido }: { formas: FormaOpcao[]; onF
               tipo={tef}
               valor={v}
               agente={agenteTef}
+              conta="Venda de vale-presente"
               desabilitado={!pronto}
               aoAprovar={async (t) => {
                 const r = await venderValePresente({ ...dados(), tef: t });

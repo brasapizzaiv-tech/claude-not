@@ -258,6 +258,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                     tipo={tefSel}
                     valor={total}
                     agente={agenteTef}
+                    conta={`Pedido #${p.numero ?? "—"}`}
                     desabilitado={proc}
                     aoAprovar={async (tef) => {
                       const r = await receberDelivery(p.id, { forma: formaSel, tef, valorTef: total });

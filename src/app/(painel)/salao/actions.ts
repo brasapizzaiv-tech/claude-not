@@ -11,7 +11,7 @@ import { conferirFormasEspeciais, lancarFormasEspeciais } from "@/lib/pagamento-
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
-import { fecharTefNoBanco } from "@/lib/tef-venda-server";
+import { fecharTefNoBanco, PREFIXO_SEM_CONTA, transacaoSemConta } from "@/lib/tef-venda-server";
 import { codigoDaForma, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
 import { reimprimirNaCozinha, resolverCombo } from "@/lib/delivery-core";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
@@ -1290,31 +1290,33 @@ export async function pagarSelecao(
         .maybeSingle();
       if (baixa) await ligarBaixaAoMov(supabase, baixa, (mov as { id?: string } | null)?.id ?? null);
       if (t) {
-        const { data: tr } = await supabase
-          .from("tef_transacoes")
-          .insert({
-            caixa_id: caixaId,
-            comanda_ids: [...new Set([...sel.map((s) => s.comandaId), ...extras.map((e) => e.comandaId)])],
-            mov_id: (mov as { id?: string } | null)?.id ?? null,
-            terminal: t.terminal,
-            tipo: t.tipo,
-            valor: p.valor,
-            parcelas: Math.max(1, Number(t.parcelas) || 1),
-            rede: t.rede,
-            bandeira: t.bandeira,
-            produto: t.produto,
-            nsu: t.nsu,
-            nsu_host: t.nsuHost,
-            autorizacao: t.autorizacao,
-            pan_mascarado: t.panMascarado,
-            status: "aprovada",
-            via_cliente: t.viaCliente ?? [],
-            via_loja: t.viaLoja ?? [],
-            id_agente: t.idAgente,
-            criado_por: quem.user?.id ?? null,
-          })
-          .select("id")
-          .maybeSingle();
+        const campos = {
+          caixa_id: caixaId,
+          comanda_ids: comandasDaVenda,
+          mov_id: (mov as { id?: string } | null)?.id ?? null,
+          terminal: t.terminal,
+          tipo: t.tipo,
+          valor: p.valor,
+          parcelas: Math.max(1, Number(t.parcelas) || 1),
+          rede: t.rede,
+          bandeira: t.bandeira,
+          produto: t.produto,
+          nsu: t.nsu,
+          nsu_host: t.nsuHost,
+          autorizacao: t.autorizacao,
+          pan_mascarado: t.panMascarado,
+          status: "aprovada",
+          via_cliente: t.viaCliente ?? [],
+          via_loja: t.viaLoja ?? [],
+          id_agente: t.idAgente,
+          criado_por: quem.user?.id ?? null,
+        };
+        // Veio de "Recebido sem conta" (ou outra tela já guardou): liga aquela
+        // linha a esta venda em vez de nascer outra pro mesmo NSU.
+        const existente = await transacaoSemConta(supabase, t);
+        const { data: tr } = existente
+          ? await supabase.from("tef_transacoes").update({ ...campos, mensagem: null }).eq("id", existente).select("id").maybeSingle()
+          : await supabase.from("tef_transacoes").insert(campos).select("id").maybeSingle();
         const transacaoId = (tr as { id?: string } | null)?.id;
         if (transacaoId) tefRegistros.push({ idAgente: t.idAgente, transacaoId });
       }
@@ -1515,26 +1517,44 @@ export async function registrarPixTeste(r: {
 }
 
 /**
- * Cartão CONFIRMADO no pinpad cuja venda NÃO foi gravada.
+ * Cartão ou Pix CONFIRMADO no pinpad cuja venda NÃO foi gravada.
  *
  * Acontece na conta com dois cartões: o primeiro é confirmado (CNF) antes de
  * passar o segundo — o gerenciador exige — e depois a venda falha ou o caixa
- * tira o pagamento da conta. O dinheiro já foi cobrado e não dá mais pra
- * desfazer (NCN); só cancelar (CNC), que precisa do cartão de novo. Fica
- * registrado fora do caixa (mov_id nulo), como o Pix de teste, pra aparecer em
- * Cartões (TEF) e poder ser cancelado por lá.
+ * tira o pagamento da conta. E desde 31/10 (BUG-001, comanda 238) também quando
+ * o pinpad aprova e não tem mais tela pra receber (o caixa saiu da conta): em
+ * vez de desfazer — o cliente pagava e recebia de volta —, a guarda do pinpad
+ * (src/lib/tef-guarda.ts) confirma e guarda aqui.
+ *
+ * Fica fora do caixa (mov_id nulo) e aparece em "Recebido sem conta" no
+ * Pagamento do caixa, pra usar numa conta, e em Cartões (TEF), pra cancelar.
  */
 export async function registrarTefAvulso(
   t: {
     idAgente: string; terminal: string | null; nsu: string | null; nsuHost: string | null; autorizacao: string | null;
-    rede: string | null; bandeira: string | null; produto: string | null; tipo: "credito" | "debito" | "voucher" | "pix";
+    rede: string | null; bandeira: string | null; produto: string | null;
+    // Nulo quando a tela que cobrou foi fechada antes de o pinpad responder e
+    // ninguém anotou o tipo (o agente só guarda valor e NSU).
+    tipo: "credito" | "debito" | "voucher" | "pix" | null;
     parcelas: number; panMascarado: string | null; viaCliente: string[]; viaLoja: string[];
   },
   valor: number,
   motivo: string,
 ) {
-  await exigirAcesso("/salao");
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
   const supabase = await createClient();
+  // Já registrado (a venda gravou no meio do caminho, ou outra aba guardou antes).
+  if (t.idAgente && t.nsu) {
+    let q = supabase
+      .from("tef_transacoes")
+      .select("id")
+      .eq("id_agente", t.idAgente)
+      .eq("nsu", t.nsu)
+      .gte("criado_em", new Date(Date.now() - 7 * 86400000).toISOString());
+    if (t.terminal) q = q.eq("terminal", t.terminal);
+    const { data: ja } = await q.limit(1).maybeSingle();
+    if (ja) return { ok: true as const };
+  }
   const { data: userData } = await supabase.auth.getUser();
   const { error } = await supabase.from("tef_transacoes").insert({
     mov_id: null,
@@ -1551,12 +1571,79 @@ export async function registrarTefAvulso(
     autorizacao: t.autorizacao,
     pan_mascarado: t.panMascarado,
     status: "confirmada",
-    mensagem: `Cobrado no pinpad sem venda gravada (${motivo}) — cancelar aqui`,
+    mensagem: `${PREFIXO_SEM_CONTA} gravada (${motivo}) — use numa conta pelo Pagamento do caixa, ou cancele aqui`,
     via_cliente: t.viaCliente ?? [],
     via_loja: t.viaLoja ?? [],
     id_agente: t.idAgente,
     criado_por: userData.user?.id ?? null,
   });
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath("/salao/caixa/tef");
+  return { ok: true as const };
+}
+
+export type TefSemConta = {
+  id: string;
+  valor: number;
+  criadoEm: string;
+  /** O que a guarda anotou: de que conta era e por que ficou sem venda. */
+  motivo: string;
+  tef: {
+    idAgente: string; terminal: string | null; nsu: string | null; nsuHost: string | null; autorizacao: string | null;
+    rede: string | null; bandeira: string | null; produto: string | null; tipo: "credito" | "debito" | "voucher" | "pix" | null;
+    parcelas: number; panMascarado: string | null; viaCliente: string[]; viaLoja: string[];
+  };
+};
+
+/**
+ * "Recebido sem conta": pagamentos aprovados no pinpad que ficaram sem venda
+ * (registrarTefAvulso) nos últimos 7 dias e ainda não foram usados numa conta,
+ * cancelados nem resolvidos à mão. Aparecem no Pagamento do caixa.
+ */
+export async function listarTefSemConta(): Promise<TefSemConta[]> {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tef_transacoes")
+    .select("id, valor, criado_em, mensagem, id_agente, terminal, nsu, nsu_host, autorizacao, rede, bandeira, produto, tipo, parcelas, pan_mascarado, via_cliente, via_loja")
+    .is("mov_id", null)
+    .eq("status", "confirmada")
+    .like("mensagem", `${PREFIXO_SEM_CONTA}%`)
+    .gte("criado_em", new Date(Date.now() - 7 * 86400000).toISOString())
+    .order("criado_em", { ascending: false })
+    .limit(20);
+  type Linha = {
+    id: string; valor: number | string; criado_em: string; mensagem: string | null; id_agente: string | null; terminal: string | null;
+    nsu: string | null; nsu_host: string | null; autorizacao: string | null; rede: string | null; bandeira: string | null; produto: string | null;
+    tipo: TefSemConta["tef"]["tipo"]; parcelas: number | null; pan_mascarado: string | null; via_cliente: string[] | null; via_loja: string[] | null;
+  };
+  return ((data as Linha[] | null) ?? [])
+    .filter((l) => !!l.id_agente)
+    .map((l) => ({
+      id: l.id,
+      valor: Number(l.valor),
+      criadoEm: l.criado_em,
+      motivo: (l.mensagem ?? "").match(/\((.*)\)/)?.[1] ?? "",
+      tef: {
+        idAgente: l.id_agente as string, terminal: l.terminal, nsu: l.nsu, nsuHost: l.nsu_host, autorizacao: l.autorizacao,
+        rede: l.rede, bandeira: l.bandeira, produto: l.produto, tipo: l.tipo, parcelas: Number(l.parcelas) || 1,
+        panMascarado: l.pan_mascarado, viaCliente: l.via_cliente ?? [], viaLoja: l.via_loja ?? [],
+      },
+    }));
+}
+
+/** O caixa já acertou à mão (lançou sem o pinpad, ou o cliente não era daqui): sai da lista. */
+export async function resolverTefSemConta(id: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data } = await supabase.from("tef_transacoes").select("mensagem").eq("id", id).is("mov_id", null).maybeSingle();
+  if (!data) return { ok: false as const, mensagem: "Esse pagamento não está mais sem conta." };
+  const quando = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+  const { error } = await supabase
+    .from("tef_transacoes")
+    .update({ mensagem: `Resolvido à mão em ${quando} — ${(data as { mensagem: string | null }).mensagem ?? ""}`.slice(0, 500), atualizado_em: new Date().toISOString() })
+    .eq("id", id)
+    .is("mov_id", null);
   if (error) return { ok: false as const, mensagem: error.message };
   revalidatePath("/salao/caixa/tef");
   return { ok: true as const };
