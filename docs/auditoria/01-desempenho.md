@@ -14,6 +14,7 @@
   4. **Notas fiscais do salão: 0,9 s.** Soma todas as notas já emitidas desde o começo.
   5. **Tela inicial:** 89 requisições e 5,2 s até terminar tudo (8,6 s na 1ª vez).
   6. **Contagem de estoque:** um cálculo leva em média 0,4 s no banco, e o pior caso foi 4,3 s.
+- **Pagamento com cartão ou Pix no caixa: ~3,9 s de espera depois que a venda já gravou** (DES-010). O programa da maquininha espera 3 s por um "eco" que o programa da Elgin não manda, e a tela só mostra "Recebido" depois disso. Medido nas 158 vendas de 30 e 31/10.
 - **Em toda tela do painel:** a conferência do login custa ~0,15 s por clique. Uma tela simples do painel leva 0,23 a 0,28 s, enquanto uma tela de fora do painel leva 0,09 a 0,12 s.
 
 ## Como foi medido
@@ -218,10 +219,37 @@ O banco tem 62 MB, e as maiores tabelas do dia a dia têm de 3 mil a 6 mil linha
 - Risco da correção: baixo
 - Depende de: DES-003
 
+### [DES-010] Pagamento com cartão/Pix: 3,9 s de espera depois que a venda já gravou
+- Severidade: alto (todo pagamento com cartão ou Pix, ~80 por dia)
+- Onde:
+  - `agente-tef/agente.mjs:190-195`: no CNF, `esperarArquivo(arqResp, 3000)` espera 3 s por um IntPos.001 de "eco";
+  - `src/app/(painel)/salao/caixa/receber.tsx`, em `confirmar()`: o "Recebido" só aparece depois do laço `tefConfirmar` + `fecharTef`;
+  - o mesmo em `src/components/cobrar-pinpad.tsx` (PDV, delivery e vale-presente).
+- O que acontece: a venda grava, o navegador manda o agente confirmar o cartão (CNF), o agente fica 3 s esperando um arquivo de eco que o gerenciador da Elgin não escreve, e só então o caixa vê "Recebido" e pode seguir pro próximo cliente.
+- Como reproduzir: verificado pelos carimbos do banco; pagamento não executado.
+- Evidência, nas 158 vendas com cartão ou Pix de 30 e 31/10:
+
+  | Trecho | Mediana | Faixa |
+  |---|---:|---|
+  | Fim das gravações → nota pendente criada (fim da ação no servidor) | 81 ms | — |
+  | Nota pendente → transação fechada | **3.881 ms** | 3.606 a 4.299 ms |
+
+  A transação fechada é a resposta + CNF no agente + `fecharTef`. Variar tão pouco é sinal de espera fixa, e não de rede.
+- Causa provável: o tempo-limite de 3 s do eco do CNF sempre se esgota. A volta da ação também traz a tela do caixa montada de novo (`revalidatePath`), e depois o `router.refresh()` monta outra vez.
+- Correção proposta:
+  1. **No caixa** (sem mexer no PC do caixa): mostrar "Recebido" assim que a venda gravar e fazer o CNF + `fecharTef` em segundo plano. A guarda do BUG-001 já cobre o caso de a tela fechar no meio. Ganha ~3,5 s por pagamento já na próxima publicação.
+  2. **No agente** (versão nova, instalada no PC do caixa): esperar o eco no máximo ~300 ms. A venda seguinte já apaga qualquer resposta velha antes de começar (`agente.mjs:170`).
+  3. Tirar a montagem dobrada da tela (`revalidatePath` + `router.refresh()`).
+- Esforço: P (1) + P (2, mais a instalação no caixa) + P (3)
+- Risco da correção: médio (fluxo do TEF em produção; testar com o simulador do agente)
+- Depende de: nada
+- Não medido: o tempo do começo da ação `pagarSelecao` (login, configuração, conferências) até começar a fechar as comandas. O banco não carimba esse trecho. Ele tem ~8 idas ao banco em fila.
+
 ## 5. As 5 correções rápidas de maior efeito
 
 | # | Correção | Ganha | Esforço |
 |---|---|---|---|
+| 0 | Caixa mostra "Recebido" sem esperar o CNF (DES-010, parte 1) | ~3,5 s em **cada** pagamento com cartão ou Pix | P |
 | 1 | Fotos do cardápio com carregamento preguiçoso (DES-006, parte 1) | /pedir no celular deixa de baixar ~6 MB de uma vez; /salao/cardapio idem | P |
 | 2 | Migration com os 4 índices (DES-003) | contagem (0,4 s → menos), tela inicial, buffet, cron SEFAZ; e evita piorar com o tempo | P |
 | 3 | Total das notas somado no banco (DES-008) | /salao/notas-fiscais: 0,9 s → próximo das telas comuns | P |

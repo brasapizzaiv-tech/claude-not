@@ -59,7 +59,7 @@ Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-00
 
 ## Achados abertos (contagem por etapa)
 
-Etapa 1: 9 achados (DES-001 a DES-009) — 2 altos (DES-002 /financeiro/banco, DES-006 fotos do /pedir), 6 médios, 1 baixo. Detalhes no `01-desempenho.md`.
+Etapa 1: 10 achados (DES-001 a DES-010) — 3 altos (DES-002 /financeiro/banco, DES-006 fotos do /pedir, DES-010 espera de 3,9 s no pagamento com cartão/Pix), 6 médios, 1 baixo. Detalhes no `01-desempenho.md`.
 
 A Etapa 0 só registra observações, que viram itens nas etapas certas. Os achados abaixo
 chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando ela começar.
