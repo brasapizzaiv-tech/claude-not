@@ -19,7 +19,7 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | # | Etapa | Status | Relatório |
 |---|---|---|---|
 | 0 | Preparação e inventário | **concluída (30/10)**; respostas do Rafael em 31/10 (abaixo) | `00-inventario.md` |
-| 1 | Desempenho e lentidão | **em andamento (31/10)** | `01-desempenho.md` |
+| 1 | Desempenho e lentidão | **concluída (31/10)**; esperando o "seguir" do Rafael | `01-desempenho.md` |
 | 2 | Saúde do código | não começou | `02-codigo.md` |
 | 3 | Varredura de todas as telas | não começou | `03-telas.md` + `prints/` |
 | 4 | Bugs de lógica e dados | não começou | `04-bugs.md` |
@@ -39,19 +39,10 @@ Horário: medir com o robô fora do serviço (almoço 11:30–14:00 seg–sáb; 
 
 ## Onde parou
 
-Etapa 1 em andamento (31/10, ~20h). Rascunho em `01-desempenho.md` (achados DES-001 a DES-005, provisórios).
+Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-001 a DES-009, tabela das 131 medidas, top 5 correções rápidas). Próxima: **Etapa 2 (saúde do código)**, só quando o Rafael mandar seguir.
 
-Feito:
-- JS por tela (`js-por-rota.mjs`): nenhuma passa de 300 KB gzip; a maior é /delivery com 230 KB.
-- Banco (`consultas-lentas.mjs --explain`): top 20 por total e por média, com planos; índices faltando; RPCs pesadas.
-- Código: cascata de login (3× getUser + ~8 consultas em fila por tela do painel), /financeiro/banco sem filtro, cron SEFAZ N+1.
-- Robô `medir-telas.mjs` escrito e testado (sintaxe e resumo); `playwright-core` 1.64.1 e `lighthouse` 13.6.0 instalados em scripts/auditoria (node_modules fora do git).
-
-Falta (nesta ordem):
-1. O Rafael entra no robô: `node scripts/auditoria/medir-telas.mjs --login --perfil <scratchpad>/perfil-robo`, fora do serviço.
-2. Rodar `medir-telas.mjs --perfil … --saida <scratchpad>/medicao.json` (~30–40 min) e gerar a tabela com `--resumo`.
-3. Fechar o 01-desempenho.md: tabela ok/atenção/lenta, confirmar DES-001 com número, consultas por tela, top 5 correções rápidas.
-4. Mostrar o resumo e parar.
+- O perfil do robô (com o login do Rafael) continua em `<scratchpad>/perfil-robo`: serve pros prints da Etapa 3. **Apagar no fim da auditoria.**
+- Medidas cruas: `<scratchpad>/medicao.json` (fora do git; o anexo do relatório tem a tabela).
 
 ## Scripts da auditoria (todos só leitura)
 
@@ -67,6 +58,8 @@ Falta (nesta ordem):
 | `scripts/auditoria/medir-telas.mjs` | Robô (Chrome instalado) que mede cada tela: pronta, TTFB, LCP, clique no menu (RSC), requisições; bloqueia tudo que não é GET |
 
 ## Achados abertos (contagem por etapa)
+
+Etapa 1: 9 achados (DES-001 a DES-009) — 2 altos (DES-002 /financeiro/banco, DES-006 fotos do /pedir), 6 médios, 1 baixo. Detalhes no `01-desempenho.md`.
 
 A Etapa 0 só registra observações, que viram itens nas etapas certas. Os achados abaixo
 chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando ela começar.
