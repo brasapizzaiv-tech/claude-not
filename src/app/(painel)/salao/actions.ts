@@ -1952,6 +1952,45 @@ async function deliveryEmAberto(supabase: Awaited<ReturnType<typeof createClient
     });
 }
 
+// Comandas abertas com valor a receber: também impedem o fechamento (pedido
+// do Rafael, 31/10 — a 502 da mesa 5 ficou aberta desde o almoço e o caixa do
+// almoço fechou assim mesmo). Vale qualquer dia, não só o do caixa. Comanda
+// vazia (nada a pagar) não trava. As do delivery ficam de fora: quem cuida
+// delas é o deliveryEmAberto, com a mensagem certa.
+async function comandasEmAberto(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await supabase
+    .from("pdv_comandas")
+    .select("id, numero, mesa, aberta_em")
+    .eq("status", "aberta")
+    .order("aberta_em")
+    .limit(300);
+  const abertas = (data as { id: string; numero: number; mesa: string | null; aberta_em: string }[]) ?? [];
+  if (abertas.length === 0) return [];
+  const { data: dels } = await supabase.from("delivery_pedidos").select("comanda_id").in("comanda_id", abertas.map((c) => c.id));
+  const doDelivery = new Set(((dels as { comanda_id: string | null }[]) ?? []).map((d) => d.comanda_id));
+  const comFalta = await Promise.all(
+    abertas
+      .filter((c) => !doDelivery.has(c.id))
+      .map(async (c) => ({ c, falta: (await faltasDaComanda(supabase, c.id)).reduce((a, l) => a + l.falta, 0) })),
+  );
+  return comFalta
+    .filter((x) => x.falta > 0.004)
+    .map(({ c, falta }) => ({ id: c.id, numero: c.numero, mesa: c.mesa, falta: r2(falta), abertaEm: c.aberta_em }));
+}
+
+/** O que impede fechar o caixa agora: a tela mostra antes de contar o dinheiro. */
+export async function pendenciasDoFechamento(caixaId: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: caixa } = await supabase.from("pdv_caixas").select("aberto_em").eq("id", caixaId).maybeSingle();
+  if (!caixa) return { comandas: [], delivery: [] };
+  const [delivery, comandas] = await Promise.all([
+    deliveryEmAberto(supabase, String(caixa.aberto_em)),
+    comandasEmAberto(supabase),
+  ]);
+  return { comandas, delivery };
+}
+
 // Fechamento Z: confere o dinheiro contado x esperado, grava a quebra e o
 // resumo por forma de pagamento, e fecha o caixa.
 export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs: string) {
@@ -1973,6 +2012,14 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
     return {
       ok: false as const,
       mensagem: `Não dá pra fechar o caixa: ${pendentes.length} pedido(s) de delivery em aberto — ${lista}${pendentes.length > 6 ? "…" : ""}. Entregue e receba (ou cancele) no Delivery — o que está com motoboy fecha em Delivery → Entregadores → Caixa dos motoboys — e tente de novo.`,
+    };
+  }
+  const abertas = await comandasEmAberto(supabase);
+  if (abertas.length > 0) {
+    const lista = abertas.slice(0, 8).map((c) => `#${c.numero}${c.mesa ? ` (${c.mesa})` : ""}`).join(", ");
+    return {
+      ok: false as const,
+      mensagem: `Não dá pra fechar o caixa: ${abertas.length} comanda(s) aberta(s) com valor a receber — ${lista}${abertas.length > 8 ? "…" : ""}. Receba cada uma (ou exclua, se foi aberta por engano) e tente de novo.`,
     };
   }
 

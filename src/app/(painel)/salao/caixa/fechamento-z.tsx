@@ -3,9 +3,13 @@
 import { Icone } from "@/components/icone";
 import { avisar, confirmar as perguntarSeOk } from "@/components/dialogo";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
+import { BotaoAcao } from "@/components/enviar";
 import { useRouter } from "next/navigation";
-import { fecharCaixaZ, reimprimirFechamento } from "../actions";
+import { fecharCaixaZ, pendenciasDoFechamento, reimprimirFechamento } from "../actions";
+
+type Pendencias = Awaited<ReturnType<typeof pendenciasDoFechamento>>;
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -44,6 +48,21 @@ export function FechamentoZ({
   // Quantas impressoras receberam o cupom (0 = nenhuma marcada pra NFC-e).
   const [impresso, setImpresso] = useState<number | null>(null);
   const [msgImp, setMsgImp] = useState<string | null>(null);
+
+  // Comanda aberta com valor ou delivery sem receber: não fecha (o servidor
+  // confere de novo). Aparece assim que abre, antes de contar a gaveta.
+  const [pend, setPend] = useState<Pendencias | null>(null);
+  async function conferirPendencias() {
+    try { setPend(await pendenciasDoFechamento(caixaId)); } catch { setPend(null); }
+  }
+  useEffect(() => {
+    if (!aberto) return;
+    const t = setTimeout(() => { void conferirPendencias(); }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto]);
+  const qtdPend = (pend?.comandas.length ?? 0) + (pend?.delivery.length ?? 0);
+  const horaDe = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
   const contado = num(contadoStr);
   const quebra = Math.round((contado - esperado) * 100) / 100;
@@ -94,6 +113,35 @@ export function FechamentoZ({
                 ✕
               </button>
             </div>
+
+            {qtdPend > 0 && pend && (
+              <div className="mb-3 rounded-cartao bg-urgente-fundo p-3 text-sm">
+                <p className="font-bold text-urgente-texto">Ainda não dá pra fechar: tem conta sem receber</p>
+                <p className="mt-0.5 text-xs text-texto-suave">Receba cada uma (ou exclua a comanda aberta por engano) e toque em Conferir de novo.</p>
+                <ul className="mt-2 space-y-1">
+                  {pend.comandas.map((c) => (
+                    <li key={c.id} className="flex items-center gap-2">
+                      <Link href={`/salao/comandas/${c.id}`} className="min-h-11 flex-1 content-center font-semibold text-texto underline-offset-2 hover:underline">
+                        Comanda #{c.numero}{c.mesa ? ` · ${c.mesa}` : ""}
+                        <span className="block text-mini font-normal text-texto-fraco">aberta {horaDe(c.abertaEm)}</span>
+                      </Link>
+                      <span className="font-numero tabular-nums text-texto">falta {brl(c.falta)}</span>
+                    </li>
+                  ))}
+                  {pend.delivery.map((d, i) => (
+                    <li key={`d${i}`} className="flex items-center gap-2">
+                      <Link href="/delivery" className="min-h-11 flex-1 content-center font-semibold text-texto underline-offset-2 hover:underline">
+                        Delivery #{d.numero ?? "?"} · {d.nome}
+                        <span className="block text-mini font-normal text-texto-fraco">{d.motivo}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <BotaoAcao aoClicar={conferirPendencias} className="btn-secundario mt-2 w-full text-sm">
+                  Conferir de novo
+                </BotaoAcao>
+              </div>
+            )}
 
             <div className="space-y-1 rounded-cartao bg-superficie-suave p-3 text-sm">
               <div className="flex justify-between text-texto-suave">
@@ -183,7 +231,8 @@ export function FechamentoZ({
               </button>
               <button
                 onClick={confirmar}
-                disabled={proc || contadoStr.trim() === ""}
+                disabled={proc || contadoStr.trim() === "" || qtdPend > 0}
+                title={qtdPend > 0 ? "Tem comanda aberta ou delivery sem receber" : undefined}
                 className="rounded-controle bg-zinc-800 px-5 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50 dark:bg-zinc-700"
               >
                 {proc ? "Fechando..." : "Fechar e imprimir Z"}
