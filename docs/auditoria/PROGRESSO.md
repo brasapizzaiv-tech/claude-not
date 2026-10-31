@@ -18,8 +18,8 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 
 | # | Etapa | Status | Relatório |
 |---|---|---|---|
-| 0 | Preparação e inventário | **concluída (30/10)**, esperando respostas do Rafael (seção 4 do relatório) | `00-inventario.md` |
-| 1 | Desempenho e lentidão | não começou. Depende das respostas da Etapa 0 (ambiente e ferramentas) | `01-desempenho.md` |
+| 0 | Preparação e inventário | **concluída (30/10)**; respostas do Rafael em 31/10 (abaixo) | `00-inventario.md` |
+| 1 | Desempenho e lentidão | **em andamento (31/10)** | `01-desempenho.md` |
 | 2 | Saúde do código | não começou | `02-codigo.md` |
 | 3 | Varredura de todas as telas | não começou | `03-telas.md` + `prints/` |
 | 4 | Bugs de lógica e dados | não começou | `04-bugs.md` |
@@ -28,14 +28,30 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | 7 | Interface, consistência e acessibilidade | não começou | `07-interface.md` |
 | 8 | Relatório final e plano de correção | não começou | `RELATORIO-FINAL.md` |
 
+## Respostas do Rafael à Etapa 0 (31/10)
+
+1. Ferramentas: **pode instalar** `playwright-core` e `lighthouse` só em `scripts/auditoria/` (package.json próprio, node_modules fora do git).
+2. Login do robô: **o login do próprio Rafael**. Ele digita e-mail e senha na janela do robô; a sessão fica no scratchpad e é apagada no fim. O robô só faz GET e bloqueia qualquer outra requisição (exceto RPC só de leitura).
+3. Telas que gravam ao abrir: **pode medir as 4 idempotentes** (cotações vencidas, sync das marmitas em /pedir e /delivery/novo, sync dos 10% em /colaboradores/semana, /cotar). `/cotacoes/[id]/fornecedores` fica sempre de fora.
+4. Etapa 3: **só leitura**, sem salvar nada (sem projeto de teste).
+
+Horário: medir com o robô fora do serviço (almoço 11:30–14:00 seg–sáb; noite 18:30–22:00 sex e sáb). Domingo não tem serviço.
+
 ## Onde parou
 
-Etapa 0 terminada. Antes da Etapa 1, o Rafael precisa responder as perguntas da seção 4 do `00-inventario.md`:
+Etapa 1 em andamento (31/10, ~20h). Rascunho em `01-desempenho.md` (achados DES-001 a DES-005, provisórios).
 
-1. Pode instalar `playwright-core` e `lighthouse` só dentro de `scripts/auditoria/`?
-2. Ele cria os dois usuários de teste (dono e funcionário) e o colaborador e o entregador de teste?
-3. As telas que gravam alguma coisa ao abrir entram ou ficam fora da medição?
-4. Quer o projeto Supabase de teste para a Etapa 3?
+Feito:
+- JS por tela (`js-por-rota.mjs`): nenhuma passa de 300 KB gzip; a maior é /delivery com 230 KB.
+- Banco (`consultas-lentas.mjs --explain`): top 20 por total e por média, com planos; índices faltando; RPCs pesadas.
+- Código: cascata de login (3× getUser + ~8 consultas em fila por tela do painel), /financeiro/banco sem filtro, cron SEFAZ N+1.
+- Robô `medir-telas.mjs` escrito e testado (sintaxe e resumo); `playwright-core` 1.64.1 e `lighthouse` 13.6.0 instalados em scripts/auditoria (node_modules fora do git).
+
+Falta (nesta ordem):
+1. O Rafael entra no robô: `node scripts/auditoria/medir-telas.mjs --login --perfil <scratchpad>/perfil-robo`, fora do serviço.
+2. Rodar `medir-telas.mjs --perfil … --saida <scratchpad>/medicao.json` (~30–40 min) e gerar a tabela com `--resumo`.
+3. Fechar o 01-desempenho.md: tabela ok/atenção/lenta, confirmar DES-001 com número, consultas por tela, top 5 correções rápidas.
+4. Mostrar o resumo e parar.
 
 ## Scripts da auditoria (todos só leitura)
 
@@ -46,6 +62,9 @@ Etapa 0 terminada. Antes da Etapa 1, o Rafael precisa responder as perguntas da 
 | `scripts/auditoria/ferramentas-banco.mjs` | Versão, extensões, `pg_stat_statements`, tamanho e as maiores tabelas |
 | `scripts/auditoria/pendencias-banco.mjs` | Policies `USING (true)` e funções SECURITY DEFINER abertas sem login |
 | `scripts/auditoria/rpcs-que-gravam.mjs` | Quais funções do banco gravam alguma coisa (pra saber quais telas o robô não pode abrir) |
+| `scripts/auditoria/js-por-rota.mjs` | JavaScript de 1ª visita por tela (gzip), a partir do `next build` |
+| `scripts/auditoria/consultas-lentas.mjs` | Top consultas do `pg_stat_statements` (total e média) e planos `EXPLAIN (GENERIC_PLAN)` com RLS |
+| `scripts/auditoria/medir-telas.mjs` | Robô (Chrome instalado) que mede cada tela: pronta, TTFB, LCP, clique no menu (RSC), requisições; bloqueia tudo que não é GET |
 
 ## Achados abertos (contagem por etapa)
 

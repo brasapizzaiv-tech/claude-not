@@ -1,0 +1,10 @@
+{
+  "name": "auditoria",
+  "private": true,
+  "type": "module",
+  "description": "Ferramentas da auditoria (medição de telas). Fica fora do sistema publicado.",
+  "dependencies": {
+    "lighthouse": "^13.6.0",
+    "playwright-core": "^1.64.1"
+  }
+}
