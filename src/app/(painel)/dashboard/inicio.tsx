@@ -174,6 +174,13 @@ export function Inicio({ d }: { d: DadosInicio }) {
               type="date"
               value={d.dia}
               onChange={(e) => router.push(`/dashboard?dia=${e.target.value}`)}
+              // No Chrome do computador, clicar no meio de um campo de data só
+              // marca o dia/mês/ano — o calendário abre pelo ícone, que aqui
+              // fica invisível no canto. Por isso o clique no botão "não fazia
+              // nada" (31/10). Abre o calendário na mão.
+              onClick={(e) => {
+                try { e.currentTarget.showPicker(); } catch { /* navegador sem showPicker: fica o jeito padrão */ }
+              }}
               aria-label="Ver outro dia"
               className="absolute inset-0 cursor-pointer opacity-0"
             />
