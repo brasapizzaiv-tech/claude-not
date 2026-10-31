@@ -49,4 +49,38 @@ Etapa 0 terminada. Antes da Etapa 1, o Rafael precisa responder as perguntas da 
 
 ## Achados abertos (contagem por etapa)
 
-Nenhum achado formal ainda. A Etapa 0 só registra observações, que viram itens nas etapas certas.
+A Etapa 0 só registra observações, que viram itens nas etapas certas. Os achados abaixo
+chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando ela começar.
+
+### [BUG-001] Pix da maquininha some se o caixa sai da comanda enquanto o QR está no pinpad
+- Severidade: crítico
+- Onde: `src/app/(painel)/salao/caixa/pagamentos.tsx` (`passarNoCartao`), `agente-tef/agente.mjs` (`desfazerPendenteAntes`)
+- O que acontece: o caixa manda o Pix pro pinpad e sai da comanda. O cliente paga, o agente
+  recebe "aprovado" e guarda como pendente, mas a tela que esperava a resposta não existe mais,
+  então nada é gravado. Na próxima venda no pinpad o agente desfaz (NCN) o Pix pendente, e o
+  aviso vermelho aparece na conta de OUTRO cliente.
+- Como reproduzir: verificado por leitura, não executado (é pagamento real).
+- Evidência: 31/10, comanda 238 (Balança). Conta das comandas 238+239 = R$ 129,37. R$ 100 em
+  dinheiro entraram às 14:11:16 (fechou a 239 e pagou parte da 238). Ficaram R$ 29,37 em aberto
+  na 238, que o Rafael pôs no Pix do pinpad e saiu da comanda. Não existe nenhum registro de
+  R$ 29,37: nem em `tef_transacoes`, nem em `pix_cobrancas` (zero cobranças do QR da tela no dia),
+  nem em `pdv_caixa_mov`. A venda seguinte no mesmo pinpad (comanda 360, débito R$ 56,66,
+  14:12:20) é o ponto em que o agente teria desfeito o Pix. O log do agente fica no PC do caixa
+  (`C:\ProgramData\AgenteTEF\agente.log`), não neste. O Rafael confirmou no extrato: o Pix foi
+  estornado pro cliente. O cliente pagou certo, recebeu de volta, e a conta ficou R$ 29,37 a menos.
+- Causa provável: a resposta do pinpad só é tratada pela tela aberta. Não existe registro da
+  transação aprovada no servidor antes de a venda ser gravada, e a regra do agente é "sem venda
+  gravada, sem cobrança" (desfaz).
+- Correção proposta: (1) travar a saída da comanda enquanto o pinpad espera, com aviso;
+  (2) Pix ou cartão aprovado sem tela pra receber vira "pagamento recebido sem comanda" (CNF +
+  registro avulso), com botão pra ligar numa comanda, em vez de ser desfeito; (3) o aviso de
+  "desfeito" não pode aparecer na conta de outro cliente. Decisão do Rafael: manter "desfaz"
+  ou passar a "guarda e liga depois".
+- Esforço: M
+- Risco da correção: médio (mexe no fluxo do TEF em produção; testar com o simulador do agente)
+- Depende de: decisão do Rafael no item (2). Ele decidiu em 31/10: guardar, não devolver.
+- **Corrigido em 31/10 (fora da ordem da auditoria, a pedido do Rafael).** Sem mexer no agente
+  do PC do caixa: `src/lib/tef-guarda.ts`, "Recebido sem conta" no Pagamento do caixa, venda
+  liga a linha guardada (`transacaoSemConta`). Continua desfazendo um único caso: o agente
+  reiniciar com um pagamento pendente (`recuperar()` no agente), que só muda com uma versão
+  nova do agente instalada no caixa.
