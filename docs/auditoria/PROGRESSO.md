@@ -84,3 +84,17 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
   liga a linha guardada (`transacaoSemConta`). Continua desfazendo um único caso: o agente
   reiniciar com um pagamento pendente (`recuperar()` no agente), que só muda com uma versão
   nova do agente instalada no caixa.
+- Revisão independente (31/10) achou falhas raras na primeira versão, corrigidas em seguida:
+  "Usar nesta conta" num PC sem pinpad marcava a transação como desfeita; falta de conexão
+  depois do CNF perdia o registro (agora fica numa fila no navegador); desfazer que o agente
+  não respondeu passava a ser confirmado pela guarda (agora é desfeito); duas abas no mesmo PC
+  (a guarda espera 60 s antes de mexer num pagamento recém-aprovado de outra tela); pagamento
+  "sem conta" usado em duas vendas (a venda confere antes e só liga linha livre).
+
+### [BUG-002] "Ver outro dia" da tela inicial não abria o calendário
+- Severidade: baixo
+- Onde: `src/app/(painel)/dashboard/inicio.tsx`
+- O que acontece: o botão é um campo de data invisível por cima. No Chrome do computador,
+  clicar no meio do campo só marca dia/mês/ano; o calendário abre pelo ícone, que fica escondido.
+- Evidência: relato do Rafael com print (31/10).
+- Correção: o clique chama `showPicker()`. **Corrigido em 31/10.**
