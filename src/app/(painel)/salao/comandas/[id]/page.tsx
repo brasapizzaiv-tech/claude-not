@@ -171,7 +171,9 @@ export default async function ComandaPage({
       ? (Number(comanda.servico) / subtotal) * 100
       : 0
     : servicoAgora(cfg);
-  const servico = fechada ? Number(comanda.servico) : Math.round(subtotal * perc) / 100;
+  // Toda paga: o serviço é o que de fato entrou (o cliente pode não ter pago os 10%).
+  const servicoPago = Math.max(0, Math.round((Number(comanda.buffet_valor_pago ?? 0) + lista.reduce((s, i) => s + Number(i.valor_pago ?? 0), 0) - subtotal) * 100) / 100);
+  const servico = fechada ? Number(comanda.servico) : soFaltaFechar ? servicoPago : Math.round(subtotal * perc) / 100;
   const total = subtotal + servico;
 
   return (
