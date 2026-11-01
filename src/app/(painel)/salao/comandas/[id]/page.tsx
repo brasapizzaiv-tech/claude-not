@@ -6,7 +6,7 @@ import { servicoAgora } from "../../util";
 import { LancarItens, ReimprimirCozinha } from "./cliente";
 import type { PizzaOpcao, ComboGrupo } from "./cliente";
 import { AcoesComanda } from "./acoes";
-import { removerItemComanda } from "../../actions";
+import { fecharComandaPaga, removerItemComanda } from "../../actions";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -21,7 +21,7 @@ export default async function ComandaPage({
 
   const { data: comanda } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, mesa, status, peso, tara, valor_buffet, livre, so_kg, servico, forma_pagamento, aberta_em, conta_pedida_em, conta_pedida_por")
+    .select("id, numero, mesa, status, peso, tara, valor_buffet, livre, so_kg, servico, forma_pagamento, aberta_em, conta_pedida_em, conta_pedida_por, buffet_pago, buffet_valor_pago")
     .eq("id", id)
     .single();
   if (!comanda) notFound();
@@ -34,7 +34,7 @@ export default async function ComandaPage({
   ] = await Promise.all([
     supabase
       .from("pdv_comanda_itens")
-      .select("id, descricao, qtd, preco_unit, lancamento_id, criado_em")
+      .select("id, descricao, qtd, preco_unit, lancamento_id, criado_em, pago, valor_pago")
       .eq("comanda_id", id)
       .order("criado_em"),
     supabase.from("pdv_itens").select("id, nome, categoria, preco, por_kg").eq("ativo", true).eq("disponivel", true).eq("combo", false).order("nome"),
@@ -145,7 +145,7 @@ export default async function ComandaPage({
   );
 
   const lista =
-    (itens as { id: string; descricao: string; qtd: number; preco_unit: number; lancamento_id: string | null; criado_em: string }[]) ?? [];
+    (itens as { id: string; descricao: string; qtd: number; preco_unit: number; lancamento_id: string | null; criado_em: string; pago: boolean; valor_pago: number | null }[]) ?? [];
   // Itens juntos por pedido (o que foi pra cozinha de uma vez), na ordem.
   const pedidos: { lanc: string | null; hora: string; itens: typeof lista }[] = [];
   for (const i of lista) {
@@ -155,6 +155,13 @@ export default async function ComandaPage({
   }
   const fechada = comanda.status === "fechada";
   const temBuffet = Number(comanda.valor_buffet) > 0 || Number(comanda.peso ?? 0) > 0;
+  // Aberta, já recebeu alguma coisa e não falta nada: só falta fechar (o
+  // item que faltava foi excluído depois do pagamento — 171, 31/10).
+  const recebeu = lista.some((i) => i.pago || Number(i.valor_pago ?? 0) > 0) || !!comanda.buffet_pago || Number(comanda.buffet_valor_pago ?? 0) > 0.005;
+  const semFalta =
+    lista.every((i) => i.pago || Math.abs(Number(i.qtd) * Number(i.preco_unit)) < 0.005) &&
+    (Number(comanda.valor_buffet) <= 0 || !!comanda.buffet_pago);
+  const soFaltaFechar = !fechada && recebeu && semFalta;
 
   const subtotal =
     Number(comanda.valor_buffet) +
@@ -247,10 +254,17 @@ export default async function ComandaPage({
                 <div className="flex justify-between text-painel-foco-suave"><span>Serviço ({Math.round(perc)}%)</span><span className="font-numero">{moeda(servico)}</span></div>
               )}
             </div>
-            {!fechada && (
+            {soFaltaFechar ? (
+              <form action={fecharComandaPaga} className="mt-2">
+                <input type="hidden" name="id" value={comanda.id} />
+                <Enviar className="btn-principal w-full text-sm">Fechar comanda</Enviar>
+              </form>
+            ) : !fechada && (
               <Link href={`/salao/caixa?abrir=${comanda.id}`} className="btn-principal mt-2 w-full text-sm">Receber no caixa</Link>
             )}
-            <p className="text-center text-xs text-painel-foco-suave">O pagamento é feito no caixa. Aqui você adiciona ou retira itens.</p>
+            <p className="text-center text-xs text-painel-foco-suave">
+              {soFaltaFechar ? "Tudo já foi pago no caixa. Falta só fechar a comanda." : "O pagamento é feito no caixa. Aqui você adiciona ou retira itens."}
+            </p>
           </div>
           {!fechada && <AcoesComanda
               comandaId={comanda.id}

@@ -140,6 +140,7 @@ export function ReceberComandas({
     start(async () => {
       const r = await removerItemCaixa(itemId, motivo.trim());
       if (!r.ok) { void avisar(r.mensagem); return; }
+      if (r.fechou) setMsg(`✓ Comanda ${r.numero ?? ""} já estava paga e foi fechada.`);
       setExcluidos((prev) => new Set(prev).add(itemId));
       setCarrinho((prev) => { const n = new Set(prev); n.delete(l.key); return n; });
       router.refresh();

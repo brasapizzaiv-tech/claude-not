@@ -881,6 +881,8 @@ export async function removerItemComanda(formData: FormData) {
     cancelado_por: userData.user?.id ?? null,
   });
   await supabase.from("pdv_comanda_itens").delete().eq("id", id);
+  // Era o que faltava de uma comanda já paga em parte: fecha.
+  if (await fecharSeJaRecebeu(supabase, it.comanda_id as string)) revalidatePath("/salao");
   revalidatePath(`/salao/comandas/${comandaId}`);
   revalidatePath(`/garcom/comanda/${comandaId}`);
 }
@@ -933,6 +935,36 @@ async function fecharSeQuitou(
       .eq("id", comandaId);
   }
   return quitou;
+}
+
+// Fora do pagamento (item excluído, botão "Fechar comanda"): fecha a comanda
+// aberta que já recebeu alguma coisa e não tem mais nada a pagar. Comanda que
+// nunca recebeu fica aberta mesmo vazia. Em 31/10 a 171 ficou aberta com tudo
+// pago: a metade que faltava foi excluída no caixa depois do pagamento.
+async function fecharSeJaRecebeu(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  comandaId: string,
+) {
+  const [{ data: com }, { data: pagos }] = await Promise.all([
+    supabase.from("pdv_comandas").select("status, buffet_pago, buffet_valor_pago").eq("id", comandaId).maybeSingle(),
+    supabase.from("pdv_comanda_itens").select("id").eq("comanda_id", comandaId).or("pago.eq.true,valor_pago.gt.0").limit(1),
+  ]);
+  if (com?.status !== "aberta") return false;
+  const recebeu = (pagos ?? []).length > 0 || !!com.buffet_pago || Number(com.buffet_valor_pago ?? 0) > 0.005;
+  if (!recebeu) return false;
+  return fecharSeQuitou(supabase, comandaId);
+}
+
+// "Fechar comanda" na tela da comanda: só quando já está toda paga.
+export async function fecharComandaPaga(formData: FormData) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  if (!id) return;
+  await fecharSeJaRecebeu(supabase, id);
+  revalidatePath("/salao");
+  revalidatePath("/salao/caixa");
+  revalidatePath(`/salao/comandas/${id}`);
 }
 
 // O que falta pagar de uma comanda (por item e buffet, com serviço).
@@ -2174,10 +2206,13 @@ export async function removerItemCaixa(itemId: string, motivo: string) {
   });
   const { error } = await supabase.from("pdv_comanda_itens").delete().eq("id", itemId);
   if (error) return { ok: false as const, mensagem: "Não consegui excluir. Tente de novo." };
+  // Era o que faltava de uma comanda já paga em parte: fecha (BUG-003, 171).
+  const fechou = await fecharSeJaRecebeu(supabase, it.comanda_id as string);
+  if (fechou) revalidatePath("/salao");
   revalidatePath("/salao/caixa");
   revalidatePath(`/salao/comandas/${it.comanda_id}`);
   revalidatePath(`/garcom/comanda/${it.comanda_id}`);
-  return { ok: true as const };
+  return { ok: true as const, fechou, numero: (com?.numero as number | null) ?? null };
 }
 
 // "Reimprimir na cozinha" na tela da comanda.
