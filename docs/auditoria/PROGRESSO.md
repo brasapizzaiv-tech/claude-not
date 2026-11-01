@@ -132,3 +132,8 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
 - Esforço: P
 - Risco da correção: baixo
 - Depende de: OK do Rafael (fecha a 171 = gravação no banco de produção).
+- **Corrigido em 31/10 (fora da ordem da auditoria, com o OK do Rafael).** `fecharSeJaRecebeu` roda
+  depois de excluir item (caixa e ×) e só fecha comanda que já recebeu alguma coisa. A tela da
+  comanda mostra "Fechar comanda" quando ela está aberta e toda paga, com o serviço que de fato
+  entrou. A gravação direta da 171 no banco foi recusada pela permissão da sessão; ela fecha
+  por esse botão.
