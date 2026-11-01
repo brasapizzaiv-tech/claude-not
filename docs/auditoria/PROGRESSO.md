@@ -110,3 +110,25 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
   clicar no meio do campo só marca dia/mês/ano; o calendário abre pelo ícone, que fica escondido.
 - Evidência: relato do Rafael com print (31/10).
 - Correção: o clique chama `showPicker()`. **Corrigido em 31/10.**
+
+### [BUG-003] Comanda paga fica aberta quando o último item que faltava é excluído depois do pagamento
+- Severidade: médio
+- Onde: `src/app/(painel)/salao/actions.ts` (`removerItemCaixa`, `removerItemComanda`); o fechamento
+  automático (`fecharSeQuitou`) só roda dentro do pagamento
+- O que acontece: a comanda só fecha sozinha no fim de um pagamento, se não sobrar nada. Se sobrou
+  um item e ele é excluído depois (no caixa ou pelo × da comanda), a comanda fica aberta com R$ 0
+  a pagar. Não tem botão pra fechar (Excluir é barrado porque já teve pagamento, e está certo).
+  O dinheiro está certo e o fechamento do caixa não trava (a trava só conta comanda com valor a
+  receber), mas a mesa aparece ocupada e o garçom que digitar o mesmo cartão abre essa comanda
+  velha, com os itens pagos (`acharComanda` procura cartão com status aberta).
+- Como reproduzir: verificado por leitura e pelos horários do banco, não executado.
+- Evidência: 31/10, comanda 171 (Mesa 17). 22:14:36 o caixa divide o "Rodizio Tradicional Kids"
+  em 2; 22:16:14 débito de R$ 335,15 paga a 171 (R$ 245,25) + R$ 89,90 da 152, mas a metade
+  "Kids (1/2)" (R$ 44,95) ficou de fora; 22:18:05 essa metade é excluída no caixa ("Lançado em outra
+  comanda"). Resultado: 6 itens, todos pagos, status `aberta`. Nos últimos 30 dias é o único caso.
+- Causa provável: `removerItemCaixa` e `removerItemComanda` não chamam `fecharSeQuitou` depois de apagar.
+- Correção proposta: chamar `fecharSeQuitou` depois de excluir um item (só se a comanda já teve
+  algum pagamento); fechar a 171 (status `fechada`, forma "Dividido", serviço 0).
+- Esforço: P
+- Risco da correção: baixo
+- Depende de: OK do Rafael (fecha a 171 = gravação no banco de produção).
