@@ -166,7 +166,26 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
   produtos, e recalculou os 16 pedidos ligados (divergências de 149 para 79). Migration 0270: trecho
   com fator acima de 5× a maior contagem fica fora da média e aparece como "a conferir" na tela de
   Consumo; a tela da nota avisa ao digitar. Sobrou marcada só a Farinha de Pizza 25Kg (cadastro em kg,
-  nota certa ×25, contagem em sacos): decisão do Rafael.
+  nota ×25, contagem em sacos): o Rafael confirmou que contam por saco e trocou na tela da nota (×1;
+  a unidade ficou "un", 1 un = 1 saco). Nada mais marcado em 03/11.
+
+### [BUG-005] Contagens importadas com o mesmo horário inflam a barra do consumo na semana de 17/08
+- Severidade: baixo
+- Onde: `consumo_periodos` (migrations 0244 e 0270): ordena e separa os trechos por `contagens.criado_em`
+- O que acontece: a importação da Planilha CMV (20/08, 00:17) criou 3 contagens de datas antigas (03/08,
+  09/08, 16/08) com o mesmo `criado_em`. Viram trechos de 0 dias, com o mesmo fim, e o `left join` por
+  `fim` repete a entrada do trecho anterior em todos eles.
+- Como reproduzir: verificado por leitura no banco.
+- Evidência: 03/11, print do Rafael (tampa TP 200, semana de 17/08 = 6.530). Conta: (800 + 860 + 840)
+  em 2,68 dias × 7 = 6.530. As semanas seguintes dão de 315 a 530 e a média de 402 está certa. 241 produtos têm
+  esses trechos; em 126 a barra fica acima de 3× o normal.
+- Alcance: só a barra da semana de 17/08. A média e o "gasta ~X por semana" usam 8 semanas (desde
+  08/09) e não pegam esses trechos. A barra sai sozinha em 09/11, quando a janela de 12 semanas anda.
+- Correção proposta: nessa conta, ignorar contagem e pedido com `criado_em` mais de 2 dias depois da
+  própria `data` (importados). Vale também para importações futuras de outros restaurantes.
+- Esforço: P
+- Risco da correção: baixo (função só de leitura, nenhum dado muda)
+- Depende de: OK do Rafael.
 
 ### Observação para a Etapa 5 (segurança)
 `scripts/migrate.mjs` termina toda rodada com `grant execute on all functions ... to anon`. Isso desfaz o
