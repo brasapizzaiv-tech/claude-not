@@ -161,3 +161,15 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
 - Esforço: P
 - Risco da correção: baixo (mexe só nesses itens; o valor em R$ das notas não muda)
 - Depende de: OK do Rafael e confirmar que esses itens são contados por caixa/pacote.
+- **Corrigido em 03/11 (fora da ordem da auditoria, com o OK do Rafael).** `scripts/corrigir-fator-por-pacote.mjs`
+  acertou 46 linhas de nota (as 44 + 2 do guardanapo que estavam ×1) e o preço de referência dos 17
+  produtos, e recalculou os 16 pedidos ligados (divergências de 149 para 79). Migration 0270: trecho
+  com fator acima de 5× a maior contagem fica fora da média e aparece como "a conferir" na tela de
+  Consumo; a tela da nota avisa ao digitar. Sobrou marcada só a Farinha de Pizza 25Kg (cadastro em kg,
+  nota certa ×25, contagem em sacos): decisão do Rafael.
+
+### Observação para a Etapa 5 (segurança)
+`scripts/migrate.mjs` termina toda rodada com `grant execute on all functions ... to anon`. Isso desfaz o
+que a migration 0216 ("funções antigas sem anônimo") tirou: em 03/11, `anon` tem execute em
+`_contagem_referencia`, `consumo_periodos` e `painel_resumo`. Verificar na Etapa 5 quais funções ficam
+expostas de verdade (as que chamam `exigir_interno()` barram por dentro).
