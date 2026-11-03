@@ -44,6 +44,17 @@ Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-00
 - O perfil do robô (com o login do Rafael) continua em `<scratchpad>/perfil-robo`: serve pros prints da Etapa 3. **Apagar no fim da auditoria.**
 - Medidas cruas: `<scratchpad>/medicao.json` (fora do git; o anexo do relatório tem a tabela).
 
+**Parado em 03/11, ~18h50, a pedido do Rafael (saiu e fechou o notebook).** Antes de seguir:
+- **DES-010 (espera de 3,9 s depois do cartão/Pix):** correção pronta, com o OK dele, mas **sem commit e sem publicar**: está
+  só na pasta do projeto, em `src/lib/tef-guarda.ts`, `src/lib/tef-venda-server.ts`, `src/components/cobrar-pinpad.tsx`,
+  `salao/caixa/receber.tsx` e `salao/caixa/pagamentos.tsx`. Passou 44 de 44 verificações contra o agente e o
+  simulador em pasta isolada. Falta: revisão independente (interrompida antes do fim), publicar fora do serviço e um teste
+  de R$ 1 do Rafael no pinpad, cancelando depois.
+- **BUG-006:** esperando o OK dele.
+- **Baixa pela nota (pedido novo):** ver "Saldo do cliente × nota avulsa" abaixo. Falta combinar e fazer.
+- O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
+  (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
+
 ## Scripts da auditoria (todos só leitura)
 
 | Script | O que faz |
@@ -211,6 +222,17 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
 - Esforço: P
 - Risco da correção: baixo
 - Depende de: OK do Rafael.
+
+### Saldo do cliente × nota avulsa (pedido do Rafael, 03/11; ainda não combinado nem feito)
+O que ele pediu: ligar o saldo do cliente às notas avulsas emitidas pra dar baixa e descontar do saldo, e nem toda nota avulsa
+deve contar no caixa. Hoje a única baixa é "Receber" em Fiado, que exige caixa aberto e grava `pdv_caixa_mov` como venda.
+- 03/11: as 3 NF-e do Kern (nº 2, 3 e 4, R$ 18.173,70, de 16 a 31/10) saíram às 12h03-12h12, cada uma num cadastro do Kern.
+  As baixas das 14h09 foram por "Receber" em Pix e zeraram os 3 saldos: R$ 10.344,00, R$ 8.568,00 e R$ 3.606,84.
+- Diferença de R$ 4.345,14 entre baixas e notas: débitos sem nota avulsa neste sistema. Cadastro bf3b2e8c: R$ 1.608,00 (3 linhas, 13 a
+  15/10). Cadastro 18e6bcf4: R$ 1.416,00 (3 linhas, 13 a 15/10). Cadastro cdb7a95f: R$ 1.321,14 (9 linhas, 22/09 a 15/10). Nesse
+  último, os R$ 149,70 de 29/10 entraram na NF-e 4 como linha "Almoços", sem a comanda ligada.
+- Não se sabe ainda se esses Pix entraram mesmo no caixa ou só serviram pra zerar o saldo: é pergunta pro Rafael. O último extrato
+  importado vai até 30/09, então o banco não confirma.
 
 ### Observação para a Etapa 4 (lógica e dados)
 Sobra nos caixas do dia (23 de 23 caixas positivos em 30 dias, média R$ 156, total R$ 3.586; à noite, perto de
