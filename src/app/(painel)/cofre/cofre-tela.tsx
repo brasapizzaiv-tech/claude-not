@@ -21,6 +21,8 @@ export type Pendente = {
   rotulo: string;
   valor: number;
   sai: boolean;
+  /** Caixa fechado antes da 1ª contagem: confirmar que o dinheiro ficou fora. */
+  aviso?: string;
 };
 
 export type DadosCofre = {
@@ -110,6 +112,7 @@ export function CofreTela({ d }: { d: DadosCofre }) {
                     <span className="text-sm">
                       {p.rotulo}
                       <span className="block text-xs text-texto-fraco">{p.sai ? "sai do cofre" : "entra no cofre"}</span>
+                      {p.aviso && <span className="block text-xs font-medium text-texto-marca">{p.aviso}</span>}
                     </span>
                     <span className="flex items-center gap-3">
                       <span className="font-numero font-bold">{moedaBR(p.valor)}</span>
