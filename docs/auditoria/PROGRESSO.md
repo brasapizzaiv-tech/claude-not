@@ -186,6 +186,9 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
 - Esforço: P
 - Risco da correção: baixo (função só de leitura, nenhum dado muda)
 - Depende de: OK do Rafael.
+- **Corrigido em 03/11 (fora da ordem da auditoria, com o OK do Rafael).** Migration 0271: o filtro pega só as 3
+  contagens e os 2 pedidos da importação. Comparação antes × depois nos 359 produtos: nenhuma média de
+  8 semanas mudou, nenhuma barra de 31/08 em diante mudou, trechos de 0 dias de 482 para 0.
 
 ### Observação para a Etapa 5 (segurança)
 `scripts/migrate.mjs` termina toda rodada com `grant execute on all functions ... to anon`. Isso desfaz o
