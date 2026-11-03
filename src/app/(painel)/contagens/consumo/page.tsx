@@ -19,7 +19,7 @@ function segunda(dia: string) {
   return somaDias(dia, -dow);
 }
 
-type Periodo = { produto_id: string; ini: string; fim: string; qtd_fim: number; consumo: number; dias: number };
+type Periodo = { produto_id: string; ini: string; fim: string; qtd_fim: number; consumo: number; dias: number; fator_suspeito: number | null; nota_suspeita: string | null; maior_contagem: number | null };
 
 export default async function ConsumoPage() {
   const supabase = await createClient();
@@ -39,7 +39,7 @@ export default async function ConsumoPage() {
   const porProduto = new Map<string, Periodo[]>();
   for (const p of periodos) {
     const l = porProduto.get(p.produto_id) ?? [];
-    l.push({ ...p, qtd_fim: Number(p.qtd_fim), consumo: Number(p.consumo), dias: Number(p.dias) });
+    l.push({ ...p, qtd_fim: Number(p.qtd_fim), consumo: Number(p.consumo), dias: Number(p.dias), fator_suspeito: p.fator_suspeito != null ? Number(p.fator_suspeito) : null, maior_contagem: p.maior_contagem != null ? Number(p.maior_contagem) : null });
     porProduto.set(p.produto_id, l);
   }
 
@@ -47,8 +47,9 @@ export default async function ConsumoPage() {
   for (const pr of (prods as unknown as { id: string; nome: string; unidade: string; categorias: { nome: string } | { nome: string }[] | null }[]) ?? []) {
     const ps = porProduto.get(pr.id);
     if (!ps || ps.length === 0) continue;
-    // Contagem errada (consumo negativo) fica fora — igual à média da contagem.
-    const validos = ps.filter((p) => p.consumo >= 0);
+    // Contagem errada (consumo negativo) e entrada fora de proporção (fator da
+    // nota muito acima de tudo que já foi contado) ficam fora — igual à média da contagem.
+    const validos = ps.filter((p) => p.consumo >= 0 && p.fator_suspeito == null);
     const ult8 = validos.filter((p) => p.fim.slice(0, 10) >= desde8);
     const dias8 = ult8.reduce((s, p) => s + p.dias, 0);
     const media = dias8 >= 3 ? (ult8.reduce((s, p) => s + p.consumo, 0) / dias8) * 7 : null;
@@ -70,7 +71,10 @@ export default async function ConsumoPage() {
       semanas: valores,
       estoque: ultimo.qtd_fim,
       contadoEm: ultimo.fim.slice(0, 10),
-      erradas: ps.length - validos.length,
+      erradas: ps.filter((p) => p.consumo < 0 && p.fator_suspeito == null).length,
+      aConferir: ps
+        .filter((p) => p.fator_suspeito != null)
+        .map((p) => ({ semana: segunda(p.fim.slice(0, 10)), fator: p.fator_suspeito!, maior: p.maior_contagem ?? 0, notaId: p.nota_suspeita })),
     });
   }
   linhas.sort((a, b) => (b.media ?? -1) - (a.media ?? -1));
@@ -82,7 +86,7 @@ export default async function ConsumoPage() {
       <p className="mt-1 max-w-3xl text-sm text-texto-suave">
         Quanto sai de cada produto por semana, pelas contagens: <b className="text-texto">tinha + chegou − tem agora</b>.
         A média é das últimas 8 semanas; o gráfico mostra as últimas {SEMANAS}. Contagem que deu consumo negativo
-        (contou errado) fica fora da conta.
+        (contou errado) e entrada fora de proporção (nota em peças, contagem em caixa) ficam fora da conta.
       </p>
       <ConsumoTabela linhas={linhas} semanas={semanas} />
     </div>

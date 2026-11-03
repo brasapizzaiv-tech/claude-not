@@ -3,6 +3,7 @@
 // Tabela do consumo + gráfico de barras por semana. Uma série só (o produto),
 // na cor da marca; o valor aparece ao passar o dedo/mouse na barra.
 import { Fragment, useMemo, useState } from "react";
+import Link from "next/link";
 
 export type LinhaConsumo = {
   id: string;
@@ -14,6 +15,8 @@ export type LinhaConsumo = {
   estoque: number; // na última contagem
   contadoEm: string;
   erradas: number;
+  /** Semanas em que a nota entrou fora de proporção com a contagem (fora da média). */
+  aConferir: { semana: string; fator: number; maior: number; notaId: string | null }[];
 };
 
 const num = (n: number) => (n >= 10 ? Math.round(n) : Math.round(n * 10) / 10).toLocaleString("pt-BR");
@@ -43,6 +46,7 @@ function Grafico({ linha, semanas }: { linha: LinhaConsumo; semanas: string[] })
   const W = 640, H = 180, base = H - 24, topo = 16, gap = 6;
   const bw = (W - gap * (semanas.length - 1)) / semanas.length;
   const y = (v: number) => base - (v / max) * (base - topo);
+  const marcadas = new Set(linha.aConferir.map((a) => a.semana));
   return (
     <div className="relative">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`Consumo semanal de ${linha.nome}`}>
@@ -60,6 +64,9 @@ function Grafico({ linha, semanas }: { linha: LinhaConsumo; semanas: string[] })
             {v != null && (
               <rect x={i * (bw + gap)} y={y(v)} width={bw} height={Math.max(2, base - y(v))} rx={4} fill="var(--marca-primaria)" opacity={foco == null || foco === i ? 1 : 0.45} />
             )}
+            {marcadas.has(semanas[i]) && (
+              <text x={i * (bw + gap) + bw / 2} y={base - 6} textAnchor="middle" fontSize={14} fontWeight={700} fill="var(--urgente-texto)">!</text>
+            )}
             {(i % 2 === 1 || semanas.length <= 8) && (
               <text x={i * (bw + gap) + bw / 2} y={H - 6} textAnchor="middle" fontSize={11} fill="var(--texto-fraco)">{dm(semanas[i])}</text>
             )}
@@ -69,7 +76,7 @@ function Grafico({ linha, semanas }: { linha: LinhaConsumo; semanas: string[] })
       {foco != null && (
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 rounded-controle bg-texto px-3 py-1.5 text-xs text-fundo shadow-cartao">
           Semana de {dm(semanas[foco])}:{" "}
-          <b>{linha.semanas[foco] == null ? "sem contagem" : `${num(linha.semanas[foco]!)} ${linha.unidade}`}</b>
+          <b>{marcadas.has(semanas[foco]) ? "entrada a conferir, fora da média" : linha.semanas[foco] == null ? "sem contagem" : `${num(linha.semanas[foco]!)} ${linha.unidade}`}</b>
         </div>
       )}
     </div>
@@ -80,9 +87,11 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
   const [busca, setBusca] = useState("");
   const [cat, setCat] = useState("");
   const [aberto, setAberto] = useState<string | null>(null);
+  const [soConferir, setSoConferir] = useState(false);
+  const nConferir = linhas.filter((l) => l.aConferir.length > 0).length;
   const categorias = useMemo(() => [...new Set(linhas.map((l) => l.categoria))].sort(), [linhas]);
   const q = semAcento(busca.trim());
-  const visiveis = linhas.filter((l) => (!cat || l.categoria === cat) && (!q || semAcento(l.nome).includes(q)));
+  const visiveis = linhas.filter((l) => (!cat || l.categoria === cat) && (!q || semAcento(l.nome).includes(q)) && (!soConferir || l.aConferir.length > 0));
 
   return (
     <div className="mt-5">
@@ -103,6 +112,17 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
           <option value="">Todas as categorias</option>
           {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
+        {nConferir > 0 && (
+          <button
+            type="button"
+            onClick={() => setSoConferir((v) => !v)}
+            aria-pressed={soConferir}
+            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold ${soConferir ? "bg-texto text-fundo" : "bg-painel-cartao text-texto shadow-cartao"}`}
+          >
+            A conferir
+            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${soConferir ? "bg-primaria text-marca-sobre-primaria" : "pilula-urgente"}`}>{nConferir}</span>
+          </button>
+        )}
         <span className="text-sm text-texto-suave">{visiveis.length} produtos</span>
       </div>
 
@@ -131,6 +151,7 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
                     <td className="px-4 py-2.5">
                       <span className="font-medium text-texto">{l.nome}</span>
                       <span className="block text-xs text-texto-fraco">{l.categoria}</span>
+                      {l.aConferir.length > 0 && <span className="pilula pilula-urgente mt-1">entrada a conferir</span>}
                     </td>
                     <td className="px-4 py-2.5 text-right font-numero font-bold text-texto">
                       {l.media == null ? <span className="font-sans font-normal text-texto-fraco">—</span> : `${num(l.media)} ${l.unidade}`}
@@ -153,6 +174,12 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
                       <td colSpan={5} className="bg-superficie-suave px-4 py-4">
                         <p className="mb-2 text-sm font-semibold text-texto">{l.nome} — consumo por semana ({l.unidade})</p>
                         <Grafico linha={l} semanas={semanas} />
+                        {l.aConferir.map((a) => (
+                          <p key={`${a.semana}-${a.notaId}`} className="mt-2 text-xs text-texto-suave">
+                            Semana de {dm(a.semana)}: a nota entrou com ×{num(a.fator)} e a contagem nunca passou de {num(a.maior)} {l.unidade}. Ficou fora da média.{" "}
+                            {a.notaId && <Link href={`/notas/${a.notaId}`} className="font-semibold text-texto-marca underline">Abrir a nota</Link>}
+                          </p>
+                        ))}
                         {l.erradas > 0 && (
                           <p className="mt-2 text-xs text-texto-suave">{l.erradas} contagem(ns) deram consumo negativo e ficaram fora da conta (provável erro de contagem).</p>
                         )}

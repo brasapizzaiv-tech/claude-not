@@ -70,6 +70,12 @@ export default async function NotaDetalhePage({
   const produtos = (prodData as { id: string; nome: string; unidade: string; tamanhos?: number[] | null; medida?: string | null }[]) ?? [];
   const tamanhosDe = new Map(produtos.filter((p) => (p.tamanhos?.length ?? 0) > 0).map((p) => [p.id, { tamanhos: (p.tamanhos ?? []).map(Number), medida: p.medida ?? null }] as const));
   const unidadeDe = new Map(produtos.map((p) => [p.id, p.unidade] as const));
+  // Pra avisar quando o fator deixa a entrada muito acima do que já foi contado.
+  const prodDaNota = [...new Set(itens.map((i) => i.produto_id).filter((x): x is string => !!x))];
+  const { data: maioresData } = prodDaNota.length > 0
+    ? await supabase.rpc("maior_contagem", { p_produtos: prodDaNota })
+    : { data: [] };
+  const maiorDe = new Map(((maioresData as { produto_id: string; maior: number }[] | null) ?? []).map((m) => [m.produto_id, Number(m.maior)] as const));
   // Pra quem é o item (sócios / funcionário) — lista de quem pode receber.
   const { data: colsData } = itens.length > 0
     ? await supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome")
@@ -264,6 +270,7 @@ export default async function NotaDetalhePage({
                         temProduto={!!i.produto_id}
                         produtoId={i.produto_id}
                         unidadeProduto={i.produto_id ? unidadeDe.get(i.produto_id) ?? "un" : "un"}
+                        maiorContagem={i.produto_id ? maiorDe.get(i.produto_id) ?? null : null}
                       />
                     </td>
                     <td className="px-4 py-2 text-right text-texto">

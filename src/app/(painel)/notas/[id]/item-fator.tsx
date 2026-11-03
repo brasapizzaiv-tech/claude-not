@@ -14,7 +14,7 @@ const UNIDADES = ["un", "kg", "g", "L", "ml", "cx", "pct", "fardo", "dz", "saco"
 // produto aparece ao lado e pode ser trocada aqui mesmo — é olhando a nota
 // que se percebe que o estoque está contando na medida errada (08/10/2026).
 export function ItemFator({
-  itemId, fator, qtd, unidade, valorTotal, temProduto, produtoId, unidadeProduto,
+  itemId, fator, qtd, unidade, valorTotal, temProduto, produtoId, unidadeProduto, maiorContagem,
 }: {
   itemId: string;
   fator: number;
@@ -24,6 +24,8 @@ export function ItemFator({
   temProduto: boolean;
   produtoId: string | null;
   unidadeProduto: string;
+  /** Maior quantidade contada deste produto nos últimos 4 meses. */
+  maiorContagem?: number | null;
 }) {
   const router = useRouter();
   const [salvando, start] = useTransition();
@@ -36,6 +38,9 @@ export function ItemFator({
   const precoUn = valorTotal != null && unidades > 0 ? Number(valorTotal) / unidades : null;
   const un = unidadeProduto || "un";
   const opcoes = UNIDADES.includes(un) ? UNIDADES : [un, ...UNIDADES];
+  // Mesma regra da tela de Consumo (migration 0270): nota em peças, contagem em
+  // caixa. Foi assim que "1 pacote × 920" virou consumo de 919 na semana.
+  const foraDeProporcao = temProduto && maiorContagem != null && maiorContagem > 0 && f > 5 * maiorContagem;
 
   function salvar() {
     start(async () => {
@@ -65,7 +70,7 @@ export function ItemFator({
 
   return (
     <div className="flex flex-col items-end gap-0.5">
-      <label className="flex items-center gap-1 text-xs text-texto-suave" title={`Quanto do produto (em ${un}) tem em cada ${unidade || "unidade"} da nota (ex.: caixa com 27 un → 27; saco de 25 kg → 25)`}>
+      <label className="flex items-center gap-1 text-xs text-texto-suave" title={`Quanto do produto (em ${un}) tem em cada ${unidade || "unidade"} da nota (ex.: caixa com 27 un → 27; saco de 25 kg → 25). Se a contagem é da ${unidade || "unidade"} fechada, deixe 1.`}>
         ×
         <input
           value={txt}
@@ -115,8 +120,13 @@ export function ItemFator({
           = {unidades.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} {un}{precoUn != null ? ` · ${moeda(precoUn)}/${un}` : ""}
         </span>
       ) : temProduto && /^(CX|CXA|FD|FDO|PCT|PC|SC|ENG|DZ|PACK|CJ)$/i.test((unidade ?? "").trim()) ? (
-        <span className="text-mini text-amber-600">vem em {unidade}: informe quantos {un}.</span>
+        <span className="text-mini text-amber-600">vem em {unidade}: informe quantos {un}. Se contam a {unidade} fechada, deixe 1.</span>
       ) : null}
+      {foraDeProporcao && (
+        <span className="max-w-[15rem] text-right text-mini font-semibold text-urgente-texto">
+          A contagem deste produto não passou de {maiorContagem!.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} {un} nos últimos 4 meses. Se vocês contam a {unidade || "embalagem"} fechada, deixe ×1.
+        </span>
+      )}
     </div>
   );
 }
