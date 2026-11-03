@@ -137,3 +137,27 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
   comanda mostra "Fechar comanda" quando ela está aberta e toda paga, com o serviço que de fato
   entrou. A gravação direta da 171 no banco foi recusada pela permissão da sessão; ela fecha
   por esse botão.
+
+### [BUG-004] Fator da nota em peças quando a contagem é em caixa/pacote infla o consumo e zera o preço de referência
+- Severidade: médio
+- Onde: `nota_itens.fator` (tela da nota, `item-fator.tsx`); a cópia automática do fator da última nota
+  do mesmo item/fornecedor em `src/app/(painel)/notas/actions.ts` espalha o erro; quem usa o fator:
+  `consumo_periodos` (0244), preço de referência (`notas/actions.ts`), CMV (`financeiro/cmv`)
+- O que acontece: a nota vem "1 CX c/ 100 luvas" e o fator ficou 100, mas a contagem conta a caixa
+  (1, 2). Entre duas contagens o consumo vira "tinha 2 + chegou 920 − tem 3 = 919", e a média da
+  semana dispara. O preço de referência vira preço da peça (luva R$ 0,30 em vez de R$ 30,46 a caixa),
+  então o valor desses itens no estoque fica quase zero.
+- Como reproduzir: verificado por leitura no banco, não executado.
+- Evidência: 03/11, relato do Rafael com print (EMB PLAST ALIM 30x39: média 337, semana de 14/09 = 919).
+  Nota "C/1X920" com fator 920 em 10/09, 13/10 e 23/10; contagem sempre 2 ou 3. Mesmo padrão em 17
+  produtos (44 linhas de nota): luvas nitrílicas, sachês, embalagens plásticas, sacos de lixo, canudos,
+  palito, sacola, pano, guardanapo (este conta pacote: fator certo seria 12, o fardo).
+- Causa provável: o fator foi digitado como "quantas peças" e não "quantas unidades da contagem";
+  depois a nota seguinte copia o fator anterior sozinha.
+- Correção proposta: (1) acertar o fator das 44 linhas e recalcular o preço de referência (gravação
+  em produção, precisa do OK); (2) avisar na nota quando o fator deixa a entrada muito acima de tudo
+  que já foi contado; (3) na tela de Consumo, marcar o trecho em que "chegou" é desproporcional em vez
+  de jogar na média.
+- Esforço: P
+- Risco da correção: baixo (mexe só nesses itens; o valor em R$ das notas não muda)
+- Depende de: OK do Rafael e confirmar que esses itens são contados por caixa/pacote.
