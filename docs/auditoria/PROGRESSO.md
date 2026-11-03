@@ -190,6 +190,28 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
   contagens e os 2 pedidos da importação. Comparação antes × depois nos 359 produtos: nenhuma média de
   8 semanas mudou, nenhuma barra de 31/08 em diante mudou, trechos de 0 dias de 482 para 0.
 
+### [BUG-006] Recebimento de fiado conta como faturamento: a mesma venda entra duas vezes
+- Severidade: alto (DRE e CMV do mês)
+- Onde: `receberFiado` em `src/app/(painel)/salao/actions.ts` grava `tipo: "venda"`, descrição "Fiado — cliente". Quem
+  soma: `dashboard/page.tsx` (`movs`) e a função `faturamento_sistema_dias` (migration 0220), que alimenta DRE,
+  CMV e Notas × Faturamento desde setembro (`faturamento_dias` termina em 31/08).
+- O que acontece: a venda no fiado já entra como "Saldo cliente" no dia em que foi vendida. Quando o cliente paga,
+  entra de novo.
+- Como reproduzir: verificado por leitura no banco.
+- Evidência: 03/11, print do Rafael (tela inicial: R$ 29.345,91, +515%). R$ 25.028,06 são 6 Pix de acerto de fiado
+  (Kern R$ 22.518,84, Auto Center R$ 1.623,06, Brasa Hamburgueria R$ 449,86, Cortesia Ana e Rafa R$ 436,30). Venda
+  de verdade no dia: R$ 4.317,85, 9% abaixo da terça anterior (R$ 4.768,97). Vendido no fiado em set + out:
+  R$ 2.596,43 + R$ 24.757,29 = R$ 27.353,72. Recebido de fiado até hoje: R$ 2.325,66 + R$ 25.028,06 = R$ 27.353,72.
+  Bate no centavo.
+- Efeito: faturamento a mais de R$ 2.325,66 em setembro e R$ 25.028,06 em novembro (até 03/11). Outubro não teve
+  recebimento. O CMV % de novembro sai mais baixo do que o real.
+- O que está certo: o dinheiro entrou e o fechamento do caixa precisa contar esse valor na conferência por forma.
+- Correção proposta: recebimento de fiado continua no caixa, mas sai do faturamento (tela inicial, DRE, CMV, Notas ×
+  Faturamento), e aparece como linha própria no "Caixa do dia". Nenhum dado muda; o histórico se acerta sozinho.
+- Esforço: P
+- Risco da correção: baixo
+- Depende de: OK do Rafael.
+
 ### Observação para a Etapa 4 (lógica e dados)
 Sobra nos caixas do dia (23 de 23 caixas positivos em 30 dias, média R$ 156, total R$ 3.586; à noite, perto de
 zero): o Rafael explicou em 03/11 que entra na gaveta o dinheiro do delivery do outro sistema, porque o delivery
