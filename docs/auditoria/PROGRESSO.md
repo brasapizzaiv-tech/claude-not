@@ -190,6 +190,10 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
   contagens e os 2 pedidos da importação. Comparação antes × depois nos 359 produtos: nenhuma média de
   8 semanas mudou, nenhuma barra de 31/08 em diante mudou, trechos de 0 dias de 482 para 0.
 
+### Observação para a Etapa 7 (interface)
+Gráfico da tela de Consumo (`consumo-tabela.tsx`): o texto "média X" é desenhado antes das barras, então
+some atrás da última barra quando ela passa da média (visto em 03/11 na tampa TP 200).
+
 ### Observação para a Etapa 5 (segurança)
 `scripts/migrate.mjs` termina toda rodada com `grant execute on all functions ... to anon`. Isso desfaz o
 que a migration 0216 ("funções antigas sem anônimo") tirou: em 03/11, `anon` tem execute em
