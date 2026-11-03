@@ -190,6 +190,12 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
   contagens e os 2 pedidos da importação. Comparação antes × depois nos 359 produtos: nenhuma média de
   8 semanas mudou, nenhuma barra de 31/08 em diante mudou, trechos de 0 dias de 482 para 0.
 
+### Observação para a Etapa 4 (lógica e dados)
+Sobra nos caixas do dia (23 de 23 caixas positivos em 30 dias, média R$ 156, total R$ 3.586; à noite, perto de
+zero): o Rafael explicou em 03/11 que entra na gaveta o dinheiro do delivery do outro sistema, porque o delivery
+daqui ainda não terminou. Não é erro do caixa e não vira achado por enquanto. Olhar de novo quando o delivery
+migrar: a sobra deve zerar. Se não zerar, aí é investigar.
+
 ### Observação para a Etapa 7 (interface)
 Gráfico da tela de Consumo (`consumo-tabela.tsx`): o texto "média X" é desenhado antes das barras, então
 some atrás da última barra quando ela passa da média (visto em 03/11 na tampa TP 200).
