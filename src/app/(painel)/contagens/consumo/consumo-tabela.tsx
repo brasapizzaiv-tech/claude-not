@@ -123,7 +123,7 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
             <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${soConferir ? "bg-primaria text-marca-sobre-primaria" : "pilula-urgente"}`}>{nConferir}</span>
           </button>
         )}
-        <span className="text-sm text-texto-suave">{visiveis.length} produtos</span>
+        <span className="text-sm text-texto-suave">{visiveis.length} {visiveis.length === 1 ? "produto" : "produtos"}</span>
       </div>
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
