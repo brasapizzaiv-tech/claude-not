@@ -285,6 +285,47 @@ type Escolha = {
   marca?: string | null;
 };
 
+type Supa = Awaited<ReturnType<typeof createClient>>;
+
+// Pedido ainda não chegou nem foi conferido: dá pra mexer nos itens.
+const pedidoMexivel = (p: { status?: string | null; conferido_em?: string | null; conf_colab_em?: string | null }) =>
+  (p.status ?? "rascunho") === "rascunho" && !p.conferido_em && !p.conf_colab_em;
+
+// Deixa o pedido igual ao que está escolhido pra esse fornecedor na comparação:
+// entra o que falta, sai o que foi pra outro (ou desmarcado), e quantidade,
+// preço e marca seguem a escolha. Ex.: a Costela Janela foi pro pedido do MC
+// como exclusiva; quando a SOS também passou a vender, ela tem que sair dele.
+async function sincronizarPedido(supabase: Supa, pedidoId: string, itens: Escolha[]) {
+  const { data: atuais } = await supabase
+    .from("pedido_itens")
+    .select("id, produto_id, qtd, preco_unit, marca")
+    .eq("pedido_id", pedidoId);
+  const quer = new Map(itens.map((i) => [i.produto_id, i]));
+  const visto = new Set<string>();
+  const sair: string[] = [];
+  let mudaram = 0;
+  for (const a of atuais ?? []) {
+    const pid = a.produto_id as string;
+    const e = quer.get(pid);
+    if (!e || visto.has(pid)) { sair.push(a.id as string); continue; }
+    visto.add(pid);
+    const preco = a.preco_unit != null ? Number(a.preco_unit) : null;
+    const precoMudou = (preco == null) !== (e.preco_unit == null) || Math.abs((preco ?? 0) - (e.preco_unit ?? 0)) > 0.005;
+    if (Math.abs(Number(a.qtd) - e.qtd) > 0.0005 || precoMudou || ((a.marca as string | null) ?? null) !== (e.marca ?? null)) {
+      await supabase.from("pedido_itens").update({ qtd: e.qtd, preco_unit: e.preco_unit, marca: e.marca ?? null }).eq("id", a.id as string);
+      mudaram++;
+    }
+  }
+  if (sair.length > 0) await supabase.from("pedido_itens").delete().in("id", sair);
+  const novos = itens.filter((i) => !visto.has(i.produto_id));
+  if (novos.length > 0) {
+    await supabase.from("pedido_itens").insert(
+      novos.map((i) => ({ pedido_id: pedidoId, produto_id: i.produto_id, qtd: i.qtd, preco_unit: i.preco_unit, marca: i.marca ?? null })),
+    );
+  }
+  return { entraram: novos.length, sairam: sair.length, mudaram, restam: visto.size + novos.length };
+}
+
 // Gera os pedidos de compra a partir das escolhas (agrupadas por fornecedor).
 export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
   const supabase = await createClient();
@@ -309,14 +350,21 @@ export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
   }
 
   // Fornecedores que já têm pedido nesta cotação (exclusivos gerados antes ou
-  // pedido adiantado): COMPLETA o pedido com os itens que ainda não estão nele,
-  // em vez de pular o fornecedor — era isso que deixava item de fora.
+  // pedido adiantado): o pedido fica igual à escolha final (entra o que falta,
+  // sai o que foi pra outro fornecedor). Pedido que já chegou só ganha o novo.
   const { data: jaTem } = await supabase
     .from("pedidos")
-    .select("id, fornecedor_id, pedido_itens(produto_id)")
+    .select("id, fornecedor_id, status, conferido_em, conf_colab_em, pedido_itens(produto_id)")
     .eq("cotacao_id", cotacaoId);
   const pedidoDe = new Map<string, { id: string; produtos: Set<string> }>();
-  for (const p of (jaTem as unknown as { id: string; fornecedor_id: string; pedido_itens: { produto_id: string }[] | null }[]) ?? []) {
+  type PedExist = { id: string; fornecedor_id: string; status: string | null; conferido_em: string | null; conf_colab_em: string | null; pedido_itens: { produto_id: string }[] | null };
+  for (const p of (jaTem as unknown as PedExist[]) ?? []) {
+    if (pedidoMexivel(p)) {
+      const r = await sincronizarPedido(supabase, p.id, porForn.get(p.fornecedor_id) ?? []);
+      porForn.delete(p.fornecedor_id);
+      if (r.restam === 0) await supabase.from("pedidos").delete().eq("id", p.id);
+      continue;
+    }
     pedidoDe.set(p.fornecedor_id, { id: p.id, produtos: new Set((p.pedido_itens ?? []).map((x) => x.produto_id)) });
   }
 
@@ -371,44 +419,43 @@ export async function adiantarPedidoFornecedor(
   if (cot?.pedidos_gerados_em) return { ok: false as const, travada: true as const };
 
   const itens = escolhas.filter((e) => e.fornecedor_id === fornecedorId && e.qtd > 0);
-  if (itens.length === 0) return { ok: false as const, semItens: true as const };
 
-  // Já existe pedido desse fornecedor (itens exclusivos gerados antes)? Completa
-  // com o que foi escolhido na comparação e ainda não está nele.
+  // Já existe pedido desse fornecedor (exclusivos gerados antes ou adiantado)?
+  // Fica igual ao que está escolhido agora: completa, tira e atualiza.
   const { data: existe } = await supabase
     .from("pedidos")
-    .select("id, pedido_itens(produto_id)")
+    .select("id, status, conferido_em, conf_colab_em")
     .eq("cotacao_id", cotacaoId)
     .eq("fornecedor_id", fornecedorId)
     .maybeSingle();
-  const ex = existe as { id: string; pedido_itens: { produto_id: string }[] | null } | null;
-  let pedidoId = ex?.id;
-  const jaTem = new Set((ex?.pedido_itens ?? []).map((x) => x.produto_id));
-  const novos = itens.filter((i) => !jaTem.has(i.produto_id));
-  if (pedidoId && novos.length === 0) return { ok: false as const, jaGerado: true as const };
-  if (!pedidoId) {
-    const { data: ped } = await supabase
-      .from("pedidos")
-      .insert({ cotacao_id: cotacaoId, fornecedor_id: fornecedorId })
-      .select("id")
-      .single();
-    pedidoId = (ped as { id: string } | null)?.id;
-  }
-  if (pedidoId) {
-    await supabase.from("pedido_itens").insert(
-      novos.map((i) => ({
-        pedido_id: pedidoId,
-        produto_id: i.produto_id,
-        qtd: i.qtd,
-        preco_unit: i.preco_unit,
-        marca: i.marca ?? null,
-      })),
-    );
+  const fim = () => {
+    revalidatePath(`/cotacoes/${cotacaoId}/pedidos`);
+    revalidatePath(`/cotacoes/${cotacaoId}/comparar`);
+  };
+  if (existe) {
+    if (!pedidoMexivel(existe)) return { ok: false as const, chegou: true as const };
+    const r = await sincronizarPedido(supabase, existe.id as string, itens);
+    if (r.restam === 0) {
+      await supabase.from("pedidos").delete().eq("id", existe.id as string);
+      fim();
+      return { ok: true as const, apagado: true as const, ...r };
+    }
+    if (r.entraram + r.sairam + r.mudaram === 0) return { ok: false as const, jaGerado: true as const };
+    fim();
+    return { ok: true as const, apagado: false as const, ...r };
   }
 
-  revalidatePath(`/cotacoes/${cotacaoId}/pedidos`);
-  revalidatePath(`/cotacoes/${cotacaoId}/comparar`);
-  return { ok: true as const };
+  if (itens.length === 0) return { ok: false as const, semItens: true as const };
+  const { data: ped } = await supabase
+    .from("pedidos")
+    .insert({ cotacao_id: cotacaoId, fornecedor_id: fornecedorId })
+    .select("id")
+    .single();
+  const pedidoId = (ped as { id: string } | null)?.id;
+  if (pedidoId) await sincronizarPedido(supabase, pedidoId, itens);
+
+  fim();
+  return { ok: true as const, apagado: false as const, entraram: itens.length, sairam: 0, mudaram: 0, restam: itens.length };
 }
 
 // Cria uma NOVA cotação só com os itens que ainda não foram pedidos na atual.

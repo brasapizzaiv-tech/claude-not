@@ -74,6 +74,13 @@ export type ProdutoLinha = {
   melhorForn: string | null;
 };
 
+/** O que já está no pedido gerado de um fornecedor (por produto). */
+export type PedidoAtual = {
+  /** Ainda não chegou nem foi conferido: dá pra atualizar pela comparação. */
+  mexivel: boolean;
+  itens: Record<string, { qtd: number; preco: number | null; marca: string | null; nome: string }>;
+};
+
 // Embalagem "Unidade" em todo preço só poluía a tela: só mostra quando diz algo.
 const embUtil = (e: string | null) => (e && !/^(unidade|un|und|unid)\.?$/i.test(e.trim()) ? e : null);
 
@@ -89,6 +96,7 @@ export function CompararClient({
   ultimaCompra,
   travada,
   fornecedoresComPedido,
+  pedidoAtual,
   estadoSalvo,
 }: {
   cotacaoId: string;
@@ -98,6 +106,7 @@ export function CompararClient({
   ultimaCompra: Record<string, { forn: string; preco: number | null; data: string }>;
   travada: boolean;
   fornecedoresComPedido: string[];
+  pedidoAtual: Record<string, PedidoAtual>;
   /** O que já foi escolhido aqui, salvo no sistema (vale em qualquer PC). */
   estadoSalvo?: EstadoComparacao | null;
 }) {
@@ -325,7 +334,21 @@ export function CompararClient({
     (p) => Object.keys(alocacaoDe(p.produto_id)).length > 0,
   ).length;
 
-  function gerar() {
+  async function gerar() {
+    // Pedido que já existia e vai mudar (entra/sai item): avisa antes.
+    const mudam = fornecedores
+      .map((f) => ({ f, d: diferencaPedido(f.id) }))
+      .filter((x) => x.d && x.d.total > 0);
+    if (
+      mudam.length > 0 &&
+      !(await confirmar("Gerar os pedidos?", {
+        detalhe:
+          "Pedidos que já estavam gerados vão ficar iguais ao que está escolhido agora: " +
+          mudam.map(({ f, d }) => `${f.nome} (${resumoDiferenca(d!)})`).join("; ") + ".",
+        okTexto: "Gerar pedidos",
+      }))
+    )
+      return;
     startSave(async () => {
       const escolhas: {
         fornecedor_id: string;
@@ -407,22 +430,75 @@ export function CompararClient({
       : "https://web.whatsapp.com/";
   }
 
+  // Diferença entre o pedido já gerado do fornecedor e o que está escolhido
+  // agora. null = ele não tem pedido (ou o pedido já chegou e não muda mais).
+  function diferencaPedido(fid: string) {
+    const atual = pedidoAtual[fid];
+    if (!atual || !atual.mexivel || !gerados.has(fid)) return null;
+    const quer = escolhasDoForn(fid);
+    const nomeDe = new Map<string, string>([
+      ...produtos.map((p) => [p.produto_id, p.nome] as const),
+      ...exclusivos.map((e) => [e.produto_id, e.nome] as const),
+    ]);
+    const entra: string[] = [], muda: string[] = [];
+    for (const e of quer) {
+      const a = atual.itens[e.produto_id];
+      const nome = nomeDe.get(e.produto_id) ?? "—";
+      if (!a) entra.push(nome);
+      else if (
+        Math.abs(a.qtd - e.qtd) > 0.0005 ||
+        (a.preco == null) !== (e.preco_unit == null) ||
+        Math.abs((a.preco ?? 0) - (e.preco_unit ?? 0)) > 0.005 ||
+        (a.marca ?? null) !== (e.marca ?? null)
+      )
+        muda.push(nome);
+    }
+    const ficam = new Set(quer.map((e) => e.produto_id));
+    const sai = Object.entries(atual.itens).filter(([pid]) => !ficam.has(pid)).map(([, a]) => a.nome);
+    return { entra, sai, muda, total: entra.length + sai.length + muda.length, vazio: quer.length === 0 };
+  }
+  function resumoDiferenca(d: NonNullable<ReturnType<typeof diferencaPedido>>) {
+    return [
+      d.entra.length ? `entra ${d.entra.join(", ")}` : "",
+      d.sai.length ? `sai ${d.sai.join(", ")}` : "",
+      d.muda.length ? `muda quantidade ou preço de ${d.muda.join(", ")}` : "",
+    ].filter(Boolean).join("; ");
+  }
+
   async function adiantar(fid: string, nome: string) {
     const itens = escolhasDoForn(fid);
-    if (itens.length === 0) {
+    const dif = diferencaPedido(fid);
+    if (itens.length === 0 && !dif) {
       void avisar(`Nenhum item escolhido de ${nome}. Escolha ao menos um item desse fornecedor antes de adiantar.`);
       return;
     }
-    if (!await confirmar(`Adiantar o pedido de ${nome} agora (${itens.length} item(ns))? Os outros fornecedores continuam abertos.`))
-      return;
+    const ok = dif
+      ? await confirmar(`Atualizar o pedido de ${nome}?`, {
+          detalhe: dif.vazio
+            ? "Não sobrou nenhum item escolhido desse fornecedor: o pedido dele será apagado."
+            : `O pedido fica igual ao que está escolhido agora: ${resumoDiferenca(dif)}.`,
+          okTexto: dif.vazio ? "Apagar pedido" : "Atualizar pedido",
+          perigo: dif.vazio,
+        })
+      : await confirmar(`Adiantar o pedido de ${nome} agora (${itens.length} item(ns))? Os outros fornecedores continuam abertos.`);
+    if (!ok) return;
     setAdiantando(fid);
     startSave(async () => {
       const r = await adiantarPedidoFornecedor(cotacaoId, fid, itens);
       setAdiantando(null);
       if (r.ok) {
-        setGerados((s) => new Set(s).add(fid));
+        setGerados((s) => {
+          const n = new Set(s);
+          if (r.apagado) n.delete(fid);
+          else n.add(fid);
+          return n;
+        });
+        router.refresh();
       } else if ("jaGerado" in r) {
         setGerados((s) => new Set(s).add(fid));
+        router.refresh();
+      } else if ("chegou" in r) {
+        void avisar(`O pedido de ${nome} já chegou ou foi conferido. Não dá mais para mudar por aqui.`);
       } else if ("travada" in r) {
         void avisar("A cotação já foi fechada — não dá mais para adiantar.");
       }
@@ -722,7 +798,21 @@ export function CompararClient({
                       </div>
                     )}
                     <div className="mt-1 flex flex-wrap items-center justify-end gap-1">
-                      {gerados.has(f.id) ? (
+                      {!travada && (diferencaPedido(f.id)?.total ?? 0) > 0 ? (
+                        <>
+                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-mini font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+                            ✓ gerado
+                          </span>
+                          <button
+                            onClick={() => adiantar(f.id, f.nome)}
+                            disabled={salvando}
+                            title={`O pedido gerado está diferente do que está escolhido: ${resumoDiferenca(diferencaPedido(f.id)!)}`}
+                            className="rounded bg-orange-500 px-2 py-0.5 text-mini font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50"
+                          >
+                            {adiantando === f.id ? "..." : "Atualizar pedido"}
+                          </button>
+                        </>
+                      ) : gerados.has(f.id) ? (
                         <>
                           <span className="rounded bg-green-100 px-1.5 py-0.5 text-mini font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
                             ✓ gerado

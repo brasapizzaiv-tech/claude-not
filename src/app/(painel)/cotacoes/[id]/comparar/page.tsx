@@ -11,6 +11,7 @@ import {
   type FornecedorCol,
   type ExclusivoLinha,
   type Cel,
+  type PedidoAtual,
 } from "./comparar-client";
 
 export default async function CompararPage({
@@ -33,14 +34,33 @@ export default async function CompararPage({
   const { data: cmp } = await supabase.from("cotacao_comparacao").select("estado").eq("cotacao_id", id).maybeSingle();
   const estadoSalvo = ((cmp as { estado?: EstadoComparacao } | null)?.estado ?? null) as EstadoComparacao | null;
 
-  // Fornecedores que já tiveram pedido adiantado nesta cotação.
+  // Fornecedores que já tiveram pedido adiantado nesta cotação, com o que está
+  // no pedido agora (pra tela mostrar "Atualizar pedido" quando a escolha mudou).
   const { data: pedidosExist } = await supabase
     .from("pedidos")
-    .select("fornecedor_id")
+    .select("fornecedor_id, status, conferido_em, conf_colab_em, pedido_itens(produto_id, qtd, preco_unit, marca, produtos(nome))")
     .eq("cotacao_id", id);
   const fornecedoresComPedido = [
     ...new Set((pedidosExist ?? []).map((p) => p.fornecedor_id as string)),
   ];
+  const pedidoAtual: Record<string, PedidoAtual> = {};
+  for (const p of (pedidosExist ?? []) as unknown as {
+    fornecedor_id: string;
+    status: string | null;
+    conferido_em: string | null;
+    conf_colab_em: string | null;
+    pedido_itens: { produto_id: string; qtd: number; preco_unit: number | null; marca: string | null; produtos: { nome?: string } | null }[] | null;
+  }[]) {
+    pedidoAtual[p.fornecedor_id] = {
+      mexivel: (p.status ?? "rascunho") === "rascunho" && !p.conferido_em && !p.conf_colab_em,
+      itens: Object.fromEntries(
+        (p.pedido_itens ?? []).map((i) => [
+          i.produto_id,
+          { qtd: Number(i.qtd), preco: i.preco_unit != null ? Number(i.preco_unit) : null, marca: i.marca ?? null, nome: i.produtos?.nome ?? "—" },
+        ]),
+      ),
+    };
+  }
 
   const [{ data: itens }, { data: fornsData }, { data: precos }] =
     await Promise.all([
@@ -340,6 +360,7 @@ export default async function CompararPage({
           ultimaCompra={ultimaCompra}
           travada={travada}
           fornecedoresComPedido={fornecedoresComPedido}
+          pedidoAtual={pedidoAtual}
           estadoSalvo={estadoSalvo}
         />
       )}
