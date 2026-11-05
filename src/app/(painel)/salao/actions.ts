@@ -1991,6 +1991,12 @@ export async function sangria(formData: FormData) {
   const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
   const valor = valorNum(formData.get("valor"));
   if (!caixaId || valor <= 0) return;
+  // A tela só envia com o destino escolhido. Pagamento sem categoria entraria no
+  // Cofre como dinheiro a guardar, então não grava. Sem destino nenhum é aba
+  // aberta antes da publicação: segue como antes para não perder a saída.
+  const categoriaId = ((formData.get("categoria_id") as string) || "").trim();
+  const categoriaValida = /^[0-9a-f-]{36}$/i.test(categoriaId);
+  if (formData.get("destino") === "pagamento" && !categoriaValida) return;
   const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
     caixa_id: caixaId,
     tipo: "sangria",
@@ -1999,8 +2005,7 @@ export async function sangria(formData: FormData) {
     valor,
   }).select("id").single();
   // Pagamento com categoria = despesa paga no financeiro (migration 0252).
-  const categoriaId = ((formData.get("categoria_id") as string) || "").trim();
-  if (mov?.id && /^[0-9a-f-]{36}$/i.test(categoriaId)) {
+  if (mov?.id && categoriaValida) {
     const { lancarSangriaNoFinanceiro } = await import("@/lib/sangria-financeiro");
     await lancarSangriaNoFinanceiro(supabase, mov.id as string, categoriaId);
   }

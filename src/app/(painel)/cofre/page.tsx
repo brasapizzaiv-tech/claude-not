@@ -32,12 +32,8 @@ export default async function CofrePage() {
   const inicio = (cfg as { inicio_em: string | null } | null)?.inicio_em ?? null;
   const pendentes: Pendente[] = [];
   if (inicio) {
-    // Caixa fechado até 24 h antes da 1ª contagem também aparece, com aviso: o
-    // dinheiro dele pode ter ficado separado fora do cofre (03/11: o do almoço
-    // fechou 14:16 e a contagem foi 15:06). Depois de 24 h some sozinho.
-    const antes = new Date(new Date(inicio).getTime() - 24 * 3600 * 1000).toISOString();
     const [{ data: fechados }, { data: abertos }, { data: sangrias }, { data: jaFeitos }] = await Promise.all([
-      db.from("pdv_caixas").select("id, nome, aberto_em, fechado_em, dinheiro_contado, dinheiro_esperado").eq("status", "fechado").gte("fechado_em", antes).order("fechado_em").limit(60),
+      db.from("pdv_caixas").select("id, nome, aberto_em, fechado_em, dinheiro_contado, dinheiro_esperado").eq("status", "fechado").gte("fechado_em", inicio).order("fechado_em").limit(60),
       db.from("pdv_caixas").select("id, nome, aberto_em, saldo_inicial").gte("aberto_em", inicio).gt("saldo_inicial", 0).order("aberto_em").limit(60),
       db.from("pdv_caixa_mov").select("id, valor, descricao, criado_em").eq("tipo", "sangria").is("lancamento_id", null).gte("criado_em", inicio).order("criado_em").limit(100),
       db.from("cofre_movimentos").select("origem_tipo, origem_id").not("origem_id", "is", null).gte("criado_em", inicio).limit(1000),
@@ -51,11 +47,7 @@ export default async function CofrePage() {
       if (feito.has(`caixa:${c.id}`)) continue;
       const v = Number(c.dinheiro_contado ?? c.dinheiro_esperado ?? 0);
       if (v <= 0) continue;
-      const anterior = new Date(c.fechado_em).getTime() < new Date(inicio).getTime();
-      pendentes.push({
-        origem: { tipo: "caixa", id: c.id, esperado: v }, tipo: "entrada_caixa", quando: c.fechado_em, rotulo: `Dinheiro do caixa fechado em ${hora(c.fechado_em)}`, valor: v, sai: false,
-        aviso: anterior ? "Fechou antes da primeira contagem: só guarde se esse dinheiro não estava no cofre quando contou." : undefined,
-      });
+      pendentes.push({ origem: { tipo: "caixa", id: c.id, esperado: v }, tipo: "entrada_caixa", quando: c.fechado_em, rotulo: `Dinheiro do caixa fechado em ${hora(c.fechado_em)}`, valor: v, sai: false });
     }
     for (const s of (sangrias as { id: string; valor: number; descricao: string | null; criado_em: string }[] | null) ?? []) {
       if (feito.has(`sangria:${s.id}`)) continue;

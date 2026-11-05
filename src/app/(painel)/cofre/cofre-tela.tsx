@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icone, type NomeIcone } from "@/components/icone";
 import { BotaoAcao } from "@/components/enviar";
@@ -21,8 +22,6 @@ export type Pendente = {
   rotulo: string;
   valor: number;
   sai: boolean;
-  /** Caixa fechado antes da 1ª contagem: confirmar que o dinheiro ficou fora. */
-  aviso?: string;
 };
 
 export type DadosCofre = {
@@ -112,7 +111,11 @@ export function CofreTela({ d }: { d: DadosCofre }) {
                     <span className="text-sm">
                       {p.rotulo}
                       <span className="block text-xs text-texto-fraco">{p.sai ? "sai do cofre" : "entra no cofre"}</span>
-                      {p.aviso && <span className="block text-xs font-medium text-texto-marca">{p.aviso}</span>}
+                      {p.tipo === "sangria" && (
+                        <Link href="/salao/caixa/sangrias" className="mt-0.5 inline-flex min-h-11 items-center text-xs font-semibold text-texto-marca hover:underline">
+                          Foi um pagamento? Lançar a categoria
+                        </Link>
+                      )}
                     </span>
                     <span className="flex items-center gap-3">
                       <span className="font-numero font-bold">{moedaBR(p.valor)}</span>

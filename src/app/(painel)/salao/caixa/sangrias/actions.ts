@@ -18,6 +18,7 @@ export async function lancarSangrias(movIds: string[], categoriaId: string) {
   }
   revalidatePath("/salao/caixa/sangrias");
   revalidatePath("/financeiro");
+  revalidatePath("/cofre");
   return { ok: true as const, feitas };
 }
 
@@ -26,5 +27,6 @@ export async function desfazerSangria(movId: string) {
   const db = await createClient();
   const r = await desfazerSangriaNoFinanceiro(db, movId);
   revalidatePath("/salao/caixa/sangrias");
+  revalidatePath("/cofre");
   return r;
 }

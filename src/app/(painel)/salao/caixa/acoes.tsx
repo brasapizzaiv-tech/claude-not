@@ -14,6 +14,66 @@ import type { CategoriaSangria } from "@/lib/sangria-financeiro";
 const inputCls =
   "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
+const OPCOES_DESTINO = [
+  { valor: "cofre", titulo: "Vai para o cofre", detalhe: "retirada para guardar" },
+  { valor: "pagamento", titulo: "É um pagamento", detalhe: "despesa paga no caixa" },
+] as const;
+
+// A saída precisa dizer para onde o dinheiro foi. Sem categoria o Cofre espera
+// esse dinheiro: em 05/11 o gelo pago no caixa apareceu lá para guardar.
+function DestinoSaida({ categorias, maisUsadas }: { categorias: CategoriaSangria[]; maisUsadas: CategoriaSangria[] }) {
+  const [destino, setDestino] = useState<"" | "cofre" | "pagamento">("");
+  return (
+    <fieldset className="space-y-2">
+      <legend className="mb-1 block text-xs text-texto-suave">Para onde vai esse dinheiro?</legend>
+      <div className="grid grid-cols-2 gap-2">
+        {OPCOES_DESTINO.map((o) => (
+          <label
+            key={o.valor}
+            className={`flex min-h-11 cursor-pointer items-start gap-2 rounded-controle border-2 px-3 py-2 text-sm font-semibold ${destino === o.valor ? "border-primaria bg-destaque text-texto" : "border-borda-forte text-texto-suave"}`}
+          >
+            <input
+              type="radio"
+              name="destino"
+              value={o.valor}
+              required
+              checked={destino === o.valor}
+              onChange={() => setDestino(o.valor)}
+              className="mt-0.5 h-5 w-5 shrink-0"
+            />
+            <span>
+              {o.titulo}
+              <span className="block text-mini font-normal text-texto-suave">{o.detalhe}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {destino === "pagamento" && (
+        <div>
+          <label htmlFor="saida-categoria" className="mb-1 block text-xs text-texto-suave">Categoria (vai pro financeiro como despesa paga)</label>
+          <select id="saida-categoria" name="categoria_id" required defaultValue="" className={`${inputCls} w-full`}>
+            <option value="" disabled>Escolha a categoria…</option>
+            {maisUsadas.length > 0 && (
+              <optgroup label="Mais usadas">
+                {maisUsadas.map((c) => <option key={"m" + c.id} value={c.id}>{c.nome}</option>)}
+              </optgroup>
+            )}
+            <optgroup label="Todas">
+              {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </optgroup>
+          </select>
+          <p className="mt-1 text-mini text-texto-fraco">
+            No motivo, escreva pra quem foi (ex.: “Dani motoboy”). O acerto da semana dos funcionários continua pela tela Semana e 10%, não marque aqui.
+          </p>
+        </div>
+      )}
+      <p className="text-mini text-texto-fraco">
+        <Link href="/salao/caixa/sangrias" className="font-semibold text-texto-marca hover:underline">Classificar sangrias antigas</Link>
+      </p>
+    </fieldset>
+  );
+}
+
 export function CaixaAcoes({ caixaId, categorias = [] }: { caixaId: string; categorias?: CategoriaSangria[] }) {
   const maisUsadas = [...categorias].filter((c) => c.usos > 0).sort((a, b) => b.usos - a.usos).slice(0, 6);
   // ?acao=sangria (botão Sangria da tela inicial) já abre na saída.
@@ -73,26 +133,7 @@ export function CaixaAcoes({ caixaId, categorias = [] }: { caixaId: string; cate
                   className={`${inputCls} w-full`}
                 />
               </div>
-              {!entrada && (
-                <div>
-                  <label className="mb-1 block text-xs text-texto-suave">É um pagamento? Categoria (vai pro financeiro como despesa paga)</label>
-                  <select name="categoria_id" defaultValue="" className={`${inputCls} w-full`}>
-                    <option value="">Não — só retirada (cofre, troco)</option>
-                    {maisUsadas.length > 0 && (
-                      <optgroup label="Mais usadas">
-                        {maisUsadas.map((c) => <option key={"m" + c.id} value={c.id}>{c.nome}</option>)}
-                      </optgroup>
-                    )}
-                    <optgroup label="Todas">
-                      {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                    </optgroup>
-                  </select>
-                  <p className="mt-1 text-mini text-texto-fraco">
-                    No motivo, escreva pra quem foi (ex.: “Dani motoboy”). O acerto da semana dos funcionários continua pela tela Semana e 10%, não marque aqui.
-                    {" "}<Link href="/salao/caixa/sangrias" className="font-semibold text-texto-marca hover:underline">Classificar sangrias antigas</Link>
-                  </p>
-                </div>
-              )}
+              {!entrada && <DestinoSaida categorias={categorias} maisUsadas={maisUsadas} />}
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setAberto(false)} className="btn-secundario text-sm">
                   Cancelar
