@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
 import { LancarItens, ReimprimirCozinha } from "./cliente";
 import type { PizzaOpcao, ComboGrupo } from "./cliente";
-import { AcoesComanda } from "./acoes";
+import { AcoesComanda, ExcluirBuffet } from "./acoes";
 import { fecharComandaPaga, removerItemComanda } from "../../actions";
 
 const moeda = (n: number) =>
@@ -201,7 +201,9 @@ export default async function ComandaPage({
                   <li className="flex items-center gap-3 rounded-controle px-3 py-2.5">
                     <span className="flex-1 text-sm font-medium text-texto">Buffet{comanda.peso ? ` (${comanda.peso} kg)` : ""}</span>
                     <span className="font-numero text-[15px] font-bold text-texto">{moeda(Number(comanda.valor_buffet))}</span>
-                    <span className="w-11" />
+                    {!fechada && !comanda.buffet_pago && Number(comanda.buffet_valor_pago ?? 0) <= 0.005 && Number(comanda.valor_buffet) > 0 ? (
+                      <ExcluirBuffet comandaId={comanda.id} valor={Number(comanda.valor_buffet)} />
+                    ) : <span className="w-11" />}
                   </li>
                 )}
                 {pedidos.map((p) => [

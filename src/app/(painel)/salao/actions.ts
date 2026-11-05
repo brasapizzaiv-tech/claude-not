@@ -887,6 +887,58 @@ export async function removerItemComanda(formData: FormData) {
   revalidatePath(`/garcom/comanda/${comandaId}`);
 }
 
+// Exclui o buffet que sobrou em aberto na comanda. Na 334 de 05/11 o caixa cobrou
+// o produto "Buffet Livre" no lugar dele e a comanda ficou aberta, sem ter como
+// tirar. Buffet com pagamento não sai por aqui; o motivo fica em Cancelados.
+export async function removerBuffetComanda(comandaId: string, motivo: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const texto = (motivo ?? "").trim();
+  if (texto.length < 3) return { ok: false as const, mensagem: "Informe o motivo (pelo menos 3 letras)." };
+
+  const { data: c } = await supabase
+    .from("pdv_comandas")
+    .select("numero, mesa, status, peso, valor_buffet, livre, buffet_pago, buffet_valor_pago, buffet_base_pago")
+    .eq("id", comandaId)
+    .maybeSingle();
+  if (!c || c.status !== "aberta") return { ok: false as const, mensagem: "Esta comanda não está mais aberta. Atualize a tela." };
+  const valor = Number(c.valor_buffet ?? 0);
+  if (!(valor > 0)) return { ok: false as const, mensagem: "Esta comanda não tem buffet para excluir. Atualize a tela." };
+  const semPagamento = !c.buffet_pago && Number(c.buffet_valor_pago ?? 0) <= 0.005 && Number(c.buffet_base_pago ?? 0) <= 0.005;
+  if (!semPagamento) return { ok: false as const, mensagem: "Este buffet já recebeu pagamento e não pode ser excluído. Se o recebimento foi errado, faça o estorno pelo caixa." };
+
+  // Só muda se ninguém pagou o buffet nesse meio-tempo (outro caixa).
+  const { data: mudou } = await supabase
+    .from("pdv_comandas")
+    .update({ peso: 0, tara: 0, valor_buffet: 0, livre: false })
+    .eq("id", comandaId)
+    .eq("status", "aberta")
+    .eq("buffet_pago", false)
+    .or("buffet_valor_pago.is.null,buffet_valor_pago.eq.0")
+    .select("id");
+  if (!mudou?.length) return { ok: false as const, mensagem: "O buffet não foi excluído: a comanda mudou agora há pouco. Atualize a tela e confira." };
+
+  const peso = Number(c.peso ?? 0);
+  const { data: userData } = await supabase.auth.getUser();
+  await supabase.from("pdv_itens_cancelados").insert({
+    comanda_numero: c.numero,
+    mesa: c.mesa ?? null,
+    descricao: `Buffet${c.livre ? " livre" : ""}${peso > 0 ? ` (${peso.toFixed(3).replace(".", ",")} kg)` : ""}`,
+    qtd: 1,
+    valor,
+    motivo: texto.slice(0, 200),
+    cancelado_por: userData.user?.id ?? null,
+  });
+
+  // Era o que faltava de uma comanda já paga: fecha.
+  await fecharSeJaRecebeu(supabase, comandaId);
+  revalidatePath("/salao");
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao/cancelados");
+  revalidatePath(`/salao/comandas/${comandaId}`);
+  return { ok: true as const };
+}
+
 // Total de uma comanda = buffet + itens + serviço (do horário).
 async function calcTotalComanda(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -1243,7 +1295,9 @@ export async function pagarSelecao(
         .select("valor_buffet, buffet_pago, buffet_base_pago, buffet_valor_pago")
         .eq("id", s.comandaId)
         .single();
-      if (c && !c.buffet_pago) {
+      // Sem valor = o buffet foi excluído e esta tela está desatualizada: não
+      // pode contar como recebido, senão lançaria a venda de algo que saiu.
+      if (c && !c.buffet_pago && Number(c.valor_buffet ?? 0) > 0) {
         const preco = r2(Number(c.valor_buffet ?? 0));
         const falta = Math.max(0, preco - Number(c.buffet_base_pago ?? 0));
         await supabase

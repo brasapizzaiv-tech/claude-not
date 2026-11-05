@@ -4,7 +4,39 @@ import { avisar, confirmar, perguntar } from "@/components/dialogo";
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { excluirComanda, virarLivreComanda, alternarContaPedida } from "../../actions";
+import { BotaoAcao } from "@/components/enviar";
+import { excluirComanda, removerBuffetComanda, virarLivreComanda, alternarContaPedida } from "../../actions";
+
+// O "×" da linha do buffet: pede o motivo, que fica registrado em Cancelados.
+export function ExcluirBuffet({ comandaId, valor }: { comandaId: string; valor: number }) {
+  const router = useRouter();
+  const texto = valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return (
+    <BotaoAcao
+      aoClicar={async () => {
+        const motivo = await perguntar(`Excluir o buffet de ${texto} desta comanda?`, "", {
+          detalhe: "Escreva o motivo. Ele fica registrado em Cancelados.",
+          obrigatorio: true,
+        });
+        if (motivo == null) return;
+        if (motivo.trim().length < 3) {
+          void avisar("Informe o motivo (pelo menos 3 letras).");
+          return;
+        }
+        const r = await removerBuffetComanda(comandaId, motivo);
+        if (!r.ok) {
+          void avisar(r.mensagem);
+          return;
+        }
+        router.refresh();
+      }}
+      aria-label="Excluir o buffet"
+      className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-fraco hover:bg-urgente-fundo hover:text-urgente-texto"
+    >
+      ×
+    </BotaoAcao>
+  );
+}
 
 export function AcoesComanda({
   comandaId, livre, temBuffet, contaPedida = false, contaPedidaPor = null,
