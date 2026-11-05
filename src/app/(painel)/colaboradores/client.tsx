@@ -84,6 +84,18 @@ function CodigoApp({ c, link }: { c: Colaborador; link: string }) {
   );
 }
 
+const APP_EQUIPE_PLAY = "https://play.google.com/store/apps/details?id=br.com.motelli.equipe";
+
+// No iPhone segue o link pessoal: o app ainda não saiu na App Store.
+function mensagemApp(c: Colaborador, link: string) {
+  return encodeURIComponent(
+    `Oi ${c.nome}! Esse é o seu app da Brasa.\n\n` +
+      `No Android, baixe o Motelli Equipe na Play Store:\n${APP_EQUIPE_PLAY}` +
+      (c.codigo ? `\nDepois de instalar, entre com o código ${codigoFmt(c.codigo)}.` : "") +
+      `\n\nNo iPhone, abra este link e use "Adicionar à Tela de Início":\n${link}`,
+  );
+}
+
 function LinkApp({ c }: { c: Colaborador }) {
   const [copiado, setCopiado] = useState(false);
   if (!c.token) return <GerarLink id={c.id} small />;
@@ -91,10 +103,7 @@ function LinkApp({ c }: { c: Colaborador }) {
   const link = `${origin}/eu/${c.token}`;
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
-  const msg = encodeURIComponent(
-    `Oi ${c.nome}! Esse é o seu app da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}` +
-      (c.codigo ? `\nNo app Motelli Equipe, o seu código de entrada é ${codigoFmt(c.codigo)}.` : ""),
-  );
+  const msg = mensagemApp(c, link);
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <button
@@ -144,10 +153,7 @@ function CardApp({ c }: { c: Colaborador }) {
   const link = `${origin}/eu/${c.token}`;
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
-  const msg = encodeURIComponent(
-    `Oi ${c.nome}! Esse é o seu app da Brasa. Abra o link e "adicione à tela de início" do celular:\n${link}` +
-      (c.codigo ? `\nNo app Motelli Equipe, o seu código de entrada é ${codigoFmt(c.codigo)}.` : ""),
-  );
+  const msg = mensagemApp(c, link);
   return (
     <div className="cartao p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
