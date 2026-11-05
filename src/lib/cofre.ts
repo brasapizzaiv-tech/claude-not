@@ -6,6 +6,47 @@
 export type Quantidades = Record<string, number>;
 export type Gaveta = "moedas" | "troco" | "grandes";
 
+export type Pendente = {
+  origem: { tipo: "caixa" | "sangria" | "abertura"; id: string; esperado: number };
+  tipo: "entrada_caixa" | "sangria" | "fundo_caixa";
+  quando: string;
+  rotulo: string;
+  valor: number;
+  sai: boolean;
+};
+
+export type DadosCofre = {
+  iniciado: boolean;
+  saldo: Quantidades;
+  faixas: Record<string, { minimo: number; maximo: number }>;
+  pendentes: Pendente[];
+  pedidos: { id: string; quantidades: Quantidades; valor: number; obs: string | null; criado_por_nome: string | null; quando: string }[];
+  movimentos: { id: string; tipo: string; quantidades: Quantidades; valor: number; esperado: number | null; descricao: string | null; criado_por_nome: string | null; quando: string }[];
+  categorias: { id: string; nome: string }[];
+};
+
+export type MovimentoNovo = {
+  tipo: string;
+  quantidades: Quantidades;
+  descricao?: string;
+  origem?: { tipo: "caixa" | "sangria" | "abertura"; id: string; esperado?: number | null } | null;
+  pedidoId?: string | null;
+};
+
+type Resultado = { ok: true } | { ok: false; mensagem: string };
+
+/** O que a tela do Cofre pede ao servidor. O painel e o app entregam as suas. */
+export type AcoesCofre = {
+  registrarMovimento: (d: MovimentoNovo) => Promise<Resultado>;
+  pagarConta: (d: { quantidades: Quantidades; descricao: string; categoriaId?: string | null; lancamentoId?: string | null }) => Promise<Resultado>;
+  buscarContasAbertas: (termo: string) => Promise<{ id: string; descricao: string; valor: number; vencimento: string | null }[]>;
+  conferirCofre: (d: { contado: Quantidades; motivo?: string }) => Promise<Resultado>;
+  salvarFaixas: (faixas: { centavos: number; minimo: number; maximo: number }[]) => Promise<Resultado>;
+  marcarEncomenda: (d: { quantidades: Quantidades; obs?: string }) => Promise<Resultado>;
+  cancelarEncomenda: (id: string) => Promise<Resultado>;
+  desfazerMovimento: (id: string) => Promise<Resultado>;
+};
+
 export const MOEDAS = [5, 10, 25, 50, 100];
 export const NOTAS_TROCO = [200, 500, 1000, 2000];
 export const NOTAS_GRANDES = [5000, 10000];

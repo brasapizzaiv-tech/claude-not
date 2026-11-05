@@ -9,30 +9,8 @@ import { confirmar, avisar } from "@/components/dialogo";
 import { moedaBR } from "@/lib/format";
 import {
   DENOMINACOES, GAVETAS, TIPOS, descreverQuantidades, ehMoeda, gavetaDe, listaEncomenda, rotuloDen, situacao, valorDe, valorGaveta,
-  type Faixa, type Quantidades,
+  type AcoesCofre, type DadosCofre, type Faixa, type Pendente, type Quantidades,
 } from "@/lib/cofre";
-import {
-  buscarContasAbertas, cancelarEncomenda, conferirCofre, desfazerMovimento, marcarEncomenda, pagarConta, registrarMovimento, salvarFaixas,
-} from "./actions";
-
-export type Pendente = {
-  origem: { tipo: "caixa" | "sangria" | "abertura"; id: string; esperado: number };
-  tipo: "entrada_caixa" | "sangria" | "fundo_caixa";
-  quando: string;
-  rotulo: string;
-  valor: number;
-  sai: boolean;
-};
-
-export type DadosCofre = {
-  iniciado: boolean;
-  saldo: Quantidades;
-  faixas: Record<string, Faixa>;
-  pendentes: Pendente[];
-  pedidos: { id: string; quantidades: Quantidades; valor: number; obs: string | null; criado_por_nome: string | null; quando: string }[];
-  movimentos: { id: string; tipo: string; quantidades: Quantidades; valor: number; esperado: number | null; descricao: string | null; criado_por_nome: string | null; quando: string }[];
-  categorias: { id: string; nome: string }[];
-};
 
 // O que a janela de contagem está fazendo agora.
 type Janela =
@@ -43,7 +21,8 @@ type Janela =
 
 const TITULO = "font-numero font-bold tracking-apertada text-texto";
 
-export function CofreTela({ d }: { d: DadosCofre }) {
+/** noApp: dentro do app da equipe, onde a pessoa não tem o login do painel. */
+export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: AcoesCofre; noApp?: boolean }) {
   const router = useRouter();
   const [aba, setAba] = useState<"cofre" | "historico" | "faixas">("cofre");
   const [janela, setJanela] = useState<Janela | null>(null);
@@ -111,7 +90,7 @@ export function CofreTela({ d }: { d: DadosCofre }) {
                     <span className="text-sm">
                       {p.rotulo}
                       <span className="block text-xs text-texto-fraco">{p.sai ? "sai do cofre" : "entra no cofre"}</span>
-                      {p.tipo === "sangria" && (
+                      {p.tipo === "sangria" && !noApp && (
                         <Link href="/salao/caixa/sangrias" className="mt-0.5 inline-flex min-h-11 items-center text-xs font-semibold text-texto-marca hover:underline">
                           Foi um pagamento? Lançar a categoria
                         </Link>
@@ -139,7 +118,7 @@ export function CofreTela({ d }: { d: DadosCofre }) {
                     {descreverQuantidades(encomenda)} <span className="font-numero font-bold">({moedaBR(valorDe(encomenda))})</span>
                   </span>
                   <BotaoAcao className="btn-secundario text-sm" aoClicar={async () => {
-                    const r = await marcarEncomenda({ quantidades: encomenda });
+                    const r = await acoes.marcarEncomenda({ quantidades: encomenda });
                     if (!r.ok) return avisar(r.mensagem);
                     router.refresh();
                   }}>Marcar como encomendado</BotaoAcao>
@@ -158,7 +137,9 @@ export function CofreTela({ d }: { d: DadosCofre }) {
                     </button>
                     <BotaoAcao className="btn-secundario text-sm" aoClicar={async () => {
                       if (!(await confirmar("Cancelar essa encomenda?"))) return;
-                      await cancelarEncomenda(p.id); router.refresh();
+                      const r = await acoes.cancelarEncomenda(p.id);
+                      if (!r.ok) return avisar(r.mensagem);
+                      router.refresh();
                     }}>Cancelar</BotaoAcao>
                   </span>
                 </div>
@@ -205,16 +186,16 @@ export function CofreTela({ d }: { d: DadosCofre }) {
         </div>
       )}
 
-      {aba === "historico" && <Historico d={d} />}
-      {aba === "faixas" && <Faixas d={d} />}
+      {aba === "historico" && <Historico d={d} acoes={acoes} />}
+      {aba === "faixas" && <Faixas d={d} acoes={acoes} />}
 
       {janela && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
           <div className="cartao my-6 w-full max-w-2xl p-5">
-            {janela.modo === "mov" && <FormMovimento j={janela} saldo={d.saldo} onFechar={() => setJanela(null)} onFeito={feito} />}
-            {janela.modo === "pagar" && <FormPagar d={d} onFechar={() => setJanela(null)} onFeito={feito} />}
-            {janela.modo === "troca" && <FormTroca saldo={d.saldo} onFechar={() => setJanela(null)} onFeito={feito} />}
-            {janela.modo === "conferir" && <FormConferir d={d} onFechar={() => setJanela(null)} onFeito={feito} />}
+            {janela.modo === "mov" && <FormMovimento acoes={acoes} j={janela} saldo={d.saldo} onFechar={() => setJanela(null)} onFeito={feito} />}
+            {janela.modo === "pagar" && <FormPagar acoes={acoes} d={d} onFechar={() => setJanela(null)} onFeito={feito} />}
+            {janela.modo === "troca" && <FormTroca acoes={acoes} saldo={d.saldo} onFechar={() => setJanela(null)} onFeito={feito} />}
+            {janela.modo === "conferir" && <FormConferir acoes={acoes} d={d} onFechar={() => setJanela(null)} onFeito={feito} />}
           </div>
         </div>
       )}
@@ -224,7 +205,7 @@ export function CofreTela({ d }: { d: DadosCofre }) {
 
 function Acao({ icone, rotulo, onClick }: { icone: NomeIcone; rotulo: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="btn-secundario flex min-h-14 flex-col items-center justify-center gap-1 text-sm">
+    <button type="button" onClick={onClick} className="btn-secundario flex min-h-14 flex-col items-center justify-center gap-1 px-3 py-2.5 text-center text-sm">
       <Icone nome={icone} tamanho={18} /> {rotulo}
     </button>
   );
@@ -239,8 +220,8 @@ function Contagem({ valor, onChange, saldo, mostrarSaldo }: { valor: Quantidades
           <span className="rotulo">{g.rotulo}</span>
           <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {[...g.centavos].reverse().map((c) => (
-              <label key={c} className="flex items-center justify-between gap-2 rounded-controle bg-superficie-suave px-3 py-1.5 text-sm">
-                <span>
+              <label key={c} className="flex items-center justify-between gap-1.5 rounded-controle bg-superficie-suave px-2.5 py-1.5 text-sm">
+                <span className="whitespace-nowrap">
                   {rotuloDen(c)}
                   {mostrarSaldo && <span className="block text-xs text-texto-fraco">tem {saldo?.[String(c)] ?? 0}</span>}
                 </span>
@@ -254,7 +235,7 @@ function Contagem({ valor, onChange, saldo, mostrarSaldo }: { valor: Quantidades
                     if (n) novo[String(c)] = n; else delete novo[String(c)];
                     onChange(novo);
                   }}
-                  className="min-h-11 w-20 rounded-controle border border-borda bg-painel-cartao px-2 text-right font-numero"
+                  className="min-h-11 w-16 rounded-controle border border-borda bg-painel-cartao px-2 text-right font-numero sm:w-20"
                   placeholder="0"
                 />
               </label>
@@ -282,7 +263,7 @@ function Diferenca({ total, esperado }: { total: number; esperado?: number }) {
   return <span className="pilula pilula-urgente">{dif > 0 ? "sobrou" : "faltou"} {moedaBR(Math.abs(dif))}</span>;
 }
 
-function FormMovimento({ j, saldo, onFechar, onFeito }: { j: Extract<Janela, { modo: "mov" }>; saldo: Quantidades; onFechar: () => void; onFeito: () => void }) {
+function FormMovimento({ acoes, j, saldo, onFechar, onFeito }: { acoes: AcoesCofre; j: Extract<Janela, { modo: "mov" }>; saldo: Quantidades; onFechar: () => void; onFeito: () => void }) {
   const [q, setQ] = useState<Quantidades>(j.inicial ?? {});
   const [desc, setDesc] = useState("");
   const total = valorDe(q);
@@ -303,7 +284,7 @@ function FormMovimento({ j, saldo, onFechar, onFeito }: { j: Extract<Janela, { m
         <span className="flex items-center gap-2"><span className={`text-xl ${TITULO}`}>{moedaBR(total)}</span><Diferenca total={total} esperado={j.esperado} /></span>
         <BotaoAcao className="btn-principal text-sm" aoClicar={async () => {
           if (j.esperado != null && Math.abs(total - j.esperado) >= 0.005 && !(await confirmar(`A contagem deu ${moedaBR(total)} e o esperado era ${moedaBR(j.esperado)}. Registrar assim mesmo?`))) return;
-          const r = await registrarMovimento({ tipo: j.tipo, quantidades: q, descricao: desc, origem: j.origem ?? null, pedidoId: j.pedidoId ?? null });
+          const r = await acoes.registrarMovimento({ tipo: j.tipo, quantidades: q, descricao: desc, origem: j.origem ?? null, pedidoId: j.pedidoId ?? null });
           if (!r.ok) return avisar(r.mensagem);
           onFeito();
         }}>{j.sai ? "Registrar saída" : "Guardar no cofre"}</BotaoAcao>
@@ -312,7 +293,7 @@ function FormMovimento({ j, saldo, onFechar, onFeito }: { j: Extract<Janela, { m
   );
 }
 
-function FormPagar({ d, onFechar, onFeito }: { d: DadosCofre; onFechar: () => void; onFeito: () => void }) {
+function FormPagar({ acoes, d, onFechar, onFeito }: { acoes: AcoesCofre; d: DadosCofre; onFechar: () => void; onFeito: () => void }) {
   const [q, setQ] = useState<Quantidades>({});
   const [desc, setDesc] = useState("");
   const [cat, setCat] = useState("");
@@ -336,7 +317,7 @@ function FormPagar({ d, onFechar, onFeito }: { d: DadosCofre; onFechar: () => vo
               <div className="mt-2 flex gap-2">
                 <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="água, luz, 100,00…" aria-label="Buscar conta em aberto"
                   className="min-h-11 flex-1 rounded-controle border border-borda bg-painel-cartao px-3 text-sm" />
-                <BotaoAcao className="btn-secundario text-sm" aoClicar={async () => setContas(await buscarContasAbertas(busca))}><Icone nome="buscar" tamanho={15} /> Buscar</BotaoAcao>
+                <BotaoAcao className="btn-secundario text-sm" aoClicar={async () => setContas(await acoes.buscarContasAbertas(busca))}><Icone nome="buscar" tamanho={15} /> Buscar</BotaoAcao>
               </div>
               {contas && (contas.length === 0
                 ? <p className="mt-2 text-xs text-texto-fraco">Nenhuma conta em aberto com isso. Se não está lá, preencha abaixo que o sistema cria a conta já paga.</p>
@@ -375,7 +356,7 @@ function FormPagar({ d, onFechar, onFeito }: { d: DadosCofre; onFechar: () => vo
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <span className="flex items-center gap-2"><span className={`text-xl ${TITULO}`}>{moedaBR(total)}</span>{conta && <Diferenca total={total} esperado={conta.valor} />}</span>
         <BotaoAcao className="btn-principal text-sm" aoClicar={async () => {
-          const r = await pagarConta({ quantidades: q, descricao: desc, categoriaId: cat || null, lancamentoId: conta?.id ?? null });
+          const r = await acoes.pagarConta({ quantidades: q, descricao: desc, categoriaId: cat || null, lancamentoId: conta?.id ?? null });
           if (!r.ok) return avisar(r.mensagem);
           onFeito();
         }}>{conta ? "Pagar e dar baixa" : "Pagar e lançar no financeiro"}</BotaoAcao>
@@ -384,7 +365,7 @@ function FormPagar({ d, onFechar, onFeito }: { d: DadosCofre; onFechar: () => vo
   );
 }
 
-function FormTroca({ saldo, onFechar, onFeito }: { saldo: Quantidades; onFechar: () => void; onFeito: () => void }) {
+function FormTroca({ acoes, saldo, onFechar, onFeito }: { acoes: AcoesCofre; saldo: Quantidades; onFechar: () => void; onFeito: () => void }) {
   const [sai, setSai] = useState<Quantidades>({});
   const [entra, setEntra] = useState<Quantidades>({});
   const [desc, setDesc] = useState("");
@@ -405,7 +386,7 @@ function FormTroca({ saldo, onFechar, onFeito }: { saldo: Quantidades; onFechar:
         <BotaoAcao className="btn-principal text-sm" aoClicar={async () => {
           const q: Quantidades = { ...entra };
           for (const [k, v] of Object.entries(sai)) q[k] = (q[k] ?? 0) - v;
-          const r = await registrarMovimento({ tipo: "troca", quantidades: q, descricao: desc });
+          const r = await acoes.registrarMovimento({ tipo: "troca", quantidades: q, descricao: desc });
           if (!r.ok) return avisar(r.mensagem);
           onFeito();
         }}>Registrar troca</BotaoAcao>
@@ -414,7 +395,7 @@ function FormTroca({ saldo, onFechar, onFeito }: { saldo: Quantidades; onFechar:
   );
 }
 
-function FormConferir({ d, onFechar, onFeito }: { d: DadosCofre; onFechar: () => void; onFeito: () => void }) {
+function FormConferir({ acoes, d, onFechar, onFeito }: { acoes: AcoesCofre; d: DadosCofre; onFechar: () => void; onFeito: () => void }) {
   const [q, setQ] = useState<Quantidades>({});
   const [motivo, setMotivo] = useState("");
   const total = valorDe(q);
@@ -436,7 +417,7 @@ function FormConferir({ d, onFechar, onFeito }: { d: DadosCofre; onFechar: () =>
         <span className="flex items-center gap-2"><span className={`text-xl ${TITULO}`}>{moedaBR(total)}</span>{d.iniciado && <Diferenca total={total} esperado={esperado} />}</span>
         <BotaoAcao className="btn-principal text-sm" aoClicar={async () => {
           if (!d.iniciado && !(await confirmar(`Começar o cofre com ${moedaBR(total)}?`))) return;
-          const r = await conferirCofre({ contado: q, motivo });
+          const r = await acoes.conferirCofre({ contado: q, motivo });
           if (!r.ok) return avisar(r.mensagem);
           onFeito();
         }}>{d.iniciado ? "Salvar conferência" : "Salvar saldo inicial"}</BotaoAcao>
@@ -445,7 +426,7 @@ function FormConferir({ d, onFechar, onFeito }: { d: DadosCofre; onFechar: () =>
   );
 }
 
-function Historico({ d }: { d: DadosCofre }) {
+function Historico({ d, acoes }: { d: DadosCofre; acoes: AcoesCofre }) {
   const router = useRouter();
   if (d.movimentos.length === 0) return <p className="text-sm text-texto-fraco">Ainda não tem movimentação.</p>;
   return (
@@ -468,7 +449,7 @@ function Historico({ d }: { d: DadosCofre }) {
                 <span className="font-numero font-bold">{v > 0 ? "+" : v < 0 ? "−" : ""} {moedaBR(Math.abs(v))}</span>
                 <BotaoAcao className="btn-secundario min-h-11 min-w-11 justify-center" aria-label="Desfazer" title="Desfazer" aoClicar={async () => {
                   if (!(await confirmar("Desfazer esta movimentação?", m.tipo === "pagamento" ? { detalhe: "A conta volta pro Contas a Pagar (ou é apagada, se foi criada aqui)." } : undefined))) return;
-                  const r = await desfazerMovimento(m.id);
+                  const r = await acoes.desfazerMovimento(m.id);
                   if (!r.ok) return avisar(r.mensagem);
                   router.refresh();
                 }}><Icone nome="desfazer" tamanho={15} /></BotaoAcao>
@@ -481,7 +462,7 @@ function Historico({ d }: { d: DadosCofre }) {
   );
 }
 
-function Faixas({ d }: { d: DadosCofre }) {
+function Faixas({ d, acoes }: { d: DadosCofre; acoes: AcoesCofre }) {
   const router = useRouter();
   const [f, setF] = useState<Record<string, Faixa>>(() => Object.fromEntries(DENOMINACOES.map((c) => [String(c), d.faixas[String(c)] ?? { minimo: 0, maximo: 0 }])));
   const campo = (c: number, k: keyof Faixa) => (
@@ -507,7 +488,7 @@ function Faixas({ d }: { d: DadosCofre }) {
       </table>
       <div className="mt-4 flex justify-end">
         <BotaoAcao className="btn-principal text-sm" aoClicar={async () => {
-          const r = await salvarFaixas(DENOMINACOES.map((c) => ({ centavos: c, ...f[String(c)] })));
+          const r = await acoes.salvarFaixas(DENOMINACOES.map((c) => ({ centavos: c, ...f[String(c)] })));
           if (!r.ok) return avisar(r.mensagem);
           await avisar("Mínimo e máximo salvos.");
           router.refresh();

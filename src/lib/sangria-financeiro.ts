@@ -10,12 +10,15 @@ export type CategoriaSangria = { id: string; nome: string; grupo: string | null;
 const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 /** Categorias de despesa, com as mais usadas em pagamento em dinheiro primeiro. */
-export async function categoriasDeSangria(db: Db): Promise<CategoriaSangria[]> {
+export async function categoriasDeSangria(db: Db, empresaId?: string): Promise<CategoriaSangria[]> {
   const desde = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
-  const [{ data: cats }, { data: usados }] = await Promise.all([
-    db.from("dre_categorias").select("id, nome, grupo, tipo").eq("ativo", true).not("tipo", "in", "(receita,deducao)").order("nome"),
-    db.from("lancamentos").select("categoria_id").ilike("forma_pagamento", "%dinheiro%").gte("data", desde).limit(1000),
-  ]);
+  let qCats = db.from("dre_categorias").select("id, nome, grupo, tipo").eq("ativo", true).not("tipo", "in", "(receita,deducao)");
+  let qUsados = db.from("lancamentos").select("categoria_id").ilike("forma_pagamento", "%dinheiro%").gte("data", desde);
+  if (empresaId) {
+    qCats = qCats.eq("empresa_id", empresaId);
+    qUsados = qUsados.eq("empresa_id", empresaId);
+  }
+  const [{ data: cats }, { data: usados }] = await Promise.all([qCats.order("nome"), qUsados.limit(1000)]);
   const usos = new Map<string, number>();
   for (const u of (usados as { categoria_id: string | null }[]) ?? []) if (u.categoria_id) usos.set(u.categoria_id, (usos.get(u.categoria_id) ?? 0) + 1);
   return ((cats as { id: string; nome: string; grupo: string | null }[]) ?? [])

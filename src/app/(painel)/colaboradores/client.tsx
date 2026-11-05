@@ -216,6 +216,7 @@ function resumoQuadro(c: Colaborador): string {
   if (c.esporadico) partes.push("free esporádico");
   if (c.faz_garcom) partes.push("garçom");
   if (c.faz_cardapio) partes.push("cardápio");
+  if (c.faz_cofre) partes.push("cofre");
   if (((c.checklist_setores as string[] | null) ?? []).length > 0) partes.push("checklists");
   return partes.join(" · ");
 }
@@ -385,6 +386,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
                           {c.faz_etiquetas && <span className="inline-flex items-center gap-1"><Icone nome="etiqueta" tamanho={12} /> etiquetas</span>}
                           {c.faz_contas && <span className="inline-flex items-center gap-1"><Icone nome="dinheiro" tamanho={12} /> contas</span>}
                           {c.faz_cardapio && <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> cardápio</span>}
+                          {c.faz_cofre && <span className="inline-flex items-center gap-1"><Icone nome="cofre" tamanho={12} /> cofre</span>}
                         </div>
                     </td>
                     <td className="px-4 py-3">
@@ -648,6 +650,9 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> <Icone nome="salao" tamanho={14} /> Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="faz_cofre" defaultChecked={editando ? !!editando.faz_cofre : false} /> <Icone nome="cofre" tamanho={14} /> Cofre (ver o saldo, guardar dinheiro e pagar contas pelo app)
           </label>
           {setoresChecklist.length > 0 && (
             <div className="cartao p-3">

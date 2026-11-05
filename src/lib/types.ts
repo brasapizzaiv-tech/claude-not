@@ -43,6 +43,7 @@ export type Colaborador = {
   faz_contas?: boolean;
   faz_garcom?: boolean;
   faz_cardapio?: boolean;
+  faz_cofre?: boolean;
   bate_ponto?: boolean;
   cpf?: string | null;
   valor_free?: number | null;
