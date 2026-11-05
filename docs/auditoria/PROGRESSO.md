@@ -50,6 +50,10 @@ Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-00
   `salao/caixa/receber.tsx` e `salao/caixa/pagamentos.tsx`. Passou 44 de 44 verificações contra o agente e o
   simulador em pasta isolada. Falta: revisão independente (interrompida antes do fim), publicar fora do serviço e um teste
   de R$ 1 do Rafael no pinpad, cancelando depois.
+  Em 05/11 a revisão terminou: 6 casos de exceção e um texto do PDV, todos corrigidos (53 de 53 verificações). Sobra um caso:
+  PC cair nos ~3 s depois de o CNF sair, o agente desfaz ao religar e a linha fica "confirmada"; só some com versão nova do
+  agente. Riscos que já existiam, para a Etapa 4: a resposta de `pagarSelecao` perdida desfaz o cartão com a venda gravada
+  (`receber.tsx`, `cobrar-pinpad.tsx`), e o Pix de teste em `tef-lista.tsx` não passa pela guarda.
 - **BUG-006:** esperando o OK dele.
 - **Baixa pela nota (pedido novo):** ver "Saldo do cliente × nota avulsa" abaixo. Falta combinar e fazer.
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
