@@ -54,6 +54,7 @@ Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-00
   PC cair nos ~3 s depois de o CNF sair, o agente desfaz ao religar e a linha fica "confirmada"; só some com versão nova do
   agente. Riscos que já existiam, para a Etapa 4: a resposta de `pagarSelecao` perdida desfaz o cartão com a venda gravada
   (`receber.tsx`, `cobrar-pinpad.tsx`), e o Pix de teste em `tef-lista.tsx` não passa pela guarda.
+  **Publicado em 05/11 ~12h30 (commit 88de779), com o OK do Rafael.** Falta o teste de R$ 1 no pinpad.
 - **BUG-006:** esperando o OK dele.
 - **Baixa pela nota (pedido novo):** ver "Saldo do cliente × nota avulsa" abaixo. Falta combinar e fazer.
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
@@ -237,6 +238,21 @@ deve contar no caixa. Hoje a única baixa é "Receber" em Fiado, que exige caixa
   último, os R$ 149,70 de 29/10 entraram na NF-e 4 como linha "Almoços", sem a comanda ligada.
 - Não se sabe ainda se esses Pix entraram mesmo no caixa ou só serviram pra zerar o saldo: é pergunta pro Rafael. O último extrato
   importado vai até 30/09, então o banco não confirma.
+
+### [BUG-007] Buffet que sobrou em aberto não tinha como sair da comanda já paga
+
+Comanda 334 de 05/11: o caixa recebeu R$ 41,90 no crédito (NSU 031357) pelo produto "Buffet Livre", sem o buffet da balança
+na cobrança. A comanda ficou aberta mostrando mais R$ 41,90, e a tela só tinha "×" para itens, nunca para o buffet. Único
+caso igual em 60 dias.
+
+- **Corrigido com o OK do Rafael:** a 334 foi fechada no banco, com o buffet registrado em Cancelados, sem mexer no pagamento.
+- **Publicado em 05/11 (commit 02b371a):** `removerBuffetComanda` e o "×" na linha do buffet, com motivo obrigatório. Buffet
+  com pagamento não sai, e `pagarSelecao` não conta como recebido um buffet já excluído em tela desatualizada.
+- **Falta ver:** o "×" na tela com comanda aberta. Na hora da publicação não havia nenhuma com buffet.
+
+**Fato para a Etapa 4, sem conclusão:** comandas da balança excluídas sem pagamento são frequentes. Em 05/11 foram 15
+(R$ 589,16), 10 delas em um minuto com o motivo "sobrou" (R$ 394,85); em 16/10 foram 25 (R$ 2.171,78). Falta entender se isso
+é rotina de sobra de cupom ou se esconde venda não recebida.
 
 ### Observação para a Etapa 4 (lógica e dados)
 Sobra nos caixas do dia (23 de 23 caixas positivos em 30 dias, média R$ 156, total R$ 3.586; à noite, perto de
