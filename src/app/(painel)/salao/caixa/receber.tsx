@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { avisar, confirmar as perguntarSeOk, perguntar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
-import { pagarSelecao, fecharTef, registrarTefAvulso, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
-import { tefConfirmar } from "@/lib/tef-client";
-import { desfazerNoPinpad, esquecerCobranca, guardarSemConta } from "@/lib/tef-guarda";
+import { pagarSelecao, registrarTefAvulso, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
+import { confirmarVendaGravada, desfazerNoPinpad, guardarSemConta } from "@/lib/tef-guarda";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { PixQr } from "@/components/pix-qr";
 import { emiteNotaAuto, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
@@ -563,15 +562,10 @@ export function ReceberComandas({
         if (presos) await avisar(presos.trim());
       }
       if (r.ok) {
-        // Venda gravada → confirma cada cartão no pinpad e registra no sistema.
+        // Venda gravada → confirma cada cartão no pinpad e registra no sistema,
+        // fora da tela: o caixa não espera os ~3,9 s do CNF (DES-010).
         const registros = ("tefRegistros" in r ? r.tefRegistros : []) as { idAgente: string; transacaoId: string }[];
-        for (const reg of registros) {
-          let confirmou = false;
-          if (jaConfirmados.has(reg.idAgente)) confirmou = true;
-          else try { confirmou = (await tefConfirmar(reg.idAgente)).ok; } catch { confirmou = false; }
-          esquecerCobranca(reg.idAgente);
-          try { await fecharTef(reg.transacaoId, confirmou, confirmou ? undefined : "o agente não confirmou (CNF)"); } catch { /* registrado depois */ }
-        }
+        confirmarVendaGravada(registros.map((reg) => ({ ...reg, confirmado: jaConfirmados.has(reg.idAgente) })));
         setMsg(
           `✓ Recebido ${brl(totalPagar)} — comanda(s) ${r.numeros.map((n) => `#${n}`).join(", ")}.` +
             (troco > 0.005 ? ` Troco: ${brl(troco)}.` : ""),

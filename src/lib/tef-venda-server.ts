@@ -100,13 +100,19 @@ export async function registrarTefDaVenda(
   return (data as { id?: string } | null)?.id ?? null;
 }
 
-/** Fecha a transação depois do CNF; confirmada → comprovante na fila de impressão. */
+/**
+ * Fecha a transação depois do CNF; confirmada → comprovante na fila de impressão.
+ * Só fecha a que ainda está "aprovada": a confirmação roda em segundo plano e pode
+ * ser retomada por outra tela, e não pode sair um comprovante a mais por isso.
+ */
 export async function fecharTefNoBanco(supabase: Db, transacaoId: string, confirmada: boolean, motivo?: string) {
-  await supabase
+  const { data: fechou } = await supabase
     .from("tef_transacoes")
     .update({ status: confirmada ? "confirmada" : "desfeita", mensagem: motivo ?? null, atualizado_em: new Date().toISOString() })
-    .eq("id", transacaoId);
-  if (confirmada) {
+    .eq("id", transacaoId)
+    .eq("status", "aprovada")
+    .select("id");
+  if (confirmada && (fechou?.length ?? 0) > 0) {
     const { data: imps } = await supabase.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true);
     const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
     if (ids.length > 0) {

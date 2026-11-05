@@ -9,8 +9,9 @@
 // não some: quem não tem mais onde pôr confirma no pinpad e guarda como
 // "recebido sem conta" (registrarTefAvulso), e o caixa usa depois numa conta
 // pelo Pagamento → "Recebido sem conta".
+import { avisar } from "@/components/dialogo";
 import { tefConfirmar, tefDesfazer, tefDisponivel, type TefDados } from "@/lib/tef-client";
-import { registrarTefAvulso } from "@/app/(painel)/salao/actions";
+import { fecharTef, registrarTefAvulso } from "@/app/(painel)/salao/actions";
 
 type TipoTef = TefDados["tipo"];
 /** O que vai pro registro: o tipo pode faltar (aba fechada antes de anotar). */
@@ -117,6 +118,147 @@ export async function guardarSemConta(tef: TefParaGuardar, valor: number, motivo
   return true;
 }
 
+// ---------- Confirmação depois da venda (DES-010, 03/11/2026) ----------
+// A venda já gravou e o caixa ficava ~3,9 s parado: o agente espera 3 s por um
+// eco do CNF que o gerenciador da Elgin não manda. Agora o "Recebido" aparece na
+// hora e o CNF + fechamento correm aqui, em fila, fora da tela. A anotação vem
+// antes de tudo: se a aba fechar no meio, a próxima tela termina, e a guarda sabe
+// que aquele pagamento TEM venda (não é "recebido sem conta").
+const CHAVE_FECHAR = "tef-fechar";
+type AFechar = {
+  idAgente: string;
+  transacaoId: string | null;
+  /** CNF resolvido: já estava confirmado, ou só falta gravar o fechamento. */
+  confirmado: boolean;
+  desde: number;
+  /** O CNF saiu pelo menos uma vez. Sem isso, "nada pendente" quer dizer que o agente desfez. */
+  cnfEnviado?: boolean;
+  /** O CNF não chegou ao gerenciador: "nada pendente" depois disso quer dizer desfeito. */
+  falhou?: boolean;
+  desfeito?: boolean;
+  motivo?: string;
+};
+let filaFechar: Promise<unknown> = Promise.resolve();
+// Os que esta aba já tentou. Os outros, com menos de 30 s, são de outra aba que
+// ainda está cuidando deles.
+const tentados = new Set<string>();
+// A página está indo embora: o navegador aborta o fetch e isso parece falha do
+// agente, mas o CNF pode ter chegado. Não é "falhou".
+let saindo = false;
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => { saindo = true; });
+  window.addEventListener("pageshow", () => { saindo = false; });
+}
+function temAnotacoes() {
+  try {
+    localStorage.setItem("tef-teste", "1");
+    localStorage.removeItem("tef-teste");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function mudarFechar(idAgente: string, mudar: Partial<AFechar> | null) {
+  const l = ler<AFechar[]>(CHAVE_FECHAR) ?? [];
+  gravar(CHAVE_FECHAR, mudar ? l.map((x) => (x.idAgente === idAgente ? { ...x, ...mudar } : x)) : l.filter((x) => x.idAgente !== idAgente));
+}
+
+async function mandarCnf(idAgente: string): Promise<"ok" | "sem_pendente" | "sem_resposta" | "falhou"> {
+  // Pinpad ocupado com outra operação (409): espera um pouco em vez de desistir.
+  for (let i = 0; i < 8; i++) {
+    try {
+      const c = await tefConfirmar(idAgente);
+      if (c.ok) return c.aviso ? "sem_pendente" : "ok";
+      if (!/em andamento/i.test(c.erro ?? "")) return "falhou";
+    } catch (e) {
+      // Tempo esgotado: o agente pode ter recebido e seguir com o CNF.
+      return saindo || (e instanceof DOMException && e.name === "TimeoutError") ? "sem_resposta" : "falhou";
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return "falhou";
+}
+
+/** Devolve false se o pinpad não confirmou; o pagamento segue anotado pra tentar de novo. */
+async function fecharUm(x: AFechar, primeira: boolean): Promise<boolean> {
+  let { confirmado, desfeito, motivo } = x;
+  if (!confirmado) {
+    mudarFechar(x.idAgente, { cnfEnviado: true });
+    const c = await mandarCnf(x.idAgente);
+    // Outra aba pode ter resolvido enquanto este CNF esperava a vez: vale o que
+    // ela anotou, não o que esta aba leu antes.
+    const agora = (ler<AFechar[]>(CHAVE_FECHAR) ?? []).find((a) => a.idAgente === x.idAgente);
+    if (!agora && temAnotacoes()) return true;
+    if (agora?.confirmado) {
+      ({ confirmado, desfeito, motivo } = agora);
+    } else {
+      if (c === "falhou" || c === "sem_resposta") {
+        mudarFechar(x.idAgente, { falhou: c === "falhou" || agora?.falhou || x.falhou });
+        return false;
+      }
+      confirmado = true;
+      if (c === "sem_pendente" && !primeira) {
+        if (agora?.falhou || x.falhou || !x.cnfEnviado) {
+          // O CNF não chegou, e o agente já não tem o pagamento: ele desfez ao religar.
+          desfeito = true;
+          motivo = "o CNF não chegou e o agente não tem mais esse pagamento em aberto: confira se voltou pro cliente";
+          void avisar("Um pagamento do pinpad foi desfeito com a venda já gravada.", "O agente não tem mais esse pagamento em aberto. Confira em Cartões (TEF) se o valor voltou pro cliente e acerte a venda.");
+        } else {
+          motivo = "a tela saiu antes da resposta do CNF; o agente não tem mais esse pagamento em aberto";
+        }
+      }
+      mudarFechar(x.idAgente, { confirmado, desfeito, motivo });
+    }
+  }
+  if (x.transacaoId) {
+    // Sem conexão: fica anotado e fecha na próxima (o CNF já foi).
+    try { await fecharTef(x.transacaoId, !desfeito, motivo); } catch { return true; }
+  }
+  mudarFechar(x.idAgente, null);
+  return true;
+}
+
+/**
+ * A venda gravou: confirma no pinpad e fecha a transação fora da tela. Volta na
+ * hora; o caixa já pode seguir. Se o pinpad não confirmar, avisa, e a próxima
+ * cobrança tenta de novo antes de começar (senão o agente desfaria o pagamento).
+ */
+export function confirmarVendaGravada(regs: { idAgente: string; transacaoId: string | null; confirmado: boolean }[]) {
+  if (regs.length === 0) return;
+  const desde = Date.now();
+  const novos: AFechar[] = regs.map((r) => ({ ...r, desde }));
+  gravar(CHAVE_FECHAR, [...(ler<AFechar[]>(CHAVE_FECHAR) ?? []), ...novos]);
+  for (const r of regs) esquecerCobranca(r.idAgente);
+  filaFechar = filaFechar.then(async () => {
+    let falhou = false;
+    for (const x of novos) {
+      tentados.add(x.idAgente);
+      if (!(await fecharUm(x, true))) falhou = true;
+    }
+    if (falhou) void avisar("O pinpad não confirmou o último pagamento.", "A venda está gravada. Confira se o gerenciador do TEF está aberto: o sistema tenta de novo antes da próxima cobrança.");
+  });
+}
+
+/** Espera os CNFs desta aba: o pinpad só faz uma operação por vez. */
+export function aguardarConfirmacoes() {
+  return filaFechar;
+}
+
+/** Termina o que ficou pela metade (aba fechada, sem conexão, agente fora do ar). */
+async function retomarFechamentos() {
+  await filaFechar;
+  const faltam = (ler<AFechar[]>(CHAVE_FECHAR) ?? []).filter((x) => tentados.has(x.idAgente) || Date.now() - x.desde > 30_000);
+  if (faltam.length === 0) return;
+  filaFechar = filaFechar.then(async () => {
+    for (const x of faltam) {
+      tentados.add(x.idAgente);
+      await fecharUm(x, false);
+    }
+  });
+  await filaFechar;
+}
+
 /**
  * Antes de mandar uma cobrança nova pro pinpad (e ao abrir o Pagamento). Se
  * o agente tem um pagamento aprovado e ainda sem confirmação que NÃO é desta
@@ -129,6 +271,7 @@ export async function guardarSemConta(tef: TefParaGuardar, valor: number, motivo
 export async function resgatarPendente(daConta: string[] = []): Promise<{ recado: string | null; bloquear: string | null }> {
   const nada = { recado: null, bloquear: null };
   await reenviarGuardados();
+  await retomarFechamentos();
   const s = await tefDisponivel();
   if (!s) return nada;
   const p = s.pendente;
@@ -136,6 +279,18 @@ export async function resgatarPendente(daConta: string[] = []): Promise<{ recado
   if (!p) { gravar(CHAVE_DESFAZER, null); return nada; }
   if (daConta.includes(p.id)) return nada;
   const v = brl(Number(p.valor));
+
+  // A venda deste já gravou, só falta o CNF. Não é "sem conta", e uma cobrança
+  // nova agora faria o agente desfazer um pagamento que está na venda.
+  const fechando = (ler<AFechar[]>(CHAVE_FECHAR) ?? []).find((x) => x.idAgente === p.id);
+  if (fechando) {
+    return {
+      recado: null,
+      bloquear: fechando.falhou
+        ? `O pinpad não confirmou o pagamento anterior de ${v}. Confira se o gerenciador do TEF está aberto e tente de novo.`
+        : `O pinpad ainda está confirmando o pagamento anterior de ${v}. Espere uns segundos e tente de novo.`,
+    };
+  }
 
   // O caixa mandou desfazer e o agente não respondeu na hora: desfaz agora.
   const desfazer = ler<string[]>(CHAVE_DESFAZER) ?? [];

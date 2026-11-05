@@ -7,12 +7,12 @@
 //
 // Ordem, igual ao caixa: (1) cobra no pinpad; (2) `aoAprovar` grava a venda no
 // servidor levando os dados do TEF; (3) gravou → confirma (CNF) no pinpad e
-// fecha a transação; não gravou → DESFAZ no pinpad, pra não ficar cobrado.
+// fecha a transação em segundo plano; não gravou → DESFAZ no pinpad, pra não
+// ficar cobrado.
 import { useEffect, useState } from "react";
 import { Icone } from "@/components/icone";
-import { tefConfirmar, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
-import { fecharTef } from "@/app/(painel)/salao/actions";
-import { anotarAprovada, anotarCobranca, desfazerNoPinpad, esquecerCobranca, resgatarPendente } from "@/lib/tef-guarda";
+import { tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { anotarAprovada, anotarCobranca, confirmarVendaGravada, desfazerNoPinpad, esquecerCobranca, resgatarPendente } from "@/lib/tef-guarda";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -48,7 +48,7 @@ export function CobrarPinpad({
   /** De que venda é (ex.: "PDV balcão"): vai junto se o pagamento ficar sem conta. */
   conta?: string;
 }) {
-  const [etapa, setEtapa] = useState<"" | "pinpad" | "gravando">("");
+  const [etapa, setEtapa] = useState<"" | "preparando" | "pinpad" | "gravando">("");
   const [aviso, setAviso] = useState<string | null>(null);
   const ehPix = tipo === "pix";
 
@@ -63,7 +63,7 @@ export function CobrarPinpad({
   async function cobrar() {
     if (etapa || !(valor > 0.005)) return;
     setAviso(null);
-    setEtapa("pinpad");
+    setEtapa("preparando");
     try {
       // Pagamento aprovado de outra tela que saiu no meio: guarda em "Recebido
       // sem conta" antes, senão o agente desfaz ao receber esta cobrança.
@@ -71,6 +71,7 @@ export function CobrarPinpad({
       if (guarda.bloquear) { setAviso(guarda.bloquear); return; }
       if (guarda.recado) setAviso(guarda.recado);
       anotarCobranca(tipo, valor, conta);
+      setEtapa("pinpad");
       const r = ehPix ? await tefPix({ valor }) : await tefVenda({ valor, tipo, parcelas: 1 });
       if (!r.ok) { esquecerCobranca(); setAviso(r.erro || "O TEF não respondeu."); return; }
       // O agente desfez um pagamento de outra tela que estava sem lançamento.
@@ -106,12 +107,8 @@ export function CobrarPinpad({
         setAviso(`${g.mensagem || "A venda não gravou."} A cobrança no ${ehPix ? "Pix" : "cartão"} foi DESFEITA.`);
         return;
       }
-      let confirmou = false;
-      try { confirmou = (await tefConfirmar(dados.idAgente)).ok; } catch { confirmou = false; }
-      esquecerCobranca(dados.idAgente);
-      if (g.transacaoId) {
-        try { await fecharTef(g.transacaoId, confirmou, confirmou ? undefined : "o agente não confirmou (CNF)"); } catch { /* fica aprovada; aparece em Cartões (TEF) */ }
-      }
+      // Fora da tela: o caixa não espera os ~3,9 s do CNF (DES-010).
+      confirmarVendaGravada([{ idAgente: dados.idAgente, transacaoId: g.transacaoId ?? null, confirmado: false }]);
       aoTerminar?.();
     } catch {
       setAviso("O agente TEF não respondeu. Confira o ícone na bandeja.");
@@ -125,7 +122,7 @@ export function CobrarPinpad({
       {etapa ? (
         <div className="text-center">
           <p className="text-base font-bold text-emerald-800 dark:text-emerald-300">
-            {etapa === "gravando" ? "Aprovado — registrando a venda…" : ehPix ? "Aguardando o Pix no pinpad…" : "Aguardando o cartão no pinpad…"}
+            {etapa === "gravando" ? "Aprovado — registrando a venda…" : etapa === "preparando" ? "Preparando o pinpad…" : ehPix ? "Aguardando o Pix no pinpad…" : "Aguardando o cartão no pinpad…"}
           </p>
           {etapa === "pinpad" && (
             <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">

@@ -1595,7 +1595,7 @@ export async function registrarTefAvulso(
   if (t.idAgente && t.nsu) {
     let q = supabase
       .from("tef_transacoes")
-      .select("id, status")
+      .select("id, status, mov_id")
       .eq("id_agente", t.idAgente)
       .eq("nsu", t.nsu)
       .gte("criado_em", new Date(Date.now() - 7 * 86400000).toISOString());
@@ -1604,8 +1604,11 @@ export async function registrarTefAvulso(
     if (ja) {
       // A guarda acabou de confirmar no pinpad: se a linha ficou "aprovada" ou
       // "desfeita" (o caixa não conseguiu o CNF na hora), passa a valer.
-      const linha = ja as { id: string; status: string };
-      if (linha.status === "aprovada" || linha.status === "desfeita") {
+      const linha = ja as { id: string; status: string; mov_id: string | null };
+      // Já está numa venda: fecha pelo caminho normal, que põe o comprovante na fila.
+      if (linha.status === "aprovada" && linha.mov_id) {
+        await fecharTefNoBanco(supabase, linha.id, true);
+      } else if (linha.status === "aprovada" || linha.status === "desfeita") {
         await supabase.from("tef_transacoes").update({ status: "confirmada", atualizado_em: new Date().toISOString() }).eq("id", linha.id);
       }
       return { ok: true as const };

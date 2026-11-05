@@ -67,22 +67,33 @@ export function Dialogos() {
   const resolverRef = useRef<Resolver | null>(null);
   const campoRef = useRef<HTMLInputElement>(null);
   const okRef = useRef<HTMLButtonElement>(null);
+  // Aviso que chega com outro diálogo aberto (o pinpad avisa de fora da tela)
+  // espera a vez: por cima, a pergunta aberta sumia e quem esperava a resposta
+  // ficava parado pra sempre.
+  const filaRef = useRef<{ p: Pedido; r: Resolver }[]>([]);
+
+  const mostrar = useCallback((p: Pedido, r: Resolver) => {
+    resolverRef.current = r;
+    setTexto(p.tipo === "perguntar" ? (p.valor ?? "") : "");
+    setPedido(p);
+  }, []);
 
   const fechar = useCallback((valor: string | boolean | null) => {
     resolverRef.current?.(valor);
     resolverRef.current = null;
-    setPedido(null);
-  }, []);
+    const proximo = filaRef.current.shift();
+    if (proximo) mostrar(proximo.p, proximo.r);
+    else setPedido(null);
+  }, [mostrar]);
 
   // Registra a ponte enquanto este componente estiver na tela.
   useEffect(() => {
     abrirNaTela = (p, r) => {
-      resolverRef.current = r;
-      setTexto(p.tipo === "perguntar" ? (p.valor ?? "") : "");
-      setPedido(p);
+      if (resolverRef.current) filaRef.current.push({ p, r });
+      else mostrar(p, r);
     };
     return () => { abrirNaTela = null; };
-  }, []);
+  }, [mostrar]);
 
   // Esc desiste, Enter confirma. O foco entra no campo ou no botão principal.
   useEffect(() => {

@@ -7,7 +7,7 @@
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { agenteAceitaModalidade, tefConfirmar, tefDisponivel, tefPix, tefVenda, type ModalidadeDebito, type TefDados, type TefStatus } from "@/lib/tef-client";
-import { anotarAprovada, anotarCobranca, esquecerCobranca, guardarSemConta, resgatarPendente } from "@/lib/tef-guarda";
+import { aguardarConfirmacoes, anotarAprovada, anotarCobranca, esquecerCobranca, guardarSemConta, resgatarPendente } from "@/lib/tef-guarda";
 import { listarTefSemConta, resolverTefSemConta, type TefSemConta } from "@/app/(painel)/salao/actions";
 import { BotaoAcao } from "@/components/enviar";
 import { confirmar as perguntarSeOk } from "@/components/dialogo";
@@ -265,6 +265,8 @@ export function PainelPagamentos({
     setAviso(null);
     setTefEtapa("enviando");
     try {
+      // A venda anterior pode estar confirmando no pinpad (fora da tela).
+      await aguardarConfirmacoes();
       // Dois cartões na mesma conta: o gerenciador exige que a transação
       // anterior esteja confirmada (CNF) ou desfeita antes de começar outra.
       // Até 24/09 o caixa só confirmava depois de gravar a venda inteira, e o
