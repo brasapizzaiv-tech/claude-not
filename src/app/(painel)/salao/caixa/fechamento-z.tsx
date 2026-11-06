@@ -6,6 +6,8 @@ import { avisar, confirmar as perguntarSeOk } from "@/components/dialogo";
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { BotaoAcao } from "@/components/enviar";
+import { ContagemNotas } from "@/components/contagem-notas";
+import { valorDe, type Quantidades } from "@/lib/cofre";
 import { useRouter } from "next/navigation";
 import { fecharCaixaZ, pendenciasDoFechamento, reimprimirFechamento } from "../actions";
 
@@ -43,6 +45,10 @@ export function FechamentoZ({
   const [proc, start] = useTransition();
   const [aberto, setAberto] = useState(false);
   const [contadoStr, setContadoStr] = useState("");
+  // Nota por nota: essa contagem vai junto pro Cofre, que não pede de novo.
+  const [modo, setModo] = useState<"notas" | "total">("notas");
+  const [notas, setNotas] = useState<Quantidades>({});
+  const [erroNotas, setErroNotas] = useState(false);
   const [obs, setObs] = useState("");
   const [feito, setFeito] = useState<{ esperado: number; contado: number; quebra: number } | null>(null);
   // Quantas impressoras receberam o cupom (0 = nenhuma marcada pra NFC-e).
@@ -64,14 +70,16 @@ export function FechamentoZ({
   const qtdPend = (pend?.comandas.length ?? 0) + (pend?.delivery.length ?? 0);
   const horaDe = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-  const contado = num(contadoStr);
+  const porNotas = modo === "notas";
+  const contado = porNotas ? valorDe(notas) : num(contadoStr);
+  const preenchido = porNotas ? Object.keys(notas).length > 0 && !erroNotas : contadoStr.trim() !== "";
   const quebra = Math.round((contado - esperado) * 100) / 100;
 
   async function confirmar() {
     if (!await perguntarSeOk("Fechar o caixa agora? Depois de fechado não entra mais venda nele.")) return;
     start(async () => {
       try {
-        const r = await fecharCaixaZ(caixaId, contado, obs);
+        const r = await fecharCaixaZ(caixaId, contado, obs, porNotas ? notas : null);
         if (r.ok) {
           setFeito({ esperado: r.esperado, contado: r.contado, quebra: r.quebra });
           // O cupom vai pra fila da Central de Impressões (mesma impressora da
@@ -106,7 +114,7 @@ export function FechamentoZ({
 
       {aberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-cartao bg-painel-cartao p-5">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-cartao bg-painel-cartao p-5">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-texto">Fechamento Z</h2>
               <button onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">
@@ -180,20 +188,49 @@ export function FechamentoZ({
             </div>
 
             <div className="mt-3">
-              <label className="mb-1 block text-sm font-medium text-texto-suave">
-                Dinheiro contado (R$)
-              </label>
-              <input
-                autoFocus
-                inputMode="decimal"
-                value={contadoStr}
-                onChange={(e) => setContadoStr(e.target.value)}
-                placeholder="Conte a gaveta e digite aqui"
-                className={`${inputCls} w-full text-right text-lg`}
-              />
+              <div className="mb-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Como contar a gaveta">
+                {([["notas", "Nota por nota"], ["total", "Só o total"]] as const).map(([k, rotulo]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={modo === k}
+                    onClick={() => setModo(k)}
+                    className={`min-h-11 rounded-full px-4 text-sm font-semibold ${modo === k ? "bg-painel-foco-fundo text-painel-foco-texto" : "btn-secundario"}`}
+                  >
+                    {rotulo}
+                  </button>
+                ))}
+              </div>
+              {porNotas ? (
+                <>
+                  <p className="mb-2 text-xs text-texto-suave">Preencha a quantidade ou o valor de cada nota. Essa contagem já vai para o Cofre.</p>
+                  <ContagemNotas valor={notas} onChange={setNotas} aoMudarErro={setErroNotas} focoInicial />
+                  <div className="mt-3 flex items-center justify-between text-sm font-medium text-texto-suave">
+                    <span>Dinheiro contado</span>
+                    <span className="font-numero text-lg font-bold text-texto">{brl(contado)}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="contado-total" className="mb-1 block text-sm font-medium text-texto-suave">
+                    Dinheiro contado (R$)
+                  </label>
+                  <input
+                    id="contado-total"
+                    autoFocus
+                    inputMode="decimal"
+                    value={contadoStr}
+                    onChange={(e) => setContadoStr(e.target.value)}
+                    placeholder="Conte a gaveta e digite aqui"
+                    className={`${inputCls} w-full text-right text-lg`}
+                  />
+                  <p className="mt-1 text-xs text-texto-suave">Só com o total, o Cofre vai pedir a contagem das notas depois.</p>
+                </>
+              )}
             </div>
 
-            {contadoStr.trim() !== "" && (
+            {preenchido && (
               <div
                 className={`mt-2 rounded-cartao p-3 text-center text-sm font-bold ${
                   Math.abs(quebra) < 0.01
@@ -231,7 +268,7 @@ export function FechamentoZ({
               </button>
               <button
                 onClick={confirmar}
-                disabled={proc || contadoStr.trim() === "" || qtdPend > 0}
+                disabled={proc || !preenchido || qtdPend > 0}
                 title={qtdPend > 0 ? "Tem comanda aberta ou delivery sem receber" : undefined}
                 className="rounded-controle bg-zinc-800 px-5 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50 dark:bg-zinc-700"
               >

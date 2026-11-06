@@ -18,6 +18,7 @@ import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVal
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
 import { aplicarJuntar, buffetJuntado, lerParaJuntar, podeSomar, type ModoJuntar, type PrecoBuffet } from "@/lib/juntar-comandas";
+import { contagemValida, valorDe, type Quantidades } from "@/lib/cofre";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -2142,9 +2143,12 @@ export async function pendenciasDoFechamento(caixaId: string) {
 
 // Fechamento Z: confere o dinheiro contado x esperado, grava a quebra e o
 // resumo por forma de pagamento, e fecha o caixa.
-export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs: string) {
+export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs: string, notas?: Quantidades | null) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
+  // Contou nota por nota: o total sai das notas, e o Cofre usa a mesma contagem.
+  const notasContadas = notas ? contagemValida(notas) : null;
+  if (notas && !notasContadas) return { ok: false as const, mensagem: "A contagem das notas está com um número inválido. Confira e tente de novo." };
   const { data: caixa } = await supabase
     .from("pdv_caixas")
     .select("saldo_inicial, aberto_em")
@@ -2191,7 +2195,8 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
   const saldoInicial = Number(caixa.saldo_inicial);
   const vendasDinheiro = vendasPorForma["Dinheiro"] || 0;
   const esperado = Math.round((saldoInicial + vendasDinheiro + suprimentos - sangrias) * 100) / 100;
-  const contado = Math.round(dinheiroContado * 100) / 100;
+  const notasDoResumo = notasContadas && Object.keys(notasContadas).length > 0 ? notasContadas : null;
+  const contado = Math.round((notasDoResumo ? valorDe(notasDoResumo) : dinheiroContado) * 100) / 100;
   const quebra = Math.round((contado - esperado) * 100) / 100;
   const totalVendas = Object.values(vendasPorForma).reduce((s, v) => s + v, 0);
 
@@ -2209,6 +2214,7 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
     suprimentos: Math.round(suprimentos * 100) / 100,
     sangrias: Math.round(sangrias * 100) / 100,
     operador,
+    ...(notasDoResumo ? { notas: notasDoResumo } : {}),
   };
 
   await supabase

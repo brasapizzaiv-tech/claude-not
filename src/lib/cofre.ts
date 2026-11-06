@@ -13,6 +13,8 @@ export type Pendente = {
   rotulo: string;
   valor: number;
   sai: boolean;
+  /** Notas já contadas no fechamento do caixa: guarda sem contar de novo. */
+  contagem?: Quantidades | null;
 };
 
 export type DadosCofre = {
@@ -66,6 +68,7 @@ export function rotuloDen(c: number) {
   return `R$ 0,${String(c).padStart(2, "0")}`;
 }
 export const ehMoeda = (c: number) => c <= 100;
+export const moedaOuNota = (c: number) => (ehMoeda(c) ? "moedas" : "notas");
 
 /** Só inteiros, sem zeros e só notas/moedas conhecidas. */
 export function limpar(q: Quantidades | null | undefined): Quantidades {
@@ -76,6 +79,32 @@ export function limpar(q: Quantidades | null | undefined): Quantidades {
     if (DENOMINACOES.includes(c) && Number.isFinite(n) && n !== 0) out[String(c)] = n;
   }
   return out;
+}
+
+/** Contagem digitada na tela: só quantidades positivas de notas conhecidas. */
+export function contagemValida(q: Quantidades | null | undefined): Quantidades | null {
+  const out = limpar(q);
+  return Object.values(out).some((v) => v < 0) ? null : out;
+}
+
+/** Valor digitado na linha de uma nota ("600", "1.200,50", "0.50") → quantas notas
+ *  são. null quando não fecha em notas inteiras ou não é um número. */
+export function qtdDoValor(centavos: number, texto: string): number | null {
+  const t = texto.trim();
+  if (!t) return 0;
+  const decimalComPonto = !t.includes(",") && /\.\d{1,2}$/.test(t);
+  const n = Number(decimalComPonto ? t : t.replace(/\./g, "").replace(",", "."));
+  if (!Number.isFinite(n) || n < 0) return null;
+  const cent = Math.round(n * 100);
+  return cent % centavos === 0 ? cent / centavos : null;
+}
+
+/** Contagem por nota guardada no fechamento do caixa. Só vale se ainda bater com o
+ *  valor do caixa; senão o cofre pede a contagem como antes. */
+export function contagemDoCaixa(resumo: { notas?: Quantidades | null } | null | undefined, valor: number): Quantidades | null {
+  const notas = contagemValida(resumo?.notas);
+  if (!notas || Object.keys(notas).length === 0) return null;
+  return Math.abs(valorDe(notas) - valor) < 0.005 ? notas : null;
 }
 
 export const negar = (q: Quantidades): Quantidades => Object.fromEntries(Object.entries(q).map(([k, v]) => [k, -v]));

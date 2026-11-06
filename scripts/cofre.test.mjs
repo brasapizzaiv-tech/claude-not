@@ -2,7 +2,38 @@
 // Rode: node --test scripts/cofre.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { valorDe, valorGaveta, limpar, situacao, listaEncomenda, rotuloDen, negar } from "../src/lib/cofre.ts";
+import { valorDe, valorGaveta, limpar, situacao, listaEncomenda, rotuloDen, negar, qtdDoValor, contagemValida, contagemDoCaixa } from "../src/lib/cofre.ts";
+
+test("valor digitado vira quantidade de notas", () => {
+  assert.equal(qtdDoValor(5000, "600"), 12);
+  assert.equal(qtdDoValor(5000, "600,00"), 12);
+  assert.equal(qtdDoValor(10000, "1.200,00"), 12);
+  assert.equal(qtdDoValor(50, "3,50"), 7);
+  assert.equal(qtdDoValor(50, "0.50"), 1);
+  assert.equal(qtdDoValor(5, "1,05"), 21);
+  assert.equal(qtdDoValor(5000, ""), 0);
+});
+
+test("valor que não fecha em notas inteiras é recusado", () => {
+  assert.equal(qtdDoValor(5000, "75"), null);
+  assert.equal(qtdDoValor(200, "3"), null);
+  assert.equal(qtdDoValor(5000, "abc"), null);
+  assert.equal(qtdDoValor(5000, "-50"), null);
+});
+
+test("contagem do fechamento não aceita quantidade negativa", () => {
+  assert.deepEqual(contagemValida({ 5000: 2, 7: 3, 100: 0 }), { 5000: 2 });
+  assert.equal(contagemValida({ 5000: -2 }), null);
+});
+
+test("cofre só reaproveita a contagem que bate com o valor do caixa", () => {
+  const notas = { 5000: 2, 1000: 1 };
+  assert.deepEqual(contagemDoCaixa({ notas }, 110), notas);
+  assert.equal(contagemDoCaixa({ notas }, 120), null);
+  assert.equal(contagemDoCaixa({}, 110), null);
+  assert.equal(contagemDoCaixa(null, 110), null);
+  assert.equal(contagemDoCaixa({ notas: { 5000: -2 } }, -100), null);
+});
 
 test("valor em centavos não erra soma de moeda", () => {
   assert.equal(valorDe({ "5": 3, "10": 1, "25": 2 }), 0.75);

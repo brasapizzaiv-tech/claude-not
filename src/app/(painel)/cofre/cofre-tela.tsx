@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icone, type NomeIcone } from "@/components/icone";
 import { BotaoAcao } from "@/components/enviar";
+import { ContagemNotas } from "@/components/contagem-notas";
 import { confirmar, avisar } from "@/components/dialogo";
 import { moedaBR } from "@/lib/format";
 import {
@@ -89,7 +90,9 @@ export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: A
                   <li key={`${p.origem.tipo}:${p.origem.id}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                     <span className="text-sm">
                       {p.rotulo}
-                      <span className="block text-xs text-texto-fraco">{p.sai ? "sai do cofre" : "entra no cofre"}</span>
+                      <span className="block text-xs text-texto-fraco">
+                        {p.contagem ? `Contado no fechamento: ${descreverQuantidades(p.contagem)}` : p.sai ? "sai do cofre" : "entra no cofre"}
+                      </span>
                       {p.tipo === "sangria" && !noApp && (
                         <Link href="/salao/caixa/sangrias" className="mt-0.5 inline-flex min-h-11 items-center text-xs font-semibold text-texto-marca hover:underline">
                           Foi um pagamento? Lançar a categoria
@@ -98,9 +101,16 @@ export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: A
                     </span>
                     <span className="flex items-center gap-3">
                       <span className="font-numero font-bold">{moedaBR(p.valor)}</span>
+                      {p.contagem && (
+                        <BotaoAcao className="btn-secundario text-sm" aoClicar={async () => {
+                          const r = await acoes.registrarMovimento({ tipo: p.tipo, quantidades: p.contagem ?? {}, origem: p.origem });
+                          if (!r.ok) return avisar(r.mensagem);
+                          router.refresh();
+                        }}>Guardar no cofre</BotaoAcao>
+                      )}
                       <button type="button" className="btn-secundario text-sm"
-                        onClick={() => setJanela({ modo: "mov", tipo: p.tipo, titulo: p.rotulo, sai: p.sai, esperado: p.valor, origem: p.origem })}>
-                        {p.sai ? "Contar e tirar" : "Contar e guardar"}
+                        onClick={() => setJanela({ modo: "mov", tipo: p.tipo, titulo: p.rotulo, sai: p.sai, esperado: p.valor, origem: p.origem, inicial: p.contagem ?? undefined })}>
+                        {p.contagem ? "Corrigir" : p.sai ? "Contar e tirar" : "Contar e guardar"}
                       </button>
                     </span>
                   </li>
@@ -211,40 +221,8 @@ function Acao({ icone, rotulo, onClick }: { icone: NomeIcone; rotulo: string; on
   );
 }
 
-/** Uma caixinha de quantidade por nota/moeda, agrupadas por gaveta. */
-function Contagem({ valor, onChange, saldo, mostrarSaldo }: { valor: Quantidades; onChange: (q: Quantidades) => void; saldo?: Quantidades; mostrarSaldo?: boolean }) {
-  return (
-    <div className="space-y-3">
-      {GAVETAS.map((g) => (
-        <div key={g.chave}>
-          <span className="rotulo">{g.rotulo}</span>
-          <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {[...g.centavos].reverse().map((c) => (
-              <label key={c} className="flex items-center justify-between gap-1.5 rounded-controle bg-superficie-suave px-2.5 py-1.5 text-sm">
-                <span className="whitespace-nowrap">
-                  {rotuloDen(c)}
-                  {mostrarSaldo && <span className="block text-xs text-texto-fraco">tem {saldo?.[String(c)] ?? 0}</span>}
-                </span>
-                <input
-                  inputMode="numeric"
-                  aria-label={`Quantidade de ${rotuloDen(c)}`}
-                  value={valor[String(c)] ? String(valor[String(c)]) : ""}
-                  onChange={(e) => {
-                    const n = Math.max(0, Math.trunc(Number(e.target.value.replace(/\D/g, "")) || 0));
-                    const novo = { ...valor };
-                    if (n) novo[String(c)] = n; else delete novo[String(c)];
-                    onChange(novo);
-                  }}
-                  className="min-h-11 w-16 rounded-controle border border-borda bg-painel-cartao px-2 text-right font-numero sm:w-20"
-                  placeholder="0"
-                />
-              </label>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+function Contagem(p: { valor: Quantidades; onChange: (q: Quantidades) => void; saldo?: Quantidades; mostrarSaldo?: boolean }) {
+  return <ContagemNotas {...p} lado />;
 }
 
 function Cabecalho({ titulo, onFechar }: { titulo: string; onFechar: () => void }) {

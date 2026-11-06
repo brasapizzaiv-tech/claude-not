@@ -4,7 +4,7 @@
 // do banco, então toda consulta aqui filtra pela empresa.
 import { buscarTodas } from "@/lib/supabase/todas";
 import { categoriasDeSangria } from "@/lib/sangria-financeiro";
-import { limpar, negar, valorDe, TIPOS, type DadosCofre, type MovimentoNovo, type Pendente, type Quantidades } from "@/lib/cofre";
+import { contagemDoCaixa, limpar, negar, valorDe, TIPOS, type DadosCofre, type MovimentoNovo, type Pendente, type Quantidades } from "@/lib/cofre";
 import type { createClient } from "@/lib/supabase/server";
 
 export type Db = Awaited<ReturnType<typeof createClient>>;
@@ -52,7 +52,7 @@ export async function carregarDados(ctx: Ctx): Promise<DadosCofre> {
   const pendentes: Pendente[] = [];
   if (inicio) {
     const [{ data: fechados }, { data: abertos }, { data: sangrias }, { data: jaFeitos }] = await Promise.all([
-      db.from("pdv_caixas").select("id, nome, aberto_em, fechado_em, dinheiro_contado, dinheiro_esperado").eq("empresa_id", empresaId).eq("status", "fechado").gte("fechado_em", inicio).order("fechado_em").limit(60),
+      db.from("pdv_caixas").select("id, nome, aberto_em, fechado_em, dinheiro_contado, dinheiro_esperado, resumo").eq("empresa_id", empresaId).eq("status", "fechado").gte("fechado_em", inicio).order("fechado_em").limit(60),
       db.from("pdv_caixas").select("id, nome, aberto_em, saldo_inicial").eq("empresa_id", empresaId).gte("aberto_em", inicio).gt("saldo_inicial", 0).order("aberto_em").limit(60),
       db.from("pdv_caixa_mov").select("id, valor, descricao, criado_em").eq("empresa_id", empresaId).eq("tipo", "sangria").is("lancamento_id", null).gte("criado_em", inicio).order("criado_em").limit(100),
       db.from("cofre_movimentos").select("origem_tipo, origem_id").eq("empresa_id", empresaId).not("origem_id", "is", null).gte("criado_em", inicio).limit(1000),
@@ -62,11 +62,11 @@ export async function carregarDados(ctx: Ctx): Promise<DadosCofre> {
       if (feito.has(`abertura:${c.id}`)) continue;
       pendentes.push({ origem: { tipo: "abertura", id: c.id, esperado: Number(c.saldo_inicial) }, tipo: "fundo_caixa", quando: c.aberto_em, rotulo: `Troco pra abrir o caixa (${hora(c.aberto_em)})`, valor: Number(c.saldo_inicial), sai: true });
     }
-    for (const c of (fechados as { id: string; nome: string | null; fechado_em: string; dinheiro_contado: number | null; dinheiro_esperado: number | null }[] | null) ?? []) {
+    for (const c of (fechados as { id: string; nome: string | null; fechado_em: string; dinheiro_contado: number | null; dinheiro_esperado: number | null; resumo: { notas?: Quantidades | null } | null }[] | null) ?? []) {
       if (feito.has(`caixa:${c.id}`)) continue;
       const v = Number(c.dinheiro_contado ?? c.dinheiro_esperado ?? 0);
       if (v <= 0) continue;
-      pendentes.push({ origem: { tipo: "caixa", id: c.id, esperado: v }, tipo: "entrada_caixa", quando: c.fechado_em, rotulo: `Dinheiro do caixa fechado em ${hora(c.fechado_em)}`, valor: v, sai: false });
+      pendentes.push({ origem: { tipo: "caixa", id: c.id, esperado: v }, tipo: "entrada_caixa", quando: c.fechado_em, rotulo: `Dinheiro do caixa fechado em ${hora(c.fechado_em)}`, valor: v, sai: false, contagem: contagemDoCaixa(c.resumo, v) });
     }
     for (const s of (sangrias as { id: string; valor: number; descricao: string | null; criado_em: string }[] | null) ?? []) {
       if (feito.has(`sangria:${s.id}`)) continue;
