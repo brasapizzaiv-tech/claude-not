@@ -6,7 +6,7 @@
 // botão de "auto preencher o que falta", cédulas (Shift soma), observação e,
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { agenteAceitaModalidade, tefConfirmar, tefDisponivel, tefPix, tefVenda, type ModalidadeDebito, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { agenteAceitaModalidade, motivoRecusa, tefConfirmar, tefDisponivel, tefPix, tefVenda, type ModalidadeDebito, type TefDados, type TefStatus } from "@/lib/tef-client";
 import { aguardarConfirmacoes, anotarAprovada, anotarCobranca, anotarRecusa, esquecerCobranca, guardarSemConta, resgatarPendente } from "@/lib/tef-guarda";
 import { listarTefSemConta, resolverTefSemConta, type TefSemConta } from "@/app/(painel)/salao/actions";
 import { BotaoAcao } from "@/components/enviar";
@@ -317,8 +317,9 @@ export function PainelPagamentos({
       }
       if (!r.aprovada) {
         esquecerCobranca();
-        anotarRecusa({ status: "negada", tipo, valor: cent(aplica), parcelas, terminal: r.terminal ?? tef.terminal, hostname: tef.hostname, rede: r.rede, bandeira: r.bandeira, produto: r.produto, panMascarado: r.panMascarado, mensagem: r.mensagem, conta });
-        setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`);
+        const motivo = motivoRecusa(r);
+        anotarRecusa({ status: "negada", tipo, valor: cent(aplica), parcelas, terminal: r.terminal ?? tef.terminal, hostname: tef.hostname, rede: r.rede, bandeira: r.bandeira, produto: r.produto, panMascarado: r.panMascarado, mensagem: motivo.registro, conta });
+        setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${motivo.tela}.`);
         return;
       }
       const dados: TefDados = {

@@ -11,7 +11,7 @@
 // ficar cobrado.
 import { useEffect, useState } from "react";
 import { Icone } from "@/components/icone";
-import { tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { motivoRecusa, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
 import { anotarAprovada, anotarCobranca, anotarRecusa, confirmarVendaGravada, desfazerNoPinpad, esquecerCobranca, resgatarPendente } from "@/lib/tef-guarda";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -83,8 +83,9 @@ export function CobrarPinpad({
       if (r.desfeitaAnterior) setAviso(`Atenção: o pinpad desfez um pagamento anterior de ${brl(r.desfeitaAnterior.valor)} (NSU ${r.desfeitaAnterior.nsu ?? "?"}) que estava sem lançamento. Esse valor volta pro cliente.`);
       if (!r.aprovada) {
         esquecerCobranca();
-        anotarRecusa({ status: "negada", tipo, valor, terminal: r.terminal ?? agente.terminal, hostname: agente.hostname, rede: r.rede, bandeira: r.bandeira, produto: r.produto, panMascarado: r.panMascarado, mensagem: r.mensagem, conta });
-        setAviso(`${ehPix ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`);
+        const motivo = motivoRecusa(r);
+        anotarRecusa({ status: "negada", tipo, valor, terminal: r.terminal ?? agente.terminal, hostname: agente.hostname, rede: r.rede, bandeira: r.bandeira, produto: r.produto, panMascarado: r.panMascarado, mensagem: motivo.registro, conta });
+        setAviso(`${ehPix ? "Pix" : "Cartão"} não aprovado: ${motivo.tela}.`);
         return;
       }
       const dados: TefDados = {

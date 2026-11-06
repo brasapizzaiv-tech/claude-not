@@ -23,6 +23,11 @@ export type TefVenda = {
   erro?: string;
   aprovada?: boolean;
   mensagem?: string;
+  /** Campos crus do gerenciador e os códigos: só para explicar uma recusa. */
+  status?: string;
+  codigo?: string | null;
+  retorno?: string | null;
+  campos?: Record<string, string>;
   idAgente?: string;
   terminal?: string;
   nsu?: string | null;
@@ -45,6 +50,22 @@ export type TefVenda = {
   // DESFEZ antes de começar esta. O caixa tira aquele pagamento da conta.
   desfeitaAnterior?: { id: string; nsu: string | null; valor: number } | null;
 };
+
+// O Hub responde "Sucesso" no campo 375-001 mesmo quando a venda não passou: quer
+// dizer que a chamada funcionou, não que o cartão foi aprovado. O motivo de verdade,
+// quando vem, está no texto do operador (030-000) ou no status (009-000).
+export function motivoRecusa(r: Pick<TefVenda, "mensagem" | "status" | "codigo" | "retorno" | "campos">) {
+  const util = (t?: string | null) => {
+    const s = (t ?? "").trim();
+    return s && !/^sucesso$/i.test(s) ? s : "";
+  };
+  const motivo = util(r.mensagem) || util(r.campos?.["030-000"]) || util(r.status);
+  const codigos = [r.status && `status ${r.status}`, r.codigo != null && `código ${r.codigo}`, r.retorno != null && `retorno ${r.retorno}`].filter(Boolean).join(", ");
+  return {
+    tela: motivo || "recusado ou cancelado no pinpad",
+    registro: `${motivo || "O pinpad não informou o motivo"}${codigos ? ` [${codigos}]` : ""}`,
+  };
+}
 
 // Dados do TEF que viajam junto com o pagamento até o servidor.
 export type TefDados = {
