@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { pagarSelecao, registrarTefAvulso, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
 import { confirmarVendaGravada, desfazerNoPinpad, guardarSemConta } from "@/lib/tef-guarda";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
+import { JuntarComandas } from "./juntar-comandas";
 import { PixQr } from "@/components/pix-qr";
 import { emiteNotaAuto, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { PainelPagamentos, type ColabMini, type Pagamento } from "./pagamentos";
@@ -768,6 +769,18 @@ export function ReceberComandas({
               </button>
             </span>
           ))}
+          {/* Mesma pessoa com vários cupons. Com pagamento na conta, não mexe. */}
+          {selComandas.length >= 2 && pagos.length === 0 && !parte && (
+            <JuntarComandas
+              ids={selComandas.map((c) => c.id)}
+              aoJuntar={(id, numero, valor) => {
+                setSel(new Set([id]));
+                setCarrinho(new Set());
+                setMsg(`✓ Comandas juntadas na #${numero}. Buffet: ${brl(valor)}.`);
+                router.refresh();
+              }}
+            />
+          )}
           <div className="relative min-w-[220px] flex-1">
             <input
               value={busca}

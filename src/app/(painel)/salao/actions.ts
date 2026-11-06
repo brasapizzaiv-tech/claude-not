@@ -17,6 +17,7 @@ import { reimprimirNaCozinha, resolverCombo } from "@/lib/delivery-core";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
+import { aplicarJuntar, buffetJuntado, lerParaJuntar, podeSomar, type ModoJuntar, type PrecoBuffet } from "@/lib/juntar-comandas";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -713,32 +714,40 @@ export async function excluirComanda(formData: FormData) {
   redirect("/salao");
 }
 
-// Junta OUTRA comanda nesta: move os itens, soma buffet/peso/tara e apaga a outra.
-export async function juntarComandas(formData: FormData) {
+// Junta as comandas da mesma pessoa no caixa: fica a de menor número. A regra e a
+// ordem de gravação moram em src/lib/juntar-comandas.ts.
+function precoParaJuntar(cfg: Record<string, string>): PrecoBuffet {
+  return { livreHoje: precoDoDia(cfg).livre, calcular: (peso, soKg) => calcBuffet(cfg, peso, 0, soKg) };
+}
+
+/** O que o caixa vê antes de escolher: as comandas e quanto dá cada opção. */
+export async function previaJuntarComandas(ids: string[]) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
-  const id = formData.get("id") as string;
-  const outra = formData.get("outra") as string;
-  if (!outra || outra === id) return;
+  const r = await lerParaJuntar(supabase, ids);
+  if (!r.ok) return r;
+  const preco = precoParaJuntar(await pdvCfg(supabase));
+  const somar = podeSomar(r.comandas) ? buffetJuntado(r.comandas, { tipo: "somar" }, preco) : null;
+  return {
+    ok: true as const,
+    comandas: r.comandas.map((c) => ({ id: c.id, numero: c.numero, peso: c.peso, valor: c.valor, livre: c.livre })),
+    livreHoje: preco.livreHoje,
+    somar: somar?.ok ? { valor: somar.campos.valor_buffet, peso: somar.campos.peso, livre: somar.campos.livre } : null,
+  };
+}
 
-  const [{ data: a }, { data: o }] = await Promise.all([
-    supabase.from("pdv_comandas").select("peso, tara, valor_buffet, livre").eq("id", id).single(),
-    supabase.from("pdv_comandas").select("peso, tara, valor_buffet, livre").eq("id", outra).single(),
-  ]);
-  if (!a || !o) return;
-
-  await supabase.from("pdv_comanda_itens").update({ comanda_id: id }).eq("comanda_id", outra);
-  await supabase
-    .from("pdv_comandas")
-    .update({
-      peso: Number(a.peso || 0) + Number(o.peso || 0),
-      tara: Number(a.tara || 0) + Number(o.tara || 0),
-      valor_buffet: Number(a.valor_buffet) + Number(o.valor_buffet),
-      livre: a.livre || o.livre,
-    })
-    .eq("id", id);
-  await supabase.from("pdv_comandas").delete().eq("id", outra);
-  revalidatePath(`/salao/comandas/${id}`);
+export async function juntarComandasCaixa(ids: string[], modo: ModoJuntar) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const lidas = await lerParaJuntar(supabase, ids);
+  if (!lidas.ok) return lidas;
+  const preco = precoParaJuntar(await pdvCfg(supabase));
+  const { data: userData } = await supabase.auth.getUser();
+  const r = await aplicarJuntar(supabase, lidas.comandas, modo, preco, userData.user?.id ?? null);
   revalidatePath("/salao");
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao/cancelados");
+  return r;
 }
 
 // pesoKg: item vendido por kg (migration 0259) — a quantidade é o peso.
