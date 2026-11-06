@@ -1695,6 +1695,52 @@ export async function registrarTefAvulso(
   return { ok: true as const };
 }
 
+/**
+ * Cobrança que o pinpad não aprovou: guarda data, hora, valor, tipo, terminal e a
+ * mensagem, para ter o que mostrar à Elgin (06/11/2026). Só um registro: mov_id e
+ * id_agente nulos, status fora de "confirmada", então não entra em caixa, totais
+ * nem "Recebido sem conta".
+ */
+export async function registrarRecusaTef(d: {
+  status: "negada" | "erro";
+  tipo: "credito" | "debito" | "voucher" | "pix";
+  valor: number;
+  parcelas?: number | null;
+  terminal?: string | null;
+  hostname?: string | null;
+  rede?: string | null;
+  bandeira?: string | null;
+  produto?: string | null;
+  panMascarado?: string | null;
+  mensagem?: string | null;
+  conta?: string | null;
+}) {
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
+  const valor = Number(d.valor);
+  if (!(valor > 0) || !["negada", "erro"].includes(d.status)) return { ok: false as const };
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const texto = (d.mensagem ?? "").trim() || "Sem mensagem do pinpad";
+  const { error } = await supabase.from("tef_transacoes").insert({
+    mov_id: null,
+    caixa_id: null,
+    id_agente: null,
+    status: d.status,
+    tipo: d.tipo,
+    valor,
+    parcelas: Math.max(1, Number(d.parcelas) || 1),
+    terminal: d.terminal ?? null,
+    hostname: d.hostname ?? null,
+    rede: d.rede ?? null,
+    bandeira: d.bandeira ?? null,
+    produto: d.produto ?? null,
+    pan_mascarado: d.panMascarado ?? null,
+    mensagem: `${texto}${d.conta ? ` (${d.conta})` : ""}`.slice(0, 500),
+    criado_por: userData.user?.id ?? null,
+  });
+  return error ? { ok: false as const } : { ok: true as const };
+}
+
 export type TefSemConta = {
   id: string;
   valor: number;

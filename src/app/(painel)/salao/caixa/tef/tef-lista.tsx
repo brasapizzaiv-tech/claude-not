@@ -42,8 +42,8 @@ const STATUS: Record<string, { rotulo: string; cls: string }> = {
   aprovada: { rotulo: "aprovada (sem confirmar)", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" },
   cancelada: { rotulo: "cancelada", cls: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
   desfeita: { rotulo: "desfeita", cls: "bg-superficie-suave text-texto-suave " },
-  negada: { rotulo: "negada", cls: "bg-superficie-suave text-texto-suave " },
-  erro: { rotulo: "erro", cls: "bg-superficie-suave text-texto-suave " },
+  negada: { rotulo: "recusada", cls: "pilula-urgente" },
+  erro: { rotulo: "erro no pinpad", cls: "pilula-urgente" },
 };
 
 export function TefLista({ linhas }: { linhas: TefLinha[] }) {
@@ -220,7 +220,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
                   <td className="px-3 py-2 tabular-nums text-texto-suave">{l.nsu ?? "—"}{l.autorizacao ? ` / ${l.autorizacao}` : ""}</td>
                   <td className="px-3 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-mini font-medium ${st.cls}`}>{st.rotulo}</span>
-                    {l.mensagem && <div className="mt-0.5 max-w-[260px] truncate text-mini text-texto-fraco" title={l.mensagem}>{l.mensagem}</div>}
+                    {l.mensagem && <div className={`mt-0.5 max-w-[260px] text-mini text-texto-fraco ${l.status === "negada" || l.status === "erro" ? "" : "truncate"}`} title={l.mensagem}>{l.mensagem}</div>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1.5">

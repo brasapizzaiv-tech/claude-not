@@ -7,7 +7,7 @@
 // no cartão, a bandeira. Enter salva, Esc volta.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { agenteAceitaModalidade, tefConfirmar, tefDisponivel, tefPix, tefVenda, type ModalidadeDebito, type TefDados, type TefStatus } from "@/lib/tef-client";
-import { aguardarConfirmacoes, anotarAprovada, anotarCobranca, esquecerCobranca, guardarSemConta, resgatarPendente } from "@/lib/tef-guarda";
+import { aguardarConfirmacoes, anotarAprovada, anotarCobranca, anotarRecusa, esquecerCobranca, guardarSemConta, resgatarPendente } from "@/lib/tef-guarda";
 import { listarTefSemConta, resolverTefSemConta, type TefSemConta } from "@/app/(painel)/salao/actions";
 import { BotaoAcao } from "@/components/enviar";
 import { confirmar as perguntarSeOk } from "@/components/dialogo";
@@ -309,8 +309,18 @@ export function PainelPagamentos({
             parcelas: tipo === "credito" || (tipo === "debito" && modDebito === "parcelado") ? parcelas : 1,
             ...(tipo === "debito" && modDebito !== "avista" ? { modalidade: modDebito } : {}),
           });
-      if (!r.ok) { esquecerCobranca(); setAviso(r.erro || "O TEF não respondeu."); return; }
-      if (!r.aprovada) { esquecerCobranca(); setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`); return; }
+      if (!r.ok) {
+        esquecerCobranca();
+        anotarRecusa({ status: "erro", tipo, valor: cent(aplica), parcelas, terminal: tef.terminal, hostname: tef.hostname, mensagem: r.erro, conta });
+        setAviso(r.erro || "O TEF não respondeu.");
+        return;
+      }
+      if (!r.aprovada) {
+        esquecerCobranca();
+        anotarRecusa({ status: "negada", tipo, valor: cent(aplica), parcelas, terminal: r.terminal ?? tef.terminal, hostname: tef.hostname, rede: r.rede, bandeira: r.bandeira, produto: r.produto, panMascarado: r.panMascarado, mensagem: r.mensagem, conta });
+        setAviso(`${tipo === "pix" ? "Pix" : "Cartão"} não aprovado: ${r.mensagem || "recusado"}.`);
+        return;
+      }
       const dados: TefDados = {
         idAgente: r.idAgente || "",
         terminal: r.terminal ?? null,

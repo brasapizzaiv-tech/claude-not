@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const valida = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null);
 const somaDias = (dia: string, n: number) => new Date(new Date(`${dia}T12:00:00Z`).getTime() + n * 86400000).toISOString().slice(0, 10);
-const ROT_STATUS: Record<string, string> = { confirmada: "Aprovadas", cancelada: "Canceladas", desfeita: "Desfeitas", aprovada: "Sem confirmação" };
+const ROT_STATUS: Record<string, string> = { confirmada: "Aprovadas", cancelada: "Canceladas", desfeita: "Desfeitas", aprovada: "Sem confirmação", negada: "Recusadas", erro: "Erro no pinpad" };
 
 type Busca = { de?: string; ate?: string; q?: string; status?: string };
 
@@ -48,7 +48,7 @@ export default async function TefPage({ searchParams }: { searchParams: Promise<
   const casa = (l: TefLinha) => {
     if (!q) return true;
     const t = q.toLowerCase();
-    return [l.nsu, l.autorizacao, l.pan_mascarado, l.bandeira, l.rede].some((v) => (v ?? "").toLowerCase().includes(t)) ||
+    return [l.nsu, l.autorizacao, l.pan_mascarado, l.bandeira, l.rede, l.mensagem].some((v) => (v ?? "").toLowerCase().includes(t)) ||
       (/^\d+(\.\d{1,2})?$/.test(qNum) && Math.abs(Number(l.valor) - Number(qNum)) < 0.005);
   };
   const filtradas = todas.filter((l) => casa(l) && (!status || l.status === status));
@@ -94,7 +94,7 @@ export default async function TefPage({ searchParams }: { searchParams: Promise<
       <div className="mt-2 mb-4">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="cartao" tamanho={20} className="mr-2" /> Cartões (TEF)</h1>
         <p className="text-sm text-texto-suave">
-          Tudo o que passou no pinpad, por período. Aqui você reimprime a via do cliente, cancela uma venda (o pinpad pede o cartão de novo) e abre o menu administrativo da Elgin.
+          Tudo o que passou no pinpad, por período, inclusive as recusas, com a mensagem para mostrar à assistência. Aqui você reimprime a via do cliente, cancela uma venda (o pinpad pede o cartão de novo) e abre o menu administrativo da Elgin.
         </p>
       </div>
 

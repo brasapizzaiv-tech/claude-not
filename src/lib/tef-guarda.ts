@@ -11,7 +11,7 @@
 // pelo Pagamento → "Recebido sem conta".
 import { avisar } from "@/components/dialogo";
 import { tefConfirmar, tefDesfazer, tefDisponivel, type TefDados } from "@/lib/tef-client";
-import { fecharTef, registrarTefAvulso } from "@/app/(painel)/salao/actions";
+import { fecharTef, registrarRecusaTef, registrarTefAvulso } from "@/app/(painel)/salao/actions";
 
 type TipoTef = TefDados["tipo"];
 /** O que vai pro registro: o tipo pode faltar (aba fechada antes de anotar). */
@@ -47,6 +47,11 @@ function gravar(chave: string, v: unknown) {
 }
 
 /** Logo antes de mandar pro pinpad. */
+/** Guarda a recusa do pinpad para a assistência. Fora da fila da venda: se falhar, o caixa nem percebe. */
+export function anotarRecusa(d: Parameters<typeof registrarRecusaTef>[0]) {
+  void registrarRecusaTef(d).catch(() => {});
+}
+
 export function anotarCobranca(tipo: TipoTef, valor: number, conta: string) {
   gravar(CHAVE, { tipo, valor, conta, desde: Date.now() } satisfies Anotacao);
 }
