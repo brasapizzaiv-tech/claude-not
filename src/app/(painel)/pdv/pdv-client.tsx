@@ -15,11 +15,12 @@ import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import type { TefDados } from "@/lib/tef-client";
 import { CampoVale } from "@/components/campo-vale";
 import type { ValeConsulta } from "../salao/caixa/vales/actions";
+import { descontoFuncionario, descontoValido, percentualFuncionario, valorDoDesconto } from "@/lib/desconto-pdv";
 
 export type ItemMenu = { id: string; nome: string; categoria: string; preco: number; porKg?: boolean };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean; cliente?: string; cashbackUsado?: number; cashbackGanho?: number };
+type Feito = { numero: number; comandaId?: string; pago: boolean; forma?: string; troco?: number; semCaixa?: boolean; viagem?: boolean; cliente?: string; cashbackUsado?: number; cashbackGanho?: number; desconto?: number };
 
 export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado: false, producao: false }, formas = FORMAS_PADRAO.pdv, colaboradores = [] }: { itens: ItemMenu[]; categorias: string[]; pixAtivo?: boolean; nfce?: { ligado: boolean; producao: boolean }; formas?: FormaOpcao[]; colaboradores?: { id: string; nome: string }[] }) {
   const FORMAS = formas.map((f) => ({ id: f.nome, label: f.nome, icone: iconeDoTipo(f.tipo) }));
@@ -32,6 +33,12 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const [local, setLocal] = useState<"aqui" | "viagem">("aqui");
   const [forma, setForma] = useState(formas[0]?.nome ?? "Dinheiro");
   const [recebido, setRecebido] = useState("");
+  // Desconto da venda (ex.: funcionário), em R$ ou %. Vale pra qualquer forma.
+  const [descontoTxt, setDescontoTxt] = useState("");
+  const [descontoPct, setDescontoPct] = useState(false);
+  // Desconto de funcionário: o percentual vem da forma e vale pra um item só.
+  const [funcionario, setFuncionario] = useState(false);
+  const [itemFuncId, setItemFuncId] = useState<string | null>(null);
   // Compra da equipe pede o funcionário; Saldo cliente pede o cliente.
   const [colabId, setColabId] = useState("");
   const [cliente, setCliente] = useState<{ id: string; nome: string } | null>(null);
@@ -72,12 +79,20 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const cartLista = Object.entries(cart).filter(([, q]) => q > 0).map(([id, q]) => ({ item: itemDe.get(id)!, qtd: q })).filter((x) => x.item);
   const total = Math.round(cartLista.reduce((s, x) => s + x.item.preco * x.qtd, 0) * 100) / 100;
   const cartCount = cartLista.reduce((s, x) => s + (x.item.porKg ? 1 : x.qtd), 0);
+  // Preço de "um" do item: no vendido por kg, é a pesagem inteira.
+  const precoDeUm = (x: (typeof cartLista)[number]) => (x.item.porKg ? Math.round(x.item.preco * x.qtd * 100) / 100 : x.item.preco);
+  // Começa no mais caro; quem está no caixa pode trocar.
+  const itemFunc = cartLista.find((x) => x.item.id === itemFuncId) ?? cartLista.reduce<(typeof cartLista)[number] | null>((m, x) => (!m || precoDeUm(x) > precoDeUm(m) ? x : m), null);
+  const pctFunc = percentualFuncionario(tipoForma);
+  const desconto = funcionario ? (itemFunc ? descontoFuncionario(precoDeUm(itemFunc), tipoForma) : 0) : valorDoDesconto(total, descontoTxt, descontoPct);
+  const descontoOk = descontoValido(total, desconto);
+  const aposDesconto = Math.round((total - desconto) * 100) / 100;
   // Cashback usado sai do valor a cobrar (o servidor confere e tem a palavra final).
   const cbUsado = cliente && cb && usarCb && cb.saldo > 0 && tipoDe(forma, formas) !== "equipe"
-    ? Math.round(Math.max(0, Math.min(cb.saldo, cb.maxResgate ?? Infinity, total)) * 100) / 100
+    ? Math.round(Math.max(0, Math.min(cb.saldo, cb.maxResgate ?? Infinity, aposDesconto)) * 100) / 100
     : 0;
-  const cobrar = Math.round((total - cbUsado) * 100) / 100;
-  const faltaQuem = (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente) || (semDinheiro && !valeComCodigo && !motivo.trim()) || (!!pedeCodigo && !motivo.trim()) || (valeComCodigo && (!vale || vale.saldo < cobrar - 0.005));
+  const cobrar = Math.round((aposDesconto - cbUsado) * 100) / 100;
+  const faltaQuem = !descontoOk || (tipoForma === "equipe" && !colabId) || (tipoForma === "saldo" && !cliente) || (semDinheiro && !valeComCodigo && !motivo.trim()) || (!!pedeCodigo && !motivo.trim()) || (valeComCodigo && (!vale || vale.saldo < cobrar - 0.005));
   const recebidoNum = Number(recebido.replace(",", ".")) || 0;
   const troco = tipoDe(forma, formas) === "dinheiro" && recebidoNum > cobrar ? Math.round((recebidoNum - cobrar) * 100) / 100 : 0;
 
@@ -108,7 +123,9 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             cliente: pagamento?.clienteId ? nomeCliente : undefined,
             cashbackUsado: "cashbackUsado" in r ? r.cashbackUsado : 0,
             cashbackGanho: "cashbackGanho" in r ? r.cashbackGanho : 0,
+            desconto: "desconto" in r ? r.desconto : 0,
           });
+          setDescontoTxt(""); setDescontoPct(false); setFuncionario(false); setItemFuncId(null);
           setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); escolherCliente(null); setBuscaCli("");
   }
 
@@ -119,7 +136,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     finalizandoRef.current = true;
     const pagamento: Pagto = { forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 };
     try {
-      const r = await finalizarVendaPdv(itensParaEnviar(), obs, { ...pagamento, tef, valorTef: cobrar }, local);
+      const r = await finalizarVendaPdv(itensParaEnviar(), obs, { ...pagamento, tef, valorTef: cobrar, desconto, descontoFuncionario: funcionario }, local);
       if (!r.ok) return { ok: false, mensagem: ("mensagem" in r && r.mensagem) || "Não foi possível concluir." };
       concluir(r, pagamento, 0, local === "viagem", cliente?.nome);
       return { ok: true, transacaoId: "tefTransacaoId" in r ? r.tefTransacaoId : null };
@@ -136,7 +153,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     const nomeCliente = cliente?.nome;
     start(async () => {
       try {
-        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento ? { ...pagamento, observacao: pedeCodigo && motivo.trim() ? `${pedeCodigo}: ${motivo.trim()}` : motivo.trim() || null, valeCodigo: valeComCodigo && vale ? vale.codigo : null } : null, local);
+        const r = await finalizarVendaPdv(itensParaEnviar(), obs, pagamento ? { ...pagamento, observacao: pedeCodigo && motivo.trim() ? `${pedeCodigo}: ${motivo.trim()}` : motivo.trim() || null, valeCodigo: valeComCodigo && vale ? vale.codigo : null, desconto, descontoFuncionario: funcionario } : null, local);
         if (r.ok) {
           setMotivo("");
           setVale(null);
@@ -168,6 +185,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
         <p className="mt-1 text-texto-suave">
           {feito.pago ? <>Pagou em <b>{feito.forma}</b> e o pedido foi pra cozinha.</> : "O pedido foi pra cozinha. Receba o pagamento no caixa."}
         </p>
+        {feito.pago && (feito.desconto ?? 0) > 0 && <p className="mt-1 text-sm text-texto-suave">Com {brl(feito.desconto!)} de desconto.</p>}
         {feito.pago && ((feito.cashbackUsado ?? 0) > 0 || (feito.cashbackGanho ?? 0) > 0) && (
           <p className="mt-3 inline-flex items-center gap-1.5 rounded-cartao bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
             <Icone nome="presente" tamanho={15} />
@@ -269,11 +287,43 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             </div>
           </>
         ) : (
-          <div className="flex flex-1 flex-col p-3">
+          <div className="flex flex-1 flex-col overflow-y-auto p-3">
             <div className="mb-3 rounded-cartao bg-superficie-suave p-3 text-center">
               <div className="text-sm text-texto-suave">Total a cobrar {local === "viagem" && <span className="inline-flex items-center gap-1 font-bold text-amber-600">· <Icone nome="viagem" tamanho={13} /> Viagem</span>}</div>
               <div className="text-3xl font-bold">{brl(cobrar)}</div>
-              {cbUsado > 0 && <div className="text-xs text-emerald-600">{brl(total)} − {brl(cbUsado)} de cashback</div>}
+              {desconto > 0 && descontoOk && <div className="text-xs text-texto-suave">{brl(total)} − {brl(desconto)} de desconto{funcionario ? ` (${pctFunc}%)` : ""}</div>}
+              {cbUsado > 0 && <div className="text-xs text-emerald-600">{brl(aposDesconto)} − {brl(cbUsado)} de cashback</div>}
+            </div>
+            <div className="mb-3">
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor="pdv-desconto" className="text-sm text-texto-suave">Desconto</label>
+                <button type="button" aria-pressed={funcionario} onClick={() => setFuncionario(!funcionario)} className={`min-h-11 rounded-full px-4 text-sm font-semibold ${funcionario ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto"}`}>Funcionário</button>
+              </div>
+              {funcionario ? (
+                <div className="mt-1">
+                  <p className="text-xs text-texto-suave">{pctFunc > 0 ? `${pctFunc}% em um item. Em qual?` : `${forma} não tem desconto de funcionário.`}</p>
+                  {pctFunc > 0 && (
+                    <div role="radiogroup" aria-label="Item que ganha o desconto" className="mt-1 max-h-40 space-y-1 overflow-y-auto">
+                      {cartLista.map((x) => (
+                        <button key={x.item.id} type="button" role="radio" aria-checked={itemFunc?.item.id === x.item.id} onClick={() => setItemFuncId(x.item.id)} className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-controle px-3 py-1.5 text-left text-sm ${itemFunc?.item.id === x.item.id ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto"}`}>
+                          <span className="min-w-0 truncate font-medium">{x.item.nome}</span>
+                          <span className="shrink-0 font-numero font-semibold">{brl(precoDeUm(x))}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+              <div className="mt-1 flex gap-2">
+                <input id="pdv-desconto" value={descontoTxt} onChange={(e) => setDescontoTxt(e.target.value)} inputMode="decimal" placeholder={descontoPct ? "0" : "0,00"} aria-invalid={!descontoOk} className="min-h-11 w-0 flex-1 rounded-controle border border-borda-forte bg-transparent px-3 text-right font-numero" />
+                <div className="flex gap-1" role="radiogroup" aria-label="Desconto em reais ou em percentual">
+                  {([[false, "R$"], [true, "%"]] as const).map(([pct, rotulo]) => (
+                    <button key={rotulo} type="button" role="radio" aria-checked={descontoPct === pct} onClick={() => setDescontoPct(pct)} className={`min-h-11 min-w-11 rounded-controle text-sm font-semibold ${descontoPct === pct ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto"}`}>{rotulo}</button>
+                  ))}
+                </div>
+              </div>
+              )}
+              {!descontoOk && <p className="mt-1 text-xs font-semibold text-urgente-texto">O desconto precisa ficar abaixo do total. Pra dar de graça, use Cortesia.</p>}
             </div>
             <div className="mb-2 flex justify-end"><NfceAutoToggle ligado={nfce.ligado} producao={nfce.producao} compacto /></div>
             <div className="mb-3 grid grid-cols-3 gap-2">

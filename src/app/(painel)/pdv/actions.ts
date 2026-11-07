@@ -9,6 +9,7 @@ import { lancarFormasEspeciais } from "@/lib/pagamento-especial";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
 import { debitarVale, ligarBaixaAoMov, obsDaBaixa } from "@/lib/vale-presente-server";
 import { normalizarCodigo } from "@/lib/vale-presente";
+import { descontoValido } from "@/lib/desconto-pdv";
 
 type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number };
 
@@ -21,9 +22,15 @@ export async function finalizarVendaPdv(
   itens: ItemVenda[],
   obs: string,
   // `tef`: já cobrado no pinpad (Pix na maquininha ou cartão), no valor `valorTef`.
-  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number; observacao?: string | null; valeCodigo?: string | null } | null,
+  pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number; observacao?: string | null; valeCodigo?: string | null; desconto?: number; descontoFuncionario?: boolean } | null,
   local: "aqui" | "viagem" = "aqui",
 ) {
+  // Desconto em reais, conferido antes de mandar pra cozinha.
+  const desconto = Math.round(Number(pagamento?.desconto ?? 0) * 100) / 100;
+  const estimado = Math.round(itens.reduce((t, i) => t + Number(i.preco) * Number(i.qtd), 0) * 100) / 100;
+  if (!descontoValido(estimado, desconto)) {
+    return { ok: false as const, mensagem: "O desconto precisa ficar abaixo do total da venda. Pra dar de graça, use Cortesia." };
+  }
   // O rótulo da "mesa" vira o cabeçalho grande da comanda na cozinha — então
   // "VIAGEM" aparece bem visível pra saberem que é pra embalar.
   const mesa = local === "viagem" ? "Balcão · VIAGEM" : "Balcão";
@@ -42,10 +49,10 @@ export async function finalizarVendaPdv(
     const sb = await createClient();
     const { data: vs } = await sb.from("vales_presente").select("saldo").eq("codigo", normalizarCodigo(pagamento.valeCodigo)).maybeSingle();
     const saldoVale = Number((vs as { saldo?: number } | null)?.saldo ?? 0);
-    const estimado = Math.round(itens.reduce((t, i) => t + Number(i.preco) * Number(i.qtd), 0) * 100) / 100;
+    const aPagar = Math.round((estimado - desconto) * 100) / 100;
     if (!vs) return { ok: false as const, mensagem: "Código de vale não encontrado." };
-    if (saldoVale < estimado - 0.005) {
-      return { ok: false as const, mensagem: `O vale tem ${saldoVale.toFixed(2).replace(".", ",")} de saldo e a venda dá ${estimado.toFixed(2).replace(".", ",")}. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.` };
+    if (saldoVale < aPagar - 0.005) {
+      return { ok: false as const, mensagem: `O vale tem ${saldoVale.toFixed(2).replace(".", ",")} de saldo e a venda dá ${aPagar.toFixed(2).replace(".", ",")}. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.` };
     }
   }
   const r = await lancarPedidoGarcom(mesa, itens, obs);
@@ -70,6 +77,11 @@ export async function finalizarVendaPdv(
     payables.push({ id: it.id as string, payable });
   }
   total = Math.round(total * 100) / 100;
+  // O total do banco manda: preço que mudou no meio não pode virar venda de graça.
+  if (!descontoValido(total, desconto)) {
+    return { ok: false as const, mensagem: `O desconto ficou maior que o total. A comanda #${r.numero} foi pra cozinha e ficou aberta pra receber no caixa.` };
+  }
+  const aposDesconto = Math.round((total - desconto) * 100) / 100;
 
   const { data: cx } = await supabase
     .from("pdv_caixas")
@@ -95,13 +107,13 @@ export async function finalizarVendaPdv(
   if (clienteId && cashbackNoPdv && pagamento.usarCashback && tipo !== "equipe") {
     const { data: saldo } = await supabase.rpc("cashback_saldo", { p_cliente: clienteId });
     const teto = cbCfg?.max_resgate != null ? Number(cbCfg.max_resgate) : Infinity;
-    const desejado = r2(Math.max(0, Math.min(Number(saldo ?? 0), teto, total)));
+    const desejado = r2(Math.max(0, Math.min(Number(saldo ?? 0), teto, aposDesconto)));
     if (desejado > 0) {
       const { data: usado } = await supabase.rpc("cashback_resgatar_ref", { p_cliente: clienteId, p_pedido: null, p_comanda: r.comandaId, p_valor: desejado });
       cashbackUsado = r2(Number(usado ?? 0));
     }
   }
-  const cobrar = r2(total - cashbackUsado);
+  const cobrar = r2(aposDesconto - cashbackUsado);
 
   // Cobrado no pinpad por um valor diferente do que o servidor calculou (o
   // cashback mudou no meio)? Não fecha: a tela desfaz a cobrança e a comanda
@@ -149,7 +161,7 @@ export async function finalizarVendaPdv(
       caixa_id: cx.id,
       tipo: tipoDoMovimento(tipo),
       observacao: ((baixaVale?.ok ? obsDaBaixa(baixaVale.baixa) : "") || (pagamento.observacao ?? "").trim()).slice(0, 200) || null,
-      descricao: `PDV Balcão #${r.numero}${cashbackUsado > 0 ? ` · cashback ${cashbackUsado.toFixed(2).replace(".", ",")}` : ""}`,
+      descricao: `PDV Balcão #${r.numero}${desconto > 0 ? ` · desconto ${pagamento.descontoFuncionario ? "funcionário " : ""}${desconto.toFixed(2).replace(".", ",")}` : ""}${cashbackUsado > 0 ? ` · cashback ${cashbackUsado.toFixed(2).replace(".", ",")}` : ""}`,
       forma_pagamento: pagamento.forma,
       valor: cobrar,
       comanda_id: r.comandaId,
@@ -185,12 +197,12 @@ export async function finalizarVendaPdv(
       const emPromo = new Set(((promos as { id: string }[]) ?? []).map((p) => p.id));
       elegivel = r2(itens.filter((i) => !emPromo.has(i.itemId)).reduce((s, i) => s + i.preco * i.qtd, 0));
     }
-    const base = r2(Math.max(0, elegivel * (1 - cashbackUsado / total)));
+    const base = r2(Math.max(0, elegivel * (1 - (cashbackUsado + desconto) / total)));
     const { data: ganho } = await supabase.rpc("cashback_creditar_venda", { p_cliente: clienteId, p_comanda: r.comandaId, p_base: base, p_forma: pagamento.forma });
     cashbackGanho = r2(Number(ganho ?? 0));
   }
 
-  return { ok: true as const, numero: r.numero, comandaId: r.comandaId, pago: true, semCaixa: !cx?.id, total: cobrar, cashbackUsado, cashbackGanho, tefTransacaoId };
+  return { ok: true as const, numero: r.numero, comandaId: r.comandaId, pago: true, semCaixa: !cx?.id, total: cobrar, desconto, cashbackUsado, cashbackGanho, tefTransacaoId };
 }
 
 // Saldo de cashback do cliente vinculado no balcão (pra mostrar e oferecer usar).
