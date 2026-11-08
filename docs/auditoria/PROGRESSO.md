@@ -21,8 +21,8 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | 0 | Preparação e inventário | **concluída (30/10)**; respostas do Rafael em 31/10 (abaixo) | `00-inventario.md` |
 | 1 | Desempenho e lentidão | **concluída (31/10)** | `01-desempenho.md` |
 | 2 | Saúde do código | **concluída (08/11)** | `02-codigo.md` |
-| 3 | Varredura de todas as telas | **concluída (08/11)**; esperando o "seguir" do Rafael | `03-telas.md` + `prints/` (só local) |
-| 4 | Bugs de lógica e dados | não começou | `04-bugs.md` |
+| 3 | Varredura de todas as telas | **concluída (08/11)** | `03-telas.md` + `prints/` (só local) |
+| 4 | Bugs de lógica e dados | **concluída (08/11)**; esperando o "seguir" e 2 decisões do Rafael | `04-bugs.md` |
 | 5 | Segurança e banco | não começou | `05-seguranca-banco.md` |
 | 6 | Integrações e o que roda fora do navegador | não começou | `06-integracoes.md` |
 | 7 | Interface, consistência e acessibilidade | não começou | `07-interface.md` |
@@ -72,7 +72,11 @@ funcionário mostrou que `/fiscal` (com o token da Focus e o CSC) e `/clientes` 
 **corrigido na hora** com o OK do Rafael (commit 89d91ab + migration 0275, conferido com o mesmo login). Sobram médios
 de tela (janela de fornecedor sem rolagem, erro de hidratação em 6 telas, tela inicial cortada no celular) e contraste.
 Perfis do robô: `<scratchpad>/perfil-robo` (Rafael) e `<scratchpad>/perfil-funcionario` — **apagar no fim da auditoria**.
-Próxima: **Etapa 4 (bugs de lógica e dados)**, só com o "seguir".
+**Etapa 4 concluída em 08/11 à noite.** Relatório em `04-bugs.md` (58 achados: 9 altos, 21 médios, 28 baixos), feito
+em 5 frentes paralelas, só leitura; os mais graves conferidos de novo no código. Pedem decisão do Rafael: **FIS-03** (nota
+automática desligada desde 31/10 14:20: foi de propósito?) e **FIN-01** (faturamento conta os 10% do garçom). Com data:
+**MAR-01** (rotação das marmitas do Kern atrasa a partir de 14/12) e **MAR-02** (feriados de 25/12 e 28/12–02/01 não
+bloqueiam marmita nem reserva). Próxima: **Etapa 5 (segurança e banco)**, só com o "seguir".
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
@@ -100,6 +104,9 @@ Etapa 1: 10 achados (DES-001 a DES-010) — 3 altos (DES-002 /financeiro/banco, 
 
 Etapa 2: 12 achados (COD-001 a COD-012) — 1 crítico (COD-002 forma de pagamento da NFC-e, **corrigido 08/11**), 1 alto
 (COD-001 `next` e dependências), 4 médios, 6 baixos. Detalhes no `02-codigo.md`.
+
+Etapa 4: 58 achados (CX, DEL, FIS, FIN, EST, EQP, MAR) — 9 altos, 21 médios, 28 baixos. Detalhes no `04-bugs.md`. O
+fato das exclusões da balança (anotado em 05/11, depois do BUG-007) virou CX-02.
 
 Etapa 3: 8 achados (TEL-001 a TEL-008) — 1 crítico e 1 alto **corrigidos em 08/11** (configuração fiscal e clientes
 abertos a qualquer funcionário), 3 médios (janela sem rolagem, hidratação, início no celular), 3 baixos. Detalhes no
