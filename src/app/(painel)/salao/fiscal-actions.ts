@@ -199,9 +199,12 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   total = Math.round(total * 100) / 100;
   if (items.length === 0 || total <= 0) return { ok: false, mensagem: "Comanda sem itens/valor para emitir." };
 
-  // Desconto dado no recebimento (caixa/PDV, migration 0273): sai em cada item,
-  // pro total da nota bater com o que o cliente pagou.
-  const desconto = Math.round(coms.reduce((s, c) => s + Math.max(0, Number(c.desconto_nota) || 0), 0) * 100) / 100;
+  // Desconto dado no recebimento (caixa/PDV, migration 0273) + o do pedido de
+  // delivery/app (cupom e cashback ficam em delivery_pedidos.desconto): sai em
+  // cada item, pro total da nota bater com o que o cliente pagou.
+  const { data: pedsDesc } = await supabase.from("delivery_pedidos").select("desconto").in("comanda_id", ids);
+  const descontoPedido = ((pedsDesc as { desconto: number | null }[]) ?? []).reduce((s, p) => s + Math.max(0, Number(p.desconto) || 0), 0);
+  const desconto = Math.round((coms.reduce((s, c) => s + Math.max(0, Number(c.desconto_nota) || 0), 0) + descontoPedido) * 100) / 100;
   if (desconto > 0) {
     if (desconto >= total - 0.005) return { ok: false, mensagem: "Venda com 100% de desconto não emite nota." };
     const partes = repartirDesconto(items.map((i) => Number(i.valor_bruto)), desconto);

@@ -181,7 +181,8 @@ export async function finalizarVendaPdv(
       forma_pagamento: pagamento.forma,
       servico: 0,
       // Sai na NFC-e (migration 0273): a nota fica no valor pago, não no cheio.
-      desconto_nota: desconto,
+      // Cashback usado também é desconto da loja (Rafael, 08/11/2026).
+      desconto_nota: r2(desconto + cashbackUsado),
       ...(pagamento.clienteId ? { cliente_id: pagamento.clienteId } : {}),
     })
     .eq("id", r.comandaId);
