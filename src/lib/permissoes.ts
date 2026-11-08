@@ -77,10 +77,22 @@ export const MODULOS: {
   { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "pizza", rotas: ["/cozinha"] },
 ];
 
+// Rotas só do dono. A configuração fiscal guarda o token da Focus e o CSC, e as
+// formas de pagamento mudam o caixa de todo mundo (auditoria, 08/11/2026: antes
+// qualquer funcionário logado abria /fiscal e salvava).
+const SO_DONO = ["/usuarios", "/fiscal", "/formas-pagamento", "/aparencia"];
+
+// Cadastro de clientes (CPF, telefone, endereço): quem vende e quem fatura.
+const ROTAS_CLIENTES = ["/clientes"];
+export const PERMISSOES_CLIENTES: ModuloKey[] = ["salao", "pdv", "delivery", "financeiro"];
+
+const naRota = (path: string, r: string) => path === r || path.startsWith(r + "/");
+
 // Qual módulo "controla" a rota. "usuarios" é só do dono. null = rota livre
 // para qualquer logado (ex.: /dashboard).
-export function moduloDaRota(path: string): ModuloKey | "usuarios" | null {
-  if (path === "/usuarios" || path.startsWith("/usuarios/")) return "usuarios";
+export function moduloDaRota(path: string): ModuloKey | "usuarios" | "clientes" | null {
+  if (SO_DONO.some((r) => naRota(path, r))) return "usuarios";
+  if (ROTAS_CLIENTES.some((r) => naRota(path, r))) return "clientes";
   for (const m of MODULOS) {
     for (const r of m.rotas) {
       if (path === r || path.startsWith(r + "/")) return m.key;
@@ -98,6 +110,7 @@ export function podeAcessar(
   const mod = moduloDaRota(path);
   if (mod === null) return true; // rota livre (dashboard etc.)
   if (mod === "usuarios") return false; // só o dono
+  if (mod === "clientes") return PERMISSOES_CLIENTES.some((p) => permissoes.includes(p));
   // Quem tem acesso ao Salão também usa o app do garçom.
   if (mod === "garcom") return permissoes.includes("garcom") || permissoes.includes("salao");
   // Quem tem o Financeiro completo também abre as Contas a pagar.

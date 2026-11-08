@@ -5,6 +5,8 @@
 // banco e com o Focus.
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
@@ -18,8 +20,13 @@ import {
 const ACESSO = ["/salao", "/financeiro"];
 type Db = Awaited<ReturnType<typeof createClient>>;
 
-async function cfgFiscal(db: Db) {
-  const { data } = await db.from("config_fiscal").select("chave, valor");
+// Lida no servidor: o token da Focus não é legível por funcionário no banco
+// (migration 0275). Filtrada pela empresa de quem está emitindo.
+async function cfgFiscal() {
+  const empresaId = await empresaAtualId();
+  const { data } = empresaId
+    ? await createAdminClient().from("config_fiscal").select("chave, valor").eq("empresa_id", empresaId)
+    : { data: [] };
   const cfg: Record<string, string> = {};
   for (const r of (data as { chave: string; valor: string | null }[]) ?? []) cfg[r.chave] = r.valor ?? "";
   return cfg;
@@ -235,7 +242,7 @@ export async function emitirNotaAvulsa(input: EmitirAvulsa) {
   const erros = conferirNota(input.modelo, input.dest, input.linhas);
   if (erros.length) return { ok: false as const, mensagem: erros.join(" ") };
 
-  const cfg = await cfgFiscal(db);
+  const cfg = await cfgFiscal();
   if (cfg.emissor !== "focusnfe") return { ok: false as const, mensagem: "O emissor da Config fiscal não é o Focus." };
   const ambienteCaixa = (cfg.emissor_ambiente as FocusAmbiente) || "homologacao";
   const ambiente: FocusAmbiente = input.teste ? "homologacao" : ambienteCaixa;
@@ -347,7 +354,7 @@ export async function consultarNotaAvulsa(id: string) {
   const { data: n } = await db.from("nfce_emitidas").select("ref, ambiente, modelo").eq("id", id).maybeSingle();
   if (!n) return { ok: false as const, mensagem: "Nota não encontrada." };
   if (n.modelo !== "nfe") return { ok: false as const, mensagem: "Só a NF-e precisa ser consultada." };
-  const cfg = await cfgFiscal(db);
+  const cfg = await cfgFiscal();
   const token = n.ambiente === "homologacao" && (cfg.emissor_ambiente || "homologacao") !== "homologacao" ? cfg.emissor_token_homologacao : cfg.emissor_token;
   if (!token) return { ok: false as const, mensagem: "Falta o token do emissor." };
   const r = await consultarNfe({ token, ambiente: n.ambiente as FocusAmbiente }, n.ref as string);

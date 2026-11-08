@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { type ModuloKey } from "@/lib/permissoes";
+import { PERMISSOES_CLIENTES, type ModuloKey } from "@/lib/permissoes";
 import { Icone, type NomeIcone } from "@/components/icone";
 import { TEMA_PADRAO, type Tema } from "@/lib/tema";
 import { SeletorTema } from "@/components/seletor-tema";
@@ -254,9 +254,9 @@ export function Sidebar({
     {
       key: "config", label: "Configurações", icon: "ajustes",
       itens: [
-        ...so(has("financeiro"), { href: "/fiscal", label: "Config fiscal", icon: "cupom" }, { href: "/fiscal/perfis", label: "Perfis fiscais", icon: "etiqueta" }),
+        ...so(admin, { href: "/fiscal", label: "Config fiscal", icon: "cupom" }, { href: "/fiscal/perfis", label: "Perfis fiscais", icon: "etiqueta" }),
         ...so(has("impressao"), { href: "/impressao", label: "Central de impressões", icon: "imprimir" }),
-        { href: "/clientes", label: "Clientes (NF-e)", icon: "cracha" },
+        ...so(PERMISSOES_CLIENTES.some((p) => has(p)), { href: "/clientes", label: "Clientes (NF-e)", icon: "cracha" }),
         ...so(admin, { href: "/usuarios", label: "Usuários e permissões", icon: "chave" }),
         ...so(admin, { href: "/aparencia", label: "Aparência da empresa", icon: "brilho" }),
         ...so(admin, { href: "/formas-pagamento", label: "Formas de pagamento", icon: "cartao" }),

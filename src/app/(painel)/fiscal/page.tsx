@@ -111,8 +111,8 @@ export default async function FiscalPage() {
             </div>
             <div className="sm:col-span-3">
               <label className="mb-1 block text-xs text-texto-suave">Token de API do emissor ({v("emissor_ambiente") === "producao" ? "PRODUÇÃO" : "homologação"})</label>
-              <input name="emissor_token" defaultValue={v("emissor_token")} placeholder="token do Focus" className={campo} />
-              <p className="mt-1 text-mini text-texto-fraco">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto.</p>
+              <input name="emissor_token" type="password" autoComplete="off" placeholder={v("emissor_token") ? "configurado — deixe vazio pra manter" : "token do Focus"} className={campo} />
+              <p className="mt-1 text-mini text-texto-fraco">O Focus tem um token pra homologação e OUTRO pra produção. Ao trocar o ambiente, troque o token junto. O token salvo não aparece aqui: pra trocar, cole o novo.</p>
             </div>
             <div>
               <label className="mb-1 block text-xs text-texto-suave">Série da NF-e (nota pra empresa)</label>
@@ -120,10 +120,13 @@ export default async function FiscalPage() {
             </div>
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs text-texto-suave">Token de HOMOLOGAÇÃO (opcional, pra nota de teste na Nota avulsa)</label>
-              <input name="emissor_token_homologacao" type="password" autoComplete="off" defaultValue={v("emissor_token_homologacao")} placeholder="token de homologação do Focus" className={campo} />
+              <input name="emissor_token_homologacao" type="password" autoComplete="off" placeholder={v("emissor_token_homologacao") ? "configurado — deixe vazio pra manter" : "token de homologação do Focus"} className={campo} />
               <p className="mt-1 text-mini text-texto-fraco">Com ele, a Nota avulsa pode emitir uma nota de teste, sem valor fiscal, mesmo com o caixa em produção.</p>
             </div>
-            <Campo nome="csc" def={v("csc")} label="CSC (código do QR)" />
+            <div>
+              <label className="mb-1 block text-xs text-texto-suave">CSC (código do QR)</label>
+              <input name="csc" type="password" autoComplete="off" placeholder={v("csc") ? "configurado — deixe vazio pra manter" : ""} className={campo} />
+            </div>
             <Campo nome="csc_id" def={v("csc_id")} label="ID do CSC" />
           </div>
         </section>

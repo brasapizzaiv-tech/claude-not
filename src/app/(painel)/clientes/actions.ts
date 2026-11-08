@@ -4,8 +4,12 @@ import { numeroBR } from "@/lib/format";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
+// Cadastro de clientes: só quem vende ou fatura (auditoria, 08/11/2026: antes
+// qualquer funcionário logado salvava e removia).
 export async function salvarCliente(formData: FormData) {
+  await exigirAcesso("/clientes");
   const supabase = await createClient();
   const id = (formData.get("id") as string) || null;
   const nome = ((formData.get("nome") as string) || "").trim();
@@ -51,6 +55,7 @@ export async function salvarCliente(formData: FormData) {
 }
 
 export async function excluirCliente(formData: FormData) {
+  await exigirAcesso("/clientes");
   const supabase = await createClient();
   await supabase.from("clientes").update({ ativo: false }).eq("id", formData.get("id") as string);
   revalidatePath("/clientes");

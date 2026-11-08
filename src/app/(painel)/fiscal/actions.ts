@@ -6,8 +6,13 @@ import { createClient } from "@/lib/supabase/server";
 import { emitirNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
-// Salva a configuração fiscal (dados da empresa + emissor). Chave/valor.
+// Segredos da configuração: a tela não mostra o valor; campo vazio mantém o atual.
+const SEGREDOS = new Set(["emissor_token", "emissor_token_homologacao", "csc"]);
+
+// Salva a configuração fiscal (dados da empresa + emissor). Chave/valor. Só o
+// dono (auditoria, 08/11/2026: antes qualquer funcionário logado salvava).
 export async function salvarConfigFiscal(formData: FormData) {
+  await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const campos = [
     "razao_social",
@@ -38,11 +43,9 @@ export async function salvarConfigFiscal(formData: FormData) {
   // o upsert precisa dizer os dois — senão ele tentaria bater só pelo nome e
   // sobrescreveria o ajuste de outro restaurante.
   const empresaId = await empresaAtualId();
-  const linhas = campos.map((chave) => ({
-    empresa_id: empresaId,
-    chave,
-    valor: ((formData.get(chave) as string) ?? "").trim(),
-  }));
+  const linhas = campos
+    .map((chave) => ({ empresa_id: empresaId, chave, valor: ((formData.get(chave) as string) ?? "").trim() }))
+    .filter((l) => !(SEGREDOS.has(l.chave) && !l.valor));
   await supabase.from("config_fiscal").upsert(linhas, { onConflict: "empresa_id,chave" });
   revalidatePath("/fiscal");
 }
@@ -51,6 +54,7 @@ export async function salvarConfigFiscal(formData: FormData) {
 // CSC de ponta a ponta. Usa códigos fiscais típicos de restaurante (o contador
 // confirma os definitivos antes de produção).
 export async function emitirNotaTeste() {
+  await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const { data } = await supabase.from("config_fiscal").select("chave, valor");
   const cfg: Record<string, string> = {};
@@ -132,7 +136,7 @@ const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const numOuNull = (v: unknown) => { const t = String(v ?? "").trim().replace(",", "."); return t === "" ? null : (Number(t) || 0); };
 
 export async function salvarPerfilFiscal(fd: FormData) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const id = ((fd.get("id") as string) || "").trim() || null;
   const nome = ((fd.get("nome") as string) || "").trim();
@@ -174,7 +178,7 @@ export async function salvarPerfilFiscal(fd: FormData) {
 }
 
 export async function excluirPerfilFiscal(id: string) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const { error } = await supabase.from("perfis_fiscais").delete().eq("id", id);
   if (error) return { ok: false, mensagem: error.message };
@@ -183,7 +187,7 @@ export async function excluirPerfilFiscal(id: string) {
 }
 
 export async function definirPerfilCategoria(categoriaId: string, perfilId: string | null) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const { error } = await supabase.from("pdv_categorias").update({ perfil_fiscal_id: perfilId }).eq("id", categoriaId);
   if (error) return { ok: false, mensagem: error.message };
@@ -192,7 +196,7 @@ export async function definirPerfilCategoria(categoriaId: string, perfilId: stri
 }
 
 export async function definirPerfilItem(itemId: string, perfilId: string | null) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const { error } = await supabase.from("pdv_itens").update({ perfil_fiscal_id: perfilId }).eq("id", itemId);
   if (error) return { ok: false, mensagem: error.message };

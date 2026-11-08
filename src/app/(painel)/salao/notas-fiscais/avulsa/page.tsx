@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { listarFormas } from "@/lib/formas-pagamento-server";
 import { AvulsaClient, type ItemCardapio, type PerfilOpcao } from "./avulsa-client";
@@ -12,10 +14,14 @@ export const dynamic = "force-dynamic";
 export default async function NotaAvulsaPage() {
   await exigirAcesso(["/salao", "/financeiro"]);
   const db = await createClient();
+  // Só o ambiente e SE existe token de homologação (o valor nunca vai pra tela).
+  const empresaId = await empresaAtualId();
   const [{ data: itens }, { data: perfis }, { data: cfgRows }] = await Promise.all([
     db.from("pdv_itens").select("id, nome, preco, categoria").eq("ativo", true).order("nome").limit(2000),
     db.from("perfis_fiscais").select("id, nome, cfop, csosn, ncm").eq("ativo", true).order("nome"),
-    db.from("config_fiscal").select("chave, valor"),
+    empresaId
+      ? createAdminClient().from("config_fiscal").select("chave, valor").eq("empresa_id", empresaId).in("chave", ["emissor_ambiente", "emissor_token_homologacao"])
+      : Promise.resolve({ data: [] }),
   ]);
   const cfg: Record<string, string> = {};
   for (const r of (cfgRows as { chave: string; valor: string | null }[]) ?? []) cfg[r.chave] = r.valor ?? "";

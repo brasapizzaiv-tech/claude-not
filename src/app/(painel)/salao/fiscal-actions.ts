@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { codigoFiscalDoTipo } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
@@ -59,10 +60,15 @@ async function pagamentosDasComandas(supabase: ClienteSupabase, ids: string[]): 
   return out;
 }
 
-async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data } = await supabase.from("config_fiscal").select("chave, valor");
+// Configuração fiscal da empresa, lida no servidor. O token da Focus e o CSC não
+// são legíveis por funcionário no banco (migration 0275), e a fila automática roda
+// sem ninguém logado: por isso a chave administrativa, sempre filtrada pela
+// empresa da comanda/nota. Sem empresa, nada (não emite com config de outra).
+async function cfgFiscal(empresaId: string | null | undefined) {
   const cfg: Record<string, string> = {};
-  for (const r of data ?? []) cfg[r.chave] = r.valor ?? "";
+  if (!empresaId) return cfg;
+  const { data } = await createAdminClient().from("config_fiscal").select("chave, valor").eq("empresa_id", empresaId);
+  for (const r of (data as { chave: string; valor: string | null }[]) ?? []) cfg[r.chave] = r.valor ?? "";
   return cfg;
 }
 
@@ -83,8 +89,7 @@ export async function definirNfceAuto(ligado: boolean) {
 
 // Estado da nota automática pra tela: ligada? e o fiscal está em produção?
 export async function lerNfceAuto() {
-  const supabase = await createClient();
-  const cfg = await cfgFiscal(supabase);
+  const cfg = await cfgFiscal(await empresaAtualId());
   return { ligado: cfg.nfce_auto === "1", producao: cfg.emissor_ambiente === "producao" && !!cfg.emissor_token };
 }
 
@@ -121,17 +126,17 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   if (jaTem)
     return { ok: true, jaEmitida: true, id: jaTem.id as string, status: "autorizado", numero: jaTem.numero, chave: jaTem.chave, urlDanfe: jaTem.url_danfe, mensagem: undefined as string | undefined };
 
-  const cfg = await cfgFiscal(supabase);
+  const { data: comsData } = await supabase
+    .from("pdv_comandas")
+    .select("id, numero, valor_buffet, forma_pagamento, cliente_id, desconto_nota, empresa_id")
+    .in("id", ids);
+  const coms = (comsData ?? []) as { id: string; numero: number; valor_buffet: number | null; forma_pagamento: string | null; cliente_id: string | null; desconto_nota: number | null; empresa_id: string | null }[];
+  if (coms.length === 0) return { ok: false, mensagem: "Comanda não encontrada." };
+
+  const cfg = await cfgFiscal(coms[0].empresa_id);
   if (cfg.emissor !== "focusnfe") return { ok: false, mensagem: "Emissor não é o Focus na Config fiscal." };
   if (!cfg.emissor_token) return { ok: false, mensagem: "Falta o token do emissor na Config fiscal." };
   const ambiente = (cfg.emissor_ambiente as FocusAmbiente) || "homologacao";
-
-  const { data: comsData } = await supabase
-    .from("pdv_comandas")
-    .select("id, numero, valor_buffet, forma_pagamento, cliente_id, desconto_nota")
-    .in("id", ids);
-  const coms = (comsData ?? []) as { id: string; numero: number; valor_buffet: number | null; forma_pagamento: string | null; cliente_id: string | null; desconto_nota: number | null }[];
-  if (coms.length === 0) return { ok: false, mensagem: "Comanda não encontrada." };
   const com = {
     forma_pagamento: coms.find((c) => c.forma_pagamento)?.forma_pagamento ?? null,
     cliente_id: coms.find((c) => c.cliente_id)?.cliente_id ?? null,
@@ -355,13 +360,13 @@ export async function cancelarNfceEmitida(id: string, justificativa: string) {
 
   const { data: nota } = await supabase
     .from("nfce_emitidas")
-    .select("ref, ambiente, status, modelo")
+    .select("ref, ambiente, status, modelo, empresa_id")
     .eq("id", id)
     .maybeSingle();
   if (!nota) return { ok: false, mensagem: "Nota não encontrada." };
   if (nota.status !== "autorizado") return { ok: false, mensagem: "Só dá pra cancelar nota autorizada." };
 
-  const cfg = await cfgFiscal(supabase);
+  const cfg = await cfgFiscal(nota.empresa_id as string | null);
   // Nota de teste (homologação) feita com o caixa em produção usa o token de homologação.
   const amb = (nota.ambiente as FocusAmbiente) || "homologacao";
   const token = amb === "homologacao" && (cfg.emissor_ambiente || "homologacao") !== "homologacao" ? cfg.emissor_token_homologacao : cfg.emissor_token;
