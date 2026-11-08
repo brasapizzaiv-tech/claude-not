@@ -19,6 +19,7 @@ import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
 import { aplicarJuntar, buffetJuntado, lerParaJuntar, podeSomar, type ModoJuntar, type PrecoBuffet } from "@/lib/juntar-comandas";
 import { contagemValida, valorDe, type Quantidades } from "@/lib/cofre";
+import { repartirDesconto } from "@/lib/fiscal/desconto-nota";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -1199,6 +1200,8 @@ export async function pagarSelecao(
   cobrarServico = true,
   /** "Pagar parte": dinheiro (já com ou sem os 10%) que cobre um pedaço da comanda. */
   partes: { comandaId: string; valor: number }[] = [],
+  /** Desconto deste recebimento, sem os 10% (digitado + 5% do dinheiro): sai na NFC-e. */
+  desconto = 0,
 ) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
@@ -1256,6 +1259,11 @@ export async function pagarSelecao(
     baixas.set(i, b.baixa);
   }
 
+  // Consumo (sem os 10%) quitado agora em cada comanda: é por ele que o desconto
+  // se reparte entre as comandas pra sair na nota.
+  const basePorComanda = new Map<string, number>();
+  const somarBase = (id: string, v: number) => { if (v > 0) basePorComanda.set(id, r2((basePorComanda.get(id) ?? 0) + v)); };
+
   // Produtos avulsos inseridos no caixa: cria o item na comanda já pago.
   for (const e of extras) {
     if (!(e.qtd > 0)) continue;
@@ -1276,6 +1284,7 @@ export async function pagarSelecao(
       base_pago: r2(precoVenda(prod) * e.qtd),
       pago: true,
     });
+    somarBase(e.comandaId, r2(precoVenda(prod) * e.qtd));
   }
 
   const numeros: number[] = [];
@@ -1297,6 +1306,7 @@ export async function pagarSelecao(
         .from("pdv_comanda_itens")
         .update({ valor_pago: r2(Number(row.valor_pago ?? 0) + falta * fator), base_pago: preco, pago: true })
         .eq("id", itemId);
+      somarBase(s.comandaId, falta);
       quitadosAgora++;
     }
     if (s.buffet) {
@@ -1314,11 +1324,15 @@ export async function pagarSelecao(
           .from("pdv_comandas")
           .update({ buffet_valor_pago: r2(Number(c.buffet_valor_pago ?? 0) + falta * fator), buffet_base_pago: preco, buffet_pago: true })
           .eq("id", s.comandaId);
+        somarBase(s.comandaId, falta);
         quitadosAgora++;
       }
     }
     const parte = partes.find((p) => p.comandaId === s.comandaId);
-    if (parte && (await aplicarParte(supabase, s.comandaId, parte.valor, fator)) > 0) quitadosAgora++;
+    if (parte && (await aplicarParte(supabase, s.comandaId, parte.valor, fator)) > 0) {
+      somarBase(s.comandaId, r2(parte.valor / fator));
+      quitadosAgora++;
+    }
     const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", s.comandaId).single();
     if (com?.numero != null) numeros.push(com.numero);
     await fecharSeQuitou(supabase, s.comandaId);
@@ -1356,6 +1370,19 @@ export async function pagarSelecao(
     return { ok: false as const, mensagem: especiais.mensagem };
   }
   revalidatePath("/retiradas");
+
+  // Desconto na nota (migration 0273): reparte pelo consumo quitado agora e soma
+  // no que a comanda já tinha (pagamento em partes). Nunca passa do consumo.
+  const descontoNota = r2(Math.max(0, Math.min(Number(desconto) || 0, [...basePorComanda.values()].reduce((a, b) => a + b, 0))));
+  if (descontoNota > 0) {
+    const ids = [...basePorComanda.keys()];
+    const fatias = repartirDesconto(ids.map((id) => basePorComanda.get(id) ?? 0), descontoNota);
+    for (const [k, id] of ids.entries()) {
+      if (!(fatias[k] > 0)) continue;
+      const { data: c } = await supabase.from("pdv_comandas").select("desconto_nota").eq("id", id).single();
+      await supabase.from("pdv_comandas").update({ desconto_nota: r2(Number(c?.desconto_nota ?? 0) + fatias[k]) }).eq("id", id);
+    }
+  }
 
   const totalPago =
     Math.round(pagamentos.reduce((a, p) => a + (p.valor > 0 ? p.valor : 0), 0) * 100) / 100;

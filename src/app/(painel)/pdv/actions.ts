@@ -180,6 +180,8 @@ export async function finalizarVendaPdv(
       fechada_em: new Date().toISOString(),
       forma_pagamento: pagamento.forma,
       servico: 0,
+      // Sai na NFC-e (migration 0273): a nota fica no valor pago, não no cheio.
+      desconto_nota: desconto,
       ...(pagamento.clienteId ? { cliente_id: pagamento.clienteId } : {}),
     })
     .eq("id", r.comandaId);

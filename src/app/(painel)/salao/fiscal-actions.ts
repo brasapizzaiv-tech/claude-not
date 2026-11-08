@@ -7,6 +7,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { codigoFiscalDoTipo } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { emitirNfce, cancelarNfce, cancelarNfe, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
+import { repartirDesconto, totalComDesconto } from "@/lib/fiscal/desconto-nota";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
 const FORMA_FOCUS: Record<string, string> = {
@@ -99,9 +100,9 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
 
   const { data: comsData } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, valor_buffet, forma_pagamento, cliente_id")
+    .select("id, numero, valor_buffet, forma_pagamento, cliente_id, desconto_nota")
     .in("id", ids);
-  const coms = (comsData ?? []) as { id: string; numero: number; valor_buffet: number | null; forma_pagamento: string | null; cliente_id: string | null }[];
+  const coms = (comsData ?? []) as { id: string; numero: number; valor_buffet: number | null; forma_pagamento: string | null; cliente_id: string | null; desconto_nota: number | null }[];
   if (coms.length === 0) return { ok: false, mensagem: "Comanda não encontrada." };
   const com = {
     forma_pagamento: coms.find((c) => c.forma_pagamento)?.forma_pagamento ?? null,
@@ -197,6 +198,16 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   total = Math.round(total * 100) / 100;
   if (items.length === 0 || total <= 0) return { ok: false, mensagem: "Comanda sem itens/valor para emitir." };
 
+  // Desconto dado no recebimento (caixa/PDV, migration 0273): sai em cada item,
+  // pro total da nota bater com o que o cliente pagou.
+  const desconto = Math.round(coms.reduce((s, c) => s + Math.max(0, Number(c.desconto_nota) || 0), 0) * 100) / 100;
+  if (desconto > 0) {
+    if (desconto >= total - 0.005) return { ok: false, mensagem: "Venda com 100% de desconto não emite nota." };
+    const partes = repartirDesconto(items.map((i) => Number(i.valor_bruto)), desconto);
+    items.forEach((i, k) => { if (partes[k] > 0) i.valor_desconto = partes[k].toFixed(2); });
+  }
+  const liquido = totalComDesconto(total, desconto);
+
   const forma = await codigoFiscalDaForma((com.forma_pagamento as string) || "");
 
   const bras = new Date(Date.now() - 3 * 3600 * 1000 - 60 * 1000);
@@ -220,7 +231,7 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
       ...(docLimpo && nomeDest ? { nome_destinatario: nomeDest } : {}),
       serie: (cfg.nfce_serie || "").trim() || undefined,
       items,
-      formas_pagamento: [{ forma_pagamento: forma, valor_pagamento: total.toFixed(2) }],
+      formas_pagamento: [{ forma_pagamento: forma, valor_pagamento: liquido.toFixed(2) }],
     },
   );
 
@@ -237,7 +248,7 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
     url_danfe: r.urlDanfe ?? null,
     url_xml: r.urlXml ?? null,
     mensagem: r.mensagem ?? null,
-    valor: total,
+    valor: liquido,
   }).select("id").single();
 
   for (const id of ids) revalidatePath(`/salao/comandas/${id}`);

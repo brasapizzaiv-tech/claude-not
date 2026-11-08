@@ -548,6 +548,8 @@ export function ReceberComandas({
           clienteSel?.id ?? null,
           parte ? parte.comServico : cobrarServico,
           partesPayload.map((p) => ({ comandaId: p.comandaId, valor: p.valor })),
+          // Sai na nota: desconto digitado + 5% do dinheiro, menos o acréscimo.
+          Math.max(0, Math.round((desc + descDinheiro - acr) * 100) / 100),
         );
       } catch {
         confirmandoRef.current = false;

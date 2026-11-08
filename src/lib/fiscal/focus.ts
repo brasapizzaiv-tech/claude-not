@@ -31,6 +31,7 @@ export type FocusItem = {
   cest?: string; // 7 dígitos, quando o item tem ST
   pis_situacao_tributaria?: string; // ex.: "49"
   cofins_situacao_tributaria?: string; // ex.: "49"
+  valor_desconto?: string; // vDesc do item (desconto dado no recebimento)
 };
 
 export type FocusPagamento = {
