@@ -80,6 +80,7 @@ export function NotasClient({
     start(async () => {
       const r = await cancelarNfceEmitida(id, j.trim());
       if (!r.ok) void avisar("Não cancelou: " + (r.mensagem || "erro"));
+      else if (r.aviso) void avisar(`Nota cancelada. ${r.aviso}`);
       router.refresh();
     });
   }

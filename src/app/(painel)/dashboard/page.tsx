@@ -112,7 +112,7 @@ export default async function DashboardPage({
     buscarTodas((de, ate) =>
       supabase
         .from("pdv_caixa_mov")
-        .select("tipo, valor, forma_pagamento, criado_em, caixa_id")
+        .select("tipo, valor, forma_pagamento, criado_em, caixa_id, recebe_fiado")
         .gte("criado_em", jAntes.de < inicioSerie ? jAntes.de : inicioSerie)
         .lt("criado_em", j.ate)
         .order("id")
@@ -147,8 +147,10 @@ export default async function DashboardPage({
   const grupos = lerGrupos(cfg.mesa_grupos, qtdMesas);
 
   // ---------- Faturamento: do dia, do mesmo dia da semana passada, e a série ----------
-  type Mov = { tipo: string; valor: number; forma_pagamento: string | null; criado_em: string; caixa_id: string };
-  const movs = ((movSerie as Mov[]) ?? []).filter((m) => m.tipo === "venda");
+  type Mov = { tipo: string; valor: number; forma_pagamento: string | null; criado_em: string; caixa_id: string; recebe_fiado: boolean | null };
+  // Recebimento de fiado não é venda nova (BUG-006): a venda já contou no dia em
+  // que foi pro saldo do cliente.
+  const movs = ((movSerie as Mov[]) ?? []).filter((m) => m.tipo === "venda" && !m.recebe_fiado);
   const somaEntre = (de: string, ate: string) =>
     movs.filter((m) => m.criado_em >= de && m.criado_em < ate).reduce((s, m) => s + Number(m.valor || 0), 0);
 
@@ -173,6 +175,12 @@ export default async function DashboardPage({
       outras.set(nome, (outras.get(nome) ?? 0) + Number(m.valor || 0));
     }
   }
+  // Acerto de fiado que entrou neste caixa: aparece à parte, fora do total.
+  const fiadoNoCaixa = ((movSerie as Mov[]) ?? [])
+    .filter((m) => m.tipo === "venda" && m.recebe_fiado)
+    .filter((m) => (caixaAbertoId ? m.caixa_id === caixaAbertoId : m.criado_em >= j.de && m.criado_em < j.ate))
+    .reduce((s, m) => s + Number(m.valor || 0), 0);
+  if (fiadoNoCaixa >= 0.01) outras.set("fiado recebido (fora do total)", fiadoNoCaixa);
   // Dia × noite: a noite começa às 16h, o mesmo corte do 10% (servico_noites,
   // migration 0250). Tudo dentro da janela do dia, então dia + noite = total.
   const corteNoite = `${dia}T19:00:00.000Z`; // 16h em Brasília

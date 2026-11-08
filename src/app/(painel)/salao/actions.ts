@@ -1886,6 +1886,9 @@ export async function receberFiado(clienteId: string, valor: number, forma: stri
     forma_pagamento: forma,
     valor: v,
     comanda_id: null,
+    // Entra na conferência do caixa, mas não é venda nova: a venda já contou no
+    // dia em que foi pro saldo (BUG-006, migration 0274).
+    recebe_fiado: true,
   });
   revalidatePath("/salao/caixa");
   revalidatePath("/salao/caixa/fiado");
@@ -2205,17 +2208,20 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
 
   const { data: movs } = await supabase
     .from("pdv_caixa_mov")
-    .select("tipo, forma_pagamento, valor")
+    .select("tipo, forma_pagamento, valor, recebe_fiado")
     .eq("caixa_id", caixaId);
 
   const vendasPorForma: Record<string, number> = {};
   let suprimentos = 0;
   let sangrias = 0;
+  // Acerto de fiado: conta na conferência por forma, mas não é venda nova (BUG-006).
+  let recebidoFiado = 0;
   for (const m of movs ?? []) {
     const v = Number(m.valor);
     if (m.tipo === "venda") {
       const f = m.forma_pagamento || "Outros";
       vendasPorForma[f] = (vendasPorForma[f] || 0) + v;
+      if (m.recebe_fiado) recebidoFiado += v;
     } else if (m.tipo === "suprimento") suprimentos += v;
     else if (m.tipo === "sangria") sangrias += v;
   }
@@ -2238,6 +2244,7 @@ export async function fecharCaixaZ(caixaId: string, dinheiroContado: number, obs
     saldoInicial,
     vendasPorForma,
     totalVendas: Math.round(totalVendas * 100) / 100,
+    ...(recebidoFiado >= 0.01 ? { recebidoFiado: Math.round(recebidoFiado * 100) / 100 } : {}),
     suprimentos: Math.round(suprimentos * 100) / 100,
     sangrias: Math.round(sangrias * 100) / 100,
     operador,

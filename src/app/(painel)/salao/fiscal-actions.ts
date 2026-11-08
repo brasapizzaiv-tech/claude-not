@@ -8,6 +8,7 @@ import { codigoFiscalDoTipo } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { emitirNfce, cancelarNfce, cancelarNfe, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
 import { repartirDesconto, totalComDesconto } from "@/lib/fiscal/desconto-nota";
+import { desfazerLancamentosNota } from "./notas-fiscais/avulsa/actions";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
 const FORMA_FOCUS: Record<string, string> = {
@@ -331,11 +332,14 @@ export async function cancelarNfceEmitida(id: string, justificativa: string) {
 
   // NF-e (nota avulsa pra empresa) cancela por outro endereço do Focus.
   const r = await (nota.modelo === "nfe" ? cancelarNfe : cancelarNfce)({ token, ambiente: amb }, nota.ref as string, just);
+  let aviso: string | null = null;
   if (r.ok) {
     await supabase.from("nfce_emitidas").update({ status: "cancelado", mensagem: just }).eq("id", id);
+    // Nota avulsa que deu baixa no saldo ou entrou no caixa: desfaz (migration 0274).
+    aviso = await desfazerLancamentosNota(id);
   }
   revalidatePath("/salao/notas-fiscais");
-  return { ok: r.ok, status: r.status, mensagem: r.mensagem };
+  return { ok: r.ok, status: r.status, mensagem: r.mensagem, aviso };
 }
 
 // Cancela itens específicos de comandas (a "Cancelar produtos" da mesa). Registra

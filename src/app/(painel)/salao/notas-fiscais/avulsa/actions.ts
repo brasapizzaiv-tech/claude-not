@@ -6,6 +6,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { tipoDe } from "@/lib/formas-pagamento";
+import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { buscarCnpj, soDigitos } from "@/lib/fiscal/cnpj";
 import { consultarNfe, emitirNfce, emitirNfe, type FocusAmbiente, type FocusResposta } from "@/lib/fiscal/focus";
 import {
@@ -104,7 +106,117 @@ export type EmitirAvulsa = {
   forma: string;
   observacao: string;
   comandaIds: string[];
+  /** Quanto sai do saldo do cliente quando a nota for autorizada (0 = não mexe). */
+  baixaSaldo?: number;
+  /** Forma com que entra no caixa aberto (null = não entra no caixa). */
+  caixaForma?: string | null;
 };
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
+// Formas que não servem pra entrada no caixa pela nota: têm fluxo próprio ou não são dinheiro.
+const FORA_DO_CAIXA = new Set(["saldo", "equipe", "cortesia", "vale_presente"]);
+
+async function saldoDe(db: Db, clienteId: string) {
+  const { data } = await db.from("cliente_fiado").select("tipo, valor").eq("cliente_id", clienteId).limit(5000);
+  return r2(((data as { tipo: string; valor: number }[]) ?? []).reduce((s, m) => s + Number(m.valor) * (m.tipo === "debito" ? 1 : -1), 0));
+}
+
+async function caixaAbertoId(db: Db) {
+  const { data } = await db.from("pdv_caixas").select("id").eq("status", "aberto").order("aberto_em", { ascending: false }).limit(1).maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+/** Saldo em aberto do cliente (fiado), pra tela oferecer a baixa. */
+export async function saldoClienteNota(clienteId: string | null) {
+  await exigirAcesso(ACESSO);
+  const db = await createClient();
+  return { saldo: clienteId ? await saldoDe(db, clienteId) : 0, caixaAberto: !!(await caixaAbertoId(db)) };
+}
+
+// Depois de autorizada: dá a baixa no saldo e/ou lança no caixa, uma vez só
+// (marca lancado_em antes; consultar de novo não lança duas vezes).
+async function lancarDaNota(db: Db, notaId: string) {
+  const { data: n } = await db
+    .from("nfce_emitidas")
+    .select("id, status, ambiente, modelo, numero, valor, cliente_id, destinatario, baixa_saldo, caixa_forma, lancado_em")
+    .eq("id", notaId)
+    .maybeSingle();
+  if (!n || n.status !== "autorizado" || n.ambiente !== "producao" || n.lancado_em) return null;
+  const baixa = r2(Number(n.baixa_saldo) || 0);
+  const forma = (n.caixa_forma as string | null) || null;
+  if (!(baixa > 0) && !forma) return null;
+  const { data: marcada } = await db.from("nfce_emitidas").update({ lancado_em: new Date().toISOString() }).eq("id", notaId).is("lancado_em", null).select("id").maybeSingle();
+  if (!marcada) return null;
+
+  const rotulo = `${n.modelo === "nfe" ? "NF-e" : "NFC-e"} nº ${n.numero ?? "?"}`;
+  const caixaId = forma ? await caixaAbertoId(db) : null;
+  const avisos: string[] = [];
+  const { data: quem } = await db.auth.getUser();
+  let fiadoId: string | null = null;
+  let movId: string | null = null;
+  if (baixa > 0 && n.cliente_id) {
+    const { data: f } = await db.from("cliente_fiado").insert({
+      cliente_id: n.cliente_id,
+      tipo: "pagamento",
+      valor: baixa,
+      descricao: `Baixa pela ${rotulo}`,
+      forma_pagamento: forma ?? "Nota avulsa",
+      caixa_id: caixaId,
+      criado_por: quem.user?.id ?? null,
+    }).select("id").single();
+    fiadoId = (f?.id as string | undefined) ?? null;
+    if (!fiadoId) avisos.push("A baixa no saldo não gravou. Lance em Fiado.");
+  }
+  if (forma) {
+    if (!caixaId) avisos.push("O caixa fechou antes da nota sair: a entrada no caixa não foi lançada.");
+    else {
+      const { data: m } = await db.from("pdv_caixa_mov").insert({
+        caixa_id: caixaId,
+        tipo: "venda",
+        descricao: `${rotulo} — ${(n.destinatario as string | null) ?? "nota avulsa"}`.slice(0, 200),
+        forma_pagamento: forma,
+        valor: baixa > 0 ? baixa : r2(Number(n.valor) || 0),
+        comanda_id: null,
+        // Com baixa no saldo é acerto de fiado (a venda já contou); sem baixa é venda do dia.
+        recebe_fiado: baixa > 0,
+      }).select("id").single();
+      movId = (m?.id as string | undefined) ?? null;
+      if (!movId) avisos.push("A entrada no caixa não gravou. Lance pelo caixa.");
+    }
+  }
+  await db.from("nfce_emitidas").update({ fiado_id: fiadoId, mov_id: movId }).eq("id", notaId);
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao/caixa/fiado");
+  return avisos.length ? avisos.join(" ") : null;
+}
+
+/** Nota avulsa cancelada: desfaz a baixa e a entrada no caixa (se o caixa ainda está aberto). */
+export async function desfazerLancamentosNota(notaId: string) {
+  await exigirAcesso(["/salao", "/financeiro"]);
+  const db = await createClient();
+  const { data: n } = await db.from("nfce_emitidas").select("status, fiado_id, mov_id").eq("id", notaId).maybeSingle();
+  // Só desfaz de nota que foi mesmo cancelada.
+  if (!n || n.status !== "cancelado") return null;
+  const avisos: string[] = [];
+  if (n.fiado_id) {
+    await db.from("cliente_fiado").delete().eq("id", n.fiado_id as string);
+    avisos.push("A baixa no saldo do cliente foi desfeita.");
+  }
+  if (n.mov_id) {
+    const { data: m } = await db.from("pdv_caixa_mov").select("caixa_id").eq("id", n.mov_id as string).maybeSingle();
+    const { data: cx } = m?.caixa_id ? await db.from("pdv_caixas").select("status").eq("id", m.caixa_id as string).maybeSingle() : { data: null };
+    if (cx?.status === "aberto") {
+      await db.from("pdv_caixa_mov").delete().eq("id", n.mov_id as string);
+      avisos.push("A entrada no caixa foi tirada.");
+    } else {
+      avisos.push("A entrada no caixa ficou, porque aquele caixa já fechou: acerte com uma sangria.");
+    }
+  }
+  await db.from("nfce_emitidas").update({ fiado_id: null, mov_id: null }).eq("id", notaId);
+  revalidatePath("/salao/caixa");
+  revalidatePath("/salao/caixa/fiado");
+  return avisos.length ? avisos.join(" ") : null;
+}
 
 // Espera a NF-e sair da fila do Focus (ela é assíncrona). Até ~30 s.
 async function aguardarNfe(cfg: { token: string; ambiente: FocusAmbiente }, ref: string, primeira: FocusResposta) {
@@ -127,6 +239,21 @@ export async function emitirNotaAvulsa(input: EmitirAvulsa) {
   if (cfg.emissor !== "focusnfe") return { ok: false as const, mensagem: "O emissor da Config fiscal não é o Focus." };
   const ambienteCaixa = (cfg.emissor_ambiente as FocusAmbiente) || "homologacao";
   const ambiente: FocusAmbiente = input.teste ? "homologacao" : ambienteCaixa;
+
+  // Baixa no saldo e entrada no caixa: conferidas ANTES de emitir; nota de teste não mexe em nada.
+  const totalNota = totalLinhas(input.linhas.filter((l) => l.qtd > 0 && l.valorUnit > 0));
+  const baixaSaldo = ambiente === "producao" ? r2(Math.max(0, Number(input.baixaSaldo) || 0)) : 0;
+  const caixaForma = ambiente === "producao" ? ((input.caixaForma ?? "").trim() || null) : null;
+  if (baixaSaldo > 0) {
+    if (!input.dest.clienteId) return { ok: false as const, mensagem: "Pra dar baixa no saldo, escolha o cliente do cadastro." };
+    const saldo = await saldoDe(db, input.dest.clienteId);
+    if (baixaSaldo > saldo + 0.005) return { ok: false as const, mensagem: `A baixa (${baixaSaldo.toFixed(2).replace(".", ",")}) é maior que o saldo em aberto do cliente (${saldo.toFixed(2).replace(".", ",")}).` };
+    if (baixaSaldo > totalNota + 0.005) return { ok: false as const, mensagem: "A baixa no saldo não pode passar do total da nota." };
+  }
+  if (caixaForma) {
+    if (!(await caixaAbertoId(db))) return { ok: false as const, mensagem: "Pra lançar no caixa, o caixa precisa estar aberto. Abra o caixa ou desmarque essa opção." };
+    if (FORA_DO_CAIXA.has(tipoDe(caixaForma, await formasParaTipo()))) return { ok: false as const, mensagem: `"${caixaForma}" não serve pra entrada no caixa. Escolha dinheiro, Pix, cartão ou outra forma.` };
+  }
   const token = input.teste
     ? cfg.emissor_token_homologacao || (ambienteCaixa === "homologacao" ? cfg.emissor_token : "")
     : cfg.emissor_token;
@@ -190,13 +317,17 @@ export async function emitirNotaAvulsa(input: EmitirAvulsa) {
     comanda_ids: input.comandaIds.length ? input.comandaIds : null,
     itens: linhas,
     observacao: input.observacao.trim() || null,
+    baixa_saldo: baixaSaldo,
+    caixa_forma: caixaForma,
   }).select("id").single();
   revalidatePath("/salao/notas-fiscais");
 
   const autorizado = r.status === "autorizado";
+  const aviso = autorizado && gravada?.id ? await lancarDaNota(db, gravada.id as string) : null;
   return {
     ok: autorizado || r.status === "processando_autorizacao",
     autorizado,
+    aviso,
     id: (gravada?.id as string | undefined) ?? null,
     status: r.status ?? null,
     numero: r.numero ?? null,
@@ -225,7 +356,9 @@ export async function consultarNotaAvulsa(id: string) {
     url_danfe: r.urlDanfe ?? null, url_xml: r.urlXml ?? null, mensagem: r.mensagem ?? null,
   }).eq("id", id);
   revalidatePath("/salao/notas-fiscais");
-  return { ok: r.status === "autorizado", status: r.status ?? null, numero: r.numero ?? null, urlDanfe: r.urlDanfe ?? null, mensagem: r.mensagem ?? null };
+  // Autorizou agora: faz a baixa e a entrada no caixa que ficaram combinadas.
+  const aviso = r.status === "autorizado" ? await lancarDaNota(db, id) : null;
+  return { ok: r.status === "autorizado", status: r.status ?? null, numero: r.numero ?? null, urlDanfe: r.urlDanfe ?? null, mensagem: r.mensagem ?? null, aviso };
 }
 
 // Busca de cliente na hora (no banco, em TODOS os clientes — a lista inteira

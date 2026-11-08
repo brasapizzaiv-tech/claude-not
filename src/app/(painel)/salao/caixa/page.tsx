@@ -26,6 +26,7 @@ type Mov = {
   forma_pagamento: string | null;
   valor: number;
   criado_em: string;
+  recebe_fiado: boolean | null;
 };
 
 export default async function CaixaPage({
@@ -106,7 +107,7 @@ export default async function CaixaPage({
   // ---- Caixa aberto: movimentos + resumo ----
   const { data: movRows } = await supabase
     .from("pdv_caixa_mov")
-    .select("id, tipo, descricao, forma_pagamento, valor, criado_em")
+    .select("id, tipo, descricao, forma_pagamento, valor, criado_em, recebe_fiado")
     .eq("caixa_id", caixa.id)
     .order("criado_em", { ascending: false });
   const movs = (movRows as Mov[]) ?? [];
@@ -265,11 +266,14 @@ export default async function CaixaPage({
   let suprimentos = 0;
   let sangrias = 0;
   const semDinheiro = new Map<string, number>();
+  // Acerto de fiado: entra na conferência por forma, mas não é venda nova (BUG-006).
+  let fiadoRecebido = 0;
   for (const m of movs) {
     const v = Number(m.valor);
     if (m.tipo === "venda") {
       const f = m.forma_pagamento || "Outros";
       vendasPorForma.set(f, (vendasPorForma.get(f) || 0) + v);
+      if (m.recebe_fiado) fiadoRecebido += v;
     } else if (m.tipo === "suprimento") suprimentos += v;
     else if (m.tipo === "sangria") sangrias += v;
     // Cortesia / vale-presente (0233): fecham conta sem dinheiro — listados à parte.
@@ -396,6 +400,12 @@ export default async function CaixaPage({
               <span>Total recebido</span>
               <span>{brl(totalVendas)}</span>
             </div>
+            {fiadoRecebido >= 0.01 && (
+              <div className="flex justify-between text-xs text-texto-fraco">
+                <span>dos quais acerto de fiado (não é venda nova)</span>
+                <span>{brl(fiadoRecebido)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-numero text-lg font-semibold tracking-apertada text-texto">
               <span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Dinheiro no caixa</span>
               <span>{brl(dinheiroEmCaixa)}</span>

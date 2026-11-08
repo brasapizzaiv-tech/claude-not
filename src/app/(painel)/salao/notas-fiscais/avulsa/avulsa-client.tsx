@@ -9,7 +9,7 @@ import { BotaoAcao } from "@/components/enviar";
 import { avisar, confirmar } from "@/components/dialogo";
 import { Icone } from "@/components/icone";
 import { FORMAS_NOTA, conferirNota, totalLinhas, type DestNota, type LinhaNota, type ModeloNota } from "@/lib/fiscal/avulsa";
-import { buscarClientesNota, buscarCnpjNota, comprasDoCliente, consultarNotaAvulsa, emitirNotaAvulsa, salvarClienteNota } from "./actions";
+import { buscarClientesNota, buscarCnpjNota, comprasDoCliente, consultarNotaAvulsa, emitirNotaAvulsa, saldoClienteNota, salvarClienteNota } from "./actions";
 
 export type ClienteNota = {
   id: string; nome: string; cpf_cnpj: string | null; ie: string | null; indicador_ie: "1" | "2" | "9" | null;
@@ -49,10 +49,11 @@ const linhaNova = (l?: Partial<LinhaNota>): Linha => ({
 type Resultado = {
   autorizado: boolean; id: string | null; status: string | null; numero: string | null; serie: string | null;
   urlDanfe: string | null; urlXml: string | null; ambiente: string | null; mensagem: string | null; erros: string | null;
+  aviso: string | null;
 };
 
-export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
-  itens: ItemCardapio[]; perfis: PerfilOpcao[]; producao: boolean; podeTeste: boolean;
+export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }: {
+  itens: ItemCardapio[]; perfis: PerfilOpcao[]; producao: boolean; podeTeste: boolean; formasCaixa: string[];
 }) {
   const router = useRouter();
   const [modelo, setModelo] = useState<ModeloNota>("nfe");
@@ -68,8 +69,19 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
   const [comandaIds, setComandaIds] = useState<string[]>([]);
   const [infoPuxar, setInfoPuxar] = useState<string | null>(null);
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  // Depois de autorizada: baixa no saldo do cliente e/ou entrada no caixa (cada uma opcional).
+  const [situacao, setSituacao] = useState<{ saldo: number; caixaAberto: boolean } | null>(null);
+  const [darBaixa, setDarBaixa] = useState(false);
+  const [baixaTxt, setBaixaTxt] = useState("");
+  const [noCaixa, setNoCaixa] = useState(false);
+  const [caixaForma, setCaixaForma] = useState(formasCaixa[0] ?? "");
+  useEffect(() => {
+    let vivo = true;
+    saldoClienteNota(dest.clienteId).then((s) => { if (vivo) setSituacao(s); }).catch(() => { if (vivo) setSituacao(null); });
+    return () => { vivo = false; };
+  }, [dest.clienteId]);
 
-  const setD = (k: keyof DestNota, v: string) => setDest((d) => ({ ...d, [k]: v }));
+  const setD =(k: keyof DestNota, v: string) => setDest((d) => ({ ...d, [k]: v }));
   const itemPorNome = useMemo(() => new Map(itens.map((i) => [i.nome.toLowerCase(), i])), [itens]);
   // Busca no banco (todos os clientes), um instante depois de parar de digitar.
   const [sugestoesCli, setSugestoesCli] = useState<ClienteNota[]>([]);
@@ -85,12 +97,18 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
   const linhasNota: LinhaNota[] = linhas.map(({ itemId, descricao, qtd, valorUnit, perfilId }) => ({ itemId, descricao, qtd, valorUnit, perfilId }));
   const total = totalLinhas(linhasNota);
   const pendencias = conferirNota(modelo, dest, linhasNota);
+  const saldoCli = situacao?.saldo ?? 0;
+  const podeBaixa = !!dest.clienteId && saldoCli > 0.005;
+  const baixaValor = darBaixa && podeBaixa ? Math.round((baixaTxt.trim() ? num(baixaTxt) : Math.min(total, saldoCli)) * 100) / 100 : 0;
+  const vaiNoCaixa = noCaixa && !!caixaForma;
+  const valorNoCaixa = baixaValor > 0 ? baixaValor : total;
 
   function escolherCliente(c: ClienteNota) {
     setDest(destDoCliente(c));
     setBuscaCli("");
     setComandaIds([]);
     setInfoPuxar(null);
+    setBaixaTxt("");
   }
 
   async function buscarReceita() {
@@ -130,11 +148,20 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
 
   async function emitir() {
     if (pendencias.length) { void avisar(pendencias.join("\n")); return; }
+    if (!teste && darBaixa && podeBaixa && (baixaValor <= 0 || baixaValor > saldoCli + 0.005 || baixaValor > total + 0.005)) {
+      void avisar(`A baixa precisa ficar entre R$ 0,01 e ${brl(Math.min(total, saldoCli))} (o menor entre o total da nota e o saldo do cliente).`);
+      return;
+    }
+    if (!teste && vaiNoCaixa && !situacao?.caixaAberto) { void avisar("O caixa está fechado. Abra o caixa ou desmarque \"Lançar no caixa\"."); return; }
     const tipo = modelo === "nfe" ? "NF-e" : "NFC-e";
     const quem = dest.nome.trim() || "consumidor";
+    const depois = teste ? [] : [
+      baixaValor > 0 ? `dá baixa de ${brl(baixaValor)} no saldo do cliente` : "não mexe no saldo do cliente",
+      vaiNoCaixa ? `entra ${brl(valorNoCaixa)} no caixa em ${caixaForma}${baixaValor > 0 ? " (acerto de fiado, não é venda nova)" : " (conta como venda do dia)"}` : "não entra no caixa",
+    ];
     const ok = await confirmar(
       teste ? `Emitir ${tipo} de TESTE (sem valor fiscal) de ${brl(total)} para ${quem}?` : `Emitir ${tipo} de ${brl(total)} para ${quem}?`,
-      { detalhe: teste ? undefined : "Ela vale na SEFAZ. Pra desfazer, só cancelando (até 24 h).", perigo: !teste, okTexto: `Emitir ${tipo}` },
+      { detalhe: teste ? undefined : `Ela vale na SEFAZ. Pra desfazer, só cancelando (até 24 h). Ao autorizar, ${depois.join(" e ")}.`, perigo: !teste, okTexto: `Emitir ${tipo}` },
     );
     if (!ok) return;
     let d = dest;
@@ -144,11 +171,20 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
       d = { ...dest, clienteId: s.id };
       setDest(d);
     }
-    const r = await emitirNotaAvulsa({ modelo, teste, dest: d, linhas: linhasNota, forma, observacao: obs, comandaIds });
-    setResultado({
-      autorizado: !!r.autorizado, id: r.id ?? null, status: r.status ?? null, numero: r.numero ?? null, serie: r.serie ?? null,
-      urlDanfe: r.urlDanfe ?? null, urlXml: r.urlXml ?? null, ambiente: r.ambiente ?? null, mensagem: r.mensagem ?? null, erros: r.erros ?? null,
+    const r = await emitirNotaAvulsa({
+      modelo, teste, dest: d, linhas: linhasNota, forma, observacao: obs, comandaIds,
+      baixaSaldo: teste ? 0 : baixaValor,
+      caixaForma: !teste && vaiNoCaixa ? caixaForma : null,
     });
+    if (!r.ok && !("status" in r)) { void avisar(r.mensagem ?? "Não emitiu."); return; }
+    setResultado({
+      autorizado: "autorizado" in r && !!r.autorizado, id: ("id" in r ? r.id : null) ?? null, status: ("status" in r ? r.status : null) ?? null,
+      numero: ("numero" in r ? r.numero : null) ?? null, serie: ("serie" in r ? r.serie : null) ?? null,
+      urlDanfe: ("urlDanfe" in r ? r.urlDanfe : null) ?? null, urlXml: ("urlXml" in r ? r.urlXml : null) ?? null,
+      ambiente: ("ambiente" in r ? r.ambiente : null) ?? null, mensagem: r.mensagem ?? null, erros: ("erros" in r ? r.erros : null) ?? null,
+      aviso: ("aviso" in r ? r.aviso : null) ?? null,
+    });
+    saldoClienteNota(d.clienteId).then(setSituacao).catch(() => setSituacao(null));
     router.refresh();
   }
 
@@ -156,7 +192,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
     if (!resultado?.id) return;
     const r = await consultarNotaAvulsa(resultado.id);
     if (!r.ok && !r.status) { void avisar(r.mensagem ?? "Não consegui consultar."); return; }
-    setResultado((x) => (x ? { ...x, status: r.status, numero: r.numero, urlDanfe: r.urlDanfe, mensagem: r.mensagem, autorizado: r.status === "autorizado" } : x));
+    setResultado((x) => (x ? { ...x, status: r.status, numero: r.numero, urlDanfe: r.urlDanfe, mensagem: r.mensagem, autorizado: r.status === "autorizado", aviso: ("aviso" in r ? r.aviso : null) ?? x.aviso } : x));
   }
 
   return (
@@ -320,6 +356,52 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
             </label>
           )}
         </div>
+
+        {!teste && (
+          <div className="mt-4 grid gap-3 rounded-controle bg-superficie-suave p-4">
+            <p className="text-sm font-semibold text-texto">Quando a nota for autorizada</p>
+            <div>
+              <label className={`flex min-h-11 items-center gap-2 text-sm ${podeBaixa ? "text-texto" : "text-texto-fraco"}`}>
+                <input type="checkbox" checked={darBaixa && podeBaixa} disabled={!podeBaixa} onChange={(e) => setDarBaixa(e.target.checked)} className="h-5 w-5" />
+                Dar baixa no saldo do cliente
+              </label>
+              <p className="pl-7 text-xs text-texto-suave">
+                {!dest.clienteId ? "Escolha um cliente do cadastro no passo 2."
+                  : podeBaixa ? <>Saldo em aberto: <span className="font-numero font-semibold text-texto">{brl(saldoCli)}</span>. A baixa tira esse valor do que ele deve.</>
+                  : "Esse cliente não tem saldo em aberto."}
+              </p>
+              {darBaixa && podeBaixa && (
+                <label className={`${rotuloCampo} mt-2 block pl-7`}>Valor da baixa
+                  <input value={baixaTxt} onChange={(e) => setBaixaTxt(e.target.value)} inputMode="decimal"
+                    placeholder={Math.min(total, saldoCli).toFixed(2).replace(".", ",")} className={`${campo} mt-1 max-w-48 text-right`} />
+                </label>
+              )}
+            </div>
+            <div>
+              <label className="flex min-h-11 items-center gap-2 text-sm text-texto">
+                <input type="checkbox" checked={noCaixa} onChange={(e) => setNoCaixa(e.target.checked)} className="h-5 w-5" />
+                Lançar no caixa
+              </label>
+              {noCaixa ? (
+                <div className="pl-7">
+                  <label className={`${rotuloCampo} block`}>Recebido em
+                    <select value={caixaForma} onChange={(e) => setCaixaForma(e.target.value)} className={`${campo} mt-1 max-w-64`}>
+                      {formasCaixa.map((f) => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </label>
+                  <p className="mt-1 text-xs text-texto-suave">
+                    Entra <span className="font-numero font-semibold text-texto">{brl(valorNoCaixa)}</span> no caixa aberto
+                    {baixaValor > 0 ? " como acerto de fiado: não conta de novo como venda." : " como venda do dia."}
+                  </p>
+                  {situacao && !situacao.caixaAberto && <p className="mt-1 text-xs font-semibold text-urgente-texto">O caixa está fechado. Abra o caixa antes de emitir.</p>}
+                </div>
+              ) : (
+                <p className="pl-7 text-xs text-texto-suave">A nota não mexe no caixa nem no faturamento.</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-borda pt-4">
           <div>
             <p className="rotulo">Total da nota</p>
@@ -346,6 +428,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste }: {
                 {resultado.urlDanfe && <a href={resultado.urlDanfe} target="_blank" rel="noopener noreferrer" className="btn-principal text-sm">Abrir a nota (PDF)</a>}
                 {resultado.urlXml && <a href={resultado.urlXml} target="_blank" rel="noopener noreferrer" className="btn-secundario text-sm">XML</a>}
               </div>
+              {resultado.aviso && <p className="mt-3 text-sm font-semibold text-urgente-texto">{resultado.aviso}</p>}
             </>
           ) : resultado.status === "processando_autorizacao" ? (
             <>

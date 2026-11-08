@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { listarFormas } from "@/lib/formas-pagamento-server";
 import { AvulsaClient, type ItemCardapio, type PerfilOpcao } from "./avulsa-client";
 
 export const metadata = { title: "Nota avulsa · Notas fiscais" };
@@ -20,6 +21,10 @@ export default async function NotaAvulsaPage() {
   for (const r of (cfgRows as { chave: string; valor: string | null }[]) ?? []) cfg[r.chave] = r.valor ?? "";
   const producao = cfg.emissor_ambiente === "producao";
   const podeTeste = !!cfg.emissor_token_homologacao || !producao;
+  // Formas com que a nota pode entrar no caixa (sem saldo, equipe, cortesia e vale-presente).
+  const formasCaixa = (await listarFormas("caixa"))
+    .filter((f) => !["saldo", "equipe", "cortesia", "vale_presente"].includes(f.tipo))
+    .map((f) => f.nome);
 
   return (
     <div className="w-full px-4 py-5 md:px-[30px] md:py-[26px]">
@@ -35,6 +40,7 @@ export default async function NotaAvulsaPage() {
         perfis={(perfis as PerfilOpcao[]) ?? []}
         producao={producao}
         podeTeste={podeTeste}
+        formasCaixa={formasCaixa}
       />
     </div>
   );
