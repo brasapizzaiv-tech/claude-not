@@ -20,8 +20,8 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 |---|---|---|---|
 | 0 | Preparação e inventário | **concluída (30/10)**; respostas do Rafael em 31/10 (abaixo) | `00-inventario.md` |
 | 1 | Desempenho e lentidão | **concluída (31/10)** | `01-desempenho.md` |
-| 2 | Saúde do código | **concluída (08/11)**; esperando o "seguir" do Rafael | `02-codigo.md` |
-| 3 | Varredura de todas as telas | não começou | `03-telas.md` + `prints/` |
+| 2 | Saúde do código | **concluída (08/11)** | `02-codigo.md` |
+| 3 | Varredura de todas as telas | **concluída (08/11)**; esperando o "seguir" do Rafael | `03-telas.md` + `prints/` (só local) |
 | 4 | Bugs de lógica e dados | não começou | `04-bugs.md` |
 | 5 | Segurança e banco | não começou | `05-seguranca-banco.md` |
 | 6 | Integrações e o que roda fora do navegador | não começou | `06-integracoes.md` |
@@ -64,7 +64,15 @@ nota de R$ 200 no cofre, desconto do funcionário no PDV, e os 9 acertos de fiad
 
 **Etapa 2 concluída em 08/11 à noite.** Relatório em `02-codigo.md` (COD-001 a COD-012). O mais grave é o **COD-002**: as
 NFC-e do caixa declaram pagamento "Dinheiro" mesmo pagas no cartão, Pix ou vale (umas 1.228 das 1.244 notas de 30 dias).
-Esperando o Rafael decidir se corrige antes de seguir. Próxima: **Etapa 3 (varredura das telas)**, só com o "seguir".
+**COD-002 corrigido em 08/11 ~19h (commit 7499bf8, OK do Rafael):** a nota usa os pagamentos da venda; NFC-e de
+homologação autorizada antes de publicar. Falta conferir a 1ª nota real do caixa no cartão (segunda 09/11).
+
+**Etapa 3 concluída em 08/11 ~21h.** Relatório em `03-telas.md` (TEL-001 a TEL-008); prints só neste PC. O login de um
+funcionário mostrou que `/fiscal` (com o token da Focus e o CSC) e `/clientes` abriam pra qualquer pessoa logada:
+**corrigido na hora** com o OK do Rafael (commit 89d91ab + migration 0275, conferido com o mesmo login). Sobram médios
+de tela (janela de fornecedor sem rolagem, erro de hidratação em 6 telas, tela inicial cortada no celular) e contraste.
+Perfis do robô: `<scratchpad>/perfil-robo` (Rafael) e `<scratchpad>/perfil-funcionario` — **apagar no fim da auditoria**.
+Próxima: **Etapa 4 (bugs de lógica e dados)**, só com o "seguir".
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
@@ -82,13 +90,20 @@ Esperando o Rafael decidir se corrige antes de seguir. Próxima: **Etapa 3 (varr
 | `scripts/auditoria/medir-telas.mjs` | Robô (Chrome instalado) que mede cada tela: pronta, TTFB, LCP, clique no menu (RSC), requisições; bloqueia tudo que não é GET |
 | `scripts/auditoria/codigo-morto.mjs` | Arquivos e exports de `src` que ninguém importa (só lê os arquivos) |
 | `scripts/auditoria/migrations-x-banco.mjs` | Migrations do repositório × `public._migrations`, números repetidos, objetos do banco sem migration |
+| `scripts/auditoria/varrer-telas.mjs` | Etapa 3: cada tela em 3 tamanhos × 2 temas, sem login, token inválido e cliques seguros; só GET |
+| `scripts/auditoria/varrer-funcionario.mjs` | Etapa 3: com login de funcionário, abriu × o que as permissões deixam |
+| `scripts/auditoria/conferir-fiscal-funcionario.mjs` | Prova do TEL-001: funcionário não abre `/fiscal` nem lê token/CSC pela API (só lista as chaves) |
 
 ## Achados abertos (contagem por etapa)
 
 Etapa 1: 10 achados (DES-001 a DES-010) — 3 altos (DES-002 /financeiro/banco, DES-006 fotos do /pedir, DES-010 espera de 3,9 s no pagamento com cartão/Pix), 6 médios, 1 baixo. Detalhes no `01-desempenho.md`.
 
-Etapa 2: 12 achados (COD-001 a COD-012) — 1 crítico (COD-002 forma de pagamento da NFC-e), 1 alto (COD-001 `next` e
-dependências), 4 médios, 6 baixos. Detalhes no `02-codigo.md`.
+Etapa 2: 12 achados (COD-001 a COD-012) — 1 crítico (COD-002 forma de pagamento da NFC-e, **corrigido 08/11**), 1 alto
+(COD-001 `next` e dependências), 4 médios, 6 baixos. Detalhes no `02-codigo.md`.
+
+Etapa 3: 8 achados (TEL-001 a TEL-008) — 1 crítico e 1 alto **corrigidos em 08/11** (configuração fiscal e clientes
+abertos a qualquer funcionário), 3 médios (janela sem rolagem, hidratação, início no celular), 3 baixos. Detalhes no
+`03-telas.md`.
 
 A Etapa 0 só registra observações, que viram itens nas etapas certas. Os achados abaixo
 chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando ela começar.

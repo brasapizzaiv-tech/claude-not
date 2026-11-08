@@ -53,6 +53,10 @@ precisa de decisão do Rafael antes da Etapa 3.
 - Esforço: M
 - Risco da correção: médio (mexe na montagem de toda nota do caixa; testar em homologação antes)
 - Depende de: decisão do Rafael (e, se ele quiser, do contador sobre as notas já emitidas).
+- **Corrigido em 08/11 (OK do Rafael; commit `7499bf8`):** `src/lib/fiscal/pagamentos-nota.ts` monta uma linha por forma
+  a partir de `pdv_caixa_mov` (estorno abate, repartido até o total da nota); cartão e Pix com `tipo_integracao` 2,
+  bandeira e autorização do pinpad. Simulação nas 400 últimas notas: 394 passam à forma real, soma sempre igual ao
+  total. NFC-e de homologação autorizada (crédito Mastercard + Pix + item com desconto). Falta a 1ª nota real do caixa.
 
 ### [COD-001] `next` 16.3.0 tem dois avisos críticos de segurança, e outras 4 bibliotecas diretas têm avisos altos
 - Severidade: alto
