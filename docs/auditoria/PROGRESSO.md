@@ -19,8 +19,8 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | # | Etapa | Status | Relatório |
 |---|---|---|---|
 | 0 | Preparação e inventário | **concluída (30/10)**; respostas do Rafael em 31/10 (abaixo) | `00-inventario.md` |
-| 1 | Desempenho e lentidão | **concluída (31/10)**; esperando o "seguir" do Rafael | `01-desempenho.md` |
-| 2 | Saúde do código | não começou | `02-codigo.md` |
+| 1 | Desempenho e lentidão | **concluída (31/10)** | `01-desempenho.md` |
+| 2 | Saúde do código | **concluída (08/11)**; esperando o "seguir" do Rafael | `02-codigo.md` |
 | 3 | Varredura de todas as telas | não começou | `03-telas.md` + `prints/` |
 | 4 | Bugs de lógica e dados | não começou | `04-bugs.md` |
 | 5 | Segurança e banco | não começou | `05-seguranca-banco.md` |
@@ -55,8 +55,16 @@ Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-00
   agente. Riscos que já existiam, para a Etapa 4: a resposta de `pagarSelecao` perdida desfaz o cartão com a venda gravada
   (`receber.tsx`, `cobrar-pinpad.tsx`), e o Pix de teste em `tef-lista.tsx` não passa pela guarda.
   **Publicado em 05/11 ~12h30 (commit 88de779), com o OK do Rafael.** Falta o teste de R$ 1 no pinpad.
-- **BUG-006:** esperando o OK dele.
-- **Baixa pela nota (pedido novo):** ver "Saldo do cliente × nota avulsa" abaixo. Falta combinar e fazer.
+- **BUG-006:** corrigido em 08/11 (ver abaixo).
+- **Baixa pela nota:** feita em 08/11 (ver "Saldo do cliente × nota avulsa" abaixo).
+
+**08/11 (domingo), ~19h:** o Rafael mandou seguir. Etapa 2 começou. Correções fora da ordem feitas de 06 a 08/11, todas com o
+OK dele e publicadas fora do serviço: BUG-006, BUG-008 (nota sem desconto), opções da nota avulsa, baixa do fiado sem caixa,
+nota de R$ 200 no cofre, desconto do funcionário no PDV, e os 9 acertos de fiado falsos tirados do caixa (detalhes abaixo).
+
+**Etapa 2 concluída em 08/11 à noite.** Relatório em `02-codigo.md` (COD-001 a COD-012). O mais grave é o **COD-002**: as
+NFC-e do caixa declaram pagamento "Dinheiro" mesmo pagas no cartão, Pix ou vale (umas 1.228 das 1.244 notas de 30 dias).
+Esperando o Rafael decidir se corrige antes de seguir. Próxima: **Etapa 3 (varredura das telas)**, só com o "seguir".
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
@@ -72,10 +80,15 @@ Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-00
 | `scripts/auditoria/js-por-rota.mjs` | JavaScript de 1ª visita por tela (gzip), a partir do `next build` |
 | `scripts/auditoria/consultas-lentas.mjs` | Top consultas do `pg_stat_statements` (total e média) e planos `EXPLAIN (GENERIC_PLAN)` com RLS |
 | `scripts/auditoria/medir-telas.mjs` | Robô (Chrome instalado) que mede cada tela: pronta, TTFB, LCP, clique no menu (RSC), requisições; bloqueia tudo que não é GET |
+| `scripts/auditoria/codigo-morto.mjs` | Arquivos e exports de `src` que ninguém importa (só lê os arquivos) |
+| `scripts/auditoria/migrations-x-banco.mjs` | Migrations do repositório × `public._migrations`, números repetidos, objetos do banco sem migration |
 
 ## Achados abertos (contagem por etapa)
 
 Etapa 1: 10 achados (DES-001 a DES-010) — 3 altos (DES-002 /financeiro/banco, DES-006 fotos do /pedir, DES-010 espera de 3,9 s no pagamento com cartão/Pix), 6 médios, 1 baixo. Detalhes no `01-desempenho.md`.
+
+Etapa 2: 12 achados (COD-001 a COD-012) — 1 crítico (COD-002 forma de pagamento da NFC-e), 1 alto (COD-001 `next` e
+dependências), 4 médios, 6 baixos. Detalhes no `02-codigo.md`.
 
 A Etapa 0 só registra observações, que viram itens nas etapas certas. Os achados abaixo
 chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando ela começar.
@@ -227,8 +240,35 @@ chegaram pelo uso, antes da etapa deles, e passam pro relatório da etapa quando
 - Esforço: P
 - Risco da correção: baixo
 - Depende de: OK do Rafael.
+- **Corrigido em 08/11 (fora da ordem da auditoria, com o OK do Rafael; commit e47d73e, migration 0274).**
+  `pdv_caixa_mov.recebe_fiado`: o acerto continua na conferência do caixa e no Fechamento Z, mas sai da tela inicial e de
+  `faturamento_sistema_dias`. Os 9 acertos antigos foram marcados. Conferido: 03/11 passou a R$ 4.317,85 (a venda real).
+- **Os 9 acertos não eram dinheiro (Rafael, 08/11):** a Luana usou "Receber" só pra zerar o saldo. Com o OK dele, os 9
+  lançamentos foram tirados do caixa (6 de 03/11, R$ 25.028,06; 3 de 30/09, R$ 2.325,66), com script que só apagava se
+  achasse exatamente essas linhas e esse valor. Os saldos ficaram como ele decidiu: Kern paga ~5 dias úteis depois da nota,
+  Auto Center é troca de serviço, Brasa Hamburgueria paga no dia da nota, "Cortesia Ana e Rafa" é família e amigos. O resumo
+  gravado do Z de 03/11 continua com Pix R$ 25.028,06 (é a foto do que foi impresso). Para não repetir: "Dar baixa sem entrar
+  no caixa" no Fiado (commit 7bcc0ea), com motivo.
+- Fica para depois (Rafael): passar a lançar a cortesia de família e amigos pela forma Cortesia, fora do faturamento.
 
-### Saldo do cliente × nota avulsa (pedido do Rafael, 03/11; ainda não combinado nem feito)
+### [BUG-008] A NFC-e saía com o preço cheio quando a venda tinha desconto
+- Severidade: alto (fiscal)
+- Onde: `emitirNfceCore` em `src/app/(painel)/salao/fiscal-actions.ts` montava os itens pelo preço da comanda e o pagamento
+  pelo total cheio. O desconto do caixa (digitado e 5% do dinheiro), do PDV (incluindo o de funcionário), o cashback e o
+  cupom do delivery não chegavam na nota.
+- O que acontecia: venda de R$ 42 paga R$ 29,40 saía com nota de R$ 42. No cartão e no Pix, com a nota automática, sem
+  ninguém ver.
+- Evidência: verificado por leitura do código em 07/11.
+- **Corrigido em 08/11 (com o OK do Rafael; commits 7a2de88 e 877868c, migration 0273).** `pdv_comandas.desconto_nota`
+  gravado no recebimento (caixa e PDV, com o cashback); a nota soma também `delivery_pedidos.desconto`. O desconto vai em
+  `valor_desconto` de cada item, repartido pelo maior resto (`src/lib/fiscal/desconto-nota.ts`, testes em
+  `scripts/desconto-nota.test.mjs`); pagamento e `nfce_emitidas.valor` ficam no valor pago. Desconto de 100% não emite.
+  Falta: conferir a primeira nota real com desconto. A taxa de entrega continua fora da nota (o Rafael não pediu).
+
+### Saldo do cliente × nota avulsa (pedido do Rafael, 03/11; feito em 08/11)
+**Feito em 08/11 (commit e47d73e, migration 0274):** a nota avulsa tem "Dar baixa no saldo do cliente" (valor até o saldo e o
+total) e "Lançar no caixa" (forma; com baixa vira acerto de fiado, sem baixa é venda do dia). Aplicado uma vez quando a nota
+é autorizada e desfeito se ela for cancelada. Falta o primeiro uso real (nota do Kern no fim do mês). Histórico:
 O que ele pediu: ligar o saldo do cliente às notas avulsas emitidas pra dar baixa e descontar do saldo, e nem toda nota avulsa
 deve contar no caixa. Hoje a única baixa é "Receber" em Fiado, que exige caixa aberto e grava `pdv_caixa_mov` como venda.
 - 03/11: as 3 NF-e do Kern (nº 2, 3 e 4, R$ 18.173,70, de 16 a 31/10) saíram às 12h03-12h12, cada uma num cadastro do Kern.
@@ -236,8 +276,12 @@ deve contar no caixa. Hoje a única baixa é "Receber" em Fiado, que exige caixa
 - Diferença de R$ 4.345,14 entre baixas e notas: débitos sem nota avulsa neste sistema. Cadastro bf3b2e8c: R$ 1.608,00 (3 linhas, 13 a
   15/10). Cadastro 18e6bcf4: R$ 1.416,00 (3 linhas, 13 a 15/10). Cadastro cdb7a95f: R$ 1.321,14 (9 linhas, 22/09 a 15/10). Nesse
   último, os R$ 149,70 de 29/10 entraram na NF-e 4 como linha "Almoços", sem a comanda ligada.
-- Não se sabe ainda se esses Pix entraram mesmo no caixa ou só serviram pra zerar o saldo: é pergunta pro Rafael. O último extrato
-  importado vai até 30/09, então o banco não confirma.
+- Os Pix não entraram (Rafael, 08/11): ver BUG-006.
+
+### Observação para a Etapa 6 (integrações)
+07/11: o PDV não chamava o pinpad porque a única forma de cartão ligada nele era a genérica "Cartão" (tipo `cartao`, sem
+TEF). O Rafael ligou crédito, débito e vale refeição no PDV em Formas de pagamento. Nada no código; vale um aviso no cadastro
+quando uma forma de cartão sem TEF fica ligada num canal com pinpad.
 
 ### [BUG-007] Buffet que sobrou em aberto não tinha como sair da comanda já paga
 
