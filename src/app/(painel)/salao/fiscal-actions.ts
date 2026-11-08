@@ -8,6 +8,7 @@ import { codigoFiscalDoTipo } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { emitirNfce, cancelarNfce, cancelarNfe, type FocusAmbiente, type FocusItem } from "@/lib/fiscal/focus";
 import { repartirDesconto, totalComDesconto } from "@/lib/fiscal/desconto-nota";
+import { pagamentosDaNota, type PagamentoVenda } from "@/lib/fiscal/pagamentos-nota";
 import { desfazerLancamentosNota } from "./notas-fiscais/avulsa/actions";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
@@ -20,16 +21,42 @@ const FORMA_FOCUS: Record<string, string> = {
   "Cartão de credito": "03",
   "Vale refeição": "11", // vale-refeição
   "Vale refeicao": "11",
+  "Pix na máquina": "17",
+  "Cartão": "03",
   "Saldo cliente": "05", // crédito loja (fiado)
+  "Compra da equipe": "05",
 };
 
 // Primeiro o cadastro (o tipo da forma decide), depois o mapa fixo acima;
-// nome desconhecido (ex.: "Dividido") vai como dinheiro, como sempre foi.
+// nome desconhecido vai como dinheiro. "Dividido" (o caixa grava na comanda)
+// não chega mais aqui na nota do caixa: ela usa os pagamentos da venda (COD-002).
 async function codigoFiscalDaForma(nome: string): Promise<string> {
   const n = nome.trim().toLowerCase();
   const f = (await formasParaTipo()).find((x) => x.nome.trim().toLowerCase() === n);
   if (f) return codigoFiscalDoTipo(f.tipo);
-  return FORMA_FOCUS[nome] || "01";
+  return FORMA_FOCUS[nome.trim()] || "01";
+}
+
+// Pagamentos de verdade das comandas da nota (pdv_caixa_mov), já com o código da
+// SEFAZ. Estorno do TEF é venda negativa e abate a forma. Cortesia e vale-presente
+// também fecham conta e entram (como "outros", pelo tipo do cadastro).
+async function pagamentosDasComandas(supabase: ClienteSupabase, ids: string[]): Promise<PagamentoVenda[]> {
+  const { data } = await supabase
+    .from("pdv_caixa_mov")
+    .select("forma_pagamento, valor, bandeira, tef_autorizacao")
+    .or(`comanda_id.in.(${ids.join(",")}),comanda_ids.ov.{${ids.join(",")}}`)
+    .in("tipo", ["venda", "cortesia", "vale_presente"])
+    .limit(500);
+  const linhas = (data as { forma_pagamento: string | null; valor: number; bandeira: string | null; tef_autorizacao: string | null }[]) ?? [];
+  const codigos = new Map<string, string>();
+  const out: PagamentoVenda[] = [];
+  for (const m of linhas) {
+    const nome = (m.forma_pagamento || "").trim();
+    if (!nome) continue;
+    if (!codigos.has(nome)) codigos.set(nome, await codigoFiscalDaForma(nome));
+    out.push({ codigo: codigos.get(nome)!, valor: Number(m.valor) || 0, bandeira: m.bandeira, autorizacao: m.tef_autorizacao });
+  }
+  return out;
 }
 
 async function cfgFiscal(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -212,9 +239,16 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   }
   const liquido = totalComDesconto(total, desconto);
 
-  const forma = await codigoFiscalDaForma((com.forma_pagamento as string) || "");
+  // Formas de pagamento: as da venda de verdade, repartidas até o total da nota
+  // (COD-002). Sem pagamento registrado (venda antiga, pedido pago fora do
+  // caixa), vale a forma da comanda, como antes.
+  let formasPagamento = pagamentosDaNota(await pagamentosDasComandas(supabase, ids), liquido);
+  if (formasPagamento.length === 0) {
+    const forma = await codigoFiscalDaForma((com.forma_pagamento as string) || "");
+    formasPagamento = pagamentosDaNota([{ codigo: forma, valor: liquido }], liquido);
+  }
 
-  const bras = new Date(Date.now() - 3 * 3600 * 1000 - 60 * 1000);
+  const bras =new Date(Date.now() - 3 * 3600 * 1000 - 60 * 1000);
   const iso = bras.toISOString().slice(0, 19) + "-03:00";
   const ref = `cmd-${comandaId.slice(0, 8)}-${Date.now()}`;
 
@@ -235,7 +269,7 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
       ...(docLimpo && nomeDest ? { nome_destinatario: nomeDest } : {}),
       serie: (cfg.nfce_serie || "").trim() || undefined,
       items,
-      formas_pagamento: [{ forma_pagamento: forma, valor_pagamento: liquido.toFixed(2) }],
+      formas_pagamento: formasPagamento,
     },
   );
 

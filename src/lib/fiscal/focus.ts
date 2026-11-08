@@ -37,6 +37,9 @@ export type FocusItem = {
 export type FocusPagamento = {
   forma_pagamento: string; // "01" dinheiro, "03" crédito, "04" débito, "17" Pix...
   valor_pagamento: string;
+  tipo_integracao?: string; // grupo do cartão: "1" integrado, "2" não integrado
+  bandeira_operadora?: string; // tBand da SEFAZ: "01" Visa, "02" Mastercard…
+  numero_autorizacao?: string;
 };
 
 export type FocusNfcePayload = {
