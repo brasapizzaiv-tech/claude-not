@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import * as core from "@/lib/cardapio-dia-core";
 import { kernDoDia, podeEditarMarmita } from "@/lib/marmitas-cardapio";
-import { diaDoCardapio, diaSemanaIso } from "@/lib/dia-cardapio";
+import { addDiasIso, diaDoCardapio, diaSemanaIso } from "@/lib/dia-cardapio";
+import { diasFechados } from "@/lib/feriados-fechados";
 import { empresaAtualId } from "@/lib/empresa";
 import { colabCardapio } from "./actions";
 import { CardapioApp } from "./cardapio-app";
@@ -32,9 +33,12 @@ export default async function CardapioColabPage({
     );
   }
 
-  // Abre já no próximo dia a ser servido (virada 13:30, pula domingo).
-  const dia = /^\d{4}-\d{2}-\d{2}$/.test(diaParam) ? diaParam : diaDoCardapio();
+  // Abre já no próximo dia a ser servido (virada 13:30, pula domingo e feriado fechado).
   const db = createAdminClient() as core.Db;
+  const hojeSP = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const dia = /^\d{4}-\d{2}-\d{2}$/.test(diaParam)
+    ? diaParam
+    : diaDoCardapio(undefined, await diasFechados(db, await empresaAtualId(), hojeSP, addDiasIso(hojeSP, 70)));
   const dow = diaSemanaIso(dia);
   const [cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat, precos] = await Promise.all([
     core.lerCardapioDia(db, dia),

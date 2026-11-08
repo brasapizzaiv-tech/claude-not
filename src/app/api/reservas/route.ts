@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
+import { diasFechados } from "@/lib/feriados-fechados";
 
 // Reservas vindas do site público. A página é estática (public/site), então
 // toda a regra fica aqui: nenhum dado de acesso ao banco aparece no HTML.
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
   );
   if (!ehData(data)) return NextResponse.json({ limites, bloqueios: [], lotacao: {} });
 
-  const [{ data: bloqData }, { data: resData }] = await Promise.all([
+  const [{ data: bloqData }, { data: resData }, fechado] = await Promise.all([
     supabase
       .from("reservas_bloqueios")
       .select("turno, motivo")
@@ -51,7 +52,11 @@ export async function GET(req: NextRequest) {
       .eq("empresa_id", empresaId)
       .eq("data", data)
       .neq("status", "cancelada"),
+    diasFechados(supabase, empresaId, data, data),
   ]);
+  // Feriado com a casa fechada (tela /feriados) fecha o dia todo pras reservas.
+  const bloqueios = [...((bloqData as { turno: string; motivo: string | null }[]) ?? [])];
+  if (fechado.has(data)) bloqueios.push({ turno: "Dia todo", motivo: `Feriado (${fechado.get(data)})` });
 
   const lotacao: Record<string, { reservas: number; pessoas: number }> = {};
   for (const r of (resData as { turno: string; pessoas: number }[]) ?? []) {
@@ -62,7 +67,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     limites,
-    bloqueios: (bloqData as { turno: string; motivo: string | null }[]) ?? [],
+    bloqueios,
     lotacao,
   });
 }
@@ -104,6 +109,7 @@ export async function POST(req: NextRequest) {
     .eq("empresa_id", empresaId)
     .eq("data", data);
   const fechados = ((bloq as { turno: string }[]) ?? []).map((b) => b.turno);
+  if ((await diasFechados(supabase, empresaId, data, data)).has(data)) fechados.push("Dia todo");
   if (fechados.includes("Dia todo") || fechados.includes(turno))
     return NextResponse.json(
       { erro: "Esse horário está fechado para reservas." },

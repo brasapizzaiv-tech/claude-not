@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
+import { diasFechados } from "@/lib/feriados-fechados";
+import { empresaAtualId } from "@/lib/empresa";
 
 // Login unificado: quem está logado no ERP como "dono" é admin das marmitas.
 async function erpDono(): Promise<boolean> {
@@ -52,6 +54,9 @@ type Cfg = {
   colaboradores: { id: string; nome: string; matricula?: string }[];
   // Dias sem marmita (feriados): o app pula esses dias.
   bloqueios: { data: string; motivo: string }[];
+  // Feriados com a casa fechada (tela /feriados). Somam aos bloqueios acima,
+  // mas não são gravados junto: apagar o feriado lá libera aqui (MAR-02).
+  feriados: { data: string; motivo: string }[];
   cardapios: {
     semanas: { id: string; nome: string; dias: Record<string, { pratos: string[]; proteinas: string[]; salada: string }> }[];
     ativo: string | null;
@@ -64,9 +69,11 @@ type Cfg = {
 };
 
 async function getCfg(db: Db): Promise<Cfg> {
-  const [{ data }, { data: excRows }] = await Promise.all([
+  const hoje = agoraBR().data;
+  const [{ data }, { data: excRows }, fechados] = await Promise.all([
     db.from("mkt_config").select("chave, valor"),
-    db.from("marmitas_dia_excecao").select("data, pratos, proteinas, salada").gte("data", addDias(agoraBR().data, -2)),
+    db.from("marmitas_dia_excecao").select("data, pratos, proteinas, salada").gte("data", addDias(hoje, -2)),
+    diasFechados(db as Parameters<typeof diasFechados>[0], await empresaAtualId().catch(() => null), addDias(hoje, -7), addDias(hoje, 120)),
   ]);
   const excecoes: Cfg["excecoes"] = {};
   for (const e of (excRows as { data: string; pratos: unknown; proteinas: unknown; salada: string | null }[]) ?? []) {
@@ -88,12 +95,18 @@ async function getCfg(db: Db): Promise<Cfg> {
     bloqueios: (parseLista(m.bloqueios) as unknown as { data?: string; motivo?: string }[])
       .filter((b) => b && typeof b.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.data))
       .map((b) => ({ data: b.data as string, motivo: String(b.motivo || "").trim() })),
+    feriados: [...fechados].map(([d, nome]) => ({ data: d, motivo: `Feriado (${nome})` })),
     cardapios,
     excecoes,
   };
 }
 function bloqueado(cfg: Cfg, data: string) {
-  return cfg.bloqueios.find((b) => b.data === data) ?? null;
+  return cfg.bloqueios.find((b) => b.data === data) ?? cfg.feriados.find((b) => b.data === data) ?? null;
+}
+// Bloqueios do app + feriados fechados, sem repetir data (pro aviso na tela).
+function todosBloqueios(cfg: Cfg) {
+  const vistos = new Set(cfg.bloqueios.map((b) => b.data));
+  return [...cfg.bloqueios, ...cfg.feriados.filter((f) => !vistos.has(f.data))];
 }
 async function setCfg(db: Db, chave: string, valor: unknown) {
   await db.from("mkt_config").upsert({ chave, valor: String(valor) });
@@ -254,7 +267,7 @@ async function handle(req: NextRequest, rota: string[]) {
     const aberto = !cfg.bloquearAposLimite || dentroJanela;
     const semCardapio = !temCardapio(cfg, alvo);
     // Feriados dos próximos 10 dias, pro aviso na tela do colaborador.
-    const proximosBloqueios = cfg.bloqueios.filter((b) => b.data >= ag.data && b.data <= addDias(ag.data, 10)).sort((a, b) => (a.data < b.data ? -1 : 1));
+    const proximosBloqueios = todosBloqueios(cfg).filter((b) => b.data >= ag.data && b.data <= addDias(ag.data, 10)).sort((a, b) => (a.data < b.data ? -1 : 1));
     return json({ nomeConvenio: cfg.nomeConvenio, filiais: cfg.filiais, horaLimite: cfg.horaLimite, horaAbertura: cfg.horaAbertura, horaEntrega: cfg.horaEntrega, data: alvo, aberto, semCardapio, semana: semanaPara(cfg, alvo)?.nome ?? null, cardapioHoje: resolveCardapioHoje(cfg, alvo), colaboradores: disponiveis, proximosBloqueios });
   }
   if (path === "/api/publico/pedido" && method === "POST") {
@@ -418,9 +431,19 @@ async function handle(req: NextRequest, rota: string[]) {
       const ids = new Set(limpo.map((s) => s.id));
       // Programação por segunda-feira (YYYY-MM-DD → id). Guarda só as últimas 12 semanas.
       const progIn = body?.programacao && typeof body.programacao === "object" ? (body.programacao as Record<string, unknown>) : cfg.cardapios.programacao || {};
-      const programacao: Record<string, string> = {};
+      const completa: Record<string, string> = {};
       for (const [k, v] of Object.entries(progIn)) {
-        if (/^\d{4}-\d{2}-\d{2}$/.test(k) && ids.has(String(v)) && k >= addDias(estaSeg, -84)) programacao[segundaDe(k)] = String(v);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(k) && ids.has(String(v))) completa[segundaDe(k)] = String(v);
+      }
+      const programacao: Record<string, string> = {};
+      for (const [k, v] of Object.entries(completa)) if (k >= addDias(estaSeg, -84)) programacao[k] = v;
+      // A poda das semanas antigas não pode apagar a âncora da rotação (MAR-01 da
+      // auditoria, 08/11/2026): se não sobrou nenhuma até esta semana, ancora a
+      // semana atual com o que a programação COMPLETA dá pra ela — e não com o
+      // "ativo" guardado, que pode estar semanas atrasado.
+      if (!Object.keys(programacao).some((k) => k <= estaSeg) && Object.keys(completa).length) {
+        const atual = semanaPara({ ...cfg, cardapios: { semanas: limpo, ativo: cfg.cardapios.ativo, programacao: completa } }, estaSeg)?.id;
+        if (atual) programacao[estaSeg] = atual;
       }
       // Compatibilidade com o "ativar semana" antigo (manda só `ativo`): vale pra esta semana.
       const ativoBody = typeof body?.ativo === "string" ? body.ativo : null;

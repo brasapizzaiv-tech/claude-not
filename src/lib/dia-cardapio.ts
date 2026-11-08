@@ -37,13 +37,16 @@ export function diaSemanaIso(iso: string): number {
 }
 
 // Data (YYYY-MM-DD) do cardápio que deve estar na tela neste instante.
-export function diaDoCardapio(agora: number | Date = Date.now()): string {
+// `fechados`: dias de feriado com a casa fechada (src/lib/feriados-fechados.ts),
+// pulados como o domingo — na véspera do Natal a TV já mostra o dia 26.
+export function diaDoCardapio(agora: number | Date = Date.now(), fechados?: ReadonlySet<string> | ReadonlyMap<string, unknown>): string {
   const ms = typeof agora === "number" ? agora : agora.getTime();
   const p = partesSP(ms);
   let iso = p.iso;
   const depoisDaVirada = p.hora > VIRADA_HORA || (p.hora === VIRADA_HORA && p.minuto >= VIRADA_MINUTO);
   if (depoisDaVirada) iso = addDiasIso(iso, 1);
-  while (diaSemanaIso(iso) === 0) iso = addDiasIso(iso, 1); // domingo não abre
+  // Domingo não abre; feriado fechado também não. Limite de 62 dias contra laço.
+  for (let n = 0; n < 62 && (diaSemanaIso(iso) === 0 || !!fechados?.has(iso)); n++) iso = addDiasIso(iso, 1);
   return iso;
 }
 

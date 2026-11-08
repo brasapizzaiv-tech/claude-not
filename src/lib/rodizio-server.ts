@@ -5,6 +5,8 @@ import { montarCardapioDia, type CardapioTv, type Db } from "@/lib/cardapio-dia-
 import { apontamentosTv as apontamentosDaRevisao, type ApontamentoTv } from "@/lib/checklists-core";
 import { PRONTO_SOME_SEG, type PedidoRodizio } from "@/lib/rodizio";
 import { somarDias, type Feriado } from "@/lib/feriados";
+import { diasFechados } from "@/lib/feriados-fechados";
+import { empresaAtualId } from "@/lib/empresa";
 import type { Evento } from "@/lib/eventos";
 
 // Fila do rodízio pra TV (cliente administrativo: a TV não tem login).
@@ -133,8 +135,17 @@ export async function aniversariantesMes(): Promise<AniversarianteTv[]> {
 // VALE AGORA (diaDoCardapio: vira às 13:30, pula domingo). Guardado 30 s: a TV
 // pergunta a cada 3 s e isso não muda de segundo em segundo.
 let cardapioCache: { dia: string; em: number; valor: CardapioTv } | null = null;
+// Feriados fechados (pula na virada, como o domingo). Guardado 10 min.
+let fechadosCache: { em: number; valor: Map<string, string> } | null = null;
+async function fechadosTv(agora: number) {
+  if (fechadosCache && agora - fechadosCache.em < 600_000) return fechadosCache.valor;
+  const hoje = new Date(agora).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const valor = await diasFechados(createAdminClient() as Db, await empresaAtualId().catch(() => null), hoje, somarDias(hoje, 70)).catch(() => new Map<string, string>());
+  fechadosCache = { em: agora, valor };
+  return valor;
+}
 export async function cardapioTv(agora = Date.now()): Promise<CardapioTv> {
-  const dia = diaDoCardapio(agora);
+  const dia = diaDoCardapio(agora, await fechadosTv(agora));
   if (cardapioCache && cardapioCache.dia === dia && agora - cardapioCache.em < 30_000) return cardapioCache.valor;
   const valor = await montarCardapioDia(createAdminClient() as Db, dia, await kernDoDia(dia).catch(() => null));
   cardapioCache = { dia, em: agora, valor };
