@@ -65,6 +65,13 @@ test("lista de encomenda só com o que está abaixo do mínimo", () => {
   assert.deepEqual(listaEncomenda({ "200": 40, "10000": 35 }, faixas), { "200": 110 });
 });
 
+test("nota de R$ 200 existe e é nota grande", () => {
+  assert.deepEqual(limpar({ "20000": 3 }), { "20000": 3 });
+  assert.equal(qtdDoValor(20000, "1.000,00"), 5);
+  assert.equal(valorGaveta({ "20000": 2, "10000": 1 }, "grandes"), 500);
+  assert.equal(rotuloDen(20000), "R$ 200");
+});
+
 test("rótulos", () => {
   assert.equal(rotuloDen(10000), "R$ 100");
   assert.equal(rotuloDen(100), "R$ 1");

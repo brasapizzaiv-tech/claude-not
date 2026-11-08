@@ -51,13 +51,13 @@ export type AcoesCofre = {
 
 export const MOEDAS = [5, 10, 25, 50, 100];
 export const NOTAS_TROCO = [200, 500, 1000, 2000];
-export const NOTAS_GRANDES = [5000, 10000];
+export const NOTAS_GRANDES = [5000, 10000, 20000];
 export const DENOMINACOES = [...NOTAS_GRANDES.slice().reverse(), ...NOTAS_TROCO.slice().reverse(), ...MOEDAS.slice().reverse()];
 
 export const GAVETAS: { chave: Gaveta; rotulo: string; centavos: number[] }[] = [
   { chave: "moedas", rotulo: "Moedas", centavos: MOEDAS },
   { chave: "troco", rotulo: "Troco (R$ 2 a R$ 20)", centavos: NOTAS_TROCO },
-  { chave: "grandes", rotulo: "Notas grandes (R$ 50 e R$ 100)", centavos: NOTAS_GRANDES },
+  { chave: "grandes", rotulo: "Notas grandes (R$ 50 a R$ 200)", centavos: NOTAS_GRANDES },
 ];
 
 export const gavetaDe = (c: number): Gaveta => (c <= 100 ? "moedas" : c <= 2000 ? "troco" : "grandes");
