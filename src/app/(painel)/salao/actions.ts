@@ -1895,6 +1895,31 @@ export async function receberFiado(clienteId: string, valor: number, forma: stri
   return { ok: true as const };
 }
 
+// Baixa no fiado SEM entrar no caixa (pedido do Rafael, 08/11/2026): troca de
+// serviço (Auto Center), cortesia de família e amigos, ou outro motivo escrito.
+// Não precisa de caixa aberto e não lança nada em pdv_caixa_mov.
+export async function baixarFiadoSemCaixa(clienteId: string, valor: number, motivo: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const v = Math.round(Number(valor) * 100) / 100;
+  const m = (motivo || "").trim().slice(0, 120);
+  if (!clienteId || !(v > 0)) return { ok: false as const, mensagem: "Valor inválido." };
+  if (m.length < 3) return { ok: false as const, mensagem: "Escreva o motivo da baixa." };
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase.from("cliente_fiado").insert({
+    cliente_id: clienteId,
+    tipo: "pagamento",
+    valor: v,
+    descricao: `Baixa sem caixa: ${m}`,
+    forma_pagamento: "Sem caixa",
+    caixa_id: null,
+    criado_por: userData.user?.id ?? null,
+  });
+  if (error) return { ok: false as const, mensagem: error.message };
+  revalidatePath("/salao/caixa/fiado");
+  return { ok: true as const };
+}
+
 // Frente de caixa: recebe VÁRIAS comandas de uma vez (somadas), com uma ou mais
 // formas de pagamento (split). Cobra só o que falta, marca tudo pago e fecha.
 export async function receberComandas(
