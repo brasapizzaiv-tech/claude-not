@@ -200,6 +200,7 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
 - Evidência: `config_fiscal.nfce_auto = '0'`; última linha em `nfce_pendentes` 31/10 14:20; NFC-e autorizadas por dia:
   26/10 53, 27/10 57, 28/10 77, 29/10 54, 30/10 111, 31/10 56 → 03/11 4, 04/11 3, 05/11 9, 06/11 8, 07/11 5. Conferido.
 - Correção: perguntar ao Rafael. Se não foi ele, religar pelo botão do caixa.
+- **Respondido (Rafael, 08/11): foi ele que desligou, de propósito.** Não é defeito; fica fechado.
 
 ### [FIS-01] Fila da nota: linha presa em "emitindo" e risco de nota em dobro
 - Severidade: médio (latente)
@@ -234,6 +235,8 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
 - Correção: tirar `pdv_comandas.servico` na função (ou guardar a parte do serviço no movimento). Antes: confirmar se a
   planilha antiga (até 31/08) contava os 10%, pra manter a comparação entre meses.
 - Esforço: M · Risco: médio
+- **Respondido (Rafael, 08/11): mantém como está** (o faturamento segue com os 10%). Não é defeito; fica fechado. Quem
+  ler o CMV% precisa saber que a receita inclui o serviço.
 
 ### [FIN-02] Fatura do cartão lança estorno como despesa
 - Severidade: médio (ainda não aconteceu) · Onde: `financeiro/fatura/actions.ts:77,91`; `src/lib/fatura.ts:142`
@@ -324,6 +327,9 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
 - Correção: na poda, manter sempre a âncora mais recente ≤ semana atual (ou gravar antes a âncora calculada pela
   programação completa). Nos dois arquivos. Corrigir antes de 14/12.
 - Esforço: P · Risco: baixo
+- **Corrigido em 08/11 (OK do Rafael; commit `8b9aea9`):** sem âncora depois da poda, a semana atual vem da programação
+  completa. Simulado de 08/12/2026 a 07/06/2027: todas as semanas certas (14/12 = s3, 04/01 = s2). A cópia em
+  `marmitas-cardapio.ts` não poda, não precisou mudar.
 
 ### [MAR-02] Feriado "fecha" em /feriados não bloqueia marmita, reserva nem a virada do cardápio
 - Severidade: médio (com data: 25/12)
@@ -334,6 +340,10 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
   cria o delivery cobrando o Kern; o site aceita reserva de Rodízio em 25/12, 01/01 e 02/01.
 - Correção: ler `feriados` nos três lugares. Paliativo: cadastrar as datas à mão nos dois bloqueios antes de 24/12.
 - Esforço: M · Risco: baixo
+- **Corrigido em 08/11 (OK do Rafael; commit `8b9aea9`):** `src/lib/feriados-fechados.ts` (situação "fecha", períodos
+  abertos dia a dia) usado pelo app das marmitas (soma aos bloqueios digitados, sem gravar junto), pelas reservas (tela
+  e servidor) e pela virada do cardápio (TV e app da equipe). Conferido na produção: `/api/reservas?data=2026-12-25`
+  devolve "Dia todo — Feriado (Natal)"; 23/12 segue livre.
 
 ### [MAR-03] Delivery do Kern pode sair em dobro se a rotina e o botão rodarem juntos
 - Severidade: médio · Onde: `src/lib/kern-delivery.ts:57-103`

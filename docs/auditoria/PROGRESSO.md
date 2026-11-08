@@ -73,10 +73,10 @@ funcionário mostrou que `/fiscal` (com o token da Focus e o CSC) e `/clientes` 
 de tela (janela de fornecedor sem rolagem, erro de hidratação em 6 telas, tela inicial cortada no celular) e contraste.
 Perfis do robô: `<scratchpad>/perfil-robo` (Rafael) e `<scratchpad>/perfil-funcionario` — **apagar no fim da auditoria**.
 **Etapa 4 concluída em 08/11 à noite.** Relatório em `04-bugs.md` (58 achados: 9 altos, 21 médios, 28 baixos), feito
-em 5 frentes paralelas, só leitura; os mais graves conferidos de novo no código. Pedem decisão do Rafael: **FIS-03** (nota
-automática desligada desde 31/10 14:20: foi de propósito?) e **FIN-01** (faturamento conta os 10% do garçom). Com data:
-**MAR-01** (rotação das marmitas do Kern atrasa a partir de 14/12) e **MAR-02** (feriados de 25/12 e 28/12–02/01 não
-bloqueiam marmita nem reserva). Próxima: **Etapa 5 (segurança e banco)**, só com o "seguir".
+em 5 frentes paralelas, só leitura; os mais graves conferidos de novo no código. Decisões do Rafael (08/11): **FIS-03** a nota
+automática foi desligada por ele, de propósito; **FIN-01** o faturamento continua com os 10%. Os dois ficam fechados. Os dois com data,
+**MAR-01** (rotação das marmitas do Kern) e **MAR-02** (feriados não fechavam marmita, reserva nem cardápio), foram
+**corrigidos em 08/11** com o OK dele (commit 8b9aea9). Próxima: **Etapa 5 (segurança e banco)**, só com o "seguir".
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
