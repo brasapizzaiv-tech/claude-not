@@ -26,7 +26,7 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | 5 | Segurança e banco | **concluída (08/11)**; respondida; SEC-01/03/05/12 corrigidos | `05-seguranca-banco.md` |
 | 6 | Integrações e o que roda fora do navegador | **concluída (09/11)**; 4 conferências do Rafael + 2 decisões | `06-integracoes.md` |
 | 7 | Interface, consistência e acessibilidade | **concluída (09/11)**; 2 decisões do Rafael | `07-interface.md` |
-| 8 | Relatório final e plano de correção | não começou | `RELATORIO-FINAL.md` |
+| 8 | Relatório final e plano de correção | **concluída (09/11)**; correções em ondas, cada uma com o OK do Rafael | `RELATORIO-FINAL.md` |
 
 ## Respostas do Rafael à Etapa 0 (31/10)
 
@@ -103,6 +103,17 @@ com [Cancelar] [Salvar]), 13 médios, 20 baixos. Robô novo `scripts/auditoria/a
 09:11–09:24, só GET); o id de exemplo de `/financeiro/caixa/[id]` e `/salao/caixa/movimentos/[id]` estava errado nos
 dois robôs (corrigido e medido de novo). **Decisões:** liberar o zoom em `/pedir` e `/cotar` (ACE-09); site e marmitas
 ficam com identidade própria? Próxima: **Etapa 8 (relatório final e plano de correção)**, só com o "seguir".
+
+**Etapa 8 concluída em 09/11 ~10h.** `RELATORIO-FINAL.md`: 192 achados nas 7 etapas, 14 corrigidos/fechados durante a
+auditoria (mais os BUG-001 a 008), ~178 abertos, nenhum crítico. Plano em 7 ondas: **0** só o Rafael (4 conferências + 5
+decisões + 1ª nota real no cartão), **1** dinheiro e nota (cliques que apagam/cancelam/duplicam), **2** falha calada (tela
+"Saúde do sistema" + agentes novos), **3** segurança (SEC-04 tela por tela, Next.js), **4** velocidade, **5** travas
+antes de ligar delivery próprio/cashback/campanhas/2ª empresa, **6** interface, **7** baixos. **A auditoria terminou;
+daqui pra frente é correção, uma onda por vez, cada uma com o OK do Rafael** (ele pediu em 09/11 que as correções
+ficassem pra conclusão). Perfis do robô ficam até o fim das correções (servem pra conferir) e depois são apagados.
+
+Para retomar a correção numa sessão nova:
+> Leia `docs/auditoria/RELATORIO-FINAL.md` e `docs/auditoria/PROGRESSO.md` e siga a próxima onda de correção aprovada.
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
