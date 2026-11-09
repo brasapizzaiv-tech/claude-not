@@ -41,9 +41,13 @@ function Card({ titulo, valor, cor }: { titulo: string; valor: string; cor?: str
 function badge(status: string) {
   if (status === "autorizado") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300";
   if (status === "cancelado") return "bg-zinc-200 text-texto-suave dark:bg-zinc-800 ";
+  if (status === "enviando" || status === "processando_autorizacao" || status === "cancelando") return "pilula-info";
   return "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300";
 }
-const rotulo = (s: string) => (s === "autorizado" ? "Sucesso" : s === "cancelado" ? "Cancelada" : "Erro");
+// Situações que ainda não são finais (FIS-01/NFE-01/NFE-07): a rotina de
+// conferência pergunta à Focus e atualiza sozinha.
+const EM_ANDAMENTO: Record<string, string> = { enviando: "Enviando", processando_autorizacao: "Processando", cancelando: "Cancelando" };
+const rotulo = (s: string) => (s === "autorizado" ? "Sucesso" : s === "cancelado" ? "Cancelada" : EM_ANDAMENTO[s] ?? "Erro");
 
 export function NotasClient({
   linhas,
@@ -189,7 +193,7 @@ export function NotasClient({
                   {l.urlXml && (
                     <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-3 text-texto-suave hover:underline">XML</a>
                   )}
-                  {l.status === "autorizado" && (
+                  {(l.status === "autorizado" || l.status === "cancelando") && (
                     <button onClick={() => cancelar(l.id)} disabled={proc} className="text-red-500 hover:underline disabled:opacity-50">
                       Cancelar
                     </button>

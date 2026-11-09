@@ -81,6 +81,11 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/whatsapp/") ||
     path.startsWith("/api/rastreio") ||
     path.startsWith("/api/contagem/cron") ||
+    // Conferência das notas na Focus (de 30 em 30 min): a rota confere o CRON_SECRET.
+    path === "/api/fiscal/conferir" ||
+    // Sinal de vida do agente TEF: quem valida é o token do agente. Fora daqui o
+    // POST caía no login e o sinal nunca chegava (PAG-05: tef_status sempre vazio).
+    path.startsWith("/api/tef/") ||
     // Pedido automático da Kern (08:35): a própria rota confere o CRON_SECRET.
     path.startsWith("/api/kern/") ||
     // Batidas do relógio de ponto: quem valida é o token do agente.

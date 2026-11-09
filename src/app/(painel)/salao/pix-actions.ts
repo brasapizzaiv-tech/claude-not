@@ -87,6 +87,12 @@ export async function encerrarPixCaixa(
       .eq("status", "aguardando");
     return { ok: true as const };
   }
+  // Já resolvida (paga pela consulta, confirmada na mão, cancelada antes): não
+  // pergunta ao banco nem cancela lá — isso atrasava o "Pagar" seguinte e podia
+  // remover uma cobrança que o caixa já deu como paga.
+  const { data: reg } = await supabase.from("pix_cobrancas").select("status").eq("txid", txid).maybeSingle();
+  const stReg = (reg as { status: string } | null)?.status;
+  if (stReg && stReg !== "aguardando") return { ok: true as const, ...(stReg === "pago" ? { pago: true } : {}) };
   try {
     const c = await consultarCobrancaPix(txid);
     if (c.pago) {
@@ -178,6 +184,11 @@ export async function estornarPix(txid: string, valor: number, motivo: string) {
   try {
     dev = await devolverPix(e2eid, idDev, v);
   } catch (e) {
+    // Tempo esgotado: o banco pode ter feito a devolução sem a resposta chegar.
+    // Tentar de novo geraria OUTRA devolução (id novo) — então manda conferir antes.
+    if (e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError")) {
+      return { ok: false as const, erro: "O banco demorou pra responder e a devolução PODE ter sido feita. Confira no extrato do Sicoob antes de tentar de novo." };
+    }
     return { ok: false as const, erro: (e instanceof Error ? e.message : String(e)).slice(0, 200) };
   }
 

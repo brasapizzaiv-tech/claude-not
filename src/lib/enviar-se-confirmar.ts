@@ -27,6 +27,8 @@ export function enviarSeConfirmar(
       if (!ok || !form.isConnected) return;
       liberados.add(form);
       form.requestSubmit(botao && (botao as { form?: unknown }).form === form ? botao : undefined);
+      // Se o navegador não enviou (campo inválido), o próximo clique pergunta de novo.
+      setTimeout(() => liberados.delete(form), 0);
     });
   };
 }

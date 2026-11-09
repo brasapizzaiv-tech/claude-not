@@ -30,6 +30,10 @@
     {
       "path": "/api/equipe/avisos",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/fiscal/conferir",
+      "schedule": "10,40 * * * *"
     }
   ]
 }

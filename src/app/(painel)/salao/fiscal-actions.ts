@@ -11,6 +11,7 @@ import { emitirNfce, cancelarNfce, cancelarNfe, type FocusAmbiente, type FocusIt
 import { repartirDesconto, totalComDesconto } from "@/lib/fiscal/desconto-nota";
 import { pagamentosDaNota, type PagamentoVenda } from "@/lib/fiscal/pagamentos-nota";
 import { desfazerLancamentosNota } from "./notas-fiscais/avulsa/actions";
+import { atualizarPelaFocus, type LinhaNota } from "@/lib/fiscal/conferir-notas";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
 const FORMA_FOCUS: Record<string, string> = {
@@ -113,6 +114,18 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   const comandaId = ids[0];
   let docLimpo = (documento || "").replace(/\D/g, "");
   let nomeDest: string | undefined;
+
+  // Nota dessa venda ainda em andamento (enviando agora, ou a SEFAZ processando):
+  // emitir de novo daria duas notas pra mesma venda (FIS-01/NFE-01).
+  const { data: andando } = await supabase
+    .from("nfce_emitidas")
+    .select("id, status, criado_em")
+    .or(`comanda_id.in.(${ids.join(",")}),comanda_ids.ov.{${ids.join(",")}}`)
+    .in("status", ["processando_autorizacao", "enviando"])
+    .gte("criado_em", new Date(Date.now() - 2 * 60_000).toISOString())
+    .limit(1)
+    .maybeSingle();
+  if (andando) return { ok: false, mensagem: "A nota dessa venda está sendo emitida agora. Espere um minuto e confira em Notas fiscais." };
 
   // Já autorizada (pra qualquer uma dessas comandas)? devolve.
   const { data: jaTem } = await supabase
@@ -253,9 +266,47 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
     formasPagamento = pagamentosDaNota([{ codigo: forma, valor: liquido }], liquido);
   }
 
+  // Tentativa anterior que caiu no meio (conexão, função interrompida): a Focus
+  // pode ter autorizado sem a resposta chegar. Pergunta antes de emitir outra —
+  // senão saíam duas notas da mesma venda (FIS-01).
+  const tokenEmissao = { token: cfg.emissor_token, ambiente };
+  const { data: tentativas } = await supabase
+    .from("nfce_emitidas")
+    .select("id, ref, status, mensagem, modelo, ambiente, empresa_id")
+    .or(`comanda_id.in.(${ids.join(",")}),comanda_ids.ov.{${ids.join(",")}}`)
+    .eq("modelo", "nfce")
+    .eq("ambiente", ambiente)
+    .gte("criado_em", new Date(Date.now() - 48 * 3600_000).toISOString())
+    .order("criado_em", { ascending: false })
+    .limit(20);
+  const caidas = ((tentativas as LinhaNota[] | null) ?? [])
+    .filter((t) => t.status === "enviando" || t.status === "processando_autorizacao" || (t.status === "erro" && (t.mensagem ?? "").startsWith("Falha de conexão")))
+    .slice(0, 3);
+  for (const t of caidas) {
+    const a = await atualizarPelaFocus(supabase, t, tokenEmissao);
+    if (!a) return { ok: false, mensagem: "Não consegui confirmar com a Focus se a tentativa anterior saiu. Tente de novo em 1 minuto." };
+    if (a.status === "autorizado") {
+      for (const id of ids) revalidatePath(`/salao/comandas/${id}`);
+      return { ok: true, jaEmitida: true, id: t.id, status: "autorizado", numero: a.numero, chave: a.chave, urlDanfe: a.urlDanfe, mensagem: undefined as string | undefined };
+    }
+    if (a.status === "processando_autorizacao") return { ok: false, mensagem: "A nota dessa venda ainda está em processamento na SEFAZ. Confira em Notas fiscais daqui a alguns minutos." };
+  }
+
   const bras =new Date(Date.now() - 3 * 3600 * 1000 - 60 * 1000);
   const iso = bras.toISOString().slice(0, 19) + "-03:00";
   const ref = `cmd-${comandaId.slice(0, 8)}-${Date.now()}`;
+
+  // Registra a tentativa ANTES de mandar (status "enviando"): se a função cair
+  // no meio, a próxima sabe qual ref perguntar à Focus em vez de emitir outra.
+  const { data: reservada } = await supabase.from("nfce_emitidas").insert({
+    comanda_id: comandaId,
+    comanda_ids: ids,
+    modelo: "nfce",
+    ambiente,
+    ref,
+    status: "enviando",
+    valor: liquido,
+  }).select("id").single();
 
   const r = await emitirNfce(
     { token: cfg.emissor_token, ambiente },
@@ -278,12 +329,7 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
     },
   );
 
-  const { data: gravada } = await supabase.from("nfce_emitidas").insert({
-    comanda_id: comandaId,
-    comanda_ids: ids,
-    modelo: "nfce",
-    ambiente,
-    ref,
+  const resultado = {
     status: r.status ?? (r.ok ? "autorizado" : "erro"),
     numero: r.numero ?? null,
     serie: r.serie ?? null,
@@ -291,8 +337,16 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
     url_danfe: r.urlDanfe ?? null,
     url_xml: r.urlXml ?? null,
     mensagem: r.mensagem ?? null,
-    valor: liquido,
-  }).select("id").single();
+  };
+  let gravada: { id?: string } | null = null;
+  if (reservada?.id) {
+    await supabase.from("nfce_emitidas").update(resultado).eq("id", reservada.id);
+    gravada = { id: reservada.id as string };
+  } else {
+    gravada = (await supabase.from("nfce_emitidas").insert({
+      comanda_id: comandaId, comanda_ids: ids, modelo: "nfce", ambiente, ref, valor: liquido, ...resultado,
+    }).select("id").single()).data;
+  }
 
   for (const id of ids) revalidatePath(`/salao/comandas/${id}`);
   return {
@@ -360,11 +414,11 @@ export async function cancelarNfceEmitida(id: string, justificativa: string) {
 
   const { data: nota } = await supabase
     .from("nfce_emitidas")
-    .select("ref, ambiente, status, modelo, empresa_id")
+    .select("id, ref, ambiente, status, mensagem, modelo, empresa_id, fiado_id, mov_id")
     .eq("id", id)
     .maybeSingle();
   if (!nota) return { ok: false, mensagem: "Nota não encontrada." };
-  if (nota.status !== "autorizado") return { ok: false, mensagem: "Só dá pra cancelar nota autorizada." };
+  if (nota.status !== "autorizado" && nota.status !== "cancelando") return { ok: false, mensagem: "Só dá pra cancelar nota autorizada." };
 
   const cfg = await cfgFiscal(nota.empresa_id as string | null);
   // Nota de teste (homologação) feita com o caixa em produção usa o token de homologação.
@@ -372,10 +426,28 @@ export async function cancelarNfceEmitida(id: string, justificativa: string) {
   const token = amb === "homologacao" && (cfg.emissor_ambiente || "homologacao") !== "homologacao" ? cfg.emissor_token_homologacao : cfg.emissor_token;
   if (!token) return { ok: false, mensagem: "Falta o token do emissor." };
 
+  // Cancelamento que ficou em processamento: pergunta à Focus antes. Se a SEFAZ
+  // já cancelou, só falta desfazer a baixa no saldo/caixa (NFE-07).
+  if (nota.status === "cancelando") {
+    const a = await atualizarPelaFocus(createAdminClient(), { ...(nota as LinhaNota), fiado_id: null, mov_id: null }, { token, ambiente: amb });
+    if (a?.status === "cancelado") {
+      await supabase.from("nfce_emitidas").update({ mensagem: just }).eq("id", id);
+      const aviso = await desfazerLancamentosNota(id);
+      revalidatePath("/salao/notas-fiscais");
+      return { ok: true, status: "cancelado", mensagem: undefined, aviso };
+    }
+    if (a?.status === "cancelando" || !a) return { ok: false, mensagem: "A SEFAZ ainda está processando o cancelamento. Tente de novo em alguns minutos." };
+  }
+
   // NF-e (nota avulsa pra empresa) cancela por outro endereço do Focus.
   const r = await (nota.modelo === "nfe" ? cancelarNfe : cancelarNfce)({ token, ambiente: amb }, nota.ref as string, just);
   let aviso: string | null = null;
-  if (r.ok) {
+  if (r.ok && r.status === "processando_cancelamento") {
+    // A SEFAZ ainda não respondeu: a nota continua valendo até confirmar. A
+    // rotina /api/fiscal/conferir pergunta de novo (NFE-07).
+    await supabase.from("nfce_emitidas").update({ status: "cancelando", mensagem: `Cancelamento enviado, aguardando a SEFAZ (${just})` }).eq("id", id);
+    aviso = "A SEFAZ ainda está processando o cancelamento. A situação da nota atualiza sozinha em até meia hora.";
+  } else if (r.ok) {
     await supabase.from("nfce_emitidas").update({ status: "cancelado", mensagem: just }).eq("id", id);
     // Nota avulsa que deu baixa no saldo ou entrou no caixa: desfaz (migration 0274).
     aviso = await desfazerLancamentosNota(id);

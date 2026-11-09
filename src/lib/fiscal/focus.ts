@@ -82,7 +82,7 @@ type CfgFocus = { token: string; ambiente: FocusAmbiente };
 function montaUrls(amb: FocusAmbiente, r: Record<string, unknown>): { urlDanfe?: string; urlXml?: string } {
   const host = baseUrl(amb);
   const cd = r.caminho_danfe as string | undefined;
-  const cx = r.caminho_xml as string | undefined;
+  const cx = (r.caminho_xml as string | undefined) || (r.caminho_xml_nota_fiscal as string | undefined);
   return {
     urlDanfe: cd ? (cd.startsWith("http") ? cd : host + cd) : undefined,
     urlXml: cx ? (cx.startsWith("http") ? cx : host + cx) : undefined,
@@ -95,7 +95,7 @@ function montaUrls(amb: FocusAmbiente, r: Record<string, unknown>): { urlDanfe?:
 export async function baixarXmlNfce(cfg: CfgFocus, urlDanfeOuXml: string): Promise<string | null> {
   const url = urlDanfeOuXml.replace(/.(html?|pdf)$/i, "");
   try {
-    const resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) } });
+    const resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) }, signal: AbortSignal.timeout(20_000) });
     if (!resp.ok) return null;
     const texto = await resp.text();
     return texto.includes("<infNFe") ? texto : null;
@@ -107,7 +107,7 @@ export async function baixarXmlNfce(cfg: CfgFocus, urlDanfeOuXml: string): Promi
 // Baixa o PDF do DANFE (URL devolvida na emissão) autenticando com o token.
 export async function baixarDanfe(cfg: CfgFocus, urlDanfe: string): Promise<Buffer | null> {
   try {
-    const resp = await fetch(urlDanfe, { headers: { Authorization: authHeader(cfg.token) } });
+    const resp = await fetch(urlDanfe, { headers: { Authorization: authHeader(cfg.token) }, signal: AbortSignal.timeout(20_000) });
     if (!resp.ok) return null;
     return Buffer.from(await resp.arrayBuffer());
   } catch {
@@ -123,10 +123,13 @@ export async function emitirNfce(
   const url = `${baseUrl(cfg.ambiente)}/v2/nfce?ref=${encodeURIComponent(ref)}`;
   let resp: Response;
   try {
+    // Tempo limite (FIS-01): sem ele, a Focus parada prendia a emissão até a
+    // função cair — e a linha da fila ficava "emitindo" pra sempre.
     resp = await fetch(url, {
       method: "POST",
       headers: { Authorization: authHeader(cfg.token), "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(60_000),
     });
   } catch (e) {
     return { ok: false, statusHttp: 0, ref, mensagem: "Falha de conexão com o Focus: " + (e instanceof Error ? e.message : String(e)) };
@@ -156,7 +159,12 @@ export async function emitirNfce(
 
 export async function consultarNfce(cfg: CfgFocus, ref: string): Promise<FocusResposta> {
   const url = `${baseUrl(cfg.ambiente)}/v2/nfce/${encodeURIComponent(ref)}`;
-  const resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) } });
+  let resp: Response;
+  try {
+    resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) }, signal: AbortSignal.timeout(20_000) });
+  } catch (e) {
+    return { ok: false, statusHttp: 0, ref, mensagem: "Falha de conexão com o Focus: " + (e instanceof Error ? e.message : String(e)) };
+  }
   let r: Record<string, unknown> = {};
   try { r = await resp.json(); } catch {}
   const status = r.status as string | undefined;
@@ -177,11 +185,17 @@ export async function consultarNfce(cfg: CfgFocus, ref: string): Promise<FocusRe
 
 export async function cancelarNfce(cfg: CfgFocus, ref: string, justificativa: string): Promise<FocusResposta> {
   const url = `${baseUrl(cfg.ambiente)}/v2/nfce/${encodeURIComponent(ref)}`;
-  const resp = await fetch(url, {
-    method: "DELETE",
-    headers: { Authorization: authHeader(cfg.token), "Content-Type": "application/json" },
-    body: JSON.stringify({ justificativa }),
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: authHeader(cfg.token), "Content-Type": "application/json" },
+      body: JSON.stringify({ justificativa }),
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (e) {
+    return { ok: false, statusHttp: 0, ref, mensagem: "Falha de conexão com o Focus: " + (e instanceof Error ? e.message : String(e)) };
+  }
   let r: Record<string, unknown> = {};
   try { r = await resp.json(); } catch {}
   const status = r.status as string | undefined;
@@ -278,7 +292,7 @@ export async function emitirNfe(cfg: CfgFocus, ref: string, payload: FocusNfePay
 export async function consultarNfe(cfg: CfgFocus, ref: string): Promise<FocusResposta> {
   const url = `${baseUrl(cfg.ambiente)}/v2/nfe/${encodeURIComponent(ref)}`;
   try {
-    const resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) } });
+    const resp = await fetch(url, { headers: { Authorization: authHeader(cfg.token) }, signal: AbortSignal.timeout(20_000) });
     let r: Record<string, unknown> = {};
     try { r = await resp.json(); } catch { /* corpo vazio */ }
     return respostaFocus(cfg.ambiente, ref, resp.status, r, ["autorizado"]);
@@ -289,11 +303,17 @@ export async function consultarNfe(cfg: CfgFocus, ref: string): Promise<FocusRes
 
 export async function cancelarNfe(cfg: CfgFocus, ref: string, justificativa: string): Promise<FocusResposta> {
   const url = `${baseUrl(cfg.ambiente)}/v2/nfe/${encodeURIComponent(ref)}`;
-  const resp = await fetch(url, {
-    method: "DELETE",
-    headers: { Authorization: authHeader(cfg.token), "Content-Type": "application/json" },
-    body: JSON.stringify({ justificativa }),
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: authHeader(cfg.token), "Content-Type": "application/json" },
+      body: JSON.stringify({ justificativa }),
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (e) {
+    return { ok: false, statusHttp: 0, ref, mensagem: "Falha de conexão com o Focus: " + (e instanceof Error ? e.message : String(e)) };
+  }
   let r: Record<string, unknown> = {};
   try { r = await resp.json(); } catch { /* corpo vazio */ }
   return respostaFocus(cfg.ambiente, ref, resp.status, r, ["cancelado", "processando_cancelamento"]);

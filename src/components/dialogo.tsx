@@ -97,13 +97,16 @@ export function Dialogos() {
     // de `start(async () => { await confirmar(...) })` marcava a janela como parte da
     // transição, e o React só desenha a transição quando ela termina — que esperava
     // a resposta da janela que nunca aparecia: botão travado, pergunta invisível.
+    let vivo = true;
     abrirNaTela = (p, r) => {
       setTimeout(() => {
+        // A moldura saiu antes de a janela abrir: responde "não" (nunca "sim" sem ver).
+        if (!vivo) { r(p.tipo === "confirmar" ? false : null); return; }
         if (resolverRef.current) filaRef.current.push({ p, r });
         else mostrar(p, r);
       }, 0);
     };
-    return () => { abrirNaTela = null; };
+    return () => { vivo = false; abrirNaTela = null; };
   }, [mostrar]);
 
   // Esc desiste, Enter confirma. O foco entra no campo ou no botão principal.

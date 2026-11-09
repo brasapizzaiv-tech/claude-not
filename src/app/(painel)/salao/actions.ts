@@ -665,7 +665,9 @@ export async function alternarMarmita(formData: FormData) {
 export async function excluirComanda(formData: FormData) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
-  const id = formData.get("id") as string;
+  const id = String(formData.get("id") ?? "");
+  // O id entra num filtro .or(): só aceita uuid (vírgula/parêntese mudariam o filtro).
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return { ok: false as const, mensagem: "Comanda inválida." };
   const motivo = ((formData.get("motivo") as string) || "").trim();
   if (motivo.length < 3) return { ok: false as const, mensagem: "Informe o motivo (pelo menos 3 letras)." };
 
@@ -676,11 +678,12 @@ export async function excluirComanda(formData: FormData) {
   // Num recebimento de várias comandas, `comanda_id` guarda só a primeira; as
   // outras estão em `comanda_ids`. Olhar só a primeira deixava excluir as outras
   // já pagas (CX-01: 4 casos de 07 a 22/10).
-  const { data: recebidos } = await supabase
+  const { data: recebidos, error: errRecebidos } = await supabase
     .from("pdv_caixa_mov")
     .select("valor, forma_pagamento")
     .or(`comanda_id.eq.${id},comanda_ids.cs.{${id}}`)
     .eq("tipo", "venda");
+  if (errRecebidos) return { ok: false as const, mensagem: "Não consegui conferir os pagamentos da comanda. Tente de novo." };
   const totalRecebido = (recebidos ?? []).reduce((s, m) => s + Number(m.valor), 0);
   if (totalRecebido > 0.005) {
     const formas = [...new Set((recebidos ?? []).map((m) => m.forma_pagamento).filter(Boolean))].join(", ");
@@ -708,7 +711,7 @@ export async function excluirComanda(formData: FormData) {
   if (temPago) {
     return {
       ok: false as const,
-      mensagem: "Esta comanda tem parte já paga no caixa e não pode ser excluída. Se o recebimento foi errado, faça o estorno pelo caixa.",
+      mensagem: "Esta comanda tem parte já paga no caixa e não pode ser excluída. Se o cliente virou buffet livre, use o botão Buffet livre na comanda; se o recebimento foi errado, fale com a gerência.",
     };
   }
   const valor =
@@ -716,8 +719,8 @@ export async function excluirComanda(formData: FormData) {
     (itc ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
   // Apaga primeiro e só registra no log se apagou (antes o log contava como
   // excluída uma comanda que o banco recusou apagar).
-  const { error: errApagar } = await supabase.from("pdv_comandas").delete().eq("id", id);
-  if (errApagar) return { ok: false as const, mensagem: "Não consegui excluir a comanda. Nada foi apagado; tente de novo." };
+  const { data: apagou, error: errApagar } = await supabase.from("pdv_comandas").delete().eq("id", id).select("id");
+  if (errApagar || !apagou?.length) return { ok: false as const, mensagem: "Não consegui excluir a comanda. Nada foi apagado; tente de novo." };
   const { data: userData } = await supabase.auth.getUser();
   await supabase.from("pdv_comandas_excluidas").insert({
     comanda_numero: com?.numero ?? null,
@@ -1265,6 +1268,23 @@ export async function pagarSelecao(
   const conferencia = await conferirFormasEspeciais(supabase, { pagamentos, clienteId: clienteId ?? null, formas: formasT });
   if (!conferencia.ok) return { ok: false as const, mensagem: conferencia.mensagem };
 
+  // Outro caixa recebeu parte DESTA seleção enquanto a tela estava aberta: antes
+  // passava (havia algo a quitar) e o pagamento entrava inteiro, inclusive o das
+  // linhas já pagas. Confere tudo antes de marcar qualquer coisa (revisão do CX-04).
+  {
+    const pedidos = sel.flatMap((s) => s.itemIds);
+    if (pedidos.length > 0) {
+      const { data: jaPagos } = await supabase.from("pdv_comanda_itens").select("id").in("id", pedidos).eq("pago", true);
+      const comBuffet = sel.filter((s) => s.buffet).map((s) => s.comandaId);
+      const { data: buffetsPagos } = comBuffet.length
+        ? await supabase.from("pdv_comandas").select("id").in("id", comBuffet).eq("buffet_pago", true)
+        : { data: [] as { id: string }[] };
+      if ((jaPagos?.length ?? 0) > 0 || (buffetsPagos?.length ?? 0) > 0) {
+        return { ok: false as const, mensagem: "Parte dessa conta já foi recebida (outro caixa?). Nada foi lançado — atualize a tela e confira o que falta." };
+      }
+    }
+  }
+
   // Baixa nos vales ANTES de marcar a conta como paga: sem saldo (ou vencido),
   // nada é lançado. Se a conta não fechar depois, o saldo volta pro vale.
   const baixas = new Map<number, BaixaVale>();
@@ -1616,12 +1636,15 @@ export async function registrarCancelamentoTef(
   // do mesmo cancelamento (tela repetida, nova tentativa) lançavam dois estornos.
   // E sem caixa aberto o cartão JÁ foi cancelado na adquirente: registra assim
   // mesmo (antes ficava "confirmada") e avisa pra lançar o estorno à mão.
-  const { data: marcou } = await supabase
+  const { data: marcou, error: errMarcar } = await supabase
     .from("tef_transacoes")
     .update({ status: "cancelada", mensagem: `Cancelada em ${agora.slice(0, 16).replace("T", " ")} (NSU do cancelamento ${r.nsu ?? "-"})${veioDoCaixa && !caixaId ? " — SEM ESTORNO NO CAIXA (não havia caixa aberto)" : ""}`, atualizado_em: agora })
     .eq("id", transacaoId)
     .eq("status", "confirmada")
     .select("id");
+  // Erro do banco não é "já registrado": joga a exceção pra tela guardar o
+  // cancelamento e tentar de novo (senão o cartão cancelado ficava "confirmada").
+  if (errMarcar) throw new Error("Não consegui gravar o cancelamento agora. Ele fica guardado e é gravado de novo.");
   if (!marcou?.length) return { ok: false as const, mensagem: "Esse cancelamento já tinha sido registrado." };
 
   // Forma de pagamento da venda original (pra o estorno cair na mesma).
@@ -1632,7 +1655,7 @@ export async function registrarCancelamentoTef(
   } else {
     forma = orig.tipo === "debito" ? "Cartão de débito" : orig.tipo === "voucher" ? "Vale refeição" : "Cartão de crédito";
   }
-  const estorno = veioDoCaixa
+  const resEstorno = veioDoCaixa && caixaId
     ? (
         await supabase
           .from("pdv_caixa_mov")
@@ -1646,8 +1669,10 @@ export async function registrarCancelamentoTef(
           })
           .select("id")
           .single()
-      ).data
+      )
     : null;
+  const estorno = resEstorno?.data ?? null;
+  const estornoFalhou = !!resEstorno?.error;
 
   const { data: nova } = await supabase
     .from("tef_transacoes")
@@ -1671,6 +1696,9 @@ export async function registrarCancelamentoTef(
   if (novaId && r.viaCliente.length > 0) await reimprimirTef(novaId);
   revalidatePath("/salao/caixa");
   revalidatePath("/salao/caixa/tef");
+  if (estornoFalhou) {
+    return { ok: true as const, aviso: `O cartão foi cancelado, mas não consegui lançar o estorno no caixa: lance a saída de ${Number(orig.valor).toFixed(2).replace(".", ",")} à mão.` };
+  }
   if (veioDoCaixa && !caixaId) {
     return { ok: true as const, aviso: `O cartão foi cancelado, mas não havia caixa aberto: lance a saída de ${Number(orig.valor).toFixed(2).replace(".", ",")} à mão no próximo caixa.` };
   }

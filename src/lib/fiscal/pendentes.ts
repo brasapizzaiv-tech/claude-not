@@ -22,6 +22,14 @@ export async function processarNfcePendentes(): Promise<ResultadoFila> {
   const admin = createAdminClient();
   const agora = new Date().toISOString();
 
+  // Linha presa em "emitindo" (a função caiu no meio): volta pra fila. É seguro
+  // porque a emissão confere antes na Focus se a tentativa anterior saiu (FIS-01).
+  await admin
+    .from("nfce_pendentes")
+    .update({ status: "aguardando" })
+    .eq("status", "emitindo")
+    .lt("emitir_em", new Date(Date.now() - 15 * 60_000).toISOString());
+
   const { data: vencidas } = await admin
     .from("nfce_pendentes")
     .select("id")

@@ -363,8 +363,9 @@ export function ReceberComandas({
   const podeConfirmar =
     temAlgo &&
     selComandas.length > 0 &&
-    // total zerado (desconto de 100%) fecha sem pagamento nenhum
-    (totalPagar < 0.005 || Math.abs(falta) < 0.01) &&
+    // Total zerado só fecha sem pagamento se não foi por desconto: desconto de
+    // 100% é Cortesia (o servidor recusa, CX-06).
+    ((totalPagar < 0.005 && !(desc > 0)) || (totalPagar >= 0.005 && Math.abs(falta) < 0.01)) &&
     (!usaSaldoCliente || !!clienteSel);
 
   // Busca no servidor enquanto digita (espera 300 ms pra não chamar a cada

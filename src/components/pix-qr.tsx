@@ -70,6 +70,7 @@ export function PixQr({
         const r = await consultarPixCaixa(cob.txid);
         if (!vivo) return;
         if (r.ok && r.pago) {
+          if (atualRef.current) atualRef.current.pago = true;
           setPago(true);
           onPagoRef.current();
           return;
@@ -114,8 +115,9 @@ export function PixQr({
       const r = await encerrarPixCaixa(cob.txid, "cancelado", true).catch(() => null);
       // O cliente pagou enquanto o caixa desistia: recebe como Pix.
       if (r?.pago) {
+        if (atualRef.current) atualRef.current.pago = true;
         setPago(true);
-        void avisar("Esse Pix já tinha caído — a conta foi recebida como Pix.");
+        void avisar("Esse Pix já tinha caído: ele entrou como Pix nesta conta.");
         onPagoRef.current();
         return;
       }
@@ -123,6 +125,7 @@ export function PixQr({
     setCob(null); setSrc(""); setPago(false);
   }
   async function confirmarNaMao() {
+    if (atualRef.current) atualRef.current.pago = true;
     if (cob) await encerrarPixCaixa(cob.txid, "pago").catch(() => {});
     setPago(true);
     onPagoRef.current();
