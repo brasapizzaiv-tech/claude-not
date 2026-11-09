@@ -2,7 +2,7 @@ import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { COOKIE_GARCOM } from "@/lib/garcom-auth";
+import { COOKIE_GARCOM, tokenDoCookieGarcom } from "@/lib/garcom-auth";
 
 // DE QUEM É ESTE ACESSO? (Etapa 1 do multiempresa)
 //
@@ -71,7 +71,8 @@ async function porPerfil(): Promise<string | null> {
 async function porColaborador(): Promise<string | null> {
   try {
     const jar = await cookies();
-    const token = jar.get(COOKIE_GARCOM)?.value ?? "";
+    // Só reconhece a empresa; quem decide o acesso é colaboradorGarcom (assinatura).
+    const token = tokenDoCookieGarcom(jar.get(COOKIE_GARCOM)?.value ?? "");
     if (!token) return null;
     return await empresaDoColaborador(token);
   } catch {

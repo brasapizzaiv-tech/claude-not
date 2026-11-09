@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
-import { COOKIE_GARCOM } from "@/lib/garcom-auth";
+import { COOKIE_GARCOM, valorCookieGarcom } from "@/lib/garcom-auth";
 
 // "Modo garçom" do app pessoal: confere PIN (cookie eu_{token}) e a marcação
 // faz_garcom, grava o cookie do garçom e manda pra /garcom.
@@ -23,7 +23,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   if (!ok) return NextResponse.redirect(`${origem}/eu/${token}?garcom=negado`);
 
   const res = NextResponse.redirect(`${origem}/garcom`);
-  res.cookies.set(COOKIE_GARCOM, token, {
+  res.cookies.set(COOKIE_GARCOM, valorCookieGarcom(token, c!.pin), {
     httpOnly: true,
     sameSite: "lax",
     secure: origem.startsWith("https"),

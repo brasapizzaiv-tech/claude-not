@@ -1,4 +1,4 @@
-import { sessaoGarcom } from "@/lib/garcom-auth";
+import { sessaoGarcom, destinoSemSessaoGarcom } from "@/lib/garcom-auth";
 import { redirect } from "next/navigation";
 import { GarcomPedido, type ItemMenu } from "./garcom-pedido";
 
@@ -16,7 +16,7 @@ export default async function GarcomMesaPage({
   const { comanda: comandaInicial } = await searchParams;
   const mesa = decodeURIComponent(mesaRaw);
   const sessao = await sessaoGarcom();
-  if (!sessao) redirect("/login?next=/garcom");
+  if (!sessao) redirect(await destinoSemSessaoGarcom());
   const supabase = sessao.db;
 
   const [

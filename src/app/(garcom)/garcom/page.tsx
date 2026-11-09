@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Icone } from "@/components/icone";
-import { sessaoGarcom } from "@/lib/garcom-auth";
+import { sessaoGarcom, destinoSemSessaoGarcom } from "@/lib/garcom-auth";
 import { redirect } from "next/navigation";
 import { BuscaComanda } from "./busca";
 
@@ -37,7 +37,7 @@ type Grupo = {
 
 export default async function GarcomPage() {
   const sessao = await sessaoGarcom();
-  if (!sessao) redirect("/login?next=/garcom");
+  if (!sessao) redirect(await destinoSemSessaoGarcom());
   const supabase = sessao.db;
   const [{ data: abertas }, { data: cfgRows }, { data: itRows }] = await Promise.all([
     supabase.from("pdv_comandas").select("id, numero, mesa").eq("status", "aberta").order("numero"),

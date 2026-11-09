@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Enviar } from "@/components/enviar";
 import { notFound } from "next/navigation";
-import { sessaoGarcom } from "@/lib/garcom-auth";
+import { sessaoGarcom, destinoSemSessaoGarcom } from "@/lib/garcom-auth";
 import { redirect } from "next/navigation";
 import { LancarItens } from "@/app/(painel)/salao/comandas/[id]/cliente";
 import type { PizzaOpcao, ComboGrupo } from "@/app/(painel)/salao/comandas/[id]/cliente";
@@ -17,7 +17,7 @@ export default async function GarcomComandaPage({
 }) {
   const { id } = await params;
   const sessao = await sessaoGarcom();
-  if (!sessao) redirect("/login?next=/garcom");
+  if (!sessao) redirect(await destinoSemSessaoGarcom());
   const supabase = sessao.db;
 
   const { data: comanda } = await supabase

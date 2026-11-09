@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
-import { sessaoGarcom } from "@/lib/garcom-auth";
+import { sessaoGarcom, destinoSemSessaoGarcom } from "@/lib/garcom-auth";
 import { SemZoom } from "@/components/sem-zoom";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 import { Dialogos } from "@/components/dialogo";
@@ -30,7 +30,7 @@ export default async function GarcomLayout({ children }: { children: React.React
   // Entra: usuário do sistema com permissão de garçom/salão, ou colaborador
   // marcado como garçom vindo do app pessoal (cookie).
   const s = await sessaoGarcom();
-  if (!s) redirect("/login?next=/garcom");
+  if (!s) redirect(await destinoSemSessaoGarcom());
   if (!s.podeGarcom) redirect("/dashboard");
   // O app do garçom é escuro SEMPRE, e isso é decisão de uso: celular na mão
   // dentro do salão, muitas vezes à noite. Não segue a escolha de tema da

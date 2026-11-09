@@ -6,7 +6,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { COOKIE_GARCOM } from "@/lib/garcom-auth";
+import { COOKIE_GARCOM, valorCookieGarcom } from "@/lib/garcom-auth";
 
 export async function conviteValido(token: string) {
   if (!/^[0-9a-f]{20}$/.test(token)) return null;
@@ -31,15 +31,17 @@ export async function entrarGarcomAvulso(token: string, nomeDigitado: string) {
   // Mesmo nome de um avulso de outra noite: reaproveita (não enche o cadastro).
   const { data: ja } = await admin
     .from("colaboradores")
-    .select("id, token")
+    .select("id, token, pin")
     .eq("empresa_id", conv.empresa_id)
     .ilike("nome", nome)
     .not("garcom_ate", "is", null)
     .limit(1)
     .maybeSingle();
   let colabToken: string;
+  let colabPin: string | null = null;
   if (ja) {
     colabToken = ja.token as string;
+    colabPin = (ja.pin as string | null) ?? null;
     await admin.from("colaboradores").update({ ativo: true, faz_garcom: true, garcom_ate: conv.valido_ate }).eq("id", ja.id);
   } else {
     colabToken = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
@@ -61,7 +63,7 @@ export async function entrarGarcomAvulso(token: string, nomeDigitado: string) {
   const h = await headers();
   const https = (h.get("x-forwarded-proto") ?? "https") === "https";
   const jar = await cookies();
-  jar.set(COOKIE_GARCOM, colabToken, {
+  jar.set(COOKIE_GARCOM, valorCookieGarcom(colabToken, colabPin), {
     httpOnly: true,
     sameSite: "lax",
     secure: https,
