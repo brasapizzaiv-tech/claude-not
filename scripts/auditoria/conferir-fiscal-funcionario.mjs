@@ -13,7 +13,7 @@ const { chromium } = require("playwright-core");
 const ctx = await chromium.launchPersistentContext(perfil, { channel: "chrome", headless: true });
 await ctx.route("**/*", (r) => (["GET", "HEAD", "OPTIONS"].includes(r.request().method()) || new URL(r.request().url()).pathname === "/auth/v1/token" ? r.continue() : r.abort()));
 const page = ctx.pages()[0] ?? (await ctx.newPage());
-for (const rota of ["/fiscal", "/fiscal/perfis", "/formas-pagamento", "/clientes", "/salao/caixa"]) {
+for (const rota of ["/fiscal", "/fiscal/perfis", "/formas-pagamento", "/clientes", "/salao/caixa", "/notas", "/notas/sefaz"]) {
   await page.goto(BASE + rota, { waitUntil: "load", timeout: 45_000 }).catch(() => {});
   console.log(`${rota} → ${new URL(page.url()).pathname}`);
 }
@@ -28,3 +28,6 @@ const chaves = (await r.json()).map((x) => x.chave).sort();
 console.log(`API config_fiscal (funcionário): HTTP ${r.status} · ${chaves.length} chaves`);
 for (const s of ["emissor_token", "emissor_token_homologacao", "csc"]) console.log(`  ${s}: ${chaves.includes(s) ? "AINDA VISÍVEL" : "escondido"}`);
 console.log(`  outras visíveis: ${chaves.filter((c) => !["emissor_token", "emissor_token_homologacao", "csc"].includes(c)).length}`);
+// Certificado A1 (SEC-03, migration 0277): só conta linhas, nunca pede o arquivo.
+const s = await fetch(`${SUPABASE_URL}/rest/v1/config_sefaz?select=id`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${acesso}` } });
+console.log(`API config_sefaz (funcionário): HTTP ${s.status} · ${(await s.json()).length} linha(s) visível(is)`);
