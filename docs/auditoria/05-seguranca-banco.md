@@ -294,7 +294,17 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 | agentes (Bearer) | 64 hex (256 bits) | não | legível por qualquer login | médio (SEC-04) |
 | etiqueta `/e/{uuid}` | uuid | não | dá baixa sem login | baixo (por desenho) |
 
-## O que o Rafael precisa conferir (não dá pra ver daqui)
+## Respostas e conferências (08/11, ~22h)
+
+- **SEC-02: o cadastro aberto foi desligado** pelo Rafael (`/auth/v1/settings` agora devolve `disable_signup: true`).
+- As 3 contas dono são conhecidas (Rafael). O `FICHAS.md` do teimofit é conta de teste (Rafael).
+- Vercel (lista só de nomes, `vercel env ls`): **`CRON_SECRET` existe** em produção → as rotinas estão protegidas.
+  **`WHATSAPP_APP_SECRET` não existe** → o webhook do WhatsApp aceita chamada sem assinatura (SEC-12 vale: dá pra forjar
+  "SAIR" e status). Correção: o Rafael pega o "Chave secreta do app" no painel da Meta (app Motelli → Configurações do
+  app → Básico) e cola na Vercel como `WHATSAPP_APP_SECRET`; depois o webhook passa a recusar sem assinatura.
+- Backup: o Rafael vai conferir.
+
+## O que o Rafael precisava conferir (lista original)
 
 1. **Supabase → Authentication → Sign In / Providers → Email → "Allow new users to sign up": desligar.** (SEC-02)
 2. Vercel → Settings → Environment Variables: `CRON_SECRET`, `WHATSAPP_APP_SECRET`, `RODIZIO_TV_CHAVE` existem em
