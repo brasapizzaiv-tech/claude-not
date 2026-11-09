@@ -27,6 +27,10 @@ Scripts novos desta etapa (só leitura):
 **O mais importante:** COD-002. As NFC-e do caixa saem com a forma de pagamento errada. É problema fiscal e
 precisa de decisão do Rafael antes da Etapa 3.
 
+> **COD-002 CORRIGIDO em 08/11/2026 ~19h** (commit 7499bf8, com o OK do Rafael): a nota usa os pagamentos da venda
+> (`src/lib/fiscal/pagamentos-nota.ts`), com o grupo do cartão quando veio do pinpad. NFC-e de homologação autorizada
+> antes de publicar. Falta conferir a 1ª nota real do caixa no cartão; as notas antigas são conversa com o contador.
+
 ## Achados
 
 ### [COD-002] As NFC-e do caixa saem com pagamento "Dinheiro", mesmo pagas no cartão, Pix ou vale

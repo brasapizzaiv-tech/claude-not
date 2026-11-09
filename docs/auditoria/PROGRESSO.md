@@ -23,8 +23,8 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | 2 | Saúde do código | **concluída (08/11)** | `02-codigo.md` |
 | 3 | Varredura de todas as telas | **concluída (08/11)** | `03-telas.md` + `prints/` (só local) |
 | 4 | Bugs de lógica e dados | **concluída (08/11)** | `04-bugs.md` |
-| 5 | Segurança e banco | **concluída (08/11)**; esperando o Rafael (cadastro aberto + 4 perguntas) | `05-seguranca-banco.md` |
-| 6 | Integrações e o que roda fora do navegador | não começou | `06-integracoes.md` |
+| 5 | Segurança e banco | **concluída (08/11)**; respondida; SEC-01/03/05/12 corrigidos | `05-seguranca-banco.md` |
+| 6 | Integrações e o que roda fora do navegador | **concluída (09/11)**; 4 conferências do Rafael + 2 decisões | `06-integracoes.md` |
 | 7 | Interface, consistência e acessibilidade | não começou | `07-interface.md` |
 | 8 | Relatório final e plano de correção | não começou | `RELATORIO-FINAL.md` |
 
@@ -83,6 +83,17 @@ médios, baixos). O banco separa por empresa mas não por papel; com o cadastro 
 estava entreaberta. **SEC-01 (qualquer login virava dono) corrigido na hora** com o OK do Rafael (migration 0276,
 provado como o funcionário). **Falta o Rafael desligar o cadastro aberto (SEC-02)** e responder: as 3 contas dono, as
 variáveis na Vercel, o backup e o FICHAS.md do teimofit. Próxima: **Etapa 6 (integrações)**, só com o "seguir".
+Respondido em 08/11: cadastro aberto desligado, backup do plano Pro confirmado. Corrigidos com o OK do Rafael, de 08 a
+09/11: SEC-03 (certificado só pro dono, migration 0277), SEC-12 (webhook e rotinas), SEC-05 inteiro (migrations
+0278–0280: PIN com limite de tentativas e embaralhado, chave de acesso no celular, código de uso único). Ver `05-seguranca-banco.md`.
+
+**Etapa 6 concluída em 09/11 (segunda, madrugada).** Relatório em `06-integracoes.md`: 49 achados, 0 críticos, 0 altos,
+18 médios, 31 baixos, em 5 frentes paralelas, só leitura; os principais conferidos de novo no código e no banco. Nada
+quebrado hoje; o padrão é **falha calada** (agente parado, SEFAZ, Sicoob, Meta, Google e relógio não avisam ninguém).
+**O Rafael confere fora do sistema:** extrato da Bin (R$ 48,90 da comanda 246 em 05/11, marcado "desfeito", PAG-01),
+extrato do Sicoob (9 QR "cancelados" que continuavam pagáveis, PAG-02), painel da Focus (62 NFC-e em contingência,
+NFE-01) e teto de cota no Google Cloud (CRN-02). **Decisões:** avisos de WhatsApp pros telefones do Kern (MSG-06) e Pix
+pelo QR do Sicoob × Pix na máquina (0 pelo QR desde 15/10). Próxima: **Etapa 7 (interface)**, só com o "seguir".
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
