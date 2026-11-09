@@ -47,6 +47,7 @@ fornecedor cuja nota não chegou.
 ## Nota fiscal e SEFAZ
 
 ### [NFE-01] O sistema nunca confere a NFC-e depois de emitida; 62 notas em contingência sem confirmação
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: `src/lib/fiscal/focus.ts:157-176` (`consultarNfce` existe e nada chama); `focus.ts:138` (`processando_autorizacao`
   conta como ok); `src/lib/fiscal/pendentes.ts:50-55`; trava contra nota em dobro em `salao/fiscal-actions.ts:118-127`
@@ -117,6 +118,7 @@ fornecedor cuja nota não chegou.
 - Esforço: P · Risco: baixo
 
 ### [NFE-07] Cancelamento marca "cancelado" sem confirmar
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo (nunca usado: 0 notas canceladas)
 - Onde: `focus.ts:178-196`, `:290-300`; `salao/fiscal-actions.ts:376-379`; `notas-fiscais/notas-client.tsx:192` (botão em
   toda nota, mesmo depois dos 30 min da NFC-e)
@@ -124,6 +126,7 @@ fornecedor cuja nota não chegou.
 - Esforço: P · Risco: baixo
 
 ### [NFE-08] O link do XML nunca é guardado nas NFC-e
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `focus.ts:82-90` e `:137` (a NFC-e lê só `caminho_xml`; a NF-e também lê `caminho_xml_nota_fiscal`, `:252-254`)
 - Evidência: 2.818 de 2.818 NFC-e com `url_xml` vazio; as NF-e têm. A impressão funciona por outro caminho.
@@ -138,6 +141,7 @@ Continuam abertos, sem repetir aqui: CX-05, DEL-01, DEL-02, DEL-03, o caso do PC
 teste fora da guarda.
 
 ### [PAG-01] "Desfeita" é deduzida, não vista: R$ 48,90 ficaram no caixa com o cartão marcado como devolvido
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: `src/lib/tef-guarda.ts:206-211` (conferido); `agente-tef/agente.mjs:252-254` e `:263`
 - O que acontece: o agente só responde "nada pendente", sem dizer se confirmou ou desfez. Quando a 1ª tentativa de
@@ -152,6 +156,7 @@ teste fora da guarda.
 - Esforço: M · Risco: médio (versão nova do agente nos 2 PCs)
 
 ### [PAG-02] "Cancelar QR" do Pix só cancela no sistema; o QR continua pagável no banco
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: `src/components/pix-qr.tsx:42-48` (o comentário promete "não sobrar QR fantasma pagável"), `:84-93`, `:103-106`;
   `salao/pix-actions.ts:42`, `:63-72`; `src/lib/pix.ts` não tem chamada de cancelamento (conferido)
@@ -164,6 +169,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [PAG-03] Cancelamento no pinpad acontece antes de conferir se o caixa está aberto
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: `salao/caixa/tef/tef-lista.tsx:94-101`; `salao/actions.ts:1533-1541` e `:1587-1590`
 - O que acontece: o cancelamento vai à adquirente e é confirmado antes de o sistema checar "caixa aberto". Sem caixa
@@ -175,6 +181,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [PAG-04] Chamadas ao Sicoob sem tempo limite podem travar o "Pagar" da mesma aba
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio** (só com o Sicoob lento)
 - Onde: `src/lib/pix.ts:109`, `:182`, `:199`, `:247`; `pix-qr.tsx:64-78` (consulta a cada 3 s, sem esperar a anterior)
 - O que acontece: as ações do servidor rodam uma de cada vez por aba (`node_modules/next/dist/docs/01-app/02-guides/server-actions.md`).
@@ -183,6 +190,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [PAG-05] O sinal de vida do agente TEF nunca chega ao servidor
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `src/lib/supabase/middleware.ts:75-87` (lista pública tem `/api/impressao/`, `/api/balanca/` e `/api/ponto/`,
   mas não `/api/tef/`, conferido); `agente-tef/agente.mjs:389-402`
@@ -224,6 +232,7 @@ teste fora da guarda.
 - Esforço: P · Risco: médio (versão nova do agente)
 
 ### [PAG-10] Pix Sicoob: falhas que não deixam rastro
+- **Corrigido em parte em 09/11/2026 (Onda 1).** Ver `RELATORIO-FINAL.md`.
 - Severidade: baixo
 - Onde: `salao/pix-actions.ts:20-28` (insert da cobrança sem conferir erro), `:124` (id novo de devolução a cada
   clique), `:133-139` (valor devolvido lido e gravado por cima)
@@ -257,6 +266,7 @@ teste fora da guarda.
 - Esforço: P/M · Risco: baixo
 
 ### [AGT-03] O agente de impressão pode travar sem cair, e o painel continua dizendo "conectado"
+- **Corrigido em parte em 09/11/2026 (Onda 1).** Ver `RELATORIO-FINAL.md`.
 - Severidade: **médio** (sem caso comprovado)
 - Onde: `agente-impressao/agente.mjs:154` (`print` sem tempo limite), `:106`, `:120`, `:133` (rede sem tempo limite),
   `:101-104` e `:174-178` (o laço só segue quando a rodada termina), `:180-181` (sinal de vida com relógio próprio);
@@ -266,6 +276,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [AGT-04] Confirmação de "impresso" perdida faz imprimir em dobro
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: `agente-impressao/agente.mjs:118-131` (a baixa está dentro do mesmo `try` do ESC/POS, conferido) e `:93-99`
   (`darBaixa` não confere a resposta)

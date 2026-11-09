@@ -35,6 +35,7 @@ encontrados nesta noite já foram corrigidos (a nota declarando dinheiro, COD-00
 ## Caixa, PDV, comandas e balança
 
 ### [CX-01] Dá pra excluir comanda já paga quando ela não é a primeira de um recebimento conjunto
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto**
 - Onde: `src/app/(painel)/salao/actions.ts:676-690` (`excluirComanda`)
 - O que acontece: a trava só procura pagamento com `comanda_id = id`. Num recebimento de várias comandas,
@@ -67,6 +68,7 @@ encontrados nesta noite já foram corrigidos (a nota declarando dinheiro, COD-00
 - Esforço: M · Risco: baixo
 
 ### [CX-03] Saldo cliente e Compra da equipe são lançados antes de saber se havia algo a receber
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio
 - Onde: `salao/actions.ts` — `lancarFormasEspeciais` roda antes da checagem `quitadosAgora === 0`
 - O que acontece: com a tela desatualizada ou outro caixa recebendo junto, o fiado (ou a retirada do funcionário) fica
@@ -76,6 +78,7 @@ encontrados nesta noite já foram corrigidos (a nota declarando dinheiro, COD-00
 - Esforço: M · Risco: médio
 
 ### [CX-04] Dois caixas recebendo a mesma conta ao mesmo tempo lançam duas vezes
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio
 - Onde: `pagarSelecao` — lê `pago` e faz update sem `.eq("pago", false)`
 - O que acontece: duas chamadas simultâneas passam as duas. No mesmo caixa o clique duplo já é barrado. Os 6 pares de
@@ -84,12 +87,14 @@ encontrados nesta noite já foram corrigidos (a nota declarando dinheiro, COD-00
 - Esforço: P · Risco: baixo
 
 ### [CX-05] Resposta perdida depois de gravar: o cartão é desfeito e a venda fica como "cartão" sem ter sido cobrada
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio (suspeita apoiada no código; já anotada na Etapa 1)
 - Onde: `salao/caixa/receber.tsx:554-560`
 - Correção: chave de recebimento (idempotência); no erro, perguntar ao servidor se gravou antes de desfazer.
 - Esforço: M · Risco: médio
 
 ### [CX-06] Desconto de 100% no caixa fecha a comanda sem pagamento e sem motivo
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio
 - Onde: `receber.tsx:366-367`; `pagarSelecao` não valida desconto nem a soma dos pagamentos contra o devido
 - O que acontece: o PDV recusa (manda usar Cortesia), o caixa do salão não. Zero casos desde 01/10. Relacionado: #240
@@ -203,6 +208,7 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
 - **Respondido (Rafael, 08/11): foi ele que desligou, de propósito.** Não é defeito; fica fechado.
 
 ### [FIS-01] Fila da nota: linha presa em "emitindo" e risco de nota em dobro
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio (latente)
 - Onde: `src/lib/fiscal/pendentes.ts:39-85`; `caixa/pendentes-actions.ts:43-52`; `fiscal-actions.ts` (ref nova a cada
   tentativa, trava só em "autorizado"); `focus.ts` (fetch sem timeout)
@@ -239,16 +245,19 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
   ler o CMV% precisa saber que a receita inclui o serviço.
 
 ### [FIN-02] Fatura do cartão lança estorno como despesa
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio (ainda não aconteceu) · Onde: `financeiro/fatura/actions.ts:77,91`; `src/lib/fatura.ts:142`
 - `Math.abs` transforma crédito em gasto: compra de 100 estornada vira 200 de despesa. Manter o sinal e barrar a mesma
   fatura lançada duas vezes. Esforço P.
 
 ### [FIN-03] Desfazer a conciliação deixa o lançamento do extrato órfão (e gerar de novo duplica)
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio · Onde: `financeiro/banco/actions.ts:99-181, 267-284`
 - Evidência: lançamento `53fe514a` (R$ 2.000, 21/09) idêntico à transação `4d2c849a`, que está sem vínculo. Duplo clique
   em "gerar" também cria duas despesas. Ao desconciliar, perguntar se apaga; em gerar, sair se já tem lançamento.
 
 ### [FIN-04] CMV conta a compra pela data de emissão; a regra da casa é a entrada
+- **Decidido pelo Rafael (09/11/2026): o CMV conta pela data de EMISSÃO** (como já calculava). A data de entrada é só da contagem/consumo. Fica fechado.
 - Severidade: médio · Onde: `financeiro/cmv/page.tsx:185-190` (a regra está em `notas/actions.ts:426-433`)
 - 32 de 270 notas desde set/2026 (R$ 38.693,82) caem em semana diferente entre emissão e entrada. Confirmar qual vale.
 
@@ -264,6 +273,7 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
 ## Compras, estoque e equipe
 
 ### [EST-01] Salvar ou finalizar a contagem no painel apaga ou zera o que o contador gravou pelo link
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto**
 - Onde: `contagens/actions.ts:63-74` e `contagens/[id]/contar.tsx:113-141, 167-170`. Conferido no código.
 - O que acontece: o painel manda todos os produtos; o que não está com valor **na tela aberta** é apagado de
@@ -274,6 +284,7 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
 - Esforço: M · Risco: médio
 
 ### [EST-02] "Remover" contagem: um clique, sem confirmação, apaga até contagem finalizada
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto**
 - Onde: `contagens/page.tsx:111-118` (botão direto); `contagens/actions.ts:99-104` (sem `exigirAcesso`, erro ignorado).
   Conferido no código.
@@ -284,21 +295,25 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
 - Esforço: P · Risco: baixo
 
 ### [EST-03] Link de contagem ainda grava em contagem finalizada
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio · Onde: função `contar_salvar` (não confere `status`); só a tela bloqueia.
 - Aba velha muda contagem já fechada (que entrou no CMV). Recusar no banco, como já é feito no prazo da cotação.
 
 ### [EQP-01] Acerto da semana: o adiantamento que a tela mostra não é o que o servidor desconta
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio · Onde: `colaboradores/semana/semana.tsx:387-395` × `semana/actions.ts:175-188, 195`
 - A tela desconta `min(adiantamentos abertos, valor da semana)`; o servidor só desconta adiantamentos inteiros e para no
   primeiro que não cabe. Ex.: adiantamentos de 100 e 200, semana de 250: a tela mostra "em mãos R$ 0", o servidor desconta
   só 100. Pagando pelo que a tela mostrou, a pessoa perde R$ 150. Ainda não aconteceu (2 adiantamentos, ambos certos).
 
 ### [EQP-02] O 10% de semana já paga muda se mexerem em "recebe 10%" ou no peso de alguém ativo
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio · Onde: `semana.tsx:240-245, 258`; `semana/page.tsx:59-61`
 - A divisão de cada noite usa a configuração de hoje; a tela oferece "Lançar diferença" a todos e pode pagar duas vezes.
   Guardar a divisão no momento do acerto.
 
 ### [EQP-03] "Preencher com a escala fixa" tira os dois turnos quando a folga é de um turno só
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio · Onde: `semana/actions.ts:116-119` (ignora `grupo_alvo`)
 - 22 folgas aprovadas têm `grupo_alvo`; em 2 de almoço a noite foi remarcada à mão depois. Sem isso a pessoa perde a
   diária da noite e a parte do 10%.

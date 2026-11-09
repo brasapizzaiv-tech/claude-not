@@ -215,6 +215,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 - Esforço: P · Risco: baixo
 
 ### [SEC-13] Link de contagem antigo reescreve contagem finalizada e aceita qualquer produto
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio (= EST-03 da Etapa 4, agora com mais detalhe)
 - `contar_salvar` não olha o status nem as categorias do link: 36 dos 39 links apontam pra contagem finalizada e não
   expiram; o link aceita qualquer produto ativo (de outra categoria e de outra empresa). Muda o CMV de semanas passadas.

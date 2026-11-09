@@ -195,6 +195,26 @@ Alguns baixos valem antes, se der tempo:
 
 ---
 
+## Andamento das correções
+
+### Onda 1 — feita em 09/11/2026 (com o OK do Rafael, "pode começar" e "pode fazer tbm")
+
+| Lote | Commit | O que corrigiu | No ar |
+|---|---|---|---|
+| A | `41cfaa3`, `ccade6e` | ACE-01, ACE-02 (+ TXT-03 nessas ações), TXT-01, EST-02. Peças novas: `enviarSeConfirmar` (`src/lib/enviar-se-confirmar.ts`, com testes), `FormConfirmado`; a caixa de pergunta abre fora da transição (o "Estornar" travava) | 09/11 11:35, conferido pelo robô sem gravar |
+| B1 | `e5a2737` | CX-01, CX-03, CX-04, CX-06, PAG-01 ("a conferir" em Cartões (TEF)), PAG-02, PAG-03, PAG-04, PAG-10 (parte) | a publicar |
+| B2 | `b25e8b2` | NFE-01 (rotina `/api/fiscal/conferir`, migration 0281), FIS-01, NFE-07, NFE-08, PAG-05, e os 9 pontos da revisão independente do B1 | a publicar |
+| C | `85beb45` | EST-01, EST-03 / SEC-13 (migration 0282) | a publicar |
+| D | `cb677a7` | EQP-01, EQP-03, FIN-02, FIN-03 | a publicar |
+| E | `9338d02` | AGT-04 e parte do AGT-03: agente de impressão 1.2.1 (instalar no PC central) | a instalar |
+| — | `baa29fe` | CX-05 (resposta perdida depois de gravar não desfaz o cartão; caixa, PDV e delivery) | a publicar |
+| — | `d78c71e` | EQP-02 (divisão do 10% congelada no pagamento, migration 0283); FIN-04 decidido: CMV pela emissão | a publicar |
+
+Testes: 14 testes novos (`scripts/enviar-se-confirmar.test.mjs`, `scripts/conferir-notas.test.mjs`); 170 de 172 passam
+(as 2 falhas são as antigas do delivery, COD-008). Migrations 0281, 0282 e 0283 ensaiadas em transação desfeita.
+
+Ficou de fora da Onda 1: nada dos itens listados. Depende do Rafael: conferir os extratos (Onda 0) e instalar o agente 1.2.1.
+
 ## Como vai ser a correção
 
 1. Você escolhe a onda (recomendo **Onda 0 hoje** e **Onda 1** como primeira de código).

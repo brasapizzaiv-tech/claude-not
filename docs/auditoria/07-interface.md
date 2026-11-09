@@ -77,6 +77,7 @@ recebimento reais: as duas abrem, 0 violações no computador; no celular escuro
 ## Ações que apagam e textos que enganam (os altos)
 
 ### [ACE-01] A pergunta "tem certeza?" aparece, mas a exclusão já aconteceu
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto**
 - Onde: `src/app/(painel)/conferencia/excluir.tsx:12-18` ("Apagar o pedido… remove o lançamento no financeiro") e
   `src/app/(painel)/categorias/client.tsx:148-155` (conferidos)
@@ -89,6 +90,7 @@ recebimento reais: as duas abrem, 0 violações no computador; no celular escuro
 - Esforço: P · Risco: baixo
 
 ### [ACE-02] Ações de dinheiro, nota e pessoas que apagam com um clique
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto** (as 3 primeiras); médio (o resto)
 - Onde, do mais grave:
   - **Estornar nota** — `notas/nota-acoes.tsx:19-23` e `:53` (conferido), `notas/[id]/lancamento.tsx:443`. O
@@ -108,6 +110,7 @@ recebimento reais: as duas abrem, 0 violações no computador; no celular escuro
 - Esforço: P · Risco: baixo
 
 ### [TXT-01] "Cancelar" com dois sentidos na mesma janela, inclusive no cancelamento da NFC-e
+- **Corrigido em 09/11/2026 (Onda 1 da correção).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto**
 - Onde: `salao/notas-fiscais/notas-client.tsx:76-80` (conferido): o botão "Cancelar" da nota abre "Motivo do
   cancelamento" com **[Cancelar] [Salvar]** (`components/dialogo.tsx:170`, `:185`: o `perguntar()` não aceita outro
@@ -414,6 +417,7 @@ escuro**; violet, indigo e pink nem são remapeados.
 - Esforço: M · Risco: baixo
 
 ### [TXT-03] Gravação que falha em silêncio
+- **Corrigido em parte em 09/11/2026 (Onda 1).** Ver `RELATORIO-FINAL.md`.
 - Severidade: **médio**
 - Onde: ~379 `await supabase.from(..).delete/update/insert/upsert(...)` com o resultado descartado em 77 arquivos (contra
   ~173 que guardam o `error`). Os que importam: `excluirFechamento` (`financeiro/caixa/actions.ts:128`),
