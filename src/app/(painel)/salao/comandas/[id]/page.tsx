@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Enviar } from "@/components/enviar";
+import { FormConfirmado } from "@/components/form-confirmado";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../../util";
@@ -219,13 +220,13 @@ export default async function ComandaPage({
                     </span>
                     <span className="font-numero text-[15px] font-bold text-texto">{moeda(Number(i.qtd) * Number(i.preco_unit))}</span>
                     {!fechada ? (
-                      <form action={removerItemComanda} className="inline">
+                      <FormConfirmado action={removerItemComanda} className="inline" pergunta={`Tirar ${i.descricao} da comanda?`} detalhe="Fica registrado em Cancelados." okTexto="Tirar o item">
                         <input type="hidden" name="id" value={i.id} />
                         <input type="hidden" name="comanda_id" value={comanda.id} />
                         <Enviar className="flex h-11 w-11 items-center justify-center rounded-controle text-texto-fraco hover:bg-urgente-fundo hover:text-urgente-texto" aria-label={`Tirar ${i.descricao}`}>
                           ×
                         </Enviar>
-                      </form>
+                      </FormConfirmado>
                     ) : <span className="w-11" />}
                   </li>
                   )),

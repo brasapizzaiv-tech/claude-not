@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
-import { confirmar } from "@/components/dialogo";
+import { confirmar, enviarSeConfirmar } from "@/components/dialogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DreCategoria } from "@/lib/types";
@@ -145,16 +145,14 @@ export function CategoriasClient({
                     <form
                       action={excluirCategoria}
                       className="inline"
-                      onSubmit={async (e) => {
-                        if (
-                          c.qtdProdutos > 0 &&
-                          !await confirmar(
-                            `"${c.nome}" tem ${c.qtdProdutos} produto(s). Eles ficarão sem categoria. Remover mesmo assim?`,
-                          )
-                        ) {
-                          e.preventDefault();
-                        }
-                      }}
+                      onSubmit={enviarSeConfirmar(() =>
+                        c.qtdProdutos > 0
+                          ? confirmar(
+                              `"${c.nome}" tem ${c.qtdProdutos} produto(s). Eles ficarão sem categoria. Remover mesmo assim?`,
+                              { perigo: true, okTexto: "Remover a categoria" },
+                            )
+                          : true,
+                      )}
                     >
                       <input type="hidden" name="id" value={c.id} />
                       <Enviar

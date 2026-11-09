@@ -127,7 +127,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
             </button>
           )}
           {!cancelado && p.status !== "entregue" && (
-            <button onClick={async () => { const m = await perguntar("Motivo do cancelamento (o cliente vai ver):", ""); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="btn-secundario text-sm !text-urgente-texto">Cancelar</button>
+            <button onClick={async () => { const m = await perguntar("Motivo do cancelamento (o cliente vai ver):", "", { perigo: true, okTexto: "Cancelar o pedido", obrigatorio: true }); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="btn-secundario text-sm !text-urgente-texto">Cancelar</button>
           )}
         </div>
       </div>

@@ -146,7 +146,7 @@ export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: A
                       Chegou
                     </button>
                     <BotaoAcao className="btn-secundario text-sm" aoClicar={async () => {
-                      if (!(await confirmar("Cancelar essa encomenda?"))) return;
+                      if (!(await confirmar("Cancelar essa encomenda?", { perigo: true, okTexto: "Cancelar a encomenda" }))) return;
                       const r = await acoes.cancelarEncomenda(p.id);
                       if (!r.ok) return avisar(r.mensagem);
                       router.refresh();

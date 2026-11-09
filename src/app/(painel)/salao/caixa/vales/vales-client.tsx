@@ -150,13 +150,13 @@ function Detalhe({ v, hoje, onEntregar }: { v: ValeLinha; hoje: string; onEntreg
     if (!r.ok) void avisar(r.mensagem); else router.refresh();
   }
   async function cancelar() {
-    const motivo = await perguntar(`Cancelar o vale ${formatarCodigo(v.codigo)}? Ele para de valer no caixa.`, "", { detalhe: "Escreva o motivo.", obrigatorio: true });
+    const motivo = await perguntar(`Cancelar o vale ${formatarCodigo(v.codigo)}? Ele para de valer no caixa.`, "", { detalhe: "Escreva o motivo.", obrigatorio: true, perigo: true, okTexto: "Cancelar o vale" });
     if (!motivo) return;
     const r = await cancelarVale(v.id, motivo);
     if (!r.ok) void avisar(r.mensagem); else router.refresh();
   }
   async function devolver(usoId: string, valor: number) {
-    const motivo = await perguntar(`Devolver ${brl(valor)} ao saldo do vale?`, "", { detalhe: "Use quando a baixa foi feita por engano. O movimento do caixa não muda. Escreva o motivo.", obrigatorio: true });
+    const motivo = await perguntar(`Devolver ${brl(valor)} ao saldo do vale?`, "", { detalhe: "Use quando a baixa foi feita por engano. O movimento do caixa não muda. Escreva o motivo.", obrigatorio: true, okTexto: "Devolver ao vale" });
     if (!motivo) return;
     const r = await estornarUsoVale(usoId, motivo);
     if (!r.ok) void avisar(r.mensagem); else router.refresh();

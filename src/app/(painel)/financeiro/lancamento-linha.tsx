@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Combobox } from "@/components/combobox";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
+import { avisar, confirmar } from "@/components/dialogo";
 import { editarLancamento, excluirLancamento } from "./actions";
 
 const moeda = (n: number) =>
@@ -137,9 +138,16 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
             <button
               onClick={() =>
                 start(async () => {
+                  if (!(await confirmar("Remover este lançamento?", {
+                    detalhe: "Ele some do financeiro de vez.",
+                    perigo: true,
+                    okTexto: "Remover",
+                  })))
+                    return;
                   const fd = new FormData();
                   fd.set("id", l.id);
-                  await excluirLancamento(fd);
+                  const r = await excluirLancamento(fd);
+                  if (!r.ok) { void avisar(r.mensagem); return; }
                   router.refresh();
                 })
               }

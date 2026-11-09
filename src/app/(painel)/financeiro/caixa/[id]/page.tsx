@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { Enviar } from "@/components/enviar";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { calcFechamento, type FormaLinha } from "@/lib/caixa";
-import { excluirFechamento } from "../actions";
+import { ExcluirFechamento } from "./excluir";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -98,12 +97,7 @@ export default async function FechamentoRelatorio({
           >
             Editar
           </Link>
-          <form action={excluirFechamento}>
-            <input type="hidden" name="id" value={r.id} />
-            <Enviar className="rounded-controle border border-borda-forte px-4 py-2 text-sm text-texto-suave hover:border-red-400 hover:text-red-600 dark:border-borda-forte">
-              Excluir
-            </Enviar>
-          </form>
+          <ExcluirFechamento id={r.id} titulo={`de ${dataBR(r.data)}`} />
         </div>
       </div>
 

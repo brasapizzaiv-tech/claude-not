@@ -94,7 +94,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
       {botao(p)}
       {(p.status === "pendente" || p.status === "forno") && (
         <button
-          onClick={async () => { if (await confirmar(`Cancelar ${p.sabor} da mesa ${p.mesa}?`)) agir(() => cancelarRodizio(p.id)); }}
+          onClick={async () => { if (await confirmar(`Cancelar ${p.sabor} da mesa ${p.mesa}?`, { perigo: true, okTexto: "Cancelar o pedido" })) agir(() => cancelarRodizio(p.id)); }}
           disabled={proc}
           style={{ fontSize: 13, color: "#999", background: "transparent", border: 0, textDecoration: "underline", padding: 6 }}
         >

@@ -74,7 +74,7 @@ export function NotasClient({
   }, [linhas, busca, fStatus, fModelo]);
 
   async function cancelar(id: string) {
-    const j = await perguntar("Motivo do cancelamento (mínimo 15 caracteres):", "");
+    const j = await perguntar("Motivo do cancelamento da nota (mínimo 15 caracteres):", "", { detalhe: "A nota é cancelada na Receita e não dá pra desfazer.", perigo: true, okTexto: "Cancelar a nota", obrigatorio: true });
     if (j == null) return;
     if (j.trim().length < 15) { void avisar("A justificativa precisa ter pelo menos 15 caracteres."); return; }
     start(async () => {

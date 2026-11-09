@@ -206,7 +206,7 @@ function PainelPedido({ p, nowMs, proc, entregadores, avancar, irPara, trocarEnt
     : [[p.logradouro, p.numero_casa].filter(Boolean).join(", "), p.bairro].filter(Boolean).join(" · ") || "Endereço no pedido";
 
   async function recusar() {
-    const motivo = await perguntar("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "");
+    const motivo = await perguntar("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "", { perigo: true, okTexto: "Cancelar o pedido", obrigatorio: true });
     if (motivo && motivo.trim()) avancar({ ...p, status: "__cancelar" } as PedidoBoard, { motivo: motivo.trim() });
   }
 

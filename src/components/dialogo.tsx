@@ -23,7 +23,7 @@ import { Icone, type NomeIcone } from "@/components/icone";
 type Pedido =
   | { tipo: "confirmar"; texto: string; detalhe?: string; perigo?: boolean; okTexto?: string }
   | { tipo: "avisar"; texto: string; detalhe?: string }
-  | { tipo: "perguntar"; texto: string; detalhe?: string; valor?: string; obrigatorio?: boolean };
+  | { tipo: "perguntar"; texto: string; detalhe?: string; valor?: string; obrigatorio?: boolean; perigo?: boolean; okTexto?: string };
 
 type Resolver = (v: string | boolean | null) => void;
 
@@ -47,11 +47,14 @@ export function avisar(texto: string, detalhe?: string): Promise<void> {
   return new Promise((res) => abrirNaTela!({ tipo: "avisar", texto, detalhe }, () => res()));
 }
 
-/** Pede um texto. Devolve null se a pessoa desistiu. */
+/** Pede um texto. Devolve null se a pessoa desistiu.
+ *  Quando a pergunta leva a uma ação que não tem volta (cancelar nota, excluir),
+ *  passe `perigo` e um `okTexto` que diga o que acontece ("Cancelar a nota"): o
+ *  botão de desistir é sempre "Voltar", pra nunca ter dois "Cancelar" de sentido oposto. */
 export function perguntar(
   texto: string,
   valor = "",
-  opcoes?: { detalhe?: string; obrigatorio?: boolean },
+  opcoes?: { detalhe?: string; obrigatorio?: boolean; perigo?: boolean; okTexto?: string },
 ): Promise<string | null> {
   if (!abrirNaTela) return Promise.resolve(window.prompt(texto, valor));
   return new Promise((res) =>
@@ -60,6 +63,8 @@ export function perguntar(
     ),
   );
 }
+
+export { enviarSeConfirmar } from "@/lib/enviar-se-confirmar";
 
 export function Dialogos() {
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -111,7 +116,7 @@ export function Dialogos() {
 
   if (!pedido) return null;
 
-  const perigo = pedido.tipo === "confirmar" && pedido.perigo;
+  const perigo = (pedido.tipo === "confirmar" || pedido.tipo === "perguntar") && pedido.perigo;
   const icone: NomeIcone = perigo ? "alerta" : pedido.tipo === "avisar" ? "aviso" : "duvida";
   const faltaTexto = pedido.tipo === "perguntar" && pedido.obrigatorio && !texto.trim();
 
@@ -167,7 +172,7 @@ export function Dialogos() {
               onClick={() => fechar(pedido.tipo === "confirmar" ? false : null)}
               className="btn-secundario text-sm"
             >
-              Cancelar
+              Voltar
             </button>
           )}
           <button
@@ -182,7 +187,7 @@ export function Dialogos() {
               ? "Entendi"
               : pedido.tipo === "confirmar"
                 ? (pedido.okTexto ?? "Confirmar")
-                : "Salvar"}
+                : (pedido.okTexto ?? "Salvar")}
           </button>
         </div>
       </div>

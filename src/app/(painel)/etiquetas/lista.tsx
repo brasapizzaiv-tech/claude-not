@@ -2,6 +2,7 @@
 
 import { Icone } from "@/components/icone";
 import { Enviar } from "@/components/enviar";
+import { FormConfirmado } from "@/components/form-confirmado";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -192,10 +193,15 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <Link href={`/etiquetas/${r.id}`} className="mr-3 text-orange-600 hover:underline">Imprimir</Link>
                     <EtiquetaBaixa id={r.id} status={r.status} />
-                    <form action={excluirEtiqueta} className="ml-2 inline">
+                    <FormConfirmado
+                      action={excluirEtiqueta}
+                      className="ml-2 inline"
+                      pergunta={`Excluir a etiqueta de ${r.produto_nome}?`}
+                      okTexto="Excluir a etiqueta"
+                    >
                       <input type="hidden" name="id" value={r.id} />
-                      <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">×</Enviar>
-                    </form>
+                      <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600" aria-label={`Excluir a etiqueta de ${r.produto_nome}`}>×</Enviar>
+                    </FormConfirmado>
                   </td>
                 </tr>
               ))}

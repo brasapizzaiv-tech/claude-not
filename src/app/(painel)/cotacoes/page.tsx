@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Enviar } from "@/components/enviar";
+import { FormConfirmado } from "@/components/form-confirmado";
 import { createClient } from "@/lib/supabase/server";
 import type { Cotacao, Contagem } from "@/lib/types";
 import { dataBR } from "@/lib/format";
@@ -108,14 +109,20 @@ export default async function CotacoesPage() {
                       >
                         Abrir
                       </Link>
-                      <form action={excluirCotacao} className="inline">
+                      <FormConfirmado
+                        action={excluirCotacao}
+                        className="inline"
+                        pergunta="Remover esta cotação?"
+                        detalhe="Ela some de vez, junto com as respostas dos fornecedores."
+                        okTexto="Remover a cotação"
+                      >
                         <input type="hidden" name="id" value={c.id} />
                         <Enviar
                           className="text-texto-fraco transition hover:text-erro"
                         >
                           Remover
                         </Enviar>
-                      </form>
+                      </FormConfirmado>
                     </td>
                   </tr>
                 ))}

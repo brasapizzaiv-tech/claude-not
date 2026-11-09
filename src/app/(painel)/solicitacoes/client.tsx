@@ -84,7 +84,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     rodar(() => responderSolicitacao(s.id, "comprado"));
   }
   async function rejeitar(s: Solic) {
-    const motivo = await perguntar(`${s.tipo === "manutencao" ? "Não vai fazer" : "Rejeitar"} "${s.item}". Quer deixar um recado pra ${s.nome.split(" ")[0]}? (opcional)`);
+    const motivo = await perguntar(`${s.tipo === "manutencao" ? "Não vai fazer" : "Rejeitar"} "${s.item}". Quer deixar um recado pra ${s.nome.split(" ")[0]}? (opcional)`, "", { okTexto: s.tipo === "manutencao" ? "Não vai fazer" : "Rejeitar" });
     if (motivo === null) return;
     rodar(() => responderSolicitacao(s.id, "rejeitado", motivo));
   }
@@ -104,7 +104,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     rodar(() => responderVarias([...marcadas], "comprado"));
   }
   async function loteRejeitar() {
-    const motivo = await perguntar("Rejeitar os selecionados. Recado (opcional):");
+    const motivo = await perguntar("Rejeitar os selecionados. Recado (opcional):", "", { okTexto: "Rejeitar" });
     if (motivo === null) return;
     rodar(() => responderVarias([...marcadas], "rejeitado", motivo));
   }

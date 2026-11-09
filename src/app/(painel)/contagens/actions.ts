@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 export async function criarContagem(formData: FormData) {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ export async function criarContagem(formData: FormData) {
 
   const descricao =
     (formData.get("descricao") as string)?.trim() ||
-    `Contagem ${new Date().toLocaleDateString("pt-BR")}`;
+    `Contagem ${new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`;
 
   const { data, error } = await supabase
     .from("contagens")
@@ -96,11 +97,24 @@ export async function reabrirContagem(formData: FormData) {
   revalidatePath("/contagens");
 }
 
-export async function excluirContagem(formData: FormData) {
+// Remove uma contagem em rascunho. A finalizada já entrou no CMV: apagar mudava o
+// CMV de semanas passadas, então é recusada (reabrir primeiro, de propósito) (EST-02).
+export async function excluirContagem(id: string): Promise<{ ok: true } | { ok: false; mensagem: string }> {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
-  const id = formData.get("id") as string;
-  await supabase.from("contagens").delete().eq("id", id);
+  const { data: c, error: errLer } = await supabase.from("contagens").select("status").eq("id", id).maybeSingle();
+  if (errLer) return { ok: false, mensagem: "Não consegui ler a contagem. Tente de novo." };
+  if (!c) return { ok: false, mensagem: "Essa contagem não existe mais." };
+  if (c.status === "finalizada")
+    return { ok: false, mensagem: "Contagem finalizada já entrou no CMV e não pode ser removida. Se precisar mesmo, abra e reabra a contagem antes." };
+  const { error } = await supabase.from("contagens").delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503")
+      return { ok: false, mensagem: "Essa contagem está ligada a uma cotação ou pedido e não pode ser removida." };
+    return { ok: false, mensagem: "Não consegui remover a contagem. Nada foi apagado." };
+  }
   revalidatePath("/contagens");
+  return { ok: true };
 }
 
 // Atribui (ou desatribui) uma categoria a um colaborador nesta contagem.

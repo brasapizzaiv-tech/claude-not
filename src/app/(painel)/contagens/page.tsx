@@ -4,7 +4,8 @@ import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import type { Contagem } from "@/lib/types";
 import { dataBR } from "@/lib/format";
-import { criarContagem, excluirContagem } from "./actions";
+import { criarContagem } from "./actions";
+import { RemoverContagem } from "./remover";
 import { AvulsaForm } from "./avulsa";
 
 export default async function ContagensPage() {
@@ -108,14 +109,7 @@ export default async function ContagensPage() {
                       >
                         Abrir
                       </Link>
-                      <form action={excluirContagem} className="inline">
-                        <input type="hidden" name="id" value={c.id} />
-                        <Enviar
-                          className="text-texto-fraco hover:text-red-600"
-                        >
-                          Remover
-                        </Enviar>
-                      </form>
+                      {c.status !== "finalizada" && <RemoverContagem id={c.id} nome={c.descricao ?? "sem nome"} />}
                     </td>
                   </tr>
                 ))}

@@ -14,6 +14,7 @@ import {
   definirValorBoleto,
 } from "../actions";
 import { Combobox } from "@/components/combobox";
+import { avisar, confirmar } from "@/components/dialogo";
 import { dataBR, numeroBR } from "@/lib/format";
 
 const campo =
@@ -151,7 +152,14 @@ export function LancamentoNota({
   }
   function estornar() {
     start(async () => {
-      await estornarNota(notaId);
+      if (!(await confirmar("Estornar esta nota?", {
+        detalhe: "As contas dela saem do Contas a pagar e a nota volta pra pendente (dá pra lançar de novo).",
+        perigo: true,
+        okTexto: "Estornar",
+      })))
+        return;
+      const r = await estornarNota(notaId);
+      if (!r.ok) { void avisar(r.mensagem); return; }
       router.refresh();
     });
   }

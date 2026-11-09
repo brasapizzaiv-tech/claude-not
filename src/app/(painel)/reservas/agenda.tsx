@@ -398,7 +398,10 @@ function CartaoReserva({
         {r.status !== "cancelada" && (
           <button
             disabled={proc}
-            onClick={() => acao(() => definirStatus(r.id, "cancelada"))}
+            onClick={async () => {
+              if (!(await confirmar("Cancelar esta reserva?", { perigo: true, okTexto: "Cancelar a reserva" }))) return;
+              acao(() => definirStatus(r.id, "cancelada"));
+            }}
             className={btn}
           >
             Cancelar

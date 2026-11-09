@@ -125,7 +125,8 @@ export async function excluirFechamento(formData: FormData) {
   await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const id = formData.get("id") as string;
-  await supabase.from("fechamentos_caixa").delete().eq("id", id);
+  const { error } = await supabase.from("fechamentos_caixa").delete().eq("id", id);
+  if (error) throw new Error("Não consegui excluir o fechamento. Nada foi apagado; tente de novo.");
   revalidatePath("/financeiro/caixa");
   redirect("/financeiro/caixa");
 }

@@ -1,7 +1,7 @@
 "use client";
 import { Icone } from "@/components/icone";
 import { Enviar } from "@/components/enviar";
-import { confirmar } from "@/components/dialogo";
+import { confirmar, enviarSeConfirmar } from "@/components/dialogo";
 
 import { excluirPedido } from "./actions";
 
@@ -9,14 +9,12 @@ export function ExcluirPedido({ id, nome }: { id: string; nome: string }) {
   return (
     <form
       action={excluirPedido}
-      onSubmit={async (e) => {
-        if (
-          !await confirmar(
-            `Apagar o pedido de ${nome}? Isso remove o pedido e o lançamento dele no financeiro. Não dá pra desfazer.`,
-          )
-        )
-          e.preventDefault();
-      }}
+      onSubmit={enviarSeConfirmar(() =>
+        confirmar(
+          `Apagar o pedido de ${nome}? Isso remove o pedido e o lançamento dele no financeiro. Não dá pra desfazer.`,
+          { perigo: true, okTexto: "Apagar o pedido" },
+        ),
+      )}
     >
       <input type="hidden" name="id" value={id} />
       <Enviar

@@ -133,7 +133,7 @@ export function ReceberComandas({
   }
   async function excluirItem(l: Linha) {
     if (!l.itemId) return;
-    const motivo = await perguntar(`Motivo da exclusão de "${l.nome}" (obrigatório):`, "");
+    const motivo = await perguntar(`Motivo da exclusão de "${l.nome}" (obrigatório):`, "", { perigo: true, okTexto: "Excluir o item", obrigatorio: true });
     if (motivo == null) return;
     if (motivo.trim().length < 3) { void avisar("Informe o motivo (pelo menos 3 caracteres)."); return; }
     const itemId = l.itemId;

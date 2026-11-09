@@ -120,7 +120,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
   const st = ST[p.status] ?? ST.pendente;
   const [tempo, setTempo] = useState(40);
   async function recusar() {
-    const motivo = await perguntar("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "");
+    const motivo = await perguntar("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "", { perigo: true, okTexto: "Cancelar o pedido", obrigatorio: true });
     if (motivo && motivo.trim()) avancar({ ...p, status: "__cancelar" } as PedidoBoard, { motivo: motivo.trim() });
   }
   const total = Math.round((p.subtotal + Number(p.taxa_entrega) - Number(p.desconto)) * 100) / 100;

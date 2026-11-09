@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Enviar } from "@/components/enviar";
+import { FormConfirmado } from "@/components/form-confirmado";
 import { notFound } from "next/navigation";
 import { sessaoGarcom, destinoSemSessaoGarcom } from "@/lib/garcom-auth";
 import { redirect } from "next/navigation";
@@ -165,11 +166,11 @@ export default async function GarcomComandaPage({
                     </td>
                     <td className="px-2 py-2 text-right">
                       {!fechada && (
-                        <form action={removerItemComanda} className="inline">
+                        <FormConfirmado action={removerItemComanda} className="inline" pergunta={`Tirar ${i.descricao} da comanda?`} detalhe="Fica registrado em Cancelados." okTexto="Tirar o item">
                           <input type="hidden" name="id" value={i.id} />
                           <input type="hidden" name="comanda_id" value={comanda.id} />
                           <Enviar className="text-texto-suave hover:text-red-600 dark:text-texto-fraco">×</Enviar>
-                        </form>
+                        </FormConfirmado>
                       )}
                     </td>
                   </tr>

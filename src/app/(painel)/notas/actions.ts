@@ -7,6 +7,7 @@ import { ligarNotaAoPedido, recalcularDoItemNota, type Db as DbConf } from "@/li
 import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
 import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { moedaBR } from "@/lib/format";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
 // Primeiro dia do mês atual (AAAA-MM-01) — nota anterior a isso entra como paga.
@@ -697,32 +698,48 @@ export async function definirFatorItemNota(itemId: string, fator: number) {
   return { ok: true, fator: f };
 }
 
-// Estorna a nota lançada: remove a conta e volta para pendente (pode relançar).
-export async function estornarNota(notaId: string) {
+// Tira as contas da nota e muda a situação dela. Recusa se alguma parcela já foi
+// paga: apagar a conta paga sumia com o pagamento do financeiro e da conciliação
+// (ACE-02). Quem precisa mesmo estornar desfaz o pagamento no Contas a pagar antes.
+async function tirarContasDaNota(
+  notaId: string,
+  situacao: "pendente" | "cancelada",
+): Promise<{ ok: true } | { ok: false; mensagem: string }> {
   await exigirAcesso("/notas");
   const supabase = await createClient();
-  await supabase.from("lancamentos").delete().eq("nota_id", notaId);
-  await supabase
+  const { data: pagas, error: errLer } = await supabase
+    .from("lancamentos")
+    .select("valor")
+    .eq("nota_id", notaId)
+    .eq("pago", true);
+  if (errLer) return { ok: false, mensagem: "Não consegui conferir as parcelas da nota. Tente de novo." };
+  if (pagas && pagas.length > 0) {
+    const total = pagas.reduce((s, l) => s + Number(l.valor || 0), 0);
+    return {
+      ok: false,
+      mensagem: `Esta nota tem ${pagas.length} parcela(s) já paga(s) (${moedaBR(total)}). Desfaça o pagamento no Contas a pagar antes.`,
+    };
+  }
+  const { error: errApagar } = await supabase.from("lancamentos").delete().eq("nota_id", notaId);
+  if (errApagar) return { ok: false, mensagem: "Não consegui tirar as contas da nota. Nada foi mudado." };
+  const { error: errNota } = await supabase
     .from("notas_fiscais")
-    .update({ situacao: "pendente" })
+    .update({ situacao })
     .eq("id", notaId);
+  if (errNota) return { ok: false, mensagem: "As contas saíram, mas a nota não mudou de situação. Tente de novo." };
   revalidatePath("/notas");
   revalidatePath("/financeiro/contas");
   return { ok: true };
 }
 
+// Estorna a nota lançada: remove a conta e volta para pendente (pode relançar).
+export async function estornarNota(notaId: string) {
+  return tirarContasDaNota(notaId, "pendente");
+}
+
 // Marca a nota como cancelada e remove qualquer conta gerada por ela.
 export async function cancelarNota(notaId: string) {
-  await exigirAcesso("/notas");
-  const supabase = await createClient();
-  await supabase.from("lancamentos").delete().eq("nota_id", notaId);
-  await supabase
-    .from("notas_fiscais")
-    .update({ situacao: "cancelada" })
-    .eq("id", notaId);
-  revalidatePath("/notas");
-  revalidatePath("/financeiro/contas");
-  return { ok: true };
+  return tirarContasDaNota(notaId, "cancelada");
 }
 
 // Vincula (concilia) a nota a um pedido; remove o lançamento provisório do pedido.

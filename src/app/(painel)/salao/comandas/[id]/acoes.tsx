@@ -17,6 +17,8 @@ export function ExcluirBuffet({ comandaId, valor }: { comandaId: string; valor: 
         const motivo = await perguntar(`Excluir o buffet de ${texto} desta comanda?`, "", {
           detalhe: "Escreva o motivo. Ele fica registrado em Cancelados.",
           obrigatorio: true,
+          perigo: true,
+          okTexto: "Excluir o buffet",
         });
         if (motivo == null) return;
         if (motivo.trim().length < 3) {
@@ -68,7 +70,7 @@ export function AcoesComanda({
   };
 
   const excluir = async () => {
-    const motivo = await perguntar("Motivo da exclusão da comanda (obrigatório):", "");
+    const motivo = await perguntar("Motivo da exclusão da comanda (obrigatório):", "", { perigo: true, okTexto: "Excluir a comanda", obrigatorio: true });
     if (motivo == null) return;
     if (motivo.trim().length < 3) {
       void avisar("Informe o motivo (pelo menos 3 caracteres).");

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Enviar } from "@/components/enviar";
+import { FormConfirmado } from "@/components/form-confirmado";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { criarCupom, alternarCupom, excluirCupom } from "../actions";
@@ -92,10 +93,16 @@ export default async function CuponsPage() {
                         <input type="hidden" name="ativo" value={c.ativo ? "0" : "1"} />
                         <Enviar className="mr-3 text-xs text-texto-fraco hover:text-orange-600">{c.ativo ? "desativar" : "reativar"}</Enviar>
                       </form>
-                      <form action={excluirCupom} className="inline">
+                      <FormConfirmado
+                        action={excluirCupom}
+                        className="inline"
+                        pergunta={`Excluir o cupom ${c.codigo}?`}
+                        detalhe="Ele some de vez. Pra só parar de valer, use desativar."
+                        okTexto="Excluir o cupom"
+                      >
                         <input type="hidden" name="id" value={c.id} />
                         <Enviar className="text-xs text-texto-fraco hover:text-red-600">excluir</Enviar>
-                      </form>
+                      </FormConfirmado>
                     </td>
                   </tr>
                 );

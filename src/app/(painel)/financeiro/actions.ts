@@ -108,9 +108,11 @@ export async function excluirLancamento(formData: FormData) {
   await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const id = formData.get("id") as string;
-  await supabase.from("lancamentos").delete().eq("id", id).eq("origem", "manual");
+  const { error } = await supabase.from("lancamentos").delete().eq("id", id).eq("origem", "manual");
+  if (error) return { ok: false as const, mensagem: "Não consegui remover o lançamento. Nada foi apagado; tente de novo." };
   revalidatePath("/financeiro");
   revalidatePath("/financeiro/contas");
+  return { ok: true as const };
 }
 
 // Edita um lançamento manual (data, categoria, valor, descrição, vencimento).

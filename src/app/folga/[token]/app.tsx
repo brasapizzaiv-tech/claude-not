@@ -251,7 +251,7 @@ export function FolgaApp({
                   {p.status === "Pendente" && (
                     <button
                       disabled={proc}
-                      onClick={async () => { if (await confirmar("Cancelar este pedido?")) start(async () => { await cancelarMeuPedido(token, p.id); router.refresh(); }); }}
+                      onClick={async () => { if (await confirmar("Cancelar este pedido?", { perigo: true, okTexto: "Cancelar o pedido" })) start(async () => { await cancelarMeuPedido(token, p.id); router.refresh(); }); }}
                       className="shrink-0 text-xs text-red-500 underline"
                     >
                       cancelar

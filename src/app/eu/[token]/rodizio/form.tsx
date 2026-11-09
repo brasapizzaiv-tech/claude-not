@@ -62,7 +62,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
     });
   }
   async function cancelar(id: string) {
-    if (!await confirmar("Cancelar este pedido?")) return;
+    if (!await confirmar("Cancelar este pedido?", { perigo: true, okTexto: "Cancelar o pedido" })) return;
     start(async () => {
       const r = await cancelarPedidoRodizio(token, id);
       if (!r.ok) setMsg(r.mensagem);

@@ -2,6 +2,7 @@
 
 import { Icone } from "@/components/icone";
 import { Enviar } from "@/components/enviar";
+import { FormConfirmado } from "@/components/form-confirmado";
 import { avisar } from "@/components/dialogo";
 
 import { siteUrl } from "@/lib/site-url";
@@ -148,10 +149,16 @@ function LinkApp({ c }: { c: Colaborador }) {
         {c.pin ? "PIN definido" : "sem PIN"}
       </span>
       {c.pin && (
-        <form action={zerarPinColaborador} className="inline">
+        <FormConfirmado
+          action={zerarPinColaborador}
+          className="inline"
+          pergunta={`Zerar o PIN de ${c.nome}?`}
+          detalhe="A pessoa sai de todos os celulares e cria um PIN novo na próxima vez que abrir o app."
+          okTexto="Zerar o PIN"
+        >
           <input type="hidden" name="id" value={c.id} />
           <Enviar className="text-texto-fraco hover:text-red-600">zerar PIN</Enviar>
-        </form>
+        </FormConfirmado>
       )}
     </div>
   );

@@ -115,7 +115,7 @@ export function MesaDetalhe({
   async function cancelar() {
     const ids = todasLinhas.filter((l) => l.itemId && sel.has(l.key)).map((l) => l.itemId as string);
     if (ids.length === 0) { setMsg("Selecione ao menos um item (não pago)."); return; }
-    const motivo = await perguntar(`Cancelar ${ids.length} item(ns)? Informe o motivo:`, "");
+    const motivo = await perguntar(`Cancelar ${ids.length} item(ns)? Informe o motivo:`, "", { perigo: true, okTexto: ids.length > 1 ? "Cancelar os itens" : "Cancelar o item", obrigatorio: true });
     if (motivo == null) return;
     if (motivo.trim().length < 3) { void avisar("Informe o motivo (mín. 3 caracteres)."); return; }
     start(async () => {
