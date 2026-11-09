@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 //      WHATSAPP_VERIFY_TOKEN (a senha que o Rafael inventou na Vercel).
 // POST: status das mensagens enviadas (sent/delivered/read/failed) e
 //       mensagens que o cliente manda pra gente. Tudo gravado em
-//       whatsapp_mensagens; assinatura conferida se WHATSAPP_APP_SECRET existir.
+//       whatsapp_mensagens; assinatura SEMPRE conferida (WHATSAPP_APP_SECRET).
 export async function GET(req: Request) {
   const u = new URL(req.url);
   const esperado = (process.env.WHATSAPP_VERIFY_TOKEN || "").trim();
@@ -35,13 +35,14 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const bruto = await req.text();
+  // Sem a chave do app não dá pra saber se veio da Meta: recusa (auditoria SEC-12,
+  // 08/11/2026 — antes aceitava tudo e dava pra forjar "SAIR" e status).
   const segredo = (process.env.WHATSAPP_APP_SECRET || "").trim();
-  if (segredo) {
-    const assin = req.headers.get("x-hub-signature-256") || "";
-    const esperado = "sha256=" + createHmac("sha256", segredo).update(bruto).digest("hex");
-    const a = Buffer.from(assin), b = Buffer.from(esperado);
-    if (a.length !== b.length || !timingSafeEqual(a, b)) return new Response("assinatura inválida", { status: 401 });
-  }
+  if (!segredo) return new Response("WHATSAPP_APP_SECRET não configurado", { status: 503 });
+  const assin = req.headers.get("x-hub-signature-256") || "";
+  const esperado = "sha256=" + createHmac("sha256", segredo).update(bruto).digest("hex");
+  const a = Buffer.from(assin), b = Buffer.from(esperado);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return new Response("assinatura inválida", { status: 401 });
   let body: unknown;
   try { body = JSON.parse(bruto); } catch { return new Response("json inválido", { status: 400 }); }
 
