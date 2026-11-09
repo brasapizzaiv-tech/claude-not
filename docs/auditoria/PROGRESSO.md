@@ -22,8 +22,8 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | 1 | Desempenho e lentidão | **concluída (31/10)** | `01-desempenho.md` |
 | 2 | Saúde do código | **concluída (08/11)** | `02-codigo.md` |
 | 3 | Varredura de todas as telas | **concluída (08/11)** | `03-telas.md` + `prints/` (só local) |
-| 4 | Bugs de lógica e dados | **concluída (08/11)**; esperando o "seguir" e 2 decisões do Rafael | `04-bugs.md` |
-| 5 | Segurança e banco | não começou | `05-seguranca-banco.md` |
+| 4 | Bugs de lógica e dados | **concluída (08/11)** | `04-bugs.md` |
+| 5 | Segurança e banco | **concluída (08/11)**; esperando o Rafael (cadastro aberto + 4 perguntas) | `05-seguranca-banco.md` |
 | 6 | Integrações e o que roda fora do navegador | não começou | `06-integracoes.md` |
 | 7 | Interface, consistência e acessibilidade | não começou | `07-interface.md` |
 | 8 | Relatório final e plano de correção | não começou | `RELATORIO-FINAL.md` |
@@ -77,6 +77,12 @@ em 5 frentes paralelas, só leitura; os mais graves conferidos de novo no códig
 automática foi desligada por ele, de propósito; **FIN-01** o faturamento continua com os 10%. Os dois ficam fechados. Os dois com data,
 **MAR-01** (rotação das marmitas do Kern) e **MAR-02** (feriados não fechavam marmita, reserva nem cardápio), foram
 **corrigidos em 08/11** com o OK dele (commit 8b9aea9). Próxima: **Etapa 5 (segurança e banco)**, só com o "seguir".
+
+**Etapa 5 concluída em 08/11 ~21h40.** Relatório em `05-seguranca-banco.md` (SEC-01 a SEC-19: 3 críticos, 6 altos, 9
+médios, baixos). O banco separa por empresa mas não por papel; com o cadastro aberto do Supabase, a porta da internet
+estava entreaberta. **SEC-01 (qualquer login virava dono) corrigido na hora** com o OK do Rafael (migration 0276,
+provado como o funcionário). **Falta o Rafael desligar o cadastro aberto (SEC-02)** e responder: as 3 contas dono, as
+variáveis na Vercel, o backup e o FICHAS.md do teimofit. Próxima: **Etapa 6 (integrações)**, só com o "seguir".
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
@@ -104,6 +110,9 @@ Etapa 1: 10 achados (DES-001 a DES-010) — 3 altos (DES-002 /financeiro/banco, 
 
 Etapa 2: 12 achados (COD-001 a COD-012) — 1 crítico (COD-002 forma de pagamento da NFC-e, **corrigido 08/11**), 1 alto
 (COD-001 `next` e dependências), 4 médios, 6 baixos. Detalhes no `02-codigo.md`.
+
+Etapa 5: 19 grupos (SEC-01 a SEC-19) — 3 críticos (SEC-01 corrigido; SEC-02 com o Rafael; SEC-03 certificado), 6
+altos, 9 médios. Detalhes no `05-seguranca-banco.md`.
 
 Etapa 4: 58 achados (CX, DEL, FIS, FIN, EST, EQP, MAR) — 9 altos, 21 médios, 28 baixos. Detalhes no `04-bugs.md`. O
 fato das exclusões da balança (anotado em 05/11, depois do BUG-007) virou CX-02.
