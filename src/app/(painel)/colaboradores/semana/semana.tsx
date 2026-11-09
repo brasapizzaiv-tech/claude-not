@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
 import { EnvelopeCofre } from "./envelope-cofre";
-import { descreverQuantidades, montarEnvelope, montarEnvelopes, valorDe, type Quantidades } from "@/lib/cofre";
+import { descreverQuantidades, montarEnvelope, montarEnvelopes, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
 import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
@@ -443,20 +443,22 @@ export function SemanaClient({
   // monta cada envelope com o menor número de notas, só com o que tem no cofre,
   // um depois do outro. "ajustar" troca as notas de alguém.
   const emMaosDe = (id: string, total: number) => Math.round((total - descontoDe(id, total)) * 100) / 100;
+  // No envelope vai o em mãos arredondado pra cima até o real (decisão do Rafael).
+  const envelopeDe = (id: string, total: number) => valorDoEnvelope(emMaosDe(id, total));
   const doCofre = (id: string) => !!cofreSaldo && !semCofre.has(id);
   const envelopes = useMemo(() => {
     if (!cofreSaldo) return {} as Record<string, Quantidades | null>;
     const pedidos = aLancar
       .filter((x) => doCofre(x.p.id))
       .map((x) => {
-        const alvo = emMaosDe(x.p.id, x.total);
+        const alvo = envelopeDe(x.p.id, x.total);
         const fixo = envFixo[x.p.id];
         return { id: x.p.id, centavos: Math.round(alvo * 100), fixo: fixo && Math.abs(valorDe(fixo) - alvo) < 0.005 ? fixo : null };
       });
     return montarEnvelopes(pedidos, cofreSaldo).envelopes;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cofreSaldo, aLancar, semCofre, envFixo, descontarAdiant, descontar, descontarValor]);
-  const totalCofre = aLancar.filter((x) => doCofre(x.p.id)).reduce((s, x) => s + emMaosDe(x.p.id, x.total), 0);
+  const totalCofre = aLancar.filter((x) => doCofre(x.p.id)).reduce((s, x) => s + envelopeDe(x.p.id, x.total), 0);
 
   // Relatório dos pagamentos da semana: abre numa aba nova, pronto pra imprimir
   // ou salvar em PDF. É montado daqui, com o mesmo cálculo da tela (o CSV também
@@ -544,7 +546,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     const ok = await confirmar(
       `Lançar ${aLancar.length} pagamento(s) somando ${brl(totalALancar)} no Contas a pagar (CMO Eventual / Diaristas)${jaPago ? ", já marcados como pagos" : ""}?` +
         (totalDesconto > 0 ? `\n\nFiado descontado: ${brl(totalDesconto)} (sai em mãos ${brl(totalALancar - totalDesconto)}). As compras internas dessas pessoas serão marcadas como pagas.` : ""),
-      nCofre ? { detalhe: `Sai do cofre: ${brl(totalCofre)} em ${nCofre} envelope(s). Essas contas já entram pagas, em Dinheiro.`, okTexto: "Lançar e tirar do cofre" } : undefined,
+      nCofre ? { detalhe: `Sai do cofre: ${brl(totalCofre)} em ${nCofre} envelope(s), cada um arredondado pra cima até o real. Essas contas já entram pagas, em Dinheiro.`, okTexto: "Lançar e tirar do cofre" } : undefined,
     );
     if (!ok) return;
     start(async () => {
@@ -1232,13 +1234,16 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             />
                             do cofre
                           </label>
+                          {doCofre(p.id) && envelopeDe(p.id, total) - emMaosDe(p.id, total) > 0.005 && (
+                            <span className="text-texto-suave">no envelope {brl(envelopeDe(p.id, total))} (+{brl(envelopeDe(p.id, total) - emMaosDe(p.id, total))})</span>
+                          )}
                           {doCofre(p.id) && (envelopes[p.id] ? (
                             <span className="max-w-[220px] text-right text-texto-fraco">{descreverQuantidades(envelopes[p.id]!) || "nada em mãos"}</span>
                           ) : (
                             <span className="text-urgente-texto">faltam notas no cofre</span>
                           ))}
                           {doCofre(p.id) && emMaosDe(p.id, total) > 0.005 && (
-                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: emMaosDe(p.id, total) })} className="text-texto-marca hover:underline">
+                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: envelopeDe(p.id, total) })} className="text-texto-marca hover:underline">
                               ajustar notas
                             </button>
                           )}

@@ -113,3 +113,13 @@ test("vários envelopes: ajuste à mão de um vale e desconta do resto", () => {
   const { envelopes } = montarEnvelopes([{ id: "a", centavos: 10000, fixo: { "5000": 2 } }, { id: "b", centavos: 10000 }], { "10000": 1, "5000": 2 });
   assert.deepEqual(envelopes.b, { "10000": 1 });
 });
+
+import { valorDoEnvelope } from "../src/lib/cofre.ts";
+test("envelope do acerto: arredonda pra cima até o real inteiro", () => {
+  assert.equal(valorDoEnvelope(32.44), 33);
+  assert.equal(valorDoEnvelope(32), 32);
+  assert.equal(valorDoEnvelope(32.0000001), 32);
+  assert.equal(valorDoEnvelope(0.01), 1);
+  assert.equal(valorDoEnvelope(0), 0);
+  assert.equal(valorDoEnvelope(-5), 0);
+});

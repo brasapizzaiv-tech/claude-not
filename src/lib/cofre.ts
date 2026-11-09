@@ -165,6 +165,16 @@ export const TIPOS: Record<string, { rotulo: string; sentido: 1 | -1 | 0 }> = {
 };
 
 /**
+ * Valor que vai no envelope do cofre: o em mãos arredondado PRA CIMA até o real
+ * inteiro (decisão do Rafael, 09/11/2026: R$ 32,44 → R$ 33). A diferença a casa
+ * paga e fica anotada na conta da pessoa.
+ */
+export function valorDoEnvelope(emMaos: number): number {
+  const v = Math.round(Number(emMaos) * 100) / 100;
+  return v <= 0 ? 0 : Math.ceil(v - 1e-9);
+}
+
+/**
  * Envelope de pagamento: as notas/moedas que fecham `centavos` exatamente, com o
  * MENOR número de peças, usando só o que tem no `saldo`. Devolve as quantidades
  * (positivas) ou null se não dá pra fechar o valor com o que tem.

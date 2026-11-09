@@ -7,7 +7,7 @@ import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/e
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { TURNO } from "@/lib/folgas";
 import { cofreIniciado, saldoAtual, sairDoCofre, type Ctx as CtxCofre } from "@/lib/cofre-core";
-import { valorDe, type Quantidades } from "@/lib/cofre";
+import { valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
 
 // Contexto do cofre pra quem está lançando (empresa e nome de quem fez).
 async function ctxDoCofre(supabase: Awaited<ReturnType<typeof createClient>>): Promise<CtxCofre> {
@@ -220,7 +220,8 @@ export async function lancarPagamentosSemana(
     for (const it of comCofre) {
       const emMaos = await emMaosDe(supabase, it);
       const env = valorDe(it.cofre!);
-      if (Math.abs(env - emMaos) > 0.009) return { erro: `O envelope de ${it.nome} (R$ ${env.toFixed(2).replace(".", ",")}) não fecha com o valor em mãos (R$ ${emMaos.toFixed(2).replace(".", ",")}). Atualize a tela e confira.` };
+      const esperado = valorDoEnvelope(emMaos);
+      if (Math.abs(env - esperado) > 0.009) return { erro: `O envelope de ${it.nome} (R$ ${env.toFixed(2).replace(".", ",")}) não fecha com o valor em mãos arredondado (R$ ${esperado.toFixed(2).replace(".", ",")}). Atualize a tela e confira.` };
     }
     const saldo = await saldoAtual(ctxCofre);
     const total = somaEnvelopes(comCofre.map((i) => i.cofre!));
@@ -278,7 +279,12 @@ export async function lancarPagamentosSemana(
       descAdiant > 0 ? `adiantamento descontado ${descAdiant.toFixed(2).replace(".", ",")}` : "",
       descFiado > 0 ? `fiado descontado ${descFiado.toFixed(2).replace(".", ",")}` : "",
     ].filter(Boolean);
-    const sufixo = desconto > 0 ? ` · ${partes.join(", ")} → em mãos ${emMaos.toFixed(2).replace(".", ",")}` : "";
+    // Dinheiro do cofre: o envelope é o em mãos arredondado pra cima até o real;
+    // a diferença (até R$ 0,99) é paga pela casa e entra na conta (o financeiro
+    // bate com o que saiu do cofre).
+    const arred = it.cofre ? Math.round((valorDoEnvelope(emMaos) - emMaos) * 100) / 100 : 0;
+    const sufixo = (desconto > 0 ? ` · ${partes.join(", ")} → em mãos ${emMaos.toFixed(2).replace(".", ",")}` : "")
+      + (arred > 0 ? ` · arredondado +${arred.toFixed(2).replace(".", ",")} no dinheiro do cofre` : "");
 
     const { data: l, error } = await supabase
       .from("lancamentos")
@@ -288,7 +294,7 @@ export async function lancarPagamentosSemana(
         descricao: `Semana ${rotulo} — ${it.nome} (${it.detalhe})${sufixo}`,
         forma_pagamento: it.cofre ? "Dinheiro" : opts.forma,
         lancamento_em: hoje,
-        valor: Math.round(it.valor * 100) / 100,
+        valor: Math.round((it.valor + arred) * 100) / 100,
         origem: "manual",
         vencimento: dataLanc,
         pago: it.cofre ? true : opts.jaPago,
