@@ -119,8 +119,19 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   minutos". Achado junto e fechado: **PIN nulo passava** (`v_pin <> null` dá null e o `if` não barrava) — a anon
   chamava `colaborador_home(token, null)` e entrava. Ensaio em transação desfeita 11/11; em produção as telas
   pedem PIN e PIN vazio/nulo é recusado sem contar erro.
-- **Continua aberto:** PIN em texto (sem hash); cookie `eu_{token}` guarda o próprio PIN; código de ativação de 6
-  dígitos.
+- **Resto CORRIGIDO 09/11 (~01h, OK do Rafael; commits 4e73dc6 + a605d4a, migrations 0279/0280, ensaio 20/20):**
+  - PIN embaralhado: `colaboradores.pin` = `h1:` + HMAC-SHA256 com pimenta em `privado.colab_pin_pimenta` (esquema
+    que a API não enxerga); os 35 PINs viraram hash. Ler a tabela não revela o PIN nem deixa testar os 10 mil.
+  - Celular sem o PIN: cookie `eu_{token}` = chave de acesso `s1.<64 hex>` (`colab_criar_sessao`, só o hash em
+    `privado.colab_sessoes`); cookie antigo troca sozinho na tela inicial (`RenovarAcesso`); "Sair deste aparelho"
+    invalida a chave; zerar/trocar PIN, desligar ou trocar o link derrubam as chaves (gatilho). Com a chave válida a
+    pessoa entra mesmo se alguém travou o PIN dela de propósito.
+  - Código de ativação: continua 6 números (os apps das lojas só aceitam isso), mas vale UMA vez e por 7 dias
+    (`codigo_ate`); os de hoje ganharam 7 dias; painéis mostram "Gerar código". De 61 códigos válidos pra sempre
+    → só os de quem está instalando.
+  - Modo garçom: cookie que não confere (PIN mudou) renova pelo `/eu/{token}/garcom`; avulso vencido não entra em ciclo.
+- **SEC-05 FECHADO.** Fica de observação: o `token` dos colaboradores ainda é legível por qualquer login da empresa
+  (SEC-04); com ele + PIN (agora limitado a 5 tentativas/15 min) entra-se no `/eu`.
 - **Achado novo, CORRIGIDO 08/11 (~00h, OK do Rafael, commit fab38ef):** o cookie `garcom_colab` do modo garçom
   guardava só o token, sem o PIN: quem tinha o link de um garçom montava o cookie e usava o app do garçom. Agora é
   `token.assinatura` (HMAC no servidor, `src/lib/garcom-assinatura.ts`, amarrado ao PIN atual; testes 4/4). Cookie
