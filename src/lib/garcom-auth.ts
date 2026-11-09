@@ -27,13 +27,16 @@ export function tokenDoCookieGarcom(valor: string): string {
   return tokenDoValor(valor);
 }
 
-/** Pra onde mandar quem abriu /garcom sem sessão válida. Cookie do formato
- *  antigo (só o token, de antes de 08/11/2026) vai renovar pelo /eu/{token}/garcom,
- *  que confere o PIN do app e grava o cookie novo — quem já estava com o modo
- *  garçom aberto no celular entra sem perceber. */
+/** Pra onde mandar quem abriu /garcom sem sessão válida. Se o celular tem um
+ *  cookie do garçom que não vale mais (formato antigo, só o token, de antes de
+ *  08/11/2026; ou assinado com um PIN que mudou), vai renovar pelo
+ *  /eu/{token}/garcom, que confere o PIN do app e grava o cookie novo — quem já
+ *  estava com o modo garçom aberto entra sem perceber. Quem não tem o PIN do app
+ *  cai na tela do PIN. */
 export async function destinoSemSessaoGarcom(): Promise<string> {
   const v = (await cookies()).get(COOKIE_GARCOM)?.value ?? "";
-  if (v && !v.includes(".") && /^[A-Za-z0-9_-]{8,64}$/.test(v)) return `/eu/${v}/garcom`;
+  const token = v.includes(".") ? tokenDoValor(v) : v;
+  if (token && /^[A-Za-z0-9_-]{8,64}$/.test(token)) return `/eu/${token}/garcom`;
   return "/login?next=/garcom";
 }
 

@@ -15,12 +15,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 
   const { data: colab } = await admin
     .from("colaboradores")
-    .select("id, pin, faz_garcom, ativo")
+    .select("id, pin, faz_garcom, ativo, garcom_ate")
     .eq("token", token)
     .maybeSingle();
-  const c = colab as { id: string; pin: string | null; faz_garcom: boolean; ativo: boolean } | null;
-  const ok = !!c && c.ativo && c.faz_garcom && (!c.pin || (await pinConfere(token, pin)));
-  if (!ok) return NextResponse.redirect(`${origem}/eu/${token}?garcom=negado`);
+  const c = colab as { id: string; pin: string | null; faz_garcom: boolean; ativo: boolean; garcom_ate: string | null } | null;
+  // Garçom avulso com o link da noite vencido não renova (senão o /garcom
+  // mandaria pra cá de novo, sem fim).
+  const vencido = !!c?.garcom_ate && new Date(c.garcom_ate).getTime() <= Date.now();
+  const ok = !!c && c.ativo && c.faz_garcom && !vencido && (!c.pin || (await pinConfere(token, pin)));
+  if (!ok) return NextResponse.redirect(vencido ? `${origem}/login?next=/garcom` : `${origem}/eu/${token}?garcom=negado`);
 
   const res = NextResponse.redirect(`${origem}/garcom`);
   res.cookies.set(COOKIE_GARCOM, valorCookieGarcom(token, c!.pin), {

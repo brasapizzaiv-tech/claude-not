@@ -162,7 +162,8 @@ export async function novoCodigoEntregador(formData: FormData) {
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const { data: codigo } = await supabase.rpc("gerar_codigo_entregador");
-  if (typeof codigo === "string") await supabase.from("entregadores").update({ codigo }).eq("id", id);
+  // Vale uma vez e por 7 dias (migration 0280).
+  if (typeof codigo === "string") await supabase.from("entregadores").update({ codigo, codigo_ate: new Date(Date.now() + 7 * 86400000).toISOString() }).eq("id", id);
   revalidatePath("/delivery/entregadores");
 }
 

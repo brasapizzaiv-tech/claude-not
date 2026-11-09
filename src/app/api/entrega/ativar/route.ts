@@ -27,16 +27,19 @@ export async function POST(req: Request) {
     return resposta({ erro: "Muitas tentativas erradas. Espere 15 minutos ou use o QR code do painel." }, 429);
   }
 
+  // O código vale uma vez e por 7 dias (migration 0280, auditoria SEC-05).
   const { data } = await admin
     .from("entregadores")
-    .select("token, ativo, empresas(dominio, ativo)")
+    .select("id, token, ativo, empresas(dominio, ativo)")
     .eq("codigo", codigo)
+    .gt("codigo_ate", new Date().toISOString())
     .maybeSingle();
-  const e = data as { token: string | null; ativo: boolean; empresas: { dominio: string | null; ativo: boolean } | null } | null;
+  const e = data as { id: string; token: string | null; ativo: boolean; empresas: { dominio: string | null; ativo: boolean } | null } | null;
   const dominio = String(e?.empresas?.dominio ?? "").trim().toLowerCase();
   const ok = !!(e?.ativo && e.token && e.empresas?.ativo !== false && dominioOk(dominio));
 
   await registrarTentativa(admin, ip, ok);
-  if (!ok) return resposta({ erro: "Código não encontrado. Confira os números com a gerência." }, 404);
+  if (!ok) return resposta({ erro: "Código não encontrado ou vencido. Peça um código novo à gerência." }, 404);
+  await admin.from("entregadores").update({ codigo: null, codigo_ate: null }).eq("id", e!.id);
   return resposta({ url: `https://${dominio}/entrega/${e!.token}` });
 }

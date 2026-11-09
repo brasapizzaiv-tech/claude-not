@@ -3,20 +3,37 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { pinTravado } from "@/lib/pin-colaborador";
+import { pinConfere, pinTravado } from "@/lib/pin-colaborador";
 import { recalcularDivergencias } from "@/lib/conferencia-core";
 
 const soDigitos = (s: string) => (s || "").replace(/\D/g, "").slice(0, 4);
 
+// O celular guarda uma CHAVE DE ACESSO, não o PIN (migration 0279, auditoria
+// SEC-05). A chave sai de colab_criar_sessao, que confere o PIN (e conta erro).
+// Se a chave não vier por algum motivo, guarda o PIN como antes pra ninguém
+// ficar sem entrar — a tela inicial troca depois.
 async function gravarCookie(token: string, pin: string) {
+  const supabase = await createClient();
+  const { data: chave } = await supabase.rpc("colab_criar_sessao", { p_token: token, p_pin: pin });
   const jar = await cookies();
-  jar.set(`eu_${token}`, pin, {
+  jar.set(`eu_${token}`, typeof chave === "string" && chave.startsWith("s1.") ? chave : pin, {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
     path: `/eu/${token}`,
     maxAge: 60 * 60 * 24 * 180, // 180 dias
   });
+}
+
+// Celular que ainda guarda o PIN (de antes de 09/11/2026): troca pela chave de
+// acesso. Chamado sozinho pela tela inicial do app; não muda nada pra pessoa.
+export async function renovarAcessoColab(token: string) {
+  const jar = await cookies();
+  const atual = jar.get(`eu_${token}`)?.value ?? "";
+  if (!/^\d{4}$/.test(atual)) return { ok: false };
+  if (!(await pinConfere(token, atual))) return { ok: false };
+  await gravarCookie(token, atual);
+  return { ok: true };
 }
 
 export async function definirPin(token: string, pinRaw: string) {
@@ -126,6 +143,12 @@ export async function entrarPin(token: string, pinRaw: string) {
 // app nativo ainda volta pra tela do código (src/components/sair-do-aparelho.tsx).
 export async function sairDoAparelhoColab(token: string) {
   const jar = await cookies();
+  const atual = jar.get(`eu_${token}`)?.value ?? "";
+  // A chave deste celular deixa de valer no banco também (migration 0279).
+  if (atual.startsWith("s1.")) {
+    const supabase = await createClient();
+    await supabase.rpc("colab_encerrar_sessao", { p_token: token, p_segredo: atual });
+  }
   jar.delete({ name: `eu_${token}`, path: `/eu/${token}` });
   return { ok: true };
 }

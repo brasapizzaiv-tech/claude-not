@@ -33,11 +33,11 @@ export default async function EntregadoresPage() {
   const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "www.brasarestaurante.com.br"}`;
   const [{ data }, { data: cols }] = await Promise.all([
     supabase.from("entregadores")
-      .select("id, nome, telefone, ativo, token, codigo, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite, troco_inicial, ultima_lat, ultima_lng, ultima_pos_em")
+      .select("id, nome, telefone, ativo, token, codigo, codigo_ate, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite, troco_inicial, ultima_lat, ultima_lng, ultima_pos_em")
       .order("nome"),
     supabase.from("colaboradores").select("id, nome, nome_social").eq("ativo", true).order("nome"),
   ]);
-  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; colaborador_id: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean; troco_inicial: number; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
+  const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; codigo_ate: string | null; colaborador_id: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean; troco_inicial: number; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
   const ligados = new Set(lista.map((e) => e.colaborador_id).filter(Boolean));
   const livres = ((cols ?? []) as { id: string; nome: string; nome_social: string | null }[]).filter((c) => !ligados.has(c.id));
   const agora = agoraMs();
@@ -78,6 +78,8 @@ export default async function EntregadoresPage() {
         {lista.length === 0 && <p className="text-sm text-texto-suave">Nenhum entregador cadastrado.</p>}
         {lista.map((e) => {
           const link = e.token ? `${origem}/entrega/${e.token}` : null;
+          // Código de entrada: vale uma vez e por 7 dias (migration 0280).
+          const cod = e.codigo && e.codigo_ate && new Date(e.codigo_ate).getTime() > agora ? e.codigo : null;
           const posMin = e.ultima_pos_em ? Math.round((agora - new Date(e.ultima_pos_em).getTime()) / 60000) : null;
           return (
             <div key={e.id} className={`rounded-cartao border p-3 ${e.ativo ? "border-borda" : "border-borda opacity-50 "}`}>
@@ -106,13 +108,13 @@ export default async function EntregadoresPage() {
                   {/* Entrada no app: código de 6 números ou QR (migration 0227). */}
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-texto-suave">Código de entrada no app:</span>
-                    <span className="text-xl font-bold tracking-widest text-texto">{e.codigo ? codigoFmt(e.codigo) : "—"}</span>
+                    <span className="text-xl font-bold tracking-widest text-texto">{cod ? codigoFmt(cod) : "—"}</span>{cod && e.codigo_ate && <span className="text-texto-fraco">vale 1 vez, até {new Date(e.codigo_ate).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" })}</span>}
                     <form action={novoCodigoEntregador}>
                       <input type="hidden" name="id" value={e.id} />
-                      <Enviar className="rounded-controle border border-borda-forte px-2 py-1">Trocar código</Enviar>
+                      <Enviar className="rounded-controle border border-borda-forte px-2 py-1">{cod ? "Trocar código" : "Gerar código"}</Enviar>
                     </form>
                     <a href={`https://web.whatsapp.com/send?phone=${e.telefone ? (d => d.length > 11 ? d : "55" + d)(e.telefone.replace(/\D/g, "")) : ""}&text=${encodeURIComponent(`Seu acesso ao app de entregas da Brasa.
-No app Motelli Entregador, digite o código: ${e.codigo ? codigoFmt(e.codigo) : ""}
+No app Motelli Entregador, digite o código: ${cod ? codigoFmt(cod) : ""}
 Ou abra este link: ${link}
 O código é seu, não passe pra ninguém.`)}`} target="_blank" rel="noreferrer" className="ml-auto rounded-controle bg-texto px-2 py-1 font-semibold text-fundo">Mandar no WhatsApp</a>
                   </div>

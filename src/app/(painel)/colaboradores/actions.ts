@@ -158,6 +158,19 @@ export async function gerarTokenColaborador(formData: FormData) {
   revalidatePath("/folgas");
 }
 
+// Código de 6 números pro app Motelli Equipe: vale uma vez e por 7 dias
+// (migration 0280, auditoria SEC-05). Gera um novo quando a pessoa vai instalar.
+export async function gerarCodigoColaborador(formData: FormData) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const { data: codigo } = await supabase.rpc("gerar_codigo_colaborador");
+  if (typeof codigo === "string") {
+    await supabase.from("colaboradores").update({ codigo, codigo_ate: new Date(Date.now() + 7 * 86400000).toISOString() }).eq("id", id);
+  }
+  revalidatePath("/colaboradores");
+}
+
 // Zera o PIN do colaborador (ele cria um novo no próximo acesso ao app).
 export async function zerarPinColaborador(formData: FormData) {
   await exigirAcesso("/colaboradores");

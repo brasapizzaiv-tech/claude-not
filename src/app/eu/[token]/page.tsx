@@ -13,6 +13,7 @@ import { contarFaixas, hojeSP } from "@/lib/etiqueta-vencimentos";
 import { lembretesDoColaborador } from "@/lib/lembretes-server";
 import { LembretesHoje } from "./lembretes-hoje";
 import { SairEu } from "./sair-eu";
+import { RenovarAcesso } from "./renovar-acesso";
 import { AvisosCelular } from "./avisos-celular";
 import { EntregaObrigatoria } from "./entrega-obrigatoria";
 import { pontoAResponder } from "@/lib/ponto-espelho";
@@ -222,6 +223,7 @@ export default async function AppColaboradorPage({
   return (
     <Moldura>
       {saudacao}
+      {/^\d{4}$/.test(pinCookie) && <RenovarAcesso token={token} />}
       <AvisosCelular token={token} />
       <LembretesHoje token={token} itens={lembretes} />
       {fazContagem && <EntregaObrigatoria token={token} pedidos={entregasObrigatorias(pedidos, hojeSP())} produtos={produtos} hoje={hojeSP()} />}

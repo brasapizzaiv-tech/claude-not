@@ -18,6 +18,7 @@ import {
   reativarColaborador,
   zerarPinColaborador,
   gerarTokenColaborador,
+  gerarCodigoColaborador,
 } from "./actions";
 
 export type FolgaPerfil = {
@@ -53,19 +54,34 @@ function GerarLink({ id, small }: { id: string; small?: boolean }) {
 }
 
 // Entrada no app Motelli Equipe: código de 6 números ou QR do link pessoal.
+// O código vale uma vez e por 7 dias (migration 0280); sem código válido, o
+// botão "Gerar código" cria um novo. O QR (link pessoal) segue valendo.
 const codigoFmt = (cod: string) => `${cod.slice(0, 3)} ${cod.slice(3)}`;
+function codigoValido(c: Colaborador, agora: number) {
+  return c.codigo && c.codigo_ate && new Date(c.codigo_ate).getTime() > agora ? c.codigo : null;
+}
 function CodigoApp({ c, link }: { c: Colaborador; link: string }) {
   const [qr, setQr] = useState<string | null>(null);
   const [aberto, setAberto] = useState(false);
+  const [agora] = useState(() => Date.now());
   useEffect(() => {
     if (!aberto || qr) return;
     QRCode.toDataURL(link, { margin: 1, width: 220 }).then(setQr).catch(() => setQr(null));
   }, [aberto, qr, link]);
-  if (!c.codigo) return null;
+  const cod = codigoValido(c, agora);
   return (
     <span className="inline-flex items-center gap-2">
-      <span className="text-texto-fraco">código</span>
-      <b className="tracking-widest text-texto">{codigoFmt(c.codigo)}</b>
+      {cod ? (
+        <>
+          <span className="text-texto-fraco">código</span>
+          <b className="tracking-widest text-texto">{codigoFmt(cod)}</b>
+        </>
+      ) : (
+        <form action={gerarCodigoColaborador} className="inline">
+          <input type="hidden" name="id" value={c.id} />
+          <Enviar className="rounded border border-borda-forte px-1.5 py-0.5 text-texto-suave hover:bg-superficie-suave">Gerar código</Enviar>
+        </form>
+      )}
       <button type="button" onClick={() => setAberto((v) => !v)} className="rounded border border-borda-forte px-1.5 py-0.5 text-texto-suave hover:bg-superficie-suave">
         QR
       </button>
@@ -75,7 +91,7 @@ function CodigoApp({ c, link }: { c: Colaborador; link: string }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {qr ? <img src={qr} alt={`QR do app de ${c.nome}`} width={220} height={220} /> : <span className="block h-[220px] w-[220px]" />}
             <span className="mt-2 block text-sm font-semibold">{c.nome}</span>
-            <span className="block text-xs text-zinc-500">No app Motelli Equipe: “Ler QR code” — ou o código {codigoFmt(c.codigo)}</span>
+            <span className="block text-xs text-zinc-500">No app Motelli Equipe: “Ler QR code”{cod ? ` — ou o código ${codigoFmt(cod)}` : ""}</span>
             <button type="button" onClick={() => setAberto(false)} className="mt-3 rounded-controle bg-zinc-900 px-4 py-1.5 text-sm font-semibold text-white">Fechar</button>
           </span>
         </span>
@@ -88,10 +104,11 @@ const APP_EQUIPE_PLAY = "https://play.google.com/store/apps/details?id=br.com.mo
 
 // No iPhone segue o link pessoal: o app ainda não saiu na App Store.
 function mensagemApp(c: Colaborador, link: string) {
+  const cod = codigoValido(c, Date.now());
   return encodeURIComponent(
     `Oi ${c.nome}! Esse é o seu app da Brasa.\n\n` +
       `No Android, baixe o Motelli Equipe na Play Store:\n${APP_EQUIPE_PLAY}` +
-      (c.codigo ? `\nDepois de instalar, entre com o código ${codigoFmt(c.codigo)}.` : "") +
+      (cod ? `\nDepois de instalar, entre com o código ${codigoFmt(cod)} (vale uma vez, por 7 dias).` : "") +
       `\n\nNo iPhone, abra este link e use "Adicionar à Tela de Início":\n${link}`,
   );
 }
