@@ -30,9 +30,11 @@ export type Pessoa = {
 };
 
 type Presenca = { colaborador_id: string; data: string; turno: Turno };
-type Dez = { data: string; valor: number; pagar_em: string; origem?: string; desconto_pct?: number };
+// divisao: quem entrava na divisão daquela noite e com que peso, congelado no
+// primeiro pagamento da semana (EQP-02). Sem ela, vale a configuração de hoje.
+type Dez = { data: string; valor: number; pagar_em: string; origem?: string; desconto_pct?: number; divisao?: Record<string, number> | null };
 // Linha do painel de 10%: valor como texto (digitação) + em que semana é pago.
-type DezLinha = { data: string; valor: string; pagar_em: string; origem?: string; desconto_pct: number };
+type DezLinha = { data: string; valor: string; pagar_em: string; origem?: string; desconto_pct: number; divisao?: Record<string, number> | null };
 
 const chave = (id: string, data: string, turno: Turno) => `${id}|${data}|${turno}`;
 
@@ -193,7 +195,7 @@ export function SemanaClient({
     () => new Set(presencasIniciais.map((p) => chave(p.colaborador_id, p.data, p.turno))),
   );
   const [dez, setDez] = useState<DezLinha[]>(() =>
-    dezIniciais.map((d) => ({ data: d.data, valor: Number(d.valor) ? fmtNum(Number(d.valor)) : "", pagar_em: d.pagar_em, origem: d.origem, desconto_pct: Number(d.desconto_pct) || 0 })),
+    dezIniciais.map((d) => ({ data: d.data, valor: Number(d.valor) ? fmtNum(Number(d.valor)) : "", pagar_em: d.pagar_em, origem: d.origem, desconto_pct: Number(d.desconto_pct) || 0, divisao: d.divisao ?? null })),
   );
   const [novaNoite, setNovaNoite] = useState("");
   const [extras, setExtras] = useState<Set<string>>(new Set()); // esporádicos trazidos pra semana
@@ -237,13 +239,23 @@ export function SemanaClient({
       const arrecadado = numBRtxt(e.valor);
       const custo = Math.round(arrecadado * (Number(e.desconto_pct) || 0)) / 100;
       const pool = Math.round((arrecadado - custo) * 100) / 100;
-      const presentes = [
-        ...pessoas.filter((p) => p.recebe_10),
-        ...inativos10, // desativados depois: a parte deles já foi paga, não sobra pros outros
-      ].filter((p) => marcadas.has(chave(p.id, e.data, "noite")));
-      const pesoTotal = presentes.reduce((s, p) => s + (Number(p.peso_10) || 1), 0);
+      // Noite de semana já paga: a divisão é a congelada no pagamento (EQP-02).
+      // Mudar "recebe 10%" ou o peso depois não mexe mais nela; a presença sim.
+      const congelada = e.divisao && typeof e.divisao === "object" ? e.divisao : null;
+      const presentes: { id: string; peso: number }[] = congelada
+        ? Object.entries(congelada)
+            .filter(([id]) => marcadas.has(chave(id, e.data, "noite")))
+            .map(([id, peso]) => ({ id, peso: Number(peso) || 1 }))
+        : [
+            ...pessoas.filter((p) => p.recebe_10),
+            ...inativos10, // desativados depois: a parte deles já foi paga, não sobra pros outros
+          ]
+            .filter((p) => marcadas.has(chave(p.id, e.data, "noite")))
+            .map((p) => ({ id: p.id, peso: Number(p.peso_10) || 1 }));
+      const pesoTotal = presentes.reduce((s, p) => s + p.peso, 0);
       const unit = pesoTotal > 0 ? pool / pesoTotal : 0;
-      return { data: e.data, pagar_em: e.pagar_em, arrecadado, custo, pct: Number(e.desconto_pct) || 0, pool, presentes: presentes.length, pesoTotal, unit, nestaSemana: e.pagar_em === segunda };
+      const pesoDe = new Map(presentes.map((p) => [p.id, p.peso]));
+      return { data: e.data, pagar_em: e.pagar_em, arrecadado, custo, pct: Number(e.desconto_pct) || 0, pool, presentes: presentes.length, pesoTotal, unit, pesoDe, nestaSemana: e.pagar_em === segunda };
     });
     const noitesPagas = porNoite.filter((n) => n.nestaSemana);
     const porPessoa = naGrade.map((p) => {
@@ -253,10 +265,10 @@ export function SemanaClient({
         if (marcadas.has(chave(p.id, d, "dia"))) { nDias++; if (foraDaEscala(p, "dia", dow)) freeDia++; }
         if (marcadas.has(chave(p.id, d, "noite"))) { nNoites++; if (foraDaEscala(p, "noite", dow)) freeNoite++; }
       }
-      if (p.recebe_10) {
-        for (const n of noitesPagas) {
-          if (marcadas.has(chave(p.id, n.data, "noite"))) dez10 += n.unit * (Number(p.peso_10) || 1);
-        }
+      // Cada noite já sabe quem estava na divisão e com que peso (congelado ou de hoje).
+      for (const n of noitesPagas) {
+        const peso = n.pesoDe.get(p.id);
+        if (peso) dez10 += n.unit * peso;
       }
       // Carteira assinada = salário à parte (não entra diária); pode ser CLT de dia e free de noite.
       const cltDia = vinculoDoTurno(p, "dia") === "clt";

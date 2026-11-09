@@ -182,6 +182,8 @@ export default async function CmvPage({
       o.qtd += q;
       map.set(id, o);
     };
+    // Compra entra no CMV pela data de EMISSÃO da nota (decisão do Rafael, 09/11/2026,
+    // auditoria FIN-04). A data de entrada (entrada_em) é só da contagem/consumo.
     const { data: nn } = await supabase
       .from("notas_fiscais")
       .select("id, pedido_id")

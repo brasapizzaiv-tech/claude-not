@@ -167,6 +167,15 @@ export async function lancarPagamentosSemana(
   const validos = itens.filter((i) => i.valor > 0 && !pulados.has(i.colaboradorId));
   if (!validos.length) return { erro: "Nada pra lançar (já lançado ou valor zero)." };
 
+  // Congela a divisão do 10% das noites desta semana (quem recebe 10% e o peso de
+  // cada um), na primeira vez que a semana é paga (EQP-02, migration 0283).
+  {
+    const { data: r10 } = await supabase.from("colaboradores").select("id, peso_10").eq("recebe_10", true);
+    const divisao = Object.fromEntries(((r10 ?? []) as { id: string; peso_10: number | null }[]).map((c) => [c.id, Number(c.peso_10) || 1]));
+    const { error: errDiv } = await supabase.from("dez_por_cento_noites").update({ divisao }).eq("pagar_em", segunda).is("divisao", null);
+    if (errDiv) return { erro: "Não consegui guardar a divisão do 10% desta semana. Nada foi lançado; tente de novo." };
+  }
+
   const dataLanc = /^\d{4}-\d{2}-\d{2}$/.test(opts.data) ? opts.data : hojeSP();
   const hoje = hojeSP();
   const rotulo = rotuloSemana(segunda);
