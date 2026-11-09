@@ -106,7 +106,7 @@ async function obterToken(): Promise<string> {
     headers.Authorization = `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`;
     url = `${URL_TOKEN}?grant_type=client_credentials`;
   }
-  const r = await ufetch(url, { method: "POST", headers, body: form.toString(), dispatcher: getDispatcher() });
+  const r = await ufetch(url, { method: "POST", headers, body: form.toString(), dispatcher: getDispatcher(), signal: AbortSignal.timeout(10_000) });
   if (!r.ok) throw new Error(`token HTTP ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
   const j = (await r.json()) as { access_token: string; expires_in?: number };
   tokenCache = { token: j.access_token, expira: Date.now() + (Number(j.expires_in ?? 300) - 30) * 1000 };
@@ -184,6 +184,7 @@ export async function criarCobrancaPix(dados: {
     headers: { ...(await headersApi()), "Content-Type": "application/json" },
     body: JSON.stringify(body),
     dispatcher: getDispatcher(),
+    signal: AbortSignal.timeout(15_000),
   });
   const j = (await r.json().catch(() => null)) as { location?: string; loc?: { location?: string }; pixCopiaECola?: string; brcode?: string; detail?: string } | null;
   if (!r.ok || !j) throw new Error(`cob HTTP ${r.status}${j?.detail ? `: ${j.detail}` : ""}`);
@@ -196,9 +197,12 @@ export async function criarCobrancaPix(dados: {
 
 // Consulta a cobrança: status CONCLUIDA = pago.
 export async function consultarCobrancaPix(txid: string) {
+  // Tempo limite (PAG-04): sem ele, com o banco parado cada consulta esperava
+  // minutos, e as ações do servidor da mesma aba (o "Pagar") ficavam na fila atrás.
   const r = await ufetch(`${URL_COB}/cob/${txid}`, {
     headers: await headersApi(),
     dispatcher: getDispatcher(),
+    signal: AbortSignal.timeout(8_000),
   });
   if (!r.ok) throw new Error(`consulta HTTP ${r.status}`);
   const j = (await r.json()) as {
@@ -215,6 +219,20 @@ export async function consultarCobrancaPix(txid: string) {
   const pago = temPix && (original <= 0 || recebido >= original - 0.005);
   const e2eid = (j.pix ?? []).find((p) => p.endToEndId)?.endToEndId ?? null;
   return { status: j.status ?? "ATIVA", pago, recebido, original, temPix, e2eid, ambiente: AMBIENTE };
+}
+
+// Cancela a cobrança no banco (PATCH /cob/{txid}, padrão BACEN): o QR deixa de
+// ser pagável. Antes o "Cancelar QR" só mudava o sistema e o cliente ainda podia
+// pagar por 30 min, sem o dinheiro aparecer em lugar nenhum (PAG-02).
+export async function cancelarCobrancaPix(txid: string) {
+  const r = await ufetch(`${URL_COB}/cob/${txid}`, {
+    method: "PATCH",
+    headers: { ...(await headersApi()), "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "REMOVIDA_PELO_USUARIO_RECEBEDOR" }),
+    dispatcher: getDispatcher(),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!r.ok) throw new Error(`cancelar HTTP ${r.status}`);
 }
 
 // Diagnóstico pra tela de config (sem expor valores): banco, ambiente e quais
@@ -249,6 +267,7 @@ export async function devolverPix(e2eid: string, idDevolucao: string, valor: num
     headers: { ...(await headersApi()), "Content-Type": "application/json" },
     body: JSON.stringify({ valor: valor.toFixed(2) }),
     dispatcher: getDispatcher(),
+    signal: AbortSignal.timeout(20_000),
   });
   const j = (await r.json().catch(() => null)) as { id?: string; rtrId?: string; status?: string; detail?: string; title?: string; violacoes?: { razao?: string }[] } | null;
   if (!r.ok) {

@@ -673,10 +673,13 @@ export async function excluirComanda(formData: FormData) {
   // caixa registrou, a nota fiscal fica sem itens e o dia não bate. Em 11/09
   // quatro comandas da balança foram pagas e excluídas em menos de um minuto
   // (a moça queria "virar livre") — o certo é o botão Buffet livre na comanda.
+  // Num recebimento de várias comandas, `comanda_id` guarda só a primeira; as
+  // outras estão em `comanda_ids`. Olhar só a primeira deixava excluir as outras
+  // já pagas (CX-01: 4 casos de 07 a 22/10).
   const { data: recebidos } = await supabase
     .from("pdv_caixa_mov")
     .select("valor, forma_pagamento")
-    .eq("comanda_id", id)
+    .or(`comanda_id.eq.${id},comanda_ids.cs.{${id}}`)
     .eq("tipo", "venda");
   const totalRecebido = (recebidos ?? []).reduce((s, m) => s + Number(m.valor), 0);
   if (totalRecebido > 0.005) {
@@ -689,19 +692,32 @@ export async function excluirComanda(formData: FormData) {
     };
   }
 
-  // Registra no log de auditoria antes de apagar.
   const { data: com } = await supabase
     .from("pdv_comandas")
-    .select("numero, mesa, valor_buffet")
+    .select("numero, mesa, valor_buffet, buffet_pago, buffet_base_pago")
     .eq("id", id)
     .maybeSingle();
   const { data: itc } = await supabase
     .from("pdv_comanda_itens")
-    .select("qtd, preco_unit")
+    .select("qtd, preco_unit, pago, base_pago")
     .eq("comanda_id", id);
+  // Parte já paga (item, buffet ou "Pagar parte") também trava: o dinheiro está no caixa.
+  const temPago =
+    !!com?.buffet_pago || Number(com?.buffet_base_pago ?? 0) > 0.005 ||
+    (itc ?? []).some((i) => i.pago || Number(i.base_pago ?? 0) > 0.005);
+  if (temPago) {
+    return {
+      ok: false as const,
+      mensagem: "Esta comanda tem parte já paga no caixa e não pode ser excluída. Se o recebimento foi errado, faça o estorno pelo caixa.",
+    };
+  }
   const valor =
     Number(com?.valor_buffet ?? 0) +
     (itc ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  // Apaga primeiro e só registra no log se apagou (antes o log contava como
+  // excluída uma comanda que o banco recusou apagar).
+  const { error: errApagar } = await supabase.from("pdv_comandas").delete().eq("id", id);
+  if (errApagar) return { ok: false as const, mensagem: "Não consegui excluir a comanda. Nada foi apagado; tente de novo." };
   const { data: userData } = await supabase.auth.getUser();
   await supabase.from("pdv_comandas_excluidas").insert({
     comanda_numero: com?.numero ?? null,
@@ -710,8 +726,6 @@ export async function excluirComanda(formData: FormData) {
     motivo,
     excluido_por: userData.user?.id ?? null,
   });
-
-  await supabase.from("pdv_comandas").delete().eq("id", id);
   revalidatePath("/salao");
   redirect("/salao");
 }
@@ -1220,6 +1234,11 @@ export async function pagarSelecao(
       return { ok: false as const, mensagem: `A parte (${p.valor.toFixed(2).replace(".", ",")}) é maior do que falta nessa comanda. Atualize a tela.` };
     }
   }
+  // Desconto que zera a conta (100%) fechava a comanda sem pagamento e sem motivo
+  // (CX-06). O PDV já recusava: conta dada é Cortesia, que pede o motivo.
+  if (Number(desconto) > 0 && !pagamentos.some((p) => p.valor > 0)) {
+    return { ok: false as const, mensagem: "Desconto de 100% não fecha a conta. Se é por conta da casa, use a forma Cortesia (ela pede o motivo)." };
+  }
   // Tipo de cada forma (cadastro): cortesia e vale-presente pedem o motivo e
   // não entram como venda (migration 0233).
   const formasT = await formasParaTipo();
@@ -1302,10 +1321,15 @@ export async function pagarSelecao(
       // Paga o que falta do preço (pode já ter recebido uma parte antes).
       const preco = r2(Number(row.qtd) * Number(row.preco_unit));
       const falta = Math.max(0, preco - Number(row.base_pago ?? 0));
-      await supabase
+      // Só marca se ainda não estiver pago: dois caixas recebendo a mesma conta
+      // ao mesmo tempo passavam os dois e lançavam a venda 2× (CX-04).
+      const { data: mudou } = await supabase
         .from("pdv_comanda_itens")
         .update({ valor_pago: r2(Number(row.valor_pago ?? 0) + falta * fator), base_pago: preco, pago: true })
-        .eq("id", itemId);
+        .eq("id", itemId)
+        .eq("pago", false)
+        .select("id");
+      if (!mudou?.length) continue;
       somarBase(s.comandaId, falta);
       quitadosAgora++;
     }
@@ -1320,12 +1344,16 @@ export async function pagarSelecao(
       if (c && !c.buffet_pago && Number(c.valor_buffet ?? 0) > 0) {
         const preco = r2(Number(c.valor_buffet ?? 0));
         const falta = Math.max(0, preco - Number(c.buffet_base_pago ?? 0));
-        await supabase
+        const { data: mudou } = await supabase
           .from("pdv_comandas")
           .update({ buffet_valor_pago: r2(Number(c.buffet_valor_pago ?? 0) + falta * fator), buffet_base_pago: preco, buffet_pago: true })
-          .eq("id", s.comandaId);
-        somarBase(s.comandaId, falta);
-        quitadosAgora++;
+          .eq("id", s.comandaId)
+          .eq("buffet_pago", false)
+          .select("id");
+        if (mudou?.length) {
+          somarBase(s.comandaId, falta);
+          quitadosAgora++;
+        }
       }
     }
     const parte = partes.find((p) => p.comandaId === s.comandaId);
@@ -1353,6 +1381,15 @@ export async function pagarSelecao(
     if (todas.length > 0) {
       await supabase.from("pdv_comandas").update({ cliente_id: clienteId }).in("id", todas);
     }
+  }
+
+  // Nada foi quitado agora (outro caixa recebeu antes, tela desatualizada): para
+  // AQUI, antes de lançar fiado ou Compra da equipe — antes o fiado ficava gravado
+  // e a resposta dizia "já tinha sido recebida" (CX-03).
+  if (sel.length > 0 && quitadosAgora === 0 && extras.length === 0) {
+    await estornarBaixas(supabase, [...baixas.values()], "conta já recebida");
+    revalidatePath("/salao/caixa");
+    return { ok: false as const, mensagem: "Essa conta já tinha sido recebida (outro caixa?). Nada foi lançado de novo — atualize a tela." };
   }
 
   // "Compra da equipe" (vai pra Compras internas) e "Saldo cliente" (fiado):
@@ -1386,11 +1423,6 @@ export async function pagarSelecao(
 
   const totalPago =
     Math.round(pagamentos.reduce((a, p) => a + (p.valor > 0 ? p.valor : 0), 0) * 100) / 100;
-  if (sel.length > 0 && quitadosAgora === 0 && extras.length === 0) {
-    await estornarBaixas(supabase, [...baixas.values()], "conta já recebida");
-    revalidatePath("/salao/caixa");
-    return { ok: false as const, mensagem: "Essa conta já tinha sido recebida (outro caixa?). Nada foi lançado de novo — atualize a tela." };
-  }
   const primeiraComanda = sel[0]?.comandaId ?? extras[0]?.comandaId;
   // Todas as comandas quitadas neste recebimento: o link "ver comanda" das
   // Movimentações abre uma por uma (antes só a primeira era guardada).
@@ -1518,6 +1550,45 @@ export async function fecharTef(transacaoId: string, confirmada: boolean, motivo
 // Cancelamento de uma venda no cartão (CNC já aprovado pelo pinpad): marca a
 // transação original como cancelada, grava o estorno no caixa aberto (venda
 // negativa na mesma forma, pra o fechamento e o Z baterem) e imprime a via.
+// Confere ANTES de acionar o pinpad: a venda ainda está confirmada e há caixa
+// aberto pra lançar o estorno. Antes a conferência vinha depois do cancelamento
+// já aprovado na adquirente, e sem caixa o cartão ficava cancelado e o sistema
+// seguia "confirmada" (PAG-03).
+export async function conferirAntesDeCancelarTef(transacaoId: string) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: orig } = await supabase.from("tef_transacoes").select("status, mov_id").eq("id", transacaoId).maybeSingle();
+  if (!orig) return { ok: false as const, mensagem: "Transação não encontrada. Atualize a tela." };
+  if (orig.status !== "confirmada") return { ok: false as const, mensagem: "Essa venda não está mais confirmada (outra tela já cancelou?). Atualize a tela." };
+  if (orig.mov_id && !(await caixaAberto(supabase))) return { ok: false as const, mensagem: "Abra o caixa antes de cancelar: o estorno precisa de um caixa aberto." };
+  return { ok: true as const };
+}
+
+// Depois de olhar o extrato: o pagamento "A CONFERIR" entrou ou não (PAG-01).
+export async function resolverTefAConferir(transacaoId: string, entrou: boolean) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const { data: atual } = await supabase.from("tef_transacoes").select("status, mensagem").eq("id", transacaoId).maybeSingle();
+  const msgAtual = (atual as { mensagem: string | null } | null)?.mensagem ?? "";
+  if ((atual as { status: string } | null)?.status !== "desfeita" || !/^A CONFERIR|^o CNF não chegou e o agente não tem mais/.test(msgAtual)) {
+    return { ok: false as const, mensagem: "Esse pagamento não está mais a conferir. Atualize a tela." };
+  }
+  const { data: quem } = await supabase.auth.getUser();
+  const nota = `conferido no extrato em ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}${quem.user?.email ? ` por ${quem.user.email}` : ""}`;
+  const { data, error } = await supabase
+    .from("tef_transacoes")
+    .update(entrou
+      ? { status: "confirmada", mensagem: `Entrou (${nota})`, atualizado_em: new Date().toISOString() }
+      : { mensagem: `Não entrou: voltou pro cliente (${nota})`, atualizado_em: new Date().toISOString() })
+    .eq("id", transacaoId)
+    .eq("status", "desfeita")
+    .eq("mensagem", msgAtual)
+    .select("id");
+  if (error || !data?.length) return { ok: false as const, mensagem: "Não consegui marcar (já foi marcado em outra tela?). Atualize a tela." };
+  revalidatePath("/salao/caixa/tef");
+  return { ok: true as const };
+}
+
 export async function registrarCancelamentoTef(
   transacaoId: string,
   r: { nsu: string | null; autorizacao: string | null; rede: string | null; bandeira: string | null; viaCliente: string[]; viaLoja: string[]; idAgente: string | null; terminal: string | null },
@@ -1538,9 +1609,20 @@ export async function registrarCancelamentoTef(
   // negativo em cima de dinheiro que não existiu.
   const veioDoCaixa = !!orig.mov_id;
   const caixaId = veioDoCaixa ? await caixaAberto(supabase) : null;
-  if (veioDoCaixa && !caixaId) return { ok: false as const, mensagem: "Não tem caixa aberto pra lançar o estorno." };
   const { data: userData } = await supabase.auth.getUser();
   const agora = new Date().toISOString();
+
+  // Marca a original PRIMEIRO, e só se ainda estiver confirmada: dois registros
+  // do mesmo cancelamento (tela repetida, nova tentativa) lançavam dois estornos.
+  // E sem caixa aberto o cartão JÁ foi cancelado na adquirente: registra assim
+  // mesmo (antes ficava "confirmada") e avisa pra lançar o estorno à mão.
+  const { data: marcou } = await supabase
+    .from("tef_transacoes")
+    .update({ status: "cancelada", mensagem: `Cancelada em ${agora.slice(0, 16).replace("T", " ")} (NSU do cancelamento ${r.nsu ?? "-"})${veioDoCaixa && !caixaId ? " — SEM ESTORNO NO CAIXA (não havia caixa aberto)" : ""}`, atualizado_em: agora })
+    .eq("id", transacaoId)
+    .eq("status", "confirmada")
+    .select("id");
+  if (!marcou?.length) return { ok: false as const, mensagem: "Esse cancelamento já tinha sido registrado." };
 
   // Forma de pagamento da venda original (pra o estorno cair na mesma).
   let forma = "Cartão";
@@ -1584,15 +1666,14 @@ export async function registrarCancelamentoTef(
     })
     .select("id")
     .single();
-  await supabase
-    .from("tef_transacoes")
-    .update({ status: "cancelada", mensagem: `Cancelada em ${agora.slice(0, 16).replace("T", " ")} (NSU do cancelamento ${r.nsu ?? "-"})`, atualizado_em: agora })
-    .eq("id", transacaoId);
 
   const novaId = (nova as { id?: string } | null)?.id;
   if (novaId && r.viaCliente.length > 0) await reimprimirTef(novaId);
   revalidatePath("/salao/caixa");
   revalidatePath("/salao/caixa/tef");
+  if (veioDoCaixa && !caixaId) {
+    return { ok: true as const, aviso: `O cartão foi cancelado, mas não havia caixa aberto: lance a saída de ${Number(orig.valor).toFixed(2).replace(".", ",")} à mão no próximo caixa.` };
+  }
   return { ok: true as const };
 }
 

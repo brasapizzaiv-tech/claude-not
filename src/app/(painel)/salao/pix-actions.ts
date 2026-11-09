@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
-import { criarCobrancaPix, consultarCobrancaPix, devolverPix, gerarTxid, pixBanco, pixConfigurado } from "@/lib/pix";
+import { cancelarCobrancaPix, criarCobrancaPix, consultarCobrancaPix, devolverPix, gerarTxid, pixBanco, pixConfigurado } from "@/lib/pix";
 
 const ROTAS = ["/salao", "/pdv"];
 
@@ -17,7 +17,7 @@ export async function gerarPixCaixa(valor: number, descricao: string, origem: "c
   const { data: userData } = await supabase.auth.getUser();
   try {
     const cob = await criarCobrancaPix({ txid: gerarTxid(), valor: v, expiracaoSeg: 1800, descricao: descricao || "Brasa" });
-    await supabase.from("pix_cobrancas").insert({
+    const { error: errGravar } = await supabase.from("pix_cobrancas").insert({
       txid: cob.txid,
       valor: v,
       descricao: descricao || null,
@@ -26,6 +26,12 @@ export async function gerarPixCaixa(valor: number, descricao: string, origem: "c
       banco: pixBanco(),
       criado_por: userData?.user?.id ?? null,
     });
+    // Sem o registro, o Pix pago não aparece em Pix recebidos nem pode ser
+    // estornado (PAG-10): não mostra o QR; cancela a cobrança no banco.
+    if (errGravar) {
+      await cancelarCobrancaPix(cob.txid).catch(() => {});
+      return { ok: false as const, erro: "não consegui registrar a cobrança no sistema" };
+    }
     return { ok: true as const, txid: cob.txid, copiaECola: cob.copiaECola };
   } catch (e) {
     return { ok: false as const, erro: (e instanceof Error ? e.message : String(e)).slice(0, 200) };
@@ -60,12 +66,58 @@ export async function consultarPixCaixa(txid: string) {
 
 // Caixa desistiu do QR (cliente vai pagar de outro jeito) ou confirmou na mão
 // que viu o Pix cair no app do banco.
-export async function encerrarPixCaixa(txid: string, como: "cancelado" | "pago") {
+//
+// Cancelar (PAG-02): pergunta ao banco antes. Se o Pix já caiu, NÃO cancela:
+// devolve pago=true pra tela receber como Pix (ou, se a conta já foi fechada de
+// outro jeito, fica registrado como "PAGO SEM VENDA", pra devolver ou acertar).
+// Se não caiu, cancela também no banco, pra o QR deixar de ser pagável.
+export async function encerrarPixCaixa(
+  txid: string,
+  como: "cancelado" | "pago",
+  /** A conta ainda está na tela: se já foi pago, a tela recebe como Pix (não é "sem venda"). */
+  aindaNaConta = false,
+): Promise<{ ok: true; pago?: boolean; valor?: number }> {
   await exigirAcesso(ROTAS);
   const supabase = await createClient();
+  if (como === "pago") {
+    await supabase
+      .from("pix_cobrancas")
+      .update({ status: "pago", pago_em: new Date().toISOString() })
+      .eq("txid", txid)
+      .eq("status", "aguardando");
+    return { ok: true as const };
+  }
+  try {
+    const c = await consultarCobrancaPix(txid);
+    if (c.pago) {
+      const { data: atual } = await supabase.from("pix_cobrancas").select("descricao").eq("txid", txid).maybeSingle();
+      const desc = (atual as { descricao: string | null } | null)?.descricao ?? "";
+      await supabase
+        .from("pix_cobrancas")
+        .update({
+          status: "pago",
+          pago_em: new Date().toISOString(),
+          valor_recebido: c.recebido,
+          e2eid: c.e2eid,
+          status_banco: `${c.status} pix=${c.recebido.toFixed(2)} — pago quando o caixa ia cancelar`,
+          descricao: aindaNaConta || desc.startsWith("PAGO SEM VENDA") ? desc : `PAGO SEM VENDA — ${desc}`.slice(0, 200),
+        })
+        .eq("txid", txid)
+        .eq("status", "aguardando");
+      return { ok: true as const, pago: true, valor: c.recebido };
+    }
+  } catch {
+    // Banco sem responder: cancela no sistema mesmo assim e tenta cancelar lá.
+  }
+  let noBanco = "cancelado no banco";
+  try {
+    await cancelarCobrancaPix(txid);
+  } catch (e) {
+    noBanco = `não consegui cancelar no banco (${(e instanceof Error ? e.message : String(e)).slice(0, 60)})`;
+  }
   await supabase
     .from("pix_cobrancas")
-    .update(como === "pago" ? { status: "pago", pago_em: new Date().toISOString() } : { status: "cancelado" })
+    .update({ status: "cancelado", status_banco: noBanco })
     .eq("txid", txid)
     .eq("status", "aguardando");
   return { ok: true as const };

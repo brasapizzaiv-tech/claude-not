@@ -207,8 +207,11 @@ async function fecharUm(x: AFechar, primeira: boolean): Promise<boolean> {
         if (agora?.falhou || x.falhou || !x.cnfEnviado) {
           // O CNF não chegou, e o agente já não tem o pagamento: ele desfez ao religar.
           desfeito = true;
-          motivo = "o CNF não chegou e o agente não tem mais esse pagamento em aberto: confira se voltou pro cliente";
-          void avisar("Um pagamento do pinpad foi desfeito com a venda já gravada.", "O agente não tem mais esse pagamento em aberto. Confira em Cartões (TEF) se o valor voltou pro cliente e acerte a venda.");
+          // Isto é DEDUÇÃO, não algo que o agente disse: o CNF pode ter chegado e só
+          // a resposta se perdeu. Por isso fica "A CONFERIR" em Cartões (TEF), com os
+          // botões de quem olhou o extrato (PAG-01: R$ 48,90 da comanda 246, 05/11).
+          motivo = "A CONFERIR: o CNF não chegou e o agente não tem mais esse pagamento em aberto — confira no extrato da adquirente se entrou";
+          void avisar("Um pagamento do pinpad ficou A CONFERIR.", "A venda está gravada, mas não deu pra saber se o cartão foi confirmado. Confira no extrato da adquirente e marque em Cartões (TEF).");
         } else {
           motivo = "a tela saiu antes da resposta do CNF; o agente não tem mais esse pagamento em aberto";
         }

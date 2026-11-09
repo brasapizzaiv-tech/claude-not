@@ -6,7 +6,19 @@ import { confirmar } from "@/components/dialogo";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { tefAdm, tefCancelar, tefConfirmar, tefDisponivel, tefPix, type TefStatus } from "@/lib/tef-client";
-import { registrarCancelamentoTef, registrarPixTeste, reimprimirTef } from "../../actions";
+import { conferirAntesDeCancelarTef, registrarCancelamentoTef, registrarPixTeste, reimprimirTef, resolverTefAConferir } from "../../actions";
+
+// "Desfeita" que o sistema DEDUZIU (não viu): fica a conferir no extrato (PAG-01).
+// O texto antigo (antes de 09/11) também conta, pra o caso de 05/11 aparecer.
+const aConferir = (l: { status: string; mensagem: string | null }) =>
+  l.status === "desfeita" && /^A CONFERIR|^o CNF não chegou e o agente não tem mais/.test(l.mensagem ?? "");
+
+// Cancelamento aprovado no pinpad que não chegou a ser gravado (internet caiu
+// nessa hora): fica guardado neste PC e é gravado na próxima abertura (PAG-03).
+const CHAVE_CANC = "tef-cancelamentos-pendentes";
+type CancPendente = { transacaoId: string; r: Parameters<typeof registrarCancelamentoTef>[1] };
+const lerCanc = (): CancPendente[] => { try { return JSON.parse(localStorage.getItem(CHAVE_CANC) || "[]"); } catch { return []; } };
+const gravarCanc = (v: CancPendente[]) => { try { localStorage.setItem(CHAVE_CANC, JSON.stringify(v)); } catch { /* sem armazenamento */ } };
 
 export type TefLinha = {
   id: string;
@@ -53,6 +65,28 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [ocupadoId, setOcupadoId] = useState<string | null>(null);
 
+  // Grava o que ficou pendente de um cancelamento aprovado (internet caiu).
+  useEffect(() => {
+    const pend = lerCanc();
+    if (pend.length === 0) return;
+    void (async () => {
+      const resto: CancPendente[] = [];
+      for (const p of pend) {
+        try { await registrarCancelamentoTef(p.transacaoId, p.r); } catch { resto.push(p); }
+      }
+      gravarCanc(resto);
+      if (resto.length < pend.length) router.refresh();
+    })();
+  }, [router]);
+
+  function resolver(l: TefLinha, entrou: boolean) {
+    start(async () => {
+      const r = await resolverTefAConferir(l.id, entrou);
+      setMsg(r.ok ? (entrou ? `✓ Marcado: os ${brl(l.valor)} entraram.` : `✓ Marcado: os ${brl(l.valor)} não entraram (voltaram pro cliente). Acerte a venda no caixa.`) : r.mensagem);
+      router.refresh();
+    });
+  }
+
   useEffect(() => {
     let vivo = true;
     const ver = async () => { const s = await tefDisponivel(); if (vivo) setAgente(s); };
@@ -84,7 +118,9 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
     // a Elgin reprovisionando. Então o aviso diz o que fazer nessa hora.
     const armadilha =
       'ATENÇÃO: se a janela da Elgin pedir SENHA DE SUPERVISOR, NÃO feche a janela nem aperte Esc — fechar sem a senha DESATIVA o terminal. Digite a senha ou responda "Não" na pergunta anterior.';
-    if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. ${aviso}\n\n${armadilha}`)) return;
+    if (!await confirmar(`Cancelar a venda de ${brl(l.valor)} (NSU ${l.nsu})?\n\nO pinpad vai pedir o cartão do cliente de novo. ${aviso}\n\n${armadilha}`, { perigo: true, okTexto: "Cancelar a venda" })) return;
+    const pode = await conferirAntesDeCancelarTef(l.id);
+    if (!pode.ok) { setMsg(pode.mensagem); return; }
     // O NSU vai na requisição (012-000); se mesmo assim a janela da Elgin
     // perguntar a data ou o "Número do Documento", a tela já diz o que responder.
     setMsg(`Olhe a janela da Elgin e peça o cartão ao cliente. Se ela perguntar a data da venda, é ${dataBr(l.criado_em)}; se perguntar o "Número do Documento", é o NSU ${l.nsu}. Tem até 10 minutos.`);
@@ -94,11 +130,15 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
         const r = await tefCancelar({ nsu: l.nsu!, valor: Number(l.valor), data: dataTef(l.criado_em) });
         if (!r.ok) { setMsg(r.erro ?? "O agente não respondeu."); return; }
         if (!r.aprovada) { setMsg(`Cancelamento não aprovado: ${r.mensagem || "sem detalhe"}.`); return; }
-        const g = await registrarCancelamentoTef(l.id, {
+        const dados = {
           nsu: r.nsu ?? null, autorizacao: r.autorizacao ?? null, rede: r.rede ?? null, bandeira: r.bandeira ?? null,
           viaCliente: r.viaCliente ?? [], viaLoja: r.viaLoja ?? [], idAgente: r.idAgente ?? null, terminal: r.terminal ?? null,
-        });
-        setMsg(g.ok ? `✓ Venda de ${brl(l.valor)} cancelada. Via do cancelamento mandada pra impressora.` : g.mensagem);
+        };
+        // Já cancelou na adquirente: guarda antes de gravar, pra não perder se a internet cair agora.
+        gravarCanc([...lerCanc(), { transacaoId: l.id, r: dados }]);
+        const g = await registrarCancelamentoTef(l.id, dados);
+        gravarCanc(lerCanc().filter((p) => p.transacaoId !== l.id));
+        setMsg(g.ok ? (g.aviso ?? `✓ Venda de ${brl(l.valor)} cancelada. Via do cancelamento mandada pra impressora.`) : g.mensagem);
         router.refresh();
       } catch (e) {
         setMsg(e instanceof Error ? e.message : "Falha ao falar com o agente.");
@@ -206,7 +246,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
               <tr><td colSpan={6} className="px-3 py-8 text-center text-texto-fraco">Nenhum cartão nesse período.</td></tr>
             )}
             {linhas.map((l) => {
-              const st = STATUS[l.status] ?? { rotulo: l.status, cls: "bg-superficie-suave text-texto-suave" };
+              const st = aConferir(l) ? { rotulo: "a conferir", cls: "pilula-urgente" } : STATUS[l.status] ?? { rotulo: l.status, cls: "bg-superficie-suave text-texto-suave" };
               const podeCancelar = l.status === "confirmada" && !!l.nsu;
               const podeImprimir = l.status === "confirmada" || l.status === "cancelada";
               return (
@@ -224,6 +264,12 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1.5">
+                      {aConferir(l) && (
+                        <>
+                          <button onClick={() => resolver(l, true)} disabled={proc} className={btn} title="Conferi no extrato da adquirente e o valor entrou">Entrou no extrato</button>
+                          <button onClick={() => resolver(l, false)} disabled={proc} className={btn} title="Conferi no extrato e o valor não entrou">Não entrou</button>
+                        </>
+                      )}
                       {podeImprimir && <button onClick={() => reimprimir(l)} disabled={proc} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>}
                       {podeCancelar && (
                         <button onClick={() => cancelar(l)} disabled={proc || !agente} className="rounded-controle border border-red-400 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:hover:bg-red-950">

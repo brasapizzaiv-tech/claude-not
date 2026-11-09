@@ -5,6 +5,7 @@ import { Icone } from "@/components/icone";
 import { useEffect, useRef, useState, useTransition } from "react";
 import QRCode from "qrcode";
 import { gerarPixCaixa, consultarPixCaixa, encerrarPixCaixa } from "@/app/(painel)/salao/pix-actions";
+import { avisar } from "@/components/dialogo";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -57,17 +58,19 @@ export function PixQr({
     return () => { vivo = false; };
   }, [cob, compacto]);
 
-  // Consulta o banco a cada 3 s enquanto o QR está na tela.
+  // Consulta o banco 3 s depois da resposta anterior, enquanto o QR está na tela.
+  // Encadeada (não setInterval): com o banco lento, as consultas faziam fila e
+  // seguravam o "Pagar" da mesma aba atrás delas (PAG-04).
   useEffect(() => {
     if (!cob || pago) return;
     let vivo = true;
-    const t = setInterval(async () => {
+    let t: ReturnType<typeof setTimeout>;
+    const consultar = async () => {
       try {
         const r = await consultarPixCaixa(cob.txid);
         if (!vivo) return;
         if (r.ok && r.pago) {
           setPago(true);
-          clearInterval(t);
           onPagoRef.current();
           return;
         }
@@ -75,8 +78,10 @@ export function PixQr({
       } catch {
         if (vivo) setFalhas((f) => f + 1);
       }
-    }, 3000);
-    return () => { vivo = false; clearInterval(t); };
+      if (vivo) t = setTimeout(consultar, 3000);
+    };
+    t = setTimeout(consultar, 3000);
+    return () => { vivo = false; clearTimeout(t); };
   }, [cob, pago]);
 
   // Valor mudou depois de gerar (desconto, outro item): o QR antigo não serve
@@ -84,7 +89,11 @@ export function PixQr({
   useEffect(() => {
     if (!cob || pago || Math.abs(cob.valor - valor) <= 0.005) return;
     const t = setTimeout(() => {
-      encerrarPixCaixa(cob.txid, "cancelado").catch(() => {});
+      encerrarPixCaixa(cob.txid, "cancelado")
+        .then((r) => {
+          if (r.pago) void avisar(`O QR anterior já tinha sido pago (${brl(r.valor ?? cob.valor)}).`, "Ele ficou em Pix recebidos como PAGO SEM VENDA. Confira antes de cobrar de novo.");
+        })
+        .catch(() => {});
       setCob(null);
       setSrc("");
       setErro(`O valor mudou para ${brl(valor)} — o QR anterior foi cancelado. Gere outro.`);
@@ -101,7 +110,16 @@ export function PixQr({
     });
   }
   async function cancelar() {
-    if (cob) await encerrarPixCaixa(cob.txid, "cancelado").catch(() => {});
+    if (cob) {
+      const r = await encerrarPixCaixa(cob.txid, "cancelado", true).catch(() => null);
+      // O cliente pagou enquanto o caixa desistia: recebe como Pix.
+      if (r?.pago) {
+        setPago(true);
+        void avisar("Esse Pix já tinha caído — a conta foi recebida como Pix.");
+        onPagoRef.current();
+        return;
+      }
+    }
     setCob(null); setSrc(""); setPago(false);
   }
   async function confirmarNaMao() {
