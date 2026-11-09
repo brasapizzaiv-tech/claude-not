@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -88,9 +90,15 @@ export function CentralImpressao({
             ? `Recebendo as impressões normalmente.${vistoTxt ? ` Último sinal: ${vistoTxt}.` : ""}`
             : "Instale o Agente no PC responsável (ou verifique se ele está aberto). Enquanto isso, nada será impresso."}
         </p>
-        <button onClick={() => setVerConfig((v) => !v)} className="mt-2 text-xs text-blue-500 underline">
-          {verConfig ? "esconder" : "ver"} dados do agente (endereço/token)
-        </button>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <button onClick={() => setVerConfig((v) => !v)} className="text-xs text-blue-500 underline">
+            {verConfig ? "esconder" : "ver"} dados do agente (endereço/token)
+          </button>
+          {/* Instaladores dos agentes, pra baixar direto no PC (pedido do Rafael, 09/11). */}
+          <Link href="/impressao/downloads" className="text-xs font-medium text-texto-marca underline">
+            baixar os instaladores (impressão, balança, pinpad)
+          </Link>
+        </div>
         {verConfig && (
           <div className="mt-2 space-y-2 rounded-controle bg-superficie-suave p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2"><span className="w-20 shrink-0 text-texto-fraco">Endereço:</span><code className="rounded bg-painel-cartao px-2 py-0.5">{baseUrl}</code></div>
