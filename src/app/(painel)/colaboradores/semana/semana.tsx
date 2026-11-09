@@ -384,7 +384,20 @@ export function SemanaClient({
   const totalALancar = aLancar.reduce((s, x) => s + x.total, 0);
   // O que sai do valor em mãos (a conta continua cheia): o adiantamento primeiro,
   // e o fiado, se marcado, no que sobrar. Nunca passa do valor da pessoa.
-  const adiantDe = (id: string, total: number) => (descontarAdiant.has(id) ? Math.min(adiantPor[id]?.valor ?? 0, total) : 0);
+  // Igual ao servidor (EQP-01): só adiantamentos INTEIROS, do mais antigo, até o
+  // primeiro que não cabe. Antes a tela descontava min(total, valor) e mostrava um
+  // "em mãos" diferente do que o servidor lançava.
+  const adiantDe = (id: string, total: number) => {
+    if (!descontarAdiant.has(id)) return 0;
+    let soma = 0;
+    for (const a of adiantamentos) {
+      if (a.colaborador_id !== id) continue;
+      const v = Number(a.valor) || 0;
+      if (soma + v > total + 0.005) break;
+      soma = Math.round((soma + v) * 100) / 100;
+    }
+    return soma;
+  };
   // Fiado pedido: o que foi digitado, ou tudo (Infinity) se o campo está como veio.
   const fiadoPedido = (id: string) => (descontarValor[id] === undefined ? Infinity : numBRtxt(descontarValor[id]));
   const fiadoDe = (id: string, total: number, a: number) =>

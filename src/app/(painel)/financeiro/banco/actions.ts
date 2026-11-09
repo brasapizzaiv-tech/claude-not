@@ -108,10 +108,26 @@ export async function gerarLancamentoDaTransacao(
   const supabase = await createClient();
   const { data: t } = await supabase
     .from("transacoes_banco")
-    .select("data, valor, descricao, banco")
+    .select("data, valor, descricao, banco, lancamento_id")
     .eq("id", transacaoId)
     .maybeSingle();
   if (!t) return { ok: false, erro: "Transação não encontrada." };
+  // Já conciliada (duplo clique, outra aba): gerar de novo criava outra despesa (FIN-03).
+  if (t.lancamento_id) return { ok: false, erro: "Essa transação já está conciliada. Atualize a tela." };
+
+  // Liga a transação ao lançamento só se ela ainda estiver livre; se outra
+  // chamada ligou primeiro, apaga o que esta acabou de criar.
+  async function ligarOuDesfazer(principalId: string, criados: string[]) {
+    const { data: ligou } = await supabase
+      .from("transacoes_banco")
+      .update({ lancamento_id: principalId })
+      .eq("id", transacaoId)
+      .is("lancamento_id", null)
+      .select("id");
+    if (ligou?.length) return true;
+    await supabase.from("lancamentos").delete().in("id", criados);
+    return false;
+  }
 
   // De onde veio e como andou — direto do extrato, sem ninguém digitar.
   const formaExtrato = formaDoExtrato(t.descricao as string | null);
@@ -148,7 +164,7 @@ export async function gerarLancamentoDaTransacao(
     if (criadas.length === 0) return { ok: false, erro: "Não foi possível criar os lançamentos." };
     // A transação aponta pra maior parte; as outras ficam amarradas pelo grupo.
     const principal = criadas.reduce((x, y) => (Number(y.valor) > Number(x.valor) ? y : x));
-    await supabase.from("transacoes_banco").update({ lancamento_id: principal.id }).eq("id", transacaoId);
+    if (!(await ligarOuDesfazer(principal.id, criadas.map((c) => c.id)))) return { ok: false, erro: "Essa transação já tinha sido conciliada (outra aba?). Nada foi criado." };
     revalidatePath("/financeiro/banco");
     revalidatePath("/financeiro");
     return { ok: true, partes: criadas.length };
@@ -171,10 +187,7 @@ export async function gerarLancamentoDaTransacao(
     .single();
   if (!l) return { ok: false, erro: "Não foi possível criar o lançamento." };
 
-  await supabase
-    .from("transacoes_banco")
-    .update({ lancamento_id: l.id })
-    .eq("id", transacaoId);
+  if (!(await ligarOuDesfazer(l.id as string, [l.id as string]))) return { ok: false, erro: "Essa transação já tinha sido conciliada (outra aba?). Nada foi criado." };
   revalidatePath("/financeiro/banco");
   revalidatePath("/financeiro");
   return { ok: true };
@@ -264,14 +277,45 @@ export async function conciliarVarias(
   return { ok: true };
 }
 
-export async function desconciliar(transacaoId: string) {
+// O lançamento ligado foi criado A PARTIR deste extrato ("Gerar lançamento")?
+// Aí, ao desfazer, ele vira órfão e gerar de novo duplica (FIN-03): a tela
+// pergunta se apaga junto. Critério: manual, pago no dia do extrato, mesmo valor
+// (ou o grupo das partes somando o valor).
+export async function lancamentoGeradoDoExtrato(transacaoId: string) {
   await exigirAcesso("/financeiro");
   const supabase = await createClient();
-  await supabase
+  const { data: t } = await supabase.from("transacoes_banco").select("data, valor, lancamento_id").eq("id", transacaoId).maybeSingle();
+  if (!t?.lancamento_id) return { gerado: false as const };
+  const { data: l } = await supabase.from("lancamentos").select("id, origem, pago_em, valor, grupo_id, descricao").eq("id", t.lancamento_id as string).maybeSingle();
+  if (!l || l.origem !== "manual" || l.pago_em !== t.data) return { gerado: false as const };
+  const total = Math.round(Math.abs(Number(t.valor)) * 100) / 100;
+  let ids = [l.id as string];
+  let soma = Number(l.valor);
+  if (l.grupo_id) {
+    const { data: g } = await supabase.from("lancamentos").select("id, valor").eq("grupo_id", l.grupo_id as string);
+    ids = ((g as { id: string; valor: number }[]) ?? []).map((x) => x.id);
+    soma = ((g as { id: string; valor: number }[]) ?? []).reduce((a, x) => a + Number(x.valor), 0);
+  }
+  if (Math.abs(Math.round(soma * 100) / 100 - total) > 0.005) return { gerado: false as const };
+  return { gerado: true as const, ids, descricao: (l.descricao as string | null) ?? "" };
+}
+
+export async function desconciliar(transacaoId: string, apagarLancamento = false) {
+  await exigirAcesso("/financeiro");
+  const supabase = await createClient();
+  const gerado = apagarLancamento ? await lancamentoGeradoDoExtrato(transacaoId) : { gerado: false as const };
+  const { error } = await supabase
     .from("transacoes_banco")
     .update({ lancamento_id: null })
     .eq("id", transacaoId);
+  if (error) return { ok: false, erro: "Não consegui desfazer a conciliação. Tente de novo." };
+  if (gerado.gerado) {
+    const { error: errApagar } = await supabase.from("lancamentos").delete().in("id", gerado.ids).eq("origem", "manual");
+    if (errApagar) return { ok: false, erro: "Desfiz a conciliação, mas não consegui apagar o lançamento. Apague em Contas a pagar." };
+  }
   revalidatePath("/financeiro/banco");
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/contas");
   return { ok: true };
 }
 

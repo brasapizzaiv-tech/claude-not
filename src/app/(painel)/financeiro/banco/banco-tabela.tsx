@@ -1,6 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
-import { confirmar } from "@/components/dialogo";
+import { avisar, confirmar } from "@/components/dialogo";
 
 import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
   conciliar,
   conciliarVarias,
   desconciliar,
+  lancamentoGeradoDoExtrato,
   gerarLancamentoDaTransacao,
   lancarNotaEConciliar,
   excluirTransacao,
@@ -140,7 +141,10 @@ export function BancoTabela({
   }
   function run(fn: () => Promise<unknown>) {
     start(async () => {
-      await fn();
+      const r = await fn();
+      // O servidor recusou (já conciliada, erro do banco): mostra o porquê.
+      const erro = r && typeof r === "object" && "erro" in r ? (r as { erro?: string }).erro : undefined;
+      if (erro) void avisar(erro);
       setPainel(null);
       router.refresh();
     });
@@ -333,7 +337,23 @@ export function BancoTabela({
                         {conciliado ? (
                           <button
                             disabled={proc}
-                            onClick={() => run(() => desconciliar(t.id))}
+                            onClick={async () => {
+                              // Lançamento criado a partir deste extrato: pergunta se apaga junto
+                              // (senão fica órfão e gerar de novo duplica — FIN-03).
+                              const g = await lancamentoGeradoDoExtrato(t.id);
+                              if (g.gerado) {
+                                const apagar = await confirmar("Desfazer a conciliação e apagar o lançamento?", {
+                                  detalhe: `"${g.descricao.slice(0, 80)}" foi criado a partir deste extrato. Se não apagar, ele fica no financeiro sem extrato, e gerar de novo duplica. Voltar mantém tudo como está.`,
+                                  perigo: true,
+                                  okTexto: "Desfazer e apagar",
+                                });
+                                if (!apagar) return;
+                                run(() => desconciliar(t.id, true));
+                                return;
+                              }
+                              if (!(await confirmar("Desfazer a conciliação?", { okTexto: "Desfazer" }))) return;
+                              run(() => desconciliar(t.id));
+                            }}
                             className="text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
                           >
                             Desfazer

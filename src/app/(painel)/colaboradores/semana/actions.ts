@@ -5,6 +5,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { TURNO } from "@/lib/folgas";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { descontoDezPadrao } from "@/lib/dez-caixa";
 import { aplicarRecebimentoFiado, planejarRecebimentoFiado, type PlanoFiado } from "@/lib/retiradas-quitar";
@@ -105,17 +106,23 @@ export async function preencherEscalaFixa(segunda: string) {
     supabase.from("presencas_folgas").select("colaborador_id, data, turno").gte("data", dias[0]).lte("data", dias[dias.length - 1]),
     supabase
       .from("folgas_pedidos")
-      .select("data, folgas_funcionarios(colaborador_id)")
+      .select("data, grupo_alvo, folgas_funcionarios(colaborador_id)")
       .eq("status", "Aprovado")
       .gte("data", dias[0])
       .lte("data", dias[dias.length - 1]),
   ]);
   const pular = new Set<string>();
   for (const f of (folgasMao ?? []) as { colaborador_id: string; data: string; turno: string }[]) pular.add(`${f.colaborador_id}|${f.data}|${f.turno}`);
-  type FolgaApp = { data: string; folgas_funcionarios: { colaborador_id: string | null } | { colaborador_id: string | null }[] | null };
+  type FolgaApp = { data: string; grupo_alvo: string | null; folgas_funcionarios: { colaborador_id: string | null } | { colaborador_id: string | null }[] | null };
   for (const f of ((folgasApp as unknown as FolgaApp[]) ?? [])) {
     const ff = Array.isArray(f.folgas_funcionarios) ? f.folgas_funcionarios[0] : f.folgas_funcionarios;
-    if (ff?.colaborador_id) { pular.add(`${ff.colaborador_id}|${f.data}|dia`); pular.add(`${ff.colaborador_id}|${f.data}|noite`); }
+    if (!ff?.colaborador_id) continue;
+    // Folga de um turno só (grupo_alvo: almoço = dia; cozinha/salão/entrega da
+    // noite = noite) tira só aquele turno. Antes tirava os dois e a pessoa perdia a
+    // diária e o 10% do outro turno (EQP-03). Sem grupo_alvo: dia inteiro.
+    const turno = f.grupo_alvo ? (TURNO[f.grupo_alvo] === "Dia" ? "dia" : "noite") : null;
+    if (turno !== "noite") pular.add(`${ff.colaborador_id}|${f.data}|dia`);
+    if (turno !== "dia") pular.add(`${ff.colaborador_id}|${f.data}|noite`);
   }
   const linhas: { colaborador_id: string; data: string; turno: Turno }[] = [];
   for (const d of dias) {

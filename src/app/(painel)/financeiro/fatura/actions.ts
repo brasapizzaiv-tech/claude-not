@@ -82,14 +82,35 @@ export async function lancarFatura(input: {
   const dataComp = `${input.competencia}-01`;
   const venc = /^\d{4}-\d{2}-\d{2}$/.test(input.vencimento) ? input.vencimento : null;
 
+  // A mesma fatura lançada duas vezes (FIN-02): mesma competência, mesmo banco,
+  // mesmo número de compras e mesmo total já estão no financeiro.
+  const totalNovo = Math.round(linhas.reduce((s, c) => s + c.valor, 0) * 100) / 100;
+  {
+    let q = supabase.from("lancamentos").select("grupo_id, valor").eq("data", dataComp).eq("forma_pagamento", "Cartão de crédito").not("grupo_id", "is", null);
+    q = input.banco ? q.eq("banco", input.banco) : q.is("banco", null);
+    const { data: ja } = await q;
+    const grupos = new Map<string, { n: number; total: number }>();
+    for (const l of (ja as { grupo_id: string; valor: number }[]) ?? []) {
+      const g = grupos.get(l.grupo_id) ?? { n: 0, total: 0 };
+      g.n++;
+      g.total = Math.round((g.total + Number(l.valor)) * 100) / 100;
+      grupos.set(l.grupo_id, g);
+    }
+    if ([...grupos.values()].some((g) => g.n === linhas.length && Math.abs(g.total - totalNovo) < 0.01)) {
+      return { ok: false as const, erro: "Essa fatura já foi lançada (mesma competência, banco, compras e total). Confira em Contas a pagar." };
+    }
+  }
+
   const { data: criados, error } = await supabase
     .from("lancamentos")
     .insert(
       linhas.map((c) => ({
         data: dataComp,
         categoria_id: c.categoriaId,
-        valor: Math.round(Math.abs(c.valor) * 100) / 100,
-        descricao: `${c.descricao}${c.parcela ? ` (${c.parcela})` : ""}`,
+        // Estorno (crédito na fatura) entra NEGATIVO e abate a despesa. Antes o
+        // Math.abs fazia a compra de 100 estornada virar 200 de despesa (FIN-02).
+        valor: Math.round(c.valor * 100) / 100,
+        descricao: `${c.valor < 0 ? "Estorno: " : ""}${c.descricao}${c.parcela ? ` (${c.parcela})` : ""}`,
         origem: "manual",
         banco: input.banco,
         forma_pagamento: "Cartão de crédito",
