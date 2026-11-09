@@ -35,43 +35,45 @@ type ItemContagem = {
   precisa_comprar?: boolean | null; // item "precisa comprar?" (migration 0231)
 };
 
+// Grava só o que MUDOU no painel (EST-01). Antes o painel mandava todos os
+// produtos e apagava o que não estava preenchido NA TELA ABERTA: o que o contador
+// gravou pelo link depois que o painel abriu sumia (com as parcelas por local).
+//   gravar: o que foi contado/alterado aqui;
+//   apagar: o que estava salvo quando a tela abriu e foi esvaziado aqui;
+//   zerarSeFaltar (ao finalizar): "contei 0" só pra quem não tem linha nenhuma —
+//   se o link gravou nesse meio tempo, a linha dele fica.
 export async function salvarContagemItens(
   contagemId: string,
-  itens: ItemContagem[],
-) {
+  mudancas: { gravar: ItemContagem[]; apagar?: string[]; zerarSeFaltar?: string[] },
+): Promise<{ ok: boolean; gravados: number; mensagem?: string }> {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
+  const { data: c } = await supabase.from("contagens").select("status").eq("id", contagemId).maybeSingle();
+  if (!c) return { ok: false, gravados: 0, mensagem: "Essa contagem não existe mais." };
+  if (c.status === "finalizada") return { ok: false, gravados: 0, mensagem: "Essa contagem já foi finalizada. Reabra antes de mudar." };
 
-  // Grava os itens CONTADOS (inclusive os "contei 0"); se não vier o marcador
-  // (contado), mantém o comportamento antigo (grava quem tem valor > 0).
-  const contou = (i: ItemContagem) => i.contado ?? (i.qtd_estoque > 0 || i.qtd_pedir > 0);
-  const paraGravar = itens
-    .filter(contou)
-    .map(({ produto_id, qtd_estoque, qtd_pedir, parcelas, precisa_comprar }) => ({
-      produto_id,
-      qtd_estoque,
-      qtd_pedir,
-      parcelas: parcelas ?? null,
-      precisa_comprar: precisa_comprar ?? null,
-      contagem_id: contagemId,
-    }));
-
+  const paraGravar = mudancas.gravar.map(({ produto_id, qtd_estoque, qtd_pedir, parcelas, precisa_comprar }) => ({
+    produto_id,
+    qtd_estoque,
+    qtd_pedir,
+    parcelas: parcelas ?? null,
+    precisa_comprar: precisa_comprar ?? null,
+    contagem_id: contagemId,
+  }));
   if (paraGravar.length > 0) {
-    await supabase
-      .from("contagem_itens")
-      .upsert(paraGravar, { onConflict: "contagem_id,produto_id" });
+    const { error } = await supabase.from("contagem_itens").upsert(paraGravar, { onConflict: "contagem_id,produto_id" });
+    if (error) return { ok: false, gravados: 0, mensagem: "Não consegui salvar a contagem. Nada foi mudado; tente de novo." };
   }
-
-  // Remove itens que foram zerados (existiam antes, agora sem valor).
-  const idsComValor = new Set(paraGravar.map((i) => i.produto_id));
-  const zerados = itens
-    .filter((i) => !idsComValor.has(i.produto_id))
-    .map((i) => i.produto_id);
-  if (zerados.length > 0) {
-    await supabase
-      .from("contagem_itens")
-      .delete()
-      .eq("contagem_id", contagemId)
-      .in("produto_id", zerados);
+  if (mudancas.apagar?.length) {
+    const { error } = await supabase.from("contagem_itens").delete().eq("contagem_id", contagemId).in("produto_id", mudancas.apagar);
+    if (error) return { ok: false, gravados: paraGravar.length, mensagem: "Salvei o que foi contado, mas não consegui limpar os itens esvaziados. Tente de novo." };
+  }
+  if (mudancas.zerarSeFaltar?.length) {
+    const { error } = await supabase.from("contagem_itens").upsert(
+      mudancas.zerarSeFaltar.map((produto_id) => ({ produto_id, contagem_id: contagemId, qtd_estoque: 0, qtd_pedir: 0, parcelas: null, precisa_comprar: null })),
+      { onConflict: "contagem_id,produto_id", ignoreDuplicates: true },
+    );
+    if (error) return { ok: false, gravados: paraGravar.length, mensagem: "Não consegui marcar os itens em branco como 0. Tente de novo." };
   }
 
   revalidatePath(`/contagens/${contagemId}`);
@@ -79,6 +81,7 @@ export async function salvarContagemItens(
 }
 
 export async function finalizarContagem(formData: FormData) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase

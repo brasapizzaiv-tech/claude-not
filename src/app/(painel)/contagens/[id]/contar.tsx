@@ -108,36 +108,50 @@ export function ContarClient({
     return calcular(el?.value ?? "");
   }
 
+  // Como a contagem estava quando ESTA tela abriu (e o que ela mesma salvou
+  // depois). É contra isso que se vê o que mudou aqui: o que o contador gravar
+  // pelo link enquanto a tela está aberta não é tocado (EST-01).
+  const [base] = useState(() => new Map<string, ItemInicial>(itens.map((i) => [i.produto_id, i])));
+
   // zerarFaltantes: ao FINALIZAR, item em branco vira "contei 0" (assim entra na
-  // cotação com estoque 0 em vez de sumir da lista).
+  // cotação com estoque 0 em vez de sumir da lista) — só se não tiver linha
+  // nenhuma no banco (o servidor confere).
   function montarItens(zerarFaltantes = false) {
-    const iniDe = new Map(itens.map((i) => [i.produto_id, i]));
-    return produtos.map((p) => {
+    const gravar: { produto_id: string; qtd_estoque: number; qtd_pedir: number; contado: boolean; parcelas: unknown; precisa_comprar?: boolean | null }[] = [];
+    const apagar: string[] = [];
+    const zerarSeFaltar: string[] = [];
+    for (const p of produtos) {
+      const ini = base.get(p.id);
       if (p.contagem_sim_nao) {
         const r = simNao[p.id];
-        return {
-          produto_id: p.id,
-          qtd_estoque: 0,
-          qtd_pedir: 0,
-          contado: typeof r === "boolean" || zerarFaltantes,
-          parcelas: null,
-          precisa_comprar: typeof r === "boolean" ? r : null,
-        };
+        if (typeof r === "boolean") {
+          if (!ini || ini.precisa_comprar !== r) gravar.push({ produto_id: p.id, qtd_estoque: 0, qtd_pedir: 0, contado: true, parcelas: null, precisa_comprar: r });
+        } else if (!ini && zerarFaltantes) zerarSeFaltar.push(p.id);
+        continue;
       }
       const contado = preenchidos.has(p.id);
-      const qtd = contado ? ler(`estoque_${p.id}`) : 0;
-      // O detalhe por local/etiqueta (vindo da contagem pelo link) só continua
-      // valendo se o total não foi mexido aqui; senão fica sem detalhe.
-      const ps = lerParcelas(iniDe.get(p.id)?.parcelas);
-      const manter = ps.length > 0 && Math.abs(somaParcelas(ps) - qtd) < 0.0005;
-      return {
-        produto_id: p.id,
-        qtd_estoque: qtd,
-        qtd_pedir: 0,
-        contado: contado || zerarFaltantes,
-        parcelas: manter ? ps : null,
-      };
-    });
+      if (contado) {
+        const qtd = ler(`estoque_${p.id}`);
+        if (ini && Math.abs(Number(ini.qtd_estoque) - qtd) < 0.0005) continue; // não mexeu aqui
+        // O detalhe por local/etiqueta (vindo da contagem pelo link) só continua
+        // valendo se o total não foi mexido aqui; senão fica sem detalhe.
+        const ps = lerParcelas(ini?.parcelas);
+        const manter = ps.length > 0 && Math.abs(somaParcelas(ps) - qtd) < 0.0005;
+        gravar.push({ produto_id: p.id, qtd_estoque: qtd, qtd_pedir: 0, contado: true, parcelas: manter ? ps : null });
+      } else if (ini) {
+        apagar.push(p.id); // estava salvo quando a tela abriu e foi esvaziado aqui
+      } else if (zerarFaltantes) {
+        zerarSeFaltar.push(p.id);
+      }
+    }
+    return { gravar, apagar, zerarSeFaltar };
+  }
+
+  // Depois de salvar, o que esta tela gravou passa a ser a base.
+  function atualizarBase(m: ReturnType<typeof montarItens>) {
+    for (const g of m.gravar) base.set(g.produto_id, { produto_id: g.produto_id, qtd_estoque: g.qtd_estoque, qtd_pedir: 0, parcelas: g.parcelas, precisa_comprar: g.precisa_comprar ?? null });
+    for (const id of m.apagar) base.delete(id);
+    for (const id of m.zerarSeFaltar) if (!base.has(id)) base.set(id, { produto_id: id, qtd_estoque: 0, qtd_pedir: 0, parcelas: null, precisa_comprar: null });
   }
 
   // Produtos ainda NÃO contados (nem valor, nem "contei 0").
@@ -166,10 +180,13 @@ export function ContarClient({
 
   function gravar(entao?: () => Promise<void>, zerarFaltantes = false) {
     startSave(async () => {
-      const r = await salvarContagemItens(contagem.id, montarItens(zerarFaltantes));
+      const m = montarItens(zerarFaltantes);
+      const r = await salvarContagemItens(contagem.id, m);
+      if (!r.ok) { setMsg(r.mensagem ?? "Não consegui salvar."); return; }
+      atualizarBase(m);
       if (entao) await entao();
       else {
-        setMsg(`Salvo! (${r?.gravados ?? 0} itens contados)`);
+        setMsg(r.gravados > 0 || m.apagar.length > 0 ? `Salvo! (${r.gravados} ${r.gravados === 1 ? "item mudou" : "itens mudaram"})` : "Nada mudou desde a última vez.");
         setTimeout(() => setMsg(null), 4000);
       }
     });
