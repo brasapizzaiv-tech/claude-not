@@ -82,6 +82,11 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   "tem certificado: sim". Guardar a senha fora de coluna legível. Regra da casa "nunca tocar no certificado": mexer só na
   permissão, não no arquivo; trocar a senha é decisão do Rafael.
 - Esforço: P · Risco: médio
+- **CORRIGIDO 08/11 (~23h, OK do Rafael):** commit cd0dfbd + migration 0277 (RLS de `config_sefaz` só do dono). O
+  servidor lê o certificado pela chave administrativa, filtrado pela empresa, depois de `exigirAcesso("/notas")`;
+  `/notas/sefaz` e salvar o certificado entraram no SO_DONO; o botão "SEFAZ automático" some pra quem não é dono.
+  Conferido com o login do funcionário: 0 linhas de `config_sefaz` pela API, `/notas/sefaz` → início, `/notas` abre.
+  O arquivo e a senha do certificado não foram tocados (a senha segue em coluna de texto, agora só o dono lê).
 
 ### [SEC-04] A RLS não distingue funcionário de dono: quase tudo aberto pra qualquer login
 - Severidade: **alto**
@@ -108,6 +113,15 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 - Correção: contador de erro por token no banco (5 erros → trava 15 min) nas RPCs `colaborador_*`; PIN com hash; cookie
   com valor assinado; código de uso único ou que expira, 8+ caracteres.
 - Esforço: M · Risco: médio
+- **PARTE CORRIGIDA 08/11 (~23h30, OK do Rafael):** migration 0278 + commit 73c95a4. `colab_pin_ok(token, pin)`:
+  5 erros seguidos travam a pessoa por 15 min (mesmo com o PIN certo), acerto zera. As 7 funções `colaborador_*`
+  e as 13 comparações do servidor no `/eu` passam por ela (`src/lib/pin-colaborador.ts`); a tela avisa "Espere 15
+  minutos". Achado junto e fechado: **PIN nulo passava** (`v_pin <> null` dá null e o `if` não barrava) — a anon
+  chamava `colaborador_home(token, null)` e entrava. Ensaio em transação desfeita 11/11; em produção as telas
+  pedem PIN e PIN vazio/nulo é recusado sem contar erro.
+- **Continua aberto:** PIN em texto (sem hash); cookie `eu_{token}` guarda o próprio PIN; código de ativação de 6
+  dígitos; e **novo:** o cookie `garcom_colab` do modo garçom guarda só o token, sem o PIN (`src/lib/garcom-auth.ts`):
+  quem tem o link de um garçom monta o cookie e usa o app do garçom sem PIN. Correção: cookie assinado pelo servidor.
 
 ### [SEC-06] App das marmitas: senha numérica em texto, sem limite, e lista pública de funcionários do Kern
 - Severidade: **alto**
