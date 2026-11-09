@@ -77,8 +77,8 @@ const EXEMPLO = {
   "/colaboradores/[id]": "colaboradores", "/colaboradores/ponto/horarios/[id]": "ponto_horarios", "/conferencia/[id]": "pedidos",
   "/contagens/[id]": "contagens", "/contagens/[id]/atribuir": "contagens", "/cotacoes/[id]": "cotacoes", "/cotacoes/[id]/comparar": "cotacoes",
   "/cotacoes/[id]/pedidos": "cotacoes", "/delivery/[id]": "delivery_pedidos", "/pedir/acompanhar/[id]": "delivery_pedidos",
-  "/delivery/campanhas/[id]": "wpp_campanhas", "/etiquetas/[id]": "etiquetas", "/e/[id]": "etiquetas", "/financeiro/caixa/[id]": "pdv_caixas",
-  "/salao/caixa/movimentos/[id]": "pdv_caixas", "/notas/[id]": "notas_fiscais", "/salao/comandas/[id]": "pdv_comandas",
+  "/delivery/campanhas/[id]": "wpp_campanhas", "/etiquetas/[id]": "etiquetas", "/e/[id]": "etiquetas", "/financeiro/caixa/[id]": "fechamentos_caixa",
+  "/salao/caixa/movimentos/[id]": "select id::text from public.pdv_caixa_mov where tipo = 'venda' order by criado_em desc limit 1", "/notas/[id]": "notas_fiscais", "/salao/comandas/[id]": "pdv_comandas",
   "/garcom/comanda/[id]": "pdv_comandas", "/salao/cardapio/adicionais/[itemId]": "cardapio_itens",
   // Combo é um item do cardápio que tem grupos de escolha.
   "/salao/cardapio/combos/[id]": "select distinct item_id::text as id from public.pdv_item_grupos limit 1",

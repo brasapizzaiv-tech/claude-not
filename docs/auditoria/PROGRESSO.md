@@ -25,7 +25,7 @@ Para continuar depois de uma pausa (ou numa sessão nova):
 | 4 | Bugs de lógica e dados | **concluída (08/11)** | `04-bugs.md` |
 | 5 | Segurança e banco | **concluída (08/11)**; respondida; SEC-01/03/05/12 corrigidos | `05-seguranca-banco.md` |
 | 6 | Integrações e o que roda fora do navegador | **concluída (09/11)**; 4 conferências do Rafael + 2 decisões | `06-integracoes.md` |
-| 7 | Interface, consistência e acessibilidade | não começou | `07-interface.md` |
+| 7 | Interface, consistência e acessibilidade | **concluída (09/11)**; 2 decisões do Rafael | `07-interface.md` |
 | 8 | Relatório final e plano de correção | não começou | `RELATORIO-FINAL.md` |
 
 ## Respostas do Rafael à Etapa 0 (31/10)
@@ -94,6 +94,15 @@ quebrado hoje; o padrão é **falha calada** (agente parado, SEFAZ, Sicoob, Meta
 extrato do Sicoob (9 QR "cancelados" que continuavam pagáveis, PAG-02), painel da Focus (62 NFC-e em contingência,
 NFE-01) e teto de cota no Google Cloud (CRN-02). **Decisões:** avisos de WhatsApp pros telefones do Kern (MSG-06) e Pix
 pelo QR do Sicoob × Pix na máquina (0 pelo QR desde 15/10). Próxima: **Etapa 7 (interface)**, só com o "seguir".
+
+**09/11 de manhã:** o Rafael mandou seguir pra Etapa 7 e decidiu que **todas as correções ficam pra conclusão** (Etapa 8).
+**Etapa 7 concluída em 09/11 ~10h.** Relatório em `07-interface.md`: 36 achados, 0 críticos, **3 altos** (ACE-01 a pergunta
+"tem certeza?" aparece depois de a exclusão já ter saído, em Apagar pedido da Conferência e Remover categoria; ACE-02
+Estornar nota/Excluir fechamento/Remover lançamento sem confirmação, o estorno apaga até conta paga; TXT-01 cancelar NFC-e
+com [Cancelar] [Salvar]), 13 médios, 20 baixos. Robô novo `scripts/auditoria/acessibilidade.mjs` (axe em 126 telas × 2,
+09:11–09:24, só GET); o id de exemplo de `/financeiro/caixa/[id]` e `/salao/caixa/movimentos/[id]` estava errado nos
+dois robôs (corrigido e medido de novo). **Decisões:** liberar o zoom em `/pedir` e `/cotar` (ACE-09); site e marmitas
+ficam com identidade própria? Próxima: **Etapa 8 (relatório final e plano de correção)**, só com o "seguir".
 - O cenário de teste do agente real: na 1ª rodada, uma venda de teste de R$ 10 foi ao agente real deste notebook
   (homologação, sem pinpad) por erro do teste. Voltou "Erro ao consultar PINPAD", sem cobrança e sem pendência.
 
