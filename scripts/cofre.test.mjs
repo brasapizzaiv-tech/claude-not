@@ -78,3 +78,38 @@ test("rótulos", () => {
   assert.equal(rotuloDen(25), "R$ 0,25");
   assert.equal(rotuloDen(5), "R$ 0,05");
 });
+
+// ---- Envelope de pagamento (acerto da semana e adiantamento pelo cofre) ----
+import { montarEnvelope, montarEnvelopes } from "../src/lib/cofre.ts";
+
+test("envelope: menor número de notas com o que tem no cofre", () => {
+  const saldo = { "10000": 5, "5000": 2, "2000": 10, "1000": 4, "500": 3, "200": 5, "100": 10, "50": 10 };
+  assert.deepEqual(montarEnvelope(35000, saldo), { "10000": 3, "5000": 1 });
+  assert.deepEqual(montarEnvelope(48750, saldo), { "10000": 4, "5000": 1, "2000": 1, "1000": 1, "500": 1, "200": 1, "50": 1 });
+});
+
+test("envelope: quando falta a nota grande, fecha com as menores", () => {
+  // R$ 60 sem nota de 10: greedy (50 + ?) não fecha; 3 de 20 fecha.
+  assert.deepEqual(montarEnvelope(6000, { "5000": 1, "2000": 3 }), { "2000": 3 });
+});
+
+test("envelope: não dá pra fechar → null (nunca inventa nota)", () => {
+  assert.equal(montarEnvelope(3000, { "2000": 1 }), null);
+  assert.equal(montarEnvelope(12345, { "10000": 2 }), null); // não é múltiplo de 5 centavos
+});
+
+test("envelope: valor zero não tira nada", () => {
+  assert.deepEqual(montarEnvelope(0, {}), {});
+});
+
+test("vários envelopes: o segundo usa o que sobrou do primeiro", () => {
+  const { envelopes, resto } = montarEnvelopes([{ id: "a", centavos: 20000 }, { id: "b", centavos: 15000 }], { "10000": 2, "5000": 3 });
+  assert.deepEqual(envelopes.a, { "10000": 2 });
+  assert.deepEqual(envelopes.b, { "5000": 3 });
+  assert.equal(resto["10000"], 0);
+});
+
+test("vários envelopes: ajuste à mão de um vale e desconta do resto", () => {
+  const { envelopes } = montarEnvelopes([{ id: "a", centavos: 10000, fixo: { "5000": 2 } }, { id: "b", centavos: 10000 }], { "10000": 1, "5000": 2 });
+  assert.deepEqual(envelopes.b, { "10000": 1 });
+});

@@ -3,6 +3,8 @@ import { diasDaSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { SemanaClient, type Pessoa } from "./semana";
 import { descontoDezPadrao, sincronizarDezDoCaixa } from "@/lib/dez-caixa";
+import { cofreIniciado, saldoAtual } from "@/lib/cofre-core";
+import { empresaAtualId } from "@/lib/empresa";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,12 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     // Adiantamentos ainda não descontados — saem no próximo acerto lançado.
     supabase.from("adiantamentos").select("id, colaborador_id, nome, valor, data, motivo").eq("status", "aberto").order("data"),
   ]);
+
+  // Saldo do cofre, nota por nota: o acerto e o adiantamento podem sair dele.
+  // Cofre que ainda não começou (sem a primeira contagem) = não oferece.
+  const empresaCofre = await empresaAtualId();
+  const ctxCofre = empresaCofre ? { db: supabase, empresaId: empresaCofre, quem: null } : null;
+  const cofreSaldo = ctxCofre && (await cofreIniciado(ctxCofre)) ? await saldoAtual(ctxCofre) : null;
 
   // Presenças da semana + das noites de 10% que entram neste acerto (podem ser de outra semana).
   const datasExtras = ((dez ?? []) as { data: string }[]).map((d) => d.data).filter((d) => d < segunda || d > fim);
@@ -98,6 +106,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
   return (
     <SemanaClient
       key={segunda}
+      cofreSaldo={cofreSaldo}
       segunda={segunda}
       dias={dias}
       pessoas={pessoasDaSemana}

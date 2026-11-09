@@ -163,3 +163,56 @@ export const TIPOS: Record<string, { rotulo: string; sentido: 1 | -1 | 0 }> = {
   troca: { rotulo: "Troca de notas", sentido: 0 },
   outro: { rotulo: "Outro", sentido: 0 },
 };
+
+/**
+ * Envelope de pagamento: as notas/moedas que fecham `centavos` exatamente, com o
+ * MENOR número de peças, usando só o que tem no `saldo`. Devolve as quantidades
+ * (positivas) ou null se não dá pra fechar o valor com o que tem.
+ * Todas as peças são múltiplas de 5 centavos: a conta é feita nessa unidade.
+ */
+export function montarEnvelope(centavos: number, saldo: Quantidades): Quantidades | null {
+  const alvo = Math.round(centavos);
+  if (alvo === 0) return {};
+  if (alvo < 0 || alvo % 5 !== 0) return null;
+  const V = alvo / 5;
+  // Cada nota disponível vira "pacotes" de 1, 2, 4… (mochila limitada → 0/1).
+  const itens: { den: number; qtd: number; u: number }[] = [];
+  for (const den of DENOMINACOES) {
+    let tem = Math.max(0, Math.floor(Number(saldo[String(den)] ?? 0)));
+    tem = Math.min(tem, Math.floor(alvo / den));
+    for (let p = 1; tem > 0; p *= 2) {
+      const q = Math.min(p, tem);
+      itens.push({ den, qtd: q, u: (den / 5) * q });
+      tem -= q;
+    }
+  }
+  const INF = 1e9;
+  const dp = new Float64Array(V + 1).fill(INF);
+  dp[0] = 0;
+  const usou = itens.map(() => new Uint8Array(V + 1));
+  itens.forEach((it, i) => {
+    for (let v = V; v >= it.u; v--) {
+      const c = dp[v - it.u] + it.qtd;
+      if (c < dp[v]) { dp[v] = c; usou[i][v] = 1; }
+    }
+  });
+  if (dp[V] >= INF) return null;
+  const out: Quantidades = {};
+  let v = V;
+  for (let i = itens.length - 1; i >= 0 && v > 0; i--) {
+    if (usou[i][v]) { out[String(itens[i].den)] = (out[String(itens[i].den)] ?? 0) + itens[i].qtd; v -= itens[i].u; }
+  }
+  return v === 0 ? out : null;
+}
+
+/** Vários envelopes em seguida: cada um tira do que sobrou dos anteriores. */
+export function montarEnvelopes(pedidos: { id: string; centavos: number; fixo?: Quantidades | null }[], saldo: Quantidades) {
+  const resto: Quantidades = { ...saldo };
+  const out: Record<string, Quantidades | null> = {};
+  for (const p of pedidos) {
+    const env = p.fixo ?? montarEnvelope(p.centavos, resto);
+    out[p.id] = env;
+    if (env) for (const [k, q] of Object.entries(env)) resto[k] = (resto[k] ?? 0) - q;
+  }
+  return { envelopes: out, resto };
+}

@@ -156,6 +156,35 @@ export async function pagarConta(ctx: Ctx, d: { quantidades: Quantidades; descri
   return { ok: true as const };
 }
 
+/**
+ * Saída de dinheiro do cofre ligada a uma conta (acerto da semana) ou a um
+ * adiantamento. `quantidades` positivas = o que sai (o envelope). Confere o
+ * saldo nota por nota antes.
+ */
+export async function sairDoCofre(
+  ctx: Ctx,
+  d: { quantidades: Quantidades; descricao: string; lancamentoId?: string | null; adiantamentoId?: string | null },
+) {
+  const { db, empresaId, quem } = ctx;
+  const q = negar(limpar(Object.fromEntries(Object.entries(d.quantidades).map(([k, v]) => [k, Math.abs(Number(v))]))));
+  if (Object.keys(q).length === 0) return { ok: true as const };
+  const saldo = await saldoAtual(ctx);
+  if (faltaNoCofre(saldo, q).length) return { ok: false as const, mensagem: "Não tem essas notas no cofre. Confira o envelope (ou faça a conferência do cofre)." };
+  const { error } = await db.from("cofre_movimentos").insert({
+    empresa_id: empresaId,
+    tipo: "pagamento", quantidades: q, valor: valorDe(q), descricao: d.descricao.trim().slice(0, 200) || null,
+    lancamento_id: d.lancamentoId ?? null, adiantamento_id: d.adiantamentoId ?? null, criado_por_nome: quem,
+  });
+  if (error) return { ok: false as const, mensagem: error.message };
+  return { ok: true as const };
+}
+
+/** O cofre já começou (primeira contagem feita)? Sem isso não há saldo pra tirar. */
+export async function cofreIniciado({ db, empresaId }: Ctx) {
+  const { data } = await db.from("cofre_config").select("inicio_em").eq("empresa_id", empresaId).maybeSingle();
+  return !!(data as { inicio_em: string | null } | null)?.inicio_em;
+}
+
 /** Contas a pagar em aberto, buscadas no banco (nunca a tabela toda na tela). */
 export async function buscarContasAbertas({ db, empresaId }: Ctx, termo: string) {
   let qy = db.from("lancamentos").select("id, descricao, valor, vencimento").eq("empresa_id", empresaId).eq("pago", false).gt("valor", 0).order("vencimento", { ascending: true }).limit(12);
@@ -223,9 +252,17 @@ export async function cancelarEncomenda({ db, empresaId }: Ctx, id: string) {
 /** Desfaz um movimento (errou a contagem). Se ele criou uma conta paga, apaga;
  *  se deu baixa numa conta, ela volta a ficar em aberto. */
 export async function desfazerMovimento({ db, empresaId }: Ctx, id: string) {
-  const { data: m } = await db.from("cofre_movimentos").select("id, tipo, lancamento_id, pedido_id").eq("id", id).eq("empresa_id", empresaId).maybeSingle();
-  const mov = m as { id: string; tipo: string; lancamento_id: string | null; pedido_id: string | null } | null;
+  const { data: m } = await db.from("cofre_movimentos").select("id, tipo, lancamento_id, pedido_id, adiantamento_id").eq("id", id).eq("empresa_id", empresaId).maybeSingle();
+  const mov = m as { id: string; tipo: string; lancamento_id: string | null; pedido_id: string | null; adiantamento_id: string | null } | null;
   if (!mov) return { ok: false as const, mensagem: "Movimento não encontrado." };
+  // Adiantamento pago pelo cofre: desfazer a saída = o adiantamento não foi dado.
+  // Já descontado num acerto, não dá (o acerto já contou com ele).
+  if (mov.adiantamento_id) {
+    const { data: ad } = await db.from("adiantamentos").select("status").eq("id", mov.adiantamento_id).maybeSingle();
+    const st = (ad as { status: string } | null)?.status;
+    if (st && st !== "aberto") return { ok: false as const, mensagem: "Esse adiantamento já foi descontado num acerto da semana: não dá pra desfazer pelo cofre." };
+    if (st) await db.from("adiantamentos").delete().eq("id", mov.adiantamento_id).eq("status", "aberto");
+  }
   if (mov.lancamento_id) {
     const { data: l } = await db.from("lancamentos").select("origem").eq("id", mov.lancamento_id).eq("empresa_id", empresaId).maybeSingle();
     if ((l as { origem: string } | null)?.origem === "cofre") await db.from("lancamentos").delete().eq("id", mov.lancamento_id).eq("empresa_id", empresaId);

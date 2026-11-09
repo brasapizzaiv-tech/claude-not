@@ -7,6 +7,8 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
+import { EnvelopeCofre } from "./envelope-cofre";
+import { descreverQuantidades, montarEnvelope, montarEnvelopes, valorDe, type Quantidades } from "@/lib/cofre";
 import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
@@ -62,8 +64,10 @@ type Pago = { colaborador_id: string; valor: number; lancamento_id: string | nul
 type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, descontoDezPadrao = 0, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [],
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, descontoDezPadrao = 0, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [], cofreSaldo = null,
 }: {
+  /** Saldo do cofre por nota (null = cofre não começou): o acerto e o adiantamento podem sair dele. */
+  cofreSaldo?: Quantidades | null;
   /** Batidas do relógio de ponto da semana (migration 0221). */
   batidasPonto?: { colaborador_id: string; data: string; turno: Turno; hora: string }[];
   /** Batidas sem colaborador ligado (CPF não cadastrado). */
@@ -99,6 +103,9 @@ export function SemanaClient({
   }, [adiantamentos]);
   const [descontarAdiant, setDescontarAdiant] = useState<Set<string>>(() => new Set(adiantamentos.map((a) => a.colaborador_id)));
   const [adiantAberto, setAdiantAberto] = useState(false);
+  const [semCofre, setSemCofre] = useState<Set<string>>(new Set());
+  const [envFixo, setEnvFixo] = useState<Record<string, Quantidades>>({});
+  const [ajustando, setAjustando] = useState<{ id: string; nome: string; alvo: number } | null>(null);
   const [adiantPessoa, setAdiantPessoa] = useState("");
   const [adiantValor, setAdiantValor] = useState("");
   const [adiantData, setAdiantData] = useState(() => {
@@ -106,16 +113,27 @@ export function SemanaClient({
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
   const [adiantMotivo, setAdiantMotivo] = useState("");
+  // Adiantamento em dinheiro sai do cofre (pedido do Rafael, 09/11): vem marcado
+  // quando o cofre já começou; o sistema sugere as notas.
+  const [adiantCofre, setAdiantCofre] = useState(!!cofreSaldo);
+  const [adiantEnvFixo, setAdiantEnvFixo] = useState<Quantidades | null>(null);
+  const adiantV = numBRtxt(adiantValor);
+  const adiantEnv: Quantidades | null =
+    cofreSaldo && adiantCofre && adiantV > 0
+      ? adiantEnvFixo && Math.abs(valorDe(adiantEnvFixo) - adiantV) < 0.005 ? adiantEnvFixo : montarEnvelope(Math.round(adiantV * 100), cofreSaldo)
+      : null;
   function registrarAdiant() {
     const p = pessoas.find((x) => x.id === adiantPessoa);
     const v = numBRtxt(adiantValor);
     if (!p || !(v > 0)) { setErro("Escolha a pessoa e informe o valor do adiantamento."); return; }
+    const doCofre = !!cofreSaldo && adiantCofre;
+    if (doCofre && !adiantEnv) { setErro("O cofre não tem notas pra fechar esse valor. Ajuste as notas ou desmarque \"do cofre\"."); return; }
     start(async () => {
-      const r = await registrarAdiantamento(p.id, p.nome, v, adiantData, adiantMotivo);
+      const r = await registrarAdiantamento(p.id, p.nome, v, adiantData, adiantMotivo, doCofre ? adiantEnv : null);
       if (r.erro) { setErro(r.erro); return; }
       setDescontarAdiant((s) => new Set(s).add(p.id));
-      setAdiantValor(""); setAdiantMotivo("");
-      setMsg(`✓ Adiantamento de ${brl(v)} registrado pra ${p.nome}. Sai no próximo acerto.`);
+      setAdiantValor(""); setAdiantMotivo(""); setAdiantEnvFixo(null);
+      setMsg(`✓ Adiantamento de ${brl(v)} registrado pra ${p.nome}${doCofre ? " (saiu do cofre)" : ""}. Sai no próximo acerto.`);
       router.refresh();
     });
   }
@@ -421,6 +439,25 @@ export function SemanaClient({
   const totalDesconto = aLancar.reduce((s, x) => s + descontoDe(x.p.id, x.total), 0);
   const comFiado = aLancar.filter((x) => (fiadoPor[x.p.id]?.valor ?? 0) > 0.005);
 
+  // Dinheiro do cofre no acerto: caixinha por pessoa (vem marcada); o sistema
+  // monta cada envelope com o menor número de notas, só com o que tem no cofre,
+  // um depois do outro. "ajustar" troca as notas de alguém.
+  const emMaosDe = (id: string, total: number) => Math.round((total - descontoDe(id, total)) * 100) / 100;
+  const doCofre = (id: string) => !!cofreSaldo && !semCofre.has(id);
+  const envelopes = useMemo(() => {
+    if (!cofreSaldo) return {} as Record<string, Quantidades | null>;
+    const pedidos = aLancar
+      .filter((x) => doCofre(x.p.id))
+      .map((x) => {
+        const alvo = emMaosDe(x.p.id, x.total);
+        const fixo = envFixo[x.p.id];
+        return { id: x.p.id, centavos: Math.round(alvo * 100), fixo: fixo && Math.abs(valorDe(fixo) - alvo) < 0.005 ? fixo : null };
+      });
+    return montarEnvelopes(pedidos, cofreSaldo).envelopes;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cofreSaldo, aLancar, semCofre, envFixo, descontarAdiant, descontar, descontarValor]);
+  const totalCofre = aLancar.filter((x) => doCofre(x.p.id)).reduce((s, x) => s + emMaosDe(x.p.id, x.total), 0);
+
   // Relatório dos pagamentos da semana: abre numa aba nova, pronto pra imprimir
   // ou salvar em PDF. É montado daqui, com o mesmo cálculo da tela (o CSV também
   // é), então mostra exatamente o que o Resumo mostra — inclusive o que ainda
@@ -501,9 +538,13 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
 
   async function lancar() {
     if (!aLancar.length) return;
+    const semNotas = aLancar.filter((x) => doCofre(x.p.id) && !envelopes[x.p.id]);
+    if (semNotas.length) { setErro(`O cofre não tem notas pra fechar o envelope de ${semNotas.map((x) => x.p.nome).join(", ")}. Ajuste as notas ou desmarque "do cofre".`); return; }
+    const nCofre = aLancar.filter((x) => doCofre(x.p.id)).length;
     const ok = await confirmar(
       `Lançar ${aLancar.length} pagamento(s) somando ${brl(totalALancar)} no Contas a pagar (CMO Eventual / Diaristas)${jaPago ? ", já marcados como pagos" : ""}?` +
         (totalDesconto > 0 ? `\n\nFiado descontado: ${brl(totalDesconto)} (sai em mãos ${brl(totalALancar - totalDesconto)}). As compras internas dessas pessoas serão marcadas como pagas.` : ""),
+      nCofre ? { detalhe: `Sai do cofre: ${brl(totalCofre)} em ${nCofre} envelope(s). Essas contas já entram pagas, em Dinheiro.`, okTexto: "Lançar e tirar do cofre" } : undefined,
     );
     if (!ok) return;
     start(async () => {
@@ -524,12 +565,14 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           descontarFiado: descontar.has(x.p.id),
           fiadoValor: fiadoDe(x.p.id, x.total, adiantDe(x.p.id, x.total)),
           descontarAdiantamento: descontarAdiant.has(x.p.id),
+          cofre: doCofre(x.p.id) ? envelopes[x.p.id] : null,
         })),
         { jaPago, data: dataPag, forma: formaPag || null },
       );
       if (r.erro) setErro(r.erro);
       else {
-        setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar${r.totalDesc ? `, descontado em mãos ${brl(r.totalDesc)} (adiantamento/fiado)` : ""}.`);
+        setMsg(`${r.n} lançamento(s) criado(s) no Contas a pagar${r.totalDesc ? `, descontado em mãos ${brl(r.totalDesc)} (adiantamento/fiado)` : ""}${nCofre ? `; ${brl(totalCofre)} saiu do cofre` : ""}.`);
+        setEnvFixo({});
         setDescontar(new Set());
         setDescontarValor({});
         router.refresh();
@@ -537,8 +580,24 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     });
   }
 
+  const ajusteInicial = ajustando ? (ajustando.id === "__adiant" ? adiantEnv : envelopes[ajustando.id] ?? null) : null;
+
   return (
     <div className="w-full p-4 sm:p-6">
+      {ajustando && cofreSaldo && (
+        <EnvelopeCofre
+          titulo={ajustando.id === "__adiant" ? "Adiantamento" : ajustando.nome}
+          alvo={ajustando.alvo}
+          inicial={ajusteInicial}
+          saldo={cofreSaldo}
+          aoFechar={() => setAjustando(null)}
+          aoSalvar={(q) => {
+            if (ajustando.id === "__adiant") setAdiantEnvFixo(q);
+            else setEnvFixo((o) => ({ ...o, [ajustando.id]: q }));
+            setAjustando(null);
+          }}
+        />
+      )}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Semana e 10%</h1>
@@ -624,6 +683,23 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
               Registrar adiantamento
             </button>
           </div>
+          {cofreSaldo && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <label className="flex cursor-pointer items-center gap-1 text-texto-suave">
+                <input type="checkbox" checked={adiantCofre} onChange={(e) => setAdiantCofre(e.target.checked)} /> dinheiro do cofre
+              </label>
+              {adiantCofre && adiantV > 0 && (adiantEnv ? (
+                <span className="text-texto-fraco">sai: {descreverQuantidades(adiantEnv)}</span>
+              ) : (
+                <span className="text-urgente-texto">o cofre não tem notas pra esse valor</span>
+              ))}
+              {adiantCofre && adiantV > 0 && (
+                <button type="button" onClick={() => setAjustando({ id: "__adiant", nome: "adiantamento", alvo: adiantV })} className="text-texto-marca hover:underline">
+                  ajustar notas
+                </button>
+              )}
+            </div>
+          )}
           {adiantamentos.length > 0 && (
             <div className="mt-3">
               <p className="mb-1 text-xs font-bold text-texto-fraco">Em aberto (saem no próximo acerto de cada pessoa)</p>
@@ -1146,6 +1222,28 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                       {pagoDe.has(p.id)
                         ? brl(Number(pagoDe.get(p.id)!.valor) - Number(pagoDe.get(p.id)!.desconto || 0))
                         : brl(total - descontoDe(p.id, total))}
+                      {!pagoDe.has(p.id) && cofreSaldo && total > 0.005 && !desmarcados.has(p.id) && (
+                        <div className="mt-1 flex flex-col items-end gap-0.5 text-xs font-normal">
+                          <label className="flex cursor-pointer items-center gap-1 text-texto-suave">
+                            <input
+                              type="checkbox"
+                              checked={doCofre(p.id)}
+                              onChange={(e) => setSemCofre((s) => { const n = new Set(s); if (e.target.checked) n.delete(p.id); else n.add(p.id); return n; })}
+                            />
+                            do cofre
+                          </label>
+                          {doCofre(p.id) && (envelopes[p.id] ? (
+                            <span className="max-w-[220px] text-right text-texto-fraco">{descreverQuantidades(envelopes[p.id]!) || "nada em mãos"}</span>
+                          ) : (
+                            <span className="text-urgente-texto">faltam notas no cofre</span>
+                          ))}
+                          {doCofre(p.id) && emMaosDe(p.id, total) > 0.005 && (
+                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: emMaosDe(p.id, total) })} className="text-texto-marca hover:underline">
+                              ajustar notas
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>}
                   </tr>
                 ))}

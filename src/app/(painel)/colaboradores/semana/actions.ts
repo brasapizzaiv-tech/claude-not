@@ -6,6 +6,26 @@ import { createClient } from "@/lib/supabase/server";
 import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/equipe";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { TURNO } from "@/lib/folgas";
+import { cofreIniciado, saldoAtual, sairDoCofre, type Ctx as CtxCofre } from "@/lib/cofre-core";
+import { valorDe, type Quantidades } from "@/lib/cofre";
+
+// Contexto do cofre pra quem está lançando (empresa e nome de quem fez).
+async function ctxDoCofre(supabase: Awaited<ReturnType<typeof createClient>>): Promise<CtxCofre> {
+  const empresaId = await empresaAtualId();
+  if (!empresaId) throw new Error("Não identifiquei a empresa deste acesso.");
+  const { data: u } = await supabase.auth.getUser();
+  let quem: string | null = null;
+  if (u.user) {
+    const { data: p } = await supabase.from("profiles").select("nome").eq("id", u.user.id).maybeSingle();
+    quem = (p?.nome as string | null) || u.user.email || null;
+  }
+  return { db: supabase, empresaId, quem };
+}
+const somaEnvelopes = (lista: Quantidades[]) => {
+  const t: Quantidades = {};
+  for (const q of lista) for (const [k, v] of Object.entries(q)) t[k] = (t[k] ?? 0) + Math.abs(Number(v));
+  return t;
+};
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { descontoDezPadrao } from "@/lib/dez-caixa";
 import { aplicarRecebimentoFiado, planejarRecebimentoFiado, type PlanoFiado } from "@/lib/retiradas-quitar";
@@ -147,9 +167,32 @@ export async function preencherEscalaFixa(segunda: string) {
 // Opcional: descontar o fiado (retiradas em aberto) — as retiradas viram "pago"
 // com a observação da semana, mas a conta no contas a pagar fica com o valor
 // CHEIO (pra somar a mão de obra do mês); o desconto só reduz o que sai em mãos.
+// O que a pessoa leva em mãos: valor menos adiantamentos inteiros (do mais antigo,
+// até o primeiro que não cabe) e o fiado planejado. Só LÊ: é a mesma conta que o
+// lançamento faz, pra conferir o envelope do cofre antes de lançar.
+async function emMaosDe(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  it: { colaboradorId: string; valor: number; descontarFiado?: boolean; fiadoValor?: number; descontarAdiantamento?: boolean },
+) {
+  let desconto = 0;
+  if (it.descontarAdiantamento !== false) {
+    const { data: abertos } = await supabase.from("adiantamentos").select("valor").eq("colaborador_id", it.colaboradorId).eq("status", "aberto").order("data", { ascending: true });
+    for (const a of (abertos ?? []) as { valor: number }[]) {
+      const v = Number(a.valor) || 0;
+      if (desconto + v > it.valor + 0.005) break;
+      desconto += v;
+    }
+  }
+  if (it.descontarFiado) {
+    const alvo = Math.min(Number.isFinite(it.fiadoValor) && (it.fiadoValor as number) > 0 ? (it.fiadoValor as number) : Infinity, it.valor - desconto);
+    desconto = Math.round((desconto + (await planejarRecebimentoFiado(supabase, it.colaboradorId, alvo)).recebido) * 100) / 100;
+  }
+  return Math.round((it.valor - desconto) * 100) / 100;
+}
+
 export async function lancarPagamentosSemana(
   segunda: string,
-  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean; fiadoValor?: number; descontarAdiantamento?: boolean }[],
+  itens: { colaboradorId: string; nome: string; valor: number; detalhe: string; descontarFiado?: boolean; fiadoValor?: number; descontarAdiantamento?: boolean; cofre?: Quantidades | null }[],
   opts: { jaPago: boolean; data: string; forma: string | null },
 ) {
   await exigirAcesso("/colaboradores");
@@ -166,6 +209,23 @@ export async function lancarPagamentosSemana(
   const pulados = new Set((jaPagos ?? []).map((x) => x.colaborador_id as string));
   const validos = itens.filter((i) => i.valor > 0 && !pulados.has(i.colaboradorId));
   if (!validos.length) return { erro: "Nada pra lançar (já lançado ou valor zero)." };
+
+  // Dinheiro do cofre: confere ANTES de lançar qualquer coisa que cada envelope
+  // fecha o valor em mãos da pessoa e que o cofre tem todas as notas.
+  const comCofre = validos.filter((i) => i.cofre);
+  let ctxCofre: CtxCofre | null = null;
+  if (comCofre.length) {
+    ctxCofre = await ctxDoCofre(supabase);
+    if (!(await cofreIniciado(ctxCofre))) return { erro: "O cofre ainda não começou (falta a primeira contagem). Desmarque \"do cofre\" ou faça a contagem no Cofre." };
+    for (const it of comCofre) {
+      const emMaos = await emMaosDe(supabase, it);
+      const env = valorDe(it.cofre!);
+      if (Math.abs(env - emMaos) > 0.009) return { erro: `O envelope de ${it.nome} (R$ ${env.toFixed(2).replace(".", ",")}) não fecha com o valor em mãos (R$ ${emMaos.toFixed(2).replace(".", ",")}). Atualize a tela e confira.` };
+    }
+    const saldo = await saldoAtual(ctxCofre);
+    const total = somaEnvelopes(comCofre.map((i) => i.cofre!));
+    if (Object.entries(total).some(([k, q]) => (saldo[k] ?? 0) < q)) return { erro: "O cofre não tem todas as notas desses envelopes. Ajuste os envelopes ou confira o cofre." };
+  }
 
   // Congela a divisão do 10% das noites desta semana (quem recebe 10% e o peso de
   // cada um), na primeira vez que a semana é paga (EQP-02, migration 0283).
@@ -226,13 +286,13 @@ export async function lancarPagamentosSemana(
         data: dataLanc,
         categoria_id: cat.id,
         descricao: `Semana ${rotulo} — ${it.nome} (${it.detalhe})${sufixo}`,
-        forma_pagamento: opts.forma,
+        forma_pagamento: it.cofre ? "Dinheiro" : opts.forma,
         lancamento_em: hoje,
         valor: Math.round(it.valor * 100) / 100,
         origem: "manual",
         vencimento: dataLanc,
-        pago: opts.jaPago,
-        pago_em: opts.jaPago ? dataLanc : null,
+        pago: it.cofre ? true : opts.jaPago,
+        pago_em: it.cofre || opts.jaPago ? dataLanc : null,
       })
       .select("id")
       .single();
@@ -254,6 +314,10 @@ export async function lancarPagamentosSemana(
       if ("erro" in r) return { erro: `Conta lançada, mas o fiado de ${it.nome} não foi baixado: ${r.erro}`, n: n + 1 };
       totalDesc += descFiado;
     }
+    if (it.cofre && ctxCofre) {
+      const c = await sairDoCofre(ctxCofre, { quantidades: it.cofre, descricao: `Semana ${rotulo} — ${it.nome}`, lancamentoId: l.id as string });
+      if (!c.ok) return { erro: `Conta de ${it.nome} lançada como paga, mas não saiu do cofre: ${c.mensagem} Registre a saída à mão no Cofre (Pagar conta).`, n: n + 1 };
+    }
     n++;
     avisos.push({ colaboradorId: it.colaboradorId, valor: emMaos });
   }
@@ -269,18 +333,34 @@ export async function lancarPagamentosSemana(
 // próxima semana lançada, quando sai do que ela recebe em mãos (a conta no
 // Contas a pagar continua cheia). Separado das compras internas de propósito:
 // tem gente cujo fiado é descontado só uma vez por mês.
-export async function registrarAdiantamento(colaboradorId: string, nome: string, valor: number, data: string, motivo: string) {
+export async function registrarAdiantamento(colaboradorId: string, nome: string, valor: number, data: string, motivo: string, cofre?: Quantidades | null) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const v = Math.round(Number(valor) * 100) / 100;
   if (!colaboradorId || !(v > 0)) return { erro: "Escolha a pessoa e informe o valor." };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
+  let ctxCofre: CtxCofre | null = null;
+  if (cofre) {
+    ctxCofre = await ctxDoCofre(supabase);
+    if (!(await cofreIniciado(ctxCofre))) return { erro: "O cofre ainda não começou (falta a primeira contagem)." };
+    if (Math.abs(valorDe(cofre) - v) > 0.009) return { erro: `As notas (R$ ${valorDe(cofre).toFixed(2).replace(".", ",")}) não fecham o adiantamento (R$ ${v.toFixed(2).replace(".", ",")}).` };
+  }
   const { data: userData } = await supabase.auth.getUser();
-  const { error } = await supabase
+  const { data: ad, error } = await supabase
     .from("adiantamentos")
-    .insert({ colaborador_id: colaboradorId, nome, valor: v, data, motivo: motivo.trim().slice(0, 200) || null, criado_por: userData.user?.id ?? null });
-  if (error) return { erro: error.message };
+    .insert({ colaborador_id: colaboradorId, nome, valor: v, data, motivo: motivo.trim().slice(0, 200) || null, criado_por: userData.user?.id ?? null })
+    .select("id")
+    .single();
+  if (error || !ad) return { erro: error?.message ?? "Não consegui registrar o adiantamento." };
+  if (cofre && ctxCofre) {
+    const c = await sairDoCofre(ctxCofre, { quantidades: cofre, descricao: `Adiantamento — ${nome}${motivo.trim() ? ` (${motivo.trim().slice(0, 60)})` : ""}`, adiantamentoId: ad.id as string });
+    if (!c.ok) {
+      await supabase.from("adiantamentos").delete().eq("id", ad.id);
+      return { erro: c.mensagem };
+    }
+  }
   revalidatePath("/colaboradores/semana");
+  revalidatePath("/cofre");
   return { ok: true };
 }
 
@@ -288,9 +368,15 @@ export async function registrarAdiantamento(colaboradorId: string, nome: string,
 export async function excluirAdiantamento(id: string) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
+  const { data: ad } = await supabase.from("adiantamentos").select("status").eq("id", id).maybeSingle();
+  if (!ad || (ad as { status: string }).status !== "aberto") return { erro: "Esse adiantamento não está mais em aberto (já foi descontado?)." };
+  // Saiu do cofre: apagar o adiantamento = o dinheiro voltou pro cofre.
+  const { error: errCofre } = await supabase.from("cofre_movimentos").delete().eq("adiantamento_id", id);
+  if (errCofre) return { erro: "Não consegui devolver o dinheiro ao cofre. Nada foi apagado." };
   const { error } = await supabase.from("adiantamentos").delete().eq("id", id).eq("status", "aberto");
   if (error) return { erro: error.message };
   revalidatePath("/colaboradores/semana");
+  revalidatePath("/cofre");
   return { ok: true };
 }
 
