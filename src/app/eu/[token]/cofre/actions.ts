@@ -6,6 +6,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import * as core from "@/lib/cofre-core";
 import type { MovimentoNovo, Quantidades } from "@/lib/cofre";
 
@@ -22,7 +23,7 @@ export async function colabCofre(token: string): Promise<{ id: string; nome: str
   if (!data || !data.ativo || !data.faz_cofre) return null;
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
-  if (!data.pin || data.pin !== pin) return null;
+  if (!data.pin || !(await pinConfere(token, pin))) return null;
   return { id: data.id as string, nome: data.nome as string, empresaId: data.empresa_id as string };
 }
 

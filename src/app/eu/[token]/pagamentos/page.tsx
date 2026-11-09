@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import { brl, rotuloSemana, segundaDe, somarDias, ymd } from "@/lib/equipe";
 
 export const metadata = { title: "Meus pagamentos · Brasa" };
@@ -19,7 +20,7 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
     .maybeSingle();
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
-  if (!colab || !colab.ativo || !colab.pin || colab.pin !== pin) {
+  if (!colab || !colab.ativo || !colab.pin || !(await pinConfere(token, pin))) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
         <p className="text-texto-suave">Entre com o seu PIN de novo pra ver os pagamentos.</p>

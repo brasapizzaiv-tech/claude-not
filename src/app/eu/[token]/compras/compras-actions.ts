@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 
 // Qualquer colaborador ativo, com o PIN batendo, pode pedir compras.
 export async function colabPedidos(token: string) {
@@ -15,7 +16,7 @@ export async function colabPedidos(token: string) {
   if (!data || !data.ativo) return null;
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
-  if (!data.pin || data.pin !== pin) return null;
+  if (!data.pin || !(await pinConfere(token, pin))) return null;
   return { id: data.id as string, nome: data.nome as string };
 }
 

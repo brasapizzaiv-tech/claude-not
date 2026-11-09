@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import { hojeSP } from "@/lib/assiduidade-server";
 import { ASSINATURA_DESDE, assinaturasDoCiclo, fechamentosDoCiclo, cicloDoDia, ciclosRecentes, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
 import { duracao, hhmm, type SituacaoDia } from "@/lib/ponto-relatorio-core";
@@ -30,7 +31,7 @@ export default async function MeuPontoPage({ params, searchParams }: { params: P
   const { data: c } = await admin.from("colaboradores").select("id, nome, empresa_id, ativo, pin, bate_ponto").eq("token", token).maybeSingle();
   const colab = c as { id: string; nome: string; empresa_id: string; ativo: boolean; pin: string | null; bate_ponto: boolean } | null;
   const pin = (await cookies()).get(`eu_${token}`)?.value ?? "";
-  if (!colab || !colab.ativo || !colab.pin || colab.pin !== pin) {
+  if (!colab || !colab.ativo || !colab.pin || !(await pinConfere(token, pin))) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
         <p className="text-texto-suave">Entre com o seu PIN de novo pra ver o seu ponto.</p>

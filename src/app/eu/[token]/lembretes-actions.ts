@@ -6,6 +6,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import { lembretesDoColaborador } from "@/lib/lembretes-server";
 
 export async function confirmarLembreteApp(token: string, lembreteId: string, dia: string) {
@@ -14,7 +15,7 @@ export async function confirmarLembreteApp(token: string, lembreteId: string, di
   const { data: colab } = await admin.from("colaboradores").select("id, empresa_id, ativo, pin").eq("token", token).maybeSingle();
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
-  if (!colab || !colab.ativo || !colab.pin || colab.pin !== pin) {
+  if (!colab || !colab.ativo || !colab.pin || !(await pinConfere(token, pin))) {
     return { ok: false as const, mensagem: "Entre com o seu PIN de novo." };
   }
   const meus = await lembretesDoColaborador(colab.id as string);

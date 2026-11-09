@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 
 // Colaborador com a função "contas" E com o PIN batendo (dado financeiro exige o PIN).
 export async function colabContas(token: string) {
@@ -14,7 +15,7 @@ export async function colabContas(token: string) {
   if (!data || !data.ativo || !data.faz_contas) return null;
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
-  if (!data.pin || data.pin !== pin) return null;
+  if (!data.pin || !(await pinConfere(token, pin))) return null;
   return { id: data.id as string, nome: data.nome as string };
 }
 

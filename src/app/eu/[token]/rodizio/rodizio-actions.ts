@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import { MESAS_MAX, type PedidoRodizio, type FracaoRodizio } from "@/lib/rodizio";
 
 // Garçom pelo app pessoal: colaborador ativo, com "faz garçom" e PIN batendo.
@@ -17,7 +18,7 @@ export async function colabRodizio(token: string) {
   if (!data || !data.ativo || !data.faz_garcom) return null;
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
-  if (!data.pin || data.pin !== pin) return null;
+  if (!data.pin || !(await pinConfere(token, pin))) return null;
   return { id: data.id as string, nome: data.nome as string };
 }
 

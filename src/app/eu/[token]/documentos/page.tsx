@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import { BotoesDocumento } from "./botoes";
 
 export const metadata = { title: "Meus documentos · Brasa" };
@@ -17,7 +18,7 @@ export default async function MeusDocumentosPage({ params }: { params: Promise<{
   const { data: c } = await admin.from("colaboradores").select("id, ativo, pin").eq("token", token).maybeSingle();
   const colab = c as { id: string; ativo: boolean; pin: string | null } | null;
   const pin = (await cookies()).get(`eu_${token}`)?.value ?? "";
-  if (!colab || !colab.ativo || !colab.pin || colab.pin !== pin) {
+  if (!colab || !colab.ativo || !colab.pin || !(await pinConfere(token, pin))) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
         <p className="text-texto-suave">Entre com o seu PIN de novo pra ver os documentos.</p>

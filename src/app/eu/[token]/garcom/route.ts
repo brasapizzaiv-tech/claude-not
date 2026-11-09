@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import { COOKIE_GARCOM } from "@/lib/garcom-auth";
 
 // "Modo garçom" do app pessoal: confere PIN (cookie eu_{token}) e a marcação
@@ -18,7 +19,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     .eq("token", token)
     .maybeSingle();
   const c = colab as { id: string; pin: string | null; faz_garcom: boolean; ativo: boolean } | null;
-  const ok = !!c && c.ativo && c.faz_garcom && (!c.pin || c.pin === pin);
+  const ok = !!c && c.ativo && c.faz_garcom && (!c.pin || (await pinConfere(token, pin)));
   if (!ok) return NextResponse.redirect(`${origem}/eu/${token}?garcom=negado`);
 
   const res = NextResponse.redirect(`${origem}/garcom`);

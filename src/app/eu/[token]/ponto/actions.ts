@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import { hojeSP } from "@/lib/assiduidade-server";
 import { ASSINATURA_DESDE, cicloDoDia, fechamentosDoCiclo, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
 
@@ -20,7 +21,7 @@ export async function responderPonto(token: string, de: string, resposta: "assin
   const { data: c } = await admin.from("colaboradores").select("id, empresa_id, ativo, pin, bate_ponto").eq("token", token).maybeSingle();
   const colab = c as { id: string; empresa_id: string; ativo: boolean; pin: string | null; bate_ponto: boolean } | null;
   const pin = (await cookies()).get(`eu_${token}`)?.value ?? "";
-  if (!colab || !colab.ativo || !colab.pin || colab.pin !== pin) return { ok: false as const, erro: "Entre com o seu PIN de novo." };
+  if (!colab || !colab.ativo || !colab.pin || !(await pinConfere(token, pin))) return { ok: false as const, erro: "Entre com o seu PIN de novo." };
 
   const ciclo = cicloDoDia(de);
   if (ciclo.de !== de || de < ASSINATURA_DESDE) return { ok: false as const, erro: "Ciclo inválido." };

@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinTravado } from "@/lib/pin-colaborador";
 import { recalcularDivergencias } from "@/lib/conferencia-core";
 
 const soDigitos = (s: string) => (s || "").replace(/\D/g, "").slice(0, 4);
@@ -112,7 +113,11 @@ export async function entrarPin(token: string, pinRaw: string) {
     p_token: token,
     p_pin: pin,
   });
-  if (!data || data.erro) return { ok: false, erro: "PIN incorreto." };
+  if (!data || data.erro) {
+    // 5 erros seguidos travam por 15 min (migration 0278, auditoria SEC-05).
+    if (await pinTravado(token)) return { ok: false, erro: "Muitas tentativas erradas. Espere 15 minutos e tente de novo." };
+    return { ok: false, erro: "PIN incorreto." };
+  }
   await gravarCookie(token, pin);
   return { ok: true };
 }

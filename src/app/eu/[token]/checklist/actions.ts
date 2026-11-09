@@ -6,6 +6,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 import * as core from "@/lib/checklists-core";
 
 export type ColabChecklist = { id: string; nome: string; setores: string[] };
@@ -23,7 +24,7 @@ export async function colabChecklist(token: string): Promise<ColabChecklist | nu
   if (setores.length === 0) return null;
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
-  if (!data.pin || data.pin !== pin) return null;
+  if (!data.pin || !(await pinConfere(token, pin))) return null;
   return { id: data.id as string, nome: data.nome as string, setores };
 }
 

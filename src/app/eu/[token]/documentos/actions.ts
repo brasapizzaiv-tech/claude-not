@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pinConfere } from "@/lib/pin-colaborador";
 
 // Documentos que a gestão pediu pra pessoa assinar (migration 0257). Tudo
 // confere o PIN do app e se o documento é dela.
@@ -12,7 +13,7 @@ async function pessoaDoToken(token: string) {
   const { data: c } = await admin.from("colaboradores").select("id, ativo, pin").eq("token", token).maybeSingle();
   const colab = c as { id: string; ativo: boolean; pin: string | null } | null;
   const pin = (await cookies()).get(`eu_${token}`)?.value ?? "";
-  if (!colab || !colab.ativo || !colab.pin || colab.pin !== pin) return null;
+  if (!colab || !colab.ativo || !colab.pin || !(await pinConfere(token, pin))) return null;
   return { admin, id: colab.id };
 }
 
