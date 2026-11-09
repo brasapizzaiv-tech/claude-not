@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { soDigitos } from "@/lib/nfe";
 import { distribuicaoDFe } from "@/lib/sefaz/distribuicao";
 import { importarNota, importarResumo } from "@/app/(painel)/notas/actions";
@@ -13,6 +14,7 @@ export type ConfigSefaz = {
   cert_senha: string | null;
   ult_nsu: string;
   bloqueado_ate: string | null;
+  atualizado_em?: string | null;
   forcado_em?: string | null;
   reprocessado_em?: string | null;
 };
@@ -26,6 +28,20 @@ export type ResultadoBusca = {
   erro?: string;
   bloqueado_ate?: string;
 };
+
+// A configuração da SEFAZ (com o certificado) só o dono lê pela própria sessão
+// (migration 0277). O servidor lê com a chave administrativa, pela empresa.
+// Só chamar depois de conferir a permissão de quem pediu.
+export async function lerConfigSefaz(empresaId: string | null): Promise<ConfigSefaz | null> {
+  if (!empresaId) return null;
+  const { data } = await createAdminClient()
+    .from("config_sefaz")
+    .select("*")
+    .eq("empresa_id", empresaId)
+    .limit(1)
+    .maybeSingle();
+  return (data as ConfigSefaz | null) ?? null;
+}
 
 function horaBR(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", {
@@ -67,6 +83,9 @@ export async function rodarBuscaSefaz(
     });
   }
 
+  // O marcador e a trava ficam em config_sefaz, que a sessão de funcionário não
+  // grava mais (0277): sempre pela chave administrativa.
+  const adminCfg = createAdminClient();
   let ult = cfg.ult_nsu || "0";
   let maxNSU = "0";
   let importadas = 0;
@@ -129,7 +148,7 @@ export async function rodarBuscaSefaz(
 
     ult = resp.ultNSU;
     maxNSU = resp.maxNSU;
-    await supabase
+    await adminCfg
       .from("config_sefaz")
       .update({ ult_nsu: ult, atualizado_em: new Date().toISOString() })
       .eq("id", cfg.id);
@@ -148,7 +167,7 @@ export async function rodarBuscaSefaz(
   const patch: Record<string, unknown> = { bloqueado_ate: bloqueadoAte };
   // Marca quando foi a última busca forçada, para a busca esperta espaçar bem.
   if (opts?.forcar) patch.forcado_em = new Date().toISOString();
-  await supabase.from("config_sefaz").update(patch).eq("id", cfg.id);
+  await adminCfg.from("config_sefaz").update(patch).eq("id", cfg.id);
 
   return { importadas, resumos, falhas, cStat, xMotivo, erro, bloqueado_ate: bloqueadoAte };
 }

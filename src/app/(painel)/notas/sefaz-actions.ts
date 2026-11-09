@@ -2,21 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
+import { exigirAcesso } from "@/lib/permissoes-server";
 import { soDigitos } from "@/lib/nfe";
 import { manifestarCiencia } from "@/lib/sefaz/manifestacao";
-import { rodarBuscaSefaz, type ConfigSefaz } from "@/lib/sefaz/busca";
+import { rodarBuscaSefaz, lerConfigSefaz } from "@/lib/sefaz/busca";
 
+// O certificado só é lido pelo servidor (chave administrativa, filtrado pela
+// empresa) e só depois de conferir a permissão "notas" de quem clicou. A sessão
+// do usuário continua sendo usada nas notas (auditoria SEC-03, 08/11/2026).
 async function getConfig() {
+  await exigirAcesso("/notas");
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("config_sefaz")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
-  return { supabase, cfg: data as ConfigSefaz | null };
+  const cfg = await lerConfigSefaz(await empresaAtualId());
+  return { supabase, cfg };
 }
 
 // Salva/atualiza o certificado e os dados do SEFAZ. Senha nunca vai ao cliente.
+// Só o dono (/notas/sefaz está em SO_DONO).
 export async function salvarConfigSefaz(dados: {
   cnpj: string;
   cuf: number;
@@ -25,7 +29,11 @@ export async function salvarConfigSefaz(dados: {
   cert_pfx?: string; // base64 do .pfx (opcional em edições)
   cert_senha?: string;
 }) {
-  const { supabase, cfg } = await getConfig();
+  await exigirAcesso("/notas/sefaz");
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false };
+  const admin = createAdminClient();
+  const cfg = await lerConfigSefaz(empresaId);
   const patch: Record<string, unknown> = {
     cnpj: soDigitos(dados.cnpj),
     cuf: dados.cuf,
@@ -38,8 +46,8 @@ export async function salvarConfigSefaz(dados: {
   }
   if (dados.cert_senha) patch.cert_senha = dados.cert_senha;
 
-  if (cfg) await supabase.from("config_sefaz").update(patch).eq("id", cfg.id);
-  else await supabase.from("config_sefaz").insert(patch);
+  if (cfg) await admin.from("config_sefaz").update(patch).eq("id", cfg.id).eq("empresa_id", empresaId);
+  else await admin.from("config_sefaz").insert({ ...patch, empresa_id: empresaId });
 
   revalidatePath("/notas/sefaz");
   return { ok: true };
@@ -227,7 +235,7 @@ export async function reprocessarSefaz(dias?: number) {
     if (base?.nsu) inicio = String(Math.max(0, Number(base.nsu) - 1));
   }
 
-  await supabase
+  await createAdminClient()
     .from("config_sefaz")
     .update({ ult_nsu: inicio, bloqueado_ate: null })
     .eq("id", cfg.id);

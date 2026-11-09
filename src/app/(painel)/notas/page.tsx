@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { empresaAtualId } from "@/lib/empresa";
+import { lerConfigSefaz } from "@/lib/sefaz/busca";
 import { UploadNota } from "./upload";
 import { BuscarNotas } from "./buscar-notas";
 import { ManifestarLote } from "./manifestar-lote";
@@ -7,7 +9,9 @@ import { NotasLista, type NotaLinha } from "./notas-lista";
 
 export default async function NotasPage() {
   const supabase = await createClient();
-  const [{ data }, { data: cfg }] = await Promise.all([
+  // A config da SEFAZ (com o certificado) só o dono lê pela sessão (0277): aqui
+  // o servidor lê pela empresa e a tela recebe só o horário da trava.
+  const [{ data }, cfg, { data: dono }] = await Promise.all([
     supabase
       .from("notas_fiscais")
       .select(
@@ -15,9 +19,10 @@ export default async function NotasPage() {
       )
       .order("data_emissao", { ascending: false })
       .limit(300),
-    supabase.from("config_sefaz").select("bloqueado_ate").limit(1).maybeSingle(),
+    empresaAtualId().then(lerConfigSefaz),
+    supabase.rpc("sou_dono"),
   ]);
-  const bloqueadoAte = (cfg as { bloqueado_ate?: string | null } | null)?.bloqueado_ate ?? null;
+  const bloqueadoAte = cfg?.bloqueado_ate ?? null;
 
   type Nota = {
     id: string;
@@ -111,12 +116,14 @@ export default async function NotasPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/notas/sefaz"
-            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-          >
-            SEFAZ automático
-          </Link>
+          {dono === true && (
+            <Link
+              href="/notas/sefaz"
+              className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            >
+              SEFAZ automático
+            </Link>
+          )}
           <UploadNota />
         </div>
       </div>

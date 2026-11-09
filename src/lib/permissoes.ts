@@ -79,8 +79,9 @@ export const MODULOS: {
 
 // Rotas só do dono. A configuração fiscal guarda o token da Focus e o CSC, e as
 // formas de pagamento mudam o caixa de todo mundo (auditoria, 08/11/2026: antes
-// qualquer funcionário logado abria /fiscal e salvava).
-const SO_DONO = ["/usuarios", "/fiscal", "/formas-pagamento", "/aparencia"];
+// qualquer funcionário logado abria /fiscal e salvava). /notas/sefaz guarda o
+// certificado A1 (SEC-03): a busca de notas segue pra quem tem "notas".
+const SO_DONO = ["/usuarios", "/fiscal", "/formas-pagamento", "/aparencia", "/notas/sefaz"];
 
 // Cadastro de clientes (CPF, telefone, endereço): quem vende e quem fatura.
 const ROTAS_CLIENTES = ["/clientes"];

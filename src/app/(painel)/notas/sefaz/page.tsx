@@ -1,19 +1,16 @@
 import Link from "next/link";
 import { Icone } from "@/components/icone";
-import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
+import { empresaAtualId } from "@/lib/empresa";
+import { exigirAcesso } from "@/lib/permissoes-server";
+import { lerConfigSefaz } from "@/lib/sefaz/busca";
 import { SefazPainel } from "./sefaz-painel";
 
 export default async function SefazPage() {
-  const supabase = await createClient();
-  // Nunca traz cert_pfx/cert_senha para o cliente.
-  const { data } = await supabase
-    .from("config_sefaz")
-    .select(
-      "cnpj, cuf, ambiente, cert_nome, cert_pfx, ult_nsu, atualizado_em, bloqueado_ate",
-    )
-    .limit(1)
-    .maybeSingle();
+  // Só o dono (SO_DONO). Nunca traz cert_pfx/cert_senha para o cliente: a tela
+  // recebe só "tem certificado: sim/não".
+  await exigirAcesso("/notas/sefaz");
+  const data = await lerConfigSefaz(await empresaAtualId());
 
   const status = {
     temCert: !!data?.cert_pfx,
