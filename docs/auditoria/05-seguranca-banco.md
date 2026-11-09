@@ -120,8 +120,12 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   chamava `colaborador_home(token, null)` e entrava. Ensaio em transação desfeita 11/11; em produção as telas
   pedem PIN e PIN vazio/nulo é recusado sem contar erro.
 - **Continua aberto:** PIN em texto (sem hash); cookie `eu_{token}` guarda o próprio PIN; código de ativação de 6
-  dígitos; e **novo:** o cookie `garcom_colab` do modo garçom guarda só o token, sem o PIN (`src/lib/garcom-auth.ts`):
-  quem tem o link de um garçom monta o cookie e usa o app do garçom sem PIN. Correção: cookie assinado pelo servidor.
+  dígitos.
+- **Achado novo, CORRIGIDO 08/11 (~00h, OK do Rafael, commit fab38ef):** o cookie `garcom_colab` do modo garçom
+  guardava só o token, sem o PIN: quem tinha o link de um garçom montava o cookie e usava o app do garçom. Agora é
+  `token.assinatura` (HMAC no servidor, `src/lib/garcom-assinatura.ts`, amarrado ao PIN atual; testes 4/4). Cookie
+  antigo renova sozinho pelo `/eu/{token}/garcom` (que confere o PIN do app). Em produção: só o token → manda
+  renovar → sem o PIN do app volta pro `/eu` com "garcom=negado"; assinatura inventada → login.
 
 ### [SEC-06] App das marmitas: senha numérica em texto, sem limite, e lista pública de funcionários do Kern
 - Severidade: **alto**
