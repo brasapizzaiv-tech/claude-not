@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { iniciarPonto } from "./ponto.mjs";
 
 const { print } = ptp;
-const VERSAO = "1.2.0"; // 1.2.0: lê o relógio de ponto Control iD (ponto.mjs, menu do ícone "Relógio de ponto...") e manda as batidas pro sistema; // 1.1.6: consulta a fila a cada 3 s só enquanto há impressão (2 min depois da última), senão a cada 10 s; sinal de vida a cada 60 s — corta 70% das chamadas na Vercel; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
+const VERSAO = "1.2.1"; // 1.2.1: impresso e não confirmado NÃO reimprime (só tenta a baixa de novo) e toda chamada à rede tem tempo limite; // 1.2.0: lê o relógio de ponto Control iD (ponto.mjs, menu do ícone "Relógio de ponto...") e manda as batidas pro sistema; // 1.1.6: consulta a fila a cada 3 s só enquanto há impressão (2 min depois da última), senão a cada 10 s; sinal de vida a cada 60 s — corta 70% das chamadas na Vercel; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -82,7 +82,7 @@ function imprimirRaw(printer, bytes) {
 async function heartbeat() {
   try {
     const printers = await listarImpressoras();
-    await fetch(`${baseUrl}/api/impressao/heartbeat`, {
+    await rede(`${baseUrl}/api/impressao/heartbeat`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({ hostname: os.hostname(), printers, versao: VERSAO }),
@@ -90,12 +90,45 @@ async function heartbeat() {
   } catch { /* silencioso */ }
 }
 
+// Tempo limite em toda chamada ao sistema: sem ele, uma conexão pendurada
+// prendia o laço (a fila parava e o sinal de vida seguia dizendo "conectado").
+const rede = (url, opts = {}) => fetch(url, { ...opts, signal: AbortSignal.timeout(20000) });
+
+// Impressos que ainda não tiveram a baixa confirmada pelo sistema. Se a baixa
+// falha (internet, servidor), o item volta na fila em 90 s — e antes era
+// impresso DE NOVO (no cupom ESC/POS, até 3 vias). Agora só a baixa é tentada
+// de novo. Fica em arquivo pra valer também depois de reiniciar o agente.
+const arqSemBaixa = path.join(dataDir, "impressos-sem-baixa.json");
+const semBaixa = new Map(); // id -> quando imprimiu (ms)
+try {
+  for (const [id, t] of Object.entries(JSON.parse(readFileSync(arqSemBaixa, "utf8")))) {
+    if (Date.now() - Number(t) < 6 * 3600_000) semBaixa.set(id, Number(t));
+  }
+} catch { /* primeira vez */ }
+function guardarSemBaixa() {
+  try { writeFileSync(arqSemBaixa, JSON.stringify(Object.fromEntries(semBaixa))); } catch { /* sem disco */ }
+}
+
+// Confirma no sistema que imprimiu. Devolve true só se o servidor aceitou.
 async function darBaixa(id) {
-  await fetch(`${baseUrl}/api/impressao/baixa`, {
-    method: "POST",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
-  });
+  try {
+    const r = await rede(`${baseUrl}/api/impressao/baixa`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Imprimiu: tenta a baixa; se não der, anota pra não reimprimir.
+async function imprimiu(id) {
+  if (await darBaixa(id)) { if (semBaixa.delete(id)) guardarSemBaixa(); return; }
+  semBaixa.set(id, Date.now());
+  guardarSemBaixa();
+  log(`Impresso, mas o sistema não confirmou a baixa (${id.slice(0, 8)}). Não vou imprimir de novo: só tento a baixa.`);
 }
 
 let rodando = false;
@@ -103,12 +136,17 @@ async function ciclo() {
   if (rodando) return;
   rodando = true;
   try {
-    const r = await fetch(`${baseUrl}/api/impressao/fila`, { headers });
+    const r = await rede(`${baseUrl}/api/impressao/fila`, { headers });
     if (r.status === 401) { log("Token inválido — confira o config.json (copie de Etiquetas → Estações)."); return; }
     if (!r.ok) { log(`Erro ao buscar a fila (${r.status}).`); return; }
     const { jobs } = await r.json();
     if (jobs.length > 0) ultimoJob = Date.now();
     for (const job of jobs) {
+      // Já impresso, só faltava a baixa: não imprime de novo (AGT-04).
+      if (semBaixa.has(job.id)) {
+        if (await darBaixa(job.id)) { semBaixa.delete(job.id); guardarSemBaixa(); log(`Baixa confirmada (${String(job.id).slice(0, 8)}), sem reimprimir.`); }
+        continue;
+      }
       if (!job.printer) {
         log(`Impressora "${job.impressora || "?"}" sem "Nome no Windows" — pulei. Configure em Etiquetas → Estações.`);
         continue;
@@ -116,21 +154,27 @@ async function ciclo() {
       // ESC/POS: quem decide é o servidor (campo "formato" da fila). Se a
       // impressora recusar os bytes crus (não é térmica ESC/POS), cai pro PDF.
       if (job.formato === "escpos") {
+        // Só a IMPRESSÃO fica no try: antes a baixa estava junto, e uma baixa que
+        // falhava era lida como "ESC/POS falhou" e o cupom saía de novo pelo PDF.
+        let impressoRaw = false;
         try {
-          const pr = await fetch(`${baseUrl}${job.url}?formato=escpos`, { headers });
+          const pr = await rede(`${baseUrl}${job.url}?formato=escpos`, { headers });
           if (!pr.ok) throw new Error(`servidor respondeu ${pr.status}`);
           const bytes = Buffer.from(await pr.arrayBuffer());
           if (bytes.length < 8) throw new Error("cupom vazio");
           await imprimirRaw(job.printer, bytes);
-          await darBaixa(job.id);
-          log(`Impresso (ESC/POS) em "${job.printer}".`);
-          continue;
+          impressoRaw = true;
         } catch (e) {
           log(`ESC/POS falhou (${e.message}) — tentando pelo PDF.`);
         }
+        if (impressoRaw) {
+          await imprimiu(job.id);
+          log(`Impresso (ESC/POS) em "${job.printer}".`);
+          continue;
+        }
       }
       try {
-        const pr = await fetch(`${baseUrl}${job.url}`, { headers });
+        const pr = await rede(`${baseUrl}${job.url}`, { headers });
         if (!pr.ok) { log(`Erro ao gerar o PDF (${pr.status}).`); continue; }
         const buf = Buffer.from(await pr.arrayBuffer());
         const file = path.join(tmp, `${job.id}.pdf`);
@@ -152,7 +196,7 @@ async function ciclo() {
         else if (etiqueta) { const o = orientacaoDoPdf(buf); if (o) opcoes.orientation = o; }
         else opcoes.orientation = "portrait";
         await print(file, opcoes);
-        await darBaixa(job.id);
+        await imprimiu(job.id);
         log(`Impresso em "${job.printer}".`);
       } catch (e) {
         log(`Falha ao imprimir: ${e.message}`);
