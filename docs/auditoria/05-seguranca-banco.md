@@ -234,6 +234,8 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   Não há script de backup no repositório.
 - **O Rafael confere** no Supabase: Project Settings → Billing (qual plano) e Database → Backups (backup diário? quantos
   dias? PITR?). Se for o grátis, não há backup pra restaurar: plano Pro (7 dias) ou um `pg_dump` noturno fora do Supabase.
+- **Resposta (08/11):** plano Pro, com backup. → resolvido. Fica de observação: o backup diário do Pro guarda 7 dias e
+  não cobre as fotos do Storage (cotação); sem PITR, o pior caso é perder até 1 dia de lançamentos.
 
 ### [SEC-18] Leitura de tabela inteira em excesso e chaves estrangeiras sem índice
 - Severidade: médio (confirma DES-003 e DES-005 da Etapa 1)
@@ -302,7 +304,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   **`WHATSAPP_APP_SECRET` não existe** → o webhook do WhatsApp aceita chamada sem assinatura (SEC-12 vale: dá pra forjar
   "SAIR" e status). Correção: o Rafael pega o "Chave secreta do app" no painel da Meta (app Motelli → Configurações do
   app → Básico) e cola na Vercel como `WHATSAPP_APP_SECRET`; depois o webhook passa a recusar sem assinatura.
-- Backup: o Rafael vai conferir.
+- Backup: plano Pro com backup (conferido pelo Rafael em 08/11).
 
 ## O que o Rafael precisava conferir (lista original)
 
