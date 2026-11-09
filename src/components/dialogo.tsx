@@ -93,9 +93,15 @@ export function Dialogos() {
 
   // Registra a ponte enquanto este componente estiver na tela.
   useEffect(() => {
+    // O setTimeout tira a abertura de dentro de uma transição. Quem pergunta dentro
+    // de `start(async () => { await confirmar(...) })` marcava a janela como parte da
+    // transição, e o React só desenha a transição quando ela termina — que esperava
+    // a resposta da janela que nunca aparecia: botão travado, pergunta invisível.
     abrirNaTela = (p, r) => {
-      if (resolverRef.current) filaRef.current.push({ p, r });
-      else mostrar(p, r);
+      setTimeout(() => {
+        if (resolverRef.current) filaRef.current.push({ p, r });
+        else mostrar(p, r);
+      }, 0);
     };
     return () => { abrirNaTela = null; };
   }, [mostrar]);
