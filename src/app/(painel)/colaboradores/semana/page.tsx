@@ -43,6 +43,26 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
   const empresaCofre = await empresaAtualId();
   const ctxCofre = empresaCofre ? { db: supabase, empresaId: empresaCofre, quem: null } : null;
   const cofreSaldo = ctxCofre && (await cofreIniciado(ctxCofre)) ? await saldoAtual(ctxCofre) : null;
+  // Semana já paga em dinheiro sem ter saído do cofre: dá pra tirar agora.
+  let pagosParaCofre: string[] = [];
+  if (cofreSaldo) {
+    const ps = ((pagos ?? []) as { colaborador_id: string; lancamento_id: string | null }[]).filter((p) => p.lancamento_id);
+    const ids = ps.map((p) => p.lancamento_id as string);
+    if (ids.length) {
+      const [{ data: ls }, { data: movs }] = await Promise.all([
+        supabase.from("lancamentos").select("id, pago, forma_pagamento").in("id", ids),
+        supabase.from("cofre_movimentos").select("lancamento_id").in("lancamento_id", ids),
+      ]);
+      const noCofre = new Set(((movs ?? []) as { lancamento_id: string }[]).map((m) => m.lancamento_id));
+      const dinheiro = new Map(((ls ?? []) as { id: string; pago: boolean; forma_pagamento: string | null }[]).map((l) => [l.id, l.pago && l.forma_pagamento === "Dinheiro"]));
+      const porPessoa = new Map<string, boolean>();
+      for (const p of ps) {
+        const ok = !!dinheiro.get(p.lancamento_id as string) && !noCofre.has(p.lancamento_id as string);
+        porPessoa.set(p.colaborador_id, (porPessoa.get(p.colaborador_id) ?? true) && ok);
+      }
+      pagosParaCofre = [...porPessoa].filter(([, ok]) => ok).map(([id]) => id);
+    }
+  }
 
   // Presenças da semana + das noites de 10% que entram neste acerto (podem ser de outra semana).
   const datasExtras = ((dez ?? []) as { data: string }[]).map((d) => d.data).filter((d) => d < segunda || d > fim);
@@ -107,6 +127,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     <SemanaClient
       key={segunda}
       cofreSaldo={cofreSaldo}
+      pagosParaCofre={pagosParaCofre}
       segunda={segunda}
       dias={dias}
       pessoas={pessoasDaSemana}

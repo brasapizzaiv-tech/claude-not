@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
 import { EnvelopeCofre } from "./envelope-cofre";
 import { descreverQuantidades, montarEnvelope, montarEnvelopes, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
-import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
+import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, tirarDoCofrePagos, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 
 export type Pessoa = {
   id: string;
@@ -64,8 +64,10 @@ type Pago = { colaborador_id: string; valor: number; lancamento_id: string | nul
 type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, descontoDezPadrao = 0, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [], cofreSaldo = null,
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, descontoDezPadrao = 0, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [], cofreSaldo = null, pagosParaCofre = [],
 }: {
+  /** Já pagos em dinheiro nesta semana sem ter saído do cofre (dá pra tirar agora). */
+  pagosParaCofre?: string[];
   /** Saldo do cofre por nota (null = cofre não começou): o acerto e o adiantamento podem sair dele. */
   cofreSaldo?: Quantidades | null;
   /** Batidas do relógio de ponto da semana (migration 0221). */
@@ -460,6 +462,39 @@ export function SemanaClient({
   }, [cofreSaldo, aLancar, semCofre, envFixo, descontarAdiant, descontar, descontarValor]);
   const totalCofre = aLancar.filter((x) => doCofre(x.p.id)).reduce((s, x) => s + envelopeDe(x.p.id, x.total), 0);
 
+  // Semana já paga em dinheiro, antes da caixinha existir: tirar do cofre agora.
+  const pagosMaos = (id: string) => (pagoDe.has(id) ? Math.round((Number(pagoDe.get(id)!.valor) - Number(pagoDe.get(id)!.desconto || 0)) * 100) / 100 : 0);
+  const retroIds = cofreSaldo ? pagosParaCofre.filter((id) => !semCofre.has(id) && pagosMaos(id) > 0.005) : [];
+  const envelopesRetro = useMemo(() => {
+    if (!cofreSaldo) return {} as Record<string, Quantidades | null>;
+    return montarEnvelopes(
+      retroIds.map((id) => {
+        const alvo = valorDoEnvelope(pagosMaos(id));
+        const fixo = envFixo[id];
+        return { id, centavos: Math.round(alvo * 100), fixo: fixo && Math.abs(valorDe(fixo) - alvo) < 0.005 ? fixo : null };
+      }),
+      cofreSaldo,
+    ).envelopes;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cofreSaldo, pagosParaCofre, semCofre, envFixo, pagos]);
+  const totalRetro = retroIds.reduce((s, id) => s + valorDoEnvelope(pagosMaos(id)), 0);
+  async function tirarRetro() {
+    const falta = retroIds.filter((id) => !envelopesRetro[id]);
+    const nome = (id: string) => pessoas.find((p) => p.id === id)?.nome ?? id;
+    if (falta.length) { setErro(`O cofre não tem notas pro envelope de ${falta.map(nome).join(", ")}. Ajuste ou desmarque.`); return; }
+    if (!(await confirmar(`Tirar do cofre ${brl(totalRetro)} dos ${retroIds.length} pagamento(s) em dinheiro desta semana?`, {
+      detalhe: "Esses pagamentos já foram lançados e feitos. Aqui só registra a saída do dinheiro no cofre (cada envelope arredondado pra cima até o real; a diferença entra na conta).",
+      okTexto: "Tirar do cofre",
+    }))) return;
+    start(async () => {
+      const r = await tirarDoCofrePagos(segunda, retroIds.map((id) => ({ colaboradorId: id, nome: nome(id), cofre: envelopesRetro[id]! })));
+      if (r.erro) { setErro(r.erro); return; }
+      setMsg(`✓ ${r.n} pagamento(s) saíram do cofre (${brl(totalRetro)}).`);
+      setEnvFixo({});
+      router.refresh();
+    });
+  }
+
   // Relatório dos pagamentos da semana: abre numa aba nova, pronto pra imprimir
   // ou salvar em PDF. É montado daqui, com o mesmo cálculo da tela (o CSV também
   // é), então mostra exatamente o que o Resumo mostra — inclusive o que ainda
@@ -582,7 +617,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     });
   }
 
-  const ajusteInicial = ajustando ? (ajustando.id === "__adiant" ? adiantEnv : envelopes[ajustando.id] ?? null) : null;
+  const ajusteInicial = ajustando ? (ajustando.id === "__adiant" ? adiantEnv : envelopes[ajustando.id] ?? envelopesRetro[ajustando.id] ?? null) : null;
 
   return (
     <div className="w-full p-4 sm:p-6">
@@ -1224,6 +1259,31 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                       {pagoDe.has(p.id)
                         ? brl(Number(pagoDe.get(p.id)!.valor) - Number(pagoDe.get(p.id)!.desconto || 0))
                         : brl(total - descontoDe(p.id, total))}
+                      {pagoDe.has(p.id) && cofreSaldo && pagosParaCofre.includes(p.id) && pagosMaos(p.id) > 0.005 && (
+                        <div className="mt-1 flex flex-col items-end gap-0.5 text-xs font-normal">
+                          <label className="flex cursor-pointer items-center gap-1 text-texto-suave" title="Pago em dinheiro antes da caixinha do cofre existir">
+                            <input
+                              type="checkbox"
+                              checked={!semCofre.has(p.id)}
+                              onChange={(e) => setSemCofre((s) => { const n = new Set(s); if (e.target.checked) n.delete(p.id); else n.add(p.id); return n; })}
+                            />
+                            tirar do cofre
+                          </label>
+                          {!semCofre.has(p.id) && valorDoEnvelope(pagosMaos(p.id)) - pagosMaos(p.id) > 0.005 && (
+                            <span className="text-texto-suave">no envelope {brl(valorDoEnvelope(pagosMaos(p.id)))}</span>
+                          )}
+                          {!semCofre.has(p.id) && (envelopesRetro[p.id] ? (
+                            <span className="max-w-[220px] text-right text-texto-fraco">{descreverQuantidades(envelopesRetro[p.id]!)}</span>
+                          ) : (
+                            <span className="text-urgente-texto">faltam notas no cofre</span>
+                          ))}
+                          {!semCofre.has(p.id) && (
+                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: valorDoEnvelope(pagosMaos(p.id)) })} className="text-texto-marca hover:underline">
+                              ajustar notas
+                            </button>
+                          )}
+                        </div>
+                      )}
                       {!pagoDe.has(p.id) && cofreSaldo && total > 0.005 && !desmarcados.has(p.id) && (
                         <div className="mt-1 flex flex-col items-end gap-0.5 text-xs font-normal">
                           <label className="flex cursor-pointer items-center gap-1 text-texto-suave">
@@ -1319,6 +1379,11 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                 className="rounded-controle border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
               >
                 {descontar.size >= comFiado.length ? "não descontar fiado de ninguém" : `descontar fiado de todos (${comFiado.length})`}
+              </button>
+            )}
+            {retroIds.length > 0 && (
+              <button type="button" onClick={tirarRetro} disabled={pending} className="btn-secundario text-sm">
+                Tirar do cofre {retroIds.length} pago{retroIds.length === 1 ? "" : "s"} em dinheiro · {brl(totalRetro)}
               </button>
             )}
             {msg && <span className="text-xs text-green-700">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}

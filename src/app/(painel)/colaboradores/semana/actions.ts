@@ -388,6 +388,58 @@ export async function excluirAdiantamento(id: string) {
 
 // Esqueceu algo depois de já ter lançado a semana da pessoa (um extra, uma
 // noite): lança só a DIFERENÇA como um segundo lançamento da mesma semana.
+// Semana JÁ lançada e paga em dinheiro, sem ter saído do cofre no sistema (o
+// acerto de 02/11 foi pago antes de existir a caixinha): registra agora a saída
+// do cofre, ligada à conta que já existe. Mesma regra do lançamento: envelope =
+// em mãos arredondado pra cima até o real; a diferença entra na conta.
+export async function tirarDoCofrePagos(segunda: string, itens: { colaboradorId: string; nome: string; cofre: Quantidades }[]) {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  if (!itens.length) return { erro: "Ninguém marcado." };
+  const ctxCofre = await ctxDoCofre(supabase);
+  if (!(await cofreIniciado(ctxCofre))) return { erro: "O cofre ainda não começou (falta a primeira contagem)." };
+  const rotulo = rotuloSemana(segunda);
+
+  type Plano = { it: (typeof itens)[number]; lancId: string; valor: number; descricao: string; arred: number };
+  const planos: Plano[] = [];
+  for (const it of itens) {
+    const { data: sps } = await supabase.from("semana_pagamentos").select("valor, desconto, lancamento_id").eq("segunda", segunda).eq("colaborador_id", it.colaboradorId).order("criado_em");
+    const linhas = ((sps ?? []) as { valor: number; desconto: number | null; lancamento_id: string | null }[]).filter((x) => x.lancamento_id);
+    if (!linhas.length) return { erro: `${it.nome} não tem pagamento lançado nesta semana.` };
+    const ids = linhas.map((x) => x.lancamento_id as string);
+    const { data: ls } = await supabase.from("lancamentos").select("id, pago, forma_pagamento, valor, descricao").in("id", ids);
+    const lancs = (ls ?? []) as { id: string; pago: boolean; forma_pagamento: string | null; valor: number; descricao: string | null }[];
+    if (lancs.some((l) => !l.pago || l.forma_pagamento !== "Dinheiro")) return { erro: `O pagamento de ${it.nome} não está como pago em Dinheiro. Só dá pra tirar do cofre o que foi pago em dinheiro.` };
+    const { data: ja } = await supabase.from("cofre_movimentos").select("id").in("lancamento_id", ids).limit(1);
+    if (ja?.length) return { erro: `O pagamento de ${it.nome} já saiu do cofre.` };
+    const emMaos = Math.round(linhas.reduce((s, x) => s + Number(x.valor) - Number(x.desconto || 0), 0) * 100) / 100;
+    const esperado = valorDoEnvelope(emMaos);
+    if (Math.abs(valorDe(it.cofre) - esperado) > 0.009) return { erro: `O envelope de ${it.nome} não fecha com o em mãos arredondado (R$ ${esperado.toFixed(2).replace(".", ",")}). Atualize a tela.` };
+    const primeiro = lancs.find((l) => l.id === ids[0]) ?? lancs[0];
+    planos.push({ it, lancId: primeiro.id, valor: Number(primeiro.valor), descricao: primeiro.descricao ?? "", arred: Math.round((esperado - emMaos) * 100) / 100 });
+  }
+  const saldo = await saldoAtual(ctxCofre);
+  const total = somaEnvelopes(itens.map((i) => i.cofre));
+  if (Object.entries(total).some(([k, q]) => (saldo[k] ?? 0) < q)) return { erro: "O cofre não tem todas as notas desses envelopes. Ajuste os envelopes ou confira o cofre." };
+
+  let n = 0;
+  for (const p of planos) {
+    const c = await sairDoCofre(ctxCofre, { quantidades: p.it.cofre, descricao: `Semana ${rotulo} — ${p.it.nome} (pago antes)`, lancamentoId: p.lancId });
+    if (!c.ok) return { erro: `${n} saíram do cofre; parou em ${p.it.nome}: ${c.mensagem}`, n };
+    if (p.arred > 0) {
+      await supabase.from("lancamentos").update({
+        valor: Math.round((p.valor + p.arred) * 100) / 100,
+        descricao: `${p.descricao} · arredondado +${p.arred.toFixed(2).replace(".", ",")} no dinheiro do cofre`.slice(0, 500),
+      }).eq("id", p.lancId);
+    }
+    n++;
+  }
+  revalidatePath("/colaboradores/semana");
+  revalidatePath("/cofre");
+  revalidatePath("/financeiro/contas");
+  return { ok: true, n };
+}
+
 export async function lancarComplementoSemana(
   segunda: string,
   colaboradorId: string,
