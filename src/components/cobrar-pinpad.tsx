@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { Icone } from "@/components/icone";
 import { motivoRecusa, tefDisponivel, tefPix, tefVenda, type TefDados, type TefStatus } from "@/lib/tef-client";
+import { conferirVendaGravada } from "@/app/(painel)/salao/actions";
 import { anotarAprovada, anotarCobranca, anotarRecusa, confirmarVendaGravada, desfazerNoPinpad, esquecerCobranca, resgatarPendente } from "@/lib/tef-guarda";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -108,10 +109,23 @@ export function CobrarPinpad({
       anotarAprovada(dados);
       setEtapa("gravando");
       let g: Awaited<ReturnType<typeof aoAprovar>>;
+      let gravadaSemResposta = false;
       try {
         g = await aoAprovar(dados);
       } catch {
+        // A resposta pode ter se perdido DEPOIS de gravar (CX-05): pergunta pelo NSU
+        // antes de desfazer. Gravada → confirma; sem resposta, tenta mais 2 vezes.
         g = { ok: false, mensagem: "Sem conexão ao gravar a venda." };
+        gravadaSemResposta = false;
+        for (let tentativa = 0; tentativa < 3; tentativa++) {
+          try {
+            const v = await conferirVendaGravada([{ idAgente: dados.idAgente, nsu: dados.nsu ?? null }]);
+            if (v.gravada) { g = { ok: true, transacaoId: v.tefRegistros[0]?.transacaoId ?? null }; gravadaSemResposta = true; }
+            break;
+          } catch {
+            await new Promise((res) => setTimeout(res, 2000));
+          }
+        }
       }
       if (!g.ok) {
         await desfazerNoPinpad(dados.idAgente, g.mensagem || "a venda não gravou");
@@ -120,6 +134,12 @@ export function CobrarPinpad({
       }
       // Fora da tela: o caixa não espera os ~3,9 s do CNF (DES-010).
       confirmarVendaGravada([{ idAgente: dados.idAgente, transacaoId: g.transacaoId ?? null, confirmado: false }]);
+      if (gravadaSemResposta) {
+        // A tela que chamou não soube que gravou (não limpou o carrinho): avisa
+        // pra atualizar antes de continuar, senão a mesma venda sairia de novo.
+        setAviso("A conexão caiu, mas a venda foi gravada e o cartão confirmado. Atualize a tela (F5) antes de continuar.");
+        return;
+      }
       aoTerminar?.();
     } catch {
       setAviso("O agente TEF não respondeu. Confira o ícone na bandeja.");

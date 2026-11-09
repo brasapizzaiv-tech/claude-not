@@ -1556,6 +1556,32 @@ export async function pagarSelecao(
   return { ok: true as const, numeros, total: totalPago, pendenteId, tefRegistros };
 }
 
+// A resposta do "Pagar" se perdeu (conexão caiu): a venda gravou ou não? O NSU do
+// cartão identifica — se já há transação desse NSU ligada a um movimento do caixa,
+// a venda está gravada e o cartão deve ser CONFIRMADO, não desfeito (CX-05).
+export async function conferirVendaGravada(tefs: { idAgente: string; nsu: string | null }[]) {
+  await exigirAcesso(["/salao", "/pdv", "/delivery"]);
+  const supabase = await createClient();
+  const desde = new Date(Date.now() - 20 * 60_000).toISOString();
+  const registros: { idAgente: string; transacaoId: string }[] = [];
+  for (const t of tefs) {
+    if (!t.nsu) return { gravada: false as const };
+    const { data, error } = await supabase
+      .from("tef_transacoes")
+      .select("id")
+      .eq("nsu", t.nsu)
+      .eq("id_agente", t.idAgente)
+      .not("mov_id", "is", null)
+      .gte("criado_em", desde)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error("sem resposta do banco");
+    if (!data) return { gravada: false as const };
+    registros.push({ idAgente: t.idAgente, transacaoId: (data as { id: string }).id });
+  }
+  return { gravada: true as const, tefRegistros: registros };
+}
+
 // Depois que o pinpad confirmou (CNF) ou desfez (NCN), o registro do TEF
 // reflete isso; confirmado → a via do cliente sai na impressora da nota.
 // PDV e delivery também passam no pinpad (12/10/2026), então quem vende por

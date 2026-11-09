@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { avisar, confirmar as perguntarSeOk, perguntar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
-import { pagarSelecao, registrarTefAvulso, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
+import { conferirVendaGravada, pagarSelecao, registrarTefAvulso, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
 import { confirmarVendaGravada, desfazerNoPinpad, guardarSemConta } from "@/lib/tef-guarda";
 import { EmitirNotaCaixa } from "./emitir-nota-caixa";
 import { JuntarComandas } from "./juntar-comandas";
@@ -554,6 +554,25 @@ export function ReceberComandas({
         );
       } catch {
         confirmandoRef.current = false;
+        // A resposta pode ter se perdido DEPOIS de gravar (CX-05): antes de desfazer
+        // o cartão, pergunta se a venda está lá (pelo NSU). Gravada → confirma o
+        // cartão. Sem conseguir perguntar, tenta mais 2 vezes antes de desfazer.
+        const aConferir = comTef.filter((x) => !x.tef!.semContaId && !x.tef!.confirmado);
+        if (aConferir.length > 0) {
+          for (let tentativa = 0; tentativa < 3; tentativa++) {
+            try {
+              const v = await conferirVendaGravada(aConferir.map((x) => ({ idAgente: x.tef!.idAgente, nsu: x.tef!.nsu ?? null })));
+              if (v.gravada) {
+                confirmarVendaGravada(v.tefRegistros.map((reg) => ({ ...reg, confirmado: jaConfirmados.has(reg.idAgente) })));
+                setMsg("A conexão caiu, mas a venda tinha sido gravada: o cartão foi confirmado. Atualize a tela pra ver a comanda fechada.");
+                return;
+              }
+              break; // respondeu que não gravou: pode desfazer
+            } catch {
+              await new Promise((res) => setTimeout(res, 2000));
+            }
+          }
+        }
         const presos = await desfazerTefs("sem conexão ao gravar a venda");
         setMsg((comTef.length > 0
           ? "Sem conexão. A cobrança no cartão foi DESFEITA — passe de novo quando a conexão voltar."
