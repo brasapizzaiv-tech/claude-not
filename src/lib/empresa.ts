@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { perfilDaSessao } from "@/lib/sessao";
 import { COOKIE_GARCOM, tokenDoCookieGarcom } from "@/lib/garcom-auth";
 
 // DE QUEM É ESTE ACESSO? (Etapa 1 do multiempresa)
@@ -52,17 +52,8 @@ export function apelidoDoEndereco(host: string | null): string | null {
 
 async function porPerfil(): Promise<string | null> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase
-      .from("profiles")
-      .select("empresa_id")
-      .eq("id", user.id)
-      .maybeSingle();
-    return (data?.empresa_id as string | undefined) ?? null;
+    // O perfil já buscado nesta requisição (DES-001, src/lib/sessao.ts).
+    return (await perfilDaSessao())?.empresa_id ?? null;
   } catch {
     return null;
   }

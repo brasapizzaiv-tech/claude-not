@@ -55,18 +55,24 @@ export function BancoTabela({
   transacoes,
   categorias,
   lancamentos,
+  meses,
+  mes,
 }: {
   transacoes: TransRow[];
   categorias: Cat[];
   lancamentos: LancOpt[];
+  /** Meses que têm extrato (AAAA-MM, do mais novo pro mais velho). */
+  meses: string[];
+  /** Mês na tela (vem do endereço ?mes=; o servidor só manda as dele). */
+  mes: string;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
   const [filtro, setFiltro] = useState("Todos");
   // Extrato inteiro numa tela só não dá pra trabalhar: abre no mês mais recente
   // e mostra só o que ainda falta conciliar (é o que o dia a dia pede).
-  const meses = [...new Set(transacoes.map((t) => mesDe(t.data)))].sort().reverse();
-  const [mes, setMes] = useState(meses[0] ?? "todos");
+  // O mês mora no endereço: trocar busca só as transações dele no servidor.
+  const setMes = (m: string) => router.push(`/financeiro/banco?mes=${m}`);
   const [soFalta, setSoFalta] = useState(true);
   const [busca, setBusca] = useState("");
   const [painel, setPainel] = useState<string | null>(null);

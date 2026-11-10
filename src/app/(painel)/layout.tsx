@@ -6,6 +6,7 @@ import { Dialogos } from "@/components/dialogo";
 import { lerMarca } from "@/lib/marca";
 import { empresaAtual } from "@/lib/empresa";
 import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
+import { perfilDaSessao, usuarioDaSessao } from "@/lib/sessao";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
 function hojeBR() {
@@ -24,10 +25,9 @@ export default async function PainelLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: erroAuth,
-  } = await supabase.auth.getUser();
+  // Login e perfil uma vez só por requisição (DES-001): o título, a empresa e
+  // o exigirAcesso da página reaproveitam.
+  const { user, erro: erroAuth } = await usuarioDaSessao();
 
   if (!user) {
     // Erro transitório do Auth (rede/limite/5xx) NÃO é "deslogado": mostra erro
@@ -38,41 +38,28 @@ export default async function PainelLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nome, papel, permissoes, tema")
-    .eq("id", user.id)
-    .single();
+  const profile = await perfilDaSessao();
 
   const admin = profile?.papel === "dono";
   const permissoes = (profile?.permissoes as string[] | null) ?? [];
   // Aparência escolhida pela pessoa (claro / escuro / do aparelho). Vem do
   // perfil, e não do navegador, pra valer em qualquer aparelho onde ela entrar.
-  const tema: Tema = ehTema(profile?.tema) ? profile.tema : TEMA_PADRAO;
+  const tema: Tema = profile && ehTema(profile.tema) ? profile.tema : TEMA_PADRAO;
 
   // Reservas de hoje em diante que ainda estão como "nova" ou "aguardando" —
   // vira o numerozinho no menu, para nenhuma passar batida.
-  const marca = await lerMarca();
   const hoje = hojeBR();
-  let reservasNovas = 0;
-  if (admin || permissoes.includes("reservas")) {
-    const { count } = await supabase
-      .from("reservas")
-      .select("id", { count: "exact", head: true })
-      .gte("data", hoje)
-      .in("status", ["nova", "aguardando"]);
-    reservasNovas = count ?? 0;
-  }
-
   // Pedidos de compra da equipe ainda não atendidos — numerozinho no menu.
-  let pedidosCompra = 0;
-  if (admin || permissoes.includes("solicitacoes")) {
-    const { count } = await supabase
-      .from("solicitacoes_compra")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pendente");
-    pedidosCompra = count ?? 0;
-  }
+  // As três buscas ao mesmo tempo (antes uma esperava a outra).
+  const [marca, reservasNovas, pedidosCompra] = await Promise.all([
+    lerMarca(),
+    admin || permissoes.includes("reservas")
+      ? supabase.from("reservas").select("id", { count: "exact", head: true }).gte("data", hoje).in("status", ["nova", "aguardando"]).then((r) => r.count ?? 0)
+      : Promise.resolve(0),
+    admin || permissoes.includes("solicitacoes")
+      ? supabase.from("solicitacoes_compra").select("id", { count: "exact", head: true }).eq("status", "pendente").then((r) => r.count ?? 0)
+      : Promise.resolve(0),
+  ]);
 
   return (
     <div className="flex min-h-full flex-1">

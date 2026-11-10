@@ -8,32 +8,59 @@ import { BancoTabela } from "./banco-tabela";
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export default async function BancoPage() {
-  const supabase = await createClient();
+const somarDiasISO = (iso: string, n: number) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const proximoMes = (mes: string) => {
+  const [a, m] = mes.split("-").map(Number);
+  return m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, "0")}`;
+};
 
-  // O banco devolve no máximo 1000 linhas por consulta. O extrato (1,5 mil
-  // linhas em out/2026, ~400/mês) pedia .limit(5000) e vinham só 1000: as
-  // mais antigas sumiam da tela e da conciliação sem aviso. Os lançamentos
-  // (3,4 mil) já vinham em páginas, mas sem desempate na ordem. Agora os dois
-  // vêm em páginas de 1000, com ordem estável.
+export default async function BancoPage({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
+  const supabase = await createClient();
+  const sp = await searchParams;
+
+  // VELOCIDADE (DES-002): antes vinham o extrato inteiro (1,5 mil linhas) e
+  // TODOS os lançamentos (3,9 mil) a cada clique, pra mostrar um mês só. Agora
+  // vêm só as transações do mês escolhido e os lançamentos que podem casar com
+  // elas (data do banco entre 8 meses antes e 4 depois — conferido: nenhuma sugestão dos últimos meses fica de fora). "Todos" ainda traz
+  // tudo. Sempre em páginas de 1000 com ordem estável (o banco corta em 1000).
+  const [{ data: datasData }, ligadosData] = await Promise.all([
+    supabase.rpc("transacoes_meses"),
+    // Lançamento já ligado a QUALQUER transação (de qualquer mês) não vira sugestão.
+    buscarTodas<{ lancamento_id: string }>((de, ate) =>
+      supabase.from("transacoes_banco").select("lancamento_id").not("lancamento_id", "is", null).order("id").range(de, ate),
+    ),
+  ]);
+  const meses = ((datasData as { mes: string }[] | null) ?? []).map((r) => r.mes);
+  const mesSel = sp.mes === "todos" ? "todos" : sp.mes && meses.includes(sp.mes) ? sp.mes : (meses[0] ?? "todos");
+  const de = mesSel === "todos" ? null : `${mesSel}-01`;
+  const ate = mesSel === "todos" ? null : `${proximoMes(mesSel)}-01`;
+  const janDe = de ? somarDiasISO(de, -240) : null;
+  const janAte = ate ? somarDiasISO(ate, 120) : null;
+
   const [transData, lancData, { data: catData }] =
     await Promise.all([
-      buscarTodas((de, ate) =>
-        supabase
+      buscarTodas((a, b) => {
+        let q = supabase
           .from("transacoes_banco")
-          .select("id, data, valor, descricao, banco, lancamento_id, lancamentos(descricao)")
-          .order("data", { ascending: false })
-          .order("id")
-          .range(de, ate),
-      ),
-      buscarTodas((de, ate) =>
-        supabase
+          .select("id, data, valor, descricao, banco, lancamento_id, lancamentos(descricao)");
+        if (de && ate) q = q.gte("data", de).lt("data", ate);
+        return q.order("data", { ascending: false }).order("id").range(a, b);
+      }),
+      buscarTodas((a, b) => {
+        let q = supabase
           .from("lancamentos")
-          .select("id, data, vencimento, pago_em, valor, descricao, nota_id, grupo_id, dre_categorias(tipo, nome), fornecedores(nome)")
-          .order("data", { ascending: false })
-          .order("id")
-          .range(de, ate),
-      ),
+          .select("id, data, vencimento, pago_em, valor, descricao, nota_id, grupo_id, dre_categorias(tipo, nome), fornecedores(nome)");
+        if (janDe && janAte) {
+          q = q.or(
+            `and(pago_em.gte.${janDe},pago_em.lt.${janAte}),and(pago_em.is.null,vencimento.gte.${janDe},vencimento.lt.${janAte}),and(pago_em.is.null,vencimento.is.null,data.gte.${janDe},data.lt.${janAte})`,
+          );
+        }
+        return q.order("data", { ascending: false }).order("id").range(a, b);
+      }),
       supabase
         .from("dre_categorias")
         .select("id, nome, tipo, grupo")
@@ -122,7 +149,7 @@ export default async function BancoPage() {
 
   // Sugere um boleto para cada transação não conciliada (guloso, sem repetir).
   // Um boleto já conciliado em QUALQUER uma de suas partes está fora.
-  const jaLigados = new Set(transacoes.filter((t) => t.lancamento_id).map((t) => t.lancamento_id));
+  const jaLigados = new Set(ligadosData.map((t) => t.lancamento_id));
   const usados = new Set<string>();
   for (const b of boletos) if (b.ids.some((id) => jaLigados.has(id))) b.ids.forEach((id) => usados.add(id));
   const diasEntre = (a: string, b: string) =>
@@ -227,7 +254,7 @@ export default async function BancoPage() {
         </div>
       </div>
 
-      {transacoes.length === 0 ? (
+      {meses.length === 0 ? (
         <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
           Nenhuma transação ainda. Escolha o <b>banco</b> e clique em{" "}
           <b>Importar extrato (OFX)</b>.
@@ -237,6 +264,8 @@ export default async function BancoPage() {
           transacoes={rows}
           categorias={categorias}
           lancamentos={lancamentosOpt}
+          meses={meses}
+          mes={mesSel}
         />
       )}
     </div>
