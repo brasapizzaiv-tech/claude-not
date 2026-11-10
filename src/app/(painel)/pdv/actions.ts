@@ -25,6 +25,7 @@ export async function finalizarVendaPdv(
   pagamento: { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean; tef?: TefDaVenda | null; valorTef?: number; observacao?: string | null; valeCodigo?: string | null; desconto?: number; descontoFuncionario?: boolean } | null,
   local: "aqui" | "viagem" = "aqui",
 ) {
+  await exigirAcesso("/pdv");
   // Desconto em reais, conferido antes de mandar pra cozinha.
   const desconto = Math.round(Number(pagamento?.desconto ?? 0) * 100) / 100;
   const estimado = Math.round(itens.reduce((t, i) => t + Number(i.preco) * Number(i.qtd), 0) * 100) / 100;

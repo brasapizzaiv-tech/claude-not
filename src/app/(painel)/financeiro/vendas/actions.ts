@@ -1,4 +1,5 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { empresaAtualId } from "@/lib/empresa";
@@ -10,6 +11,7 @@ import { lerRelatorioNotas } from "@/lib/notas-emitidas";
 // NOITE). Só interessa a coluna REALIZADO de cada bloco (3 colunas depois de
 // "DATA"). Reimportar substitui os lançamentos 'planilha' das mesmas datas.
 export async function importarFaturamentoPlanilha(fd: FormData) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const file = fd.get("arquivo") as File | null;
   if (!file || file.size === 0) return { ok: false as const, erro: "Escolha o arquivo." };
@@ -82,6 +84,7 @@ export async function importarFaturamentoPlanilha(fd: FormData) {
 }
 
 export async function importarNotasEmitidas(html: string) {
+  await exigirAcesso("/financeiro");
   const supabase = await createClient();
   const notas = lerRelatorioNotas(html);
   if (notas.length === 0)

@@ -1,4 +1,5 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { lerListaTamanhos } from "@/lib/embalagens";
 import { revalidatePath } from "next/cache";
@@ -6,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
 
 export async function salvarProduto(formData: FormData) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   const id = formData.get("id") as string | null;
 
@@ -85,6 +87,7 @@ export async function salvarProduto(formData: FormData) {
 }
 
 export async function excluirProduto(formData: FormData) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("produtos").update({ ativo: false }).eq("id", id);
@@ -97,6 +100,7 @@ export async function definirFornecedoresDoProduto(
   fornecedorIds: string[],
   exclusivo = false,
 ) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   // Produto exclusivo: garante no máximo 1 fornecedor.
   const ids = exclusivo ? fornecedorIds.slice(0, 1) : fornecedorIds;
@@ -115,6 +119,7 @@ export async function definirFornecedoresDoProduto(
 // com mais de 1 fornecedor, recusa (precisaEscolher) para a tela forçar a
 // escolha de qual fornecedor fica.
 export async function marcarExclusivo(produtoId: string, valor: boolean) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   if (valor) {
     const { count } = await supabase
@@ -131,6 +136,7 @@ export async function marcarExclusivo(produtoId: string, valor: boolean) {
 // Marca vários produtos como exclusivos de uma vez. Só marca os que têm no
 // máximo 1 fornecedor; os que têm 2+ ficam de fora (precisam escolher qual).
 export async function marcarExclusivosEmLote(produtoIds: string[]) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   if (produtoIds.length === 0) return { ok: true as const, marcados: [] as string[], pulados: 0 };
   const cont = new Map<string, number>();
@@ -153,6 +159,7 @@ export async function vincularProdutosAoFornecedor(
   produtoIds: string[],
   fornecedorId: string,
 ) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   if (!fornecedorId || produtoIds.length === 0) return { ok: false, total: 0 };
   // Não vincula em lote produtos exclusivos (eles têm 1 fornecedor fixo).
@@ -176,6 +183,7 @@ export async function vincularProdutosAoFornecedor(
 // Cria um fornecedor "Hortifrúti / Feira" (se não existir) e vincula a ele
 // todos os produtos que hoje estão sem nenhum fornecedor.
 export async function vincularSemFornecedorNaFeira() {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
 
   let { data: forn } = await supabase
@@ -214,6 +222,7 @@ export async function vincularSemFornecedorNaFeira() {
 
 // Estoque ideal e fardo editados direto na lista (sem abrir o produto).
 export async function salvarIdealFardo(produtoId: string, campo: "estoque_ideal" | "fardo", valor: number) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   if (!["estoque_ideal", "fardo"].includes(campo)) return { ok: false as const, mensagem: "Campo inválido." };
   const v = Number.isFinite(valor) ? Math.max(0, valor) : 0;
@@ -225,6 +234,7 @@ export async function salvarIdealFardo(produtoId: string, campo: "estoque_ideal"
 
 // Contagem "precisa comprar?" (sim/não) em vários produtos de uma vez.
 export async function marcarContagemSimNao(ids: string[], valor: boolean) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   if (!ids.length) return { ok: true as const, total: 0 };
   const { error } = await supabase.from("produtos").update({ contagem_sim_nao: valor }).in("id", ids);
@@ -237,6 +247,7 @@ export async function marcarContagemSimNao(ids: string[], valor: boolean) {
 // com nomes diferentes): tudo do `de` passa pro `para` e o `de` é desativado.
 // A regra mora no banco (mesclar_produtos, migration 0231).
 export async function mesclarProdutos(de: string, para: string) {
+  await exigirAcesso("/produtos");
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("mesclar_produtos", { p_de: de, p_para: para });
   if (error) return { ok: false as const, mensagem: error.message };

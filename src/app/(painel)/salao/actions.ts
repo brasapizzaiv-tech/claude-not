@@ -37,6 +37,7 @@ const valorNum = (s: unknown) =>
 
 // ---------- Configurações do PDV (pdv_config chave/valor) ----------
 export async function salvarConfigPdv(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const linhas = [
     { chave: "nome_restaurante", valor: ((formData.get("nome_restaurante") as string) || "").trim() },
@@ -88,12 +89,14 @@ async function garantirCategoria(
 }
 
 export async function adicionarCategoria(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   await garantirCategoria(supabase, (formData.get("nome") as string) || "");
   revalidatePath("/salao/cardapio");
 }
 
 export async function toggleCategoria(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const disponivel = formData.get("disponivel") === "1";
@@ -102,6 +105,7 @@ export async function toggleCategoria(formData: FormData) {
 }
 
 export async function moverCategoria(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const dir = (formData.get("dir") as string) === "cima" ? -1 : 1;
@@ -123,6 +127,7 @@ export async function moverCategoria(formData: FormData) {
 }
 
 export async function excluirCategoria(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   await supabase.from("pdv_categorias").delete().eq("id", formData.get("id") as string);
   revalidatePath("/salao/cardapio");
@@ -130,6 +135,7 @@ export async function excluirCategoria(formData: FormData) {
 
 // ---------- Itens do cardápio ----------
 export async function salvarItem(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = (formData.get("id") as string) || null;
   const nome = (formData.get("nome") as string)?.trim();
@@ -159,6 +165,7 @@ export async function salvarItem(formData: FormData) {
 
 // Horários de disponibilidade (app do cliente) por categoria ou item.
 export async function salvarHorarios(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const tipo = formData.get("tipo") as string; // 'categoria' | 'item'
   const id = formData.get("id") as string;
@@ -206,6 +213,7 @@ export async function salvarPizzasDisponibilidade(formData: FormData) {
 
 // Canais onde a categoria aparece (App/Garçom/PDV).
 export async function salvarCanaisCategoria(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   if (!id) return;
@@ -222,6 +230,7 @@ export async function salvarCanaisCategoria(formData: FormData) {
 
 // Disponível/indisponível manual (ex.: esgotou) — vale em todos os canais.
 export async function toggleDisponivelItem(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const disponivel = formData.get("disponivel") === "1";
@@ -233,6 +242,7 @@ export async function toggleDisponivelItem(formData: FormData) {
 // Rafael, 03/10/2026: "sem ter que entrar no Editar"). "app" é a coluna
 // `delivery` (nome antigo da flag do app do cliente).
 export async function toggleCanalItem(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const canal = formData.get("canal") as string;
@@ -245,6 +255,7 @@ export async function toggleCanalItem(formData: FormData) {
 
 // Liga/desliga uma opção de complemento (adicional)
 export async function toggleOpcaoComplemento(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const itemId = formData.get("item_id") as string;
@@ -255,6 +266,7 @@ export async function toggleOpcaoComplemento(formData: FormData) {
 
 // Edita o preço de uma opção de complemento
 export async function editarPrecoOpcao(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const itemId = formData.get("item_id") as string;
@@ -264,6 +276,7 @@ export async function editarPrecoOpcao(formData: FormData) {
 }
 
 export async function toggleItem(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const ativo = formData.get("ativo") === "1";
@@ -272,6 +285,7 @@ export async function toggleItem(formData: FormData) {
 }
 
 export async function excluirItem(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   await supabase.from("pdv_itens").delete().eq("id", formData.get("id") as string);
   revalidatePath("/salao/cardapio");
@@ -297,13 +311,17 @@ function precoDoDia(cfg: Record<string, string>) {
 }
 
 // Calcula o valor do buffet. soPorKg=true (marmita) NÃO aplica o teto "livre".
+// Teto de uma pesagem do buffet (SEC-11): nenhum prato passa disso, e barra
+// número absurdo mandado direto pro servidor.
+const PESO_MAX_KG = 8;
+
 function calcBuffet(
   cfg: Record<string, string>,
   peso: number,
   tara: number,
   soPorKg = false,
 ) {
-  const liquido = Math.max(0, peso - tara);
+  const liquido = Math.max(0, (Number(peso) || 0) - (Number(tara) || 0));
   const { precoKg, livre } = precoDoDia(cfg);
   let valor = liquido * precoKg;
   let ehLivre = false;
@@ -316,6 +334,7 @@ function calcBuffet(
 
 // Botão LIVRE do quiosque touch: comanda de buffet livre direto, sem pesar.
 export async function gerarComandaLivreKiosk() {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const cfg = await pdvCfg(supabase);
   const { livre } = precoDoDia(cfg);
@@ -335,6 +354,7 @@ export async function gerarComandaLivreKiosk() {
 // "A balança está tarada com o prato" do quiosque, guardado no sistema (27/10/2026):
 // só no navegador, o PC perdeu a marca e o quiosque parou de pesar sozinho.
 export async function salvarBalancaTaradaKiosk(tarada: boolean) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const empresaId = await empresaAtualId();
   const { error } = await supabase.from("pdv_config")
@@ -343,6 +363,7 @@ export async function salvarBalancaTaradaKiosk(tarada: boolean) {
 }
 
 export async function virarLivreKiosk(comandaId: string) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const cid = (comandaId || "").trim();
   if (!/^[0-9a-f-]{36}$/i.test(cid)) return { ok: false as const, mensagem: "QR inválido." };
@@ -426,6 +447,7 @@ export async function virarLivreComanda(comandaId: string) {
 // Mesmo que virarLivreKiosk, mas pelo NÚMERO da comanda (digitado no quiosque
 // quando o QR não lê). Pega a comanda aberta mais recente com esse número.
 export async function virarLivrePorNumeroKiosk(numero: number) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const n = Math.floor(Number(numero));
   if (!(n > 0)) return { ok: false as const, mensagem: "Número inválido." };
@@ -458,6 +480,7 @@ export async function virarLivrePorNumeroKiosk(numero: number) {
 
 /** Acha a comanda de balança pelo número OU pelo id do QR do cupom. */
 export async function buscarComandaBalancaKiosk(alvo: string) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const txt = (alvo || "").trim();
   const uuid = txt.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
@@ -491,10 +514,12 @@ export async function buscarComandaBalancaKiosk(alvo: string) {
 
 /** Soma uma segunda pesagem na comanda que já existe. */
 export async function repesarKiosk(comandaId: string, liquidoNovo: number, taraBalanca = 0) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const cid = (comandaId || "").trim();
   if (!/^[0-9a-f-]{36}$/i.test(cid)) return { ok: false as const, mensagem: "Comanda inválida." };
   if (!(liquidoNovo > 0)) return { ok: false as const, mensagem: "Peso não veio da balança." };
+  if (liquidoNovo > PESO_MAX_KG) return { ok: false as const, mensagem: `Peso fora do normal (${liquidoNovo} kg). Tire o prato e pese de novo.` };
 
   const { data: com } = await supabase
     .from("pdv_comandas")
@@ -548,6 +573,7 @@ export async function repesarKiosk(comandaId: string, liquidoNovo: number, taraB
 
 // Nova comanda de buffet a partir do peso (kg). Aplica "livre" (teto) se passar.
 export async function criarComandaBuffet(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const peso = valorNum(formData.get("peso"));
   if (peso <= 0) return;
@@ -572,8 +598,9 @@ export async function gerarComandaBuffetKiosk(
   soPorKg = false,
   taraBalanca = 0,
 ) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
-  if (!(peso > 0)) return { ok: false as const };
+  if (!(peso > 0) || peso > PESO_MAX_KG) return { ok: false as const, mensagem: `Peso fora do normal (${peso} kg). Tire o prato e pese de novo.` };
   const cfg = await pdvCfg(supabase);
   // O quiosque manda o peso LÍQUIDO já resolvido (o que a balança lê; marmita =
   // leitura + tara da balança). Nada de "tara padrão" aqui — tara é só registro.
@@ -607,6 +634,7 @@ export async function gerarComandaBuffetKiosk(
 
 // Nova comanda "à la carte" numa mesa (sem buffet). Abre a comanda em seguida.
 export async function criarComandaMesa(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const mesa = ((formData.get("mesa") as string) || "").trim();
   if (!mesa) return;
@@ -623,6 +651,7 @@ export async function criarComandaMesa(formData: FormData) {
 
 // Edita o buffet da comanda (peso/tara) e recalcula o valor (respeita marmita).
 export async function editarBuffet(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const peso = valorNum(formData.get("peso"));
@@ -644,6 +673,7 @@ export async function editarBuffet(formData: FormData) {
 // Caixa: troca rápida entre buffet (com teto livre) e marmita (só por kg),
 // recalculando o valor da comanda.
 export async function alternarMarmita(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const { data: com } = await supabase
@@ -772,6 +802,7 @@ export async function juntarComandasCaixa(ids: string[], modo: ModoJuntar) {
 
 // pesoKg: item vendido por kg (migration 0259) — a quantidade é o peso.
 export async function adicionarItemComanda(comandaId: string, itemId: string, pesoKg?: number) {
+  await exigirAcesso(["/salao", "/garcom"]);
   const supabase = await dbGarcomOuUsuario();
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
   const { data: item } = await supabase
@@ -803,6 +834,7 @@ export async function adicionarPizzaComanda(
   saborIds: string[],
   bordaId: string | null,
 ) {
+  await exigirAcesso(["/salao", "/garcom"]);
   const supabase = await dbGarcomOuUsuario();
   if (!tamanhoId || saborIds.length === 0) return { ok: false as const, mensagem: "Escolha tamanho e sabor." };
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
@@ -866,6 +898,7 @@ export async function adicionarComboComanda(
   itemId: string,
   opcaoIds: string[],
 ) {
+  await exigirAcesso(["/salao", "/garcom"]);
   const supabase = await dbGarcomOuUsuario();
   if (!(await comandaAberta(supabase, comandaId))) return { ok: false as const, mensagem: "Essa comanda já foi fechada no caixa." };
   // Mesma conta do delivery/garçom (etapas, média da pizza, mínimo/máximo).
@@ -2132,6 +2165,7 @@ export async function receberComandas(
 }
 
 export async function fecharComanda(formData: FormData) {
+  await exigirAcesso("/salao");
   const supabase = await createClient();
   const comandaId = formData.get("id") as string;
   const forma = (formData.get("forma") as string) || null;

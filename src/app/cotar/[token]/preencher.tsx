@@ -1,12 +1,12 @@
 "use client";
 
 import { Icone } from "@/components/icone";
-import { confirmar } from "@/components/dialogo";
+import { confirmar, avisar } from "@/components/dialogo";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dataBR } from "@/lib/format";
-import { salvarPrecosPublico, removerItemPublico, type DadosCotacao } from "./actions";
+import { salvarPrecosPublico, removerItemPublico, urlParaFoto, type DadosCotacao } from "./actions";
 import { textoFalta, textoPrazo, venceu } from "@/lib/cotacao-prazo";
 
 export type LinhaPreco = {
@@ -248,34 +248,64 @@ export function CotarPreencher({
     }, 1200);
   }
 
-  async function enviarFoto(produtoId: string, file: File) {
-    setSubindo((s) => ({ ...s, [produtoId]: true }));
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `${token}/${produtoId}-${new Date().getTime()}.${ext}`;
+  // Foto do celular costuma ter 3–6 MB: diminui pra 1600 px em JPG antes de
+  // mandar (fica ~300 KB). Se o navegador não conseguir, manda como veio.
+  async function comprimir(file: File): Promise<Blob> {
+    try {
+      if (!file.type.startsWith("image/")) return file;
+      const bmp = await createImageBitmap(file);
+      const escala = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(bmp.width * escala);
+      c.height = Math.round(bmp.height * escala);
+      c.getContext("2d")?.drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise<Blob | null>((ok) => c.toBlob(ok, "image/jpeg", 0.82));
+      // Formato que o sistema não aceita (HEIC, GIF...) vai sempre convertido.
+      const aceito = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+      return blob && (!aceito || blob.size < file.size) ? blob : file;
+    } catch {
+      return file;
+    }
+  }
+
+  // Sobe pela URL de uso único que o servidor gera depois de conferir o link
+  // (SEC-07). Devolve o endereço público da foto, ou null.
+  async function subirFoto(file: File): Promise<string | null> {
+    const blob = await comprimir(file);
+    const tipo = blob.type || file.type;
+    const prep = await urlParaFoto(token, tipo, blob.size);
+    if (!prep.ok) { await avisar(prep.erro); return null; }
     const { error } = await supabase.storage
       .from("cotacao-fotos")
-      .upload(path, file, { upsert: true });
-    if (!error) {
-      const { data } = supabase.storage.from("cotacao-fotos").getPublicUrl(path);
-      setFotos((s) => ({ ...s, [produtoId]: data.publicUrl }));
-      agendarSalvar();
+      .uploadToSignedUrl(prep.path, prep.envio, blob, { contentType: tipo });
+    if (error) { await avisar("Não consegui enviar a foto. Tente de novo."); return null; }
+    return prep.publica;
+  }
+
+  async function enviarFoto(produtoId: string, file: File) {
+    setSubindo((s) => ({ ...s, [produtoId]: true }));
+    try {
+      const url = await subirFoto(file);
+      if (url) {
+        setFotos((s) => ({ ...s, [produtoId]: url }));
+        agendarSalvar();
+      }
+    } finally {
+      setSubindo((s) => ({ ...s, [produtoId]: false }));
     }
-    setSubindo((s) => ({ ...s, [produtoId]: false }));
   }
 
   async function enviarFotoPromo(file: File) {
     setSubindoPromo(true);
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `${token}/promocao-${new Date().getTime()}.${ext}`;
-    const { error } = await supabase.storage
-      .from("cotacao-fotos")
-      .upload(path, file, { upsert: true });
-    if (!error) {
-      const { data } = supabase.storage.from("cotacao-fotos").getPublicUrl(path);
-      setDados((d) => ({ ...d, promocao_foto: data.publicUrl }));
-      agendarSalvar();
+    try {
+      const url = await subirFoto(file);
+      if (url) {
+        setDados((d) => ({ ...d, promocao_foto: url }));
+        agendarSalvar();
+      }
+    } finally {
+      setSubindoPromo(false);
     }
-    setSubindoPromo(false);
   }
 
   function enviar() {

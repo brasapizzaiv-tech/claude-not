@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rodarBuscaSefaz, type ConfigSefaz } from "@/lib/sefaz/busca";
 import { marcarSinal } from "@/lib/saude";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 // Busca automática de notas na SEFAZ pelo Vercel Cron, de 10 em 10 minutos a
 // partir do :03 (vercel.json). A trava de 1 hora decide: quase todas as rodadas
@@ -9,11 +10,7 @@ import { marcarSinal } from "@/lib/saude";
 // por 1 segundo (NFE-05) nem disparar junto com a busca esperta do :00 (CRN-06).
 // Protegida pelo CRON_SECRET (o Vercel envia no cabeçalho Authorization).
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization");
-  const key = req.nextUrl.searchParams.get("key");
-  // Aceita o segredo pelo cabeçalho (Vercel Cron) ou por ?key= (pinger externo).
-  if (!secret || (auth !== `Bearer ${secret}` && key !== secret)) {
+  if (!cronAutorizado(req)) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 

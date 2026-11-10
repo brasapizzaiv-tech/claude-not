@@ -1,9 +1,11 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function salvarAgendamento(formData: FormData) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   const id = (formData.get("id") as string) || null;
   const nome = (formData.get("nome") as string)?.trim();
@@ -49,6 +51,7 @@ export async function salvarAgendamento(formData: FormData) {
 }
 
 export async function alternarAgendamento(formData: FormData) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const ativo = formData.get("ativo") === "true";
@@ -60,6 +63,7 @@ export async function alternarAgendamento(formData: FormData) {
 }
 
 export async function excluirAgendamento(formData: FormData) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("contagem_agendamentos").delete().eq("id", id);

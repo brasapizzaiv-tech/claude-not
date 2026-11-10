@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { empresasKernAtivas, gerarPedidosKern } from "@/lib/kern-delivery";
 import { rodarRotina } from "@/lib/saude";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,10 +11,7 @@ export const maxDuration = 60;
 // (vercel.json "35 11 * * 1-6", que é UTC). Os pedidos de marmita fecham às
 // 08:30. Protegida pelo CRON_SECRET, igual às outras rotinas.
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization");
-  const key = req.nextUrl.searchParams.get("key");
-  if (!secret || (auth !== `Bearer ${secret}` && key !== secret)) {
+  if (!cronAutorizado(req)) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
   // Se a rotina do Kern não rodar, o delivery do dia não é criado: o sinal

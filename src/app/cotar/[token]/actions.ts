@@ -1,6 +1,8 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type PrecoExtra = {
   marca: string;
@@ -65,4 +67,34 @@ export async function removerItemPublico(token: string, produtoId: string) {
   });
   if (error) return { ok: false };
   return data as { ok: boolean };
+}
+
+// Foto do produto/promoção (auditoria SEC-07). Antes o celular do fornecedor
+// subia direto pro bucket com a chave pública, na pasta {token}/ — e a pasta
+// era listável, o que entregava o token de todos os fornecedores. Agora o
+// servidor confere o link, a cotação aberta, o tipo e o tamanho, e devolve um
+// endereço de envio de uso único com nome aleatório.
+const FOTO_MAX_BYTES = 3 * 1024 * 1024;
+const FOTO_EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+
+export async function urlParaFoto(token: string, tipo: string, tamanho: number) {
+  const ext = FOTO_EXT[tipo];
+  if (!ext) return { ok: false as const, erro: "Envie uma foto (JPG, PNG ou WEBP)." };
+  if (!(tamanho > 0) || tamanho > FOTO_MAX_BYTES) return { ok: false as const, erro: "A foto passou de 3 MB." };
+  if (!/^[A-Za-z0-9_-]{8,80}$/.test(String(token))) return { ok: false as const, erro: "Link inválido." };
+  const admin = createAdminClient();
+  const { data: cf } = await admin
+    .from("cotacao_fornecedores")
+    .select("id, cotacoes(status, respostas_ate)")
+    .eq("token", token)
+    .maybeSingle();
+  if (!cf) return { ok: false as const, erro: "Link inválido." };
+  const cot = (Array.isArray(cf.cotacoes) ? cf.cotacoes[0] : cf.cotacoes) as { status?: string; respostas_ate?: string | null } | null;
+  if (cot?.respostas_ate && new Date(cot.respostas_ate).getTime() < Date.now())
+    return { ok: false as const, erro: "O prazo pra responder esta cotação terminou." };
+  const path = `f/${randomUUID()}.${ext}`;
+  const { data, error } = await admin.storage.from("cotacao-fotos").createSignedUploadUrl(path);
+  if (error || !data) return { ok: false as const, erro: "Não consegui preparar o envio. Tente de novo." };
+  const publica = admin.storage.from("cotacao-fotos").getPublicUrl(path).data.publicUrl;
+  return { ok: true as const, path, envio: data.token, publica };
 }

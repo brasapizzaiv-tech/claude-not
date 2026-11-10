@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
 export async function criarContagem(formData: FormData) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   const {
     data: { user },
@@ -93,6 +94,7 @@ export async function finalizarContagem(formData: FormData) {
 }
 
 export async function reabrirContagem(formData: FormData) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("contagens").update({ status: "rascunho" }).eq("id", id);
@@ -127,6 +129,7 @@ export async function criarContagemAvulsa(
   categoriaIds: string[],
   colaboradorId: string,
 ) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   if (!colaboradorId || categoriaIds.length === 0)
     return { ok: false as const };
@@ -174,6 +177,7 @@ export async function criarContagemAvulsa(
 
 // Atribui TODAS as categorias a um colaborador (contagem inteira p/ 1 pessoa).
 export async function atribuirTudo(contagemId: string, colaboradorId: string) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
   if (!colaboradorId) return;
 
@@ -223,6 +227,7 @@ export async function salvarAtribuicao(
   categoriaId: string,
   colaboradorId: string | null,
 ) {
+  await exigirAcesso("/contagens");
   const supabase = await createClient();
 
   if (!colaboradorId) {

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { conferirNotasPendentes } from "@/lib/fiscal/conferir-notas";
 import { rodarRotina } from "@/lib/saude";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,8 +12,7 @@ export const maxDuration = 60;
 // (contingência offline, processando, enviando, cancelando) — NFE-01.
 // De 30 em 30 min (vercel.json), protegida pelo CRON_SECRET no cabeçalho.
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!cronAutorizado(req)) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
   return rodarRotina("rotina:fiscal-conferir", async () => {

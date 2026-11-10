@@ -1,4 +1,5 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -30,6 +31,7 @@ export async function criarEtiqueta(dados: {
   impressora_id?: string;
   copias?: number;
 }) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   const tipo = tipoValido(dados.tipo);
   const livre = tipo === "livre";
@@ -117,6 +119,7 @@ export async function criarEtiqueta(dados: {
 
 // Reenvia uma etiqueta para a fila de impressão (reimprimir).
 export async function reimprimirEtiqueta(id: string) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   const { data: et } = await supabase.from("etiquetas").select("impressora_id").eq("id", id).maybeSingle();
   await supabase.from("impressao_fila").insert({ tipo: "etiqueta", ref_id: id, impressora_id: et?.impressora_id ?? null });
@@ -126,6 +129,7 @@ export async function reimprimirEtiqueta(id: string) {
 
 // Dá baixa na etiqueta (usada ou descartada) — controle de validade.
 export async function darBaixaEtiqueta(id: string, status: "usada" | "descartada") {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   await supabase
     .from("etiquetas")
@@ -136,6 +140,7 @@ export async function darBaixaEtiqueta(id: string, status: "usada" | "descartada
 }
 
 export async function reativarEtiqueta(id: string) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   await supabase
     .from("etiquetas")
@@ -146,6 +151,7 @@ export async function reativarEtiqueta(id: string) {
 }
 
 export async function excluirEtiqueta(formData: FormData) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("etiquetas").delete().eq("id", id);
@@ -154,6 +160,7 @@ export async function excluirEtiqueta(formData: FormData) {
 
 // Atualiza a validade padrão (dias) de um produto.
 export async function salvarValidadeProduto(produtoId: string, dias: number | null) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   await supabase.from("produtos").update({ validade_dias: dias }).eq("id", produtoId);
   revalidatePath("/etiquetas");
@@ -164,6 +171,7 @@ export async function salvarValidadeProduto(produtoId: string, dias: number | nu
 const dias = (v: unknown) => (v == null || v === "" ? null : Math.max(0, Math.floor(Number(v))) || null);
 
 export async function criarItemEtiqueta(d: DadosItem) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   const nome = (d.nome || "").trim();
   if (!nome) return null;
@@ -184,6 +192,7 @@ export async function criarItemEtiqueta(d: DadosItem) {
 }
 
 export async function salvarItemEtiqueta(d: DadosItem & { id?: string; ativo?: boolean; produto_id?: string | null }) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   const nome = (d.nome || "").trim();
   if (!nome) return { ok: false };
@@ -204,6 +213,7 @@ export async function salvarItemEtiqueta(d: DadosItem & { id?: string; ativo?: b
 }
 
 export async function excluirItemEtiqueta(id: string) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   await supabase.from("etiqueta_itens").delete().eq("id", id);
   revalidatePath("/etiquetas");
@@ -212,6 +222,7 @@ export async function excluirItemEtiqueta(id: string) {
 }
 
 export async function salvarCategoriaEtiqueta(d: { id?: string; nome: string; ordem?: number; ativo?: boolean }) {
+  await exigirAcesso("/etiquetas");
   const supabase = await createClient();
   const nome = (d.nome || "").trim();
   if (!nome) return { ok: false };

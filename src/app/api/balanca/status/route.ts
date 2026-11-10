@@ -36,8 +36,10 @@ export async function POST(req: Request) {
   // Devolve o que o agente precisa pra numerar: número inicial da balança e
   // quando o caixa atual abriu (muda → o agente reinicia a numeração).
   const [{ data: cfg }, { data: caixa }] = await Promise.all([
-    admin.from("pdv_config").select("valor").eq("chave", "numero_inicial_balanca").maybeSingle(),
-    admin.from("pdv_caixas").select("aberto_em").is("fechado_em", null).order("aberto_em", { ascending: false }).limit(1).maybeSingle(),
+    // Só desta loja (AGT-13): com a 2ª empresa, o caixa aberto da outra
+    // reiniciaria a numeração desta balança.
+    admin.from("pdv_config").select("valor").eq("chave", "numero_inicial_balanca").eq("empresa_id", empresaId).maybeSingle(),
+    admin.from("pdv_caixas").select("aberto_em").is("fechado_em", null).eq("empresa_id", empresaId).order("aberto_em", { ascending: false }).limit(1).maybeSingle(),
   ]);
   return Response.json({
     ok: true,

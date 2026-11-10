@@ -1,9 +1,11 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function salvarCategoria(formData: FormData) {
+  await exigirAcesso("/categorias");
   const supabase = await createClient();
   const id = formData.get("id") as string | null;
   const nome = (formData.get("nome") as string)?.trim();
@@ -24,6 +26,7 @@ export async function mapearCategoriaDre(
   categoriaId: string,
   dreCategoriaId: string | null,
 ) {
+  await exigirAcesso("/categorias");
   const supabase = await createClient();
   await supabase
     .from("categorias")
@@ -33,6 +36,7 @@ export async function mapearCategoriaDre(
 }
 
 export async function excluirCategoria(formData: FormData) {
+  await exigirAcesso("/categorias");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   // Produtos ligados a ela ficam "Sem categoria" (categoria_id vira nulo).

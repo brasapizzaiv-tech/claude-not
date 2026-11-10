@@ -1,4 +1,5 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { empresaAtualId } from "@/lib/empresa";
@@ -22,6 +23,7 @@ export type DadosReserva = {
 const limpo = (s: string | null | undefined) => (s ?? "").trim() || null;
 
 export async function criarReserva(d: DadosReserva) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   const pessoas = Math.max(0, d.adultos) + Math.max(0, d.criancas);
   if (!d.nome.trim() || !d.telefone.trim() || !d.data)
@@ -49,6 +51,7 @@ export async function criarReserva(d: DadosReserva) {
 }
 
 export async function salvarReserva(id: string, d: DadosReserva) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   const pessoas = Math.max(0, d.adultos) + Math.max(0, d.criancas);
   if (pessoas < 1) return { ok: false, erro: "Precisa de pelo menos uma pessoa." };
@@ -78,6 +81,7 @@ export async function salvarReserva(id: string, d: DadosReserva) {
 
 // Confirmar, cancelar ou voltar para "nova".
 export async function definirStatus(id: string, status: string) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   await supabase.from("reservas").update({ status }).eq("id", id);
   revalidatePath("/reservas");
@@ -86,6 +90,7 @@ export async function definirStatus(id: string, status: string) {
 
 // Marca que a mesa chegou (ou desfaz).
 export async function marcarChegou(id: string, chegou: boolean) {
+  await exigirAcesso(["/reservas", "/reservas/hoje"]);
   const supabase = await createClient();
   await supabase
     .from("reservas")
@@ -96,6 +101,7 @@ export async function marcarChegou(id: string, chegou: boolean) {
 }
 
 export async function apagarReserva(id: string) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   await supabase.from("reservas").delete().eq("id", id);
   revalidatePath("/reservas");
@@ -107,6 +113,7 @@ export async function bloquearData(
   turno: string,
   motivo: string | null,
 ) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   if (!data) return { ok: false, erro: "Escolha o dia." };
   await supabase
@@ -117,6 +124,7 @@ export async function bloquearData(
 }
 
 export async function liberarBloqueio(id: string) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   await supabase.from("reservas_bloqueios").delete().eq("id", id);
   revalidatePath("/reservas");
@@ -126,6 +134,7 @@ export async function liberarBloqueio(id: string) {
 export async function salvarLimites(
   linhas: { turno: string; max_reservas: number; max_pessoas: number; grupo_grande: number }[],
 ) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   const empresaId = await empresaAtualId();
   await supabase
@@ -139,6 +148,7 @@ export async function salvarLimites(
 }
 
 export async function salvarMensagens(msgs: { chave: string; valor: string }[]) {
+  await exigirAcesso("/reservas");
   const supabase = await createClient();
   const empresaId = await empresaAtualId();
   await supabase
@@ -153,6 +163,7 @@ export async function salvarMensagens(msgs: { chave: string; valor: string }[]) 
 
 // Atribui/limpa a mesa de uma reserva (usado na tela de celular da recepção).
 export async function atribuirMesa(id: string, mesa: string) {
+  await exigirAcesso(["/reservas", "/reservas/hoje"]);
   const supabase = await createClient();
   await supabase
     .from("reservas")

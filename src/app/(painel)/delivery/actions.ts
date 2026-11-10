@@ -18,6 +18,7 @@ export type { LinhaPedido, DadosPedidoDelivery } from "@/lib/delivery-core";
 
 // Cria o pedido pelo painel (atendente): já nasce "aceito" e imprime na cozinha.
 export async function criarPedidoDelivery(d: DadosPedidoDelivery) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id ?? null;
@@ -88,6 +89,7 @@ export async function definirStatusDelivery(id: string, status: string, extra?: 
 }
 
 export async function definirEntregador(id: string, entregadorId: string | null) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   await supabase.from("delivery_pedidos").update({ entregador_id: entregadorId }).eq("id", id);
   revalidatePath("/delivery");
@@ -96,6 +98,7 @@ export async function definirEntregador(id: string, entregadorId: string | null)
 }
 
 export async function definirPagoDelivery(id: string, pago: boolean) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   await supabase.from("delivery_pedidos").update({ pago }).eq("id", id);
   revalidatePath("/delivery");
@@ -104,6 +107,7 @@ export async function definirPagoDelivery(id: string, pago: boolean) {
 }
 
 export async function definirPrevisao(id: string, previsaoISO: string | null) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   await supabase.from("delivery_pedidos").update({ previsao_em: previsaoISO }).eq("id", id);
   revalidatePath(`/delivery/${id}`);
@@ -111,6 +115,7 @@ export async function definirPrevisao(id: string, previsaoISO: string | null) {
 }
 
 export async function reimprimirDelivery(id: string) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const enviado = await imprimirComandaDoPedido(supabase, id);
   return { ok: enviado > 0, enviado } as { ok: boolean; enviado: number };
@@ -125,6 +130,7 @@ function turnosDoForm(formData: FormData) {
 }
 
 export async function criarEntregador(formData: FormData) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const nome = ((formData.get("nome") as string) || "").trim();
   const telefone = ((formData.get("telefone") as string) || "").trim();
@@ -159,6 +165,7 @@ export async function criarEntregadorDoColaborador(formData: FormData) {
 // Troca o código de entrada no app (vazou, ou o entregador saiu). Quem já
 // entrou continua entrando: o app guarda o link, não o código.
 export async function novoCodigoEntregador(formData: FormData) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const { data: codigo } = await supabase.rpc("gerar_codigo_entregador");
@@ -168,6 +175,7 @@ export async function novoCodigoEntregador(formData: FormData) {
 }
 
 export async function alternarEntregador(formData: FormData) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const ativo = formData.get("ativo") === "1";
@@ -179,12 +187,14 @@ export async function alternarEntregador(formData: FormData) {
 export async function calcularEntrega(endereco: {
   logradouro?: string; numero?: string; bairro?: string; cidade?: string; cep?: string;
 }) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   return calcularTaxaEntrega(supabase, endereco);
 }
 
 // Salva a config do delivery e geocodifica o endereço do restaurante.
 export async function salvarConfigDelivery(formData: FormData) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const num = (k: string) => { const v = Number(String(formData.get(k) ?? "").replace(",", ".")); return Number.isFinite(v) ? v : 0; };
   const origemEndereco = String(formData.get("origem_endereco") ?? "").trim();
@@ -233,6 +243,7 @@ export async function salvarConfigDelivery(formData: FormData) {
 
 // ---------- Cupons de desconto do app ----------
 export async function criarCupom(formData: FormData) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const codigo = String(formData.get("codigo") ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!codigo) return;
@@ -249,6 +260,7 @@ export async function criarCupom(formData: FormData) {
 }
 
 export async function alternarCupom(formData: FormData) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const ativo = formData.get("ativo") === "1";
@@ -257,6 +269,7 @@ export async function alternarCupom(formData: FormData) {
 }
 
 export async function excluirCupom(formData: FormData) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   await supabase.from("cupons").delete().eq("id", formData.get("id") as string);
   revalidatePath("/delivery/cupons");
@@ -266,6 +279,7 @@ export async function excluirCupom(formData: FormData) {
 
 // Sobe a foto de um item ou sabor pro bucket público e grava a URL.
 export async function salvarFotoCardapio(formData: FormData) {
+  await exigirAcesso(["/delivery", "/salao"]);
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return { ok: false as const, mensagem: "Sem acesso." };
@@ -293,6 +307,7 @@ export async function salvarFotoCardapio(formData: FormData) {
 }
 
 export async function removerFotoCardapio(formData: FormData) {
+  await exigirAcesso(["/delivery", "/salao"]);
   const supabase = await createClient();
   const tipo = formData.get("tipo") as string;
   const id = formData.get("id") as string;
@@ -304,6 +319,7 @@ export async function removerFotoCardapio(formData: FormData) {
 
 // Salva descrição (item/sabor) e a visibilidade do item no app.
 export async function salvarDetalheCardapio(formData: FormData) {
+  await exigirAcesso(["/delivery", "/salao"]);
   const supabase = await createClient();
   const tipo = formData.get("tipo") as string;
   const id = formData.get("id") as string;
@@ -381,6 +397,7 @@ export async function desativarSabor(id: string) {
 }
 
 export async function salvarFatias(formData: FormData) {
+  await exigirAcesso(["/delivery", "/salao"]);
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const fatias = Math.round(Number(formData.get("fatias"))) || null;
@@ -391,6 +408,7 @@ export async function salvarFatias(formData: FormData) {
 
 // Busca cliente por telefone (autocompleta o Novo pedido).
 export async function buscarClientePorTelefone(termo: string) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const t = (termo || "").replace(/\D/g, "");
   if (t.length < 4) return [];

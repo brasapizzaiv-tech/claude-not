@@ -1,4 +1,5 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -6,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 // Gestão das impressoras (Central de Impressões) — vale para todos os tipos de
 // documento (etiquetas hoje; comandas/cupons no futuro).
 export async function criarImpressora(nome: string) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   const n = nome?.trim();
   if (!n) return { ok: false as const };
@@ -16,6 +18,7 @@ export async function criarImpressora(nome: string) {
 
 // Cadastra rápido uma impressora detectada no PC (nome = nome do Windows).
 export async function criarImpressoraDetectada(windowsName: string) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   const n = windowsName?.trim();
   if (!n) return { ok: false as const };
@@ -25,6 +28,7 @@ export async function criarImpressoraDetectada(windowsName: string) {
 }
 
 export async function renomearImpressora(id: string, nome: string) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   const n = nome?.trim();
   if (!n) return { ok: false as const };
@@ -34,6 +38,7 @@ export async function renomearImpressora(id: string, nome: string) {
 }
 
 export async function definirImpressoraWindows(id: string, nome: string) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressoras").update({ impressora_windows: nome?.trim() || null }).eq("id", id);
   revalidatePath("/impressao");
@@ -41,6 +46,7 @@ export async function definirImpressoraWindows(id: string, nome: string) {
 }
 
 export async function definirRecebeComandas(id: string, valor: boolean) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressoras").update({ recebe_comandas: valor }).eq("id", id);
   revalidatePath("/impressao");
@@ -49,6 +55,7 @@ export async function definirRecebeComandas(id: string, valor: boolean) {
 
 // Impressora que imprime as etiquetas das marmitas do convênio (Kern).
 export async function definirRecebePizzas(id: string, valor: boolean) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressoras").update({ recebe_pizzas: valor }).eq("id", id);
   revalidatePath("/impressao");
@@ -57,6 +64,7 @@ export async function definirRecebePizzas(id: string, valor: boolean) {
 
 // Só uma impressora imprime o cupom da NFC-e.
 export async function definirRecebeNfce(id: string, valor: boolean) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   if (valor) await supabase.from("impressoras").update({ recebe_nfce: false }).neq("id", id);
   await supabase.from("impressoras").update({ recebe_nfce: valor }).eq("id", id);
@@ -65,6 +73,7 @@ export async function definirRecebeNfce(id: string, valor: boolean) {
 }
 
 export async function definirRecebeMarmitas(id: string, valor: boolean) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   // Só uma impressora recebe as marmitas.
   if (valor) await supabase.from("impressoras").update({ recebe_marmitas: false }).neq("id", id);
@@ -75,6 +84,7 @@ export async function definirRecebeMarmitas(id: string, valor: boolean) {
 
 // Produtos que essa impressora imprime nas comandas (null = todos).
 export async function definirComandaProdutos(id: string, produtos: string[] | null) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressoras").update({ comanda_produtos: produtos }).eq("id", id);
   revalidatePath("/impressao");
@@ -88,6 +98,7 @@ export async function definirEtiquetaConfig(id: string, config: {
   barraValidade?: boolean; categoria?: boolean; empresa?: string | null;
   deslocX?: number; deslocY?: number;
 }) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressoras").update({ etiqueta_config: config }).eq("id", id);
   revalidatePath("/impressao");
@@ -96,6 +107,7 @@ export async function definirEtiquetaConfig(id: string, config: {
 
 // Etiqueta de teste com moldura na borda (pra calibrar o deslocamento).
 export async function imprimirTesteEtiqueta(impressoraId: string) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressao_fila").insert({ tipo: "teste_etiqueta", ref_id: impressoraId, impressora_id: impressoraId });
   revalidatePath("/impressao");
@@ -106,6 +118,7 @@ export async function definirComandaConfig(id: string, config: {
   largura: number; precos: boolean; garcom: boolean; hora: boolean;
   agrupar: boolean; qtdCat: boolean; destObs: boolean;
 }) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressoras").update({ comanda_config: config }).eq("id", id);
   revalidatePath("/impressao");
@@ -114,6 +127,7 @@ export async function definirComandaConfig(id: string, config: {
 
 // Enfileira uma página de teste para a impressora (o agente imprime).
 export async function imprimirTeste(impressoraId: string) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressao_fila").insert({ tipo: "teste", ref_id: impressoraId, impressora_id: impressoraId });
   revalidatePath("/impressao");
@@ -121,6 +135,7 @@ export async function imprimirTeste(impressoraId: string) {
 }
 
 export async function definirImpressoraAtiva(id: string, ativo: boolean) {
+  await exigirAcesso("/impressao");
   const supabase = await createClient();
   await supabase.from("impressoras").update({ ativo }).eq("id", id);
   revalidatePath("/impressao");

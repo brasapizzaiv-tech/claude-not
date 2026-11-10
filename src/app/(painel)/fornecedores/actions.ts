@@ -1,4 +1,5 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -53,6 +54,7 @@ async function sincronizarCategoriasFornecedor(
 }
 
 export async function salvarFornecedor(formData: FormData) {
+  await exigirAcesso("/fornecedores");
   const supabase = await createClient();
   const id = formData.get("id") as string | null;
   const payload = dados(formData);
@@ -76,6 +78,7 @@ export async function salvarFornecedor(formData: FormData) {
 }
 
 export async function excluirFornecedor(formData: FormData) {
+  await exigirAcesso("/fornecedores");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   // Exclusão "suave": marca como inativo para preservar histórico.
@@ -85,6 +88,7 @@ export async function excluirFornecedor(formData: FormData) {
 
 // Inativar (some das cotações, guarda o histórico) e reativar depois.
 export async function alternarAtivoFornecedor(id: string, ativo: boolean) {
+  await exigirAcesso("/fornecedores");
   const supabase = await createClient();
   const { error } = await supabase.from("fornecedores").update({ ativo }).eq("id", id);
   revalidatePath("/fornecedores");
@@ -93,6 +97,7 @@ export async function alternarAtivoFornecedor(id: string, ativo: boolean) {
 
 // "Sempre convidar": entra sozinho em toda cotação nova que tenha item dele.
 export async function alternarPadraoFornecedor(id: string, padrao: boolean) {
+  await exigirAcesso("/fornecedores");
   const supabase = await createClient();
   const { error } = await supabase.from("fornecedores").update({ cotacao_padrao: padrao }).eq("id", id);
   revalidatePath("/fornecedores");

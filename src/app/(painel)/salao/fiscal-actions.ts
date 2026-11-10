@@ -90,6 +90,7 @@ export async function definirNfceAuto(ligado: boolean) {
 
 // Estado da nota automática pra tela: ligada? e o fiscal está em produção?
 export async function lerNfceAuto() {
+  await exigirAcesso(["/salao", "/pdv"]);
   const cfg = await cfgFiscal(await empresaAtualId());
   return { ligado: cfg.nfce_auto === "1", producao: cfg.emissor_ambiente === "producao" && !!cfg.emissor_token };
 }
@@ -376,7 +377,16 @@ export async function emitirNfceComandasAdmin(
   comandaIds: string[],
   documento?: string,
 ) {
+  clienteDoServidor(admin);
   return emitirNfceCore(admin as ClienteSupabase, comandaIds, documento);
+}
+
+// Estas duas "Admin" existem pra rotina da fila (src/lib/fiscal/pendentes.ts),
+// que passa o cliente administrativo. Como o arquivo é "use server", elas
+// também viram endereço chamável do navegador (SEC-11) — mas do navegador só
+// chega JSON, nunca um cliente com funções. Esta trava garante que nada roda.
+function clienteDoServidor(admin: unknown) {
+  if (!admin || typeof (admin as { from?: unknown }).from !== "function") throw new Error("Sem permissão para esta ação.");
 }
 
 // Manda o cupom da NFC-e (DANFE) pra impressora marcada na Central de
@@ -401,6 +411,7 @@ export async function imprimirNfce(nfceId: string) {
 
 // Impressão disparada pela fila automática (sem usuário logado).
 export async function imprimirNfceAdmin(admin: unknown, nfceId: string) {
+  clienteDoServidor(admin);
   return imprimirNfceCore(admin as ClienteSupabase, nfceId);
 }
 

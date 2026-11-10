@@ -305,8 +305,10 @@ export async function criarPedidoDeliveryCore(
     }
   }
 
-  // Desconto do cupom sobre o subtotal REAL (resolvido acima).
-  let desconto = r2(Number(d.desconto) || 0);
+  // Desconto do cupom sobre o subtotal REAL (resolvido acima). O desconto
+  // digitado fica entre 0 e o subtotal (SEC-11: antes dava total negativo).
+  const subtotalReal = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
+  let desconto = r2(Math.min(subtotalReal, Math.max(0, Number(d.desconto) || 0)));
   let descontoMotivo = (d.descontoMotivo || "").trim() || null;
   if (opts.cupom) {
     const subtotal = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
@@ -316,7 +318,7 @@ export async function criarPedidoDeliveryCore(
     const valorCupom = opts.cupom.tipo === "percent"
       ? r2(subtotal * Number(opts.cupom.valor) / 100)
       : Math.min(subtotal, r2(Number(opts.cupom.valor)));
-    desconto = r2(desconto + valorCupom);
+    desconto = r2(Math.min(subtotalReal, desconto + valorCupom));
     descontoMotivo = [descontoMotivo, `Cupom ${opts.cupom.codigo}`].filter(Boolean).join(" · ");
   }
 

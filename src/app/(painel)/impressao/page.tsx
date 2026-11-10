@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { CentralImpressao, type Impressora } from "./central";
 
 export const metadata = { title: "Central de Impressões · Brasa" };
@@ -18,6 +19,7 @@ export default async function CentralImpressaoPage() {
   const { data: cfg } = await admin
     .from("impressao_config")
     .select("token, hostname, printers, visto_em, versao")
+    .eq("empresa_id", (await empresaAtualId()) ?? "")
     .maybeSingle();
 
   const vistoEm = (cfg?.visto_em as string) ?? null;

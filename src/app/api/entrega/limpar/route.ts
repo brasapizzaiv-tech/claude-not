@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rodarRotina } from "@/lib/saude";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,10 +15,7 @@ export const dynamic = "force-dynamic";
 const DIAS = 90;
 
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization");
-  const key = req.nextUrl.searchParams.get("key");
-  if (!secret || (auth !== `Bearer ${secret}` && key !== secret)) {
+  if (!cronAutorizado(req)) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 

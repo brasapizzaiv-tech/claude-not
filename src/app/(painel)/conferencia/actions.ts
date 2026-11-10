@@ -16,6 +16,7 @@ type ItemConf = {
 
 // Apaga um pedido (e seus itens + o lançamento no financeiro, se houver).
 export async function excluirPedido(formData: FormData) {
+  await exigirAcesso("/conferencia");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   if (!id) return;
@@ -60,6 +61,7 @@ export async function criarPedidoManual(
   data: string,
   itens: { produto_id: string; qtd: number; preco_unit: number | null }[],
 ) {
+  await exigirAcesso("/conferencia");
   const supabase = await createClient();
   const { data: ped } = await supabase
     .from("pedidos")
@@ -96,6 +98,7 @@ export async function adicionarItemConferencia(
   produtoId: string,
   qtd: number,
 ) {
+  await exigirAcesso("/conferencia");
   const supabase = await createClient();
   if (!produtoId) return { ok: false };
   await supabase.from("pedido_itens").insert({
@@ -110,6 +113,7 @@ export async function adicionarItemConferencia(
 
 // Remove um item da conferência (ex.: produto que não veio).
 export async function removerItemConferencia(itemId: string, pedidoId: string) {
+  await exigirAcesso("/conferencia");
   const supabase = await createClient();
   await supabase.from("pedido_itens").delete().eq("id", itemId);
   revalidatePath(`/conferencia/${pedidoId}`);
@@ -122,6 +126,7 @@ export async function salvarConferencia(
   observacoes: string,
   finalizar: boolean,
 ) {
+  await exigirAcesso("/conferencia");
   const supabase = await createClient();
 
   for (const i of itens) {

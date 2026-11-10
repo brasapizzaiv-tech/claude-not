@@ -22,14 +22,17 @@ async function sessao() {
 const atualizar = () => revalidatePath("/cardapio-do-dia");
 
 export async function listarSaladasBase(): Promise<SaladaBase[]> {
+  await exigirAcesso("/cardapio-do-dia");
   const supabase = await createClient();
   return core.listarSaladasBase(supabase as unknown as core.Db);
 }
 export async function saladasDoDia(data: string): Promise<string[]> {
+  await exigirAcesso("/cardapio-do-dia");
   const supabase = await createClient();
   return core.saladasDoDia(supabase as unknown as core.Db, data);
 }
 export async function padraoSemanaSaladas(dow: number): Promise<string[]> {
+  await exigirAcesso("/cardapio-do-dia");
   const supabase = await createClient();
   return core.padraoSemanaSaladas(supabase as unknown as core.Db, dow);
 }

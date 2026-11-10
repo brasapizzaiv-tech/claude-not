@@ -1,4 +1,5 @@
 "use server";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
@@ -8,6 +9,7 @@ import { buscarTodas } from "@/lib/supabase/todas";
 import { prazoPadraoDesde } from "@/lib/cotacao-prazo";
 
 export async function criarCotacao(formData: FormData) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
 
   const descricao =
@@ -34,6 +36,7 @@ type ItemCotacao = { produto_id: string; qtd: number };
 // dispute outros itens na comparação: os itens disputados entram no MESMO
 // pedido depois, pelo "Gerar pedidos" (que completa em vez de pular).
 export async function gerarPedidosExclusivos(cotacaoId: string) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const { data: cot } = await supabase
     .from("cotacoes")
@@ -128,6 +131,7 @@ export async function salvarCotacaoItens(
    *  backup do "Desfazer" (senão cada tecla virava um backup). */
   semBackup = false,
 ) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
 
   // Backup do estado ATUAL antes de sobrescrever (para "Desfazer").
@@ -184,6 +188,7 @@ export async function salvarCotacaoItens(
 
 // Desfaz o último salvamento: restaura as quantidades do backup mais recente.
 export async function reverterCotacao(cotacaoId: string) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const { data: bkp } = await supabase
     .from("cotacao_itens_backup")
@@ -215,6 +220,7 @@ export async function convidarFornecedor(
   cotacaoId: string,
   fornecedorId: string,
 ) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
 
   const { data: existente } = await supabase
@@ -236,6 +242,7 @@ export async function convidarFornecedor(
 
 // Convida vários fornecedores de uma vez (cria o link de quem ainda não tem).
 export async function convidarVarios(cotacaoId: string, fornecedorIds: string[]) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   if (fornecedorIds.length === 0) return;
 
@@ -263,6 +270,7 @@ export async function removerFornecedor(
   cotacaoId: string,
   fornecedorId: string,
 ) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   await supabase
     .from("cotacao_precos")
@@ -328,6 +336,7 @@ async function sincronizarPedido(supabase: Supa, pedidoId: string, itens: Escolh
 
 // Gera os pedidos de compra a partir das escolhas (agrupadas por fornecedor).
 export async function gerarPedidos(cotacaoId: string, escolhas: Escolha[]) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
 
   // TRAVA: se esta cotação já gerou pedidos, NÃO regenera (senão apagaria os
@@ -410,6 +419,7 @@ export async function adiantarPedidoFornecedor(
   fornecedorId: string,
   escolhas: Escolha[],
 ) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const { data: cot } = await supabase
     .from("cotacoes")
@@ -460,6 +470,7 @@ export async function adiantarPedidoFornecedor(
 
 // Cria uma NOVA cotação só com os itens que ainda não foram pedidos na atual.
 export async function novaCotacaoDosFaltantes(cotacaoId: string) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
 
   const [{ data: itens }, { data: peds }] = await Promise.all([
@@ -499,6 +510,7 @@ export async function novaCotacaoDosFaltantes(cotacaoId: string) {
 }
 
 export async function fecharCotacao(formData: FormData) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("cotacoes").update({ status: "fechada" }).eq("id", id);
@@ -507,6 +519,7 @@ export async function fecharCotacao(formData: FormData) {
 }
 
 export async function reabrirCotacao(formData: FormData) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const id = formData.get("id") as string;
 
@@ -537,6 +550,7 @@ export async function reabrirCotacao(formData: FormData) {
 // Prazo pra responder (migration 0247). `ate` null = sem prazo. Prazo no
 // futuro numa cotação fechada = reabrir por mais tempo.
 export async function definirPrazoCotacao(id: string, ate: string | null) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const quando = ate ? new Date(ate) : null;
   if (quando && !(quando.getTime() > Date.now())) return { ok: false as const, mensagem: "Escolha um horário que ainda não passou." };
@@ -557,6 +571,7 @@ export async function definirPrazoCotacao(id: string, ate: string | null) {
 
 // Prazo padrão (horas a partir do primeiro envio do link); null = sem prazo.
 export async function salvarPrazoPadraoCotacao(horas: number | null) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const h = horas && horas > 0 ? Math.min(720, Math.round(horas)) : null;
   const { error } = await supabase.from("wpp_config").update({ cotacao_prazo_horas: h }).not("empresa_id", "is", null);
@@ -564,6 +579,7 @@ export async function salvarPrazoPadraoCotacao(horas: number | null) {
 }
 
 export async function excluirCotacao(formData: FormData) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const id = formData.get("id") as string;
   await supabase.from("cotacoes").delete().eq("id", id);
@@ -582,6 +598,7 @@ export type EstadoComparacao = {
   dividindo?: string[];
 };
 export async function salvarComparacao(cotacaoId: string, estado: EstadoComparacao) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false as const };
@@ -594,6 +611,7 @@ export async function salvarComparacao(cotacaoId: string, estado: EstadoComparac
 // "Enviado" do WhatsApp na tela de fornecedores da cotação (migration 0242):
 // fica no sistema, não mais só no navegador.
 export async function marcarEnviadoCotacao(cotacaoId: string, fornecedorIds: string[]) {
+  await exigirAcesso("/cotacoes");
   if (fornecedorIds.length === 0) return { ok: true as const };
   const supabase = await createClient();
   const { error } = await supabase
@@ -615,6 +633,7 @@ export async function marcarEnviadoCotacao(cotacaoId: string, fornecedorIds: str
   return error ? { ok: false as const } : { ok: true as const };
 }
 export async function limparEnviadosCotacao(cotacaoId: string) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const { error } = await supabase.from("cotacao_fornecedores").update({ enviado_em: null }).eq("cotacao_id", cotacaoId);
   return error ? { ok: false as const } : { ok: true as const };
@@ -622,6 +641,7 @@ export async function limparEnviadosCotacao(cotacaoId: string) {
 
 // Texto da mensagem do WhatsApp da cotação (vale pra todas, em qualquer PC).
 export async function salvarMsgCotacao(texto: string) {
+  await exigirAcesso("/cotacoes");
   const supabase = await createClient();
   const { error } = await supabase
     .from("wpp_config")
