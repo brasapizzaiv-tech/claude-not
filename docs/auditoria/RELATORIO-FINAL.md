@@ -293,6 +293,12 @@ Falta na Onda 3: MSG-03 (apps nas lojas: código + versão nova nas lojas).
 
 Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a referência da contagem de 280 a 109 ms).
 
+### Onda 6 — em andamento (OK do Rafael: "podemos fazer a 6 primeiro"), 10/11/2026
+
+| Lote | Commit | O que foi |
+|---|---|---|
+| 1 | `43de360` | VIS-03 (8 botões laranja com texto grafite), VIS-04 (Abrir caixa em .cartao-foco), TEL-005 (rodapé da tela inicial não corta no celular — conferido em 390 px), VIS-05 (10 botões com trava), TXT-02 (`explicarErro` em 148 retornos; repetido pelo código 23505), ACE-06 (50 role=alert, 87 role=status) |
+
 ## Como vai ser a correção
 
 1. Você escolhe a onda (recomendo **Onda 0 hoje** e **Onda 1** como primeira de código).
