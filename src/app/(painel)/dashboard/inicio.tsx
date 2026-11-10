@@ -236,9 +236,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
                       type="button"
                       onClick={() => setGrupo(nome)}
                       aria-pressed={ativo}
-                      className={`flex min-h-11 items-center rounded-full px-4 text-[13px] ${
-                        ativo ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo dark:text-painel-foco-texto" : "bg-painel-fundo text-texto shadow-[inset_0_0_0_1px_var(--borda)]"
-                      }`}
+                      className={`filtro ${ativo ? "filtro-ativo" : ""}`}
                     >
                       {nome ?? "Tudo"}
                     </button>

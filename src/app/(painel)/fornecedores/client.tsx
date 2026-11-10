@@ -66,8 +66,8 @@ export function FornecedoresClient({
       <div className="mb-4 flex flex-wrap gap-2">
         {([[false, `Ativos`, ativos.length], [true, `Inativos`, inativos.length]] as [boolean, string, number][]).map(([v, rot, n]) => (
           <button key={rot} type="button" onClick={() => setVerInativos(v)} aria-pressed={verInativos === v}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold ${verInativos === v ? "bg-texto text-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}>
-            {rot} <span className="font-numero">{n}</span>
+            className={`filtro ${verInativos === v ? "filtro-ativo" : ""}`}>
+            {rot} <span className="filtro-contador">{n}</span>
           </button>
         ))}
       </div>

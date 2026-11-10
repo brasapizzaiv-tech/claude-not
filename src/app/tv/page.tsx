@@ -23,7 +23,7 @@ import { TvClient } from "./tv-client";
 //    O modo normal detecta isso: se em 8 s o código não ligou, a própria
 //    página pula pro modo simples (script minúsculo em JavaScript antigo).
 export const metadata: Metadata = { title: "Rodízio · Cozinha", robots: { index: false, follow: false } };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, userScalable: false, themeColor: "#0b0b0b" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, userScalable: false, themeColor: TV.fundo };
 export const dynamic = "force-dynamic";
 
 const SIMPLES_INTERVALO_SEG = 5;
@@ -35,7 +35,7 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
 
   if (!ok) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#888", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", textAlign: "center", padding: 32 }}>
+      <div style={{ minHeight: "100vh", background: TV.fundo, color: TV.fraco, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", textAlign: "center", padding: 32 }}>
         <div>
           <p style={{ fontSize: 28, fontWeight: 800, color: "#ccc" }}>Quadro do rodízio</p>
           <p style={{ marginTop: 8, fontSize: 18 }}>
@@ -119,8 +119,8 @@ function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversarian
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 24px 14px", fontSize: "1.9vh", color: TV.fraco }}>
         <span style={{ display: "flex", alignItems: "center", gap: 16 }}>Brasa · Rodízio {!mostrarFila && <TvPontos pagina={pagina} total={totalPaginas} />}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? "#ef4444" : "#22c55e", display: "inline-block" }} />
-          {semRede && <span style={{ color: "#ef4444", fontWeight: 700 }}>SEM CONEXÃO</span>}
+          <span style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? TV.atraso : TV.ok, display: "inline-block" }} />
+          {semRede && <span style={{ color: TV.atraso, fontWeight: 700 }}>SEM CONEXÃO</span>}
           <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: TV.suave }}>{hora}</span>
         </span>
       </div>

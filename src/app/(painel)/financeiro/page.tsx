@@ -99,10 +99,11 @@ export default async function FinanceiroPage({
             sozinhos como CMV.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href={`/financeiro?mes=${desloca(mes, -1)}`}
-            className="rounded-controle border border-borda-forte px-3 py-2 text-sm"
+            aria-label="Mês anterior"
+            className="btn-secundario min-h-11 px-3 text-sm"
           >
             ‹
           </Link>
@@ -111,51 +112,52 @@ export default async function FinanceiroPage({
           </span>
           <Link
             href={`/financeiro?mes=${desloca(mes, 1)}`}
-            className="rounded-controle border border-borda-forte px-3 py-2 text-sm"
+            aria-label="Próximo mês"
+            className="btn-secundario min-h-11 px-3 text-sm"
           >
             ›
           </Link>
           <Link
             href="/financeiro/contas"
-            className="ml-2 rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="btn-secundario ml-2 min-h-11 px-4 text-sm"
           >
             Contas a pagar
           </Link>
           <Link
             href={`/financeiro/orcamento?mes=${mes}`}
-            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="btn-secundario min-h-11 px-4 text-sm"
           >
             Orçamento
           </Link>
           <Link
             href="/financeiro/banco"
-            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="btn-secundario min-h-11 px-4 text-sm"
           >
             Banco
           </Link>
           <Link
             href="/financeiro/vendas"
-            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="btn-secundario min-h-11 px-4 text-sm"
           >
             Vendas
           </Link>
           <Link
             href="/financeiro/vendidos"
-            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="btn-secundario min-h-11 px-4 text-sm"
           >
             Produtos vendidos
           </Link>
           <Link
             href="/financeiro/categorias"
-            className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            className="btn-secundario min-h-11 px-4 text-sm"
           >
             Categorias
           </Link>
           <Link
             href={`/financeiro/dre?mes=${mes}`}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+            className="btn-secundario min-h-11 px-4 text-sm font-bold"
           >
-            Ver DRE →
+            Ver DRE
           </Link>
         </div>
       </div>
@@ -187,7 +189,7 @@ export default async function FinanceiroPage({
       {/* Novo lançamento */}
       <form
         action={criarLancamento}
-        className="mb-6 flex flex-wrap items-end gap-2 cartao p-4"
+        className="mb-6 flex flex-wrap items-start gap-x-3 gap-y-3 cartao p-4"
       >
         <div>
           <label className="mb-1 block text-xs text-texto-suave" title="Mês em que a despesa aconteceu — é por aqui que ela entra no DRE.">
@@ -208,6 +210,7 @@ export default async function FinanceiroPage({
           {/* 117 categorias: digitar filtra. O grupo entra no rótulo pra
               procurar tanto por "Salários" quanto por "Pessoal". */}
           <EscolhaComBusca
+            className={`${inputCls} w-full`}
             name="categoria_id"
             obrigatorio
             rotuloVazio="Escolha..."
@@ -303,13 +306,13 @@ export default async function FinanceiroPage({
             className={`${inputCls} w-16`}
           />
         </div>
-        <label className="flex items-center gap-1.5 pb-2 text-xs text-texto-suave">
+        <label className="mt-5 flex min-h-11 items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" name="pago" defaultChecked />
           Já pago
         </label>
-        <Enviar className="rounded-controle bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900 dark:bg-zinc-700">
-          Lançar
-        </Enviar>
+        <div className="mt-5">
+          <Enviar className="btn-principal min-h-11 px-5 text-sm">Lançar</Enviar>
+        </div>
       </form>
 
       {/* Lista */}

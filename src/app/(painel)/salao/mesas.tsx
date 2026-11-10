@@ -121,10 +121,10 @@ export function MesasGrid({
               type="button"
               onClick={() => setSituacao(v)}
               aria-pressed={ativo}
-              className={`flex min-h-11 items-center gap-2 rounded-full pl-4 pr-2 text-[13.5px] ${ativo ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}
+              className={`filtro ${ativo ? "filtro-ativo" : ""}`}
             >
               {rot}
-              <span className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold ${ativo ? "bg-primaria text-marca-sobre-primaria" : "bg-superficie-suave text-texto-suave"}`}>{n}</span>
+              <span className="filtro-contador">{n}</span>
             </button>
           );
         })}

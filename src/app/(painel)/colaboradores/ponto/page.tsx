@@ -217,8 +217,9 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                 </select>
                 <button className="ml-1 min-h-10 rounded-controle border border-borda-forte px-3 text-sm">ver</button>
               </form>
-              <Link href={q({ inc: soInconsistencias ? undefined : "1" })} className="ml-auto text-sm text-texto-suave hover:underline">
-                {soInconsistencias ? "☑" : "☐"} Mostrar apenas inconsistências
+              <Link href={q({ inc: soInconsistencias ? undefined : "1" })} className="ml-auto inline-flex min-h-11 items-center gap-2 text-sm text-texto-suave hover:underline" aria-pressed={soInconsistencias}>
+                <span aria-hidden className={`inline-flex h-4 w-4 items-center justify-center rounded border ${soInconsistencias ? "border-primaria bg-primaria text-marca-sobre-primaria" : "border-borda-forte"}`}>{soInconsistencias && <Icone nome="certo" tamanho={12} />}</span>
+                Mostrar apenas inconsistências
               </Link>
               <Imprimir />
             </div>

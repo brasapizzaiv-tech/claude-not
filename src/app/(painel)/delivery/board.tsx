@@ -437,10 +437,10 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
               type="button"
               onClick={() => setFStatus(x.k)}
               aria-pressed={ativo}
-              className={`flex min-h-11 items-center gap-2 rounded-full pl-4 pr-2 text-[13.5px] ${ativo ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}
+              className={`filtro ${ativo ? "filtro-ativo" : ""}`}
             >
               {x.rotulo}
-              <span className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold ${ativo ? "bg-primaria text-marca-sobre-primaria" : urgente ? "bg-urgente-solido text-marca-escuro" : "bg-superficie-suave text-texto-suave"}`}>
+              <span className={`filtro-contador ${!ativo && urgente ? "filtro-contador-urgente" : ""}`}>
                 {n}
               </span>
             </button>

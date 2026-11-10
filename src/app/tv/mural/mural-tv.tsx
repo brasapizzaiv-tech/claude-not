@@ -26,7 +26,7 @@ const BORDA = TV.borda;
 const TEXTO = TV.texto;
 const FRACO = TV.fraco;
 const LARANJA = TV.laranja;
-const CREME = "#fff6ec";
+const CREME = TV.texto;
 const ATENCAO = "#e0a04a";
 
 /** De quanto em quanto tempo a TV se recarrega sozinha, em segundos. Sem

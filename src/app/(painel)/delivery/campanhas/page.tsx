@@ -68,7 +68,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
 
       <div className="mb-3 flex gap-2 text-sm">
         {[["mes", "Mês atual"], ["30", "Últimos 30 dias"], ["tudo", "Tudo"]].map(([v, r]) => (
-          <Link key={v} href={`/delivery/campanhas?periodo=${v}`} className={`rounded-full border px-3 py-1 ${periodo === v ? "border-texto bg-texto text-fundo" : "border-borda-forte text-texto-suave"}`}>{r}</Link>
+          <Link key={v} href={`/delivery/campanhas?periodo=${v}`} className={`filtro ${periodo === v ? "filtro-ativo" : ""}`} aria-current={periodo === v ? "page" : undefined}>{r}</Link>
         ))}
       </div>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

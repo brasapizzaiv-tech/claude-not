@@ -150,7 +150,7 @@ export function FaturaClient({
       {/* ---------- conferência ---------- */}
       {compras && (
         <>
-          <div className="flex flex-wrap items-end gap-3 cartao p-4">
+          <div className="flex flex-wrap items-start gap-3 cartao p-4">
             <div>
               <label className="mb-1 block text-xs text-texto-suave">Competência</label>
               <input type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className={input} />
@@ -169,7 +169,7 @@ export function FaturaClient({
                 ))}
               </select>
             </div>
-            <label className="flex items-center gap-1.5 pb-2 text-sm text-texto-suave">
+            <label className="mt-5 flex min-h-11 items-center gap-1.5 text-sm text-texto-suave">
               <input type="checkbox" checked={pago} onChange={(e) => setPago(e.target.checked)} /> já paguei
             </label>
             {transacoes.length > 0 && (

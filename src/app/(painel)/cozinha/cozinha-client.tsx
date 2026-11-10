@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { RodizioCard } from "@/components/rodizio-card";
 import { filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
 import { avancarRodizio, cancelarRodizio, filaRodizio } from "./actions";
+import { TV } from "@/lib/tv-cores";
 
 const ESCALA = 0.8; // tablet: um pouco menor que a TV, pra caber mais
 
@@ -69,7 +70,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
         <button
           onClick={() => agir(() => avancarRodizio(p.id, "forno"))}
           disabled={proc}
-          style={{ minHeight: 72, minWidth: 150, borderRadius: 14, background: "#3b82f6", color: "#fff", fontSize: 22, fontWeight: 900, border: 0, padding: "0 18px" }}
+          style={{ minHeight: 72, minWidth: 150, borderRadius: 14, background: TV.info, color: TV.fundo, fontSize: 22, fontWeight: 900, border: 0, padding: "0 18px" }}
         >
           <Icone nome="fogo" tamanho={16} className="mr-1.5" /> No forno
         </button>
@@ -80,13 +81,13 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
         <button
           onClick={() => agir(() => avancarRodizio(p.id, "pronto"))}
           disabled={proc}
-          style={{ minHeight: 72, minWidth: 150, borderRadius: 14, background: "#22c55e", color: "#fff", fontSize: 22, fontWeight: 900, border: 0, padding: "0 18px" }}
+          style={{ minHeight: 72, minWidth: 150, borderRadius: 14, background: TV.ok, color: TV.fundo, fontSize: 22, fontWeight: 900, border: 0, padding: "0 18px" }}
         >
           ✓ Pronto
         </button>
       );
     }
-    return <div style={{ minWidth: 150, textAlign: "center", fontSize: 20, fontWeight: 800, color: "#22c55e" }}>saiu</div>;
+    return <div style={{ minWidth: 150, textAlign: "center", fontSize: 20, fontWeight: 800, color: TV.ok }}>saiu</div>;
   };
 
   const acoes = (p: PedidoRodizio) => (
@@ -105,18 +106,18 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", padding: 16 }}>
+    <div style={{ minHeight: "100vh", background: TV.fundo, color: TV.texto, padding: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.08em", color: "#C78340" }}><Icone nome="pizza" tamanho={22} className="mr-2" /> RODÍZIO · COZINHA</span>
+        <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.08em", color: TV.laranja }}><Icone nome="pizza" tamanho={22} className="mr-2" /> RODÍZIO · COZINHA</span>
         <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 16, color: "#888" }}>
-          <span style={{ width: 12, height: 12, borderRadius: 6, background: realtime ? "#22c55e" : "#f59e0b", display: "inline-block" }} />
+          <span style={{ width: 12, height: 12, borderRadius: 6, background: realtime ? TV.ok : TV.aviso, display: "inline-block" }} />
           {realtime ? "ao vivo" : "atualizando a cada 10 s"}
           <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#bbb" }}>
             {new Date(agora).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
           </span>
         </span>
       </div>
-      {erro && <p role="alert" style={{ color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>{erro}</p>}
+      {erro && <p role="alert" style={{ color: TV.atraso, fontWeight: 700, marginBottom: 8 }}>{erro}</p>}
 
       {fila.length === 0 ? (
         <div style={{ height: "70vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -124,7 +125,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          {[["SALGADAS", "#C78340", salgadas], ["DOCES", "#f472b6", doces]].map(([titulo, cor, lista]) => (
+          {[["SALGADAS", TV.laranja, salgadas], ["DOCES", TV.rosa, doces]].map(([titulo, cor, lista]) => (
             <div key={titulo as string}>
               <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "0.12em", color: cor as string, marginBottom: 8 }}>
                 {titulo as string} <span style={{ color: "#777", fontWeight: 700 }}>{(lista as PedidoRodizio[]).length}</span>

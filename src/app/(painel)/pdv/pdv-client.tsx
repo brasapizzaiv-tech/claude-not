@@ -224,7 +224,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
         </div>
         <div className="flex flex-wrap gap-1.5 border-b border-borda p-2">
           {abas.map((c) => (
-            <button key={c} onClick={() => setAba(c)} aria-pressed={aba === c} className={`min-h-11 shrink-0 rounded-full px-4 text-[13.5px] ${aba === c ? "bg-marca-escuro font-semibold text-painel-foco-texto dark:bg-painel-foco-fundo" : "bg-painel-fundo text-texto hover:bg-superficie-suave"}`}>{c}</button>
+            <button key={c} onClick={() => setAba(c)} aria-pressed={aba === c} className={`filtro shrink-0 ${aba === c ? "filtro-ativo" : ""}`}>{c}</button>
           ))}
         </div>
         <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-3 sm:grid-cols-3 lg:grid-cols-4">

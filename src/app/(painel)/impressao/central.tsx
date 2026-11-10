@@ -6,6 +6,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   criarImpressora, criarImpressoraDetectada, renomearImpressora, definirImpressoraAtiva, definirImpressoraWindows, definirRecebeComandas, definirRecebeMarmitas, definirComandaProdutos, definirComandaConfig, definirEtiquetaConfig, imprimirTeste, imprimirTesteEtiqueta, definirRecebeNfce, definirRecebePizzas } from "./actions";
+import { Icone } from "@/components/icone";
 
 export type ComandaConfig = { largura: number; precos: boolean; garcom: boolean; hora: boolean; agrupar: boolean; qtdCat: boolean; destObs: boolean };
 export type EtiquetaConfig = { largura: number; altura: number; margem: number; escala: number; qr: boolean; barraValidade?: boolean; categoria?: boolean; empresa?: string | null; deslocX?: number; deslocY?: number };
@@ -53,7 +54,7 @@ export function CentralImpressao({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">🖨️ Central de Impressões</h1>
+      <h1 className="mb-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="imprimir" tamanho={24} className="mr-1.5 inline" />Central de Impressões</h1>
       <p className="mb-5 text-sm text-texto-suave">
         Aqui ficam <b>todas as impressoras</b> (etiquetas hoje; comandas e cupons no futuro). As impressões saem por um
         <b> PC central</b> com o <b>Agente</b> instalado.
@@ -61,8 +62,8 @@ export function CentralImpressao({
 
       {(semImpressora.length > 0 || temPizzaSemImpressora) && (
         <div className="mb-4 rounded-cartao border border-amber-500/40 bg-amber-500/5 p-4 text-sm">
-          <p className="font-semibold text-aviso-texto dark:text-amber-400">⚠️ Pedidos que não saem em nenhuma impressora de cozinha</p>
-          {temPizzaSemImpressora && <p className="mt-1">🍕 <b>Pizzas montadas</b>: nenhuma impressora está marcada &quot;Recebe as pizzas montadas&quot;.</p>}
+          <p className="font-semibold text-aviso-texto dark:text-amber-400"><Icone nome="alerta" tamanho={16} className="mr-1.5 inline" />Pedidos que não saem em nenhuma impressora de cozinha</p>
+          {temPizzaSemImpressora && <p className="mt-1"><Icone nome="pizza" tamanho={16} className="mr-1.5 inline" /><b>Pizzas montadas</b>: nenhuma impressora está marcada &quot;Recebe as pizzas montadas&quot;.</p>}
           {semImpressora.length > 0 && (
             <details className="mt-1">
               <summary className="cursor-pointer">{semImpressora.length} itens do cardápio fora de todas as vias (clique pra ver)</summary>
@@ -142,14 +143,14 @@ export function CentralImpressao({
             ) : (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="font-semibold text-texto">🖨️ {im.nome}{im.ativo ? "" : " (inativa)"}</div>
+                  <div className="font-semibold text-texto"><Icone nome="imprimir" tamanho={16} className="mr-1.5 inline" />{im.nome}{im.ativo ? "" : " (inativa)"}</div>
                   <div className="flex items-center gap-2">
                     <button
                       disabled={proc}
                       onClick={() => { run(() => imprimirTeste(im.id)); setMsg(`Teste enviado para "${im.nome}". Deve sair na impressora.`); setTimeout(() => setMsg(null), 4000); }}
                       className="rounded-controle border border-borda-forte px-2 py-1 text-xs font-medium text-texto-suave hover:bg-superficie-suave"
                     >
-                      🖨️ testar
+                      <Icone nome="imprimir" tamanho={14} className="mr-1.5 inline" />testar
                     </button>
                     <button onClick={() => { setEditId(im.id); setEditNome(im.nome); }} className="text-sm text-orange-600 hover:underline">renomear</button>
                     <button disabled={proc} onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-texto-fraco hover:text-texto-suave">{im.ativo ? "desativar" : "reativar"}</button>
@@ -163,7 +164,7 @@ export function CentralImpressao({
                 {im.recebe_comandas && (
                   <label className="mt-1 flex items-center gap-2 text-sm text-texto-suave">
                     <input type="checkbox" checked={!!im.recebe_pizzas} disabled={proc} onChange={(e) => run(() => definirRecebePizzas(im.id, e.target.checked))} />
-                    🍕 Recebe as pizzas montadas (meio a meio, borda) — elas não são item do cardápio, então não entram na lista de produtos abaixo
+                    <Icone nome="pizza" tamanho={14} className="mr-1.5 inline" />Recebe as pizzas montadas (meio a meio, borda) — elas não são item do cardápio, então não entram na lista de produtos abaixo
                   </label>
                 )}
                 {im.recebe_comandas && <ViaProdutos im={im} produtos={produtos} proc={proc} run={run} />}
@@ -174,7 +175,7 @@ export function CentralImpressao({
                 </label>
                 <label className="mt-2 flex items-center gap-2 text-sm text-texto-suave">
                   <input type="checkbox" checked={!!im.recebe_nfce} disabled={proc} onChange={(e) => run(() => definirRecebeNfce(im.id, e.target.checked))} />
-                  🧾 Imprime o cupom da NFC-e (DANFE, 80 mm) — o caixa pergunta &quot;Imprimir nota?&quot; e sai aqui
+                  <Icone nome="cupom" tamanho={14} className="mr-1.5 inline" />Imprime o cupom da NFC-e (DANFE, 80 mm) — o caixa pergunta &quot;Imprimir nota?&quot; e sai aqui
                 </label>
                 <EtiquetaFormato im={im} proc={proc} run={run} />
               </>
@@ -222,13 +223,13 @@ function EtiquetaFormato({ im, proc, run }: {
   if (!aberto) {
     return (
       <button onClick={() => setAberto(true)} className="mt-2 text-xs font-medium text-texto-suave hover:text-orange-600">
-        🏷️ Formato da etiqueta {im.etiqueta_config ? `(${c.largura}×${c.altura}mm)` : "(padrão 55×55mm)"} ▸
+        <Icone nome="etiqueta" tamanho={14} className="mr-1.5 inline" />Formato da etiqueta {im.etiqueta_config ? `(${c.largura}×${c.altura}mm)` : "(padrão 55×55mm)"} ▸
       </button>
     );
   }
   return (
     <div className="mt-2 rounded-controle bg-superficie-suave p-2">
-      <button onClick={() => setAberto(false)} className="mb-1.5 text-xs text-texto-suave">🏷️ Formato da etiqueta ▾</button>
+      <button onClick={() => setAberto(false)} className="mb-1.5 text-xs text-texto-suave"><Icone nome="etiqueta" tamanho={14} className="mr-1.5 inline" />Formato da etiqueta ▾</button>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-texto-suave">
         <label className="flex items-center gap-1.5">Largura
           <input defaultValue={c.largura} inputMode="decimal" disabled={proc} onBlur={(e) => salvar({ ...c, largura: num(e.target.value, 25, 120, 55) })} className={campo} /> mm
@@ -267,7 +268,7 @@ function EtiquetaFormato({ im, proc, run }: {
           onClick={() => { setSalvo(false); run(async () => { await imprimirTesteEtiqueta(im.id); setSalvo(true); setTimeout(() => setSalvo(false), 2500); }); }}
           className="rounded-controle border border-orange-400 px-2.5 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30"
         >
-          🏷️ Imprimir etiqueta de teste
+          <Icone nome="etiqueta" tamanho={14} className="mr-1.5 inline" />Imprimir etiqueta de teste
         </button>
       </div>
       <p className="mt-1 text-mini text-texto-fraco">

@@ -5,6 +5,7 @@ import { Icone } from "@/components/icone";
 // tablet da cozinha (com botões). Feito pra ser lido de longe: mesa e sabor
 // grandes, selo colorido da fração, tempo de espera.
 import { FRACAO_ROTULO, STATUS_COR, ESPERA_ALERTA_MIN, minutosDesde, tempoEspera, type PedidoRodizio } from "@/lib/rodizio";
+import { TV } from "@/lib/tv-cores";
 
 export function RodizioCard({
   p,
@@ -46,7 +47,7 @@ export function RodizioCard({
         alignItems: "center",
         gap: px(18),
         minHeight: px(96),
-        boxShadow: atrasado ? "0 0 0 3px #ef4444 inset" : undefined,
+        boxShadow: atrasado ? `0 0 0 3px ${TV.atraso} inset` : undefined,
       }}
     >
       {/* mesa */}
@@ -65,7 +66,7 @@ export function RodizioCard({
               letterSpacing: "0.08em",
               padding: `${px(3)} ${px(10)}`,
               borderRadius: px(8),
-              background: p.fracao === "inteira" ? "#fff" : p.fracao === "meia" ? "#facc15" : "#f472b6",
+              background: p.fracao === "inteira" ? TV.texto : p.fracao === "meia" ? TV.aviso : TV.rosa,
               color: "#111",
             }}
           >
@@ -89,7 +90,7 @@ export function RodizioCard({
           {nome}
         </div>
         {p.observacao && (
-          <div style={{ fontSize: px(20), color: "#fde68a", fontWeight: 700, marginTop: px(2) }}><Icone nome="alerta" tamanho={18} className="mr-1.5" /> {p.observacao}</div>
+          <div style={{ fontSize: px(20), color: TV.aviso, fontWeight: 700, marginTop: px(2) }}><Icone nome="alerta" tamanho={18} className="mr-1.5" /> {p.observacao}</div>
         )}
       </div>
 
@@ -99,7 +100,7 @@ export function RodizioCard({
           style={{
             fontSize: px(26),
             fontWeight: 900,
-            color: atrasado ? "#ef4444" : cor.texto,
+            color: atrasado ? TV.atraso : cor.texto,
             fontVariantNumeric: "tabular-nums",
           }}
         >

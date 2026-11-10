@@ -516,6 +516,33 @@ optgroup {
     border-radius: var(--raio-cartao);
     box-shadow: var(--sombra-cartao);
   }
+  /* Filtro em pílula (VIS-16): um formato só no sistema inteiro. Os outros
+     brancos com sombra; o ativo em grafite (creme no escuro); contador laranja
+     no ativo, pêssego nos outros, vermelho quando pede atenção. 44px de toque.
+     Uso: className={`filtro ${ativo ? "filtro-ativo" : ""}`} (ou aria-pressed /
+     aria-current="page"), e <span className="filtro-contador">3</span>. */
+  .filtro {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    min-height: 44px; padding: 0 1rem; border-radius: 9999px;
+    font-size: 13px; font-weight: 500; white-space: nowrap;
+    background: var(--painel-cartao); color: var(--texto); box-shadow: var(--sombra-controle);
+  }
+  .filtro:hover { color: var(--texto); background: var(--superficie-suave); }
+  .filtro-ativo, .filtro[aria-pressed="true"], .filtro[aria-current="page"] {
+    background: var(--painel-foco-fundo); color: var(--painel-foco-texto); font-weight: 600; box-shadow: none;
+  }
+  .filtro-ativo:hover, .filtro[aria-pressed="true"]:hover, .filtro[aria-current="page"]:hover {
+    background: var(--painel-foco-fundo); color: var(--painel-foco-texto); opacity: 0.92;
+  }
+  .filtro-contador {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px;
+    padding: 0 6px; border-radius: 9999px; font-size: 11px; font-weight: 700; font-family: var(--fonte-numero);
+    background: var(--destaque); color: var(--texto-marca-pilula);
+  }
+  .filtro-ativo .filtro-contador, .filtro[aria-pressed="true"] .filtro-contador, .filtro[aria-current="page"] .filtro-contador {
+    background: var(--marca-primaria); color: var(--marca-sobre-primaria);
+  }
+  .filtro-contador-urgente, .filtro-ativo .filtro-contador-urgente { background: var(--urgente-solido); color: #fff; }
   /* Cartão de foco: um por tela, invertido (grafite no claro, creme no escuro). */
   .cartao-foco {
     background: var(--painel-foco-fundo);

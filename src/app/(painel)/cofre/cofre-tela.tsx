@@ -65,7 +65,7 @@ export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: A
       <div className="flex flex-wrap gap-2" role="tablist">
         {([["cofre", "Cofre"], ["historico", "Movimentações"], ["faixas", "Mínimo e máximo"]] as const).map(([k, r]) => (
           <button key={k} type="button" role="tab" aria-selected={aba === k} onClick={() => setAba(k)}
-            className={`min-h-11 rounded-full px-4 text-sm font-semibold ${aba === k ? "bg-painel-foco-fundo text-painel-foco-texto" : "btn-secundario"}`}>
+            className={`filtro ${aba === k ? "filtro-ativo" : ""}`}>
             {r}
           </button>
         ))}

@@ -105,7 +105,7 @@ export default async function TefPage({ searchParams }: { searchParams: Promise<
             const ativo = a.de === de && a.ate === ate;
             return (
               <Link key={a.rotulo} href={link({ de: a.de, ate: a.ate })} aria-current={ativo ? "true" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold ${ativo ? "bg-texto text-fundo" : "bg-painel-cartao text-texto shadow-controle"}`}>
+                className={`filtro ${ativo ? "filtro-ativo" : ""}`}>
                 {a.rotulo}
               </Link>
             );

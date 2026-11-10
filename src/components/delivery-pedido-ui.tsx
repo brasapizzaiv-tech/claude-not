@@ -135,7 +135,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
         .sort((a, b) => Number(!semAcento(b.nome).startsWith(q)) - Number(!semAcento(a.nome).startsWith(q)));
 
   const aba = (ativa: boolean) =>
-    `min-h-11 shrink-0 rounded-full px-3 text-sm font-bold ${ativa ? "bg-texto text-fundo" : "bg-superficie-suave text-texto"}`;
+    `filtro shrink-0 ${ativa ? "filtro-ativo" : ""}`;
   const linha = (on: boolean) =>
     `flex w-full items-center gap-3 rounded-cartao p-3 text-left ${on ? "bg-destaque shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao shadow-cartao"}`;
   const redondo = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl font-bold";

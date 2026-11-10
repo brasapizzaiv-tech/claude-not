@@ -118,10 +118,10 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
             type="button"
             onClick={() => setSoConferir((v) => !v)}
             aria-pressed={soConferir}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold ${soConferir ? "bg-texto text-fundo" : "bg-painel-cartao text-texto shadow-cartao"}`}
+            className={`filtro ${soConferir ? "filtro-ativo" : ""}`}
           >
             A conferir
-            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${soConferir ? "bg-primaria text-marca-sobre-primaria" : "pilula-urgente"}`}>{nConferir}</span>
+            <span className={`filtro-contador ${soConferir ? "" : "filtro-contador-urgente"}`}>{nConferir}</span>
           </button>
         )}
         <span className="text-sm text-texto-suave">{visiveis.length} {visiveis.length === 1 ? "produto" : "produtos"}</span>

@@ -23,4 +23,9 @@ export const TV = {
   atencaoFundo: "#3a1a12",
   recadoFundo: "#3a2712",
   rosa: "#e0919c",    // doces, no quadro do rodízio
+  // Estado (os mesmos tons do tema escuro do painel; VIS-08).
+  ok: "#5fe3a1",      // feito / pronto / conectado
+  aviso: "#ffc94d",   // meio-termo: meia porção, reconectando
+  info: "#8fb4ff",    // em andamento (forno)
+  atraso: "#ff7448",  // atrasado / sem conexão / erro
 } as const;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { FAIXAS, hojeSP, somarDias, type Contagem, type Faixa, type DiaFaixa } from "@/lib/etiqueta-vencimentos";
 import { CONS_LABEL, TIPOS, dataBRcurta, linhasExtras, tipoInfo, type EtiquetaConfig, type EtiquetaDados, type TipoEtiqueta } from "@/lib/etiqueta-tipos";
+import { Icone } from "@/components/icone";
 
 // ---------- Painel de vencimentos (4 cartões) ----------
 export function PainelVencimentos({ contagem, base, ativo }: { contagem: Contagem; base: string; ativo?: Faixa | null }) {
@@ -249,7 +250,7 @@ export function TipoSelector({ value, onChange }: { value: TipoEtiqueta; onChang
             value === t.key ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
           }`}
         >
-          <div className="text-base">{t.icone}</div>
+          <div className="text-base"><Icone nome={t.icone} tamanho={18} /></div>
           {/* nome curto no celular, completo em tela larga */}
           <span className="sm:hidden">{t.curto}</span>
           <span className="hidden sm:inline">{t.titulo}</span>

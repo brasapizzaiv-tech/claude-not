@@ -180,9 +180,9 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span
             title={semRede ? "Sem conexão" : "Conectado"}
-            style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? "#ef4444" : "#22c55e", display: "inline-block", boxShadow: semRede ? "0 0 10px #ef4444" : "0 0 10px #22c55e" }}
+            style={{ width: 14, height: 14, borderRadius: 7, background: semRede ? TV.atraso : TV.ok, display: "inline-block", boxShadow: semRede ? "0 0 10px #ef4444" : "0 0 10px #22c55e" }}
           />
-          {semRede && <span style={{ color: "#ef4444", fontWeight: 700 }}>SEM CONEXÃO</span>}
+          {semRede && <span style={{ color: TV.atraso, fontWeight: 700 }}>SEM CONEXÃO</span>}
           <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: TV.suave }}>
             {new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
           </span>
