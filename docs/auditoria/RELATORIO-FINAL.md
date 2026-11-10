@@ -302,7 +302,9 @@ Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a r
 | 3 | `4ef3306` | VIS-01/TEL-006: 541 textos de estado nos tokens ok/urgente/info; token novo **aviso** (paleta.ts + globals.css + .pilula-aviso) em 205 amarelos. VIS-11: 269 raios no padrão. VIS-13: 26 anéis de foco à mão fora. VIS-06/07: quiosque, /cotar, /contar, /folga e login com os pares claro+escuro nos tokens. Conferido no ar no tema escuro: tokens aplicados, 39 telas sem erro |
 | 4 | `e05bce5` | ACE-08 (template "%s · empresa"; conferido: "Contas a pagar · Brasa Pizzaria e Restaurante"), ACE-10 (4 caixas do navegador + Dialogos em /cotar e /folga), ACE-11 (data com anel), VIS-19, VIS-09 (70 → info), ACE-12 (29 cabeçalhos, 82 tabelas com foco), TEL-007 (Clientes e Notas fiscais 44 px) |
 
-Fica da Onda 6: VIS-10/16/17/18 (peças prontas: um FiltroPilula, títulos e botões repetidos), VIS-12 (emoji na Central de impressões e etiquetas), VIS-08 (cozinha/TV fora do tv-cores.ts), VIS-15 (leitor de câmera em 5 versões), TEL-007 no resto (produtos, cardápio).
+| 5 | `2eba016` | VIS-16 (.filtro/.filtro-ativo/.filtro-contador, 11 filtros), VIS-12 (emoji → Icone), VIS-08 (cozinha/TV só tv-cores.ts), Financeiro e fatura alinhados pelo topo (pedido do Rafael; conferido: os 9 rótulos na mesma altura), EscolhaComBusca com estilo de campo, atalhos em .btn-secundario |
+
+Fica da Onda 6 (baixo): VIS-10/17/18 (títulos e botões repetidos tela por tela), VIS-15 (leitor de câmera único), TEL-007 em produtos/cardápio. Alinhamento visual não é pego pelo robô: conferir por print.
 
 ## Como vai ser a correção
 
