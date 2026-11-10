@@ -12,6 +12,14 @@
 //   27/jul 08:31 Londrina Online Ll68gangclos R$ 19,90
 //   27/jun 07:45 Online Paypal Scienerbxc6 4029357733   ← compra no exterior
 //   Hk BRL 48,96 = US$ 0,00 R$ 0,00 R$ 48,96              quebra em 2 linhas
+//
+// Formato do Sicoob (internet banking, "Extrato de fatura", out/2026): valor
+// sem "R$", parcela no MEIO e a cidade no fim; exterior em 2 linhas.
+//   25/02 ANUIDADE MASTERCARD (8063) 07/12 18,75
+//   31/01 PAV 08/12 Rio de Janeir 3.750,00
+//   18/09 VERCEL INC.V COVINA
+//   US$ 23,04 U$ 23,04 V.DOL 5,1575 118,83
+//   Total da fatura 3.885,18
 
 export type CompraFatura = {
   data: string | null;      // AAAA-MM-DD
@@ -83,6 +91,10 @@ function limparDescricao(resto: string): string {
   return t.replace(/\s{2,}/g, " ").trim();
 }
 
+// Valor no fim da linha: "R$ 363,00", "-R$ 9.263,68", "3.750,00", "18,75 C".
+// O "R$" só vale junto (o "r" de "Janeir" não é moeda).
+const VALOR_FIM = /(-?\s*(?:R\$\s*)?-?[\d.]{1,12},\d{2})(?:\s*([DC]))?\s*$/;
+
 export function lerFaturaTexto(texto: string): FaturaLida {
   const linhas = String(texto || "")
     .replace(/\r/g, "")
@@ -102,6 +114,7 @@ export function lerFaturaTexto(texto: string): FaturaLida {
       const m =
         l.match(/total\s+desta\s+fatura[^0-9-]{0,20}(-?[\d.]+,\d{2})/i) ||
         l.match(/total\s+(?:da\s+)?fatura\s+de\s+\w+[^0-9-]{0,20}(-?[\d.]+,\d{2})/i) ||
+        l.match(/^total\s+da\s+fatura[^0-9-]{0,20}(-?[\d.]+,\d{2})/i) || // Sicoob
         l.match(/valor\s+total[^0-9-]{0,20}(-?[\d.]+,\d{2})/i);
       if (m) totalFatura = valorBR(m[1]);
     }
@@ -126,13 +139,13 @@ export function lerFaturaTexto(texto: string): FaturaLida {
 
     // Compra no exterior quebra em duas linhas: a primeira não tem valor.
     let resto = mData[4];
-    let valorTexto = resto.match(/(-?\s*R?\$?\s*[\d.]{1,12},\d{2})\s*([DC])?\s*$/i);
+    let valorTexto = resto.match(VALOR_FIM);
     if (!valorTexto && i + 1 < linhas.length) {
       const proxima = linhas[i + 1];
-      const naProxima = proxima.match(/(-?\s*R?\$?\s*[\d.]{1,12},\d{2})\s*$/);
+      const naProxima = proxima.match(VALOR_FIM);
       if (naProxima && !/^\d{1,2}[/ ]/.test(proxima)) {
         resto = `${resto} ${proxima}`;
-        valorTexto = resto.match(/(-?\s*R?\$?\s*[\d.]{1,12},\d{2})\s*([DC])?\s*$/i);
+        valorTexto = resto.match(VALOR_FIM);
         i++; // a linha de baixo já foi usada
       }
     }
@@ -150,6 +163,14 @@ export function lerFaturaTexto(texto: string): FaturaLida {
       parcelaAtual = Number(mParc[1]);
       parcela = `${mParc[1].padStart(2, "0")}/${mParc[2].padStart(2, "0")}`;
       resto = resto.slice(0, resto.length - mParc[0].length).trim();
+    } else {
+      // Sicoob: a parcela vem no meio, antes da cidade ("PAV 08/12 Rio de Janeir").
+      const mMeio = resto.match(/\s(\d{2})\/(\d{2})\s/);
+      if (mMeio && Number(mMeio[2]) > 1 && Number(mMeio[2]) <= 48 && Number(mMeio[1]) >= 1 && Number(mMeio[1]) <= Number(mMeio[2])) {
+        parcelaAtual = Number(mMeio[1]);
+        parcela = `${mMeio[1]}/${mMeio[2]}`;
+        resto = `${resto.slice(0, mMeio.index)} ${resto.slice((mMeio.index ?? 0) + mMeio[0].length)}`.trim();
+      }
     }
 
     const descricao = limparDescricao(resto);
