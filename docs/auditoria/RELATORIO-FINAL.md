@@ -298,6 +298,7 @@ Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a r
 | Lote | Commit | O que foi |
 |---|---|---|
 | 1 | `43de360` | VIS-03 (8 botões laranja com texto grafite), VIS-04 (Abrir caixa em .cartao-foco), TEL-005 (rodapé da tela inicial não corta no celular — conferido em 390 px), VIS-05 (10 botões com trava), TXT-02 (`explicarErro` em 148 retornos; repetido pelo código 23505), ACE-06 (50 role=alert, 87 role=status) |
+| 2 | `e48b4ec` | ACE-03/VIS-14/TEL-003: `src/components/janela.tsx` (Esc, Tab preso, foco devolvido, rola) em 29 janelas — conferido no ar: janela do fornecedor em tela de 680 px abre com foco no Nome, Salvar alcançável, Esc fecha; a de Pagamento do caixa fica de fora (pinpad). ACE-07: 58 botões de símbolo com nome. ACE-04: ~176 campos com aria-label. TEL-004: cozinha, etiquetas, etiqueta e áreas de entrega sem erro de hidratação (conferido) |
 
 ## Como vai ser a correção
 
