@@ -69,16 +69,32 @@ async function main() {
     }
   }
 
+  // Segunda camada (auditoria SEC-15): toda tabela do public TEM que ter RLS.
+  // Tabela sem RLS com permissão pra API vira leitura/escrita pública na hora.
+  // A rodada falha aqui, antes de dar qualquer permissão.
+  const { rows: semRls } = await client.query(`
+    select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity`);
+  if (semRls.length) {
+    throw new Error(`Tabela sem RLS no public: ${semRls.map((r) => r.relname).join(", ")}. Ponha "alter table ... enable row level security" na migration.`);
+  }
+
   // A partir de 30/10/2026 a Supabase não dá mais permissão automática nas
   // tabelas novas do public. Depois de toda rodada (mesmo sem migration nova),
-  // garante o acesso dos papéis da API. Não abre dado: o RLS continua mandando.
+  // garante o acesso dos papéis LOGADO e SERVIDOR. O anônimo (chave pública)
+  // NÃO ganha tabela nenhuma (SEC-15, migration 0290): só lê "empresas"; o que
+  // é público passa por função com token. Funções: o Postgres já dá EXECUTE a
+  // todos na criação; aqui não se devolve ao anon o que uma migration tirou.
   await client.query(`
     grant usage on schema public to anon, authenticated, service_role;
-    grant select, insert, update, delete on all tables in schema public to anon, authenticated, service_role;
-    grant usage, select, update on all sequences in schema public to anon, authenticated, service_role;
-    grant execute on all functions in schema public to anon, authenticated, service_role;
+    grant select, insert, update, delete on all tables in schema public to authenticated, service_role;
+    grant usage, select, update on all sequences in schema public to authenticated, service_role;
+    grant execute on all functions in schema public to authenticated, service_role;
+    revoke all on all tables in schema public from anon;
+    revoke all on all sequences in schema public from anon;
+    grant select on public.empresas to anon;
   `);
-  console.log("✓ Permissões dos papéis da API garantidas (anon, authenticated, service_role)");
+  console.log("✓ Permissões dos papéis da API garantidas (authenticated e service_role; anon só lê empresas)");
 
   console.log(
     count === 0
