@@ -15,6 +15,7 @@ import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
 import { AvisoSaude } from "@/components/aviso-saude";
 import { empresaAtualId } from "@/lib/empresa";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 
 const brl = (n: number) =>
@@ -227,7 +228,9 @@ export default async function CaixaPage({
   // forma "Compra da equipe" mostrar o saldo na hora de escolher a pessoa).
   const [{ data: colabRows }, { data: retRows }] = await Promise.all([
     supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome"),
-    supabase.from("retiradas").select("colaborador_id, valor").eq("status", "aberto"),
+    // Compras internas só abrem pra quem tem o módulo (SEC-04): o saldo de cada
+    // um vem pelo servidor, filtrado pela empresa, só quem e quanto.
+    createAdminClient().from("retiradas").select("colaborador_id, valor").eq("empresa_id", (await empresaAtualId()) ?? "00000000-0000-0000-0000-000000000000").eq("status", "aberto"),
   ]);
   const abertoPorColab = new Map<string, number>();
   for (const r of ((retRows as { colaborador_id: string | null; valor: number }[]) ?? [])) {

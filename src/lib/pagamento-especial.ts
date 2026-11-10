@@ -5,6 +5,8 @@
 // PDV e o recebimento do delivery usam o mesmo código — o Rafael pediu pra um
 // funcionário poder pedir pelo app e o operador mudar pra Compra da equipe.
 import type { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { tipoDe, type FormaOpcao } from "./formas-pagamento";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
@@ -73,10 +75,17 @@ export async function lancarFormasEspeciais(
     }
     const { data: userEq } = await supabase.auth.getUser();
     const hojeBR = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+    // Compras internas só abrem pra quem tem o módulo (SEC-04, 0298): quem
+    // recebe (caixa, PDV, delivery) grava pelo servidor, com a empresa na mão.
+    // Quem chama já conferiu a permissão (exigirAcesso).
+    const empresaEq = await empresaAtualId();
+    if (!empresaEq) return { ok: false, mensagem: "Não consegui saber a empresa deste acesso. Entre de novo." };
+    const adminEq = createAdminClient();
     for (const p of daEquipe) {
       const { data: colab } = await supabase.from("colaboradores").select("nome, ativo").eq("id", p.colaboradorId!).maybeSingle();
       if (!colab || !colab.ativo) return { ok: false, mensagem: "Funcionário não encontrado (ou desligado)." };
-      const { error } = await supabase.from("retiradas").insert({
+      const { error } = await adminEq.from("retiradas").insert({
+        empresa_id: empresaEq,
         colaborador_id: p.colaboradorId,
         nome: colab.nome as string,
         item: `Consumo · ${opts.rotulo}`,
