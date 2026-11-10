@@ -255,6 +255,10 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 - Esforço: M · Risco: médio (testar os apps por link)
 
 ### [SEC-16] LGPD: a exclusão prometida não existe, e apagar colaborador apaga registro que a lei manda guardar
+- **CORRIGIDO 10/11/2026 ~17h35 (migration 0299, commit a27431e).** Decisões do Rafael: cliente que pede é anonimizado
+  (`anonimizar_cliente`; Clientes → Remover), colaborador com histórico só desligado (12 FKs RESTRICT), nada automático.
+  Quanto tempo cada dado fica: nota fiscal e registros de pagamento pelo prazo da lei (5 anos); ponto, acertos e
+  atestados enquanto a lei trabalhista mandar; o resto até a pessoa pedir. Posições do entregador: 90 dias (já existia).
 - Severidade: médio
 - A política de privacidade (`src/app/motelli/privacidade/page.tsx:85`) promete apagar cadastro, mensagens e posições em
   até 15 dias; `excluirCliente` só marca `ativo = false` e telefone/endereço continuam em `delivery_pedidos`,
