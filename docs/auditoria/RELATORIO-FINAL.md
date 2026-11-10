@@ -270,7 +270,7 @@ Revisão independente do lote 2: 5 pontos (trava burlável com tentativas simult
 
 Revisão independente do lote 1: 1 ponto sério (o app do garçom não lançaria itens) e 2 menores (foto HEIC, peso acima de 32 kg cobrado calado), corrigidos antes de publicar. Robô só leitura: 8 telas do painel abrem sem erro; rotinas seguem gravando sinal depois da publicação.
 
-Falta na Onda 3: SEC-04 (permissão por tela também no banco), COD-001 (Next.js), SEC-15 (anon), AGT-11/AGT-12/PAG-09 (agentes), SEC-16 (LGPD), MSG-03 (apps nas lojas).
+Falta na Onda 3: SEC-04 (permissão por tela também no banco), AGT-11/AGT-12/PAG-09 (agentes), SEC-16 (LGPD), MSG-03 (apps nas lojas).
 
 ## Como vai ser a correção
 
