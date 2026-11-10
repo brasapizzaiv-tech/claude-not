@@ -54,9 +54,18 @@ export async function salvarCliente(formData: FormData) {
   return { ok: true as const };
 }
 
-export async function excluirCliente(formData: FormData) {
+// LGPD (SEC-16, migration 0299): "Remover" apaga os dados pessoais do cliente
+// em todo o sistema (nome, telefone, endereço, CPF/CNPJ — nos pedidos,
+// reservas, vales e mensagens também). Valores, fiado, cashback e notas
+// fiscais ficam. Quem ainda deve fiado não sai. Não dá pra desfazer.
+export async function excluirCliente(id: string) {
   await exigirAcesso("/clientes");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false as const, mensagem: "Cliente inválido." };
   const supabase = await createClient();
-  await supabase.from("clientes").update({ ativo: false }).eq("id", formData.get("id") as string);
+  const { data, error } = await supabase.rpc("anonimizar_cliente", { p_cliente: id });
   revalidatePath("/clientes");
+  if (error) return { ok: false as const, mensagem: "Não consegui apagar agora. Tente de novo." };
+  const r = data as { ok: boolean; erro?: string } | null;
+  if (!r?.ok) return { ok: false as const, mensagem: r?.erro ?? "Não consegui apagar." };
+  return { ok: true as const };
 }

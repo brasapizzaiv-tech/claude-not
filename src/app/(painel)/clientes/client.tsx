@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Enviar } from "@/components/enviar";
+import { BotaoAcao, Enviar } from "@/components/enviar";
+import { avisar, confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { salvarCliente, excluirCliente } from "./actions";
@@ -123,10 +124,22 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
                     >
                       Editar
                     </button>
-                    <form action={excluirCliente} className="inline">
-                      <input type="hidden" name="id" value={c.id} />
-                      <Enviar className="text-texto-fraco hover:text-red-600">Remover</Enviar>
-                    </form>
+                    <BotaoAcao
+                      className="text-texto-fraco hover:text-red-600"
+                      aoClicar={async () => {
+                        const ok = await confirmar(`Apagar os dados de ${c.nome}?`, {
+                          detalhe: "Nome, telefone, endereço e CPF/CNPJ saem de todo o sistema, inclusive dos pedidos, reservas, vales e mensagens. Valores, fiado e notas fiscais ficam (a lei manda guardar). Não dá para desfazer.",
+                          perigo: true,
+                          okTexto: "Apagar os dados",
+                        });
+                        if (!ok) return;
+                        const r = await excluirCliente(c.id);
+                        if (!r.ok) await avisar(r.mensagem);
+                        else router.refresh();
+                      }}
+                    >
+                      Remover
+                    </BotaoAcao>
                   </td>
                 </tr>
               ))}
