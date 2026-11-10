@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { lerPaginaNfce, chaveDoTexto } from "../src/lib/nfce-consulta-parse.ts";
+import { lerPaginaNfce, chaveDoTexto, parametroDoQr } from "../src/lib/nfce-consulta-parse.ts";
 
 const html = readFileSync(new URL("./fixtures/nfce-kern-2026-11-07.html", import.meta.url), "utf8");
 const c = lerPaginaNfce(html);
@@ -44,4 +44,13 @@ test("chave a partir do endereço do QR ou dos números digitados", () => {
   assert.equal(chaveDoTexto(url), "43261148810660000164652060002781851708378333");
   assert.equal(chaveDoTexto("4326 1148 8106 6000 0164 6520 6000 2781 8517 0837 8333"), "43261148810660000164652060002781851708378333");
   assert.equal(chaveDoTexto("qualquer coisa"), "");
+});
+
+test("parâmetro do QR: câmera, colado ou leitor USB com o | trocado", () => {
+  const certo = "43261148810660000164652060002781851708378333|2|1|1|19EF72D4F2D5C7E33833AA49C62C25530534FE1F";
+  assert.equal(parametroDoQr("https://www.sefaz.rs.gov.br/NFCE/NFCE-COM.aspx?p=" + certo), certo);
+  // leitor em teclado ABNT: | vira < e ?= viram outros símbolos
+  assert.equal(parametroDoQr("https:;;www.sefaz.rs.gov.br;NFCE;NFCE-COM.aspx°p+43261148810660000164652060002781851708378333<2<1<1<19EF72D4F2D5C7E33833AA49C62C25530534FE1F"), certo);
+  assert.equal(parametroDoQr("43261148810660000164652060002781851708378333"), null); // só a chave não basta
+  assert.equal(parametroDoQr("qualquer coisa"), null);
 });

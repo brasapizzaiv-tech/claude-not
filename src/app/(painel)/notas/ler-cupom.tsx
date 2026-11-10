@@ -44,13 +44,33 @@ export function LerCupom() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => { setRes(null); setAberto(true); }}
-        className="btn-secundario inline-flex min-h-11 items-center gap-2 text-sm"
-      >
-        <Icone nome="cupom" tamanho={16} /> Ler cupom (QR)
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Leitor de QR do caixa (USB): ele "digita" o código e aperta Enter.
+            É só clicar no campo e ler o cupom. */}
+        <form
+          className="flex"
+          onSubmit={(e) => { e.preventDefault(); if (texto.trim()) void importar(texto); }}
+        >
+          <label htmlFor="cupom-leitor" className="sr-only">Leitor de QR do cupom</label>
+          <input
+            id="cupom-leitor"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder={lendo ? "Buscando o cupom…" : "Clique e leia o cupom no leitor"}
+            disabled={lendo}
+            autoComplete="off"
+            className="min-h-11 w-60 rounded-controle border border-borda bg-painel-cartao px-3 text-sm text-texto"
+          />
+        </form>
+        <button
+          type="button"
+          onClick={() => { setRes(null); setAberto(true); }}
+          className="btn-secundario inline-flex min-h-11 items-center gap-2 text-sm"
+          aria-label="Ler o cupom pela câmera"
+        >
+          <Icone nome="camera" tamanho={16} /> Câmera
+        </button>
+      </div>
 
       {res && (
         <div className={`mt-3 max-w-sm rounded-controle px-3 py-2 text-sm ${res.ok ? "bg-superficie-suave text-texto" : "bg-urgente-fundo text-urgente-texto"}`}>

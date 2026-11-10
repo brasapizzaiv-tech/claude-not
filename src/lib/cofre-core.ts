@@ -53,14 +53,15 @@ export async function carregarDados(ctx: Ctx): Promise<DadosCofre> {
   if (inicio) {
     const [{ data: fechados }, { data: abertos }, { data: sangrias }, { data: jaFeitos }] = await Promise.all([
       db.from("pdv_caixas").select("id, nome, aberto_em, fechado_em, dinheiro_contado, dinheiro_esperado, resumo").eq("empresa_id", empresaId).eq("status", "fechado").gte("fechado_em", inicio).order("fechado_em").limit(60),
-      db.from("pdv_caixas").select("id, nome, aberto_em, saldo_inicial").eq("empresa_id", empresaId).gte("aberto_em", inicio).gt("saldo_inicial", 0).order("aberto_em").limit(60),
+      db.from("pdv_caixas").select("id, nome, aberto_em, saldo_inicial, abertura_notas").eq("empresa_id", empresaId).gte("aberto_em", inicio).gt("saldo_inicial", 0).order("aberto_em").limit(60),
       db.from("pdv_caixa_mov").select("id, valor, descricao, criado_em").eq("empresa_id", empresaId).eq("tipo", "sangria").is("lancamento_id", null).gte("criado_em", inicio).order("criado_em").limit(100),
       db.from("cofre_movimentos").select("origem_tipo, origem_id").eq("empresa_id", empresaId).not("origem_id", "is", null).gte("criado_em", inicio).limit(1000),
     ]);
     const feito = new Set(((jaFeitos as { origem_tipo: string; origem_id: string }[] | null) ?? []).map((m) => `${m.origem_tipo}:${m.origem_id}`));
-    for (const c of (abertos as { id: string; nome: string | null; aberto_em: string; saldo_inicial: number }[] | null) ?? []) {
+    for (const c of (abertos as { id: string; nome: string | null; aberto_em: string; saldo_inicial: number; abertura_notas: Quantidades | null }[] | null) ?? []) {
       if (feito.has(`abertura:${c.id}`)) continue;
-      pendentes.push({ origem: { tipo: "abertura", id: c.id, esperado: Number(c.saldo_inicial) }, tipo: "fundo_caixa", quando: c.aberto_em, rotulo: `Troco pra abrir o caixa (${hora(c.aberto_em)})`, valor: Number(c.saldo_inicial), sai: true });
+      // Troco contado nota por nota na abertura: a saída já vem preenchida.
+      pendentes.push({ origem: { tipo: "abertura", id: c.id, esperado: Number(c.saldo_inicial) }, tipo: "fundo_caixa", quando: c.aberto_em, rotulo: `Troco pra abrir o caixa (${hora(c.aberto_em)})`, valor: Number(c.saldo_inicial), sai: true, contagem: contagemDoCaixa({ notas: c.abertura_notas }, Number(c.saldo_inicial)) });
     }
     for (const c of (fechados as { id: string; nome: string | null; fechado_em: string; dinheiro_contado: number | null; dinheiro_esperado: number | null; resumo: { notas?: Quantidades | null } | null }[] | null) ?? []) {
       if (feito.has(`caixa:${c.id}`)) continue;

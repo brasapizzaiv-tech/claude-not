@@ -61,6 +61,23 @@ export function chaveDoTexto(texto: string): string {
   return d.length === 44 ? d : "";
 }
 
+/**
+ * O parâmetro "p" do QR (chave de 44 dígitos + versão + ambiente + ... + hash),
+ * tirado do endereço lido pela câmera, colado, ou "digitado" pelo leitor de QR
+ * do caixa. O leitor USB funciona como teclado: num teclado ABNT o "|" (e até o
+ * "?" e o "=") pode sair trocado. Então acha a chave em qualquer lugar e, depois
+ * dela, qualquer separador vira "|".
+ */
+export function parametroDoQr(texto: string): string | null {
+  let t = (texto || "").trim();
+  try { t = decodeURIComponent(t); } catch { /* fica como veio */ }
+  const k = t.match(/(?:^|[^0-9])(\d{44})[^0-9A-Za-z]+([0-9A-Za-z][\s\S]*)$/);
+  if (!k) return null;
+  const resto = k[2].split(/[^0-9A-Za-z]+/).filter(Boolean);
+  if (resto.length < 2 || resto.join("").length > 200) return null;
+  return `${k[1]}|${resto.join("|")}`;
+}
+
 export function lerPaginaNfce(html: string): CupomLido {
   const h = html.replace(/\r?\n/g, " ");
 

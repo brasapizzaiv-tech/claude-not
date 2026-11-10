@@ -1,17 +1,10 @@
-import { lerPaginaNfce, type CupomLido } from "@/lib/nfce-consulta-parse";
+import { lerPaginaNfce, parametroDoQr, type CupomLido } from "@/lib/nfce-consulta-parse";
+export { parametroDoQr };
 
 // Busca a NFC-e (cupom de supermercado etc.) na página pública da SEFAZ a
 // partir do texto do QR code. Só o portal da SVRS (RS); o endereço é montado
 // aqui (nunca seguimos um endereço qualquer que veio do QR).
 const PORTAL = "https://dfe-portal.svrs.rs.gov.br/Dfe/QrCodeNFce";
-
-/** O parâmetro "p" do QR: chave de 44 dígitos + versão + ambiente + ... + hash. */
-export function parametroDoQr(texto: string): string | null {
-  const t = (texto || "").trim();
-  const m = t.match(/[?&]p=([^&#\s]+)/i);
-  const p = decodeURIComponent(m ? m[1] : t);
-  return /^\d{44}\|[0-9A-Za-z|]{3,200}$/.test(p) ? p : null;
-}
 
 export async function buscarCupomNfce(texto: string): Promise<{ ok: true; cupom: CupomLido } | { ok: false; erro: string }> {
   const p = parametroDoQr(texto);

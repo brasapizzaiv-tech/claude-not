@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { Enviar } from "@/components/enviar";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
-import { abrirCaixa } from "../actions";
 import { servicoAgora } from "../util";
 import { CaixaAcoes } from "./acoes";
 import { categoriasDeSangria } from "@/lib/sangria-financeiro";
 import { FechamentoZ } from "./fechamento-z";
+import { AbrirCaixaForm } from "./abrir-caixa";
 import { ReceberComandas } from "./receber";
 import { NotasPendentes, type Pendente } from "./notas-pendentes";
 import { pixConfigurado } from "@/lib/pix";
@@ -77,31 +76,7 @@ export default async function CaixaPage({
           </Link>
         </div>
 
-        <form
-          action={abrirCaixa}
-          className="mt-6 space-y-4 rounded-cartao bg-painel-foco-fundo p-5 text-painel-foco-texto"
-        >
-          <div>
-            <label className="mb-1 block text-xs text-texto-suave">Nome / turno</label>
-            <input
-              name="nome"
-              defaultValue="Noite"
-              className="min-h-11 w-full rounded-controle border border-current/30 bg-transparent px-3 text-sm placeholder:opacity-60"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-texto-suave">Troco inicial / saldo anterior (R$)</label>
-            <input
-              name="saldo_inicial"
-              inputMode="decimal"
-              placeholder="0,00"
-              className="min-h-11 w-40 rounded-controle border border-current/30 bg-transparent px-3 font-numero text-sm "
-            />
-          </div>
-          <Enviar className="min-h-11 rounded-controle bg-painel-foco-texto px-5 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90">
-            Abrir caixa
-          </Enviar>
-        </form>
+        <AbrirCaixaForm />
       </div>
     );
   }

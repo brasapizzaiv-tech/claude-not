@@ -2243,8 +2243,16 @@ export async function abrirCaixa(formData: FormData) {
   const jaAberto = await caixaAberto(supabase);
   if (jaAberto) redirect("/salao/caixa");
   const nome = ((formData.get("nome") as string) || "Caixa").trim();
-  const saldo_inicial = valorNum(formData.get("saldo_inicial"));
-  await supabase.from("pdv_caixas").insert({ nome, saldo_inicial });
+  // Troco contado nota por nota (pedido do Rafael, 10/11/2026): o total sai
+  // das notas e a contagem vai pronta pro Cofre. Sem notas, vale o total.
+  let notasAbertura: Quantidades | null = null;
+  try {
+    const bruto = formData.get("notas");
+    if (typeof bruto === "string" && bruto.trim() && bruto.trim() !== "{}") notasAbertura = contagemValida(JSON.parse(bruto));
+  } catch { notasAbertura = null; }
+  const temNotas = !!notasAbertura && Object.keys(notasAbertura).length > 0;
+  const saldo_inicial = temNotas ? valorDe(notasAbertura as Quantidades) : valorNum(formData.get("saldo_inicial"));
+  await supabase.from("pdv_caixas").insert({ nome, saldo_inicial, abertura_notas: temNotas ? notasAbertura : null });
   // Numeração do salão/balcão reinicia do 1 a cada caixa (a balança reinicia
   // sozinha pelo agente, a partir do número inicial configurado).
   await supabase.rpc("pdv_reiniciar_numeracao");
