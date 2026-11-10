@@ -105,7 +105,7 @@ async function Contador({ de, ate, hoje, nomeArquivo, supabase }: P & { hoje: st
   // Fechar o mês vale do ciclo em que começou a assinatura no app (o de setembro foi no papel).
   const cicloInteiro = ciclo.de === de && ciclo.ate === ate && de >= ASSINATURA_DESDE;
   const [{ data: fichas }, fechamentos] = await Promise.all([
-    ids.length ? supabase.from("colaboradores").select("id, matricula, numero_folha, funcao, pis").in("id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? supabase.from("colaboradores_dados").select("id, matricula, numero_folha, funcao, pis").in("id", ids) : Promise.resolve({ data: [] }),
     cicloInteiro ? fechamentosDoCiclo(supabase, de, ids) : Promise.resolve(null),
   ]);
   const fichaDe = new Map(((fichas ?? []) as { id: string; matricula: string | null; numero_folha: string | null; funcao: string | null; pis: string | null }[]).map((f) => [f.id, f]));

@@ -96,28 +96,41 @@ async function main() {
   `);
   console.log("✓ Permissões dos papéis da API garantidas (authenticated e service_role; anon só lê empresas)");
 
-  // Colunas secretas (SEC-04, migration 0292): a sessão do painel não lê o
-  // token/PIN/código de colaboradores e entregadores. O grant de tabela inteira
-  // logo acima devolveria tudo, então reaplica aqui, sempre por último.
+  // Colunas secretas (SEC-04, migrations 0292 e 0295): a sessão do painel não
+  // lê o token/PIN/código de colaboradores e entregadores, nem (depois da 0295)
+  // os dados pessoais da equipe — esses só pela visão colaboradores_dados. O
+  // grant de tabela inteira logo acima devolveria tudo, então reaplica aqui,
+  // sempre por último.
+  const { rows: r0295 } = await client.query("select 1 from _migrations where nome like '0295%' limit 1");
+  const PESSOAIS = [
+    "cpf", "rg", "pis", "ctps", "cnh", "cnh_categoria", "cnh_validade", "nascimento",
+    "cep", "endereco", "endereco_numero", "bairro", "cidade", "uf", "telefone", "telefone_emergencia",
+    "nome_pai", "nome_mae", "genero", "tipo_sanguineo", "conjuge", "filhos",
+    "salario_base", "valor_dia", "valor_noite", "valor_free", "numero_folha",
+  ];
+  const SECRETAS = {
+    colaboradores: ["token", "pin", "codigo", ...(r0295.length ? PESSOAIS : [])],
+    entregadores: ["token", "codigo"],
+  };
+  for (const [tabela, secretas] of Object.entries(SECRETAS)) {
+    const { rows } = await client.query(
+      "select column_name from information_schema.columns where table_schema = 'public' and table_name = $1 and column_name <> all ($2::text[]) order by ordinal_position",
+      [tabela, secretas],
+    );
+    if (!rows.length) continue;
+    const cols = rows.map((r) => `"${r.column_name.replace(/"/g, '""')}"`).join(", ");
+    await client.query(`revoke select on public.${tabela} from authenticated`);
+    await client.query(`grant select (${cols}) on public.${tabela} to authenticated`);
+  }
+  // A visão da ficha completa é só leitura (gravar por ela pularia o RLS).
   await client.query(`
-    do $$
-    declare t text; secretas text[]; cols text;
-    begin
-      for t, secretas in select * from (values
-          ('colaboradores', array['token', 'pin', 'codigo']),
-          ('entregadores', array['token', 'codigo'])
-        ) as v(t, s)
-      loop
-        select string_agg(quote_ident(column_name), ', ' order by ordinal_position) into cols
-          from information_schema.columns
-         where table_schema = 'public' and table_name = t and column_name <> all (secretas);
-        if cols is null then continue; end if;
-        execute format('revoke select on public.%I from authenticated', t);
-        execute format('grant select (%s) on public.%I to authenticated', cols, t);
-      end loop;
-    end $$;
+    do $x$ begin
+      if to_regclass('public.colaboradores_dados') is not null then
+        revoke insert, update, delete, truncate, references, trigger on public.colaboradores_dados from authenticated;
+      end if;
+    end $x$;
   `);
-  console.log("✓ Colunas secretas fora da sessão (token/PIN/código)");
+  console.log(`✓ Colunas secretas fora da sessão (token/PIN/código${r0295.length ? " e dados pessoais da equipe" : ""})`);
 
   console.log(
     count === 0

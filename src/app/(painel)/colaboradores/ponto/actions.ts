@@ -47,7 +47,7 @@ export async function incluirBatida(colaboradorId: string, dia: string, hora: st
   await exigirAcesso("/colaboradores");
   if (!DATA.test(dia) || !HORA.test(hora)) return { ok: false as const, erro: "Confira o dia e a hora." };
   const supabase = await createClient();
-  const { data: c } = await supabase.from("colaboradores").select("id, cpf, nome, bate_ponto").eq("id", colaboradorId).maybeSingle();
+  const { data: c } = await supabase.from("colaboradores_dados").select("id, cpf, nome, bate_ponto").eq("id", colaboradorId).maybeSingle();
   const col = c as { id: string; cpf: string | null; nome: string; bate_ponto: boolean } | null;
   if (!col) return { ok: false as const, erro: "Pessoa não encontrada." };
   if (await diaFechado(supabase, col.id, [dia])) return { ok: false as const, erro: AVISO_FECHADO };
@@ -191,14 +191,17 @@ export async function vincularCpfPonto(cpf: string, colaboradorId: string) {
   if (!empresaId || c.length !== 11) return { ok: false as const, erro: "CPF inválido." };
   if (!colaboradorId) return { ok: false as const, erro: "Escolha o colaborador." };
   const supabase = await createClient();
-  const { data: col } = await supabase.from("colaboradores").select("id, nome, cpf").eq("id", colaboradorId).maybeSingle();
+  const { data: col } = await supabase.from("colaboradores_dados").select("id, nome, cpf").eq("id", colaboradorId).maybeSingle();
   if (!col) return { ok: false as const, erro: "Colaborador não encontrado." };
   const atual = String((col as { cpf: string | null }).cpf ?? "").replace(/\D/g, "");
   // O relógio manda o PIS de quem foi cadastrado nele pelo PIS (migration 0251):
   // número que é PIS válido (e não é o CPF da pessoa) vai pro campo PIS.
   const ehPis = pisValido(c) && c !== atual;
   if (!ehPis && atual && atual !== c) return { ok: false as const, erro: `${(col as { nome: string }).nome} já tem outro CPF no cadastro. Confira em Colaboradores.` };
-  const { data: outro } = await supabase.from("colaboradores").select("nome").or(`cpf.eq.${c},pis.eq.${c}`).neq("id", colaboradorId).limit(1).maybeSingle();
+  // CPF/PIS são dados pessoais: a busca vai pela visão (SEC-04). Se a busca
+  // falhar, não segue — senão o mesmo número ia pra duas pessoas.
+  const { data: outro, error: eOutro } = await supabase.from("colaboradores_dados").select("nome").or(`cpf.eq.${c},pis.eq.${c}`).neq("id", colaboradorId).limit(1).maybeSingle();
+  if (eOutro) return { ok: false as const, erro: "Não consegui conferir se esse número já é de outra pessoa. Tente de novo." };
   if (outro) return { ok: false as const, erro: `Esse número já é de ${(outro as { nome: string }).nome}.` };
   const { error } = await supabase.from("colaboradores").update(ehPis ? { pis: c } : { cpf: c }).eq("id", colaboradorId);
   if (error) return { ok: false as const, erro: error.message };

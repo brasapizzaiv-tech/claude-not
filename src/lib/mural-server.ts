@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import type { AniversarioMural, EntregaMural, FolgaMural, PedidoCompraMural } from "@/app/(painel)/mural/mural";
 import { TURNO } from "@/lib/folgas";
 import type { Feriado } from "@/lib/feriados";
@@ -74,9 +75,12 @@ export async function dadosDoMural(supabase: Cliente, empresaId?: string) {
     .neq("status", "cancelado")
     .gte("data", hoje)
     .lte("data", daquiA(hoje, 120));
-  let qAniv = supabase
+  // Aniversários: o nascimento é dado pessoal e a sessão não lê (SEC-04); vai
+  // pelo servidor, filtrado pela empresa, e só nome + data saem daqui.
+  let qAniv = createAdminClient()
     .from("colaboradores")
     .select("nome, nascimento")
+    .eq("empresa_id", empresaId ?? (await empresaAtualId()) ?? "")
     .eq("ativo", true)
     .not("nascimento", "is", null);
   // Entregas de fornecedor (migration 0228): o que a equipe disse que não veio

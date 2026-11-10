@@ -149,7 +149,8 @@ export async function criarEntregadorDoColaborador(formData: FormData) {
   const supabase = await createClient();
   const colaboradorId = String(formData.get("colaborador_id") ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(colaboradorId)) return;
-  const { data: c } = await supabase.from("colaboradores").select("id, nome, nome_social, whatsapp, telefone").eq("id", colaboradorId).maybeSingle();
+  // O telefone é dado pessoal (SEC-04): pelo servidor, já com a permissão do delivery conferida.
+  const { data: c } = await createAdminClient().from("colaboradores").select("id, nome, nome_social, whatsapp, telefone").eq("id", colaboradorId).eq("empresa_id", (await empresaAtualId()) ?? "").maybeSingle();
   const col = c as { id: string; nome: string; nome_social: string | null; whatsapp: string | null; telefone: string | null } | null;
   if (!col) return;
   const { data: ja } = await supabase.from("entregadores").select("id").eq("colaborador_id", col.id).maybeSingle();

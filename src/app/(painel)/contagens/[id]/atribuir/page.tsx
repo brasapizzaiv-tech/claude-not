@@ -23,7 +23,7 @@ export default async function AtribuirPage({
       supabase.from("categorias").select("id, nome, produtos(count)").order("nome"),
       supabase
         .from("colaboradores")
-        .select("*")
+        .select("id, nome, ativo")
         .eq("ativo", true)
         .order("nome"),
       supabase

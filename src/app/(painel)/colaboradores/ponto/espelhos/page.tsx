@@ -28,7 +28,7 @@ export default async function EspelhosPage({ searchParams }: { searchParams: Pro
   const espelhos = await espelhosDoPeriodo(supabase, de, ate);
   const ids = espelhos.map((e) => e.pessoa.id);
   const { data: fichas } = ids.length
-    ? await supabase.from("colaboradores").select("id, matricula, pis, funcao").in("id", ids)
+    ? await supabase.from("colaboradores_dados").select("id, matricula, pis, funcao").in("id", ids)
     : { data: [] };
   const fichaDe = new Map(((fichas ?? []) as { id: string; matricula: string | null; pis: string | null; funcao: string | null }[]).map((f) => [f.id, f]));
 

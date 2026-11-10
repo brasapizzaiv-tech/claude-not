@@ -19,8 +19,9 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
   // 10% da noite puxado do CAIXA (migration 0250) — ver src/lib/dez-caixa.ts.
   const servicoCaixa = await sincronizarDezDoCaixa(supabase, segunda, fim);
   const [{ data: colabs }, { data: dez }, { data: pagos }, { data: fiado }, { data: extras }, { data: adiantamentos }] = await Promise.all([
+    // Salário e diária: pela visão que só abre pra quem tem Colaboradores (SEC-04).
     supabase
-      .from("colaboradores")
+      .from("colaboradores_dados")
       .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, valor_free, dias_dia, dias_noite, salario_base, recebe_10, peso_10, esporadico, ativo, bate_ponto")
       .eq("ativo", true)
       .order("nome"),

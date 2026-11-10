@@ -90,8 +90,13 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
   const pessoa = ativos[idxPessoa];
   // Cabeçalho do espelho como o cartão do RHiD: matrícula, cargo, departamento, PIS, admissão e observações (ficha, migration 0257).
   const { data: fichaRow } = pessoa && aba === "espelho"
-    ? await supabase.from("colaboradores").select("matricula, pis, funcao, obs_cartao_ponto, departamentos(nome)").eq("id", pessoa.id).maybeSingle()
+    ? await supabase.from("colaboradores").select("matricula, funcao, obs_cartao_ponto, departamentos(nome)").eq("id", pessoa.id).maybeSingle()
     : { data: null };
+  // O PIS é dado pessoal: vem da visão que só abre pra quem tem Colaboradores (SEC-04).
+  const { data: pisRow } = pessoa && aba === "espelho"
+    ? await supabase.from("colaboradores_dados").select("pis").eq("id", pessoa.id).maybeSingle()
+    : { data: null };
+  if (fichaRow) (fichaRow as { pis?: string | null }).pis = (pisRow as { pis?: string | null } | null)?.pis ?? null;
   const ficha = fichaRow as { matricula: string | null; pis: string | null; funcao: string | null; obs_cartao_ponto: string | null; departamentos: { nome: string } | { nome: string }[] | null } | null;
   const depFicha = ficha ? (Array.isArray(ficha.departamentos) ? ficha.departamentos[0]?.nome : ficha.departamentos?.nome) ?? null : null;
   const q = (o: Record<string, string | undefined>) => {
@@ -121,7 +126,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
     const local = new Date(new Date(iso).getTime() - 3 * 3600000);
     return `${DOW[local.getUTCDay()]} ${local.toISOString().slice(8, 10)}/${local.toISOString().slice(5, 7)} ${local.toISOString().slice(11, 16)}`;
   };
-  const { data: colsRows } = semDonoMap.size ? await supabase.from("colaboradores").select("id, nome, cpf").eq("ativo", true).order("nome") : { data: [] };
+  const { data: colsRows } = semDonoMap.size ? await supabase.from("colaboradores_dados").select("id, nome, cpf").eq("ativo", true).order("nome") : { data: [] };
   const colsLista = ((colsRows as { id: string; nome: string; cpf: string | null }[]) ?? []).map((c) => ({ id: c.id, nome: c.nome, temCpf: String(c.cpf ?? "").replace(/\D/g, "").length === 11 }));
   // O nome que está no relógio já sugere de quem é (só entre quem ainda não tem CPF).
   const semCpfLista = colsLista.filter((c) => !c.temCpf);

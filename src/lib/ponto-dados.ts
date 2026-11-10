@@ -58,7 +58,11 @@ export async function carregarBasePonto(db: Db, de: string, ate: string, opts: {
   // Com o cliente admin (app da equipe) não há RLS: filtra a empresa à mão.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const daEmpresa = <Q,>(q: Q): Q => (opts.empresaId ? (q as any).eq("empresa_id", opts.empresaId) : q);
-  let qCols = daEmpresa(db.from("colaboradores").select("id, nome, dias_dia, ativo, cpf, admissao, desligado_em").eq("bate_ponto", true).order("nome"));
+  // O CPF é dado pessoal (SEC-04): com a sessão do painel vem da visão
+  // colaboradores_dados (só quem tem Colaboradores, e todas as telas do ponto
+  // já exigem isso); com o cliente admin do app da equipe, da tabela.
+  const fonte = opts.empresaId ? "colaboradores" : "colaboradores_dados";
+  let qCols = daEmpresa(db.from(fonte).select("id, nome, dias_dia, ativo, cpf, admissao, desligado_em").eq("bate_ponto", true).order("nome"));
   if (!opts.incluirInativos) qCols = qCols.eq("ativo", true);
   if (opts.pessoaId) qCols = qCols.eq("id", opts.pessoaId);
   const [{ data: cols }, bats, { data: fol }, { data: ats }, { data: tjs }, { data: fer }] = await Promise.all([
