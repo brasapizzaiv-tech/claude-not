@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.14"; // 0.9.14: debito pre-datado (011-000=21) e parcelado pela loja (22) - Banricompras; 0.9.13: a ativacao do Hub manda sobre o terminal do config.json (o config antigo de homologacao derrubou a ativacao de producao em 07/10); 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
+const VERSAO = "0.9.15"; // 0.9.15: a porta local só aceita pedido da página do sistema, corpo grande é recusado sem travar o pinpad e saiu o /raw (mostrava o último comprovante); // 0.9.14: debito pre-datado (011-000=21) e parcelado pela loja (22) - Banricompras; 0.9.13: a ativacao do Hub manda sobre o terminal do config.json (o config antigo de homologacao derrubou a ativacao de producao em 07/10); 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -291,22 +291,68 @@ async function recuperar() {
 }
 
 // ---------- servidor local pro caixa ----------
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+// Só a página do sistema conversa com esta porta (auditoria AGT-12/PAG-09).
+// Antes era CORS "*": qualquer site aberto neste PC podia mandar pedido. O
+// navegador manda o Origin em todo pedido de outra página; sem Origin é um
+// programa do próprio PC (aceito). Vale o endereço do config.json, com e sem
+// "www", e o localhost do desenvolvimento.
+function origensPermitidas(base) {
+  const s = new Set(["http://localhost:3000"]);
+  try {
+    const u = new URL(base);
+    s.add(u.origin);
+    const outro = u.hostname.startsWith("www.") ? u.hostname.slice(4) : "www." + u.hostname;
+    s.add(`${u.protocol}//${outro}${u.port ? ":" + u.port : ""}`);
+  } catch { /* sem baseUrl: só localhost */ }
+  return s;
+}
+const ORIGENS = origensPermitidas(baseUrl);
+// Endereço extra (ex.: outro domínio do sistema): "origens": ["https://..."] no config.json.
+for (const o of Array.isArray(cfg.origens) ? cfg.origens : []) ORIGENS.add(String(o).replace(/[/]+$/, ""));
+const recusadas = new Set();
+const origemOk = (req) => {
+  const o = req.headers.origin;
+  if (!o || ORIGENS.has(o)) return true;
+  if (!recusadas.has(o) && recusadas.size < 50) {
+    recusadas.add(o);
+    log(`Pedido recusado de ${o} (aceito só: ${[...ORIGENS].join(", ")}). Se for o sistema por outro endereço, ponha em "origens" no config.json.`);
+  }
+  return false;
 };
-const json = (res, status, obj) => { res.writeHead(status, { ...cors, "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); };
+function corsDe(req) {
+  return {
+    "Access-Control-Allow-Origin": req.headers.origin && ORIGENS.has(req.headers.origin) ? req.headers.origin : "null",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Private-Network": "true",
+    Vary: "Origin",
+  };
+}
+const json = (res, status, obj) => { res.writeHead(status, { ...(res.cors || {}), "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); };
+// Corpo acima de 20 KB é recusado com erro (antes o pedido era cortado e a
+// promessa nunca terminava: o "ocupado" ficava preso e tudo dava 409 até
+// reiniciar o agente).
 function corpo(req) {
   return new Promise((resolve, reject) => {
     let s = "";
-    req.on("data", (c) => { s += c; if (s.length > 20000) req.destroy(); });
-    req.on("end", () => { try { resolve(s ? JSON.parse(s) : {}); } catch { reject(new Error("JSON inválido")); } });
+    let acabou = false;
+    const falhar = (e) => { if (!acabou) { acabou = true; reject(e); } };
+    req.on("data", (c) => {
+      if (acabou) return;
+      s += c;
+      if (s.length > 20000) { falhar(new Error("Pedido grande demais.")); req.destroy(); }
+    });
+    req.on("end", () => { if (acabou) return; acabou = true; try { resolve(s ? JSON.parse(s) : {}); } catch { reject(new Error("JSON inválido")); } });
+    req.on("error", () => falhar(new Error("Pedido interrompido.")));
+    req.on("close", () => falhar(new Error("Pedido interrompido.")));
   });
 }
 const gerenciadorPresente = () => existsSync(pastaReq) && existsSync(pastaResp);
 
 const server = http.createServer(async (req, res) => {
+  const cors = corsDe(req);
+  res.cors = cors;
+  if (!origemOk(req)) { res.writeHead(403, cors); return res.end(); }
   if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
   const url = req.url || "/";
 
@@ -363,14 +409,8 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // Última resposta crua da pasta (diagnóstico).
-  if (req.method === "GET" && url === "/raw") {
-    const arquivos = {};
-    for (const [nome, p] of [["req", arqReq], ["sts", arqSts], ["resp", arqResp]]) arquivos[nome] = lerArquivo(p);
-    let listaResp = [];
-    try { listaResp = readdirSync(pastaResp); } catch { /* ok */ }
-    return json(res, 200, { ok: true, arquivos, listaResp, estado });
-  }
+  // (O /raw de diagnóstico saiu na 0.9.15: devolvia o último comprovante a
+  // qualquer página. O conteúdo continua no log do agente.)
 
   json(res, 404, { ok: false, erro: "rota desconhecida" });
 });

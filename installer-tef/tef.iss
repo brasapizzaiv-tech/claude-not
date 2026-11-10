@@ -4,7 +4,7 @@
 #define AppName "Agente TEF"
 ; A versão vem do build.ps1 (/DAppVer=...), lida do VERSAO do agente.mjs.
 #ifndef AppVer
-#define AppVer "0.9.14"
+#define AppVer "0.9.15"
 #endif
 #define AppPublisher "Brasa Sistemas"
 
@@ -181,10 +181,16 @@ var
 begin
   if CurUninstallStep = usUninstall then
   begin
-    { Primeiro para a bandeja (senão ela reinicia o agente), depois o agente. }
+    { Primeiro para a bandeja (senão ela reinicia o agente), depois o agente.
+      Os .pid ficam em ProgramData\AgenteTEF; só mata se o processo ainda for
+      o nosso (número reaproveitado por outro programa fica — AGT-11). }
+    if LoadStringFromFile(ExpandConstant('{commonappdata}\AgenteTEF\bandeja.pid'), pid) then
+      Exec('taskkill.exe', '/F /FI "PID eq ' + Trim(String(pid)) + '" /FI "IMAGENAME eq powershell.exe"', '', SW_HIDE, ewWaitUntilTerminated, rc);
     if LoadStringFromFile(ExpandConstant('{app}\bandeja.pid'), pid) then
-      Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
+      Exec('taskkill.exe', '/F /FI "PID eq ' + Trim(String(pid)) + '" /FI "IMAGENAME eq powershell.exe"', '', SW_HIDE, ewWaitUntilTerminated, rc);
+    if LoadStringFromFile(ExpandConstant('{commonappdata}\AgenteTEF\agente.pid'), pid) then
+      Exec('taskkill.exe', '/F /FI "PID eq ' + Trim(String(pid)) + '" /FI "IMAGENAME eq node.exe"', '', SW_HIDE, ewWaitUntilTerminated, rc);
     if LoadStringFromFile(ExpandConstant('{app}\agente.pid'), pid) then
-      Exec('taskkill.exe', '/F /PID ' + Trim(String(pid)), '', SW_HIDE, ewWaitUntilTerminated, rc);
+      Exec('taskkill.exe', '/F /FI "PID eq ' + Trim(String(pid)) + '" /FI "IMAGENAME eq node.exe"', '', SW_HIDE, ewWaitUntilTerminated, rc);
   end;
 end;

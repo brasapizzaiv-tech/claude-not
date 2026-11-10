@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { gerarCupomEscPos, gerarTesteEscPos } from "./escpos.mjs";
 
-const VERSAO = "1.2.4"; // 1.2.4: token recusado (401/403) ou sistema ocupado (408/429) NÃO tira a pesagem da fila (tenta de novo); as recusadas dos últimos 3 dias vão no sinal de vida e aparecem no painel; // 1.2.3: sinal de vida a cada 60 s (era 15 s; a Vercel cobra por chamada); // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
+const VERSAO = "1.2.5"; // 1.2.5: a porta local só aceita pedido da página do sistema (antes qualquer site aberto no PC podia imprimir cupom ou trocar a impressora); // 1.2.4: token recusado (401/403) ou sistema ocupado (408/429) NÃO tira a pesagem da fila (tenta de novo); as recusadas dos últimos 3 dias vão no sinal de vida e aparecem no painel; // 1.2.3: sinal de vida a cada 60 s (era 15 s; a Vercel cobra por chamada); // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -418,12 +418,46 @@ async function heartbeat() {
 setInterval(heartbeat, 60000);
 
 // ---------- servidor local pro quiosque ----------
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+// Só a página do sistema conversa com esta porta (auditoria AGT-12/PAG-09).
+// Antes era CORS "*": qualquer site aberto neste PC podia mandar pedido. O
+// navegador manda o Origin em todo pedido de outra página; sem Origin é um
+// programa do próprio PC (aceito). Vale o endereço do config.json, com e sem
+// "www", e o localhost do desenvolvimento.
+function origensPermitidas(base) {
+  const s = new Set(["http://localhost:3000"]);
+  try {
+    const u = new URL(base);
+    s.add(u.origin);
+    const outro = u.hostname.startsWith("www.") ? u.hostname.slice(4) : "www." + u.hostname;
+    s.add(`${u.protocol}//${outro}${u.port ? ":" + u.port : ""}`);
+  } catch { /* sem baseUrl: só localhost */ }
+  return s;
+}
+const ORIGENS = origensPermitidas(baseUrl);
+// Endereço extra (ex.: outro domínio do sistema): "origens": ["https://..."] no config.json.
+for (const o of Array.isArray(cfg.origens) ? cfg.origens : []) ORIGENS.add(String(o).replace(/[/]+$/, ""));
+const recusadas = new Set();
+const origemOk = (req) => {
+  const o = req.headers.origin;
+  if (!o || ORIGENS.has(o)) return true;
+  if (!recusadas.has(o) && recusadas.size < 50) {
+    recusadas.add(o);
+    log(`Pedido recusado de ${o} (aceito só: ${[...ORIGENS].join(", ")}). Se for o sistema por outro endereço, ponha em "origens" no config.json.`);
+  }
+  return false;
 };
+function corsDe(req) {
+  return {
+    "Access-Control-Allow-Origin": req.headers.origin && ORIGENS.has(req.headers.origin) ? req.headers.origin : "null",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Private-Network": "true",
+    Vary: "Origin",
+  };
+}
 const server = http.createServer(async (req, res) => {
+  const cors = corsDe(req);
+  if (!origemOk(req)) { res.writeHead(403, cors); return res.end(); }
   if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
 
   if (req.method === "GET" && req.url === "/peso") {

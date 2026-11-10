@@ -9,8 +9,22 @@
 // Configuração: %ProgramData%\AgenteImpressao\relogio.json
 //   { "host": "192.168.1.129", "usuario": "...", "senha": "...", "intervaloMin": 5 }
 // (o menu do ícone "Relógio de ponto..." grava esse arquivo). Sem ele, nada roda.
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
+
+// Senha do relógio cifrada pelo Windows (DPAPI, escopo da máquina) — AGT-11.
+// O base64 vai por variável de ambiente, nunca montado dentro do comando.
+function dpapi(acao, valor) {
+  const script = acao === "abrir"
+    ? "Add-Type -AssemblyName System.Security; $b=[Convert]::FromBase64String($env:AGT_V); [Console]::Out.Write([Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Unprotect($b,$null,[Security.Cryptography.DataProtectionScope]::LocalMachine)))"
+    : "Add-Type -AssemblyName System.Security; $b=[Text.Encoding]::UTF8.GetBytes($env:AGT_V); [Console]::Out.Write([Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Protect($b,$null,[Security.Cryptography.DataProtectionScope]::LocalMachine)))";
+  // A saída é sempre base64 (ASCII): o console do PowerShell 5 estraga acento.
+  const saida = execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], {
+    env: { ...process.env, AGT_V: String(valor) }, windowsHide: true, encoding: "utf8", timeout: 20000,
+  }).trim();
+  return acao === "abrir" ? Buffer.from(saida, "base64").toString("utf8") : saida;
+}
 
 const LOTE = 500; // o relógio exporta em páginas de 500, igual à tela dele
 
@@ -19,6 +33,21 @@ export function iniciarPonto({ dataDir, baseUrl, headers, log }) {
   if (!existsSync(arq)) { log("Relógio de ponto: não configurado (menu do ícone > Relógio de ponto)."); return; }
   let cfg;
   try { cfg = JSON.parse(readFileSync(arq, "utf8").replace(/^﻿/, "")); } catch (e) { log(`Relógio de ponto: relogio.json inválido (${e.message}).`); return; }
+  // Senha: cifrada (novo) ou em texto (instalação antiga). A antiga é cifrada
+  // agora e o arquivo é regravado sem ela.
+  let senha = "";
+  try {
+    if (cfg.senhaProtegida) senha = dpapi("abrir", cfg.senhaProtegida);
+    else if (cfg.senha) {
+      senha = String(cfg.senha);
+      try {
+        const { senha: _fora, ...resto } = cfg;
+        writeFileSync(arq, JSON.stringify({ ...resto, senhaProtegida: dpapi("proteger", senha) }, null, 2));
+        log("Relógio de ponto: senha do relogio.json cifrada pelo Windows.");
+      } catch (e) { log(`Relógio de ponto: não consegui cifrar a senha agora (${e.message}); sigo com a de texto.`); }
+    }
+  } catch (e) { log(`Relógio de ponto: não consegui ler a senha cifrada (${e.message}). Salve de novo pelo menu do ícone.`); }
+  cfg.senha = senha;
   const host = String(cfg.host || "").trim();
   if (!host || !cfg.usuario) { log("Relógio de ponto: falta o IP ou o usuário em relogio.json."); return; }
   const base = /^https?:\/\//.test(host) ? host.replace(/\/$/, "") : `http://${host}`;

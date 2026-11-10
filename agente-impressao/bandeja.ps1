@@ -77,6 +77,17 @@ $miRe.add_Click({
 })
 # Relogio de ponto (Control iD): IP, usuario e senha do painel do relogio.
 # Grava relogio.json em ProgramData (so neste PC) e reinicia o agente.
+# A senha fica cifrada pelo Windows (DPAPI, escopo da maquina): o arquivo
+# copiado pra outro PC nao abre (auditoria AGT-11). Antes ia em texto.
+Add-Type -AssemblyName System.Security
+function Proteger-Senha([string]$s) {
+  $b = [Text.Encoding]::UTF8.GetBytes($s)
+  [Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Protect($b, $null, [Security.Cryptography.DataProtectionScope]::LocalMachine))
+}
+function Abrir-Senha([string]$s) {
+  $b = [Convert]::FromBase64String($s)
+  [Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect($b, $null, [Security.Cryptography.DataProtectionScope]::LocalMachine))
+}
 $miPonto.add_Click({
   $arq = Join-Path $dataDir "relogio.json"
   $atual = @{ host = "192.168.1.129"; usuario = ""; senha = ""; intervaloMin = 5 }
@@ -85,7 +96,8 @@ $miPonto.add_Click({
       $j = Get-Content $arq -Raw | ConvertFrom-Json
       if ($j.host) { $atual.host = $j.host }
       if ($j.usuario) { $atual.usuario = $j.usuario }
-      if ($j.senha) { $atual.senha = $j.senha }
+      if ($j.senhaProtegida) { try { $atual.senha = Abrir-Senha $j.senhaProtegida } catch {} }
+      elseif ($j.senha) { $atual.senha = $j.senha }
       if ($j.intervaloMin) { $atual.intervaloMin = $j.intervaloMin }
     }
   } catch {}
@@ -142,7 +154,7 @@ $miPonto.add_Click({
     $novo = [ordered]@{
       host = $campos[0].Text.Trim()
       usuario = $campos[1].Text.Trim()
-      senha = $campos[2].Text
+      senhaProtegida = (Proteger-Senha $campos[2].Text)
       intervaloMin = $atual.intervaloMin
     }
     try {
