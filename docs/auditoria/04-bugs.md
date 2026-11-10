@@ -370,7 +370,7 @@ desligado, cupons com 0 usos. Vários achados ainda não deram prejuízo: aparec
   `folgas_funcionarios`: as 12 contagens "Bebidas" de sábado 21:30 ficaram com data de domingo (a última: "Bebidas — 07/11"
   com data 08/11); 4 pedidos, 1 cotação, 1 folga. A tolerância do CMV absorve hoje. Padrão
   `(now() at time zone 'America/Sao_Paulo')::date`.
-- **[MAR-05]** (corrigido em 09/11/2026, Onda 2) Rotinas automáticas falham caladas: `api/contagem/cron`, `api/entrega/limpar` e `api/kern/delivery`
+- **[MAR-05]** (corrigido em 09/11/2026, Onda 2) (corrigido em 09/11/2026, Onda 2) Rotinas automáticas falham caladas: `api/contagem/cron`, `api/entrega/limpar` e `api/kern/delivery`
   respondem 200 com erro; se a do Kern não rodar, o delivery não é criado e ninguém vê. Hoje 76/76 certos.
 - **[MAR-06]** Aviso da SEFAZ mostra a hora 3h adiantada (`src/lib/sefaz/busca.ts:30-35`, sem `timeZone`).
 - **[MAR-07]** Reserva sem trava de concorrência (dois no último lugar passam) e regras de domingo/Rodízio/horário-limite

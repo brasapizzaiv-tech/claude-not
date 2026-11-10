@@ -256,6 +256,16 @@ trava de 1 h sempre gravada, padrão do fornecedor, filial do Kern sem pedido, p
 Downloads: **impressão 1.3.0** e **balança 1.2.4** (falta instalar nos PCs). Conferido no ar sem gravar: Saúde, SEFAZ,
 Downloads e aviso na tela inicial; rotinas e relógio de ponto gravando sinal; agente 1.2.1 com versão registrada.
 
+### Onda 3 — em andamento (OK do Rafael: "pode seguir"); lote 1 publicado em 10/11/2026 ~06h45
+
+| Lote | Commit | O que corrigiu |
+|---|---|---|
+| 1 | `5868b6f` | **SEC-11**: `exigirAcesso` nas 141 ações do painel que não conferiam permissão no servidor (garçom continua lançando item: `["/salao","/garcom"]`); desconto do delivery entre 0 e o subtotal; peso do quiosque até 8 kg; `emitirNfceComandasAdmin`/`imprimirNfceAdmin` só rodam com o cliente do servidor. **SEC-07**: foto da cotação por endereço assinado gerado no servidor, nome aleatório, 3 MB, só imagem, o celular reduz a foto; migration 0287 tira a listagem e o envio direto (conferido: anônimo lista 0 e o envio é recusado). **SEC-12** (resto): rotinas só pelo cabeçalho (`?key=` responde 401). **AGT-13**: balança e Central filtradas pela empresa |
+
+Revisão independente do lote 1: 1 ponto sério (o app do garçom não lançaria itens) e 2 menores (foto HEIC, peso acima de 32 kg cobrado calado), corrigidos antes de publicar. Robô só leitura: 8 telas do painel abrem sem erro; rotinas seguem gravando sinal depois da publicação.
+
+Falta na Onda 3: SEC-04 (permissão por tela também no banco), SEC-10 (funções do app da equipe), SEC-06 (marmitas), COD-001 (Next.js), SEC-15 (anon), AGT-11/AGT-12/PAG-09 (agentes), SEC-16 (LGPD), MSG-03 (apps nas lojas).
+
 ## Como vai ser a correção
 
 1. Você escolhe a onda (recomendo **Onda 0 hoje** e **Onda 1** como primeira de código).

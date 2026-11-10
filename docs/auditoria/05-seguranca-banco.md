@@ -149,6 +149,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 - Esforço: M · Risco: baixo
 
 ### [SEC-07] Fotos da cotação: a pasta pública revela os tokens dos fornecedores e aceita qualquer arquivo
+- **Corrigido em 10/11/2026 (Onda 3, lote 1).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto**
 - Onde: bucket `cotacao-fotos` (`public = true`, sem limite de tamanho nem de tipo), policies de SELECT e INSERT pra
   `anon`; `cotar/[token]/preencher.tsx:254,269` grava em `{token}/...`.
@@ -190,6 +191,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   empresa. Esforço M.
 
 ### [SEC-11] Ações do painel sem checagem de permissão no servidor
+- **Corrigido em 10/11/2026 (Onda 3, lote 1).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio (anônimo não alcança; qualquer login, sim)
 - Além das já conhecidas (`contagens`, `conferencia`, `cotacoes`): `salao/actions.ts` (preços e cardápio, configuração do
   PDV, comandas, `*Kiosk` com peso sem teto), `delivery/actions.ts` (**`definirPagoDelivery`**, status, entregador,
@@ -203,6 +205,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 - Esforço: M · Risco: baixo
 
 ### [SEC-12] Segredos que, se faltarem, deixam a porta aberta
+- **Corrigido em 10/11/2026 (Onda 3, lote 1).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio (vira alto se faltar na Vercel)
 - As 7 rotinas (`contagem/cron`, `sefaz/cron`, `sefaz/completar`, `whatsapp/disparos`, `kern/delivery`,
   `equipe/avisos`, `entrega/limpar`) usam `if (secret && …)` e aceitam `?key=` na URL (vai pros logs); o webhook do

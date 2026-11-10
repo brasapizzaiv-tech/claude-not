@@ -357,6 +357,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [AGT-13] Sinal de vida da balança e Central de impressão sem filtro de empresa
+- **Corrigido em 10/11/2026 (Onda 3, lote 1).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo (só com a 2ª empresa)
 - Onde: `api/balanca/status/route.ts:33-36`; `(painel)/impressao/page.tsx:18-21`
 - Correção: `.eq("empresa_id", empresaId)`.
