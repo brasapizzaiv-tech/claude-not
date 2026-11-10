@@ -6,8 +6,13 @@ import { avisosDeSaude } from "@/lib/saude-painel";
 // quando alguma peça está parada ou pede atenção: impressão sem sinal, comanda
 // presa na fila, balança com pesagem que não subiu, SEFAZ parada, certificado
 // vencendo, rotina do Kern que não rodou... (auditoria, Onda 2).
-export async function AvisoSaude({ empresaId, className = "" }: { empresaId: string | null; className?: string }) {
-  const avisos = await avisosDeSaude(empresaId);
+export async function AvisoSaude({ empresaId, className = "", sem = [] }: {
+  empresaId: string | null;
+  className?: string;
+  /** Peças que esta tela não mostra (ex.: o caixa não resolve o WhatsApp). */
+  sem?: string[];
+}) {
+  const avisos = await avisosDeSaude(empresaId, sem);
   if (avisos.length === 0) return null;
   return (
     <Link

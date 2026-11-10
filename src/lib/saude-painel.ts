@@ -272,9 +272,10 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
     const rodouHoje = !!s && hojeSP(new Date(s.ultima_em)) === hojeSP(agoraD);
     let estado: Estado = "ok";
     let resumo = s ? `Rodou ${haQuanto(s.ultima_em, agora)}` : "Sem registro ainda";
-    if (s && !s.ok && rodouHoje) { estado = "parado"; resumo = `Delivery do Kern: falhou hoje (${s.detalhe ?? "erro"})`; }
+    // Sem nenhum registro (logo depois de publicar) não dá pra dizer que falhou.
+    if (!s) estado = "neutro";
+    else if (!s.ok && rodouHoje) { estado = "parado"; resumo = `Delivery do Kern: falhou hoje (${s.detalhe ?? "erro"})`; }
     else if (devia && !rodouHoje) { estado = "parado"; resumo = "Delivery do Kern: a rotina das 08:35 não rodou hoje"; }
-    else if (!s) estado = "neutro";
     itens.push({ chave: "rotina:kern", nome: "Pedido do delivery do Kern (08:35)", estado, resumo, detalhe: s?.detalhe, quando: s?.ultima_em });
   }
 
@@ -309,11 +310,13 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
 }
 
 /** Só o que pede ação, pro aviso da tela inicial / caixa / PDV. */
-export async function avisosDeSaude(empresaId: string | null): Promise<string[]> {
+export async function avisosDeSaude(empresaId: string | null, sem: string[] = []): Promise<string[]> {
   if (!empresaId) return [];
   try {
     const s = await lerSaude(empresaId);
-    return s.itens.filter((i) => i.estado === "parado" || i.estado === "atencao").map((i) => i.resumo);
+    return s.itens
+      .filter((i) => (i.estado === "parado" || i.estado === "atencao") && !sem.includes(i.chave))
+      .map((i) => i.resumo);
   } catch {
     return [];
   }
