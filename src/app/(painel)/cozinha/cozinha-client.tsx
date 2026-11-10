@@ -109,10 +109,11 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
     <div style={{ minHeight: "100vh", background: TV.fundo, color: TV.texto, padding: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.08em", color: TV.laranja }}><Icone nome="pizza" tamanho={22} className="mr-2" /> RODÍZIO · COZINHA</span>
-        <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 16, color: "#888" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 16, color: TV.fraco }}>
           <span style={{ width: 12, height: 12, borderRadius: 6, background: realtime ? TV.ok : TV.aviso, display: "inline-block" }} />
           {realtime ? "ao vivo" : "atualizando a cada 10 s"}
-          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#bbb" }}>
+          {/* O servidor desenha a hora e o tablet acerta logo depois: na virada do minuto os dois diferem (normal), sem refazer a tela. */}
+          <span suppressHydrationWarning style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: TV.suave }}>
             {new Date(agora).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
           </span>
         </span>
