@@ -270,6 +270,9 @@ Revisão independente do lote 2: 5 pontos (trava burlável com tentativas simult
 
 | 4 | `c0be492` | **AGT-12** (balança 1.2.5) e **PAG-09** (pinpad 0.9.15): porta local só aceita a página do sistema (origem do config.json, com e sem www, ou `origens`), loga a recusada; pinpad recusa corpo grande sem travar e perdeu o `/raw`. **AGT-11** (impressão 1.3.1): senha do relógio cifrada pelo Windows (DPAPI) no relogio.json, a antiga é cifrada ao ligar; desinstaladores da balança e do pinpad acham o .pid e só matam o processo se ainda for o nosso. Instaladores na página Downloads; **falta instalar nos PCs** |
 
+| 5 | `a985d5e` | **SEC-04 fase A** (migration 0292): `impressao_config` e `mkt_config` só do dono pela sessão; `colaboradores.token/pin/codigo` e `entregadores.token/codigo` sem SELECT pra sessão (permissão por coluna, reaplicada pelo `migrate.mjs`); Colaboradores, ficha, Entregadores, Lembretes e Kern leem pelo servidor depois da permissão; `tem_permissao(modulo)` criada. Conferido no ar: telas abrem, 47 links pessoais aparecem pro dono |
+| — | `7160f99`, `3096890` | Fora das ondas (pedidos do Rafael): ler cupom NFC-e pelo QR (câmera ou leitor USB) em Notas; abrir o caixa com o troco nota por nota (migration 0291) |
+
 Revisão independente do lote 1: 1 ponto sério (o app do garçom não lançaria itens) e 2 menores (foto HEIC, peso acima de 32 kg cobrado calado), corrigidos antes de publicar. Robô só leitura: 8 telas do painel abrem sem erro; rotinas seguem gravando sinal depois da publicação.
 
 Falta na Onda 3: SEC-04 (permissão por tela também no banco), SEC-16 (LGPD), MSG-03 (apps nas lojas).
