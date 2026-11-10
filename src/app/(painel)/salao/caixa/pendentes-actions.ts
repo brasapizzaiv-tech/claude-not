@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const soDoc = (s: string) => (s || "").replace(/\D/g, "");
 
@@ -20,7 +21,7 @@ export async function salvarCpfPendente(id: string, documento: string) {
     .update({ cpf_cnpj: doc || null })
     .eq("id", id)
     .eq("status", "aguardando");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/salao/caixa");
   return { ok: true as const };
 }
@@ -85,7 +86,7 @@ export async function cancelarNotaPendente(id: string) {
     .update({ status: "cancelada", resolvido_em: new Date().toISOString() })
     .eq("id", id)
     .in("status", ["aguardando", "erro"]);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/salao/caixa");
   return { ok: true as const };
 }

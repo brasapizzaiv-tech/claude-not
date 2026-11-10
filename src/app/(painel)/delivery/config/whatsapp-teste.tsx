@@ -41,11 +41,11 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
           >
             {proc ? "Enviando..." : "Testar envio"}
           </button>
-          {msg && <span className="text-xs">{msg}</span>}
+          {msg && <span role="status" className="text-xs">{msg}</span>}
           <button onClick={verModelos} disabled={proc} className="rounded-controle border border-emerald-400 px-3 py-1.5 text-sm font-semibold disabled:opacity-50">Ver modelos</button>
         </div>
       )}
-      {modelosErro && <p className="mt-2 text-xs text-rose-600">{modelosErro}</p>}
+      {modelosErro && <p role="alert" className="mt-2 text-xs text-rose-600">{modelosErro}</p>}
       {modelos && (
         <ul className="mt-2 space-y-0.5 text-xs">
           {ESPERADOS.map((nome) => {

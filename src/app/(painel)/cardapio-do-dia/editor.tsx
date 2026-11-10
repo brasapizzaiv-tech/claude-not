@@ -381,7 +381,7 @@ export function EditorCardapio({
               )}
             </div>
             {msg && (
-              <p className="mt-2 text-xs text-texto-suave">{msg}</p>
+              <p role="status" className="mt-2 text-xs text-texto-suave">{msg}</p>
             )}
           </div>
         </div>
@@ -628,7 +628,7 @@ function BlocoItens({
 /* ---------------- catálogo de pratos ---------------- */
 function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean }) {
   const router = useRouter();
-  const [, start] = useTransition();
+  const [ocupado, start] = useTransition();
   const [grupo, setGrupo] = useState<Grupo>("proteinas");
   const [novos, setNovos] = useState("");
   const [busca, setBusca] = useState("");
@@ -687,7 +687,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
           >
             Cadastrar
           </button>
-          {msg && <p className="mt-1 text-mini text-texto-suave">{msg}</p>}
+          {msg && <p role="status" className="mt-1 text-mini text-texto-suave">{msg}</p>}
         </div>
 
         <input
@@ -708,7 +708,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
                   <span className="ml-1 text-texto-fraco">· {i.usos}x</span>
                 )}
               </span>
-              <button
+              <button disabled={ocupado}
                 onClick={async () => {
                   if (await confirmar(`Tirar “${i.nome}” do catálogo?`))
                     start(async () => {

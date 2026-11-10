@@ -222,7 +222,7 @@ export function SeletorItem({
                   key={c.id}
                   type="button"
                   onClick={() => setCat(c.id)}
-                  className="min-h-16 rounded-xl bg-[#C78340] px-2 py-2 text-center text-xs font-semibold leading-tight text-white hover:brightness-110"
+                  className="min-h-16 rounded-controle bg-primaria px-2 py-2 text-center text-xs font-semibold leading-tight text-marca-sobre-primaria hover:brightness-110"
                 >
                   {c.nome}
                 </button>

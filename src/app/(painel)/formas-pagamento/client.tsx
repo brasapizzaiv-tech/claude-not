@@ -37,7 +37,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
   return (
     <div className="space-y-4">
       {erro && (
-        <p className="rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">{erro}</p>
+        <p role="alert" className="rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">{erro}</p>
       )}
 
       {/* Lista */}
@@ -224,7 +224,7 @@ function Formulario({
           </div>
         </div>
       </div>
-      {erro && <p className="mt-3 text-sm text-erro">{erro}</p>}
+      {erro && <p role="alert" className="mt-3 text-sm text-erro">{erro}</p>}
       <div className="mt-4 flex items-center gap-2">
         <Enviar className="rounded-controle bg-primaria px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:opacity-90">
           {d.id ? "Salvar" : "Criar forma"}

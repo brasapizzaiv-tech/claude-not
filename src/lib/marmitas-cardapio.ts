@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { addDiasIso, diaSemanaIso } from "@/lib/dia-cardapio";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Cardápio das marmitas Kern numa data — lê o MESMO cadastro do app das
 // marmitas (mkt_config.cardapios: 4 semanas em rotação + programação por
@@ -234,12 +235,12 @@ export async function salvarExcecaoMarmita(iso: string, dados: { pratos: string[
   const salada = String(dados.salada ?? "").trim().slice(0, 80);
   if (pratos.length === 0 && proteinas.length === 0) {
     const { error } = await admin.from("marmitas_dia_excecao").delete().eq("data", iso);
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
     return { ok: true as const, removida: true as const };
   }
   const { error } = await admin
     .from("marmitas_dia_excecao")
     .upsert({ data: iso, pratos, proteinas, salada, por_nome: porNome || null, atualizado_em: new Date().toISOString() }, { onConflict: "empresa_id,data" });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, removida: false as const };
 }

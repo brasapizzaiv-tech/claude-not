@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { periodosDoDia, type DiaHorarioSalvo } from "@/lib/ponto-horarios-core";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -58,12 +59,12 @@ export async function salvarHorario(h: HorarioEntrada) {
   const supabase = await createClient();
   if (h.id) {
     const { error } = await supabase.from("ponto_horarios").update(linha).eq("id", h.id);
-    if (error) return { ok: false as const, erro: error.message };
+    if (error) return { ok: false as const, erro: explicarErro(error) };
     revalidar();
     return { ok: true as const, id: h.id };
   }
   const { data, error } = await supabase.from("ponto_horarios").insert(linha).select("id").single();
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar();
   return { ok: true as const, id: (data as { id: string }).id };
 }
@@ -89,7 +90,7 @@ export async function definirHorarioPessoa(colaboradorId: string, horarioId: str
   if (depois.length) await supabase.from("colaborador_horarios").delete().in("id", depois);
   if (vigente) await supabase.from("colaborador_horarios").update({ ate: vespera }).eq("id", vigente.id);
   const { error } = await supabase.from("colaborador_horarios").insert({ colaborador_id: colaboradorId, horario_id: horarioId, de, criado_por: auth.user?.id ?? null });
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar();
   return { ok: true as const };
 }
@@ -105,7 +106,7 @@ export async function apagarHorario(id: string) {
     return { ok: true as const, desativado: true };
   }
   const { error } = await supabase.from("ponto_horarios").delete().eq("id", id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar();
   return { ok: true as const, desativado: false };
 }

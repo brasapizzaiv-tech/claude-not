@@ -663,7 +663,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           <button onClick={() => setModo("grade")} className={`px-3 py-1.5 ${modo === "grade" ? "bg-orange-500 text-marca-sobre-primaria" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="horario" tamanho={14} /> Grade</span></button>
           <button onClick={() => setModo("resumo")} className={`px-3 py-1.5 ${modo === "resumo" ? "bg-orange-500 text-marca-sobre-primaria" : ""}`}><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Resumo pra pagar</span></button>
         </div>
-        <button
+        <button disabled={pending}
           onClick={() => start(async () => { const r = await preencherEscalaFixa(segunda); if (r.erro) setErro(r.erro); else router.refresh(); })}
           className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave"
           title="Marca os dias fixos de cada pessoa (não apaga o que já foi marcado)"
@@ -698,7 +698,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           ))}
         </div>
         {pending && <span className="text-xs text-texto-fraco">salvando…</span>}
-        {erro && <span className="text-xs text-red-600">{erro}</span>}
+        {erro && <span role="alert" className="text-xs text-red-600">{erro}</span>}
       </div>
 
       {adiantAberto && (
@@ -747,7 +747,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                     <span className="text-texto-suave">{rotuloDia(a.data)}</span>
                     <span className="font-semibold">{brl(Number(a.valor))}</span>
                     {a.motivo && <span className="text-xs text-texto-suave">{a.motivo}</span>}
-                    <button
+                    <button disabled={pending}
                       onClick={async () => {
                         if (!await confirmar(`Apagar o adiantamento de ${brl(Number(a.valor))} de ${a.nome}?`)) return;
                         start(async () => { const r = await excluirAdiantamento(a.id); if (r.erro) setErro(r.erro); else router.refresh(); });
@@ -796,7 +796,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             <input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Nome" className={`${inputCls} w-48`} />
             <input value={novoDia} onChange={(e) => setNovoDia(e.target.value)} placeholder="R$ dia" inputMode="decimal" className={`${inputCls} w-24`} />
             <input value={novoNoite} onChange={(e) => setNovoNoite(e.target.value)} placeholder="R$ noite" inputMode="decimal" className={`${inputCls} w-24`} />
-            <button
+            <button disabled={pending}
               onClick={() =>
                 start(async () => {
                   const r = await criarEsporadico(novoNome, numBRtxt(novoDia) || null, numBRtxt(novoNoite) || null);
@@ -1386,7 +1386,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                 Tirar do cofre {retroIds.length} pago{retroIds.length === 1 ? "" : "s"} em dinheiro · {brl(totalRetro)}
               </button>
             )}
-            {msg && <span className="text-xs text-green-700">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}
+            {msg && <span role="status" className="text-xs text-green-700">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}
           </div>}
         </div>
       )}

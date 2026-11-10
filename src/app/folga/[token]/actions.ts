@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // App do funcionário (link pessoal, sem login). Tudo passa pelo servidor com o
 // cliente admin, validando o token — nada de chave no navegador.
@@ -38,7 +39,7 @@ export async function pedirFolga(token: string, data: string, motivo: string, gr
   });
   if (error) {
     if (error.code === "23505") return { ok: false as const, mensagem: "Você já tem um pedido nesse dia/turno." };
-    return { ok: false as const, mensagem: error.message };
+    return { ok: false as const, mensagem: explicarErro(error) };
   }
   return { ok: true as const };
 }
@@ -54,5 +55,5 @@ export async function cancelarMeuPedido(token: string, pedidoId: number) {
     .eq("id", pedidoId)
     .eq("funcionario_id", eu.id)
     .eq("status", "Pendente");
-  return error ? { ok: false as const, mensagem: error.message } : { ok: true as const };
+  return error ? { ok: false as const, mensagem: explicarErro(error) } : { ok: true as const };
 }

@@ -143,7 +143,7 @@ export function NovoUsuario() {
           toggle={toggle}
         />
       </div>
-      {erro && <p className="mt-3 text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-3 text-sm text-red-600">{erro}</p>}
       <div className="mt-4 flex gap-2">
         <button
           onClick={salvar}
@@ -306,7 +306,7 @@ export function UsuarioLinha({
         </div>
       )}
 
-      {msg && <p className="mt-3 text-xs text-texto-suave">{msg}</p>}
+      {msg && <p role="status" className="mt-3 text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import type { StatusEvento } from "@/lib/eventos";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const STATUS: StatusEvento[] = ["marcado", "confirmado", "cancelado"];
 
@@ -41,7 +42,7 @@ export async function salvarEvento(fd: FormData) {
   const { error } = id
     ? await supabase.from("eventos").update(linha).eq("id", id)
     : await supabase.from("eventos").insert(linha);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
 
   revalidatePath("/feriados");
   revalidatePath("/mural");
@@ -55,7 +56,7 @@ export async function statusDoEvento(id: string, status: string) {
   if (!STATUS.includes(status as StatusEvento)) return { ok: false as const, erro: "Status inválido." };
   const supabase = await createClient();
   const { error } = await supabase.from("eventos").update({ status }).eq("id", id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath("/feriados");
   revalidatePath("/mural");
   return { ok: true as const };
@@ -65,7 +66,7 @@ export async function excluirEvento(id: string) {
   await exigirAcesso("/feriados");
   const supabase = await createClient();
   const { error } = await supabase.from("eventos").delete().eq("id", id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath("/feriados");
   revalidatePath("/mural");
   return { ok: true as const };

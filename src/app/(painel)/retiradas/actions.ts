@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { receberFiado } from "@/lib/retiradas-quitar";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const hojeBR = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
@@ -114,7 +115,7 @@ export async function salvarProduto(input: {
     if (error) return erro(error.message);
   } else {
     const { error } = await supabase.from("retirada_produtos").insert(row);
-    if (error) return error.code === "23505" ? erro("Já existe um produto com esse nome.") : erro(error.message);
+    if (error) return error.code === "23505" ? erro("Já existe um produto com esse nome.") : erro(explicarErro(error));
   }
   return ok();
 }

@@ -10,6 +10,7 @@ import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { moedaBR } from "@/lib/format";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Primeiro dia do mês atual (AAAA-MM-01) — nota anterior a isso entra como paga.
 function inicioDoMes() {
@@ -631,7 +632,7 @@ export async function definirEntradaNota(notaId: string, dia: string) {
     .from("notas_fiscais")
     .update({ entrada_em: `${dia}T12:00:00-03:00` })
     .eq("id", notaId);
-  if (error) return { ok: false, erro: error.message };
+  if (error) return { ok: false, erro: explicarErro(error) };
   revalidatePath(`/notas/${notaId}`);
   return { ok: true };
 }
@@ -855,7 +856,7 @@ export async function definirDestinoItemNota(
     .from("nota_itens")
     .update({ destino, destino_colaborador_id: destino === "funcionario" ? colaboradorId : null, destino_retirada_id: retiradaId })
     .eq("id", itemId);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath(`/notas/${it.nota_id}`);
   revalidatePath("/retiradas");
   return { ok: true as const, notaLancada: nf?.situacao === "lancada" };

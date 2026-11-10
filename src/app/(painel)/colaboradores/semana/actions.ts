@@ -8,6 +8,7 @@ import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { TURNO } from "@/lib/folgas";
 import { cofreIniciado, saldoAtual, sairDoCofre, type Ctx as CtxCofre } from "@/lib/cofre-core";
 import { valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Contexto do cofre pra quem está lançando (empresa e nome de quem fez).
 async function ctxDoCofre(supabase: Awaited<ReturnType<typeof createClient>>): Promise<CtxCofre> {
@@ -45,11 +46,11 @@ export async function marcarPresenca(colaboradorId: string, data: string, turno:
     const { error } = await supabase
       .from("presencas")
       .upsert(chave, { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
-    if (error) return { erro: error.message };
+    if (error) return { erro: explicarErro(error) };
     await supabase.from("presencas_folgas").delete().match(chave);
   } else {
     const { error } = await supabase.from("presencas").delete().match(chave);
-    if (error) return { erro: error.message };
+    if (error) return { erro: explicarErro(error) };
     await supabase.from("presencas_folgas").upsert(chave, { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
   }
   return { ok: true };
@@ -72,7 +73,7 @@ export async function salvarDezPorCento(data: string, valor: number, pagarEm?: s
       { empresa_id: empresaId, data, valor: Math.max(0, valor || 0), pagar_em, origem: origem === "caixa" ? "caixa" : "manual", ...(ja ? {} : { desconto_pct: await descontoDezPadrao(supabase) }) },
       { onConflict: "empresa_id,data" },
     );
-  if (error) return { erro: error.message };
+  if (error) return { erro: explicarErro(error) };
   return { ok: true, pagar_em };
 }
 
@@ -94,7 +95,7 @@ export async function salvarExtra(
   const dm = descontoMotivo.trim() || null;
   if (!v && !m && !d && !dm) {
     const { error } = await supabase.from("semana_extras").delete().match({ segunda, colaborador_id: colaboradorId });
-    return error ? { erro: error.message } : { ok: true };
+    return error ? { erro: explicarErro(error) } : { ok: true };
   }
   const { error } = await supabase
     .from("semana_extras")
@@ -102,14 +103,14 @@ export async function salvarExtra(
       { segunda, colaborador_id: colaboradorId, valor: v, motivo: m, turno: turno === "dia" ? "dia" : "noite", desconto: d, desconto_motivo: dm },
       { onConflict: "segunda,colaborador_id" },
     );
-  return error ? { erro: error.message } : { ok: true };
+  return error ? { erro: explicarErro(error) } : { ok: true };
 }
 
 export async function excluirDezPorCento(data: string) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const { error } = await supabase.from("dez_por_cento_noites").delete().eq("data", data);
-  if (error) return { erro: error.message };
+  if (error) return { erro: explicarErro(error) };
   return { ok: true };
 }
 
@@ -156,7 +157,7 @@ export async function preencherEscalaFixa(segunda: string) {
     const { error } = await supabase
       .from("presencas")
       .upsert(linhas, { onConflict: "colaborador_id,data,turno", ignoreDuplicates: true });
-    if (error) return { erro: error.message };
+    if (error) return { erro: explicarErro(error) };
   }
   revalidatePath("/colaboradores/semana");
   return { ok: true, n: linhas.length };
@@ -302,7 +303,7 @@ export async function lancarPagamentosSemana(
       })
       .select("id")
       .single();
-    if (error) return { erro: error.message, n };
+    if (error) return { erro: explicarErro(error), n };
     const { data: sp } = await supabase
       .from("semana_pagamentos")
       .insert({ segunda, colaborador_id: it.colaboradorId, valor: it.valor, lancamento_id: l.id, desconto })
@@ -357,7 +358,7 @@ export async function registrarAdiantamento(colaboradorId: string, nome: string,
     .insert({ colaborador_id: colaboradorId, nome, valor: v, data, motivo: motivo.trim().slice(0, 200) || null, criado_por: userData.user?.id ?? null })
     .select("id")
     .single();
-  if (error || !ad) return { erro: error?.message ?? "Não consegui registrar o adiantamento." };
+  if (error || !ad) return { erro: explicarErro(error, "Não consegui registrar o adiantamento.") };
   if (cofre && ctxCofre) {
     const c = await sairDoCofre(ctxCofre, { quantidades: cofre, descricao: `Adiantamento — ${nome}${motivo.trim() ? ` (${motivo.trim().slice(0, 60)})` : ""}`, adiantamentoId: ad.id as string });
     if (!c.ok) {
@@ -380,7 +381,7 @@ export async function excluirAdiantamento(id: string) {
   const { error: errCofre } = await supabase.from("cofre_movimentos").delete().eq("adiantamento_id", id);
   if (errCofre) return { erro: "Não consegui devolver o dinheiro ao cofre. Nada foi apagado." };
   const { error } = await supabase.from("adiantamentos").delete().eq("id", id).eq("status", "aberto");
-  if (error) return { erro: error.message };
+  if (error) return { erro: explicarErro(error) };
   revalidatePath("/colaboradores/semana");
   revalidatePath("/cofre");
   return { ok: true };
@@ -477,7 +478,7 @@ export async function lancarComplementoSemana(
     })
     .select("id")
     .single();
-  if (error) return { erro: error.message };
+  if (error) return { erro: explicarErro(error) };
   await supabase.from("semana_pagamentos").insert({ segunda, colaborador_id: colaboradorId, valor: v, lancamento_id: l.id, desconto: 0 });
   revalidatePath("/colaboradores/semana");
   revalidatePath("/financeiro/contas");
@@ -505,7 +506,7 @@ export async function criarEsporadico(nome: string, valorDia: number | null, val
     })
     .select("id")
     .single();
-  if (error) return { erro: error.message };
+  if (error) return { erro: explicarErro(error) };
   revalidatePath("/colaboradores");
   return { ok: true, id: data.id as string };
 }
@@ -522,7 +523,7 @@ export async function salvarDescontoDez(pct: number, segunda: string) {
   const supabase = await createClient();
   const empresaId = await empresaAtualId();
   const { error } = await supabase.from("pdv_config").upsert({ empresa_id: empresaId, chave: "dez_desconto_pct", valor: String(pct) }, { onConflict: "empresa_id,chave" });
-  if (error) return { erro: error.message };
+  if (error) return { erro: explicarErro(error) };
   const { data: pagas } = await supabase.from("semana_pagamentos").select("segunda").not("lancamento_id", "is", null).gte("segunda", segunda);
   const conta = new Map<string, number>();
   for (const x of (pagas as { segunda: string }[]) ?? []) conta.set(String(x.segunda).slice(0, 10), (conta.get(String(x.segunda).slice(0, 10)) ?? 0) + 1);

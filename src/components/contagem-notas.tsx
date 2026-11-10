@@ -100,7 +100,7 @@ export function ContagemNotas({ valor, onChange, saldo, mostrarSaldo, lado, foco
           placeholder="0,00"
           className={CAMPO}
         />
-        {erro && <p className="col-span-3 text-xs font-semibold text-urgente-texto">Esse valor não fecha em {moedaOuNota(c)} de {rotuloDen(c)}.</p>}
+        {erro && <p role="alert" className="col-span-3 text-xs font-semibold text-urgente-texto">Esse valor não fecha em {moedaOuNota(c)} de {rotuloDen(c)}.</p>}
       </div>
     );
   };

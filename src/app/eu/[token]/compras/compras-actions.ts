@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Qualquer colaborador ativo, com o PIN batendo, pode pedir compras.
 export async function colabPedidos(token: string) {
@@ -63,7 +64,7 @@ export async function pedirCompra(
     motivo: (input.motivo || "").trim().slice(0, 500) || null,
     urgente: !!input.urgente,
   });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath(`/eu/${token}/compras`);
   revalidatePath("/solicitacoes");
   return { ok: true as const };
@@ -80,7 +81,7 @@ export async function cancelarMinhaSolicitacao(token: string, id: number) {
     .eq("id", id)
     .eq("colaborador_id", colab.id)
     .eq("status", "pendente");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath(`/eu/${token}/compras`);
   revalidatePath("/solicitacoes");
   return { ok: true as const };

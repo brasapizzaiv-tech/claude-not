@@ -116,7 +116,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
           </span>
         </span>
       </div>
-      {erro && <p style={{ color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>{erro}</p>}
+      {erro && <p role="alert" style={{ color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>{erro}</p>}
 
       {fila.length === 0 ? (
         <div style={{ height: "70vh", display: "flex", alignItems: "center", justifyContent: "center" }}>

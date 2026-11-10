@@ -306,7 +306,7 @@ export function PedidoCard({
           </div>
 
           {erro && (
-            <p className="rounded-controle bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+            <p role="alert" className="rounded-controle bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
               {erro}
             </p>
           )}

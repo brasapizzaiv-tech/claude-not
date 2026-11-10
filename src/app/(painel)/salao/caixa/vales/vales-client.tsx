@@ -167,7 +167,7 @@ function Detalhe({ v, hoje, onEntregar }: { v: ValeLinha; hoje: string; onEntreg
       <div className="grid gap-1 text-texto-suave sm:grid-cols-2">
         <p>Vendido em {quando(v.criadoEm)}{v.forma ? ` · ${v.forma}` : ""} · {brl(v.valor)}</p>
         {v.telefone && <p>WhatsApp {v.telefone}</p>}
-        {v.mensagem && <p className="italic sm:col-span-2">“{v.mensagem}”</p>}
+        {v.mensagem && <p role="status" className="italic sm:col-span-2">“{v.mensagem}”</p>}
         {v.status === "cancelado" && <p className="text-red-600 sm:col-span-2">Cancelado: {v.canceladoMotivo}</p>}
         {ativo && v.validade < hoje && <p className="text-amber-700 dark:text-amber-300 sm:col-span-2">Venceu em {dataBR(v.validade)}. Prorrogue pra aceitar no caixa.</p>}
       </div>
@@ -273,7 +273,7 @@ function VenderVale({ formas, onFechar, onVendido }: { formas: FormaOpcao[]; onF
           ))}
         </div>
 
-        {erro && <p className="mt-3 text-sm font-medium text-red-600">{erro}</p>}
+        {erro && <p role="alert" className="mt-3 text-sm font-medium text-red-600">{erro}</p>}
 
         <div className="mt-4">
           {tef && agenteTef ? (
@@ -370,7 +370,7 @@ function EntregarVale({ v, onFechar }: { v: ValeCartao & { id: string; telefone:
           <button type="button" onClick={baixar} className={btnLinha}><Icone nome="baixar" tamanho={15} /> Só baixar a imagem</button>
         </div>
         <p className="mt-2 text-xs text-texto-fraco">No WhatsApp Web, anexe a imagem baixada na conversa (o texto já vai com o código).</p>
-        {aviso && <p className="mt-2 text-sm font-medium text-texto">{aviso}</p>}
+        {aviso && <p role="status" className="mt-2 text-sm font-medium text-texto">{aviso}</p>}
       </div>
     </div>
   );

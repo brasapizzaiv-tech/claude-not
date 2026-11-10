@@ -44,7 +44,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
 
   return (
     <div className="space-y-6">
-      {msg && <p className="rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{msg}</p>}
+      {msg && <p role="status" className="rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{msg}</p>}
 
       {/* Setores */}
       <div className="cartao p-4">

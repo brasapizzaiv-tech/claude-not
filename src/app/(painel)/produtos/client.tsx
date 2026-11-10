@@ -786,7 +786,7 @@ export function ProdutosClient({
                   <Icone nome="alerta" tamanho={14} className="mr-1" /> Unidades diferentes ({mesclar.a.unidade} × {mesclar.b.unidade}). As quantidades antigas do que sai passam como se fossem na unidade do que fica — confira antes.
                 </p>
               )}
-              {mesclarErro && <p className="mt-3 text-sm text-red-600">{mesclarErro}</p>}
+              {mesclarErro && <p role="alert" className="mt-3 text-sm text-red-600">{mesclarErro}</p>}
               <div className="mt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setMesclar(null)} className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave">Cancelar</button>
                 <button type="button" onClick={confirmarMesclar} disabled={proc} className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60">

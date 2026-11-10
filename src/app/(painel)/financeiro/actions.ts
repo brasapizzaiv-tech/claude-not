@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ajustarTotalBoleto, lerValorBR } from "@/lib/boleto";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export async function criarLancamento(formData: FormData) {
   await exigirAcesso("/financeiro");
@@ -219,7 +220,7 @@ export async function pagarVarias(ids: string[], dataPago: string) {
     .in("id", lista)
     .eq("pago", false)
     .select("id");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/financeiro/contas");
   revalidatePath("/financeiro");
   return { ok: true as const, quantidade: upd?.length ?? 0 };

@@ -125,7 +125,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
       </div>
 
       {msg && (
-        <p className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p role="status" className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
           {msg}
         </p>
       )}

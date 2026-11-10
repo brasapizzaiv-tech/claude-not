@@ -87,7 +87,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
 
   return (
     <div className="space-y-6">
-      {msg && <div className="rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">{msg}</div>}
+      {msg && <div role="status" className="rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">{msg}</div>}
 
       {/* Categorias */}
       <details className="cartao p-4">

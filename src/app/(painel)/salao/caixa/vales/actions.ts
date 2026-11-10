@@ -10,6 +10,7 @@ import { naoEntraNoCaixa, tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
 import { dataBR, formatarCodigo, gerarCodigoVale, normalizarCodigo, validadePadrao, type ValeCartao } from "@/lib/vale-presente";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -62,7 +63,7 @@ export async function venderValePresente(d: DadosVenda) {
       caixa_id: caixaId,
     }).select("id, codigo").single();
     if (data) vale = data as { id: string; codigo: string };
-    else if (error && !/duplicate|unique/i.test(error.message)) return { ok: false as const, mensagem: error.message };
+    else if (error && !/duplicate|unique/i.test(error.message)) return { ok: false as const, mensagem: explicarErro(error) };
   }
   if (!vale) return { ok: false as const, mensagem: "Não consegui gerar o código. Tente de novo." };
 
@@ -78,7 +79,7 @@ export async function venderValePresente(d: DadosVenda) {
   }).select("id").maybeSingle();
   if (eMov) {
     await supabase.from("vales_presente").delete().eq("id", vale.id);
-    return { ok: false as const, mensagem: eMov.message };
+    return { ok: false as const, mensagem: explicarErro(eMov) };
   }
   const movId = (mov as { id?: string } | null)?.id ?? null;
   await supabase.from("vales_presente").update({ caixa_mov_id: movId }).eq("id", vale.id);
@@ -118,7 +119,7 @@ export async function imprimirValeCaixa(id: string) {
   const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
   if (ids.length === 0) return { ok: false as const, mensagem: "Nenhuma impressora do caixa (a que recebe NFC-e) marcada na Central de Impressões." };
   const { error } = await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "vale", ref_id: id, impressora_id })));
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 
@@ -128,7 +129,7 @@ export async function cancelarVale(id: string, motivo: string) {
   if (m.length < 3) return { ok: false as const, mensagem: "Escreva o motivo (pelo menos 3 letras)." };
   const supabase = await createClient();
   const { error } = await supabase.from("vales_presente").update({ status: "cancelado", cancelado_em: new Date().toISOString(), cancelado_motivo: m.slice(0, 200) }).eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/salao/caixa/vales");
   return { ok: true as const };
 }
@@ -138,7 +139,7 @@ export async function prorrogarVale(id: string, validade: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(validade) || validade < hojeSP()) return { ok: false as const, mensagem: "Escolha uma data a partir de hoje." };
   const supabase = await createClient();
   const { error } = await supabase.from("vales_presente").update({ validade }).eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/salao/caixa/vales");
   return { ok: true as const };
 }
@@ -150,7 +151,7 @@ export async function estornarUsoVale(usoId: string, motivo: string) {
   if (m.length < 3) return { ok: false as const, mensagem: "Escreva o motivo (pelo menos 3 letras)." };
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("vale_presente_estornar", { p_uso: usoId, p_obs: m.slice(0, 150) });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   const r = data as { ok: boolean; erro?: string };
   if (!r?.ok) return { ok: false as const, mensagem: r?.erro ?? "Não consegui devolver." };
   revalidatePath("/salao/caixa/vales");

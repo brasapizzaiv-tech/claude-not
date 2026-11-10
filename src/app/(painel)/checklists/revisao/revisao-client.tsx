@@ -86,7 +86,7 @@ export function RevisaoClient({
         </div>
       </div>
 
-      {msg && <p className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
+      {msg && <p role="status" className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-4">
         <div className={card}><p className="text-xs text-texto-suave">Listas do dia</p><p className="text-2xl font-bold text-texto">{resumo.listas}</p></div>

@@ -7,6 +7,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { parseAniversario } from "@/lib/equipe";
 import { pisValido } from "@/lib/ponto-core";
 import { COLUNAS_DATA, COLUNAS_FICHA, COLUNAS_NUMEROS } from "@/lib/ficha-core";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -38,7 +39,7 @@ export async function salvarFicha(id: string, campos: Record<string, string>) {
   if (!Object.keys(upd).length) return { ok: true as const };
   const supabase = await createClient();
   const { error } = await supabase.from("colaboradores").update(upd).eq("id", id);
-  if (error) return { ok: false as const, erro: error.message.includes("duplicate") ? "Esse CPF já está em outro cadastro." : error.message };
+  if (error) return { ok: false as const, erro: error.code === "23505" ? "Esse CPF já está em outro cadastro." : explicarErro(error) };
   revalidar(id);
   return { ok: true as const };
 }
@@ -62,7 +63,7 @@ export async function trocarCargo(id: string, cargoId: string, de: string) {
   if (depois.length) await supabase.from("colaborador_cargos").delete().in("id", depois);
   if (vigente) await supabase.from("colaborador_cargos").update({ ate: vespera(de) }).eq("id", vigente.id);
   const { error } = await supabase.from("colaborador_cargos").insert({ colaborador_id: id, cargo_id: cargoId, de });
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   await supabase.from("colaboradores").update({ cargo_id: cargoId, funcao: (cargo as { nome: string }).nome }).eq("id", id);
   revalidar(id);
   return { ok: true as const };
@@ -106,7 +107,7 @@ export async function salvarDemissao(id: string, data: string, motivoId: string,
   const { error } = await supabase.from("colaboradores")
     .update({ desligado_em: data, motivo_demissao_id: UUID.test(motivoId) ? motivoId : null, desligado_motivo: obs.trim().slice(0, 300) || null })
     .eq("id", id).eq("ativo", false);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar(id);
   return { ok: true as const };
 }
@@ -141,7 +142,7 @@ export async function enviarDocumento(fd: FormData) {
   });
   if (error) {
     await supabase.storage.from("documentos-equipe").remove([caminho]);
-    return { ok: false as const, erro: error.message };
+    return { ok: false as const, erro: explicarErro(error) };
   }
   revalidar(id);
   return { ok: true as const };
@@ -184,7 +185,7 @@ export async function salvarItemCadastro(tabela: TabelaCadastro, nome: string, i
   const { error } = id
     ? await supabase.from(tabela).update({ nome: n, ativo: true }).eq("id", id)
     : await supabase.from(tabela).insert({ nome: n });
-  if (error) return { ok: false as const, erro: error.message.includes("duplicate") ? "Já existe um com esse nome." : error.message };
+  if (error) return { ok: false as const, erro: error.code === "23505" ? "Já existe um com esse nome." : explicarErro(error) };
   if (tabela === "cargos" && id) await supabase.from("colaboradores").update({ funcao: n }).eq("cargo_id", id);
   revalidatePath("/colaboradores/cadastros");
   revalidatePath("/colaboradores");
@@ -205,7 +206,7 @@ export async function apagarItemCadastro(tabela: TabelaCadastro, id: string) {
   const { error } = usado
     ? await supabase.from(tabela).update({ ativo: false }).eq("id", id)
     : await supabase.from(tabela).delete().eq("id", id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath("/colaboradores/cadastros");
   return { ok: true as const, desativado: usado };
 }

@@ -19,7 +19,8 @@ export function AbrirCaixaForm() {
   const total = valorDe(notas);
 
   return (
-    <form action={abrirCaixa} className="mt-6 space-y-4 rounded-cartao bg-painel-foco-fundo p-5 text-painel-foco-texto">
+    // Cartão de foco (VIS-04): a peça pronta, com o anel do teclado na cor do cartão.
+    <form action={abrirCaixa} className="cartao-foco mt-6 space-y-4 p-5" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
       <div>
         <label htmlFor="caixa-nome" className="mb-1 block text-xs text-painel-foco-rotulo">Nome / turno</label>
         <input
@@ -74,7 +75,7 @@ export function AbrirCaixaForm() {
 
       <Enviar
         disabled={porNotas && erroNotas}
-        className="min-h-11 rounded-controle bg-painel-foco-texto px-5 text-sm font-semibold text-painel-foco-fundo transition hover:opacity-90"
+        className="btn-principal min-h-11 px-5 text-sm"
       >
         Abrir caixa
       </Enviar>

@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
 import { chaveTvOk } from "@/lib/rodizio-server";
 import { urlCameraOk } from "@/lib/tv-camera";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +25,6 @@ export async function POST(req: Request) {
     { ...(empresaId ? { empresa_id: empresaId } : {}), url, ao_vivo: corpo?.aoVivo === true, visto_em: new Date().toISOString() },
     { onConflict: "empresa_id" },
   );
-  if (error) return Response.json({ ok: false, erro: error.message }, { status: 500 });
+  if (error) return Response.json({ ok: false, erro: explicarErro(error) }, { status: 500 });
   return Response.json({ ok: true });
 }

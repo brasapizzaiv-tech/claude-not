@@ -396,7 +396,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-borda pt-3">
         <div>
           <div className="font-numero text-lg font-bold">{brl(preco)}</div>
-          {problema && <div className="text-xs text-texto-suave">{problema}</div>}
+          {problema && <div role="alert" className="text-xs text-texto-suave">{problema}</div>}
         </div>
         <button onClick={adicionar} disabled={!!problema} className="btn-principal text-sm">Adicionar</button>
       </div>

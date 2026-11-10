@@ -8,6 +8,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { addDiasIso, diaSemanaIso } from "@/lib/dia-cardapio";
 import type { KernDia } from "@/lib/marmitas-cardapio";
 import type { Marmitas } from "@/lib/marmitas-marcas";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export type Db = ReturnType<typeof createAdminClient>;
 
@@ -283,11 +284,11 @@ export async function padraoSemanaSaladas(db: Db, dow: number): Promise<string[]
 export async function salvarSaladasDia(db: Db, data: string, ids: string[], ator: Ator) {
   if (!diaValido(data)) return { ok: false as const, mensagem: "Dia inválido." };
   const { error: e1 } = await db.from("cardapio_dia_saladas").delete().eq("data", data);
-  if (e1) return { ok: false as const, mensagem: e1.message };
+  if (e1) return { ok: false as const, mensagem: explicarErro(e1) };
   const unicos = [...new Set(ids)];
   if (unicos.length > 0) {
     const { error: e2 } = await db.from("cardapio_dia_saladas").insert(unicos.map((salada_id) => ({ data, salada_id })));
-    if (e2) return { ok: false as const, mensagem: e2.message };
+    if (e2) return { ok: false as const, mensagem: explicarErro(e2) };
   }
   await registrarPublicacao(db, data, "saladas", ator, unicos.length ? `${unicos.length} salada(s)` : "voltou ao padrão da semana");
   return { ok: true as const };
@@ -295,11 +296,11 @@ export async function salvarSaladasDia(db: Db, data: string, ids: string[], ator
 export async function salvarPadraoSemanaSaladas(db: Db, dow: number, ids: string[]) {
   if (!(dow >= 0 && dow <= 6)) return { ok: false as const, mensagem: "Dia inválido." };
   const { error: e1 } = await db.from("saladas_semana").delete().eq("dow", dow);
-  if (e1) return { ok: false as const, mensagem: e1.message };
+  if (e1) return { ok: false as const, mensagem: explicarErro(e1) };
   const unicos = [...new Set(ids)];
   if (unicos.length > 0) {
     const { error: e2 } = await db.from("saladas_semana").insert(unicos.map((salada_id) => ({ dow, salada_id })));
-    if (e2) return { ok: false as const, mensagem: e2.message };
+    if (e2) return { ok: false as const, mensagem: explicarErro(e2) };
   }
   return { ok: true as const };
 }
@@ -312,12 +313,12 @@ export async function criarSalada(db: Db, nome: string, categoria: CategoriaSala
     .upsert({ empresa_id: empresaId, nome: n, categoria, ativo: true }, { onConflict: "empresa_id,nome" })
     .select("id")
     .single();
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, id: (data as { id: string }).id };
 }
 export async function removerSalada(db: Db, id: string) {
   const { error } = await db.from("saladas_base").update({ ativo: false }).eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 

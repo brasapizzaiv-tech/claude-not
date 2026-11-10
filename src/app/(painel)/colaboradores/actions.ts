@@ -8,6 +8,7 @@ import { numBR, parseAniversario } from "@/lib/equipe";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { definirHorarioPessoa } from "./ponto/horarios/actions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 function novoToken() {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
@@ -196,7 +197,7 @@ export async function desligarColaborador(id: string, motivo: string, data: stri
     .from("colaboradores")
     .update({ ativo: false, desligado_em: dt, desligado_motivo: mot, token: null, pin: null, ...(motivoId && /^[0-9a-f-]{36}$/i.test(motivoId) ? { motivo_demissao_id: motivoId } : {}) })
     .eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   await supabase.from("folgas_funcionarios").update({ ativo: false }).eq("colaborador_id", id);
   revalidatePath("/colaboradores");
   revalidatePath("/folgas");
@@ -238,7 +239,7 @@ export async function gerarLinkGarcomAvulso() {
   const { data: { user } } = await supabase.auth.getUser();
   const linha = { token: tokenConvite(), valido_ate: fimDaNoite(), criado_por: user?.id ?? null };
   const { error } = await supabase.from("garcom_convites").insert(linha);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, token: linha.token, valido_ate: linha.valido_ate };
 }
 

@@ -45,7 +45,7 @@ export function EntradaEntrega() {
         placeholder="https://www.brasarestaurante.com.br/entrega/…"
         className="w-full max-w-md rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-base focus:border-orange-500"
       />
-      {erro && <p className="mt-2 text-sm text-rose-400">{erro}</p>}
+      {erro && <p role="alert" className="mt-2 text-sm text-rose-400">{erro}</p>}
       <button onClick={entrar} className="btn-principal mt-4 w-full max-w-md text-base">Entrar</button>
     </div>
   );

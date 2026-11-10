@@ -7,6 +7,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { apagarAfdRepetidas, marcarPresencasDoPonto, receberAfd } from "@/lib/ponto-server";
 import { pisValido, turnoDaBatida } from "@/lib/ponto-core";
 import { AVISO_FECHADO, diaFechado } from "@/lib/ponto-espelho";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 /** Mês fechado (migration 0258): a batida desse dia não muda mais. */
 async function batidaTravada(supabase: Awaited<ReturnType<typeof createClient>>, id: string, outroDia?: string) {
@@ -62,7 +63,7 @@ export async function incluirBatida(colaboradorId: string, dia: string, hora: st
     nome: col.nome, colaborador_id: col.id, data: turnoDia, turno, origem: "manual",
     obs: obs.trim().slice(0, 200) || null, criado_por: auth.user?.id ?? null,
   });
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   const empresaId = await empresaAtualId();
   if (empresaId) await marcarPresencasDoPonto(empresaId, [{ colaboradorId: col.id, data: turnoDia }]);
   revalidar();
@@ -118,7 +119,7 @@ export async function justificar(fd: FormData) {
     colaborador_id: colaborador, inicio, fim, tipo, tipo_id: tipoJ.id, minutos, arquivo_url: arquivo,
     motivo: String(fd.get("motivo") ?? "").trim().slice(0, 200) || null, criado_por: auth.user?.id ?? null,
   });
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar();
   return { ok: true as const };
 }
@@ -139,7 +140,7 @@ async function ajustar(id: string, campos: Record<string, unknown>) {
   const { data: auth } = await supabase.auth.getUser();
   const { error } = await supabase.from("ponto_batidas")
     .update({ ...campos, ajustada_por: auth.user?.id ?? null, ajustada_em: new Date().toISOString() }).eq("id", id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar();
   return { ok: true as const };
 }
@@ -204,10 +205,10 @@ export async function vincularCpfPonto(cpf: string, colaboradorId: string) {
   if (eOutro) return { ok: false as const, erro: "Não consegui conferir se esse número já é de outra pessoa. Tente de novo." };
   if (outro) return { ok: false as const, erro: `Esse número já é de ${(outro as { nome: string }).nome}.` };
   const { error } = await supabase.from("colaboradores").update(ehPis ? { pis: c } : { cpf: c }).eq("id", colaboradorId);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   const { data: ligadas, error: e2 } = await supabase.from("ponto_batidas").update({ colaborador_id: colaboradorId })
     .eq("cpf", c).is("colaborador_id", null).select("data");
-  if (e2) return { ok: false as const, erro: e2.message };
+  if (e2) return { ok: false as const, erro: explicarErro(e2) };
   // Histórico que veio duas vezes (RHiD com o CPF, relógio com o PIS): fica a do relógio.
   await apagarAfdRepetidas(empresaId, colaboradorId);
   const dias = [...new Set(((ligadas ?? []) as { data: string }[]).map((b) => String(b.data).slice(0, 10)))];
@@ -230,7 +231,7 @@ export async function fecharMes(de: string, ate: string, pessoaIds: string[]) {
   const novas = pessoaIds.filter((p) => !fechadas.has(p)).map((p) => ({ colaborador_id: p, de, ate, fechado_por: auth.user?.id ?? null }));
   if (novas.length) {
     const { error } = await supabase.from("ponto_fechamentos").insert(novas);
-    if (error) return { ok: false as const, erro: error.message };
+    if (error) return { ok: false as const, erro: explicarErro(error) };
   }
   revalidar();
   return { ok: true as const, fechadas: novas.length };
@@ -244,7 +245,7 @@ export async function reabrirMes(de: string, pessoaId: string) {
   const { data: auth } = await supabase.auth.getUser();
   const { error } = await supabase.from("ponto_fechamentos").update({ reaberto_em: new Date().toISOString(), reaberto_por: auth.user?.id ?? null })
     .eq("colaborador_id", pessoaId).eq("de", de).is("reaberto_em", null);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar();
   return { ok: true as const };
 }
@@ -259,7 +260,7 @@ export async function salvarInconsistencias(regras: { nome: string; campo: strin
   const { data: cfg } = await supabase.from("assiduidade_config").select("id").maybeSingle();
   if (!cfg) return { ok: false as const, erro: "Configuração do ponto não encontrada." };
   const { error } = await supabase.from("assiduidade_config").update({ inconsistencias: limpas }).eq("id", (cfg as { id: string }).id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidar();
   revalidatePath("/colaboradores/ponto/regras");
   return { ok: true as const };
@@ -274,7 +275,7 @@ export async function salvarTipoJustificativa(t: { id?: string; nome: string; ef
   const linha = { nome, efeito: t.efeito, tira_premio: !!t.tira_premio, ativo: !!t.ativo };
   const supabase = await createClient();
   const { error } = t.id ? await supabase.from("justificativa_tipos").update(linha).eq("id", t.id) : await supabase.from("justificativa_tipos").insert(linha);
-  if (error) return { ok: false as const, erro: error.message.includes("duplicate") ? "Já existe um tipo com esse nome." : error.message };
+  if (error) return { ok: false as const, erro: error.code === "23505" ? "Já existe um tipo com esse nome." : explicarErro(error) };
   revalidatePath("/colaboradores/ponto/regras");
   revalidar();
   return { ok: true as const };

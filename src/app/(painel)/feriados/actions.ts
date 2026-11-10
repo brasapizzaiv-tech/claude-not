@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { calendarioOficial, type SituacaoFeriado } from "@/lib/feriados";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const SITUACOES: SituacaoFeriado[] = ["indefinido", "abre", "fecha", "especial"];
 
@@ -21,7 +22,7 @@ export async function decidirFeriado(id: string, situacao: string, detalhe: stri
     .from("feriados")
     .update({ situacao, detalhe: detalhe.trim() || null })
     .eq("id", id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath("/feriados");
   revalidatePath("/mural");
   return { ok: true as const };
@@ -51,7 +52,7 @@ export async function criarFeriado(fd: FormData) {
   if (error) {
     return {
       ok: false as const,
-      erro: error.code === "23505" ? "Já existe uma data cadastrada nesse dia." : error.message,
+      erro: error.code === "23505" ? "Já existe uma data cadastrada nesse dia." : explicarErro(error),
     };
   }
   revalidatePath("/feriados");
@@ -63,7 +64,7 @@ export async function excluirFeriado(id: string) {
   await exigirAcesso("/feriados");
   const supabase = await createClient();
   const { error } = await supabase.from("feriados").delete().eq("id", id);
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath("/feriados");
   revalidatePath("/mural");
   return { ok: true as const };
@@ -87,7 +88,7 @@ export async function trazerCalendario() {
   }
 
   const { error } = await supabase.from("feriados").insert(novas.map((f) => ({ data: f.data, nome: f.nome })));
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath("/feriados");
   revalidatePath("/mural");
   return { ok: true as const, adicionados: novas.length };

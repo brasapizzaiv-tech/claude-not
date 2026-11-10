@@ -176,7 +176,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           <button onClick={() => setMarcadas(new Set())} className="text-texto-suave underline">limpar</button>
         </div>
       )}
-      {msg && <p className="mb-3 text-sm text-red-600">{msg}</p>}
+      {msg && <p role="status" className="mb-3 text-sm text-red-600">{msg}</p>}
 
       {filtradas.length === 0 ? (
         <div className="rounded-cartao bg-painel-cartao p-10 text-center text-sm text-texto-suave">
@@ -308,7 +308,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
           {proc ? "Salvando…" : "Salvar"}
         </button>
       </div>
-      {msg && <p className="text-sm text-red-600 md:col-span-4">{msg}</p>}
+      {msg && <p role="status" className="text-sm text-red-600 md:col-span-4">{msg}</p>}
     </div>
   );
 }

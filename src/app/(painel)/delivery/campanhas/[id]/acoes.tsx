@@ -26,7 +26,7 @@ export function AcoesCampanha({ id, status }: { id: string; status: string }) {
       {!["concluida", "cancelada"].includes(status) && (
         <BotaoAcao aoClicar={agir("cancelar", "Cancelar a campanha? Quem ainda está na fila não recebe.")} className={`${b} text-red-600`}>Cancelar</BotaoAcao>
       )}
-      {erro && <span className="text-xs text-red-600">{erro}</span>}
+      {erro && <span role="alert" className="text-xs text-red-600">{erro}</span>}
     </div>
   );
 }

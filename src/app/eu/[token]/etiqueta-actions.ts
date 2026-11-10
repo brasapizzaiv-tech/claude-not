@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { tipoValido } from "@/lib/etiqueta-tipos";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 async function colabDoToken(token: string) {
   const admin = createAdminClient();
@@ -91,7 +92,7 @@ export async function criarEtiquetaColab(token: string, dados: {
     .select("id, numero")
     .order("numero");
 
-  if (error || !data || data.length === 0) return { ok: false as const, mensagem: error?.message || "Não foi possível gerar." };
+  if (error || !data || data.length === 0) return { ok: false as const, mensagem: explicarErro(error, "Não foi possível gerar.") };
   await admin.from("impressao_fila").insert(
     data.map((e) => ({ tipo: "etiqueta", ref_id: e.id, impressora_id: impressoraId })),
   );

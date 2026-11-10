@@ -131,7 +131,7 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
       {/* Barra fixa de baixa */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-borda bg-painel-cartao p-3">
         <div className="mx-auto max-w-md">
-          {feito && <p className="mb-2 text-center text-sm font-medium text-green-600">{feito}</p>}
+          {feito && <p role="status" className="mb-2 text-center text-sm font-medium text-green-600">{feito}</p>}
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-semibold text-zinc-800 dark:text-zinc-100">
               {marcadas.size === 0 ? "Marque as contas pagas" : `${marcadas.size} selecionada(s) · ${moeda(total)}`}

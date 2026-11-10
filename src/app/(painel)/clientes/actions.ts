@@ -5,6 +5,7 @@ import { numeroBR } from "@/lib/format";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Cadastro de clientes: só quem vende ou fatura (auditoria, 08/11/2026: antes
 // qualquer funcionário logado salvava e removia).
@@ -50,7 +51,7 @@ export async function salvarCliente(formData: FormData) {
     ? await supabase.from("clientes").update(payload).eq("id", id)
     : await supabase.from("clientes").insert(payload);
   revalidatePath("/clientes");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 

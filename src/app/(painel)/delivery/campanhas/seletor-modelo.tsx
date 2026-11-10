@@ -98,7 +98,7 @@ export function SeletorModelo({
               }}
             />
           </label>
-          {msgImg && <span className="text-xs text-red-600">{msgImg}</span>}
+          {msgImg && <span role="status" className="text-xs text-red-600">{msgImg}</span>}
         </div>
       )}
 
@@ -121,7 +121,7 @@ export function SeletorModelo({
           >
             {testando ? "Enviando..." : "Enviar teste"}
           </button>
-          {msgTeste && <span className="text-xs text-texto-suave">{msgTeste}</span>}
+          {msgTeste && <span role="status" className="text-xs text-texto-suave">{msgTeste}</span>}
         </div>
       )}
     </div>

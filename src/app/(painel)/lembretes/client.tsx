@@ -243,7 +243,7 @@ function Formulario({ inicial, hoje, setores, pessoas, erro, aoSalvar, aoCancela
         {repeticao === "uma_vez" && <p className="mt-1 text-xs text-texto-fraco">Quem não confirmar no dia continua vendo por até 7 dias.</p>}
       </div>
 
-      {erro && <p className="text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
       <div>
         <Enviar className="btn-principal min-h-11 text-sm">{inicial ? "Salvar" : "Criar lembrete"}</Enviar>
       </div>

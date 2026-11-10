@@ -171,7 +171,7 @@ export function LeitorQr({
           )}
         </div>
         {aviso && (
-          <div className="absolute inset-x-0 bottom-2 text-center">
+          <div role="status" className="absolute inset-x-0 bottom-2 text-center">
             <span className="rounded-full bg-black/70 px-3 py-1 text-sm font-semibold">{aviso}</span>
           </div>
         )}

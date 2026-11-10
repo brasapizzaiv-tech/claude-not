@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
 import { MESAS_MAX, type PedidoRodizio, type FracaoRodizio } from "@/lib/rodizio";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Garçom pelo app pessoal: colaborador ativo, com "faz garçom" e PIN batendo.
 // (Mesma regra do modo garçom — o rodízio faz parte dele.)
@@ -85,7 +86,7 @@ export async function lancarPedidoRodizio(
     colaborador_id: colab.id,
     garcom: colab.nome,
   });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath(`/eu/${token}/rodizio`);
   return { ok: true as const };
 }
@@ -101,7 +102,7 @@ export async function cancelarPedidoRodizio(token: string, id: string) {
     .eq("id", id)
     .eq("status", "pendente")
     .select("id");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   if (!data || data.length === 0) return { ok: false as const, mensagem: "Já foi pro forno — fale com a cozinha." };
   return { ok: true as const };
 }

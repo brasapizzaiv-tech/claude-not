@@ -46,7 +46,7 @@ export function CriarPin({ token }: { token: string }) {
         placeholder="repita o PIN"
         className={box}
       />
-      {erro && <p className="text-center text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="text-center text-sm text-red-600">{erro}</p>}
       <button onClick={salvar} disabled={p} className={btn}>
         {p ? "Salvando..." : "Criar meu PIN"}
       </button>
@@ -81,7 +81,7 @@ export function EntrarPin({ token }: { token: string }) {
         className={box}
         autoFocus
       />
-      {erro && <p className="text-center text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="text-center text-sm text-red-600">{erro}</p>}
       <button onClick={entrar} disabled={p} className={btn}>
         {p ? "Entrando..." : "Entrar"}
       </button>

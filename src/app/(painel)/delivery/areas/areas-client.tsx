@@ -162,7 +162,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
             <button onClick={() => setRasc({ ...rasc, pontos: rasc.pontos.slice(0, -1) })} disabled={rasc.pontos.length === 0} className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm disabled:opacity-40">↶ Desfazer ponto</button>
             <button onClick={() => setRasc(vazio(rasc.cor))} className="rounded-controle px-3 py-1.5 text-sm text-texto-suave underline">limpar</button>
           </div>
-          {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
+          {msg && <p role="status" className="mt-2 text-xs text-texto-suave">{msg}</p>}
         </div>
 
         {/* lista */}

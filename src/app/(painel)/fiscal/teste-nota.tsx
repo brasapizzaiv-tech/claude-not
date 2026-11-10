@@ -56,8 +56,8 @@ export function TesteNota() {
           ) : (
             <>
               <p className="font-semibold">✗ Não autorizou {res.status ? `(${res.status})` : ""}</p>
-              {res.mensagem && <p className="mt-1">{res.mensagem}</p>}
-              {res.erros && <p className="mt-1 break-all text-xs opacity-80">{res.erros}</p>}
+              {res.mensagem && <p role="status" className="mt-1">{res.mensagem}</p>}
+              {res.erros && <p role="alert" className="mt-1 break-all text-xs opacity-80">{res.erros}</p>}
               <p className="mt-1 text-xs opacity-70">HTTP {res.statusHttp}</p>
             </>
           )}

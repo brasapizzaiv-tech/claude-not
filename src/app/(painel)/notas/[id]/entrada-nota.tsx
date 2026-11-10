@@ -37,7 +37,7 @@ export function EntradaNota({ notaId, dia }: { notaId: string; dia: string | nul
       <span className="text-mini text-texto-fraco">
         {dia ? "a contagem conta o que chegou a partir deste dia" : "ainda sem entrada: o Lançar marca o dia de hoje"}
       </span>
-      {erro && <span className="text-mini text-erro">{erro}</span>}
+      {erro && <span role="alert" className="text-mini text-erro">{erro}</span>}
     </div>
   );
 }

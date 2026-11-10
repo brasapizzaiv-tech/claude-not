@@ -428,7 +428,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
                 {resultado.urlDanfe && <a href={resultado.urlDanfe} target="_blank" rel="noopener noreferrer" className="btn-principal text-sm">Abrir a nota (PDF)</a>}
                 {resultado.urlXml && <a href={resultado.urlXml} target="_blank" rel="noopener noreferrer" className="btn-secundario text-sm">XML</a>}
               </div>
-              {resultado.aviso && <p className="mt-3 text-sm font-semibold text-urgente-texto">{resultado.aviso}</p>}
+              {resultado.aviso && <p role="status" className="mt-3 text-sm font-semibold text-urgente-texto">{resultado.aviso}</p>}
             </>
           ) : resultado.status === "processando_autorizacao" ? (
             <>

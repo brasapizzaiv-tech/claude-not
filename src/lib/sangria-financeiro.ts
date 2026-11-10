@@ -9,6 +9,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
 /** O financeiro pelo servidor: cliente administrativo + a empresa (filtro na mão). */
@@ -55,7 +56,7 @@ export async function lancarSangriaNoFinanceiro(db: Db, fin: FinSangria, movId: 
   const lanc = fin.admin.from("lancamentos");
   if (m.lancamento_id) {
     const { error } = await lanc.update({ categoria_id: categoriaId }).eq("id", m.lancamento_id).eq("empresa_id", fin.empresaId);
-    return error ? { ok: false as const, mensagem: error.message } : { ok: true as const, lancamentoId: m.lancamento_id };
+    return error ? { ok: false as const, mensagem: explicarErro(error) } : { ok: true as const, lancamentoId: m.lancamento_id };
   }
   const dia = diaSP(m.criado_em);
   const { data: l, error } = await lanc.insert({
@@ -71,7 +72,7 @@ export async function lancarSangriaNoFinanceiro(db: Db, fin: FinSangria, movId: 
     forma_pagamento: "Dinheiro",
     origem: "caixa",
   }).select("id").single();
-  if (error || !l) return { ok: false as const, mensagem: error?.message ?? "Não lançou." };
+  if (error || !l) return { ok: false as const, mensagem: explicarErro(error, "Não lançou.") };
   await db.from("pdv_caixa_mov").update({ lancamento_id: l.id }).eq("id", m.id);
   return { ok: true as const, lancamentoId: l.id as string };
 }

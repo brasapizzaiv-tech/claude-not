@@ -110,7 +110,7 @@ export function ConectarWhatsapp({ conta }: { conta: ContaWpp }) {
         </button>
         {!pronto && <span className="text-xs text-texto-fraco">carregando a Meta...</span>}
       </div>
-      {msg && <p className={`rounded-controle px-3 py-2 ${msg.ok ? "pilula-ok" : "pilula-urgente"}`}>{msg.texto}</p>}
+      {msg && <p role="status" className={`rounded-controle px-3 py-2 ${msg.ok ? "pilula-ok" : "pilula-urgente"}`}>{msg.texto}</p>}
       <p className="text-xs text-texto-fraco">
         Depois de conectado: o WhatsApp Web e os computadores ligados ao celular desconectam uma vez (é só ler o QR de novo), o WhatsApp de Windows deixa de funcionar
         e as listas de transmissão do celular ficam só leitura.

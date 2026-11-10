@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Turnos do delivery (migration 0237): troca a lista inteira de uma vez.
 export async function salvarTurnosDelivery(lista: { nome: string; inicio: string; fim: string }[]) {
@@ -17,7 +18,7 @@ export async function salvarTurnosDelivery(lista: { nome: string; inicio: string
   const supabase = await createClient();
   const { data: antes } = await supabase.from("delivery_turnos").select("id");
   const { error } = await supabase.from("delivery_turnos").insert(limpa.map((t, i) => ({ ...t, ordem: i + 1 })));
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   const velhos = ((antes as { id: string }[]) ?? []).map((x) => x.id);
   if (velhos.length) await supabase.from("delivery_turnos").delete().in("id", velhos);
   revalidatePath("/delivery/config");

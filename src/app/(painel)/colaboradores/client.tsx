@@ -275,7 +275,7 @@ function DesligarModal({ c, onClose, motivos = [] }: { c: Row; onClose: () => vo
         )}
         <label className="mt-3 mb-1 block text-xs font-medium text-texto-suave">{motivos.length ? "Observação" : "Motivo (obrigatório)"}</label>
         <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder={motivos.length ? "Opcional" : "Ex.: pediu demissão / dispensado / parou de vir…"} className={inputCls} />
-        {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
+        {msg && <p role="status" className="mt-2 text-sm text-red-600">{msg}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">Cancelar</button>
           <button

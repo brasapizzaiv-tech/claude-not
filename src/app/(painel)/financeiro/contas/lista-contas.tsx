@@ -462,7 +462,7 @@ export function ListaContasView({
               </button>
             </>
           )}
-          {msgLote && <span className="w-full text-xs font-medium text-sucesso">{msgLote}</span>}
+          {msgLote && <span role="status" className="w-full text-xs font-medium text-sucesso">{msgLote}</span>}
         </div>
       )}
 

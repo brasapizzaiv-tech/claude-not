@@ -152,7 +152,7 @@ export function CentralImpressao({
                       🖨️ testar
                     </button>
                     <button onClick={() => { setEditId(im.id); setEditNome(im.nome); }} className="text-sm text-orange-600 hover:underline">renomear</button>
-                    <button onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-texto-fraco hover:text-texto-suave">{im.ativo ? "desativar" : "reativar"}</button>
+                    <button disabled={proc} onClick={() => run(() => definirImpressoraAtiva(im.id, !im.ativo))} className="text-sm text-texto-fraco hover:text-texto-suave">{im.ativo ? "desativar" : "reativar"}</button>
                   </div>
                 </div>
                 <WinField im={im} printersPc={printersPc} proc={proc} run={run} />
@@ -191,7 +191,7 @@ export function CentralImpressao({
       </div>
 
       {msg && (
-        <div className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-md rounded-cartao bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white">
+        <div role="status" className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-md rounded-cartao bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white">
           {msg}
         </div>
       )}
@@ -245,7 +245,7 @@ function EtiquetaFormato({ im, proc, run }: {
           ))}
         </label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.qr} disabled={proc} onChange={(e) => salvar({ ...c, qr: e.target.checked })} /> QR code</label>
-        {salvo && <span className="text-xs font-semibold text-emerald-600">✓ salvo</span>}
+        {salvo && <span role="status" className="text-xs font-semibold text-emerald-600">✓ salvo</span>}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-texto-suave">
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={!!c.barraValidade} disabled={proc} onChange={(e) => salvar({ ...c, barraValidade: e.target.checked })} /> VALIDADE em barra preta</label>

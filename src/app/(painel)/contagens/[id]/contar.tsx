@@ -309,7 +309,7 @@ export function ContarClient({
       </div>
 
       {msg && (
-        <div className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
           {msg}
         </div>
       )}
@@ -460,7 +460,7 @@ export function ContarClient({
       </form>
 
       {avisoSusp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div role="status" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
             <h2 className="text-lg font-bold text-texto">
               <Icone nome="alerta" tamanho={14} className="mr-1.5" /> {avisoSusp.nomes.length} {avisoSusp.nomes.length === 1 ? "item" : "itens"} com número maior do que podia ter
@@ -497,7 +497,7 @@ export function ContarClient({
       )}
 
       {aviso && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div role="status" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
             <h2 className="text-lg font-bold text-texto">
               Faltam {aviso.faltam.length} {aviso.faltam.length === 1 ? "item" : "itens"} sem contar

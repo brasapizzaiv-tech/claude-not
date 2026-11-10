@@ -149,7 +149,7 @@ export function FolgaApp({
       </div>
 
       {aviso && (
-        <div className={`mb-3 rounded-lg border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600" : "border-red-500/40 bg-red-500/10 text-red-600"}`}>
+        <div role="status" className={`mb-3 rounded-lg border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600" : "border-red-500/40 bg-red-500/10 text-red-600"}`}>
           {aviso.txt}
         </div>
       )}

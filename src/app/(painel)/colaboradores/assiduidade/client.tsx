@@ -22,7 +22,7 @@ export function LancarTrimestre({ trimestre }: { trimestre: string }) {
       >
         Lançar no acerto da semana
       </BotaoAcao>
-      {msg && <span className="text-sm text-texto-suave">{msg}</span>}
+      {msg && <span role="status" className="text-sm text-texto-suave">{msg}</span>}
     </div>
   );
 }
@@ -44,7 +44,7 @@ export function NovoAtestado({ pessoas, hoje }: { pessoas: { id: string; nome: s
       <label className="flex flex-col text-xs text-texto-fraco">Até<input type="date" name="fim" defaultValue={hoje} className={CAMPO} /></label>
       <label className="flex flex-col text-xs text-texto-fraco">Motivo (opcional)<input name="motivo" maxLength={200} className={`${CAMPO} w-40`} /></label>
       <Enviar className="btn-principal min-h-10">Registrar</Enviar>
-      {erro && <p className="w-full text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="w-full text-sm text-red-600">{erro}</p>}
     </form>
   );
 }

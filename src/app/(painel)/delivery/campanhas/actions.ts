@@ -7,6 +7,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { empresaAtualId } from "@/lib/empresa";
 import { criarModeloWpp, enviarModeloWpp } from "@/lib/whatsapp";
 import { linkCardapio, resolverVariaveis, PUBLICOS, VARIAVEIS, type TipoPublico } from "@/lib/whatsapp-marketing";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 const limpaVars = (v: unknown) => (Array.isArray(v) ? v.map(String).filter((x) => x in VARIAVEIS) : []);
@@ -39,7 +40,7 @@ export async function subirImagemCampanha(formData: FormData) {
   const caminho = `campanhas/${crypto.randomUUID()}.${ext}`;
   const admin = createAdminClient();
   const { error } = await admin.storage.from("cardapio").upload(caminho, Buffer.from(await f.arrayBuffer()), { contentType: f.type, upsert: false });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, url: admin.storage.from("cardapio").getPublicUrl(caminho).data.publicUrl };
 }
 
@@ -79,7 +80,7 @@ export async function criarCampanha(input: CampanhaInput, lancar: boolean) {
     lancada_em: lancar ? new Date().toISOString() : null,
     criado_por: auth.user?.id ?? null,
   }).select("id").single();
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/campanhas");
   return { ok: true as const, id: (data as { id: string }).id };
 }
@@ -130,7 +131,7 @@ export async function salvarGatilho(input: { chave: string; ativo: boolean; mode
     imagem_url: input.imagemUrl || null,
     atualizado_em: new Date().toISOString(),
   }, { onConflict: "empresa_id,chave" });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/gatilhos");
   return { ok: true as const };
 }

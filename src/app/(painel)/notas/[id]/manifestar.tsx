@@ -49,7 +49,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
         {processando ? "Manifestando e baixando..." : "Manifestar e baixar completa"}
       </button>
       {msg && (
-        <p className="mt-3 text-sm text-texto-suave">{msg}</p>
+        <p role="status" className="mt-3 text-sm text-texto-suave">{msg}</p>
       )}
       {diag && (
         <details className="mt-2">

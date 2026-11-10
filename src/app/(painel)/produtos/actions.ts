@@ -5,6 +5,7 @@ import { lerListaTamanhos } from "@/lib/embalagens";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export async function salvarProduto(formData: FormData) {
   await exigirAcesso("/produtos");
@@ -227,7 +228,7 @@ export async function salvarIdealFardo(produtoId: string, campo: "estoque_ideal"
   if (!["estoque_ideal", "fardo"].includes(campo)) return { ok: false as const, mensagem: "Campo inválido." };
   const v = Number.isFinite(valor) ? Math.max(0, valor) : 0;
   const { error } = await supabase.from("produtos").update({ [campo]: v }).eq("id", produtoId);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/produtos");
   return { ok: true as const };
 }
@@ -238,7 +239,7 @@ export async function marcarContagemSimNao(ids: string[], valor: boolean) {
   const supabase = await createClient();
   if (!ids.length) return { ok: true as const, total: 0 };
   const { error } = await supabase.from("produtos").update({ contagem_sim_nao: valor }).in("id", ids);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/produtos");
   return { ok: true as const, total: ids.length };
 }
@@ -250,7 +251,7 @@ export async function mesclarProdutos(de: string, para: string) {
   await exigirAcesso("/produtos");
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("mesclar_produtos", { p_de: de, p_para: para });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   const r = data as { ok: boolean; erro?: string; de?: string; para?: string };
   if (!r?.ok) return { ok: false as const, mensagem: r?.erro ?? "Não consegui mesclar." };
   revalidatePath("/produtos");

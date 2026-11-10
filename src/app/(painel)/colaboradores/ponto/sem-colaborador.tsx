@@ -67,7 +67,7 @@ export function BatidasSemColaborador({ lista, colaboradores }: { lista: CpfSemD
           </li>
         ))}
       </ul>
-      {msg && <p className="mt-2 text-sm text-texto-suave">{msg}</p>}
+      {msg && <p role="status" className="mt-2 text-sm text-texto-suave">{msg}</p>}
     </section>
   );
 }

@@ -80,7 +80,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
           <Icone nome="camera" tamanho={20} titulo="Ler código" />
         </button>
       </div>
-      {erro && <p className="mb-2 px-1 text-sm text-red-400">{erro}</p>}
+      {erro && <p role="alert" className="mb-2 px-1 text-sm text-red-400">{erro}</p>}
       {scan && (
         <Scanner onClose={() => setScan(false)} onLido={onLido} />
       )}

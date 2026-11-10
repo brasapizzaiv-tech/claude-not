@@ -5,6 +5,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { emitirNfce, type FocusAmbiente } from "@/lib/fiscal/focus";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Segredos da configuração: a tela não mostra o valor; campo vazio mantém o atual.
 const SEGREDOS = new Set(["emissor_token", "emissor_token_homologacao", "csc"]);
@@ -172,7 +173,7 @@ export async function salvarPerfilFiscal(fd: FormData) {
   const { error } = id
     ? await supabase.from("perfis_fiscais").update(dados).eq("id", id)
     : await supabase.from("perfis_fiscais").insert(dados);
-  if (error) return { ok: false, mensagem: error.message };
+  if (error) return { ok: false, mensagem: explicarErro(error) };
   revalidatePath("/fiscal/perfis");
   return { ok: true };
 }
@@ -181,7 +182,7 @@ export async function excluirPerfilFiscal(id: string) {
   await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const { error } = await supabase.from("perfis_fiscais").delete().eq("id", id);
-  if (error) return { ok: false, mensagem: error.message };
+  if (error) return { ok: false, mensagem: explicarErro(error) };
   revalidatePath("/fiscal/perfis");
   return { ok: true };
 }
@@ -190,7 +191,7 @@ export async function definirPerfilCategoria(categoriaId: string, perfilId: stri
   await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const { error } = await supabase.from("pdv_categorias").update({ perfil_fiscal_id: perfilId }).eq("id", categoriaId);
-  if (error) return { ok: false, mensagem: error.message };
+  if (error) return { ok: false, mensagem: explicarErro(error) };
   revalidatePath("/fiscal/perfis");
   return { ok: true };
 }
@@ -199,7 +200,7 @@ export async function definirPerfilItem(itemId: string, perfilId: string | null)
   await exigirAcesso("/fiscal");
   const supabase = await createClient();
   const { error } = await supabase.from("pdv_itens").update({ perfil_fiscal_id: perfilId }).eq("id", itemId);
-  if (error) return { ok: false, mensagem: error.message };
+  if (error) return { ok: false, mensagem: explicarErro(error) };
   revalidatePath("/fiscal/perfis");
   return { ok: true };
 }

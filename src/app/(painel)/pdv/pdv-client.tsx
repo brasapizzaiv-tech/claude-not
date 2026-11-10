@@ -281,7 +281,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               </div>
               <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
               <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
-              {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
+              {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
               <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="btn-principal mb-2 w-full text-base"><span className="inline-flex items-center justify-center gap-2"><Icone nome="dinheiro" tamanho={18} /> Cobrar e finalizar</span></button>
               <button onClick={() => finalizar(null)} disabled={proc || cartLista.length === 0} className="btn-secundario w-full text-sm">{proc ? "Enviando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="panela" tamanho={14} /> Só enviar pra cozinha (pago no caixa)</span>}</button>
             </div>
@@ -419,7 +419,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               <div className="mb-3"><PixQr valor={cobrar} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 })} compacto /></div>
             )}
             <div className="flex-1" />
-            {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
+            {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
             {tefDoTipo(tipoForma) && agenteTef ? (
               <CobrarPinpad
                 tipo={tefDoTipo(tipoForma)!}

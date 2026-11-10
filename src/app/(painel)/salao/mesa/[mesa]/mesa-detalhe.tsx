@@ -220,7 +220,7 @@ export function MesaDetalhe({
         </div>
       </div>
 
-      {msg && <p className="mt-2 text-center text-sm text-emerald-700 dark:text-emerald-400">{msg}</p>}
+      {msg && <p role="status" className="mt-2 text-center text-sm text-emerald-700 dark:text-emerald-400">{msg}</p>}
 
       {/* Rodapé */}
       <div className="mt-4 flex items-center justify-between">

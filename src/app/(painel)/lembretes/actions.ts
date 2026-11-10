@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { after } from "next/server";
 import { avisarLembrete } from "@/lib/push-avisos";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -49,11 +50,11 @@ export async function salvarLembrete(fd: FormData) {
   const supabase = await createClient();
   if (id) {
     const { error } = await supabase.from("lembretes").update(row).eq("id", id);
-    if (error) return { ok: false as const, erro: error.message };
+    if (error) return { ok: false as const, erro: explicarErro(error) };
   } else {
     const { data: auth } = await supabase.auth.getUser();
     const { data: novo, error } = await supabase.from("lembretes").insert({ ...row, criado_por: auth.user?.id ?? null }).select("id").single();
-    if (error) return { ok: false as const, erro: error.message };
+    if (error) return { ok: false as const, erro: explicarErro(error) };
     // Celular de quem o lembrete pega (só se vale hoje), depois da resposta.
     const novoId = (novo as { id: string } | null)?.id;
     if (novoId) after(() => avisarLembrete(novoId));

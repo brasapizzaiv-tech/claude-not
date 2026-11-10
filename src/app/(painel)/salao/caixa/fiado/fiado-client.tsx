@@ -68,7 +68,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
         <label className="flex items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={soAbertos} onChange={(e) => setSoAbertos(e.target.checked)} /> só com saldo em aberto
         </label>
-        {msg && <p className="text-sm text-emerald-700 dark:text-emerald-400">{msg}</p>}
+        {msg && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{msg}</p>}
       </div>
       {lista.length === 0 ? (
         <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">Nenhum cliente com fiado.</p>

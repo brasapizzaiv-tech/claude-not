@@ -298,7 +298,7 @@ export default async function CmvPage({
 
       <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
         <Link href={atalhoAnterior} className="rounded-controle border border-borda-forte px-3 py-1.5">← semana anterior</Link>
-        <span className={`rounded-controle px-3 py-1.5 font-semibold text-white ${emAndamento ? "bg-amber-500" : "bg-orange-500"}`}>
+        <span className={`rounded-controle px-3 py-1.5 font-semibold text-marca-sobre-primaria ${emAndamento ? "bg-amber-500" : "bg-orange-500"}`}>
           seg {dataBR(dEI)} → dom {dataBR(dEF)}{emAndamento ? " · em andamento" : " · fechada"}
         </span>
         {atalhoProxima ? (

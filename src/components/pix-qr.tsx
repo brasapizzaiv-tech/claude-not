@@ -150,7 +150,7 @@ export function PixQr({
         >
           {gerando ? "Gerando QR…" : <span className="inline-flex items-center justify-center gap-2"><Icone nome="rapido" tamanho={16} /> Gerar QR Code Pix de {brl(valor)}</span>}
         </button>
-        {erro && <p className="text-xs text-amber-700 dark:text-amber-400">{erro.startsWith("O valor mudou") ? erro : `Não deu pra gerar o QR: ${erro}. Receba o Pix pela chave, como antes.`}</p>}
+        {erro && <p role="alert" className="text-xs text-amber-700 dark:text-amber-400">{erro.startsWith("O valor mudou") ? erro : `Não deu pra gerar o QR: ${erro}. Receba o Pix pela chave, como antes.`}</p>}
       </div>
     );
   }

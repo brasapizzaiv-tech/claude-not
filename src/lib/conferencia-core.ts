@@ -9,6 +9,7 @@
 // mostram. Qualquer diferença conta (regra do Rafael): preço 1 centavo acima
 // do cotado já é divergência.
 import type { createAdminClient } from "@/lib/supabase/admin";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export type Db = ReturnType<typeof createAdminClient>;
 
@@ -163,7 +164,7 @@ export async function ligarNotaAoPedido(db: Db, notaId: string, pedidoId: string
     .from("notas_fiscais")
     .update({ pedido_id: pedidoId, status: pedidoId ? "conciliada" : "importada" })
     .eq("id", notaId);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   if (pedidoId) await db.from("lancamentos").delete().eq("pedido_id", pedidoId).eq("origem", "pedido");
   if (pedidoAntigo && pedidoAntigo !== pedidoId) await recalcularDivergencias(db, pedidoAntigo);
   if (pedidoId) await recalcularDivergencias(db, pedidoId);

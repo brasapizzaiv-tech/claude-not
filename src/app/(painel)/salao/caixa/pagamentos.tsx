@@ -474,7 +474,7 @@ export function PainelPagamentos({
               </li>
             ))}
           </ul>
-          {avisoSemConta && <p className="mt-2 text-sm font-medium text-urgente-texto">{avisoSemConta}</p>}
+          {avisoSemConta && <p role="status" className="mt-2 text-sm font-medium text-urgente-texto">{avisoSemConta}</p>}
         </div>
       )}
 
@@ -766,7 +766,7 @@ export function PainelPagamentos({
             />
           </label>
 
-          {aviso && <p className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
+          {aviso && <p role="status" className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
 
           <div className="mt-3 flex gap-2">
             <button onClick={fechar} disabled={!!tefEtapa} className={`${btn} flex-1 border-borda-forte text-texto-suave disabled:opacity-40`}>

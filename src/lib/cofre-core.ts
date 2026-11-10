@@ -6,6 +6,7 @@ import { buscarTodas } from "@/lib/supabase/todas";
 import { categoriasDeSangria } from "@/lib/sangria-financeiro";
 import { contagemDoCaixa, limpar, negar, valorDe, TIPOS, type DadosCofre, type MovimentoNovo, type Pendente, type Quantidades } from "@/lib/cofre";
 import type { createClient } from "@/lib/supabase/server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export type Db = Awaited<ReturnType<typeof createClient>>;
 export type Ctx = { db: Db; empresaId: string; quem: string | null };
@@ -136,7 +137,7 @@ export async function pagarConta(ctx: Ctx, d: { quantidades: Quantidades; descri
     if (conta.pago) return { ok: false as const, mensagem: "Essa conta já está paga." };
     if (Math.abs(Number(conta.valor) - valor) > 0.009) return { ok: false as const, mensagem: `A conta é de R$ ${Number(conta.valor).toFixed(2).replace(".", ",")} e saíram R$ ${valor.toFixed(2).replace(".", ",")} do cofre. Confira as notas.` };
     const { error } = await db.from("lancamentos").update({ pago: true, pago_em: dia, forma_pagamento: "Dinheiro" }).eq("id", conta.id).eq("empresa_id", empresaId).eq("pago", false);
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
     lancamentoId = conta.id;
   } else {
     if (!d.categoriaId) return { ok: false as const, mensagem: "Escolha a categoria (pra entrar certo no financeiro)." };
@@ -146,14 +147,14 @@ export async function pagarConta(ctx: Ctx, d: { quantidades: Quantidades; descri
       descricao: `Pago pelo cofre: ${descricao}`.slice(0, 200), categoria_id: d.categoriaId,
       valor, forma_pagamento: "Dinheiro", origem: "cofre",
     }).select("id").single();
-    if (error || !l) return { ok: false as const, mensagem: error?.message ?? "Não consegui criar a conta." };
+    if (error || !l) return { ok: false as const, mensagem: explicarErro(error, "Não consegui criar a conta.") };
     lancamentoId = l.id as string;
   }
   const { error } = await db.from("cofre_movimentos").insert({
     empresa_id: empresaId,
     tipo: "pagamento", quantidades: q, valor: -valor, descricao, lancamento_id: lancamentoId, criado_por_nome: quem,
   });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 
@@ -176,7 +177,7 @@ export async function sairDoCofre(
     tipo: "pagamento", quantidades: q, valor: valorDe(q), descricao: d.descricao.trim().slice(0, 200) || null,
     lancamento_id: d.lancamentoId ?? null, adiantamento_id: d.adiantamentoId ?? null, criado_por_nome: quem,
   });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 
@@ -219,7 +220,7 @@ export async function conferirCofre(ctx: Ctx, d: { contado: Quantidades; motivo?
       descricao: primeira ? "Saldo inicial do cofre" : (d.motivo ?? "").trim().slice(0, 200) || "Conferência sem diferença",
       criado_por_nome: quem,
     });
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
   }
   if (primeira) await db.from("cofre_config").upsert({ empresa_id: empresaId, inicio_em: new Date().toISOString() });
   return { ok: true as const, diferenca: valorDe(dif) };
@@ -232,7 +233,7 @@ export async function salvarFaixas({ db, empresaId }: Ctx, faixas: { centavos: n
     .map((f) => ({ empresa_id: empresaId, centavos: f.centavos, minimo: Math.max(0, Math.trunc(f.minimo || 0)), maximo: Math.max(0, Math.trunc(f.maximo || 0)) }));
   if (linhas.some((l) => l.maximo > 0 && l.minimo > l.maximo)) return { ok: false as const, mensagem: "O mínimo não pode ser maior que o máximo." };
   const { error } = await db.from("cofre_denominacoes").upsert(linhas, { onConflict: "empresa_id,centavos" });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 
@@ -241,7 +242,7 @@ export async function marcarEncomenda({ db, empresaId, quem }: Ctx, d: { quantid
   const q = limpar(Object.fromEntries(Object.entries(d.quantidades).map(([k, v]) => [k, Math.abs(Number(v))])));
   if (Object.keys(q).length === 0) return { ok: false as const, mensagem: "Nada pra encomendar." };
   const { error } = await db.from("cofre_pedidos").insert({ empresa_id: empresaId, quantidades: q, valor: valorDe(q), obs: (d.obs ?? "").trim().slice(0, 200) || null, criado_por_nome: quem });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 

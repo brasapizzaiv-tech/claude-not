@@ -172,7 +172,7 @@ export function CardapioApp({
         <button type="button" onClick={() => setAba("marmitas")} className={abaCls("marmitas")}>Marmitas</button>
       </div>
 
-      {msg && <p className="mt-3 rounded-cartao bg-superficie-suave px-3 py-2 text-base text-texto-suave">{msg}</p>}
+      {msg && <p role="status" className="mt-3 rounded-cartao bg-superficie-suave px-3 py-2 text-base text-texto-suave">{msg}</p>}
 
       {/* ---- BUFFET */}
       {aba === "buffet" && (

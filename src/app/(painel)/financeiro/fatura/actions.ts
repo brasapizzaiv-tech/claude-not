@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { lerFaturaTexto, chaveEstabelecimento, type CompraFatura } from "@/lib/fatura";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export type CompraRevisada = CompraFatura & {
   uid: string;
@@ -123,7 +124,7 @@ export async function lancarFatura(input: {
       })),
     )
     .select("id, valor");
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
 
   const criadas = (criados as { id: string; valor: number }[]) ?? [];
   // A fatura no extrato aponta pro maior lançamento; o grupo sai das sugestões.

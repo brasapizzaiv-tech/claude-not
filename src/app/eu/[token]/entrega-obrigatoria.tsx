@@ -127,7 +127,7 @@ export function EntregaObrigatoria({
           </div>
         )}
 
-        {erro && <p className="mt-3 rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{erro}</p>}
+        {erro && <p role="alert" className="mt-3 rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{erro}</p>}
       </div>
     </div>
   );

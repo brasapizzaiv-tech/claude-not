@@ -193,7 +193,7 @@ export function ParcelasEditor({
               {proc ? "Salvando..." : "Salvar parcelamento"}
             </button>
           </div>
-          {msg && <p className="mt-2 text-xs text-texto-suave">{msg}</p>}
+          {msg && <p role="status" className="mt-2 text-xs text-texto-suave">{msg}</p>}
         </div>
       )}
     </div>

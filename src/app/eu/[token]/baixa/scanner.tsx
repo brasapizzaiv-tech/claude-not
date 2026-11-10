@@ -283,7 +283,7 @@ export function BaixaScanner({ token }: { token: string }) {
       </div>
 
       {feito && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div role="status" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="rounded-cartao bg-zinc-800 px-8 py-6 text-center">
             <div className="mb-2 flex justify-center"><Icone nome="certo" tamanho={42} className="text-emerald-500" /></div>
             <p className="font-semibold">{feito}</p>

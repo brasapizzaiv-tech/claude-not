@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
 import { hojeSP } from "@/lib/assiduidade-server";
 import { ASSINATURA_DESDE, cicloDoDia, fechamentosDoCiclo, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -40,7 +41,7 @@ export async function responderPonto(token: string, de: string, resposta: "assin
     ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || null,
     aparelho: (h.get("user-agent") ?? "").slice(0, 300) || null,
   });
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath(`/eu/${token}/ponto`);
   revalidatePath(`/eu/${token}`);
   revalidatePath("/colaboradores/ponto");

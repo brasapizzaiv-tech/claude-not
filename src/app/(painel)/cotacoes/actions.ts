@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
 import { prazoPadraoDesde } from "@/lib/cotacao-prazo";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export async function criarCotacao(formData: FormData) {
   await exigirAcesso("/cotacoes");
@@ -557,7 +558,7 @@ export async function definirPrazoCotacao(id: string, ate: string | null) {
   const { data: c } = await supabase.from("cotacoes").select("status").eq("id", id).maybeSingle();
   if (!c) return { ok: false as const, mensagem: "Cotação não encontrada." };
   const { error } = await supabase.from("cotacoes").update({ respostas_ate: quando ? quando.toISOString() : null }).eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   if (c.status === "fechada") {
     const fd = new FormData();
     fd.set("id", id);

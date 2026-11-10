@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { empresaAtualId } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Garante que quem está chamando é o dono. Lança erro caso contrário.
 async function garantirDono() {
@@ -48,7 +49,7 @@ export async function criarUsuario(dados: {
   });
 
   if (error || !novo?.user) {
-    return { ok: false, erro: error?.message ?? "Falha ao criar usuário." };
+    return { ok: false, erro: explicarErro(error, "Falha ao criar usuário.") };
   }
 
   // A trigger já criou o profile; ajusta papel + permissões.
@@ -89,7 +90,7 @@ export async function trocarSenha(id: string, senha: string) {
     password: senha,
   });
   revalidatePath("/usuarios");
-  return { ok: !error, erro: error?.message };
+  return { ok: !error, erro: (error ? explicarErro(error) : undefined) };
 }
 
 export async function excluirUsuario(id: string) {
@@ -100,5 +101,5 @@ export async function excluirUsuario(id: string) {
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.deleteUser(id);
   revalidatePath("/usuarios");
-  return { ok: !error, erro: error?.message };
+  return { ok: !error, erro: (error ? explicarErro(error) : undefined) };
 }

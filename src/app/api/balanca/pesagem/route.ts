@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaDoAgente } from "@/lib/impressao-agente";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export const runtime = "nodejs";
 
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
     })
     .select("id, numero")
     .single();
-  if (error || !com) return Response.json({ ok: false, erro: error?.message ?? "falha ao criar" }, { status: 500 });
+  if (error || !com) return Response.json({ ok: false, erro: explicarErro(error, "falha ao criar") }, { status: 500 });
 
   return Response.json({
     ok: true,

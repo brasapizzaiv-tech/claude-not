@@ -143,7 +143,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
         ) : (
           <button
             onClick={conectar}
-            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-orange-600"
+            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-semibold text-marca-sobre-primaria hover:bg-orange-600"
           >
             Conectar balança
           </button>
@@ -151,7 +151,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       </div>
 
       {erro && (
-        <p className="rounded-controle bg-red-50 p-2 text-xs text-red-600 dark:bg-red-950/30">{erro}</p>
+        <p role="alert" className="rounded-controle bg-red-50 p-2 text-xs text-red-600 dark:bg-red-950/30">{erro}</p>
       )}
 
       {/* Peso lido */}

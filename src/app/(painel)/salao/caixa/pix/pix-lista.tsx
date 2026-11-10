@@ -66,7 +66,7 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
 
   return (
     <div className="space-y-2">
-      {msg && <p className="rounded-controle bg-superficie-suave px-3 py-2 text-sm">{msg}</p>}
+      {msg && <p role="status" className="rounded-controle bg-superficie-suave px-3 py-2 text-sm">{msg}</p>}
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[720px] text-sm">
           <thead className="rotulo text-left">

@@ -121,7 +121,7 @@ export function FaturaClient({
               name="arquivo"
               accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain"
               required
-              className="text-sm text-texto-suave file:mr-3 file:rounded-controle file:border-0 file:bg-orange-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-orange-600"
+              className="text-sm text-texto-suave file:mr-3 file:rounded-controle file:border-0 file:bg-orange-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-marca-sobre-primaria hover:file:bg-orange-600"
             />
             <Enviar
               disabled={proc}
@@ -137,12 +137,12 @@ export function FaturaClient({
       )}
 
       {erro && (
-        <p className="rounded-cartao border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+        <p role="alert" className="rounded-cartao border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
           {erro}
         </p>
       )}
       {feito && (
-        <p className="rounded-cartao border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+        <p role="status" className="rounded-cartao border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
           {feito}
         </p>
       )}

@@ -146,7 +146,7 @@ export function NovaCampanha({ modelos, cupons, limiteDia, precoMarketing, preco
         {contagem != null && preco != null && msg.modelo && (
           <p className="mt-3 text-sm text-texto-suave">Custo estimado na Meta: <b>{brl(contagem * preco)}</b> ({contagem} × {brl(preco)}).</p>
         )}
-        {erro && <p className="mt-3 text-sm text-red-600">{erro}</p>}
+        {erro && <p role="alert" className="mt-3 text-sm text-red-600">{erro}</p>}
         <div className="mt-4 flex flex-wrap justify-between gap-2">
           <button type="button" onClick={() => setPasso(4)} className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm">← Voltar</button>
           <div className="flex gap-2">

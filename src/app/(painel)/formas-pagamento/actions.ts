@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { TIPOS_FORMA, type TipoFormaCadastro } from "@/lib/formas-pagamento";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Só o dono mexe aqui: a forma muda o caixa, o PDV, o delivery e o app.
 async function exigirDono() {
@@ -74,7 +75,7 @@ export async function alternarForma(
   try {
     const supabase = await exigirDono();
     const { error } = await supabase.from("formas_pagamento").update({ [campo]: valor }).eq("id", id);
-    if (error) return { ok: false, erro: error.message };
+    if (error) return { ok: false, erro: explicarErro(error) };
     avisarTelas();
     return { ok: true };
   } catch (e) {
@@ -96,7 +97,7 @@ export async function moverForma(id: string, direcao: -1 | 1): Promise<{ ok: boo
     [nova[i].ordem, nova[j].ordem] = [nova[j].ordem, nova[i].ordem];
     for (const f of nova) {
       const { error } = await supabase.from("formas_pagamento").update({ ordem: f.ordem }).eq("id", f.id);
-      if (error) return { ok: false, erro: error.message };
+      if (error) return { ok: false, erro: explicarErro(error) };
     }
     avisarTelas();
     return { ok: true };
@@ -110,7 +111,7 @@ export async function excluirForma(id: string): Promise<{ ok: boolean; erro?: st
   try {
     const supabase = await exigirDono();
     const { error } = await supabase.from("formas_pagamento").delete().eq("id", id);
-    if (error) return { ok: false, erro: error.message };
+    if (error) return { ok: false, erro: explicarErro(error) };
     avisarTelas();
     return { ok: true };
   } catch (e) {

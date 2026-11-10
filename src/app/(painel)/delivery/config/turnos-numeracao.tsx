@@ -70,7 +70,7 @@ export function TurnosNumeracao({ inicial, agora }: { inicial: TurnoLinha[]; ago
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <BotaoAcao aoClicar={salvar} disabled={!mudou || sobrepoe} className="btn-principal text-sm">Salvar turnos</BotaoAcao>
-        {msg && <span className="text-sm text-texto-suave">{msg}</span>}
+        {msg && <span role="status" className="text-sm text-texto-suave">{msg}</span>}
       </div>
       <p className="mt-2 text-xs text-texto-fraco">Mudar os horários vale pros pedidos novos. Pedido que já entrou fica com o número que recebeu.</p>
     </section>

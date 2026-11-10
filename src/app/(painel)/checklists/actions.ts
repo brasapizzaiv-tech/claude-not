@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import * as core from "@/lib/checklists-core";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 async function sessao() {
   await exigirAcesso("/checklists");
@@ -33,12 +34,12 @@ export async function salvarSetor(input: { id?: string; nome: string; cor: strin
   if (nome.length < 2) return { ok: false as const, mensagem: "Escreva o nome do setor." };
   if (input.id) {
     const { error } = await db.from("checklist_setores").update({ nome, cor: input.cor }).eq("id", input.id);
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
   } else {
     const { data: ultimos } = await db.from("checklist_setores").select("ordem").order("ordem", { ascending: false }).limit(1);
     const ordem = Number((ultimos as { ordem: number }[])?.[0]?.ordem ?? 0) + 1;
     const { error } = await db.from("checklist_setores").insert({ nome, cor: input.cor, ordem });
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
   }
   atualizar();
   return { ok: true as const };
@@ -80,12 +81,12 @@ export async function salvarModelo(input: {
   };
   if (input.id) {
     const { error } = await db.from("checklist_modelos").update(linha).eq("id", input.id);
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
     atualizar();
     return { ok: true as const, id: input.id };
   }
   const { data, error } = await db.from("checklist_modelos").insert(linha).select("id").single();
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   atualizar();
   return { ok: true as const, id: (data as { id: string }).id };
 }
@@ -127,14 +128,14 @@ export async function salvarItemModelo(input: {
   };
   if (input.id) {
     const { error } = await db.from("checklist_modelo_itens").update(linha).eq("id", input.id);
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
   } else {
     const { data: ult } = await db
       .from("checklist_modelo_itens").select("ordem")
       .eq("modelo_id", input.modelo_id).order("ordem", { ascending: false }).limit(1);
     const ordem = Number((ult as { ordem: number }[])?.[0]?.ordem ?? 0) + 1;
     const { error } = await db.from("checklist_modelo_itens").insert({ ...linha, modelo_id: input.modelo_id, ordem });
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
   }
   atualizar();
   return { ok: true as const };

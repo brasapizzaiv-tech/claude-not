@@ -16,6 +16,7 @@ import {
   agruparItens, conferirNota, montarNfceAvulsa, montarNfe, totalLinhas,
   type DestNota, type LinhaNota, type ModeloNota, type PadroesFiscais, type PerfilNota,
 } from "@/lib/fiscal/avulsa";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const ACESSO = ["/salao", "/financeiro"];
 type Db = Awaited<ReturnType<typeof createClient>>;
@@ -65,10 +66,10 @@ export async function salvarClienteNota(d: DestNota) {
   }
   if (id) {
     const { error } = await db.from("clientes").update(linha).eq("id", id);
-    if (error) return { ok: false as const, mensagem: error.message };
+    if (error) return { ok: false as const, mensagem: explicarErro(error) };
   } else {
     const { data, error } = await db.from("clientes").insert(linha).select("id").single();
-    if (error || !data) return { ok: false as const, mensagem: error?.message ?? "Não salvou o cliente." };
+    if (error || !data) return { ok: false as const, mensagem: explicarErro(error, "Não salvou o cliente.") };
     id = data.id as string;
   }
   return { ok: true as const, id };

@@ -26,7 +26,7 @@ export function GerarAgora() {
       </BotaoAcao>
       {r && (
         <div className="text-sm">
-          {r.mensagem && <p className="text-texto-suave">{r.mensagem}</p>}
+          {r.mensagem && <p role="status" className="text-texto-suave">{r.mensagem}</p>}
           <ul className="mt-1 space-y-0.5">
             {r.filiais.map((f) => (
               <li key={f.filial} className={f.acao === "erro" || f.acao === "sem_cliente" || f.acao === "travado" ? "text-amber-700 dark:text-amber-400" : "text-texto"}>

@@ -193,7 +193,7 @@ export function ConferirClient({
       </div>
 
       {msg && (
-        <div className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
           {msg}
         </div>
       )}

@@ -72,7 +72,7 @@ export function UploadOfx() {
           }}
         />
       </label>
-      {msg && <p className="w-full text-xs text-texto-suave">{msg}</p>}
+      {msg && <p role="status" className="w-full text-xs text-texto-suave">{msg}</p>}
     </div>
   );
 }

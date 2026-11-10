@@ -88,7 +88,7 @@ export function NovoModelo() {
       <button type="button" disabled={enviando || !nomeLimpo || !corpo.trim()} onClick={criar} className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo disabled:opacity-40">
         {enviando ? "Enviando pra Meta..." : "Enviar pra aprovação"}
       </button>
-      {aviso && <p className={aviso.ok ? "text-emerald-600" : "text-red-600"}>{aviso.texto}</p>}
+      {aviso && <p role="status" className={aviso.ok ? "text-emerald-600" : "text-red-600"}>{aviso.texto}</p>}
     </div>
   );
 }

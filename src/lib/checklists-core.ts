@@ -3,6 +3,7 @@
 // da cozinha (apontamentos). Quem chama passa o cliente de banco e quem age.
 // Sem "use server": é biblioteca.
 import type { createAdminClient } from "@/lib/supabase/admin";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export type Db = ReturnType<typeof createAdminClient>;
 export type Ator = { nome: string; colabId?: string | null };
@@ -215,7 +216,7 @@ export async function salvarResposta(
   if (dados.texto !== undefined) linha.texto = dados.texto;
   if (dados.foto_url !== undefined) linha.foto_url = dados.foto_url;
   const { error } = await db.from("checklist_respostas").upsert(linha, { onConflict: "execucao_id,item_id" });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 
@@ -268,7 +269,7 @@ export async function criarApontamento(
     })
     .select("id")
     .single();
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, id: (data as { id: string }).id };
 }
 
@@ -279,13 +280,13 @@ export async function publicarApontamentos(db: Db, ids: string[], ate: string | 
     .from("checklist_apontamentos")
     .update({ na_tv: true, ate, publicado_em: new Date().toISOString(), publicado_por: ator.nome })
     .in("id", ids);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, n: ids.length };
 }
 
 export async function tirarDaTv(db: Db, id: string) {
   const { error } = await db.from("checklist_apontamentos").update({ na_tv: false }).eq("id", id);
-  return error ? { ok: false as const, mensagem: error.message } : { ok: true as const };
+  return error ? { ok: false as const, mensagem: explicarErro(error) } : { ok: true as const };
 }
 
 export async function resolverApontamento(db: Db, id: string, ator: Ator, desfazer = false) {
@@ -295,12 +296,12 @@ export async function resolverApontamento(db: Db, id: string, ator: Ator, desfaz
       ? { resolvido_em: null, resolvido_por: null }
       : { resolvido_em: new Date().toISOString(), resolvido_por: ator.nome, na_tv: false })
     .eq("id", id);
-  return error ? { ok: false as const, mensagem: error.message } : { ok: true as const };
+  return error ? { ok: false as const, mensagem: explicarErro(error) } : { ok: true as const };
 }
 
 export async function excluirApontamento(db: Db, id: string) {
   const { error } = await db.from("checklist_apontamentos").delete().eq("id", id);
-  return error ? { ok: false as const, mensagem: error.message } : { ok: true as const };
+  return error ? { ok: false as const, mensagem: explicarErro(error) } : { ok: true as const };
 }
 
 // O que está valendo na TV agora: publicado, não resolvido e dentro do prazo.

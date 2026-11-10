@@ -222,7 +222,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
                 {salvando ? "Salvando..." : "Salvar"}
               </Enviar>
             </div>
-            {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
+            {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
           </form>
         </div>
       )}

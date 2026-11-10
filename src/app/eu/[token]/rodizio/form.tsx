@@ -167,7 +167,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       >
         {proc ? "Enviando…" : "Enviar para a cozinha"}
       </button>
-      {msg && <p className={`text-center text-sm ${msg.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{msg}</p>}
+      {msg && <p role="status" className={`text-center text-sm ${msg.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{msg}</p>}
 
       {/* pedidos abertos da mesa */}
       {mesaOk && (

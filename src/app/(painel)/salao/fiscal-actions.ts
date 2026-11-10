@@ -13,6 +13,7 @@ import { pagamentosDaNota, type PagamentoVenda } from "@/lib/fiscal/pagamentos-n
 import { desfazerLancamentosNota } from "./notas-fiscais/avulsa/actions";
 import { atualizarPelaFocus, type LinhaNota } from "@/lib/fiscal/conferir-notas";
 import { linhasDaNota, unidadeDaLinha, type ItemCoberto } from "@/lib/fiscal/recebimento-nota";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
 const FORMA_FOCUS: Record<string, string> = {
@@ -488,7 +489,7 @@ async function imprimirNfceCore(supabase: ClienteSupabase, nfceId: string) {
   const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
   if (ids.length === 0) return { ok: false as const, mensagem: "Nenhuma impressora marcada pra NFC-e na Central de Impressões." };
   const { error } = await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "nfce", ref_id: nfceId, impressora_id })));
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, total: ids.length };
 }
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 export type RecadoTvLinha = { id: string; texto: string; ativo: boolean; ordem: number; ate: string | null; criado_em: string };
 
@@ -22,7 +23,7 @@ export async function salvarRecadoTv(input: { id?: string; texto: string; ate: s
   const { error } = input.id
     ? await supabase.from("tv_recados").update({ texto, ate }).eq("id", input.id)
     : await supabase.from("tv_recados").insert({ texto, ate, ativo: true });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/cozinha/recados");
   return { ok: true as const };
 }
@@ -31,7 +32,7 @@ export async function alternarRecadoTv(id: string, ativo: boolean) {
   await exigirAcesso("/cozinha");
   const supabase = await createClient();
   const { error } = await supabase.from("tv_recados").update({ ativo }).eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/cozinha/recados");
   return { ok: true as const };
 }
@@ -40,7 +41,7 @@ export async function excluirRecadoTv(id: string) {
   await exigirAcesso("/cozinha");
   const supabase = await createClient();
   const { error } = await supabase.from("tv_recados").delete().eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/cozinha/recados");
   return { ok: true as const };
 }

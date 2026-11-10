@@ -79,7 +79,7 @@ export function GestaoFolgas({
       </div>
 
       {aviso && (
-        <div className={`mb-3 rounded-controle border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300" : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-300"}`}>
+        <div role="status" className={`mb-3 rounded-controle border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300" : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-300"}`}>
           {aviso.txt}
         </div>
       )}
@@ -248,7 +248,7 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                       <span className="text-texto-fraco"> · pedida em {fmtData(p.criado_em.slice(0, 10))}</span>
                     )}
                   </span>
-                  <button onClick={() => run(() => reabrirPedido(p.id))} className="shrink-0 text-xs text-blue-500 underline">reabrir</button>
+                  <button disabled={proc} onClick={() => run(() => reabrirPedido(p.id))} className="shrink-0 text-xs text-blue-500 underline">reabrir</button>
                 </li>
               );
             })}
@@ -488,7 +488,7 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
             })}
           </div>
           {ajustes[sel] && (
-            <button onClick={() => run(() => limparAjuste(sel))} className="mt-2 text-xs text-blue-500 underline">voltar ao limite padrão do dia da semana</button>
+            <button disabled={proc} onClick={() => run(() => limparAjuste(sel))} className="mt-2 text-xs text-blue-500 underline">voltar ao limite padrão do dia da semana</button>
           )}
 
           {doDia.length > 0 && (
@@ -500,7 +500,7 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
                   if (!f) return null;
                   const g = (p.grupo_alvo as GrupoKey) || f.grupo;
                   return (
-                    <button
+                    <button disabled={proc}
                       key={p.id}
                       onClick={async () => { if (await confirmar(`Excluir a folga de ${f.nome} em ${fmtData(p.data)}?`)) run(() => excluirPedido(p.id)); }}
                       className="rounded px-2 py-0.5 text-xs"

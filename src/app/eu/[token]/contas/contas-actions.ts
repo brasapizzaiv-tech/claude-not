@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Colaborador com a função "contas" E com o PIN batendo (dado financeiro exige o PIN).
 export async function colabContas(token: string) {
@@ -34,6 +35,6 @@ export async function pagarContasColab(token: string, ids: string[], dataPago: s
     .in("id", lista)
     .eq("pago", false)
     .select("id");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, quantidade: upd?.length ?? 0 };
 }

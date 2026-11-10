@@ -6,6 +6,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { segundaDe } from "@/lib/equipe";
 import { mesesDoTrimestre, periodoMes } from "@/lib/assiduidade-core";
 import { apurarAssiduidade, hojeSP, lerConfig } from "@/lib/assiduidade-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -49,7 +50,7 @@ export async function salvarAtestado(fd: FormData) {
   if (!colaborador || !DATA.test(inicio) || !DATA.test(fim) || fim < inicio) return { ok: false as const, erro: "Escolha a pessoa e as datas do atestado." };
   const supabase = await createClient();
   const { error } = await supabase.from("atestados").insert({ colaborador_id: colaborador, inicio, fim, motivo: String(fd.get("motivo") ?? "").trim().slice(0, 200) || null });
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   revalidatePath("/colaboradores/assiduidade");
   return { ok: true as const };
 }

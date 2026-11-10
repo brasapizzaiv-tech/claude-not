@@ -95,7 +95,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
         >
           {proc ? "Enviando…" : "Enviar pedido"}
         </button>
-        {msg && <p className={`mt-2 text-center text-sm ${msg.endsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{msg}</p>}
+        {msg && <p role="status" className={`mt-2 text-center text-sm ${msg.endsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{msg}</p>}
       </div>
 
       {pendentes.length > 0 && (

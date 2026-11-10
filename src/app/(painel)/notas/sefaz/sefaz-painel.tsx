@@ -248,7 +248,7 @@ export function SefazPainel({
           >
             {salvando ? "Salvando..." : "Salvar configuração"}
           </button>
-          {msg && <span className="text-sm text-green-600">{msg}</span>}
+          {msg && <span role="status" className="text-sm text-green-600">{msg}</span>}
         </div>
       </div>
 
@@ -320,7 +320,7 @@ export function SefazPainel({
           </p>
         )}
         {resultado && (
-          <p className="mt-3 text-sm text-texto-suave">
+          <p role="status" className="mt-3 text-sm text-texto-suave">
             {resultado}
           </p>
         )}

@@ -429,12 +429,12 @@ export function PreencherClient({
 
       <div className="mx-auto max-w-xl px-4">
         {msg && (
-          <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+          <div role="status" className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
             {msg}
           </div>
         )}
         {erroEnvio && (
-          <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+          <div role="alert" className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
             <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {erroEnvio}
           </div>
         )}
@@ -545,7 +545,7 @@ export function PreencherClient({
                             className={`rounded-xl border bg-white p-3 dark:bg-zinc-900 ${feito ? "border-emerald-300 dark:border-emerald-800" : "border-zinc-200 dark:border-zinc-800"}`}
                           >
                             <div className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">
-                              {feito && <span className="mr-1 text-emerald-600">✓</span>}
+                              {feito && <span role="status" className="mr-1 text-emerald-600">✓</span>}
                               {p.nome}
                               <span className="ml-1 text-xs font-normal text-zinc-400">
                                 ({p.unidade})
@@ -593,7 +593,7 @@ export function PreencherClient({
                         <div key={p.id} className={`rounded-xl border bg-white p-3 dark:bg-zinc-900 ${feito ? "border-emerald-300 dark:border-emerald-800" : "border-orange-200 dark:border-orange-900"}`}>
                           <div className="mb-2 flex items-start justify-between gap-2">
                             <div className="font-medium text-zinc-900 dark:text-zinc-100">
-                              {feito && <span className="mr-1 text-emerald-600">✓</span>}
+                              {feito && <span role="status" className="mr-1 text-emerald-600">✓</span>}
                               {p.nome}
                               <span className="ml-1 text-xs font-normal text-zinc-400">({p.unidade})</span>
                             </div>

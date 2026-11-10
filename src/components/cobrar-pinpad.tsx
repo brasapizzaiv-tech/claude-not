@@ -180,7 +180,7 @@ export function CobrarPinpad({
           </p>
         </>
       )}
-      {aviso && <p className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
+      {aviso && <p role="status" className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
     </div>
   );
 }

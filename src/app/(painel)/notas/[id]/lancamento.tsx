@@ -395,7 +395,7 @@ export function LancamentoNota({
               Salvar valor do boleto
             </button>
             {boleto && (
-              <button
+              <button disabled={proc}
                 type="button"
                 onClick={() => {
                   setBoleto("");
@@ -423,7 +423,7 @@ export function LancamentoNota({
             )}
           </p>
           {msgBoleto && (
-            <p className="mt-1 text-mini text-texto-suave">{msgBoleto}</p>
+            <p role="status" className="mt-1 text-mini text-texto-suave">{msgBoleto}</p>
           )}
         </div>
       )}

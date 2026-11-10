@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import type { AreaEntrega, PromoTele } from "@/lib/delivery-areas";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const num = (v: unknown) => { const n = Number(String(v ?? "").replace(",", ".")); return Number.isFinite(n) ? n : 0; };
 
@@ -24,7 +25,7 @@ export async function salvarArea(input: { id?: string | null; nome: string; cor:
   const { data, error } = input.id
     ? await supabase.from("delivery_areas").update(row).eq("id", input.id).select("id").single()
     : await supabase.from("delivery_areas").insert(row).select("id").single();
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/areas");
   return { ok: true as const, id: (data as { id: string }).id };
 }
@@ -33,7 +34,7 @@ export async function alternarArea(id: string, ativo: boolean) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
   const { error } = await supabase.from("delivery_areas").update({ ativo }).eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/areas");
   return { ok: true as const };
 }
@@ -42,7 +43,7 @@ export async function excluirArea(id: string) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
   const { error } = await supabase.from("delivery_areas").delete().eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/areas");
   return { ok: true as const };
 }
@@ -68,7 +69,7 @@ export async function salvarPromoTele(input: {
   const { error } = input.id
     ? await supabase.from("delivery_promocoes_tele").update(row).eq("id", input.id)
     : await supabase.from("delivery_promocoes_tele").insert(row);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/areas");
   return { ok: true as const };
 }
@@ -77,7 +78,7 @@ export async function alternarPromoTele(id: string, ativo: boolean) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
   const { error } = await supabase.from("delivery_promocoes_tele").update({ ativo }).eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/areas");
   return { ok: true as const };
 }
@@ -86,7 +87,7 @@ export async function excluirPromoTele(id: string) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
   const { error } = await supabase.from("delivery_promocoes_tele").delete().eq("id", id);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/delivery/areas");
   return { ok: true as const };
 }

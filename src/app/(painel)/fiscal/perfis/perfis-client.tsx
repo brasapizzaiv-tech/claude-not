@@ -62,7 +62,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
 
   return (
     <div className="space-y-8">
-      {msg && <p className="rounded-controle bg-superficie-suave px-3 py-2 text-sm">{msg}</p>}
+      {msg && <p role="status" className="rounded-controle bg-superficie-suave px-3 py-2 text-sm">{msg}</p>}
 
       {/* 1. Perfis */}
       <section>
@@ -101,7 +101,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
                   <td className="px-3 py-2 text-xs">{p.homologado ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">✓ contador</span> : <span className="text-amber-600">pendente</span>}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button onClick={() => setEditando({ id: p.id, nome: p.nome, ncm: p.ncm ?? "", cest: p.cest ?? "", cfop: p.cfop, csosn: p.csosn, origem: p.origem, unidade: p.unidade, pis_cst: p.pis_cst, cofins_cst: p.cofins_cst, homologado: p.homologado, obs: p.obs ?? "", is_cst: p.is_cst, is_classificacao: p.is_classificacao, is_aliquota: p.is_aliquota, ibs_cbs_cst: p.ibs_cbs_cst, ibs_cbs_classificacao: p.ibs_cbs_classificacao, ibs_uf_aliquota: p.ibs_uf_aliquota, ibs_mun_aliquota: p.ibs_mun_aliquota, cbs_aliquota: p.cbs_aliquota })} className="mr-3 text-orange-600 hover:underline">Editar</button>
-                    <button
+                    <button disabled={pend}
                       onClick={async () => { if (await confirmar(`Excluir o perfil "${p.nome}"? Categorias e itens que usam ele voltam pro padrão.`)) run(() => excluirPerfilFiscal(p.id)); }}
                       className="text-texto-fraco hover:text-red-600"
                     >

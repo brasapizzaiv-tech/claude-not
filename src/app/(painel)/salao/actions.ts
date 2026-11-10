@@ -22,6 +22,7 @@ import { aplicarJuntar, buffetJuntado, lerParaJuntar, podeSomar, type ModoJuntar
 import { contagemValida, valorDe, type Quantidades } from "@/lib/cofre";
 import { repartirDesconto } from "@/lib/fiscal/desconto-nota";
 import type { ItemCoberto } from "@/lib/fiscal/recebimento-nota";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -1850,7 +1851,7 @@ export async function registrarPixTeste(r: {
     })
     .select("id")
     .single();
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
 
   const id = (data as { id: string }).id;
   if (r.viaCliente.length > 0) await reimprimirTef(id);
@@ -1930,7 +1931,7 @@ export async function registrarTefAvulso(
     id_agente: t.idAgente,
     criado_por: userData.user?.id ?? null,
   });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/salao/caixa/tef");
   return { ok: true as const };
 }
@@ -2043,7 +2044,7 @@ export async function resolverTefSemConta(id: string) {
     .update({ mensagem: `Resolvido à mão em ${quando} — ${(data as { mensagem: string | null }).mensagem ?? ""}`.slice(0, 500), atualizado_em: new Date().toISOString() })
     .eq("id", id)
     .is("mov_id", null);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/salao/caixa/tef");
   return { ok: true as const };
 }
@@ -2056,7 +2057,7 @@ export async function reimprimirTef(transacaoId: string) {
   const ids = ((imps as { id: string }[]) ?? []).map((i) => i.id);
   if (ids.length === 0) return { ok: false as const, mensagem: "Nenhuma impressora marcada pra NFC-e na Central de Impressões." };
   const { error } = await supabase.from("impressao_fila").insert(ids.map((impressora_id) => ({ tipo: "tef", ref_id: transacaoId, impressora_id })));
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const };
 }
 
@@ -2081,7 +2082,7 @@ export async function receberFiado(clienteId: string, valor: number, forma: stri
     caixa_id: caixaId,
     criado_por: userData.user?.id ?? null,
   });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   await supabase.from("pdv_caixa_mov").insert({
     caixa_id: caixaId,
     tipo: "venda",
@@ -2118,7 +2119,7 @@ export async function baixarFiadoSemCaixa(clienteId: string, valor: number, moti
     caixa_id: null,
     criado_por: userData.user?.id ?? null,
   });
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/salao/caixa/fiado");
   return { ok: true as const };
 }
@@ -2532,7 +2533,7 @@ export async function reimprimirFechamento(caixaId: string) {
   const { error } = await supabase
     .from("impressao_fila")
     .insert(ids.map((impressora_id) => ({ tipo: "fechamento", ref_id: caixaId, impressora_id })));
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   return { ok: true as const, total: ids.length };
 }
 
@@ -2557,7 +2558,7 @@ export async function dividirItemCaixa(itemId: string, partes: number) {
     .from("pdv_comanda_itens")
     .update({ qtd: qtdParte, descricao: `${base} (1/${n})` })
     .eq("id", itemId);
-  if (e1) return { ok: false as const, mensagem: e1.message };
+  if (e1) return { ok: false as const, mensagem: explicarErro(e1) };
   const copias = [];
   for (let i = 2; i <= n; i++) {
     copias.push({
@@ -2566,7 +2567,7 @@ export async function dividirItemCaixa(itemId: string, partes: number) {
     });
   }
   const { error: e2 } = await supabase.from("pdv_comanda_itens").insert(copias);
-  if (e2) return { ok: false as const, mensagem: e2.message };
+  if (e2) return { ok: false as const, mensagem: explicarErro(e2) };
   revalidatePath("/salao/caixa");
   revalidatePath(`/salao/comandas/${it.comanda_id}`);
   revalidatePath(`/garcom/comanda/${it.comanda_id}`);

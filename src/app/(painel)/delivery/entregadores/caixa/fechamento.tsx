@@ -65,7 +65,7 @@ export function FechamentoMotoboy({ boy, formas, pedidos }: { boy: { id: string;
             <li key={p.id} className="flex flex-wrap items-center gap-2 py-2">
               <div className="min-w-0 flex-1">
                 <div className="font-semibold text-texto">#{p.numero ?? "—"} · {p.nome}</div>
-                <div className="text-xs text-texto-suave">no app: {p.formaBoy ?? "—"}{aviso && <span className="ml-1 text-texto-marca">· {aviso}</span>}</div>
+                <div className="text-xs text-texto-suave">no app: {p.formaBoy ?? "—"}{aviso && <span role="status" className="ml-1 text-texto-marca">· {aviso}</span>}</div>
               </div>
               <select aria-label={`Forma do pedido ${p.numero ?? ""}`} value={forma[p.id]} onChange={(e) => setForma({ ...forma, [p.id]: e.target.value })} className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-2 text-sm">
                 {formas.map((f) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}

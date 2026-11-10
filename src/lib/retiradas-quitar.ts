@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Receber PARTE do fiado (compras internas) de uma pessoa.
 //
@@ -58,7 +59,7 @@ export async function aplicarRecebimentoFiado(db: Db, plano: PlanoFiado, dataPag
       .from("retiradas")
       .update({ status: "pago", data_pagamento: dataPagamento, obs_pagamento: obs })
       .in("id", plano.inteiras);
-    if (error) return { erro: error.message };
+    if (error) return { erro: explicarErro(error) };
   }
   if (plano.parcial) {
     const { id, valor, pagar } = plano.parcial;
@@ -67,7 +68,7 @@ export async function aplicarRecebimentoFiado(db: Db, plano: PlanoFiado, dataPag
       .select("colaborador_id, nome, produto_id, item, data, observacao, criado_por")
       .eq("id", id)
       .single();
-    if (e1 || !orig) return { erro: e1?.message ?? "compra não encontrada" };
+    if (e1 || !orig) return { erro: explicarErro(e1, "compra não encontrada") };
     // Primeiro a cópia paga, depois encolhe a original — se falhar no meio,
     // sobra dinheiro em aberto, nunca dinheiro sumido.
     const { error: e2 } = await db.from("retiradas").insert({
@@ -78,9 +79,9 @@ export async function aplicarRecebimentoFiado(db: Db, plano: PlanoFiado, dataPag
       data_pagamento: dataPagamento,
       obs_pagamento: `${obs ? obs + " · " : ""}parte de ${valor.toFixed(2).replace(".", ",")}`,
     });
-    if (e2) return { erro: e2.message };
+    if (e2) return { erro: explicarErro(e2) };
     const { error: e3 } = await db.from("retiradas").update({ valor: r2(valor - pagar) }).eq("id", id);
-    if (e3) return { erro: e3.message };
+    if (e3) return { erro: explicarErro(e3) };
   }
   return { ok: true as const };
 }

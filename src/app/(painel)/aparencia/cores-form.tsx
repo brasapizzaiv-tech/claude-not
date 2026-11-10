@@ -152,7 +152,7 @@ export function CoresForm({
               Desfazer
             </button>
           )}
-          {msg && <span className="text-sm text-texto-suave">{msg}</span>}
+          {msg && <span role="status" className="text-sm text-texto-suave">{msg}</span>}
         </div>
       </div>
 

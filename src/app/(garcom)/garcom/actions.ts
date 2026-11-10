@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { resolverLinhas, enfileirarCozinha, reimprimirNaCozinha, type LinhaPedido } from "@/lib/delivery-core";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Lança um pedido com PIZZA/COMBO/itens (Fase C): as linhas chegam como ids e
 // os preços/descrições são resolvidos no servidor (mesmo motor do delivery).
@@ -169,7 +170,7 @@ export async function abrirComanda(mesa: string, cartao?: string) {
     .insert({ mesa: m, peso: 0, tara: 0, valor_buffet: 0, livre: false, cartao: card, ...(numeroCartao ? { numero: numeroCartao } : {}) })
     .select("id, numero")
     .single();
-  if (error || !com) return { ok: false as const, mensagem: error?.message || "Não foi possível abrir a comanda." };
+  if (error || !com) return { ok: false as const, mensagem: explicarErro(error, "Não foi possível abrir a comanda.") };
   revalidatePath("/garcom");
   revalidatePath("/salao");
   return { ok: true as const, comandaId: com.id as string, mesa: m, numero: com.numero as number };
@@ -189,7 +190,7 @@ export async function transferirComanda(comandaId: string, novaMesa: string) {
     .eq("id", cid)
     .eq("status", "aberta")
     .select("id");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   if (!mov || mov.length === 0) return { ok: false as const, mensagem: "Essa comanda já foi fechada — não dá mais pra mover." };
   revalidatePath("/garcom");
   revalidatePath("/salao");

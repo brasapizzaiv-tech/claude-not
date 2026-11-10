@@ -1278,7 +1278,7 @@ export function ReceberComandas({
                         ? `Falta lançar ${brl(falta)}`
                         : `Finalizar ${brl(totalPagar)}`}
                   </button>
-                  {msg && <p className="text-center text-xs text-emerald-700 dark:text-emerald-400">{msg}</p>}
+                  {msg && <p role="status" className="text-center text-xs text-emerald-700 dark:text-emerald-400">{msg}</p>}
                 </div>
               )}
             </div>
@@ -1333,7 +1333,7 @@ export function ReceberComandas({
                 Não precisa
               </button>
             </div>
-            {notaMsg && <p className="mt-3 text-center text-sm text-texto-suave">{notaMsg}</p>}
+            {notaMsg && <p role="status" className="mt-3 text-center text-sm text-texto-suave">{notaMsg}</p>}
             {autoNaFila && !notaMsg && (
               <p className="mt-3 text-center text-xs text-texto-fraco">
                 Se disser &quot;não precisa&quot;, a nota sai sozinha em alguns minutos, sem imprimir.

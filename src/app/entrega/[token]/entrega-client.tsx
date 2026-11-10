@@ -300,7 +300,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
         <button onClick={() => setScan(true)} className="btn-principal text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={14} /> Ler cupom</span></button>
       </header>
 
-      {msg && <div className="mx-4 mt-3 rounded-cartao bg-superficie-suave px-3 py-2 text-sm">{msg}</div>}
+      {msg && <div role="status" className="mx-4 mt-3 rounded-cartao bg-superficie-suave px-3 py-2 text-sm">{msg}</div>}
 
       {aba === "entregas" && (
         <main className="space-y-4 p-4">
@@ -434,7 +434,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
             <button onClick={alternarGps} className={`w-full rounded-cartao py-3 text-base font-bold ${gpsOn ? "bg-emerald-600 text-white" : "bg-superficie-suave text-texto"}`}>
               {gpsOn ? <span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={14} /> Rastreamento ATIVO — tocar pra desligar</span> : "Ligar rastreamento"}
             </button>
-            {gpsErro && <p className="mt-2 text-sm text-rose-400">{gpsErro}</p>}
+            {gpsErro && <p role="alert" className="mt-2 text-sm text-rose-400">{gpsErro}</p>}
           </div>
           {avisoGps && (
             <div role="dialog" aria-modal="true" aria-labelledby="aviso-gps-titulo" className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
@@ -580,7 +580,7 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
         <canvas ref={canvasRef} className="hidden" />
         {lendo && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="h-56 w-56 rounded-cartao border-4 border-white/70" /></div>}
       </div>
-      {erro && <p className="px-4 py-2 text-sm text-rose-400">{erro}</p>}
+      {erro && <p role="alert" className="px-4 py-2 text-sm text-rose-400">{erro}</p>}
       <div className="flex gap-2 p-3">
         <input value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="flex-1 rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-lg text-white" />
         <button onClick={() => onLido(refManual)} className="btn-principal">Pegar</button>

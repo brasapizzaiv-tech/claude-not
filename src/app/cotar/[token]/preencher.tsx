@@ -420,12 +420,12 @@ export function CotarPreencher({
 
       <div className="mx-auto max-w-xl px-4">
         {msg && (
-          <div className="mt-4 rounded-lg bg-green-100 px-4 py-3 text-sm font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
+          <div role="status" className="mt-4 rounded-lg bg-green-100 px-4 py-3 text-sm font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
             {msg}
           </div>
         )}
         {erro && (
-          <div className="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950 dark:text-red-300">
+          <div role="alert" className="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950 dark:text-red-300">
             <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {erro}
           </div>
         )}

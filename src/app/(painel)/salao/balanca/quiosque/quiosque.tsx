@@ -886,7 +886,7 @@ export function QuiosqueBalanca({
               ))}
               {impressoras.length === 0 && !msgConfig && <p className="text-marca-escuro/50">Procurando impressoras…</p>}
             </div>
-            {msgConfig && <p className="mt-3 text-sm text-orange-500">{msgConfig}</p>}
+            {msgConfig && <p role="status" className="mt-3 text-sm text-orange-500">{msgConfig}</p>}
             {/* Voz do quiosque */}
             <div className="mt-4 rounded-xl border border-marca-escuro/15 p-3 text-sm">
               <div className="flex items-center justify-between gap-2">
@@ -1035,7 +1035,7 @@ export function QuiosqueBalanca({
                 </button>
               ))}
             </div>
-            {erro && <p className="mt-4 text-lg font-bold text-red-600">{erro}</p>}
+            {erro && <p role="alert" className="mt-4 text-lg font-bold text-red-600">{erro}</p>}
             <button onClick={() => setRepesarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
           </div>
         </div>
@@ -1080,7 +1080,7 @@ export function QuiosqueBalanca({
                 </button>
               ))}
             </div>
-            {erro && <p className="mt-3 text-lg text-red-600">{erro}</p>}
+            {erro && <p role="alert" className="mt-3 text-lg text-red-600">{erro}</p>}
             <button onClick={() => setVirarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
           </div>
         </div>
@@ -1101,7 +1101,7 @@ export function QuiosqueBalanca({
             Clique uma vez e escolha a porta da balança na lista
             (<b>Prolific</b> ou <b>USB-Serial</b>) — pode ser COM3, COM5, COM7... Depois deixe rodando.
           </p>
-          {erro && <p className="max-w-lg text-lg text-red-600">{erro}</p>}
+          {erro && <p role="alert" className="max-w-lg text-lg text-red-600">{erro}</p>}
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6">
@@ -1170,7 +1170,7 @@ export function QuiosqueBalanca({
                 </button>
               </div>
               {erroImpressao && (
-                <p className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira nos ajustes.</p>
+                <p role="alert" className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira nos ajustes.</p>
               )}
             </div>
           ) : estado === "tarando" ? (
@@ -1277,7 +1277,7 @@ export function QuiosqueBalanca({
                   <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium opacity-70">{soKg ? "cobra só por kg nesta pesagem" : "cobra só por kg"}</span>
                 </button>
               </div>
-              {erro && <p className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
+              {erro && <p role="alert" className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
               {taraBalanca > 0.001 ? (
                 <p className="mt-2 text-sm text-marca-escuro/40">
                   Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg
@@ -1409,7 +1409,7 @@ export function QuiosqueBalanca({
               <CupomQR id={resultado.id} />
             )}
             <div style={{ fontSize: "8pt", marginTop: "1mm" }}>{new Date().toLocaleString("pt-BR")}</div>
-            {cupom.msg && <div style={{ fontSize: "9pt", marginTop: "1mm" }}>{cupom.msg}</div>}
+            {cupom.msg && <div role="status" style={{ fontSize: "9pt", marginTop: "1mm" }}>{cupom.msg}</div>}
 
             <div style={{ borderTop: "1px dashed #000", margin: "2mm 0" }} />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10pt" }}>

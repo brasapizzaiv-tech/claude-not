@@ -57,8 +57,8 @@ export function EmitirNfce({
           {res && !res.ok && (
             <div className="mt-2 rounded-cartao bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-200">
               <p className="font-semibold">✗ Não autorizou {res.status ? `(${res.status})` : ""}</p>
-              {res.mensagem && <p className="mt-1">{res.mensagem}</p>}
-              {res.erros && <p className="mt-1 break-all text-xs opacity-80">{res.erros}</p>}
+              {res.mensagem && <p role="status" className="mt-1">{res.mensagem}</p>}
+              {res.erros && <p role="alert" className="mt-1 break-all text-xs opacity-80">{res.erros}</p>}
             </div>
           )}
         </>

@@ -288,7 +288,7 @@ export function NovoPedido({
           {descN > 0 && <div className="mb-1 flex justify-between text-sm text-rose-500"><span>Desconto</span><span>− {brl(descN)}</span></div>}
           <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
           {forma === "Dinheiro" && trocoN > total && <div className="mb-2 flex justify-between text-sm text-amber-600"><span>Troco</span><span>{brl(Math.round((trocoN - total) * 100) / 100)}</span></div>}
-          {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
+          {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
           <button onClick={finalizar} disabled={proc} className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo disabled:opacity-50">{proc ? "Criando..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={17} /> Criar pedido</span>}</button>
         </div>
       </div>

@@ -56,7 +56,7 @@ export function LembretesHoje({ token, itens }: { token: string; itens: Lembrete
           </li>
         ))}
       </ul>
-      {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
     </div>
   );
 }

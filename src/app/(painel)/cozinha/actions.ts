@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import type { PedidoRodizio } from "@/lib/rodizio";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 const CAMPOS = "id, mesa, sabor, tipo, fracao, quantidade, observacao, status, criado_em, forno_em, pronto_em, garcom";
 
@@ -33,7 +34,7 @@ export async function avancarRodizio(id: string, para: "forno" | "pronto") {
     .eq("id", id)
     .eq("status", de) // se outro tablet já avançou, não volta nem repete
     .select("id");
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   if (!data || data.length === 0) return { ok: false as const, mensagem: "Este pedido já mudou de status." };
   revalidatePath("/cozinha");
   return { ok: true as const };
@@ -47,7 +48,7 @@ export async function cancelarRodizio(id: string) {
     .update({ status: "cancelado", cancelado_em: new Date().toISOString() })
     .eq("id", id)
     .in("status", ["pendente", "forno"]);
-  if (error) return { ok: false as const, mensagem: error.message };
+  if (error) return { ok: false as const, mensagem: explicarErro(error) };
   revalidatePath("/cozinha");
   return { ok: true as const };
 }

@@ -191,7 +191,7 @@ export function Scanner() {
       </div>
 
       {erro && (
-        <p className="mt-3 rounded-cartao bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p role="alert" className="mt-3 rounded-cartao bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
           {erro}
         </p>
       )}

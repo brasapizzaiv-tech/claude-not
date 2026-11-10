@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Documentos que a gestão pediu pra pessoa assinar (migration 0257). Tudo
 // confere o PIN do app e se o documento é dela.
@@ -40,7 +41,7 @@ export async function assinarDocumentoEu(token: string, docId: string) {
     })
     .eq("id", docId).eq("colaborador_id", p.id).eq("pedir_assinatura", true).is("assinado_em", null)
     .select("id");
-  if (error) return { ok: false as const, erro: error.message };
+  if (error) return { ok: false as const, erro: explicarErro(error) };
   if (!data?.length) return { ok: false as const, erro: "Esse documento já foi assinado." };
   revalidatePath(`/eu/${token}/documentos`);
   revalidatePath(`/eu/${token}`);

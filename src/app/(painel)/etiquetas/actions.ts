@@ -4,6 +4,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { tipoValido } from "@/lib/etiqueta-tipos";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 type DadosItem = {
   nome: string;
@@ -230,7 +231,7 @@ export async function salvarCategoriaEtiqueta(d: { id?: string; nome: string; or
   const r = d.id
     ? await supabase.from("etiqueta_categorias").update(row).eq("id", d.id)
     : await supabase.from("etiqueta_categorias").insert(row);
-  if (r.error) return { ok: false, mensagem: r.error.message.includes("unique") ? "Já existe uma categoria com esse nome." : r.error.message };
+  if (r.error) return { ok: false, mensagem: r.error.code === "23505" ? "Já existe uma categoria com esse nome." : explicarErro(r.error) };
   revalidatePath("/etiquetas");
   revalidatePath("/etiquetas/itens");
   return { ok: true };

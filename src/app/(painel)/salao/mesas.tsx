@@ -106,7 +106,7 @@ export function MesasGrid({
               Ir ao caixa
             </button>
           </div>
-          {pgtoErro && <p className="mt-1 px-1 text-sm text-erro">{pgtoErro}</p>}
+          {pgtoErro && <p role="alert" className="mt-1 px-1 text-sm text-erro">{pgtoErro}</p>}
         </div>
       )}
 

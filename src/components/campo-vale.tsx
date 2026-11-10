@@ -78,7 +78,7 @@ export function CampoVale({
           </div>
         </div>
       )}
-      {erro && <p className="mt-1 text-xs font-medium text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-1 text-xs font-medium text-red-600">{erro}</p>}
       <button type="button" onClick={() => { onVale(null); onSemCodigo(true); }} className="mt-1 text-mini text-texto-fraco underline">
         Vale antigo, sem código
       </button>

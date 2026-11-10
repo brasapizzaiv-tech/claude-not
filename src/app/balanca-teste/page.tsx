@@ -128,7 +128,7 @@ export default function BalancaTeste() {
           <button
             onClick={conectar}
             disabled={!suportado}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:bg-orange-600 disabled:opacity-60"
           >
             Conectar balança
           </button>

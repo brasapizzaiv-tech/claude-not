@@ -63,7 +63,7 @@ export function OrcamentoClient({
         >
           {salvando ? "Salvando..." : "Salvar orçamento"}
         </button>
-        {msg && <span className="text-sm text-green-600">{msg}</span>}
+        {msg && <span role="status" className="text-sm text-green-600">{msg}</span>}
       </div>
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">

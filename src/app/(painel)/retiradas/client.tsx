@@ -75,7 +75,7 @@ export function RetiradasClient({
         </button>
       </div>
 
-      {aviso && <div className="mb-3 rounded-controle border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600">{aviso}</div>}
+      {aviso && <div role="status" className="mb-3 rounded-controle border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600">{aviso}</div>}
 
       <div className="mb-4 flex gap-2">
         {([["resumo", "Resumo"], ["lancamentos", "Lançamentos"], ["acertos", "Acertos"], ["produtos", "Produtos e preços"]] as const).map(([k, label]) => (

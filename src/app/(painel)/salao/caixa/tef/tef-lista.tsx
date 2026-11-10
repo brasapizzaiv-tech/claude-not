@@ -227,7 +227,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
         <button onClick={adm} disabled={proc || !agente} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="ajustes" tamanho={14} /> Menu administrativo (Elgin)</span></button>
         <button onClick={pix} disabled={proc || !agente} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="celular" tamanho={14} /> Pix pelo pinpad (teste)</span></button>
       </div>
-      {msg && <p className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
+      {msg && <p role="status" className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="min-w-[720px] w-full text-sm">
@@ -260,7 +260,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
                   <td className="px-3 py-2 tabular-nums text-texto-suave">{l.nsu ?? "—"}{l.autorizacao ? ` / ${l.autorizacao}` : ""}</td>
                   <td className="px-3 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-mini font-medium ${st.cls}`}>{st.rotulo}</span>
-                    {l.mensagem && <div className={`mt-0.5 max-w-[260px] text-mini text-texto-fraco ${l.status === "negada" || l.status === "erro" ? "" : "truncate"}`} title={l.mensagem}>{l.mensagem}</div>}
+                    {l.mensagem && <div role="status" className={`mt-0.5 max-w-[260px] text-mini text-texto-fraco ${l.status === "negada" || l.status === "erro" ? "" : "truncate"}`} title={l.mensagem}>{l.mensagem}</div>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1.5">

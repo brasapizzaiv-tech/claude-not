@@ -2,6 +2,7 @@
 // dá baixa ANTES de marcar a conta como paga; se a venda não fechar, devolve.
 import type { createClient } from "@/lib/supabase/server";
 import { formatarCodigo, normalizarCodigo } from "@/lib/vale-presente";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
 
@@ -17,7 +18,7 @@ export async function debitarVale(
   const cod = normalizarCodigo(codigo);
   if (!cod) return { ok: false, mensagem: "Digite o código do vale." };
   const { data, error } = await supabase.rpc("vale_presente_debitar", { p_codigo: cod, p_valor: valor, p_origem: origem, p_comanda: comandaId });
-  if (error) return { ok: false, mensagem: error.message };
+  if (error) return { ok: false, mensagem: explicarErro(error) };
   const r = data as { ok: boolean; erro?: string; uso_id?: string; vale_id?: string; saldo?: number; para?: string | null; codigo?: string };
   if (!r?.ok) return { ok: false, mensagem: `Vale ${formatarCodigo(cod)}: ${r?.erro ?? "não deu baixa."}` };
   return { ok: true, baixa: { usoId: r.uso_id!, valeId: r.vale_id!, codigo: r.codigo ?? cod, para: r.para ?? null, saldo: Number(r.saldo ?? 0), valor } };

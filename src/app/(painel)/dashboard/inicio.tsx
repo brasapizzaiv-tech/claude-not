@@ -326,8 +326,9 @@ export function Inicio({ d }: { d: DadosInicio }) {
       </section>
 
       {/* ---------- 4. Rodapé em três cartões ---------- */}
+      {/* min-w-0 nos cartões: o texto longo ("…110 fornecedores") não estica a coluna no celular (TEL-005) */}
       <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr_1fr]">
-        <section className="cartao flex flex-col px-5 py-[18px]">
+        <section className="cartao flex min-w-0 flex-col px-5 py-[18px]">
           <div className="flex items-center justify-between">
             <h2 className={`text-[17px] ${TITULO}`}>Delivery</h2>
             <span className={d.delivery.aberto ? "pilula pilula-ok" : "pilula pilula-neutra"}>{d.delivery.aberto ? "aberto" : "fechado"}</span>
@@ -352,7 +353,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
           </div>
         </section>
 
-        <section className="cartao flex flex-col px-5 py-[18px]">
+        <section className="cartao flex min-w-0 flex-col px-5 py-[18px]">
           <div className="flex items-center justify-between">
             <h2 className={`text-[17px] ${TITULO}`}>Precisa de você</h2>
             {d.pendencias.length > 0 && <span className="pilula pilula-urgente-solido">{d.pendencias.length}</span>}
@@ -376,7 +377,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
           )}
         </section>
 
-        <section className="cartao flex flex-col px-5 py-[18px]">
+        <section className="cartao flex min-w-0 flex-col px-5 py-[18px]">
           <h2 className={`text-[17px] ${TITULO}`}>Na casa agora</h2>
           {d.turno.pessoas.length === 0 ? (
             <p className="mt-3 text-sm text-texto-suave">Ninguém marcado no turno {d.turno.rotulo === "noite" ? "da noite" : "do dia"}.</p>

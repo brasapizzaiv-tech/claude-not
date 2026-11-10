@@ -116,7 +116,7 @@ export function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: 
           <Enviar className="rounded-controle border border-borda-forte px-1.5 py-1 text-xs text-rose-500" title="Remover foto">✕</Enviar>
         </form>
       )}
-      {msg && <span className="text-xs text-rose-500">{msg}</span>}
+      {msg && <span role="status" className="text-xs text-rose-500">{msg}</span>}
     </span>
   );
 }

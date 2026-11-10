@@ -309,7 +309,7 @@ export function FechamentoZ({
                   >
                     Imprimir pelo navegador
                   </button>
-                  {msgImp && <span className="self-center text-xs text-texto-suave">{msgImp}</span>}
+                  {msgImp && <span role="status" className="self-center text-xs text-texto-suave">{msgImp}</span>}
                 </div>
               </div>
             )}
@@ -319,7 +319,7 @@ export function FechamentoZ({
 
       {/* Cupom Z (só na impressão — térmica) */}
       {feito && (
-        <div className="cupom-z">
+        <div role="status" className="cupom-z">
           <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "14pt" }}>FECHAMENTO Z</div>
           <div style={{ textAlign: "center" }}>{nome}</div>
           <div>Abertura: {abertoHora}</div>

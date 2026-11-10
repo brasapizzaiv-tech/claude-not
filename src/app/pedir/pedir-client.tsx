@@ -684,7 +684,7 @@ export function PedirClient({
             {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
             {cashbackUsado > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cashback</span><span>− {brl(cashbackUsado)}</span></div>}
             <div className="mb-2 flex items-baseline justify-between"><span className="font-semibold text-texto">Total</span><span className="numero-grande text-[24px] text-texto">{brl(total)}</span></div>
-            {erro && <p className="mb-2 text-sm text-red-500">{erro}</p>}
+            {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
             {horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo && cart.length > 0 && (
               <p className="mb-2 text-xs text-amber-600">Pedido mínimo {brl(horario.pedidoMinimo)} — faltam {brl(horario.pedidoMinimo - subtotal)}.</p>
             )}
@@ -728,7 +728,7 @@ export function PedirClient({
         </div>
       )}
       {aviso && (
-        <div className="mx-3 mt-3 rounded-controle bg-destaque px-4 py-2.5 text-center text-sm font-semibold text-texto-marca-pilula">
+        <div role="status" className="mx-3 mt-3 rounded-controle bg-destaque px-4 py-2.5 text-center text-sm font-semibold text-texto-marca-pilula">
             <span className="inline-flex items-center gap-1.5"><Icone nome="megafone" tamanho={14} /> {aviso}</span>
           </div>
       )}

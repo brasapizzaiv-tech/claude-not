@@ -54,14 +54,14 @@ export function RecadosClient({ inicial }: { inicial: RecadoTvLinha[] }) {
             <label className="mb-1 block text-xs text-texto-suave">Mostrar até (opcional)</label>
             <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className={inputCls} />
           </div>
-          <button onClick={salvar} disabled={proc || texto.trim().length < 2} className="rounded-controle bg-orange-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
+          <button onClick={salvar} disabled={proc || texto.trim().length < 2} className="rounded-controle bg-orange-600 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-40">
             {proc ? "..." : editando ? "Salvar" : "Colocar na TV"}
           </button>
           {editando && (
             <button onClick={() => { setEditando(null); setTexto(""); setAte(""); }} className="rounded-controle px-3 py-2 text-sm text-texto-suave underline">cancelar</button>
           )}
         </div>
-        {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
+        {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
       </div>
 
       <div className="divide-y divide-zinc-100 cartao dark:divide-zinc-800">

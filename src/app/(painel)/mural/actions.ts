@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { explicarErro } from "@/lib/erro-amigavel";
 
 // Trocar a chave é o botão de "perdi o controle do link": o endereço antigo
 // morre na hora. Só quem entra no mural pode fazer isso.
@@ -14,7 +15,7 @@ export async function trocarChaveDoMural() {
   const empresaId = (atual as { empresa_id: string } | null)?.empresa_id;
   if (!empresaId) return { ok: false, erro: "Mural sem configuração nesta empresa." };
   const { error } = await supabase.from("mural_config").update({ chave: nova }).eq("empresa_id", empresaId);
-  if (error) return { ok: false, erro: error.message };
+  if (error) return { ok: false, erro: explicarErro(error) };
   revalidatePath("/mural");
   return { ok: true };
 }
