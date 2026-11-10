@@ -49,12 +49,12 @@ export async function processarNfcePendentes(): Promise<ResultadoFila> {
       .update({ status: "emitindo" })
       .eq("id", id)
       .eq("status", "aguardando") // só passa quem chegou primeiro
-      .select("id, comanda_ids, cpf_cnpj, tentativas");
-    const linha = ((presas as { id: string; comanda_ids: string[]; cpf_cnpj: string | null; tentativas: number }[]) ?? [])[0];
+      .select("id, comanda_ids, cpf_cnpj, tentativas, recebimento_id");
+    const linha = ((presas as { id: string; comanda_ids: string[]; cpf_cnpj: string | null; tentativas: number; recebimento_id: string | null }[]) ?? [])[0];
     if (!linha) continue; // outra chamada pegou esta
 
     try {
-      const r = await emitirNfceComandasAdmin(admin, linha.comanda_ids, linha.cpf_cnpj ?? "");
+      const r = await emitirNfceComandasAdmin(admin, linha.comanda_ids, linha.cpf_cnpj ?? "", linha.recebimento_id);
       if (r.ok) {
         await admin
           .from("nfce_pendentes")

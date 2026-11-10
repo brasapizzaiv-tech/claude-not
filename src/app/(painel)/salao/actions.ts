@@ -21,6 +21,7 @@ import { fmtKg } from "@/lib/peso-kg";
 import { aplicarJuntar, buffetJuntado, lerParaJuntar, podeSomar, type ModoJuntar, type PrecoBuffet } from "@/lib/juntar-comandas";
 import { contagemValida, valorDe, type Quantidades } from "@/lib/cofre";
 import { repartirDesconto } from "@/lib/fiscal/desconto-nota";
+import type { ItemCoberto } from "@/lib/fiscal/recebimento-nota";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -1336,6 +1337,9 @@ export async function pagarSelecao(
   // se reparte entre as comandas pra sair na nota.
   const basePorComanda = new Map<string, number>();
   const somarBase = (id: string, v: number) => { if (v > 0) basePorComanda.set(id, r2((basePorComanda.get(id) ?? 0) + v)); };
+  // O que ESTE recebimento pagou, linha por linha: é o que vai na nota dele
+  // (nota por recebimento, migration 0297).
+  const cobertos: ItemCoberto[] = [];
 
   // Produtos avulsos inseridos no caixa: cria o item na comanda já pago.
   for (const e of extras) {
@@ -1347,6 +1351,7 @@ export async function pagarSelecao(
       .single();
     if (!prod) continue;
     const payable = Math.round(precoVenda(prod) * e.qtd * fator * 100) / 100;
+    cobertos.push({ tipo: "item", comanda_id: e.comandaId, linha_id: null, item_id: e.itemId, descricao: prod.nome, qtd: e.qtd, preco_unit: precoVenda(prod), valor: r2(precoVenda(prod) * e.qtd) });
     await supabase.from("pdv_comanda_itens").insert({
       comanda_id: e.comandaId,
       item_id: e.itemId,
@@ -1368,7 +1373,7 @@ export async function pagarSelecao(
     for (const itemId of s.itemIds) {
       const { data: row } = await supabase
         .from("pdv_comanda_itens")
-        .select("qtd, preco_unit, pago, base_pago, valor_pago")
+        .select("qtd, preco_unit, pago, base_pago, valor_pago, descricao, item_id")
         .eq("id", itemId)
         .single();
       if (!row || row.pago) continue;
@@ -1385,6 +1390,7 @@ export async function pagarSelecao(
         .select("id");
       if (!mudou?.length) continue;
       somarBase(s.comandaId, falta);
+      cobertos.push({ tipo: "item", comanda_id: s.comandaId, linha_id: itemId, item_id: (row.item_id as string | null) ?? null, descricao: (row.descricao as string) || "Item", qtd: Number(row.qtd), preco_unit: Number(row.preco_unit), valor: r2(falta) });
       quitadosAgora++;
     }
     if (s.buffet) {
@@ -1406,17 +1412,21 @@ export async function pagarSelecao(
           .select("id");
         if (mudou?.length) {
           somarBase(s.comandaId, falta);
+          cobertos.push({ tipo: "buffet", comanda_id: s.comandaId, numero: null, preco, valor: r2(falta) });
           quitadosAgora++;
         }
       }
     }
     const parte = partes.find((p) => p.comandaId === s.comandaId);
-    if (parte && (await aplicarParte(supabase, s.comandaId, parte.valor, fator)) > 0) {
-      somarBase(s.comandaId, r2(parte.valor / fator));
+    const cobertosParte = parte ? await aplicarParte(supabase, s.comandaId, parte.valor, fator) : [];
+    if (cobertosParte.length > 0) {
+      somarBase(s.comandaId, r2(parte!.valor / fator));
+      cobertos.push(...cobertosParte);
       quitadosAgora++;
     }
     const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", s.comandaId).single();
     if (com?.numero != null) numeros.push(com.numero);
+    for (const c of cobertos) if (c.tipo === "buffet" && c.comanda_id === s.comandaId && c.numero == null) c.numero = (com?.numero as number | null) ?? null;
     await fecharSeQuitou(supabase, s.comandaId);
   }
 
@@ -1483,6 +1493,7 @@ export async function pagarSelecao(
   const comandasDaVenda = [...new Set([...sel.map((s) => s.comandaId), ...extras.map((e) => e.comandaId)])];
   // Pagamentos feitos no TEF: o caixa vai CONFIRMAR no pinpad com estes ids.
   const tefRegistros: { idAgente: string; transacaoId: string }[] = [];
+  const movIds: string[] = [];
   if (caixaId && primeiraComanda) {
     const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
     const { data: quem } = await supabase.auth.getUser();
@@ -1510,6 +1521,7 @@ export async function pagarSelecao(
         })
         .select("id")
         .maybeSingle();
+      if ((mov as { id?: string } | null)?.id) movIds.push((mov as { id: string }).id);
       if (baixa) await ligarBaixaAoMov(supabase, baixa, (mov as { id?: string } | null)?.id ?? null);
       if (t) {
         const campos = {
@@ -1548,6 +1560,24 @@ export async function pagarSelecao(
     }
   }
 
+  // O recebimento: o que foi pago agora, com que movimentos e desconto. A nota
+  // (automática ou na hora) sai só com isso — duas pessoas que dividem a conta
+  // têm cada uma a sua. Se não gravar, a nota volta a ser a da comanda inteira.
+  let recebimentoId: string | null = null;
+  if (cobertos.length > 0) {
+    const { data: rec, error: eRec } = await supabase.from("pdv_recebimentos").insert({
+      caixa_id: caixaId,
+      comanda_ids: comandasDaVenda,
+      itens: cobertos,
+      mov_ids: movIds,
+      desconto: descontoNota,
+      valor: totalPago,
+      cliente_id: clienteId ?? null,
+    }).select("id").maybeSingle();
+    if (eRec) await registrarErro("caixa:recebimento", eRec, { caixaId });
+    recebimentoId = (rec as { id?: string } | null)?.id ?? null;
+  }
+
   // Nota automática: Pix, cartão e vale entram na FILA (o caixa tem alguns
   // minutos pra digitar o CPF ou mandar emitir na hora); o resto não gera nota
   // sozinho. Quem emite é a rotina em src/lib/fiscal/pendentes.ts.
@@ -1570,6 +1600,7 @@ export async function pagarSelecao(
         if (comandasNota.length > 0) {
           const { data: pend } = await supabase.from("nfce_pendentes").insert({
             comanda_ids: comandasNota,
+            recebimento_id: recebimentoId,
             numeros: numeros.map((n) => `#${n}`).join(", "),
             cliente_id: clienteId ?? null,
             valor: totalPago,
@@ -1589,7 +1620,7 @@ export async function pagarSelecao(
 
   revalidatePath("/salao/caixa");
   revalidatePath("/salao");
-  return { ok: true as const, numeros, total: totalPago, pendenteId, tefRegistros };
+  return { ok: true as const, numeros, total: totalPago, pendenteId, recebimentoId, tefRegistros };
 }
 
 // A resposta do "Pagar" se perdeu (conexão caiu): a venda gravou ou não? O NSU do

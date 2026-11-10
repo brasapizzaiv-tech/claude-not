@@ -41,11 +41,11 @@ export async function emitirNotaPendenteAgora(id: string, documento?: string) {
     .update({ status: "emitindo", cpf_cnpj: doc || null })
     .eq("id", id)
     .in("status", ["aguardando", "erro"])
-    .select("id, comanda_ids, cpf_cnpj");
-  const linha = ((presas as { id: string; comanda_ids: string[]; cpf_cnpj: string | null }[]) ?? [])[0];
+    .select("id, comanda_ids, cpf_cnpj, recebimento_id");
+  const linha = ((presas as { id: string; comanda_ids: string[]; cpf_cnpj: string | null; recebimento_id: string | null }[]) ?? [])[0];
   if (!linha) return { ok: false as const, mensagem: "Esta nota já está sendo emitida." };
 
-  const r = await emitirNfceComandas(linha.comanda_ids, linha.cpf_cnpj ?? "");
+  const r = await emitirNfceComandas(linha.comanda_ids, linha.cpf_cnpj ?? "", linha.recebimento_id);
   if (!r.ok) {
     await supabase
       .from("nfce_pendentes")

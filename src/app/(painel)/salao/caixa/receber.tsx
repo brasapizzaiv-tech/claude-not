@@ -169,6 +169,8 @@ export function ReceberComandas({
   // perguntar da nota. Separar assim tira o excesso de informação de uma tela só.
   const [etapa, setEtapa] = useState<"conta" | "pagamento" | "nota">("conta");
   const [pendenteId, setPendenteId] = useState<string | null>(null);
+  // Recebimento que acabou de entrar: a nota dele é só do que ele pagou.
+  const [recebimentoId, setRecebimentoId] = useState<string | null>(null);
   const [docNota, setDocNota] = useState("");
   const [notaMsg, setNotaMsg] = useState<string | null>(null);
   const [notaProc, setNotaProc] = useState(false);
@@ -624,6 +626,7 @@ export function ReceberComandas({
         setPagos([]);
         setPessoas("");
         setPendenteId(("pendenteId" in r ? (r.pendenteId as string | null) : null) ?? null);
+        setRecebimentoId(("recebimentoId" in r ? (r.recebimentoId as string | null) : null) ?? null);
         setDocNota("");
         setNotaMsg(null);
         setEtapa("nota");
@@ -649,7 +652,7 @@ export function ReceberComandas({
           setNotaMsg(r.ok ? `Nota ${r.numero ?? ""} emitida e enviada pra impressora.` : r.mensagem);
           if (r.ok) setTimeout(fecharNota, 1800);
         } else {
-          const r = await emitirNfceComandas(pagas.map((c) => c.id), doc);
+          const r = await emitirNfceComandas(pagas.map((c) => c.id), doc, recebimentoId);
           if (r.ok) {
             const nfceId = "id" in r ? (r.id as string | undefined) : undefined;
             if (nfceId) await imprimirNfce(nfceId);
@@ -1366,7 +1369,7 @@ export function ReceberComandas({
           &quot;Notas saindo automaticamente&quot; — <b>Emitir e imprimir</b>.
         </p>
       )}
-      {pagas.length > 0 && !autoNaFila && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} juntas />}
+      {pagas.length > 0 && !autoNaFila && <EmitirNotaCaixa comandas={pagas} autoIds={autoIds} juntas recebimentoId={recebimentoId} />}
 
       {/* Cupom de recebimento (só na impressão — térmica) */}
       {recibo && (

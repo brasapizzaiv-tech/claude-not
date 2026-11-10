@@ -11,10 +11,13 @@ export function EmitirNotaCaixa({
   comandas,
   autoIds = [],
   juntas = false,
+  recebimentoId = null,
 }: {
   comandas: { id: string; numero: number }[];
   autoIds?: string[];
   juntas?: boolean;
+  /** Nota só do que este recebimento pagou (caixa do salão, migration 0297). */
+  recebimentoId?: string | null;
 }) {
   const [proc, start] = useTransition();
   const [cpf, setCpf] = useState<Record<string, string>>({});
@@ -44,7 +47,7 @@ export function EmitirNotaCaixa({
   function emitir(g: { key: string; ids: string[] }, docForcado?: string) {
     start(async () => {
       try {
-        const r = await emitirNfceComandas(g.ids, docForcado ?? (cpf[g.key] || ""));
+        const r = await emitirNfceComandas(g.ids, docForcado ?? (cpf[g.key] || ""), recebimentoId);
         setRes((s) => ({
           ...s,
           [g.key]: { ok: r.ok, msg: r.ok ? `✓ NFC-e ${r.numero ?? ""} autorizada` : r.mensagem || "não autorizou", url: r.urlDanfe, nfceId: "id" in r ? (r.id as string | undefined) : undefined },
