@@ -243,6 +243,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 - Esforço: M · Risco: médio
 
 ### [SEC-15] O banco depende de uma camada só: anon tem permissão em tudo
+- **Corrigido em 10/11/2026 (Onda 3, lote 3).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio
 - anon tem SELECT/INSERT/UPDATE/DELETE nas 159 tabelas e EXECUTE nas 77 funções (default privileges da 0208 e o
   `grant ... to anon` no fim de cada rodada do `scripts/migrate.mjs`, que ainda desfaz qualquer `revoke` futuro — inclusive

@@ -63,6 +63,7 @@ precisa de decisão do Rafael antes da Etapa 3.
   total. NFC-e de homologação autorizada (crédito Mastercard + Pix + item com desconto). Falta a 1ª nota real do caixa.
 
 ### [COD-001] `next` 16.3.0 tem dois avisos críticos de segurança, e outras 4 bibliotecas diretas têm avisos altos
+- **Corrigido em 10/11/2026 (Onda 3, lote 3).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: alto
 - Onde: `package.json`
 - O que o `npm audit` diz (8/11): 18 avisos (1 crítico, 9 altos, 8 moderados).

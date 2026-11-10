@@ -266,6 +266,8 @@ Downloads e aviso na tela inicial; rotinas e relógio de ponto gravando sinal; a
 
 Revisão independente do lote 2: 5 pontos (trava burlável com tentativas simultâneas, acerto zerava a contagem, senha velha no navegador do dono travava o restaurante, cache de senha entre servidores, função auxiliar chamável), todos corrigidos antes de publicar (publicado 10/11 ~07h10). Pendente com o Rafael: trocar a senha de 4 dígitos do app das marmitas.
 
+| 3 | `3eeee8a` | **COD-001**: Next.js e eslint-config-next 16.3.0 → 16.4.5 (avisos críticos), undici 8.12.4, node-forge 1.4.3, xmldom/source-map-js; sobra o xlsx (sem correção no npm; só quem tem Financeiro usa). **SEC-15** (migration 0290): anon sem permissão em tabela/sequência (só lê `empresas`, a única policy dele), padrão de tabela nova também; `scripts/migrate.mjs` não devolve mais ao anon e falha se alguma tabela do public estiver sem RLS. Conferido no ar (10/11 ~07h45): robô abriu 15 telas (os 2 avisos #418 em /cozinha e /etiquetas são o TEL-004 antigo), rotinas seguem rodando, anon recusado |
+
 Revisão independente do lote 1: 1 ponto sério (o app do garçom não lançaria itens) e 2 menores (foto HEIC, peso acima de 32 kg cobrado calado), corrigidos antes de publicar. Robô só leitura: 8 telas do painel abrem sem erro; rotinas seguem gravando sinal depois da publicação.
 
 Falta na Onda 3: SEC-04 (permissão por tela também no banco), COD-001 (Next.js), SEC-15 (anon), AGT-11/AGT-12/PAG-09 (agentes), SEC-16 (LGPD), MSG-03 (apps nas lojas).
