@@ -7,6 +7,7 @@ import { marcarPresencasDoPonto } from "@/lib/ponto-server";
 import { numBR, parseAniversario } from "@/lib/equipe";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { definirHorarioPessoa } from "./ponto/horarios/actions";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 function novoToken() {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
@@ -71,7 +72,8 @@ export async function salvarColaborador(formData: FormData) {
       .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, faz_cofre: fazCofre, checklist_setores: checklistSetores, ...quadro })
       .eq("id", id);
     if (error) return { erro: `Não salvou: ${error.message}` };
-    token = (await supabase.from("colaboradores").select("token").eq("id", id).maybeSingle()).data?.token ?? null;
+    // O token não é lido pela sessão (SEC-04): pelo servidor, já com a permissão conferida.
+    token = (await createAdminClient().from("colaboradores").select("token").eq("id", id).eq("empresa_id", (await empresaAtualId()) ?? "").maybeSingle()).data?.token ?? null;
     if (!token) {
       token = novoToken();
       await supabase.from("colaboradores").update({ token }).eq("id", id);

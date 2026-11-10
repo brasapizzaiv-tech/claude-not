@@ -96,6 +96,29 @@ async function main() {
   `);
   console.log("✓ Permissões dos papéis da API garantidas (authenticated e service_role; anon só lê empresas)");
 
+  // Colunas secretas (SEC-04, migration 0292): a sessão do painel não lê o
+  // token/PIN/código de colaboradores e entregadores. O grant de tabela inteira
+  // logo acima devolveria tudo, então reaplica aqui, sempre por último.
+  await client.query(`
+    do $
+    declare t text; secretas text[]; cols text;
+    begin
+      for t, secretas in select * from (values
+          ('colaboradores', array['token', 'pin', 'codigo']),
+          ('entregadores', array['token', 'codigo'])
+        ) as v(t, s)
+      loop
+        select string_agg(quote_ident(column_name), ', ' order by ordinal_position) into cols
+          from information_schema.columns
+         where table_schema = 'public' and table_name = t and column_name <> all (secretas);
+        if cols is null then continue; end if;
+        execute format('revoke select on public.%I from authenticated', t);
+        execute format('grant select (%s) on public.%I to authenticated', cols, t);
+      end loop;
+    end $;
+  `);
+  console.log("✓ Colunas secretas fora da sessão (token/PIN/código)");
+
   console.log(
     count === 0
       ? "\nNada novo. Banco já está atualizado. ✅"

@@ -1,14 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { exigirAcesso } from "@/lib/permissoes-server";
+import { empresaAtualId } from "@/lib/empresa";
 import type { Colaborador } from "@/lib/types";
 import { ColaboradoresClient, type FolgaPerfil, type HorarioOpcao, type Row } from "./client";
 import { resumoHorario, type HorarioPonto } from "@/lib/ponto-horarios-core";
 import { hojeSP } from "@/lib/assiduidade-server";
 
 export default async function ColaboradoresPage() {
+  // Token do link pessoal, PIN e código de ativação não são lidos pela sessão
+  // (SEC-04, migration 0292): só aqui, pelo servidor, pra quem tem a permissão.
+  await exigirAcesso("/colaboradores");
+  const empresaId = (await empresaAtualId()) ?? "";
   const supabase = await createClient();
   const hoje = hojeSP();
   const [{ data: colabs }, { data: folgas }, { data: setoresCk }, { data: hors }, { data: vincs }, { data: motivos }] = await Promise.all([
-    supabase.from("colaboradores").select("*").order("nome"),
+    createAdminClient().from("colaboradores").select("*").eq("empresa_id", empresaId).order("nome"),
     supabase
       .from("folgas_funcionarios")
       .select("id, colaborador_id, grupo, vinculo, funcao, dias, grupo2, dias2, gerente, ativo")

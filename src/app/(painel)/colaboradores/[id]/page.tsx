@@ -8,6 +8,8 @@ import { duracao } from "@/lib/ponto-relatorio-core";
 import { DIAS_SEMANA, minutosDoDia, ORDEM_DIAS, periodosDoDia, resumoHorario, totalSemana, type HorarioPonto } from "@/lib/ponto-horarios-core";
 import { CAMPOS_GERAIS, CAMPOS_PESSOAIS, diasAte } from "@/lib/ficha-core";
 import { AbaCampos, CargosAba, DemissaoAba, DocumentosAba, HorarioAba, type Documento, type Opcao } from "./ficha";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 
 export const metadata = { title: "Ficha do funcionário" };
 export const dynamic = "force-dynamic";
@@ -30,7 +32,8 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
   const supabase = await createClient();
   const hoje = hojeSP();
 
-  const { data: c } = await supabase.from("colaboradores").select("*").eq("id", id).maybeSingle();
+  // Segredos (token/PIN/código) só pelo servidor, depois da permissão (SEC-04).
+  const { data: c } = await createAdminClient().from("colaboradores").select("*").eq("id", id).eq("empresa_id", (await empresaAtualId()) ?? "").maybeSingle();
   if (!c) notFound();
   const col = c as Record<string, unknown> & { id: string; nome: string; ativo: boolean; bate_ponto: boolean; whatsapp: string | null; departamento_id: string | null; cargo_id: string | null; superior_id: string | null; motivo_demissao_id: string | null; desligado_em: string | null; desligado_motivo: string | null; admissao: string | null; nascimento: string | null; matricula: string | null; funcao: string | null };
 

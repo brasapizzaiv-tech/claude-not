@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { salvarKernDelivery } from "./actions";
 import { GerarAgora } from "./gerar";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Kern · Delivery" };
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export default async function KernDeliveryPage() {
     supabase.from("kern_delivery_config").select("ativo, item_id, clientes").maybeSingle(),
     supabase.from("pdv_itens").select("id, nome, preco").eq("ativo", true).ilike("nome", "%marmit%").order("nome"),
     supabase.from("clientes").select("id, nome, bairro, logradouro").ilike("nome", "%kern%").order("nome"),
-    supabase.from("mkt_config").select("chave, valor").in("chave", ["filiais", "horaEntrega", "horaLimite"]),
+    createAdminClient().from("mkt_config").select("chave, valor").in("chave", ["filiais", "horaEntrega", "horaLimite"]),
     supabase.from("mkt_pedidos").select("filial").like("data", `${hoje}%`),
     supabase.from("kern_delivery").select("data, filial, qtd, pedido_id, atualizado_em, delivery_pedidos(status, pago)").gte("data", diasAtras(hoje, 14)).order("data", { ascending: false }).order("filial"),
   ]);

@@ -5,6 +5,9 @@ import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { criarEntregador, criarEntregadorDoColaborador, alternarEntregador, salvarValoresEntregador, novoCodigoEntregador } from "../actions";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
+import { exigirAcesso } from "@/lib/permissoes-server";
 
 export const metadata = { title: "Entregadores · Delivery" };
 export const dynamic = "force-dynamic";
@@ -28,12 +31,15 @@ function Turnos({ dia = true, noite = true }: { dia?: boolean; noite?: boolean }
 // (fixo por turno + por tele + regra do almoço) e onde está agora (GPS do app).
 // Os fixos vêm de Colaboradores; os eventuais são cadastrados aqui.
 export default async function EntregadoresPage() {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   const h = await headers();
   const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "www.brasarestaurante.com.br"}`;
   const [{ data }, { data: cols }] = await Promise.all([
-    supabase.from("entregadores")
+    // token/código só pelo servidor (SEC-04), com a permissão do delivery.
+    createAdminClient().from("entregadores")
       .select("id, nome, telefone, ativo, token, codigo, codigo_ate, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite, troco_inicial, ultima_lat, ultima_lng, ultima_pos_em")
+      .eq("empresa_id", (await empresaAtualId()) ?? "")
       .order("nome"),
     supabase.from("colaboradores").select("id, nome, nome_social").eq("ativo", true).order("nome"),
   ]);

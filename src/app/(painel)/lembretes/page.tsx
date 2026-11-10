@@ -4,6 +4,8 @@ import { Icone } from "@/components/icone";
 import { ehPara, lerLembrete, resumoQuando, valeNoDia, ATRASADO_ATE_DIAS, type Lembrete } from "@/lib/lembretes-core";
 import { hojeSP } from "@/lib/lembretes-server";
 import { LembretesClient, type LinhaLembrete } from "./client";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 
 export const metadata = { title: "Lembretes · Brasa" };
 export const dynamic = "force-dynamic";
@@ -27,12 +29,15 @@ export default async function LembretesPage() {
   const [{ data: ls }, { data: setRows }, { data: colRows }, { data: confRows }] = await Promise.all([
     supabase.from("lembretes").select("*").order("criado_em", { ascending: false }),
     supabase.from("checklist_setores").select("id, nome").eq("ativo", true).order("ordem"),
-    supabase.from("colaboradores").select("id, nome, checklist_setores, pin, ativo").eq("ativo", true).order("nome"),
+    supabase.from("colaboradores").select("id, nome, checklist_setores, ativo").eq("ativo", true).order("nome"),
     supabase.from("lembrete_confirmacoes").select("lembrete_id, colaborador_id, dia, confirmado_em").gte("dia", limite),
   ]);
   const lembretes = ((ls ?? []) as Record<string, unknown>[]).map(lerLembrete);
   const setores = ((setRows ?? []) as { id: string; nome: string }[]);
-  const todos = ((colRows ?? []) as { id: string; nome: string; checklist_setores: string[] | null; pin: string | null }[]);
+  // Quem usa o app = quem já criou PIN. O PIN não é lido pela sessão (SEC-04):
+  // o servidor só diz sim/não.
+  const comPin = new Set(((await createAdminClient().from("colaboradores").select("id").eq("empresa_id", (await empresaAtualId()) ?? "").eq("ativo", true).not("pin", "is", null)).data ?? []).map((r) => (r as { id: string }).id));
+  const todos = ((colRows ?? []) as { id: string; nome: string; checklist_setores: string[] | null }[]).map((c) => ({ ...c, pin: comPin.has(c.id) ? "sim" : null }));
   // Só conta quem já usa o app (tem PIN). Quem nunca entrou não tem como ver,
   // e listar como "falta" só ia fazer barulho.
   const usamApp = todos.filter((c) => !!c.pin).map((c) => ({ id: c.id, nome: c.nome, setores: c.checklist_setores ?? [] }));
