@@ -1608,6 +1608,7 @@ export async function pagarSelecao(
             caixa_id: caixaId,
             emitir_em: new Date(Date.now() + minutos * 60_000).toISOString(),
           }).select("id").maybeSingle();
+          if (!pend) throw new Error("a pendência da nota automática não gravou");
           pendenteId = (pend as { id?: string } | null)?.id ?? null;
         }
       }

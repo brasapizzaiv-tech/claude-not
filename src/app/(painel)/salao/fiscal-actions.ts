@@ -147,18 +147,41 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   // No recebimento, as outras notas da comanda são de OUTROS pagamentos (cada
   // pessoa a sua): só conta a deste recebimento.
   const filtroNotas = rec ? `recebimento_id.eq.${rec.id}` : dasComandas;
+  const filtroAndamento = rec ? `recebimento_id.eq.${rec.id},and(recebimento_id.is.null,or(${dasComandas}))` : dasComandas;
 
   // Nota dessa venda ainda em andamento (enviando agora, ou a SEFAZ processando):
   // emitir de novo daria duas notas pra mesma venda (FIS-01/NFE-01).
   const { data: andando } = await supabase
     .from("nfce_emitidas")
     .select("id, status, criado_em")
-    .or(filtroNotas)
+    .or(filtroAndamento)
     .in("status", ["processando_autorizacao", "enviando"])
     .gte("criado_em", new Date(Date.now() - 2 * 60_000).toISOString())
     .limit(1)
     .maybeSingle();
   if (andando) return { ok: false, mensagem: "A nota dessa venda está sendo emitida agora. Espere um minuto e confira em Notas fiscais." };
+
+  if (!rec) {
+    const { data: recs } = await supabase
+      .from("pdv_recebimentos")
+      .select("id")
+      .overlaps("comanda_ids", ids)
+      .order("criado_em", { ascending: true })
+      .limit(20);
+    const recIds = ((recs as { id: string }[]) ?? []).map((r) => r.id);
+    if (recIds.length > 0) {
+      const { data: notasRec } = await supabase
+        .from("nfce_emitidas")
+        .select("recebimento_id")
+        .in("recebimento_id", recIds)
+        .eq("status", "autorizado");
+      const comNota = new Set(((notasRec as { recebimento_id: string }[]) ?? []).map((n) => n.recebimento_id));
+      if (comNota.size > 0) {
+        const falta = recIds.find((id) => !comNota.has(id));
+        if (falta) return emitirNfceCore(supabase, ids, documento, falta);
+      }
+    }
+  }
 
   // Já autorizada? devolve. No recebimento: a dele, ou uma da comanda inteira
   // (emitida antes de existir a nota por recebimento — ela já cobre tudo).
@@ -198,7 +221,9 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   const ambiente = (cfg.emissor_ambiente as FocusAmbiente) || "homologacao";
   const com = {
     forma_pagamento: coms.find((c) => c.forma_pagamento)?.forma_pagamento ?? null,
-    cliente_id: rec?.cliente_id ?? coms.find((c) => c.cliente_id)?.cliente_id ?? null,
+    // No recebimento, só o cliente escolhido NELE: o da comanda pode ter sido
+    // gravado pelo pagamento de outra pessoa (a nota sairia com o CPF dela).
+    cliente_id: rec ? rec.cliente_id ?? null : coms.find((c) => c.cliente_id)?.cliente_id ?? null,
   };
   if (!docLimpo && com.cliente_id) {
     const { data: cli } = await supabase.from("clientes").select("nome, cpf_cnpj").eq("id", com.cliente_id as string).maybeSingle();
@@ -323,6 +348,7 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   // (COD-002). Sem pagamento registrado (venda antiga, pedido pago fora do
   // caixa), vale a forma da comanda, como antes.
   let formasPagamento = pagamentosDaNota(rec ? await pagamentosDosMovs(supabase, rec.mov_ids ?? []) : await pagamentosDasComandas(supabase, ids), liquido);
+  if (rec && formasPagamento.length === 0) formasPagamento = pagamentosDaNota(await pagamentosDasComandas(supabase, ids), liquido);
   if (formasPagamento.length === 0) {
     const forma = await codigoFiscalDaForma((com.forma_pagamento as string) || "");
     formasPagamento = pagamentosDaNota([{ codigo: forma, valor: liquido }], liquido);
@@ -335,7 +361,7 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   const { data: tentativas } = await supabase
     .from("nfce_emitidas")
     .select("id, ref, status, mensagem, modelo, ambiente, empresa_id")
-    .or(filtroNotas)
+    .or(filtroAndamento)
     .eq("modelo", "nfce")
     .eq("ambiente", ambiente)
     .gte("criado_em", new Date(Date.now() - 48 * 3600_000).toISOString())
