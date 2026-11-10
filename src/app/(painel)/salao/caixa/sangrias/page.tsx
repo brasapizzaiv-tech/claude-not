@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { buscarTodas } from "@/lib/supabase/todas";
-import { categoriasDeSangria } from "@/lib/sangria-financeiro";
+import { categoriasDeSangria, finDaSangria } from "@/lib/sangria-financeiro";
 import { SangriasClient, type LinhaSangria } from "./sangrias-client";
 
 export const metadata = { title: "Sangrias · Caixa" };
@@ -17,20 +17,24 @@ export default async function SangriasPage({ searchParams }: { searchParams: Pro
   const { de: deParam } = await searchParams;
   const de = /^\d{4}-\d{2}-\d{2}$/.test(deParam ?? "") ? (deParam as string) : "2026-09-01";
   const db = await createClient();
+  // O financeiro vem pelo servidor: quem só tem o Salão não lê as contas (SEC-04).
+  const fin = await finDaSangria();
   const [movs, categorias, parecidos] = await Promise.all([
     buscarTodas<{ id: string; descricao: string | null; valor: number; criado_em: string; lancamento_id: string | null }>((a, b) =>
       db.from("pdv_caixa_mov").select("id, descricao, valor, criado_em, lancamento_id").eq("tipo", "sangria")
         .gte("criado_em", `${de}T03:00:00Z`).order("criado_em", { ascending: false }).order("id").range(a, b),
     ),
-    categoriasDeSangria(db),
+    categoriasDeSangria(db, undefined, fin),
     // Contas lançadas à mão no período: mesmo valor perto da data = possível duplicidade.
-    buscarTodas<{ id: string; descricao: string | null; valor: number; data: string }>((a, b) =>
-      db.from("lancamentos").select("id, descricao, valor, data").gte("data", de).neq("origem", "caixa").order("id").range(a, b),
-    ),
+    fin
+      ? buscarTodas<{ id: string; descricao: string | null; valor: number; data: string }>((a, b) =>
+          fin.admin.from("lancamentos").select("id, descricao, valor, data").eq("empresa_id", fin.empresaId).gte("data", de).neq("origem", "caixa").order("id").range(a, b),
+        )
+      : Promise.resolve([] as { id: string; descricao: string | null; valor: number; data: string }[]),
   ]);
   const lids = movs.map((m) => m.lancamento_id).filter(Boolean) as string[];
-  const { data: lancs } = lids.length
-    ? await db.from("lancamentos").select("id, categoria_id").in("id", lids)
+  const { data: lancs } = lids.length && fin
+    ? await fin.admin.from("lancamentos").select("id, categoria_id").eq("empresa_id", fin.empresaId).in("id", lids)
     : { data: [] as { id: string; categoria_id: string | null }[] };
   const catDoLanc = new Map(((lancs as { id: string; categoria_id: string | null }[]) ?? []).map((l) => [l.id, l.categoria_id]));
   const nomeCat = new Map(categorias.map((c) => [c.id, c.nome]));

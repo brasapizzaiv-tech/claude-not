@@ -3,7 +3,7 @@ import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "../util";
 import { CaixaAcoes } from "./acoes";
-import { categoriasDeSangria } from "@/lib/sangria-financeiro";
+import { categoriasDeSangria, finDaSangria } from "@/lib/sangria-financeiro";
 import { FechamentoZ } from "./fechamento-z";
 import { AbrirCaixaForm } from "./abrir-caixa";
 import { ReceberComandas } from "./receber";
@@ -37,7 +37,7 @@ export default async function CaixaPage({
 }) {
   const { abrir } = await searchParams;
   const supabase = await createClient();
-  const categoriasSangria = await categoriasDeSangria(supabase);
+  const categoriasSangria = await categoriasDeSangria(supabase, undefined, await finDaSangria());
   const { data: caixa } = await supabase
     .from("pdv_caixas")
     .select("id, nome, saldo_inicial, aberto_em, status")

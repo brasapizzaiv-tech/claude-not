@@ -8,6 +8,7 @@ import { pedidoAtrasado } from "@/lib/delivery-atraso";
 import { Inicio, type DadosInicio, type Mesa } from "./inicio";
 import { AvisoSaude } from "@/components/aviso-saude";
 import { empresaAtualId } from "@/lib/empresa";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Tela inicial do painel (Etapa 4 do design).
 //
@@ -129,7 +130,9 @@ export default async function DashboardPage({
     pode("etiquetas")
       ? supabase.from("etiquetas").select("id").eq("status", "ativa").lt("validade", dia)
       : Promise.resolve({ data: [] as { id: string }[] }),
-    supabase.from("presencas").select("colaborador_id, turno").eq("data", dia),
+    // Presença e ponto só abrem pra quem tem Colaboradores (SEC-04): aqui vêm
+    // pelo servidor, filtradas pela empresa, só quem e em que turno.
+    empresaAtualId().then((emp) => createAdminClient().from("presencas").select("colaborador_id, turno").eq("empresa_id", emp ?? "00000000-0000-0000-0000-000000000000").eq("data", dia)),
     supabase.from("delivery_config").select("aberto").maybeSingle(),
     // Comandas abertas em cada um dos 7 dias + o mesmo dia da semana passada
     // (contagem pelo banco, sem trazer linhas: passa fácil de 1000 na semana).
@@ -278,9 +281,10 @@ export default async function DashboardPage({
   );
   // E quem bateu ponto neste turno: a presença só é lançada pra quem está
   // marcado "bate ponto", mas na casa está todo mundo que bateu.
-  const { data: batidasTurno } = await supabase
+  const { data: batidasTurno } = await createAdminClient()
     .from("ponto_batidas")
     .select("colaborador_id")
+    .eq("empresa_id", (await empresaAtualId()) ?? "00000000-0000-0000-0000-000000000000")
     .eq("data", dia)
     .eq("turno", turnoAgora)
     .eq("desconsiderada", false)

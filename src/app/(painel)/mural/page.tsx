@@ -2,6 +2,8 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { dadosDoMural } from "@/lib/mural-server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { Mural } from "./mural";
 import { LinkDaTv } from "./link-da-tv";
 
@@ -26,9 +28,12 @@ export const dynamic = "force-dynamic";
 export default async function MuralPage() {
   await exigirAcesso("/mural");
   const supabase = await createClient();
+  // As folgas só abrem pra quem tem Folgas/Colaboradores (SEC-04). O mural lê
+  // pelo servidor, como a TV, com a empresa como filtro.
+  const empresaId = (await empresaAtualId()) ?? "00000000-0000-0000-0000-000000000000";
 
   const [{ folgas, solicitacoes, feriados, eventos, aniversarios, entregas, hoje }, { data: config }, h] = await Promise.all([
-    dadosDoMural(supabase),
+    dadosDoMural(createAdminClient(), empresaId),
     supabase.from("mural_config").select("chave").maybeSingle(),
     headers(),
   ]);

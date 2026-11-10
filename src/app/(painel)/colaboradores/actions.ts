@@ -217,7 +217,7 @@ export async function reativarColaborador(formData: FormData) {
 // Link da noite: quem abre digita o nome e entra no app do garçom até o fim
 // do link, sem cadastro. Um link ativo por vez.
 export async function linkGarcomAvulso() {
-  await exigirAcesso(["/colaboradores", "/salao"]);
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const { data } = await supabase
     .from("garcom_convites")
@@ -231,7 +231,7 @@ export async function linkGarcomAvulso() {
 }
 
 export async function gerarLinkGarcomAvulso() {
-  await exigirAcesso(["/colaboradores", "/salao"]);
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const { fimDaNoite, tokenConvite } = await import("@/lib/garcom-avulso");
   await supabase.from("garcom_convites").update({ ativo: false }).eq("ativo", true);
@@ -244,7 +244,7 @@ export async function gerarLinkGarcomAvulso() {
 
 // Encerra o link e tira na hora quem entrou por ele.
 export async function encerrarLinkGarcomAvulso() {
-  await exigirAcesso(["/colaboradores", "/salao"]);
+  await exigirAcesso("/colaboradores");
   const supabase = await createClient();
   const agora = new Date().toISOString();
   await supabase.from("garcom_convites").update({ ativo: false }).eq("ativo", true);

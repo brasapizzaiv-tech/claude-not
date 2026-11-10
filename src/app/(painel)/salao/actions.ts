@@ -2288,6 +2288,9 @@ export async function sangria(formData: FormData) {
   const categoriaId = ((formData.get("categoria_id") as string) || "").trim();
   const categoriaValida = /^[0-9a-f-]{36}$/i.test(categoriaId);
   if (formData.get("destino") === "pagamento" && !categoriaValida) return;
+  const { finDaSangria, lancarSangriaNoFinanceiro } = await import("@/lib/sangria-financeiro");
+  const fin = categoriaValida ? await finDaSangria() : null;
+  if (categoriaValida && !fin) throw new Error("Não consegui saber a empresa deste acesso. Entre de novo.");
   const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
     caixa_id: caixaId,
     tipo: "sangria",
@@ -2296,9 +2299,9 @@ export async function sangria(formData: FormData) {
     valor,
   }).select("id").single();
   // Pagamento com categoria = despesa paga no financeiro (migration 0252).
-  if (mov?.id && categoriaValida) {
-    const { lancarSangriaNoFinanceiro } = await import("@/lib/sangria-financeiro");
-    await lancarSangriaNoFinanceiro(supabase, mov.id as string, categoriaId);
+  if (mov?.id && categoriaValida && fin) {
+    const r = await lancarSangriaNoFinanceiro(supabase, fin, mov.id as string, categoriaId);
+    if (!r.ok) await registrarErro("caixa:sangria-financeiro", `Sangria sem despesa no financeiro: ${r.mensagem}`, { movId: mov.id }, fin.empresaId);
   }
   revalidatePath("/salao/caixa");
 }
