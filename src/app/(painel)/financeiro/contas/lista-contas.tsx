@@ -279,11 +279,26 @@ function Linhas({
 export function ListaContasView({
   linhas,
   aberto,
+  status = "aberto",
+  filtrosQs = "",
+  buscaInicial = "",
 }: {
   linhas: LinhaConta[];
   aberto: boolean;
+  /** Situação escolhida: a busca só olha as contas dela. */
+  status?: string;
+  /** Os filtros da tela, pra levar a busca pra "Todas" sem perder nenhum. */
+  filtrosQs?: string;
+  buscaInicial?: string;
 }) {
-  const [busca, setBusca] = useState("");
+  const [busca, setBusca] = useState(buscaInicial);
+  // "Procurar em todas": mesma busca e filtros, na situação Todas.
+  const linkTodas = (() => {
+    const q = new URLSearchParams(filtrosQs);
+    q.set("status", "todas");
+    q.set("q", busca.trim());
+    return `/financeiro/contas?${q.toString()}`;
+  })();
 
   // Por qual coluna a lista está ordenada. Vale pra tela toda, e ordena DENTRO
   // de cada grupo — a divisão por vencimento continua mandando, porque é ela
@@ -338,11 +353,12 @@ export function ListaContasView({
   const filtradas = useMemo(() => {
     const q = norm(busca.trim());
     if (!q) return linhas;
+    // Número digitado ("1.250,00", "89,9", "150") também acha pelo valor.
+    const soNumero = /^[\d.,]+$/.test(q) ? Number(q.includes(",") || /^\d{1,3}(\.\d{3})+$/.test(q) ? q.replace(/\./g, "").replace(",", ".") : q) : NaN;
     return linhas.filter(
       (l) =>
-        norm(l.descricao ?? "").includes(q) ||
-        norm(l.fornecedores?.nome ?? "").includes(q) ||
-        norm(l.dre_categorias?.nome ?? "").includes(q),
+        norm(l.texto_busca ?? [l.descricao, l.fornecedores?.nome, l.dre_categorias?.nome].filter(Boolean).join(" ")).includes(q) ||
+        (Number.isFinite(soNumero) && soNumero > 0 && Math.abs(Number(l.valor) - soNumero) < 0.005),
     );
   }, [busca, linhas]);
 
@@ -417,6 +433,12 @@ export function ListaContasView({
           {filtradas.length} de {linhas.length}
         </span>
       </div>
+      {busca.trim() && status !== "todas" && (
+        <p className="-mt-2 mb-4 text-sm text-texto-suave">
+          Procurando só nas contas {status === "pagas" ? "pagas" : "em aberto"}.{" "}
+          <a href={linkTodas} className="font-semibold text-texto-marca underline">Procurar em todas (abertas e pagas)</a>
+        </p>
+      )}
 
       {aberto && (
         <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao px-3 py-2 text-sm">

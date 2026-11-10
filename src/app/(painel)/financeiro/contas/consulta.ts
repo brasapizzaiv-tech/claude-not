@@ -34,6 +34,9 @@ export type LinhaConta = {
   categoria_id: string | null;
   dre_categorias: { nome?: string; tipo?: string } | null;
   fornecedores: { nome?: string } | null;
+  /** Tudo o que a busca da tela procura: descrição, fornecedor e categoria de
+   *  TODOS os lançamentos do boleto (antes só os do primeiro). */
+  texto_busca?: string;
 };
 
 // Agrupa os lançamentos de uma MESMA nota + vencimento (= um boleto) numa linha
@@ -49,9 +52,10 @@ export function agruparContas(linhas: LinhaConta[]): LinhaConta[] {
         ? `nota|${l.nota_id}|${l.vencimento ?? ""}|${l.pago ? "1" : "0"}`
         : `lanc|${l.id}`;
     const custas = l.ajuste ? Number(l.valor) : 0;
+    const texto = [l.descricao, l.fornecedores?.nome, l.dre_categorias?.nome].filter(Boolean).join(" ");
     const g = grupos.get(key);
     if (!g) {
-      grupos.set(key, { ...l, ids: [l.id], custas });
+      grupos.set(key, { ...l, ids: [l.id], custas, texto_busca: texto });
       // O ajuste (custas do boleto) não conta como "categoria" da linha.
       cats.set(
         key,
@@ -61,6 +65,7 @@ export function agruparContas(linhas: LinhaConta[]): LinhaConta[] {
       g.valor = Math.round((Number(g.valor) + Number(l.valor)) * 100) / 100;
       g.custas = Math.round(((g.custas ?? 0) + custas) * 100) / 100;
       g.ids!.push(l.id);
+      g.texto_busca = `${g.texto_busca ?? ""} ${texto}`;
       if (!l.ajuste && l.dre_categorias?.nome)
         cats.get(key)!.add(l.dre_categorias.nome);
     }

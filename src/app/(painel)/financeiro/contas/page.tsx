@@ -193,7 +193,7 @@ export default async function ContasPagarPage({
         </div>
       ) : (
         <>
-          <ListaContasView linhas={linhasAgrupadas} aberto={aberto} />
+          <ListaContasView linhas={linhasAgrupadas} aberto={aberto} status={f.status || "aberto"} filtrosQs={querystring} buscaInicial={sp.q ?? ""} />
           {/* Rodapé: o resumo do que está na tela agora. */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-cartao bg-painel-cartao px-4 py-3">
             <p className="text-xs text-texto-fraco">
