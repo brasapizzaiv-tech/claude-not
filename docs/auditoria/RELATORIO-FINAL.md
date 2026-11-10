@@ -268,9 +268,11 @@ Revisão independente do lote 2: 5 pontos (trava burlável com tentativas simult
 
 | 3 | `3eeee8a` | **COD-001**: Next.js e eslint-config-next 16.3.0 → 16.4.5 (avisos críticos), undici 8.12.4, node-forge 1.4.3, xmldom/source-map-js; sobra o xlsx (sem correção no npm; só quem tem Financeiro usa). **SEC-15** (migration 0290): anon sem permissão em tabela/sequência (só lê `empresas`, a única policy dele), padrão de tabela nova também; `scripts/migrate.mjs` não devolve mais ao anon e falha se alguma tabela do public estiver sem RLS. Conferido no ar (10/11 ~07h45): robô abriu 15 telas (os 2 avisos #418 em /cozinha e /etiquetas são o TEL-004 antigo), rotinas seguem rodando, anon recusado |
 
+| 4 | `c0be492` | **AGT-12** (balança 1.2.5) e **PAG-09** (pinpad 0.9.15): porta local só aceita a página do sistema (origem do config.json, com e sem www, ou `origens`), loga a recusada; pinpad recusa corpo grande sem travar e perdeu o `/raw`. **AGT-11** (impressão 1.3.1): senha do relógio cifrada pelo Windows (DPAPI) no relogio.json, a antiga é cifrada ao ligar; desinstaladores da balança e do pinpad acham o .pid e só matam o processo se ainda for o nosso. Instaladores na página Downloads; **falta instalar nos PCs** |
+
 Revisão independente do lote 1: 1 ponto sério (o app do garçom não lançaria itens) e 2 menores (foto HEIC, peso acima de 32 kg cobrado calado), corrigidos antes de publicar. Robô só leitura: 8 telas do painel abrem sem erro; rotinas seguem gravando sinal depois da publicação.
 
-Falta na Onda 3: SEC-04 (permissão por tela também no banco), AGT-11/AGT-12/PAG-09 (agentes), SEC-16 (LGPD), MSG-03 (apps nas lojas).
+Falta na Onda 3: SEC-04 (permissão por tela também no banco), SEC-16 (LGPD), MSG-03 (apps nas lojas).
 
 ## Como vai ser a correção
 

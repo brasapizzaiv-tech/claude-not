@@ -228,6 +228,7 @@ teste fora da guarda.
 - Esforço: P · Risco: médio (versão nova do agente)
 
 ### [PAG-09] Porta local do agente TEF sem senha; envio grande trava o pinpad até reiniciar
+- **Corrigido em 10/11/2026 (Onda 3, lote 4).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `agente-tef/agente.mjs:294-306`, `:322-324`, `:367-373`
 - O que acontece: aceita pedido de qualquer origem (`/venda`, `/cancelar`, `/desfazer`); `/raw` mostra o último
@@ -341,6 +342,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [AGT-11] Segredos e desinstalação nos PCs
+- **Corrigido em 10/11/2026 (Onda 3, lote 4).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `agente-impressao/bandeja.ps1:80-149` (senha do relógio em texto em `C:\ProgramData\AgenteImpressao\relogio.json`,
   pasta que qualquer usuário altera, `impressao.iss:36`); `ponto.mjs:24` (relógio por `http://`); nenhuma ação pra trocar
@@ -349,6 +351,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [AGT-12] O endereço local da balança aceita pedido de qualquer página aberta no PC
+- **Corrigido em 10/11/2026 (Onda 3, lote 4).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `agente-balanca/agente.mjs:402-406` (CORS `*`, conferido), `:432-460`, `:488-516`
 - O que acontece: um site aberto naquele PC pode imprimir cupom com valor inventado ou trocar a impressora. No sistema o
