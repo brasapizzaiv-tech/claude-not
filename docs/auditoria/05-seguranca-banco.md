@@ -89,7 +89,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   O arquivo e a senha do certificado não foram tocados (a senha segue em coluna de texto, agora só o dono lê).
 
 ### [SEC-04] A RLS não distingue funcionário de dono: quase tudo aberto pra qualquer login
-- **Fase A corrigida em 10/11/2026 (Onda 3):** token dos agentes e config das marmitas só do dono; token/PIN/código de colaboradores e entregadores sem SELECT pra sessão (migration 0292). Fase B (permissão por módulo nas tabelas de dinheiro e equipe) em aberto.
+- **Fase A corrigida em 10/11/2026 (Onda 3):** token dos agentes e config das marmitas só do dono; token/PIN/código de colaboradores e entregadores sem SELECT pra sessão (migration 0292). **Fase B, lote 1 (10/11, migrations 0294/0295):** dados pessoais da equipe (CPF, RG, PIS, CTPS, CNH, endereço, telefone, nascimento, pais, tipo sanguíneo, filhos, salário/diária) só pela visão `colaboradores_dados` (permissão Colaboradores). Correção da 0292 na 0293 (geradores de código). Restam: equipe e dinheiro por módulo, clientes/Pix/cartão.
 - Severidade: **alto**
 - Onde: 149–151 tabelas com a mesma regra `ALL to authenticated using/check (empresa_id = empresa_atual())`.
 - O que alguém consegue fazer pela API, com qualquer login (até o do quiosque da balança):
