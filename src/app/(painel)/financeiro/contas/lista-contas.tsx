@@ -357,7 +357,7 @@ export function ListaContasView({
     const soNumero = /^[\d.,]+$/.test(q) ? Number(q.includes(",") || /^\d{1,3}(\.\d{3})+$/.test(q) ? q.replace(/\./g, "").replace(",", ".") : q) : NaN;
     return linhas.filter(
       (l) =>
-        norm(l.texto_busca ?? [l.descricao, l.fornecedores?.nome, l.dre_categorias?.nome].filter(Boolean).join(" ")).includes(q) ||
+        norm(l.texto_busca ?? [l.descricao, l.fornecedores?.nome, l.dre_categorias?.nome, l.forma_pagamento, l.banco].filter(Boolean).join(" ")).includes(q) ||
         (Number.isFinite(soNumero) && soNumero > 0 && Math.abs(Number(l.valor) - soNumero) < 0.005),
     );
   }, [busca, linhas]);
@@ -418,7 +418,7 @@ export function ListaContasView({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar conta por descrição, fornecedor ou categoria..."
+          placeholder="Buscar por descrição, fornecedor, categoria, forma de pagamento ou valor..."
           className="min-h-11 w-full max-w-md rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
         />
         {busca && (

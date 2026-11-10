@@ -52,7 +52,8 @@ export function agruparContas(linhas: LinhaConta[]): LinhaConta[] {
         ? `nota|${l.nota_id}|${l.vencimento ?? ""}|${l.pago ? "1" : "0"}`
         : `lanc|${l.id}`;
     const custas = l.ajuste ? Number(l.valor) : 0;
-    const texto = [l.descricao, l.fornecedores?.nome, l.dre_categorias?.nome].filter(Boolean).join(" ");
+    // Forma e banco também: "cartão" acha as pagas no cartão de crédito.
+    const texto = [l.descricao, l.fornecedores?.nome, l.dre_categorias?.nome, l.forma_pagamento, l.banco].filter(Boolean).join(" ");
     const g = grupos.get(key);
     if (!g) {
       grupos.set(key, { ...l, ids: [l.id], custas, texto_busca: texto });
