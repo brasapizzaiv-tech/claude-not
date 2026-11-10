@@ -262,9 +262,13 @@ Downloads e aviso na tela inicial; rotinas e relógio de ponto gravando sinal; a
 |---|---|---|
 | 1 | `5868b6f` | **SEC-11**: `exigirAcesso` nas 141 ações do painel que não conferiam permissão no servidor (garçom continua lançando item: `["/salao","/garcom"]`); desconto do delivery entre 0 e o subtotal; peso do quiosque até 8 kg; `emitirNfceComandasAdmin`/`imprimirNfceAdmin` só rodam com o cliente do servidor. **SEC-07**: foto da cotação por endereço assinado gerado no servidor, nome aleatório, 3 MB, só imagem, o celular reduz a foto; migration 0287 tira a listagem e o envio direto (conferido: anônimo lista 0 e o envio é recusado). **SEC-12** (resto): rotinas só pelo cabeçalho (`?key=` responde 401). **AGT-13**: balança e Central filtradas pela empresa |
 
+| 2 | `4e1eebc` | **SEC-10** (migration 0288): funções de pedido do app da equipe exigem quem confere entrega, pedido/item/produto da própria empresa e pedido não conferido; remover só o item incluído pelo app. **SEC-06** (migration 0289): senhas das marmitas em scrypt (a antiga vira hash no 1º acerto), mínimo 6 e única; 5 erros por endereço ou 50 no total em 15 min travam 15 min (contagem atômica, acerto não zera); dono logado entra antes da trava; `/api/publico` sem matrícula (conferido no ar: 81 nomes, 0 matrículas) |
+
+Revisão independente do lote 2: 5 pontos (trava burlável com tentativas simultâneas, acerto zerava a contagem, senha velha no navegador do dono travava o restaurante, cache de senha entre servidores, função auxiliar chamável), todos corrigidos antes de publicar (publicado 10/11 ~07h10). Pendente com o Rafael: trocar a senha de 4 dígitos do app das marmitas.
+
 Revisão independente do lote 1: 1 ponto sério (o app do garçom não lançaria itens) e 2 menores (foto HEIC, peso acima de 32 kg cobrado calado), corrigidos antes de publicar. Robô só leitura: 8 telas do painel abrem sem erro; rotinas seguem gravando sinal depois da publicação.
 
-Falta na Onda 3: SEC-04 (permissão por tela também no banco), SEC-10 (funções do app da equipe), SEC-06 (marmitas), COD-001 (Next.js), SEC-15 (anon), AGT-11/AGT-12/PAG-09 (agentes), SEC-16 (LGPD), MSG-03 (apps nas lojas).
+Falta na Onda 3: SEC-04 (permissão por tela também no banco), COD-001 (Next.js), SEC-15 (anon), AGT-11/AGT-12/PAG-09 (agentes), SEC-16 (LGPD), MSG-03 (apps nas lojas).
 
 ## Como vai ser a correção
 
