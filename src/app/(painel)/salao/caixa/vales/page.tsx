@@ -8,7 +8,7 @@ import { ValesClient, type ValeLinha } from "./vales-client";
 // Venda no caixa (o dinheiro entra no dia), código pra dar baixa, saldo que
 // vai sendo usado aos poucos, validade (3 meses), e o cartão do cliente:
 // imagem pro WhatsApp, cupom na térmica e cartão pra imprimir.
-export const metadata = { title: "Vales-presente · Brasa" };
+export const metadata = { title: "Vales-presente" };
 
 export default async function ValesPage({ searchParams }: { searchParams: Promise<{ q?: string; todos?: string }> }) {
   const sp = await searchParams;

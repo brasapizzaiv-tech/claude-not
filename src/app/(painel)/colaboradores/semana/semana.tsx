@@ -816,7 +816,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
 
       {/* 10% da noite: painel separado. Cada noite tem a data em que foi gerada e a
           semana em que é paga (padrão: a seguinte). A divisão usa quem trabalhou NAQUELA noite. */}
-      <div className="mb-4 rounded-cartao border border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+      <div className="mb-4 rounded-cartao border border-borda bg-info-fundo p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="flex items-center gap-1.5 font-semibold"><Icone nome="noite" tamanho={15} /> 10% da noite</p>
@@ -827,7 +827,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           </div>
           <div className="flex items-center gap-2 text-sm">
             <input type="date" value={novaNoite} onChange={(e) => setNovaNoite(e.target.value)} className={inputCls} />
-            <button onClick={addNoite} disabled={!novaNoite} className="rounded-controle bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700 disabled:opacity-40">
+            <button onClick={addNoite} disabled={!novaNoite} className="rounded-controle bg-info-texto px-3 py-1.5 font-medium text-painel-cartao hover:opacity-90 disabled:opacity-40">
               + Adicionar noite
             </button>
           </div>
@@ -835,7 +835,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         {dez.length === 0 ? (
           <p className="text-sm text-texto-suave">Nenhuma noite lançada. Adicione a data da noite e digite o valor.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[720px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
@@ -844,7 +844,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                   <th className="px-2 py-1">Paga em</th>
                   <th className="px-2 py-1 text-center">Trabalharam</th>
                   <th className="px-2 py-1 text-right">Cada um</th>
-                  <th className="px-2 py-1"></th>
+                  <th className="px-2 py-1"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -887,7 +887,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                         <select
                           value={e.pagar_em}
                           onChange={(ev) => salvarDez(n.data, e.valor, ev.target.value)}
-                          className={`${inputCls}  ${n.nestaSemana ? "border-indigo-400 font-medium" : ""}`}
+                          className={`${inputCls}  ${n.nestaSemana ? "border-info-texto font-medium" : ""}`}
                         >
                           {opcoesPagar.map((s) => (
                             <option key={s} value={s}>
@@ -906,7 +906,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                     </tr>
                   );
                 })}
-                <tr className="border-t border-indigo-200 font-semibold dark:border-indigo-900">
+                <tr className="border-t border-borda font-semibold">
                   <td className="px-2 py-1" colSpan={1}>Entra nesta semana</td>
                   <td className="px-2 py-1 text-right">
                     {brl(calc.totalPool)}
@@ -923,7 +923,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
       </div>
 
       {modo === "grade" ? (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full text-sm">
             <thead className="rotulo">
               <tr>
@@ -970,7 +970,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                           <button
                             onClick={() => toggle(p, d, "noite")}
                             title="Trabalhou de noite"
-                            className={`h-8 w-8 rounded-controle border text-base ${kn ? "border-indigo-600 bg-indigo-600 text-white" : "border-borda text-zinc-300 hover:border-indigo-400 "}  ${mostraNoite ? "" : "opacity-30"}`}
+                            className={`h-8 w-8 rounded-controle border text-base ${kn ? "border-info-texto bg-info-texto text-painel-cartao" : "border-borda text-zinc-300 hover:border-info-texto "}  ${mostraNoite ? "" : "opacity-30"}`}
                           >
                             <Icone nome="noite" tamanho={17} titulo="Trabalhou de noite" />
                           </button>
@@ -1023,7 +1023,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
               <div className="text-lg font-semibold">{brl(calc.turnoDia.diarias + calc.turnoDia.extras)}</div>
               <div className="text-xs text-texto-suave">{calc.turnoDia.presencas} presença{calc.turnoDia.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoDia.diarias)}{calc.turnoDia.extras > 0 ? ` + extras ${brl(calc.turnoDia.extras)}` : ""} (CLT não entra)</div>
             </div>
-            <div className={`rounded-cartao border bg-painel-cartao p-3 ${turnoFiltro === "noite" ? "border-indigo-500" : "border-borda"}`}>
+            <div className={`rounded-cartao border bg-painel-cartao p-3 ${turnoFiltro === "noite" ? "border-info-texto" : "border-borda"}`}>
               <div className="flex items-center gap-1.5 text-xs font-bold text-texto-suave"><Icone nome="noite" tamanho={13} /> Noite</div>
               <div className="text-lg font-semibold">{brl(calc.turnoNoite.diarias + calc.turnoNoite.dez + calc.turnoNoite.extras)}</div>
               <div className="text-xs text-texto-suave">{calc.turnoNoite.presencas} presença{calc.turnoNoite.presencas === 1 ? "" : "s"} · diárias {brl(calc.turnoNoite.diarias)} + 10% {brl(calc.turnoNoite.dez)}{calc.turnoNoite.extras > 0 ? ` + extras ${brl(calc.turnoNoite.extras)}` : ""}</div>
@@ -1063,7 +1063,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
               Mostrando só o turno {turnoFiltro === "dia" ? "DIA" : "NOITE"}: os valores abaixo são só desse turno. Pra lançar o pagamento, volte em <b>Todos</b>.
             </div>
           )}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[1080px] text-sm">
             <thead className="rotulo text-left">
               <tr>

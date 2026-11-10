@@ -8,6 +8,8 @@ import { criarContagem } from "./actions";
 import { RemoverContagem } from "./remover";
 import { AvulsaForm } from "./avulsa";
 
+export const metadata = { title: "Contagem de estoque" };
+
 export default async function ContagensPage() {
   const supabase = await createClient();
   const [{ data }, { data: cats }, { data: colabs }] = await Promise.all([
@@ -64,14 +66,14 @@ export default async function ContagensPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[560px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
                   <th className="px-4 py-3">Descrição</th>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">

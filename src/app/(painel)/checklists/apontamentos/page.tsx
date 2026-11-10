@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 import { ApontamentosClient } from "./apontamentos-client";
 
-export const metadata = { title: "Apontamentos · Brasa" };
+export const metadata = { title: "Apontamentos" };
 export const dynamic = "force-dynamic";
 
 // Todos os apontamentos: os que estão na TV, os resolvidos e os que expiraram

@@ -696,7 +696,7 @@ export function CompararClient({
       </div>
 
       {fornecedores.some((f) => f.promocaoTexto || f.promocaoFoto) && (
-        <div className="mb-4 rounded-cartao border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
+        <div className="mb-4 rounded-cartao border border-borda bg-info-fundo p-4">
           <h2 className="text-sm font-semibold text-texto">
             <Icone nome="presente" tamanho={16} className="mr-1.5" /> Ofertas dos fornecedores
           </h2>
@@ -706,7 +706,7 @@ export function CompararClient({
               .map((f) => (
                 <div
                   key={f.id}
-                  className="flex gap-3 rounded-controle border border-violet-200 bg-painel-cartao p-2 dark:border-violet-900"
+                  className="flex gap-3 rounded-controle border border-borda bg-painel-cartao p-2"
                 >
                   {f.promocaoFoto && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -1114,13 +1114,13 @@ export function CompararClient({
 
       {/* Pedido direto: itens com fornecedor exclusivo (sem cotação) */}
       {exclusivos.length > 0 && (
-        <div className="mt-4 rounded-cartao border border-indigo-200 bg-indigo-50/50 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+        <div className="mt-4 rounded-cartao border border-borda bg-info-fundo p-4">
           <div className="mb-2 flex items-center gap-2">
             <Icone nome="cupom" tamanho={18} />
             <h2 className="font-semibold text-texto">
               Pedido direto — fornecedor exclusivo
             </h2>
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+            <span className="rounded-full bg-info-fundo px-2 py-0.5 text-xs font-medium text-info-texto">
               {exclusivos.length} {exclusivos.length === 1 ? "item" : "itens"}
             </span>
           </div>

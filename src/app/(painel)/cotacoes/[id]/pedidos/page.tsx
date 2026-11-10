@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { Cotacao } from "@/lib/types";
 import { PedidoAcoes } from "./pedido-acoes";
 
+export const metadata = { title: "Pedidos" };
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -100,7 +102,7 @@ export default async function PedidosPage({
                     {moeda(total)}
                   </span>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-borda">
                       {itens.map((i, idx) => (

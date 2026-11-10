@@ -71,7 +71,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
           <h2 className="text-lg font-semibold">1. Perfis fiscais</h2>
           <button onClick={() => setEditando({ ...VAZIO })} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">+ Novo perfil</button>
         </div>
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="rotulo text-left">
               <tr>
@@ -83,7 +83,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
                 <th className="px-3 py-2">Orig.</th>
                 <th className="px-3 py-2">Un.</th>
                 <th className="px-3 py-2">Homol.</th>
-                <th className="px-3 py-2"></th>
+                <th className="px-3 py-2"><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">
@@ -158,7 +158,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
             <input type="checkbox" checked={soExcecoes} onChange={(e) => setSoExcecoes(e.target.checked)} /> só com exceção
           </label>
         </div>
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[640px] text-sm">
             <thead className="rotulo text-left">
               <tr>

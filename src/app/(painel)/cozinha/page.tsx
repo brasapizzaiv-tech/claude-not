@@ -2,7 +2,7 @@ import type { Viewport } from "next";
 import { filaRodizio } from "./actions";
 import { CozinhaClient } from "./cozinha-client";
 
-export const metadata = { title: "Rodízio · Cozinha · Brasa" };
+export const metadata = { title: "Rodízio · Cozinha" };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, userScalable: false };
 export const dynamic = "force-dynamic";
 

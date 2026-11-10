@@ -201,7 +201,7 @@ export function FaturaClient({
             {semCategoria > 0 && <span className="text-aviso-texto">{semCategoria} sem categoria</span>}
           </div>
 
-          <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+          <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[560px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
@@ -209,7 +209,7 @@ export function FaturaClient({
                   <th className="px-3 py-2">Compra</th>
                   <th className="px-3 py-2">Categoria</th>
                   <th className="px-3 py-2 text-right">Valor</th>
-                  <th className="px-3 py-2"></th>
+                  <th className="px-3 py-2"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">

@@ -6,6 +6,8 @@ import { BANCOS, TIPOS_PAGAMENTO } from "@/lib/financeiro";
 import { consultarContas, agruparContas, type FiltroContas } from "./consulta";
 import { ListaContasView } from "./lista-contas";
 
+export const metadata = { title: "Contas a pagar" };
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

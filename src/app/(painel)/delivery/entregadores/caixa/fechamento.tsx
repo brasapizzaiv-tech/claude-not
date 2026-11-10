@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BotaoAcao } from "@/components/enviar";
 import { fecharCaixaMotoboy } from "../../actions";
+import { confirmar } from "@/components/dialogo";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -43,7 +44,7 @@ export function FechamentoMotoboy({ boy, formas, pedidos }: { boy: { id: string;
     if (!contado.trim()) { setMsg("Conte o dinheiro que ele devolveu e preencha."); return; }
     if (naMaquina > 0 && !maquina.trim()) { setMsg("Some os comprovantes da maquininha e preencha."); return; }
     const avisos = [difD ? `dinheiro ${difD > 0 ? "sobrando" : "faltando"} ${brl(Math.abs(difD))}` : "", difM ? `máquina ${difM > 0 ? "sobrando" : "faltando"} ${brl(Math.abs(difM))}` : ""].filter(Boolean);
-    if (avisos.length && !confirm(`O caixa do ${boy.nome} não bateu: ${avisos.join(" e ")}. Fechar mesmo assim? A diferença fica registrada.`)) return;
+    if (avisos.length && !(await confirmar(`O caixa do ${boy.nome} não bateu: ${avisos.join(" e ")}. Fechar mesmo assim?`, { detalhe: "A diferença fica registrada.", okTexto: "Fechar mesmo assim" }))) return;
     const r = await fecharCaixaMotoboy({ entregadorId: boy.id, troco: lerValor(troco), contado: lerValor(contado), maquina: lerValor(maquina), obs, formas: forma });
     if (!r.ok) { setMsg(r.mensagem); router.refresh(); return; }
     router.refresh();

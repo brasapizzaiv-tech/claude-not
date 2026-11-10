@@ -7,7 +7,7 @@ import { LembretesClient, type LinhaLembrete } from "./client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
 
-export const metadata = { title: "Lembretes · Brasa" };
+export const metadata = { title: "Lembretes" };
 export const dynamic = "force-dynamic";
 
 // LEMBRETES PRA EQUIPE (migration 0218)

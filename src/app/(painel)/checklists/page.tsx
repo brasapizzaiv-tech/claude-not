@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 import { ChecklistItensVista } from "@/components/checklist-itens-vista";
 
-export const metadata = { title: "Checklists de hoje · Brasa" };
+export const metadata = { title: "Checklists de hoje" };
 export const dynamic = "force-dynamic";
 
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });

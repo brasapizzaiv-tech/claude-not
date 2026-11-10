@@ -175,11 +175,11 @@ function Linhas({
 }) {
   const lista = ordenar(itens, ordem);
   return (
-    <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+    <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
       <table className="min-w-[560px] w-full text-sm">
         <thead>
           <tr className="text-xs text-texto-fraco">
-            {selecao && <th className="w-8" />}
+            {selecao && <th className="w-8"><span className="sr-only">Ações</span></th>}
             {aoOrdenar ? (
               <>
                 <Cabecalho rotulo="Conta" campo="conta" ordem={ordem} aoOrdenar={aoOrdenar} alinhar="left" />

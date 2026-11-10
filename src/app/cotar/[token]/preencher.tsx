@@ -557,8 +557,8 @@ export function CotarPreencher({
 
                 {/* ST (Substituição Tributária) — só nos produtos marcados */}
                 {p.tem_st && !emFalta && (
-                  <div className="mt-2 rounded-controle border border-violet-200 bg-violet-50/50 p-2.5 dark:border-violet-900 dark:bg-violet-950/20">
-                    <p className="text-xs font-semibold text-violet-800 dark:text-violet-300">
+                  <div className="mt-2 rounded-controle border border-borda bg-info-fundo p-2.5">
+                    <p className="text-xs font-semibold text-info-texto">
                       <Icone nome="alerta" tamanho={13} className="mr-1" /> Este item tem ICMS-ST
                     </p>
                     <label className="mt-1.5 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
@@ -779,7 +779,7 @@ export function CotarPreencher({
 
           {/* Promoção / oferta do fornecedor */}
           {!fechada && (
-            <div className="rounded-cartao border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
+            <div className="rounded-cartao border border-borda bg-info-fundo p-4">
               <h2 className="text-sm font-semibold text-texto">
                 <Icone nome="presente" tamanho={15} className="mr-1.5" /> Tem alguma promoção ou oferta?
               </h2>
@@ -806,7 +806,7 @@ export function CotarPreencher({
                     className="h-16 w-16 rounded-controle object-cover"
                   />
                 )}
-                <label className="cursor-pointer text-xs font-medium text-violet-600 hover:underline">
+                <label className="cursor-pointer text-xs font-medium text-info-texto hover:underline">
                   {subindoPromo
                     ? "Enviando foto..."
                     : dados.promocao_foto

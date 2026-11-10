@@ -3,7 +3,7 @@ import { Icone } from "@/components/icone";
 import { listarRecadosTv } from "./actions";
 import { RecadosClient } from "./recados-client";
 
-export const metadata = { title: "Recados da TV · Brasa" };
+export const metadata = { title: "Recados da TV" };
 export const dynamic = "force-dynamic";
 
 // Recados que aparecem na TV da cozinha quando não há pedido do rodízio

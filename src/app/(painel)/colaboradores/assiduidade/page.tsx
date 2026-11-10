@@ -8,7 +8,7 @@ import { apurarAssiduidade, hojeSP, lerConfig } from "@/lib/assiduidade-server";
 import { salvarConfigAssiduidade } from "./actions";
 import { ApagarAtestado, LancarTrimestre, NovoAtestado } from "./client";
 
-export const metadata = { title: "Assiduidade · Brasa" };
+export const metadata = { title: "Assiduidade" };
 export const dynamic = "force-dynamic";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -115,7 +115,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
           <h2 className="font-semibold">Trimestre {tri.replace("-T", " · T")} ({mesesTri.map(rotuloMes).join(", ")})</h2>
           {triAcabou ? <LancarTrimestre trimestre={tri} /> : <span className="text-xs text-texto-fraco">paga depois de {dm(fimTri)}</span>}
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[520px] text-sm">
             <thead className="rotulo text-left"><tr><th className="py-1">Pessoa</th>{mesesTri.map((m) => <th key={m} className="py-1">{rotuloMes(m)}</th>)}<th className="py-1 text-right">A receber</th></tr></thead>
             <tbody className="divide-y divide-borda">

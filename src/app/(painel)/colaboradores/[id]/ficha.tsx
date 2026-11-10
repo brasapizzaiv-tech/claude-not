@@ -147,7 +147,7 @@ export function CargosAba({ id, hoje, historico, cargos, admissao }: { id: strin
     <section className="cartao p-4">
       <p className="rotulo mb-2">Histórico de cargos</p>
       <table className="w-full text-sm">
-        <thead className="rotulo text-left"><tr><th className="py-2">De</th><th>Até</th><th>Cargo</th><th></th></tr></thead>
+        <thead className="rotulo text-left"><tr><th className="py-2">De</th><th>Até</th><th>Cargo</th><th><span className="sr-only">Ações</span></th></tr></thead>
         <tbody className="divide-y divide-borda">
           {historico.map((h) => (
             <tr key={h.id}><td className="py-2">{dmy(h.de)}</td><td>{h.ate ? dmy(h.ate) : "em diante"}</td><td className="font-semibold text-texto">{h.nome}</td>
@@ -259,9 +259,9 @@ export function DocumentosAba({ id, docs, temApp }: { id: string; docs: Document
           </form>
         )}
       </div>
-      <div className="cartao overflow-x-auto">
+      <div className="cartao overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="rotulo text-left"><tr><th className="px-4 py-3">Nome</th><th className="px-2 py-3">Tipo</th><th className="px-2 py-3">Assinatura</th><th className="px-2 py-3">Validade</th><th className="px-4 py-3"></th></tr></thead>
+          <thead className="rotulo text-left"><tr><th className="px-4 py-3">Nome</th><th className="px-2 py-3">Tipo</th><th className="px-2 py-3">Assinatura</th><th className="px-2 py-3">Validade</th><th className="px-4 py-3"><span className="sr-only">Ações</span></th></tr></thead>
           <tbody className="divide-y divide-borda">
             {docs.map((d) => (
               <tr key={d.id}>

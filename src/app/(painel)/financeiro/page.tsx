@@ -8,6 +8,8 @@ import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { criarLancamento } from "./actions";
 import { LancamentosTabela } from "./lancamentos-tabela";
 
+export const metadata = { title: "Financeiro" };
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

@@ -7,7 +7,7 @@ import { hojeSP } from "@/lib/etiqueta-vencimentos";
 // Contas fechadas sem entrar dinheiro: o que a casa deu (cortesia) e o que foi
 // pago com vale vendido antes. Ficam fora do caixa e do faturamento — aqui é
 // onde se contabiliza, com o motivo que o caixa escreveu.
-export const metadata = { title: "Cortesias e vales · Brasa" };
+export const metadata = { title: "Cortesias e vales" };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dataHora = (iso: string) =>

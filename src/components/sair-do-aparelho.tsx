@@ -9,6 +9,7 @@
 // página local do app), então a gente volta pra ela com ?sair=1 e ela mesma
 // esquece o endereço (www/index.html). No navegador, só esquece o PIN.
 import { useState } from "react";
+import { confirmar } from "@/components/dialogo";
 
 function telaDoApp(): string | null {
   const w = window as unknown as { androidBridge?: unknown; webkit?: { messageHandlers?: { bridge?: unknown } } };
@@ -21,7 +22,7 @@ export function SairDoAparelho({ aoSair, className = "" }: { aoSair?: () => Prom
   const [saindo, setSaindo] = useState(false);
   async function sair() {
     if (saindo) return;
-    if (!window.confirm("Sair deste aparelho? Pra entrar de novo vai precisar do código (ou do link) e do PIN.")) return;
+    if (!(await confirmar("Sair deste aparelho?", { detalhe: "Pra entrar de novo vai precisar do código (ou do link) e do PIN.", okTexto: "Sair" }))) return;
     setSaindo(true);
     try { await aoSair?.(); } catch { /* sem conexão: no app, voltar pro código resolve igual */ }
     const app = telaDoApp();

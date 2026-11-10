@@ -498,6 +498,12 @@ optgroup {
     outline: 2px solid var(--foco);
     outline-offset: 2px;
   }
+  /* Campo de data/hora (ACE-11): no Chrome o foco vai pra parte de dentro (o
+     dia, o mês) e o campo em si não casa com :focus-visible — saía sem anel. */
+  :where(input[type="date"], input[type="month"], input[type="time"], input[type="datetime-local"], input[type="week"]):focus-within {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
 }
 
 /* ---------- PEÇAS PRONTAS DO LAYOUT NOVO (out/2026) ----------

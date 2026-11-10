@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SolicitacoesClient, type Pessoa, type Solic } from "./client";
 
-export const metadata = { title: "Pedidos da equipe · Brasa" };
+export const metadata = { title: "Pedidos da equipe" };
 
 export default async function SolicitacoesPage() {
   const supabase = await createClient();

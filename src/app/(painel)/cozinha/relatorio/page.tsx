@@ -3,7 +3,7 @@ import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
-export const metadata = { title: "Rodízio · relatório · Brasa" };
+export const metadata = { title: "Rodízio · relatório" };
 export const dynamic = "force-dynamic";
 
 const brT = (iso: string) => iso.split("-").reverse().join("/");
@@ -85,7 +85,7 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-cartao bg-painel-cartao">
           <p className="border-b border-borda px-4 py-2 text-sm font-semibold">Sabores mais pedidos</p>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-borda">
                 {topSabores.map(([s, n]) => (
@@ -98,7 +98,7 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
         </div>
         <div className="rounded-cartao bg-painel-cartao">
           <p className="border-b border-borda px-4 py-2 text-sm font-semibold">Pedidos por mesa</p>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-borda">
                 {topMesas.map(([m, n]) => (

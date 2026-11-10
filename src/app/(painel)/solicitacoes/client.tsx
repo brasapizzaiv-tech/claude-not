@@ -183,7 +183,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           {aba === "pendente" ? "Nenhum pedido pendente." : "Nada por aqui."}
         </div>
       ) : (
-        <div className="overflow-x-auto cartao">
+        <div className="overflow-x-auto cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>

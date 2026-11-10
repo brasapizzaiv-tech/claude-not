@@ -66,7 +66,7 @@ export function OrcamentoClient({
         {msg && <span role="status" className="text-sm text-ok-texto">{msg}</span>}
       </div>
 
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="min-w-[560px] w-full text-sm">
           <thead className="rotulo text-left">
             <tr>

@@ -9,7 +9,7 @@ import { ROTULO_DIVERGENCIA, type ResumoDivergencias, type TipoDivergencia } fro
 // por período e por fornecedor. Os dados vêm gravados em cada pedido
 // (pedidos.divergencias), calculados na hora em que a equipe confere, o
 // painel salva ou a nota é ligada.
-export const metadata = { title: "Divergências da conferência · Brasa" };
+export const metadata = { title: "Divergências da conferência" };
 export const dynamic = "force-dynamic";
 
 const moeda = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -104,7 +104,7 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
 
       {fornecedores.length > 0 && (
         <div className="mb-6 overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[720px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr><th className="px-4 py-2">Fornecedor</th><th className="px-4 py-2 text-right">Pedidos c/ problema</th><th className="px-4 py-2 text-right">Divergências</th><th className="px-4 py-2 text-right">Qtd/falta</th><th className="px-4 py-2 text-right">Preço acima</th><th className="px-4 py-2 text-right">Cobrado a mais</th></tr>

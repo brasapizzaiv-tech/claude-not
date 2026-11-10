@@ -102,7 +102,7 @@ export function RetiradasClient({
           {doMes.length === 0 ? (
             <p className="py-4 text-center text-sm text-texto-suave">Nenhuma compra nesse mês.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
               <table className="w-full text-sm">
                 <tbody className="divide-y divide-borda">
                   {doMes.map((r) => (
@@ -355,7 +355,7 @@ function ResumoTab({ retiradas, proc, run }: {
     <div className="space-y-4">
       <div className={card}>
         <h2 className="mb-2 font-bold">Por funcionário</h2>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[560px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>
@@ -363,7 +363,7 @@ function ResumoTab({ retiradas, proc, run }: {
                 <th className="py-1 pr-2 text-right">Comprado</th>
                 <th className="py-1 pr-2 text-right">Pago</th>
                 <th className="py-1 pr-2 text-right">Em aberto</th>
-                <th></th>
+                <th><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">
@@ -423,7 +423,7 @@ function ResumoTab({ retiradas, proc, run }: {
 
       <div className={card}>
         <h2 className="mb-2 font-bold">Por mês</h2>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full text-sm">
             <thead className="rotulo text-left">
               <tr>
@@ -462,7 +462,7 @@ function ProdutosTab({ produtos, proc, run }: {
         <h2 className="font-bold">Produtos e preços</h2>
         <button onClick={() => setEdit("novo")} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">+ Produto</button>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full text-sm">
           <tbody className="divide-y divide-borda">
             {produtos.map((p) => (

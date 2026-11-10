@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { NotasClient } from "./notas-client";
 import { consultarNotas, POR_PAGINA } from "./consulta";
 
+export const metadata = { title: "Notas fiscais" };
+
 export default async function NotasFiscaisPage({
   searchParams,
 }: {

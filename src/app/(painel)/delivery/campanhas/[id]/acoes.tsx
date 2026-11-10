@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BotaoAcao } from "@/components/enviar";
 import { mudarCampanha } from "../actions";
+import { confirmar } from "@/components/dialogo";
 
 type Acao = "lancar" | "pausar" | "retomar" | "cancelar";
 
@@ -10,7 +11,7 @@ type Acao = "lancar" | "pausar" | "retomar" | "cancelar";
 export function AcoesCampanha({ id, status }: { id: string; status: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const agir = (acao: Acao, pergunta?: string) => async () => {
-    if (pergunta && !window.confirm(pergunta)) return;
+    if (pergunta && !(await confirmar(pergunta))) return;
     setErro(null);
     const r = await mudarCampanha(id, acao);
     if (!r.ok) setErro(r.mensagem);

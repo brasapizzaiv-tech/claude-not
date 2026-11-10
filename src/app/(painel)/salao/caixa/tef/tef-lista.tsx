@@ -1,7 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
-import { confirmar } from "@/components/dialogo";
+import { confirmar, perguntar } from "@/components/dialogo";
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -171,9 +171,9 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
   //
   // Pede o valor e cobra: o gerenciador desenha o QR na tela do pinpad. Não
   // registra pagamento nenhum no caixa — é uma cobrança avulsa, de teste.
-  function pix() {
+  async function pix() {
     if (!agente) { setMsg("O Agente TEF não está rodando neste PC."); return; }
-    const digitado = window.prompt("Valor do Pix pelo pinpad (só pra teste — não entra no caixa):", "1,00");
+    const digitado = await perguntar("Valor do Pix pelo pinpad (só pra teste — não entra no caixa):", "1,00");
     if (digitado === null) return;
     const valor = Number(digitado.replace(/\./g, "").replace(",", "."));
     if (!(valor > 0)) { setMsg("Valor inválido."); return; }
@@ -229,7 +229,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
       </div>
       {msg && <p role="status" className="mb-3 rounded-controle bg-superficie-suave px-3 py-2 text-sm text-texto-suave">{msg}</p>}
 
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="min-w-[720px] w-full text-sm">
           <thead className="rotulo text-left">
             <tr>
@@ -238,7 +238,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
               <th className="px-3 py-2 text-right">Valor</th>
               <th className="px-3 py-2">NSU / Aut.</th>
               <th className="px-3 py-2">Situação</th>
-              <th className="px-3 py-2"></th>
+              <th className="px-3 py-2"><span className="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-borda">

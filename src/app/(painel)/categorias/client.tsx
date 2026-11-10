@@ -82,14 +82,14 @@ export function CategoriasClient({
       </div>
 
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[560px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Produtos</th>
                 <th className="px-4 py-3">Conta no DRE (compras)</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">

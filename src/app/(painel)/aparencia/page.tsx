@@ -5,6 +5,8 @@ import { lerMarca } from "@/lib/marca";
 import { comoReconheci } from "@/lib/empresa";
 import { CoresForm } from "./cores-form";
 
+export const metadata = { title: "Aparência da empresa" };
+
 // Aparência da empresa (Etapa 3 do design).
 //
 // É aqui que outro restaurante entra com a cara dele. Só do dono: a cor muda

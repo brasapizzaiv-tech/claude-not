@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { salvarConfigFiscal } from "./actions";
 import { TesteNota } from "./teste-nota";
 
+export const metadata = { title: "Configuração fiscal (NF-e / NFC-e)" };
+
 const campo =
   "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 

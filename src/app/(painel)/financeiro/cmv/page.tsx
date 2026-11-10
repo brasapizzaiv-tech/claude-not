@@ -7,6 +7,8 @@ import { segundaDe, somarDias } from "@/lib/equipe";
 import { faturamentoPorDia } from "@/lib/faturamento";
 import { CmvTabela, type CmvRow } from "./cmv-tabela";
 
+export const metadata = { title: "CMV Real / Consumo" };
+
 type Contagem = { id: string; data: string; descricao: string | null };
 type Prod = {
   id: string;

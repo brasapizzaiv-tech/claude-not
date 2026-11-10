@@ -148,7 +148,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         Por forma de pagamento
       </h2>
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full text-sm">
             <thead className="rotulo text-left">
               <tr>

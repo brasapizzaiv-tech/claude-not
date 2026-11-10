@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BANCOS } from "@/lib/financeiro";
 import { FaturaClient } from "./fatura-client";
 
-export const metadata = { title: "Fatura do cartão · Brasa" };
+export const metadata = { title: "Fatura do cartão" };
 
 export default async function FaturaPage() {
   const supabase = await createClient();

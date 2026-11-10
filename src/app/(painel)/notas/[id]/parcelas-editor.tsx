@@ -94,7 +94,7 @@ export function ParcelasEditor({
   }
 
   return (
-    <div className="mt-4 rounded-cartao border border-violet-200 dark:border-violet-900">
+    <div className="mt-4 rounded-cartao border border-borda">
       <button
         onClick={() => setAberto((v) => !v)}
         className="flex w-full items-center justify-between px-4 py-3 text-left"
@@ -102,7 +102,7 @@ export function ParcelasEditor({
         <span className="text-sm font-semibold text-texto">
           <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Parcelamento manual
           {parcelas.length > 1 && (
-            <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-mini font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+            <span className="ml-2 rounded-full bg-info-fundo px-2 py-0.5 text-mini font-medium text-info-texto">
               {parcelas.length}x salvo
             </span>
           )}
@@ -111,7 +111,7 @@ export function ParcelasEditor({
       </button>
 
       {aberto && (
-        <div className="border-t border-violet-100 p-4 dark:border-violet-900/60">
+        <div className="border-t border-info-texto p-4 dark:border-info-texto/60">
           {lancada && (
             <p className="mb-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
               Esta nota já está <b>lançada</b>. Para o parcelamento valer, salve as
@@ -136,7 +136,7 @@ export function ParcelasEditor({
             </span>
             <button
               onClick={gerar}
-              className="rounded-controle bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700"
+              className="rounded-controle bg-info-texto px-3 py-1.5 text-xs font-medium text-painel-cartao hover:opacity-90"
             >
               Gerar
             </button>
@@ -173,7 +173,7 @@ export function ParcelasEditor({
 
           <button
             onClick={addLinha}
-            className="mt-2 text-xs font-medium text-violet-600 hover:underline"
+            className="mt-2 text-xs font-medium text-info-texto hover:underline"
           >
             + adicionar parcela
           </button>
@@ -188,7 +188,7 @@ export function ParcelasEditor({
             <button
               onClick={salvar}
               disabled={proc}
-              className="rounded-controle bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+              className="rounded-controle bg-info-texto px-4 py-2 text-sm font-semibold text-painel-cartao hover:opacity-90 disabled:opacity-60"
             >
               {proc ? "Salvando..." : "Salvar parcelamento"}
             </button>

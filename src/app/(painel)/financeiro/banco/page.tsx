@@ -5,6 +5,8 @@ import { dataBR } from "@/lib/format";
 import { UploadOfx } from "./upload";
 import { BancoTabela } from "./banco-tabela";
 
+export const metadata = { title: "Conciliação bancária" };
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

@@ -133,7 +133,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
       {lista.length === 0 ? (
         <div className="rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">Nenhuma etiqueta no período.</div>
       ) : visao === "agrupado" ? (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[560px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr><th className="px-3 py-3">Produto</th><th className="px-3 py-3">Categoria</th><th className="px-3 py-3 text-right">Etiquetas</th><th className="px-3 py-3">Última</th></tr>
@@ -151,7 +151,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
           </table>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>

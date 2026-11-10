@@ -80,7 +80,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
           Nenhuma nota encontrada para <b>{busca}</b>.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[820px] text-sm">
             <thead className="rotulo text-left">
               <tr>
@@ -91,7 +91,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                 <th className="px-4 py-3 text-right">Valor</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Lançada em</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">

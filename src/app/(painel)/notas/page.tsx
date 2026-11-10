@@ -8,6 +8,8 @@ import { BuscarNotas } from "./buscar-notas";
 import { ManifestarLote } from "./manifestar-lote";
 import { NotasLista, type NotaLinha } from "./notas-lista";
 
+export const metadata = { title: "Notas Fiscais" };
+
 export default async function NotasPage() {
   const supabase = await createClient();
   // A config da SEFAZ (com o certificado) só o dono lê pela sessão (0277): aqui

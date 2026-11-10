@@ -4,6 +4,8 @@ import type { DreCategoria } from "@/lib/types";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { OrcamentoClient, type LinhaOrc } from "./orcamento-client";
 
+export const metadata = { title: "Orçamento × Real" };
+
 function desloca(mes: string, delta: number) {
   const [a, m] = mes.split("-").map(Number);
   const d = new Date(a, m - 1 + delta, 1);

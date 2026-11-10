@@ -140,7 +140,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
       {lista.length === 0 ? (
         <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">Nenhum item ainda. Cadastre acima.</p>
       ) : (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>
@@ -150,7 +150,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
                 <th className="px-3 py-2 text-center">Congelado</th>
                 <th className="px-3 py-2 text-center">Ambiente</th>
                 <th className="px-3 py-2 text-center">Ativo</th>
-                <th className="px-3 py-2"></th>
+                <th className="px-3 py-2"><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">

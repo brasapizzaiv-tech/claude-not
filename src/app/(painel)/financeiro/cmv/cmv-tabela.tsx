@@ -340,7 +340,7 @@ export function CmvTabela({
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[900px] text-sm">
           <thead className="rotulo text-left">
             <tr>

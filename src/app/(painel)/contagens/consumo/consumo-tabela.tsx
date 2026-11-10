@@ -54,7 +54,6 @@ function Grafico({ linha, semanas }: { linha: LinhaConsumo; semanas: string[] })
         {linha.media != null && (
           <g>
             <line x1={0} x2={W} y1={y(linha.media)} y2={y(linha.media)} stroke="var(--texto-suave)" strokeWidth={1} strokeDasharray="4 4" />
-            <text x={W - 4} y={y(linha.media) - 4} textAnchor="end" fontSize={11} fill="var(--texto-suave)">média {num(linha.media)}</text>
           </g>
         )}
         {linha.semanas.map((v, i) => (
@@ -72,6 +71,8 @@ function Grafico({ linha, semanas }: { linha: LinhaConsumo; semanas: string[] })
             )}
           </g>
         ))}
+        {/* Texto da média DEPOIS das barras (o SVG pinta por cima o que vem depois — VIS-19), com contorno da cor do cartão pra ler sobre a barra. */}
+        {linha.media != null && <text x={W - 4} y={y(linha.media) - 4} textAnchor="end" fontSize={11} fill="var(--texto-suave)" stroke="var(--painel-cartao)" strokeWidth={3} paintOrder="stroke">média {num(linha.media)}</text>}
       </svg>
       {foco != null && (
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 rounded-controle bg-texto px-3 py-1.5 text-xs text-fundo shadow-cartao">
@@ -126,7 +127,7 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
         <span className="text-sm text-texto-suave">{visiveis.length} {visiveis.length === 1 ? "produto" : "produtos"}</span>
       </div>
 
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="rotulo text-left">
             <tr>

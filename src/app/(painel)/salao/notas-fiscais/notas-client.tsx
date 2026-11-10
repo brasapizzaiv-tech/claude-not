@@ -157,7 +157,7 @@ export function NotasClient({
         </button>
       </form>
 
-      <div className="mt-3 overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="mt-3 overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="min-w-[720px] w-full text-sm">
           <thead className="rotulo text-left">
             <tr>
@@ -166,7 +166,7 @@ export function NotasClient({
               <th className="px-4 py-2 font-medium">Tipo</th>
               <th className="px-4 py-2 text-right font-medium">Valor</th>
               <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium"></th>
+              <th className="px-4 py-2 font-medium"><span className="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-borda">
@@ -195,19 +195,19 @@ export function NotasClient({
                   {l.urlDanfe && l.status === "autorizado" && (
                     <button
                       onClick={() => { imprimirNfce(l.id).then((r) => void avisar(r.ok ? "Enviada pra impressora." : r.mensagem)).catch(() => void avisar("Sem conexão.")); }}
-                      className="mr-3 text-ok-texto hover:underline"
+                      className="mr-1 inline-flex min-h-11 items-center px-2 text-ok-texto hover:underline"
                     >
                       Imprimir
                     </button>
                   )}
                   {l.urlDanfe && (
-                    <a href={l.urlDanfe} target="_blank" rel="noopener noreferrer" className="mr-3 text-orange-600 hover:underline">PDF</a>
+                    <a href={l.urlDanfe} target="_blank" rel="noopener noreferrer" className="mr-1 inline-flex min-h-11 items-center px-2 text-texto-marca hover:underline">PDF</a>
                   )}
                   {l.urlXml && (
-                    <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-3 text-texto-suave hover:underline">XML</a>
+                    <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-1 inline-flex min-h-11 items-center px-2 text-texto-suave hover:underline">XML</a>
                   )}
                   {(l.status === "autorizado" || l.status === "cancelando") && (
-                    <button onClick={() => cancelar(l.id)} disabled={proc} className="text-urgente-texto hover:underline disabled:opacity-50">
+                    <button onClick={() => cancelar(l.id)} disabled={proc} className="inline-flex min-h-11 items-center px-2 text-urgente-texto hover:underline disabled:opacity-50">
                       Cancelar
                     </button>
                   )}

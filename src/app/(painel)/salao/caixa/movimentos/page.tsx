@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 // Histórico do caixa aberto: tudo que entrou e saiu. Fica fora da tela de
 // receber porque lá o operador precisa de foco, não de histórico.
-export const metadata = { title: "Movimentações do caixa · Brasa" };
+export const metadata = { title: "Movimentações do caixa" };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -99,7 +99,7 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="min-w-[560px] w-full text-sm">
           <thead className="rotulo text-left">
             <tr>

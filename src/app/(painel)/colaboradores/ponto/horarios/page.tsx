@@ -47,7 +47,7 @@ export default async function HorariosPage({ searchParams }: { searchParams: Pro
         <Link href="/colaboradores/ponto/horarios?todos=1" aria-current={todos === "1" ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full px-4 font-semibold ${todos === "1" ? "pilula-grafite" : "bg-painel-cartao text-texto shadow-[var(--sombra-controle)]"}`}>Todos</Link>
       </div>
 
-      <div className="cartao mt-4 overflow-x-auto">
+      <div className="cartao mt-4 overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[720px] text-sm">
           <thead className="rotulo text-left">
             <tr><th className="px-4 py-3">Nome</th><th className="px-2 py-3">Horário</th><th className="px-2 py-3 text-right">Semana</th><th className="px-4 py-3">Quem está hoje</th></tr>

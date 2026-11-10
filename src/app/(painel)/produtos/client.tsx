@@ -355,7 +355,7 @@ export function ProdutosClient({
           Nenhum produto encontrado.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>
@@ -385,7 +385,7 @@ export function ProdutosClient({
                   </button>
                 </th>
                 <th className="px-4 py-3">Preço ref.</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">
@@ -657,7 +657,7 @@ export function ProdutosClient({
                   Dias de validade por conservação (usado nas etiquetas).
                 </p>
               </div>
-              <div className="rounded-cartao border border-violet-200 p-3 dark:border-violet-900">
+              <div className="rounded-cartao border border-borda p-3">
                 <label className="flex items-center gap-2 text-sm font-medium text-texto-suave">
                   <input
                     type="checkbox"

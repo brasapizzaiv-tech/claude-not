@@ -381,14 +381,14 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[560px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">Folga / Contagem</th>
                   <th className="px-4 py-3">App pessoal</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">

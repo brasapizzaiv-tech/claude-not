@@ -7,7 +7,7 @@ import { ConsumoTabela, type LinhaConsumo } from "./consumo-tabela";
 // Consumo dos produtos (migration 0244): entre duas contagens seguidas,
 // consumo = tinha + chegou − tem agora. Média das últimas 8 semanas e as
 // últimas 12 semanas uma a uma, pra ver se o produto está saindo mais ou menos.
-export const metadata = { title: "Consumo do estoque · Brasa" };
+export const metadata = { title: "Consumo do estoque" };
 export const dynamic = "force-dynamic";
 
 const SEMANAS = 12;

@@ -559,11 +559,11 @@ function AbaLimites({ limites, proc, run }: { limites: Limites; proc: boolean; r
     <div className={card}>
       <h2 className="font-bold">Limite padrão de folgas</h2>
       <p className="text-sm text-texto-suave">Quantas pessoas de cada grupo podem folgar em cada dia da semana. Vale de hoje em diante. Ajustes de um dia específico ficam na aba Calendário.</p>
-      <div className="mt-3 overflow-x-auto">
+      <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[560px] border-collapse text-sm">
           <tbody>
             <tr>
-              <th />
+              <th><span className="sr-only">Ações</span></th>
               {DIAS.map((d) => <th key={d} className="p-1.5 text-xs font-semibold text-texto-fraco">{d}</th>)}
             </tr>
             {GRUPO_KEYS.map((g) => (

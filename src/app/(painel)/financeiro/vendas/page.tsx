@@ -5,6 +5,8 @@ import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { UploadVendas, UploadFaturamento } from "./upload";
 import { faturamentoPorDia, notasPorDia, somarFaturamento } from "@/lib/faturamento";
 
+export const metadata = { title: "Notas emitidas × Faturamento" };
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -134,7 +136,7 @@ export default async function VendasPage({
 
       {/* Por dia */}
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[560px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>

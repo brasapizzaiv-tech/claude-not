@@ -152,7 +152,7 @@ export function NovoPedidoClient({
       {/* Itens do pedido */}
       {itens.length > 0 && (
         <div className="mt-4 overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[560px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
@@ -160,7 +160,7 @@ export function NovoPedidoClient({
                   <th className="px-3 py-2 text-right">Qtd</th>
                   <th className="px-3 py-2 text-right">Preço un.</th>
                   <th className="px-3 py-2 text-right">Total</th>
-                  <th className="px-3 py-2"></th>
+                  <th className="px-3 py-2"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">

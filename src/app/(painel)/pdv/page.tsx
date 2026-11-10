@@ -5,7 +5,7 @@ import { listarFormas } from "@/lib/formas-pagamento-server";
 import { FORMAS_FIXAS_VENDA } from "@/lib/formas-pagamento";
 import { lerNfceAuto } from "../salao/fiscal-actions";
 
-export const metadata = { title: "PDV · Brasa" };
+export const metadata = { title: "PDV" };
 
 export default async function PdvPage() {
   const supabase = await createClient();

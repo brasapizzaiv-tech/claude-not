@@ -16,7 +16,9 @@ function hojeBR() {
 // Aba do navegador: o nome do restaurante (quem tem título próprio na página continua com o dele).
 export async function generateMetadata() {
   const empresa = await empresaAtual().catch(() => null);
-  return { title: empresa?.nome ?? "Motelli" };
+  // Cada tela põe só o nome dela; o sufixo é o da empresa (ACE-08, multiempresa).
+  const nome = empresa?.nome ?? "Motelli";
+  return { title: { template: `%s · ${nome}`, default: nome } };
 }
 
 export default async function PainelLayout({

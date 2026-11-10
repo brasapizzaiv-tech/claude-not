@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
 import { CentralImpressao, type Impressora } from "./central";
 
-export const metadata = { title: "Central de Impressões · Brasa" };
+export const metadata = { title: "Central de Impressões" };
 
 export default async function CentralImpressaoPage() {
   const supabase = await createClient();

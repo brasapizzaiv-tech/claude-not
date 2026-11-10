@@ -3,7 +3,7 @@ import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 import { empresaAtualId } from "@/lib/empresa";
 import { AvisoSaude } from "@/components/aviso-saude";
 
-export const metadata = { title: "Delivery · Brasa" };
+export const metadata = { title: "Delivery" };
 
 // (fora do componente por causa da regra de pureza do React)
 const agoraMs = () => Date.now();

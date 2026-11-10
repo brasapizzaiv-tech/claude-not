@@ -9,7 +9,7 @@ import { ASSINATURA_DESDE, ciclosRecentes, espelhosDoPeriodo, fechamentosDoCiclo
 import { absenteismo, resumoMes, turnover, type PessoaTurnover } from "@/lib/ponto-relatorios-core";
 import { BaixarCsv, ImprimirRelatorio } from "./baixar";
 
-export const metadata = { title: "Relatórios do ponto · Brasa" };
+export const metadata = { title: "Relatórios do ponto" };
 export const dynamic = "force-dynamic";
 
 // Etapa 4 da saída do RHiD (27/10/2026): os relatórios do menu "Relatórios"
@@ -131,7 +131,7 @@ async function Contador({ de, ate, hoje, nomeArquivo, supabase }: P & { hoje: st
           Mês ainda não fechado de {abertos.map((e) => e.pessoa.nome.split(" ")[0]).join(", ")}. <Link href={`/colaboradores/ponto?de=${de}&ate=${ate}`} className="font-semibold underline">Conferir e fechar</Link> antes de mandar pro contador.
         </p>
       )}
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[980px] text-sm tabular-nums print:min-w-0 print:text-xs">
           <thead><tr>
             <th className={CAB}>Pessoa</th><th className={CABN}>Dias</th><th className={CABN}>Normais</th><th className={CABN}>Faltas</th><th className={CABN}>Falta e atraso</th>
@@ -217,7 +217,7 @@ async function Alteracoes({ de, ate, nomeArquivo, supabase }: P) {
   return (
     <section>
       <Acoes csv={csv} />
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[760px] text-sm print:min-w-0 print:text-xs">
           <thead><tr><th className={CAB}>Dia</th><th className={CAB}>Pessoa</th><th className={CAB}>O quê</th><th className={CAB}>Detalhe</th><th className={CAB}>Feito por</th></tr></thead>
           <tbody className="divide-y divide-borda">
@@ -259,7 +259,7 @@ async function AbsenteismoRel({ de, ate, nomeArquivo, supabase }: P) {
         <div className="rounded-cartao bg-superficie-suave p-4"><p className="rotulo">Atrasos e saídas</p><p className="numero-grande mt-1 text-[26px] text-texto">{duracao(tot.atrasos)}</p></div>
         <div className="rounded-cartao bg-superficie-suave p-4"><p className="rotulo">Atestados e afastamentos</p><p className="numero-grande mt-1 text-[26px] text-texto">{duracao(tot.just)}</p></div>
       </div>
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[720px] text-sm tabular-nums print:min-w-0 print:text-xs">
           <thead><tr><th className={CAB}>Pessoa</th><th className={CABN}>Previstas</th><th className={CABN}>Faltas</th><th className={CABN}>Atrasos e saídas</th><th className={CABN}>Atestados</th><th className={CABN}>Total ausente</th><th className={CABN}>Absenteísmo</th></tr></thead>
           <tbody className="divide-y divide-borda">
@@ -309,7 +309,7 @@ async function Afastamentos({ de, ate, nomeArquivo, supabase }: P) {
           {[...porTipo].map(([t, n]) => <span key={t} className="pilula">{t}: {n} {n === 1 ? "dia" : "dias"}</span>)}
         </div>
       )}
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao print:overflow-visible" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[720px] text-sm print:min-w-0 print:text-xs">
           <thead><tr><th className={CAB}>Pessoa</th><th className={CAB}>Tipo</th><th className={CAB}>Período</th><th className={CABN}>Dias</th><th className={CAB}>Motivo</th></tr></thead>
           <tbody className="divide-y divide-borda">

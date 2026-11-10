@@ -158,7 +158,7 @@ export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: A
             </div>
           )}
 
-          <div className="cartao overflow-x-auto p-4">
+          <div className="cartao overflow-x-auto p-4" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="text-left">

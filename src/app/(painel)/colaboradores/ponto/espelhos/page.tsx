@@ -6,7 +6,7 @@ import { duracao, hhmm } from "@/lib/ponto-relatorio-core";
 import { ciclosRecentes, espelhosDoPeriodo } from "@/lib/ponto-espelho";
 import { ImprimirRelatorio } from "../relatorios/baixar";
 
-export const metadata = { title: "Espelhos de ponto · Brasa" };
+export const metadata = { title: "Espelhos de ponto" };
 export const dynamic = "force-dynamic";
 
 // Os espelhos de todo mundo, um por folha, pra imprimir ou salvar em PDF e

@@ -7,7 +7,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { Mural } from "./mural";
 import { LinkDaTv } from "./link-da-tv";
 
-export const metadata = { title: "Mural do escritório · Brasa" };
+export const metadata = { title: "Mural do escritório" };
 export const dynamic = "force-dynamic";
 
 // MURAL DO ESCRITÓRIO

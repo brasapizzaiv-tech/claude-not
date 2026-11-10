@@ -7,6 +7,8 @@ import { dataBR } from "@/lib/format";
 import { textoPrazo } from "@/lib/cotacao-prazo";
 import { criarCotacao, excluirCotacao } from "./actions";
 
+export const metadata = { title: "Cotações" };
+
 export default async function CotacoesPage() {
   const supabase = await createClient();
 
@@ -61,14 +63,14 @@ export default async function CotacoesPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[560px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
                   <th className="px-4 py-3">Descrição</th>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">

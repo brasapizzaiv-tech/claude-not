@@ -55,7 +55,7 @@ export function VendidosClient({ linhas, total, agrupar, periodo }: { linhas: Li
       {lista.length === 0 ? (
         <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">Nada vendido nesse período com esses filtros.</p>
       ) : (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full text-sm">
             <thead className="rotulo text-left">
               <tr>

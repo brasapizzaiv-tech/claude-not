@@ -10,6 +10,8 @@ import {
   type FornecedorLinha,
 } from "./fornecedores-client";
 
+export const metadata = { title: "Escolher fornecedores" };
+
 export default async function CotacaoFornecedoresPage({
   params,
 }: {

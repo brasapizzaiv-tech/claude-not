@@ -11,7 +11,7 @@ import { AjustarDia, BatidaMenu, FechamentoMes, ImportarAfd, Imprimir, type Tipo
 import { BatidasSemColaborador, type CpfSemDono } from "./sem-colaborador";
 import { ASSINATURA_DESDE, assinaturasDoCiclo, cicloDoDia, fechamentosDoCiclo, resumoParaAssinar } from "@/lib/ponto-espelho";
 
-export const metadata = { title: "Relatórios de ponto · Brasa" };
+export const metadata = { title: "Relatórios de ponto" };
 export const dynamic = "force-dynamic";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
@@ -231,7 +231,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
               </p>
               {ficha?.obs_cartao_ponto && <p className="mt-1 text-sm text-texto">{ficha.obs_cartao_ponto}</p>}
             </div>
-            <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+            <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
               <table className="w-full min-w-[760px] text-sm tabular-nums">
                 <thead><tr>
                   <th className={CAB}>Dia</th><th className={CAB}>Horário</th>
@@ -364,7 +364,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         lista.sort((a, b) => a.dia.localeCompare(b.dia) || a.nome.localeCompare(b.nome));
         return (
           <section className="space-y-4">
-            <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+            <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
               <table className="w-full min-w-[560px] text-sm tabular-nums">
                 <thead><tr><th className={CAB}>Pessoa</th><th className={`${CAB} text-right`}>Atraso somado</th><th className={`${CAB} text-right`}>Faltas</th><th className={`${CAB} text-right`}>Batida faltando</th></tr></thead>
                 <tbody className="divide-y divide-borda">
@@ -379,7 +379,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                 </tbody>
               </table>
             </div>
-            <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+            <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
               <table className="w-full min-w-[560px] text-sm">
                 <thead><tr><th className={CAB}>Dia</th><th className={CAB}>Pessoa</th><th className={CAB}>O quê</th><th className={CAB}>Detalhe</th></tr></thead>
                 <tbody className="divide-y divide-borda">

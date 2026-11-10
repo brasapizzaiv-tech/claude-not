@@ -14,6 +14,8 @@ import {
   type PedidoAtual,
 } from "./comparar-client";
 
+export const metadata = { title: "Comparar preços" };
+
 export default async function CompararPage({
   params,
 }: {

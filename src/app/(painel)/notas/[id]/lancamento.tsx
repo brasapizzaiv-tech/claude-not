@@ -317,7 +317,7 @@ export function LancamentoNota({
 
       {/* Parcelamento (duplicatas do XML) */}
       {temParcelas && (
-        <div className="rounded-cartao border border-violet-200 bg-violet-50/50 p-3 dark:border-violet-900 dark:bg-violet-950/20">
+        <div className="rounded-cartao border border-borda bg-info-fundo p-3">
           <label className="flex items-center gap-2 text-sm font-medium text-texto">
             <input
               type="checkbox"
@@ -331,7 +331,7 @@ export function LancamentoNota({
             {parcelas.map((p, i) => (
               <span
                 key={i}
-                className="rounded-controle border border-violet-200 bg-painel-cartao px-2.5 py-1 text-xs text-texto-suave dark:border-violet-900"
+                className="rounded-controle border border-borda bg-painel-cartao px-2.5 py-1 text-xs text-texto-suave"
               >
                 {p.numero ?? i + 1}: {p.vencimento ? dataBR(p.vencimento) : "—"} ·{" "}
                 {moeda(Number(p.valor))}

@@ -336,7 +336,7 @@ export function ContarClient({
       </div>
 
       <form ref={formRef}>
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full text-sm">
             <thead className="rotulo text-left">
               <tr>

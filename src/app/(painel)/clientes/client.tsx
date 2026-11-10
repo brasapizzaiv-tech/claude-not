@@ -104,7 +104,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
       />
 
       <div className="mt-4 overflow-hidden rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full text-sm">
             <tbody className="divide-y divide-borda">
               {filtrados.map((c) => (
@@ -121,12 +121,12 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
                         setEditando(c);
                         setAberto(true);
                       }}
-                      className="mr-3 text-orange-600 hover:underline"
+                      className="mr-1 inline-flex min-h-11 items-center px-2 text-texto-marca hover:underline"
                     >
                       Editar
                     </button>
                     <BotaoAcao
-                      className="text-texto-fraco hover:text-urgente-texto"
+                      className="inline-flex min-h-11 items-center px-2 text-texto-fraco hover:text-urgente-texto"
                       aoClicar={async () => {
                         const ok = await confirmar(`Apagar os dados de ${c.nome}?`, {
                           detalhe: "Nome, telefone, endereço e CPF/CNPJ saem de todo o sistema, inclusive dos pedidos, reservas, vales e mensagens. Valores, fiado e notas fiscais ficam (a lei manda guardar). Não dá para desfazer.",

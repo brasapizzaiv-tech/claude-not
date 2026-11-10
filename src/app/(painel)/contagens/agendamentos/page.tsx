@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AgendamentosClient, type Ag } from "./form";
 
+export const metadata = { title: "Agendamentos de contagem" };
+
 export default async function AgendamentosPage() {
   const supabase = await createClient();
   const [{ data }, { data: cats }, { data: colabs }] = await Promise.all([

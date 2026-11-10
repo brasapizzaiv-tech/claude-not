@@ -41,7 +41,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
       )}
 
       {/* Lista */}
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[860px] text-sm">
           <thead className="rotulo text-left">
             <tr>
@@ -49,7 +49,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
               <th className="px-4 py-3">Tipo</th>
               <th className="px-4 py-3">Aparece em</th>
               <th className="px-4 py-3">Ativa</th>
-              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-borda">

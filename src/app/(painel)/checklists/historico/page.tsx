@@ -3,7 +3,7 @@ import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 
-export const metadata = { title: "Histórico de checklists · Brasa" };
+export const metadata = { title: "Histórico de checklists" };
 export const dynamic = "force-dynamic";
 
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
@@ -127,7 +127,7 @@ export default async function HistoricoChecklistsPage({
       </div>
 
       <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[560px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr><th className="px-4 py-2">Dia</th><th className="px-4 py-2">Lista</th><th className="px-4 py-2">Quem</th><th className="px-4 py-2 text-right">Itens</th><th className="px-4 py-2">Situação</th></tr>

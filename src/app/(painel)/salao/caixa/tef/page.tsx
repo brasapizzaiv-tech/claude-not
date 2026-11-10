@@ -8,7 +8,7 @@ import { TefLista, type TefLinha } from "./tef-lista";
 // abrir o menu administrativo do gerenciador. Fica fora da tela de receber.
 // Histórico inteiro por período (antes: só 7 dias e no máximo 150 — sumia
 // quase metade numa semana de movimento).
-export const metadata = { title: "Cartões TEF · Brasa" };
+export const metadata = { title: "Cartões TEF" };
 export const dynamic = "force-dynamic";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

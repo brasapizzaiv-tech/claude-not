@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GestaoFolgas } from "./gestao-folgas";
 import type { Funcionario, Pedido } from "@/lib/folgas";
 
-export const metadata = { title: "Folgas · Brasa" };
+export const metadata = { title: "Folgas" };
 
 export default async function FolgasPage() {
   const supabase = await createClient();

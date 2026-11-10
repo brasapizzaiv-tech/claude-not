@@ -78,7 +78,7 @@ export function FornecedoresClient({
         </div>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[560px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
@@ -86,7 +86,7 @@ export function FornecedoresClient({
                   <th className="px-4 py-3">Contato</th>
                   <th className="px-4 py-3">Telefone</th>
                   <th className="px-4 py-3">WhatsApp</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">

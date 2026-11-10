@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CategoriasDreClient, type CategoriaDre } from "./client";
 
-export const metadata = { title: "Categorias do DRE · Brasa" };
+export const metadata = { title: "Categorias do DRE" };
 
 // Categorias que o CÓDIGO procura pelo NOME, não pelo id. Renomear qualquer
 // uma destas quebra uma automação em silêncio:

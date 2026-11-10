@@ -312,10 +312,10 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
         </div>
 
         <datalist id="itens-cardapio">{itens.map((i) => <option key={i.id} value={i.nome} />)}</datalist>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[640px] text-sm">
             <thead className="rotulo text-left">
-              <tr><th className="py-2 pr-2">Descrição</th><th className="w-24 py-2 pr-2 text-right">Qtd</th><th className="w-32 py-2 pr-2 text-right">Valor un.</th><th className="w-44 py-2 pr-2">Perfil fiscal</th><th className="w-28 py-2 text-right">Total</th><th className="w-11" /></tr>
+              <tr><th className="py-2 pr-2">Descrição</th><th className="w-24 py-2 pr-2 text-right">Qtd</th><th className="w-32 py-2 pr-2 text-right">Valor un.</th><th className="w-44 py-2 pr-2">Perfil fiscal</th><th className="w-28 py-2 text-right">Total</th><th className="w-11"><span className="sr-only">Ações</span></th></tr>
             </thead>
             <tbody className="divide-y divide-borda">
               {linhas.map((l) => (

@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { criarComandaBuffet } from "../actions";
 import { BalancaLeitor } from "./leitor";
 
+export const metadata = { title: "Balança / Buffet" };
+
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

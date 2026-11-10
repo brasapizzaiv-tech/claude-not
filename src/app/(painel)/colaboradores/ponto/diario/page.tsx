@@ -7,7 +7,7 @@ import { duracao, espelho, hhmm, inconsistenciasDia } from "@/lib/ponto-relatori
 import { cicloDoDia, fechamentosDoCiclo } from "@/lib/ponto-espelho";
 import { AjustarDia, BatidaMenu, type TipoJustOpcao } from "../client";
 
-export const metadata = { title: "Ponto diário · Brasa" };
+export const metadata = { title: "Ponto diário" };
 export const dynamic = "force-dynamic";
 
 const DOW = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -87,7 +87,7 @@ export default async function PontoDiarioPage({ searchParams }: { searchParams: 
         </span>
       </div>
 
-      <div className="cartao mt-4 overflow-x-auto">
+      <div className="cartao mt-4 overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[860px] text-sm tabular-nums">
           <thead><tr>
             <th className={CAB}>Funcionário</th>

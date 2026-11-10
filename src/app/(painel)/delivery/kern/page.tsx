@@ -101,7 +101,7 @@ export default async function KernDeliveryPage() {
 
       <section>
         <h2 className="mb-2 font-semibold">Últimos 15 dias</h2>
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[480px] text-sm">
             <thead className="rotulo text-left"><tr><th className="px-3 py-2">Dia</th><th className="px-3 py-2">Filial</th><th className="px-3 py-2 text-right">Marmitas</th><th className="px-3 py-2 text-right">Valor</th><th className="px-3 py-2">Pedido</th></tr></thead>
             <tbody className="divide-y divide-borda">

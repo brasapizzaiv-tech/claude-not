@@ -5,6 +5,8 @@ import { dataBR } from "@/lib/format";
 import { ExcluirPedido } from "./excluir";
 import type { ResumoDivergencias } from "@/lib/conferencia-core";
 
+export const metadata = { title: "Conferência" };
+
 const moedaCurta = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 // Fora do componente por causa da regra de pureza do React.
 const inicioDoMes = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 7) + "-01";
@@ -84,7 +86,7 @@ export default async function ConferenciaPage() {
         </div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[720px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
@@ -94,7 +96,7 @@ export default async function ConferenciaPage() {
                   <th className="px-4 py-3 text-right">Total</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Conferência</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borda">
@@ -118,7 +120,7 @@ export default async function ConferenciaPage() {
                       </td>
                       <td className="px-4 py-3 text-texto-suave">
                         {p.cotacoes?.descricao ?? (
-                          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                          <span className="rounded-full bg-info-fundo px-2 py-0.5 text-xs font-medium text-info-texto">
                             Compra direta
                           </span>
                         )}

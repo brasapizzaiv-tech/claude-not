@@ -306,7 +306,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
         <main className="space-y-4 p-4">
           {aCaminho.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-indigo-300"><span className="inline-flex items-center gap-1.5"><Icone nome="entrega" tamanho={15} /> A caminho ({aCaminho.length})</span></h2>
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-info-texto"><span className="inline-flex items-center gap-1.5"><Icone nome="entrega" tamanho={15} /> A caminho ({aCaminho.length})</span></h2>
               <div className="space-y-2">
                 {aCaminho.map((p) => (
                   <Card key={p.id} p={p} acoes={

@@ -76,7 +76,7 @@ const ST: Record<string, { label: string; cor: string; bg: string; proximo?: str
   aceito: { label: "Aceito", cor: "text-info-texto", bg: "bg-blue-500/10", proximo: "em_preparo" },
   em_preparo: { label: "Em preparo", cor: "text-aviso-texto", bg: "bg-amber-500/10", proximo: "pronto" },
   pronto: { label: "Pronto", cor: "text-ok-texto", bg: "bg-emerald-500/10", proximo: "saiu" },
-  saiu: { label: "Saiu p/ entrega", cor: "text-indigo-600", bg: "bg-indigo-500/10", proximo: "entregue" },
+  saiu: { label: "Saiu p/ entrega", cor: "text-info-texto", bg: "bg-info-texto/10", proximo: "entregue" },
   entregue: { label: "Entregue", cor: "text-texto-suave", bg: "bg-superficie-suave" },
   cancelado: { label: "Cancelado", cor: "text-texto-fraco", bg: "bg-superficie-suave" },
 };

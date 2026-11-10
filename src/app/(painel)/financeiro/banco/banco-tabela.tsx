@@ -253,7 +253,7 @@ export function BancoTabela({
       </div>
 
       <div className="rounded-cartao bg-painel-cartao">
-        <div className="overflow-x-auto xl:overflow-x-visible">
+        <div className="overflow-x-auto xl:overflow-x-visible" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[560px] w-full text-sm">
             {/* Fica no topo enquanto a lista rola: com 225 linhas, sem isso
                 não dá pra saber qual coluna é qual no meio da tela. */}
@@ -273,7 +273,7 @@ export function BancoTabela({
                 <th className="px-4 py-3">Descrição (banco)</th>
                 <th className="px-4 py-3 text-right">Valor</th>
                 <th className="px-4 py-3">Lançamento</th>
-                <th className="px-4 py-3 text-right"></th>
+                <th className="px-4 py-3 text-right"><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">

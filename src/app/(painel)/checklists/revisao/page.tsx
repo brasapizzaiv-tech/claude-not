@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 import { RevisaoClient, type ListaRevisao } from "./revisao-client";
 
-export const metadata = { title: "Revisar checklists · Brasa" };
+export const metadata = { title: "Revisar checklists" };
 export const dynamic = "force-dynamic";
 
 // Revisão do dia: abre no dia anterior, mostra o que ficou pendente e deixa

@@ -177,7 +177,7 @@ export default async function FechamentoRelatorio({
           <h2 className="mb-2 font-semibold text-texto">
             Por forma de pagamento
           </h2>
-          <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+          <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="w-full min-w-[460px] text-sm">
               <thead className="rotulo text-left">
                 <tr>

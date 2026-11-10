@@ -158,7 +158,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
           })}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>
@@ -169,7 +169,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                 <th className="px-3 py-3">Manipulação</th>
                 <th className="px-3 py-3">Validade</th>
                 <th className="px-3 py-3">{historico ? "Baixa" : ""}</th>
-                <th className="px-3 py-3"></th>
+                <th className="px-3 py-3"><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-borda">

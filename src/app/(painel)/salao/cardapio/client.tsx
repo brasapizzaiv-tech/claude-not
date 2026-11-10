@@ -591,7 +591,7 @@ function ItensTabela({
     return <p className="text-sm text-texto-fraco">Nenhum produto nesta categoria.</p>;
   return (
     <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full text-sm">
           <tbody className="divide-y divide-borda">
             {itens.map((i) => {
@@ -757,7 +757,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
           <p className="mb-2 text-xs font-medium text-texto-suave">
             Preços por dia da semana (deixe vazio para usar o preço geral acima)
           </p>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="text-sm">
               <thead>
                 <tr className="text-xs text-texto-fraco">

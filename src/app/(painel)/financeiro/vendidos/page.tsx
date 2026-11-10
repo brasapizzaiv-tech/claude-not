@@ -267,7 +267,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
           </summary>
           <div className="space-y-3 px-4 pb-4">
             {excluidas.length > 0 && (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
                 <table className="min-w-[560px] w-full text-sm">
                   <thead className="rotulo text-left"><tr><th className="py-1">Comanda excluída</th><th className="py-1">Mesa</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
                   <tbody className="divide-y divide-borda">
@@ -279,7 +279,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
               </div>
             )}
             {cancelados.length > 0 && (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
                 <table className="min-w-[560px] w-full text-sm">
                   <thead className="rotulo text-left"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
                   <tbody className="divide-y divide-borda">

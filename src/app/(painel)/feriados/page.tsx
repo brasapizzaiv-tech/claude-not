@@ -6,7 +6,7 @@ import type { Evento } from "@/lib/eventos";
 import { FeriadosClient } from "./client";
 import { EventosClient } from "./eventos-client";
 
-export const metadata = { title: "Feriados e eventos · Brasa" };
+export const metadata = { title: "Feriados e eventos" };
 export const dynamic = "force-dynamic";
 
 // FERIADOS E EVENTOS

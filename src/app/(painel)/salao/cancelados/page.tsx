@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Cancelados / excluídos" };
+
 const brl = (n: number | null) =>
   (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dataHora = (iso: string | null) =>
@@ -69,7 +71,7 @@ export default async function CanceladosPage() {
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Cancelados / excluídos</h1>
       <p className="mt-1 text-sm text-texto-suave">Auditoria: comandas excluídas e itens cancelados, com o motivo, quem fez e quando.</p>
 
-      <div className="mt-4 overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="mt-4 overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="min-w-[560px] w-full text-sm">
           <thead className="rotulo text-left">
             <tr>

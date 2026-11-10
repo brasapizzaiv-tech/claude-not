@@ -6,6 +6,8 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { lerConfigSefaz } from "@/lib/sefaz/busca";
 import { SefazPainel } from "./sefaz-painel";
 
+export const metadata = { title: "SEFAZ automático" };
+
 export default async function SefazPage() {
   // Só o dono (SO_DONO). Nunca traz cert_pfx/cert_senha para o cliente: a tela
   // recebe só "tem certificado: sim/não".

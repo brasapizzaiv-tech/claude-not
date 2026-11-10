@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NovoUsuario, UsuarioLinha } from "./ui";
 
+export const metadata = { title: "Usuários" };
+
 export default async function UsuariosPage() {
   const supabase = await createClient();
   const {

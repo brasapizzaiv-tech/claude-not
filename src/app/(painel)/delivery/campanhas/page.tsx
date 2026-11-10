@@ -78,7 +78,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
         <div className={cartao}><div className="text-xs text-texto-suave">Total vendido</div><div className="font-numero text-xl font-semibold">{brl(totalVendido)}</div></div>
       </div>
 
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="rotulo text-left">
             <tr><th className="px-3 py-2">Situação</th><th className="px-3 py-2">Nome</th><th className="px-3 py-2">Público</th><th className="px-3 py-2">Criação</th><th className="px-3 py-2 text-right">Clientes</th><th className="px-3 py-2 text-right">Enviadas</th></tr>

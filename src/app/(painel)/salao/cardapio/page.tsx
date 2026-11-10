@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CardapioClient } from "./client";
 import type { Horarios } from "@/lib/disponibilidade";
 
+export const metadata = { title: "Cardápio" };
+
 export default async function CardapioPage() {
   const supabase = await createClient();
   const [{ data: cfg }, { data: itens }, { data: cats }, { data: gruposRows }, { data: tamanhos }, { data: sabores }, { data: precos }] = await Promise.all([

@@ -152,7 +152,7 @@ export default async function GarcomComandaPage({
         {lista.length === 0 ? (
           <p className="p-4 text-center text-sm text-texto-suave">Nada lançado ainda.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-zinc-100 dark:divide-borda">
                 {lista.map((i) => (

@@ -285,7 +285,7 @@ export function CotacaoClient({
 
       {autoMsg && <p className="mb-1 text-right text-xs text-texto-suave" aria-live="polite">{autoMsg}</p>}
       <form ref={formRef} onInput={aoDigitar}>
-        <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+        <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="min-w-[720px] w-full text-sm">
             <thead className="rotulo text-left">
               <tr>

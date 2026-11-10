@@ -218,7 +218,7 @@ export default async function NotaDetalhePage({
             Vincule cada item ao seu produto para o CMV cair na categoria certa
             no DRE. Em âmbar = ainda sem vínculo.
           </p>
-          <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+          <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="min-w-[560px] w-full text-sm">
               <thead className="rotulo text-left">
                 <tr>
@@ -300,7 +300,7 @@ export default async function NotaDetalhePage({
         </p>
       ) : (
         <div className="overflow-hidden rounded-cartao bg-painel-cartao">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-borda">
                 {pedidos.map((p) => {

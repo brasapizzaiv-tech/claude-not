@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import * as core from "@/lib/checklists-core";
 import { ModelosClient } from "./modelos-client";
 
-export const metadata = { title: "Modelos de checklist · Brasa" };
+export const metadata = { title: "Modelos de checklist" };
 export const dynamic = "force-dynamic";
 
 export default async function ModelosChecklistPage() {

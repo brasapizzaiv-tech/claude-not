@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { todasFormas } from "@/lib/formas-pagamento-server";
 import { FormasClient } from "./client";
 
-export const metadata = { title: "Formas de pagamento · Brasa" };
+export const metadata = { title: "Formas de pagamento" };
 
 // Cadastro das formas de pagamento da venda. Só do dono: uma forma nova
 // aparece no caixa, no PDV, no delivery e no app do cliente.

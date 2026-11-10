@@ -80,7 +80,7 @@ export function SangriasClient({ linhas, categorias, de }: { linhas: LinhaSangri
         </BotaoAcao>
       </div>
 
-      <div className="cartao overflow-x-auto">
+      <div className="cartao overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="rotulo text-left">
             <tr>

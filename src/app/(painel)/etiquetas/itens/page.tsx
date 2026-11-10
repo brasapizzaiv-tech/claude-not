@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ItensClient, type ItemRow, type CatRow } from "./itens-client";
 
+export const metadata = { title: "Itens e categorias de etiqueta" };
+
 export default async function ItensEtiquetaPage() {
   const supabase = await createClient();
   const [{ data: cats }, { data: its }] = await Promise.all([

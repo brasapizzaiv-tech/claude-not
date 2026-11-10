@@ -67,7 +67,7 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
   return (
     <div className="space-y-2">
       {msg && <p role="status" className="rounded-controle bg-superficie-suave px-3 py-2 text-sm">{msg}</p>}
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[720px] text-sm">
           <thead className="rotulo text-left">
             <tr>
@@ -76,7 +76,7 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
               <th className="px-3 py-2">Referência</th>
               <th className="px-3 py-2 text-right">Valor</th>
               <th className="px-3 py-2">Situação</th>
-              <th className="px-3 py-2"></th>
+              <th className="px-3 py-2"><span className="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-borda">

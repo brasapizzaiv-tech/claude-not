@@ -64,7 +64,7 @@ export default async function GatilhosPage() {
       />
 
       <h2 className="mb-2 mt-8 font-semibold">Histórico de disparos</h2>
-      <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
+      <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[560px] text-sm">
           <thead className="rotulo text-left"><tr><th className="px-3 py-2">Gatilho</th><th className="px-3 py-2">Cliente</th><th className="px-3 py-2">Situação</th><th className="px-3 py-2">Quando</th></tr></thead>
           <tbody className="divide-y divide-borda">

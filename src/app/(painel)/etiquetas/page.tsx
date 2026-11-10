@@ -6,6 +6,8 @@ import { PainelVencimentos, FaixaDias, type ItemEtq, type CatEtq } from "@/compo
 import { EtiquetaForm, type Imp } from "./etiqueta-form";
 import { ListaEtiquetas, type EtLinha } from "./lista";
 
+export const metadata = { title: "Etiquetas" };
+
 const COLS = "id, numero, produto_nome, categoria_nome, colaborador_nome, validade, conservacao, quantidade, unidade, status, baixa_em, tipo, lote, manipulado_em";
 
 export default async function EtiquetasPage({

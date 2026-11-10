@@ -17,6 +17,8 @@ import { AvisoSaude } from "@/components/aviso-saude";
 import { empresaAtualId } from "@/lib/empresa";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Frente de Caixa" };
+
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

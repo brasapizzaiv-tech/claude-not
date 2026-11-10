@@ -150,7 +150,7 @@ export default async function FechamentosPage({ searchParams }: { searchParams: 
         </div>
       </div>
 
-      <div className="cartao mt-4 overflow-x-auto">
+      <div className="cartao mt-4 overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full min-w-[1080px] text-sm">
           <thead className="rotulo text-left">
             <tr>
@@ -165,7 +165,7 @@ export default async function FechamentosPage({ searchParams }: { searchParams: 
               <th className="px-2 py-3 text-right">Comandas · ticket</th>
               <th className="px-2 py-3 text-right">Sangrias</th>
               <th className="px-2 py-3 text-right">Esperado × contado</th>
-              <th className="px-4 py-3" />
+              <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-borda">
