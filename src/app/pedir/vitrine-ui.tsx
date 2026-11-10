@@ -20,7 +20,7 @@ function Foto({ url, className }: { url: string | null | undefined; className: s
     );
   }
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className={`${className} object-cover`} />;
+  return <img src={url} alt="" loading="lazy" decoding="async" className={`${className} object-cover`} />;
 }
 
 /** Destaques do topo: um cartão grande por destaque, com "Pedir agora". */

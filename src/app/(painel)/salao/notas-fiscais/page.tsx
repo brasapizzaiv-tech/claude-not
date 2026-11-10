@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { buscarPorLotes, buscarTodas } from "@/lib/supabase/todas";
+import { buscarPorLotes } from "@/lib/supabase/todas";
 import { NotasClient, type NotaLinha } from "./notas-client";
 
 export default async function NotasFiscaisPage() {
@@ -20,12 +20,10 @@ export default async function NotasFiscaisPage() {
     contar((q) => q.eq("status", "autorizado")),
     contar((q) => q.eq("status", "cancelado")),
     contar((q) => q.or("status.is.null,status.not.in.(autorizado,cancelado)")),
-    buscarTodas<{ valor: number | null }>(
-      (de, ate) => supabase.from("nfce_emitidas").select("valor").eq("status", "autorizado").order("id").range(de, ate),
-      500000,
-    ),
+    // Soma no banco (DES-008, migration 0301): antes baixava o valor de todas.
+    supabase.rpc("nfce_total_autorizado"),
   ]);
-  const valorTotal = valores.reduce((s, v) => s + Number(v.valor ?? 0), 0);
+  const valorTotal = Number((valores as { data: unknown }).data) || 0;
 
   // Nota de várias comandas: busca os números de todas (em lotes — a lista de
   // ids vai no endereço da consulta, que tem tamanho máximo).

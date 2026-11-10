@@ -234,7 +234,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
                   <div key={s.id} className={linha(n > 0)}>
                     {s.foto_url && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={s.foto_url} alt="" className="h-12 w-12 shrink-0 rounded-controle object-cover" />
+                      <img src={s.foto_url} alt="" loading="lazy" decoding="async" className="h-12 w-12 shrink-0 rounded-controle object-cover" />
                     )}
                     <button type="button" onClick={() => maisSabor(s.id)} disabled={n === 0 && cheio} className="min-w-0 flex-1 text-left disabled:opacity-50">
                       <span className="block text-base font-semibold leading-tight">

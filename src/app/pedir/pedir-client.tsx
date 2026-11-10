@@ -37,7 +37,7 @@ const STATUS_LABEL: Record<string, string> = {
 function FotoItem({ url, size = "h-20 w-24" }: { url?: string | null; size?: string }) {
   if (!url) return null;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className={`${size} shrink-0 rounded-cartao object-cover`} />;
+  return <img src={url} alt="" loading="lazy" decoding="async" className={`${size} shrink-0 rounded-cartao object-cover`} />;
 }
 
 export type HorarioPedir = {

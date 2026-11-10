@@ -41,19 +41,17 @@ export async function GET(req: NextRequest) {
   // para liberar o XML completo de todas as notas.
   const { data: candidatas } = await admin
     .from("notas_fiscais")
-    .select("id, manifestado_em")
+    // Itens contados junto (DES-005): antes era uma consulta por nota.
+    .select("id, manifestado_em, nota_itens(count)")
     .not("manifestado_em", "is", null)
     .gte("manifestado_em", new Date(agora - 3 * 60 * 60 * 1000).toISOString())
     .lte("manifestado_em", new Date(agora - 60 * 1000).toISOString());
+  const itensDe = (n: { nota_itens?: { count: number }[] | null }) => Number(n.nota_itens?.[0]?.count ?? 0);
 
   let aguardando = 0;
   let manifestMaisNova = 0; // a mais recente entre as que ainda esperam itens
   for (const n of candidatas ?? []) {
-    const { count } = await admin
-      .from("nota_itens")
-      .select("id", { count: "exact", head: true })
-      .eq("nota_id", n.id as string);
-    if ((count ?? 0) === 0) {
+    if (itensDe(n as { nota_itens?: { count: number }[] | null }) === 0) {
       aguardando++;
       const t = new Date(n.manifestado_em as string).getTime();
       if (t > manifestMaisNova) manifestMaisNova = t;
@@ -65,18 +63,12 @@ export async function GET(req: NextRequest) {
   // reprocessando desde o início. Faz isso sozinho, no máximo a cada 8h.
   const { data: presas } = await admin
     .from("notas_fiscais")
-    .select("id")
+    .select("id, nota_itens(count)")
     .not("manifestado_em", "is", null)
     .gte("manifestado_em", new Date(agora - 5 * 24 * 60 * 60 * 1000).toISOString())
     .lte("manifestado_em", new Date(agora - 3 * 60 * 60 * 1000).toISOString());
   let travadas = 0;
-  for (const n of presas ?? []) {
-    const { count } = await admin
-      .from("nota_itens")
-      .select("id", { count: "exact", head: true })
-      .eq("nota_id", n.id as string);
-    if ((count ?? 0) === 0) travadas++;
-  }
+  for (const n of presas ?? []) if (itensDe(n as { nota_itens?: { count: number }[] | null }) === 0) travadas++;
   const reprocEm = cfg.reprocessado_em ? new Date(cfg.reprocessado_em).getTime() : 0;
   // (Nunca durante um castigo 656 nem logo depois de outra busca forçada.)
   if (travadas > 0 && agora - reprocEm > 8 * 60 * 60 * 1000 && podeForcar(cfg, false).ok) {

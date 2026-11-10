@@ -78,7 +78,7 @@ type Sabor = { id: string; nome: string; foto_url: string | null; descricao: str
 export function Foto({ url, tam = "h-12 w-12" }: { url: string | null; tam?: string }) {
   if (!url) return <div className={`flex ${tam} shrink-0 items-center justify-center rounded-controle bg-superficie-suave text-texto-fraco `}><Icone nome="salao" tamanho={18} /></div>;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className={`${tam} shrink-0 rounded-controle object-cover`} />;
+  return <img src={url} alt="" loading="lazy" decoding="async" className={`${tam} shrink-0 rounded-controle object-cover`} />;
 }
 
 export function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: string; temFoto: boolean }) {

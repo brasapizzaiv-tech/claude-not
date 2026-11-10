@@ -268,6 +268,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
                   return (
                     <Link
                       key={m.numero}
+                      prefetch={false}
                       href={m.comandaId ? `/salao/comandas/${m.comandaId}` : `/salao/mesa/${m.numero}`}
                       title={titulo}
                       aria-label={titulo}

@@ -136,13 +136,13 @@ export default async function DashboardPage({
     supabase.from("delivery_config").select("aberto").maybeSingle(),
     // Comandas abertas em cada um dos 7 dias + o mesmo dia da semana passada
     // (contagem pelo banco, sem trazer linhas: passa fácil de 1000 na semana).
-    Promise.all(
-      [...Array.from({ length: 7 }, (_, i) => somarDias(dia, i - 6)), semanaAtras].map(async (d) => {
-        const jj = janelaDoDia(d);
-        const { count } = await supabase.from("pdv_comandas").select("id", { count: "exact", head: true }).gte("aberta_em", jj.de).lt("aberta_em", jj.ate);
-        return count ?? 0;
-      }),
-    ),
+    // Uma consulta só pros 8 dias (DES-009, migration 0301).
+    (async () => {
+      const dias = [...Array.from({ length: 7 }, (_, i) => somarDias(dia, i - 6)), semanaAtras];
+      const { data } = await supabase.rpc("comandas_por_dia", { p_dias: dias });
+      const porDia = new Map(((data as { dia: string; n: number }[] | null) ?? []).map((r) => [String(r.dia).slice(0, 10), Number(r.n) || 0]));
+      return dias.map((d) => porDia.get(d) ?? 0);
+    })(),
     formasParaTipo(),
   ]);
 
