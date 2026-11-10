@@ -100,7 +100,7 @@ async function main() {
   // token/PIN/código de colaboradores e entregadores. O grant de tabela inteira
   // logo acima devolveria tudo, então reaplica aqui, sempre por último.
   await client.query(`
-    do $
+    do $$
     declare t text; secretas text[]; cols text;
     begin
       for t, secretas in select * from (values
@@ -115,7 +115,7 @@ async function main() {
         execute format('revoke select on public.%I from authenticated', t);
         execute format('grant select (%s) on public.%I to authenticated', cols, t);
       end loop;
-    end $;
+    end $$;
   `);
   console.log("✓ Colunas secretas fora da sessão (token/PIN/código)");
 
