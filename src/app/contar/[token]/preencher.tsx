@@ -235,16 +235,16 @@ export function PreencherClient({
       );
     }
     if (jaConfirmado(id)) {
-      return <div className="mt-1 text-mini text-emerald-600">✓ Conferido: você contou de novo e confirmou {f(totalDe(id))}.</div>;
+      return <div className="mt-1 text-mini text-ok-texto">✓ Conferido: você contou de novo e confirmou {f(totalDe(id))}.</div>;
     }
     return (
-      <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+      <div className="mt-2 rounded-controle border border-amber-300 bg-amber-50 p-2 text-xs text-aviso-texto dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
         <Icone nome="alerta" tamanho={13} className="mr-1" /> {explicacao(r, totalDe(id))}
         <div className="mt-1.5 flex gap-2">
           <button
             type="button"
             onClick={() => confirmar(id, totalDe(id))}
-            className="rounded-md bg-amber-600 px-2 py-1 font-semibold text-white"
+            className="rounded-controle bg-amber-600 px-2 py-1 font-semibold text-white"
           >
             Contei de novo, está certo
           </button>
@@ -258,7 +258,7 @@ export function PreencherClient({
   // dentro do render remonta a cada tecla).
   const botoesSimNao = (id: string) => {
     const r = simNao[id];
-    const base = "flex-1 rounded-lg py-3 text-sm font-semibold ring-1 transition";
+    const base = "flex-1 rounded-controle py-3 text-sm font-semibold ring-1 transition";
     return (
       <div>
         <p className="mb-1.5 text-sm text-zinc-500">Só de olhar: precisa comprar?</p>
@@ -409,11 +409,11 @@ export function PreencherClient({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-32 dark:bg-zinc-950">
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="min-h-screen bg-painel-fundo pb-32">
+      <header className="sticky top-0 z-10 border-b border-borda bg-painel-cartao px-4 py-3">
         {/* Avulsa com várias categorias: o nome inteiro ocupava meia tela. Fica
             "Contagem avulsa · 19/10/2026"; as categorias abrem num toque. */}
-        <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-lg font-bold text-texto">
           {tituloCurto}
         </h1>
         <p className="text-sm text-zinc-500">
@@ -429,22 +429,22 @@ export function PreencherClient({
 
       <div className="mx-auto max-w-xl px-4">
         {msg && (
-          <div role="status" className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+          <div role="status" className="mt-4 rounded-controle bg-green-50 px-4 py-3 text-sm text-ok-texto dark:bg-green-950 dark:text-green-300">
             {msg}
           </div>
         )}
         {erroEnvio && (
-          <div role="alert" className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+          <div role="alert" className="mt-4 rounded-controle bg-red-50 px-4 py-3 text-sm font-medium text-urgente-texto dark:bg-red-950 dark:text-red-300">
             <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {erroEnvio}
           </div>
         )}
 
         {finalizada ? (
-          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+          <div className="mt-6 rounded-cartao border border-amber-200 bg-amber-50 p-6 text-center text-aviso-texto dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
             Esta contagem já foi finalizada. Não é mais possível editar.
           </div>
         ) : produtos.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-zinc-200 p-6 text-center text-zinc-500 dark:border-zinc-800">
+          <div className="mt-6 rounded-cartao border border-borda p-6 text-center text-zinc-500">
             Nenhum produto atribuído a você nesta contagem.
           </div>
         ) : (
@@ -458,7 +458,7 @@ export function PreencherClient({
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                   placeholder="Buscar item..."
-                  className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-3 pr-11 text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                  className="w-full rounded-controle border border-borda-forte bg-painel-cartao py-2 pl-3 pr-11 text-base text-texto focus:border-orange-500"
                 />
                 {busca && (
                   <button
@@ -475,7 +475,7 @@ export function PreencherClient({
               <button
                 type="button"
                 onClick={() => setLeitor(true)}
-                className="shrink-0 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+                className="shrink-0 rounded-controle bg-zinc-900 px-3 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
               >
                 <span className="inline-flex items-center gap-1.5"><Icone nome="camera" tamanho={15} /> Ler etiquetas{lidas > 0 ? ` (${lidas})` : ""}</span>
               </button>
@@ -542,10 +542,10 @@ export function PreencherClient({
                         return (
                           <div
                             key={p.id}
-                            className={`rounded-xl border bg-white p-3 dark:bg-zinc-900 ${feito ? "border-emerald-300 dark:border-emerald-800" : "border-zinc-200 dark:border-zinc-800"}`}
+                            className={`rounded-controle border bg-white p-3 dark:bg-zinc-900 ${feito ? "border-emerald-300 dark:border-emerald-800" : "border-zinc-200 dark:border-zinc-800"}`}
                           >
-                            <div className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">
-                              {feito && <span role="status" className="mr-1 text-emerald-600">✓</span>}
+                            <div className="mb-2 font-medium text-texto">
+                              {feito && <span role="status" className="mr-1 text-ok-texto">✓</span>}
                               {p.nome}
                               <span className="ml-1 text-xs font-normal text-zinc-400">
                                 ({p.unidade})
@@ -590,14 +590,14 @@ export function PreencherClient({
                     {extras.map((p) => {
                       const feito = foiPreenchido(p.id);
                       return (
-                        <div key={p.id} className={`rounded-xl border bg-white p-3 dark:bg-zinc-900 ${feito ? "border-emerald-300 dark:border-emerald-800" : "border-orange-200 dark:border-orange-900"}`}>
+                        <div key={p.id} className={`rounded-controle border bg-white p-3 dark:bg-zinc-900 ${feito ? "border-emerald-300 dark:border-emerald-800" : "border-orange-200 dark:border-orange-900"}`}>
                           <div className="mb-2 flex items-start justify-between gap-2">
-                            <div className="font-medium text-zinc-900 dark:text-zinc-100">
-                              {feito && <span role="status" className="mr-1 text-emerald-600">✓</span>}
+                            <div className="font-medium text-texto">
+                              {feito && <span role="status" className="mr-1 text-ok-texto">✓</span>}
                               {p.nome}
                               <span className="ml-1 text-xs font-normal text-zinc-400">({p.unidade})</span>
                             </div>
-                            <button onClick={() => removerExtra(p.id)} className="text-xs text-zinc-400 hover:text-red-600">remover</button>
+                            <button onClick={() => removerExtra(p.id)} className="text-xs text-zinc-400 hover:text-urgente-texto">remover</button>
                           </div>
                           {p.sim_nao ? botoesSimNao(p.id) : (
                             <>
@@ -623,7 +623,7 @@ export function PreencherClient({
               )}
 
               {/* Adicionar item fora da lista */}
-              <div className="rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
+              <div className="rounded-controle border border-dashed border-borda-forte p-3">
                 {!addAberto ? (
                   <button onClick={() => setAddAberto(true)} className="w-full text-sm font-semibold text-orange-600">
                     <Icone nome="novo" tamanho={14} className="mr-1" /> Tem um item no estoque que não está na lista? Adicionar
@@ -636,9 +636,9 @@ export function PreencherClient({
                         onChange={(e) => setAddBusca(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") buscarAdd(); }}
                         placeholder="Nome do item (ex.: vinagre)"
-                        className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950"
+                        className="flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-base"
                       />
-                      <button onClick={buscarAdd} disabled={addBuscando || addBusca.trim().length < 2} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50">
+                      <button onClick={buscarAdd} disabled={addBuscando || addBusca.trim().length < 2} className="rounded-controle bg-primaria px-3 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50">
                         {addBuscando ? "..." : "Buscar"}
                       </button>
                       <button aria-label="Fechar" onClick={() => { setAddAberto(false); setAddBusca(""); setAddResultados([]); }} className="text-zinc-400">✕</button>
@@ -646,7 +646,7 @@ export function PreencherClient({
                     {addResultados.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {addResultados.map((p) => (
-                          <button key={p.id} onClick={() => adicionarExtra(p)} className="flex w-full items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 text-left text-sm hover:bg-orange-50 dark:border-zinc-700 dark:hover:bg-orange-950">
+                          <button key={p.id} onClick={() => adicionarExtra(p)} className="flex w-full items-center justify-between rounded-controle border border-borda px-3 py-2 text-left text-sm hover:bg-orange-50 dark:hover:bg-orange-950">
                             <span>{p.nome} <span className="text-xs text-zinc-400">({p.unidade})</span></span>
                             <span className="text-xs text-zinc-400">{p.categoria}</span>
                           </button>
@@ -662,7 +662,7 @@ export function PreencherClient({
       </div>
 
       {!finalizada && produtos.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="fixed inset-x-0 bottom-0 border-t border-borda bg-painel-cartao p-3">
           <div className="mx-auto max-w-xl">
             <div className="mb-1.5 text-center text-xs text-zinc-500">
               {preenchidos} de {todosItens.length} itens preenchidos · não tem nenhum? digite <b>0</b>
@@ -671,7 +671,7 @@ export function PreencherClient({
             <button
               onClick={salvar}
               disabled={salvando}
-              className="w-full rounded-xl bg-orange-500 px-4 py-3 text-base font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+              className="w-full rounded-controle bg-primaria px-4 py-3 text-base font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
             >
               {salvando ? "Enviando..." : `Enviar contagem (${preenchidos})`}
             </button>

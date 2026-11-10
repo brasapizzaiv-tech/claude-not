@@ -29,7 +29,7 @@ export function GerarAgora() {
           {r.mensagem && <p role="status" className="text-texto-suave">{r.mensagem}</p>}
           <ul className="mt-1 space-y-0.5">
             {r.filiais.map((f) => (
-              <li key={f.filial} className={f.acao === "erro" || f.acao === "sem_cliente" || f.acao === "travado" ? "text-amber-700 dark:text-amber-400" : "text-texto"}>
+              <li key={f.filial} className={f.acao === "erro" || f.acao === "sem_cliente" || f.acao === "travado" ? "text-aviso-texto dark:text-amber-400" : "text-texto"}>
                 {f.filial}: {f.qtd} marmitas, {ACAO[f.acao]}{f.detalhe ? ` (${f.detalhe})` : ""}
               </li>
             ))}

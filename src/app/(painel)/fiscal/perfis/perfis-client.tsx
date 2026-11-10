@@ -99,12 +99,12 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
                   <td className="px-3 py-2 font-mono text-xs">{p.csosn}</td>
                   <td className="px-3 py-2 font-mono text-xs">{p.origem}</td>
                   <td className="px-3 py-2 font-mono text-xs">{p.unidade}</td>
-                  <td className="px-3 py-2 text-xs">{p.homologado ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">✓ contador</span> : <span className="text-amber-600">pendente</span>}</td>
+                  <td className="px-3 py-2 text-xs">{p.homologado ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-ok-texto dark:bg-emerald-950 dark:text-emerald-300">✓ contador</span> : <span className="text-aviso-texto">pendente</span>}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button onClick={() => setEditando({ id: p.id, nome: p.nome, ncm: p.ncm ?? "", cest: p.cest ?? "", cfop: p.cfop, csosn: p.csosn, origem: p.origem, unidade: p.unidade, pis_cst: p.pis_cst, cofins_cst: p.cofins_cst, homologado: p.homologado, obs: p.obs ?? "", is_cst: p.is_cst, is_classificacao: p.is_classificacao, is_aliquota: p.is_aliquota, ibs_cbs_cst: p.ibs_cbs_cst, ibs_cbs_classificacao: p.ibs_cbs_classificacao, ibs_uf_aliquota: p.ibs_uf_aliquota, ibs_mun_aliquota: p.ibs_mun_aliquota, cbs_aliquota: p.cbs_aliquota })} className="mr-3 text-orange-600 hover:underline">Editar</button>
                     <button disabled={pend}
                       onClick={async () => { if (await confirmar(`Excluir o perfil "${p.nome}"? Categorias e itens que usam ele voltam pro padrão.`)) run(() => excluirPerfilFiscal(p.id)); }}
-                      className="text-texto-fraco hover:text-red-600"
+                      className="text-texto-fraco hover:text-urgente-texto"
                     >
                       Excluir
                     </button>
@@ -144,7 +144,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
           ))}
         </div>
         {semPerfil > 0 && (
-          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400"><Icone nome="alerta" tamanho={13} className="mr-1" /> {semPerfil} {semPerfil === 1 ? "item ainda cai" : "itens ainda caem"} no padrão da config (categoria sem perfil).</p>
+          <p className="mt-2 text-xs text-aviso-texto dark:text-amber-400"><Icone nome="alerta" tamanho={13} className="mr-1" /> {semPerfil} {semPerfil === 1 ? "item ainda cai" : "itens ainda caem"} no padrão da config (categoria sem perfil).</p>
         )}
       </section>
 
@@ -179,7 +179,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
                       {ef.perfil ? (
                         <span className={ef.fonte === "item" ? "font-medium text-orange-600" : ""}>{ef.perfil.nome}</span>
                       ) : (
-                        <span className="text-amber-600">padrão da config</span>
+                        <span className="text-aviso-texto">padrão da config</span>
                       )}
                       <span className="ml-1 text-mini text-texto-fraco">({ef.fonte === "item" ? "exceção" : ef.fonte === "categoria" ? "categoria" : "config"})</span>
                     </td>

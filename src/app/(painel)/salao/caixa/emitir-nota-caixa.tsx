@@ -62,7 +62,7 @@ export function EmitirNotaCaixa({
 
   return (
     <div className="mt-3 cartao p-3">
-      <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100"><Icone nome="cupom" tamanho={14} className="mr-1.5" /> {autoIds.length > 0 ? "CPF ou CNPJ na nota?" : "Emitir NFC-e"} {autoIds.length > 0 && <span className="ml-1 text-xs font-normal text-emerald-600">(nota automática: Pix/cartão)</span>}</p>
+      <p className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100"><Icone nome="cupom" tamanho={14} className="mr-1.5" /> {autoIds.length > 0 ? "CPF ou CNPJ na nota?" : "Emitir NFC-e"} {autoIds.length > 0 && <span className="ml-1 text-xs font-normal text-ok-texto">(nota automática: Pix/cartão)</span>}</p>
       <div className="space-y-2">
         {grupos.map((g) => {
           const r = res[g.key];
@@ -82,7 +82,7 @@ export function EmitirNotaCaixa({
                 />
               )}
               {r?.ok ? (
-                <span className="text-sm font-medium text-emerald-600">{r.msg}</span>
+                <span className="text-sm font-medium text-ok-texto">{r.msg}</span>
               ) : auto ? (
                 <>
                   <button
@@ -109,10 +109,10 @@ export function EmitirNotaCaixa({
                   {proc ? "Emitindo…" : "Emitir"}
                 </button>
               )}
-              {r && !r.ok && <span className="text-sm text-red-600">{r.msg}</span>}
+              {r && !r.ok && <span className="text-sm text-urgente-texto">{r.msg}</span>}
               {r?.ok && !r.impressao && r.nfceId && (
                 <span className="flex items-center gap-1.5 rounded-controle border border-emerald-500 bg-emerald-500/10 px-2 py-1 text-sm">
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">Imprimir nota?</span>
+                  <span className="font-semibold text-ok-texto dark:text-emerald-400">Imprimir nota?</span>
                   <button onClick={() => imprimir(g.key)} disabled={proc} className="rounded-controle bg-texto px-2.5 py-0.5 text-xs font-semibold text-fundo disabled:opacity-60">Sim</button>
                   <button onClick={() => setRes((s) => ({ ...s, [g.key]: { ...s[g.key], impressao: "sem impressão" } }))} className="rounded-controle px-2 py-0.5 text-xs text-texto-suave">Não</button>
                 </span>

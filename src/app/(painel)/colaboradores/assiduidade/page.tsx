@@ -48,9 +48,9 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
 
   const selo = (g: boolean | null, emAndamento: boolean) =>
     g === null ? <span className="text-texto-fraco">—</span>
-      : !g ? <span className="font-semibold text-red-600">perdeu</span>
-        : emAndamento ? <span className="text-amber-700 dark:text-amber-400">até agora ok</span>
-          : <span className="font-semibold text-emerald-600">ganhou</span>;
+      : !g ? <span className="font-semibold text-urgente-texto">perdeu</span>
+        : emAndamento ? <span className="text-aviso-texto dark:text-amber-400">até agora ok</span>
+          : <span className="font-semibold text-ok-texto">ganhou</span>;
 
   return (
     <div className="w-full max-w-5xl p-4 sm:p-6">
@@ -69,7 +69,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
         </div>
       </div>
 
-      {!cfg.ativo && <p className="mb-4 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">O prêmio está desligado nas regras abaixo.</p>}
+      {!cfg.ativo && <p className="mb-4 rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950/30 dark:text-amber-200">O prêmio está desligado nas regras abaixo.</p>}
 
       <section className="mb-6 overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[640px] text-sm">
@@ -87,14 +87,14 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
                     <div className="text-xs text-texto-fraco">escala: {p.escala.length ? [...p.escala].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DOW[d]).join(", ") : "sem dias de dia no cadastro"}</div>
                   </td>
                   <td className="px-3 py-2 text-right">{r.esperados}</td>
-                  <td className={`px-3 py-2 text-right ${estourou ? "font-semibold text-red-600" : ""}`}>
+                  <td className={`px-3 py-2 text-right ${estourou ? "font-semibold text-urgente-texto" : ""}`}>
                     {r.atrasoTotal} min
                     {r.atrasos.length > 0 && <div className="text-xs font-normal text-texto-fraco">{r.atrasos.map((a) => `${dm(a.dia)} ${a.chegou} (+${a.min})`).join(" · ")}</div>}
                   </td>
                   <td className="px-3 py-2 text-xs">
-                    {r.faltas.length > 0 && <div className="text-red-600">faltas: {r.faltas.map(dm).join(", ")}</div>}
-                    {r.folgas.length > 0 && <div className="text-amber-700 dark:text-amber-400">folgas: {r.folgas.map(dm).join(", ")}</div>}
-                    {r.atestados.length > 0 && <div className="text-amber-700 dark:text-amber-400">atestado: {r.atestados.map(dm).join(", ")}</div>}
+                    {r.faltas.length > 0 && <div className="text-urgente-texto">faltas: {r.faltas.map(dm).join(", ")}</div>}
+                    {r.folgas.length > 0 && <div className="text-aviso-texto dark:text-amber-400">folgas: {r.folgas.map(dm).join(", ")}</div>}
+                    {r.atestados.length > 0 && <div className="text-aviso-texto dark:text-amber-400">atestado: {r.atestados.map(dm).join(", ")}</div>}
                     {!r.faltas.length && !r.folgas.length && !r.atestados.length && <span className="text-texto-fraco">nenhuma</span>}
                   </td>
                   <td className="px-3 py-2">
@@ -127,7 +127,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
                   <tr key={p.id}>
                     <td className="py-1.5">{p.nome}</td>
                     {res.map((g, i) => <td key={i} className="py-1.5">{selo(g, hoje <= fimDoMes(mesesTri[i]))}</td>)}
-                    <td className="py-1.5 text-right">{pago ? <span className="text-emerald-600">{brl(Number(pago.valor))} pago na semana de {dm(pago.segunda)}</span> : brl(meses * cfg.valor_mes)}</td>
+                    <td className="py-1.5 text-right">{pago ? <span className="text-ok-texto">{brl(Number(pago.valor))} pago na semana de {dm(pago.segunda)}</span> : brl(meses * cfg.valor_mes)}</td>
                   </tr>
                 );
               })}

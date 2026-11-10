@@ -54,7 +54,7 @@ function CampoInline({ id, campo, valor, placeholder }: { id: string; campo: "es
 type Fornecedor = { id: string; nome: string };
 
 const inputCls =
-  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 const UNIDADES = [
   "un", "kg", "g", "L", "ml", "cx", "pct", "fardo", "dz", "saco", "bandeja",
@@ -263,7 +263,7 @@ export function ProdutosClient({
       </div>
 
       {semForn > 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950/30 dark:text-amber-300">
           <span>
             {semForn} produto(s) sem nenhum fornecedor — não aparecem pra ninguém na cotação.
           </span>
@@ -347,7 +347,7 @@ export function ProdutosClient({
         </div>
       )}
       {bulkMsg && (
-        <p className="mb-3 text-sm text-green-700 dark:text-green-400">{bulkMsg}</p>
+        <p className="mb-3 text-sm text-ok-texto dark:text-green-400">{bulkMsg}</p>
       )}
 
       {filtrados.length === 0 ? (
@@ -408,7 +408,7 @@ export function ProdutosClient({
                   <td className="px-4 py-3 font-medium text-texto">
                     {p.nome}
                     {p.contagem_sim_nao && (
-                      <span className="ml-2 rounded bg-sky-100 px-1.5 py-0.5 text-mini font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" title="Na contagem só pergunta se precisa comprar">
+                      <span className="ml-2 rounded bg-sky-100 px-1.5 py-0.5 text-mini font-semibold text-info-texto dark:bg-sky-900/40 dark:text-sky-300" title="Na contagem só pergunta se precisa comprar">
                         sim/não
                       </span>
                     )}
@@ -438,7 +438,7 @@ export function ProdutosClient({
                           onClick={() => setFornDe(p)}
                           className={`rounded-controle px-2 py-1 text-xs font-medium ${
                             n === 0
-                              ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+                              ? "bg-amber-100 text-aviso-texto dark:bg-amber-500/15 dark:text-amber-400"
                               : "bg-superficie-suave text-texto-suave hover:bg-zinc-200  "
                           }`}
                         >
@@ -472,7 +472,7 @@ export function ProdutosClient({
                     <form action={excluirProduto} className="inline">
                       <input type="hidden" name="id" value={p.id} />
                       <Enviar
-                        className="text-texto-fraco hover:text-red-600"
+                        className="text-texto-fraco hover:text-urgente-texto"
                       >
                         Remover
                       </Enviar>
@@ -762,7 +762,7 @@ export function ProdutosClient({
             >
               <span className="flex items-center justify-between gap-2">
                 <span className="font-semibold text-texto">{p.nome}</span>
-                <span className={`text-xs font-semibold ${ativo ? "text-emerald-700 dark:text-emerald-300" : "text-texto-fraco"}`}>{ativo ? "FICA" : "sai"}</span>
+                <span className={`text-xs font-semibold ${ativo ? "text-ok-texto dark:text-emerald-300" : "text-texto-fraco"}`}>{ativo ? "FICA" : "sai"}</span>
               </span>
               <span className="mt-0.5 block text-xs text-texto-suave">
                 {p.categorias?.nome ?? "sem categoria"} · {p.unidade} · {vinc.get(p.id)?.size ?? 0} fornecedor(es){p.estoque_ideal ? ` · ideal ${p.estoque_ideal}` : ""}
@@ -783,11 +783,11 @@ export function ProdutosClient({
                 {lado(mesclar.b)}
               </div>
               {unidadesDiferentes && (
-                <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+                <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950/30 dark:text-amber-300">
                   <Icone nome="alerta" tamanho={14} className="mr-1" /> Unidades diferentes ({mesclar.a.unidade} × {mesclar.b.unidade}). As quantidades antigas do que sai passam como se fossem na unidade do que fica — confira antes.
                 </p>
               )}
-              {mesclarErro && <p role="alert" className="mt-3 text-sm text-red-600">{mesclarErro}</p>}
+              {mesclarErro && <p role="alert" className="mt-3 text-sm text-urgente-texto">{mesclarErro}</p>}
               <div className="mt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setMesclar(null)} className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave">Cancelar</button>
                 <button type="button" onClick={confirmarMesclar} disabled={proc} className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60">

@@ -68,7 +68,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
         <label className="flex items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={soAbertos} onChange={(e) => setSoAbertos(e.target.checked)} /> só com saldo em aberto
         </label>
-        {msg && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{msg}</p>}
+        {msg && <p role="status" className="text-sm text-ok-texto dark:text-emerald-400">{msg}</p>}
       </div>
       {lista.length === 0 ? (
         <p className="rounded-cartao bg-painel-cartao p-8 text-center text-sm text-texto-suave">Nenhum cliente com fiado.</p>
@@ -82,7 +82,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
                   {c.telefone && <p className="text-xs text-texto-suave">{c.telefone}</p>}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`text-lg font-bold ${c.saldo > 0.005 ? "text-red-600" : "text-emerald-600"}`}>{brl(c.saldo)}</span>
+                  <span className={`text-lg font-bold ${c.saldo > 0.005 ? "text-urgente-texto" : "text-ok-texto"}`}>{brl(c.saldo)}</span>
                   {c.saldo > 0.005 && aberto !== c.id && (
                     <button onClick={() => { setAberto(c.id); setValor(c.saldo.toFixed(2).replace(".", ",")); setBaixaValor(c.saldo.toFixed(2).replace(".", ",")); setMsg(null); }} className="rounded-controle bg-texto px-3 py-1.5 text-sm font-semibold text-fundo">
                       Receber
@@ -125,7 +125,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
                     {c.lancamentos.map((l) => (
                       <li key={l.id} className="flex justify-between gap-2 text-texto-suave">
                         <span>{l.quando} · <Icone nome={l.tipo === "debito" ? "cupom" : "dinheiro"} tamanho={12} className="mr-1" />{l.descricao ?? (l.tipo === "debito" ? "Venda fiada" : "Pagamento")}{l.forma ? ` (${l.forma})` : ""}</span>
-                        <span className={l.tipo === "debito" ? "text-red-600" : "text-emerald-600"}>{l.tipo === "debito" ? "+" : "−"} {brl(l.valor)}</span>
+                        <span className={l.tipo === "debito" ? "text-urgente-texto" : "text-ok-texto"}>{l.tipo === "debito" ? "+" : "−"} {brl(l.valor)}</span>
                       </li>
                     ))}
                   </ul>

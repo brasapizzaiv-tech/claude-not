@@ -75,7 +75,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
                 {fezNoite && <span className="inline-flex items-center gap-1"><Icone nome="noite" tamanho={12} /> noite</span>}</span>
               <div className="ml-auto text-right">
                 <div className="text-xs text-texto-suave">a pagar</div>
-                <div className="text-xl font-bold text-emerald-600">{brl(total)}</div>
+                <div className="text-xl font-bold text-ok-texto">{brl(total)}</div>
               </div>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 text-sm md:grid-cols-5">
@@ -96,7 +96,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
             </details>
             <div className="mt-3">
               {feito ? (
-                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-sm font-semibold text-emerald-600">✓ Acertado: {brl(Number(feito.total))} ({feito.teles_qtd} teles + fixo {brl(Number(feito.fixo))})</span>
+                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-sm font-semibold text-ok-texto">✓ Acertado: {brl(Number(feito.total))} ({feito.teles_qtd} teles + fixo {brl(Number(feito.fixo))})</span>
               ) : (
                 <form action={registrarAcertoEntregador} className="flex flex-wrap items-center gap-2">
                   <input type="hidden" name="entregador_id" value={b.id} />

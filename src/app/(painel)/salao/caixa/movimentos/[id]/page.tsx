@@ -89,7 +89,7 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
                 {p.observacao && <span className="ml-2 text-xs text-texto-suave">{p.observacao}</span>}
                 <span className="ml-2 text-xs text-texto-fraco">{hora(p.criado_em)}</span>
               </span>
-              <b className={Number(p.valor) < 0 ? "text-red-600" : "text-emerald-700 dark:text-emerald-400"}>{brl(Number(p.valor))}</b>
+              <b className={Number(p.valor) < 0 ? "text-urgente-texto" : "text-ok-texto dark:text-emerald-400"}>{brl(Number(p.valor))}</b>
             </li>
           ))}
         </ul>
@@ -116,7 +116,7 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
                   Comanda #{c.numero}
                   {c.mesa ? <span className="ml-2 text-sm font-normal text-texto-suave">{c.mesa}</span> : null}
                   {c.livre && <span className="ml-2 rounded bg-orange-500 px-1.5 py-0.5 text-mini font-bold text-marca-sobre-primaria">LIVRE</span>}
-                  <span className={`ml-2 rounded-full px-2 py-0.5 text-mini font-medium ${c.status === "fechada" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                  <span className={`ml-2 rounded-full px-2 py-0.5 text-mini font-medium ${c.status === "fechada" ? "bg-emerald-100 text-ok-texto dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-aviso-texto dark:bg-amber-950 dark:text-amber-300"}`}>
                     {c.status}
                   </span>
                 </p>
@@ -133,7 +133,7 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
                   <li key={i.id} className="flex justify-between gap-2 py-1.5">
                     <span className="text-texto-suave">
                       {Number(i.qtd) > 1 ? `${i.qtd}× ` : ""}{i.descricao ?? "Item"}
-                      {!i.pago && <span className="ml-2 text-mini text-amber-600">não pago</span>}
+                      {!i.pago && <span className="ml-2 text-mini text-aviso-texto">não pago</span>}
                     </span>
                     <span className="text-texto-suave">{brl(Number(i.qtd) * Number(i.preco_unit))}</span>
                   </li>

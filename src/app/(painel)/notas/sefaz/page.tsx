@@ -42,7 +42,7 @@ export default async function SefazPage() {
           : ""}
       </p>
 
-      <div className="mb-6 rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+      <div className="mb-6 rounded-controle bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
         <Icone nome="cadeado" tamanho={14} className="mr-1.5" /> Seu certificado e a senha ficam guardados no servidor só para
         conectar na SEFAZ. Ninguém além do sistema acessa. Use apenas em um
         equipamento de sua confiança.

@@ -21,9 +21,9 @@ export function NfceAutoToggle({ ligado, producao, compacto }: { ligado: boolean
       onClick={alternar}
       disabled={pend}
       title={producao ? "Pix e cartão emitem a NFC-e sozinhos. Clique pra ligar/desligar." : "Só funciona com o fiscal em produção."}
-      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm disabled:opacity-60 ${
+      className={`flex items-center gap-2 rounded-controle border px-3 py-2 text-sm disabled:opacity-60 ${
         ligado && producao
-          ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+          ? "border-emerald-500 bg-emerald-500/10 text-ok-texto dark:text-emerald-400"
           : "border-zinc-300 text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
       }`}
     >
@@ -31,7 +31,7 @@ export function NfceAutoToggle({ ligado, producao, compacto }: { ligado: boolean
         <span className={`block h-3 w-3 rounded-full bg-white transition ${ligado ? "translate-x-3" : ""}`} />
       </span>
       {compacto ? "Nota auto" : `NFC-e automática (Pix/cartão): ${ligado ? "ligada" : "desligada"}`}
-      {!producao && !compacto && <span className="text-mini text-amber-600">só em produção</span>}
+      {!producao && !compacto && <span className="text-mini text-aviso-texto">só em produção</span>}
     </button>
   );
 }

@@ -221,12 +221,12 @@ export function EditorCardapio({
               {dia === hoje ? " · hoje" : ""}
             </span>
             {status === "publicado" && (
-              <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-mini font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+              <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-mini font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
                 no ar{atual?.publicado_por ? ` · ${atual.publicado_por} ${quando(atual.publicado_em)}` : ""}
               </span>
             )}
             {status === "alterado" && (
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-mini font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-mini font-medium text-aviso-texto dark:bg-amber-950 dark:text-amber-200">
                 no ar · com alterações não publicadas ({atual?.alterado_por ?? "?"} {quando(atual?.alterado_em ?? null)})
               </span>
             )}
@@ -238,7 +238,7 @@ export function EditorCardapio({
           </div>
 
           {domingo && (
-            <p className="mb-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            <p className="mb-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
               Domingo a casa não abre — normalmente não precisa de cardápio.
             </p>
           )}
@@ -343,7 +343,7 @@ export function EditorCardapio({
                 {atual?.publicado ? "Salvar sem publicar" : "Salvar rascunho"}
               </button>
               {status === "alterado" && (
-                <button disabled={proc} onClick={publicarSo} className="rounded-controle border border-amber-500 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">
+                <button disabled={proc} onClick={publicarSo} className="rounded-controle border border-amber-500 px-3 py-1.5 text-xs font-semibold text-aviso-texto hover:bg-amber-50 dark:text-amber-300">
                   Publicar o que está salvo
                 </button>
               )}
@@ -374,7 +374,7 @@ export function EditorCardapio({
                         router.refresh();
                       });
                   }}
-                  className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"
+                  className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-urgente-texto"
                 >
                   Apagar
                 </button>
@@ -414,7 +414,7 @@ export function EditorCardapio({
                       <span
                         className={
                           c?.publicado
-                            ? "font-medium text-green-600"
+                            ? "font-medium text-ok-texto"
                             : c
                               ? "text-texto-fraco"
                               : "text-zinc-300 dark:text-zinc-600"
@@ -569,7 +569,7 @@ function BlocoItens({
               <button aria-label="Fechar"
                 onClick={() => remover(i)}
                 title="Tirar do cardápio"
-                className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+                className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
               >
                 ✕
               </button>
@@ -716,7 +716,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
                       router.refresh();
                     });
                 }}
-                className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+                className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
               >
                 ✕
               </button>

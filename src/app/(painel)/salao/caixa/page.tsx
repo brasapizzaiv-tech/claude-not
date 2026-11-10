@@ -368,11 +368,11 @@ export default async function CaixaPage({
                 <span>{brl(v)}</span>
               </div>
             ))}
-            <div className="flex justify-between text-blue-600">
+            <div className="flex justify-between text-info-texto">
               <span>Suprimentos</span>
               <span>{brl(suprimentos)}</span>
             </div>
-            <div className="flex justify-between text-red-600">
+            <div className="flex justify-between text-urgente-texto">
               <span>Sangrias</span>
               <span>− {brl(sangrias)}</span>
             </div>

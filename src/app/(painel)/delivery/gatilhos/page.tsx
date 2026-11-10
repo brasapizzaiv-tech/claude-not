@@ -52,9 +52,9 @@ export default async function GatilhosPage() {
       <p className="mb-4 text-sm text-texto-suave">
         Saem das {c?.auto_hora_ini?.slice(0, 5) ?? "10:00"} às {c?.auto_hora_fim?.slice(0, 5) ?? "20:00"}
         {c?.intervalo_auto_dias ? `, e o mesmo cliente recebe no máximo uma a cada ${c.intervalo_auto_dias} dias` : ""}.{" "}
-        <Link href="/delivery/whatsapp" className="text-emerald-600 underline">Mudar em Modelos e limites</Link>
+        <Link href="/delivery/whatsapp" className="text-ok-texto underline">Mudar em Modelos e limites</Link>
       </p>
-      {!mods.ok && <p className="mb-3 rounded-controle bg-red-500/10 px-3 py-2 text-sm text-red-600">Não consegui ler os modelos na Meta: {mods.erro}</p>}
+      {!mods.ok && <p className="mb-3 rounded-controle bg-red-500/10 px-3 py-2 text-sm text-urgente-texto">Não consegui ler os modelos na Meta: {mods.erro}</p>}
 
       <CartoesGatilhos
         modelos={mods.ok ? mods.modelos : []}
@@ -72,7 +72,7 @@ export default async function GatilhosPage() {
               <tr key={e.id}>
                 <td className="px-3 py-2">{titulo[e.gatilho] ?? e.gatilho}</td>
                 <td className="px-3 py-2">{e.nome ?? e.telefone}</td>
-                <td className={`px-3 py-2 ${e.status === "falha" ? "text-red-600" : ""}`} title={e.erro ?? undefined}>{ROTULO_ENVIO[e.status] ?? e.status}</td>
+                <td className={`px-3 py-2 ${e.status === "falha" ? "text-urgente-texto" : ""}`} title={e.erro ?? undefined}>{ROTULO_ENVIO[e.status] ?? e.status}</td>
                 <td className="px-3 py-2 text-texto-suave">{dataHora(e.enviado_em ?? e.criado_em)}</td>
               </tr>
             ))}

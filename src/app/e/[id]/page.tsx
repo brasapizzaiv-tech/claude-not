@@ -16,7 +16,7 @@ export default async function EtiquetaPublicaPage({
   if (!data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 dark:bg-zinc-950">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-cartao border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
           <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
             Etiqueta não encontrada
           </h1>
@@ -39,7 +39,7 @@ export default async function EtiquetaPublicaPage({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="w-full max-w-sm rounded-cartao border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <p className="text-center text-xs font-semibold uppercase tracking-wide text-zinc-400">
           Brasa · Etiqueta #{data.numero}
         </p>
@@ -58,10 +58,10 @@ export default async function EtiquetaPublicaPage({
 
         <BaixaPublica id={id} statusInicial={(data.status as string) ?? "ativa"} />
         <div
-          className={`mt-4 rounded-xl p-4 text-center ${
+          className={`mt-4 rounded-controle p-4 text-center ${
             vencida
-              ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
-              : "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
+              ? "bg-red-100 text-urgente-texto dark:bg-red-950 dark:text-red-300"
+              : "bg-green-100 text-ok-texto dark:bg-green-950 dark:text-green-300"
           }`}
         >
           <p className="text-xs uppercase">Validade</p>

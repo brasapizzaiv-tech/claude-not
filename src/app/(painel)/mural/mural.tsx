@@ -341,7 +341,7 @@ export function Mural({
                           Fica junto dos nomes, não numa linha à parte, senão
                           parece o aviso do dia de baixo. */}
                       {temGerente && (
-                        <span className="whitespace-nowrap text-xs font-semibold text-amber-600 dark:text-amber-400">
+                        <span className="whitespace-nowrap text-xs font-semibold text-aviso-texto dark:text-amber-400">
                           sem gerente
                         </span>
                       )}
@@ -380,7 +380,7 @@ export function Mural({
                       <p className="text-sm font-semibold text-texto">
                         {s.item}
                         {s.urgente && (
-                          <span className="ml-2 text-mini font-bold text-red-600 dark:text-red-400">
+                          <span className="ml-2 text-mini font-bold text-urgente-texto dark:text-red-400">
                             URGENTE
                           </span>
                         )}
@@ -406,8 +406,8 @@ export function Mural({
                           tamanho={12}
                           className={
                             s.status === "rejeitado"
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-emerald-600 dark:text-emerald-400"
+                              ? "text-urgente-texto dark:text-red-400"
+                              : "text-ok-texto dark:text-emerald-400"
                           }
                         />
                         <span className="flex-1 text-texto-suave">{s.item}</span>

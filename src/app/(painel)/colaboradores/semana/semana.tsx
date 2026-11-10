@@ -651,7 +651,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
       </div>
 
       {pontoSemPessoa.length > 0 && (
-        <div className="mb-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+        <div className="mb-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-aviso-texto dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
           <b>Batidas no relógio sem colaborador ligado:</b>{" "}
           {pontoSemPessoa.map((x) => `${x.nome || "sem nome"} (CPF final ${x.cpf.slice(-4)}, ${x.n} batida${x.n === 1 ? "" : "s"})`).join(" · ")}.
           {" "}Cadastre o CPF da pessoa em <Link href="/colaboradores" className="underline">Colaboradores</Link>; as próximas batidas entram sozinhas.
@@ -698,7 +698,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           ))}
         </div>
         {pending && <span className="text-xs text-texto-fraco">salvando…</span>}
-        {erro && <span role="alert" className="text-xs text-red-600">{erro}</span>}
+        {erro && <span role="alert" className="text-xs text-urgente-texto">{erro}</span>}
       </div>
 
       {adiantAberto && (
@@ -752,7 +752,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                         if (!await confirmar(`Apagar o adiantamento de ${brl(Number(a.valor))} de ${a.nome}?`)) return;
                         start(async () => { const r = await excluirAdiantamento(a.id); if (r.erro) setErro(r.erro); else router.refresh(); });
                       }}
-                      className="text-xs text-texto-fraco hover:text-red-600"
+                      className="text-xs text-texto-fraco hover:text-urgente-texto"
                     >
                       apagar
                     </button>
@@ -874,7 +874,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                           const cx = servicoCaixa[n.data];
                           const igual = Math.abs(cx - numBRtxt(e.valor)) < 0.01;
                           return (
-                            <div className={`mt-0.5 text-mini ${igual ? "text-texto-fraco" : "text-amber-600"}`}>
+                            <div className={`mt-0.5 text-mini ${igual ? "text-texto-fraco" : "text-aviso-texto"}`}>
                               caixa {brl(cx)}
                               {!igual && (
                                 <button type="button" onClick={() => salvarDez(n.data, fmtNum(cx), e.pagar_em)} className="ml-1 font-semibold underline">usar</button>
@@ -897,11 +897,11 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                         </select>
                       </td>
                       <td className="px-2 py-1 text-center">
-                        {n.presentes > 0 ? <span className="inline-flex items-center gap-1">{n.presentes} <Icone nome="noite" tamanho={13} /></span> : n.pool > 0 ? <span className="text-red-600">ninguém marcado nessa noite</span> : "—"}
+                        {n.presentes > 0 ? <span className="inline-flex items-center gap-1">{n.presentes} <Icone nome="noite" tamanho={13} /></span> : n.pool > 0 ? <span className="text-urgente-texto">ninguém marcado nessa noite</span> : "—"}
                       </td>
                       <td className="px-2 py-1 text-right font-semibold">{n.presentes > 0 ? brl(n.unit) : "—"}</td>
                       <td className="px-2 py-1 text-right">
-                        <button onClick={() => removerNoite(n.data)} className="text-texto-fraco hover:text-red-600"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
+                        <button onClick={() => removerNoite(n.data)} className="text-texto-fraco hover:text-urgente-texto"><Icone nome="lixeira" tamanho={15} titulo="Apagar" /></button>
                       </td>
                     </tr>
                   );
@@ -940,7 +940,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                   <td className="sticky left-0 z-10 bg-painel-cartao px-3 py-1.5">
                     <div className="font-medium text-texto">
                       {p.nome}
-                      {p.esporadico && <span className="ml-1 rounded bg-amber-100 px-1 text-mini text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">free</span>}
+                      {p.esporadico && <span className="ml-1 rounded bg-amber-100 px-1 text-mini text-aviso-texto dark:bg-amber-900/40 dark:text-amber-300">free</span>}
                     </div>
                     <div className="text-mini text-texto-fraco">
                       {clt
@@ -981,7 +981,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                           const fDia = kd && vinculoDoTurno(p, "dia") === "clt" && foraDaEscala(p, "dia", dow);
                           const fNoite = kn && vinculoDoTurno(p, "noite") === "clt" && foraDaEscala(p, "noite", dow);
                           if (!fDia && !fNoite) return null;
-                          return <div className="mt-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400" title={p.valor_free ? `Free: ${brl(Number(p.valor_free))}` : "Free sem valor: preencha o valor do free no cadastro"}>free{p.valor_free ? "" : " ?"}</div>;
+                          return <div className="mt-0.5 text-[10px] font-semibold text-ok-texto dark:text-emerald-400" title={p.valor_free ? `Free: ${brl(Number(p.valor_free))}` : "Free sem valor: preencha o valor do free no cadastro"}>free{p.valor_free ? "" : " ?"}</div>;
                         })()}
                         {(() => {
                           // Horários do relógio de ponto (migration 0221), primeiro e último de cada turno.
@@ -1059,7 +1059,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             </div>
           )}
           {turnoFiltro !== "todos" && (
-            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-aviso-texto dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
               Mostrando só o turno {turnoFiltro === "dia" ? "DIA" : "NOITE"}: os valores abaixo são só desse turno. Pra lançar o pagamento, volte em <b>Todos</b>.
             </div>
           )}
@@ -1112,7 +1112,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                   <tr key={p.id} className={`bg-painel-cartao ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-center">
                       {pagoDe.has(p.id) ? (
-                        <span className="text-xs text-green-600" title={`Lançado: ${brl(Number(pagoDe.get(p.id)!.valor))}`}>✓</span>
+                        <span className="text-xs text-ok-texto" title={`Lançado: ${brl(Number(pagoDe.get(p.id)!.valor))}`}>✓</span>
                       ) : total > 0.005 ? (
                         <input
                           type="checkbox"
@@ -1125,14 +1125,14 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                       <div className="font-medium text-texto">{p.nome}</div>
                       <div className="text-mini text-texto-fraco">
                         {rotuloVinculo}{p.funcao ? ` · ${p.funcao}` : ""}
-                        {pagoDe.has(p.id) && <span className="ml-1 text-green-600">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))}{pagoDe.get(p.id)!.n > 1 ? `, ${pagoDe.get(p.id)!.n} lançamentos` : ""})</span>}
+                        {pagoDe.has(p.id) && <span className="ml-1 text-ok-texto">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))}{pagoDe.get(p.id)!.n > 1 ? `, ${pagoDe.get(p.id)!.n} lançamentos` : ""})</span>}
                       </div>
                       {pagoDe.has(p.id) && total - pagoDe.get(p.id)!.valor > 0.005 && (
                         <button
                           type="button"
                           onClick={() => lancarDiferenca(p, Math.round((total - pagoDe.get(p.id)!.valor) * 100) / 100)}
                           disabled={pending}
-                          className="mt-1 rounded-controle border border-amber-500 px-2 py-0.5 text-mini font-medium text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-400"
+                          className="mt-1 rounded-controle border border-amber-500 px-2 py-0.5 text-mini font-medium text-aviso-texto hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-400"
                           title="Esqueceu algo? Lança só a diferença entre o total de agora e o que já foi lançado."
                         >
                           + Lançar diferença {brl(total - pagoDe.get(p.id)!.valor)}
@@ -1197,7 +1197,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                             inputMode="decimal"
                             placeholder="0,00"
-                            className={`${inputCls} w-20 text-right ${extraDe(p).desconto ? "border-red-400 text-red-700" : ""}`}
+                            className={`${inputCls} w-20 text-right ${extraDe(p).desconto ? "border-red-400 text-urgente-texto" : ""}`}
                           />
                           {(extraDe(p).desconto || extraDe(p).descMotivo) && (
                             <input aria-label="motivo (ex.: atraso)"
@@ -1219,7 +1219,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                       ) : (adiantPor[p.id]?.valor ?? 0) > 0.005 || (fiadoPor[p.id]?.valor ?? 0) > 0.005 ? (
                         <div className="flex flex-col items-end gap-0.5">
                           {(adiantPor[p.id]?.valor ?? 0) > 0.005 && (
-                            <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-amber-700 dark:text-amber-400" title={`${adiantPor[p.id].n} adiantamento(s) em aberto — desmarque só se for descontar em outra semana`}>
+                            <label className="flex cursor-pointer items-center justify-end gap-1 text-xs text-aviso-texto dark:text-amber-400" title={`${adiantPor[p.id].n} adiantamento(s) em aberto — desmarque só se for descontar em outra semana`}>
                               <input
                                 type="checkbox"
                                 checked={descontarAdiant.has(p.id)}
@@ -1229,7 +1229,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             </label>
                           )}
                           {(fiadoPor[p.id]?.valor ?? 0) > 0.005 && (
-                            <div className="flex items-center justify-end gap-1.5 text-xs text-red-600">
+                            <div className="flex items-center justify-end gap-1.5 text-xs text-urgente-texto">
                               <label className="flex cursor-pointer items-center gap-1" title={`${fiadoPor[p.id].n} compra(s) em aberto — marque pra descontar no acerto`}>
                                 <input
                                   type="checkbox"
@@ -1245,7 +1245,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                                   onChange={(e) => setDescontarValor((o) => ({ ...o, [p.id]: e.target.value }))}
                                   inputMode="decimal"
                                   title="Quanto do fiado descontar neste acerto (pode ser só uma parte)"
-                                  className={`${inputCls} w-20 text-right text-red-700`}
+                                  className={`${inputCls} w-20 text-right text-urgente-texto`}
                                 />
                               )}
                             </div>
@@ -1255,7 +1255,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                         <span className="text-zinc-300">—</span>
                       )}
                     </td>}
-                    {turnoFiltro === "todos" && <td className="px-4 py-2 text-right font-semibold text-green-700 dark:text-green-400">
+                    {turnoFiltro === "todos" && <td className="px-4 py-2 text-right font-semibold text-ok-texto dark:text-green-400">
                       {pagoDe.has(p.id)
                         ? brl(Number(pagoDe.get(p.id)!.valor) - Number(pagoDe.get(p.id)!.desconto || 0))
                         : brl(total - descontoDe(p.id, total))}
@@ -1318,10 +1318,10 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                   <td className="px-3 py-3 text-right">{brl(calc.totalDiarias)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalDez)}</td>
                   <td className="px-3 py-3 text-right">{brl(calc.totalExtras)}</td>
-                  <td className="px-3 py-3 text-right text-red-600">{calc.totalDescontosSem > 0 ? `− ${brl(calc.totalDescontosSem)}` : ""}</td>
+                  <td className="px-3 py-3 text-right text-urgente-texto">{calc.totalDescontosSem > 0 ? `− ${brl(calc.totalDescontosSem)}` : ""}</td>
                   <td className="px-4 py-3 text-right">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - calc.totalDescontosSem)}</td>
-                  <td className="px-3 py-3 text-right text-red-600">{totalDesconto > 0 ? `− ${brl(totalDesconto)}` : ""}</td>
-                  <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - calc.totalDescontosSem - totalDesconto)}</td>
+                  <td className="px-3 py-3 text-right text-urgente-texto">{totalDesconto > 0 ? `− ${brl(totalDesconto)}` : ""}</td>
+                  <td className="px-4 py-3 text-right text-ok-texto dark:text-green-400">{brl(calc.totalDiarias + calc.totalDez + calc.totalExtras - calc.totalDescontosSem - totalDesconto)}</td>
                 </tr>
               ) : turnoFiltro === "dia" ? (
                 <tr className="bg-superficie-suave font-semibold">
@@ -1345,7 +1345,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           <div className="border-t border-borda p-3 text-xs text-texto-suave">
             10% que entra neste acerto: <b>{brl(calc.totalPool)}</b> ({calc.noitesPagas.map((n) => rotuloDia(n.data)).join(", ") || "nenhuma noite"})
             {Math.abs(calc.totalPool - calc.totalDez) > 0.01 && (
-              <span className="ml-2 text-amber-600">— {brl(calc.totalPool - calc.totalDez)} sem ninguém marcado pra receber.</span>
+              <span className="ml-2 text-aviso-texto">— {brl(calc.totalPool - calc.totalDez)} sem ninguém marcado pra receber.</span>
             )}
           </div>
 
@@ -1376,7 +1376,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
               <button
                 type="button"
                 onClick={() => setDescontar((s) => (s.size >= comFiado.length ? new Set() : new Set(comFiado.map((x) => x.p.id))))}
-                className="rounded-controle border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                className="rounded-controle border border-red-300 px-2 py-1 text-xs text-urgente-texto hover:bg-red-50 dark:hover:bg-red-950"
               >
                 {descontar.size >= comFiado.length ? "não descontar fiado de ninguém" : `descontar fiado de todos (${comFiado.length})`}
               </button>
@@ -1386,7 +1386,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                 Tirar do cofre {retroIds.length} pago{retroIds.length === 1 ? "" : "s"} em dinheiro · {brl(totalRetro)}
               </button>
             )}
-            {msg && <span role="status" className="text-xs text-green-700">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}
+            {msg && <span role="status" className="text-xs text-ok-texto">{msg} <Link href="/financeiro/contas" className="underline">ver</Link></span>}
           </div>}
         </div>
       )}

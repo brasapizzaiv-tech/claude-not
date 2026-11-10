@@ -491,7 +491,7 @@ function ModalEntregue({ p, proc, onFechar, onOk }: { p: EntregaBoy; proc: boole
   const [valor, setValor] = useState(String(p.total.toFixed(2)).replace(".", ","));
   return (
     <div className="fixed inset-0 z-20 flex items-end bg-black/70" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }} onClick={onFechar}>
-      <div className="w-full rounded-t-3xl bg-painel-cartao p-5" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full rounded-t-cartao bg-painel-cartao p-5" onClick={(e) => e.stopPropagation()}>
         <div className="mb-1 text-lg font-bold">Entreguei #{p.numero} · {p.nome}</div>
         <div className="mb-3 text-sm text-texto-suave">Total {brl(p.total)}{p.pago ? " · já estava pago" : ""}</div>
         <div className="mb-3 grid grid-cols-2 gap-2">

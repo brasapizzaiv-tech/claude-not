@@ -51,7 +51,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/checklists?dia=${core.addDiasIso(dia, -1)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">← dia anterior</Link>
           {dia !== hoje && <Link href="/checklists" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">hoje</Link>}
-          <Link href="/checklists/revisao" className="rounded-controle border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300"><Icone nome="buscar" tamanho={14} className="mr-1.5" /> Revisar e apontar</Link>
+          <Link href="/checklists/revisao" className="rounded-controle border border-amber-500 px-3 py-2 text-sm font-semibold text-aviso-texto hover:bg-amber-50 dark:text-amber-300"><Icone nome="buscar" tamanho={14} className="mr-1.5" /> Revisar e apontar</Link>
           <Link href="/checklists/historico" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">Histórico</Link>
           <Link href="/checklists/modelos" className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105">Modelos</Link>
         </div>
@@ -59,8 +59,8 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <div className={card}><p className="text-xs text-texto-suave">Listas do dia</p><p className="text-2xl font-bold text-texto">{totais.listas}</p></div>
-        <div className={card}><p className="text-xs text-texto-suave">Concluídas</p><p className="text-2xl font-bold text-emerald-600">{totais.concluidas}</p></div>
-        <div className={card}><p className="text-xs text-texto-suave">Em andamento</p><p className="text-2xl font-bold text-amber-600">{totais.andamento}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Concluídas</p><p className="text-2xl font-bold text-ok-texto">{totais.concluidas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Em andamento</p><p className="text-2xl font-bold text-aviso-texto">{totais.andamento}</p></div>
         <div className={card}><p className="text-xs text-texto-suave">Não iniciadas</p><p className="text-2xl font-bold text-texto-fraco">{totais.pendentes}</p></div>
       </div>
 
@@ -89,7 +89,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
                     <p className="text-mini text-texto-fraco">{core.ROTULO_MOMENTO[mom]}</p>
                     <p className="font-semibold text-texto">{l.modelo.nome}</p>
                     <p className="mt-1 text-sm">
-                      <b className={l.s.concluida ? "text-emerald-600" : l.s.iniciada ? "text-amber-600" : "text-texto-fraco"}>{l.s.feitos}/{l.s.total}</b>
+                      <b className={l.s.concluida ? "text-ok-texto" : l.s.iniciada ? "text-aviso-texto" : "text-texto-fraco"}>{l.s.feitos}/{l.s.total}</b>
                       <span className="ml-2 text-xs text-texto-suave">
                         {l.s.concluida && l.exec?.concluido_em ? `✓ ${l.exec.concluido_nome ?? ""} ${hora(l.exec.concluido_em)}` : l.s.iniciada && l.exec ? `${l.exec.iniciado_nome ?? ""} desde ${hora(l.exec.iniciado_em)}` : "não iniciada"}
                       </span>

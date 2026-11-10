@@ -102,7 +102,7 @@ export default function BalancaTeste() {
       </p>
 
       {!suportado && (
-        <div className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+        <div className="mt-4 rounded-controle bg-amber-50 p-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           Este navegador não tem WebSerial. Use o <b>Google Chrome</b> (ou Edge)
           no computador.
         </div>
@@ -115,7 +115,7 @@ export default function BalancaTeste() {
             value={baud}
             onChange={(e) => setBaud(Number(e.target.value))}
             disabled={conectado}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="rounded-controle border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
           >
             {[9600, 4800, 2400, 19200].map((b) => (
               <option key={b} value={b}>
@@ -128,7 +128,7 @@ export default function BalancaTeste() {
           <button
             onClick={conectar}
             disabled={!suportado}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:bg-orange-600 disabled:opacity-60"
+            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:bg-orange-600 disabled:opacity-60"
           >
             Conectar balança
           </button>
@@ -136,13 +136,13 @@ export default function BalancaTeste() {
           <>
             <button
               onClick={() => pedir(0x05)}
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
+              className="rounded-controle border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
             >
               Pedir peso (ENQ)
             </button>
             <button
               onClick={desconectar}
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-red-600 dark:border-zinc-700"
+              className="rounded-controle border border-zinc-300 px-4 py-2 text-sm text-urgente-texto dark:border-zinc-700"
             >
               Desconectar
             </button>
@@ -150,14 +150,14 @@ export default function BalancaTeste() {
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mt-4 rounded-cartao border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="text-xs text-zinc-500">Números detectados (provável peso):</p>
         <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{ultimo}</p>
       </div>
 
       <div className="mt-4">
         <p className="mb-1 text-xs text-zinc-500">Dados crus (mais recente em cima):</p>
-        <div className="h-72 overflow-y-auto rounded-xl border border-zinc-200 bg-zinc-950 p-3 font-mono text-xs text-green-400 dark:border-zinc-800">
+        <div className="h-72 overflow-y-auto rounded-controle border border-zinc-200 bg-zinc-950 p-3 font-mono text-xs text-green-400 dark:border-zinc-800">
           {log.length === 0 ? (
             <span className="text-zinc-500">aguardando...</span>
           ) : (

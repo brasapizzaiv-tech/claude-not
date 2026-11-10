@@ -126,7 +126,7 @@ export function FolgaApp({
         key={data}
         disabled={!clicavel}
         onClick={() => abrir(data)}
-        className={`flex min-h-[46px] flex-col items-center justify-center rounded-lg border text-sm ${sel === data ? "border-blue-500 ring-1 ring-blue-500" : "border-zinc-200 dark:border-zinc-800"} ${passado ? "opacity-30" : ""} ${clicavel ? "" : "cursor-default"}`}
+        className={`flex min-h-[46px] flex-col items-center justify-center rounded-controle border text-sm ${sel === data ? "border-blue-500 ring-1 ring-blue-500" : "border-zinc-200 dark:border-zinc-800"} ${passado ? "opacity-30" : ""} ${clicavel ? "" : "cursor-default"}`}
       >
         <span className="font-semibold">{d}</span>
         {marcado ? <span className="text-mini text-blue-500">✓ pedida</span> : <span className={`mt-0.5 h-2 w-2 rounded-full ${cor}`} />}
@@ -139,22 +139,22 @@ export function FolgaApp({
   const foraPrazo = sel ? difDias(hojeIso, sel) < DIAS_ANTECEDENCIA : false;
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-zinc-50 p-3 dark:bg-zinc-950">
+    <div className="mx-auto min-h-screen max-w-md bg-painel-fundo p-3">
       <div className="mb-3 flex items-center gap-3 px-1 pt-2">
         <Icone nome="folga" tamanho={22} />
         <div>
-          <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Olá, {eu.nome.split(" ")[0]}</h1>
+          <h1 className="text-lg font-bold text-texto">Olá, {eu.nome.split(" ")[0]}</h1>
           <p className="text-xs text-zinc-500">{grupos.map((g) => GRUPOS[g].nome).join(" + ")}</p>
         </div>
       </div>
 
       {aviso && (
-        <div role="status" className={`mb-3 rounded-lg border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600" : "border-red-500/40 bg-red-500/10 text-red-600"}`}>
+        <div role="status" className={`mb-3 rounded-controle border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-ok-texto" : "border-red-500/40 bg-red-500/10 text-urgente-texto"}`}>
           {aviso.txt}
         </div>
       )}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-cartao border border-borda bg-painel-cartao p-3">
         <div className="mb-2 flex items-center justify-between">
           <button aria-label="Anterior" onClick={() => navega(-1)} disabled={mesAtual} className="text-sm text-zinc-500 disabled:opacity-30">‹</button>
           <h3 className="text-sm font-bold">{MESES[mes]} {ano}</h3>
@@ -173,14 +173,14 @@ export function FolgaApp({
 
       {/* Pedir folga no dia escolhido */}
       {sel && (
-        <div className="mt-3 rounded-2xl border border-blue-500/30 bg-white p-4 dark:bg-zinc-900">
+        <div className="mt-3 rounded-cartao border border-blue-500/30 bg-painel-cartao p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-bold">{DIAS[dow(sel)]}, {fmtData(sel)}</h2>
             <button onClick={() => setSel(null)} className="text-sm text-zinc-500">fechar</button>
           </div>
 
           {travadoSel ? (
-            <p className="mt-2 text-sm text-red-500">Dia travado: {travadoSel}. Não dá pra pedir folga nesse dia.</p>
+            <p className="mt-2 text-sm text-urgente-texto">Dia travado: {travadoSel}. Não dá pra pedir folga nesse dia.</p>
           ) : postosSel.length === 0 ? (
             <p className="mt-2 text-sm text-zinc-500">Você não trabalha nesse dia.</p>
           ) : (
@@ -189,9 +189,9 @@ export function FolgaApp({
                 <>
                   <p className="mt-3 text-xs text-zinc-500">Você trabalha nos dois turnos nesse dia. De qual quer folga?</p>
                   <div className="mt-1 flex flex-wrap gap-2">
-                    <button onClick={() => setTurno("")} className={`rounded-lg px-3 py-1.5 text-sm ${turno === "" ? "bg-blue-600 text-white" : "border border-zinc-300 dark:border-zinc-700"}`}>Dia inteiro</button>
+                    <button onClick={() => setTurno("")} className={`rounded-controle px-3 py-1.5 text-sm ${turno === "" ? "bg-blue-600 text-white" : "border border-zinc-300 dark:border-zinc-700"}`}>Dia inteiro</button>
                     {postosSel.map((p) => (
-                      <button key={p.grupo} onClick={() => setTurno(p.grupo)} className={`rounded-lg px-3 py-1.5 text-sm ${turno === p.grupo ? "bg-blue-600 text-white" : "border border-zinc-300 dark:border-zinc-700"}`}>
+                      <button key={p.grupo} onClick={() => setTurno(p.grupo)} className={`rounded-controle px-3 py-1.5 text-sm ${turno === p.grupo ? "bg-blue-600 text-white" : "border border-zinc-300 dark:border-zinc-700"}`}>
                         {GRUPOS[p.grupo].nome} ({TURNO[p.grupo]})
                       </button>
                     ))}
@@ -203,7 +203,7 @@ export function FolgaApp({
                 {postosSel.map((p) => (
                   <div key={p.grupo} className="flex justify-between">
                     <span style={{ color: GRUPOS[p.grupo].cor }}>{GRUPOS[p.grupo].nome}</span>
-                    <span className={p.sobra > 0 ? "text-emerald-600" : "text-red-500"}>
+                    <span className={p.sobra > 0 ? "text-ok-texto" : "text-urgente-texto"}>
                       {p.sobra > 0 ? `${p.sobra} vaga(s)` : "sem vaga"}
                     </span>
                   </div>
@@ -217,12 +217,12 @@ export function FolgaApp({
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Motivo (opcional)"
-                className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700"
+                className="mt-3 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm"
               />
               <button
                 disabled={proc}
                 onClick={enviar}
-                className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white disabled:opacity-50"
+                className="mt-2 w-full rounded-controle bg-blue-600 py-3 text-sm font-bold text-white disabled:opacity-50"
               >
                 {proc ? "Enviando..." : "Pedir folga"}
               </button>
@@ -232,27 +232,27 @@ export function FolgaApp({
       )}
 
       {/* Meus pedidos */}
-      <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mt-3 rounded-cartao border border-borda bg-painel-cartao p-4">
         <h2 className="mb-2 font-bold">Meus pedidos</h2>
         {meus.length === 0 ? (
           <p className="text-sm text-zinc-500">Nenhum pedido ainda.</p>
         ) : (
           <ul className="space-y-2">
             {meus.slice().reverse().map((p) => {
-              const cor = p.status === "Aprovado" ? "text-emerald-600" : p.status === "Negado" ? "text-red-500" : "text-amber-500";
+              const cor = p.status === "Aprovado" ? "text-ok-texto" : p.status === "Negado" ? "text-urgente-texto" : "text-amber-500";
               return (
-                <li key={p.id} className="flex items-start justify-between gap-2 border-b border-zinc-100 pb-2 text-sm last:border-0 dark:border-zinc-800">
+                <li key={p.id} className="flex items-start justify-between gap-2 border-b border-borda pb-2 text-sm last:border-0">
                   <div className="min-w-0">
                     <div className="font-medium">{fmtData(p.data)} <span className={`font-semibold ${cor}`}>· {p.status}</span></div>
                     {p.grupo_alvo && <div className="text-xs text-zinc-500">turno {TURNO[p.grupo_alvo] || ""}</div>}
                     {p.motivo && <div className="text-xs text-zinc-500">{p.motivo}</div>}
-                    {p.status === "Negado" && p.motivo_negativa && <div className="text-xs text-red-500">Motivo: {p.motivo_negativa}</div>}
+                    {p.status === "Negado" && p.motivo_negativa && <div className="text-xs text-urgente-texto">Motivo: {p.motivo_negativa}</div>}
                   </div>
                   {p.status === "Pendente" && (
                     <button
                       disabled={proc}
                       onClick={async () => { if (await confirmar("Cancelar este pedido?", { perigo: true, okTexto: "Cancelar o pedido" })) start(async () => { await cancelarMeuPedido(token, p.id); router.refresh(); }); }}
-                      className="shrink-0 text-xs text-red-500 underline"
+                      className="shrink-0 text-xs text-urgente-texto underline"
                     >
                       cancelar
                     </button>

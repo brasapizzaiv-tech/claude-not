@@ -62,7 +62,7 @@ export default async function CashbackPage() {
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-suave">Saldo em aberto</div><div className="font-numero text-lg font-semibold">{brl(saldoTotal)}</div></div>
         <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-suave">Clientes com saldo</div><div className="font-numero text-lg font-semibold">{clientesComSaldo}</div></div>
-        <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-suave">Situação</div><div className={`text-lg font-semibold ${c.ativo ? "text-emerald-600" : "text-texto-suave"}`}>{c.ativo ? "Ligado" : "Desligado"}</div></div>
+        <div className="rounded-cartao bg-painel-cartao p-3"><div className="text-xs text-texto-suave">Situação</div><div className={`text-lg font-semibold ${c.ativo ? "text-ok-texto" : "text-texto-suave"}`}>{c.ativo ? "Ligado" : "Desligado"}</div></div>
       </div>
 
       <form action={salvarCashback} className="cartao px-4">
@@ -144,7 +144,7 @@ export default async function CashbackPage() {
                   <td className="px-3 py-2 text-texto-suave">
                     {m.pedido_id ? <Link href={`/delivery/${m.pedido_id}`} className="hover:underline">{desc}</Link> : desc}
                   </td>
-                  <td className={`px-3 py-2 text-right font-medium ${m.tipo === "credito" ? "text-emerald-600" : "text-texto"}`}>
+                  <td className={`px-3 py-2 text-right font-medium ${m.tipo === "credito" ? "text-ok-texto" : "text-texto"}`}>
                     {m.tipo === "credito" ? "+" : "−"} {brl(Number(m.valor))}
                   </td>
                 </tr>

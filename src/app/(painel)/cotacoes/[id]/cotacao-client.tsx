@@ -218,7 +218,7 @@ export function CotacaoClient({
                 onClick={gerarExclusivos}
                 disabled={salvando}
                 title="Gera o pedido dos itens exclusivos (1 fornecedor) para você já enviar"
-                className="rounded-controle border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-950"
+                className="rounded-controle border border-emerald-500 px-4 py-2 text-sm font-medium text-ok-texto hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-950"
               >
                 <Icone nome="rapido" tamanho={14} className="mr-1.5" /> Gerar pedidos exclusivos
               </button>
@@ -238,7 +238,7 @@ export function CotacaoClient({
           </Link>
           <Link
             href={`/cotacoes/${cotacao.id}/pedidos`}
-            className="rounded-controle border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+            className="rounded-controle border border-emerald-500 px-4 py-2 text-sm font-medium text-ok-texto hover:bg-emerald-50 dark:hover:bg-emerald-950"
           >
             Ver pedidos →
           </Link>
@@ -257,7 +257,7 @@ export function CotacaoClient({
       </div>
 
       {msg && (
-        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-ok-texto dark:bg-green-950 dark:text-green-300">
           {msg}
         </div>
       )}
@@ -322,7 +322,7 @@ export function CotacaoClient({
                         </td>
                         <td className="px-4 py-2 text-texto-suave">{l.unidade}</td>
                         <td className="px-4 py-2 text-right text-texto-fraco">
-                          {!temContagem ? "—" : l.precisaComprar === true ? <span className="font-semibold text-orange-600">precisa</span> : l.precisaComprar === false ? <span className="text-emerald-600">tem</span> : l.contado}
+                          {!temContagem ? "—" : l.precisaComprar === true ? <span className="font-semibold text-orange-600">precisa</span> : l.precisaComprar === false ? <span className="text-ok-texto">tem</span> : l.contado}
                         </td>
                         <td className="px-4 py-2 text-right text-texto-fraco">
                           {l.ideal > 0 ? l.ideal : "—"}

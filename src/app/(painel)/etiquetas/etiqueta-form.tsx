@@ -221,7 +221,7 @@ export function EtiquetaForm({
               <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={input} />
             </div>
             {!livre && item && !diasPadrao(item, conservacao, tipo) && !validade && (
-              <p className="mt-1 text-mini text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
+              <p className="mt-1 text-mini text-aviso-texto">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
             )}
           </div>
 
@@ -249,7 +249,7 @@ export function EtiquetaForm({
           <Copias value={copias} onChange={setCopias} />
         </div>
       </div>
-      {erro && <p role="alert" className="mt-3 rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{erro}</p>}
+      {erro && <p role="alert" className="mt-3 rounded-controle bg-red-50 px-3 py-2 text-sm text-urgente-texto dark:bg-red-950 dark:text-red-300">{erro}</p>}
       <button
         onClick={gerar}
         disabled={gerando || !pronto}

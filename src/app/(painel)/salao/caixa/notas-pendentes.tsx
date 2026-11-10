@@ -68,14 +68,14 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
     "w-40 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
   const aviso = (id: string) =>
     msg[id] ? (
-      <span className={msg[id] === "✓" ? "text-xs text-emerald-600" : "text-xs text-red-600"}>{msg[id]}</span>
+      <span className={msg[id] === "✓" ? "text-xs text-ok-texto" : "text-xs text-urgente-texto"}>{msg[id]}</span>
     ) : null;
 
   return (
     <div className="mb-3 rounded-cartao border border-emerald-300 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
       <p className="mb-2 text-sm font-bold text-emerald-800 dark:text-emerald-300">
         <Icone nome="cupom" tamanho={15} className="mr-1.5" /> Notas saindo automaticamente
-        <span className="ml-2 text-xs font-normal text-emerald-700/70 dark:text-emerald-400/70">
+        <span className="ml-2 text-xs font-normal text-ok-texto/70 dark:text-emerald-400/70">
           a nota sai sozinha; o papel só imprime se o cliente pedir
         </span>
       </p>
@@ -90,7 +90,7 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
               {p.formas && <span className="text-xs text-texto-fraco">{p.formas}</span>}
 
               {comErro ? (
-                <span className="rounded-controle bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300">
+                <span className="rounded-controle bg-red-100 px-2 py-0.5 text-xs font-semibold text-urgente-texto dark:bg-red-950/50 dark:text-red-300">
                   não autorizou{p.erro ? `: ${p.erro}` : ""}
                 </span>
               ) : (
@@ -98,7 +98,7 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
                   className={
                     vencido
                       ? "rounded-controle bg-zinc-200 px-2 py-0.5 text-xs font-bold tabular-nums text-texto-suave dark:bg-zinc-800 "
-                      : "rounded-controle bg-amber-100 px-2 py-0.5 text-xs font-bold tabular-nums text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                      : "rounded-controle bg-amber-100 px-2 py-0.5 text-xs font-bold tabular-nums text-aviso-texto dark:bg-amber-950/50 dark:text-amber-300"
                   }
                 >
                   {vencido ? "emitindo…" : `sai em ${faltam(p.emitirEm, agora)}`}

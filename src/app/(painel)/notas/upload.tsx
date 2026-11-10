@@ -52,7 +52,7 @@ export function UploadNota() {
           {msgs.map((m, i) => (
             <p
               key={i}
-              className={`text-xs ${m.ok ? "text-green-600" : "text-red-600"}`}
+              className={`text-xs ${m.ok ? "text-ok-texto" : "text-urgente-texto"}`}
             >
               {m.ok ? "✓" : "✗"} {m.nome}: {m.texto}
             </p>

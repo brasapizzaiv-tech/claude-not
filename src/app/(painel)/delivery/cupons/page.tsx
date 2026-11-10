@@ -101,7 +101,7 @@ export default async function CuponsPage() {
                         okTexto="Excluir o cupom"
                       >
                         <input type="hidden" name="id" value={c.id} />
-                        <Enviar className="text-xs text-texto-fraco hover:text-red-600">excluir</Enviar>
+                        <Enviar className="text-xs text-texto-fraco hover:text-urgente-texto">excluir</Enviar>
                       </FormConfirmado>
                     </td>
                   </tr>

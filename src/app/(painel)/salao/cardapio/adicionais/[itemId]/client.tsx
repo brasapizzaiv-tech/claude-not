@@ -68,7 +68,7 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
               >
                 <span className="min-w-0 flex-1 truncate text-sm text-texto">
                   {o.nome}
-                  {!o.ativo && <span className="ml-2 text-mini text-red-500">oculto</span>}
+                  {!o.ativo && <span className="ml-2 text-mini text-urgente-texto">oculto</span>}
                 </span>
                 <form action={editarPrecoOpcao} className="flex items-center gap-1">
                   <input type="hidden" name="id" value={o.id} />
@@ -89,7 +89,7 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
                   <Enviar
                     className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${
                       o.ativo
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                        ? "bg-emerald-100 text-ok-texto dark:bg-emerald-500/15 dark:text-emerald-400"
                         : "bg-superficie-suave text-texto-suave  dark:text-texto-fraco"
                     }`}
                   >

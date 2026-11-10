@@ -73,9 +73,9 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 const ST: Record<string, { label: string; cor: string; bg: string; proximo?: string }> = {
   pendente: { label: "Pendente", cor: "text-rose-600", bg: "bg-rose-500/10", proximo: "aceito" },
-  aceito: { label: "Aceito", cor: "text-blue-600", bg: "bg-blue-500/10", proximo: "em_preparo" },
-  em_preparo: { label: "Em preparo", cor: "text-amber-600", bg: "bg-amber-500/10", proximo: "pronto" },
-  pronto: { label: "Pronto", cor: "text-emerald-600", bg: "bg-emerald-500/10", proximo: "saiu" },
+  aceito: { label: "Aceito", cor: "text-info-texto", bg: "bg-blue-500/10", proximo: "em_preparo" },
+  em_preparo: { label: "Em preparo", cor: "text-aviso-texto", bg: "bg-amber-500/10", proximo: "pronto" },
+  pronto: { label: "Pronto", cor: "text-ok-texto", bg: "bg-emerald-500/10", proximo: "saiu" },
   saiu: { label: "Saiu p/ entrega", cor: "text-indigo-600", bg: "bg-indigo-500/10", proximo: "entregue" },
   entregue: { label: "Entregue", cor: "text-texto-suave", bg: "bg-superficie-suave" },
   cancelado: { label: "Cancelado", cor: "text-texto-fraco", bg: "bg-superficie-suave" },
@@ -132,7 +132,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
         <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${st.bg}  ${st.cor}`}>{st.label}</span>
       </div>
       {p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && (
-        <div className={`mb-2 rounded-controle px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300"}`}>
+        <div className={`mb-2 rounded-controle px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-aviso-texto dark:text-amber-300" : "bg-sky-500/15 text-info-texto dark:text-sky-300"}`}>
           <Icone nome="agenda" tamanho={13} className="mr-1" /> Agendado pra {hora(p.agendado_para)}{nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? " · hora de preparar" : ""}
         </div>
       )}
@@ -145,7 +145,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
           </span>
           <span>·</span>
           <span>{p.forma_pagamento ?? "—"}</span>
-          {!p.pago && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-600">{p.status === "entregue" && p.entregadorNome ? `com ${p.entregadorNome}` : "a receber"}</span>}
+          {!p.pago && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-aviso-texto">{p.status === "entregue" && p.entregadorNome ? `com ${p.entregadorNome}` : "a receber"}</span>}
         </div>
         <div className="mt-1.5 text-sm">
           {p.tipo === "retirada" ? (

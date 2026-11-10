@@ -41,10 +41,10 @@ function Card({ titulo, valor, cor }: { titulo: string; valor: string; cor?: str
 }
 
 function badge(status: string) {
-  if (status === "autorizado") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300";
+  if (status === "autorizado") return "bg-emerald-100 text-ok-texto dark:bg-emerald-950 dark:text-emerald-300";
   if (status === "cancelado") return "bg-zinc-200 text-texto-suave dark:bg-zinc-800 ";
   if (status === "enviando" || status === "processando_autorizacao" || status === "cancelando") return "pilula-info";
-  return "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300";
+  return "bg-red-100 text-urgente-texto dark:bg-red-950 dark:text-red-300";
 }
 // Situações que ainda não são finais (FIS-01/NFE-01/NFE-07): a rotina de
 // conferência pergunta à Focus e atualiza sozinha.
@@ -126,10 +126,10 @@ export function NotasClient({
   return (
     <div className="mt-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card titulo="Emitidas" valor={String(stats.emitidas)} cor="text-emerald-600" />
+        <Card titulo="Emitidas" valor={String(stats.emitidas)} cor="text-ok-texto" />
         <Card titulo="Valor total emitido" valor={brl(stats.valorTotal)} />
         <Card titulo="Canceladas" valor={String(stats.canceladas)} />
-        <Card titulo="Com erro" valor={String(stats.erro)} cor="text-red-600" />
+        <Card titulo="Com erro" valor={String(stats.erro)} cor="text-urgente-texto" />
       </div>
 
       {/* Busca no banco: o formulário manda os filtros pro endereço. */}
@@ -188,14 +188,14 @@ export function NotasClient({
                 <td className="px-4 py-2">
                   <span className={`rounded px-2 py-0.5 text-xs font-medium ${badge(l.status)}`}>{rotulo(l.status)}</span>
                   {l.status !== "autorizado" && l.status !== "cancelado" && l.mensagem && (
-                    <div className="mt-0.5 max-w-xs truncate text-mini text-red-500" title={l.mensagem}>{l.mensagem}</div>
+                    <div className="mt-0.5 max-w-xs truncate text-mini text-urgente-texto" title={l.mensagem}>{l.mensagem}</div>
                   )}
                 </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   {l.urlDanfe && l.status === "autorizado" && (
                     <button
                       onClick={() => { imprimirNfce(l.id).then((r) => void avisar(r.ok ? "Enviada pra impressora." : r.mensagem)).catch(() => void avisar("Sem conexão.")); }}
-                      className="mr-3 text-emerald-600 hover:underline"
+                      className="mr-3 text-ok-texto hover:underline"
                     >
                       Imprimir
                     </button>
@@ -207,7 +207,7 @@ export function NotasClient({
                     <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-3 text-texto-suave hover:underline">XML</a>
                   )}
                   {(l.status === "autorizado" || l.status === "cancelando") && (
-                    <button onClick={() => cancelar(l.id)} disabled={proc} className="text-red-500 hover:underline disabled:opacity-50">
+                    <button onClick={() => cancelar(l.id)} disabled={proc} className="text-urgente-texto hover:underline disabled:opacity-50">
                       Cancelar
                     </button>
                   )}

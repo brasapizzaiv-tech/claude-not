@@ -63,7 +63,7 @@ export function OrcamentoClient({
         >
           {salvando ? "Salvando..." : "Salvar orçamento"}
         </button>
-        {msg && <span role="status" className="text-sm text-green-600">{msg}</span>}
+        {msg && <span role="status" className="text-sm text-ok-texto">{msg}</span>}
       </div>
 
       <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
@@ -121,8 +121,8 @@ export function OrcamentoClient({
                           !temDado || orc === 0
                             ? "text-texto-fraco"
                             : bom
-                              ? "text-green-600"
-                              : "text-red-600"
+                              ? "text-ok-texto"
+                              : "text-urgente-texto"
                         }`}
                       >
                         {orc > 0 ? moeda(dif) : "—"}

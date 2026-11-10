@@ -88,7 +88,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
           className={`${cx} text-center text-3xl font-black tabular-nums`}
           autoFocus
         />
-        {mesa && !mesaOk && <p className="mt-1 text-center text-xs text-red-600">Mesa de 1 a {MESAS_MAX}</p>}
+        {mesa && !mesaOk && <p className="mt-1 text-center text-xs text-urgente-texto">Mesa de 1 a {MESAS_MAX}</p>}
       </div>
 
       {/* sabor */}
@@ -167,7 +167,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
       >
         {proc ? "Enviando…" : "Enviar para a cozinha"}
       </button>
-      {msg && <p role="status" className={`text-center text-sm ${msg.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{msg}</p>}
+      {msg && <p role="status" className={`text-center text-sm ${msg.startsWith("✓") ? "text-ok-texto" : "text-urgente-texto"}`}>{msg}</p>}
 
       {/* pedidos abertos da mesa */}
       {mesaOk && (
@@ -187,7 +187,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
                     </span>
                     <span className="text-xs text-texto-suave">{tempoEspera(p.criado_em, agora)}</span>
                     {p.status === "pendente" && (
-                      <button aria-label="Fechar" type="button" onClick={() => cancelar(p.id)} className="text-xs text-texto-fraco hover:text-red-600">✕</button>
+                      <button aria-label="Fechar" type="button" onClick={() => cancelar(p.id)} className="text-xs text-texto-fraco hover:text-urgente-texto">✕</button>
                     )}
                   </li>
                 );

@@ -198,6 +198,8 @@
   --urgente-solido: #d63a22;
   --info-fundo: #e3ecfb;
   --info-texto: #2b58a8;
+  --aviso-fundo: #fdf0cf;
+  --aviso-texto: #8a5300;
   --painel-foco-fundo: var(--marca-escuro);
   --painel-foco-texto: #fff6ec;
   --painel-foco-suave: #c9b8a8;
@@ -300,6 +302,8 @@
     --urgente-solido: #ff7448;
     --info-fundo: rgba(98, 150, 255, 0.16);
     --info-texto: #8fb4ff;
+    --aviso-fundo: rgba(255, 196, 77, 0.14);
+    --aviso-texto: #ffc94d;
     --painel-foco-fundo: #fff6ec;
     --painel-foco-texto: #1c120c;
     --painel-foco-suave: #6e635b;
@@ -382,6 +386,8 @@
   --color-urgente-solido: var(--urgente-solido);
   --color-info-fundo: var(--info-fundo);
   --color-info-texto: var(--info-texto);
+  --color-aviso-fundo: var(--aviso-fundo);
+  --color-aviso-texto: var(--aviso-texto);
 
   --shadow-cartao: var(--sombra-cartao);
   --shadow-controle: var(--sombra-controle);
@@ -563,6 +569,7 @@ optgroup {
   .pilula-urgente-solido { background: var(--urgente-solido); color: var(--marca-escuro); }
   .pilula-ok { background: var(--ok-fundo); color: var(--ok-texto); }
   .pilula-info { background: var(--info-fundo); color: var(--info-texto); }
+  .pilula-aviso { background: var(--aviso-fundo); color: var(--aviso-texto); }
   .pilula-neutra { background: var(--superficie-suave); color: var(--texto-suave); }
   .pilula-grafite { background: var(--marca-escuro); color: var(--painel-foco-rotulo); }
   [data-tema="escuro"] .pilula-grafite { background: var(--painel-foco-fundo); color: var(--painel-foco-rotulo); }
@@ -580,6 +587,7 @@ optgroup {
     --ok-fundo: #d9f2e2; --ok-texto: #1e7a43;
     --urgente-fundo: #fde1da; --urgente-texto: #b42a18;
     --info-fundo: #e3ecfb; --info-texto: #2b58a8;
+    --aviso-fundo: #fdf0cf; --aviso-texto: #8a5300;
     --destaque: #ffe7d1; --texto-marca-pilula: #a3440f;
     --superficie-suave: #fbf2e8; --texto-suave: #6e635b;
   }

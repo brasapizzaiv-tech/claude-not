@@ -213,7 +213,7 @@ export function LancamentoNota({
         <label className="mb-1 block text-xs text-texto-suave">Fornecedor</label>
         {fornecedorId && !trocando ? (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-controle bg-green-100 px-3 py-1.5 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+            <span className="rounded-controle bg-green-100 px-3 py-1.5 text-sm font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
               ✓ {fornecedorNome}
             </span>
             <button
@@ -251,7 +251,7 @@ export function LancamentoNota({
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             {!fornecedorId && (
-              <p className="w-full rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+              <p className="w-full rounded-controle bg-amber-50 px-3 py-2 text-xs text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
                 Não reconheci o fornecedor pelo CNPJ ({emitCnpj || "?"}). Escolha
                 abaixo, ou cadastre um novo.
               </p>
@@ -431,10 +431,10 @@ export function LancamentoNota({
       {/* Marcada como lançada, mas a conta não existe (apagada numa limpeza) */}
       {semConta && (
         <div className="rounded-cartao border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
-          <p className="font-semibold text-amber-800 dark:text-amber-300">
+          <p className="font-semibold text-aviso-texto dark:text-amber-300">
             <Icone nome="alerta" tamanho={15} className="mr-1.5" /> Esta nota está marcada como lançada, mas não tem conta a pagar.
           </p>
-          <p className="mt-1 text-amber-700/90 dark:text-amber-400/90">
+          <p className="mt-1 text-aviso-texto/90 dark:text-amber-400/90">
             Sem a conta ela não aparece no Contas a pagar nem na conciliação do banco.
             Confira o vencimento acima e clique em <b>Lançar no financeiro</b> — mas só
             se o pagamento já não estiver lançado por fora, pra não duplicar.
@@ -446,11 +446,11 @@ export function LancamentoNota({
       <div className="flex items-center gap-3 border-t border-borda pt-3">
         {lancada ? (
           <>
-            <span className="text-sm font-medium text-green-600">✓ Lançada no financeiro</span>
+            <span className="text-sm font-medium text-ok-texto">✓ Lançada no financeiro</span>
             <button
               onClick={estornar}
               disabled={proc}
-              className="text-sm text-texto-fraco hover:text-amber-600 disabled:opacity-60"
+              className="text-sm text-texto-fraco hover:text-aviso-texto disabled:opacity-60"
             >
               Estornar
             </button>

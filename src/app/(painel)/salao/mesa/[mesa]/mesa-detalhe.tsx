@@ -133,9 +133,9 @@ export function MesaDetalhe({
       ) : (
         <span className="inline-block h-4 w-4" />
       )}
-      <span className="font-medium text-emerald-600">{l.qtd > 1 && Number.isInteger(l.qtd) ? `${l.qtd}× ` : Number.isInteger(l.qtd) ? "1× " : ""}</span>
+      <span className="font-medium text-ok-texto">{l.qtd > 1 && Number.isInteger(l.qtd) ? `${l.qtd}× ` : Number.isInteger(l.qtd) ? "1× " : ""}</span>
       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">{l.descricao}</span>
-      <span className={`rounded px-1.5 py-0.5 text-mini font-semibold ${l.quitado ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : l.pago > 0.005 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"}`}>
+      <span className={`rounded px-1.5 py-0.5 text-mini font-semibold ${l.quitado ? "bg-emerald-100 text-ok-texto dark:bg-emerald-950 dark:text-emerald-300" : l.pago > 0.005 ? "bg-amber-100 text-aviso-texto dark:bg-amber-950 dark:text-amber-300" : "bg-red-100 text-urgente-texto dark:bg-red-950 dark:text-red-300"}`}>
         {l.quitado ? "Pago" : l.pago > 0.005 ? "Parcial" : "Pendente"}
       </span>
       <div className="w-28 shrink-0 text-right">
@@ -182,7 +182,7 @@ export function MesaDetalhe({
       {/* Ações de seleção */}
       {selecionaveis.length > 0 && (
         <div className="mt-2 flex gap-3 text-sm">
-          <button onClick={marcarTodos} className="font-medium text-emerald-600 hover:underline">Marcar/Desmarcar todos</button>
+          <button onClick={marcarTodos} className="font-medium text-ok-texto hover:underline">Marcar/Desmarcar todos</button>
           {sel.size > 0 && <span className="text-texto-fraco">{sel.size} selecionado(s)</span>}
         </div>
       )}
@@ -215,12 +215,12 @@ export function MesaDetalhe({
         {/* Totais */}
         <div className="mt-3 space-y-1 border-t border-borda pt-3 text-sm">
           <div className="flex justify-between text-texto-suave"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
-          <div className="flex justify-between text-emerald-600"><span>Total pago</span><span>{brl(totalPago)}</span></div>
+          <div className="flex justify-between text-ok-texto"><span>Total pago</span><span>{brl(totalPago)}</span></div>
           <div className="flex justify-between text-lg font-bold text-texto"><span>Total pendente</span><span>{brl(totalPendente)}</span></div>
         </div>
       </div>
 
-      {msg && <p role="status" className="mt-2 text-center text-sm text-emerald-700 dark:text-emerald-400">{msg}</p>}
+      {msg && <p role="status" className="mt-2 text-center text-sm text-ok-texto dark:text-emerald-400">{msg}</p>}
 
       {/* Rodapé */}
       <div className="mt-4 flex items-center justify-between">

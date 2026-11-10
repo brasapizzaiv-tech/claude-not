@@ -91,9 +91,9 @@ export function RevisaoClient({
 
       <div className="mb-5 grid gap-3 sm:grid-cols-4">
         <div className={card}><p className="text-xs text-texto-suave">Listas do dia</p><p className="text-2xl font-bold text-texto">{resumo.listas}</p></div>
-        <div className={card}><p className="text-xs text-texto-suave">Concluídas</p><p className="text-2xl font-bold text-emerald-600">{resumo.concluidas}</p></div>
-        <div className={card}><p className="text-xs text-texto-suave">Não iniciadas</p><p className="text-2xl font-bold text-red-600">{resumo.naoIniciadas}</p></div>
-        <div className={card}><p className="text-xs text-texto-suave">Itens pendentes</p><p className="text-2xl font-bold text-amber-600">{resumo.itensPendentes}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Concluídas</p><p className="text-2xl font-bold text-ok-texto">{resumo.concluidas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Não iniciadas</p><p className="text-2xl font-bold text-urgente-texto">{resumo.naoIniciadas}</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Itens pendentes</p><p className="text-2xl font-bold text-aviso-texto">{resumo.itensPendentes}</p></div>
       </div>
 
       {/* Listas do dia */}
@@ -116,13 +116,13 @@ export function RevisaoClient({
                     {l.execucao
                       ? <>{l.execucao.iniciado_nome ?? "?"} começou {hora(l.execucao.iniciado_em)}
                           {l.execucao.concluido_em ? ` · concluída ${hora(l.execucao.concluido_em)} por ${l.execucao.concluido_nome ?? "?"}` : " · não concluída"}</>
-                      : <span className="font-semibold text-red-600">não iniciada</span>}
-                    {" · "}<b className={l.situacao.pendentes > 0 ? "text-amber-600" : "text-emerald-600"}>{l.situacao.feitos}/{l.situacao.total}</b> itens
+                      : <span className="font-semibold text-urgente-texto">não iniciada</span>}
+                    {" · "}<b className={l.situacao.pendentes > 0 ? "text-aviso-texto" : "text-ok-texto"}>{l.situacao.feitos}/{l.situacao.total}</b> itens
                   </p>
                 </div>
                 <div className="flex gap-1.5">
                   <button onClick={() => setAberta(abertaAgora ? null : l.modelo.id)} className={btnSec}>{abertaAgora ? "fechar" : "ver itens"}</button>
-                  <button onClick={() => setApontando({ lista: l, item: null })} className="rounded-controle border border-amber-500 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300">
+                  <button onClick={() => setApontando({ lista: l, item: null })} className="rounded-controle border border-amber-500 px-3 py-1.5 text-xs font-semibold text-aviso-texto hover:bg-amber-50 dark:text-amber-300">
                     Apontar correção
                   </button>
                 </div>
@@ -136,7 +136,7 @@ export function RevisaoClient({
                       <button
                         key={item.id}
                         onClick={() => setApontando({ lista: l, item })}
-                        className="shrink-0 rounded-controle border border-amber-400 px-2 py-1 text-mini font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-300"
+                        className="shrink-0 rounded-controle border border-amber-400 px-2 py-1 text-mini font-medium text-aviso-texto hover:bg-amber-50 dark:text-amber-300"
                       >
                         Apontar
                       </button>
@@ -165,7 +165,7 @@ export function RevisaoClient({
               <li key={a.id} className="flex flex-wrap items-center gap-2">
                 <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-mini font-bold dark:bg-zinc-800">{a.setor_nome ?? "geral"}</span>
                 <span className="flex-1 text-zinc-800 dark:text-zinc-100">{a.texto}</span>
-                <button onClick={() => agir(() => excluirApontamentoPainel(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">apagar</button>
+                <button onClick={() => agir(() => excluirApontamentoPainel(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-urgente-texto">apagar</button>
               </li>
             ))}
           </ul>
@@ -219,10 +219,10 @@ export function RevisaoClient({
                   {a.publicado_por ? ` · ${a.publicado_por}` : ""}
                   {a.publicado_em ? ` ${quando(a.publicado_em)}` : ""}
                 </span>
-                <button onClick={() => agir(() => resolverApontamentoPainel(a.id), "Marcado como resolvido — saiu da TV.")} disabled={proc} className="rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                <button onClick={() => agir(() => resolverApontamentoPainel(a.id), "Marcado como resolvido — saiu da TV.")} disabled={proc} className="rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-ok-texto dark:text-emerald-300">
                   ✓ Resolvido
                 </button>
-                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id), "Tirado da TV.")} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">tirar da TV</button>
+                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id), "Tirado da TV.")} disabled={proc} className="text-xs text-texto-fraco hover:text-urgente-texto">tirar da TV</button>
               </li>
             ))}
           </ul>

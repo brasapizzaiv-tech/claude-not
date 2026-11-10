@@ -10,10 +10,10 @@ export const metadata = { title: "Modelos e limites · WhatsApp" };
 export const dynamic = "force-dynamic";
 
 const STATUS_MODELO: Record<string, { rotulo: string; cor: string }> = {
-  APPROVED: { rotulo: "Aprovado", cor: "text-emerald-600" },
-  PENDING: { rotulo: "Em análise", cor: "text-amber-600" },
-  REJECTED: { rotulo: "Recusado", cor: "text-red-600" },
-  PAUSED: { rotulo: "Pausado pela Meta", cor: "text-amber-600" },
+  APPROVED: { rotulo: "Aprovado", cor: "text-ok-texto" },
+  PENDING: { rotulo: "Em análise", cor: "text-aviso-texto" },
+  REJECTED: { rotulo: "Recusado", cor: "text-urgente-texto" },
+  PAUSED: { rotulo: "Pausado pela Meta", cor: "text-aviso-texto" },
   DISABLED: { rotulo: "Desativado", cor: "text-texto-fraco" },
 };
 const CATEGORIA: Record<string, string> = { MARKETING: "Marketing", UTILITY: "Utilidade", AUTHENTICATION: "Autenticação" };
@@ -43,7 +43,7 @@ export default async function WhatsappPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="min-w-0">
           <h2 className="mb-2 font-semibold">Modelos na Meta</h2>
-          {!mods.ok && <p className="mb-3 rounded-controle bg-red-500/10 px-3 py-2 text-sm text-red-600">Não consegui ler os modelos: {mods.erro}</p>}
+          {!mods.ok && <p className="mb-3 rounded-controle bg-red-500/10 px-3 py-2 text-sm text-urgente-texto">Não consegui ler os modelos: {mods.erro}</p>}
           <div className="space-y-2">
             {modelos.map((m) => {
               const st = STATUS_MODELO[m.status] ?? { rotulo: m.status, cor: "" };
@@ -55,7 +55,7 @@ export default async function WhatsappPage() {
                     <span className={`ml-auto font-medium ${st.cor}`}>{st.rotulo}</span>
                   </div>
                   <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm text-texto-suave">{m.corpo}</p>
-                  {m.motivo && <p className="mt-1 text-xs text-red-600">Motivo da recusa: {m.motivo}</p>}
+                  {m.motivo && <p className="mt-1 text-xs text-urgente-texto">Motivo da recusa: {m.motivo}</p>}
                 </div>
               );
             })}

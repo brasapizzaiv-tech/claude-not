@@ -47,7 +47,7 @@ export default async function BalancaPage() {
 
       {/* Agente da balança: status + ALERTA de fila offline (nunca em silêncio) */}
       {filaPendente > 0 && (
-        <div className="mt-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+        <div className="mt-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-aviso-texto dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
           <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {filaPendente} pesagem(ns) na fila offline do agente — sincronizam sozinhas quando a internet do PC da balança voltar.
         </div>
       )}

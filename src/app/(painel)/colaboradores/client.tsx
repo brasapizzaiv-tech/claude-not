@@ -140,13 +140,13 @@ function LinkApp({ c }: { c: Colaborador }) {
           href={`https://web.whatsapp.com/send?phone=${zapNum}&text=${msg}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded border border-green-500 px-2 py-1 font-medium text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+          className="rounded border border-green-500 px-2 py-1 font-medium text-ok-texto hover:bg-green-50 dark:hover:bg-green-950"
         >
           Enviar no WhatsApp
         </a>
       )}
       <CodigoApp c={c} link={link} />
-      <span className={c.pin ? "text-texto-fraco" : "text-amber-600"}>
+      <span className={c.pin ? "text-texto-fraco" : "text-aviso-texto"}>
         {c.pin ? "PIN definido" : "sem PIN"}
       </span>
       {c.pin && (
@@ -158,7 +158,7 @@ function LinkApp({ c }: { c: Colaborador }) {
           okTexto="Zerar o PIN"
         >
           <input type="hidden" name="id" value={c.id} />
-          <Enviar className="text-texto-fraco hover:text-red-600">zerar PIN</Enviar>
+          <Enviar className="text-texto-fraco hover:text-urgente-texto">zerar PIN</Enviar>
         </FormConfirmado>
       )}
     </div>
@@ -183,7 +183,7 @@ function CardApp({ c }: { c: Colaborador }) {
     <div className="cartao p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="truncate font-medium text-texto">{c.nome}</span>
-        <span className={`text-xs ${c.pin ? "text-texto-fraco" : "text-amber-600"}`}>{c.pin ? "PIN ok" : "sem PIN"}</span>
+        <span className={`text-xs ${c.pin ? "text-texto-fraco" : "text-aviso-texto"}`}>{c.pin ? "PIN ok" : "sem PIN"}</span>
       </div>
       <div className="mb-2 text-xs"><CodigoApp c={c} link={link} /></div>
       <div className="flex gap-2">
@@ -213,7 +213,7 @@ function CardApp({ c }: { c: Colaborador }) {
 }
 
 const inputCls =
-  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 function resumoFolga(f: FolgaPerfil | null): string {
   if (!f) return "";
@@ -276,7 +276,7 @@ function DesligarModal({ c, onClose, motivos = [] }: { c: Row; onClose: () => vo
         )}
         <label className="mt-3 mb-1 block text-xs font-medium text-texto-suave">{motivos.length ? "Observação" : "Motivo (obrigatório)"}</label>
         <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder={motivos.length ? "Opcional" : "Ex.: pediu demissão / dispensado / parou de vir…"} className={inputCls} />
-        {msg && <p role="status" className="mt-2 text-sm text-red-600">{msg}</p>}
+        {msg && <p role="status" className="mt-2 text-sm text-urgente-texto">{msg}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">Cancelar</button>
           <button
@@ -417,7 +417,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
                     <td className="px-4 py-3">
                       {c.ativo ? <LinkApp c={c} /> : (
                         <div className="text-xs text-texto-suave">
-                          <div className="font-semibold text-red-600">Desligado em {dataBRcurta(c.desligado_em)}</div>
+                          <div className="font-semibold text-urgente-texto">Desligado em {dataBRcurta(c.desligado_em)}</div>
                           <div>{c.desligado_motivo}</div>
                           <div className="text-texto-fraco">sem acesso ao app</div>
                         </div>
@@ -432,12 +432,12 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
                           >
                             Editar
                           </button>
-                          <button type="button" onClick={() => setDesligando(c)} className="text-texto-fraco hover:text-red-600">Desligar</button>
+                          <button type="button" onClick={() => setDesligando(c)} className="text-texto-fraco hover:text-urgente-texto">Desligar</button>
                         </>
                       ) : (
                         <form action={reativarColaborador} className="inline">
                           <input type="hidden" name="id" value={c.id} />
-                          <Enviar className="text-emerald-600 hover:underline">Reativar</Enviar>
+                          <Enviar className="text-ok-texto hover:underline">Reativar</Enviar>
                         </form>
                       )}
                     </td>

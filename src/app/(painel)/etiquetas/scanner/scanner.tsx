@@ -191,7 +191,7 @@ export function Scanner() {
       </div>
 
       {erro && (
-        <p role="alert" className="mt-3 rounded-cartao bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p role="alert" className="mt-3 rounded-cartao bg-amber-50 p-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           {erro}
         </p>
       )}
@@ -201,7 +201,7 @@ export function Scanner() {
           <span className="text-sm text-texto-suave">
             {contagem} baixa(s) nesta sessão
           </span>
-          <button onClick={desligar} className="text-sm text-texto-fraco hover:text-red-600">
+          <button onClick={desligar} className="text-sm text-texto-fraco hover:text-urgente-texto">
             Desligar câmera
           </button>
         </div>
@@ -218,7 +218,7 @@ export function Scanner() {
         >
           {ultima.ok ? (
             <>
-              <p className="text-sm font-semibold text-green-700 dark:text-green-300">
+              <p className="text-sm font-semibold text-ok-texto dark:text-green-300">
                 ✓ Baixa registrada · #{ultima.numero}
               </p>
               <p className="mt-1 text-lg font-bold text-texto">
@@ -230,7 +230,7 @@ export function Scanner() {
               </p>
             </>
           ) : (
-            <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+            <p className="text-sm font-semibold text-urgente-texto dark:text-red-300">
               {ultima.erro === "nao encontrada"
                 ? "Etiqueta não encontrada."
                 : "Não foi possível dar baixa."}

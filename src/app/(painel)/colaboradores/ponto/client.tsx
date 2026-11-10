@@ -32,7 +32,7 @@ export function ImportarAfd() {
         <input type="file" name="arquivo" accept=".txt,text/plain" className="ml-2 max-w-48 text-xs" />
       </label>
       <Enviar className="btn-principal min-h-10">Importar</Enviar>
-      {msg && <span role="status" className={`w-full text-xs ${msg.ok ? "text-emerald-600" : "text-red-600"}`}>{msg.t}</span>}
+      {msg && <span role="status" className={`w-full text-xs ${msg.ok ? "text-ok-texto" : "text-urgente-texto"}`}>{msg.t}</span>}
     </form>
   );
 }
@@ -101,7 +101,7 @@ export function AjustarDia({ colaboradorId, nome, dia, tipos = [] }: { colaborad
           </div>
         </div>
       )}
-      {erro && <p role="alert" className="mt-1 text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-1 text-urgente-texto">{erro}</p>}
     </div>
   );
 }
@@ -124,7 +124,7 @@ export function BatidaMenu({ id, hora, manual, ignorada, destaque }: { id?: stri
         type="button"
         onClick={() => setAberto((v) => !v)}
         title={manual ? "Batida incluída à mão" : "Alterações de ponto"}
-        className={`rounded px-1 hover:bg-superficie-suave ${ignorada ? "text-texto-fraco line-through" : ""} ${destaque ? "font-semibold text-amber-700 dark:text-amber-400" : ""} ${manual ? "italic" : ""}`}
+        className={`rounded px-1 hover:bg-superficie-suave ${ignorada ? "text-texto-fraco line-through" : ""} ${destaque ? "font-semibold text-aviso-texto dark:text-amber-400" : ""} ${manual ? "italic" : ""}`}
       >
         {hora}{manual ? "*" : ""}
       </button>
@@ -143,7 +143,7 @@ export function BatidaMenu({ id, hora, manual, ignorada, destaque }: { id?: stri
             </>
           )}
           <button type="button" onClick={() => setAberto(false)} className={`${item} text-texto-fraco`}>fechar</button>
-          {erro && <span role="alert" className="block px-3 pb-1 text-red-600">{erro}</span>}
+          {erro && <span role="alert" className="block px-3 pb-1 text-urgente-texto">{erro}</span>}
         </span>
       )}
     </span>

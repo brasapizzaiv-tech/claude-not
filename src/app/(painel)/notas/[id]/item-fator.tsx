@@ -120,7 +120,7 @@ export function ItemFator({
           = {unidades.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} {un}{precoUn != null ? ` · ${moeda(precoUn)}/${un}` : ""}
         </span>
       ) : temProduto && /^(CX|CXA|FD|FDO|PCT|PC|SC|ENG|DZ|PACK|CJ)$/i.test((unidade ?? "").trim()) ? (
-        <span className="text-mini text-amber-600">vem em {unidade}: informe quantos {un}. Se contam a {unidade} fechada, deixe 1.</span>
+        <span className="text-mini text-aviso-texto">vem em {unidade}: informe quantos {un}. Se contam a {unidade} fechada, deixe 1.</span>
       ) : null}
       {foraDeProporcao && (
         <span className="max-w-[15rem] text-right text-mini font-semibold text-urgente-texto">

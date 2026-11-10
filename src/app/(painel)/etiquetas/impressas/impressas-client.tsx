@@ -173,7 +173,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
                   <td className="px-3 py-2 text-xs text-texto-suave">{fmt(r.criado_em)}</td>
                   <td className="px-3 py-2">{r.validade ? dataBR(r.validade) : "—"}</td>
                   <td className="px-3 py-2">
-                    <span className={`rounded px-1.5 py-0.5 text-mini font-semibold  ${r.status === "ativa" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-superficie-suave text-texto-suave  "}`}>
+                    <span className={`rounded px-1.5 py-0.5 text-mini font-semibold  ${r.status === "ativa" ? "bg-emerald-100 text-ok-texto dark:bg-emerald-950 dark:text-emerald-300" : "bg-superficie-suave text-texto-suave  "}`}>
                       {r.status === "ativa" ? "em estoque" : r.status}
                     </span>
                   </td>

@@ -139,7 +139,7 @@ export function MapaPedidosGoogle({ pinos, origem, chave, boys = [] }: {
   return (
     <div>
       <div ref={divRef} className="h-[70vh] w-full overflow-hidden cartao bg-superficie-suave" />
-      {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro} Confira a chave do navegador (GOOGLE_MAPS_BROWSER_KEY) e a restrição de domínio.</p>}
+      {erro && <p role="alert" className="mt-2 text-sm text-urgente-texto">{erro} Confira a chave do navegador (GOOGLE_MAPS_BROWSER_KEY) e a restrição de domínio.</p>}
       <div className="mt-2 flex flex-wrap gap-3 text-xs text-texto-suave">
         {Object.entries({ pendente: "Pendente", aceito: "Aceito", em_preparo: "Em preparo", pronto: "Pronto", saiu: "Saiu" }).map(([k, lbl]) => (
           <span key={k} className="flex items-center gap-1">

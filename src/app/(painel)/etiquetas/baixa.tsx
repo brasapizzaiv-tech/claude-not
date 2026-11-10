@@ -38,7 +38,7 @@ export function EtiquetaBaixa({
         <button
           onClick={() => baixa("descartada")}
           disabled={p}
-          className="mr-2 text-xs text-texto-fraco hover:text-red-600"
+          className="mr-2 text-xs text-texto-fraco hover:text-urgente-texto"
         >
           Descartar
         </button>

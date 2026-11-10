@@ -96,7 +96,7 @@ export default async function EntregadoresPage() {
                   <div className="text-xs text-texto-suave">
                     {e.telefone ?? "sem telefone"}
                     {posMin != null && (
-                      <> · {posMin <= 3 ? <span className="inline-flex items-center gap-1.5 text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" /> online agora</span> : `visto há ${posMin} min`}
+                      <> · {posMin <= 3 ? <span className="inline-flex items-center gap-1.5 text-ok-texto"><span className="h-2 w-2 rounded-full bg-emerald-500" /> online agora</span> : `visto há ${posMin} min`}
                         {e.ultima_lat != null && <> · <a href={`https://www.google.com/maps/search/?api=1&query=${e.ultima_lat},${e.ultima_lng}`} target="_blank" rel="noreferrer" className="underline">ver no mapa</a></>}
                       </>
                     )}

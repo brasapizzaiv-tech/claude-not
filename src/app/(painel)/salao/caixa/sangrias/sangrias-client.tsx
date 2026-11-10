@@ -103,7 +103,7 @@ export function SangriasClient({ linhas, categorias, de }: { linhas: LinhaSangri
                 <td className="whitespace-nowrap px-2 py-2 text-texto-suave">{l.dia.slice(8, 10)}/{l.dia.slice(5, 7)}</td>
                 <td className="px-2 py-2 text-texto">
                   {l.descricao || "Sangria"}
-                  {l.parecido && <span className="block text-xs text-amber-600">já tem conta parecida: {l.parecido}</span>}
+                  {l.parecido && <span className="block text-xs text-aviso-texto">já tem conta parecida: {l.parecido}</span>}
                 </td>
                 <td className="px-2 py-2 text-right font-numero font-semibold text-texto">{brl(l.valor)}</td>
                 <td className="px-4 py-2">

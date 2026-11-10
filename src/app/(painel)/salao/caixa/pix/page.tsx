@@ -83,7 +83,7 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="rapido" tamanho={20} className="mr-2" /> Pix recebidos</h1>
           <p className="mt-1 text-sm text-texto-suave">
             Cobranças com QR na tela (caixa, balcão e app). Banco: {diag.banco === "sicoob" ? "Sicoob" : "Sicredi"}
-            {diag.ambiente !== "producao" && <span className="ml-2 rounded bg-amber-100 px-1.5 text-xs text-amber-700">SANDBOX</span>}
+            {diag.ambiente !== "producao" && <span className="ml-2 rounded bg-amber-100 px-1.5 text-xs text-aviso-texto">SANDBOX</span>}
           </p>
         </div>
         <div className="flex gap-1 text-sm">
@@ -102,11 +102,11 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
         </div>
         <div className="cartao p-3">
           <p className="text-xs text-texto-suave">Recebido</p>
-          <p className="text-xl font-bold text-emerald-600">{totalPago.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+          <p className="text-xl font-bold text-ok-texto">{totalPago.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
         </div>
         <div className="cartao p-3">
           <p className="text-xs text-texto-suave">Devolvido</p>
-          <p className="text-xl font-bold text-amber-600">{totalDev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+          <p className="text-xl font-bold text-aviso-texto">{totalDev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
         </div>
       </div>
 

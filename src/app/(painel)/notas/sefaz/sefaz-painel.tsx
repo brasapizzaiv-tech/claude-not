@@ -248,7 +248,7 @@ export function SefazPainel({
           >
             {salvando ? "Salvando..." : "Salvar configuração"}
           </button>
-          {msg && <span role="status" className="text-sm text-green-600">{msg}</span>}
+          {msg && <span role="status" className="text-sm text-ok-texto">{msg}</span>}
         </div>
       </div>
 
@@ -313,7 +313,7 @@ export function SefazPainel({
               : "Buscar notas agora"}
         </button>
         {travado && (
-          <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
             A SEFAZ permite ~1 busca por hora. A próxima fica liberada às{" "}
             <b>{horaBR(bloqueadoAte!)}</b>. Guardamos onde parou — ao liberar, a
             busca continua de onde estava.

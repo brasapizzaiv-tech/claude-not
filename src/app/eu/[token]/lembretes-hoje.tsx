@@ -38,7 +38,7 @@ export function LembretesHoje({ token, itens }: { token: string; itens: Lembrete
                 </p>
               </div>
               {confirmado ? (
-                <Icone nome="certo" tamanho={22} className="shrink-0 text-emerald-600" titulo="Confirmado" />
+                <Icone nome="certo" tamanho={22} className="shrink-0 text-ok-texto" titulo="Confirmado" />
               ) : (
                 <BotaoAcao
                   aoClicar={async () => {
@@ -56,7 +56,7 @@ export function LembretesHoje({ token, itens }: { token: string; itens: Lembrete
           </li>
         ))}
       </ul>
-      {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-2 text-sm text-urgente-texto">{erro}</p>}
     </div>
   );
 }

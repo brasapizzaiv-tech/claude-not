@@ -16,7 +16,7 @@ export function CardapioHistorico({ itens, mostrarDia = true, grande = false }: 
           {mostrarDia && <span className="font-semibold text-zinc-600 dark:text-zinc-200">cardápio de {ddmm(h.data)}</span>}
           <span>
             <b className="text-zinc-900 dark:text-zinc-50">{h.por_nome || "alguém"}</b>{" "}
-            <span className={h.acao === "publicado" ? "font-semibold text-green-700 dark:text-green-400" : ""}>{ROTULO_ACAO[h.acao] ?? h.acao}</span>
+            <span className={h.acao === "publicado" ? "font-semibold text-ok-texto dark:text-green-400" : ""}>{ROTULO_ACAO[h.acao] ?? h.acao}</span>
             {h.detalhe ? <span className="text-zinc-400"> · {h.detalhe}</span> : null}
           </span>
         </li>

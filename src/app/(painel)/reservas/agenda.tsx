@@ -175,7 +175,7 @@ export function AgendaReservas({
           <b className="text-texto">{ativas.length}</b> reservas ·{" "}
           <b className="text-texto">{pessoasDia}</b> pessoas
           {aguardando > 0 && (
-            <span className="ml-1 font-semibold text-amber-600">
+            <span className="ml-1 font-semibold text-aviso-texto">
               · {aguardando} aguardando
             </span>
           )}
@@ -319,7 +319,7 @@ function CartaoReserva({
           {r.pessoas} {r.pessoas === 1 ? "pessoa" : "pessoas"}
         </span>
         {r.criancas > 0 && (
-          <span className="rounded-full border border-amber-300 px-2 py-0.5 text-mini text-amber-600">
+          <span className="rounded-full border border-amber-300 px-2 py-0.5 text-mini text-aviso-texto">
             {r.criancas} cadeirão
           </span>
         )}
@@ -327,22 +327,22 @@ function CartaoReserva({
           <span className={tag}>{r.ocasiao}</span>
         )}
         {r.status === "aguardando" && (
-          <span className="rounded-full border border-amber-400 px-2 py-0.5 text-mini font-medium text-amber-600">
+          <span className="rounded-full border border-amber-400 px-2 py-0.5 text-mini font-medium text-aviso-texto">
             aguardando mesa
           </span>
         )}
         {r.status === "confirmada" && (
-          <span className="rounded-full border border-green-400 px-2 py-0.5 text-mini font-medium text-green-600">
+          <span className="rounded-full border border-green-400 px-2 py-0.5 text-mini font-medium text-ok-texto">
             confirmada
           </span>
         )}
         {r.status === "cancelada" && (
-          <span className="rounded-full border border-red-300 px-2 py-0.5 text-mini text-red-500">
+          <span className="rounded-full border border-red-300 px-2 py-0.5 text-mini text-urgente-texto">
             cancelada
           </span>
         )}
         {r.chegou_em && (
-          <span className="rounded-full border border-green-400 px-2 py-0.5 text-mini font-medium text-green-600">
+          <span className="rounded-full border border-green-400 px-2 py-0.5 text-mini font-medium text-ok-texto">
             chegou
           </span>
         )}
@@ -413,7 +413,7 @@ function CartaoReserva({
             if (await confirmar(`Apagar de vez a reserva de ${r.nome}?`))
               acao(() => apagarReserva(r.id));
           }}
-          className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"
+          className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-urgente-texto"
         >
           Apagar
         </button>
@@ -757,7 +757,7 @@ function Bloqueios({
               <button
                 disabled={proc}
                 onClick={() => acao(() => liberarBloqueio(b.id))}
-                className="text-texto-fraco hover:text-green-600"
+                className="text-texto-fraco hover:text-ok-texto"
               >
                 liberar
               </button>

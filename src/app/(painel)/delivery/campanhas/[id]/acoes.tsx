@@ -24,9 +24,9 @@ export function AcoesCampanha({ id, status }: { id: string; status: string }) {
       {["agendada", "enviando"].includes(status) && <BotaoAcao aoClicar={agir("pausar")} className={b}>Pausar</BotaoAcao>}
       {status === "pausada" && <BotaoAcao aoClicar={agir("retomar")} className={b}>Retomar</BotaoAcao>}
       {!["concluida", "cancelada"].includes(status) && (
-        <BotaoAcao aoClicar={agir("cancelar", "Cancelar a campanha? Quem ainda está na fila não recebe.")} className={`${b} text-red-600`}>Cancelar</BotaoAcao>
+        <BotaoAcao aoClicar={agir("cancelar", "Cancelar a campanha? Quem ainda está na fila não recebe.")} className={`${b} text-urgente-texto`}>Cancelar</BotaoAcao>
       )}
-      {erro && <span role="alert" className="text-xs text-red-600">{erro}</span>}
+      {erro && <span role="alert" className="text-xs text-urgente-texto">{erro}</span>}
     </div>
   );
 }

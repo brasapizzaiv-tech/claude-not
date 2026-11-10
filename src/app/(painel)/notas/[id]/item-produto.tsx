@@ -32,7 +32,7 @@ export function ItemProduto({
       className={`w-full rounded-controle border px-2 py-1 text-xs focus:border-orange-500 dark:bg-zinc-950 ${
         produtoId
           ? "border-borda-forte text-texto-suave  "
-          : "border-amber-400 text-amber-600"
+          : "border-amber-400 text-aviso-texto"
       }`}
     />
   );

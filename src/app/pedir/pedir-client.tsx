@@ -483,7 +483,7 @@ export function PedirClient({
             </div>
           )}
           {feito.pix && pixPago && (
-            <div className="mx-auto mt-6 max-w-sm rounded-cartao bg-emerald-500/10 p-4 text-lg font-bold text-emerald-600">
+            <div className="mx-auto mt-6 max-w-sm rounded-cartao bg-emerald-500/10 p-4 text-lg font-bold text-ok-texto">
               <span className="inline-flex items-center gap-1.5"><Icone nome="certo" tamanho={14} /> Pagamento confirmado! Seu pedido já está como PAGO.</span>
             </div>
           )}
@@ -622,7 +622,7 @@ export function PedirClient({
 
           {tipo === "entrega" && (
             <div className="mb-4 space-y-2">
-              {lembrado && <p className="text-xs text-emerald-600">{lembrado}</p>}
+              {lembrado && <p className="text-xs text-ok-texto">{lembrado}</p>}
               <div className="grid grid-cols-3 gap-2">
                 <input aria-label="Rua" value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
                 <input aria-label="Nº" value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
@@ -638,7 +638,7 @@ export function PedirClient({
               </button>
               {calcMsg && <p className="text-sm text-texto-suave">{calcMsg}</p>}
               {promoDica && (
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-ok-texto">
                 <Icone nome="etiqueta" tamanho={14} /> {promoDica}
               </p>
             )}
@@ -681,12 +681,12 @@ export function PedirClient({
           <div className="mx-auto max-w-lg">
             <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
             {tipo === "entrega" && <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Entrega</span><span>{taxa == null ? "—" : brl(taxaN)}</span></div>}
-            {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
-            {cashbackUsado > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-emerald-600"><span>Cashback</span><span>− {brl(cashbackUsado)}</span></div>}
+            {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-ok-texto"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
+            {cashbackUsado > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-ok-texto"><span>Cashback</span><span>− {brl(cashbackUsado)}</span></div>}
             <div className="mb-2 flex items-baseline justify-between"><span className="font-semibold text-texto">Total</span><span className="numero-grande text-[24px] text-texto">{brl(total)}</span></div>
-            {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
+            {erro && <p role="alert" className="mb-2 text-sm text-urgente-texto">{erro}</p>}
             {horario.pedidoMinimo > 0 && subtotal < horario.pedidoMinimo && cart.length > 0 && (
-              <p className="mb-2 text-xs text-amber-600">Pedido mínimo {brl(horario.pedidoMinimo)} — faltam {brl(horario.pedidoMinimo - subtotal)}.</p>
+              <p className="mb-2 text-xs text-aviso-texto">Pedido mínimo {brl(horario.pedidoMinimo)} — faltam {brl(horario.pedidoMinimo - subtotal)}.</p>
             )}
             <button onClick={enviar} disabled={proc || (!aberto && !horario.podeAgendar)} className="btn-principal w-full text-base">
               {proc ? "Enviando..." : !aberto && !horario.podeAgendar ? "Delivery fechado agora" : quando === "agendar" ? <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="agenda" tamanho={17} /> Agendar pedido</span> : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="certo" tamanho={17} /> Enviar pedido</span>}

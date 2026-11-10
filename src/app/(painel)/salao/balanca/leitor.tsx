@@ -143,7 +143,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
         ) : (
           <button
             onClick={conectar}
-            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-semibold text-marca-sobre-primaria hover:bg-orange-600"
+            className="rounded-controle bg-primaria px-4 py-1.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105"
           >
             Conectar balança
           </button>
@@ -151,7 +151,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
       </div>
 
       {erro && (
-        <p role="alert" className="rounded-controle bg-red-50 p-2 text-xs text-red-600 dark:bg-red-950/30">{erro}</p>
+        <p role="alert" className="rounded-controle bg-red-50 p-2 text-xs text-urgente-texto dark:bg-red-950/30">{erro}</p>
       )}
 
       {/* Peso lido */}
@@ -207,7 +207,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
         <div>
           <div className="mb-1 flex items-center justify-between">
             <p className="text-mini text-texto-fraco">Dado bruto da balança</p>
-            <p className={`text-mini font-medium ${bytes > 0 ? "text-green-600" : "text-amber-600"}`}>
+            <p className={`text-mini font-medium ${bytes > 0 ? "text-ok-texto" : "text-aviso-texto"}`}>
               {bytes} bytes recebidos
             </p>
           </div>
@@ -216,16 +216,16 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
           </pre>
 
           {bytes === 0 && (
-            <div className="mt-2 rounded-controle bg-amber-50 p-2 text-xs text-amber-700 dark:bg-amber-950/30">
+            <div className="mt-2 rounded-controle bg-amber-50 p-2 text-xs text-aviso-texto dark:bg-amber-950/30">
               <p className="mb-2 font-medium">
                 Conectou, mas a balança não está enviando. Tente “cutucar” (a POP-31 às vezes só manda o peso quando recebe um comando):
               </p>
               <div className="flex flex-wrap gap-1.5">
-                <button onClick={() => enviar([0x05], "ENQ")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar ENQ</button>
-                <button onClick={() => enviar([0x0d], "CR")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar Enter</button>
-                <button onClick={() => enviar([0x50, 0x0d], "P")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar P</button>
-                <button onClick={() => enviar([0x57, 0x0d], "W")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar W</button>
-                <button onClick={() => enviar([0x11], "DC1")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-amber-800 dark:text-amber-300">Enviar DC1</button>
+                <button onClick={() => enviar([0x05], "ENQ")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-aviso-texto dark:text-amber-300">Enviar ENQ</button>
+                <button onClick={() => enviar([0x0d], "CR")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-aviso-texto dark:text-amber-300">Enviar Enter</button>
+                <button onClick={() => enviar([0x50, 0x0d], "P")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-aviso-texto dark:text-amber-300">Enviar P</button>
+                <button onClick={() => enviar([0x57, 0x0d], "W")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-aviso-texto dark:text-amber-300">Enviar W</button>
+                <button onClick={() => enviar([0x11], "DC1")} className="rounded bg-painel-cartao px-2 py-1 font-medium text-aviso-texto dark:text-amber-300">Enviar DC1</button>
               </div>
               <p className="mt-2">
                 Se nada mudar em nenhum, provavelmente a balança está com a **transmissão contínua desligada** (config da própria balança) ou a **velocidade** está diferente — tente 4800 ou 2400 nos ajustes (desconecte e reconecte).

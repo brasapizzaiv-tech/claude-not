@@ -60,7 +60,7 @@ type Meta = {
 const EMBALAGENS = ["Unidade", "Fardo", "Caixa", "Pacote", "Kg", "Dúzia", "Saco", "Bandeja", "Litro"];
 
 const campo =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
 export function CotarPreencher({
   token,
@@ -409,9 +409,9 @@ export function CotarPreencher({
     : outrosDisponiveis;
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24 dark:bg-zinc-950">
-      <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{descricao}</h1>
+    <div className="min-h-screen bg-painel-fundo pb-24">
+      <div className="sticky top-0 z-10 border-b border-borda bg-painel-cartao px-4 py-4">
+        <h1 className="text-lg font-bold text-texto">{descricao}</h1>
         <p className="text-sm text-zinc-500">
           Cotação para <b>{fornecedor}</b>
           {prazo ? ` · prazo ${dataBR(prazo)}` : ""}
@@ -420,32 +420,32 @@ export function CotarPreencher({
 
       <div className="mx-auto max-w-xl px-4">
         {msg && (
-          <div role="status" className="mt-4 rounded-lg bg-green-100 px-4 py-3 text-sm font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
+          <div role="status" className="mt-4 rounded-controle bg-green-100 px-4 py-3 text-sm font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
             {msg}
           </div>
         )}
         {erro && (
-          <div role="alert" className="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950 dark:text-red-300">
+          <div role="alert" className="mt-4 rounded-controle bg-red-100 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950 dark:text-red-300">
             <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {erro}
           </div>
         )}
 
         {fechada && (
-          <div className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+          <div className="mt-4 rounded-controle bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
             {respostasAte && venceu(respostasAte)
               ? <>O prazo pra responder terminou <b>{textoPrazo(respostasAte)}</b>. Os preços não podem mais ser alterados — se ainda quiser mandar, fale com o comprador.</>
               : "Esta cotação está fechada. Os preços não podem mais ser alterados."}
           </div>
         )}
         {!fechada && respostasAte && (
-          <div className="mt-4 rounded-lg bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:bg-orange-950 dark:text-orange-200">
+          <div className="mt-4 rounded-controle bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:bg-orange-950 dark:text-orange-200">
             <Icone nome="relogio" tamanho={15} className="mr-1.5" />
             Responda até <b>{textoPrazo(respostasAte)}</b>{textoFalta(respostasAte) ? ` (${textoFalta(respostasAte)})` : ""}. Depois disso o link fecha.
           </div>
         )}
 
         {!fechada && jaEnviadoEm && !msg && (
-          <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300">
+          <div className="mt-4 rounded-controle border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300">
             <Icone nome="certo" tamanho={16} className="mr-1.5" /> Você já enviou esta cotação
             {jaEnviadoEm !== "sim"
               ? ` em ${new Date(jaEnviadoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
@@ -466,11 +466,11 @@ export function CotarPreencher({
             return (
               <div
                 key={p.produto_id}
-                className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-cartao border border-borda bg-painel-cartao p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100">{p.nome}</p>
+                    <p className="font-medium text-texto">{p.nome}</p>
                     <p className="text-xs text-zinc-400">
                       {p.marca ? `${p.marca} · ` : ""}Qtd: {p.qtd} {p.unidade}
                     </p>
@@ -479,7 +479,7 @@ export function CotarPreencher({
                     <button
                       type="button"
                       onClick={() => naoTrabalho(p.produto_id, p.nome)}
-                      className="shrink-0 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-red-800 dark:hover:bg-red-950"
+                      className="shrink-0 rounded-controle border border-borda-forte px-2.5 py-1.5 text-xs font-medium text-texto-suave hover:border-red-300 hover:bg-red-50 hover:text-urgente-texto dark:hover:border-red-800 dark:hover:bg-red-950"
                     >
                       <Icone nome="proibido" tamanho={13} className="mr-1" /> Não trabalho
                     </button>
@@ -507,9 +507,9 @@ export function CotarPreencher({
                       setIndisp((s) => ({ ...s, [p.produto_id]: !s[p.produto_id] }));
                       agendarSalvar();
                     }}
-                    className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-medium ${
+                    className={`shrink-0 rounded-controle border px-3 py-2 text-xs font-medium ${
                       emFalta
-                        ? "border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                        ? "border-amber-400 bg-amber-50 text-aviso-texto dark:bg-amber-950 dark:text-amber-300"
                         : "border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     }`}
                   >
@@ -557,7 +557,7 @@ export function CotarPreencher({
 
                 {/* ST (Substituição Tributária) — só nos produtos marcados */}
                 {p.tem_st && !emFalta && (
-                  <div className="mt-2 rounded-lg border border-violet-200 bg-violet-50/50 p-2.5 dark:border-violet-900 dark:bg-violet-950/20">
+                  <div className="mt-2 rounded-controle border border-violet-200 bg-violet-50/50 p-2.5 dark:border-violet-900 dark:bg-violet-950/20">
                     <p className="text-xs font-semibold text-violet-800 dark:text-violet-300">
                       <Icone nome="alerta" tamanho={13} className="mr-1" /> Este item tem ICMS-ST
                     </p>
@@ -621,7 +621,7 @@ export function CotarPreencher({
                     {(extras[p.produto_id] ?? []).map((x, i) => (
                       <div
                         key={i}
-                        className="mt-2 rounded-lg border border-sky-200 bg-sky-50/50 p-2.5 dark:border-sky-900 dark:bg-sky-950/20"
+                        className="mt-2 rounded-controle border border-sky-200 bg-sky-50/50 p-2.5 dark:border-sky-900 dark:bg-sky-950/20"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-sky-800 dark:text-sky-300">
@@ -630,7 +630,7 @@ export function CotarPreencher({
                           <button
                             type="button"
                             onClick={() => removeExtra(p.produto_id, i)}
-                            className="text-xs text-zinc-400 hover:text-red-600"
+                            className="text-xs text-zinc-400 hover:text-urgente-texto"
                           >
                             remover
                           </button>
@@ -663,7 +663,7 @@ export function CotarPreencher({
                           />
                         </div>
                         {p.tem_st && (
-                          <label className="mt-2 flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                          <label className="mt-2 flex items-center gap-2 text-xs text-texto-suave">
                             <input
                               type="checkbox"
                               checked={x.st_inclusa}
@@ -687,7 +687,7 @@ export function CotarPreencher({
                       <button
                         type="button"
                         onClick={() => addExtra(p.produto_id)}
-                        className="mt-2 text-xs font-medium text-sky-600 hover:underline"
+                        className="mt-2 text-xs font-medium text-info-texto hover:underline"
                       >
                         + Tenho outra marca deste item
                       </button>
@@ -703,7 +703,7 @@ export function CotarPreencher({
                       <img
                         src={fotos[p.produto_id]}
                         alt={p.nome}
-                        className="h-14 w-14 rounded-lg object-cover"
+                        className="h-14 w-14 rounded-controle object-cover"
                       />
                     )}
                     <label className="cursor-pointer text-xs font-medium text-orange-600 hover:underline">
@@ -732,8 +732,8 @@ export function CotarPreencher({
 
           {/* Outros itens da cotação que ele ainda não fornece */}
           {!fechada && outrosDisponiveis.length > 0 && (
-            <div className="rounded-2xl border border-dashed border-orange-300 bg-orange-50/40 p-4 dark:border-orange-800 dark:bg-orange-950/10">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <div className="rounded-cartao border border-dashed border-orange-300 bg-orange-50/40 p-4 dark:border-orange-800 dark:bg-orange-950/10">
+              <h2 className="text-sm font-semibold text-texto">
                 Outros itens pedidos nesta cotação
               </h2>
               <p className="mt-1 text-xs text-zinc-500">
@@ -754,7 +754,7 @@ export function CotarPreencher({
                     className="flex items-center justify-between gap-2 py-2"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                      <p className="truncate text-sm font-medium text-texto">
                         {o.nome}
                       </p>
                       <p className="text-xs text-zinc-400">
@@ -764,7 +764,7 @@ export function CotarPreencher({
                     <button
                       type="button"
                       onClick={() => incluirOutro(o.produto_id)}
-                      className="shrink-0 rounded-lg border border-orange-400 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100 dark:text-orange-300 dark:hover:bg-orange-950"
+                      className="shrink-0 rounded-controle border border-orange-400 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100 dark:text-orange-300 dark:hover:bg-orange-950"
                     >
                       + Tenho / Cotar
                     </button>
@@ -779,8 +779,8 @@ export function CotarPreencher({
 
           {/* Promoção / oferta do fornecedor */}
           {!fechada && (
-            <div className="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <div className="rounded-cartao border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/10">
+              <h2 className="text-sm font-semibold text-texto">
                 <Icone nome="presente" tamanho={15} className="mr-1.5" /> Tem alguma promoção ou oferta?
               </h2>
               <p className="mt-1 text-xs text-zinc-500">
@@ -803,7 +803,7 @@ export function CotarPreencher({
                   <img
                     src={dados.promocao_foto}
                     alt="promoção"
-                    className="h-16 w-16 rounded-lg object-cover"
+                    className="h-16 w-16 rounded-controle object-cover"
                   />
                 )}
                 <label className="cursor-pointer text-xs font-medium text-violet-600 hover:underline">
@@ -829,13 +829,13 @@ export function CotarPreencher({
           )}
 
           {/* Rodapé: condições do fornecedor */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <div className="rounded-cartao border border-borda bg-painel-cartao p-4">
+            <h2 className="mb-3 text-sm font-semibold text-texto">
               Condições do pedido
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs text-zinc-500">
-                Entrega prevista <span className="text-red-500">* obrigatório</span>
+                Entrega prevista <span className="text-urgente-texto">* obrigatório</span>
                 <input
                   type="date"
                   required
@@ -896,7 +896,7 @@ export function CotarPreencher({
       </div>
 
       {!fechada && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="fixed inset-x-0 bottom-0 border-t border-borda bg-painel-cartao p-4">
           <div className="mx-auto max-w-xl">
             <p className="mb-1 text-center text-xs text-zinc-400">
               {salvo === "salvando"
@@ -908,7 +908,7 @@ export function CotarPreencher({
             <button
               onClick={enviar}
               disabled={enviando}
-              className="w-full rounded-xl bg-orange-500 py-3 text-center font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+              className="w-full rounded-controle bg-primaria py-3 text-center font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
             >
               {enviando ? "Enviando..." : "Enviar preços"}
             </button>

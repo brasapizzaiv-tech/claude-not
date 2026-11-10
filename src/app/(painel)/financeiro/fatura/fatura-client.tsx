@@ -137,7 +137,7 @@ export function FaturaClient({
       )}
 
       {erro && (
-        <p role="alert" className="rounded-cartao border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+        <p role="alert" className="rounded-cartao border border-red-300 bg-red-50 p-3 text-sm text-urgente-texto dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
           {erro}
         </p>
       )}
@@ -191,14 +191,14 @@ export function FaturaClient({
             <span className="font-semibold text-zinc-800 dark:text-zinc-100">{compras.length} compras</span>
             <span className="text-texto-suave">soma <b className="text-zinc-800 dark:text-zinc-100">{brl(total)}</b></span>
             {totalImpresso != null && (
-              <span className={Math.abs(totalImpresso - total) < 0.01 ? "text-emerald-600" : "text-amber-600"}>
+              <span className={Math.abs(totalImpresso - total) < 0.01 ? "text-ok-texto" : "text-aviso-texto"}>
                 {Math.abs(totalImpresso - total) < 0.01
                   ? "✓ bate com o total da fatura"
                   : `a fatura diz ${brl(totalImpresso)} — diferença de ${brl(Math.abs(totalImpresso - total))}`}
               </span>
             )}
-            {ignoradas > 0 && <span className="text-amber-600">{ignoradas} linha(s) não entendidas</span>}
-            {semCategoria > 0 && <span className="text-amber-600">{semCategoria} sem categoria</span>}
+            {ignoradas > 0 && <span className="text-aviso-texto">{ignoradas} linha(s) não entendidas</span>}
+            {semCategoria > 0 && <span className="text-aviso-texto">{semCategoria} sem categoria</span>}
           </div>
 
           <div className="overflow-x-auto rounded-cartao bg-painel-cartao">
@@ -219,7 +219,7 @@ export function FaturaClient({
                     <td className="px-3 py-2 text-texto">
                       {c.descricao}
                       {c.parcela && <span className="ml-1 rounded bg-zinc-200 px-1 text-mini text-texto-suave dark:bg-zinc-700">{c.parcela}</span>}
-                      {c.sugerida && <span className="ml-1 text-mini text-emerald-600">já classificada antes</span>}
+                      {c.sugerida && <span className="ml-1 text-mini text-ok-texto">já classificada antes</span>}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-1">
@@ -244,11 +244,11 @@ export function FaturaClient({
                         )}
                       </div>
                     </td>
-                    <td className={`whitespace-nowrap px-3 py-2 text-right font-medium ${c.valor < 0 ? "text-emerald-600" : "text-texto"}`}>
+                    <td className={`whitespace-nowrap px-3 py-2 text-right font-medium ${c.valor < 0 ? "text-ok-texto" : "text-texto"}`}>
                       {brl(c.valor)}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <button aria-label="Fechar" onClick={() => remover(c.uid)} title="Tirar da lista" className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">✕</button>
+                      <button aria-label="Fechar" onClick={() => remover(c.uid)} title="Tirar da lista" className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600">✕</button>
                     </td>
                   </tr>
                 ))}

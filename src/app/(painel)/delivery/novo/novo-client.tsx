@@ -150,7 +150,7 @@ export function NovoPedido({
           {visiveis.map((i) => (
             <button key={i.id} onClick={() => clicarItem(i)} className="flex min-h-[72px] flex-col justify-between cartao p-2.5 text-left hover:bg-superficie-suave">
               <span className="text-sm font-medium leading-tight">{i.nome}{comComplSet.has(i.id) && <Icone nome="ajustes" tamanho={12} className="ml-1 text-texto-fraco" />}</span>
-              <span className="text-sm text-emerald-600">{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "—"}</span>
+              <span className="text-sm text-ok-texto">{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "—"}</span>
             </button>
           ))}
           {visiveis.length === 0 && <p className="col-span-full py-10 text-center text-sm text-texto-suave">Nenhum produto.</p>}
@@ -182,8 +182,8 @@ export function NovoPedido({
 
           {/* Tipo */}
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setTipo("entrega")} className={`rounded-controle border py-2 text-sm font-semibold ${tipo === "entrega" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={14} /> Entrega</span></button>
-            <button onClick={() => setTipo("retirada")} className={`rounded-controle border py-2 text-sm font-semibold ${tipo === "retirada" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={14} /> Retirada</span></button>
+            <button onClick={() => setTipo("entrega")} className={`rounded-controle border py-2 text-sm font-semibold ${tipo === "entrega" ? "border-emerald-500 bg-emerald-500/10 text-ok-texto" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={14} /> Entrega</span></button>
+            <button onClick={() => setTipo("retirada")} className={`rounded-controle border py-2 text-sm font-semibold ${tipo === "retirada" ? "border-emerald-500 bg-emerald-500/10 text-ok-texto" : "border-borda text-texto-suave "}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={14} /> Retirada</span></button>
           </div>
 
           {/* Endereço */}
@@ -199,14 +199,14 @@ export function NovoPedido({
               </div>
               <input aria-label="Complemento (apto, casa...)" value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm " />
               <input aria-label="Ponto de referência" value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência" className="w-full rounded-controle border border-borda-forte bg-transparent px-2 py-1.5 text-sm " />
-              <button type="button" onClick={calcularTaxa} disabled={calculando} className="w-full rounded-controle border border-emerald-500 py-1.5 text-sm font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "Calculando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="local" tamanho={14} /> Calcular taxa pela distância</span>}</button>
+              <button type="button" onClick={calcularTaxa} disabled={calculando} className="w-full rounded-controle border border-emerald-500 py-1.5 text-sm font-semibold text-ok-texto disabled:opacity-50">{calculando ? "Calculando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="local" tamanho={14} /> Calcular taxa pela distância</span>}</button>
               {calcMsg && (
                 <p className={`text-xs ${geo?.fora ? "text-rose-600" : "text-texto-suave"}`}>
                   {calcMsg}
                   {geo && (
                     <>
                       {" · "}
-                      <a href={`https://www.google.com/maps/search/?api=1&query=${geo.lat},${geo.lng}`} target="_blank" rel="noreferrer" className="font-semibold text-emerald-600 hover:underline">conferir no mapa</a>
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${geo.lat},${geo.lng}`} target="_blank" rel="noreferrer" className="font-semibold text-ok-texto hover:underline">conferir no mapa</a>
                     </>
                   )}
                 </p>
@@ -225,12 +225,12 @@ export function NovoPedido({
                   <div key={l.uid} className="flex items-start justify-between gap-2 rounded-controle border border-borda p-2">
                     <div className="min-w-0 flex-1">
                       <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
-                      <div className="text-xs text-emerald-600">{brl(l.preco * l.qtd)}</div>
+                      <div className="text-xs text-ok-texto">{brl(l.preco * l.qtd)}</div>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button onClick={() => setQtd(l.uid, l.qtd - 1)} className="h-6 w-6 rounded border border-borda-forte">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={13} titulo="Tirar do pedido" /> : "−"}</button>
                       <span className="w-4 text-center text-sm font-bold">{l.qtd}</span>
-                      <button aria-label="Mais um" onClick={() => setQtd(l.uid, l.qtd + 1)} className="h-6 w-6 rounded border border-borda-forte text-emerald-600">+</button>
+                      <button aria-label="Mais um" onClick={() => setQtd(l.uid, l.qtd + 1)} className="h-6 w-6 rounded border border-borda-forte text-ok-texto">+</button>
                     </div>
                   </div>
                 ))}
@@ -265,7 +265,7 @@ export function NovoPedido({
               <div>
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-texto-suave">Taxa entrega</label>
-                  <button type="button" onClick={calcularTaxa} disabled={calculando} className="text-xs font-semibold text-emerald-600 disabled:opacity-50">{calculando ? "..." : <span className="inline-flex items-center gap-1"><Icone nome="local" tamanho={12} /> calcular</span>}</button>
+                  <button type="button" onClick={calcularTaxa} disabled={calculando} className="text-xs font-semibold text-ok-texto disabled:opacity-50">{calculando ? "..." : <span className="inline-flex items-center gap-1"><Icone nome="local" tamanho={12} /> calcular</span>}</button>
                 </div>
                 <input value={taxa} onChange={(e) => setTaxa(e.target.value)} inputMode="decimal" placeholder="0,00" className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
               </div>
@@ -287,8 +287,8 @@ export function NovoPedido({
           {tipo === "entrega" && <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Taxa</span><span>{brl(taxaN)}</span></div>}
           {descN > 0 && <div className="mb-1 flex justify-between text-sm text-rose-500"><span>Desconto</span><span>− {brl(descN)}</span></div>}
           <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
-          {forma === "Dinheiro" && trocoN > total && <div className="mb-2 flex justify-between text-sm text-amber-600"><span>Troco</span><span>{brl(Math.round((trocoN - total) * 100) / 100)}</span></div>}
-          {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
+          {forma === "Dinheiro" && trocoN > total && <div className="mb-2 flex justify-between text-sm text-aviso-texto"><span>Troco</span><span>{brl(Math.round((trocoN - total) * 100) / 100)}</span></div>}
+          {erro && <p role="alert" className="mb-2 text-sm text-urgente-texto">{erro}</p>}
           <button onClick={finalizar} disabled={proc} className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo disabled:opacity-50">{proc ? "Criando..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={17} /> Criar pedido</span>}</button>
         </div>
       </div>

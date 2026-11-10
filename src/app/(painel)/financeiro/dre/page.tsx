@@ -40,7 +40,7 @@ function Linha({
     >
       <span>{label}</span>
       <span className="flex gap-4">
-        <span className={neg ? "text-red-600" : ""}>
+        <span className={neg ? "text-urgente-texto" : ""}>
           {neg ? "- " : ""}
           {moeda(valor)}
         </span>
@@ -201,7 +201,7 @@ export default async function DrePage({
             % sobre a receita bruta. Valores lançados no mês.
           </p>
           {fonteFat.diasSistema > 0 && (
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+            <p className="mt-1 text-xs text-aviso-texto dark:text-amber-400">
               Faturamento: {fonteFat.diasPlanilha ? `${fonteFat.diasPlanilha} dias da planilha e ` : ""}{fonteFat.diasSistema} dias do caixa do sistema, que hoje só tem o almoço (a noite ainda não passa por ele).
             </p>
           )}

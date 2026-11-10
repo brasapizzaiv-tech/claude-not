@@ -61,7 +61,7 @@ export function CentralImpressao({
 
       {(semImpressora.length > 0 || temPizzaSemImpressora) && (
         <div className="mb-4 rounded-cartao border border-amber-500/40 bg-amber-500/5 p-4 text-sm">
-          <p className="font-semibold text-amber-700 dark:text-amber-400">⚠️ Pedidos que não saem em nenhuma impressora de cozinha</p>
+          <p className="font-semibold text-aviso-texto dark:text-amber-400">⚠️ Pedidos que não saem em nenhuma impressora de cozinha</p>
           {temPizzaSemImpressora && <p className="mt-1">🍕 <b>Pizzas montadas</b>: nenhuma impressora está marcada &quot;Recebe as pizzas montadas&quot;.</p>}
           {semImpressora.length > 0 && (
             <details className="mt-1">
@@ -119,7 +119,7 @@ export function CentralImpressao({
           <p className="mb-2 text-sm font-medium text-texto-suave">Impressoras detectadas no PC (ainda não usadas):</p>
           <div className="flex flex-wrap gap-2">
             {detectadasNovas.map((p) => (
-              <button key={p} disabled={proc} onClick={() => run(() => criarImpressoraDetectada(p))} className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-500/10">
+              <button key={p} disabled={proc} onClick={() => run(() => criarImpressoraDetectada(p))} className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm text-info-texto hover:bg-blue-500/10">
                 + {p}
               </button>
             ))}
@@ -245,7 +245,7 @@ function EtiquetaFormato({ im, proc, run }: {
           ))}
         </label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={c.qr} disabled={proc} onChange={(e) => salvar({ ...c, qr: e.target.checked })} /> QR code</label>
-        {salvo && <span role="status" className="text-xs font-semibold text-emerald-600">✓ salvo</span>}
+        {salvo && <span role="status" className="text-xs font-semibold text-ok-texto">✓ salvo</span>}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-texto-suave">
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={!!c.barraValidade} disabled={proc} onChange={(e) => salvar({ ...c, barraValidade: e.target.checked })} /> VALIDADE em barra preta</label>

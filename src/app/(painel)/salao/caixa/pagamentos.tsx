@@ -486,11 +486,11 @@ export function PainelPagamentos({
               <span className="min-w-0 flex-1 truncate text-texto-suave">
                 {p.forma}
                 {p.bandeira ? <span className="text-texto-fraco"> · {p.bandeira}</span> : null}
-                {p.tef ? <span className="ml-1 rounded bg-emerald-100 px-1 text-mini font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">TEF · NSU {p.tef.nsu ?? "—"}</span> : null}
+                {p.tef ? <span className="ml-1 rounded bg-emerald-100 px-1 text-mini font-semibold text-ok-texto dark:bg-emerald-900/40 dark:text-emerald-300">TEF · NSU {p.tef.nsu ?? "—"}</span> : null}
                 {p.observacao ? <span className="block truncate text-mini text-texto-fraco">{p.observacao}</span> : null}
               </span>
               <span className="font-semibold tabular-nums text-texto">{brl(p.valor)}</span>
-              <button aria-label="Fechar" onClick={() => onRemover(p.uid)} title="Tirar este pagamento" className="text-texto-fraco hover:text-red-600">✕</button>
+              <button aria-label="Fechar" onClick={() => onRemover(p.uid)} title="Tirar este pagamento" className="text-texto-fraco hover:text-urgente-texto">✕</button>
             </li>
           ))}
         </ul>
@@ -504,7 +504,7 @@ export function PainelPagamentos({
         </div>
         <div className="text-right">
           <p className="text-mini text-texto-fraco">{falta > 0.005 ? "Falta pagar" : "Fechou"}</p>
-          <p className={`text-xl font-black tabular-nums ${falta > 0.005 ? "text-amber-600" : "text-emerald-600"}`}>
+          <p className={`text-xl font-black tabular-nums ${falta > 0.005 ? "text-aviso-texto" : "text-ok-texto"}`}>
             {falta > 0.005 ? brl(falta) : "✓"}
           </p>
           {falta > 0.005 && fatorDinheiro < 0.9999 && (
@@ -512,7 +512,7 @@ export function PainelPagamentos({
           )}
         </div>
         {trocoTotal > 0.005 && (
-          <p className="col-span-2 text-right text-sm font-semibold text-emerald-600">Troco: {brl(trocoTotal)}</p>
+          <p className="col-span-2 text-right text-sm font-semibold text-ok-texto">Troco: {brl(trocoTotal)}</p>
         )}
       </div>
 
@@ -584,7 +584,7 @@ export function PainelPagamentos({
                 ))}
               </div>
               <p className="mt-1 text-mini text-texto-fraco">Clique para preencher. Segure Shift para somar.</p>
-              {troco > 0.005 && <p className="mt-1 text-right text-sm font-bold text-emerald-600">Troco: {brl(troco)}</p>}
+              {troco > 0.005 && <p className="mt-1 text-right text-sm font-bold text-ok-texto">Troco: {brl(troco)}</p>}
             </>
           )}
 
@@ -595,7 +595,7 @@ export function PainelPagamentos({
                   <p className="text-base font-bold text-emerald-800 dark:text-emerald-300">
                     {tefEtapa === "enviando" ? "Enviando pro pinpad…" : T.tef(forma) === "pix" ? "Aguardando o Pix no pinpad…" : "Aguardando o cartão no pinpad…"}
                   </p>
-                  <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                  <p className="mt-1 text-xs text-ok-texto/80 dark:text-emerald-400/80">
                     {T.tef(forma) === "pix"
                       ? "O cliente lê o QR da maquininha com o app do banco. Assim que pagar, entra sozinho. Pra desistir, cancele no pinpad."
                       : "O cliente insere ou aproxima o cartão e digita a senha. Pra desistir, cancele no pinpad."}
@@ -688,14 +688,14 @@ export function PainelPagamentos({
                     {fiado.limite != null ? ` · limite ${brl(fiado.limite)}` : " · sem limite"}
                   </p>
                   {fiado.limite != null && (
-                    <p className={fiadoEstoura ? "mt-0.5 font-semibold text-red-600" : "mt-0.5 text-texto-suave"}>
+                    <p className={fiadoEstoura ? "mt-0.5 font-semibold text-urgente-texto" : "mt-0.5 text-texto-suave"}>
                       Com esta conta ficaria {brl(cent(fiado.saldo + aplica))}
                       {fiadoEstoura ? " — passa do limite." : "."}
                     </p>
                   )}
                 </>
               ) : (
-                <p className="text-amber-600">Vincule o cliente lá em cima pra usar o Saldo cliente.</p>
+                <p className="text-aviso-texto">Vincule o cliente lá em cima pra usar o Saldo cliente.</p>
               )}
             </div>
           )}
@@ -704,7 +704,7 @@ export function PainelPagamentos({
             <div className="mt-3 rounded-controle bg-superficie-suave p-2">
               <p className="mb-1 text-mini text-texto-fraco">Funcionário</p>
               {colaboradores.length === 0 ? (
-                <p className="text-xs text-amber-600">Nenhum funcionário ativo cadastrado.</p>
+                <p className="text-xs text-aviso-texto">Nenhum funcionário ativo cadastrado.</p>
               ) : (
                 <>
                   <input aria-label="Buscar pelo nome"
@@ -751,7 +751,7 @@ export function PainelPagamentos({
             />
           )}
           {T.semDinheiro(forma) && (
-            <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+            <p className="mt-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-aviso-texto dark:bg-amber-950/30 dark:text-amber-300">
               Fecha a conta sem entrar dinheiro: não conta no caixa nem no faturamento e não sai nota. Fica no relatório de cortesias e vales.
             </p>
           )}
@@ -766,7 +766,7 @@ export function PainelPagamentos({
             />
           </label>
 
-          {aviso && <p role="status" className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
+          {aviso && <p role="status" className="mt-2 text-sm font-medium text-urgente-texto">{aviso}</p>}
 
           <div className="mt-3 flex gap-2">
             <button onClick={fechar} disabled={!!tefEtapa} className={`${btn} flex-1 border-borda-forte text-texto-suave disabled:opacity-40`}>

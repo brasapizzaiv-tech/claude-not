@@ -17,11 +17,11 @@ const badge: Record<string, string> = {
   rascunho:
     "bg-superficie-suave text-texto-suave",
   enviado:
-    "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    "bg-blue-100 text-info-texto dark:bg-blue-950 dark:text-blue-300",
   recebido:
-    "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+    "bg-amber-100 text-aviso-texto dark:bg-amber-950 dark:text-amber-300",
   conferido:
-    "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
+    "bg-green-100 text-ok-texto dark:bg-green-950 dark:text-green-300",
 };
 
 export default async function ConferenciaPage() {
@@ -148,10 +148,10 @@ export default async function ConferenciaPage() {
                         )}
                         <div className="mt-0.5 flex flex-wrap gap-1">
                           {(p.notas_fiscais?.length ?? 0) > 0
-                            ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-mini font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">nota ligada</span>
+                            ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-mini font-medium text-ok-texto dark:bg-emerald-950 dark:text-emerald-300">nota ligada</span>
                             : (p.conf_colab_em || p.status === "conferido") && <span className="rounded-controle bg-superficie-suave px-1.5 py-0.5 text-mini text-texto-suave">sem nota</span>}
                           {p.divergencias_n > 0 && (
-                            <Link href={`/conferencia/${p.id}`} className={`rounded px-1.5 py-0.5 text-mini font-semibold ${(p.divergencias as ResumoDivergencias)?.gravidade === "grave" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                            <Link href={`/conferencia/${p.id}`} className={`rounded px-1.5 py-0.5 text-mini font-semibold ${(p.divergencias as ResumoDivergencias)?.gravidade === "grave" ? "bg-red-100 text-urgente-texto dark:bg-red-950 dark:text-red-300" : "bg-amber-100 text-aviso-texto dark:bg-amber-950 dark:text-amber-300"}`}>
                               <Icone nome="alerta" tamanho={12} className="mr-1" /> {p.divergencias_n} divergência{p.divergencias_n === 1 ? "" : "s"}
                               {((p.divergencias as ResumoDivergencias)?.valor_a_mais ?? 0) > 0 ? ` · ${moedaCurta((p.divergencias as ResumoDivergencias).valor_a_mais)} a mais` : ""}
                             </Link>

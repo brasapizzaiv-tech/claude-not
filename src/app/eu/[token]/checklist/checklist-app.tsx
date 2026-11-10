@@ -148,18 +148,18 @@ export function ChecklistApp({
                     <span className="block text-base font-bold text-texto">{l.modelo.nome}</span>
                     <span className="block text-xs" style={{ color: l.cor ?? undefined }}>{l.setor}</span>
                     {l.execucao && !l.situacao.concluida && (
-                      <span className="mt-0.5 block text-xs text-amber-600">
+                      <span className="mt-0.5 block text-xs text-aviso-texto">
                         {l.execucao.iniciado_nome ?? "alguém"} começou às {hora(l.execucao.iniciado_em)}
                       </span>
                     )}
                     {l.situacao.concluida && l.execucao?.concluido_em && (
-                      <span className="mt-0.5 block text-xs text-emerald-600">
+                      <span className="mt-0.5 block text-xs text-ok-texto">
                         ✓ {l.execucao.concluido_nome ?? "concluída"} às {hora(l.execucao.concluido_em)}
                       </span>
                     )}
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className={`block text-lg font-bold ${l.situacao.concluida ? "text-emerald-600" : l.situacao.feitos > 0 ? "text-amber-600" : "text-texto-fraco"}`}>
+                    <span className={`block text-lg font-bold ${l.situacao.concluida ? "text-ok-texto" : l.situacao.feitos > 0 ? "text-aviso-texto" : "text-texto-fraco"}`}>
                       {l.situacao.feitos}/{l.situacao.total}
                     </span>
                     <span className="text-xs text-texto-fraco">{l.situacao.concluida ? "concluída" : l.situacao.iniciada ? "em andamento" : "não iniciada"}</span>
@@ -311,7 +311,7 @@ function ExecutarLista({
                   <p className="text-base font-semibold leading-snug text-texto">
                     <span className="mr-1.5 text-sm text-texto-fraco">{n + 1}.</span>
                     {i.texto}
-                    {i.obrigatorio && <span className="ml-1 text-red-600">*</span>}
+                    {i.obrigatorio && <span className="ml-1 text-urgente-texto">*</span>}
                   </p>
                   {i.instrucao && <p className="text-sm text-texto-suave">{i.instrucao}</p>}
 

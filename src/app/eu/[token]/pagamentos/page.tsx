@@ -97,7 +97,7 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
                   <div className="font-semibold text-texto">Semana {rotuloSemana(l.segunda)}</div>
                   {l.detalhe && <div className="mt-0.5 text-xs text-texto-suave">{l.detalhe.replace(/^\(|\)$/g, "")}</div>}
                 </div>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${l.pago ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"}`}>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${l.pago ? "bg-emerald-100 text-ok-texto dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-amber-100 text-aviso-texto dark:bg-amber-900/40 dark:text-amber-300"}`}>
                   {l.pago ? `pago${l.pagoEm ? ` ${fData(l.pagoEm)}` : ""} ✓` : "aguardando pagamento"}
                 </span>
               </div>
@@ -108,11 +108,11 @@ export default async function PagamentosColabPage({ params }: { params: Promise<
                 </div>
                 <div className="rounded-cartao bg-superficie-suave p-2">
                   <div className="text-mini uppercase text-texto-fraco">Fiado desc.</div>
-                  <div className={`font-semibold ${l.desconto > 0 ? "text-red-600" : "text-texto-fraco"}`}>{l.desconto > 0 ? `− ${brl(l.desconto)}` : "—"}</div>
+                  <div className={`font-semibold ${l.desconto > 0 ? "text-urgente-texto" : "text-texto-fraco"}`}>{l.desconto > 0 ? `− ${brl(l.desconto)}` : "—"}</div>
                 </div>
                 <div className="rounded-cartao bg-emerald-50 p-2 dark:bg-emerald-950/30">
-                  <div className="text-mini uppercase text-emerald-700 dark:text-emerald-300">Em mãos</div>
-                  <div className="font-bold text-emerald-700 dark:text-emerald-300">{brl(l.emMaos)}</div>
+                  <div className="text-mini uppercase text-ok-texto dark:text-emerald-300">Em mãos</div>
+                  <div className="font-bold text-ok-texto dark:text-emerald-300">{brl(l.emMaos)}</div>
                 </div>
               </div>
             </li>

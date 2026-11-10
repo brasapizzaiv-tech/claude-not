@@ -269,7 +269,7 @@ function MontarCombo({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-painel-cartao sm:rounded-cartao">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-cartao bg-painel-cartao sm:rounded-cartao">
         <div className="flex items-center justify-between border-b border-borda p-4">
           <div>
             <p className="font-bold text-texto">{item.nome}</p>
@@ -288,7 +288,7 @@ function MontarCombo({
               <div key={g.id}>
                 <div className="mb-1 flex items-center justify-between">
                   <p className="text-sm font-semibold text-texto">{g.nome}</p>
-                  <span className={`text-mini ${okMin ? "text-texto-fraco" : "text-red-500"}`}>
+                  <span className={`text-mini ${okMin ? "text-texto-fraco" : "text-urgente-texto"}`}>
                     {g.min > 0 ? `escolha ${g.min}` : "opcional"}
                     {g.max > 1 ? ` até ${g.max}` : ""} · {escolhidas}
                   </span>

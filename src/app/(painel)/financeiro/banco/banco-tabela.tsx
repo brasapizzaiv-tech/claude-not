@@ -244,11 +244,11 @@ export function BancoTabela({
       <div className="mb-6 grid grid-cols-2 gap-4">
         <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Conciliadas</p>
-          <p className="mt-1 text-xl font-bold text-green-600">{conciliadas}</p>
+          <p className="mt-1 text-xl font-bold text-ok-texto">{conciliadas}</p>
         </div>
         <div className="cartao p-4">
           <p className="text-xs text-texto-suave">A conciliar</p>
-          <p className="mt-1 text-xl font-bold text-amber-600">{aConciliar}</p>
+          <p className="mt-1 text-xl font-bold text-aviso-texto">{aConciliar}</p>
         </div>
       </div>
 
@@ -310,23 +310,23 @@ export function BancoTabela({
                       </td>
                       <td
                         className={`whitespace-nowrap px-4 py-2 text-right font-medium ${
-                          entrada ? "text-green-600" : "text-red-600"
+                          entrada ? "text-ok-texto" : "text-urgente-texto"
                         }`}
                       >
                         {moeda(Number(t.valor))}
                       </td>
                       <td className="max-w-[22ch] px-4 py-2 text-xs xl:max-w-[38ch]">
                         {conciliado ? (
-                          <span className="text-green-600">
+                          <span className="text-ok-texto">
                             ✓ {t.lancamentoLabel ?? "conciliado"}
                           </span>
                         ) : t.sugestaoLabel ? (
                           sugestaoForte(t) ? (
                             <span className="text-texto-suave">sugestão: {t.sugestaoLabel}</span>
                           ) : (
-                            <span className="text-amber-600">
+                            <span className="text-aviso-texto">
                               <Icone nome="alerta" tamanho={12} className="mr-1" /> confira a data: {t.sugestaoLabel}
-                              <span className="block text-mini text-amber-600/80">
+                              <span className="block text-mini text-aviso-texto/80">
                                 {t.sugestaoDias} dias de diferença do extrato — pode ser outro mês do mesmo fornecedor
                               </span>
                             </span>
@@ -360,7 +360,7 @@ export function BancoTabela({
                               if (!(await confirmar("Desfazer a conciliação?", { okTexto: "Desfazer" }))) return;
                               run(() => desconciliar(t.id));
                             }}
-                            className="text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
+                            className="text-xs text-texto-fraco hover:text-urgente-texto disabled:opacity-60"
                           >
                             Desfazer
                           </button>
@@ -420,7 +420,7 @@ export function BancoTabela({
                             fd.set("id", t.id);
                             return excluirTransacao(fd);
                           })}
-                          className="ml-2 text-xs text-zinc-300 hover:text-red-600 disabled:opacity-60 dark:text-zinc-600"
+                          className="ml-2 text-xs text-zinc-300 hover:text-urgente-texto disabled:opacity-60 dark:text-zinc-600"
                         >
                           ×
                         </button>
@@ -489,7 +489,7 @@ export function BancoTabela({
                                         placeholder="0,00"
                                         className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                       />
-                                      <button aria-label="Fechar" type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-red-600">✕</button>
+                                      <button aria-label="Fechar" type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-urgente-texto">✕</button>
                                     </div>
                                   ))}
                                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -500,7 +500,7 @@ export function BancoTabela({
                                       const soma = partes.reduce((a, x) => a + numeroBR(x.valor), 0);
                                       const falta = Math.round((Math.abs(Number(t.valor)) - soma) * 100) / 100;
                                       return (
-                                        <span className={`text-xs font-semibold ${Math.abs(falta) < 0.005 ? "text-emerald-600" : "text-amber-600"}`}>
+                                        <span className={`text-xs font-semibold ${Math.abs(falta) < 0.005 ? "text-ok-texto" : "text-aviso-texto"}`}>
                                           {Math.abs(falta) < 0.005
                                             ? "✓ fecha o valor"
                                             : falta > 0

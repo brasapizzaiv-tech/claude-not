@@ -93,11 +93,11 @@ export default async function ContagensPage() {
                     </td>
                     <td className="px-4 py-3">
                       {c.status === "finalizada" ? (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
                           Finalizada
                         </span>
                       ) : (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
                           Rascunho
                         </span>
                       )}

@@ -725,14 +725,14 @@ export function ReceberComandas({
               <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/20 dark:text-blue-200">
                 <Icone nome="pessoa" tamanho={14} /> {clienteSel.nome}
                 {clienteSel.cpfCnpj ? ` · ${clienteSel.cpfCnpj}` : ""}
-                <button aria-label="Fechar" onClick={() => setClienteSel(null)} className="ml-1 text-blue-600 hover:text-red-600">
+                <button aria-label="Fechar" onClick={() => setClienteSel(null)} className="ml-1 text-info-texto hover:text-urgente-texto">
                   ✕
                 </button>
               </span>
             ) : (
               <button
                 onClick={() => setAbrirCli((v) => !v)}
-                className="rounded-controle border border-blue-400 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                className="rounded-controle border border-blue-400 px-3 py-1 text-xs font-medium text-info-texto hover:bg-blue-50 dark:hover:bg-blue-950/40"
               >
                 <span className="inline-flex items-center gap-1.5"><Icone nome="pessoa" tamanho={14} /> Vincular Cliente</span>
               </button>
@@ -789,7 +789,7 @@ export function ReceberComandas({
                   <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> Virar livre</span>
                 </button>
               )}
-              <button aria-label="Fechar" onClick={() => removeComanda(c.id)} className="ml-1 text-emerald-600 hover:text-red-600">
+              <button aria-label="Fechar" onClick={() => removeComanda(c.id)} className="ml-1 text-ok-texto hover:text-urgente-texto">
                 ✕
               </button>
             </span>
@@ -890,7 +890,7 @@ export function ReceberComandas({
                           onClick={() => dividirItem(l)}
                           disabled={noCarrinho || proc}
                           title="Dividir este item em partes (cada pessoa paga a sua)"
-                          className="rounded-controle px-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-30 dark:hover:bg-blue-950/40"
+                          className="rounded-controle px-1.5 text-xs font-bold text-info-texto hover:bg-blue-50 disabled:opacity-30 dark:hover:bg-blue-950/40"
                         >
                           ÷
                         </button>
@@ -900,7 +900,7 @@ export function ReceberComandas({
                           onClick={() => excluirItem(l)}
                           disabled={noCarrinho || proc}
                           title="Excluir este item da comanda (pede o motivo)"
-                          className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 disabled:opacity-30 dark:hover:bg-red-950/40"
+                          className="rounded-controle px-1.5 text-urgente-texto hover:bg-red-50 disabled:opacity-30 dark:hover:bg-red-950/40"
                         >
                           <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                         </button>
@@ -963,7 +963,7 @@ export function ReceberComandas({
                           Parte da conta{parte.pessoas ? ` (1 de ${parte.pessoas} pessoas)` : ""}
                         </span>
                         <span className="font-numero font-bold text-texto">{brl(parte.valor)}</span>
-                        <button onClick={() => setParte(null)} title="Tirar" className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40">
+                        <button onClick={() => setParte(null)} title="Tirar" className="rounded-controle px-1.5 text-urgente-texto hover:bg-red-50 dark:hover:bg-red-950/40">
                           <Icone nome="lixeira" tamanho={15} titulo="Tirar a parte" />
                         </button>
                       </div>
@@ -985,7 +985,7 @@ export function ReceberComandas({
                       <button
                         onClick={() => tirar(l.key)}
                         title="Remover"
-                        className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        className="rounded-controle px-1.5 text-urgente-texto hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
                         <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                       </button>
@@ -996,7 +996,7 @@ export function ReceberComandas({
                       <span className="flex-1 truncate text-zinc-800 dark:text-zinc-100">
                         {e.qtd > 1 ? `${e.qtd}× ` : ""}
                         {e.nome}
-                        <span className="ml-1 rounded bg-blue-100 px-1 text-mini text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                        <span className="ml-1 rounded bg-blue-100 px-1 text-mini text-info-texto dark:bg-blue-500/20 dark:text-blue-200">
                           avulso
                         </span>
                       </span>
@@ -1004,7 +1004,7 @@ export function ReceberComandas({
                       <button
                         onClick={() => tirarExtra(e.uid)}
                         title="Remover"
-                        className="rounded-controle px-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        className="rounded-controle px-1.5 text-urgente-texto hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
                         <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
                       </button>
@@ -1075,7 +1075,7 @@ export function ReceberComandas({
                   </div>
                 )}
                 <div className="mt-2 flex items-center justify-between border-t border-borda pt-2 text-sm">
-                  <button onClick={limparCarrinho} className="text-xs text-texto-fraco hover:text-red-600">
+                  <button onClick={limparCarrinho} className="text-xs text-texto-fraco hover:text-urgente-texto">
                     Limpar itens
                   </button>
                   <span className="font-bold text-texto">{brl(subtotalBruto)}</span>
@@ -1264,7 +1264,7 @@ export function ReceberComandas({
                   />
   
                   {usaSaldoCliente && !clienteSel && (
-                    <p className="text-xs text-amber-600">Saldo cliente: vincule o cliente (acima) pra conta ir pro fiado dele.</p>
+                    <p className="text-xs text-aviso-texto">Saldo cliente: vincule o cliente (acima) pra conta ir pro fiado dele.</p>
                   )}
   
                   <button
@@ -1278,7 +1278,7 @@ export function ReceberComandas({
                         ? `Falta lançar ${brl(falta)}`
                         : `Finalizar ${brl(totalPagar)}`}
                   </button>
-                  {msg && <p role="status" className="text-center text-xs text-emerald-700 dark:text-emerald-400">{msg}</p>}
+                  {msg && <p role="status" className="text-center text-xs text-ok-texto dark:text-emerald-400">{msg}</p>}
                 </div>
               )}
             </div>
@@ -1291,10 +1291,10 @@ export function ReceberComandas({
       {etapa === "nota" && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
           <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
-            <p className="text-center text-sm font-semibold text-emerald-600">Recebido</p>
+            <p className="text-center text-sm font-semibold text-ok-texto">Recebido</p>
             <p className="mb-1 text-center text-3xl font-black text-texto">{brl(recibo?.total ?? 0)}</p>
             {(recibo?.troco ?? 0) > 0.005 && (
-              <p className="mb-1 text-center text-lg font-bold text-emerald-600">Troco: {brl(recibo?.troco ?? 0)}</p>
+              <p className="mb-1 text-center text-lg font-bold text-ok-texto">Troco: {brl(recibo?.troco ?? 0)}</p>
             )}
             <p className="mb-4 text-center text-xs text-texto-suave">
               {pagas.map((c) => `Comanda ${c.numero}`).join(" · ")}
@@ -1321,7 +1321,7 @@ export function ReceberComandas({
               <button
                 onClick={() => emitirNota("")}
                 disabled={notaProc}
-                className="rounded-cartao border-2 border-emerald-600 py-3 text-base font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                className="rounded-cartao border-2 border-emerald-600 py-3 text-base font-bold text-ok-texto hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
               >
                 <span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Sim, sem CPF</span>
               </button>

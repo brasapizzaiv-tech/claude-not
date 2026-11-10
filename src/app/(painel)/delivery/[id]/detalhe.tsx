@@ -187,7 +187,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
 
           {p.observacao && (
             <div className="rounded-cartao border border-amber-300 bg-amber-500/5 p-4 dark:border-amber-800">
-              <h2 className="mb-1 flex items-center gap-1.5 font-bold text-amber-600"><Icone nome="editar" tamanho={15} /> Observação</h2>
+              <h2 className="mb-1 flex items-center gap-1.5 font-bold text-aviso-texto"><Icone nome="editar" tamanho={15} /> Observação</h2>
               <p className="text-sm">{p.observacao}</p>
             </div>
           )}
@@ -229,7 +229,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-semibold">{p.formaPagamento ?? "—"}</div>
-                  <div className="text-xs text-emerald-600">✓ Pago</div>
+                  <div className="text-xs text-ok-texto">✓ Pago</div>
                 </div>
                 <button onClick={() => act(() => definirPagoDelivery(p.id, false))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto" title="Só desmarca a etiqueta; o que já entrou no caixa continua lá.">desmarcar</button>
               </div>
@@ -251,7 +251,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                   <input value={codigo} onChange={(e) => setCodigo(e.target.value.slice(0, 120))} placeholder={`${pedeCodigo} (obrigatório)`} aria-label={pedeCodigo} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
                 )}
                 {tipoSel === "saldo" && !p.clienteId && (
-                  <p className="text-xs text-amber-600">Este pedido não está ligado a um cliente cadastrado. Receba no caixa do salão, vinculando o cliente.</p>
+                  <p className="text-xs text-aviso-texto">Este pedido não está ligado a um cliente cadastrado. Receba no caixa do salão, vinculando o cliente.</p>
                 )}
                 {tefSel && agenteTef ? (
                   <CobrarPinpad

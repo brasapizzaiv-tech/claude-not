@@ -52,7 +52,7 @@ export default function Home() {
           </p>
           <a
             href="/login"
-            className="mt-6 inline-block rounded-lg bg-orange-500 px-6 py-2.5 font-medium text-marca-sobre-primaria transition hover:brightness-105"
+            className="mt-6 inline-block rounded-controle bg-orange-500 px-6 py-2.5 font-medium text-marca-sobre-primaria transition hover:brightness-105"
           >
             Entrar
           </a>
@@ -62,7 +62,7 @@ export default function Home() {
           {modulos.map((m) => (
             <div
               key={m.fase}
-              className={`rounded-2xl border p-6 transition ${
+              className={`rounded-cartao border p-6 transition ${
                 m.ativo
                   ? "border-orange-300 bg-white shadow-sm dark:border-orange-800 dark:bg-zinc-900"
                   : "border-zinc-200 bg-white/50 dark:border-zinc-800 dark:bg-zinc-900/40"

@@ -177,17 +177,17 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               <Icone
                 nome={feito.pago ? "certo" : "panela"}
                 tamanho={52}
-                className={feito.pago ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}
+                className={feito.pago ? "text-ok-texto dark:text-emerald-400" : "text-aviso-texto dark:text-amber-400"}
               />
             </div>
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Venda nº {feito.numero} {feito.pago ? "paga!" : "enviada!"}</h1>
-        {feito.viagem && <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-amber-600"><Icone nome="viagem" tamanho={14} /> Viagem</div>}
+        {feito.viagem && <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-aviso-texto"><Icone nome="viagem" tamanho={14} /> Viagem</div>}
         <p className="mt-1 text-texto-suave">
           {feito.pago ? <>Pagou em <b>{feito.forma}</b> e o pedido foi pra cozinha.</> : "O pedido foi pra cozinha. Receba o pagamento no caixa."}
         </p>
         {feito.pago && (feito.desconto ?? 0) > 0 && <p className="mt-1 text-sm text-texto-suave">Com {brl(feito.desconto!)} de desconto.</p>}
         {feito.pago && ((feito.cashbackUsado ?? 0) > 0 || (feito.cashbackGanho ?? 0) > 0) && (
-          <p className="mt-3 inline-flex items-center gap-1.5 rounded-cartao bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-cartao bg-emerald-500/10 px-3 py-2 text-sm text-ok-texto dark:text-emerald-400">
             <Icone nome="presente" tamanho={15} />
             {feito.cliente ?? "Cliente"}
             {(feito.cashbackUsado ?? 0) > 0 ? ` usou ${brl(feito.cashbackUsado!)} de cashback` : ""}
@@ -196,10 +196,10 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
           </p>
         )}
         {feito.pago && (feito.troco ?? 0) > 0 && (
-          <div className="mt-4 rounded-cartao bg-amber-500/10 px-4 py-3 text-xl font-bold text-amber-600">Troco: {brl(feito.troco!)}</div>
+          <div className="mt-4 rounded-cartao bg-amber-500/10 px-4 py-3 text-xl font-bold text-aviso-texto">Troco: {brl(feito.troco!)}</div>
         )}
         {feito.pago && feito.semCaixa && (
-          <p className="mt-3 flex items-start gap-1.5 text-sm text-amber-600"><Icone nome="alerta" tamanho={15} className="mt-0.5" /> Nenhum caixa aberto — a venda foi registrada, mas não entrou no caixa. Abra o caixa pra controlar o dinheiro.</p>
+          <p className="mt-3 flex items-start gap-1.5 text-sm text-aviso-texto"><Icone nome="alerta" tamanho={15} className="mt-0.5" /> Nenhum caixa aberto — a venda foi registrada, mas não entrou no caixa. Abra o caixa pra controlar o dinheiro.</p>
         )}
         {feito.pago && feito.comandaId && (
           <div className="mt-4 text-left">
@@ -281,7 +281,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               </div>
               <input aria-label="Nome do cliente / obs (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
               <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
-              {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
+              {erro && <p role="alert" className="mb-2 text-sm text-urgente-texto">{erro}</p>}
               <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="btn-principal mb-2 w-full text-base"><span className="inline-flex items-center justify-center gap-2"><Icone nome="dinheiro" tamanho={18} /> Cobrar e finalizar</span></button>
               <button onClick={() => finalizar(null)} disabled={proc || cartLista.length === 0} className="btn-secundario w-full text-sm">{proc ? "Enviando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="panela" tamanho={14} /> Só enviar pra cozinha (pago no caixa)</span>}</button>
             </div>
@@ -289,10 +289,10 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
         ) : (
           <div className="flex flex-1 flex-col overflow-y-auto p-3">
             <div className="mb-3 rounded-cartao bg-superficie-suave p-3 text-center">
-              <div className="text-sm text-texto-suave">Total a cobrar {local === "viagem" && <span className="inline-flex items-center gap-1 font-bold text-amber-600">· <Icone nome="viagem" tamanho={13} /> Viagem</span>}</div>
+              <div className="text-sm text-texto-suave">Total a cobrar {local === "viagem" && <span className="inline-flex items-center gap-1 font-bold text-aviso-texto">· <Icone nome="viagem" tamanho={13} /> Viagem</span>}</div>
               <div className="text-3xl font-bold">{brl(cobrar)}</div>
               {desconto > 0 && descontoOk && <div className="text-xs text-texto-suave">{brl(total)} − {brl(desconto)} de desconto{funcionario ? ` (${pctFunc}%)` : ""}</div>}
-              {cbUsado > 0 && <div className="text-xs text-emerald-600">{brl(aposDesconto)} − {brl(cbUsado)} de cashback</div>}
+              {cbUsado > 0 && <div className="text-xs text-ok-texto">{brl(aposDesconto)} − {brl(cbUsado)} de cashback</div>}
             </div>
             <div className="mb-3">
               <div className="flex items-center justify-between gap-2">
@@ -339,14 +339,14 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">Valor recebido</label>
                 <input value={recebido} onChange={(e) => setRecebido(e.target.value)} inputMode="decimal" placeholder="Ex.: 50" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-lg " />
-                <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-amber-600" : ""}>{brl(troco)}</span></div>
+                <div className="mt-2 flex justify-between text-lg font-bold"><span>Troco</span><span className={troco > 0 ? "text-aviso-texto" : ""}>{brl(troco)}</span></div>
               </div>
             )}
             {tipoForma === "vale_presente" && (
               <div className="mb-3">
                 <CampoVale vale={vale} onVale={setVale} semCodigo={valeSemCodigo} onSemCodigo={setValeSemCodigo} campoCls="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
                 {vale && vale.saldo < cobrar - 0.005 && (
-                  <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">O saldo não cobre a venda toda. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.</p>
+                  <p className="mt-2 text-xs font-medium text-aviso-texto dark:text-amber-300">O saldo não cobre a venda toda. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.</p>
                 )}
               </div>
             )}
@@ -419,7 +419,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               <div className="mb-3"><PixQr valor={cobrar} descricao="Brasa balcão" origem="pdv" onPago={() => finalizar({ forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 })} compacto /></div>
             )}
             <div className="flex-1" />
-            {erro && <p role="alert" className="mb-2 text-sm text-red-500">{erro}</p>}
+            {erro && <p role="alert" className="mb-2 text-sm text-urgente-texto">{erro}</p>}
             {tefDoTipo(tipoForma) && agenteTef ? (
               <CobrarPinpad
                 tipo={tefDoTipo(tipoForma)!}

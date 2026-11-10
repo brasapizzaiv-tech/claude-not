@@ -76,7 +76,7 @@ export function RetiradasClient({
         </button>
       </div>
 
-      {aviso && <div role="status" className="mb-3 rounded-controle border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600">{aviso}</div>}
+      {aviso && <div role="status" className="mb-3 rounded-controle border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-urgente-texto">{aviso}</div>}
 
       <div className="mb-4 flex gap-2">
         {([["resumo", "Resumo"], ["lancamentos", "Lançamentos"], ["acertos", "Acertos"], ["produtos", "Produtos e preços"]] as const).map(([k, label]) => (
@@ -112,7 +112,7 @@ export function RetiradasClient({
                         <div className="font-medium">{r.nome}</div>
                         <div className="text-xs text-texto-suave">{r.item}{r.peso ? ` · ${r.peso} kg` : ""}{r.observacao ? ` · ${r.observacao}` : ""}</div>
                         {r.status === "pago" && (r.data_pagamento || r.obs_pagamento) && (
-                          <div className="text-xs text-emerald-600">pago{r.data_pagamento ? ` ${fmtData(r.data_pagamento)}` : ""}{r.obs_pagamento ? ` · ${r.obs_pagamento}` : ""}</div>
+                          <div className="text-xs text-ok-texto">pago{r.data_pagamento ? ` ${fmtData(r.data_pagamento)}` : ""}{r.obs_pagamento ? ` · ${r.obs_pagamento}` : ""}</div>
                         )}
                       </td>
                       <td className="py-2 pr-2 text-right whitespace-nowrap font-medium">{brl(Number(r.valor))}</td>
@@ -125,7 +125,7 @@ export function RetiradasClient({
                             if (obs === null) return;
                             run(() => definirStatusRetirada(r.id, true, obs));
                           }}
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "pago" ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"}`}
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "pago" ? "bg-emerald-500/15 text-ok-texto" : "bg-amber-500/15 text-aviso-texto"}`}
                           title="Clique para alternar"
                         >
                           {r.status === "pago" ? "Pago" : "Em aberto"}
@@ -135,7 +135,7 @@ export function RetiradasClient({
                         <button
                           disabled={proc}
                           onClick={async () => { if (await confirmar("Excluir este lançamento?")) run(() => excluirRetirada(r.id)); }}
-                          className="text-xs text-texto-fraco hover:text-red-600"
+                          className="text-xs text-texto-fraco hover:text-urgente-texto"
                         >
                           excluir
                         </button>
@@ -228,7 +228,7 @@ function AcertosTab({ retiradas, pessoas }: { retiradas: Retirada[]; pessoas: Pe
                     <span className="font-medium">{a.nome}</span>
                     <span className="block text-xs text-texto-suave">{a.como} · {a.compras.length} compra{a.compras.length > 1 ? "s" : ""}</span>
                   </span>
-                  <span className="font-semibold text-emerald-600">{brl(a.valor)}</span>
+                  <span className="font-semibold text-ok-texto">{brl(a.valor)}</span>
                   <span className="text-texto-fraco">{aberto === a.chave ? "▴" : "▾"}</span>
                 </button>
                 {aberto === a.chave && (
@@ -371,8 +371,8 @@ function ResumoTab({ retiradas, proc, run }: {
                 <tr key={p.colaboradorId ?? p.nome}>
                   <td className="py-2 pr-2">{p.nome}</td>
                   <td className="py-2 pr-2 text-right">{brl(p.comprado)}</td>
-                  <td className="py-2 pr-2 text-right text-emerald-600">{brl(p.pago)}</td>
-                  <td className={`py-2 pr-2 text-right font-semibold ${p.aberto > 0 ? "text-red-500" : "text-texto-fraco"}`}>{brl(p.aberto)}</td>
+                  <td className="py-2 pr-2 text-right text-ok-texto">{brl(p.pago)}</td>
+                  <td className={`py-2 pr-2 text-right font-semibold ${p.aberto > 0 ? "text-urgente-texto" : "text-texto-fraco"}`}>{brl(p.aberto)}</td>
                   <td className="py-2 text-right whitespace-nowrap">
                     {p.aberto > 0 && p.colaboradorId && (
                       <span className="inline-flex gap-1.5">
@@ -412,8 +412,8 @@ function ResumoTab({ retiradas, proc, run }: {
               <tr className="border-t-2 border-borda font-bold dark:border-borda-forte">
                 <td className="py-2 pr-2">Total</td>
                 <td className="py-2 pr-2 text-right">{brl(totais.comprado)}</td>
-                <td className="py-2 pr-2 text-right text-emerald-600">{brl(totais.pago)}</td>
-                <td className="py-2 pr-2 text-right text-red-500">{brl(totais.aberto)}</td>
+                <td className="py-2 pr-2 text-right text-ok-texto">{brl(totais.pago)}</td>
+                <td className="py-2 pr-2 text-right text-urgente-texto">{brl(totais.aberto)}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -439,7 +439,7 @@ function ResumoTab({ retiradas, proc, run }: {
                 <tr key={mm}>
                   <td className="py-2 pr-2">{mesLabel(mm)}</td>
                   <td className="py-2 pr-2 text-right">{brl(v.comprado)}</td>
-                  <td className={`py-2 pr-2 text-right ${v.aberto > 0 ? "text-red-500" : "text-texto-fraco"}`}>{brl(v.aberto)}</td>
+                  <td className={`py-2 pr-2 text-right ${v.aberto > 0 ? "text-urgente-texto" : "text-texto-fraco"}`}>{brl(v.aberto)}</td>
                 </tr>
               ))}
             </tbody>

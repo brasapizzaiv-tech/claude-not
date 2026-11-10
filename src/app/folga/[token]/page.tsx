@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 function Moldura({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="w-full max-w-sm rounded-cartao border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         {children}
       </div>
     </div>

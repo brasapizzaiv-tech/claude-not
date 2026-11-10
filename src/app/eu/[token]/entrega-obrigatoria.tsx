@@ -71,7 +71,7 @@ export function EntregaObrigatoria({
         <h2 id="entrega-titulo" className="mt-1 text-2xl font-bold text-texto">
           Chegou o pedido de {p.fornecedor || "fornecedor"}?
         </h2>
-        <p className={`mt-1 flex items-center gap-1.5 text-sm font-medium ${atrasado ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`}>
+        <p className={`mt-1 flex items-center gap-1.5 text-sm font-medium ${atrasado ? "text-urgente-texto dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`}>
           <Icone nome="caminhao" tamanho={15} /> entrega prevista {quando}
         </p>
 
@@ -93,7 +93,7 @@ export function EntregaObrigatoria({
               <BotaoAcao aoClicar={() => responder("adiar")} className="w-full rounded-cartao bg-superficie-suave py-3.5 text-base font-semibold text-texto">
                 Ainda não chegou (pergunta de novo em 2 h)
               </BotaoAcao>
-              <button onClick={() => setModo("nao_veio")} className="w-full rounded-cartao border border-red-300 py-3.5 text-base font-semibold text-red-700 dark:border-red-800 dark:text-red-300">
+              <button onClick={() => setModo("nao_veio")} className="w-full rounded-cartao border border-red-300 py-3.5 text-base font-semibold text-urgente-texto dark:border-red-800 dark:text-red-300">
                 Não veio
               </button>
             </div>
@@ -127,7 +127,7 @@ export function EntregaObrigatoria({
           </div>
         )}
 
-        {erro && <p role="alert" className="mt-3 rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{erro}</p>}
+        {erro && <p role="alert" className="mt-3 rounded-controle bg-red-50 px-3 py-2 text-sm text-urgente-texto dark:bg-red-950 dark:text-red-300">{erro}</p>}
       </div>
     </div>
   );

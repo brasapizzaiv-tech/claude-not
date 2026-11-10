@@ -113,7 +113,7 @@ export function ParcelasEditor({
       {aberto && (
         <div className="border-t border-violet-100 p-4 dark:border-violet-900/60">
           {lancada && (
-            <p className="mb-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            <p className="mb-3 rounded-controle bg-amber-50 px-3 py-2 text-xs text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
               Esta nota já está <b>lançada</b>. Para o parcelamento valer, salve as
               parcelas aqui, depois <b>estorne</b> e <b>lance de novo</b> (o
               parcelado já vem marcado).
@@ -162,7 +162,7 @@ export function ParcelasEditor({
                 />
                 <button aria-label="Fechar"
                   onClick={() => removeLinha(i)}
-                  className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+                  className="text-xs text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
                   title="Remover parcela"
                 >
                   ✕
@@ -179,7 +179,7 @@ export function ParcelasEditor({
           </button>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-borda pt-3">
-            <span className={`text-xs ${Math.abs(dif) < 0.01 ? "text-texto-suave" : "text-red-600"}`}>
+            <span className={`text-xs ${Math.abs(dif) < 0.01 ? "text-texto-suave" : "text-urgente-texto"}`}>
               Soma das parcelas: <b>{moeda(total)}</b>
               {Math.abs(dif) >= 0.01 && (
                 <> — {dif > 0 ? "acima" : "abaixo"} do total da nota em {moeda(Math.abs(dif))}</>

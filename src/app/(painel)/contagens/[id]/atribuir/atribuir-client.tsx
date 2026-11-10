@@ -95,7 +95,7 @@ export function AtribuirClient({
       </p>
 
       {colaboradores.length === 0 && (
-        <div className="mt-4 rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <div className="mt-4 rounded-controle bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           Você ainda não tem colaboradores.{" "}
           <Link href="/colaboradores" className="font-medium underline">
             Cadastre um colaborador

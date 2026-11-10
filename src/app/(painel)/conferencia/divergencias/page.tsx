@@ -77,7 +77,7 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
       <Link href="/conferencia" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar para conferência</Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="alerta" tamanho={20} className="mr-2 text-amber-600" /> Divergências da conferência</h1>
+          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="alerta" tamanho={20} className="mr-2 text-aviso-texto" /> Divergências da conferência</h1>
           <p className="mt-1 text-sm text-texto-suave">O que veio diferente do pedido: quantidade, item faltando, preço acima do cotado, cobrado sem receber.</p>
         </div>
         <form className="flex flex-wrap items-end gap-2">
@@ -98,8 +98,8 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <div className={card}><p className="text-xs text-texto-suave">Pedidos no período</p><p className="text-2xl font-bold text-texto">{totalPedidos}</p><p className="text-xs text-texto-fraco">{pedidos.length} com divergência{totalPedidos > 0 ? ` (${Math.round((pedidos.length / totalPedidos) * 100)}%)` : ""}</p></div>
         <div className={card}><p className="text-xs text-texto-suave">Divergências</p><p className="text-2xl font-bold text-texto">{divergTotal}</p><p className="text-xs text-texto-fraco">{faltas} de quantidade/falta</p></div>
-        <div className={card}><p className="text-xs text-texto-suave">Preço acima do cotado</p><p className="text-2xl font-bold text-amber-600">{precoAcima}</p><p className="text-xs text-texto-fraco">itens</p></div>
-        <div className={card}><p className="text-xs text-texto-suave">Cobrado a mais</p><p className="text-2xl font-bold text-red-600">{moeda(valorAMais)}</p><p className="text-xs text-texto-fraco">preço acima + cobrado sem receber</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Preço acima do cotado</p><p className="text-2xl font-bold text-aviso-texto">{precoAcima}</p><p className="text-xs text-texto-fraco">itens</p></div>
+        <div className={card}><p className="text-xs text-texto-suave">Cobrado a mais</p><p className="text-2xl font-bold text-urgente-texto">{moeda(valorAMais)}</p><p className="text-xs text-texto-fraco">preço acima + cobrado sem receber</p></div>
       </div>
 
       {fornecedores.length > 0 && (
@@ -116,8 +116,8 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
                     <td className="px-4 py-2 text-right">{f.pedidos}</td>
                     <td className="px-4 py-2 text-right">{f.divergencias}</td>
                     <td className="px-4 py-2 text-right">{f.faltas}</td>
-                    <td className="px-4 py-2 text-right text-amber-600">{f.precoAcima}</td>
-                    <td className="px-4 py-2 text-right font-semibold text-red-600">{f.valorAMais > 0 ? moeda(f.valorAMais) : "—"}</td>
+                    <td className="px-4 py-2 text-right text-aviso-texto">{f.precoAcima}</td>
+                    <td className="px-4 py-2 text-right font-semibold text-urgente-texto">{f.valorAMais > 0 ? moeda(f.valorAMais) : "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -141,12 +141,12 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
                 </div>
                 <div className="text-sm">
                   <span className="rounded-full bg-superficie-suave px-2 py-0.5 text-xs font-medium">{p.divergencias_n} divergência{p.divergencias_n === 1 ? "" : "s"}</span>
-                  {Number(p.divergencias?.valor_a_mais ?? 0) > 0 && <span className="ml-2 font-semibold text-red-600">{moeda(Number(p.divergencias.valor_a_mais))} a mais</span>}
+                  {Number(p.divergencias?.valor_a_mais ?? 0) > 0 && <span className="ml-2 font-semibold text-urgente-texto">{moeda(Number(p.divergencias.valor_a_mais))} a mais</span>}
                 </div>
               </div>
               <ul className="mt-2 grid gap-1 text-sm text-texto-suave sm:grid-cols-2">
                 {(p.divergencias?.itens ?? []).map((d, i) => (
-                  <li key={i} className={GRAVE.has(d.tipo) ? "text-red-700 dark:text-red-300" : ""}>
+                  <li key={i} className={GRAVE.has(d.tipo) ? "text-urgente-texto dark:text-red-300" : ""}>
                     <b>{d.produto}</b>: {ROTULO_DIVERGENCIA[d.tipo]}
                     {d.tipo === "qtd_recebida" || d.tipo === "faltou" ? ` (pedido ${fmtQ(d.pedido)}, recebido ${fmtQ(d.recebido)})` : ""}
                     {d.tipo === "preco_nota_acima" || d.tipo === "preco_nota_abaixo" ? ` (cotado ${moeda(d.preco_cotado ?? 0)}, nota ${moeda(d.preco_nota ?? 0)})` : ""}

@@ -44,7 +44,7 @@ export function NovoAtestado({ pessoas, hoje }: { pessoas: { id: string; nome: s
       <label className="flex flex-col text-xs text-texto-fraco">Até<input type="date" name="fim" defaultValue={hoje} className={CAMPO} /></label>
       <label className="flex flex-col text-xs text-texto-fraco">Motivo (opcional)<input name="motivo" maxLength={200} className={`${CAMPO} w-40`} /></label>
       <Enviar className="btn-principal min-h-10">Registrar</Enviar>
-      {erro && <p role="alert" className="w-full text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="w-full text-sm text-urgente-texto">{erro}</p>}
     </form>
   );
 }
@@ -53,7 +53,7 @@ export function ApagarAtestado({ id }: { id: string }) {
   return (
     <BotaoAcao
       aoClicar={async () => { if (await confirmar("Apagar este atestado?", { perigo: true, okTexto: "Apagar" })) await apagarAtestado(id); }}
-      className="text-xs text-red-600"
+      className="text-xs text-urgente-texto"
     >
       apagar
     </BotaoAcao>

@@ -112,7 +112,7 @@ function Cartao({ x, editar }: { x: LinhaLembrete; editar: () => void }) {
         <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
           <div>
             <p className="text-xs text-texto-suave">Falta {l.tipo === "tarefa" ? "fazer" : "ver"}</p>
-            <p className={s.pendentes.length ? "text-amber-700 dark:text-amber-400" : "text-texto-fraco"}>{s.pendentes.join(", ") || "ninguém"}</p>
+            <p className={s.pendentes.length ? "text-aviso-texto dark:text-amber-400" : "text-texto-fraco"}>{s.pendentes.join(", ") || "ninguém"}</p>
           </div>
           <div>
             <p className="text-xs text-texto-suave">{l.tipo === "tarefa" ? "Fizeram" : "Viram"}</p>
@@ -128,7 +128,7 @@ function Cartao({ x, editar }: { x: LinhaLembrete; editar: () => void }) {
         </BotaoAcao>
         <BotaoAcao
           aoClicar={async () => { if (await confirmar("Apagar este lembrete?", { detalhe: "Some também o registro de quem viu.", perigo: true, okTexto: "Apagar" })) await apagarLembrete(l.id); }}
-          className="min-h-9 rounded-controle px-3 text-red-600"
+          className="min-h-9 rounded-controle px-3 text-urgente-texto"
         >
           Apagar
         </BotaoAcao>
@@ -243,7 +243,7 @@ function Formulario({ inicial, hoje, setores, pessoas, erro, aoSalvar, aoCancela
         {repeticao === "uma_vez" && <p className="mt-1 text-xs text-texto-fraco">Quem não confirmar no dia continua vendo por até 7 dias.</p>}
       </div>
 
-      {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="text-sm text-urgente-texto">{erro}</p>}
       <div>
         <Enviar className="btn-principal min-h-11 text-sm">{inicial ? "Salvar" : "Criar lembrete"}</Enviar>
       </div>

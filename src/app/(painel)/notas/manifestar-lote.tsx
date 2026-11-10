@@ -79,13 +79,13 @@ export function ManifestarLote({ notas }: { notas: NotaResumo[] }) {
             onClick={completar}
             disabled={proc}
             title="Puxa da SEFAZ o XML completo (com os itens) das notas já manifestadas"
-            className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:text-blue-300 dark:hover:bg-blue-950"
+            className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm font-medium text-info-texto hover:bg-blue-100 disabled:opacity-60 dark:text-blue-300 dark:hover:bg-blue-950"
           >
             {proc ? "Buscando..." : "Buscar itens agora"}
           </button>
           <button
             onClick={() => setAberto((v) => !v)}
-            className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-950"
+            className="rounded-controle border border-blue-400 px-3 py-1.5 text-sm font-medium text-info-texto hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-950"
           >
             {aberto ? "Fechar" : "Selecionar notas"}
           </button>

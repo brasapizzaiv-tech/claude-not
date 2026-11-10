@@ -49,7 +49,7 @@ export default async function EscolherEmpresaPage({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="w-full max-w-md rounded-cartao border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Cotação — Brasa</h1>
         {linhas.length === 0 ? (
           <p className="mt-3 text-zinc-500">Link inválido ou vencido. Peça um novo ao comprador.</p>
@@ -64,10 +64,10 @@ export default async function EscolherEmpresaPage({
                 <Link
                   key={l.token}
                   href={`/cotar/${l.token}`}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 font-semibold text-zinc-900 hover:border-orange-400 hover:bg-orange-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-orange-950"
+                  className="flex items-center justify-between rounded-controle border border-zinc-200 px-4 py-3 font-semibold text-zinc-900 hover:border-orange-400 hover:bg-orange-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-orange-950"
                 >
                   <span className="inline-flex items-center gap-1.5"><Icone nome="empresa" tamanho={14} /> {l.empresa}</span>
-                  <span className={`text-xs font-medium ${l.respondido ? "text-green-600" : "text-zinc-400"}`}>
+                  <span className={`text-xs font-medium ${l.respondido ? "text-ok-texto" : "text-zinc-400"}`}>
                     {l.fechada ? "fechada" : l.respondido ? <span className="inline-flex items-center gap-1"><Icone nome="certo" tamanho={13} /> enviada</span> : "pendente"}
                   </span>
                 </Link>

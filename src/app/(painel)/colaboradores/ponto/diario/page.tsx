@@ -108,11 +108,11 @@ export default async function PontoDiarioPage({ searchParams }: { searchParams: 
                     return <td key={i} className="px-1 py-1.5">{b ? <BatidaMenu id={b.id} hora={hhmm(b.min)} manual={b.origem === "manual"} destaque={i === 0 && l.atrasoMin > 0} /> : ""}</td>;
                   })}
                   <td className="px-2 py-1.5 text-right">{l.previstoMin ? duracao(Math.min(l.trabalhadoMin, l.previstoMin)) : ""}</td>
-                  <td className={`px-2 py-1.5 text-right ${l.faltaMin ? "text-red-600" : ""}`}>{l.faltaMin ? duracao(l.faltaMin) : ""}</td>
-                  <td className={`px-2 py-1.5 text-right ${l.extraMin ? "text-emerald-700 dark:text-emerald-400" : ""}`}>{l.extraMin ? duracao(l.extraMin) : ""}</td>
+                  <td className={`px-2 py-1.5 text-right ${l.faltaMin ? "text-urgente-texto" : ""}`}>{l.faltaMin ? duracao(l.faltaMin) : ""}</td>
+                  <td className={`px-2 py-1.5 text-right ${l.extraMin ? "text-ok-texto dark:text-emerald-400" : ""}`}>{l.extraMin ? duracao(l.extraMin) : ""}</td>
                   <td className="px-2 py-1.5 text-right">{l.noturnoMin ? duracao(l.noturnoMin) : ""}</td>
                   <td className="px-2 py-1.5 text-xs">
-                    <span className={l.justificativa ? "text-sky-700 dark:text-sky-400" : "text-texto-suave"}>{l.justificativa ?? SIT[l.situacao] ?? ""}</span>
+                    <span className={l.justificativa ? "text-info-texto dark:text-sky-400" : "text-texto-suave"}>{l.justificativa ?? SIT[l.situacao] ?? ""}</span>
                     {inc.map((r) => <span key={r.nome} className="pilula pilula-urgente ml-1">{r.nome}</span>)}
                   </td>
                   <td className="px-2 py-1.5">{fechado ? <span className="text-xs text-texto-fraco">mês fechado</span> : <AjustarDia colaboradorId={p.id} nome={p.nome} dia={dia} tipos={tipos} />}</td>
@@ -125,8 +125,8 @@ export default async function PontoDiarioPage({ searchParams }: { searchParams: 
             <tfoot><tr className="border-t-2 border-borda-forte font-semibold">
               <td className="px-2 py-2" colSpan={1 + maxBat}>Total</td>
               <td className="px-2 py-2 text-right">{duracao(tot.normais)}</td>
-              <td className="px-2 py-2 text-right text-red-600">{duracao(tot.falta)}</td>
-              <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400">{duracao(tot.extra)}</td>
+              <td className="px-2 py-2 text-right text-urgente-texto">{duracao(tot.falta)}</td>
+              <td className="px-2 py-2 text-right text-ok-texto dark:text-emerald-400">{duracao(tot.extra)}</td>
               <td className="px-2 py-2 text-right">{tot.noturno ? duracao(tot.noturno) : ""}</td>
               <td colSpan={2}></td>
             </tr></tfoot>

@@ -106,7 +106,7 @@ export default async function VendasPage({
         </div>
         <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Faturamento</p>
-          <p className="mt-1 text-xl font-bold text-green-600">
+          <p className="mt-1 text-xl font-bold text-ok-texto">
             {moeda(faturamentoLancado)}
           </p>
           <p className="mt-0.5 text-xs text-texto-fraco">
@@ -117,7 +117,7 @@ export default async function VendasPage({
           <p className="text-xs text-texto-suave">Diferença</p>
           <p
             className={`mt-1 text-xl font-bold ${
-              Math.abs(diferenca) < 0.01 ? "text-texto-suave" : "text-amber-600"
+              Math.abs(diferenca) < 0.01 ? "text-texto-suave" : "text-aviso-texto"
             }`}
           >
             {moeda(diferenca)}
@@ -125,7 +125,7 @@ export default async function VendasPage({
         </div>
       </div>
       {somaFat.diasSistema > 0 && (
-        <p className="mb-6 rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p className="mb-6 rounded-controle bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           Nos dias marcados &quot;caixa&quot;, o faturamento é o que passou pelo caixa do sistema.
           Hoje isso é só o almoço: a noite ainda não passa por ele. Importando a planilha
           desses dias no botão <b>Importar faturamento (planilha)</b>, ela passa a valer no lugar.
@@ -159,11 +159,11 @@ export default async function VendasPage({
                     <td className="px-4 py-2 text-right font-medium text-texto">
                       {moeda(g.valor)}
                     </td>
-                    <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
+                    <td className="px-4 py-2 text-right text-ok-texto dark:text-green-400">
                       {fat != null ? moeda(fat.total) : "—"}
                     </td>
                     <td className="px-4 py-2 text-xs text-texto-fraco">{fat ? (fat.fonte === "planilha" ? "planilha" : "caixa") : ""}</td>
-                    <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-texto-fraco" : Math.abs(dif) < 0.01 ? "text-texto-fraco" : "text-amber-600"}`}>
+                    <td className={`px-4 py-2 text-right font-medium ${dif == null ? "text-texto-fraco" : Math.abs(dif) < 0.01 ? "text-texto-fraco" : "text-aviso-texto"}`}>
                       {dif != null ? moeda(dif) : "—"}
                     </td>
                   </tr>

@@ -349,7 +349,7 @@ export default async function AppColaboradorPage({
         <div className="cartao mb-3 p-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="inline-flex items-center gap-2 font-semibold text-texto"><Icone nome="compras" tamanho={17} /> Minhas compras</span>
-            <span className={`text-sm font-bold ${abertoTotal > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+            <span className={`text-sm font-bold ${abertoTotal > 0 ? "text-aviso-texto" : "text-ok-texto"}`}>
               {abertoTotal > 0 ? `Em aberto: ${brl(abertoTotal)}` : "Tudo pago ✓"}
             </span>
           </div>
@@ -359,12 +359,12 @@ export default async function AppColaboradorPage({
                 <span className="min-w-0">
                   <span className="block truncate">{fData(r.data)} · {r.item}</span>
                   {r.status === "pago" && (r.data_pagamento || r.obs_pagamento) && (
-                    <span className="block text-xs text-emerald-600">pago{r.data_pagamento ? ` ${fData(r.data_pagamento)}` : ""}{r.obs_pagamento ? ` · ${r.obs_pagamento}` : ""}</span>
+                    <span className="block text-xs text-ok-texto">pago{r.data_pagamento ? ` ${fData(r.data_pagamento)}` : ""}{r.obs_pagamento ? ` · ${r.obs_pagamento}` : ""}</span>
                   )}
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   {brl(Number(r.valor))}
-                  <span className={r.status === "pago" ? "text-emerald-600" : "text-amber-600"}>{r.status === "pago" ? "pago" : "aberto"}</span>
+                  <span className={r.status === "pago" ? "text-ok-texto" : "text-aviso-texto"}>{r.status === "pago" ? "pago" : "aberto"}</span>
                 </span>
               </li>
             ))}

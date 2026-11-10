@@ -102,7 +102,7 @@ export function Combobox({
         autoComplete="off"
       />
       {open && filtradas.length > 0 && (
-        <ul className="absolute z-30 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-zinc-200 bg-white py-1 text-sm shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+        <ul className="absolute z-30 mt-1 max-h-60 w-full overflow-auto rounded-controle border border-zinc-200 bg-white py-1 text-sm shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
           {filtradas.map((o, i) => (
             <li key={o.value}>
               <button
@@ -125,7 +125,7 @@ export function Combobox({
         </ul>
       )}
       {open && filtradas.length === 0 && (
-        <div className="absolute z-30 mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-500 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="absolute z-30 mt-1 w-full rounded-controle border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-500 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
           Nada encontrado.
         </div>
       )}

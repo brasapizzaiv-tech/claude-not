@@ -171,7 +171,7 @@ export function ConferirClient({
           <p className="mt-1 text-sm text-texto-suave">
             {cotacao ? `${cotacao} · ` : ""}
             {dataBR(data)} · {status}
-            {confColab && <> · <span className="text-emerald-700 dark:text-emerald-400">✓ recebido pela equipe ({confColab.por ?? "?"}, {quando(confColab.em)})</span></>}
+            {confColab && <> · <span className="text-ok-texto dark:text-emerald-400">✓ recebido pela equipe ({confColab.por ?? "?"}, {quando(confColab.em)})</span></>}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export function ConferirClient({
       </div>
 
       {msg && (
-        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-ok-texto dark:bg-green-950 dark:text-green-300">
           {msg}
         </div>
       )}
@@ -208,9 +208,9 @@ export function ConferirClient({
                 Nota <b className="text-zinc-800 dark:text-zinc-100">{nota.numero ?? "s/nº"}</b>
                 {nota.data_emissao ? ` de ${dataBR(nota.data_emissao)}` : ""} · {moeda(nota.valor)} · {nota.itens} item(ns)
                 {Math.abs(nota.valor - totais.pedido) > 0.01
-                  ? <span className="ml-1 text-amber-600">(pedido {moeda(totais.pedido)}, dif {moeda(nota.valor - totais.pedido)})</span>
-                  : <span className="ml-1 text-emerald-600">(bate com o pedido ✓)</span>}
-                {nota.semVinculo > 0 && <span className="ml-1 text-amber-600">· {nota.semVinculo} item(ns) da nota sem produto vinculado</span>}
+                  ? <span className="ml-1 text-aviso-texto">(pedido {moeda(totais.pedido)}, dif {moeda(nota.valor - totais.pedido)})</span>
+                  : <span className="ml-1 text-ok-texto">(bate com o pedido ✓)</span>}
+                {nota.semVinculo > 0 && <span className="ml-1 text-aviso-texto">· {nota.semVinculo} item(ns) da nota sem produto vinculado</span>}
               </p>
             ) : (
               <p className="text-sm text-texto-suave">Nenhuma nota ligada. {sugeridas.length > 0 ? "Notas deste fornecedor perto da data:" : "Quando a nota entrar em Notas fiscais, ela aparece aqui pra ligar."}</p>
@@ -220,7 +220,7 @@ export function ConferirClient({
             {nota ? (
               <>
                 <Link href={`/notas/${nota.id}`} className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte">Abrir nota</Link>
-                <button onClick={() => ligarNota(null)} disabled={ligando} className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600 disabled:opacity-50">Desligar</button>
+                <button onClick={() => ligarNota(null)} disabled={ligando} className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-urgente-texto disabled:opacity-50">Desligar</button>
               </>
             ) : (
               sugeridas.map((n) => (
@@ -228,7 +228,7 @@ export function ConferirClient({
                   key={n.id}
                   onClick={() => ligarNota(n.id)}
                   disabled={ligando}
-                  className={`rounded-controle border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${Math.abs(Number(n.valor) - totais.pedido) <= 0.01 ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300" : "border-borda-forte text-texto-suave hover:bg-superficie-suave  "}`}
+                  className={`rounded-controle border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${Math.abs(Number(n.valor) - totais.pedido) <= 0.01 ? "border-emerald-500 text-ok-texto hover:bg-emerald-50 dark:text-emerald-300" : "border-borda-forte text-texto-suave hover:bg-superficie-suave  "}`}
                 >
                   Ligar nota {n.numero ?? "s/nº"}{n.data_emissao ? ` · ${dataBR(n.data_emissao)}` : ""} · {moeda(Number(n.valor))}
                 </button>
@@ -243,7 +243,7 @@ export function ConferirClient({
         <div className={`mb-4 rounded-cartao border p-4 ${divergencias.gravidade === "grave" ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"}`}>
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
             <Icone nome="alerta" tamanho={14} className="mr-1.5" /> {divergencias.n} divergência{divergencias.n === 1 ? "" : "s"}
-            {divergencias.valor_a_mais > 0 && <span className="ml-2 text-red-700 dark:text-red-300">· {moeda(divergencias.valor_a_mais)} cobrados a mais</span>}
+            {divergencias.valor_a_mais > 0 && <span className="ml-2 text-urgente-texto dark:text-red-300">· {moeda(divergencias.valor_a_mais)} cobrados a mais</span>}
           </p>
           <ul className="mt-2 space-y-1 text-sm text-texto-suave">
             {divergencias.itens.map((d, i) => (
@@ -256,7 +256,7 @@ export function ConferirClient({
                 {d.tipo === "cobrado_nao_recebido" ? ` — nota ${fmtQ(d.nota)}, recebido ${fmtQ(d.recebido)}` : ""}
                 {d.tipo === "nota_sem_pedido" ? ` — ${fmtQ(d.nota)} × ${d.preco_nota != null ? moeda(d.preco_nota) : "—"}` : ""}
                 {d.tipo === "unidade_diferente" ? ` — nota ${moeda(d.preco_nota ?? 0)} × ${fmtQ(d.nota)} vs cotado ${moeda(d.preco_cotado ?? 0)}: parece caixa de ${d.recebido}, ajuste o fator na nota` : ""}
-                {d.valor != null && d.valor !== 0 ? <span className={d.valor > 0 ? "ml-1 text-red-700 dark:text-red-300" : "ml-1 text-emerald-700 dark:text-emerald-300"}>({d.valor > 0 ? "+" : ""}{moeda(d.valor)})</span> : null}
+                {d.valor != null && d.valor !== 0 ? <span className={d.valor > 0 ? "ml-1 text-urgente-texto dark:text-red-300" : "ml-1 text-ok-texto dark:text-emerald-300"}>({d.valor > 0 ? "+" : ""}{moeda(d.valor)})</span> : null}
               </li>
             ))}
           </ul>
@@ -295,21 +295,21 @@ export function ConferirClient({
                       {i.unidade}
                     </span>
                     {i.qtd === 0 && (
-                      <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-mini font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                      <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-mini font-medium text-info-texto dark:bg-sky-950 dark:text-sky-300">
                         veio a mais
                       </span>
                     )}
                     <button aria-label="Fechar"
                       onClick={() => remover(i.id)}
                       disabled={salvando}
-                      className="ml-2 text-xs text-zinc-300 hover:text-red-600 disabled:opacity-50 dark:text-zinc-600"
+                      className="ml-2 text-xs text-zinc-300 hover:text-urgente-texto disabled:opacity-50 dark:text-zinc-600"
                       title="Remover item da conferência"
                     >
                       ✕
                     </button>
                   </td>
                   <td className="px-3 py-2 text-right text-texto-suave">{i.qtd}</td>
-                  <td className={`px-3 py-2 text-right ${i.qtd_conf_colab != null && i.qtd_conf_colab !== i.qtd ? "font-semibold text-amber-600" : "text-texto-suave"}`}>
+                  <td className={`px-3 py-2 text-right ${i.qtd_conf_colab != null && i.qtd_conf_colab !== i.qtd ? "font-semibold text-aviso-texto" : "text-texto-suave"}`}>
                     {i.qtd_conf_colab != null ? fmtQ(i.qtd_conf_colab) : <span className="text-zinc-300 dark:text-zinc-600">—</span>}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -318,7 +318,7 @@ export function ConferirClient({
                       value={e.qtd_recebida}
                       onChange={(ev) => set("qtd_recebida", ev.target.value)}
                       className={`${numInput}  ${
-                        divQtd ? "border-amber-400 text-amber-600" : ""
+                        divQtd ? "border-amber-400 text-aviso-texto" : ""
                       }`}
                     />
                   </td>
@@ -332,16 +332,16 @@ export function ConferirClient({
                       value={e.preco_recebido}
                       onChange={(ev) => set("preco_recebido", ev.target.value)}
                       className={`${numInput}  ${
-                        divPreco ? "border-amber-400 text-amber-600" : ""
+                        divPreco ? "border-amber-400 text-aviso-texto" : ""
                       }`}
                     />
                   </td>
                   <td className="px-3 py-2 text-right text-xs">
                     {i.nota_qtd != null ? (
                       <>
-                        <span className={i.nota_qtd !== i.qtd ? "font-semibold text-amber-600" : "text-texto-suave"}>{fmtQ(i.nota_qtd)}</span>
+                        <span className={i.nota_qtd !== i.qtd ? "font-semibold text-aviso-texto" : "text-texto-suave"}>{fmtQ(i.nota_qtd)}</span>
                         <span className="text-texto-fraco"> · </span>
-                        <span className={i.nota_preco != null && i.preco_unit != null && i.nota_preco > i.preco_unit + 0.004 ? "font-semibold text-red-600" : "text-texto-suave"}>{i.nota_preco != null ? moeda(i.nota_preco) : "—"}</span>
+                        <span className={i.nota_preco != null && i.preco_unit != null && i.nota_preco > i.preco_unit + 0.004 ? "font-semibold text-urgente-texto" : "text-texto-suave"}>{i.nota_preco != null ? moeda(i.nota_preco) : "—"}</span>
                       </>
                     ) : nota ? <span className="text-zinc-300 dark:text-zinc-600" title="Produto não encontrado na nota (ou item da nota sem vínculo)">não está na nota</span> : <span className="text-zinc-300 dark:text-zinc-600">—</span>}
                   </td>
@@ -368,7 +368,7 @@ export function ConferirClient({
               <td colSpan={4} className="px-3 py-3 text-right text-texto">
                 recebido {moeda(totais.recebido)}
                 {totais.recebido !== totais.pedido && (
-                  <span className="ml-2 text-amber-600">
+                  <span className="ml-2 text-aviso-texto">
                     (dif {moeda(totais.recebido - totais.pedido)})
                   </span>
                 )}

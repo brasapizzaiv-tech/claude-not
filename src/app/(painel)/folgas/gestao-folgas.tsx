@@ -79,7 +79,7 @@ export function GestaoFolgas({
       </div>
 
       {aviso && (
-        <div role="status" className={`mb-3 rounded-controle border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300" : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-300"}`}>
+        <div role="status" className={`mb-3 rounded-controle border px-3 py-2 text-sm ${aviso.ok ? "border-emerald-500/40 bg-emerald-500/10 text-ok-texto dark:text-emerald-300" : "border-red-500/40 bg-red-500/10 text-urgente-texto dark:text-red-300"}`}>
           {aviso.txt}
         </div>
       )}
@@ -182,12 +182,12 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                     {p.origem === "gestao" ? " · lançada pela gestão" : ""}
                   </p>
                 )}
-                <p className={`mt-1 text-xs ${estoura ? "text-red-500" : "text-texto-suave"}`}>
+                <p className={`mt-1 text-xs ${estoura ? "text-urgente-texto" : "text-texto-suave"}`}>
                   {lim === null ? "Grupo sem operação nesse dia" : `${aprov} de ${lim} já aprovada(s) em ${GRUPOS[gApertado].nome.toLowerCase()}`}
                   {estoura ? " · aprovar aqui passa do limite" : ""}
                 </p>
                 {conc > 1 && <p className="mt-1 text-xs font-bold text-amber-500">{conc} pessoas do mesmo grupo pediram esse dia</p>}
-                {f.gerente && semGerente(p.data, equipe, pedidos) && <p className="mt-1 text-xs font-bold text-red-500">A casa fica sem nenhum gerente nesse dia</p>}
+                {f.gerente && semGerente(p.data, equipe, pedidos) && <p className="mt-1 text-xs font-bold text-urgente-texto">A casa fica sem nenhum gerente nesse dia</p>}
                 {atras && <p className="mt-1 text-xs text-amber-500">Fora do prazo de {DIAS_ANTECEDENCIA} dias</p>}
               </div>
               <div className="flex flex-col items-end gap-2">
@@ -518,7 +518,7 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
           <div className="mt-3 border-t border-borda pt-3">
             {bloqueios[sel] ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm text-red-500">Data travada: {bloqueios[sel]}</span>
+                <span className="text-sm text-urgente-texto">Data travada: {bloqueios[sel]}</span>
                 <button disabled={proc} onClick={() => run(() => destravarData(sel))} className="rounded-controle border border-borda-forte px-3 py-1.5 text-sm">Destravar</button>
               </div>
             ) : (

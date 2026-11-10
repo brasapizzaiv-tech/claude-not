@@ -10,7 +10,7 @@ export function RemoverContagem({ id, nome }: { id: string; nome: string }) {
   const router = useRouter();
   return (
     <BotaoAcao
-      className="text-texto-fraco hover:text-red-600"
+      className="text-texto-fraco hover:text-urgente-texto"
       aoClicar={async () => {
         if (!(await confirmar(`Remover a contagem "${nome}"?`, {
           detalhe: "Ela some de vez, com os itens contados e os links enviados.",

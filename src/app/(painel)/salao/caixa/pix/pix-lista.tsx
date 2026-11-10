@@ -92,9 +92,9 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
                   <td className="px-3 py-2">
                     {l.status === "pago" ? (
                       l.valorDevolvido > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-amber-600"><Icone nome="desfazer" tamanho={12} /> devolvido {brl(l.valorDevolvido)}</span>
+                        <span className="inline-flex items-center gap-1 text-aviso-texto"><Icone nome="desfazer" tamanho={12} /> devolvido {brl(l.valorDevolvido)}</span>
                       ) : (
-                        <span className="text-emerald-600">✓ pago</span>
+                        <span className="text-ok-texto">✓ pago</span>
                       )
                     ) : l.status === "cancelado" ? (
                       <span className="text-texto-fraco">cancelado</span>
@@ -111,7 +111,7 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
                   </td>
                   <td className="px-3 py-2 text-right">
                     {podeEstornar && aberto !== l.txid && (
-                      <button onClick={() => abrir(l)} className="rounded-controle border border-amber-500 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      <button onClick={() => abrir(l)} className="rounded-controle border border-amber-500 px-3 py-1 text-xs font-medium text-aviso-texto dark:text-amber-400">
                         Estornar
                       </button>
                     )}

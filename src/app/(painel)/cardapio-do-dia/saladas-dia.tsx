@@ -89,7 +89,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
         <p className="mb-4 text-sm text-texto-suave">
           Marque o que vai no buffet de saladas deste dia. Aparece na TV da cozinha. <span className="font-medium">{sel.size}</span> marcada(s).
           {temExcecao
-            ? <> · <span className="font-medium text-amber-600">este dia tem seleção própria</span> (<button type="button" onClick={voltarPadrao} disabled={proc} className="underline">voltar ao padrão de {DIA_NOME[dow]}</button>)</>
+            ? <> · <span className="font-medium text-aviso-texto">este dia tem seleção própria</span> (<button type="button" onClick={voltarPadrao} disabled={proc} className="underline">voltar ao padrão de {DIA_NOME[dow]}</button>)</>
             : <> · seguindo o <span className="font-medium">padrão de {DIA_NOME[dow]}</span></>}
         </p>
 
@@ -109,7 +109,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
                         title="Tirar da base"
                         disabled={proc}
                         onClick={async () => { if (await confirmar(`Tirar "${s.nome}" da base de saladas?`)) start(async () => { await removerSalada(s.id); router.refresh(); }); }}
-                        className="text-xs text-texto-fraco hover:text-red-600"
+                        className="text-xs text-texto-fraco hover:text-urgente-texto"
                       >
                         ✕
                       </button>
@@ -143,7 +143,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
             Adicionar
           </button>
           <div className="flex-1" />
-          <button type="button" onClick={salvarPadrao} disabled={proc || !sujo} className="rounded-controle border border-green-600 px-3 py-2 text-sm font-semibold text-green-700 disabled:opacity-40 dark:text-green-400">
+          <button type="button" onClick={salvarPadrao} disabled={proc || !sujo} className="rounded-controle border border-green-600 px-3 py-2 text-sm font-semibold text-ok-texto disabled:opacity-40 dark:text-green-400">
             Gravar como padrão de {DIA_NOME[dow]}
           </button>
           <button type="button" onClick={salvar} disabled={proc || !sujo} className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo disabled:opacity-40">

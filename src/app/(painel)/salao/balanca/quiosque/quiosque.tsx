@@ -866,13 +866,13 @@ export function QuiosqueBalanca({
 
       {configAberta && (
         <Janela onFechar={() => setConfigAberta(false)} fundoFecha camada="z-[60]" escuro="bg-black/70">
-          <div className="w-full max-w-xl rounded-3xl bg-white p-6 text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-xl rounded-cartao bg-white p-6 text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-1 flex items-center gap-2 text-2xl font-bold"><Icone nome="imprimir" tamanho={22} /> Impressora do cupom</h2>
             <p className="mb-4 text-sm text-marca-escuro/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
             <div className="max-h-72 space-y-2 overflow-y-auto">
               <button
                 onClick={() => escolherImpressora("")}
-                className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === "" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15 hover:bg-marca-escuro/5"}`}
+                className={`block w-full rounded-controle border px-4 py-3 text-left text-lg ${impressoraCupom === "" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15 hover:bg-marca-escuro/5"}`}
               >
                 Padrão do Windows
               </button>
@@ -880,7 +880,7 @@ export function QuiosqueBalanca({
                 <button
                   key={p.nome}
                   onClick={() => escolherImpressora(p.nome)}
-                  className={`block w-full rounded-xl border px-4 py-3 text-left text-lg ${impressoraCupom === p.nome ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15 hover:bg-marca-escuro/5"}`}
+                  className={`block w-full rounded-controle border px-4 py-3 text-left text-lg ${impressoraCupom === p.nome ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15 hover:bg-marca-escuro/5"}`}
                 >
                   {p.nome}{p.padrao ? <span className="ml-2 text-xs text-marca-escuro/50">(padrão)</span> : null}
                 </button>
@@ -889,13 +889,13 @@ export function QuiosqueBalanca({
             </div>
             {msgConfig && <p role="status" className="mt-3 text-sm text-orange-500">{msgConfig}</p>}
             {/* Voz do quiosque */}
-            <div className="mt-4 rounded-xl border border-marca-escuro/15 p-3 text-sm">
+            <div className="mt-4 rounded-controle border border-marca-escuro/15 p-3 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="som" tamanho={16} /> Falar com o cliente</span>
                 <button
                   onClick={() => voz.alternar(!voz.ligada)}
                   disabled={!voz.suportada}
-                  className={`rounded-lg border px-3 py-2 font-semibold ${voz.ligada ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"} disabled:opacity-40`}
+                  className={`rounded-controle border px-3 py-2 font-semibold ${voz.ligada ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"} disabled:opacity-40`}
                 >
                   {voz.ligada ? "Ligada" : "Desligada"}
                 </button>
@@ -909,7 +909,7 @@ export function QuiosqueBalanca({
                     <select
                       value={voz.vozNome}
                       onChange={(e) => voz.trocarVoz(e.target.value)}
-                      className="mt-2 w-full rounded-lg border border-marca-escuro/15 bg-white px-3 py-2 text-sm"
+                      className="mt-2 w-full rounded-controle border border-marca-escuro/15 bg-white px-3 py-2 text-sm"
                     >
                       <option value="">Voz do Windows (automática)</option>
                       {voz.vozes.map((v) => (
@@ -919,7 +919,7 @@ export function QuiosqueBalanca({
                   )}
                   <button
                     onClick={() => voz.falar("Comanda 246. 36 reais e 44 centavos. Pode retirar seu prato.", true)}
-                    className="mt-2 w-full rounded-lg border border-marca-escuro/20 py-2 text-sm hover:bg-marca-escuro/5"
+                    className="mt-2 w-full rounded-controle border border-marca-escuro/20 py-2 text-sm hover:bg-marca-escuro/5"
                   >
                     <Icone nome="som" tamanho={15} className="mr-1.5" /> Testar a voz
                   </button>
@@ -929,16 +929,16 @@ export function QuiosqueBalanca({
               )}
             </div>
             {/* Modo de impressão: rápido (ESC/POS) ou PDF */}
-            <div className="mt-4 rounded-xl border border-marca-escuro/15 p-3 text-sm">
+            <div className="mt-4 rounded-controle border border-marca-escuro/15 p-3 text-sm">
               <p className="mb-2 font-semibold">Como imprimir o cupom</p>
               <div className="flex gap-2">
-                <button onClick={() => alternarModo("escpos")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "escpos" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="rapido" tamanho={14} /> Rápido (direto na térmica)</span></button>
-                <button onClick={() => alternarModo("pdf")} className={`flex-1 rounded-lg border px-3 py-2 ${modoImpressao === "pdf" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lento" tamanho={14} /> PDF (modo antigo)</span></button>
+                <button onClick={() => alternarModo("escpos")} className={`flex-1 rounded-controle border px-3 py-2 ${modoImpressao === "escpos" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="rapido" tamanho={14} /> Rápido (direto na térmica)</span></button>
+                <button onClick={() => alternarModo("pdf")} className={`flex-1 rounded-controle border px-3 py-2 ${modoImpressao === "pdf" ? "border-orange-500 bg-orange-500/30" : "border-marca-escuro/15"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lento" tamanho={14} /> PDF (modo antigo)</span></button>
               </div>
               <p className="mt-2 text-xs text-marca-escuro/60">O rápido sai em menos de 1 s. Se a impressora não entender (cupom em branco ou símbolos), volte pro PDF e me avise.</p>
             </div>
             {/* Como a balança está sendo usada (tara) */}
-            <label className="mt-4 flex items-start gap-2 rounded-xl border border-marca-escuro/15 p-3 text-sm">
+            <label className="mt-4 flex items-start gap-2 rounded-controle border border-marca-escuro/15 p-3 text-sm">
               <input type="checkbox" checked={balancaTarada} onChange={(e) => definirBalancaTarada(e.target.checked)} className="mt-1 h-5 w-5" />
               <span>
                 <b>A balança está tarada com o prato</b> (apertaram T com o prato em cima).
@@ -949,7 +949,7 @@ export function QuiosqueBalanca({
               </span>
             </label>
             {/* Tara do prato: aprendida da balança vazia (leitura negativa = −tara) */}
-            <div className="mt-2 rounded-xl border border-marca-escuro/15 p-3 text-sm">
+            <div className="mt-2 rounded-controle border border-marca-escuro/15 p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span>
                   Tara do prato em uso: <b>{(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg</b>
@@ -960,12 +960,12 @@ export function QuiosqueBalanca({
                     onClick={() => definirTaraPrato(Math.round(-pesoBruto * 1000) / 1000)}
                     disabled={!(pesoBruto < -0.02)}
                     title="Com a balança tarada e VAZIA, a leitura negativa é exatamente o peso do prato"
-                    className="rounded-lg bg-marca-escuro px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
+                    className="rounded-controle bg-marca-escuro px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
                   >
                     Balança vazia agora → usar {pesoBruto < -0.02 ? (-pesoBruto).toFixed(3).replace(".", ",") : "…"} kg
                   </button>
                   {taraPrato && (
-                    <button onClick={() => definirTaraPrato(null)} className="rounded-lg border border-marca-escuro/20 px-3 py-1.5 text-xs">
+                    <button onClick={() => definirTaraPrato(null)} className="rounded-controle border border-marca-escuro/20 px-3 py-1.5 text-xs">
                       voltar à padrão
                     </button>
                   )}
@@ -974,10 +974,10 @@ export function QuiosqueBalanca({
               <p className="mt-1 text-xs text-marca-escuro/50">Leitura agora: {pesoBruto.toFixed(3).replace(".", ",")} kg. Tire tudo da balança (tarada) e clique no botão.</p>
             </div>
             {/* Diagnóstico da balança: leitura crua que chegou no agente */}
-            <div className="mt-4 rounded-xl border border-marca-escuro/15 bg-[color-mix(in_srgb,var(--marca-primaria)_8%,white)] p-3 text-xs">
+            <div className="mt-4 rounded-controle border border-marca-escuro/15 bg-[color-mix(in_srgb,var(--marca-primaria)_8%,white)] p-3 text-xs">
               <div className="mb-1 flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 font-semibold"><Icone nome="balanca" tamanho={16} /> Balança (o que o agente recebeu por último)</span>
-                <button onClick={lerRaw} className="rounded-md border border-marca-escuro/20 px-2 py-0.5">atualizar</button>
+                <button onClick={lerRaw} className="rounded-controle border border-marca-escuro/20 px-2 py-0.5">atualizar</button>
               </div>
               {rawBal ? (
                 <>
@@ -991,9 +991,9 @@ export function QuiosqueBalanca({
               )}
             </div>
             <div className="mt-5 flex gap-3">
-              <button onClick={testarImpressora} className="flex-1 rounded-xl border border-marca-escuro/20 py-3 text-lg hover:bg-marca-escuro/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Imprimir teste</span></button>
-              <button onClick={testeRapido} className="flex-1 rounded-xl border border-marca-escuro/20 py-3 text-lg hover:bg-marca-escuro/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="rapido" tamanho={18} /> Teste rápido</span></button>
-              <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-orange-500 py-3 text-lg font-bold">Fechar</button>
+              <button onClick={testarImpressora} className="flex-1 rounded-controle border border-marca-escuro/20 py-3 text-lg hover:bg-marca-escuro/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="cupom" tamanho={18} /> Imprimir teste</span></button>
+              <button onClick={testeRapido} className="flex-1 rounded-controle border border-marca-escuro/20 py-3 text-lg hover:bg-marca-escuro/5"><span className="inline-flex items-center justify-center gap-2"><Icone nome="rapido" tamanho={18} /> Teste rápido</span></button>
+              <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-controle bg-primaria py-3 text-lg font-bold">Fechar</button>
             </div>
           </div>
         </Janela>
@@ -1003,7 +1003,7 @@ export function QuiosqueBalanca({
           "virar livre", porque o quiosque é touch e não abre teclado sozinho. */}
       {repesarAberto && (
         <Janela onFechar={() => setRepesarAberto(false)} fundoFecha camada="z-[60]" escuro="bg-black/60">
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-2xl rounded-cartao bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-marca-escuro"><span className="inline-flex items-center justify-center gap-3"><Icone nome="balanca" tamanho={28} /> Voltei ao buffet</span></h2>
             <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-marca-escuro/80">
               Passe o <b>QR do seu cupom</b> no leitor, ou digite o número. O prato novo <b>soma</b> na sua comanda.
@@ -1016,7 +1016,7 @@ export function QuiosqueBalanca({
                 onChange={(e) => setNumeroRepesar(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") void escolherAlvo(numeroRepesar); }}
                 placeholder="Nº"
-                className="w-full rounded-2xl border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums focus:border-orange-500"
+                className="w-full rounded-cartao border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums focus:border-orange-500"
               />
             </div>
             <div className="mx-auto mt-3 grid max-w-xs grid-cols-3 gap-2">
@@ -1030,13 +1030,13 @@ export function QuiosqueBalanca({
                     if (t === "⌫") { setNumeroRepesar((v) => v.slice(0, -1)); return; }
                     setNumeroRepesar((v) => (v.replace(/D/g, "") + t).slice(0, 5));
                   }}
-                  className="rounded-2xl border-2 border-marca-escuro/15 bg-white py-4 text-2xl font-black active:bg-marca-escuro/10 disabled:opacity-40"
+                  className="rounded-cartao border-2 border-marca-escuro/15 bg-white py-4 text-2xl font-black active:bg-marca-escuro/10 disabled:opacity-40"
                 >
                   {t}
                 </button>
               ))}
             </div>
-            {erro && <p role="alert" className="mt-4 text-lg font-bold text-red-600">{erro}</p>}
+            {erro && <p role="alert" className="mt-4 text-lg font-bold text-urgente-texto">{erro}</p>}
             <button onClick={() => setRepesarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
           </div>
         </Janela>
@@ -1044,7 +1044,7 @@ export function QuiosqueBalanca({
 
       {virarAberto && (
         <Janela onFechar={() => setVirarAberto(false)} fundoFecha camada="z-[60]" escuro="bg-black/60">
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-2xl rounded-cartao bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-orange-500"><span className="inline-flex items-center justify-center gap-3"><Icone nome="atualizar" tamanho={28} /> Virar buffet livre</span></h2>
             <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-marca-escuro/80">
               Passe o <b>QR do seu cupom</b> no leitor. A comanda pesada vira <b>BUFFET LIVRE ({moeda(buffetLivre)})</b> e sai um cupom novo.
@@ -1058,7 +1058,7 @@ export function QuiosqueBalanca({
                 onChange={(e) => setNumeroVirar(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") virarPorNumero(); }}
                 placeholder="Nº"
-                className="w-full rounded-2xl border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums focus:border-orange-500"
+                className="w-full rounded-cartao border-2 border-marca-escuro/20 px-4 py-3 text-center text-4xl font-black tabular-nums focus:border-orange-500"
               />
             </div>
             {/* teclado na tela: o PC do quiosque é touch e não abre teclado sozinho */}
@@ -1073,7 +1073,7 @@ export function QuiosqueBalanca({
                     if (t === "⌫") { setNumeroVirar((v) => v.slice(0, -1)); return; }
                     setNumeroVirar((v) => (v.replace(/\D/g, "") + t).slice(0, 5));
                   }}
-                  className={`rounded-2xl py-4 text-3xl font-black active:brightness-90 disabled:opacity-40 ${
+                  className={`rounded-cartao py-4 text-3xl font-black active:brightness-90 disabled:opacity-40 ${
                     t === "OK" ? "bg-orange-500 text-marca-sobre-primaria" : t === "⌫" ? "bg-marca-escuro/10 text-marca-escuro" : "border-2 border-marca-escuro/15 bg-white text-marca-escuro"
                   }`}
                 >
@@ -1081,7 +1081,7 @@ export function QuiosqueBalanca({
                 </button>
               ))}
             </div>
-            {erro && <p role="alert" className="mt-3 text-lg text-red-600">{erro}</p>}
+            {erro && <p role="alert" className="mt-3 text-lg text-urgente-texto">{erro}</p>}
             <button onClick={() => setVirarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
           </div>
         </Janela>
@@ -1094,7 +1094,7 @@ export function QuiosqueBalanca({
           </p>
           <button
             onClick={conectar}
-            className="rounded-3xl bg-orange-500 px-[clamp(2rem,7vw,4rem)] py-[clamp(1rem,3vh,2rem)] text-[clamp(1.25rem,4vw,2.5rem)] font-bold text-marca-sobre-primaria shadow-lg hover:brightness-110"
+            className="rounded-cartao bg-primaria px-[clamp(2rem,7vw,4rem)] py-[clamp(1rem,3vh,2rem)] text-[clamp(1.25rem,4vw,2.5rem)] font-bold text-marca-sobre-primaria shadow-lg hover:brightness-110"
           >
             Conectar balança
           </button>
@@ -1102,7 +1102,7 @@ export function QuiosqueBalanca({
             Clique uma vez e escolha a porta da balança na lista
             (<b>Prolific</b> ou <b>USB-Serial</b>) — pode ser COM3, COM5, COM7... Depois deixe rodando.
           </p>
-          {erro && <p role="alert" className="max-w-lg text-lg text-red-600">{erro}</p>}
+          {erro && <p role="alert" className="max-w-lg text-lg text-urgente-texto">{erro}</p>}
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6">
@@ -1110,7 +1110,7 @@ export function QuiosqueBalanca({
              pesagem NÃO abre comanda nova. Sem isso a pessoa de trás na fila
              poderia pesar o prato dela na conta de outra. */}
          {alvo && estado !== "resultado" && (
-           <div className="mx-auto mt-3 flex w-full max-w-4xl items-center justify-between gap-4 rounded-3xl bg-marca-escuro px-6 py-4 text-white">
+           <div className="mx-auto mt-3 flex w-full max-w-4xl items-center justify-between gap-4 rounded-cartao bg-marca-escuro px-6 py-4 text-white">
              <div className="text-left">
                <p className="text-[clamp(1.1rem,2.6vw,1.8rem)] font-black">Somando na comanda nº {alvo.numero}</p>
                <p className="text-[clamp(0.9rem,2vw,1.3rem)] opacity-80">
@@ -1119,7 +1119,7 @@ export function QuiosqueBalanca({
              </div>
              <button
                onClick={() => setAlvo(null)}
-               className="shrink-0 rounded-2xl border-2 border-white/40 px-5 py-3 text-[clamp(0.9rem,2vw,1.3rem)] font-bold"
+               className="shrink-0 rounded-cartao border-2 border-white/40 px-5 py-3 text-[clamp(0.9rem,2vw,1.3rem)] font-bold"
              >
                Cancelar
              </button>
@@ -1139,19 +1139,19 @@ export function QuiosqueBalanca({
                       : `✓ COMANDA Nº ${resultado.numero}`}
               </div>
               {resultado.codigoOffline && (
-                <p className="mb-2 text-[clamp(0.9rem,2.5vw,1.4rem)] text-amber-700">
+                <p className="mb-2 text-[clamp(0.9rem,2.5vw,1.4rem)] text-aviso-texto">
                   Sem internet agora — a comanda entra no sistema sozinha quando a conexão voltar.
                 </p>
               )}
               {resultado.peso > 0 ? (
-                <div className="mx-auto max-w-3xl rounded-3xl border-4 border-amber-400 bg-amber-100 px-8 py-4">
-                  <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-amber-700"><span className="inline-flex items-center justify-center gap-3"><Icone nome="subir" tamanho={40} /> {soKg ? "RETIRE SUA MARMITA" : "RETIRE O PRATO"}</span></p>
+                <div className="mx-auto max-w-3xl rounded-cartao border-4 border-amber-400 bg-amber-100 px-8 py-4">
+                  <p className="text-[clamp(1.75rem,6vw,4rem)] font-black text-aviso-texto"><span className="inline-flex items-center justify-center gap-3"><Icone nome="subir" tamanho={40} /> {soKg ? "RETIRE SUA MARMITA" : "RETIRE O PRATO"}</span></p>
                   <p className="mt-1 text-[clamp(0.9rem,2.5vw,1.5rem)] text-marca-escuro/70">Pegue seu cupom · a próxima pesagem começa quando a balança zerar</p>
                 </div>
               ) : (
                 <p className="text-[clamp(1.25rem,4vw,2.5rem)] text-marca-escuro/80">Pegue seu cupom · bom apetite!</p>
               )}
-              <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-green-600">{moeda(resultado.valor)}</p>
+              <p className="mt-6 text-[clamp(3rem,13vw,8rem)] font-black leading-none text-ok-texto">{moeda(resultado.valor)}</p>
               <p className="mt-3 text-[clamp(1rem,3vw,2rem)] text-marca-escuro/50">
                 {resultado.liquido.toFixed(3).replace(".", ",")} kg
                 {resultado.livre ? " · Buffet livre" : ""}
@@ -1159,25 +1159,25 @@ export function QuiosqueBalanca({
               <div className="nao-imprimir mt-6 flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={() => voltarAguardando()}
-                  className="rounded-xl bg-orange-500 px-8 py-3 text-xl font-bold text-marca-sobre-primaria hover:brightness-110"
+                  className="rounded-controle bg-primaria px-8 py-3 text-xl font-bold text-marca-sobre-primaria hover:brightness-110"
                 >
                   <Icone nome="avancar" tamanho={24} className="mr-2" /> Próximo cliente
                 </button>
                 <button
                   onClick={() => imprimirCupom(resultado)}
-                  className="rounded-xl border border-marca-escuro/20 px-6 py-3 text-xl text-marca-escuro/70 hover:bg-marca-escuro/5"
+                  className="rounded-controle border border-marca-escuro/20 px-6 py-3 text-xl text-marca-escuro/70 hover:bg-marca-escuro/5"
                 >
                   <Icone nome="imprimir" tamanho={22} className="mr-2" /> Imprimir de novo
                 </button>
               </div>
               {erroImpressao && (
-                <p role="alert" className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-red-600">Impressora: {erroImpressao} — confira nos ajustes.</p>
+                <p role="alert" className="mt-3 text-[clamp(0.9rem,2.2vw,1.3rem)] text-urgente-texto">Impressora: {erroImpressao} — confira nos ajustes.</p>
               )}
             </div>
           ) : estado === "tarando" ? (
             <div className="mx-auto max-w-4xl text-center">
-              <div className="rounded-3xl border-4 border-amber-400 bg-amber-50 px-8 py-6 text-left">
-                <p className="text-center text-[clamp(1.6rem,5vw,3.25rem)] font-black text-amber-700">TARAR A BALANÇA</p>
+              <div className="rounded-cartao border-4 border-amber-400 bg-amber-50 px-8 py-6 text-left">
+                <p className="text-center text-[clamp(1.6rem,5vw,3.25rem)] font-black text-aviso-texto">TARAR A BALANÇA</p>
                 <ol className="mt-4 list-decimal space-y-2 pl-8 text-[clamp(1.1rem,3vw,2rem)] text-marca-escuro/80">
                   <li>Tire o prato de comida da balança.</li>
                   <li>Coloque um prato vazio e aperte <b>TARA</b> na balança.</li>
@@ -1187,15 +1187,15 @@ export function QuiosqueBalanca({
               </div>
               <button
                 onClick={tarei}
-                className="mt-6 rounded-2xl bg-orange-500 px-10 py-5 text-[clamp(1.2rem,3vw,2rem)] font-black text-marca-sobre-primaria hover:brightness-110"
+                className="mt-6 rounded-cartao bg-primaria px-10 py-5 text-[clamp(1.2rem,3vw,2rem)] font-black text-marca-sobre-primaria hover:brightness-110"
               >
                 Pronto, tarei
               </button>
             </div>
           ) : estado === "conferirTara" ? (
             <div className="mx-auto max-w-4xl text-center" role="alert">
-              <div className="rounded-3xl border-4 border-red-500 bg-red-50 px-8 py-6">
-                <p className="text-[clamp(1.75rem,5.5vw,3.75rem)] font-black leading-tight text-red-700">
+              <div className="rounded-cartao border-4 border-red-500 bg-red-50 px-8 py-6">
+                <p className="text-[clamp(1.75rem,5.5vw,3.75rem)] font-black leading-tight text-urgente-texto">
                   <span className="inline-flex items-center justify-center gap-3"><Icone nome="alerta" tamanho={44} /> A BALANÇA ESTÁ TARADA?</span>
                 </p>
                 <p className="mt-3 text-[clamp(1.1rem,3vw,2rem)] text-marca-escuro/80">
@@ -1206,13 +1206,13 @@ export function QuiosqueBalanca({
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                 <button
                   onClick={vouTararAgora}
-                  className="rounded-2xl bg-red-600 px-8 py-5 text-[clamp(1.1rem,2.6vw,1.8rem)] font-black text-white hover:brightness-110"
+                  className="rounded-cartao bg-red-600 px-8 py-5 text-[clamp(1.1rem,2.6vw,1.8rem)] font-black text-white hover:brightness-110"
                 >
                   Não estava · vou tarar e pesar de novo
                 </button>
                 <button
                   onClick={taraConfirmadaCobrar}
-                  className="rounded-2xl border-2 border-marca-escuro/30 bg-white px-8 py-5 text-[clamp(1.1rem,2.6vw,1.8rem)] font-bold text-marca-escuro hover:bg-marca-escuro/5"
+                  className="rounded-cartao border-2 border-marca-escuro/30 bg-white px-8 py-5 text-[clamp(1.1rem,2.6vw,1.8rem)] font-bold text-marca-escuro hover:bg-marca-escuro/5"
                 >
                   Está tarada · pode cobrar
                 </button>
@@ -1220,7 +1220,7 @@ export function QuiosqueBalanca({
             </div>
           ) : (
             <>
-              <div className={`mb-6 rounded-3xl px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.5rem)] text-[clamp(1.25rem,5vw,3rem)] font-black uppercase tracking-wide ${badge}`}>
+              <div className={`mb-6 rounded-cartao px-[clamp(1rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.5rem)] text-[clamp(1.25rem,5vw,3rem)] font-black uppercase tracking-wide ${badge}`}>
                 {estado === "processando"
                   ? "Gerando comanda..."
                   : estado === "pesando"
@@ -1244,7 +1244,7 @@ export function QuiosqueBalanca({
                 {buffetLivre > 0 && liq <= LIMIAR && (
                   <button
                     onClick={livreDireto}
-                    className="min-w-[16rem] flex-1 rounded-3xl bg-orange-500 px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-marca-sobre-primaria shadow-lg active:brightness-90"
+                    className="min-w-[16rem] flex-1 rounded-cartao bg-primaria px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.4rem,3.6vw,3rem)] font-black leading-tight text-marca-sobre-primaria shadow-lg active:brightness-90"
                   >
                     <Icone nome="salao" tamanho={30} className="mr-3" /> QUERO O BUFFET LIVRE
                     <span className="block text-[clamp(1.1rem,2.8vw,2.2rem)] font-bold opacity-90">{moeda(buffetLivre)}</span>
@@ -1253,7 +1253,7 @@ export function QuiosqueBalanca({
                 {liq <= LIMIAR && (
                   <button
                     onClick={() => { setRepesarAberto(true); setNumeroRepesar(""); }}
-                    className="min-w-[16rem] flex-1 rounded-3xl border-4 border-marca-escuro/20 bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-marca-escuro/80 shadow-md active:brightness-95"
+                    className="min-w-[16rem] flex-1 rounded-cartao border-4 border-marca-escuro/20 bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-marca-escuro/80 shadow-md active:brightness-95"
                   >
                     <Icone nome="balanca" tamanho={26} className="mr-3" /> VOLTEI AO BUFFET
                     <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium text-marca-escuro/50">soma na comanda que já tenho</span>
@@ -1262,7 +1262,7 @@ export function QuiosqueBalanca({
                 {buffetLivre > 0 && liq <= LIMIAR && (
                   <button
                     onClick={() => { setVirarAberto(true); setNumeroVirar(""); }}
-                    className="min-w-[16rem] flex-1 rounded-3xl border-4 border-orange-500 bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-orange-500 shadow-md active:brightness-95"
+                    className="min-w-[16rem] flex-1 rounded-cartao border-4 border-orange-500 bg-white px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight text-orange-500 shadow-md active:brightness-95"
                   >
                     <Icone nome="atualizar" tamanho={26} className="mr-3" /> JÁ PESEI, QUERO VIRAR LIVRE
                     <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium text-marca-escuro/50">passe o cupom no leitor</span>
@@ -1270,7 +1270,7 @@ export function QuiosqueBalanca({
                 )}
                 <button
                   onClick={toggleSoKg}
-                  className={`min-w-[14rem] flex-1 rounded-3xl px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight shadow-md transition ${
+                  className={`min-w-[14rem] flex-1 rounded-cartao px-[clamp(1rem,3vw,2rem)] py-[clamp(1.25rem,6vh,3.5rem)] text-[clamp(1.3rem,3.2vw,2.6rem)] font-black leading-tight shadow-md transition ${
                     soKg ? "bg-yellow-400 text-black" : "border-4 border-marca-escuro/15 bg-white text-marca-escuro/70 hover:bg-marca-escuro/5"
                   }`}
                 >
@@ -1278,7 +1278,7 @@ export function QuiosqueBalanca({
                   <span className="block text-[clamp(1rem,2.2vw,1.6rem)] font-medium opacity-70">{soKg ? "cobra só por kg nesta pesagem" : "cobra só por kg"}</span>
                 </button>
               </div>
-              {erro && <p role="alert" className="mt-3 max-w-xl text-center text-xl text-red-600">{erro}</p>}
+              {erro && <p role="alert" className="mt-3 max-w-xl text-center text-xl text-urgente-texto">{erro}</p>}
               {taraBalanca > 0.001 ? (
                 <p className="mt-2 text-sm text-marca-escuro/40">
                   Tara na balança: {taraBalanca.toFixed(3).replace(".", ",")} kg
@@ -1292,7 +1292,7 @@ export function QuiosqueBalanca({
               ) : (taraPrato ?? taraPadrao) > 0 ? (
                 // Sem a marca de tarada, o prato desconta a tara aqui: se a balança
                 // também foi tarada, desconta duas vezes e nada pesa. Aviso visível.
-                <p className="mt-3 max-w-xl rounded-xl bg-amber-100 px-4 py-2 text-center text-base font-semibold text-amber-900">
+                <p className="mt-3 max-w-xl rounded-controle bg-amber-100 px-4 py-2 text-center text-base font-semibold text-amber-900">
                   {soKg ? "Marmita: cobra o peso inteiro (sem descontar prato)" : `Balança marcada como SEM tara: o prato desconta ${(taraPrato ?? taraPadrao).toFixed(3).replace(".", ",")} kg.`}
                   <span className="block text-sm font-normal">Se apertaram T com o prato na balança, toque na engrenagem e marque “A balança está tarada com o prato”.</span>
                 </p>
@@ -1301,7 +1301,7 @@ export function QuiosqueBalanca({
               {liq > LIMIAR && (
                 <button
                   onClick={() => capturar(pesoBruto)}
-                  className="mt-[clamp(0.75rem,2vh,1.5rem)] rounded-2xl bg-emerald-600 px-[clamp(1.5rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.1rem,3.2vw,2rem)] font-bold text-white hover:bg-emerald-700"
+                  className="mt-[clamp(0.75rem,2vh,1.5rem)] rounded-cartao bg-emerald-600 px-[clamp(1.5rem,5vw,3rem)] py-[clamp(0.5rem,2vh,1.25rem)] text-[clamp(1.1rem,3.2vw,2rem)] font-bold text-white hover:bg-emerald-700"
                 >
                   ✓ Gerar comanda
                 </button>
@@ -1321,7 +1321,7 @@ export function QuiosqueBalanca({
       )}
 
       {filaAgente > 0 && (
-        <div className="px-4 py-1 text-center text-[12px] font-bold text-amber-700">
+        <div className="px-4 py-1 text-center text-[12px] font-bold text-aviso-texto">
           <Icone nome="alerta" tamanho={16} className="mr-1.5" /> {filaAgente} pesagem(ns) na fila offline — sincronizam sozinhas quando a internet voltar.
         </div>
       )}

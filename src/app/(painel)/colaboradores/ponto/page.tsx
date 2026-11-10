@@ -19,11 +19,11 @@ const DOW = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const dm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 const SIT: Record<string, { rot: string; cor: string }> = {
   ok: { rot: "", cor: "" },
-  falta: { rot: "Falta", cor: "text-red-600" },
-  incompleto: { rot: "Batida faltando", cor: "text-amber-700 dark:text-amber-400" },
+  falta: { rot: "Falta", cor: "text-urgente-texto" },
+  incompleto: { rot: "Batida faltando", cor: "text-aviso-texto dark:text-amber-400" },
   folga: { rot: "Folga", cor: "text-texto-suave" },
-  atestado: { rot: "Atestado", cor: "text-sky-700 dark:text-sky-400" },
-  abono: { rot: "Abonado", cor: "text-sky-700 dark:text-sky-400" },
+  atestado: { rot: "Atestado", cor: "text-info-texto dark:text-sky-400" },
+  abono: { rot: "Abonado", cor: "text-info-texto dark:text-sky-400" },
   feriado: { rot: "Feriado", cor: "text-texto-suave" },
   fora: { rot: "", cor: "text-texto-fraco" },
   hoje: { rot: "Hoje", cor: "text-texto-fraco" },
@@ -253,15 +253,15 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                           const faltando = !b && l.situacao === "incompleto" && i < l.colunas.length + (l.colunas.length % 2);
                           return (
                             <td key={i} className="px-1 py-1.5">
-                              {b ? <BatidaMenu id={b.id} hora={hhmm(b.min)} manual={b.origem === "manual"} destaque={i === 0 && l.atrasoMin > 0} /> : faltando ? <span className="px-1 text-red-600">—</span> : ""}
+                              {b ? <BatidaMenu id={b.id} hora={hhmm(b.min)} manual={b.origem === "manual"} destaque={i === 0 && l.atrasoMin > 0} /> : faltando ? <span className="px-1 text-urgente-texto">—</span> : ""}
                             </td>
                           );
                         })}
                         <td className="px-2 py-1.5 text-right">{normais ? duracao(normais) : ""}</td>
-                        <td className={`px-2 py-1.5 text-right ${falta ? "text-red-600" : ""}`}>{falta ? duracao(falta) : ""}</td>
-                        <td className={`px-2 py-1.5 text-right ${extra ? "text-emerald-700 dark:text-emerald-400" : ""}`}>{extra ? duracao(extra) : ""}</td>
+                        <td className={`px-2 py-1.5 text-right ${falta ? "text-urgente-texto" : ""}`}>{falta ? duracao(falta) : ""}</td>
+                        <td className={`px-2 py-1.5 text-right ${extra ? "text-ok-texto dark:text-emerald-400" : ""}`}>{extra ? duracao(extra) : ""}</td>
                         {totais.noturno > 0 && <td className="px-2 py-1.5 text-right">{l.noturnoMin ? duracao(l.noturnoMin) : ""}</td>}
-                        <td className={`px-2 py-1.5 text-xs ${l.justificativa ? "text-sky-700 dark:text-sky-400" : s.cor}`}>
+                        <td className={`px-2 py-1.5 text-xs ${l.justificativa ? "text-info-texto dark:text-sky-400" : s.cor}`}>
                           {(() => {
                             const rot = l.justificativa ?? s.rot;
                             const inc = inconsistenciasDia(l, regras).filter((r) => r.campo === "atraso" || r.campo === "extra");
@@ -277,8 +277,8 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                 <tfoot><tr className="border-t-2 border-borda-forte font-semibold">
                   <td className="px-2 py-2" colSpan={2 + maxBat}>Total · {totais.diasTrabalhados} dias trabalhados{totais.faltas ? ` · ${totais.faltas} falta(s)` : ""}{totais.incompletos ? ` · ${totais.incompletos} com batida faltando` : ""}</td>
                   <td className="px-2 py-2 text-right">{duracao(Math.max(0, totais.previsto - totais.faltante))}</td>
-                  <td className="px-2 py-2 text-right text-red-600">{duracao(totais.faltante)}</td>
-                  <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400">{duracao(totais.extra)}</td>
+                  <td className="px-2 py-2 text-right text-urgente-texto">{duracao(totais.faltante)}</td>
+                  <td className="px-2 py-2 text-right text-ok-texto dark:text-emerald-400">{duracao(totais.extra)}</td>
                   {totais.noturno > 0 && <td className="px-2 py-2 text-right">{duracao(totais.noturno)}</td>}
                   <td colSpan={2}></td>
                 </tr></tfoot>
@@ -319,7 +319,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                     <td className="px-2 py-2 text-right">{totais.diasTrabalhados}</td>
                     <td className="px-2 py-2 text-right">{duracao(totais.previsto)}</td>
                     <td className="px-2 py-2 text-right">{duracao(totais.trabalhado)}</td>
-                    <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400">
+                    <td className="px-2 py-2 text-right text-ok-texto dark:text-emerald-400">
                       {duracao(totais.extra)}
                       {(totais.extraPor.sabado > 0 || totais.extraPor.domingo > 0 || totais.extraPor.feriado > 0 || totais.noturno > 0) && (
                         <span className="block text-xs font-normal text-texto-suave">
@@ -328,8 +328,8 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                         </span>
                       )}
                     </td>
-                    <td className="px-2 py-2 text-right text-red-600">{duracao(totais.faltante)}</td>
-                    <td className={`px-2 py-2 text-right ${saldo < 0 ? "text-red-600" : ""}`}>{duracao(saldo)}</td>
+                    <td className="px-2 py-2 text-right text-urgente-texto">{duracao(totais.faltante)}</td>
+                    <td className={`px-2 py-2 text-right ${saldo < 0 ? "text-urgente-texto" : ""}`}>{duracao(saldo)}</td>
                   </tr>,
                   ...porSemana(linhas).map((s) => (
                     <tr key={`${p.id}|${s.segunda}`} className="text-xs text-texto-suave">
@@ -355,9 +355,9 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         const resumo = ativos.map((p) => {
           const { linhas, totais } = espelhoDe(p.id);
           for (const l of linhas) {
-            if (l.atrasoMin > 0) lista.push({ dia: l.dia, nome: p.nome, id: p.id, tipo: "Atraso", det: `${l.atrasoMin} min · chegou ${hhmm(l.batidas[0])} (entrada ${cfg.entradas[String(l.dow)]})`, cor: "text-amber-700 dark:text-amber-400" });
-            if (l.situacao === "falta") lista.push({ dia: l.dia, nome: p.nome, id: p.id, tipo: "Falta", det: "não bateu ponto", cor: "text-red-600" });
-            if (l.situacao === "incompleto") lista.push({ dia: l.dia, nome: p.nome, id: p.id, tipo: "Batida faltando", det: `bateu ${l.batidas.map(hhmm).join(", ")}`, cor: "text-amber-700 dark:text-amber-400" });
+            if (l.atrasoMin > 0) lista.push({ dia: l.dia, nome: p.nome, id: p.id, tipo: "Atraso", det: `${l.atrasoMin} min · chegou ${hhmm(l.batidas[0])} (entrada ${cfg.entradas[String(l.dow)]})`, cor: "text-aviso-texto dark:text-amber-400" });
+            if (l.situacao === "falta") lista.push({ dia: l.dia, nome: p.nome, id: p.id, tipo: "Falta", det: "não bateu ponto", cor: "text-urgente-texto" });
+            if (l.situacao === "incompleto") lista.push({ dia: l.dia, nome: p.nome, id: p.id, tipo: "Batida faltando", det: `bateu ${l.batidas.map(hhmm).join(", ")}`, cor: "text-aviso-texto dark:text-amber-400" });
           }
           return { p, totais };
         });
@@ -371,8 +371,8 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
                   {resumo.map(({ p, totais }) => (
                     <tr key={p.id}>
                       <td className="px-2 py-1.5"><Link href={q({ aba: "espelho", p: p.id })} className="hover:underline">{p.nome}</Link></td>
-                      <td className={`px-2 py-1.5 text-right ${totais.atraso > cfg.tolerancia_min ? "font-semibold text-red-600" : ""}`}>{totais.atraso} min</td>
-                      <td className={`px-2 py-1.5 text-right ${totais.faltas ? "font-semibold text-red-600" : ""}`}>{totais.faltas}</td>
+                      <td className={`px-2 py-1.5 text-right ${totais.atraso > cfg.tolerancia_min ? "font-semibold text-urgente-texto" : ""}`}>{totais.atraso} min</td>
+                      <td className={`px-2 py-1.5 text-right ${totais.faltas ? "font-semibold text-urgente-texto" : ""}`}>{totais.faltas}</td>
                       <td className="px-2 py-1.5 text-right">{totais.incompletos}</td>
                     </tr>
                   ))}

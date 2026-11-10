@@ -169,7 +169,7 @@ export default async function GarcomComandaPage({
                         <FormConfirmado action={removerItemComanda} className="inline" pergunta={`Tirar ${i.descricao} da comanda?`} detalhe="Fica registrado em Cancelados." okTexto="Tirar o item">
                           <input type="hidden" name="id" value={i.id} />
                           <input type="hidden" name="comanda_id" value={comanda.id} />
-                          <Enviar className="text-texto-suave hover:text-red-600 dark:text-texto-fraco">×</Enviar>
+                          <Enviar className="text-texto-suave hover:text-urgente-texto dark:text-texto-fraco">×</Enviar>
                         </FormConfirmado>
                       )}
                     </td>
@@ -189,7 +189,7 @@ export default async function GarcomComandaPage({
       </div>
 
       {fechada ? (
-        <p className="rounded-cartao bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-950/30">
+        <p className="rounded-cartao bg-green-50 p-3 text-center text-sm text-ok-texto dark:bg-green-950/30">
           Comanda fechada.
         </p>
       ) : (

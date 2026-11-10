@@ -31,7 +31,7 @@ const fData = (iso: string) =>
 const diasAtras = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
 
 const BADGE: Record<Solic["status"], string> = {
-  pendente: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  pendente: "bg-amber-100 text-aviso-texto dark:bg-amber-900/40 dark:text-amber-200",
   comprado: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
   rejeitado: "bg-zinc-200 text-texto-suave dark:bg-zinc-800 ",
 };
@@ -164,7 +164,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
         </select>
         <label className="flex items-center gap-1.5 text-sm text-texto-suave">
-          <input type="checkbox" checked={soUrgentes} onChange={(e) => setSoUrgentes(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> só urgentes
+          <input type="checkbox" checked={soUrgentes} onChange={(e) => setSoUrgentes(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-urgente-texto dark:text-red-400" /> só urgentes
         </label>
       </div>
 
@@ -176,7 +176,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
           <button onClick={() => setMarcadas(new Set())} className="text-texto-suave underline">limpar</button>
         </div>
       )}
-      {msg && <p role="status" className="mb-3 text-sm text-red-600">{msg}</p>}
+      {msg && <p role="status" className="mb-3 text-sm text-urgente-texto">{msg}</p>}
 
       {filtradas.length === 0 ? (
         <div className="rounded-cartao bg-painel-cartao p-10 text-center text-sm text-texto-suave">
@@ -216,7 +216,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                     </td>
                     <td className="px-3 py-2 align-top">
                       <div className="font-semibold text-texto">
-                        {s.urgente && <Icone nome="fogo" tamanho={14} className="mr-1 text-red-600 dark:text-red-400" />}
+                        {s.urgente && <Icone nome="fogo" tamanho={14} className="mr-1 text-urgente-texto dark:text-red-400" />}
                         <Icone nome={s.tipo === "manutencao" ? "ferramenta" : "compras"} tamanho={14} className="mr-1.5 text-texto-suave" />
                         {s.item}
                         {s.quantidade ? <span className="font-normal text-texto-suave"> · {s.quantidade}</span> : null}
@@ -232,7 +232,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                     <td className="px-3 py-2 align-top whitespace-nowrap text-texto-suave">
                       {fData(s.criado_em)}
                       {s.status === "pendente" && dias >= 1 && (
-                        <span className={`ml-1 text-xs ${dias >= 7 ? "text-red-600" : "text-texto-fraco"}`}>há {dias} d</span>
+                        <span className={`ml-1 text-xs ${dias >= 7 ? "text-urgente-texto" : "text-texto-fraco"}`}>há {dias} d</span>
                       )}
                       {s.respondido_em && s.status !== "pendente" && (
                         <div className="text-xs text-texto-fraco">{rotulo(s).toLowerCase()} {fData(s.respondido_em)}</div>
@@ -253,7 +253,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
                           <button onClick={() => reabrir(s)} disabled={proc} className="ml-2 text-xs text-texto-suave underline">reabrir</button>
                         </>
                       )}
-                      <button onClick={() => excluir(s)} disabled={proc} className="ml-2 text-xs text-red-500 underline">apagar</button>
+                      <button onClick={() => excluir(s)} disabled={proc} className="ml-2 text-xs text-urgente-texto underline">apagar</button>
                     </td>
                   </tr>
                 );
@@ -302,13 +302,13 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
       <input aria-label="Pra quê / observação" className={`${inp} md:col-span-3`} placeholder="Pra quê / observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-1.5 text-sm text-texto-suave">
-          <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> urgente
+          <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-urgente-texto dark:text-red-400" /> urgente
         </label>
         <button onClick={salvar} disabled={proc || item.trim().length < 2} className="rounded-cartao bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50">
           {proc ? "Salvando…" : "Salvar"}
         </button>
       </div>
-      {msg && <p role="status" className="text-sm text-red-600 md:col-span-4">{msg}</p>}
+      {msg && <p role="status" className="text-sm text-urgente-texto md:col-span-4">{msg}</p>}
     </div>
   );
 }

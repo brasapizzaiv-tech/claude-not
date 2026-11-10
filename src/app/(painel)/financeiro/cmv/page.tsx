@@ -307,7 +307,7 @@ export default async function CmvPage({
           <span className="rounded-controle border border-borda px-3 py-1.5 text-zinc-300">próxima →</span>
         )}
         {atalhoAtual && (
-          <Link href={atalhoAtual} className="rounded-controle border border-amber-500 px-3 py-1.5 text-amber-700 dark:text-amber-300">Semana atual</Link>
+          <Link href={atalhoAtual} className="rounded-controle border border-amber-500 px-3 py-1.5 text-aviso-texto dark:text-amber-300">Semana atual</Link>
         )}
       </div>
 

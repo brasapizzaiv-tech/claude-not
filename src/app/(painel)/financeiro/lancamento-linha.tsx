@@ -125,7 +125,7 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
           </span>
         )}
       </td>
-      <td className={`px-4 py-2 text-right font-medium ${receita ? "text-green-600" : "text-red-600"}`}>
+      <td className={`px-4 py-2 text-right font-medium ${receita ? "text-ok-texto" : "text-urgente-texto"}`}>
         {receita ? "" : "- "}
         {moeda(Number(l.valor))}
       </td>
@@ -152,7 +152,7 @@ export function LancamentoLinha({ l, categorias }: { l: LancRow; categorias: Cat
                 })
               }
               disabled={proc}
-              className="ml-3 text-texto-fraco hover:text-red-600 disabled:opacity-60"
+              className="ml-3 text-texto-fraco hover:text-urgente-texto disabled:opacity-60"
             >
               Remover
             </button>

@@ -79,7 +79,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
   }
 
   const corValidade = (v: string | null) =>
-    !v ? "text-texto-fraco" : v < hoje ? "text-red-600 font-semibold" : v <= somarDias(hoje, 2) ? "text-amber-600 font-medium" : "text-green-600";
+    !v ? "text-texto-fraco" : v < hoje ? "text-urgente-texto font-semibold" : v <= somarDias(hoje, 2) ? "text-aviso-texto font-medium" : "text-ok-texto";
 
   const badgeTipo = (t: string | null) =>
     t && t !== "manipulacao" ? (
@@ -187,7 +187,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                   <td className="px-3 py-2 text-texto-suave">{r.colaborador_nome ?? "—"}</td>
                   <td className="px-3 py-2 text-xs text-texto-suave">{fmtHora(r.manipulado_em)}</td>
                   <td className={`px-3 py-2 ${corValidade(r.validade)}`}>
-                    {r.validade ? dataBR(r.validade) : "—"}{!historico && r.validade && r.validade < hoje && <Icone nome="alerta" tamanho={12} className="ml-1 text-red-600" titulo="Vencida" />}
+                    {r.validade ? dataBR(r.validade) : "—"}{!historico && r.validade && r.validade < hoje && <Icone nome="alerta" tamanho={12} className="ml-1 text-urgente-texto" titulo="Vencida" />}
                   </td>
                   <td className="px-3 py-2 text-xs text-texto-suave">{historico ? `${r.status}${r.baixa_em ? " · " + fmtHora(r.baixa_em) : ""}` : ""}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -200,7 +200,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
                       okTexto="Excluir a etiqueta"
                     >
                       <input type="hidden" name="id" value={r.id} />
-                      <Enviar className="text-zinc-300 hover:text-red-600 dark:text-zinc-600" aria-label={`Excluir a etiqueta de ${r.produto_nome}`}>×</Enviar>
+                      <Enviar className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600" aria-label={`Excluir a etiqueta de ${r.produto_nome}`}>×</Enviar>
                     </FormConfirmado>
                   </td>
                 </tr>

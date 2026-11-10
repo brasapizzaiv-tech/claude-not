@@ -49,7 +49,7 @@ export function SeletorModelo({
   return (
     <div className="space-y-3">
       {aprovados.length === 0 ? (
-        <p className="rounded-controle bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+        <p className="rounded-controle bg-amber-500/10 px-3 py-2 text-sm text-aviso-texto dark:text-amber-400">
           Nenhum modelo aprovado ainda. Crie em Delivery, Campanhas, Modelos e limites. A Meta costuma aprovar em minutos.
         </p>
       ) : (
@@ -98,7 +98,7 @@ export function SeletorModelo({
               }}
             />
           </label>
-          {msgImg && <span role="status" className="text-xs text-red-600">{msgImg}</span>}
+          {msgImg && <span role="status" className="text-xs text-urgente-texto">{msgImg}</span>}
         </div>
       )}
 

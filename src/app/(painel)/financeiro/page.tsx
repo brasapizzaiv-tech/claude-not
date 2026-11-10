@@ -162,19 +162,19 @@ export default async function FinanceiroPage({
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Receitas</p>
-          <p className="mt-1 text-xl font-bold text-green-600">
+          <p className="mt-1 text-xl font-bold text-ok-texto">
             {moeda(receitas)}
           </p>
         </div>
         <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Despesas</p>
-          <p className="mt-1 text-xl font-bold text-red-600">{moeda(saidas)}</p>
+          <p className="mt-1 text-xl font-bold text-urgente-texto">{moeda(saidas)}</p>
         </div>
         <div className="cartao p-4">
           <p className="text-xs text-texto-suave">Resultado</p>
           <p
             className={`mt-1 text-xl font-bold ${
-              resultado >= 0 ? "text-green-600" : "text-red-600"
+              resultado >= 0 ? "text-ok-texto" : "text-urgente-texto"
             }`}
           >
             {moeda(resultado)}

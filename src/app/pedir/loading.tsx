@@ -35,7 +35,7 @@ export default function Loading() {
       <div className="mb-6 flex gap-3 overflow-hidden">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="w-40 shrink-0 rounded-cartao bg-painel-cartao">
-            <Bloco className="h-24 w-full rounded-t-xl rounded-b-none" />
+            <Bloco className="h-24 w-full rounded-t-controle rounded-b-none" />
             <div className="p-2.5">
               <Bloco className="h-3.5 w-24" />
               <Bloco className="mt-2 h-3 w-14" />

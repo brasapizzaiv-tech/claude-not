@@ -158,7 +158,7 @@ export function HorariosEditor({ inicial }: { inicial: Horarios }) {
             </div>
           ))}
           {turnos.length < 4 && (
-            <button type="button" onClick={() => setTurnos((c) => [...c, { ini: "18:00", fim: "23:00" }])} className="text-xs font-semibold text-emerald-600">+ Adicionar turno</button>
+            <button type="button" onClick={() => setTurnos((c) => [...c, { ini: "18:00", fim: "23:00" }])} className="text-xs font-semibold text-ok-texto">+ Adicionar turno</button>
           )}
         </div>
       )}
@@ -422,7 +422,7 @@ export function CardapioClient({
                         cardápio só desativa — as vendas antigas continuam. */}
                     <div className="mt-2 text-right">
                       <BotaoAcao
-                        className="text-xs text-texto-fraco hover:text-red-600"
+                        className="text-xs text-texto-fraco hover:text-urgente-texto"
                         aoClicar={async () => {
                           if (!(await confirmar(`Tirar "${s.nome}" do cardápio?\n\nEle some do salão, do garçom e do app. As vendas antigas ficam.`))) return;
                           await desativarSabor(s.id);
@@ -511,14 +511,14 @@ function CategoriaCard({
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setCanaisAberto((v) => !v)}
-            className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${nCanais === 3 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" : nCanais === 0 ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"}`}
+            className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${nCanais === 3 ? "bg-emerald-100 text-ok-texto dark:bg-emerald-500/15 dark:text-emerald-400" : nCanais === 0 ? "bg-red-100 text-urgente-texto dark:bg-red-500/15 dark:text-red-400" : "bg-amber-100 text-aviso-texto dark:bg-amber-500/15 dark:text-amber-400"}`}
             title="Em quais canais essa categoria aparece"
           >
             Ativa em {nCanais} {nCanais === 1 ? "canal" : "canais"} ▾
           </button>
           <button
             onClick={() => onHorarios(cat)}
-            className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${resumo ? (foraAgora ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" : "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400") : "bg-superficie-suave text-texto-suave "}`}
+            className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${resumo ? (foraAgora ? "bg-amber-100 text-aviso-texto dark:bg-amber-500/15 dark:text-amber-400" : "bg-sky-100 text-info-texto dark:bg-sky-500/15 dark:text-sky-400") : "bg-superficie-suave text-texto-suave "}`}
             title="Dias e horários em que aparece no app do cliente"
           >
             <Icone nome="relogio" tamanho={13} className="mr-1" /> {resumo ?? "Sempre"}{foraAgora ? " · fora do horário agora" : ""}
@@ -529,8 +529,8 @@ function CategoriaCard({
             <Enviar
               className={`rounded-controle px-2.5 py-1 text-xs font-semibold ${
                 cat.disponivel
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-                  : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
+                  ? "bg-emerald-100 text-ok-texto dark:bg-emerald-500/15 dark:text-emerald-400"
+                  : "bg-red-100 text-urgente-texto dark:bg-red-500/15 dark:text-red-400"
               }`}
             >
               {cat.disponivel ? "✓ Disponível" : "✕ Indisponível"}
@@ -542,7 +542,7 @@ function CategoriaCard({
               if (!(await confirmar(`Excluir a categoria "${cat.nome}"? Os produtos não são apagados.`, { perigo: true, okTexto: "Excluir" }))) return;
               await excluirCategoria(comId(cat.id));
             }}
-            className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+            className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
             aria-label="Excluir categoria"
           >
             <Icone nome="lixeira" tamanho={15} />
@@ -601,7 +601,7 @@ function ItensTabela({
                   <td className="w-14 py-1.5 pl-3"><Foto url={i.foto_url} tam="h-10 w-10" /></td>
                   <td className="px-2 py-2 font-medium text-texto">
                     {i.nome}
-                    {!i.ativo && <span className="ml-2 text-mini text-red-500">oculto</span>}
+                    {!i.ativo && <span className="ml-2 text-mini text-urgente-texto">oculto</span>}
                     {temHorario && <span className="ml-2 inline-flex items-center gap-1 text-mini text-sky-500"><Icone nome="relogio" tamanho={11} /> {temHorario}</span>}
                   </td>
                   <td className="px-2 py-2 text-right text-texto-suave">
@@ -620,7 +620,7 @@ function ItensTabela({
                         <Enviar
                           className={`mr-1 rounded-controle px-2 py-0.5 text-mini font-semibold ${
                             ligado
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                              ? "bg-emerald-100 text-ok-texto dark:bg-emerald-500/15 dark:text-emerald-400"
                               : "bg-superficie-suave text-texto-fraco line-through"
                           }`}
                           title={`${ligado ? "Aparece" : "Não aparece"} no canal ${rotulo} — clique pra ${ligado ? "tirar" : "colocar"}`}
@@ -637,8 +637,8 @@ function ItensTabela({
                       <Enviar
                         className={`rounded-controle px-2 py-0.5 text-mini font-semibold ${
                           i.disponivel
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-                            : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
+                            ? "bg-emerald-100 text-ok-texto dark:bg-emerald-500/15 dark:text-emerald-400"
+                            : "bg-red-100 text-urgente-texto dark:bg-red-500/15 dark:text-red-400"
                         }`}
                         title="Disponível/indisponível em todos os canais (ex.: esgotou)"
                       >
@@ -660,7 +660,7 @@ function ItensTabela({
                       </Link>
                     )}
                     {!i.combo && comAdicionais.has(i.id) && (
-                      <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-3 text-emerald-600 hover:underline">
+                      <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-3 text-ok-texto hover:underline">
                         Adicionais
                       </Link>
                     )}
@@ -670,7 +670,7 @@ function ItensTabela({
                         if (!(await confirmar(`Remover "${i.nome}"?`, { perigo: true, okTexto: "Remover" }))) return;
                         await excluirItem(comId(i.id));
                       }}
-                      className="text-texto-fraco hover:text-red-600"
+                      className="text-texto-fraco hover:text-urgente-texto"
                     >
                       Remover
                     </BotaoAcao>

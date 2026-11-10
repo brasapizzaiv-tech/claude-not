@@ -95,7 +95,7 @@ export function AvisosCelular({ token }: { token: string }) {
         <button type="button" onClick={ativar} disabled={proc} className="mt-2 w-full rounded-cartao bg-texto py-2.5 text-sm font-semibold text-fundo disabled:opacity-50">
           {proc ? "Ativando…" : "Ativar avisos"}
         </button>
-        {estado === "erro" && <p className="mt-1 text-xs text-red-600">Não consegui ativar agora. Tente de novo daqui a pouco.</p>}
+        {estado === "erro" && <p className="mt-1 text-xs text-urgente-texto">Não consegui ativar agora. Tente de novo daqui a pouco.</p>}
       </div>
     );
   }

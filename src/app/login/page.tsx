@@ -35,7 +35,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50 px-6 dark:bg-zinc-950">
+    <div className="flex flex-1 items-center justify-center bg-painel-fundo px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -44,7 +44,7 @@ export default function LoginPage() {
             alt="Brasa Restaurante & Pizzaria"
             className="mx-auto mb-4 h-28 w-28 object-contain"
           />
-          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-xl font-bold text-texto">
             Motelli
           </h1>
           <p className="mt-1 text-sm text-zinc-500">Entre para continuar</p>
@@ -52,10 +52,10 @@ export default function LoginPage() {
 
         <form
           onSubmit={entrar}
-          className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="space-y-4 rounded-cartao border border-borda bg-painel-cartao p-6 shadow-sm"
         >
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="mb-1 block text-sm font-medium text-texto-suave">
               E-mail
             </label>
             <input aria-label="voce@email.com"
@@ -63,12 +63,12 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-texto focus:border-orange-500"
               placeholder="voce@email.com"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="mb-1 block text-sm font-medium text-texto-suave">
               Senha
             </label>
             <input aria-label="••••••••"
@@ -76,13 +76,13 @@ export default function LoginPage() {
               required
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-texto focus:border-orange-500"
               placeholder="••••••••"
             />
           </div>
 
           {erro && (
-            <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
+            <p role="alert" className="rounded-controle bg-red-50 px-3 py-2 text-sm text-urgente-texto dark:bg-red-950 dark:text-red-400">
               {erro}
             </p>
           )}
@@ -90,7 +90,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={carregando}
-            className="w-full rounded-lg bg-orange-500 px-4 py-2.5 font-medium text-marca-sobre-primaria transition hover:brightness-105 disabled:opacity-60"
+            className="w-full rounded-controle bg-primaria px-4 py-2.5 font-medium text-marca-sobre-primaria transition hover:brightness-105 disabled:opacity-60"
           >
             {carregando ? "Entrando..." : "Entrar"}
           </button>

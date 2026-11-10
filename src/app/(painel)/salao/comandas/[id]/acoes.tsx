@@ -119,7 +119,7 @@ export function AcoesComanda({
       <button
         onClick={excluir}
         disabled={p}
-        className="rounded-controle border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:hover:bg-red-950/40"
+        className="rounded-controle border border-red-300 px-4 py-2 text-sm font-medium text-urgente-texto hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:hover:bg-red-950/40"
       >
         {p ? "Aguarde..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="lixeira" tamanho={14} /> Excluir comanda</span>}
       </button>

@@ -37,7 +37,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
   return (
     <div className="space-y-4">
       {erro && (
-        <p role="alert" className="rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">{erro}</p>
+        <p role="alert" className="rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">{erro}</p>
       )}
 
       {/* Lista */}
@@ -82,7 +82,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
                           title={ligado ? `Tirar de ${c.label}` : `Mostrar em ${c.label}`}
                           className={`rounded-controle border px-2 py-0.5 text-xs font-medium ${
                             ligado
-                              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                              ? "border-emerald-500/40 bg-emerald-500/15 text-ok-texto dark:text-emerald-300"
                               : "border-borda text-texto-fraco hover:border-borda-forte"
                           }`}
                         >
@@ -97,7 +97,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
                     aoClicar={() => rodar(() => alternarForma(f.id, "ativo", !f.ativo))}
                     className={`rounded-controle border px-2 py-0.5 text-xs font-medium ${
                       f.ativo
-                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                        ? "border-emerald-500/40 bg-emerald-500/15 text-ok-texto dark:text-emerald-300"
                         : "border-borda text-texto-fraco"
                     }`}
                   >

@@ -159,7 +159,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
       </form>
 
       {msg && (
-        <p role="status" className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p role="status" className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           {msg}
         </p>
       )}
@@ -243,7 +243,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
                             </span>
                             {c.doSistema && (
                               <span
-                                className="rounded-controle bg-amber-100 px-1.5 py-0.5 text-mini font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                                className="rounded-controle bg-amber-100 px-1.5 py-0.5 text-mini font-medium text-aviso-texto dark:bg-amber-950 dark:text-amber-300"
                                 title="O sistema procura esta categoria pelo nome (fechamento de caixa, conferência, diaristas). Renomear quebra essa ligação."
                               >
                                 usada pelo sistema
@@ -269,7 +269,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
                               <button
                                 onClick={() => apagar(c)}
                                 disabled={salvando}
-                                className="text-xs text-texto-fraco hover:text-red-600 hover:underline"
+                                className="text-xs text-texto-fraco hover:text-urgente-texto hover:underline"
                               >
                                 apagar
                               </button>

@@ -148,7 +148,7 @@ function Resultado({
 
   return (
     <div>
-      <div className="mb-3 rounded-cartao bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+      <div className="mb-3 rounded-cartao bg-green-50 p-3 text-sm text-ok-texto dark:bg-green-950 dark:text-green-300">
         ✓ Contagem criada para <b>{res.nome}</b>. Envie o link:
       </div>
       <input

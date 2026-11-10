@@ -139,7 +139,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         {linhaCalc(
           "= Saldo final",
           c.saldo_final,
-          c.saldo_final >= 0 ? "text-green-600" : "text-red-600",
+          c.saldo_final >= 0 ? "text-ok-texto" : "text-urgente-texto",
         )}
       </div>
 
@@ -193,7 +193,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         </div>
       </div>
       {Math.abs(difFormas) > 0.01 && (
-        <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-xs text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           A soma das formas ({moeda(c.formas_total)}) está {moeda(Math.abs(difFormas))}{" "}
           {difFormas > 0 ? "acima" : "abaixo"} do Total pedidos ({moeda(c.total_pedidos)}).
           Confira os valores.

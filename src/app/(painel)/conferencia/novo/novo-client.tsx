@@ -195,7 +195,7 @@ export function NovoPedidoClient({
                     <td className="px-2 py-1 text-right">
                       <button aria-label="Fechar"
                         onClick={() => remover(idx)}
-                        className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+                        className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
                       >
                         ×
                       </button>
@@ -241,7 +241,7 @@ export function NovoPedidoClient({
         </button>
       </div>
       {fornecedorId && !zapFull && (
-        <p className="mt-2 text-xs text-amber-600">
+        <p className="mt-2 text-xs text-aviso-texto">
           O fornecedor <b>{forn?.nome}</b> não tem WhatsApp cadastrado — adicione em
           Fornecedores para poder enviar o pedido.
         </p>

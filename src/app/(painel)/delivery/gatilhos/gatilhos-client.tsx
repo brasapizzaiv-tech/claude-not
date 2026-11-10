@@ -67,7 +67,7 @@ function Cartao({ def, salvo, modelos, cupons, enviados, aberto, abrir }: {
         </label>
       </div>
 
-      <button type="button" onClick={abrir} className="mt-3 text-sm font-semibold text-emerald-600">{aberto ? "Fechar" : msg.modelo ? "Editar mensagem" : "Configurar mensagem"}</button>
+      <button type="button" onClick={abrir} className="mt-3 text-sm font-semibold text-ok-texto">{aberto ? "Fechar" : msg.modelo ? "Editar mensagem" : "Configurar mensagem"}</button>
 
       {aberto && (
         <div className="mt-3 space-y-3 border-t border-borda pt-3">
@@ -91,11 +91,11 @@ function Cartao({ def, salvo, modelos, cupons, enviados, aberto, abrir }: {
           )}
           <div className="flex flex-wrap items-center gap-3">
             <button type="button" disabled={salvando} onClick={() => salvar()} className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo disabled:opacity-40">{salvando ? "Salvando..." : "Salvar"}</button>
-            {aviso && <span role="status" className={`text-sm ${aviso.ok ? "text-emerald-600" : "text-red-600"}`}>{aviso.texto}</span>}
+            {aviso && <span role="status" className={`text-sm ${aviso.ok ? "text-ok-texto" : "text-urgente-texto"}`}>{aviso.texto}</span>}
           </div>
         </div>
       )}
-      {!aberto && aviso && <p className={`mt-2 text-sm ${aviso.ok ? "text-emerald-600" : "text-red-600"}`}>{aviso.texto}</p>}
+      {!aberto && aviso && <p className={`mt-2 text-sm ${aviso.ok ? "text-ok-texto" : "text-urgente-texto"}`}>{aviso.texto}</p>}
     </div>
   );
 }

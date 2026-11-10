@@ -202,13 +202,13 @@ export function CmvTabela({
     <div>
       {emAndamento ? (
         <>
-          <div className="mb-3 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <div className="mb-3 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-aviso-texto dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
             <b>Semana em andamento.</b> O estoque final ainda não foi contado, então o CMV desta semana só fecha quando a próxima contagem for finalizada. Enquanto isso: compras e faturamento até agora.
           </div>
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {card("Compras até agora", moeda(totalCompras), "text-orange-600")}
             {card("Faturamento até agora", faturamento > 0 ? moeda(faturamento) : "—", "", faturamento > 0 ? "" : "lance por dia abaixo")}
-            {card("Compras / Faturamento", faturamento > 0 ? pct(totalCompras / faturamento) : "—", faturamento <= 0 ? "" : totalCompras / faturamento <= meta ? "text-green-600" : "text-red-600", "prévia — não é o CMV")}
+            {card("Compras / Faturamento", faturamento > 0 ? pct(totalCompras / faturamento) : "—", faturamento <= 0 ? "" : totalCompras / faturamento <= meta ? "text-ok-texto" : "text-urgente-texto", "prévia — não é o CMV")}
             {card("Meta CMV", pct(meta))}
           </div>
         </>
@@ -216,11 +216,11 @@ export function CmvTabela({
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {card("CMV Real", moeda(totalCmv))}
         {card("Faturamento", faturamento > 0 ? moeda(faturamento) : "—", "", faturamento > 0 ? "" : "sem faturamento no período")}
-        {card("CMV %", faturamento > 0 ? pct(cmvPct) : "—", faturamento <= 0 ? "" : cmvPct <= meta ? "text-green-600" : "text-red-600")}
+        {card("CMV %", faturamento > 0 ? pct(cmvPct) : "—", faturamento <= 0 ? "" : cmvPct <= meta ? "text-ok-texto" : "text-urgente-texto")}
         {card(
           "Meta / Lacuna",
           pct(meta),
-          faturamento > 0 ? (lacuna <= 0 ? "text-green-600" : "text-red-600") : "",
+          faturamento > 0 ? (lacuna <= 0 ? "text-ok-texto" : "text-urgente-texto") : "",
           faturamento > 0 ? `${lacuna <= 0 ? "▼ dentro" : "▲ acima"} ${pct(Math.abs(lacuna))}` : "",
         )}
       </div>
@@ -293,7 +293,7 @@ export function CmvTabela({
 
       {aumentos.length > 0 && (
         <div className="mb-6 rounded-cartao border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
-          <h2 className="mb-2 text-sm font-semibold text-red-700 dark:text-red-300">
+          <h2 className="mb-2 text-sm font-semibold text-urgente-texto dark:text-red-300">
             <Icone nome="subindo" tamanho={15} className="mr-1.5" /> Maiores aumentos de preço na semana
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -303,7 +303,7 @@ export function CmvTabela({
                 className="rounded-controle border border-red-200 bg-painel-cartao px-3 py-1.5 text-xs dark:border-red-900/60"
               >
                 <span className="font-semibold text-zinc-800 dark:text-zinc-100">{r.nome}</span>{" "}
-                <span className="font-bold text-red-600">
+                <span className="font-bold text-urgente-texto">
                   ▲ {((r.variacao ?? 0) * 100).toFixed(0)}% (+{moeda(r.precoCompra - r.precoAnterior)})
                 </span>
                 <span className="ml-1 text-texto-fraco">
@@ -436,9 +436,9 @@ export function CmvTabela({
                                   <span
                                     className={`ml-1 font-semibold ${
                                       r.variacao > 0.001
-                                        ? "text-red-500"
+                                        ? "text-urgente-texto"
                                         : r.variacao < -0.001
-                                          ? "text-green-600"
+                                          ? "text-ok-texto"
                                           : "text-texto-fraco"
                                     }`}
                                     title="variação de preço vs semana anterior"
@@ -493,7 +493,7 @@ export function CmvTabela({
                               COMPRAR
                             </span>
                           ) : (
-                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-mini font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-mini font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
                               ok
                             </span>
                           )}

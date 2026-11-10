@@ -61,7 +61,7 @@ export function RecadosClient({ inicial }: { inicial: RecadoTvLinha[] }) {
             <button onClick={() => { setEditando(null); setTexto(""); setAte(""); }} className="rounded-controle px-3 py-2 text-sm text-texto-suave underline">cancelar</button>
           )}
         </div>
-        {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
+        {erro && <p role="alert" className="mt-2 text-sm text-urgente-texto">{erro}</p>}
       </div>
 
       <div className="divide-y divide-zinc-100 cartao dark:divide-zinc-800">
@@ -80,7 +80,7 @@ export function RecadosClient({ inicial }: { inicial: RecadoTvLinha[] }) {
                 {r.ativo ? "Desligar" : "Ligar"}
               </button>
               <button onClick={() => editar(r)} disabled={proc} className="rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-semibold">Editar</button>
-              <button onClick={async () => { if (await confirmar("Apagar este recado?")) rodar(() => excluirRecadoTv(r.id)); }} disabled={proc} className="rounded-controle px-3 py-1.5 text-xs font-semibold text-red-600">Apagar</button>
+              <button onClick={async () => { if (await confirmar("Apagar este recado?")) rodar(() => excluirRecadoTv(r.id)); }} disabled={proc} className="rounded-controle px-3 py-1.5 text-xs font-semibold text-urgente-texto">Apagar</button>
             </div>
           );
         })}

@@ -38,7 +38,7 @@ export function ApontamentosClient({
           <ul className="mt-1.5 space-y-1 text-sm">
             {maisRepetidos.map((r, i) => (
               <li key={i} className="flex items-baseline gap-2">
-                <span className="w-7 text-right font-bold text-amber-700 dark:text-amber-300">{r.n}×</span>
+                <span className="w-7 text-right font-bold text-aviso-texto dark:text-amber-300">{r.n}×</span>
                 <span className="text-zinc-800 dark:text-zinc-100">{r.texto}</span>
                 {r.setor && <span className="text-xs text-texto-suave">{r.setor}</span>}
               </li>
@@ -71,18 +71,18 @@ export function ApontamentosClient({
                 </p>
               </div>
               {!a.resolvido_em && (
-                <button onClick={() => agir(() => resolverApontamentoPainel(a.id))} disabled={proc} className="rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">✓ Resolvido</button>
+                <button onClick={() => agir(() => resolverApontamentoPainel(a.id))} disabled={proc} className="rounded-controle border border-emerald-500 px-2 py-1 text-xs font-medium text-ok-texto dark:text-emerald-300">✓ Resolvido</button>
               )}
               {a.resolvido_em && (
-                <button onClick={() => agir(() => resolverApontamentoPainel(a.id, true))} disabled={proc} className="text-xs text-texto-fraco hover:text-amber-600">reabrir</button>
+                <button onClick={() => agir(() => resolverApontamentoPainel(a.id, true))} disabled={proc} className="text-xs text-texto-fraco hover:text-aviso-texto">reabrir</button>
               )}
               {a.na_tv && (
-                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">tirar da TV</button>
+                <button onClick={() => agir(() => tirarApontamentoDaTv(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-urgente-texto">tirar da TV</button>
               )}
               <button aria-label="Fechar"
                 onClick={async () => { if (await confirmar("Apagar este apontamento?")) agir(() => excluirApontamentoPainel(a.id)); }}
                 disabled={proc}
-                className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+                className="text-xs text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
               >
                 ✕
               </button>

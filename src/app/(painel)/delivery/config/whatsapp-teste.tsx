@@ -21,7 +21,7 @@ export function WhatsappTeste({ configurado }: { configurado: boolean }) {
     });
   }
   return (
-    <div className={`mb-4 rounded-cartao px-4 py-3 text-sm ${configurado ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-zinc-500/10 text-texto-suave"}`}>
+    <div className={`mb-4 rounded-cartao px-4 py-3 text-sm ${configurado ? "bg-emerald-500/10 text-ok-texto dark:text-emerald-400" : "bg-zinc-500/10 text-texto-suave"}`}>
       {configurado
         ? "✓ WhatsApp oficial ligado — o cliente recebe aviso ao pedir, quando confirma, quando sai e quando entrega."
         : "💬 WhatsApp oficial ainda não configurado: faltam WHATSAPP_TOKEN e WHATSAPP_PHONE_ID na Vercel (e os 4 modelos aprovados na Meta). Sem isso, nada é enviado."}

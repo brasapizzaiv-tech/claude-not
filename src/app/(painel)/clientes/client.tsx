@@ -126,7 +126,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
                       Editar
                     </button>
                     <BotaoAcao
-                      className="text-texto-fraco hover:text-red-600"
+                      className="text-texto-fraco hover:text-urgente-texto"
                       aoClicar={async () => {
                         const ok = await confirmar(`Apagar os dados de ${c.nome}?`, {
                           detalhe: "Nome, telefone, endereço e CPF/CNPJ saem de todo o sistema, inclusive dos pedidos, reservas, vales e mensagens. Valores, fiado e notas fiscais ficam (a lei manda guardar). Não dá para desfazer.",
@@ -223,7 +223,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
                 {salvando ? "Salvando..." : "Salvar"}
               </Enviar>
             </div>
-            {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
+            {erro && <p role="alert" className="mt-2 text-sm text-urgente-texto">{erro}</p>}
           </form>
         </Janela>
       )}

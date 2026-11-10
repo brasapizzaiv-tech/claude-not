@@ -155,7 +155,7 @@ export function EventosClient({ eventos, hoje }: { eventos: Evento[]; hoje: stri
       )}
 
       {msg && (
-        <p role="status" className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p role="status" className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           {msg}
         </p>
       )}
@@ -217,7 +217,7 @@ export function EventosClient({ eventos, hoje }: { eventos: Evento[]; hoje: stri
                     const r = await excluirEvento(e.id);
                     if (!r.ok) void avisar(r.erro);
                   }}
-                  className="ml-auto text-xs text-texto-fraco hover:text-red-600 hover:underline"
+                  className="ml-auto text-xs text-texto-fraco hover:text-urgente-texto hover:underline"
                 >
                   apagar
                 </BotaoAcao>

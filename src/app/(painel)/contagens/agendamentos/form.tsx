@@ -137,7 +137,7 @@ export function AgendamentosClient({
                     fd.set("id", a.id);
                     acao(() => excluirAgendamento(fd));
                   }}
-                  className="text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
+                  className="text-xs text-texto-fraco hover:text-urgente-texto disabled:opacity-60"
                 >
                   Excluir
                 </button>

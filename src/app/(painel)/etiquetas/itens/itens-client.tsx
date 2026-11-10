@@ -87,7 +87,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
 
   return (
     <div className="space-y-6">
-      {msg && <div role="status" className="rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">{msg}</div>}
+      {msg && <div role="status" className="rounded-controle bg-green-50 px-3 py-2 text-sm text-ok-texto dark:bg-green-950 dark:text-green-300">{msg}</div>}
 
       {/* Categorias */}
       <details className="cartao p-4">
@@ -172,7 +172,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
                     <td className="px-3 py-1.5 text-center"><input type="checkbox" checked={e.ativo} onChange={(ev) => set({ ativo: ev.target.checked })} /></td>
                     <td className="px-3 py-1.5 text-right whitespace-nowrap">
                       <button onClick={() => salvar(i)} disabled={!alterado(i) || salvando} className="rounded-controle bg-orange-500 px-3 py-1 text-xs font-semibold text-marca-sobre-primaria disabled:opacity-30">Salvar</button>
-                      <button aria-label="Fechar" onClick={() => excluir(i)} disabled={salvando} className="ml-2 text-zinc-300 hover:text-red-600 dark:text-zinc-600" title="Excluir">×</button>
+                      <button aria-label="Fechar" onClick={() => excluir(i)} disabled={salvando} className="ml-2 text-zinc-300 hover:text-urgente-texto dark:text-zinc-600" title="Excluir">×</button>
                     </td>
                   </tr>
                 );

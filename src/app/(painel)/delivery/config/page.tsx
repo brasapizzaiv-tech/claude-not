@@ -51,9 +51,9 @@ export default async function DeliveryConfigPage() {
     <div className="mx-auto max-w-2xl p-4">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="ajustes" tamanho={19} /> Config do delivery</h1>
-      <p className="mb-4 text-sm text-texto-suave">Taxa de entrega: por <Link href="/delivery/areas" className="font-semibold text-emerald-600">áreas desenhadas no mapa</Link> quando houver áreas cadastradas; senão, pela distância até o restaurante (abaixo).</p>
+      <p className="mb-4 text-sm text-texto-suave">Taxa de entrega: por <Link href="/delivery/areas" className="font-semibold text-ok-texto">áreas desenhadas no mapa</Link> quando houver áreas cadastradas; senão, pela distância até o restaurante (abaixo).</p>
 
-      <div className={`mb-4 rounded-cartao px-4 py-3 text-sm ${temChave ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/10 text-amber-700 dark:text-amber-400"}`}>
+      <div className={`mb-4 rounded-cartao px-4 py-3 text-sm ${temChave ? "bg-emerald-500/10 text-ok-texto dark:text-emerald-400" : "bg-amber-500/10 text-aviso-texto dark:text-amber-400"}`}>
         {temChave
           ? "✓ Chave do Google Maps configurada — distância precisa (por rota)."
           : "ⓘ Sem chave do Google Maps: usando um cálculo grátis aproximado (linha reta). Pra ficar preciso, adicione GOOGLE_MAPS_API_KEY no .env do servidor."}
@@ -84,7 +84,7 @@ export default async function DeliveryConfigPage() {
                 <span className="text-texto-suave">O pino é o ponto de partida das entregas.</span>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${Number(c.origem_lat)},${Number(c.origem_lng)}`}
-                  target="_blank" rel="noreferrer" className="font-semibold text-emerald-600 hover:underline"
+                  target="_blank" rel="noreferrer" className="font-semibold text-ok-texto hover:underline"
                 >
                   Abrir no Google Maps →
                 </a>

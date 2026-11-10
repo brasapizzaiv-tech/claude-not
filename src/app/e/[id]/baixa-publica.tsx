@@ -29,7 +29,7 @@ export function BaixaPublica({
 
   if (status !== "ativa") {
     return (
-      <div className="mt-4 rounded-xl bg-zinc-200 p-3 text-center text-sm font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+      <div className="mt-4 rounded-controle bg-zinc-200 p-3 text-center text-sm font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
         {status === "usada" ? "✓ Baixa registrada (usada)" : "Descartada"}
       </div>
     );
@@ -40,14 +40,14 @@ export function BaixaPublica({
       <button
         onClick={() => baixar("usada")}
         disabled={!!carregando}
-        className="flex-1 rounded-xl bg-green-600 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+        className="flex-1 rounded-controle bg-green-600 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-60"
       >
         {carregando === "usada" ? "..." : "Dar baixa"}
       </button>
       <button
         onClick={() => baixar("descartada")}
         disabled={!!carregando}
-        className="rounded-xl border border-zinc-300 px-4 py-3 text-sm font-medium text-zinc-500 hover:text-red-600 disabled:opacity-60 dark:border-zinc-700"
+        className="rounded-controle border border-zinc-300 px-4 py-3 text-sm font-medium text-zinc-500 hover:text-urgente-texto disabled:opacity-60 dark:border-zinc-700"
       >
         {carregando === "descartada" ? "..." : "Descartar"}
       </button>

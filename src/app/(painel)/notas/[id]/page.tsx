@@ -169,7 +169,7 @@ export default async function NotaDetalhePage({
         />
       )}
       {!nota.fornecedor_id && (
-        <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p className="mt-2 rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           Fornecedor (CNPJ {nota.emit_cnpj}) não está no seu cadastro — cadastre-o
           com esse CNPJ para o sistema reconhecer as próximas notas.
         </p>
@@ -318,12 +318,12 @@ export default async function NotaDetalhePage({
                         <div className="text-xs text-texto-fraco">
                           pedido {moeda(p.total)} · nota {moeda(Number(nota.valor))}
                           {Math.abs(dif) > 0.01 && (
-                            <span className="ml-1 text-amber-600">
+                            <span className="ml-1 text-aviso-texto">
                               (dif {moeda(dif)})
                             </span>
                           )}
                           {Math.abs(dif) <= 0.01 && (
-                            <span className="ml-1 text-green-600">(bate ✓)</span>
+                            <span className="ml-1 text-ok-texto">(bate ✓)</span>
                           )}
                         </div>
                       </td>

@@ -50,9 +50,9 @@ const dataTef = (iso: string) => {
 // A mesma data, do jeito que o operador lê (pra digitar na janela da Elgin).
 const dataBr = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 const STATUS: Record<string, { rotulo: string; cls: string }> = {
-  confirmada: { rotulo: "aprovada", cls: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" },
-  aprovada: { rotulo: "aprovada (sem confirmar)", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" },
-  cancelada: { rotulo: "cancelada", cls: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
+  confirmada: { rotulo: "aprovada", cls: "bg-green-100 text-ok-texto dark:bg-green-950 dark:text-green-300" },
+  aprovada: { rotulo: "aprovada (sem confirmar)", cls: "bg-amber-100 text-aviso-texto dark:bg-amber-950 dark:text-amber-200" },
+  cancelada: { rotulo: "cancelada", cls: "bg-red-100 text-urgente-texto dark:bg-red-950 dark:text-red-300" },
   desfeita: { rotulo: "desfeita", cls: "bg-superficie-suave text-texto-suave " },
   negada: { rotulo: "recusada", cls: "pilula-urgente" },
   erro: { rotulo: "erro no pinpad", cls: "pilula-urgente" },
@@ -221,7 +221,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${agente ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" : "bg-superficie-suave text-texto-suave "}`}>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${agente ? "bg-green-100 text-ok-texto dark:bg-green-950 dark:text-green-300" : "bg-superficie-suave text-texto-suave "}`}>
           {agente ? `Agente TEF ${agente.versao} · ${agente.terminal}${agente.gerenciador ? " · gerenciador OK" : " · gerenciador não encontrado"}` : "Agente TEF não encontrado neste PC"}
         </span>
         <button onClick={adm} disabled={proc || !agente} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="ajustes" tamanho={14} /> Menu administrativo (Elgin)</span></button>
@@ -272,7 +272,7 @@ export function TefLista({ linhas }: { linhas: TefLinha[] }) {
                       )}
                       {podeImprimir && <button onClick={() => reimprimir(l)} disabled={proc} className={btn}><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>}
                       {podeCancelar && (
-                        <button onClick={() => cancelar(l)} disabled={proc || !agente} className="rounded-controle border border-red-400 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:hover:bg-red-950">
+                        <button onClick={() => cancelar(l)} disabled={proc || !agente} className="rounded-controle border border-red-400 px-3 py-1.5 text-xs font-medium text-urgente-texto hover:bg-red-50 disabled:opacity-40 dark:hover:bg-red-950">
                           {ocupadoId === l.id ? "No pinpad…" : <span className="inline-flex items-center gap-1.5"><Icone nome="fechar" tamanho={13} /> Cancelar</span>}
                         </button>
                       )}

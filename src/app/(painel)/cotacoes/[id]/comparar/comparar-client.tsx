@@ -632,7 +632,7 @@ export function CompararClient({
             <button
               onClick={() => startSave(async () => { await novaCotacaoDosFaltantes(cotacaoId); })}
               disabled={salvando}
-              className="rounded-controle border border-green-500 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-60 dark:text-green-300 dark:hover:bg-green-900/40"
+              className="rounded-controle border border-green-500 px-4 py-2 text-sm font-medium text-ok-texto hover:bg-green-100 disabled:opacity-60 dark:text-green-300 dark:hover:bg-green-900/40"
             >
               Nova cotação com os itens que faltam
             </button>
@@ -651,13 +651,13 @@ export function CompararClient({
           <p className="text-xs text-texto-fraco">Comparado à última compra</p>
           {resumo.comHist > 0 ? (
             <>
-              <p className={`mt-1 font-numero text-2xl font-semibold tracking-apertada ${resumo.diferenca > 0.005 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+              <p className={`mt-1 font-numero text-2xl font-semibold tracking-apertada ${resumo.diferenca > 0.005 ? "text-urgente-texto dark:text-red-400" : "text-ok-texto dark:text-emerald-400"}`}>
                 {resumo.diferenca > 0.005 ? "+" : resumo.diferenca < -0.005 ? "−" : ""}{moeda(Math.abs(resumo.diferenca))}
                 {resumo.pct != null && <span className="ml-1.5 text-base">({pct(resumo.pct)})</span>}
               </p>
               <p className="text-xs text-texto-suave">
                 {resumo.diferenca > 0.005 ? "a mais" : resumo.diferenca < -0.005 ? "de economia" : "igual"} em {resumo.comHist} itens com histórico
-                {resumo.subiram > 0 && <> · <button onClick={() => setFiltro("subiu")} className="font-semibold text-red-600 underline dark:text-red-400">{resumo.subiram} subiram</button></>}
+                {resumo.subiram > 0 && <> · <button onClick={() => setFiltro("subiu")} className="font-semibold text-urgente-texto underline dark:text-red-400">{resumo.subiram} subiram</button></>}
               </p>
             </>
           ) : (
@@ -671,7 +671,7 @@ export function CompararClient({
         </div>
         <div className="rounded-cartao bg-painel-cartao p-4">
           <p className="text-xs text-texto-fraco">Falta escolher</p>
-          <p className={`mt-1 font-numero text-2xl font-semibold tracking-apertada ${semEscolha > 0 ? "text-amber-600 dark:text-amber-400" : "text-texto"}`}>{semEscolha}</p>
+          <p className={`mt-1 font-numero text-2xl font-semibold tracking-apertada ${semEscolha > 0 ? "text-aviso-texto dark:text-amber-400" : "text-texto"}`}>{semEscolha}</p>
           <p className="text-xs text-texto-suave">
             {semEscolha > 0 ? <button onClick={() => setFiltro("sem_escolha")} className="underline">ver quais</button> : "tudo escolhido"}
             {conf.size > 0 && <> · {conf.size} conferidos</>}
@@ -800,7 +800,7 @@ export function CompararClient({
                     <div className="mt-1 flex flex-wrap items-center justify-end gap-1">
                       {!travada && (diferencaPedido(f.id)?.total ?? 0) > 0 ? (
                         <>
-                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-mini font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-mini font-semibold text-ok-texto dark:bg-green-950 dark:text-green-300">
                             ✓ gerado
                           </span>
                           <button
@@ -814,7 +814,7 @@ export function CompararClient({
                         </>
                       ) : gerados.has(f.id) ? (
                         <>
-                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-mini font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-mini font-semibold text-ok-texto dark:bg-green-950 dark:text-green-300">
                             ✓ gerado
                           </span>
                           <a
@@ -944,7 +944,7 @@ export function CompararClient({
                         <>
                           <div className="text-sm font-semibold text-texto">{moeda(l.total)}</div>
                           {l.delta != null && Math.abs(l.delta) >= 0.005 ? (
-                            <div className={`whitespace-nowrap text-mini font-semibold ${l.delta > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`} title="Preço escolhido comparado à última compra">
+                            <div className={`whitespace-nowrap text-mini font-semibold ${l.delta > 0 ? "text-urgente-texto dark:text-red-400" : "text-ok-texto dark:text-emerald-400"}`} title="Preço escolhido comparado à última compra">
                               {l.delta > 0 ? "↑" : "↓"} {pct(l.delta)} vs última
                             </div>
                           ) : l.delta != null ? (
@@ -952,7 +952,7 @@ export function CompararClient({
                           ) : null}
                         </>
                       ) : (
-                        <span className="text-mini text-amber-600 dark:text-amber-400">sem escolha</span>
+                        <span className="text-mini text-aviso-texto dark:text-amber-400">sem escolha</span>
                       )}
                     </td>
                     {colunas.map((f) => {
@@ -969,7 +969,7 @@ export function CompararClient({
                       }
                       if (!cel.disp || cel.preco == null) {
                         return (
-                          <td key={f.id} className="px-3 py-2 text-right text-xs text-amber-600 dark:text-amber-400">
+                          <td key={f.id} className="px-3 py-2 text-right text-xs text-aviso-texto dark:text-amber-400">
                             em falta
                           </td>
                         );
@@ -1007,7 +1007,7 @@ export function CompararClient({
                                   escolhido && ofSel === "main"
                                     ? "bg-orange-500 font-semibold text-marca-sobre-primaria"
                                     : melhor
-                                      ? "font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/60 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                                      ? "font-semibold text-ok-texto ring-1 ring-inset ring-emerald-500/60 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
                                       : "text-texto-suave hover:bg-superficie-suave"
                                 }`}
                                 title={detalhe || (melhor ? "Mais barato" : "")}
@@ -1018,7 +1018,7 @@ export function CompararClient({
                                   if (!k) return null;
                                   const melhorKg = menorKg != null && Math.abs(k.v - menorKg) < 0.0001;
                                   return (
-                                    <span className={`block text-mini font-normal ${escolhido && ofSel === "main" ? "text-white/80" : melhorKg ? "font-semibold text-emerald-700 dark:text-emerald-300" : "text-texto-fraco"}`}>
+                                    <span className={`block text-mini font-normal ${escolhido && ofSel === "main" ? "text-white/80" : melhorKg ? "font-semibold text-ok-texto dark:text-emerald-300" : "text-texto-fraco"}`}>
                                       {moeda(k.v)}/{k.medida}{melhorKg ? " · melhor por " + k.medida : ""}
                                     </span>
                                   );
@@ -1095,13 +1095,13 @@ export function CompararClient({
                     key={f.id}
                     className={`sticky bottom-0 z-20 bg-superficie-suave px-3 py-3 text-right ${
                       abaixoMin
-                        ? "text-amber-600"
+                        ? "text-aviso-texto"
                         : "text-texto"
                     }`}
                     title={abaixoMin ? `Abaixo do pedido mínimo (${moeda(f.pedido_minimo as number)})` : ""}
                   >
                     {total > 0 ? moeda(total) : "—"}
-                    {abaixoMin && <Icone nome="alerta" tamanho={12} className="ml-1 text-amber-600" titulo="Abaixo do mínimo" />}
+                    {abaixoMin && <Icone nome="alerta" tamanho={12} className="ml-1 text-aviso-texto" titulo="Abaixo do mínimo" />}
                     {nItens > 0 && <div className="text-mini font-normal text-texto-fraco">{nItens} {nItens === 1 ? "item" : "itens"}{abaixoMin ? " · abaixo do mín." : ""}</div>}
                   </td>
                 );
@@ -1154,7 +1154,7 @@ export function CompararClient({
       )}
 
       <p className="mt-2 text-xs text-texto-fraco">
-        Clique num preço para escolher de quem comprar. <b className="text-emerald-600">Contorno verde</b> = mais barato,{" "}
+        Clique num preço para escolher de quem comprar. <b className="text-ok-texto">Contorno verde</b> = mais barato,{" "}
         <b className="text-orange-600">laranja</b> = escolhido, e o <b>+%</b> diz quanto está acima do mais barato. A coluna{" "}
         <b>Escolhido</b> mostra quanto o item vai custar e se subiu ou baixou desde a última compra. Use <b>dividir</b> pra pedir
         o mesmo item de mais de um fornecedor e o <b>✓</b> pra marcar o que já conferiu (fica guardado neste navegador).

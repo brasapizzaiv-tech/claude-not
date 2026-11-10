@@ -143,7 +143,7 @@ export function NovoUsuario() {
           toggle={toggle}
         />
       </div>
-      {erro && <p role="alert" className="mt-3 text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-3 text-sm text-urgente-texto">{erro}</p>}
       <div className="mt-4 flex gap-2">
         <button
           onClick={salvar}
@@ -258,7 +258,7 @@ export function UsuarioLinha({
             <button
               onClick={excluir}
               disabled={p}
-              className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600 disabled:opacity-60"
+              className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-urgente-texto disabled:opacity-60"
             >
               Excluir
             </button>

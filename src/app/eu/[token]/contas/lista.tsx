@@ -42,9 +42,9 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
   // Grupos: Vencidas · Hoje · Amanhã · Próximos 7 dias · Depois · Sem vencimento
   const grupos = useMemo(() => {
     const g: { titulo: string; cor: string; itens: ContaApp[] }[] = [
-      { titulo: "Vencidas", cor: "text-red-600", itens: [] },
+      { titulo: "Vencidas", cor: "text-urgente-texto", itens: [] },
       { titulo: "Hoje", cor: "text-orange-600", itens: [] },
-      { titulo: "Amanhã", cor: "text-amber-600", itens: [] },
+      { titulo: "Amanhã", cor: "text-aviso-texto", itens: [] },
       { titulo: "Próximos 7 dias", cor: "text-texto-suave", itens: [] },
       { titulo: "Depois", cor: "text-texto-suave", itens: [] },
       { titulo: "Sem vencimento", cor: "text-texto-fraco", itens: [] },
@@ -131,7 +131,7 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
       {/* Barra fixa de baixa */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-borda bg-painel-cartao p-3">
         <div className="mx-auto max-w-md">
-          {feito && <p role="status" className="mb-2 text-center text-sm font-medium text-green-600">{feito}</p>}
+          {feito && <p role="status" className="mb-2 text-center text-sm font-medium text-ok-texto">{feito}</p>}
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-semibold text-zinc-800 dark:text-zinc-100">
               {marcadas.size === 0 ? "Marque as contas pagas" : `${marcadas.size} selecionada(s) · ${moeda(total)}`}

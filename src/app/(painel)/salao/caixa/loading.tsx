@@ -20,20 +20,20 @@ export default function Loading() {
           <Bloco className="mt-2.5 h-7 w-56" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Bloco className="h-9 w-36 rounded-lg" />
-          <Bloco className="h-9 w-32 rounded-lg" />
-          <Bloco className="h-9 w-28 rounded-lg" />
+          <Bloco className="h-9 w-36 rounded-controle" />
+          <Bloco className="h-9 w-32 rounded-controle" />
+          <Bloco className="h-9 w-28 rounded-controle" />
         </div>
       </div>
 
       {/* Linha de ações */}
       <div className="mb-4 flex flex-wrap gap-2">
-        <Bloco className="h-9 w-44 rounded-lg" />
-        <Bloco className="h-9 w-40 rounded-lg" />
+        <Bloco className="h-9 w-44 rounded-controle" />
+        <Bloco className="h-9 w-40 rounded-controle" />
       </div>
 
       {/* Barra do resumo (fechada, como fica de verdade) */}
-      <div className="mb-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mb-4 rounded-cartao border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <Bloco className="h-4 w-48" />
           <Bloco className="h-4 w-24" />
@@ -41,14 +41,14 @@ export default function Loading() {
       </div>
 
       {/* Busca da comanda */}
-      <Bloco className="mb-3 h-11 w-full rounded-xl sm:w-80" />
+      <Bloco className="mb-3 h-11 w-full rounded-controle sm:w-80" />
 
       {/* Lista de comandas abertas */}
       <div className="space-y-2.5">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
+          <div key={i} className="rounded-controle border border-zinc-200 p-3.5 dark:border-zinc-800">
             <div className="flex items-center gap-3">
-              <Bloco className="h-10 w-10 shrink-0 rounded-lg" />
+              <Bloco className="h-10 w-10 shrink-0 rounded-controle" />
               <div className="min-w-0 flex-1">
                 <Bloco className="h-4 w-32" />
                 <Bloco className="mt-2 h-3 w-44" />

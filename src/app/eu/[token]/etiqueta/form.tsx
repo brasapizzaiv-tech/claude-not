@@ -218,7 +218,7 @@ export function EtiquetaColabForm({
             <ValidadePresets value={validade} onChange={setValidade} />
             <input type="date" value={validade} onChange={(e) => setValidade(e.target.value)} className={`${input} mt-2`} />
             {!livre && item && !diasPadrao(item, conservacao, tipo) && !validade && (
-              <p className="mt-1 text-mini text-amber-600">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
+              <p className="mt-1 text-mini text-aviso-texto">Este item não tem validade cadastrada pra {conservacao} — escolha acima.</p>
             )}
           </div>
           {!livre && <CamposExtras value={extras} onChange={setExtras} />}

@@ -33,6 +33,8 @@ export const PALETA_CLARA: Record<string, string> = {
   "urgente-solido": "#d63a22",
   "info-fundo": "#e3ecfb",
   "info-texto": "#2b58a8",
+  "aviso-fundo": "#fdf0cf",           // atenção (amarelo): etiqueta e texto
+  "aviso-texto": "#8a5300",
   "painel-foco-fundo": "var(--marca-escuro)", // cartão de foco: grafite da empresa
   "painel-foco-texto": "#fff6ec",
   "painel-foco-suave": "#c9b8a8",     // texto de apoio dentro do cartão de foco
@@ -64,6 +66,8 @@ export const PALETA_ESCURA: Record<string, string> = {
   "urgente-solido": "#ff7448",
   "info-fundo": "rgba(98, 150, 255, 0.16)",
   "info-texto": "#8fb4ff",
+  "aviso-fundo": "rgba(255, 196, 77, 0.14)",
+  "aviso-texto": "#ffc94d",
   "painel-foco-fundo": "#fff6ec",          // no escuro o foco inverte: creme
   "painel-foco-texto": "#1c120c",
   "painel-foco-suave": "#6e635b",
@@ -77,7 +81,7 @@ export const PALETA_ESCURA: Record<string, string> = {
 
 // Estado (verde, vermelho, azul) NÃO gira com a marca: vermelho tem que ser
 // vermelho em qualquer empresa. Só os neutros quentes e o laranja giram.
-const FIXOS = new Set(["ok-fundo", "ok-texto", "urgente-fundo", "urgente-texto", "urgente-solido", "info-fundo", "info-texto"]);
+const FIXOS = new Set(["ok-fundo", "ok-texto", "urgente-fundo", "urgente-texto", "urgente-solido", "info-fundo", "info-texto", "aviso-fundo", "aviso-texto"]);
 
 // ---------------------------------------------------------------------------
 // Conversões de cor (HSL basta: o giro preserva luz e saturação relativa).

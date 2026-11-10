@@ -408,7 +408,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
 export function Overlay({ titulo, children, onClose }: { titulo: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <Janela onFechar={onClose} fundoFecha escuro="bg-black/40">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-cartao border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold">{titulo}</h2>
           <button aria-label="Fechar" onClick={onClose} className="text-zinc-400">✕</button>

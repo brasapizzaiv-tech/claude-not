@@ -107,7 +107,7 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
               <tr key={e.id}>
                 <td className="px-3 py-2">{e.nome ?? "—"}</td>
                 <td className="px-3 py-2 text-texto-suave">{e.telefone}</td>
-                <td className={`px-3 py-2 ${e.status === "falha" ? "text-red-600" : ""}`} title={e.erro ?? undefined}>{ROTULO_ENVIO[e.status] ?? e.status}</td>
+                <td className={`px-3 py-2 ${e.status === "falha" ? "text-urgente-texto" : ""}`} title={e.erro ?? undefined}>{ROTULO_ENVIO[e.status] ?? e.status}</td>
                 <td className="px-3 py-2 text-texto-suave">{dataHora(e.enviado_em)}</td>
               </tr>
             ))}

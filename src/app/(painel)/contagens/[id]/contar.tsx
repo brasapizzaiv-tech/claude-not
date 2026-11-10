@@ -23,9 +23,9 @@ type ItemInicial = {
 };
 
 const numInput =
-  "w-28 rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-right text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-28 rounded-controle border border-borda-forte bg-white px-2 py-1 text-sm text-right text-texto focus:border-orange-500 disabled:opacity-60 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 const campo =
-  "rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function ContarClient({
   contagem,
@@ -276,10 +276,10 @@ export function ContarClient({
             <>
               <span className="text-sm text-texto-suave">
                 {faltantes.length === 0 ? (
-                  <span className="font-medium text-emerald-600">✓ Tudo contado</span>
+                  <span className="font-medium text-ok-texto">✓ Tudo contado</span>
                 ) : (
                   <>
-                    Faltam <b className="text-amber-600">{faltantes.length}</b> de {produtos.length}
+                    Faltam <b className="text-aviso-texto">{faltantes.length}</b> de {produtos.length}
                   </>
                 )}
               </span>
@@ -309,7 +309,7 @@ export function ContarClient({
       </div>
 
       {msg && (
-        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+        <div role="status" className="mb-4 rounded-controle bg-green-50 px-3 py-2 text-sm text-ok-texto dark:bg-green-950 dark:text-green-300">
           {msg}
         </div>
       )}
@@ -384,7 +384,7 @@ export function ContarClient({
                           <td className="px-4 py-2 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               {!preenchidos.has(p.id) && !finalizada && (
-                                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-mini font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-mini font-medium text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
                                   falta
                                 </span>
                               )}
@@ -434,7 +434,7 @@ export function ContarClient({
                             )}
                             {refs.get(p.id) && !finalizada && (
                               precisaConferir(p.id) ? (
-                                <div className="mt-1 max-w-md text-right text-mini text-amber-700 dark:text-amber-300">
+                                <div className="mt-1 max-w-md text-right text-mini text-aviso-texto dark:text-amber-300">
                                   <Icone nome="alerta" tamanho={12} className="mr-1" /> {explicacao(refs.get(p.id)!, valores[p.id] ?? 0)}{" "}
                                   <button type="button" onClick={() => setConfirmados((s) => new Set(s).add(p.id))} className="ml-1 rounded bg-amber-600 px-1.5 py-0.5 font-semibold text-white">
                                     contei de novo, está certo

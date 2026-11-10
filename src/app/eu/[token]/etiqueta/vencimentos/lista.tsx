@@ -62,13 +62,13 @@ export function ListaVencimentos({ token, lista, hoje }: { token: string; lista:
                   {e.colaborador_nome ? ` · ${e.colaborador_nome.split(" ")[0]}` : ""}
                 </div>
               </div>
-              <div className={`shrink-0 text-right text-sm font-bold ${vencida ? "text-red-600" : "text-zinc-800 dark:text-zinc-100"}`}>
+              <div className={`shrink-0 text-right text-sm font-bold ${vencida ? "text-urgente-texto" : "text-zinc-800 dark:text-zinc-100"}`}>
                 {e.validade ? dataBR(e.validade) : "—"}
                 {vencida && <div className="text-mini font-semibold uppercase">vencida</div>}
               </div>
             </div>
             {f ? (
-              <p className="mt-2 text-center text-xs font-medium text-green-600">✓ {f}</p>
+              <p className="mt-2 text-center text-xs font-medium text-ok-texto">✓ {f}</p>
             ) : (
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <button onClick={() => baixa(e.id, "usada")} disabled={proc} className="rounded-controle bg-texto py-2 text-sm font-semibold text-fundo disabled:opacity-50">✓ Usada</button>

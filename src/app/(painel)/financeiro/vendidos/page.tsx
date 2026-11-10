@@ -240,7 +240,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
         <div className="cartao p-4"><p className="text-xs text-texto-suave">Valor total</p><p className="text-2xl font-bold text-texto">{brl(totalValor)}</p></div>
         <div className="cartao p-4"><p className="text-xs text-texto-suave">Itens vendidos</p><p className="text-2xl font-bold text-texto">{totalQtd.toLocaleString("pt-BR")}</p></div>
         <div className="cartao p-4"><p className="text-xs text-texto-suave">Buffet</p><p className="text-2xl font-bold text-texto">{brl(buffetValor)}</p><p className="text-xs text-texto-suave">{buffetPratos} pratos · ~{kgTxt(totalKgEstimado)} kg de comida</p></div>
-        <div className="cartao p-4"><p className="text-xs text-texto-suave">Cancelados</p><p className="text-2xl font-bold text-red-600">{brl(cancelValor)}</p><p className="text-xs text-texto-suave">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
+        <div className="cartao p-4"><p className="text-xs text-texto-suave">Cancelados</p><p className="text-2xl font-bold text-urgente-texto">{brl(cancelValor)}</p><p className="text-xs text-texto-suave">{cancelQtd} itens · {excluidas.length} comandas excluídas</p></div>
       </div>
 
       {(kgPratos > 0 || livrePesou > 0 || livreDireto > 0) && (
@@ -262,7 +262,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
 
       {(cancelados.length > 0 || excluidas.length > 0) && (
         <details className="mt-6 rounded-cartao border border-red-200 dark:border-red-900">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-400">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-urgente-texto dark:text-red-400">
             ✗ Cancelados no período: {brl(cancelValor)} ({cancelados.length} {cancelados.length === 1 ? "item" : "itens"}, {excluidas.length} {excluidas.length === 1 ? "comanda excluída" : "comandas excluídas"}) — clique pra ver
           </summary>
           <div className="space-y-3 px-4 pb-4">
@@ -272,7 +272,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
                   <thead className="rotulo text-left"><tr><th className="py-1">Comanda excluída</th><th className="py-1">Mesa</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
                   <tbody className="divide-y divide-borda">
                     {excluidas.map((e, i) => (
-                      <tr key={i}><td className="py-1">nº {e.comanda_numero ?? "—"}</td><td className="py-1 text-texto-suave">{e.mesa ?? "—"}</td><td className="py-1 text-texto-suave">{e.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(e.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(e.excluido_em)}</td></tr>
+                      <tr key={i}><td className="py-1">nº {e.comanda_numero ?? "—"}</td><td className="py-1 text-texto-suave">{e.mesa ?? "—"}</td><td className="py-1 text-texto-suave">{e.motivo ?? "—"}</td><td className="py-1 text-right text-urgente-texto">{brl(Number(e.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(e.excluido_em)}</td></tr>
                     ))}
                   </tbody>
                 </table>
@@ -284,7 +284,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
                   <thead className="rotulo text-left"><tr><th className="py-1">Item cancelado</th><th className="py-1 text-right">Qtd</th><th className="py-1">Motivo</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Quando</th></tr></thead>
                   <tbody className="divide-y divide-borda">
                     {cancelados.map((c, i) => (
-                      <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("\n")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-texto-suave">{c.motivo ?? "—"}</td><td className="py-1 text-right text-red-600">{brl(Number(c.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(c.cancelado_em)}</td></tr>
+                      <tr key={i}><td className="py-1">{(c.descricao ?? "Item").split("\n")[0]}</td><td className="py-1 text-right">{Number(c.qtd)}</td><td className="py-1 text-texto-suave">{c.motivo ?? "—"}</td><td className="py-1 text-right text-urgente-texto">{brl(Number(c.valor))}</td><td className="py-1 text-right text-texto-suave">{horaBR(c.cancelado_em)}</td></tr>
                     ))}
                   </tbody>
                 </table>

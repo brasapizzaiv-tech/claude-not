@@ -82,7 +82,7 @@ export function ValesClient({ vales, formas, caixaAberto, buscaInicial }: { vale
         >
           <Icone nome="presente" tamanho={16} /> Vender vale-presente
         </button>
-        {!caixaAberto && <span className="text-xs text-amber-700 dark:text-amber-300">Abra o caixa pra vender (o dinheiro entra no caixa do dia).</span>}
+        {!caixaAberto && <span className="text-xs text-aviso-texto dark:text-amber-300">Abra o caixa pra vender (o dinheiro entra no caixa do dia).</span>}
         <input aria-label="Buscar por código, nome ou telefone" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por código, nome ou telefone" className={`${campo} ml-auto w-full sm:w-72`} />
         <label className="flex min-h-11 items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={todos} onChange={(e) => setTodos(e.target.checked)} /> Mostrar usados, vencidos e cancelados
@@ -169,8 +169,8 @@ function Detalhe({ v, hoje, onEntregar }: { v: ValeLinha; hoje: string; onEntreg
         <p>Vendido em {quando(v.criadoEm)}{v.forma ? ` · ${v.forma}` : ""} · {brl(v.valor)}</p>
         {v.telefone && <p>WhatsApp {v.telefone}</p>}
         {v.mensagem && <p role="status" className="italic sm:col-span-2">“{v.mensagem}”</p>}
-        {v.status === "cancelado" && <p className="text-red-600 sm:col-span-2">Cancelado: {v.canceladoMotivo}</p>}
-        {ativo && v.validade < hoje && <p className="text-amber-700 dark:text-amber-300 sm:col-span-2">Venceu em {dataBR(v.validade)}. Prorrogue pra aceitar no caixa.</p>}
+        {v.status === "cancelado" && <p className="text-urgente-texto sm:col-span-2">Cancelado: {v.canceladoMotivo}</p>}
+        {ativo && v.validade < hoje && <p className="text-aviso-texto dark:text-amber-300 sm:col-span-2">Venceu em {dataBR(v.validade)}. Prorrogue pra aceitar no caixa.</p>}
       </div>
       {v.usos.length > 0 && (
         <ul className="space-y-1">
@@ -180,7 +180,7 @@ function Detalhe({ v, hoje, onEntregar }: { v: ValeLinha; hoje: string; onEntreg
               <span className="flex-1 text-texto">
                 {u.tipo === "uso" ? `Usado ${u.origem === "pdv" ? "no PDV" : "no caixa"}` : `Devolvido ao saldo${u.obs?.includes(" · ") ? ` (${u.obs.split(" · ").slice(1).join(" · ")})` : ""}`}
               </span>
-              <span className={`font-numero font-semibold ${u.tipo === "uso" ? "text-texto" : "text-emerald-600"}`}>{u.tipo === "uso" ? "−" : "+"} {brl(u.valor)}</span>
+              <span className={`font-numero font-semibold ${u.tipo === "uso" ? "text-texto" : "text-ok-texto"}`}>{u.tipo === "uso" ? "−" : "+"} {brl(u.valor)}</span>
               {u.tipo === "uso" && ativo && !devolvidos.has(u.id) && (
                 <BotaoAcao aoClicar={() => devolver(u.id, u.valor)} className="text-xs text-texto-fraco underline hover:text-texto">devolver</BotaoAcao>
               )}
@@ -191,7 +191,7 @@ function Detalhe({ v, hoje, onEntregar }: { v: ValeLinha; hoje: string; onEntreg
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={onEntregar} className={btnLinha}><Icone nome="presente" tamanho={15} /> Cartão, imagem e cupom</button>
         {ativo && <BotaoAcao aoClicar={prorrogar} className={btnLinha}><Icone nome="agenda" tamanho={15} /> Prorrogar validade</BotaoAcao>}
-        {ativo && <BotaoAcao aoClicar={cancelar} className={`${btnLinha} text-red-600`}>Cancelar vale</BotaoAcao>}
+        {ativo && <BotaoAcao aoClicar={cancelar} className={`${btnLinha} text-urgente-texto`}>Cancelar vale</BotaoAcao>}
       </div>
     </div>
   );
@@ -268,13 +268,13 @@ function VenderVale({ formas, onFechar, onVendido }: { formas: FormaOpcao[]; onF
         <label className="mt-3 block text-xs text-texto-suave">Como o cliente pagou</label>
         <div className="mt-1 flex flex-wrap gap-2">
           {formas.map((f) => (
-            <button key={f.nome} type="button" onClick={() => setForma(f.nome)} className={`min-h-11 rounded-controle border px-3 text-sm font-semibold ${forma === f.nome ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-borda-forte text-texto-suave"}`}>
+            <button key={f.nome} type="button" onClick={() => setForma(f.nome)} className={`min-h-11 rounded-controle border px-3 text-sm font-semibold ${forma === f.nome ? "border-emerald-500 bg-emerald-500/10 text-ok-texto dark:text-emerald-300" : "border-borda-forte text-texto-suave"}`}>
               {f.nome}
             </button>
           ))}
         </div>
 
-        {erro && <p role="alert" className="mt-3 text-sm font-medium text-red-600">{erro}</p>}
+        {erro && <p role="alert" className="mt-3 text-sm font-medium text-urgente-texto">{erro}</p>}
 
         <div className="mt-4">
           {tef && agenteTef ? (

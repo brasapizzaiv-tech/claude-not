@@ -8,7 +8,7 @@ import { BotaoAcao } from "@/components/enviar";
 import { Janela } from "@/components/janela";
 
 const inputCls =
-  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
 
 export function FornecedoresClient({
   fornecedores,
@@ -140,7 +140,7 @@ export function FornecedoresClient({
                       )}
                       <BotaoAcao
                         aoClicar={() => alternarAtivoFornecedor(f.id, !f.ativo)}
-                        className={f.ativo ? "text-texto-fraco hover:text-red-600" : "font-semibold text-texto-marca hover:underline"}
+                        className={f.ativo ? "text-texto-fraco hover:text-urgente-texto" : "font-semibold text-texto-marca hover:underline"}
                       >
                         {f.ativo ? "Inativar" : "Reativar"}
                       </BotaoAcao>

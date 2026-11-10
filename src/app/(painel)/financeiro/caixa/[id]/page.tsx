@@ -60,7 +60,7 @@ export default async function FechamentoRelatorio({
     ["N", "Saldo final", "=", c.saldo_final],
   ];
   const corSinal = (sinal: string) =>
-    sinal === "+" ? "text-green-600" : sinal === "−" ? "text-red-500" : "text-orange-600";
+    sinal === "+" ? "text-ok-texto" : sinal === "−" ? "text-urgente-texto" : "text-orange-600";
 
   // Painel direito: por forma de pagamento (Outros só no Dinheiro).
   const formasCalc = r.formas.map((f) => {
@@ -200,7 +200,7 @@ export default async function FechamentoRelatorio({
                     </td>
                     <td className="px-4 py-2 text-right text-texto-suave">
                       {f.outros ? (
-                        <span className="text-green-600">+ {moeda(f.outros)}</span>
+                        <span className="text-ok-texto">+ {moeda(f.outros)}</span>
                       ) : (
                         moeda(0)
                       )}
@@ -218,7 +218,7 @@ export default async function FechamentoRelatorio({
                   <td className="px-4 py-2 text-right">{moeda(subSaldo)}</td>
                 </tr>
                 {r.quebra !== 0 && (
-                  <tr className="bg-painel-cartao text-red-600">
+                  <tr className="bg-painel-cartao text-urgente-texto">
                     <td className="px-4 py-2">Quebra</td>
                     <td className="px-4 py-2 text-right">–</td>
                     <td className="px-4 py-2 text-right">–</td>

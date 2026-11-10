@@ -156,7 +156,7 @@ export function CobrarPinpad({
             {etapa === "gravando" ? "Aprovado — registrando a venda…" : etapa === "preparando" ? "Preparando o pinpad…" : ehPix ? "Aguardando o Pix no pinpad…" : "Aguardando o cartão no pinpad…"}
           </p>
           {etapa === "pinpad" && (
-            <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+            <p className="mt-1 text-xs text-ok-texto/80 dark:text-emerald-400/80">
               {ehPix
                 ? "O cliente lê o QR da maquininha com o app do banco. Assim que pagar, entra sozinho. Pra desistir, cancele no pinpad."
                 : "O cliente insere ou aproxima o cartão e digita a senha. Pra desistir, cancele no pinpad."}
@@ -180,7 +180,7 @@ export function CobrarPinpad({
           </p>
         </>
       )}
-      {aviso && <p role="status" className="mt-2 text-sm font-medium text-red-600">{aviso}</p>}
+      {aviso && <p role="status" className="mt-2 text-sm font-medium text-urgente-texto">{aviso}</p>}
     </div>
   );
 }

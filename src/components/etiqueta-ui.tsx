@@ -15,7 +15,7 @@ export function PainelVencimentos({ contagem, base, ativo }: { contagem: Contage
           <Link
             key={f.key}
             href={sel ? base : `${base}?f=${f.key}`}
-            className={`rounded-2xl p-3 text-white shadow-sm transition ${f.cor} ${sel ? "ring-4 ring-zinc-900/30 dark:ring-white/50" : "hover:opacity-90"}`}
+            className={`rounded-cartao p-3 text-white shadow-sm transition ${f.cor} ${sel ? "ring-4 ring-zinc-900/30 dark:ring-white/50" : "hover:opacity-90"}`}
           >
             <div className="text-3xl font-black leading-none">{contagem[f.key]}</div>
             <div className="mt-1 text-sm font-semibold">{f.titulo}</div>
@@ -39,7 +39,7 @@ export function FaixaDias({ dias, contagens, base, ativo }: { dias: DiaFaixa[]; 
           <Link
             key={d.data}
             href={sel ? base : `${base}?d=${d.data}`}
-            className={`rounded-xl p-2 text-center transition ${d.cor} ${sel ? "ring-4 ring-zinc-900/40 dark:ring-white/50" : "hover:opacity-90"}`}
+            className={`rounded-controle p-2 text-center transition ${d.cor} ${sel ? "ring-4 ring-zinc-900/40 dark:ring-white/50" : "hover:opacity-90"}`}
           >
             <div className="text-[10px] font-bold uppercase">{d.rotulo}</div>
             <div className="text-[10px] opacity-80">{d.sub}</div>
@@ -81,9 +81,9 @@ export type NovoItemDados = {
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+  "w-full rounded-controle border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
 const itemBtn =
-  "rounded-xl border border-zinc-300 bg-white px-3 py-3 text-left text-sm font-semibold text-zinc-800 hover:border-orange-500 hover:bg-orange-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-orange-950/30";
+  "rounded-controle border border-zinc-300 bg-white px-3 py-3 text-left text-sm font-semibold text-zinc-800 hover:border-orange-500 hover:bg-orange-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-orange-950/30";
 
 export function SeletorItem({
   itens,
@@ -113,7 +113,7 @@ export function SeletorItem({
   const sel = itens.find((i) => i.id === value);
   if (sel) {
     return (
-      <div className="flex items-center justify-between rounded-xl border-2 border-orange-500 bg-orange-50 px-3 py-2.5 dark:bg-orange-950/30">
+      <div className="flex items-center justify-between rounded-controle border-2 border-orange-500 bg-orange-50 px-3 py-2.5 dark:bg-orange-950/30">
         <div className="min-w-0">
           <div className="truncate font-bold text-zinc-900 dark:text-zinc-50">{sel.nome}</div>
           <div className="text-xs text-zinc-500">{categorias.find((c) => c.id === sel.categoria_id)?.nome ?? "Sem categoria"}</div>
@@ -152,7 +152,7 @@ export function SeletorItem({
 
       {q ? (
         filtrados.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 p-3 text-center text-sm text-zinc-400 dark:border-zinc-700">
+          <p className="rounded-controle border border-dashed border-zinc-300 p-3 text-center text-sm text-zinc-400 dark:border-zinc-700">
             Nada encontrado.{onNovo ? " Escolha uma categoria abaixo e use ＋ pra cadastrar." : ""}
           </p>
         ) : (
@@ -173,14 +173,14 @@ export function SeletorItem({
               <button key={i.id} type="button" onClick={() => onChange(i.id)} className={itemBtn}>{i.nome}</button>
             ))}
             {onNovo && !novo && (
-              <button type="button" onClick={() => setNovo(true)} className="rounded-xl border-2 border-dashed border-orange-400 px-3 py-3 text-sm font-semibold text-orange-600">
+              <button type="button" onClick={() => setNovo(true)} className="rounded-controle border-2 border-dashed border-orange-400 px-3 py-3 text-sm font-semibold text-orange-600">
                 ＋ Novo item
               </button>
             )}
           </div>
           {daCat.length === 0 && !novo && <p className="text-center text-xs text-zinc-400">Nenhum item nesta categoria ainda.</p>}
           {novo && (
-            <div className="space-y-2 rounded-xl border border-orange-300 bg-orange-50/50 p-3 dark:border-orange-800 dark:bg-orange-950/20">
+            <div className="space-y-2 rounded-controle border border-orange-300 bg-orange-50/50 p-3 dark:border-orange-800 dark:bg-orange-950/20">
               <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Novo item em {catNome}</p>
               <input aria-label="Nome (ex.: Base Feijão)" value={nNome} onChange={(e) => setNNome(e.target.value)} placeholder="Nome (ex.: Base Feijão)" className={inputCls} autoFocus />
               <div className="grid grid-cols-3 gap-2">
@@ -192,10 +192,10 @@ export function SeletorItem({
                 ))}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={salvarNovo} disabled={salvando || !nNome.trim()} className="flex-1 rounded-lg bg-orange-500 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50">
+                <button type="button" onClick={salvarNovo} disabled={salvando || !nNome.trim()} className="flex-1 rounded-controle bg-orange-500 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50">
                   {salvando ? "Salvando..." : "Salvar e usar"}
                 </button>
-                <button type="button" onClick={() => setNovo(false)} className="rounded-lg border border-zinc-300 px-3 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">Cancelar</button>
+                <button type="button" onClick={() => setNovo(false)} className="rounded-controle border border-zinc-300 px-3 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">Cancelar</button>
               </div>
             </div>
           )}
@@ -245,7 +245,7 @@ export function TipoSelector({ value, onChange }: { value: TipoEtiqueta; onChang
           type="button"
           onClick={() => onChange(t.key)}
           title={t.dica}
-          className={`min-w-0 overflow-hidden rounded-xl border px-1 py-2 text-center text-[11px] font-semibold leading-tight ${
+          className={`min-w-0 overflow-hidden rounded-controle border px-1 py-2 text-center text-[11px] font-semibold leading-tight ${
             value === t.key ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
           }`}
         >
@@ -275,7 +275,7 @@ export function CamposExtras({ value, onChange }: { value: Extras; onChange: (v:
   }
   const set = (p: Partial<Extras>) => onChange({ ...value, ...p });
   return (
-    <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+    <div className="rounded-controle border border-zinc-200 p-3 dark:border-zinc-800">
       <button type="button" onClick={() => setAberto(false)} className="mb-2 text-xs font-medium text-zinc-500">Mais campos ▾</button>
       <div className="grid grid-cols-2 gap-2">
         <label className="text-[11px] text-zinc-500">Marca / fornecedor
@@ -404,7 +404,7 @@ export function ValidadePresets({ value, onChange }: { value: string; onChange: 
             key={n}
             type="button"
             onClick={() => onChange(iso)}
-            className={`rounded-lg border py-2 text-sm font-semibold ${sel ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+            className={`rounded-controle border py-2 text-sm font-semibold ${sel ? "border-orange-500 bg-orange-500 text-marca-sobre-primaria" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
           >
             {n} dias
           </button>
@@ -419,7 +419,7 @@ export const qtdValida = (s: string) => /^\s*\d+([.,]\d+)?\s*$/.test(s) && Numbe
 
 // ---------- Contador de cópias ----------
 export function Copias({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  const b = "h-10 w-10 rounded-lg border border-zinc-300 text-lg font-bold text-zinc-700 dark:border-zinc-700 dark:text-zinc-200";
+  const b = "h-10 w-10 rounded-controle border border-zinc-300 text-lg font-bold text-zinc-700 dark:border-zinc-700 dark:text-zinc-200";
   return (
     <div className="flex items-center gap-2">
       <button aria-label="Menos um" type="button" onClick={() => onChange(Math.max(1, value - 1))} className={b}>−</button>

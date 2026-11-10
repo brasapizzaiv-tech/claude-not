@@ -205,7 +205,7 @@ export function PedidoCard({
           </span>
           <span className="ml-2 text-xs text-texto-fraco">{dataBR(pedido.data)}</span>
           {pedido.nao_veio_em && !feito && (
-            <span className="mt-0.5 block text-xs font-medium text-red-600 dark:text-red-400">
+            <span className="mt-0.5 block text-xs font-medium text-urgente-texto dark:text-red-400">
               avisado que não veio{pedido.nao_veio_por ? ` (${pedido.nao_veio_por})` : ""} — se chegou, confira
             </span>
           )}
@@ -217,7 +217,7 @@ export function PedidoCard({
         </span>
         <span className="text-xs">
           {feito ? (
-            <span className="font-medium text-green-600">✓ conferido</span>
+            <span className="font-medium text-ok-texto">✓ conferido</span>
           ) : (
             <span className="text-orange-600">{aberto ? "▲" : "conferir ▼"}</span>
           )}
@@ -236,7 +236,7 @@ export function PedidoCard({
                     {i.nome}
                   </div>
                   {i.qtd === 0 ? (
-                    <span className="rounded bg-sky-100 px-1 py-0.5 text-mini font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                    <span className="rounded bg-sky-100 px-1 py-0.5 text-mini font-medium text-info-texto dark:bg-sky-950 dark:text-sky-300">
                       veio a mais
                     </span>
                   ) : (
@@ -306,7 +306,7 @@ export function PedidoCard({
           </div>
 
           {erro && (
-            <p role="alert" className="rounded-controle bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+            <p role="alert" className="rounded-controle bg-red-50 px-3 py-2 text-xs text-urgente-texto dark:bg-red-950 dark:text-red-300">
               {erro}
             </p>
           )}
@@ -322,7 +322,7 @@ export function PedidoCard({
             {salvando ? "Salvando..." : feito ? "Atualizar conferência" : "Confirmar recebimento"}
           </button>
           {feito && pedido.conf_por && (
-            <p className="text-center text-mini text-green-600">
+            <p className="text-center text-mini text-ok-texto">
               Conferido por {pedido.conf_por}
             </p>
           )}

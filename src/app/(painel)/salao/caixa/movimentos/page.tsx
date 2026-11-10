@@ -21,12 +21,12 @@ type Mov = {
 const semDinheiroTipo = (tipo: string) => tipo === "cortesia" || tipo === "vale_presente";
 const cor = (tipo: string) =>
   tipo === "sangria"
-    ? "text-red-600"
+    ? "text-urgente-texto"
     : tipo === "suprimento"
-      ? "text-blue-600"
+      ? "text-info-texto"
       : semDinheiroTipo(tipo)
         ? "text-texto-fraco"
-        : "text-emerald-600";
+        : "text-ok-texto";
 // Cortesia e vale-presente não somam no caixa: sem sinal de "+".
 const sinal = (tipo: string, valor = 0) => (semDinheiroTipo(tipo) ? "" : tipo === "sangria" || valor < 0 ? "−" : "+");
 // Uma venda pode quitar várias comandas: mostra um link por comanda, com o
@@ -92,9 +92,9 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
           </p>
         </div>
         <div className="flex flex-wrap gap-4 text-sm">
-          <span className="text-texto-suave">Vendas <b className="text-emerald-600">{brl(vendas)}</b></span>
-          <span className="text-texto-suave">Suprimentos <b className="text-blue-600">{brl(suprimentos)}</b></span>
-          <span className="text-texto-suave">Sangrias <b className="text-red-600">{brl(sangrias)}</b></span>
+          <span className="text-texto-suave">Vendas <b className="text-ok-texto">{brl(vendas)}</b></span>
+          <span className="text-texto-suave">Suprimentos <b className="text-info-texto">{brl(suprimentos)}</b></span>
+          <span className="text-texto-suave">Sangrias <b className="text-urgente-texto">{brl(sangrias)}</b></span>
           {semDinheiro > 0 && <Link href="/salao/caixa/cortesias" className="text-texto-suave hover:underline">Cortesias e vales <b className="text-texto">{brl(semDinheiro)}</b></Link>}
         </div>
       </div>

@@ -127,7 +127,7 @@ export function DividirConta({
         </p>
 
         {linhas.length === 0 ? (
-          <p className="rounded-cartao bg-painel-cartao p-6 text-center text-sm text-emerald-600">
+          <p className="rounded-cartao bg-painel-cartao p-6 text-center text-sm text-ok-texto">
             ✓ Tudo pago!
           </p>
         ) : (
@@ -198,7 +198,7 @@ export function DividirConta({
                   </div>
                 )}
                 {troco > 0.005 && (
-                  <p className="text-right text-sm font-medium text-emerald-600">Troco: {brl(troco)}</p>
+                  <p className="text-right text-sm font-medium text-ok-texto">Troco: {brl(troco)}</p>
                 )}
                 <button
                   onClick={receber}

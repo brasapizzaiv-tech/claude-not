@@ -94,7 +94,7 @@ export default async function EtiquetasPage({
           <PainelVencimentos contagem={contagem} base="/etiquetas" ativo={faixa} />
           <div className="grid grid-cols-2 gap-2 lg:w-64">
             <Link href={soVencidas ? "/etiquetas" : "/etiquetas?f=vencidas"} className={`rounded-cartao border-2 p-3 ${soVencidas ? "border-red-500 bg-red-50 dark:bg-red-950/30" : "border-borda"}`}>
-              <div className="text-3xl font-black leading-none text-red-600">{contagem.vencidas}</div>
+              <div className="text-3xl font-black leading-none text-urgente-texto">{contagem.vencidas}</div>
               <div className="mt-1 text-xs font-semibold text-texto-suave">Vencidas não baixadas</div>
             </Link>
             <Link href="/etiquetas?ver=historico" className="rounded-cartao border-2 border-borda p-3">
@@ -107,7 +107,7 @@ export default async function EtiquetasPage({
       </div>
 
       {itens.length === 0 && (
-        <div className="mb-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+        <div className="mb-4 rounded-cartao border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
           Ainda não há itens de etiqueta cadastrados. Abra uma categoria e use <b>＋ Novo item</b> (ou cadastre em <Link href="/etiquetas/itens" className="underline">Itens e categorias</Link>).
         </div>
       )}

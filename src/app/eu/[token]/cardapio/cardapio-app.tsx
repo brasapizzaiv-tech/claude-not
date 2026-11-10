@@ -157,12 +157,12 @@ export function CardapioApp({
 
       {/* status */}
       <div className="mt-3 cartao p-3 text-center">
-        {status === "publicado" && <p className="text-base font-bold text-green-700 dark:text-green-400">● Publicado</p>}
-        {status === "alterado" && <p className="text-base font-bold text-amber-700 dark:text-amber-300">● Publicado — com alterações não publicadas</p>}
+        {status === "publicado" && <p className="text-base font-bold text-ok-texto dark:text-green-400">● Publicado</p>}
+        {status === "alterado" && <p className="text-base font-bold text-aviso-texto dark:text-amber-300">● Publicado — com alterações não publicadas</p>}
         {status === "rascunho" && <p className="text-base font-bold text-texto-suave">○ Rascunho (não está no site)</p>}
         {status === "vazio" && <p className="text-base font-bold text-texto-fraco">○ Ainda sem cardápio</p>}
         {cardapio?.publicado_em && <p className="mt-0.5 text-xs text-texto-fraco">publicado por {cardapio.publicado_por ?? "?"} em {quando(cardapio.publicado_em)}</p>}
-        {status === "alterado" && cardapio?.alterado_em && <p className="text-xs text-amber-600">alterado por {cardapio.alterado_por ?? "?"} em {quando(cardapio.alterado_em)}</p>}
+        {status === "alterado" && cardapio?.alterado_em && <p className="text-xs text-aviso-texto">alterado por {cardapio.alterado_por ?? "?"} em {quando(cardapio.alterado_em)}</p>}
       </div>
 
       {/* abas */}
@@ -185,7 +185,7 @@ export function CardapioApp({
                   <li key={i} className="rounded-cartao bg-superficie-suave px-3 py-2 text-base text-texto">
                     <div className="flex items-center justify-between gap-2">
                       <span>{nome}</span>
-                      <button type="button" onClick={() => tirarItem(g, i)} className="h-9 w-9 shrink-0 rounded-controle text-lg text-red-500" aria-label="tirar">✕</button>
+                      <button type="button" onClick={() => tirarItem(g, i)} className="h-9 w-9 shrink-0 rounded-controle text-lg text-urgente-texto" aria-label="tirar">✕</button>
                     </div>
                     {g !== "especial" && (
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -218,7 +218,7 @@ export function CardapioApp({
               {sugestoes(g).length > 0 && (
                 <div className="mt-2 space-y-1.5">
                   <p className="text-mini text-texto-fraco">
-                    {busca[g].trim() ? "encontrados" : "mais usados"} · <span className="text-amber-600">amarelo</span> = entrou nos últimos 2 dias
+                    {busca[g].trim() ? "encontrados" : "mais usados"} · <span className="text-aviso-texto">amarelo</span> = entrou nos últimos 2 dias
                   </p>
                   {sugestoes(g).map((s) => {
                     const e = estatDe(g, s.nome);
@@ -231,7 +231,7 @@ export function CardapioApp({
                         className={`flex w-full flex-col items-start gap-0.5 rounded-cartao border px-3 py-2 text-left ${recente ? "border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-950/40" : "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"}`}
                       >
                         <span className={`text-base font-medium ${recente ? "text-amber-900 dark:text-amber-100" : "text-orange-900 dark:text-orange-100"}`}>+ {s.nome}</span>
-                        <span className={`text-xs leading-tight ${recente ? "text-amber-700 dark:text-amber-300" : "text-texto-suave"}`}>{rotuloEstat(e)}</span>
+                        <span className={`text-xs leading-tight ${recente ? "text-aviso-texto dark:text-amber-300" : "text-texto-suave"}`}>{rotuloEstat(e)}</span>
                       </button>
                     );
                   })}
@@ -262,11 +262,11 @@ export function CardapioApp({
         <div className="mt-3 space-y-3">
           <p className="text-sm text-texto-suave">
             <b>{selSal.size}</b> marcada(s) ·{" "}
-            {temExcecao ? <span className="text-amber-600">seleção própria deste dia</span> : <>seguindo o padrão de {DIA_NOME[dow]}</>}
+            {temExcecao ? <span className="text-aviso-texto">seleção própria deste dia</span> : <>seguindo o padrão de {DIA_NOME[dow]}</>}
           </p>
           {porCategoria.map((g) => (
             <div key={g.categoria} className="cartao p-3">
-              <p className="mb-2 text-xs font-bold text-green-700">{g.categoria}</p>
+              <p className="mb-2 text-xs font-bold text-ok-texto">{g.categoria}</p>
               <div className="flex flex-wrap gap-2">
                 {g.itens.map((s) => (
                   <button key={s.id} type="button" onClick={() => alternarSalada(s.id)} className={chip(selSal.has(s.id))} disabled={proc}>

@@ -21,7 +21,7 @@ export function ItemTamanho({
   const [salvando, start] = useTransition();
   const lido = lerTamanho(descricao);
   if (!lido) {
-    return <p className="mt-1 text-mini text-amber-600">Vem em vários tamanhos: a nota não diz qual.</p>;
+    return <p className="mt-1 text-mini text-aviso-texto">Vem em vários tamanhos: a nota não diz qual.</p>;
   }
   const novo = !tamanhos.some((t) => Math.abs(t - lido.v) < 0.0001);
   return (

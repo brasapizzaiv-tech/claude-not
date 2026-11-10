@@ -45,7 +45,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
 
   return (
     <div className="space-y-6">
-      {msg && <p role="status" className="rounded-controle bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{msg}</p>}
+      {msg && <p role="status" className="rounded-controle bg-red-50 px-3 py-2 text-sm text-urgente-texto dark:bg-red-950 dark:text-red-300">{msg}</p>}
 
       {/* Setores */}
       <div className="cartao p-4">
@@ -125,7 +125,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
                         <button
                           onClick={async () => { if (await confirmar(`Apagar a lista "${m.nome}"?`)) agir(() => excluirModelo(m.id)); }}
                           disabled={proc}
-                          className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-red-600"
+                          className="rounded-controle px-3 py-1.5 text-xs text-texto-fraco hover:text-urgente-texto"
                         >
                           Apagar
                         </button>
@@ -222,15 +222,15 @@ function ItensDoModelo({
                 {i.secao && <span className="mr-1.5 rounded bg-superficie-suave px-1.5 py-0.5 text-mini font-bold text-texto-suave">{i.secao}</span>}
                 <span className="text-zinc-800 dark:text-zinc-100">{i.texto}</span>
                 <span className="ml-2 text-mini text-texto-fraco">{ROTULO_TIPO[i.tipo]}</span>
-                {i.obrigatorio && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-mini font-medium text-red-700 dark:bg-red-950 dark:text-red-300">obrigatório</span>}
-                {i.exige_foto && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-mini font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">foto</span>}
+                {i.obrigatorio && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-mini font-medium text-urgente-texto dark:bg-red-950 dark:text-red-300">obrigatório</span>}
+                {i.exige_foto && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-mini font-medium text-info-texto dark:bg-sky-950 dark:text-sky-300">foto</span>}
                 {i.instrucao && <span className="block text-xs text-texto-fraco">{i.instrucao}</span>}
               </span>
               <button onClick={() => setEditItem(i)} className="text-xs text-orange-600 hover:underline">editar</button>
               <button aria-label="Fechar"
                 onClick={async () => { if (await confirmar(`Tirar "${i.texto}" da lista?`)) agir(() => excluirItemModelo(i.id)); }}
                 disabled={proc}
-                className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+                className="text-xs text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
               >
                 ✕
               </button>

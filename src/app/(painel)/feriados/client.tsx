@@ -125,7 +125,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
       </div>
 
       {msg && (
-        <p role="status" className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <p role="status" className="rounded-controle bg-amber-50 px-4 py-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
           {msg}
         </p>
       )}
@@ -185,7 +185,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               />
 
               {f.situacao === "indefinido" && (
-                <span className="rounded-controle bg-amber-100 px-1.5 py-0.5 text-mini font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                <span className="rounded-controle bg-amber-100 px-1.5 py-0.5 text-mini font-semibold text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
                   a definir
                 </span>
               )}
@@ -196,7 +196,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
                   const r = await excluirFeriado(f.id);
                   if (!r.ok) void avisar(r.erro);
                 }}
-                className="text-xs text-texto-fraco hover:text-red-600 hover:underline"
+                className="text-xs text-texto-fraco hover:text-urgente-texto hover:underline"
               >
                 tirar
               </BotaoAcao>

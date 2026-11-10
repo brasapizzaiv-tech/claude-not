@@ -163,7 +163,7 @@ export function FechamentoZ({
                   <span>{brl(v)}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-blue-600">
+              <div className="flex justify-between text-info-texto">
                 <span>Suprimentos</span>
                 <span>+ {brl(suprimentos)}</span>
               </div>
@@ -173,7 +173,7 @@ export function FechamentoZ({
                   <span>{brl(v)}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-red-600">
+              <div className="flex justify-between text-urgente-texto">
                 <span>Sangrias</span>
                 <span>− {brl(sangrias)}</span>
               </div>
@@ -235,10 +235,10 @@ export function FechamentoZ({
               <div
                 className={`mt-2 rounded-cartao p-3 text-center text-sm font-bold ${
                   Math.abs(quebra) < 0.01
-                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    ? "bg-emerald-50 text-ok-texto dark:bg-emerald-950/40 dark:text-emerald-300"
                     : quebra > 0
-                      ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                      : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                      ? "bg-blue-50 text-info-texto dark:bg-blue-950/40 dark:text-blue-300"
+                      : "bg-red-50 text-urgente-texto dark:bg-red-950/40 dark:text-red-300"
                 }`}
               >
                 {Math.abs(quebra) < 0.01
@@ -280,12 +280,12 @@ export function FechamentoZ({
             {impresso !== null && (
               <div className="mt-3 rounded-cartao bg-superficie-suave p-3 text-sm">
                 {impresso > 0 ? (
-                  <p className="text-emerald-700 dark:text-emerald-400">
+                  <p className="text-ok-texto dark:text-emerald-400">
                     ✓ Caixa fechado. O cupom saiu na impressora da nota
                     {impresso > 1 ? " (" + impresso + " impressoras)" : ""}.
                   </p>
                 ) : (
-                  <p className="text-amber-600">
+                  <p className="text-aviso-texto">
                     Caixa fechado, mas nenhuma impressora está marcada pra NFC-e na Central de
                     Impressões — abri a janela de impressão do navegador.
                   </p>

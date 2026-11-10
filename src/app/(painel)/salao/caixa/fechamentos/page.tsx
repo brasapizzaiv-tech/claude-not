@@ -196,7 +196,7 @@ export default async function FechamentosPage({ searchParams }: { searchParams: 
                       {l.caixa.dinheiro_contado != null ? (
                         <>
                           <span className="text-texto">{brl(Number(l.caixa.dinheiro_esperado) || 0)} × {brl(Number(l.caixa.dinheiro_contado) || 0)}</span>
-                          <span className={`block text-xs font-semibold ${Math.abs(q) < 0.01 ? "text-texto-fraco" : q < 0 ? "text-urgente-texto" : "text-amber-600"}`}>
+                          <span className={`block text-xs font-semibold ${Math.abs(q) < 0.01 ? "text-texto-fraco" : q < 0 ? "text-urgente-texto" : "text-aviso-texto"}`}>
                             {Math.abs(q) < 0.01 ? "bateu" : `${q < 0 ? "faltou" : "sobrou"} ${brl(Math.abs(q))}`}
                           </span>
                         </>

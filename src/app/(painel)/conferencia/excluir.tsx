@@ -19,7 +19,7 @@ export function ExcluirPedido({ id, nome }: { id: string; nome: string }) {
       <input type="hidden" name="id" value={id} />
       <Enviar
         title="Apagar pedido"
-        className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
+        className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
       >
         <Icone nome="lixeira" tamanho={15} titulo="Excluir" />
       </Enviar>

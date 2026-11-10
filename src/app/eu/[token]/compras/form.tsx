@@ -11,7 +11,7 @@ const fData = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
 
 const COR: Record<Solicitacao["status"], string> = {
-  pendente: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  pendente: "bg-amber-100 text-aviso-texto dark:bg-amber-900/40 dark:text-amber-200",
   comprado: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
   rejeitado: "bg-zinc-200 text-texto-suave dark:bg-zinc-800 ",
 };
@@ -95,7 +95,7 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
         >
           {proc ? "Enviando…" : "Enviar pedido"}
         </button>
-        {msg && <p role="status" className={`mt-2 text-center text-sm ${msg.endsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{msg}</p>}
+        {msg && <p role="status" className={`mt-2 text-center text-sm ${msg.endsWith("✓") ? "text-ok-texto" : "text-urgente-texto"}`}>{msg}</p>}
       </div>
 
       {pendentes.length > 0 && (
@@ -139,7 +139,7 @@ function Linha({ s }: { s: Solicitacao }) {
     <div>
       <div className="flex items-start justify-between gap-2">
         <span className="min-w-0 font-semibold text-texto">
-          {s.urgente && s.status === "pendente" && <Icone nome="fogo" tamanho={13} className="mr-1 text-red-600" />}
+          {s.urgente && s.status === "pendente" && <Icone nome="fogo" tamanho={13} className="mr-1 text-urgente-texto" />}
           {s.tipo === "manutencao" && <Icone nome="ferramenta" tamanho={13} className="mr-1 text-texto-suave" />}
           {s.item}
           {s.quantidade ? <span className="font-normal text-texto-suave"> · {s.quantidade}</span> : null}

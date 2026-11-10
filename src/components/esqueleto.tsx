@@ -11,7 +11,7 @@
 // parados: a regra prefers-reduced-motion do globals.css cuida disso.
 
 export function Bloco({ className = "" }: { className?: string }) {
-  return <div aria-hidden className={`animate-pulse rounded-md bg-zinc-200/80 dark:bg-zinc-800 ${className}`} />;
+  return <div aria-hidden className={`animate-pulse rounded-controle bg-zinc-200/80 dark:bg-zinc-800 ${className}`} />;
 }
 
 // Cabeçalho comum: título grande e uma legenda curta.
@@ -41,7 +41,7 @@ export function EsqueletoPagina({ largura = "max-w-5xl" }: { largura?: string })
       <Titulo />
       <div className="space-y-2.5">
         {[...Array(7)].map((_, i) => (
-          <div key={i} className="rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
+          <div key={i} className="rounded-controle border border-zinc-200 p-3.5 dark:border-zinc-800">
             <div className="flex items-center gap-3">
               <Bloco className="h-9 w-9 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1">
@@ -75,10 +75,10 @@ export function EsqueletoTabela({
           <Bloco className="h-3 w-24" />
           <Bloco className="mt-2.5 h-7 w-52" />
         </div>
-        <Bloco className="h-9 w-32 rounded-lg" />
+        <Bloco className="h-9 w-32 rounded-controle" />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-hidden rounded-controle border border-zinc-200 dark:border-zinc-800">
         <div className="flex gap-4 border-b border-zinc-200 bg-zinc-50 px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-900">
           {[...Array(colunas)].map((_, i) => (
             <Bloco key={i} className={`h-3 ${i === 0 ? "flex-[2]" : "flex-1"}`} />
@@ -112,14 +112,14 @@ export function EsqueletoCartoes({
       <Titulo />
       <div className={`grid grid-cols-1 gap-3 ${colunas}`}>
         {[...Array(n)].map((_, i) => (
-          <div key={i} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div key={i} className="rounded-cartao border border-zinc-200 p-4 dark:border-zinc-800">
             <div className="flex items-center justify-between">
               <Bloco className="h-4 w-20" />
               <Bloco className="h-5 w-16 rounded-full" />
             </div>
             <Bloco className="mt-3.5 h-3.5 w-3/4" />
             <Bloco className="mt-2 h-3 w-1/2" />
-            <Bloco className="mt-4 h-8 w-full rounded-lg" />
+            <Bloco className="mt-4 h-8 w-full rounded-controle" />
           </div>
         ))}
       </div>
@@ -135,13 +135,13 @@ export function EsqueletoRelatorio({ cartoes = 4, largura = "max-w-6xl" }: { car
       <Titulo largura="w-64" />
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[...Array(cartoes)].map((_, i) => (
-          <div key={i} className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div key={i} className="rounded-controle border border-zinc-200 p-4 dark:border-zinc-800">
             <Bloco className="h-3 w-20" />
             <Bloco className="mt-3 h-7 w-28" />
           </div>
         ))}
       </div>
-      <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-hidden rounded-controle border border-zinc-200 dark:border-zinc-800">
         {[...Array(8)].map((_, l) => (
           <div key={l} className="flex gap-4 border-b border-zinc-100 px-4 py-3.5 last:border-0 dark:border-zinc-900">
             <Bloco className="h-3.5 flex-[2]" />
@@ -161,7 +161,7 @@ export function EsqueletoApp({ n = 8 }: { n?: number }) {
     <div className="mx-auto max-w-xl p-4">
       <Anuncio />
       <div className="mb-4 flex items-center gap-3">
-        <Bloco className="h-10 w-10 shrink-0 rounded-xl" />
+        <Bloco className="h-10 w-10 shrink-0 rounded-controle" />
         <div className="min-w-0 flex-1">
           <Bloco className="h-4 w-40" />
           <Bloco className="mt-2 h-3 w-24" />
@@ -169,7 +169,7 @@ export function EsqueletoApp({ n = 8 }: { n?: number }) {
       </div>
       <div className="space-y-2.5">
         {[...Array(n)].map((_, i) => (
-          <div key={i} className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div key={i} className="rounded-controle border border-zinc-200 p-4 dark:border-zinc-800">
             <div className="flex items-center justify-between gap-3">
               <Bloco className="h-4 w-1/2" />
               <Bloco className="h-4 w-16 shrink-0" />

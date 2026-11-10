@@ -61,7 +61,7 @@ function ValorConta({ l }: { l: LinhaConta }) {
           {moeda(Number(l.valor))}
         </span>
         {Math.abs(custas) >= 0.01 && (
-          <span className="block text-mini text-amber-600">
+          <span className="block text-mini text-aviso-texto">
             {custas > 0 ? "+" : "−"} {moeda(Math.abs(custas))}{" "}
             {custas > 0 ? "de custas" : "de desconto"}
           </span>
@@ -249,10 +249,10 @@ function Linhas({
                   <span
                     className={`rounded-controle px-2 py-1 text-xs font-medium ${
                       l.pago
-                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                        ? "bg-emerald-500/15 text-ok-texto dark:text-emerald-300"
                         : l.vencimento && l.vencimento < hojeBR
-                          ? "bg-red-500/15 text-red-700 dark:text-red-300"
-                          : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                          ? "bg-red-500/15 text-urgente-texto dark:text-red-300"
+                          : "bg-amber-500/15 text-aviso-texto dark:text-amber-300"
                     }`}
                   >
                     {l.pago ? "Paga" : l.vencimento && l.vencimento < hojeBR ? "Vencida" : "Em aberto"}
@@ -481,8 +481,8 @@ export function ListaContasView({
           {grupos.vencidas.length > 0 && (
             <section>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-red-600">Vencidas</h2>
-                <span className="text-sm font-medium text-red-600">
+                <h2 className="text-sm font-semibold text-urgente-texto">Vencidas</h2>
+                <span className="text-sm font-medium text-urgente-texto">
                   {moeda(grupos.totalVencidas)}
                 </span>
               </div>

@@ -24,8 +24,8 @@ export type NotaLinha = {
 };
 
 const badge: Record<string, string> = {
-  pendente: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  lancada: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
+  pendente: "bg-amber-100 text-aviso-texto dark:bg-amber-950 dark:text-amber-300",
+  lancada: "bg-green-100 text-ok-texto dark:bg-green-950 dark:text-green-300",
   cancelada: "bg-superficie-suave text-texto-fraco line-through",
 };
 const rotulo: Record<string, string> = {
@@ -131,7 +131,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
                       </span>
                       {n.aguardando && (
                         <span
-                          className="rounded-controle bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                          className="rounded-controle bg-blue-100 px-2 py-0.5 text-xs font-medium text-info-texto dark:bg-blue-950 dark:text-blue-300"
                           title="Manifestada — a busca automática vai trazer os itens em alguns minutos."
                         >
                           <Icone nome="ampulheta" tamanho={12} className="mr-1" /> aguardando itens

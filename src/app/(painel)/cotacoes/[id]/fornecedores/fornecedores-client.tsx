@@ -246,7 +246,7 @@ export function FornecedoresClient({
                       {l.convidado ? (
                         <BotaoAcao
                           aoClicar={() => remover(l.id)}
-                          className="text-xs text-texto-fraco hover:text-red-600"
+                          className="text-xs text-texto-fraco hover:text-urgente-texto"
                         >
                           Remover
                         </BotaoAcao>
@@ -282,7 +282,7 @@ export function FornecedoresClient({
                   <Icone nome="zap" tamanho={15} className="mr-1.5" /> Abrir WhatsApp do próximo ({convidados.length - enviadosCount} faltam)
                 </button>
               ) : (
-                <span className="rounded-controle bg-green-100 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                <span className="rounded-controle bg-green-100 px-3 py-2 text-sm font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
                   ✓ Todos abertos
                 </span>
               )}
@@ -388,11 +388,11 @@ export function FornecedoresClient({
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
                         {foi ? (
-                          <span className="font-medium text-green-600">✓ Enviado</span>
+                          <span className="font-medium text-ok-texto">✓ Enviado</span>
                         ) : l.respondido ? (
-                          <span className="font-medium text-green-600">Respondeu</span>
+                          <span className="font-medium text-ok-texto">Respondeu</span>
                         ) : (
-                          <span className="text-amber-600">Pendente</span>
+                          <span className="text-aviso-texto">Pendente</span>
                         )}
                       </td>
                       <td className="px-4 py-2">
@@ -419,7 +419,7 @@ export function FornecedoresClient({
                           </button>
                           <BotaoAcao
                             aoClicar={() => remover(l.id)}
-                            className="rounded-controle border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
+                            className="rounded-controle border border-red-300 px-3 py-1.5 text-xs font-medium text-urgente-texto hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
                           >
                             Retirar
                           </BotaoAcao>

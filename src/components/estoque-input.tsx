@@ -35,7 +35,7 @@ const TECLAS = ["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "−", 
 const MAPA: Record<string, string> = { "÷": "/", "×": "*", "−": "-" };
 
 const boxCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-right text-base text-zinc-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-controle border border-zinc-300 bg-white px-3 py-2 text-right text-base text-zinc-900 focus:border-orange-500 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
 // Campo de estoque com CAIXAS separadas (um por local/lugar) que somam,
 // mais uma calculadora. O total vai num input escondido (name) para salvar.
@@ -109,7 +109,7 @@ export function EstoqueInput({
           <div key={i} className="flex items-center gap-2">
             {/* Veio de uma etiqueta lida: mostra o número; o valor pode ser corrigido. */}
             {c.etiqueta && (
-              <span className="shrink-0 rounded-md bg-emerald-100 px-1.5 py-1 text-mini font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" title="Lido da etiqueta">
+              <span className="shrink-0 rounded-controle bg-emerald-100 px-1.5 py-1 text-mini font-semibold text-ok-texto dark:bg-emerald-950 dark:text-emerald-300" title="Lido da etiqueta">
                 nº {c.etiqueta.numero}
               </span>
             )}
@@ -132,7 +132,7 @@ export function EstoqueInput({
                 disabled={disabled}
                 title="Tamanho de cada unidade"
                 aria-label="Tamanho"
-                className={`shrink-0 rounded-lg border px-2 py-2 text-sm ${c.tam ? "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200" : "border-amber-400 text-amber-700 dark:text-amber-300"} bg-white dark:bg-zinc-950`}
+                className={`shrink-0 rounded-controle border px-2 py-2 text-sm ${c.tam ? "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200" : "border-amber-400 text-aviso-texto dark:text-amber-300"} bg-white dark:bg-zinc-950`}
               >
                 <option value="">tamanho?</option>
                 {(tamanhos ?? []).map((t) => <option key={t} value={t}>{textoTamanho(t, medida)}</option>)}
@@ -144,7 +144,7 @@ export function EstoqueInput({
                 onChange={(e) => setCaixa(i, { onde: (e.target.value || null) as Onde | null })}
                 disabled={disabled}
                 title="Onde essa parte está"
-                className="shrink-0 rounded-lg border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
+                className="shrink-0 rounded-controle border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
               >
                 <option value="">onde?</option>
                 {ONDES.map((o) => <option key={o} value={o}>{ONDE_ROTULO[o]}</option>)}
@@ -155,7 +155,7 @@ export function EstoqueInput({
                 type="button"
                 onClick={() => remCaixa(i)}
                 title="Remover caixa"
-                className="shrink-0 rounded-lg border border-zinc-300 px-3 py-2 text-zinc-400 hover:text-red-600 dark:border-zinc-700"
+                className="shrink-0 rounded-controle border border-zinc-300 px-3 py-2 text-zinc-400 hover:text-urgente-texto dark:border-zinc-700"
               >
                 ×
               </button>
@@ -169,7 +169,7 @@ export function EstoqueInput({
           type="button"
           onClick={addCaixa}
           disabled={disabled}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-orange-600 hover:bg-orange-50 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-orange-950"
+          className="rounded-controle border border-zinc-300 px-3 py-1.5 text-sm font-medium text-orange-600 hover:bg-orange-50 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-orange-950"
         >
           + caixa
         </button>
@@ -178,7 +178,7 @@ export function EstoqueInput({
           onClick={abrirCalc}
           disabled={disabled}
           title="Calculadora"
-          className={`rounded-lg border px-3 py-1.5 text-base disabled:opacity-60 ${
+          className={`rounded-controle border px-3 py-1.5 text-base disabled:opacity-60 ${
             calc
               ? "border-orange-500 bg-orange-50 dark:bg-orange-950"
               : "border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
@@ -195,7 +195,7 @@ export function EstoqueInput({
       {real && real.total > 0 && (
         <p className="mt-1 text-sm text-zinc-500">
           Dá <b className="text-zinc-800 dark:text-zinc-200">{textoTamanho(real.total, medida)}</b> no total
-          {real.semTamanho > 0 ? <span className="text-amber-600"> (+ {real.semTamanho} sem tamanho — escolha o tamanho)</span> : null}
+          {real.semTamanho > 0 ? <span className="text-aviso-texto"> (+ {real.semTamanho} sem tamanho — escolha o tamanho)</span> : null}
         </p>
       )}
       {comTamanhos && caixas.length === 1 && !real?.total && (
@@ -209,15 +209,15 @@ export function EstoqueInput({
         </p>
       )}
       {calc && !disabled && (
-        <div className="mt-2 grid grid-cols-4 gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mt-2 grid grid-cols-4 gap-1.5 rounded-controle border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900">
           {TECLAS.map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => tecla(t)}
-              className={`rounded-lg py-3 text-lg font-medium ${
+              className={`rounded-controle py-3 text-lg font-medium ${
                 t === "C"
-                  ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                  ? "bg-red-100 text-urgente-texto dark:bg-red-950 dark:text-red-300"
                   : "÷×−+".includes(t)
                     ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
                     : "bg-white text-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
@@ -226,8 +226,8 @@ export function EstoqueInput({
               {t}
             </button>
           ))}
-          <button type="button" onClick={() => tecla("⌫")} aria-label="Apagar o último" className="rounded-lg bg-white py-3 text-lg font-medium text-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">⌫</button>
-          <button type="button" onClick={() => tecla("=")} className="col-span-3 rounded-lg bg-orange-500 py-3 text-lg font-bold text-marca-sobre-primaria">=</button>
+          <button type="button" onClick={() => tecla("⌫")} aria-label="Apagar o último" className="rounded-controle bg-white py-3 text-lg font-medium text-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">⌫</button>
+          <button type="button" onClick={() => tecla("=")} className="col-span-3 rounded-controle bg-orange-500 py-3 text-lg font-bold text-marca-sobre-primaria">=</button>
         </div>
       )}
     </div>
