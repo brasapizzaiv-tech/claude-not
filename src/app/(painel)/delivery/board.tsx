@@ -206,7 +206,9 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
 
 export type BoyNoMapa = { id: string; nome: string; lat: number; lng: number; em: string };
 
-export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey = null, turnoAtual = null }: {
+export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey = null, turnoAtual = null, aviso = null }: {
+  /** Faixa da Saúde do sistema (WhatsApp caído, impressão parada...), MSG-05. */
+  aviso?: React.ReactNode;
   pedidos: PedidoBoard[];
   entregadores: EntregadorOpt[];
   boys?: BoyNoMapa[]; // posição dos entregadores (GPS do app), últimos 20 min
@@ -420,6 +422,8 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
           </details>
         </div>
       </div>
+
+      {aviso}
 
       {/* ---------- filtros em pílula ---------- */}
       <div className="flex flex-wrap items-center gap-2">

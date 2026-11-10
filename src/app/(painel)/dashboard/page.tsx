@@ -6,6 +6,8 @@ import { tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { pedidoAtrasado } from "@/lib/delivery-atraso";
 import { Inicio, type DadosInicio, type Mesa } from "./inicio";
+import { AvisoSaude } from "@/components/aviso-saude";
+import { empresaAtualId } from "@/lib/empresa";
 
 // Tela inicial do painel (Etapa 4 do design).
 //
@@ -393,5 +395,12 @@ export default async function DashboardPage({
     turno: { rotulo: turnoAgora === "noite" ? "noite" : "dia", pessoas: pessoasTurno },
   };
 
-  return <Inicio d={dados} />;
+  return (
+    <>
+      <div className="px-4 pt-4 md:px-[30px] md:pt-[26px] empty:hidden">
+        <AvisoSaude empresaId={await empresaAtualId()} />
+      </div>
+      <Inicio d={dados} />
+    </>
+  );
 }

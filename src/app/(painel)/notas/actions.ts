@@ -120,9 +120,12 @@ export async function importarNota(
       .eq("id", existe.id);
     if (nf.itens.length > 0) {
       const itens = await comProdutoVinculado(supabase, nf.itens);
-      await supabase
+      const { error: eItens } = await supabase
         .from("nota_itens")
         .insert(itens.map((i) => ({ ...i, nota_id: existe.id })));
+      // Sem os itens a nota ficaria "completa" vazia (NFE-06): devolve a falha
+      // pra busca não dar o documento por importado (a autocura tenta de novo).
+      if (eItens) return { ok: false, erro: `Não foi possível salvar os itens da nota: ${eItens.message}` };
     }
     await salvarParcelas(supabase, existe.id, nf.parcelas);
 
@@ -151,9 +154,16 @@ export async function importarNota(
 
   if (nf.itens.length > 0) {
     const itens = await comProdutoVinculado(supabase, nf.itens);
-    await supabase
+    const { error: eItens } = await supabase
       .from("nota_itens")
       .insert(itens.map((i) => ({ ...i, nota_id: nota.id })));
+    if (eItens) {
+      // A nota fica como resumo: a próxima busca completa os itens pelo caminho
+      // de "enriquecer", que não aplica o padrão do fornecedor — então já aplica.
+      await salvarParcelas(supabase, nota.id, nf.parcelas);
+      await aplicarPadraoFornecedor(supabase, nota.id, fornecedor?.id ?? null);
+      return { ok: false, erro: `A nota entrou, mas os itens não gravaram: ${eItens.message}` };
+    }
   }
   await salvarParcelas(supabase, nota.id, nf.parcelas);
   await aplicarPadraoFornecedor(supabase, nota.id, fornecedor?.id ?? null);
@@ -171,7 +181,7 @@ export async function importarResumo(
   if (!clienteExterno) await exigirAcesso("/notas");
   const supabase = clienteExterno ?? (await createClient());
   const r = lerResumo(resumoXml);
-  if (!r.chave) return { ok: false };
+  if (!r.chave) return { ok: false, semChave: true };
 
   const { data: existe } = await supabase
     .from("notas_fiscais")

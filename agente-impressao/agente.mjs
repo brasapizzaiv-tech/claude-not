@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { iniciarPonto } from "./ponto.mjs";
 
 const { print } = ptp;
-const VERSAO = "1.2.1"; // 1.2.1: impresso e não confirmado NÃO reimprime (só tenta a baixa de novo) e toda chamada à rede tem tempo limite; // 1.2.0: lê o relógio de ponto Control iD (ponto.mjs, menu do ícone "Relógio de ponto...") e manda as batidas pro sistema; // 1.1.6: consulta a fila a cada 3 s só enquanto há impressão (2 min depois da última), senão a cada 10 s; sinal de vida a cada 60 s — corta 70% das chamadas na Vercel; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
+const VERSAO = "1.3.0"; // 1.3.0: avisa o sistema quando um item falha (o sistema desiste depois de 5 e mostra na Saúde do sistema), tempo limite de 45 s na impressão pelo PDF (mata o SumatraPDF pendurado) e o sinal de vida manda a hora da última rodada completa da fila; // 1.2.1: impresso e não confirmado NÃO reimprime (só tenta a baixa de novo) e toda chamada à rede tem tempo limite; // 1.2.0: lê o relógio de ponto Control iD (ponto.mjs, menu do ícone "Relógio de ponto...") e manda as batidas pro sistema; // 1.1.6: consulta a fila a cada 3 s só enquanto há impressão (2 min depois da última), senão a cada 10 s; sinal de vida a cada 60 s — corta 70% das chamadas na Vercel; // 1.1.5: etiqueta deitada (100×70) — repassa a orientação que o servidor manda pro SumatraPDF, que gira toda página mais larga que alta se não for avisado; // 1.1.3: a escala vem do servidor; 1.1.4: cupom em ESC/POS (bytes crus pro spooler) quando o servidor manda formato=escpos
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // Onde o agente pode ESCREVER (Program Files é só leitura pro usuário comum).
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteImpressao") : dir;
@@ -24,6 +24,7 @@ const intervalo = Number(cfg.intervaloMs) || 3000;
 // Sem nada pra imprimir há 2 min, a consulta espaça (a Vercel cobra por chamada).
 const intervaloOcioso = Number(cfg.intervaloOciosoMs) || 10000;
 let ultimoJob = 0;
+let rodadaEm = null; // última rodada COMPLETA da fila (Date.now() deste PC)
 const headers = { Authorization: `Bearer ${token}` };
 const tmp = path.join(os.tmpdir(), "brasa-etiquetas");
 const logFile = path.join(dataDir, "agente.log");
@@ -85,7 +86,9 @@ async function heartbeat() {
     await rede(`${baseUrl}/api/impressao/heartbeat`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ hostname: os.hostname(), printers, versao: VERSAO }),
+      // Vai a IDADE da última rodada (ms), não a hora: o relógio deste PC pode
+      // estar adiantado ou atrasado em relação ao servidor.
+      body: JSON.stringify({ hostname: os.hostname(), printers, versao: VERSAO, rodada_ha_ms: rodadaEm == null ? null : Date.now() - rodadaEm }),
     });
   } catch { /* silencioso */ }
 }
@@ -123,6 +126,37 @@ async function darBaixa(id) {
   }
 }
 
+// Avisa o sistema que o item falhou (conta as tentativas; depois de 5 a fila
+// para de entregar e o painel mostra). Nunca derruba o ciclo.
+async function informarFalha(id, erro) {
+  try {
+    await rede(`${baseUrl}/api/impressao/falha`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ id, erro: String(erro || "falhou").slice(0, 300) }),
+    });
+  } catch { /* fica no log */ }
+}
+
+// O pdf-to-printer chama o SumatraPDF sem tempo limite: se ele pendurar (driver
+// travado, impressora sumida), o laço parava de vez. Com 45 s sem resposta,
+// mata o SumatraPDF e conta como falha.
+function imprimirComTempo(file, opcoes, ms = 45000) {
+  return new Promise((resolve, reject) => {
+    let acabou = false;
+    const t = setTimeout(() => {
+      if (acabou) return;
+      acabou = true;
+      execFile("taskkill", ["/IM", "SumatraPDF.exe", "/F"], { windowsHide: true }, () => {});
+      reject(new Error(`a impressão não respondeu em ${Math.round(ms / 1000)} s`));
+    }, ms);
+    print(file, opcoes).then(
+      () => { if (!acabou) { acabou = true; clearTimeout(t); resolve(); } },
+      (e) => { if (!acabou) { acabou = true; clearTimeout(t); reject(e); } },
+    );
+  });
+}
+
 // Imprimiu: tenta a baixa; se não der, anota pra não reimprimir.
 async function imprimiu(id) {
   if (await darBaixa(id)) { if (semBaixa.delete(id)) guardarSemBaixa(); return; }
@@ -149,6 +183,7 @@ async function ciclo() {
       }
       if (!job.printer) {
         log(`Impressora "${job.impressora || "?"}" sem "Nome no Windows" — pulei. Configure em Etiquetas → Estações.`);
+        await informarFalha(job.id, `impressora "${job.impressora || "?"}" sem "Nome no Windows" na Central`);
         continue;
       }
       // ESC/POS: quem decide é o servidor (campo "formato" da fila). Se a
@@ -175,7 +210,7 @@ async function ciclo() {
       }
       try {
         const pr = await rede(`${baseUrl}${job.url}`, { headers });
-        if (!pr.ok) { log(`Erro ao gerar o PDF (${pr.status}).`); continue; }
+        if (!pr.ok) { log(`Erro ao gerar o PDF (${pr.status}).`); await informarFalha(job.id, `o sistema não gerou o PDF (${pr.status})`); continue; }
         const buf = Buffer.from(await pr.arrayBuffer());
         const file = path.join(tmp, `${job.id}.pdf`);
         await writeFile(file, buf);
@@ -195,13 +230,15 @@ async function ciclo() {
         if (job.orientacao === "landscape" || job.orientacao === "portrait") opcoes.orientation = job.orientacao;
         else if (etiqueta) { const o = orientacaoDoPdf(buf); if (o) opcoes.orientation = o; }
         else opcoes.orientation = "portrait";
-        await print(file, opcoes);
+        await imprimirComTempo(file, opcoes);
         await imprimiu(job.id);
         log(`Impresso em "${job.printer}".`);
       } catch (e) {
         log(`Falha ao imprimir: ${e.message}`);
+        await informarFalha(job.id, `${job.printer}: ${e.message}`);
       }
     }
+    rodadaEm = Date.now();
   } catch (e) {
     log(`Sem conexão com o servidor: ${e.message}`);
   } finally {

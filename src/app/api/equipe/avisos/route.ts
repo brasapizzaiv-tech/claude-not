@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { avisosDaManha } from "@/lib/push-avisos";
+import { rodarRotina } from "@/lib/saude";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,5 +16,8 @@ export async function GET(req: NextRequest) {
   if (!secret || (auth !== `Bearer ${secret}` && key !== secret)) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
-  return NextResponse.json(await avisosDaManha());
+  return rodarRotina("rotina:avisos-manha", async () => {
+    const r = await avisosDaManha();
+    return { ok: true, detalhe: r.jaEnviado ? "já tinha saído hoje" : `${r.enviados} aviso(s) para ${r.pessoas} pessoa(s)`, resposta: r };
+  });
 }

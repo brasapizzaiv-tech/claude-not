@@ -12,14 +12,17 @@ export default async function BalancaPage() {
   const supabase = await createClient();
   const [{ data: cfgRows }, { data: agStatus }] = await Promise.all([
     supabase.from("pdv_config").select("chave, valor"),
-    supabase.from("balanca_status").select("hostname, visto_em, fila_pendente").maybeSingle(),
+    supabase.from("balanca_status").select("hostname, visto_em, fila_pendente, versao, erros, erros_lista").maybeSingle(),
   ]);
   const cfg: Record<string, string> = {};
   for (const r of cfgRows ?? []) cfg[r.chave] = r.valor;
   const precoKg = Number(cfg.preco_kg ?? 0);
   const taraPadrao = Number(cfg.tara_padrao ?? 0);
 
-  const ag = agStatus as { hostname: string | null; visto_em: string | null; fila_pendente: number } | null;
+  const ag = agStatus as {
+    hostname: string | null; visto_em: string | null; fila_pendente: number; versao: string | null;
+    erros: number | null; erros_lista: { ts?: string | null; numero?: number | null; peso?: number | null; erro?: string }[] | null;
+  } | null;
   const agenteOnline = !!ag?.visto_em && new Date().getTime() - new Date(ag.visto_em).getTime() < 150000; // sinal de vida do agente a cada 60 s (1.2.3)
   const filaPendente = Number(ag?.fila_pendente ?? 0);
 
@@ -48,6 +51,27 @@ export default async function BalancaPage() {
           <Icone nome="alerta" tamanho={15} className="mr-1.5" /> {filaPendente} pesagem(ns) na fila offline do agente — sincronizam sozinhas quando a internet do PC da balança voltar.
         </div>
       )}
+      {/* Pesagens que o sistema RECUSOU (AGT-01): o cupom saiu impresso, mas a
+          comanda não existe no caixa. Antes ficavam escondidas no PC. */}
+      {(ag?.erros ?? 0) > 0 && (
+        <div className="mt-4 rounded-cartao bg-urgente-fundo px-4 py-3 text-sm text-urgente-texto">
+          <p className="font-semibold">
+            <Icone nome="alerta" tamanho={15} className="mr-1.5" />
+            {ag!.erros} pesagem(ns) recusada(s) pelo sistema nos últimos 3 dias
+          </p>
+          <p className="mt-1">O cliente levou o cupom, mas a comanda não entrou no caixa. Lance na mão pelo número do cupom.</p>
+          <ul className="mt-2 space-y-1">
+            {(ag!.erros_lista ?? []).map((e, k) => (
+              <li key={k}>
+                Cupom {e.numero ?? "?"}
+                {e.peso != null ? ` · ${Number(e.peso).toLocaleString("pt-BR")} kg` : ""}
+                {e.ts ? ` · ${new Date(e.ts).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""}
+                {e.erro ? ` · ${e.erro}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {ag?.visto_em && (
         <p className="mt-3 text-xs text-texto-fraco">
           Agente da balança:{" "}
@@ -55,7 +79,7 @@ export default async function BalancaPage() {
             <span className={`h-2 w-2 rounded-full ${agenteOnline ? "bg-emerald-500" : "bg-red-500"}`} />
             {agenteOnline ? "online" : "sem sinal"}
           </span>
-          {ag.hostname ? ` · PC ${ag.hostname}` : ""} · visto {new Date(ag.visto_em).toLocaleString("pt-BR")}
+          {ag.hostname ? ` · PC ${ag.hostname}` : ""}{ag.versao ? ` · versão ${ag.versao}` : ""} · visto {new Date(ag.visto_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
         </p>
       )}
 

@@ -1,6 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaDoAgente } from "@/lib/impressao-agente";
 import { processarNfcePendentes } from "@/lib/fiscal/pendentes";
+import { registrarErro } from "@/lib/saude";
+
+// Depois de 5 falhas o item para de ser entregue e aparece na Saúde do sistema
+// (AGT-05). Comanda de cozinha com mais de 1 hora fica retida (AGT-02): sair
+// horas depois, na cozinha, só confunde.
+const MAX_TENTATIVAS = 5;
+const COMANDA_VELHA_MS = 60 * 60 * 1000;
 
 // Lista os documentos pendentes de impressão (fila genérica) para o agente.
 // Cada item entregue fica RESERVADO por 90 s (entregue_em): se dois agentes
@@ -28,23 +35,41 @@ export async function GET(req: Request) {
   // do agente (que chegava a 3 s). A fila de notas já espera N minutos mesmo.
   if (Date.now() - ultimaNfce > 30_000) {
     ultimaNfce = Date.now();
-    try { await processarNfcePendentes(); } catch { /* nota não pode travar a impressão */ }
+    try { await processarNfcePendentes(); } catch (e) {
+      // Nota não pode travar a impressão, mas fica o rastro (COD-004).
+      await registrarErro("impressao:fila:nfce-pendentes", e, null, empresaId);
+    }
   }
 
   const admin = createAdminClient();
   const limite = new Date(Date.now() - 90_000).toISOString();
-  const { data } = await admin
+  const { data, error: eFila } = await admin
     .from("impressao_fila")
-    .select("id, tipo, impressoras(nome, impressora_windows, etiqueta_config)")
+    .select("id, tipo, solicitado_em, liberado_em, impressoras(nome, impressora_windows, etiqueta_config)")
     .eq("empresa_id", empresaId)
     .is("impresso_em", null)
+    .is("descartado_em", null)
+    .is("retido_em", null)
+    .lt("tentativas", MAX_TENTATIVAS)
     .or(`entregue_em.is.null,entregue_em.lt.${limite}`)
     .order("solicitado_em", { ascending: true })
     .limit(50);
 
+  if (eFila) {
+    await registrarErro("impressao:fila", eFila.message, null, empresaId);
+    return Response.json({ jobs: [], erro: "fila indisponível" }, { status: 500 });
+  }
+
   type Imp = { nome: string; impressora_windows: string | null; etiqueta_config: { largura?: number; altura?: number } | null };
-  type Row = { id: string; tipo: string; impressoras: Imp | Imp[] | null };
-  const jobs = ((data as unknown as Row[]) ?? []).map((e) => {
+  type Row = { id: string; tipo: string; solicitado_em: string | null; liberado_em: string | null; impressoras: Imp | Imp[] | null };
+  const todas = (data as unknown as Row[]) ?? [];
+  const velhaAntes = Date.now() - COMANDA_VELHA_MS;
+  const retidas = todas.filter((e) => e.tipo === "comanda" && !e.liberado_em && e.solicitado_em && new Date(e.solicitado_em).getTime() < velhaAntes);
+  if (retidas.length > 0) {
+    await admin.from("impressao_fila").update({ retido_em: new Date().toISOString() }).in("id", retidas.map((e) => e.id));
+  }
+  const retidaIds = new Set(retidas.map((e) => e.id));
+  const jobs = todas.filter((e) => !retidaIds.has(e.id)).map((e) => {
     const imp = Array.isArray(e.impressoras) ? e.impressoras[0] : e.impressoras;
     return {
       id: e.id,

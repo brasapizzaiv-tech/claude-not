@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere, pinTravado } from "@/lib/pin-colaborador";
 import { recalcularDivergencias } from "@/lib/conferencia-core";
+import { registrarErro } from "@/lib/saude";
 
 const soDigitos = (s: string) => (s || "").replace(/\D/g, "").slice(0, 4);
 
@@ -68,7 +69,7 @@ export async function conferirPedidoColab(
   });
   // Divergências (recebido ≠ pedido, nota etc.) ficam gravadas no pedido pra
   // lista e relatório do painel. Só com a permissão já conferida pela RPC.
-  if (data?.ok) { try { await recalcularDivergencias(createAdminClient(), pedidoId); } catch { /* sem bloquear a conferência */ } }
+  if (data?.ok) { try { await recalcularDivergencias(createAdminClient(), pedidoId); } catch (e) { await registrarErro("conferencia:divergencias", e, { pedidoId }); /* sem bloquear a conferência */ } }
   return { ok: !!data?.ok };
 }
 

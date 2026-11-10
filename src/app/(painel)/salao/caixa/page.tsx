@@ -14,6 +14,8 @@ import { listarFormas } from "@/lib/formas-pagamento-server";
 import { FORMAS_FIXAS_VENDA } from "@/lib/formas-pagamento";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
 import { lerNfceAuto } from "../fiscal-actions";
+import { AvisoSaude } from "@/components/aviso-saude";
+import { empresaAtualId } from "@/lib/empresa";
 
 
 const brl = (n: number) =>
@@ -330,6 +332,8 @@ export default async function CaixaPage({
           />
         </div>
       </div>
+
+      <AvisoSaude empresaId={await empresaAtualId()} className="mb-4" />
 
       <NotasPendentes lista={pendentes} />
 

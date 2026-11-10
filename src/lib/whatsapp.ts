@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarErro } from "@/lib/saude";
 
 // WhatsApp oficial (Meta Cloud API). Fica "dormindo" até as variáveis existirem
 // na Vercel: WHATSAPP_TOKEN (token permanente do usuário do sistema),
@@ -153,7 +154,10 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
     } else if (evento === "saiu") r = await enviarTemplate(p.telefone, "pedido_saiu", [numero, boy?.nome ?? "nosso entregador"], p.id);
     else r = await enviarTemplate(p.telefone, "pedido_entregue", [numero], p.id);
     if (r.ok) await admin.from("delivery_pedidos").update({ wpp_avisos: { ...avisos, [evento]: new Date().toISOString() } }).eq("id", p.id);
-  } catch { /* nunca derruba o pedido por causa do aviso */ }
+  } catch (e) {
+    // Nunca derruba o pedido por causa do aviso, mas fica o rastro (COD-004).
+    await registrarErro("whatsapp:aviso-pedido", e, { evento });
+  }
 }
 
 // Modelos cadastrados na conta (nome, idioma, categoria, status de aprovação).

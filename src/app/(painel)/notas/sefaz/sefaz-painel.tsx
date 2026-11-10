@@ -13,7 +13,24 @@ function horaBR(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   });
+}
+
+function quandoBR(iso: string) {
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+}
+
+// Dias até a data (AAAA-MM-DD), contando pelo dia de Brasília.
+function diasAte(dia: string) {
+  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  return Math.round((Date.parse(dia + "T00:00:00Z") - Date.parse(hoje + "T00:00:00Z")) / 86400000);
 }
 
 const UFS: { sigla: string; cuf: number }[] = [
@@ -44,6 +61,11 @@ export function SefazPainel({
     ult_nsu: string;
     atualizado_em: string | null;
     bloqueado_ate: string | null;
+    cert_validade: string | null;
+    ultimo_cstat: string | null;
+    ultimo_motivo: string | null;
+    ultima_busca_em: string | null;
+    ultima_busca_ok_em: string | null;
   };
 }) {
   const router = useRouter();
@@ -53,6 +75,7 @@ export function SefazPainel({
   const [cuf, setCuf] = useState(status.cuf || 43);
   const [senha, setSenha] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
+  const [validade, setValidade] = useState(status.cert_validade ?? "");
   const [msg, setMsg] = useState<string | null>(null);
   const [resultado, setResultado] = useState<string | null>(null);
   const [bloqueadoAte, setBloqueadoAte] = useState<string | null>(
@@ -88,6 +111,7 @@ export function SefazPainel({
         cert_pfx,
         cert_nome,
         cert_senha: senha || undefined,
+        cert_validade: validade || null,
       });
       setSenha("");
       setArquivo(null);
@@ -185,6 +209,22 @@ export function SefazPainel({
             />
           </div>
           <div>
+            <label htmlFor="cert-validade" className="mb-1 block text-xs text-texto-suave">
+              Certificado vence em
+            </label>
+            <input
+              id="cert-validade"
+              type="date"
+              value={validade}
+              onChange={(e) => setValidade(e.target.value)}
+              className={input}
+            />
+            <p className="mt-1 text-xs text-texto-fraco">
+              Está no próprio certificado ou no e-mail da certificadora. O sistema avisa 30 dias antes:
+              o mesmo certificado serve à SEFAZ, à nota fiscal e ao Pix.
+            </p>
+          </div>
+          <div>
             <label className="mb-1 block text-xs text-texto-suave">Estado (UF)</label>
             <select
               value={cuf}
@@ -211,6 +251,44 @@ export function SefazPainel({
           {msg && <span className="text-sm text-green-600">{msg}</span>}
         </div>
       </div>
+
+      {/* Última resposta (NFE-03) */}
+      {(status.ultima_busca_em || status.cert_validade) && (
+        <div className="cartao p-5">
+          <h2 className="mb-3 font-semibold text-texto">Como está a ligação com a SEFAZ</h2>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            {status.ultima_busca_em && (
+              <div>
+                <dt className="rotulo">Última resposta</dt>
+                <dd className="mt-1 text-texto">
+                  {quandoBR(status.ultima_busca_em)} · {status.ultimo_cstat ? `código ${status.ultimo_cstat}` : "sem código"}
+                  {status.ultimo_motivo && <span className="block text-texto-suave">{status.ultimo_motivo}</span>}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt className="rotulo">Última busca que deu certo</dt>
+              <dd className="mt-1 text-texto">
+                {status.ultima_busca_ok_em ? quandoBR(status.ultima_busca_ok_em) : "nenhuma registrada ainda"}
+              </dd>
+            </div>
+            {status.cert_validade && (
+              <div>
+                <dt className="rotulo">Certificado</dt>
+                <dd className="mt-1">
+                  {(() => {
+                    const d = diasAte(status.cert_validade);
+                    const data = status.cert_validade.split("-").reverse().join("/");
+                    if (d < 0) return <span className="pilula pilula-urgente">venceu em {data}</span>;
+                    if (d <= 30) return <span className="pilula pilula-urgente">vence em {d} dia(s), {data}</span>;
+                    return <span className="text-texto">vale até {data}</span>;
+                  })()}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
 
       {/* Buscar */}
       <div className="cartao p-5">
@@ -249,7 +327,7 @@ export function SefazPainel({
         <p className="mt-3 text-xs text-texto-fraco">
           Dica: a SEFAZ limita consultas (cerca de 1 por hora). O botão trava
           sozinho após cada busca para evitar o “consumo indevido”. A busca
-          também roda sozinha 1x por dia, de madrugada.
+          também roda sozinha, uma vez por hora.
         </p>
 
         <div className="mt-4 border-t border-borda pt-4">

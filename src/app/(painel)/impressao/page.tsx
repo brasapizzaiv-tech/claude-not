@@ -17,7 +17,7 @@ export default async function CentralImpressaoPage() {
   const admin = createAdminClient();
   const { data: cfg } = await admin
     .from("impressao_config")
-    .select("token, hostname, printers, visto_em")
+    .select("token, hostname, printers, visto_em, versao")
     .maybeSingle();
 
   const vistoEm = (cfg?.visto_em as string) ?? null;
@@ -32,6 +32,7 @@ export default async function CentralImpressaoPage() {
       printersPc={(cfg?.printers as string[]) ?? []}
       online={online}
       vistoEm={vistoEm}
+      versao={((cfg as { versao?: string | null } | null)?.versao) ?? null}
     />
   );
 }

@@ -21,6 +21,11 @@ export default async function SefazPage() {
     ult_nsu: (data?.ult_nsu as string) ?? "000000000000000",
     atualizado_em: (data?.atualizado_em as string) ?? null,
     bloqueado_ate: (data?.bloqueado_ate as string) ?? null,
+    cert_validade: ((data as { cert_validade?: string | null } | null)?.cert_validade) ?? null,
+    ultimo_cstat: ((data as { ultimo_cstat?: string | null } | null)?.ultimo_cstat) ?? null,
+    ultimo_motivo: ((data as { ultimo_motivo?: string | null } | null)?.ultimo_motivo) ?? null,
+    ultima_busca_em: ((data as { ultima_busca_em?: string | null } | null)?.ultima_busca_em) ?? null,
+    ultima_busca_ok_em: ((data as { ultima_busca_ok_em?: string | null } | null)?.ultima_busca_ok_em) ?? null,
   };
 
   return (

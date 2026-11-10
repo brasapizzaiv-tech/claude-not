@@ -1,8 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rodarBuscaSefaz, type ConfigSefaz } from "@/lib/sefaz/busca";
+import { marcarSinal } from "@/lib/saude";
 
-// Busca automática de notas na SEFAZ, disparada 1x por dia pelo Vercel Cron.
+// Busca automática de notas na SEFAZ pelo Vercel Cron, de 10 em 10 minutos a
+// partir do :03 (vercel.json). A trava de 1 hora decide: quase todas as rodadas
+// só leem a trava e saem, e a busca acontece uma vez por hora, sem perder a vez
+// por 1 segundo (NFE-05) nem disparar junto com a busca esperta do :00 (CRN-06).
 // Protegida pelo CRON_SECRET (o Vercel envia no cabeçalho Authorization).
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -27,6 +31,7 @@ export async function GET(req: NextRequest) {
     .from("config_sefaz")
     .update({ cron_hora_em: new Date().toISOString() })
     .eq("id", cfg.id);
+  await marcarSinal("rotina:sefaz-hora", true, null);
 
   const r = await rodarBuscaSefaz(admin, cfg);
   return NextResponse.json({ ok: !r.erro, ...r });

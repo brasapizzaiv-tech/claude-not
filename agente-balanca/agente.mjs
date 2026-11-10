@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { gerarCupomEscPos, gerarTesteEscPos } from "./escpos.mjs";
 
-const VERSAO = "1.2.3"; // 1.2.3: sinal de vida a cada 60 s (era 15 s; a Vercel cobra por chamada); // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
+const VERSAO = "1.2.4"; // 1.2.4: token recusado (401/403) ou sistema ocupado (408/429) NÃO tira a pesagem da fila (tenta de novo); as recusadas dos últimos 3 dias vão no sinal de vida e aparecem no painel; // 1.2.3: sinal de vida a cada 60 s (era 15 s; a Vercel cobra por chamada); // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -360,7 +360,11 @@ async function sincronizarFila() {
         fila.shift();
         salvarFila();
       } catch (e) {
-        if (e.status >= 400 && e.status < 500) {
+        // 401/403 = token (ex.: trocado no painel antes de atualizar este PC);
+        // 408/429 = o sistema pediu pra esperar. Nada disso é a pesagem estar
+        // errada: fica na fila e tenta de novo (AGT-01).
+        const tentarDeNovo = [401, 403, 408, 429].includes(e.status);
+        if (e.status >= 400 && e.status < 500 && !tentarDeNovo) {
           // Recusada de vez (peso inválido, token errado, preço não configurado…):
           // tira da fila e guarda em fila-erros.json — senão ela trava as de trás pra sempre.
           log(`Fila: pesagem de ${p.ts} RECUSADA pelo sistema (${e.message}) — movida para fila-erros.json.`);
@@ -384,13 +388,28 @@ async function sincronizarFila() {
 }
 setInterval(sincronizarFila, 15000);
 
+// Pesagens recusadas pelo sistema nos últimos 3 dias (de fila-erros.json):
+// vão no sinal de vida pro painel mostrar — antes ficavam escondidas no PC e
+// o cliente saía com um cupom cujo número não existia no caixa.
+function errosRecentes() {
+  try {
+    const errosFile = path.join(dataDir, "fila-erros.json");
+    if (!existsSync(errosFile)) return [];
+    const desde = Date.now() - 3 * 24 * 3600_000;
+    return JSON.parse(readFileSync(errosFile, "utf8"))
+      .filter((x) => Date.parse(x.em || x.ts || 0) > desde)
+      .slice(-10)
+      .map((x) => ({ ts: x.ts ?? null, numero: x.numero ?? x.numeroLocal ?? null, peso: x.peso ?? x.pesoKg ?? null, erro: String(x.erro || "").slice(0, 160), em: x.em ?? null }));
+  } catch { return []; }
+}
+
 // Heartbeat: status + tamanho da fila (pro painel ALERTAR pendências).
 async function heartbeat() {
   try {
     const r = await fetch(`${baseUrl}/api/balanca/status`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ hostname: os.hostname(), fila_pendente: fila.length, versao: VERSAO, proximo_numero: estado.proximoNumero ?? null }),
+      body: JSON.stringify({ hostname: os.hostname(), fila_pendente: fila.length, versao: VERSAO, proximo_numero: estado.proximoNumero ?? null, erros: errosRecentes() }),
       signal: AbortSignal.timeout(8000),
     });
     if (r.ok) aplicarNumeracao(await r.json().catch(() => null));

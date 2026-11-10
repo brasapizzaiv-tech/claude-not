@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rodarRotina } from "@/lib/saude";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,11 +21,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 
-  const limite = new Date(Date.now() - DIAS * 24 * 60 * 60 * 1000).toISOString();
-  const admin = createAdminClient();
-  const { error, count } = await admin
-    .from("entregador_posicoes")
-    .delete({ count: "exact" })
-    .lt("em", limite);
-  return NextResponse.json({ ok: !error, apagadas: count ?? 0, antesDe: limite, erro: error?.message });
+  return rodarRotina("rotina:entrega-limpar", async () => {
+    const limite = new Date(Date.now() - DIAS * 24 * 60 * 60 * 1000).toISOString();
+    const { error, count } = await createAdminClient()
+      .from("entregador_posicoes")
+      .delete({ count: "exact" })
+      .lt("em", limite);
+    return {
+      ok: !error,
+      detalhe: error ? error.message : `${count ?? 0} posições apagadas`,
+      resposta: { ok: !error, apagadas: count ?? 0, antesDe: limite },
+    };
+  });
 }

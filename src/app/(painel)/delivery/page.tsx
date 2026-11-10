@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 import { empresaAtualId } from "@/lib/empresa";
+import { AvisoSaude } from "@/components/aviso-saude";
 
 export const metadata = { title: "Delivery · Brasa" };
 
@@ -82,6 +83,7 @@ export default async function DeliveryPage() {
       origemMapa={origemMapa}
       googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null}
       turnoAtual={turnoAtual}
+      aviso={<AvisoSaude empresaId={await empresaAtualId()} />}
     />
   );
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { empresaAtualId } from "@/lib/empresa";
+import { registrarErro } from "@/lib/saude";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { servicoAgora } from "./util";
@@ -1547,8 +1548,10 @@ export async function pagarSelecao(
         }
       }
     }
-  } catch {
+  } catch (e) {
     // Nota é acessório: se a fila falhar, o recebimento continua valendo.
+    // Mas fica o rastro na Saúde do sistema (COD-004).
+    await registrarErro("caixa:fila-da-nota", e, { caixaId });
   }
 
   revalidatePath("/salao/caixa");

@@ -1,5 +1,6 @@
 import { empresaDoAgente } from "@/lib/impressao-agente";
 import { receberAfd, ultimoNsr } from "@/lib/ponto-server";
+import { marcarSinal, registrarErro, mensagemDe } from "@/lib/saude";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +18,10 @@ export async function GET(req: Request) {
   if (!empresaId) return Response.json({ erro: "não autorizado" }, { status: 401 });
   const equipamento = new URL(req.url).searchParams.get("equipamento") ?? "";
   if (!SERIAL.test(equipamento)) return Response.json({ erro: "equipamento inválido" }, { status: 400 });
+  // O agente só pede o último NSR DEPOIS de entrar no relógio: este pedido é a
+  // prova de que a leitura está rodando (AGT-06). Se o relógio sair da rede ou
+  // a senha mudar, o sinal para e a Saúde do sistema avisa.
+  await marcarSinal(`ponto:${empresaId}`, true, `relógio ${equipamento} respondeu`, empresaId);
   return Response.json({ ultimoNsr: await ultimoNsr(empresaId, equipamento) });
 }
 
@@ -35,6 +40,8 @@ export async function POST(req: Request) {
     const r = await receberAfd(empresaId, equipamento, afd, usuarios);
     return Response.json({ ok: true, ...r, ultimoNsr: await ultimoNsr(empresaId, equipamento) });
   } catch (e) {
+    await marcarSinal(`ponto:${empresaId}`, false, `batidas recusadas: ${mensagemDe(e)}`, empresaId);
+    await registrarErro("ponto:receber", e, { equipamento }, empresaId);
     return Response.json({ ok: false, erro: e instanceof Error ? e.message : "erro" }, { status: 500 });
   }
 }

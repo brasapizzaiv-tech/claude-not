@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const empresaId = await empresaDoAgente(req);
   if (!empresaId) return new Response("nao autorizado", { status: 401 });
 
-  let body: { hostname?: string; fila_pendente?: number; versao?: string };
+  let body: { hostname?: string; fila_pendente?: number; versao?: string; erros?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -26,6 +26,11 @@ export async function POST(req: Request) {
       fila_pendente: Math.max(0, Math.round(Number(body.fila_pendente) || 0)),
       versao: (body.versao ?? "").slice(0, 20) || null,
       visto_em: new Date().toISOString(),
+      // Recusadas dos últimos 3 dias (agente 1.2.4+). O agente antigo não manda:
+      // fica 0 (AGT-01).
+      ...(Array.isArray(body.erros)
+        ? { erros: body.erros.length, erros_lista: body.erros.slice(0, 10) }
+        : {}),
     }, { onConflict: "empresa_id" });
 
   // Devolve o que o agente precisa pra numerar: número inicial da balança e

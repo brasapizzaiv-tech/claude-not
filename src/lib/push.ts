@@ -42,6 +42,7 @@ async function tokenDeAcesso(c: Conta): Promise<string | null> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: `${corpo}.${assinatura}` }),
+    signal: AbortSignal.timeout(8000),
   });
   if (!r.ok) return null;
   const j = (await r.json()) as { access_token?: string; expires_in?: number };
@@ -75,11 +76,13 @@ async function enviar(tokens: string[], aviso: Aviso): Promise<{ enviados: numbe
             apns: { payload: { aps: { sound: "default" } } },
           },
         }),
+        signal: AbortSignal.timeout(8000),
       });
       if (r.ok) { enviados++; return; }
       const txt = await r.text();
       // Celular que desinstalou o app ou trocou de token: apaga.
-      if (r.status === 404 || /UNREGISTERED|INVALID_ARGUMENT.*registration/i.test(txt)) mortos.push(token);
+      // (404/UNREGISTERED, ou 400 "not a valid FCM registration token" — MSG-09.)
+      if (r.status === 404 || /UNREGISTERED|not a valid FCM registration token|INVALID_ARGUMENT.*registration/i.test(txt)) mortos.push(token);
     } catch { /* rede: tenta na próxima */ }
   }));
   return { enviados, mortos };

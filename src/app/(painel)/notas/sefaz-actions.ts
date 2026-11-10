@@ -7,7 +7,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { soDigitos } from "@/lib/nfe";
 import { manifestarCiencia } from "@/lib/sefaz/manifestacao";
-import { rodarBuscaSefaz, lerConfigSefaz } from "@/lib/sefaz/busca";
+import { rodarBuscaSefaz, lerConfigSefaz, podeForcar } from "@/lib/sefaz/busca";
 
 // O certificado só é lido pelo servidor (chave administrativa, filtrado pela
 // empresa) e só depois de conferir a permissão "notas" de quem clicou. A sessão
@@ -28,6 +28,7 @@ export async function salvarConfigSefaz(dados: {
   cert_nome?: string;
   cert_pfx?: string; // base64 do .pfx (opcional em edições)
   cert_senha?: string;
+  cert_validade?: string | null; // AAAA-MM-DD, digitada pelo dono (não lemos o certificado)
 }) {
   await exigirAcesso("/notas/sefaz");
   const empresaId = await empresaAtualId();
@@ -45,6 +46,8 @@ export async function salvarConfigSefaz(dados: {
     patch.cert_nome = dados.cert_nome ?? "certificado.pfx";
   }
   if (dados.cert_senha) patch.cert_senha = dados.cert_senha;
+  if (dados.cert_validade !== undefined)
+    patch.cert_validade = dados.cert_validade && /^\d{4}-\d{2}-\d{2}$/.test(dados.cert_validade) ? dados.cert_validade : null;
 
   if (cfg) await admin.from("config_sefaz").update(patch).eq("id", cfg.id).eq("empresa_id", empresaId);
   else await admin.from("config_sefaz").insert({ ...patch, empresa_id: empresaId });
@@ -121,11 +124,12 @@ export async function manifestarVarias(notaIds: string[]) {
 
 // Força UMA busca agora para puxar o XML completo (itens) das notas já
 // manifestadas cujo XML a SEFAZ já liberou. É ação do usuário, então bypassa a
-// trava — mas faz só UMA consulta (sem loop) para não cair no "656".
+// trava — mas faz só UMA consulta (sem loop) para não cair no "656", e no
+// máximo 1 vez por hora (NFE-02).
 export async function completarItensAgora() {
   const { supabase, cfg } = await getConfig();
   if (!cfg) return { ok: false, erro: "Configure o certificado e o CNPJ primeiro." };
-  const r = await rodarBuscaSefaz(supabase, cfg, { forcar: true });
+  const r = await rodarBuscaSefaz(supabase, cfg, { forcar: true, manual: true });
   revalidatePath("/notas");
   return {
     ok: !r.erro,
@@ -219,6 +223,11 @@ export async function reprocessarSefaz(dias?: number) {
       erro: "Configure o certificado e o CNPJ primeiro.",
     };
 
+  // Reprocessar também pula a trava: no máximo 1 vez por hora e nunca depois
+  // de um 656 (NFE-02).
+  const pode = podeForcar(cfg, true);
+  if (!pode.ok) return { importadas: 0, resumos: 0, falhas: 0, cStat: "", xMotivo: "", erro: pode.erro };
+
   let inicio = "0";
   if (dias && dias > 0) {
     const corte = new Date(Date.now() - dias * 24 * 60 * 60 * 1000)
@@ -237,14 +246,10 @@ export async function reprocessarSefaz(dias?: number) {
 
   await createAdminClient()
     .from("config_sefaz")
-    .update({ ult_nsu: inicio, bloqueado_ate: null })
+    .update({ ult_nsu: inicio })
     .eq("id", cfg.id);
 
-  const r = await rodarBuscaSefaz(supabase, {
-    ...cfg,
-    ult_nsu: inicio,
-    bloqueado_ate: null,
-  });
+  const r = await rodarBuscaSefaz(supabase, { ...cfg, ult_nsu: inicio }, { forcar: true, manual: true });
   revalidatePath("/notas");
   revalidatePath("/notas/sefaz");
   return r;

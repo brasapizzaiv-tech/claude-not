@@ -214,6 +214,43 @@ Testes: 14 testes novos (`scripts/enviar-se-confirmar.test.mjs`, `scripts/confer
 (as 2 falhas são as antigas do delivery, COD-008). Migrations 0281, 0282 e 0283 ensaiadas em transação desfeita.
 
 Ficou de fora da Onda 1: nada dos itens listados. Depende do Rafael: conferir os extratos (Onda 0) e instalar o agente 1.2.1.
+(Agente 1.2.1 instalado em 09/11 no DESKTOP-2C8O2JU; 5 testes saíram uma vez cada.)
+
+### Fora das ondas, em 09/11/2026 (pedidos do Rafael)
+
+| Commit | O que fez |
+|---|---|
+| `42fbbc2`, `4d91345`, `af7172a` | Cofre no pagamento da semana e no adiantamento: caixinha por pessoa, o sistema sugere as notas, arredonda pra cima até o real inteiro (migration 0284); botão "Tirar do cofre" para semana já paga em dinheiro |
+| `6b34468` | Central de Impressões → Downloads: instaladores dos três agentes num bucket privado, link de 10 min (migration 0285) |
+| — | Calibração da Elgin L42 Pro da cozinha (rolo BOPP 60×60): driver 60×61 / intervalo 2,5 mm, offset de coluna −40, deslocY 0; o pulo vinha da cola do rolo no rolo de borracha |
+
+### Onda 2 — código pronto em 09/11/2026 (com o OK do Rafael, "pode"), a publicar
+
+Tela nova **Saúde do sistema** (`/saude`, no menu Configurações) e faixa de aviso na tela inicial, no caixa e no delivery
+quando alguma peça está parada. Migration **0286** (ensaiada em transação desfeita).
+
+| ID | Como ficou |
+|---|---|
+| AGT-02 | Agente sem sinal há mais de 150 s e item esperando há mais de 1 min aparecem no aviso; comanda de cozinha com mais de 1 h fica **segurada** (não sai sozinha) com "Imprimir de novo" / "Tirar da fila" na Saúde |
+| AGT-03 | Agente 1.3.0: tempo limite de 45 s na impressão pelo PDF (mata o SumatraPDF) e o sinal de vida manda a hora da última rodada completa; rodada parada há mais de 2 min = "travada" |
+| AGT-05 | `impressao_fila.tentativas/ultimo_erro`; o agente 1.3.0 avisa cada falha (`/api/impressao/falha`); depois de 5 a fila desiste e a Saúde mostra |
+| AGT-01 | Balança 1.2.4: 401/403/408/429 não tira a pesagem da fila; as recusadas dos últimos 3 dias vão no sinal de vida e aparecem em `/salao/balanca` e na Saúde |
+| AGT-06 | Relógio de ponto: o pedido do último NSR (que só acontece depois de entrar no relógio) marca a leitura; sem leitura há 30 min = aviso (sem precisar de agente novo) |
+| AGT-07 | Versão do agente de impressão gravada e mostrada na Central e na Saúde; balança e pinpad também; pasta `installer/` (1.0.0) apagada do git |
+| PAG-05 | Pinpads aparecem na Saúde com versão e "sinal há X min" (o sinal já chegava desde a Onda 1) |
+| NFE-03 | `config_sefaz` guarda a última resposta (código, motivo, hora) e a última busca boa; a tela da SEFAZ mostra; aviso com mais de 6 h sem busca boa; campo "Certificado vence em" (digitado pelo dono, o sistema não lê o certificado) com aviso 30 dias antes |
+| NFE-02 | Busca forçada: automática no mínimo a cada 10 min, botão "Buscar itens agora" e "Reprocessar" no máximo 1 vez por hora, e nada depois de um 656. A busca esperta só força nos 30 min depois de manifestar (antes: de 15 em 15 min por 3 h) |
+| 656 | Vira erro na tela (antes aparecia "✓ … 656") |
+| NFE-05 · CRN-06 | Busca de hora em hora agora roda de 10 em 10 min a partir do :03 (`3,13,…,53`); a trava de 1 h decide, então não perde a vez por 1 s nem cai junto com a busca esperta do :00 |
+| NFE-06 | Falha de gravação (não "já existe") para o NSU no documento: ele volta na próxima busca; na 3ª vez seguida segue e fica no registro de erros. Itens da nota que não gravam viram falha (antes a nota ficava "completa" vazia) |
+| MSG-05 | WhatsApp na Saúde e na faixa do delivery: últimas mensagens falhando e quantas falharam em 24 h |
+| MSG-09 · CRN-05 | Avisos no celular com tempo limite de 8 s e limpeza do token "not a valid FCM registration token"; resumo da manhã com trava do dia (`push_envios`); contagem agendada marca o dia antes de gerar |
+| MAR-05 | As rotinas (contagem, Kern, limpeza, avisos, WhatsApp, conferência das notas, SEFAZ) gravam o último sinal em `saude_sinais` e respondem 500 quando falham; Kern que não rodou até 08:50 vira aviso |
+| COD-004 | `registrarErro` grava em `erros_sistema` e no log: fila da nota do caixa, aviso de WhatsApp do pedido, avisos do celular, divergências da conferência, nota pendente da fila de impressão, importação da SEFAZ. A Saúde mostra os das últimas 24 h só pro dono |
+| AGT-08 | **Não feito em código**: precisa de você no PC (login automático no Windows do PC central ou tarefa "ao iniciar"). Fica para quando você estiver no PC |
+
+Testes: `scripts/saude.test.mjs` (5, trava da SEFAZ e horário de serviço); 182 de 184 passam (as 2 falhas são as antigas do
+delivery, COD-008). Build ok. Instaladores gerados: **impressão 1.3.0** e **balança 1.2.4** (sobem na página Downloads ao publicar).
 
 ## Como vai ser a correção
 

@@ -2,6 +2,7 @@
 // Cada função monta o texto e chama notificarColaboradores; todas engolem
 // erro — avisar é extra, nunca pode travar a ação de quem chamou.
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarErro } from "@/lib/saude";
 import { notificarColaboradores, pushConfigurado } from "@/lib/push";
 import { ehPara, lembretesDaPessoa, lerLembrete, valeNoDia, type Lembrete } from "@/lib/lembretes-core";
 
@@ -31,7 +32,7 @@ export async function avisarLembrete(lembreteId: string) {
       titulo: l.tipo === "tarefa" ? "Tarefa nova pra hoje" : "Lembrete novo",
       corpo: l.hora ? `${l.titulo} (${l.hora})` : l.titulo,
     });
-  } catch { /* avisar é extra */ }
+  } catch (e) { await registrarErro("push:aviso", e); /* avisar é extra */ }
 }
 
 /** Folga aprovada ou negada: avisa quem pediu. */
@@ -47,7 +48,7 @@ export async function avisarFolgaDecidida(pedidoId: number) {
     await notificarColaboradores([f.colaborador_id], p.status === "Aprovado"
       ? { titulo: "Folga aprovada", corpo: `Sua folga de ${dia} foi aprovada.` }
       : { titulo: "Folga não aprovada", corpo: `Sua folga de ${dia} não foi aprovada.${p.motivo_negativa ? ` Motivo: ${p.motivo_negativa}` : ""}` });
-  } catch { /* avisar é extra */ }
+  } catch (e) { await registrarErro("push:aviso", e); /* avisar é extra */ }
 }
 
 /** Pagamento da semana lançado: avisa cada um com o valor. */
@@ -56,7 +57,7 @@ export async function avisarPagamentosSemana(itens: { colaboradorId: string; val
     if (!pushConfigurado()) return;
     await Promise.all(itens.filter((i) => i.valor > 0).map((i) =>
       notificarColaboradores([i.colaboradorId], { titulo: "Pagamento da semana", corpo: `Seu pagamento (${rotuloSemana}) foi lançado: ${brl(i.valor)}.` })));
-  } catch { /* avisar é extra */ }
+  } catch (e) { await registrarErro("push:aviso", e); /* avisar é extra */ }
 }
 
 /**
@@ -64,10 +65,17 @@ export async function avisarPagamentosSemana(itens: { colaboradorId: string; val
  * lembretes do dia e, pra quem faz contagem, os pedidos que chegam hoje.
  * Quem não tem nada não recebe nada.
  */
-export async function avisosDaManha(): Promise<{ pessoas: number; enviados: number }> {
+export async function avisosDaManha(): Promise<{ pessoas: number; enviados: number; jaEnviado?: boolean }> {
   if (!pushConfigurado()) return { pessoas: 0, enviados: 0 };
   const admin = createAdminClient();
   const hoje = hojeSP();
+  // Trava do dia (CRN-05/MSG-09): a linha do dia é criada ANTES de mandar; se
+  // já existe, a rotina já rodou hoje e não manda de novo.
+  const { error: eTrava } = await admin.from("push_envios").insert({ tipo: "resumo_manha", dia: hoje });
+  if (eTrava) {
+    if (eTrava.code === "23505") return { pessoas: 0, enviados: 0, jaEnviado: true };
+    throw new Error(`trava do resumo: ${eTrava.message}`); // a rotina registra a falha
+  }
   const { data: disp } = await admin.from("dispositivos_push").select("colaborador_id");
   const comApp = [...new Set(((disp as { colaborador_id: string }[]) ?? []).map((d) => d.colaborador_id))];
   if (comApp.length === 0) return { pessoas: 0, enviados: 0 };
@@ -80,7 +88,7 @@ export async function avisosDaManha(): Promise<{ pessoas: number; enviados: numb
   const lembretes = ((ls as Record<string, unknown>[]) ?? []).map((r) => ({ empresa: String(r.empresa_id), l: lerLembrete(r) }));
   type Ped = { empresa_id: string; dia_entrega: string | null; fornecedores: { nome: string } | { nome: string }[] | null };
   const pedidosHoje = ((peds as Ped[]) ?? []).filter((p) => String(p.dia_entrega ?? "").slice(0, 10) === hoje);
-  let pessoas = 0, enviados = 0;
+  let pessoas = 0, enviados = 0, semEntrega = 0;
   for (const c of (colabs as (Colab & { empresa_id: string })[]) ?? []) {
     const meus = lembretesDaPessoa(lembretes.filter((x) => x.empresa === c.empresa_id).map((x) => x.l), { id: c.id, setores: c.checklist_setores ?? [] }, hoje, new Set())
       .filter((x) => x.dia === hoje);
@@ -92,7 +100,10 @@ export async function avisosDaManha(): Promise<{ pessoas: number; enviados: numb
     if (meus.length) partes.push(meus.length === 1 ? `Lembrete: ${meus[0].lembrete.titulo}` : `${meus.length} lembretes pra hoje`);
     if (forn.length) partes.push(`Chega hoje: ${forn.slice(0, 3).join(", ")}${forn.length > 3 ? ` e mais ${forn.length - 3}` : ""} — confira no app`);
     pessoas++;
-    enviados += await notificarColaboradores([c.id], { titulo: "Bom dia! Pra hoje", corpo: partes.join(" · ") });
+    const n = await notificarColaboradores([c.id], { titulo: "Bom dia! Pra hoje", corpo: partes.join(" · ") });
+    enviados += n;
+    if (n === 0) semEntrega++;
   }
+  await admin.from("push_envios").update({ enviados, falhas: semEntrega }).eq("tipo", "resumo_manha").eq("dia", hoje);
   return { pessoas, enviados };
 }

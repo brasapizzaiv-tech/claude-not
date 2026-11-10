@@ -13,8 +13,9 @@ export type Impressora = { id: string; nome: string; ativo: boolean; impressora_
 export type Produto = { id: string; nome: string; categoria: string };
 
 export function CentralImpressao({
-  impressoras, produtos, token, hostname, printersPc, online, vistoEm,
+  impressoras, produtos, token, hostname, printersPc, online, vistoEm, versao = null,
 }: {
+  versao?: string | null;
   impressoras: Impressora[];
   produtos: Produto[];
   token: string;
@@ -83,6 +84,7 @@ export function CentralImpressao({
           </div>
           <span className="text-sm text-texto-suave">
             {hostname ? `PC: ${hostname}` : "Nenhum PC vinculado ainda"}
+            {versao ? ` · versão ${versao}` : ""}
           </span>
         </div>
         <p className="mt-1 text-xs text-texto-suave">

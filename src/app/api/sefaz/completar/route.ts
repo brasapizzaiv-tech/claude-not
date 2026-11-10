@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rodarBuscaSefaz, type ConfigSefaz } from "@/lib/sefaz/busca";
+import { rodarBuscaSefaz, podeForcar, type ConfigSefaz } from "@/lib/sefaz/busca";
+import { marcarSinal } from "@/lib/saude";
 
 export const maxDuration = 60;
 
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
     .from("config_sefaz")
     .update({ cron_completar_em: new Date().toISOString() })
     .eq("id", cfg.id);
+  await marcarSinal("rotina:sefaz-completar", true, null);
 
   const agora = Date.now();
 
@@ -79,7 +81,8 @@ export async function GET(req: NextRequest) {
     if ((count ?? 0) === 0) travadas++;
   }
   const reprocEm = cfg.reprocessado_em ? new Date(cfg.reprocessado_em).getTime() : 0;
-  if (travadas > 0 && agora - reprocEm > 8 * 60 * 60 * 1000) {
+  // (Nunca durante um castigo 656 nem logo depois de outra busca forçada.)
+  if (travadas > 0 && agora - reprocEm > 8 * 60 * 60 * 1000 && podeForcar(cfg, false).ok) {
     await admin
       .from("config_sefaz")
       .update({ ult_nsu: "0", bloqueado_ate: null, reprocessado_em: new Date().toISOString() })
@@ -97,13 +100,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, aguardando: 0, forcado: false, travadas });
   }
 
-  // Espaçamento entre buscas forçadas: 5 min enquanto a manifestação é recente
-  // (até 30 min), depois afrouxa para 15 min — assim não fica batendo de 5 em 5
-  // por horas numa nota que emperrou, o que arriscaria o "656 Consumo Indevido".
+  // Só força enquanto a manifestação é recente (até 30 min), no máximo uma vez
+  // a cada 10 min (podeForcar). Depois disso quem completa é a busca de hora em
+  // hora: bater de 15 em 15 min por 3 horas arriscava o "656" (NFE-02).
   const recente = agora - manifestMaisNova < 30 * 60 * 1000;
-  const intervaloMin = (recente ? 5 : 15) * 60 * 1000;
-  const forcadoEm = cfg.forcado_em ? new Date(cfg.forcado_em).getTime() : 0;
-  if (agora - forcadoEm < intervaloMin) {
+  if (!recente) {
+    return NextResponse.json({ ok: true, aguardando, forcado: false, motivo: "fica pra busca de hora em hora" });
+  }
+  if (!podeForcar(cfg, false).ok) {
     return NextResponse.json({
       ok: true,
       aguardando,

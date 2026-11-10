@@ -2,7 +2,7 @@
 ; Compile com: ISCC.exe impressao.iss  (após rodar build.ps1, que monta build\app).
 
 #define AppName "Agente de Impressao"
-#define AppVer "1.2.1"
+#define AppVer "1.3.0"
 #define AppPublisher "Brasa Sistemas"
 
 [Setup]

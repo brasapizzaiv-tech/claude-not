@@ -39,6 +39,11 @@ Horário: medir com o robô fora do serviço (almoço 11:30–14:00 seg–sáb; 
 
 ## Onde parou
 
+**09/11/2026, fim do dia:** auditoria encerrada; correções em ondas (ver `RELATORIO-FINAL.md`, "Andamento das correções").
+Onda 1 publicada e conferida. **Onda 2 (Saúde do sistema) com código pronto, a publicar** (migration 0286 + agentes
+impressão 1.3.0 e balança 1.2.4 para instalar). Fora das ondas: cofre na semana, Downloads, calibração da etiqueta.
+O que segue abaixo é o histórico das etapas.
+
 Etapa 1 concluída em 31/10 às ~20h20. Relatório em `01-desempenho.md` (DES-001 a DES-009, tabela das 131 medidas, top 5 correções rápidas). Próxima: **Etapa 2 (saúde do código)**, só quando o Rafael mandar seguir.
 
 - O perfil do robô (com o login do Rafael) continua em `<scratchpad>/perfil-robo`: serve pros prints da Etapa 3. **Apagar no fim da auditoria.**

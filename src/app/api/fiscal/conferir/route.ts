@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { conferirNotasPendentes } from "@/lib/fiscal/conferir-notas";
+import { rodarRotina } from "@/lib/saude";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
-  const r = await conferirNotasPendentes(createAdminClient());
-  return NextResponse.json({ ok: true, ...r });
+  return rodarRotina("rotina:fiscal-conferir", async () => {
+    const r = await conferirNotasPendentes(createAdminClient());
+    return { ok: true, detalhe: JSON.stringify(r).slice(0, 200), resposta: { ok: true, ...r } };
+  });
 }
