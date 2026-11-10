@@ -300,6 +300,9 @@ Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a r
 | 1 | `43de360` | VIS-03 (8 botões laranja com texto grafite), VIS-04 (Abrir caixa em .cartao-foco), TEL-005 (rodapé da tela inicial não corta no celular — conferido em 390 px), VIS-05 (10 botões com trava), TXT-02 (`explicarErro` em 148 retornos; repetido pelo código 23505), ACE-06 (50 role=alert, 87 role=status) |
 | 2 | `e48b4ec` | ACE-03/VIS-14/TEL-003: `src/components/janela.tsx` (Esc, Tab preso, foco devolvido, rola) em 29 janelas — conferido no ar: janela do fornecedor em tela de 680 px abre com foco no Nome, Salvar alcançável, Esc fecha; a de Pagamento do caixa fica de fora (pinpad). ACE-07: 58 botões de símbolo com nome. ACE-04: ~176 campos com aria-label. TEL-004: cozinha, etiquetas, etiqueta e áreas de entrega sem erro de hidratação (conferido) |
 | 3 | `4ef3306` | VIS-01/TEL-006: 541 textos de estado nos tokens ok/urgente/info; token novo **aviso** (paleta.ts + globals.css + .pilula-aviso) em 205 amarelos. VIS-11: 269 raios no padrão. VIS-13: 26 anéis de foco à mão fora. VIS-06/07: quiosque, /cotar, /contar, /folga e login com os pares claro+escuro nos tokens. Conferido no ar no tema escuro: tokens aplicados, 39 telas sem erro |
+| 4 | `e05bce5` | ACE-08 (template "%s · empresa"; conferido: "Contas a pagar · Brasa Pizzaria e Restaurante"), ACE-10 (4 caixas do navegador + Dialogos em /cotar e /folga), ACE-11 (data com anel), VIS-19, VIS-09 (70 → info), ACE-12 (29 cabeçalhos, 82 tabelas com foco), TEL-007 (Clientes e Notas fiscais 44 px) |
+
+Fica da Onda 6: VIS-10/16/17/18 (peças prontas: um FiltroPilula, títulos e botões repetidos), VIS-12 (emoji na Central de impressões e etiquetas), VIS-08 (cozinha/TV fora do tv-cores.ts), VIS-15 (leitor de câmera em 5 versões), TEL-007 no resto (produtos, cardápio).
 
 ## Como vai ser a correção
 
