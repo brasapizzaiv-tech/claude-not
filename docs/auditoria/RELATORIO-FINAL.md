@@ -282,14 +282,16 @@ Revisão independente do lote 1: 1 ponto sério (o app do garçom não lançaria
 
 Falta na Onda 3: MSG-03 (apps nas lojas: código + versão nova nas lojas).
 
-### Onda 4 — em andamento (OK do Rafael: "pode seguir"), 10/11/2026
+### Onda 4 — feita em 10/11/2026 (OK do Rafael: "pode seguir")
 
 | Lote | Commit | O que foi |
 |---|---|---|
 | A | `10b505b` (0300, 0301) | DES-003/SEC-18: 15 índices (comandas por data, itens da nota, produto nas compras/contagem, lançamentos, conciliação, cotação, ponto…), índice repetido fora. 0301: `comandas_por_dia` (tela inicial, 8 consultas → 1) e `nfce_total_autorizado` (DES-008). DES-006: fotos com `loading="lazy"` (/pedir, cardápio, delivery). DES-005: rotina da SEFAZ conta itens junto. DES-009: mesas sem pré-carregar. Ensaio: comandas do dia 60→25 ms, referência da contagem 280→109 ms |
 | B | `4ec20cf` (0302) | DES-002: conciliação traz só o mês (?mes=) e lançamentos de 8 meses antes a 4 depois (nenhuma sugestão perdida). DES-001: `src/lib/sessao.ts` (login e perfil uma vez por requisição) no layout, empresa e `exigirAcesso`; menu em paralelo. Medido no ar: conciliação 1,8 s → 0,9 s; telas simples ~0,62 → ~0,5 s |
 
-Falta na Onda 4: DES-006 parte 2 (miniatura das fotos — a transformação de imagem da Supabase não está ligada), DES-007 (buffet ainda 1,2 s: somar no banco), DES-008 resto (Notas fiscais 1,2 s: a lista de 1.000 notas com comandas), DES-004 reescrita (opcional, o índice já levou a 109 ms).
+| C | `6d5052b` (0303, 0304) | DES-008: Notas fiscais busca no banco (filtros no endereço, 100 por página, planilha com todas as que batem). DES-007: `buffet_pratos()` num JSON só. DES-006 parte 2: miniatura 400 px WebP no upload (sharp) + `scripts/gerar-miniaturas.mjs` (51 fotos, 6,4 MB → 436 KB). Medido no ar: Notas fiscais 1,2 s → 0,58 s; buffet 1,1 s → 0,44 s; /pedir no celular baixa 7 fotos, 76 KB ao abrir |
+
+Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a referência da contagem de 280 a 109 ms).
 
 ## Como vai ser a correção
 
