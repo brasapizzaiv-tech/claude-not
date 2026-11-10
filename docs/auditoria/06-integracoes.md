@@ -64,6 +64,7 @@ fornecedor cuja nota não chegou.
 - Esforço: M · Risco: baixo
 
 ### [NFE-02] As buscas "forçadas" na SEFAZ pulam a espera de 1 hora (risco do 656)
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio** (risco; não dá pra medir, ver NFE-03)
 - Onde: `src/lib/sefaz/busca.ts:79` (`forcar` ignora `bloqueado_ate`); usado em `api/sefaz/completar/route.ts:90` e `:115`
   (a cada 5–15 min por até 3 h depois de manifestar e na autocura a cada 8 h) e em `notas/sefaz-actions.ts:114`, `:128`
@@ -77,6 +78,7 @@ fornecedor cuja nota não chegou.
 - Esforço: P · Risco: baixo
 
 ### [NFE-03] Falha da SEFAZ não aparece pra ninguém: 656, certificado vencendo, rotina parada
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: `api/sefaz/cron/route.ts:31-32` e `completar/route.ts:92,116` (resultado só no JSON pra Vercel);
   `src/lib/sefaz/distribuicao.ts:158` (656 não é tratado como erro); `notas/sefaz/sefaz-painel.tsx:105-114` (mostra
@@ -99,6 +101,7 @@ fornecedor cuja nota não chegou.
 - Esforço: P · Risco: baixo
 
 ### [NFE-05] A busca de hora em hora perde a vez por 1 segundo; o comentário diz "1x por dia"
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `busca.ts:164-166` (trava de exatamente 1 h); `api/sefaz/cron/route.ts:5`; `vercel.json` (`0 * * * *` e `*/5`, os
   dois no minuto :00)
@@ -110,6 +113,7 @@ fornecedor cuja nota não chegou.
 - Esforço: P · Risco: baixo
 
 ### [NFE-06] Falha ao importar um documento da SEFAZ é pulada sem registro
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `busca.ts:114-154` (soma em `falhas` e o NSU avança); `notas/actions.ts:122-124` e `:153-155` (insert dos itens sem
   conferir erro)
@@ -246,6 +250,7 @@ teste fora da guarda.
 ## Agentes dos PCs: impressão, relógio de ponto e balança
 
 ### [AGT-01] Balança: pesagem recusada some do sistema, mas o cupom já saiu impresso
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio** (vira **alto** no dia em que o token for trocado, que é parte da correção do SEC-04)
 - Onde: `agente-balanca/agente.mjs:442-458` (numera e imprime antes de mandar), `:363-376` (qualquer 4xx vai pra
   `fila-erros.json`, conferido), `:393` (o sinal de vida só conta a fila, não os erros)
@@ -257,6 +262,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [AGT-02] Impressão parada: ninguém fica sabendo, e a comanda velha sai horas depois
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: o "Agente conectado" só aparece em `(painel)/impressao/page.tsx:23-24`; nenhuma tela mostra a fila; itens sem validade
 - Evidência: comanda de cozinha pedida em 14/10 23:35 saiu em 15/10 09:03; em 30/10 das 11:29 às 11:50 (almoço) nada
@@ -266,7 +272,7 @@ teste fora da guarda.
 - Esforço: P/M · Risco: baixo
 
 ### [AGT-03] O agente de impressão pode travar sem cair, e o painel continua dizendo "conectado"
-- **Corrigido em parte em 09/11/2026 (Onda 1).** Ver `RELATORIO-FINAL.md`.
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio** (sem caso comprovado)
 - Onde: `agente-impressao/agente.mjs:154` (`print` sem tempo limite), `:106`, `:120`, `:133` (rede sem tempo limite),
   `:101-104` e `:174-178` (o laço só segue quando a rodada termina), `:180-181` (sinal de vida com relógio próprio);
@@ -288,6 +294,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [AGT-05] Falha de impressão repete sem limite e sem registro
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio**
 - Onde: `agente-impressao/agente.mjs:112-115`, `:134`, `:157-159` (só no log do PC); `impressao_fila` sem erro nem tentativas
 - Evidência: 16/09 08:36 duas etiquetas esperaram ~1.600 s enquanto 44 saíram na mesma impressora; hoje 0 pendentes.
@@ -295,6 +302,7 @@ teste fora da guarda.
 - Esforço: M · Risco: baixo
 
 ### [AGT-06] Relógio de ponto: se a leitura falhar, o aviso fica só no log do PC
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **médio** (a presença do 10% sai das batidas)
 - Onde: `agente-impressao/ponto.mjs:47-48`, `:59`, `:83-85`; nada de "última leitura" em `/colaboradores/ponto`
 - O que acontece: senha do relógio trocada, relógio fora da rede ou envio recusado: as batidas param de chegar e
@@ -304,6 +312,7 @@ teste fora da guarda.
 - Esforço: P · Risco: baixo
 
 ### [AGT-07] Versões: balança desatualizada, versão da impressão nem é gravada, instalador antigo com o mesmo nome
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `balanca_status.versao = 1.2.1` (07/11) × 1.2.3 em `agente-balanca/agente.mjs:21`;
   `api/impressao/heartbeat/route.ts:9-17` descarta a versão; `installer/` (1.0.0) e `installer-impressao/` (1.2.0) geram
@@ -405,6 +414,7 @@ nunca foram usados.
 - Esforço: P · Risco: baixo
 
 ### [MSG-05] Aviso de WhatsApp que falha não aparece em lugar nenhum
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `src/lib/whatsapp.ts:77-80`, `:155`; nenhuma tela lê `whatsapp_mensagens`
 - Correção: faixa no delivery quando as últimas saídas falharam por conta/token; contador de não entregues.
@@ -430,6 +440,7 @@ nunca foram usados.
 - Esforço: P · Risco: baixo
 
 ### [MSG-09] Avisos no celular: sem registro, sem trava e sem tempo limite
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo
 - Onde: `src/lib/push.ts:41`, `:66`, `:82`; `src/lib/push-avisos.ts:168-198`
 - O que acontece: não dá pra saber se o resumo das 08:00 saiu; disparo repetido manda 2x; `fetch` sem tempo limite;
@@ -482,12 +493,14 @@ a Vercel não repete rotina que falhou, e só a SEFAZ grava sinal de que rodou).
 - Esforço: P · Risco: baixo
 
 ### [CRN-05] A rotina das contagens e o aviso da manhã não têm trava contra rodar 2 vezes
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: baixo (0 casos)
 - Onde: `0216:169-180`; `push-avisos.ts:67-97`
 - Correção: marcar o dia antes de gerar só se ainda não marcado, e pular se não marcou.
 - Esforço: P · Risco: baixo
 
 ### [CRN-06] As duas rotinas da SEFAZ disparam juntas no minuto :00
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Ver NFE-05 (mesma correção: mudar a `sefaz/cron` pra `3 * * * *`).
 
 ### [CRN-07] App das marmitas: quando a API falha, mostra "abrem às undefined" ou fica mudo

@@ -95,6 +95,7 @@ precisa de decisão do Rafael antes da Etapa 3.
 - Esforço: P · Risco: baixo
 
 ### [COD-004] Erro no servidor quase nunca deixa rastro
+- **Corrigido em 09/11/2026 (Onda 2, Saúde do sistema).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio
 - Onde: todo o `src`: 2 `console.error` no total (`cotar/[token]/actions.ts` e o middleware); 37 blocos `catch` em ações e
   rotas. Vários engolem de propósito ("Nota é acessório: se a fila falhar, o recebimento continua valendo").

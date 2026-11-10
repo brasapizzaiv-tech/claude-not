@@ -224,7 +224,7 @@ Ficou de fora da Onda 1: nada dos itens listados. Depende do Rafael: conferir os
 | `6b34468` | Central de Impressões → Downloads: instaladores dos três agentes num bucket privado, link de 10 min (migration 0285) |
 | — | Calibração da Elgin L42 Pro da cozinha (rolo BOPP 60×60): driver 60×61 / intervalo 2,5 mm, offset de coluna −40, deslocY 0; o pulo vinha da cola do rolo no rolo de borracha |
 
-### Onda 2 — código pronto em 09/11/2026 (com o OK do Rafael, "pode"), a publicar
+### Onda 2 — publicada em 09/11/2026 ~23h30 (commits `f3f963b`, `7baf048`; OK do Rafael: "pode" e "pode publicar quando terminar")
 
 Tela nova **Saúde do sistema** (`/saude`, no menu Configurações) e faixa de aviso na tela inicial, no caixa e no delivery
 quando alguma peça está parada. Migration **0286** (ensaiada em transação desfeita).
@@ -250,7 +250,11 @@ quando alguma peça está parada. Migration **0286** (ensaiada em transação de
 | AGT-08 | **Não feito em código**: precisa de você no PC (login automático no Windows do PC central ou tarefa "ao iniciar"). Fica para quando você estiver no PC |
 
 Testes: `scripts/saude.test.mjs` (5, trava da SEFAZ e horário de serviço); 182 de 184 passam (as 2 falhas são as antigas do
-delivery, COD-008). Build ok. Instaladores gerados: **impressão 1.3.0** e **balança 1.2.4** (sobem na página Downloads ao publicar).
+delivery, COD-008). Build ok. Revisão independente: 8 pontos, todos corrigidos antes de publicar (guarda do servidor na função das
+contagens, idade da rodada pelo relógio do agente, trava do resumo só no "já existe", documento inválido não segura a SEFAZ,
+trava de 1 h sempre gravada, padrão do fornecedor, filial do Kern sem pedido, permissão da /saude). Instaladores na página
+Downloads: **impressão 1.3.0** e **balança 1.2.4** (falta instalar nos PCs). Conferido no ar sem gravar: Saúde, SEFAZ,
+Downloads e aviso na tela inicial; rotinas e relógio de ponto gravando sinal; agente 1.2.1 com versão registrada.
 
 ## Como vai ser a correção
 
