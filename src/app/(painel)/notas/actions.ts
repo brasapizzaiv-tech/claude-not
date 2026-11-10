@@ -4,7 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ligarNotaAoPedido, recalcularDoItemNota, type Db as DbConf } from "@/lib/conferencia-core";
-import { lerNfe, lerResumo, soDigitos } from "@/lib/nfe";
+import { lerNfe, type NfeLida, lerResumo, soDigitos } from "@/lib/nfe";
+import { buscarCupomNfce } from "@/lib/nfce-consulta";
 import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { moedaBR } from "@/lib/format";
@@ -79,8 +80,31 @@ export async function importarNota(
   // pelo próprio segredo) — não há usuário logado pra conferir.
   if (!clienteExterno) await exigirAcesso("/notas");
   const supabase = clienteExterno ?? (await createClient());
-  const nf = lerNfe(xmlText);
+  return gravarNotaLida(supabase, lerNfe(xmlText));
+}
 
+// Cupom fiscal (NFC-e) lido pelo QR code: a SEFAZ devolve os itens e a nota
+// entra pendente em Notas Fiscais, igual às de XML (pedido do Rafael,
+// 10/11/2026: compras no supermercado). Só no painel.
+export async function importarCupomNfce(textoDoQr: string) {
+  await exigirAcesso("/notas");
+  const r = await buscarCupomNfce(textoDoQr);
+  if (!r.ok) return { ok: false as const, erro: r.erro };
+  const supabase = await createClient();
+  const g = await gravarNotaLida(supabase, r.cupom);
+  if (!g.ok) return { ok: false as const, erro: g.erro ?? "Não consegui salvar o cupom." };
+  return {
+    ok: true as const,
+    notaId: g.notaId,
+    fornecedor: r.cupom.emit_nome,
+    valor: r.cupom.valor,
+    itens: r.cupom.itens.length,
+    pagamentos: r.cupom.pagamentos,
+  };
+}
+
+// Grava a nota já lida (do XML da NF-e ou do cupom NFC-e).
+async function gravarNotaLida(supabase: SupabaseClient, nf: NfeLida) {
   if (!nf.chave) return { ok: false, erro: "Arquivo não parece uma NF-e válida." };
 
   // Casa o fornecedor pelo CNPJ (só dígitos).

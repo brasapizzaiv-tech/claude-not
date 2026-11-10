@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { empresaAtualId } from "@/lib/empresa";
 import { lerConfigSefaz } from "@/lib/sefaz/busca";
 import { UploadNota } from "./upload";
+import { LerCupom } from "./ler-cupom";
 import { BuscarNotas } from "./buscar-notas";
 import { ManifestarLote } from "./manifestar-lote";
 import { NotasLista, type NotaLinha } from "./notas-lista";
@@ -111,8 +112,8 @@ export default async function NotasPage() {
             Notas Fiscais
           </h1>
           <p className="mt-1 text-texto-suave">
-            Importe o XML da NF-e. Ela vira conta a pagar e pode ser cruzada com
-            o pedido.
+            Importe o XML da NF-e ou leia o QR code do cupom do mercado. Ela vira
+            conta a pagar e pode ser cruzada com o pedido.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -124,6 +125,7 @@ export default async function NotasPage() {
               SEFAZ automático
             </Link>
           )}
+          <LerCupom />
           <UploadNota />
         </div>
       </div>
