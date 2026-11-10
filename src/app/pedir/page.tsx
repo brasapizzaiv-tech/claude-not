@@ -42,11 +42,11 @@ export default async function PedirPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg }, { data: vendidos },
   ] = await Promise.all([
-    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, descricao, horarios, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome").eq("empresa_id", empresaId),
+    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, foto_mini_url, descricao, horarios, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome").eq("empresa_id", empresaId),
     admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app, disponivel").order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_item_grupos").select("item_id").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem").eq("empresa_id", empresaId),
-    admin.from("pdv_pizza_sabores").select("id, nome, foto_url, descricao, novo").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
+    admin.from("pdv_pizza_sabores").select("id, nome, foto_url, foto_mini_url, descricao, novo").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_sabor_precos").select("sabor_id, tamanho_id, preco").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_bordas").select("id, nome").eq("ativo", true).order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_borda_precos").select("borda_id, tamanho_id, preco").eq("empresa_id", empresaId),
@@ -64,7 +64,7 @@ export default async function PedirPage() {
   const catHorarios = new Map(cats.map((c) => [c.nome, c.horarios]));
   // Categoria desligada pro App ou indisponível esconde os produtos dela.
   const catBloqueada = new Set(cats.filter((c) => c.canal_app === false || c.disponivel === false).map((c) => c.nome));
-  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; foto_url: string | null; descricao: string | null; horarios: Horarios; combo: boolean }[]) ?? [])
+  const itens = ((itensRows as { id: string; nome: string; categoria: string | null; preco: number; promo_preco: number | null; foto_url: string | null; foto_mini_url: string | null; descricao: string | null; horarios: Horarios; combo: boolean }[]) ?? [])
     .filter((i) => !catBloqueada.has(i.categoria || "Outros"))
     .filter((i) => disponivelAgora(i.horarios, agora))
     .filter((i) => disponivelAgora(catHorarios.get(i.categoria || "Outros") ?? null, agora))
@@ -74,7 +74,8 @@ export default async function PedirPage() {
         id: i.id, nome: i.nome, categoria: i.categoria || "Outros",
         preco: promo > 0 ? promo : Number(i.preco) || 0,
         preco_antigo: promo > 0 ? Number(i.preco) || 0 : null,
-        foto_url: i.foto_url, descricao: i.descricao, combo: !!i.combo,
+        // Miniatura quando existe (DES-006): o app mostra a foto pequena.
+        foto_url: i.foto_mini_url ?? i.foto_url, descricao: i.descricao, combo: !!i.combo,
       };
     });
   // Combo (migration 0263): o card mostra "a partir de" (o mais barato de cada etapa).
@@ -85,7 +86,10 @@ export default async function PedirPage() {
   const { data: cfgPizzas } = await admin.from("pdv_config").select("chave, valor").eq("empresa_id", empresaId).like("chave", "pizzas_%");
   const temPizzas = pizzasAgora(lerConfigPizzas(Object.fromEntries(((cfgPizzas as { chave: string; valor: string }[] | null) ?? []).map((r) => [r.chave, r.valor]))), agora);
   const pizzaTam = temPizzas ? ((tamanhos as { id: string; nome: string; max_sabores: number; fatias: number | null }[]) ?? []) : [];
-  const pizzaSab = temPizzas ? ((sabores as { id: string; nome: string; foto_url: string | null; descricao: string | null; novo: boolean | null }[]) ?? []) : [];
+  const pizzaSab = temPizzas
+    ? ((sabores as { id: string; nome: string; foto_url: string | null; foto_mini_url: string | null; descricao: string | null; novo: boolean | null }[]) ?? [])
+      .map(({ foto_mini_url, ...s }) => ({ ...s, foto_url: foto_mini_url ?? s.foto_url }))
+    : [];
 
   // Horários: aberto pra agora? dá pra agendar? quais horários (e quais lotaram)?
   const ligado = (cfg as { aberto?: boolean } | null)?.aberto !== false;

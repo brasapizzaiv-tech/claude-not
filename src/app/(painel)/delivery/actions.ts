@@ -302,7 +302,10 @@ export async function salvarFotoCardapio(formData: FormData) {
   const { data: pub } = admin.storage.from("cardapio").getPublicUrl(path);
   const url = `${pub.publicUrl}?v=${new Date().getTime()}`; // cache-bust ao trocar a foto
   const tabela = tipo === "item" ? "pdv_itens" : "pdv_pizza_sabores";
-  await supabase.from(tabela).update({ foto_url: url }).eq("id", id);
+  // Miniatura pro app do cliente (DES-006). Falhou = null = a tela usa a grande.
+  const { subirMiniatura } = await import("@/lib/foto-miniatura");
+  const mini = await subirMiniatura(admin, tipo as "item" | "sabor", id, bytes);
+  await supabase.from(tabela).update({ foto_url: url, foto_mini_url: mini }).eq("id", id);
   revalidatePath("/salao/cardapio");
   return { ok: true as const, url };
 }
@@ -314,7 +317,7 @@ export async function removerFotoCardapio(formData: FormData) {
   const id = formData.get("id") as string;
   if (!["item", "sabor"].includes(tipo) || !id) return;
   const tabela = tipo === "item" ? "pdv_itens" : "pdv_pizza_sabores";
-  await supabase.from(tabela).update({ foto_url: null }).eq("id", id);
+  await supabase.from(tabela).update({ foto_url: null, foto_mini_url: null }).eq("id", id);
   revalidatePath("/salao/cardapio");
 }
 

@@ -2,9 +2,11 @@
 import { Icone } from "@/components/icone";
 import { avisar, perguntar } from "@/components/dialogo";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cancelarNfceEmitida, imprimirNfce } from "../fiscal-actions";
+import { notasParaPlanilha } from "./csv-actions";
 
 export type NotaLinha = {
   id: string;
@@ -52,30 +54,33 @@ const rotulo = (s: string) => (s === "autorizado" ? "Sucesso" : s === "cancelado
 export function NotasClient({
   linhas,
   stats,
+  filtro,
+  pagina,
+  totalFiltro,
+  porPagina,
 }: {
   linhas: NotaLinha[];
   stats: { emitidas: number; valorTotal: number; canceladas: number; erro: number };
+  /** Filtros da tela: moram no endereço e a busca é feita no banco (DES-008). */
+  filtro: { q: string; status: string; modelo: string };
+  pagina: number;
+  totalFiltro: number;
+  porPagina: number;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
-  const [busca, setBusca] = useState("");
-  const [fStatus, setFStatus] = useState("");
-  const [fModelo, setFModelo] = useState("");
-
-  const filtradas = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    return linhas.filter((l) => {
-      if (fStatus && (fStatus === "erro" ? l.status === "autorizado" || l.status === "cancelado" : l.status !== fStatus)) return false;
-      if (fModelo && l.modelo !== fModelo) return false;
-      if (!q) return true;
-      return (
-        String(l.comandaNumero ?? "").includes(q) ||
-        String(l.numero ?? "").includes(q) ||
-        (l.chave ?? "").toLowerCase().includes(q) ||
-        (l.mensagem ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [linhas, busca, fStatus, fModelo]);
+  const [baixando, setBaixando] = useState(false);
+  const filtradas = linhas;
+  const paginas = Math.max(1, Math.ceil(totalFiltro / porPagina));
+  const link = (p: number) => {
+    const q = new URLSearchParams();
+    if (filtro.q) q.set("q", filtro.q);
+    if (filtro.status) q.set("status", filtro.status);
+    if (filtro.modelo) q.set("modelo", filtro.modelo);
+    if (p > 0) q.set("pagina", String(p));
+    const s = q.toString();
+    return `/salao/notas-fiscais${s ? `?${s}` : ""}`;
+  };
 
   async function cancelar(id: string) {
     const j = await perguntar("Motivo do cancelamento da nota (mínimo 15 caracteres):", "", { detalhe: "A nota é cancelada na Receita e não dá pra desfazer.", perigo: true, okTexto: "Cancelar a nota", obrigatorio: true });
@@ -89,10 +94,16 @@ export function NotasClient({
     });
   }
 
-  function baixarCsv() {
+  async function baixarCsv() {
+    if (baixando) return;
+    setBaixando(true);
+    let todas: NotaLinha[];
+    try { todas = await notasParaPlanilha(filtro); }
+    catch { setBaixando(false); void avisar("Sem conexão. Tente de novo."); return; }
+    setBaixando(false);
     const linhasCsv = [
       ["Lançamento (comanda)", "Nota", "Série", "Tipo", "Valor", "Status", "Emissão", "Chave"],
-      ...filtradas.map((l) => [
+      ...todas.map((l) => [
         l.comandaNumero ?? "",
         l.numero ?? "",
         l.serie ?? "",
@@ -121,28 +132,30 @@ export function NotasClient({
         <Card titulo="Com erro" valor={String(stats.erro)} cor="text-red-600" />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      {/* Busca no banco: o formulário manda os filtros pro endereço. */}
+      <form method="get" action="/salao/notas-fiscais" className="mt-4 flex flex-wrap items-center gap-2">
         <input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por comanda, nº da nota, chave..."
+          name="q"
+          defaultValue={filtro.q}
+          placeholder="Buscar por comanda, nº da nota, chave... (Enter)"
           className={`${sel} min-w-56 flex-1`}
         />
-        <select value={fStatus} onChange={(e) => setFStatus(e.target.value)} className={sel}>
+        <select name="status" defaultValue={filtro.status} onChange={(e) => e.currentTarget.form?.requestSubmit()} className={sel}>
           <option value="">Status: todos</option>
           <option value="autorizado">Sucesso</option>
           <option value="cancelado">Cancelada</option>
           <option value="erro">Erro</option>
         </select>
-        <select value={fModelo} onChange={(e) => setFModelo(e.target.value)} className={sel}>
+        <select name="modelo" defaultValue={filtro.modelo} onChange={(e) => e.currentTarget.form?.requestSubmit()} className={sel}>
           <option value="">Modelo: todos</option>
           <option value="nfce">NFC-e</option>
           <option value="nfe">NF-e</option>
         </select>
-        <button onClick={baixarCsv} className="rounded-controle bg-texto px-3 py-1.5 text-sm font-medium text-fundo hover:opacity-90">
-          <Icone nome="baixar" tamanho={14} className="mr-1.5" /> XLS
+        <button type="submit" className="btn-secundario text-sm">Buscar</button>
+        <button type="button" onClick={baixarCsv} disabled={baixando} className="rounded-controle bg-texto px-3 py-1.5 text-sm font-medium text-fundo hover:opacity-90 disabled:opacity-60">
+          <Icone nome="baixar" tamanho={14} className="mr-1.5" /> {baixando ? "Gerando…" : "XLS"}
         </button>
-      </div>
+      </form>
 
       <div className="mt-3 overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="min-w-[720px] w-full text-sm">
@@ -209,9 +222,14 @@ export function NotasClient({
           </tbody>
         </table>
       </div>
-      {linhas.length >= 1000 && (
-        <p className="mt-2 text-xs text-texto-fraco">Mostrando as 1000 notas mais recentes.</p>
-      )}
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-texto-suave">
+        <span>
+          {totalFiltro.toLocaleString("pt-BR")} nota(s){filtro.q || filtro.status || filtro.modelo ? " com esses filtros" : ""}
+          {paginas > 1 ? ` · página ${pagina + 1} de ${paginas}` : ""}
+        </span>
+        {pagina > 0 && <Link href={link(pagina - 1)} className="btn-secundario text-sm">Mais recentes</Link>}
+        {pagina + 1 < paginas && <Link href={link(pagina + 1)} className="btn-secundario text-sm">Mais antigas</Link>}
+      </div>
     </div>
   );
 }

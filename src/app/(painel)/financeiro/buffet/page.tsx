@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
-import { buscarTodas } from "@/lib/supabase/todas";
 import { hojeSP, somarDias } from "@/lib/etiqueta-vencimentos";
 import { analisarDias, somar, limiteQueda, segundaDe, DELTAS, type PratoBuffet, type SomaBuffet } from "@/lib/buffet-analise-core";
 
@@ -9,12 +8,9 @@ export const metadata = { title: "Buffet: livre × quilo · Financeiro" };
 
 // Acompanhamento semanal do buffet (Rafael, 27/10/2026): livre × quilo, quanto
 // daria só por quilo e com o livre mais caro. Almoço, pelas pesagens da balança.
-type ComandaRow = { aberta_em: string; livre: boolean | null; peso: number | null; valor_buffet: number | null; so_kg: boolean | null };
 
 const PERIODOS = [4, 8, 12, 26];
 const NOME_DIA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-const horaSP = (iso: string) => Number(new Date(iso).toLocaleString("en-US", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }));
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const brl0 = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -35,12 +31,10 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
   const de = somarDias(segundaDe(hoje), -7 * (semanas - 1));
 
   const supabase = await createClient();
-  const [comandas, { data: cfgRows }] = await Promise.all([
-    buscarTodas<ComandaRow>((i, f) =>
-      supabase.from("pdv_comandas").select("aberta_em, livre, peso, valor_buffet, so_kg")
-        .gt("valor_buffet", 0).neq("status", "excluida").gte("aberta_em", `${de}T03:00:00.000Z`)
-        .order("aberta_em").order("id").range(i, f),
-    ),
+  // Os pratos do almoço (sem marmita) numa ida só ao banco (DES-007, migration
+  // 0303): [dia, livre, peso, valor]. Antes eram 6 páginas de 1000 em fila.
+  const [{ data: pratosJson }, { data: cfgRows }] = await Promise.all([
+    supabase.rpc("buffet_pratos", { p_de: `${de}T03:00:00.000Z` }),
     supabase.from("pdv_config").select("chave, valor"),
   ]);
   const cfg: Record<string, string> = {};
@@ -50,10 +44,10 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
     livre: Number(cfg[`buffet_livre_${dow}`] || cfg.buffet_livre || 0),
   });
 
-  // Só o almoço e sem as marmitas (so_kg): é o prato de quem come no salão.
-  const pratos: PratoBuffet[] = comandas
-    .filter((c) => !c.so_kg && horaSP(c.aberta_em) < 16)
-    .map((c) => ({ dia: diaSP(c.aberta_em), livre: !!c.livre, peso: Number(c.peso) || 0, valor: Number(c.valor_buffet) || 0 }));
+  // Só o almoço e sem as marmitas (so_kg): é o prato de quem come no salão
+  // (o filtro e o dia de Brasília já vêm do banco).
+  const pratos: PratoBuffet[] = ((pratosJson as [string, boolean, number, number][] | null) ?? [])
+    .map(([dia, livre, peso, valor]) => ({ dia, livre: !!livre, peso: Number(peso) || 0, valor: Number(valor) || 0 }));
   const dias = analisarDias(pratos, precoPadrao);
   const total = somar(dias);
 
