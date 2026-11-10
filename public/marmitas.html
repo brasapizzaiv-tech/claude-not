@@ -280,7 +280,7 @@
       <div class="card">
         <h2 id="usuFormTitulo">Novo usuário</h2>
         <input type="hidden" id="usuId">
-        <div class="row"><div><label>Nome</label><input type="text" id="usuNome"></div><div><label>Senha</label><input type="text" id="usuSenha" placeholder="PIN/senha"></div></div>
+        <div class="row"><div><label>Nome</label><input type="text" id="usuNome"></div><div><label>Senha</label><input type="text" id="usuSenha" placeholder="mínimo 6 caracteres"></div></div>
         <h3>Permissões</h3>
         <div class="permgrid" id="usuPerms"></div>
         <button class="sec block" onclick="salvarUsuario()">Salvar usuário</button>
@@ -508,6 +508,8 @@ async function iniciarAdmin(){
   try{
     const r=await (await fetch('/api/marmitas/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha:SENHA})})).json();
     if(!r.ok){ SENHA=''; localStorage.removeItem('marmitas_admin_senha'); return mostrarLogin(); }
+    // Entrou pelo login do sistema, mas a senha guardada aqui estava velha: apaga.
+    if(r.esquecerSenha){ SENHA=''; localStorage.removeItem('marmitas_admin_senha'); }
     USER={nome:r.nome,permissoes:r.permissoes||[]};
   }catch(e){ return mostrarLogin(); }
   abrirAdmin();
@@ -517,7 +519,7 @@ async function fazerLogin(){
   const s=$('#loginSenha').value;
   const r=await (await fetch('/api/marmitas/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha:s})})).json();
   if(r.ok){ SENHA=s; localStorage.setItem('marmitas_admin_senha',s); USER={nome:r.nome,permissoes:r.permissoes||[]}; $('#loginErro').classList.add('hidden'); abrirAdmin(); }
-  else $('#loginErro').classList.remove('hidden');
+  else { const el=$('#loginErro'); if(r.erro) el.textContent=r.erro; el.classList.remove('hidden'); }
 }
 $('#loginSenha')?.addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
 function sair(){ SENHA='';USER=null;localStorage.removeItem('marmitas_admin_senha'); location.hash=''; }
@@ -883,7 +885,7 @@ function editarUsuario(id){
   $('#usuFormTitulo').textContent='Editar usuário';$('#usuId').value=u.id;$('#usuNome').value=u.nome;$('#usuSenha').value='';$('#usuSenha').placeholder='(deixe em branco p/ manter)';
   document.querySelectorAll('#usuPerms input').forEach(c=>c.checked=arr(u.permissoes).includes(c.value));
 }
-function limparUsuForm(){ $('#usuFormTitulo').textContent='Novo usuário';$('#usuId').value='';$('#usuNome').value='';$('#usuSenha').value='';$('#usuSenha').placeholder='PIN/senha';document.querySelectorAll('#usuPerms input').forEach(c=>c.checked=false); }
+function limparUsuForm(){ $('#usuFormTitulo').textContent='Novo usuário';$('#usuId').value='';$('#usuNome').value='';$('#usuSenha').value='';$('#usuSenha').placeholder='mínimo 6 caracteres';document.querySelectorAll('#usuPerms input').forEach(c=>c.checked=false); }
 async function salvarUsuario(){
   const nome=$('#usuNome').value.trim();if(!nome)return toast('Informe o nome',true);
   const permissoes=[...document.querySelectorAll('#usuPerms input:checked')].map(c=>c.value);

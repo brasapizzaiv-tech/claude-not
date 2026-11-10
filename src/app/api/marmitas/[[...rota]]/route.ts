@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buscarTodas } from "@/lib/supabase/todas";
 import { diasFechados } from "@/lib/feriados-fechados";
 import { empresaAtualId } from "@/lib/empresa";
+import { hashSenha, senhaBate, senhaEmTexto, impressao, SENHA_MIN } from "@/lib/marmitas-senha";
 
 // Login unificado: quem está logado no ERP como "dono" é admin das marmitas.
 async function erpDono(): Promise<boolean> {
@@ -197,13 +198,74 @@ function itensForaDoCardapio(card: { pratos: string[]; proteinas: string[] }, p:
   if (p.proteina && !prots.has(n(p.proteina))) fora.push(p.proteina);
   return fora;
 }
-async function resolveUsuario(cfg: Cfg, req: NextRequest) {
+// ----- Senha e tentativas (auditoria SEC-06) -----
+// A contagem mora no banco (mkt_login_erro / mkt_login_travado, migration
+// 0289): uma linha só, à prova de tentativas ao mesmo tempo. 5 erros do mesmo
+// endereço ou 50 somados em 15 min travam por 15 min. Acertar não zera.
+function ipDe(req: NextRequest) {
+  return (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || req.headers.get("x-real-ip") || "sem-ip";
+}
+async function travado(db: Db, ip: string): Promise<boolean> {
+  const { data } = await db.rpc("mkt_login_travado", { p_ip: ip });
+  return !!data;
+}
+async function contarErro(db: Db, ip: string) {
+  await db.rpc("mkt_login_erro", { p_ip: ip });
+}
+
+// Senha já conferida nesta instância (não roda o scrypt a cada chamada). Vale
+// só enquanto o hash guardado do usuário for o mesmo: senha trocada em outra
+// instância invalida sozinha.
+const conferidas = new Map<string, { id: string; hash: string; ate: number }>();
+
+function daMemoria(cfg: Cfg, senha: string) {
+  const c = conferidas.get(impressao(senha));
+  if (!c || c.ate < Date.now()) return null;
+  const u = cfg.usuarios.find((x) => x.id === c.id);
+  return u && u.senha === c.hash ? u : null;
+}
+
+/** Confere a senha. Senha antiga em texto vira hash no primeiro acerto. */
+async function usuarioDaSenha(db: Db, cfg: Cfg, senha: string) {
+  if (!senha) return null;
+  const lembrado = daMemoria(cfg, senha);
+  if (lembrado) return lembrado;
+  const u = cfg.usuarios.find((x) => senhaBate(x.senha, senha));
+  if (!u) return null;
+  let hash = u.senha;
+  if (senhaEmTexto(u.senha)) {
+    // Relê a lista na hora de gravar e troca só esta senha, e só se ela
+    // continua a mesma: não atropela um usuário salvo ao mesmo tempo.
+    hash = hashSenha(senha);
+    const { data } = await db.from("mkt_config").select("valor").eq("chave", "usuarios").maybeSingle();
+    const atual = parseLista((data as { valor?: string } | null)?.valor ?? "[]") as unknown as Cfg["usuarios"];
+    const i = atual.findIndex((x) => x.id === u.id && x.senha === u.senha);
+    if (i >= 0) {
+      atual[i] = { ...atual[i], senha: hash };
+      await setCfg(db, "usuarios", JSON.stringify(atual));
+    }
+  }
+  conferidas.set(impressao(senha), { id: u.id, hash, ate: Date.now() + 10 * 60 * 1000 });
+  return u;
+}
+
+async function resolveUsuario(db: Db, cfg: Cfg, req: NextRequest) {
   // Sem usuários cadastrados só o dono logado no ERP administra (antes qualquer
   // um virava administrador — e apagar o último usuário abria a API inteira).
   const senha = req.headers.get("x-senha") || "";
-  const u = cfg.usuarios.find((x) => x.senha === senha && senha !== "");
-  if (u) return { nome: u.nome, permissoes: u.permissoes || [] };
+  if (senha) {
+    const lembrado = daMemoria(cfg, senha);
+    if (lembrado) return { nome: lembrado.nome, permissoes: lembrado.permissoes || [] };
+  }
+  // Dono logado no sistema entra antes de qualquer trava: uma senha velha
+  // guardada no navegador dele não pode travar o restaurante.
   if (await erpDono()) return { nome: "Administrador", permissoes: PERMISSOES.slice() };
+  if (!senha) return null;
+  const ip = ipDe(req);
+  if (await travado(db, ip)) return null;
+  const u = await usuarioDaSenha(db, cfg, senha);
+  if (u) return { nome: u.nome, permissoes: u.permissoes || [] };
+  await contarErro(db, ip);
   return null;
 }
 const pode = (u: { permissoes: string[] } | null, p: string) => !!(u && (u.permissoes || []).includes(p));
@@ -263,7 +325,17 @@ async function handle(req: NextRequest, rota: string[]) {
     const { alvo, aberto: dentroJanela } = janelaPedido(cfg, ag);
     const { data: ped } = await db.from("mkt_pedidos").select("colaborador_id").eq("data", alvo);
     const jaPediram = new Set((ped || []).map((x) => x.colaborador_id).filter(Boolean));
-    const disponiveis = cfg.colaboradores.filter((c) => !jaPediram.has(c.id));
+    // Só id e nome: a matrícula é dado pessoal do funcionário do Kern e esta
+    // rota é aberta (SEC-06). Nome repetido ganha o final da matrícula pra
+    // pessoa se achar.
+    const livres = cfg.colaboradores.filter((c) => !jaPediram.has(c.id));
+    const vezes = new Map<string, number>();
+    for (const c of livres) vezes.set(String(c.nome).trim().toLowerCase(), (vezes.get(String(c.nome).trim().toLowerCase()) ?? 0) + 1);
+    const disponiveis = livres.map((c) => {
+      const rep = (vezes.get(String(c.nome).trim().toLowerCase()) ?? 0) > 1;
+      const fim = String((c as { matricula?: string }).matricula || "").slice(-2);
+      return { id: c.id, nome: c.nome, ...(rep && fim ? { matricula: `final ${fim}` } : {}) };
+    });
     const aberto = !cfg.bloquearAposLimite || dentroJanela;
     const semCardapio = !temCardapio(cfg, alvo);
     // Feriados dos próximos 10 dias, pro aviso na tela do colaborador.
@@ -315,15 +387,27 @@ async function handle(req: NextRequest, rota: string[]) {
 
   // ===== LOGIN =====
   if (path === "/api/login" && method === "POST") {
-    const u = cfg.usuarios.find((x) => x.senha === String(body?.senha || "") && x.senha !== "");
-    if (u) return json({ ok: true, nome: u.nome, permissoes: u.permissoes || [] });
-    if (await erpDono()) return json({ ok: true, nome: "Administrador", permissoes: PERMISSOES.slice() });
+    const ip = ipDe(req);
+    const senha = String(body?.senha || "");
+    if (senha) {
+      const lembrado = daMemoria(cfg, senha);
+      if (lembrado) return json({ ok: true, nome: lembrado.nome, permissoes: lembrado.permissoes || [] });
+    }
+    // Dono logado no sistema entra sem depender da senha; se a senha guardada
+    // no navegador estiver velha, a página apaga (esquecerSenha).
+    if (await erpDono()) return json({ ok: true, nome: "Administrador", permissoes: PERMISSOES.slice(), ...(senha ? { esquecerSenha: true } : {}) });
+    if (senha) {
+      if (await travado(db, ip)) return json({ ok: false, erro: "Muitas tentativas erradas. Espere 15 minutos e tente de novo." }, 429);
+      const u = await usuarioDaSenha(db, cfg, senha);
+      if (u) return json({ ok: true, nome: u.nome, permissoes: u.permissoes || [] });
+      await contarErro(db, ip);
+    }
     return json({ ok: false });
   }
   if (path === "/api/config" && method === "GET") return json(configPublica(cfg));
 
   // A partir daqui exige usuário
-  const user = await resolveUsuario(cfg, req);
+  const user = await resolveUsuario(db, cfg, req);
   if (!user) return erro("Acesso negado.", 401);
 
   // ===== IMPRESSÃO NA ELGIN (pelo agente de impressão) =====
@@ -367,20 +451,25 @@ async function handle(req: NextRequest, rota: string[]) {
       const senha = String(body?.senha || "").trim();
       const permissoes = (Array.isArray(body?.permissoes) ? body.permissoes : []).filter((p: string) => PERMISSOES.includes(p));
       if (!nome) return erro("Informe o nome do usuario");
+      // Senha nova com pelo menos 6 caracteres e guardada como hash (SEC-06).
+      if (senha && senha.length < SENHA_MIN) return erro(`A senha precisa ter pelo menos ${SENHA_MIN} caracteres.`);
+      if (senha && lista.some((u) => u.id !== body?.id && senhaBate(u.senha, senha))) return erro("Essa senha já é de outro usuário. Escolha outra.");
       if (body?.id) {
         const i = lista.findIndex((u) => u.id === body.id);
         if (i < 0) return erro("Usuario nao encontrado");
-        lista[i] = { ...lista[i], nome, permissoes, senha: senha || lista[i].senha };
+        lista[i] = { ...lista[i], nome, permissoes, senha: senha ? hashSenha(senha) : lista[i].senha };
       } else {
         if (!senha) return erro("Informe a senha do novo usuario");
-        lista.push({ id: novoId(), nome, senha, permissoes });
+        lista.push({ id: novoId(), nome, senha: hashSenha(senha), permissoes });
       }
+      conferidas.clear();
       await setCfg(db, "usuarios", JSON.stringify(lista));
       return json({ ok: true });
     }
     if (method === "DELETE") {
       const id = url.searchParams.get("id");
       await setCfg(db, "usuarios", JSON.stringify(cfg.usuarios.filter((u) => u.id !== id)));
+      conferidas.clear();
       return json({ ok: true });
     }
   }

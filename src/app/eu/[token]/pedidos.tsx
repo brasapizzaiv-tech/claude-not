@@ -255,14 +255,22 @@ export function PedidoCard({
                     ruim ? "border-red-400" : "border-borda-forte"
                   }`}
                 />
-                <button
-                  onClick={() => remover(i.id)}
-                  disabled={salvando}
-                  title="Remover item"
-                  className="shrink-0 text-zinc-300 hover:text-red-600 disabled:opacity-50 dark:text-zinc-600"
-                >
-                  ✕
-                </button>
+                {/* Só sai o item que veio a mais e foi incluído aqui (pedido 0).
+                    O que foi pedido ao fornecedor fica: se não veio, a
+                    quantidade conferida é 0 (SEC-10). */}
+                {Number(i.qtd) === 0 ? (
+                  <button
+                    onClick={() => remover(i.id)}
+                    disabled={salvando}
+                    title="Remover item"
+                    aria-label="Remover item"
+                    className="min-h-11 min-w-11 shrink-0 text-texto-fraco hover:text-urgente-texto disabled:opacity-50"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <span className="min-w-11 shrink-0" aria-hidden />
+                )}
               </div>
             );
           })}
