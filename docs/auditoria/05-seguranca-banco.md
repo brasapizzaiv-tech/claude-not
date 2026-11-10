@@ -139,6 +139,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
   renovar → sem o PIN do app volta pro `/eu` com "garcom=negado"; assinatura inventada → login.
 
 ### [SEC-06] App das marmitas: senha numérica em texto, sem limite, e lista pública de funcionários do Kern
+- **Corrigido em 10/11/2026 (Onda 3, lote 2).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: **alto**
 - Onde: `api/marmitas/[[...rota]]/route.ts:200-208, 317-322` (login), `:261-271` (`/api/publico`).
 - O que acontece: 3 contas com senha só de dígitos (6, 6 e 4), em texto em `mkt_config`, mandada no cabeçalho a cada
@@ -183,6 +184,7 @@ TV e mural recusam sem chave; não há CPF real nem csv/xlsx no git (862 commits
 - Esforço: M · Risco: baixo
 
 ### [SEC-10] As funções do app da equipe mexem em qualquer pedido de compra
+- **Corrigido em 10/11/2026 (Onda 3, lote 2).** Ver `RELATORIO-FINAL.md`, seção "Andamento das correções".
 - Severidade: médio
 - Onde: `colaborador_remove_item`, `_add_item`, `_conferir_pedido`, `_responder_entrega`, `_pedidos`.
 - Qualquer colaborador ativo (com token + PIN, ou só o token pros 19 sem PIN) apaga qualquer `pedido_itens` por id,
