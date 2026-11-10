@@ -299,7 +299,7 @@ export function ConferirClient({
                         veio a mais
                       </span>
                     )}
-                    <button
+                    <button aria-label="Fechar"
                       onClick={() => remover(i.id)}
                       disabled={salvando}
                       className="ml-2 text-xs text-zinc-300 hover:text-red-600 disabled:opacity-50 dark:text-zinc-600"
@@ -346,7 +346,7 @@ export function ConferirClient({
                     ) : nota ? <span className="text-zinc-300 dark:text-zinc-600" title="Produto não encontrado na nota (ou item da nota sem vínculo)">não está na nota</span> : <span className="text-zinc-300 dark:text-zinc-600">—</span>}
                   </td>
                   <td className="px-3 py-2">
-                    <input
+                    <input aria-label="ok / faltou / avariado"
                       value={e.obs}
                       onChange={(ev) => set("obs", ev.target.value)}
                       placeholder="ok / faltou / avariado"

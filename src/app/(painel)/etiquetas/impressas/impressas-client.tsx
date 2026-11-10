@@ -113,7 +113,7 @@ export function ImpressasClient({ rows, periodo, ini, fim }: { rows: EtImp[]; pe
             </button>
           ))}
         </div>
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔍 Produto ou nº" className={`${input} w-56`} />
+        <input aria-label="🔍 Produto ou nº" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔍 Produto ou nº" className={`${input} w-56`} />
         <select value={cat} onChange={(e) => setCat(e.target.value)} className={input}>
           <option value="">Todas as categorias</option>
           {cats.map((c) => <option key={c} value={c}>{c}</option>)}

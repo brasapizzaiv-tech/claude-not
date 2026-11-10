@@ -31,7 +31,7 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <input
+        <input aria-label="Buscar adicional"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar adicional..."

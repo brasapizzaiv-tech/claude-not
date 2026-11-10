@@ -713,9 +713,9 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
               <option value="">Pessoa…</option>
               {pessoas.filter((p) => p.turno !== "proprietario").map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
-            <input value={adiantValor} onChange={(e) => setAdiantValor(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="R$ valor" inputMode="decimal" className={`${inputCls} w-28`} />
+            <input aria-label="R$ valor" value={adiantValor} onChange={(e) => setAdiantValor(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="R$ valor" inputMode="decimal" className={`${inputCls} w-28`} />
             <input type="date" value={adiantData} onChange={(e) => setAdiantData(e.target.value)} className={inputCls} />
-            <input value={adiantMotivo} onChange={(e) => setAdiantMotivo(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="motivo (opcional)" className={`${inputCls} w-48`} />
+            <input aria-label="motivo (opcional)" value={adiantMotivo} onChange={(e) => setAdiantMotivo(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="motivo (opcional)" className={`${inputCls} w-48`} />
             <button onClick={registrarAdiant} disabled={pending} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-40">
               Registrar adiantamento
             </button>
@@ -769,7 +769,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           <p className="mb-2 text-sm font-medium">Trazer alguém pra esta semana</p>
           {foraDaGrade.length > 0 && (
             <div className="mb-3">
-              <input
+              <input aria-label="Buscar quem já está cadastrado"
                 value={buscaExtra}
                 onChange={(e) => setBuscaExtra(e.target.value)}
                 placeholder="Buscar quem já está cadastrado…"
@@ -793,9 +793,9 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           )}
           <p className="mb-1 text-xs font-bold text-texto-fraco">Ou cadastrar um free novo</p>
           <div className="flex flex-wrap items-center gap-2">
-            <input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Nome" className={`${inputCls} w-48`} />
-            <input value={novoDia} onChange={(e) => setNovoDia(e.target.value)} placeholder="R$ dia" inputMode="decimal" className={`${inputCls} w-24`} />
-            <input value={novoNoite} onChange={(e) => setNovoNoite(e.target.value)} placeholder="R$ noite" inputMode="decimal" className={`${inputCls} w-24`} />
+            <input aria-label="Nome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Nome" className={`${inputCls} w-48`} />
+            <input aria-label="R$ dia" value={novoDia} onChange={(e) => setNovoDia(e.target.value)} placeholder="R$ dia" inputMode="decimal" className={`${inputCls} w-24`} />
+            <input aria-label="R$ noite" value={novoNoite} onChange={(e) => setNovoNoite(e.target.value)} placeholder="R$ noite" inputMode="decimal" className={`${inputCls} w-24`} />
             <button disabled={pending}
               onClick={() =>
                 start(async () => {
@@ -858,7 +858,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                         {(n.data < dias[0] || n.data > dias[6]) && <span className="ml-1 text-mini text-texto-fraco">(outra semana)</span>}
                       </td>
                       <td className="px-2 py-1 text-right">
-                        <input
+                        <input aria-label="0,00"
                           value={e.valor}
                           onChange={(ev) => setDez((l) => l.map((x) => (x.data === n.data ? { ...x, valor: ev.target.value } : x)))}
                           onBlur={(ev) => salvarDez(n.data, ev.target.value, e.pagar_em)}
@@ -1164,7 +1164,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                                 <option value="noite">noite</option>
                               </select>
                             )}
-                            <input
+                            <input aria-label="0,00"
                               value={extraDe(p).valor}
                               onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { ...extraDe(p), valor: e.target.value } }))}
                               onBlur={() => salvarExtraDe(p)}
@@ -1175,7 +1175,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             />
                           </div>
                           {(extraDe(p).valor || extraDe(p).motivo) && (
-                            <input
+                            <input aria-label="motivo (ex.: hora extra)"
                               value={extraDe(p).motivo}
                               onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { ...extraDe(p), motivo: e.target.value } }))}
                               onBlur={() => salvarExtraDe(p)}
@@ -1190,7 +1190,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-right">
                       {(
                         <div className="flex flex-col items-end gap-0.5">
-                          <input
+                          <input aria-label="0,00"
                             value={extraDe(p).desconto}
                             onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { ...extraDe(p), desconto: e.target.value } }))}
                             onBlur={() => salvarExtraDe(p)}
@@ -1200,7 +1200,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             className={`${inputCls} w-20 text-right ${extraDe(p).desconto ? "border-red-400 text-red-700" : ""}`}
                           />
                           {(extraDe(p).desconto || extraDe(p).descMotivo) && (
-                            <input
+                            <input aria-label="motivo (ex.: atraso)"
                               value={extraDe(p).descMotivo}
                               onChange={(e) => setExtrasSem((o) => ({ ...o, [p.id]: { ...extraDe(p), descMotivo: e.target.value } }))}
                               onBlur={() => salvarExtraDe(p)}

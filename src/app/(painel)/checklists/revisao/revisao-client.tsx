@@ -15,6 +15,7 @@ import {
   criarApontamentoPainel, excluirApontamentoPainel, publicarNaTv,
   resolverApontamentoPainel, tirarApontamentoDaTv,
 } from "../actions";
+import { Janela } from "@/components/janela";
 
 export type ListaRevisao = {
   modelo: Modelo; setor: string; setorId: string; cor: string | null;
@@ -265,7 +266,7 @@ function ApontarModal({
   const ate = prazoData || addDiasIso(hoje, prazo);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <Janela>
       <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
         <h2 className="text-lg font-bold text-texto">Apontar correção</h2>
         <p className="mt-0.5 text-sm text-texto-suave">
@@ -330,6 +331,6 @@ function ApontarModal({
           </button>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }

@@ -151,7 +151,7 @@ export function EstoqueInput({
               </select>
             )}
             {caixas.length > 1 && !disabled && (
-              <button
+              <button aria-label="Fechar"
                 type="button"
                 onClick={() => remCaixa(i)}
                 title="Remover caixa"

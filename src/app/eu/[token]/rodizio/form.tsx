@@ -101,7 +101,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
           </div>
         ) : (
           <>
-            <input
+            <input aria-label="Digite o sabor"
               ref={buscaRef}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
@@ -146,12 +146,12 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
         <div className="mt-3 flex items-center justify-between">
           <span className="text-sm text-texto-suave">Quantidade</span>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setQtd((n) => Math.max(1, n - 1))} className="h-11 w-11 rounded-cartao bg-superficie-suave text-2xl font-bold text-texto-suave">−</button>
+            <button aria-label="Menos um" type="button" onClick={() => setQtd((n) => Math.max(1, n - 1))} className="h-11 w-11 rounded-cartao bg-superficie-suave text-2xl font-bold text-texto-suave">−</button>
             <span className="w-8 text-center text-2xl font-black tabular-nums text-texto">{qtd}</span>
-            <button type="button" onClick={() => setQtd((n) => Math.min(20, n + 1))} className="h-11 w-11 rounded-cartao bg-superficie-suave text-2xl font-bold text-texto-suave">+</button>
+            <button aria-label="Mais um" type="button" onClick={() => setQtd((n) => Math.min(20, n + 1))} className="h-11 w-11 rounded-cartao bg-superficie-suave text-2xl font-bold text-texto-suave">+</button>
           </div>
         </div>
-        <input
+        <input aria-label="Observação (ex.: sem cebola)"
           value={obs}
           onChange={(e) => setObs(e.target.value.slice(0, 120))}
           placeholder="Observação (ex.: sem cebola)"
@@ -187,7 +187,7 @@ export function RodizioForm({ token, sabores }: { token: string; sabores: SaborR
                     </span>
                     <span className="text-xs text-texto-suave">{tempoEspera(p.criado_em, agora)}</span>
                     {p.status === "pendente" && (
-                      <button type="button" onClick={() => cancelar(p.id)} className="text-xs text-texto-fraco hover:text-red-600">✕</button>
+                      <button aria-label="Fechar" type="button" onClick={() => cancelar(p.id)} className="text-xs text-texto-fraco hover:text-red-600">✕</button>
                     )}
                   </li>
                 );

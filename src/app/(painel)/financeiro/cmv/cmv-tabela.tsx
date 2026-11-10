@@ -324,7 +324,7 @@ export function CmvTabela({
       </p>
 
       <div className="mb-3 flex items-center gap-2">
-        <input
+        <input aria-label="Buscar produto"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto..."

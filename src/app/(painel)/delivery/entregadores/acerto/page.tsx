@@ -108,7 +108,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
                   <input type="hidden" name="recebido_pix" value={rec.Pix} />
                   <label className="text-xs text-texto-suave">Fixo (R$)</label>
                   <input name="fixo" defaultValue={fixo} inputMode="decimal" className="w-24 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
-                  <input name="obs" placeholder="obs (opcional)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
+                  <input aria-label="obs (opcional)" name="obs" placeholder="obs (opcional)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
                   <Enviar className="btn-principal text-sm">Registrar acerto</Enviar>
                 </form>
               )}

@@ -454,7 +454,7 @@ export function PreencherClient({
             </p>
             <div className="mt-3 flex gap-2">
               <div className="relative min-w-0 flex-1">
-                <input
+                <input aria-label="Buscar item"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                   placeholder="Buscar item..."
@@ -507,7 +507,7 @@ export function PreencherClient({
                   Cada etiqueta lida soma no item dela, com a quantidade e o local impressos. {lidas > 0 ? `${lidas} lida(s) nesta contagem.` : ""}
                 </p>
                 <div className="flex gap-2">
-                  <input
+                  <input aria-label="Ou digite o nº da etiqueta"
                     inputMode="numeric"
                     value={numeroEtq}
                     onChange={(e) => setNumeroEtq(e.target.value)}
@@ -631,7 +631,7 @@ export function PreencherClient({
                 ) : (
                   <div>
                     <div className="flex gap-2">
-                      <input
+                      <input aria-label="Nome do item (ex.: vinagre)"
                         value={addBusca}
                         onChange={(e) => setAddBusca(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") buscarAdd(); }}
@@ -641,7 +641,7 @@ export function PreencherClient({
                       <button onClick={buscarAdd} disabled={addBuscando || addBusca.trim().length < 2} className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50">
                         {addBuscando ? "..." : "Buscar"}
                       </button>
-                      <button onClick={() => { setAddAberto(false); setAddBusca(""); setAddResultados([]); }} className="text-zinc-400">✕</button>
+                      <button aria-label="Fechar" onClick={() => { setAddAberto(false); setAddBusca(""); setAddResultados([]); }} className="text-zinc-400">✕</button>
                     </div>
                     {addResultados.length > 0 && (
                       <div className="mt-2 space-y-1">

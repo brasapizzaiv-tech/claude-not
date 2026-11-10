@@ -5,6 +5,7 @@
 // considera a taxa de serviço — numa conta dividida um paga os 10% e o outro
 // não. A parte vai pro pagamento normal; a comanda fica aberta com o resto.
 import { useState } from "react";
+import { Janela } from "@/components/janela";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -55,7 +56,7 @@ export function PagarParte({
 
   const caixa = "rounded-controle border border-borda-forte px-3 pb-2 pt-1";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancelar}>
+    <Janela onFechar={onCancelar} fundoFecha>
       <div role="dialog" aria-modal="true" aria-label="Pagar parte" className="cartao w-full max-w-lg p-5" onClick={(e) => e.stopPropagation()}>
         <h2 className="font-numero text-lg font-bold text-texto">Dividir para pagamento</h2>
 
@@ -113,6 +114,6 @@ export function PagarParte({
           </button>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }

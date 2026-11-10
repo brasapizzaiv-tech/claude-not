@@ -40,7 +40,7 @@ export function EmitirNfce({
         </div>
       ) : (
         <>
-          <input
+          <input aria-label="CPF na nota? (opcional)"
             value={cpf}
             onChange={(e) => setCpf(e.target.value)}
             inputMode="numeric"

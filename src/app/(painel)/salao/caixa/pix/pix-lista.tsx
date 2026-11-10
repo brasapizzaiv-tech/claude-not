@@ -123,7 +123,7 @@ export function PixLista({ linhas }: { linhas: PixLinha[] }) {
                           inputMode="decimal"
                           className="w-28 rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1 text-right text-sm"
                         />
-                        <input
+                        <input aria-label="Motivo (ex.: cobrado errado)"
                           value={motivo}
                           onChange={(e) => setMotivo(e.target.value)}
                           placeholder="Motivo (ex.: cobrado errado)"

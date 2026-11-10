@@ -288,7 +288,7 @@ export function PedidoCard({
               className="w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm dark:text-zinc-100"
             />
             <div className="mt-2 flex items-center gap-2">
-              <input
+              <input aria-label="Qtd"
                 inputMode="decimal"
                 value={addQtd}
                 onChange={(e) => setAddQtd(e.target.value)}

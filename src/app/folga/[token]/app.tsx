@@ -156,9 +156,9 @@ export function FolgaApp({
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="mb-2 flex items-center justify-between">
-          <button onClick={() => navega(-1)} disabled={mesAtual} className="text-sm text-zinc-500 disabled:opacity-30">‹</button>
+          <button aria-label="Anterior" onClick={() => navega(-1)} disabled={mesAtual} className="text-sm text-zinc-500 disabled:opacity-30">‹</button>
           <h3 className="text-sm font-bold">{MESES[mes]} {ano}</h3>
-          <button onClick={() => navega(1)} className="text-sm text-zinc-500">›</button>
+          <button aria-label="Próximo" onClick={() => navega(1)} className="text-sm text-zinc-500">›</button>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center text-mini font-semibold text-zinc-400">
           {DIAS.map((d) => <div key={d}>{d}</div>)}
@@ -213,7 +213,7 @@ export function FolgaApp({
               {foraPrazo && <p className="mt-2 text-xs text-amber-500">Faltam menos de {DIAS_ANTECEDENCIA} dias — o pedido vai marcado como fora do prazo.</p>}
               {temPedido(sel) && <p className="mt-2 text-xs text-blue-500">Você já tem um pedido nesse dia.</p>}
 
-              <input
+              <input aria-label="Motivo (opcional)"
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Motivo (opcional)"

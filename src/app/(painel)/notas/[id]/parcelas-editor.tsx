@@ -160,7 +160,7 @@ export function ParcelasEditor({
                   onChange={(e) => set(i, "valor", e.target.value)}
                   className={`${campo} w-28 text-right`}
                 />
-                <button
+                <button aria-label="Fechar"
                   onClick={() => removeLinha(i)}
                   className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"
                   title="Remover parcela"

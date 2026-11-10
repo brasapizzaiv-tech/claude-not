@@ -81,9 +81,9 @@ export function ComprasColab({ token, lista }: { token: string; lista: Solicitac
           maxLength={200}
         />
         {tipo === "compra" && (
-          <input className={`${cx} mt-2`} placeholder="Quantidade (ex.: 2, 1 caixa)" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
+          <input aria-label="Quantidade (ex.: 2, 1 caixa)" className={`${cx} mt-2`} placeholder="Quantidade (ex.: 2, 1 caixa)" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
         )}
-        <textarea className={`${cx} mt-2`} rows={2} placeholder="Pra quê / observação (opcional)" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
+        <textarea aria-label="Pra quê / observação (opcional)" className={`${cx} mt-2`} rows={2} placeholder="Pra quê / observação (opcional)" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
         <label className="mt-2 flex items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="h-5 w-5 accent-orange-500" />
           <Icone nome="fogo" tamanho={14} className="mr-1" /> É urgente (atrapalha o trabalho)

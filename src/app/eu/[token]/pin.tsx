@@ -32,14 +32,14 @@ export function CriarPin({ token }: { token: string }) {
       <p className="text-center text-sm text-texto-suave">
         Crie um PIN de 4 números só seu. Você vai usar ele para entrar.
       </p>
-      <input
+      <input aria-label="••••"
         value={pin}
         onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
         inputMode="numeric"
         placeholder="••••"
         className={box}
       />
-      <input
+      <input aria-label="repita o PIN"
         value={pin2}
         onChange={(e) => setPin2(e.target.value.replace(/\D/g, "").slice(0, 4))}
         inputMode="numeric"
@@ -72,7 +72,7 @@ export function EntrarPin({ token }: { token: string }) {
   return (
     <div className="space-y-3">
       <p className="text-center text-sm text-texto-suave">Digite seu PIN.</p>
-      <input
+      <input aria-label="••••"
         value={pin}
         onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
         onKeyDown={(e) => e.key === "Enter" && entrar()}

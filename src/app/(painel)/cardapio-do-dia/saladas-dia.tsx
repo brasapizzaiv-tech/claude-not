@@ -104,7 +104,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
                       {sel.has(s.id) ? "✓ " : ""}{s.nome}
                     </button>
                     {gerenciar && (
-                      <button
+                      <button aria-label="Fechar"
                         type="button"
                         title="Tirar da base"
                         disabled={proc}

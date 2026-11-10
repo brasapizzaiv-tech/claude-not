@@ -599,7 +599,7 @@ function NovaReserva({
         </div>
         <div className="sm:col-span-2">
           <label className={rotulo}>Telefone</label>
-          <input value={d.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(51) 90000-0000" className={`${campo} w-full`} />
+          <input aria-label="(51) 90000-0000" value={d.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(51) 90000-0000" className={`${campo} w-full`} />
         </div>
         <div>
           <label className={rotulo}>Dia</label>
@@ -721,7 +721,7 @@ function Bloqueios({
             <option key={t}>{t}</option>
           ))}
         </select>
-        <input
+        <input aria-label="Motivo (opcional)"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
           placeholder="Motivo (opcional)"

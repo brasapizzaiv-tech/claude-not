@@ -18,6 +18,7 @@ import {
   marcarContagemSimNao,
   mesclarProdutos,
 } from "./actions";
+import { Janela } from "@/components/janela";
 
 // Campo numérico editável na própria lista: salva ao sair do campo ou no Enter,
 // mostra ✓ rapidinho. Tab pula pro próximo produto (ordem natural da tabela).
@@ -271,7 +272,7 @@ export function ProdutosClient({
       )}
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <input
+        <input aria-label="Buscar produto"
           placeholder="Buscar produto..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -485,7 +486,7 @@ export function ProdutosClient({
       )}
 
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <Janela escuro="bg-black/40">
           {/* Rola por dentro: o formulário passa da altura de telas comuns e o
               botão Salvar sumia embaixo (12/10/2026). */}
           <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-cartao bg-painel-cartao p-6">
@@ -746,7 +747,7 @@ export function ProdutosClient({
               </div>
             </form>
           </div>
-        </div>
+        </Janela>
       )}
 
       {mesclar && (() => {
@@ -771,7 +772,7 @@ export function ProdutosClient({
         };
         const unidadesDiferentes = mesclar.a.unidade.trim().toLowerCase() !== mesclar.b.unidade.trim().toLowerCase();
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="mesclar-titulo">
+          <Janela>
             <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
               <h2 id="mesclar-titulo" className="text-lg font-semibold text-texto">Mesclar produtos</h2>
               <p className="mt-1 text-sm text-texto-suave">
@@ -794,7 +795,7 @@ export function ProdutosClient({
                 </button>
               </div>
             </div>
-          </div>
+          </Janela>
         );
       })()}
 
@@ -910,7 +911,7 @@ function FornecedoresModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <Janela escuro="bg-black/40">
       <div className="flex max-h-[85vh] w-full max-w-md flex-col rounded-cartao bg-painel-cartao">
         <div className="border-b border-borda p-4">
           <p className="text-xs text-texto-fraco">Fornecedores de</p>
@@ -925,7 +926,7 @@ function FornecedoresModal({
               <Icone nome="cadeado" tamanho={14} className="mr-1.5" /> Fornecedor exclusivo <span className="text-texto-fraco">(só 1 — vai só pra ele na cotação)</span>
             </span>
           </label>
-          <input
+          <input aria-label="Buscar fornecedor"
             placeholder="Buscar fornecedor..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
@@ -977,6 +978,6 @@ function FornecedoresModal({
           </button>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }

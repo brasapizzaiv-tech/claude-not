@@ -7,6 +7,7 @@ import { Icone } from "@/components/icone";
 import { BotaoAcao } from "@/components/enviar";
 import { avisar, confirmar } from "@/components/dialogo";
 import { adicionarSugestao, removerDestaque, removerSugestao, salvarDestaque, salvarGatilho, type DestaqueForm } from "./actions";
+import { Janela } from "@/components/janela";
 
 // Vitrine do app — layout novo (out/2026). Aqui o Rafael troca o banner,
 // a promoção, a vitrine de sugestões e os gatilhos de cupom sem chamar
@@ -315,7 +316,7 @@ function FormDestaque({ inicial, itens, pizzaTamanhos, pizzaSabores, onFechar, o
   const [f, setF] = useState(inicial);
   const set = (k: keyof DestaqueForm, v: string | boolean) => setF((x) => ({ ...x, [k]: v }));
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+    <Janela>
       <div className="cartao my-6 w-full max-w-lg p-5" role="dialog" aria-label={inicial.id ? "Editar destaque" : "Novo destaque"}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-numero text-lg font-bold text-texto">{inicial.id ? "Editar destaque" : "Novo destaque"}</h2>
@@ -373,6 +374,6 @@ function FormDestaque({ inicial, itens, pizzaTamanhos, pizzaSabores, onFechar, o
           {onRemover && <BotaoAcao aoClicar={onRemover} className="btn-secundario text-sm !text-urgente-texto">Apagar</BotaoAcao>}
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }

@@ -10,6 +10,7 @@ import { tefDoTipo, type FormaOpcao } from "@/lib/formas-pagamento";
 import { dataBR, formatarCodigo, validadePadrao, type ValeCartao } from "@/lib/vale-presente";
 import { cartaoValePng, desenharCartaoVale, imprimirCartaoVale } from "@/lib/vale-cartao-imagem";
 import { cancelarVale, estornarUsoVale, imprimirValeCaixa, prorrogarVale, venderValePresente } from "./actions";
+import { Janela } from "@/components/janela";
 
 export type ValeLinha = ValeCartao & {
   id: string;
@@ -82,7 +83,7 @@ export function ValesClient({ vales, formas, caixaAberto, buscaInicial }: { vale
           <Icone nome="presente" tamanho={16} /> Vender vale-presente
         </button>
         {!caixaAberto && <span className="text-xs text-amber-700 dark:text-amber-300">Abra o caixa pra vender (o dinheiro entra no caixa do dia).</span>}
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por código, nome ou telefone" className={`${campo} ml-auto w-full sm:w-72`} />
+        <input aria-label="Buscar por código, nome ou telefone" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por código, nome ou telefone" className={`${campo} ml-auto w-full sm:w-72`} />
         <label className="flex min-h-11 items-center gap-2 text-sm text-texto-suave">
           <input type="checkbox" checked={todos} onChange={(e) => setTodos(e.target.checked)} /> Mostrar usados, vencidos e cancelados
         </label>
@@ -227,7 +228,7 @@ function VenderVale({ formas, onFechar, onVendido }: { formas: FormaOpcao[]; onF
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+    <Janela>
       <div className="my-6 w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold text-texto">Vender vale-presente</h2>
@@ -241,7 +242,7 @@ function VenderVale({ formas, onFechar, onVendido }: { formas: FormaOpcao[]; onF
               {brl(s).replace(",00", "")}
             </button>
           ))}
-          <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" placeholder="outro valor" className={`${campo} w-32 flex-1 text-base`} />
+          <input aria-label="outro valor" value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" placeholder="outro valor" className={`${campo} w-32 flex-1 text-base`} />
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -299,7 +300,7 @@ function VenderVale({ formas, onFechar, onVendido }: { formas: FormaOpcao[]; onF
           <p className="mt-2 text-xs text-texto-fraco">O valor entra no caixa de hoje como venda. Quando o vale for usado, não conta de novo.</p>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }
 
@@ -349,7 +350,7 @@ function EntregarVale({ v, onFechar }: { v: ValeCartao & { id: string; telefone:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
+    <Janela escuro="bg-black/60">
       <div className="my-6 w-full max-w-2xl rounded-cartao bg-painel-cartao p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold text-texto">Vale {formatarCodigo(v.codigo)}</h2>
@@ -372,6 +373,6 @@ function EntregarVale({ v, onFechar }: { v: ValeCartao & { id: string; telefone:
         <p className="mt-2 text-xs text-texto-fraco">No WhatsApp Web, anexe a imagem baixada na conversa (o texto já vai com o código).</p>
         {aviso && <p role="status" className="mt-2 text-sm font-medium text-texto">{aviso}</p>}
       </div>
-    </div>
+    </Janela>
   );
 }

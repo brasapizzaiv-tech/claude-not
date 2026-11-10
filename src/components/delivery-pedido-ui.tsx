@@ -9,6 +9,7 @@ import type { LinhaPedido } from "@/lib/delivery-core";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { Icone } from "@/components/icone";
 import { precoComEtapas, problemaDasEscolhas } from "@/lib/combo-preco";
+import { Janela } from "@/components/janela";
 
 // combo (migration 0263): item com etapas; a_partir = menor preço possível (o card mostra "a partir de").
 export type Item = { id: string; nome: string; categoria: string; preco: number; preco_antigo?: number | null; foto_url?: string | null; descricao?: string | null; combo?: boolean; a_partir?: number | null };
@@ -176,7 +177,7 @@ export function PizzaModal({ pizza, onClose, onAdd, tamanhoInicial, saborInicial
         </div>
         {etapa === "sabores" && buscaOn && (
           <div className="px-4 pb-2">
-            <input
+            <input aria-label="Buscar sabor"
               autoFocus
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
@@ -391,7 +392,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
         })}
       </div>
       {comObs && (
-        <input value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
+        <input aria-label="Observação (ex.: sem cebola)" value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
       )}
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-borda pt-3">
         <div>
@@ -406,14 +407,14 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
 
 export function Overlay({ titulo, children, onClose }: { titulo: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <Janela onFechar={onClose} fundoFecha escuro="bg-black/40">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold">{titulo}</h2>
-          <button onClick={onClose} className="text-zinc-400">✕</button>
+          <button aria-label="Fechar" onClick={onClose} className="text-zinc-400">✕</button>
         </div>
         {children}
       </div>
-    </div>
+    </Janela>
   );
 }

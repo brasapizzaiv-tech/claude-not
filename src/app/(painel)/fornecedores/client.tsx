@@ -5,6 +5,7 @@ import { Enviar } from "@/components/enviar";
 import type { Fornecedor } from "@/lib/types";
 import { salvarFornecedor, alternarAtivoFornecedor, alternarPadraoFornecedor } from "./actions";
 import { BotaoAcao } from "@/components/enviar";
+import { Janela } from "@/components/janela";
 
 const inputCls =
   "w-full rounded-controle border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100";
@@ -153,7 +154,7 @@ export function FornecedoresClient({
       )}
 
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <Janela escuro="bg-black/40">
           <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-6">
             <h2 className="mb-4 text-lg font-semibold text-texto">
               {editando ? "Editar fornecedor" : "Novo fornecedor"}
@@ -313,7 +314,7 @@ export function FornecedoresClient({
               </div>
             </form>
           </div>
-        </div>
+        </Janela>
       )}
     </div>
   );

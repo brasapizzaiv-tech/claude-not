@@ -6,6 +6,7 @@ import { avisar, confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { salvarCliente, excluirCliente } from "./actions";
+import { Janela } from "@/components/janela";
 
 export type Cliente = {
   id: string;
@@ -95,7 +96,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
         </button>
       </div>
 
-      <input
+      <input aria-label="Buscar por nome ou CNPJ/CPF"
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Buscar por nome ou CNPJ/CPF..."
@@ -154,7 +155,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
       </div>
 
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <Janela>
           <form
             action={enviar}
             className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-cartao bg-painel-cartao p-5"
@@ -163,7 +164,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
               <h2 className="text-lg font-bold text-texto">
                 {editando ? "Editar cliente" : "Novo cliente"}
               </h2>
-              <button type="button" onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">✕</button>
+              <button aria-label="Fechar" type="button" onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">✕</button>
             </div>
             {editando && <input type="hidden" name="id" value={editando.id} />}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -224,7 +225,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
             </div>
             {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
           </form>
-        </div>
+        </Janela>
       )}
     </div>
   );

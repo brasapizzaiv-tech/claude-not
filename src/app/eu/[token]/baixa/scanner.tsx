@@ -243,7 +243,7 @@ export function BaixaScanner({ token }: { token: string }) {
       </div>
       {manual && (
         <div className="flex gap-2 px-3 pb-2">
-          <input
+          <input aria-label="Nº da etiqueta"
             inputMode="numeric"
             value={numero}
             onChange={(e) => setNumero(e.target.value)}
@@ -264,7 +264,7 @@ export function BaixaScanner({ token }: { token: string }) {
             {lista.map((it) => (
               <li key={it.id} className="flex items-center justify-between gap-2 rounded-controle bg-zinc-900 px-3 py-2 text-sm">
                 <span className="min-w-0 truncate">{it.produto} <span className="text-texto-suave">· Nº {it.numero}</span></span>
-                <button onClick={() => remover(it.id)} className="shrink-0 text-texto-fraco">✕</button>
+                <button aria-label="Fechar" onClick={() => remover(it.id)} className="shrink-0 text-texto-fraco">✕</button>
               </li>
             ))}
           </ul>

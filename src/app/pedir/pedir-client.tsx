@@ -503,7 +503,7 @@ export function PedirClient({
           <button onClick={() => setFase("menu")} className="mb-3 min-h-11 text-sm font-semibold text-texto-marca">← Voltar pro cardápio</button>
           <h1 className="mb-3 flex items-center gap-2 text-xl font-bold"><Icone nome="lista" tamanho={19} /> Meus pedidos</h1>
           <div className="mb-4 flex gap-2">
-            <input value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input aria-label="Seu telefone com DDD" value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
             <button onClick={buscarHistorico} disabled={histBuscando} className="btn-principal text-sm">{histBuscando ? "…" : "Buscar"}</button>
           </div>
           {histCashback && (
@@ -564,7 +564,7 @@ export function PedirClient({
                     <button onClick={() => setQtd(l.uid, l.qtd + 1)} aria-label="Mais um" className="h-9 w-9 rounded-mesa bg-destaque font-bold text-texto-marca-pilula">+</button>
                   </div>
                 </div>
-                <input
+                <input aria-label="Observação deste item (ex.: sem cebola)"
                   value={l.payload.obs ?? ""}
                   onChange={(e) => setObsLinha(l.uid, e.target.value)}
                   maxLength={200}
@@ -580,8 +580,8 @@ export function PedirClient({
 
           <h2 className="mb-2 font-numero text-base font-bold text-texto">Seus dados</h2>
           <div className="mb-4 space-y-2">
-            <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
-            <input value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input aria-label="Seu nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input aria-label="Telefone com DDD (51 99999-9999)" value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
             <label className="cartao flex cursor-pointer items-start gap-3 p-4 text-sm">
               <input type="checkbox" checked={aceitaPromo} onChange={(e) => { setAceitaPromo(e.target.checked); setPromoMexeu(true); }} className="mt-0.5 h-5 w-5" style={{ accentColor: "var(--marca-primaria)" }} />
               <span><span className="font-semibold">Quero receber promoções pelo WhatsApp</span><span className="block text-xs text-texto-suave">Pode parar quando quiser respondendo SAIR.</span></span>
@@ -624,15 +624,15 @@ export function PedirClient({
             <div className="mb-4 space-y-2">
               {lembrado && <p className="text-xs text-emerald-600">{lembrado}</p>}
               <div className="grid grid-cols-3 gap-2">
-                <input value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
-                <input value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Rua" value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Nº" value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
-                <input value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Bairro" value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Cidade" value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               </div>
-              <input value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
-              <input value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência (opcional)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+              <input aria-label="Complemento (apto, casa...)" value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+              <input aria-label="Ponto de referência (opcional)" value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência (opcional)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               <button onClick={calcularTaxa} disabled={calculando} className="btn-secundario w-full text-sm">
                 {calculando ? "Calculando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="local" tamanho={14} /> Calcular entrega</span>}
               </button>
@@ -654,10 +654,10 @@ export function PedirClient({
             ))}
           </div>
           {tipoDe(forma, formas) === "dinheiro" && (
-            <input value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input aria-label="Troco para quanto? (opcional)" value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
           )}
           <div className="mb-3 flex gap-2">
-            <input value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco uppercase " />
+            <input aria-label="Cupom de desconto" value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco uppercase " />
             <button onClick={aplicarCupom} disabled={cupomProc || !cupomCodigo.trim()} className="btn-secundario text-sm">{cupomProc ? "..." : "Aplicar"}</button>
           </div>
           {cupomMsg && <p className="mb-3 text-sm text-texto-suave">{cupomMsg}</p>}
@@ -674,7 +674,7 @@ export function PedirClient({
           {cashback && cashback.saldo <= 0 && (
             <p className="mb-3 flex items-center gap-1.5 text-xs text-texto-suave"><Icone nome="presente" tamanho={14} /> Este pedido te dá {String(cashback.percentual).replace(".", ",")}% de volta em cashback quando for entregue.</p>
           )}
-          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+          <textarea aria-label="Alguma observação geral? (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Alguma observação geral? (opcional)" rows={2} className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
         </div>
 
         <div className="fixed inset-x-0 bottom-0 rounded-t-[24px] bg-painel-cartao p-4 shadow-cartao">

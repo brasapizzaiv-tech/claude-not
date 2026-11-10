@@ -105,7 +105,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
             );
           })}
           <div className="flex items-center gap-2">
-            <input value={novaCat} onChange={(e) => setNovaCat(e.target.value)} placeholder="Nova categoria" className={input} />
+            <input aria-label="Nova categoria" value={novaCat} onChange={(e) => setNovaCat(e.target.value)} placeholder="Nova categoria" className={input} />
             <button onClick={criarCat} disabled={!novaCat.trim() || salvando} className="rounded-controle bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-zinc-900">＋</button>
           </div>
         </div>
@@ -115,14 +115,14 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
       <div className="rounded-cartao border border-orange-200 bg-orange-50/40 p-4 dark:border-orange-900 dark:bg-orange-950/10">
         <p className="mb-2 font-semibold text-texto">＋ Novo item</p>
         <div className="grid gap-2 sm:grid-cols-[2fr_1.5fr_repeat(3,minmax(0,1fr))_auto]">
-          <input value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} placeholder="Nome (ex.: Base Feijão)" className={input} />
+          <input aria-label="Nome (ex.: Base Feijão)" value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} placeholder="Nome (ex.: Base Feijão)" className={input} />
           <select value={novo.categoria_id || filtro} onChange={(e) => setNovo({ ...novo, categoria_id: e.target.value })} className={input}>
             <option value="">Sem categoria</option>
             {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
-          <input inputMode="numeric" value={novo.resf} onChange={(e) => setNovo({ ...novo, resf: e.target.value })} placeholder="Resfriado (dias)" className={input} />
-          <input inputMode="numeric" value={novo.cong} onChange={(e) => setNovo({ ...novo, cong: e.target.value })} placeholder="Congelado (dias)" className={input} />
-          <input inputMode="numeric" value={novo.amb} onChange={(e) => setNovo({ ...novo, amb: e.target.value })} placeholder="Ambiente (dias)" className={input} />
+          <input aria-label="Resfriado (dias)" inputMode="numeric" value={novo.resf} onChange={(e) => setNovo({ ...novo, resf: e.target.value })} placeholder="Resfriado (dias)" className={input} />
+          <input aria-label="Congelado (dias)" inputMode="numeric" value={novo.cong} onChange={(e) => setNovo({ ...novo, cong: e.target.value })} placeholder="Congelado (dias)" className={input} />
+          <input aria-label="Ambiente (dias)" inputMode="numeric" value={novo.amb} onChange={(e) => setNovo({ ...novo, amb: e.target.value })} placeholder="Ambiente (dias)" className={input} />
           <button onClick={criar} disabled={!novo.nome.trim() || salvando} className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-40">Criar</button>
         </div>
       </div>
@@ -133,7 +133,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
           <option value="">Todas as categorias</option>
           {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome} ({itens.filter((i) => i.categoria_id === c.id).length})</option>)}
         </select>
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar item..." className={`${input} w-56`} />
+        <input aria-label="Buscar item" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar item..." className={`${input} w-56`} />
         <span className="text-sm text-texto-suave">{lista.length} item(ns)</span>
       </div>
 
@@ -172,7 +172,7 @@ export function ItensClient({ categorias, itens }: { categorias: CatRow[]; itens
                     <td className="px-3 py-1.5 text-center"><input type="checkbox" checked={e.ativo} onChange={(ev) => set({ ativo: ev.target.checked })} /></td>
                     <td className="px-3 py-1.5 text-right whitespace-nowrap">
                       <button onClick={() => salvar(i)} disabled={!alterado(i) || salvando} className="rounded-controle bg-orange-500 px-3 py-1 text-xs font-semibold text-marca-sobre-primaria disabled:opacity-30">Salvar</button>
-                      <button onClick={() => excluir(i)} disabled={salvando} className="ml-2 text-zinc-300 hover:text-red-600 dark:text-zinc-600" title="Excluir">×</button>
+                      <button aria-label="Fechar" onClick={() => excluir(i)} disabled={salvando} className="ml-2 text-zinc-300 hover:text-red-600 dark:text-zinc-600" title="Excluir">×</button>
                     </td>
                   </tr>
                 );

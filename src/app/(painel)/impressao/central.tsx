@@ -184,7 +184,7 @@ export function CentralImpressao({
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao p-3">
-        <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+        <input aria-label="Nome da nova impressora (ex.: Cozinha, Bar)" value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
         <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-marca-sobre-primaria disabled:opacity-50">
           + Adicionar impressora
         </button>

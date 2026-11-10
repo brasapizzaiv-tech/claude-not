@@ -136,7 +136,7 @@ export function EtiquetaColabForm({
           </div>
           <div>
             <label className="mb-1 block text-xs text-texto-suave">Texto (opcional)</label>
-            <textarea rows={3} value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 200))} placeholder="Até 200 caracteres" className={input} />
+            <textarea aria-label="Até 200 caracteres" rows={3} value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 200))} placeholder="Até 200 caracteres" className={input} />
           </div>
         </>
       ) : (

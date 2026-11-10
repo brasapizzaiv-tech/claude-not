@@ -279,7 +279,7 @@ export function GarcomPedido({
       {/* Busca (quando ativa) */}
       {buscaOn && (
         <div className="border-b border-borda p-2">
-          <input
+          <input aria-label="Buscar produto"
             autoFocus
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
@@ -325,7 +325,7 @@ export function GarcomPedido({
                       <div className="flex items-center gap-3 rounded-controle border border-blue-500 px-2 py-1">
                         <button onClick={(e) => { e.stopPropagation(); tiraUm(i.id); }} className="text-lg">{q === 1 ? <Icone nome="lixeira" tamanho={16} titulo="Tirar" /> : "−"}</button>
                         <span className="w-5 text-center font-bold">{q}</span>
-                        <button onClick={(e) => { e.stopPropagation(); add(i); }} className="text-lg text-blue-400">+</button>
+                        <button aria-label="Mais um" onClick={(e) => { e.stopPropagation(); add(i); }} className="text-lg text-blue-400">+</button>
                       </div>
                     )}
                   </div>
@@ -376,7 +376,7 @@ export function GarcomPedido({
         <div className="area-segura fixed inset-0 z-50 flex flex-col bg-painel-fundo">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Carrinho · {mesa}</span>
-            <button onClick={() => setCartOpen(false)} className="text-texto-suave">✕</button>
+            <button aria-label="Fechar" onClick={() => setCartOpen(false)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {cart.length === 0 ? (
@@ -395,7 +395,7 @@ export function GarcomPedido({
                     <div className="ml-2 flex items-center gap-3 rounded-controle border border-borda-forte px-2 py-1">
                       <button onClick={() => setQtdLinha(l.uid, l.qtd - 1)} className="text-lg">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={16} titulo="Tirar" /> : "−"}</button>
                       <span className="w-5 text-center font-bold">{l.qtd}</span>
-                      <button onClick={() => setQtdLinha(l.uid, l.qtd + 1)} className="text-lg text-blue-400">+</button>
+                      <button aria-label="Mais um" onClick={() => setQtdLinha(l.uid, l.qtd + 1)} className="text-lg text-blue-400">+</button>
                     </div>
                     )}
                   </div>
@@ -423,7 +423,7 @@ export function GarcomPedido({
                 + Nova comanda
               </button>
             </div>
-            <textarea
+            <textarea aria-label="Observações do pedido (opcional)"
               value={obs}
               onChange={(e) => setObs(e.target.value)}
               placeholder="Observações do pedido (opcional)"
@@ -450,7 +450,7 @@ export function GarcomPedido({
         <div className="area-segura fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Conta · {mesa}</span>
-            <button onClick={() => setContaOpen(false)} className="text-texto-suave">✕</button>
+            <button aria-label="Fechar" onClick={() => setContaOpen(false)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {comandas.length === 0 ? (
@@ -527,7 +527,7 @@ export function GarcomPedido({
         <div className="area-segura fixed inset-0 z-[65] flex flex-col bg-painel-fundo">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Trocar mesa</span>
-            <button onClick={() => setTrocaOpen(false)} className="text-texto-suave">✕</button>
+            <button aria-label="Fechar" onClick={() => setTrocaOpen(false)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {comandas.length === 0 ? (

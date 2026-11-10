@@ -30,7 +30,7 @@ export default async function CuponsPage() {
       <form action={criarCupom} className="mb-6 flex flex-wrap items-end gap-2 cartao p-4">
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Código</label>
-          <input name="codigo" required placeholder="BRASA10" className={`${inputCls} w-32 `} />
+          <input aria-label="BRASA10" name="codigo" required placeholder="BRASA10" className={`${inputCls} w-32 `} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Tipo</label>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import type { AreaEntrega, PromoTele } from "@/lib/delivery-areas";
-import { AreasClient } from "./areas-client";
+import { AreasClient } from "./areas-sem-servidor";
 
 export const metadata = { title: "Áreas de entrega · Delivery" };
 export const dynamic = "force-dynamic";

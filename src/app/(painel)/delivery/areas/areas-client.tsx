@@ -149,7 +149,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
         <div className="cartao p-3">
           <div className="mb-2 text-sm font-bold">{rasc.id ? "Editando área" : "Nova área"} <span className="font-normal text-texto-suave">— clique no mapa pra marcar os cantos; arraste um canto pra mover, a bolinha do meio do lado vira canto novo, botão direito apaga ({rasc.pontos.length} ponto{rasc.pontos.length === 1 ? "" : "s"})</span></div>
           <div className="grid grid-cols-[1fr_auto] gap-2">
-            <input value={rasc.nome} onChange={(e) => setRasc({ ...rasc, nome: e.target.value })} placeholder="Nome (ex.: Ivoti Central)" className={inp} />
+            <input aria-label="Nome (ex.: Ivoti Central)" value={rasc.nome} onChange={(e) => setRasc({ ...rasc, nome: e.target.value })} placeholder="Nome (ex.: Ivoti Central)" className={inp} />
             <input type="color" value={rasc.cor} onChange={(e) => setRasc({ ...rasc, cor: e.target.value })} className="h-9 w-12 cursor-pointer rounded-controle border border-borda-forte" title="Cor no mapa" />
           </div>
           <div className="mt-2 grid grid-cols-3 gap-2">
@@ -185,7 +185,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
         <div className="cartao p-3">
           <div className="mb-2 flex items-center gap-1.5 text-sm font-bold"><Icone nome="etiqueta" tamanho={14} /> Promoções da tele</div>
           <div className="space-y-2">
-            <input value={pNome} onChange={(e) => setPNome(e.target.value)} placeholder="Nome (ex.: Quarta tele grátis)" className={`${inp} w-full`} />
+            <input aria-label="Nome (ex.: Quarta tele grátis)" value={pNome} onChange={(e) => setPNome(e.target.value)} placeholder="Nome (ex.: Quarta tele grátis)" className={`${inp} w-full`} />
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <select value={pTipo} onChange={(e) => setPTipo(e.target.value as PromoTele["tipo"])} className={inp}>
                 <option value="gratis">Entrega grátis</option>
@@ -211,7 +211,7 @@ export function AreasClient({ areasIniciais, promosIniciais, origem }: { areasIn
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-mini text-texto-suave">Pedido mínimo (R$)</label><input value={pMin} onChange={(e) => setPMin(e.target.value)} inputMode="decimal" placeholder="qualquer" className={`${inp} w-full`} /></div>
+              <div><label className="text-mini text-texto-suave">Pedido mínimo (R$)</label><input aria-label="qualquer" value={pMin} onChange={(e) => setPMin(e.target.value)} inputMode="decimal" placeholder="qualquer" className={`${inp} w-full`} /></div>
               <div><label className="text-mini text-texto-suave">Válida até</label><input type="date" value={pVal} onChange={(e) => setPVal(e.target.value)} className={`${inp} w-full`} /></div>
               <div><label className="text-mini text-texto-suave">Das (opcional)</label><input type="time" value={pIni} onChange={(e) => setPIni(e.target.value)} className={`${inp} w-full`} /></div>
               <div><label className="text-mini text-texto-suave">Até</label><input type="time" value={pFim} onChange={(e) => setPFim(e.target.value)} className={`${inp} w-full`} /></div>

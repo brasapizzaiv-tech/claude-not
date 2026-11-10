@@ -13,6 +13,7 @@ import {
   alternarModelo, alternarSetor, excluirItemModelo, excluirModelo, moverSetor,
   reordenarItens, salvarItemModelo, salvarModelo, salvarSetor,
 } from "../actions";
+import { Janela } from "@/components/janela";
 
 const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 const btnSec = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";
@@ -60,8 +61,8 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
               {s.nome}
               {verSetores && (
                 <>
-                  <button onClick={() => agir(() => moverSetor(s.id, -1))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto-suave">↑</button>
-                  <button onClick={() => agir(() => moverSetor(s.id, 1))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto-suave">↓</button>
+                  <button aria-label="Subir" onClick={() => agir(() => moverSetor(s.id, -1))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto-suave">↑</button>
+                  <button aria-label="Descer" onClick={() => agir(() => moverSetor(s.id, 1))} disabled={proc} className="text-xs text-texto-fraco hover:text-texto-suave">↓</button>
                   <button onClick={() => agir(() => alternarSetor(s.id, !s.ativo))} disabled={proc} className="text-xs text-texto-fraco hover:text-orange-600">
                     {s.ativo ? "desativar" : "ativar"}
                   </button>
@@ -226,7 +227,7 @@ function ItensDoModelo({
                 {i.instrucao && <span className="block text-xs text-texto-fraco">{i.instrucao}</span>}
               </span>
               <button onClick={() => setEditItem(i)} className="text-xs text-orange-600 hover:underline">editar</button>
-              <button
+              <button aria-label="Fechar"
                 onClick={async () => { if (await confirmar(`Tirar "${i.texto}" da lista?`)) agir(() => excluirItemModelo(i.id)); }}
                 disabled={proc}
                 className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"
@@ -267,7 +268,7 @@ function ModeloModal({
     set(lista.includes(v) ? lista.filter((x) => x !== v) : [...lista, v]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <Janela>
       <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
         <h2 className="mb-3 text-lg font-bold text-texto">{modelo ? "Editar lista" : "Nova lista"}</h2>
         <label className="mb-1 block text-xs text-texto-suave">Nome</label>
@@ -310,7 +311,7 @@ function ModeloModal({
           </button>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }
 
@@ -328,7 +329,7 @@ function ItemModal({
   const [foto, setFoto] = useState(item?.exige_foto ?? false);
   const [obrig, setObrig] = useState(item?.obrigatorio ?? false);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <Janela>
       <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
         <h2 className="mb-3 text-lg font-bold text-texto">{item ? "Editar item" : "Novo item"}</h2>
         <label className="mb-1 block text-xs text-texto-suave">Item</label>
@@ -358,6 +359,6 @@ function ItemModal({
           </button>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }

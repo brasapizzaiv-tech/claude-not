@@ -725,7 +725,7 @@ export function ReceberComandas({
               <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/20 dark:text-blue-200">
                 <Icone nome="pessoa" tamanho={14} /> {clienteSel.nome}
                 {clienteSel.cpfCnpj ? ` · ${clienteSel.cpfCnpj}` : ""}
-                <button onClick={() => setClienteSel(null)} className="ml-1 text-blue-600 hover:text-red-600">
+                <button aria-label="Fechar" onClick={() => setClienteSel(null)} className="ml-1 text-blue-600 hover:text-red-600">
                   ✕
                 </button>
               </span>
@@ -739,7 +739,7 @@ export function ReceberComandas({
             )}
             {abrirCli && !clienteSel && (
               <div className="absolute right-0 z-30 mt-1 w-72 cartao p-2">
-                <input
+                <input aria-label="Buscar cliente por nome ou CNPJ/CPF"
                   autoFocus
                   value={buscaCli}
                   onChange={(e) => setBuscaCli(e.target.value)}
@@ -789,7 +789,7 @@ export function ReceberComandas({
                   <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> Virar livre</span>
                 </button>
               )}
-              <button onClick={() => removeComanda(c.id)} className="ml-1 text-emerald-600 hover:text-red-600">
+              <button aria-label="Fechar" onClick={() => removeComanda(c.id)} className="ml-1 text-emerald-600 hover:text-red-600">
                 ✕
               </button>
             </span>
@@ -807,7 +807,7 @@ export function ReceberComandas({
             />
           )}
           <div className="relative min-w-[220px] flex-1">
-            <input
+            <input aria-label="Digite o nº, a mesa, ou passe o leitor no QR do cupom"
               value={busca}
               autoFocus
               onChange={(e) => { if (!tratarLeitura(e.target.value)) setBusca(e.target.value); }}
@@ -877,7 +877,7 @@ export function ReceberComandas({
                       <span className={`${noCarrinho ? "line-through" : ""} text-texto-suave`}>
                         {brl(l.valorSem)}
                       </span>
-                      <button
+                      <button aria-label="Mais um"
                         onClick={() => mover(l.key)}
                         disabled={noCarrinho}
                         title="Adicionar ao pagamento"
@@ -1039,7 +1039,7 @@ export function ReceberComandas({
                   className={`${inputCls} w-14 text-center`}
                   title="Quantidade"
                 />
-                <button
+                <button aria-label="Mais um"
                   onClick={addExtra}
                   disabled={!novoProd}
                   className="rounded-controle bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-40"
@@ -1204,7 +1204,7 @@ export function ReceberComandas({
                         {n}
                       </button>
                     ))}
-                    <input
+                    <input aria-label="nº"
                       inputMode="numeric"
                       value={pessoas}
                       onChange={(e) => setPessoas(e.target.value)}
@@ -1301,7 +1301,7 @@ export function ReceberComandas({
             </p>
 
             <p className="mb-2 text-center text-lg font-bold text-texto">O cliente quer nota fiscal?</p>
-            <input
+            <input aria-label="CPF ou CNPJ (se ele pedir)"
               autoFocus
               value={docNota}
               onChange={(e) => setDocNota(e.target.value)}

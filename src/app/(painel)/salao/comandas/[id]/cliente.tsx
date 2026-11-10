@@ -117,7 +117,7 @@ export function LancarItens({
   return (
     <div className="cartao p-4">
       {/* Busca */}
-      <input
+      <input aria-label="Buscar produto pelo nome"
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Buscar produto pelo nome..."
@@ -275,7 +275,7 @@ function MontarCombo({
             <p className="font-bold text-texto">{item.nome}</p>
             <p className="text-xs text-texto-suave">Base {brl(Number(item.preco))}</p>
           </div>
-          <button onClick={onFechar} className="text-2xl leading-none text-texto-fraco hover:text-texto-suave">
+          <button aria-label="Fechar" onClick={onFechar} className="text-2xl leading-none text-texto-fraco hover:text-texto-suave">
             ×
           </button>
         </div>
@@ -312,7 +312,7 @@ function MontarCombo({
                             {o.preco > 0 && <span className="ml-1 text-texto-fraco">+{brl(o.preco)}</span>}
                           </span>
                           <span className="ml-1 flex items-center gap-1">
-                            <button
+                            <button aria-label="Menos um"
                               onClick={() => dec(g, o.id)}
                               disabled={n === 0}
                               className="h-6 w-6 rounded bg-superficie-suave text-texto-suave disabled:opacity-30"
@@ -320,7 +320,7 @@ function MontarCombo({
                               −
                             </button>
                             <span className="w-4 text-center font-medium text-texto">{n}</span>
-                            <button
+                            <button aria-label="Mais um"
                               onClick={() => inc(g, o.id)}
                               disabled={cheio}
                               className="h-6 w-6 rounded bg-orange-500 text-marca-sobre-primaria disabled:opacity-30"
@@ -482,7 +482,7 @@ export function MontarPizza({
             <p className="text-xs font-medium text-texto-fraco">
               Sabores ({sel.length}/{max})
             </p>
-            <input
+            <input aria-label="buscar sabor"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="buscar sabor..."

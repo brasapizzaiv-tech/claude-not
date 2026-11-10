@@ -58,7 +58,7 @@ export default function LoginPage() {
             <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
               E-mail
             </label>
-            <input
+            <input aria-label="voce@email.com"
               type="email"
               required
               value={email}
@@ -71,7 +71,7 @@ export default function LoginPage() {
             <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Senha
             </label>
-            <input
+            <input aria-label="••••••••"
               type="password"
               required
               value={senha}

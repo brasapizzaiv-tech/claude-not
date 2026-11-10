@@ -67,7 +67,7 @@ export default async function DeliveryConfigPage() {
       <form action={salvarConfigDelivery} className="space-y-4">
         <div>
           <label className="text-sm font-semibold">Endereço do restaurante</label>
-          <input name="origem_endereco" defaultValue={c.origem_endereco ?? ""} placeholder="Rua, número, bairro, Ivoti - RS" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+          <input aria-label="Rua, número, bairro, Ivoti - RS" name="origem_endereco" defaultValue={c.origem_endereco ?? ""} placeholder="Rua, número, bairro, Ivoti - RS" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
           <p className="mt-1 text-xs text-texto-suave">
             {geocodificado ? "Localizado no mapa — confira abaixo se o pino está no lugar certo." : "Ao salvar, o sistema localiza o endereço no mapa (ponto de partida das entregas)."}
           </p>

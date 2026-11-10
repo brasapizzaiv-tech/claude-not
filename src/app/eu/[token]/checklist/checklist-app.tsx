@@ -329,7 +329,7 @@ function ExecutarLista({
                     />
                   )}
                   {i.tipo === "texto" && (
-                    <textarea
+                    <textarea aria-label="Escreva aqui"
                       rows={2}
                       disabled={travado}
                       defaultValue={r.texto ?? ""}

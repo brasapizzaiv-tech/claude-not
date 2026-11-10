@@ -175,7 +175,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
                 ))}
               </div>
 
-              <input
+              <input aria-label="só o almoço, fecha às 14h"
                 value={detalhes[f.id] ?? f.detalhe ?? ""}
                 onChange={(e) => setDetalhes((d) => ({ ...d, [f.id]: e.target.value }))}
                 onBlur={() => salvarDetalhe(f)}

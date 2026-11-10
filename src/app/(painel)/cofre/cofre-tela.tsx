@@ -12,6 +12,7 @@ import {
   DENOMINACOES, GAVETAS, TIPOS, descreverQuantidades, ehMoeda, gavetaDe, listaEncomenda, rotuloDen, situacao, valorDe, valorGaveta,
   type AcoesCofre, type DadosCofre, type Faixa, type Pendente, type Quantidades,
 } from "@/lib/cofre";
+import { Janela } from "@/components/janela";
 
 // O que a janela de contagem está fazendo agora.
 type Janela =
@@ -200,14 +201,14 @@ export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: A
       {aba === "faixas" && <Faixas d={d} acoes={acoes} />}
 
       {janela && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
+        <Janela>
           <div className="cartao my-6 w-full max-w-2xl p-5">
             {janela.modo === "mov" && <FormMovimento acoes={acoes} j={janela} saldo={d.saldo} onFechar={() => setJanela(null)} onFeito={feito} />}
             {janela.modo === "pagar" && <FormPagar acoes={acoes} d={d} onFechar={() => setJanela(null)} onFeito={feito} />}
             {janela.modo === "troca" && <FormTroca acoes={acoes} saldo={d.saldo} onFechar={() => setJanela(null)} onFeito={feito} />}
             {janela.modo === "conferir" && <FormConferir acoes={acoes} d={d} onFechar={() => setJanela(null)} onFeito={feito} />}
           </div>
-        </div>
+        </Janela>
       )}
     </div>
   );

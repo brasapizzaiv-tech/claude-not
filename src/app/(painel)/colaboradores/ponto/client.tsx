@@ -76,7 +76,7 @@ export function AjustarDia({ colaboradorId, nome, dia, tipos = [] }: { colaborad
             <input type="date" name="inicio" defaultValue={dia} className={`${CAMPO} w-1/2`} aria-label="De" />
             <input type="date" name="fim" defaultValue={dia} className={`${CAMPO} w-1/2`} aria-label="Até" />
           </div>
-          <input name="motivo" placeholder="Motivo (opcional)" maxLength={200} className={`${CAMPO} w-full`} />
+          <input aria-label="Motivo (opcional)" name="motivo" placeholder="Motivo (opcional)" maxLength={200} className={`${CAMPO} w-full`} />
           <label className="block">Arquivo (foto ou PDF, opcional)<input type="file" name="arquivo" accept="image/*,application/pdf" className="mt-0.5 w-full" /></label>
           <div className="flex gap-2">
             <Enviar className="btn-principal min-h-8">Salvar</Enviar>
@@ -86,7 +86,7 @@ export function AjustarDia({ colaboradorId, nome, dia, tipos = [] }: { colaborad
       ) : (
         <div className="space-y-1.5">
           <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className={`${CAMPO} w-full`} aria-label="Hora da batida" />
-          <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Por quê (ex.: esqueceu de bater)" maxLength={200} className={`${CAMPO} w-full`} />
+          <input aria-label="Por quê (ex.: esqueceu de bater)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Por quê (ex.: esqueceu de bater)" maxLength={200} className={`${CAMPO} w-full`} />
           <p className="text-texto-fraco">Saída depois da meia-noite: põe a hora (ex.: 00:40), conta neste dia.</p>
           <div className="flex gap-2">
             <button

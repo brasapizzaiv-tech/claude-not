@@ -210,7 +210,7 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
             </div>
             {negando === p.id && (
               <div className="mt-3 flex flex-wrap gap-2 border-t border-borda pt-3">
-                <input
+                <input aria-label="Motivo da negativa — a pessoa vai ler isso"
                   autoFocus
                   value={motivoNeg}
                   onChange={(e) => setMotivoNeg(e.target.value)}
@@ -388,7 +388,7 @@ function FormLancar({ equipe, pedidos, byId, limites, ajustes, proc, run, onDone
           ))}
         </div>
       )}
-      <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo ou observação" className="mt-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+      <input aria-label="Motivo ou observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo ou observação" className="mt-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
       {info && <p className="mt-2 text-xs text-texto-suave">{info}</p>}
       <div className="mt-3 flex gap-2">
         <button disabled={proc || !pid || !data} onClick={salvar} className="rounded-controle bg-zinc-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">Lançar folga aprovada</button>
@@ -479,9 +479,9 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
                 <div key={g} className="flex items-center justify-between text-sm">
                   <span style={{ color: GRUPOS[g].cor }} className="font-semibold">{GRUPOS[g].nome}</span>
                   <span className="flex items-center gap-2">
-                    <button disabled={proc || lim <= 0} onClick={() => run(() => definirAjuste(sel, g, lim - 1))} className="h-7 w-7 rounded border border-borda-forte">−</button>
+                    <button aria-label="Menos um" disabled={proc || lim <= 0} onClick={() => run(() => definirAjuste(sel, g, lim - 1))} className="h-7 w-7 rounded border border-borda-forte">−</button>
                     <b className="min-w-[52px] text-center">{usadas}/{lim}</b>
-                    <button disabled={proc} onClick={() => run(() => definirAjuste(sel, g, lim + 1))} className="h-7 w-7 rounded border border-borda-forte">+</button>
+                    <button aria-label="Mais um" disabled={proc} onClick={() => run(() => definirAjuste(sel, g, lim + 1))} className="h-7 w-7 rounded border border-borda-forte">+</button>
                   </span>
                 </div>
               );
@@ -523,7 +523,7 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <input value={motivoTrava} onChange={(e) => setMotivoTrava(e.target.value)} placeholder="Motivo da trava (ex.: Kerb, evento)" className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                <input aria-label="Motivo da trava (ex.: Kerb, evento)" value={motivoTrava} onChange={(e) => setMotivoTrava(e.target.value)} placeholder="Motivo da trava (ex.: Kerb, evento)" className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
                 <button disabled={proc} onClick={() => run(() => travarData(sel, motivoTrava))} className="rounded-controle bg-zinc-900 px-3 py-2 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">Travar data</button>
               </div>
             )}

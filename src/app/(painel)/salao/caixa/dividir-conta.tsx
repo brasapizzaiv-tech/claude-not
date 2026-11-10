@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { avisar } from "@/components/dialogo";
 import { pagarValores } from "../actions";
 import type { Comanda } from "./receber";
+import { Janela } from "@/components/janela";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -112,13 +113,13 @@ export function DividirConta({
     "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <Janela>
       <div className="w-full max-w-lg rounded-cartao bg-painel-cartao p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold text-texto">
             Dividir conta — Nº {comanda.numero}
           </h2>
-          <button onClick={onClose} className="text-texto-fraco hover:text-texto-suave">✕</button>
+          <button aria-label="Fechar" onClick={onClose} className="text-texto-fraco hover:text-texto-suave">✕</button>
         </div>
         <p className="mb-3 text-xs text-texto-suave">
           Marque os itens de cada pessoa e receba. Use <b>½</b> para rachar um item. O que sobrar
@@ -215,6 +216,6 @@ export function DividirConta({
           Fechar
         </button>
       </div>
-    </div>
+    </Janela>
   );
 }

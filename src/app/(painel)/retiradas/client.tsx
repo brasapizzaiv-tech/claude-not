@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   lancarRetirada, definirStatusRetirada, quitarColaborador, receberParcial, excluirRetirada, salvarProduto,
 } from "./actions";
+import { Janela } from "@/components/janela";
 
 export type Pessoa = { id: string; nome: string };
 export type Produto = { id: number; nome: string; categoria: string | null; preco: number; ativo: boolean };
@@ -274,7 +275,7 @@ function NovaCompra({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <Janela escuro="bg-black/40">
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-cartao bg-painel-cartao p-6">
         <h2 className="mb-4 text-lg font-semibold">Nova compra</h2>
         <div className="space-y-3">
@@ -287,14 +288,14 @@ function NovaCompra({
             {produtos.map((p) => <option key={p.id} value={p.id}>{p.nome} — {brl(p.preco)}</option>)}
           </select>
           <div className="grid grid-cols-2 gap-2">
-            <input value={item} onChange={(e) => setItem(e.target.value)} placeholder="Item" className={inputCls} />
-            <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" placeholder="Valor (R$)" className={inputCls} />
+            <input aria-label="Item" value={item} onChange={(e) => setItem(e.target.value)} placeholder="Item" className={inputCls} />
+            <input aria-label="Valor (R$)" value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" placeholder="Valor (R$)" className={inputCls} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputCls} />
-            <input value={peso} onChange={(e) => setPeso(e.target.value)} inputMode="decimal" placeholder="Peso kg (opcional)" className={inputCls} />
+            <input aria-label="Peso kg (opcional)" value={peso} onChange={(e) => setPeso(e.target.value)} inputMode="decimal" placeholder="Peso kg (opcional)" className={inputCls} />
           </div>
-          <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (opcional)" className={inputCls} />
+          <input aria-label="Observação (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (opcional)" className={inputCls} />
           <div className="flex justify-end gap-2 pt-1">
             <button onClick={onClose} className="rounded-controle px-4 py-2 text-sm text-texto-suave">Cancelar</button>
             <button
@@ -311,7 +312,7 @@ function NovaCompra({
           </div>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }
 
@@ -498,13 +499,13 @@ function ProdutoModal({ alvo, proc, run, onClose }: {
   const [ativo, setAtivo] = useState(p ? p.ativo : true);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <Janela escuro="bg-black/40">
       <div className="w-full max-w-sm rounded-cartao bg-painel-cartao p-6">
         <h2 className="mb-4 text-lg font-semibold">{novo ? "Novo produto" : "Editar produto"}</h2>
         <div className="space-y-3">
-          <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" className={inputCls} />
-          <input value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="Categoria" className={inputCls} />
-          <input value={preco} onChange={(e) => setPreco(e.target.value)} inputMode="decimal" placeholder="Preço (R$)" className={inputCls} />
+          <input aria-label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" className={inputCls} />
+          <input aria-label="Categoria" value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="Categoria" className={inputCls} />
+          <input aria-label="Preço (R$)" value={preco} onChange={(e) => setPreco(e.target.value)} inputMode="decimal" placeholder="Preço (R$)" className={inputCls} />
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} /> Ativo</label>
           <div className="flex justify-end gap-2 pt-1">
             <button onClick={onClose} className="rounded-controle px-4 py-2 text-sm text-texto-suave">Cancelar</button>
@@ -518,6 +519,6 @@ function ProdutoModal({ alvo, proc, run, onClose }: {
           </div>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }

@@ -71,7 +71,7 @@ export function EmitirNotaCaixa({
             <div key={g.key} className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-texto-suave">{g.rotulo}</span>
               {!r?.ok && (
-                <input
+                <input aria-label="CPF ou CNPJ (opcional)"
                   autoFocus={g.key === primeiroAuto}
                   value={cpf[g.key] ?? ""}
                   onChange={(e) => setCpf((s) => ({ ...s, [g.key]: e.target.value }))}

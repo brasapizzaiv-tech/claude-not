@@ -38,7 +38,7 @@ export function EntradaEntrega() {
       <img src="/icons/motelli-entregador-192.png" alt="" className="mb-4 h-24 w-24 rounded-cartao" />
       <h1 className="text-2xl font-bold">Motelli Entregador</h1>
       <p className="mb-6 mt-1 text-center text-sm text-texto-suave">Cole aqui o link pessoal que a gerência te mandou no WhatsApp. Só precisa uma vez.</p>
-      <input
+      <input aria-label="https://www.brasarestaurante.com.br/entrega/"
         value={valor}
         onChange={(e) => { setValor(e.target.value); setErro(null); }}
         onKeyDown={(e) => { if (e.key === "Enter") entrar(); }}

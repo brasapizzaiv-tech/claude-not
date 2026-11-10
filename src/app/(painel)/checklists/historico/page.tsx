@@ -84,7 +84,7 @@ export default async function HistoricoChecklistsPage({
               {setores.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
           </div>
-          <div><label className="mb-1 block text-xs text-texto-suave">Pessoa</label><input name="pessoa" defaultValue={sp.pessoa ?? ""} placeholder="nome" className={`${inputCls} w-28`} /></div>
+          <div><label className="mb-1 block text-xs text-texto-suave">Pessoa</label><input aria-label="nome" name="pessoa" defaultValue={sp.pessoa ?? ""} placeholder="nome" className={`${inputCls} w-28`} /></div>
           <button className="rounded-controle bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">Filtrar</button>
         </form>
       </div>

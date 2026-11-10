@@ -46,7 +46,7 @@ export function LancamentosTabela({
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <input
+        <input aria-label="Buscar por descrição, categoria ou fornecedor"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por descrição, categoria ou fornecedor..."

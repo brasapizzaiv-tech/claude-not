@@ -166,7 +166,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
 
       {/* ---------- Buscar ---------- */}
       <div className="flex flex-wrap items-center gap-3">
-        <input
+        <input aria-label="Buscar categoria ou grupo"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar categoria ou grupo..."

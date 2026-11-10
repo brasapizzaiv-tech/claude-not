@@ -112,7 +112,7 @@ export function SeletorModelo({
 
       {m && (
         <div className="flex flex-wrap items-center gap-2">
-          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" placeholder="Seu WhatsApp pra teste" className={`${inp} w-48`} />
+          <input aria-label="Seu WhatsApp pra teste" value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" placeholder="Seu WhatsApp pra teste" className={`${inp} w-48`} />
           <button
             type="button"
             disabled={testando || tel.replace(/\D/g, "").length < 10}

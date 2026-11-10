@@ -12,6 +12,7 @@ import {
   excluirCategoria,
   mapearCategoriaDre,
 } from "./actions";
+import { Janela } from "@/components/janela";
 
 export type CategoriaComContagem = {
   id: string;
@@ -170,7 +171,7 @@ export function CategoriasClient({
       </div>
 
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <Janela escuro="bg-black/40">
           <div className="w-full max-w-sm rounded-cartao bg-painel-cartao p-6">
             <h2 className="mb-4 text-lg font-semibold text-texto">
               {editando ? "Editar categoria" : "Nova categoria"}
@@ -211,7 +212,7 @@ export function CategoriasClient({
               </div>
             </form>
           </div>
-        </div>
+        </Janela>
       )}
     </div>
   );

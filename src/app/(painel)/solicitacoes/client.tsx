@@ -153,7 +153,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
         ))}
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <input className={`${inp} w-64`} placeholder="Buscar item, motivo, pessoa…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <input aria-label="Buscar item, motivo, pessoa" className={`${inp} w-64`} placeholder="Buscar item, motivo, pessoa…" value={busca} onChange={(e) => setBusca(e.target.value)} />
         <select className={inp} value={tipo} onChange={(e) => setTipo(e.target.value as Tipo)}>
           <option value="">Compras e manutenções</option>
           <option value="compra">Só compras</option>
@@ -297,9 +297,9 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
         <option value="">Quem pediu (opcional)</option>
         {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
       </select>
-      <input className={inp} placeholder="O que precisa" value={item} onChange={(e) => setItem(e.target.value)} maxLength={200} />
-      <input className={inp} placeholder="Quantidade" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
-      <input className={`${inp} md:col-span-3`} placeholder="Pra quê / observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
+      <input aria-label="O que precisa" className={inp} placeholder="O que precisa" value={item} onChange={(e) => setItem(e.target.value)} maxLength={200} />
+      <input aria-label="Quantidade" className={inp} placeholder="Quantidade" value={qtd} onChange={(e) => setQtd(e.target.value)} maxLength={60} />
+      <input aria-label="Pra quê / observação" className={`${inp} md:col-span-3`} placeholder="Pra quê / observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-red-600 dark:text-red-400" /> urgente

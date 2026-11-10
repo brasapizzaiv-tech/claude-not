@@ -228,7 +228,7 @@ export function LancamentoNota({
             <p className="w-full text-xs text-texto-suave">
               Novo fornecedor com o CNPJ da nota ({emitCnpj || "sem CNPJ"}):
             </p>
-            <input
+            <input aria-label="Nome do fornecedor"
               value={novoNome}
               onChange={(e) => setNovoNome(e.target.value)}
               placeholder="Nome do fornecedor"

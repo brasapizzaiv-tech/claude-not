@@ -112,7 +112,7 @@ export function CozinhaClient({ inicial }: { inicial: PedidoRodizio[] }) {
           <span style={{ width: 12, height: 12, borderRadius: 6, background: realtime ? "#22c55e" : "#f59e0b", display: "inline-block" }} />
           {realtime ? "ao vivo" : "atualizando a cada 10 s"}
           <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#bbb" }}>
-            {new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            {new Date(agora).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
           </span>
         </span>
       </div>

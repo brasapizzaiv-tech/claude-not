@@ -21,6 +21,7 @@ import {
   gerarTokenColaborador,
   gerarCodigoColaborador,
 } from "./actions";
+import { Janela } from "@/components/janela";
 
 export type FolgaPerfil = {
   id: number;
@@ -256,7 +257,7 @@ function DesligarModal({ c, onClose, motivos = [] }: { c: Row; onClose: () => vo
   const [proc, start] = useTransition();
   const inputCls = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <Janela>
       <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
         <h2 className="text-lg font-bold text-texto">Desligar {c.nome}</h2>
         <p className="mt-1 text-sm text-texto-suave">
@@ -293,7 +294,7 @@ function DesligarModal({ c, onClose, motivos = [] }: { c: Row; onClose: () => vo
           </button>
         </div>
       </div>
-    </div>
+    </Janela>
   );
 }
 
@@ -333,7 +334,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <input
+          <input aria-label="Buscar"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar…"
@@ -479,7 +480,7 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
   const cltNoite = turno === "ambos" ? vincNoite === "clt" : vinc === "clt";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <Janela escuro="bg-black/40">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-cartao bg-painel-cartao p-6">
         <h2 className="mb-4 text-lg font-semibold text-texto">
           {editando ? "Editar pessoa" : "Nova pessoa"}
@@ -509,7 +510,7 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-texto-suave">WhatsApp</label>
-            <input name="whatsapp" placeholder="(51) 99999-9999" defaultValue={editando?.whatsapp ?? ""} className={inputCls} />
+            <input aria-label="(51) 99999-9999" name="whatsapp" placeholder="(51) 99999-9999" defaultValue={editando?.whatsapp ?? ""} className={inputCls} />
           </div>
 
           {/* Quadro / pagamento */}
@@ -569,7 +570,7 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
               )}
               <div>
                 <label className={lbl}>Função</label>
-                <input name="funcao_c" placeholder="Garçom, Forno…" defaultValue={editando?.funcao ?? ""} className={inputCls} />
+                <input aria-label="Garçom, Forno" name="funcao_c" placeholder="Garçom, Forno…" defaultValue={editando?.funcao ?? ""} className={inputCls} />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -619,7 +620,7 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
             </div>
             <div>
               <label className={lbl}>Uniforme</label>
-              <input name="uniforme_estilo" placeholder="Camiseta…" defaultValue={editando?.uniforme_estilo ?? ""} className={inputCls} />
+              <input aria-label="Camiseta" name="uniforme_estilo" placeholder="Camiseta…" defaultValue={editando?.uniforme_estilo ?? ""} className={inputCls} />
             </div>
             <div>
               <label className={lbl}>Qtd</label>
@@ -627,7 +628,7 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
             </div>
             <div>
               <label className={lbl}>Tamanho</label>
-              <input name="uniforme_tamanho" placeholder="M, G…" defaultValue={editando?.uniforme_tamanho ?? ""} className={inputCls} />
+              <input aria-label="M, G" name="uniforme_tamanho" placeholder="M, G…" defaultValue={editando?.uniforme_tamanho ?? ""} className={inputCls} />
             </div>
           </div>
 
@@ -713,7 +714,7 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
                   <option value="Freelance">Freelance</option>
                 </select>
               </div>
-              <input name="funcao" placeholder="Função (ex.: Garçom, Forno)" defaultValue={f?.funcao ?? ""} className={inputCls} />
+              <input aria-label="Função (ex.: Garçom, Forno)" name="funcao" placeholder="Função (ex.: Garçom, Forno)" defaultValue={f?.funcao ?? ""} className={inputCls} />
               <div>
                 <p className="mb-1 text-xs font-bold text-texto-fraco">Dias fixos</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -748,6 +749,6 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
           </div>
         </form>
       </div>
-    </div>
+    </Janela>
   );
 }

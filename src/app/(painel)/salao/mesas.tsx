@@ -85,7 +85,7 @@ export function MesasGrid({
               invertendo o fundo, não colorindo. */}
           <div className="cartao-foco flex items-center gap-3 px-5 py-4" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
             <Icone nome="cartao" tamanho={22} className="shrink-0 text-painel-foco-rotulo" />
-            <input
+            <input aria-label="Pagamento rápido — digite o nº da comanda ou leia o QR e tecle Enter"
               ref={pgtoRef}
               value={pgto}
               onChange={(e) => {

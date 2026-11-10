@@ -134,7 +134,7 @@ export function NotasClient({
 
       {/* Busca no banco: o formulário manda os filtros pro endereço. */}
       <form method="get" action="/salao/notas-fiscais" className="mt-4 flex flex-wrap items-center gap-2">
-        <input
+        <input aria-label="Buscar por comanda, nº da nota, chave..."
           name="q"
           defaultValue={filtro.q}
           placeholder="Buscar por comanda, nº da nota, chave... (Enter)"

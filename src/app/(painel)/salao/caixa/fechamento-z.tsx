@@ -10,6 +10,7 @@ import { ContagemNotas } from "@/components/contagem-notas";
 import { valorDe, type Quantidades } from "@/lib/cofre";
 import { useRouter } from "next/navigation";
 import { fecharCaixaZ, pendenciasDoFechamento, reimprimirFechamento } from "../actions";
+import { Janela } from "@/components/janela";
 
 type Pendencias = Awaited<ReturnType<typeof pendenciasDoFechamento>>;
 
@@ -113,11 +114,11 @@ export function FechamentoZ({
       </button>
 
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <Janela>
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-cartao bg-painel-cartao p-5">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-texto">Fechamento Z</h2>
-              <button onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">
+              <button aria-label="Fechar" onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">
                 ✕
               </button>
             </div>
@@ -314,7 +315,7 @@ export function FechamentoZ({
               </div>
             )}
           </div>
-        </div>
+        </Janela>
       )}
 
       {/* Cupom Z (só na impressão — térmica) */}

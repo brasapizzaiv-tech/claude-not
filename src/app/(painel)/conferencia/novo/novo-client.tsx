@@ -127,7 +127,7 @@ export function NovoPedidoClient({
       {/* Buscar e adicionar produtos */}
       <div className="mt-4">
         <label className="mb-1 block text-xs text-texto-suave">Adicionar produto</label>
-        <input
+        <input aria-label="Digite o nome do produto"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Digite o nome do produto..."
@@ -193,7 +193,7 @@ export function NovoPedidoClient({
                       })}
                     </td>
                     <td className="px-2 py-1 text-right">
-                      <button
+                      <button aria-label="Fechar"
                         onClick={() => remover(idx)}
                         className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
                       >

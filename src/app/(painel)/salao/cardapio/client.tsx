@@ -154,7 +154,7 @@ export function HorariosEditor({ inicial }: { inicial: Horarios }) {
               <input type="time" value={t.ini} onChange={(e) => setTurnos((c) => c.map((x, j) => (j === i ? { ...x, ini: e.target.value } : x)))} className={inputCls} />
               <span>até</span>
               <input type="time" value={t.fim} onChange={(e) => setTurnos((c) => c.map((x, j) => (j === i ? { ...x, fim: e.target.value } : x)))} className={inputCls} />
-              {turnos.length > 1 && <button type="button" onClick={() => setTurnos((c) => c.filter((_, j) => j !== i))} className="text-rose-500">✕</button>}
+              {turnos.length > 1 && <button aria-label="Fechar" type="button" onClick={() => setTurnos((c) => c.filter((_, j) => j !== i))} className="text-rose-500">✕</button>}
             </div>
           ))}
           {turnos.length < 4 && (
@@ -222,7 +222,7 @@ export function CardapioClient({
             <h3 className="font-bold text-texto">Editar produto</h3>
             <div className="flex items-center gap-2">
               <UploadFoto tipo="item" id={editando.id} temFoto={!!editando.foto_url} />
-              <button onClick={() => setEditando(null)} className="text-texto-fraco">✕</button>
+              <button aria-label="Fechar" onClick={() => setEditando(null)} className="text-texto-fraco">✕</button>
             </div>
           </div>
           <form
@@ -248,7 +248,7 @@ export function CardapioClient({
               </div>
               <div>
                 <label className="mb-1 flex items-center gap-1.5 text-xs text-texto-suave"><Icone nome="fogo" tamanho={13} /> Promoção (R$)</label>
-                <input name="promo_preco" inputMode="decimal" defaultValue={editando.promo_preco != null ? String(editando.promo_preco).replace(".", ",") : ""} placeholder="vazio = sem" className={`${inputCls} w-28`} />
+                <input aria-label="vazio = sem" name="promo_preco" inputMode="decimal" defaultValue={editando.promo_preco != null ? String(editando.promo_preco).replace(".", ",") : ""} placeholder="vazio = sem" className={`${inputCls} w-28`} />
               </div>
             </div>
             <div>
@@ -285,7 +285,7 @@ export function CardapioClient({
         <div className="rounded-cartao border border-sky-300 bg-sky-50 p-4 dark:border-sky-500/40 dark:bg-sky-950/20">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="flex items-center gap-1.5 font-bold text-texto"><Icone nome="relogio" tamanho={15} /> Disponibilidade da categoria &quot;{horariosCat.nome}&quot; no app</h3>
-            <button onClick={() => setHorariosCat(null)} className="text-texto-fraco">✕</button>
+            <button aria-label="Fechar" onClick={() => setHorariosCat(null)} className="text-texto-fraco">✕</button>
           </div>
           <form action={async (fd) => { await salvarHorarios(fd); setHorariosCat(null); }}>
             <input type="hidden" name="tipo" value="categoria" />
@@ -330,7 +330,7 @@ export function CardapioClient({
                   <div className="text-sm font-semibold text-texto">{t.nome}</div>
                   <div className="mb-2 text-xs text-texto-suave">{t.max_sabores} sabor{t.max_sabores > 1 ? "es" : ""}</div>
                   <div className="flex items-center gap-1.5">
-                    <input name="fatias" defaultValue={t.fatias ?? ""} inputMode="numeric" placeholder="Fatias" className={`${inputCls} w-20`} />
+                    <input aria-label="Fatias" name="fatias" defaultValue={t.fatias ?? ""} inputMode="numeric" placeholder="Fatias" className={`${inputCls} w-20`} />
                     <Enviar className="btn-principal text-xs">Ok</Enviar>
                   </div>
                 </form>
@@ -341,7 +341,7 @@ export function CardapioClient({
             <form action={adicionarSabor} className="rounded-cartao border border-dashed border-borda-forte p-3">
               <div className="mb-2 text-sm font-semibold text-texto">Novo sabor</div>
               <div className="flex flex-wrap items-center gap-2">
-                <input name="nome" required maxLength={80} placeholder="Nome do sabor" className={`${inputCls} w-64`} />
+                <input aria-label="Nome do sabor" name="nome" required maxLength={80} placeholder="Nome do sabor" className={`${inputCls} w-64`} />
                 <select name="tipo_sabor" defaultValue="salgada" className={`${inputCls} w-36`} title="Coluna no quadro do rodízio">
                   <option value="salgada">Salgada</option>
                   <option value="doce">Doce</option>
@@ -353,7 +353,7 @@ export function CardapioClient({
               <div className="mt-2">
                 <PrecosPorTamanho tamanhos={tamanhos} />
               </div>
-              <input
+              <input aria-label="Descrição (ingredientes) — aparece no app do cliente"
                 name="descricao"
                 maxLength={300}
                 placeholder="Descrição (ingredientes) — aparece no app do cliente"
@@ -366,7 +366,7 @@ export function CardapioClient({
             {/* Sabores: o nome vem inteiro (antes era cortado numa coluna fixa)
                 e a descrição ocupa a linha de baixo, que é onde se escreve mais. */}
             <div>
-              <input
+              <input aria-label="Buscar sabor"
                 value={buscaSabor}
                 onChange={(e) => setBuscaSabor(e.target.value)}
                 placeholder="Buscar sabor…"
@@ -406,7 +406,7 @@ export function CardapioClient({
                           Salvar
                         </Enviar>
                       </div>
-                      <input
+                      <input aria-label="Descrição (ingredientes) — aparece no app do cliente"
                         name="descricao"
                         defaultValue={s.descricao ?? ""}
                         maxLength={300}
@@ -569,7 +569,7 @@ function CategoriaCard({
       <form action={salvarItem} className="mt-3 flex flex-wrap items-end gap-2">
         <input type="hidden" name="categoria" value={cat.nome} />
         <div className="min-w-40 flex-1">
-          <input name="nome" required placeholder="Novo produto..." className={`${inputCls} w-full`} />
+          <input aria-label="Novo produto" name="nome" required placeholder="Novo produto..." className={`${inputCls} w-full`} />
         </div>
         <input name="preco" inputMode="decimal" placeholder="0,00" className={`${inputCls} w-24`} />
         <Enviar className="rounded-controle border border-orange-500 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950">
@@ -842,20 +842,20 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
         <div className="space-y-3 border-t border-borda pt-3">
           <p className="text-xs font-medium text-texto-suave">Dados no cupom (opcionais)</p>
           <div className="flex flex-wrap gap-3">
-            <input
+            <input aria-label="Endereço"
               name="cupom_endereco"
               defaultValue={config.cupom_endereco ?? ""}
               placeholder="Endereço"
               className={`${inputCls} min-w-56 flex-1`}
             />
-            <input
+            <input aria-label="Telefone / WhatsApp"
               name="cupom_telefone"
               defaultValue={config.cupom_telefone ?? ""}
               placeholder="Telefone / WhatsApp"
               className={inputCls}
             />
           </div>
-          <input
+          <input aria-label="Mensagem (ex.: Obrigado pela preferência!)"
             name="cupom_msg"
             defaultValue={config.cupom_msg ?? ""}
             placeholder="Mensagem (ex.: Obrigado pela preferência!)"

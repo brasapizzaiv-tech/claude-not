@@ -248,7 +248,7 @@ export function FaturaClient({
                       {brl(c.valor)}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <button onClick={() => remover(c.uid)} title="Tirar da lista" className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">✕</button>
+                      <button aria-label="Fechar" onClick={() => remover(c.uid)} title="Tirar da lista" className="text-zinc-300 hover:text-red-600 dark:text-zinc-600">✕</button>
                     </td>
                   </tr>
                 ))}

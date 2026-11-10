@@ -105,7 +105,7 @@ export function NotasPendentes({ lista }: { lista: Pendente[] }) {
                 </span>
               )}
 
-              <input
+              <input aria-label="CPF ou CNPJ"
                 value={cpf[p.id] ?? p.cpfCnpj ?? ""}
                 onChange={(e) => setCpf((s) => ({ ...s, [p.id]: e.target.value }))}
                 onBlur={() => {

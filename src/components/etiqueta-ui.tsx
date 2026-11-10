@@ -142,7 +142,7 @@ export function SeletorItem({
 
   return (
     <div className="space-y-2">
-      <input
+      <input aria-label="🔍 Buscar item"
         value={busca}
         onChange={(e) => { setBusca(e.target.value); setCat(null); }}
         placeholder="🔍 Buscar item..."
@@ -182,7 +182,7 @@ export function SeletorItem({
           {novo && (
             <div className="space-y-2 rounded-xl border border-orange-300 bg-orange-50/50 p-3 dark:border-orange-800 dark:bg-orange-950/20">
               <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Novo item em {catNome}</p>
-              <input value={nNome} onChange={(e) => setNNome(e.target.value)} placeholder="Nome (ex.: Base Feijão)" className={inputCls} autoFocus />
+              <input aria-label="Nome (ex.: Base Feijão)" value={nNome} onChange={(e) => setNNome(e.target.value)} placeholder="Nome (ex.: Base Feijão)" className={inputCls} autoFocus />
               <div className="grid grid-cols-3 gap-2">
                 {[["Resfriado", nResf, setNResf], ["Congelado", nCong, setNCong], ["Ambiente", nAmb, setNAmb]].map(([lab, v, set]) => (
                   <label key={lab as string} className="text-[11px] text-zinc-500">
@@ -307,7 +307,7 @@ export function EtiquetaVisual({ d, config, qr, className }: { d: EtiquetaDados;
   const px = (n: number) => `${(n * fe).toFixed(1)}px`;
   const t = tipoInfo(d.tipo);
   const livre = t.key === "livre";
-  const manip = new Date(d.manipuladoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const manip = new Date(d.manipuladoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
   const extras = linhasExtras(d);
   const linhas = [`${t.dataLabel}: ${manip}`, `Resp.: ${d.colaborador ?? "—"}`, `Nº ${d.numero || "—"}`, ...(c.empresa ? [c.empresa] : [])];
   const qrMm = (16 * Math.min(c.largura, c.altura)) / 55;
@@ -422,9 +422,9 @@ export function Copias({ value, onChange }: { value: number; onChange: (n: numbe
   const b = "h-10 w-10 rounded-lg border border-zinc-300 text-lg font-bold text-zinc-700 dark:border-zinc-700 dark:text-zinc-200";
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={() => onChange(Math.max(1, value - 1))} className={b}>−</button>
+      <button aria-label="Menos um" type="button" onClick={() => onChange(Math.max(1, value - 1))} className={b}>−</button>
       <span className="w-8 text-center text-lg font-bold text-zinc-900 dark:text-zinc-50">{value}</span>
-      <button type="button" onClick={() => onChange(Math.min(10, value + 1))} className={b}>+</button>
+      <button aria-label="Mais um" type="button" onClick={() => onChange(Math.min(10, value + 1))} className={b}>+</button>
       <span className="text-xs text-zinc-500">cópia(s)</span>
     </div>
   );

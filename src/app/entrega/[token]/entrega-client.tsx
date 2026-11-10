@@ -404,9 +404,9 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
       {aba === "historico" && (
         <main className="space-y-3 p-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => setDia(addDias(dia, -1))} className="rounded-controle bg-painel-cartao px-3 py-1.5">‹</button>
+            <button aria-label="Anterior" onClick={() => setDia(addDias(dia, -1))} className="rounded-controle bg-painel-cartao px-3 py-1.5">‹</button>
             <span className="font-bold">{new Date(dia + "T12:00:00-03:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "America/Sao_Paulo" })}</span>
-            <button onClick={() => setDia(addDias(dia, 1))} disabled={dia >= hoje} className="rounded-controle bg-painel-cartao px-3 py-1.5 disabled:opacity-30">›</button>
+            <button aria-label="Próximo" onClick={() => setDia(addDias(dia, 1))} disabled={dia >= hoje} className="rounded-controle bg-painel-cartao px-3 py-1.5 disabled:opacity-30">›</button>
           </div>
           {!hist ? <p className="text-sm text-texto-fraco">Carregando…</p> : hist.length === 0 ? <p className="py-10 text-center text-texto-fraco">Nenhuma entrega nesse dia.</p> : (
             <div className="space-y-2">
@@ -582,7 +582,7 @@ function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: ()
       </div>
       {erro && <p role="alert" className="px-4 py-2 text-sm text-rose-400">{erro}</p>}
       <div className="flex gap-2 p-3">
-        <input value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="flex-1 rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-lg text-white" />
+        <input aria-label="Nº do pedido (ex.: 412)" value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="flex-1 rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-lg text-white" />
         <button onClick={() => onLido(refManual)} className="btn-principal">Pegar</button>
       </div>
     </div>

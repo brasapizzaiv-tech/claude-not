@@ -57,7 +57,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
   return (
     <>
       <div className="mb-2 flex items-center gap-2 px-1">
-        <input
+        <input aria-label="Nº da comanda / cartão"
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && abrir(codigo)}
@@ -88,7 +88,7 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
         <div className="area-segura fixed inset-0 z-[65] flex flex-col bg-painel-fundo text-texto">
           <div className="flex items-center justify-between border-b border-borda p-3">
             <span className="text-lg font-bold">Abrir comanda</span>
-            <button onClick={() => setAbrirCod(null)} className="text-texto-suave">✕</button>
+            <button aria-label="Fechar" onClick={() => setAbrirCod(null)} className="text-texto-suave">✕</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <p className="mb-3 text-sm text-texto-suave">
@@ -169,7 +169,7 @@ function Scanner({ onClose, onLido }: { onClose: () => void; onLido: (v: string)
     <div className="area-segura fixed inset-0 z-[70] flex flex-col bg-black">
       <div className="flex items-center justify-between p-3 text-texto">
         <span className="font-bold">Ler comanda</span>
-        <button onClick={onClose} className="text-2xl leading-none text-texto-suave">✕</button>
+        <button aria-label="Fechar" onClick={onClose} className="text-2xl leading-none text-texto-suave">✕</button>
       </div>
       <div className="relative flex-1 overflow-hidden">
         <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />

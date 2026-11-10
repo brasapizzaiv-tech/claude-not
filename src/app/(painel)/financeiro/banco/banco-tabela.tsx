@@ -188,7 +188,7 @@ export function BancoTabela({
 
       {/* Busca + "só o que falta" */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <input
+        <input aria-label="Buscar descrição ou valor"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar descrição ou valor…"
@@ -413,7 +413,7 @@ export function BancoTabela({
                             </button>
                           </div>
                         )}
-                        <button
+                        <button aria-label="Fechar"
                           disabled={proc}
                           onClick={() => run(() => {
                             const fd = new FormData();
@@ -476,7 +476,7 @@ export function BancoTabela({
                                           className="w-full rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                         />
                                       </div>
-                                      <input
+                                      <input aria-label="o que é (opcional)"
                                         value={x.descricao}
                                         onChange={(e) => mudarParte(x.uid, "descricao", e.target.value)}
                                         placeholder="o que é (opcional)"
@@ -489,7 +489,7 @@ export function BancoTabela({
                                         placeholder="0,00"
                                         className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1.5 text-right text-xs focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950 dark:text-zinc-100"
                                       />
-                                      <button type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-red-600">✕</button>
+                                      <button aria-label="Fechar" type="button" onClick={() => tirarParte(x.uid)} className="text-texto-fraco hover:text-red-600">✕</button>
                                     </div>
                                   ))}
                                   <div className="flex flex-wrap items-center justify-between gap-2">

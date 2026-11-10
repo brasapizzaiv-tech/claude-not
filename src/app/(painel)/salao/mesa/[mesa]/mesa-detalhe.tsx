@@ -162,7 +162,7 @@ export function MesaDetalhe({
 
       {/* Busca + abas */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input
+        <input aria-label="Buscar produto ou nº da comanda"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto ou nº da comanda..."

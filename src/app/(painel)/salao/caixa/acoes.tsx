@@ -10,6 +10,7 @@ import { useSearchParams } from "next/navigation";
 import { suprimento, sangria } from "../actions";
 import Link from "next/link";
 import type { CategoriaSangria } from "@/lib/sangria-financeiro";
+import { Janela } from "@/components/janela";
 
 const inputCls =
   "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
@@ -92,11 +93,11 @@ export function CaixaAcoes({ caixaId, categorias = [] }: { caixaId: string; cate
       </button>
 
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <Janela>
           <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-texto">Movimentar caixa</h2>
-              <button onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">✕</button>
+              <button aria-label="Fechar" onClick={() => setAberto(false)} className="text-texto-fraco hover:text-texto-suave">✕</button>
             </div>
 
             <div className="mb-4 flex gap-2">
@@ -146,7 +147,7 @@ export function CaixaAcoes({ caixaId, categorias = [] }: { caixaId: string; cate
               </div>
             </form>
           </div>
-        </div>
+        </Janela>
       )}
     </>
   );

@@ -114,7 +114,7 @@ export function MarmitaDiaForm({
         </div>
         {editavel && (
           <div className="mt-2 flex gap-2">
-            <input value={novoPrato} onChange={(e) => setNovoPrato(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPrato(); } }} placeholder="+ prato" className={input} />
+            <input aria-label="+ prato" value={novoPrato} onChange={(e) => setNovoPrato(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPrato(); } }} placeholder="+ prato" className={input} />
             <button type="button" onClick={addPrato} className={`${grande ? "h-12 px-5 text-base" : "h-9 px-3 text-sm"} shrink-0 rounded-xl bg-zinc-900 font-semibold text-white dark:bg-white dark:text-zinc-900`}>Add</button>
           </div>
         )}
@@ -134,7 +134,7 @@ export function MarmitaDiaForm({
         </div>
         {editavel && (
           <div className="mt-2 flex gap-2">
-            <input value={novaProt} onChange={(e) => setNovaProt(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addProt(); } }} placeholder="+ proteína" className={input} />
+            <input aria-label="+ proteína" value={novaProt} onChange={(e) => setNovaProt(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addProt(); } }} placeholder="+ proteína" className={input} />
             <button type="button" onClick={addProt} className={`${grande ? "h-12 px-5 text-base" : "h-9 px-3 text-sm"} shrink-0 rounded-xl bg-zinc-900 font-semibold text-white dark:bg-white dark:text-zinc-900`}>Add</button>
           </div>
         )}

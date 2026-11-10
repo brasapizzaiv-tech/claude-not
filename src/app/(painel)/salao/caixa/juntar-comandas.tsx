@@ -8,6 +8,7 @@ import { avisar } from "@/components/dialogo";
 import { Icone } from "@/components/icone";
 import type { ModoJuntar } from "@/lib/juntar-comandas";
 import { juntarComandasCaixa, previaJuntarComandas } from "../actions";
+import { Janela } from "@/components/janela";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const kg = (n: number) => `${n.toFixed(3).replace(".", ",")} kg`;
@@ -54,7 +55,7 @@ export function JuntarComandas({ ids, aoJuntar }: { ids: string[]; aoJuntar: (id
       </BotaoAcao>
 
       {previa && principal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true" aria-label="Juntar comandas">
+        <Janela rotulo="Juntar comandas">
           <div className="cartao my-6 w-full max-w-md p-5">
             <div className="mb-1 flex items-start justify-between gap-3">
               <h2 className="font-numero text-xl font-bold tracking-apertada text-texto">Juntar na comanda #{principal.numero}</h2>
@@ -75,7 +76,7 @@ export function JuntarComandas({ ids, aoJuntar }: { ids: string[]; aoJuntar: (id
               <BotaoAcao aoClicar={juntar} className="btn-principal text-sm">Juntar na #{principal.numero}</BotaoAcao>
             </div>
           </div>
-        </div>
+        </Janela>
       )}
     </>
   );

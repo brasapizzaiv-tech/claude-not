@@ -79,7 +79,7 @@ export function ApontamentosClient({
               {a.na_tv && (
                 <button onClick={() => agir(() => tirarApontamentoDaTv(a.id))} disabled={proc} className="text-xs text-texto-fraco hover:text-red-600">tirar da TV</button>
               )}
-              <button
+              <button aria-label="Fechar"
                 onClick={async () => { if (await confirmar("Apagar este apontamento?")) agir(() => excluirApontamentoPainel(a.id)); }}
                 disabled={proc}
                 className="text-xs text-zinc-300 hover:text-red-600 dark:text-zinc-600"

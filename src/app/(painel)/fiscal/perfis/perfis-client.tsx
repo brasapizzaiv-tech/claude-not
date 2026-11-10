@@ -5,6 +5,7 @@ import { confirmar } from "@/components/dialogo";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { salvarPerfilFiscal, excluirPerfilFiscal, definirPerfilCategoria, definirPerfilItem } from "../actions";
+import { Janela } from "@/components/janela";
 
 export type Perfil = { id: string; nome: string; ncm: string | null; cest: string | null; cfop: string; csosn: string; origem: string; unidade: string; pis_cst: string; cofins_cst: string; homologado: boolean; obs: string | null; ativo: boolean; is_cst: string | null; is_classificacao: string | null; is_aliquota: number | null; ibs_cbs_cst: string | null; ibs_cbs_classificacao: string | null; ibs_uf_aliquota: number | null; ibs_mun_aliquota: number | null; cbs_aliquota: number | null };
 export type Categoria = { id: string; nome: string; perfil_fiscal_id: string | null };
@@ -152,7 +153,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
         <h2 className="mb-1 text-lg font-semibold">3. Exceções por item</h2>
         <p className="mb-2 text-sm text-texto-suave">Só se um item precisar de perfil diferente da categoria (ex.: uma água dentro de &quot;Bebidas&quot;). Em branco = herda da categoria.</p>
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar item ou categoria…" className={`${inputCls} w-64`} />
+          <input aria-label="Buscar item ou categoria" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar item ou categoria…" className={`${inputCls} w-64`} />
           <label className="flex items-center gap-1.5 text-sm text-texto-suave">
             <input type="checkbox" checked={soExcecoes} onChange={(e) => setSoExcecoes(e.target.checked)} /> só com exceção
           </label>
@@ -203,7 +204,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
 
       {/* Modal do perfil */}
       {editando && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <Janela escuro="bg-black/40">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -230,7 +231,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
               </div>
               <div>
                 <label className="mb-1 block text-xs text-texto-suave">CFOP *</label>
-                <input name="cfop" required defaultValue={editando.cfop} placeholder="5102 ou 5405" inputMode="numeric" className={`${inputCls} w-full font-mono`} />
+                <input aria-label="5102 ou 5405" name="cfop" required defaultValue={editando.cfop} placeholder="5102 ou 5405" inputMode="numeric" className={`${inputCls} w-full font-mono`} />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-texto-suave">CSOSN *</label>
@@ -307,7 +308,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
               <button type="submit" disabled={pend} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-marca-sobre-primaria disabled:opacity-50">Salvar</button>
             </div>
           </form>
-        </div>
+        </Janela>
       )}
     </div>
   );

@@ -263,7 +263,7 @@ export function CotacaoClient({
       )}
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <input
+        <input aria-label="Buscar produto"
           placeholder="Buscar produto..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}

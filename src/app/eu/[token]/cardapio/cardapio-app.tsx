@@ -206,7 +206,7 @@ export function CardapioApp({
                 {sel[g].length === 0 && <li className="text-sm text-texto-fraco">nenhum item</li>}
               </ul>
               <div className="mt-2 flex gap-2">
-                <input
+                <input aria-label="+ buscar ou digitar novo"
                   value={busca[g]}
                   onChange={(e) => setBusca((b) => ({ ...b, [g]: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addItem(g, busca[g]); } }}

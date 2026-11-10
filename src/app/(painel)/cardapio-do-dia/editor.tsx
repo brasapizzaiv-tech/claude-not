@@ -204,7 +204,7 @@ export function EditorCardapio({
         <div>
           {/* Dia */}
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <button onClick={() => irPara(addDias(dia, -1))} className={btn}>
+            <button aria-label="Anterior" onClick={() => irPara(addDias(dia, -1))} className={btn}>
               ←
             </button>
             <input
@@ -213,7 +213,7 @@ export function EditorCardapio({
               onChange={(e) => e.target.value && irPara(e.target.value)}
               className={campo}
             />
-            <button onClick={() => irPara(addDias(dia, 1))} className={btn}>
+            <button aria-label="Próximo" onClick={() => irPara(addDias(dia, 1))} className={btn}>
               →
             </button>
             <span className="text-sm font-semibold text-texto">
@@ -552,21 +552,21 @@ function BlocoItens({
                   </button>
                 );
               })}
-              <button
+              <button aria-label="Subir"
                 onClick={() => mover(i, -1)}
                 title="Subir"
                 className="text-zinc-300 hover:text-orange-600 dark:text-zinc-600"
               >
                 ↑
               </button>
-              <button
+              <button aria-label="Descer"
                 onClick={() => mover(i, 1)}
                 title="Descer"
                 className="text-zinc-300 hover:text-orange-600 dark:text-zinc-600"
               >
                 ↓
               </button>
-              <button
+              <button aria-label="Fechar"
                 onClick={() => remover(i)}
                 title="Tirar do cardápio"
                 className="text-zinc-300 hover:text-red-600 dark:text-zinc-600"
@@ -690,7 +690,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
           {msg && <p role="status" className="mt-1 text-mini text-texto-suave">{msg}</p>}
         </div>
 
-        <input
+        <input aria-label="Procurar no catálogo"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Procurar no catálogo..."
@@ -708,7 +708,7 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
                   <span className="ml-1 text-texto-fraco">· {i.usos}x</span>
                 )}
               </span>
-              <button disabled={ocupado}
+              <button aria-label="Fechar" disabled={ocupado}
                 onClick={async () => {
                   if (await confirmar(`Tirar “${i.nome}” do catálogo?`))
                     start(async () => {

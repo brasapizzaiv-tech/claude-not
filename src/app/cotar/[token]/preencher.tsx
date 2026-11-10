@@ -635,7 +635,7 @@ export function CotarPreencher({
                             remover
                           </button>
                         </div>
-                        <input
+                        <input aria-label="Marca (ex.: Sadia, Seara...)"
                           value={x.marca}
                           disabled={fechada}
                           placeholder="Marca (ex.: Sadia, Seara...)"
@@ -654,7 +654,7 @@ export function CotarPreencher({
                               className={`${campo} w-full text-right`}
                             />
                           </div>
-                          <input
+                          <input aria-label="Tamanho (12 un, 5 kg)"
                             value={x.tamanho}
                             disabled={fechada}
                             placeholder="Tamanho (12 un, 5 kg)"
@@ -741,7 +741,7 @@ export function CotarPreencher({
                 trabalha com algum, clique em <b>Tenho / Cotar</b> — ele entra na
                 sua lista acima para você preço.
               </p>
-              <input
+              <input aria-label="Buscar item"
                 value={buscaOutros}
                 onChange={(e) => setBuscaOutros(e.target.value)}
                 placeholder="Buscar item..."

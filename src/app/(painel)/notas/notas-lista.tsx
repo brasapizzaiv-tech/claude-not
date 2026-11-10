@@ -56,7 +56,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
-        <input
+        <input aria-label="Buscar por fornecedor ou número da nota"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por fornecedor ou número da nota..."

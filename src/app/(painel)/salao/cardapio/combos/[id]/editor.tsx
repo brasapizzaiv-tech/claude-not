@@ -130,7 +130,7 @@ function EtapaCard({ e, n, total, tamanhos, sabores, precoDe, muda, subir, desce
     <div className="cartao p-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-numero text-xl font-bold text-texto-marca">{n}</span>
-        <input value={e.nome} onChange={(ev) => muda((x) => ({ ...x, nome: ev.target.value }))} placeholder="Nome da etapa (ex.: Escolha os sabores da sua pizza)" maxLength={100} className={`${inp} min-w-0 flex-1`} />
+        <input aria-label="Nome da etapa (ex.: Escolha os sabores da sua pizza)" value={e.nome} onChange={(ev) => muda((x) => ({ ...x, nome: ev.target.value }))} placeholder="Nome da etapa (ex.: Escolha os sabores da sua pizza)" maxLength={100} className={`${inp} min-w-0 flex-1`} />
         <div className="flex gap-1">
           <button type="button" onClick={subir} disabled={n === 1} aria-label="Subir etapa" className="h-11 w-11 rounded-controle border border-borda-forte disabled:opacity-30"><Icone nome="subir" tamanho={14} /></button>
           <button type="button" onClick={descer} disabled={n === total} aria-label="Descer etapa" className="h-11 w-11 rounded-controle border border-borda-forte disabled:opacity-30"><Icone nome="subir" tamanho={14} className="rotate-180" /></button>
@@ -196,7 +196,7 @@ function EtapaCard({ e, n, total, tamanhos, sabores, precoDe, muda, subir, desce
         </div>
         <div className="space-y-1.5">
           <div className="text-xs font-semibold text-texto">Produto do cardápio</div>
-          <input value={busca} onChange={(ev) => procurar(ev.target.value)} placeholder="Buscar (ex.: guaraná)" className={`${inp} w-full`} />
+          <input aria-label="Buscar (ex.: guaraná)" value={busca} onChange={(ev) => procurar(ev.target.value)} placeholder="Buscar (ex.: guaraná)" className={`${inp} w-full`} />
           {achados.length > 0 && (
             <ul className="max-h-48 overflow-y-auto rounded-controle border border-borda bg-painel-cartao">
               {achados.map((p) => (

@@ -91,7 +91,7 @@ function ValorConta({ l }: { l: LinhaConta }) {
       >
         ✓
       </Enviar>
-      <button
+      <button aria-label="Fechar"
         type="button"
         onClick={() => setEditando(false)}
         className="text-xs text-texto-fraco hover:text-texto-suave"
@@ -415,7 +415,7 @@ export function ListaContasView({
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <input
+        <input aria-label="Buscar por descrição, fornecedor, categoria, forma de pagamento ou valor"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por descrição, fornecedor, categoria, forma de pagamento ou valor..."

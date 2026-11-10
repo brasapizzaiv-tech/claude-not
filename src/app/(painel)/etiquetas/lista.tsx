@@ -112,7 +112,7 @@ export function ListaEtiquetas({ rows, hoje, historico }: { rows: EtLinha[]; hoj
             </button>
           ))}
         </div>
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nº, produto, lote ou responsável" className={`${input} w-64`} />
+        <input aria-label="Nº, produto, lote ou responsável" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nº, produto, lote ou responsável" className={`${input} w-64`} />
         <select value={cat} onChange={(e) => setCat(e.target.value)} className={input}>
           <option value="">Todas as categorias</option>
           {cats.map((c) => <option key={c} value={c}>{c}</option>)}

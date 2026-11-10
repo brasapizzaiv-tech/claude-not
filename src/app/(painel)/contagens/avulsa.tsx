@@ -5,6 +5,7 @@ import { siteUrl } from "@/lib/site-url";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { criarContagemAvulsa } from "./actions";
+import { Janela } from "@/components/janela";
 
 type Item = { id: string; nome: string; whatsapp?: string | null };
 
@@ -57,13 +58,13 @@ export function AvulsaForm({
   const origin = siteUrl();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <Janela escuro="bg-black/40">
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-cartao bg-painel-cartao p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-texto">
             Contagem avulsa
           </h2>
-          <button
+          <button aria-label="Fechar"
             onClick={() => {
               setAberto(false);
               reset();
@@ -124,7 +125,7 @@ export function AvulsaForm({
           </>
         )}
       </div>
-    </div>
+    </Janela>
   );
 }
 

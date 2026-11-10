@@ -81,7 +81,7 @@ export function ContasColab({ token, contas, hoje }: { token: string; contas: Co
 
   return (
     <div>
-      <input
+      <input aria-label="Fornecedor, descrição ou categoria"
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Fornecedor, descrição ou categoria"

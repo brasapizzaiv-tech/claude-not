@@ -9,6 +9,7 @@ import { avisar, confirmar } from "@/components/dialogo";
 import { Icone } from "@/components/icone";
 import { textoValidade } from "@/lib/garcom-avulso";
 import { encerrarLinkGarcomAvulso, gerarLinkGarcomAvulso, linkGarcomAvulso } from "./actions";
+import { Janela } from "@/components/janela";
 
 export function GarcomAvulso() {
   const [aberto, setAberto] = useState(false);
@@ -49,7 +50,7 @@ export function GarcomAvulso() {
         <span className="inline-flex items-center gap-1.5"><Icone nome="garcom" tamanho={14} /> Garçom avulso</span>
       </button>
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4" onClick={() => setAberto(false)}>
+        <Janela onFechar={() => setAberto(false)} fundoFecha>
           <div className="cartao my-8 w-full max-w-md p-5" role="dialog" aria-label="Link do garçom avulso" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex items-center justify-between">
               <h2 className="font-numero text-lg font-bold text-texto">Garçom avulso</h2>
@@ -79,7 +80,7 @@ export function GarcomAvulso() {
               <BotaoAcao aoClicar={gerar} className="btn-principal mt-4 w-full text-sm">Gerar o link de hoje</BotaoAcao>
             )}
           </div>
-        </div>
+        </Janela>
       )}
     </>
   );

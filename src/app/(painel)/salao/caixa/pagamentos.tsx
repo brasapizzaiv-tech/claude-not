@@ -490,7 +490,7 @@ export function PainelPagamentos({
                 {p.observacao ? <span className="block truncate text-mini text-texto-fraco">{p.observacao}</span> : null}
               </span>
               <span className="font-semibold tabular-nums text-texto">{brl(p.valor)}</span>
-              <button onClick={() => onRemover(p.uid)} title="Tirar este pagamento" className="text-texto-fraco hover:text-red-600">✕</button>
+              <button aria-label="Fechar" onClick={() => onRemover(p.uid)} title="Tirar este pagamento" className="text-texto-fraco hover:text-red-600">✕</button>
             </li>
           ))}
         </ul>
@@ -707,7 +707,7 @@ export function PainelPagamentos({
                 <p className="text-xs text-amber-600">Nenhum funcionário ativo cadastrado.</p>
               ) : (
                 <>
-                  <input
+                  <input aria-label="Buscar pelo nome"
                     value={buscaColab}
                     onChange={(e) => setBuscaColab(e.target.value)}
                     placeholder="Buscar pelo nome…"

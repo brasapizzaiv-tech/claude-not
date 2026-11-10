@@ -8,6 +8,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { useVoz, valorFalado } from "./voz";
 import { buscarComandaBalancaKiosk, gerarComandaBuffetKiosk, gerarComandaLivreKiosk, repesarKiosk, salvarBalancaTaradaKiosk, virarLivreKiosk, virarLivrePorNumeroKiosk } from "../../actions";
+import { Janela } from "@/components/janela";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -864,7 +865,7 @@ export function QuiosqueBalanca({
       </div>
 
       {configAberta && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-6" onClick={() => setConfigAberta(false)}>
+        <Janela onFechar={() => setConfigAberta(false)} fundoFecha camada="z-[60]" escuro="bg-black/70">
           <div className="w-full max-w-xl rounded-3xl bg-white p-6 text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-1 flex items-center gap-2 text-2xl font-bold"><Icone nome="imprimir" tamanho={22} /> Impressora do cupom</h2>
             <p className="mb-4 text-sm text-marca-escuro/60">Impressoras deste PC (o agente imprime direto, sem janela).</p>
@@ -995,20 +996,20 @@ export function QuiosqueBalanca({
               <button onClick={() => setConfigAberta(false)} className="flex-1 rounded-xl bg-orange-500 py-3 text-lg font-bold">Fechar</button>
             </div>
           </div>
-        </div>
+        </Janela>
       )}
 
       {/* PESAR DE NOVO: escolhe a comanda ANTES de pesar. Mesmo teclado do
           "virar livre", porque o quiosque é touch e não abre teclado sozinho. */}
       {repesarAberto && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6" onClick={() => setRepesarAberto(false)}>
+        <Janela onFechar={() => setRepesarAberto(false)} fundoFecha camada="z-[60]" escuro="bg-black/60">
           <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-marca-escuro"><span className="inline-flex items-center justify-center gap-3"><Icone nome="balanca" tamanho={28} /> Voltei ao buffet</span></h2>
             <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-marca-escuro/80">
               Passe o <b>QR do seu cupom</b> no leitor, ou digite o número. O prato novo <b>soma</b> na sua comanda.
             </p>
             <div className="mx-auto mt-4 flex max-w-xs justify-center">
-              <input
+              <input aria-label="Nº"
                 autoFocus
                 inputMode="none"
                 value={numeroRepesar}
@@ -1038,11 +1039,11 @@ export function QuiosqueBalanca({
             {erro && <p role="alert" className="mt-4 text-lg font-bold text-red-600">{erro}</p>}
             <button onClick={() => setRepesarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
           </div>
-        </div>
+        </Janela>
       )}
 
       {virarAberto && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6" onClick={() => setVirarAberto(false)}>
+        <Janela onFechar={() => setVirarAberto(false)} fundoFecha camada="z-[60]" escuro="bg-black/60">
           <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center text-marca-escuro shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black text-orange-500"><span className="inline-flex items-center justify-center gap-3"><Icone nome="atualizar" tamanho={28} /> Virar buffet livre</span></h2>
             <p className="mt-2 text-[clamp(1rem,2.5vw,1.5rem)] text-marca-escuro/80">
@@ -1050,7 +1051,7 @@ export function QuiosqueBalanca({
             </p>
             <p className="mt-4 mb-2 text-base text-marca-escuro/60">Ou digite o <b>número da comanda</b> que está no cupom:</p>
             <div className="mx-auto flex max-w-xs justify-center">
-              <input
+              <input aria-label="Nº"
                 autoFocus
                 inputMode="none"
                 value={numeroVirar}
@@ -1083,7 +1084,7 @@ export function QuiosqueBalanca({
             {erro && <p role="alert" className="mt-3 text-lg text-red-600">{erro}</p>}
             <button onClick={() => setVirarAberto(false)} className="mt-6 text-lg text-marca-escuro/50 underline">Cancelar</button>
           </div>
-        </div>
+        </Janela>
       )}
 
       {estado === "conectar" ? (

@@ -73,8 +73,8 @@ export default async function EntregadoresPage() {
         </form>
         <form action={criarEntregador} className="cartao flex flex-col gap-2 p-4">
           <div className="rotulo">Eventual · só no delivery</div>
-          <input name="nome" required placeholder="Nome" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
-          <input name="telefone" placeholder="Telefone (opcional)" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
+          <input aria-label="Nome" name="nome" required placeholder="Nome" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
+          <input aria-label="Telefone (opcional)" name="telefone" placeholder="Telefone (opcional)" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
           <Turnos />
           <Enviar className="btn-secundario">Adicionar eventual</Enviar>
         </form>
@@ -156,8 +156,8 @@ O código é seu, não passe pra ninguém.`)}`} target="_blank" rel="noreferrer"
                 <div className="w-full"><Turnos dia={e.trabalha_dia} noite={e.trabalha_noite} /></div>
                 <div><label className="block text-mini text-texto-suave">Fixo almoço (R$)</label><input name="valor_fixo_dia" defaultValue={e.valor_fixo_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Fixo noite (R$)</label><input name="valor_fixo_noite" defaultValue={e.valor_fixo_noite ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
-                <div><label className="block text-mini text-texto-suave">Por tele (R$)</label><input name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" placeholder="da área" className={`${inp} w-24`} /></div>
-                <div><label className="block text-mini text-texto-suave">Almoço: grátis no fixo</label><input name="gratis_incluidas_dia" defaultValue={e.gratis_incluidas_dia ?? ""} inputMode="numeric" placeholder="sem regra" className={`${inp} w-24`} /></div>
+                <div><label className="block text-mini text-texto-suave">Por tele (R$)</label><input aria-label="da área" name="valor_tele" defaultValue={e.valor_tele ?? ""} inputMode="decimal" placeholder="da área" className={`${inp} w-24`} /></div>
+                <div><label className="block text-mini text-texto-suave">Almoço: grátis no fixo</label><input aria-label="sem regra" name="gratis_incluidas_dia" defaultValue={e.gratis_incluidas_dia ?? ""} inputMode="numeric" placeholder="sem regra" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Grátis depois (R$)</label><input name="valor_gratis_extra_dia" defaultValue={e.valor_gratis_extra_dia ?? ""} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <div><label className="block text-mini text-texto-suave">Troco que leva (R$)</label><input name="troco_inicial" defaultValue={e.troco_inicial ?? 63} inputMode="decimal" className={`${inp} w-24`} /></div>
                 <Enviar className="rounded-controle border border-borda-forte px-3 py-1.5 font-semibold">Salvar</Enviar>

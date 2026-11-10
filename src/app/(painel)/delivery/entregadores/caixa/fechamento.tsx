@@ -99,7 +99,7 @@ export function FechamentoMotoboy({ boy, formas, pedidos }: { boy: { id: string;
         </div>
       </div>
 
-      <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (opcional)" className="mt-3 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
+      <input aria-label="Observação (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (opcional)" className="mt-3 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
       {msg && <p className="mt-2 text-sm font-semibold text-texto-marca" role="alert">{msg}</p>}
       <BotaoAcao aoClicar={fechar} className="btn-principal mt-3 w-full">Fechar caixa do {boy.nome}</BotaoAcao>
     </div>
