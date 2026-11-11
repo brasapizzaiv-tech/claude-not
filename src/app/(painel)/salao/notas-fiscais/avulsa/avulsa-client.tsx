@@ -197,8 +197,9 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
 
   return (
     <div className="mt-5 grid items-start gap-4 xl:grid-cols-2">
+      {/* No computador: 1 e 3 à esquerda, 2 e 4 à direita (sem buraco embaixo do tipo de nota); no celular segue 1-2-3-4. */}
       {/* 1. tipo */}
-      <section className="cartao p-5">
+      <section className="cartao p-5 xl:col-start-1 xl:row-start-1">
         <p className="rotulo mb-3">1 · Tipo de nota</p>
         <div className="flex flex-wrap gap-2">
           {([["nfe", "NF-e · empresa (modelo 55)"], ["nfce", "NFC-e · consumidor (modelo 65)"]] as const).map(([v, t]) => (
@@ -218,7 +219,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
       </section>
 
       {/* 2. quem compra */}
-      <section className="cartao p-5">
+      <section className="cartao p-5 xl:col-start-2 xl:row-span-2 xl:row-start-1">
         <p className="rotulo mb-3">2 · Quem compra {modelo === "nfce" && <span className="normal-case tracking-normal">(opcional na NFC-e)</span>}</p>
         <div className="relative">
           <input value={buscaCli} onChange={(e) => setBuscaCli(e.target.value)} placeholder="Buscar cliente cadastrado (nome ou CNPJ)…" aria-label="Buscar cliente" className={campo} />
@@ -294,7 +295,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
       </section>
 
       {/* 3. itens */}
-      <section className="cartao p-5">
+      <section className="cartao p-5 xl:col-start-1 xl:row-span-2 xl:row-start-2">
         <p className="rotulo mb-3">3 · Itens</p>
         <div className="mb-4 rounded-controle bg-superficie-suave p-4">
           <p className="text-sm font-semibold text-texto">Puxar o que o cliente comprou no período</p>
@@ -342,7 +343,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
       </section>
 
       {/* 4. pagamento e emitir */}
-      <section className="cartao p-5">
+      <section className="cartao p-5 xl:col-start-2 xl:row-start-3">
         <p className="rotulo mb-3">4 · Pagamento e observação</p>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className={rotuloCampo}>Forma de pagamento
