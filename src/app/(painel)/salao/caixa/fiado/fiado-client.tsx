@@ -45,7 +45,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
     try {
       const r = await baixarFiadoSemCaixa(c.id, v, texto);
       if (r.ok) { setMsg(`✓ Baixa de ${brl(v)} no saldo de ${c.nome} (${texto}).`); setAberto(null); setBaixaValor(""); setMotivoTxt(""); router.refresh(); }
-      else setMsg(r.mensagem || "Não deu certo.");
+      else setMsg(r.mensagem || "Não deu certo. Confira a internet e tente de novo.");
     } catch { setMsg("Sem conexão. Tente de novo."); }
   }
 
@@ -57,7 +57,7 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
       try {
         const r = await receberFiado(c.id, v, forma);
         if (r.ok) { setMsg(`✓ Recebido ${brl(v)} de ${c.nome} em ${forma}.`); setAberto(null); setValor(""); router.refresh(); }
-        else setMsg(r.mensagem || "Não deu certo.");
+        else setMsg(r.mensagem || "Não deu certo. Confira a internet e tente de novo.");
       } catch { setMsg("Sem conexão. Tente de novo."); }
     });
   }

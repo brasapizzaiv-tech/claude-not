@@ -52,7 +52,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
     start(async () => {
       try {
         const r = await fn();
-        if (r && !r.ok) setMsg(r.mensagem || "Não deu certo.");
+        if (r && !r.ok) setMsg(r.mensagem || "Não deu certo. Confira a internet e tente de novo.");
         else if (okMsg) setMsg(okMsg);
         router.refresh();
       } catch {

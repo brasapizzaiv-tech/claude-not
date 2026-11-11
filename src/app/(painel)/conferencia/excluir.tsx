@@ -11,17 +11,17 @@ export function ExcluirPedido({ id, nome }: { id: string; nome: string }) {
       action={excluirPedido}
       onSubmit={enviarSeConfirmar(() =>
         confirmar(
-          `Apagar o pedido de ${nome}? Isso remove o pedido e o lançamento dele no financeiro. Não dá pra desfazer.`,
-          { perigo: true, okTexto: "Apagar o pedido" },
+          `Excluir o pedido de ${nome}? Isso remove o pedido e o lançamento dele no financeiro. Não dá pra desfazer.`,
+          { perigo: true, okTexto: "Excluir o pedido" },
         ),
       )}
     >
       <input type="hidden" name="id" value={id} />
       <Enviar
-        title="Apagar pedido"
+        title="Excluir pedido"
         className="text-zinc-300 hover:text-urgente-texto dark:text-zinc-600"
       >
-        <Icone nome="lixeira" tamanho={15} titulo="Excluir" />
+        <Icone nome="lixeira" tamanho={15} titulo="Excluir pedido" />
       </Enviar>
     </form>
   );

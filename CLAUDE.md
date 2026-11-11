@@ -69,3 +69,8 @@ paleta inteira gira pro tom dela; com o laranja do Brasa sai exatamente:
   (interface). A escolha mora em `--fonte-interface`/`--fonte-numero`.
 - **Acessibilidade**: alvo de toque ≥ 44px, foco visível (regra global, nunca
   `outline-none`), contraste ≥ 4,5:1 em texto nos dois temas.
+- **Nome das ações** (TXT-04): **Excluir** = some de vez (lixeira); **Desativar** =
+  sai da lista, volta depois; **Tirar** = sai da conta/seleção mas continua onde
+  estava (ícone ✕); **Cancelar** = só nota fiscal e pedido; **Fechar** = fecha a
+  janela. Erro de reserva diz o que fazer ("Confira a internet e tente de novo");
+  lista vazia aponta o botão de criar.

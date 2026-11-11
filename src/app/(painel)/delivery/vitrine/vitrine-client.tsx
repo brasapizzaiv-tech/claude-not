@@ -44,7 +44,7 @@ export function VitrineClient({ d }: { d: DadosVitrine }) {
 
   async function executar(r: Promise<{ ok: boolean; mensagem?: string }>) {
     const x = await r;
-    if (!x.ok) void avisar(x.mensagem ?? "Não deu certo.");
+    if (!x.ok) void avisar(x.mensagem ?? "Não deu certo. Confira a internet e tente de novo.");
     else router.refresh();
     return x.ok;
   }

@@ -138,7 +138,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     const pagamento: Pagto = { forma: formaPelaBandeira(forma, tef, formas), colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 };
     try {
       const r = await finalizarVendaPdv(itensParaEnviar(), obs, { ...pagamento, tef, valorTef: cobrar, desconto, descontoFuncionario: funcionario }, local);
-      if (!r.ok) return { ok: false, mensagem: ("mensagem" in r && r.mensagem) || "Não foi possível concluir." };
+      if (!r.ok) return { ok: false, mensagem: ("mensagem" in r && r.mensagem) || "Não deu certo. Confira a internet e tente de novo." };
       concluir(r, pagamento, 0, local === "viagem", cliente?.nome);
       return { ok: true, transacaoId: "tefTransacaoId" in r ? r.tefTransacaoId : null };
     } finally {
@@ -161,7 +161,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
           setValeSemCodigo(false);
           concluir(r, pagamento, trocoAtual, ehViagem, nomeCliente);
         } else {
-          setErro(("mensagem" in r && r.mensagem) || "Não foi possível concluir."); setTimeout(() => setErro(null), 3500);
+          setErro(("mensagem" in r && r.mensagem) || "Não deu certo. Confira a internet e tente de novo."); setTimeout(() => setErro(null), 3500);
         }
       } catch {
         setErro("Sem conexão. Tente de novo."); setTimeout(() => setErro(null), 3500);
@@ -238,7 +238,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
               </button>
             );
           })}
-          {visiveis.length === 0 && <p className="col-span-full py-10 text-center text-sm text-texto-suave">Nenhum produto.</p>}
+          {visiveis.length === 0 && <p className="col-span-full py-10 text-center text-sm text-texto-suave">Nenhum produto com esse nome nesta categoria. Tente outra palavra ou outra categoria.</p>}
         </div>
       </div>
 

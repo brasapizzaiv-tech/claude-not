@@ -22,7 +22,7 @@ export function CriarPin({ token }: { token: string }) {
     if (pin !== pin2) return setErro("Os dois PINs não são iguais.");
     start(async () => {
       const r = await definirPin(token, pin);
-      if (!r.ok) return setErro(r.erro ?? "Erro.");
+      if (!r.ok) return setErro(r.erro ?? "Não deu certo. Confira a internet e tente de novo.");
       router.refresh();
     });
   }
@@ -64,7 +64,7 @@ export function EntrarPin({ token }: { token: string }) {
     setErro(null);
     start(async () => {
       const r = await entrarPin(token, pin);
-      if (!r.ok) return setErro(r.erro ?? "Erro.");
+      if (!r.ok) return setErro(r.erro ?? "Não deu certo. Confira a internet e tente de novo.");
       router.refresh();
     });
   }

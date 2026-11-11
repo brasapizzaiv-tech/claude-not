@@ -146,7 +146,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
               ))}
               {filtrados.length === 0 && (
                 <tr>
-                  <td className="px-4 py-8 text-center text-texto-fraco">Nenhum cliente.</td>
+                  <td colSpan={99} className="px-4 py-8 text-center text-texto-fraco">{q ? "Nenhum cliente com essa busca. Confira o nome ou o telefone." : "Nenhum cliente ainda. Use + Novo cliente, acima."}</td>
                 </tr>
               )}
             </tbody>

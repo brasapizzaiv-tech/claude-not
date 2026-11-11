@@ -463,7 +463,7 @@ export function QuiosqueBalanca({
         setNumeroVirar("");
         concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true, viradaLivre: true, antes: r.antes });
       } else {
-        setErro(r.mensagem ?? "Não deu certo.");
+        setErro(r.mensagem ?? "Não deu certo. Confira a internet e tente de novo.");
         setTimeout(() => setErro(""), 5000);
       }
     } catch {
@@ -644,7 +644,7 @@ export function QuiosqueBalanca({
     try {
       const r = await virarLivreKiosk(comandaId);
       if (r.ok) { setVirarAberto(false); concluir({ id: r.id, numero: r.numero, valor: r.valor, liquido: 0, peso: 0, tara: 0, livre: true, viradaLivre: true, antes: r.antes }); }
-      else { setErro(r.mensagem ?? "Não deu certo."); setEst("aguardando"); setTimeout(() => setErro(""), 5000); }
+      else { setErro(r.mensagem ?? "Não deu certo. Confira a internet e tente de novo."); setEst("aguardando"); setTimeout(() => setErro(""), 5000); }
     } catch {
       setEst("aguardando");
     }

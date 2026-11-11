@@ -153,7 +153,7 @@ export function NovoPedido({
               <span className="text-sm text-ok-texto">{i.a_partir != null ? `a partir de ${brl(i.a_partir)}` : i.preco > 0 ? brl(i.preco) : "—"}</span>
             </button>
           ))}
-          {visiveis.length === 0 && <p className="col-span-full py-10 text-center text-sm text-texto-suave">Nenhum produto.</p>}
+          {visiveis.length === 0 && <p className="col-span-full py-10 text-center text-sm text-texto-suave">Nenhum produto com esse nome nesta categoria. Tente outra palavra ou outra categoria.</p>}
         </div>
       </div>
 

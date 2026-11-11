@@ -360,6 +360,8 @@ export async function consultarNotaAvulsa(id: string) {
   const token = n.ambiente === "homologacao" && (cfg.emissor_ambiente || "homologacao") !== "homologacao" ? cfg.emissor_token_homologacao : cfg.emissor_token;
   if (!token) return { ok: false as const, mensagem: "Falta o token do emissor." };
   const r = await consultarNfe({ token, ambiente: n.ambiente as FocusAmbiente }, n.ref as string);
+  // FIS-02: Focus fora do ar não traz status — não apaga o que a linha já tinha.
+  if (!r.status) return { ok: false as const, status: null, numero: null, urlDanfe: null, mensagem: r.mensagem || "A Focus não respondeu agora. Tente de novo em alguns minutos.", aviso: null };
   await db.from("nfce_emitidas").update({
     status: r.status ?? null, numero: r.numero ?? null, serie: r.serie ?? null, chave: r.chave ?? null,
     url_danfe: r.urlDanfe ?? null, url_xml: r.urlXml ?? null, mensagem: r.mensagem ?? null,

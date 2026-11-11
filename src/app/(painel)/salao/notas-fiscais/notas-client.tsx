@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cancelarNfceEmitida, imprimirNfce } from "../fiscal-actions";
 import { notasParaPlanilha } from "./csv-actions";
+import { consultarNotaAvulsa } from "./avulsa/actions";
 
 export type NotaLinha = {
   id: string;
@@ -90,6 +91,20 @@ export function NotasClient({
       const r = await cancelarNfceEmitida(id, j.trim());
       if (!r.ok) void avisar("Não cancelou: " + (r.mensagem || "erro"));
       else if (r.aviso) void avisar(`Nota cancelada. ${r.aviso}`);
+      router.refresh();
+    });
+  }
+
+  // FIS-02: NF-e que ficou "processando" (quem emitiu saiu da tela antes da
+  // resposta) — consulta a Focus de novo e, se autorizou, faz a baixa/caixa.
+  function consultar(id: string) {
+    start(async () => {
+      const r = await consultarNotaAvulsa(id);
+      if (r.ok) void avisar(`Nota autorizada${r.numero ? ` (nº ${r.numero})` : ""}.${"aviso" in r && r.aviso ? ` ${r.aviso}` : ""}`);
+      else {
+        const st = (r as { status?: string | null }).status;
+        void avisar(r.mensagem || (st ? `A Receita ainda não respondeu (${st}). Tente de novo em alguns minutos.` : "Não consegui consultar agora. Tente de novo em alguns minutos."));
+      }
       router.refresh();
     });
   }
@@ -205,6 +220,11 @@ export function NotasClient({
                   )}
                   {l.urlXml && (
                     <a href={l.urlXml} target="_blank" rel="noopener noreferrer" className="mr-1 inline-flex min-h-11 items-center px-2 text-texto-suave hover:underline">XML</a>
+                  )}
+                  {l.modelo === "nfe" && (l.status === "processando_autorizacao" || l.status === "enviando") && (
+                    <button onClick={() => consultar(l.id)} disabled={proc} className="mr-1 inline-flex min-h-11 items-center px-2 text-texto-marca hover:underline disabled:opacity-50">
+                      Consultar
+                    </button>
                   )}
                   {(l.status === "autorizado" || l.status === "cancelando") && (
                     <button onClick={() => cancelar(l.id)} disabled={proc} className="inline-flex min-h-11 items-center px-2 text-urgente-texto hover:underline disabled:opacity-50">

@@ -44,7 +44,7 @@ export function PrazoCotacao({
 
   async function aplicar(iso: string | null) {
     const r = await definirPrazoCotacao(cotacaoId, iso);
-    if (!r.ok) { void avisar(r.mensagem ?? "Não deu certo."); return; }
+    if (!r.ok) { void avisar(r.mensagem ?? "Não deu certo. Confira a internet e tente de novo."); return; }
     setAberto(false);
     router.refresh();
   }

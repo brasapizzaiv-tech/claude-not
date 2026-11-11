@@ -305,7 +305,7 @@ export function GarcomPedido({
               })}
             </div>
           ) : visiveis.length === 0 ? (
-            <p className="py-10 text-center text-sm text-texto-fraco">Nenhum produto.</p>
+            <p className="py-10 text-center text-sm text-texto-fraco">Nenhum produto com esse nome nesta categoria. Tente outra palavra ou outra categoria.</p>
           ) : (
             <div className="space-y-2">
               {visiveis.map((i) => {

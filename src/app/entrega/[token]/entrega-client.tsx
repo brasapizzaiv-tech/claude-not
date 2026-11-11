@@ -81,7 +81,7 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
     setMsg(null);
     start(async () => {
       const r = await fn();
-      if (!r.ok) setMsg(r.mensagem ?? "Não deu certo.");
+      if (!r.ok) setMsg(r.mensagem ?? "Não deu certo. Confira a internet e tente de novo.");
       else if (okMsg) setMsg(okMsg);
       await recarregar();
       if (r.ok) setTimeout(() => setMsg(null), 3000);

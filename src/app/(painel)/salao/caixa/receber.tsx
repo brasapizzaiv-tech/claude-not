@@ -984,10 +984,10 @@ export function ReceberComandas({
                       <span className="text-texto-suave">{brl(l.valorSem)}</span>
                       <button
                         onClick={() => tirar(l.key)}
-                        title="Remover"
-                        className="rounded-controle px-1.5 text-urgente-texto hover:bg-red-50 dark:hover:bg-red-950/40"
+                        title="Tirar desta conta (continua na comanda)"
+                        className="rounded-controle px-1.5 text-texto-suave hover:bg-superficie-suave"
                       >
-                        <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
+                        <Icone nome="fechar" tamanho={15} titulo="Tirar desta conta" />
                       </button>
                     </div>
                   ))}
@@ -1003,10 +1003,10 @@ export function ReceberComandas({
                       <span className="text-texto-suave">{brl(e.preco * e.qtd)}</span>
                       <button
                         onClick={() => tirarExtra(e.uid)}
-                        title="Remover"
-                        className="rounded-controle px-1.5 text-urgente-texto hover:bg-red-50 dark:hover:bg-red-950/40"
+                        title="Tirar desta conta (continua na comanda)"
+                        className="rounded-controle px-1.5 text-texto-suave hover:bg-superficie-suave"
                       >
-                        <Icone nome="lixeira" tamanho={15} titulo="Excluir item" />
+                        <Icone nome="fechar" tamanho={15} titulo="Tirar desta conta" />
                       </button>
                     </div>
                   ))}

@@ -30,7 +30,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
   async function rodar(acao: () => Promise<{ ok: boolean; erro?: string }>) {
     setErro(null);
     const r = await acao();
-    if (!r.ok) setErro(r.erro ?? "Não deu certo.");
+    if (!r.ok) setErro(r.erro ?? "Não deu certo. Confira a internet e tente de novo.");
     router.refresh();
   }
 

@@ -76,7 +76,7 @@ export function BaixaScanner({ token }: { token: string }) {
         setLista([]);
         setTimeout(() => setFeito(null), 3000);
       } else {
-        aviso(r.mensagem || "Erro");
+        aviso(r.mensagem || "Não deu certo. Confira a internet e tente de novo.");
       }
     });
   }

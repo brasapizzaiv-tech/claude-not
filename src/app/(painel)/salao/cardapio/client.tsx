@@ -98,7 +98,7 @@ export function UploadFoto({ tipo, id, temFoto }: { tipo: "item" | "sabor"; id: 
             fd.set("tipo", tipo); fd.set("id", id); fd.set("foto", await comprimirFoto(f));
             try {
               const r = await salvarFotoCardapio(fd);
-              setMsg(r.ok ? null : r.mensagem ?? "Falhou");
+              setMsg(r.ok ? null : r.mensagem ?? "Não deu certo. Confira a internet e tente de novo.");
             } catch {
               setMsg("Não consegui enviar a foto. Tente uma imagem menor.");
             }

@@ -75,7 +75,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     setMsg(null);
     start(async () => {
       const r = await fn();
-      if (!r.ok) setMsg(r.mensagem ?? "Erro.");
+      if (!r.ok) setMsg(r.mensagem ?? "Não deu certo. Confira a internet e tente de novo.");
       else setMarcadas(new Set());
       router.refresh();
     });
@@ -281,7 +281,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
     setMsg(null);
     start(async () => {
       const r = await criarSolicitacaoPainel({ colaboradorId: colab || null, tipo: tipoNovo, item, quantidade: qtd, motivo, urgente });
-      if (!r.ok) { setMsg(r.mensagem ?? "Erro."); return; }
+      if (!r.ok) { setMsg(r.mensagem ?? "Não deu certo. Confira a internet e tente de novo."); return; }
       setItem(""); setQtd(""); setMotivo(""); setUrgente(false);
       onFeito();
     });

@@ -115,7 +115,7 @@ export function BatidaMenu({ id, hora, manual, ignorada, destaque }: { id?: stri
   const fazer = (f: () => Promise<{ ok: boolean; erro?: string } | void>) => start(async () => {
     setErro(null);
     const r = await f();
-    if (r && !r.ok) setErro(r.erro ?? "Não deu certo."); else setAberto(false);
+    if (r && !r.ok) setErro(r.erro ?? "Não deu certo. Confira a internet e tente de novo."); else setAberto(false);
   });
   const item = "block w-full px-3 py-1.5 text-left hover:bg-superficie-suave disabled:opacity-40";
   return (

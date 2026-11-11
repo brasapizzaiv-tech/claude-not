@@ -22,12 +22,12 @@ export async function excluirPedido(formData: FormData) {
   if (!id) return;
   // EST-04: com nota ligada, apagar deixava a nota "conciliada" sem pedido.
   const { data: nota } = await supabase.from("notas_fiscais").select("numero").eq("pedido_id", id).limit(1).maybeSingle();
-  if (nota) throw new Error(`Este pedido está ligado à nota ${(nota as { numero?: string | null }).numero ?? ""}. Tire a nota do pedido antes de apagar.`);
+  if (nota) throw new Error(`Este pedido está ligado à nota ${(nota as { numero?: string | null }).numero ?? ""}. Tire a nota do pedido antes de excluir.`);
   // Primeiro o pedido (os itens vão junto pelo banco); o lançamento dele só
   // depois que o pedido saiu — antes, uma falha no meio deixava pedido sem itens.
   const { data: lancs } = await supabase.from("lancamentos").select("id").eq("pedido_id", id);
   const { error } = await supabase.from("pedidos").delete().eq("id", id);
-  if (error) throw new Error("Não consegui apagar o pedido agora. Tente de novo.");
+  if (error) throw new Error("Não consegui excluir o pedido agora. Tente de novo.");
   const ids = ((lancs as { id: string }[] | null) ?? []).map((l) => l.id);
   if (ids.length) await supabase.from("lancamentos").delete().in("id", ids);
   revalidatePath("/conferencia");
