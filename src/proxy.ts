@@ -7,7 +7,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 // domínio do restaurante continua abrindo o site dele na raiz (next.config).
 const HOST_MOTELLI = /(^|\.)motelli\.com\.br$/i;
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").split(":")[0];
   if (HOST_MOTELLI.test(host)) {
     // Os apps Motelli (Entregador e Equipe) perguntam aqui pelo código de entrada (é o único

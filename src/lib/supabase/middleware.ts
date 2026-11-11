@@ -63,7 +63,6 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/equipe/") ||
     path.startsWith("/garcom") ||
     path.startsWith("/folga/") ||
-    path.startsWith("/balanca-teste") ||
     path.startsWith("/marmitas") ||
     path.startsWith("/pedir") ||
     path.startsWith("/site") ||
@@ -79,7 +78,6 @@ export async function updateSession(request: NextRequest) {
     path === "/tv" ||
     path.startsWith("/api/tv/") ||
     path.startsWith("/api/whatsapp/") ||
-    path.startsWith("/api/rastreio") ||
     path.startsWith("/api/contagem/cron") ||
     // Conferência das notas na Focus (de 30 em 30 min): a rota confere o CRON_SECRET.
     path === "/api/fiscal/conferir" ||

@@ -21,8 +21,3 @@ export async function empresaDoAgente(req: Request): Promise<string | null> {
     .maybeSingle();
   return (data?.empresa_id as string | undefined) ?? null;
 }
-
-/** Só sim ou não, pra quem não precisa saber de qual loja é. */
-export async function agenteAutorizado(req: Request): Promise<boolean> {
-  return (await empresaDoAgente(req)) !== null;
-}

@@ -20,10 +20,6 @@ export function FornecedoresClient({
   categoriasProduto: { id: string; nome: string }[];
 }) {
   const nomeCatProd = (id: string) => categoriasProduto.find((c) => c.id === id)?.nome ?? "";
-  const nomeCat = (id: string | null | undefined) => {
-    const c = categorias.find((x) => x.id === id);
-    return c ? `${c.grupo} — ${c.nome}` : "";
-  };
   const grupos = [...new Set(categorias.map((c) => c.grupo))];
   const [editando, setEditando] = useState<Fornecedor | null>(null);
   const [aberto, setAberto] = useState(false);

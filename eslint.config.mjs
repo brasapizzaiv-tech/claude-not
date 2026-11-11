@@ -12,6 +12,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // COD-007: cópias antigas do projeto, bibliotecas copiadas e builds dos
+    // instaladores não são código do sistema.
+    ".claude/**",
+    "installer-*/**",
+    "**/build/**",
+    "**/dist/**",
+    "public/app/**",
+    "app-*/www/jsQR.js",
+    "app-*/android/**",
+    "app-*/ios/**",
   ]),
 ]);
 

@@ -27,8 +27,6 @@ import { COOKIE_GARCOM, tokenDoCookieGarcom } from "@/lib/garcom-auth";
 // (montar um endereço, escolher um logo, filtrar uma busca feita com a chave
 // administrativa, que passa por cima das regras do banco).
 
-export const BRASA = "00000000-0000-4000-8000-000000000001";
-
 export type Empresa = {
   id: string;
   nome: string;

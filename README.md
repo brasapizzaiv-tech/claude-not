@@ -48,7 +48,11 @@ não precisa instalar nada.
    DATABASE_URL=<Connect → Session pooler, com a senha do banco>
    ```
    > Sem esse arquivo o site ainda roda, mas os scripts (migrações e importações)
-   > não funcionam.
+   > não funcionam. A lista completa (Pix, WhatsApp, mapas, avisos, rotinas) com
+   > pra que serve cada uma está em **`.env.example`**.
+   >
+   > Migrations: números repetidos (0081–0084 têm dois arquivos cada) não são erro;
+   > a ordem é a do nome do arquivo e todos estão aplicados.
 3. Rodar:
    ```bash
    npm run dev

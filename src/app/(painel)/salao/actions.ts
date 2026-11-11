@@ -13,7 +13,7 @@ import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { sessaoGarcom } from "@/lib/garcom-auth";
 import { dbGarcomOuUsuario } from "@/lib/garcom-auth";
 import { fecharTefNoBanco, PREFIXO_SEM_CONTA, transacaoSemConta } from "@/lib/tef-venda-server";
-import { codigoDaForma, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
+import { codigoDaForma, emiteNotaAuto, naoEntraNoCaixa, tipoDe, tipoDoMovimento } from "@/lib/formas-pagamento";
 import { reimprimirNaCozinha, resolverCombo } from "@/lib/delivery-core";
 import { debitarVale, estornarBaixas, ligarBaixaAoMov, obsDaBaixa, type BaixaVale } from "@/lib/vale-presente-server";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
@@ -1579,7 +1579,9 @@ export async function pagarSelecao(
   let pendenteId: string | null = null;
   try {
     const eletronico = pagamentos.some(
-      (p) => p.valor > 0 && !naoEntraNoCaixa(tipoDe(p.forma, formasT)) && /pix|cart|créd|cred|déb|deb|vale/i.test(p.forma),
+      // COD-003: pelo TIPO do cadastro, a mesma regra que a tela usa pra avisar
+      // "vai sair nota" (antes era pelo nome, e "Juntos Sicredi" entrava pelo "cred").
+      (p) => p.valor > 0 && emiteNotaAuto(tipoDe(p.forma, formasT)),
     );
     if (eletronico) {
       const { data: cfgN } = await supabase

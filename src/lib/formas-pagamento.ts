@@ -82,8 +82,6 @@ export function tipoDe(nome: string | null | undefined, formas?: FormaOpcao[]): 
   return achada ? achada.tipo : tipoPeloNome(nome);
 }
 
-export const daTroco = (tipo: TipoForma) => tipo === "dinheiro";
-
 /**
  * Cortesia e vale-presente (pedido do Rafael, 14/10/2026): fecham a conta mas
  * não é dinheiro entrando — a cortesia a casa paga, o vale foi pago quando foi

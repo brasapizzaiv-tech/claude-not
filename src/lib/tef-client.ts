@@ -152,12 +152,3 @@ export function tefCancelar(p: { nsu: string; valor: number; data: string }) {
 export function tefAdm() {
   return chamar<TefVenda>("/adm", {}, 630000);
 }
-
-// Traduz a forma de pagamento do caixa pro tipo que o TEF entende.
-export function tipoTefDaForma(forma: string): "credito" | "debito" | "voucher" | null {
-  const f = forma.toLowerCase();
-  if (f.includes("créd") || f.includes("cred")) return "credito";
-  if (f.includes("déb") || f.includes("deb")) return "debito";
-  if (f.includes("vale") || f.includes("refei") || f.includes("alimenta")) return "voucher";
-  return null;
-}

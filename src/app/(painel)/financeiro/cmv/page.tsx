@@ -82,8 +82,6 @@ export default async function CmvPage({
     if (ult && diffDias(ult[ult.length - 1], d) <= TOL) ult.push(d);
     else clusters.push([d]);
   }
-  // Representante de cada virada = a MAIOR data do grupo (a lista está desc).
-  const reps = clusters.map((cl) => cl[0]);
 
   // Semana = data de início e data de fim. Default: a SEMANA EM ANDAMENTO
   // (da última virada até hoje) — a contagem de segunda é o estoque inicial da
