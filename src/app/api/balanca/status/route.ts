@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   ]);
   return Response.json({
     ok: true,
-    numero_inicial_balanca: Number((cfg as { valor?: string } | null)?.valor) || 200,
+    numero_inicial_balanca: Number((cfg as { valor?: string } | null)?.valor) || 201,
     caixa_aberto_em: (caixa as { aberto_em?: string } | null)?.aberto_em ?? null,
   });
 }
