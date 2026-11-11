@@ -70,13 +70,15 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
         </p>
       )}
 
+      {/* Setores lado a lado em tela larga. */}
+      <div className="grid gap-x-6 xl:grid-cols-2">
       {setores.map((s) => {
         const doSetor = linhas.filter((l) => l.modelo.setor_id === s.id);
         if (doSetor.length === 0) return null;
         return (
           <div key={s.id} className="mb-5">
             <p className="mb-2 text-xs font-bold" style={{ color: s.cor ?? undefined }}>{s.nome}</p>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
               {core.MOMENTOS.map((mom) => {
                 const doMomento = doSetor.filter((l) => l.modelo.momento === mom);
                 if (doMomento.length === 0) return null;
@@ -101,6 +103,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
           </div>
         );
       })}
+      </div>
 
       {aberta && (
         <div className="mt-6 cartao p-4">

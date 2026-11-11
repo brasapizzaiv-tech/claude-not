@@ -196,7 +196,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
   }
 
   return (
-    <div className="mt-5 grid max-w-5xl gap-4">
+    <div className="mt-5 grid items-start gap-4 xl:grid-cols-2">
       {/* 1. tipo */}
       <section className="cartao p-5">
         <p className="rotulo mb-3">1 · Tipo de nota</p>
@@ -419,7 +419,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
       </section>
 
       {resultado && (
-        <section className={`cartao p-5 ${resultado.autorizado ? "shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : ""}`} role="status">
+        <section className={`cartao p-5 xl:col-span-2 ${resultado.autorizado ? "shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : ""}`} role="status">
           {resultado.autorizado ? (
             <>
               <p className="pilula pilula-ok inline-block">autorizada{resultado.ambiente === "homologacao" ? " · teste" : ""}</p>
