@@ -65,7 +65,7 @@ export default async function ContasPagarPage({
   const aberto = f.status !== "pagas" && f.status !== "todas";
 
   return (
-    <div className="mx-auto max-w-[1200px] p-5">
+    <div className="pagina">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
@@ -178,7 +178,7 @@ export default async function ContasPagarPage({
             opcoes={categorias.map((c) => ({ value: c.id, label: c.nome }))}
           />
         </div>
-        <button className="flex min-h-11 items-center rounded-controle bg-texto px-4 text-sm font-medium text-fundo transition hover:opacity-90">
+        <button className="btn-principal min-h-11 px-4 text-sm">
           Aplicar
         </button>
         <Link

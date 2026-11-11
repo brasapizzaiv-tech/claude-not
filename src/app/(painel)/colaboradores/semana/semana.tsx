@@ -620,7 +620,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
   const ajusteInicial = ajustando ? (ajustando.id === "__adiant" ? adiantEnv : envelopes[ajustando.id] ?? envelopesRetro[ajustando.id] ?? null) : null;
 
   return (
-    <div className="w-full p-4 sm:p-6">
+    <div className="pagina">
       {ajustando && cofreSaldo && (
         <EnvelopeCofre
           titulo={ajustando.id === "__adiant" ? "Adiantamento" : ajustando.nome}

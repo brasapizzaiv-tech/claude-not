@@ -52,7 +52,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
 
   const cartao = "rounded-cartao bg-painel-cartao p-3 text-center";
   return (
-    <div className="w-full p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-end gap-3">
         <div>
@@ -62,7 +62,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
         <div className="ml-auto flex flex-wrap gap-2 text-sm">
           <Link href="/delivery/gatilhos" className="inline-flex items-center gap-1.5 rounded-controle border border-borda-forte px-3 py-2"><Icone nome="rapido" tamanho={14} /> Gatilhos automáticos</Link>
           <Link href="/delivery/whatsapp" className="inline-flex items-center gap-1.5 rounded-controle border border-borda-forte px-3 py-2"><Icone nome="ajustes" tamanho={14} /> Modelos e limites</Link>
-          <Link href="/delivery/campanhas/nova" className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo">+ Campanha</Link>
+          <Link href="/delivery/campanhas/nova" className="btn-principal min-h-11 px-4 text-sm">+ Campanha</Link>
         </div>
       </div>
 

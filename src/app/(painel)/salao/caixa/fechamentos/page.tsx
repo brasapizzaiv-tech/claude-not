@@ -126,7 +126,7 @@ export default async function FechamentosPage({ searchParams }: { searchParams: 
   const dias = [...new Set(linhas.map((l) => l.dia))];
 
   return (
-    <div className="w-full px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo"><Link href="/salao/caixa" className="hover:text-texto">Caixa</Link></p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>

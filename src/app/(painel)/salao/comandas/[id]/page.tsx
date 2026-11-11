@@ -178,7 +178,7 @@ export default async function ComandaPage({
   const total = subtotal + servico;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       {/* Topo: rótulo + número grande, como as outras telas do layout novo. */}
       <p className="rotulo">
         <Link href="/salao" className="hover:text-texto">Salão</Link> · comanda{comanda.mesa ? ` · ${comanda.mesa}` : ""}

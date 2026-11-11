@@ -32,7 +32,7 @@ export default async function CaixaMotoboysPage() {
   const nomeBoy = new Map(lista.map((b) => [b.id, b.nome]));
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
+    <div className="pagina">
       <Link href="/delivery/entregadores" className="text-sm font-semibold text-texto-marca hover:underline">← Entregadores</Link>
       <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="carteira" tamanho={19} /> Caixa dos motoboys</h1>
       <p className="mb-4 text-sm text-texto-suave">No fim do turno o boy devolve o dinheiro (o troco que levou + as teles em dinheiro) e as maquininhas. Confira o dinheiro e os comprovantes, ajuste a forma de algum pedido se ele marcou errado e feche: cada pedido entra no caixa. Pix online já sai pago e não aparece aqui. O caixa do salão só fecha depois que todos os motoboys fecharem.</p>

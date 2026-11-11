@@ -40,7 +40,7 @@ export function EventosClient({ eventos, hoje }: { eventos: Evento[]; hoje: stri
         <div>
           <button
             onClick={() => setAbrindo(true)}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             <span className="inline-flex items-center gap-2">
               <Icone nome="novo" tamanho={16} /> Marcar um evento

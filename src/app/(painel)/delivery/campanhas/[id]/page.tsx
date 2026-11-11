@@ -58,7 +58,7 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
   );
 
   return (
-    <div className="w-full max-w-4xl p-4">
+    <div className="pagina">
       <Link href="/delivery/campanhas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pras campanhas</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-start gap-3">
         <div className="min-w-0">

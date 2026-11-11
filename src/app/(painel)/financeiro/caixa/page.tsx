@@ -33,7 +33,7 @@ export default async function CaixaListaPage() {
   const lista = (data as Row[]) ?? [];
 
   return (
-    <div className="w-full p-6 sm:p-8">
+    <div className="pagina">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
@@ -53,7 +53,7 @@ export default async function CaixaListaPage() {
           </Link>
           <Link
             href="/financeiro/caixa/novo"
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             + Novo fechamento
           </Link>

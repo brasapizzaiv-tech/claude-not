@@ -60,7 +60,7 @@ export function CategoriasClient({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
@@ -75,7 +75,7 @@ export function CategoriasClient({
             setEditando(null);
             setAberto(true);
           }}
-          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           + Adicionar
         </button>

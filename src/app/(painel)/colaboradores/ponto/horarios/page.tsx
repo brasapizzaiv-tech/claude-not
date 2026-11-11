@@ -30,7 +30,7 @@ export default async function HorariosPage({ searchParams }: { searchParams: Pro
   }
 
   return (
-    <div className="w-full max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo"><Link href="/colaboradores/ponto" className="hover:text-texto">Relatórios de ponto</Link></p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>

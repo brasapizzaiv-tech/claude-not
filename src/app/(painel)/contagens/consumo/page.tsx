@@ -80,7 +80,7 @@ export default async function ConsumoPage() {
   linhas.sort((a, b) => (b.media ?? -1) - (a.media ?? -1));
 
   return (
-    <div className="w-full p-4 md:p-8">
+    <div className="pagina">
       <Link href="/contagens" className="text-sm font-semibold text-texto-marca hover:underline">← Contagem de estoque</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Consumo do estoque</h1>
       <p className="mt-1 max-w-3xl text-sm text-texto-suave">

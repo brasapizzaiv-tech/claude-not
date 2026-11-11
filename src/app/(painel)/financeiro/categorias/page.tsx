@@ -78,7 +78,7 @@ export default async function CategoriasDrePage() {
   }));
 
   return (
-    <div className="w-full p-5">
+    <div className="pagina">
       <Link href="/financeiro" className="text-sm text-texto-suave hover:underline">
         Financeiro
       </Link>

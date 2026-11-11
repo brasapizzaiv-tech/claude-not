@@ -40,7 +40,7 @@ export default async function FaturaPage() {
   }));
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="pagina">
       <Link href="/financeiro" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao financeiro
       </Link>
       <h1 className="mt-2 mb-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="cartao" tamanho={20} className="mr-2" /> Fatura do cartão</h1>

@@ -82,7 +82,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
   const porEntregador = agrupar((p) => (p.tipo === "entrega" ? (p.entregador_id ?? "sem") : null), (k) => (k === "sem" ? "Sem entregador" : entrNome.get(k) ?? "?"));
 
   return (
-    <div className="p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
         <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="grafico" tamanho={19} /> Relatórios do delivery</h1>

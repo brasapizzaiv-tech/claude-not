@@ -318,7 +318,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
   const visiveis = busca ? base.filter((c) => c.nome.toLowerCase().includes(busca.toLowerCase())) : base;
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Colaboradores</h1>
@@ -349,7 +349,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
           </button>
           <button
             onClick={() => { setEditando(null); setAberto(true); }}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             + Adicionar
           </button>

@@ -109,7 +109,7 @@ export function LerCupom() {
               placeholder="Ou cole o endereço do QR"
               className="min-h-11 flex-1 rounded-controle border border-borda bg-painel-cartao px-3 text-sm text-texto"
             />
-            <button type="submit" disabled={lendo || !texto.trim()} className="btn-principal min-h-11 px-4 text-sm disabled:opacity-60">
+            <button type="submit" disabled={lendo || !texto.trim()} className="btn-principal min-h-11 px-4 text-sm">
               {lendo ? "Buscando…" : "Importar"}
             </button>
           </form>

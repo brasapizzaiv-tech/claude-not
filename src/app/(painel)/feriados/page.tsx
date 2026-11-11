@@ -74,7 +74,7 @@ export default async function FeriadosPage({
   ).length;
 
   return (
-    <div className="w-full p-5">
+    <div className="pagina">
       <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Feriados e eventos
       </h1>

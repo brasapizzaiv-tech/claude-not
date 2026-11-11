@@ -64,7 +64,7 @@ export default async function PontoDiarioPage({ searchParams }: { searchParams: 
   const dow = new Date(Date.UTC(a, m - 1, d)).getUTCDay();
 
   return (
-    <div className="w-full max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo"><Link href="/colaboradores/ponto" className="hover:text-texto">Relatórios de ponto</Link></p>
       <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Ponto diário</h1>
 

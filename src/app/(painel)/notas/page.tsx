@@ -107,7 +107,7 @@ export default async function NotasPage() {
   }));
 
   return (
-    <div className="w-full p-4 sm:p-8">
+    <div className="pagina">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">

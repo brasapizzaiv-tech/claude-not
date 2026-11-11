@@ -52,34 +52,43 @@ export default async function CaixaPage({
   // ---- Sem caixa aberto: formulário de abertura ----
   if (!caixa) {
     return (
-      <div className="mx-auto max-w-lg p-6">
+      <div className="pagina">
         <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão
         </Link>
         <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Frente de Caixa</h1>
         <p className="mt-1 text-texto-suave">Nenhum caixa aberto. Abra um para começar a receber.</p>
-        {/* Histórico não depende de caixa aberto: consultar não é movimentar. */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link href="/salao/caixa/movimentos" className="btn-secundario text-sm">
-            <Icone nome="documento" tamanho={15} className="mr-1.5" /> Movimentações
-          </Link>
-          <Link href="/salao/caixa/fechamentos" className="btn-secundario text-sm">
-            <Icone nome="grafico" tamanho={15} className="mr-1.5" /> Fechamentos
-          </Link>
-          <Link href="/salao/caixa/tef" className="btn-secundario text-sm">
-            <Icone nome="cartao" tamanho={15} className="mr-1.5" /> Cartões (TEF)
-          </Link>
-          <Link href="/salao/caixa/pix" className="btn-secundario text-sm">
-            <Icone nome="rapido" tamanho={15} className="mr-1.5" /> Pix recebidos
-          </Link>
-          <Link href="/salao/caixa/fiado" className="btn-secundario text-sm">
-            <Icone nome="equipe" tamanho={15} className="mr-1.5" /> Fiado de clientes
-          </Link>
-          <Link href="/salao/caixa/vales" className="btn-secundario text-sm">
-            <Icone nome="presente" tamanho={15} className="mr-1.5" /> Vales-presente
-          </Link>
-        </div>
 
-        <AbrirCaixaForm />
+        {/* Abrir à esquerda, consultas à direita: a tela inteira à vista, sem rolar. */}
+        <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)]">
+          <AbrirCaixaForm />
+
+          {/* Histórico não depende de caixa aberto: consultar não é movimentar. */}
+          <section className="cartao p-5" aria-labelledby="caixa-consultas">
+            <h2 id="caixa-consultas" className="rotulo">Consultar</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {([
+                ["/salao/caixa/movimentos", "documento", "Movimentações", "Tudo que entrou e saiu"],
+                ["/salao/caixa/fechamentos", "grafico", "Fechamentos", "Caixas fechados e o Z"],
+                ["/salao/caixa/tef", "cartao", "Cartões (TEF)", "Vendas no pinpad"],
+                ["/salao/caixa/pix", "rapido", "Pix recebidos", "Cobranças pagas"],
+                ["/salao/caixa/fiado", "equipe", "Fiado de clientes", "Quem deve e quanto"],
+                ["/salao/caixa/vales", "presente", "Vales-presente", "Vender e dar baixa"],
+              ] as const).map(([href, icone, titulo, sub]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex min-h-11 items-center gap-3 rounded-controle bg-superficie-suave px-4 py-3 transition hover:bg-destaque"
+                >
+                  <Icone nome={icone} tamanho={18} className="shrink-0 text-texto-marca" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-texto">{titulo}</span>
+                    <span className="block text-xs text-texto-suave">{sub}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
     );
   }
@@ -278,7 +287,7 @@ export default async function CaixaPage({
   const formasPgto = [...(await listarFormas("caixa")), ...FORMAS_FIXAS_VENDA];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="rotulo"><Link href="/salao" className="hover:text-texto">Salão</Link> · caixa {caixa.nome}</p>

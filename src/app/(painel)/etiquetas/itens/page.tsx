@@ -15,7 +15,7 @@ export default async function ItensEtiquetaPage() {
   ]);
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link href="/etiquetas" className="text-sm font-semibold text-texto-marca hover:underline">← Etiquetas</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Itens e categorias de etiqueta</h1>
       <p className="mt-1 mb-6 text-texto-suave">

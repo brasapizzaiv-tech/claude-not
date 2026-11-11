@@ -53,7 +53,7 @@ export function CentralImpressao({
   const vistoTxt = vistoEm ? new Date(vistoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : null;
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className="pagina">
       <h1 className="mb-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="imprimir" tamanho={24} className="mr-1.5 inline" />Central de Impressões</h1>
       <p className="mb-5 text-sm text-texto-suave">
         Aqui ficam <b>todas as impressoras</b> (etiquetas hoje; comandas e cupons no futuro). As impressões saem por um

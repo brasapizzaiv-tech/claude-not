@@ -31,7 +31,7 @@ export default async function NotasFiscaisPage({
   const valorTotal = Number((valores as { data: unknown }).data) || 0;
 
   return (
-    <div className="w-full p-6">
+    <div className="pagina">
       <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão</Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Notas fiscais</h1>

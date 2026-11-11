@@ -67,7 +67,7 @@ export default async function EtiquetasPage({
   const filtroAtivo = soVencidas ? "vencidas (não baixadas)" : dia ? `dia ${dia.split("-").reverse().join("/")}` : faixa ? "faixa" : null;
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Etiquetas</h1>

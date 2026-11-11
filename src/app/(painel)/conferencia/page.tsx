@@ -54,7 +54,7 @@ export default async function ConferenciaPage() {
   const comProblemaMes = pedidos.filter((p) => p.data >= mesIni && p.divergencias_n > 0).length;
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
@@ -73,7 +73,7 @@ export default async function ConferenciaPage() {
           </Link>
           <Link
             href="/conferencia/novo"
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             + Pedido manual
           </Link>

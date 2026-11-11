@@ -39,7 +39,7 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
   }));
 
   return (
-    <div className="mx-auto max-w-4xl p-4 md:p-8">
+    <div className="pagina">
       <Link href="/salao/cardapio" className="text-sm font-semibold text-texto-marca hover:underline">← Cardápio</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
         <Foto url={item.foto_url} tam="h-14 w-14" />

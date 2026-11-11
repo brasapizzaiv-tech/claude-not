@@ -35,6 +35,10 @@ paleta inteira gira pro tom dela; com o laranja do Brasa sai exatamente:
 
 ## Linguagem visual — peças prontas no `globals.css`
 
+- **Moldura** `.pagina`: na raiz de TODA tela do painel (largura toda, mesma
+  margem: 30px/26px no computador). Nada de `max-w-*`, `mx-auto` ou `p-*` na
+  raiz; o que sobra de largura vira colunas lado a lado (grid), não espaço vazio.
+  Só ferramenta de celular (scanner, reservas de hoje, balança) limita a largura.
 - **Cartão** `.cartao`: sem borda, raio 20, sombra quente (no escuro, contorno
   interno + sombra escura).
 - **Raios**: `rounded-cartao` 20 · `rounded-controle` 14 (botão, campo, busca) ·

@@ -63,7 +63,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
   const difSoKg = total.soKg - total.valor;
 
   return (
-    <div className="w-full p-6">
+    <div className="pagina">
       <Link href="/financeiro" className="text-sm font-semibold text-texto-marca hover:underline">← Financeiro</Link>
       <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="balanca" tamanho={20} /> Buffet: livre × quilo</h1>
       <p className="mb-4 mt-1 max-w-3xl text-sm text-texto-suave">

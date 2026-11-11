@@ -27,7 +27,7 @@ export default async function FiscalPage() {
   const v = (k: string) => cfg[k] ?? "";
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className="pagina">
       <Link href="/dashboard" className="text-sm font-semibold text-texto-marca hover:underline">← Início</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Configuração fiscal (NF-e / NFC-e)</h1>
       <p className="mt-1 text-sm text-texto-suave">

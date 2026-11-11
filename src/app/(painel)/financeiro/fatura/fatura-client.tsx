@@ -261,7 +261,7 @@ export function FaturaClient({
               onClick={lancar}
               disabled={proc || semCategoria > 0 || !competencia}
               title={semCategoria > 0 ? "Escolha a categoria das compras em amarelo" : ""}
-              className="rounded-cartao bg-texto px-5 py-2.5 text-sm font-bold text-fundo hover:opacity-90 disabled:opacity-50"
+              className="btn-principal min-h-11 px-5 text-sm"
             >
               {proc ? "Lançando..." : `Lançar ${compras.length} compras (${brl(total)})`}
             </button>

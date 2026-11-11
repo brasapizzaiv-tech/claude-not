@@ -50,7 +50,7 @@ export default async function RelatoriosPontoPage({ searchParams }: { searchPara
   const nomeArquivo = `${rel}-${de}-a-${ate}`;
 
   return (
-    <div className="w-full max-w-6xl p-4 sm:p-6">
+    <div className="pagina">
       <Link href="/colaboradores/ponto" className="text-sm font-semibold text-texto-marca hover:underline print:hidden">← Relatórios de ponto</Link>
       <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto print:text-xl">
         <Icone nome="documento" tamanho={22} /> <span className="print:hidden">Relatórios do ponto</span><span className="hidden print:inline">{titulo}</span>

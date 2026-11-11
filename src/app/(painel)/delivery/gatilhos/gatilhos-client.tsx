@@ -90,7 +90,7 @@ function Cartao({ def, salvo, modelos, cupons, enviados, aberto, abrir }: {
             </label>
           )}
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" disabled={salvando} onClick={() => salvar()} className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo disabled:opacity-40">{salvando ? "Salvando..." : "Salvar"}</button>
+            <button type="button" disabled={salvando} onClick={() => salvar()} className="btn-principal min-h-11 px-4 text-sm">{salvando ? "Salvando..." : "Salvar"}</button>
             {aviso && <span role="status" className={`text-sm ${aviso.ok ? "text-ok-texto" : "text-urgente-texto"}`}>{aviso.texto}</span>}
           </div>
         </div>

@@ -29,7 +29,7 @@ export default async function BalancaPage() {
   const filaPendente = Number(ag?.fila_pendente ?? 0);
 
   return (
-    <div className="mx-auto max-w-lg p-6">
+    <div className="pagina max-w-2xl">
       <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão
       </Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">

@@ -78,7 +78,7 @@ export default async function DeliveryDetalhePage({ params }: { params: Promise<
   };
 
   return (
-    <div className="p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <Detalhe
         pedido={pedido}

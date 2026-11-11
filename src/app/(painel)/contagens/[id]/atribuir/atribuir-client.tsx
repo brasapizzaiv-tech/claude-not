@@ -78,7 +78,7 @@ export function AtribuirClient({
   const semAtribuir = categorias.filter((c) => !c.colaboradorId).length;
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link
         href={`/contagens/${contagem.id}`}
         className="text-sm text-texto-suave hover:text-orange-600"

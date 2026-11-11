@@ -140,7 +140,7 @@ export function CoresForm({
           <button
             onClick={salvar}
             disabled={!mudou || salvando}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-40"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             {salvando ? "Salvando..." : "Salvar cores"}
           </button>

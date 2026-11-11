@@ -40,7 +40,7 @@ export default async function MuralPage() {
   const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? ""}`;
 
   return (
-    <div className="flex w-full flex-col">
+    <div className="pagina flex flex-col">
       <Mural folgas={folgas} solicitacoes={solicitacoes} feriados={feriados} eventos={eventos} aniversarios={aniversarios} entregas={entregas} hoje={hoje} />
       <LinkDaTv chave={(config as { chave: string } | null)?.chave ?? null} origem={origem} />
     </div>

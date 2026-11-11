@@ -516,6 +516,13 @@ optgroup {
     border-radius: var(--raio-cartao);
     box-shadow: var(--sombra-cartao);
   }
+  /* A moldura de TODA tela do painel (pedido do Rafael, 10/11): largura toda
+     e a mesma margem em todas — 30px nas laterais e 26px em cima no
+     computador (o protótipo aprovado), menos no celular. Nada de max-w solto:
+     o que sobra de largura vira colunas, não espaço vazio. */
+  .pagina { width: 100%; padding: 20px 16px 32px; }
+  @media (min-width: 640px) { .pagina { padding: 24px 24px 36px; } }
+  @media (min-width: 1024px) { .pagina { padding: 26px 30px 40px; } }
   /* Filtro em pílula (VIS-16): um formato só no sistema inteiro. Os outros
      brancos com sombra; o ativo em grafite (creme no escuro); contador laranja
      no ativo, pêssego nos outros, vermelho quando pede atenção. 44px de toque.

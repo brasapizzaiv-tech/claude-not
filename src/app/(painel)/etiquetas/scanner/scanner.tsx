@@ -133,7 +133,7 @@ export function Scanner() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-md p-6">
+    <div className="pagina max-w-xl">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
           Leitor de etiquetas

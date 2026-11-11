@@ -53,7 +53,7 @@ export default async function VendasPage({
     "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
@@ -87,7 +87,7 @@ export default async function VendasPage({
           <label className="mb-1 block text-xs text-texto-suave">Até</label>
           <input type="date" name="ate" defaultValue={ate} className={inputCls} />
         </div>
-        <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+        <button className="btn-principal min-h-11 px-4 text-sm">
           Filtrar
         </button>
       </form>

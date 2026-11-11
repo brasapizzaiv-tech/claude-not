@@ -52,7 +52,7 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
   const valores = (campos: { k: string }[]) => Object.fromEntries(campos.map((f) => [f.k, col[f.k] == null ? "" : String(col[f.k]).slice(0, f.k === "admissao" || f.k.endsWith("validade") ? 10 : 500)]));
 
   return (
-    <div className="w-full max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo"><Link href="/colaboradores" className="hover:text-texto">Colaboradores</Link></p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>

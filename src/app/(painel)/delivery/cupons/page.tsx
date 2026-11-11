@@ -22,7 +22,7 @@ export default async function CuponsPage() {
   const hoje = hojeSP();
 
   return (
-    <div className="w-full p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="etiqueta" tamanho={19} /> Cupons de desconto</h1>
       <p className="mb-5 text-sm text-texto-suave">O cliente digita o código no carrinho do app (/pedir) e o desconto entra no pedido.</p>

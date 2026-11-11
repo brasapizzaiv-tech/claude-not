@@ -77,7 +77,7 @@ export function ModelosClient({ setores, modelos, itens }: { setores: Setor[]; m
       {/* Listas por setor */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Listas</p>
-        <button onClick={() => setEditando("novo")} className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+        <button onClick={() => setEditando("novo")} className="btn-principal min-h-11 px-4 text-sm">
           + Nova lista
         </button>
       </div>

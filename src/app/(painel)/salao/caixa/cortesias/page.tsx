@@ -37,7 +37,7 @@ export default async function CortesiasPage({ searchParams }: { searchParams: Pr
   const conta = (t: string) => movs.filter((m) => m.tipo === t).length;
 
   return (
-    <div className="mx-auto max-w-4xl p-4 md:p-6">
+    <div className="pagina">
       <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Cortesias e vales-presente</h1>
       <p className="mt-1 text-sm text-texto-suave">
@@ -53,7 +53,7 @@ export default async function CortesiasPage({ searchParams }: { searchParams: Pr
           Até
           <input type="date" name="ate" defaultValue={ate} className="mt-1 block rounded-controle border border-borda-forte bg-transparent px-2 py-1.5" />
         </label>
-        <button className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo">Ver</button>
+        <button className="btn-principal min-h-11 px-4 text-sm">Ver</button>
       </form>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">

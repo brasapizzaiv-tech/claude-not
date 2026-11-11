@@ -188,7 +188,7 @@ export function EditorCardapio({
   const mesmoDiaSemana = preenchidos.find((c) => diaSemanaN(c.data) === dow);
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
+    <div>
       <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
         Cardápio do dia
       </h1>
@@ -331,7 +331,7 @@ export function EditorCardapio({
               <button
                 disabled={proc}
                 onClick={() => salvar(true)}
-                className="rounded-controle bg-texto px-5 py-2.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
+                className="btn-principal min-h-11 px-5 text-sm"
               >
                 {proc
                   ? "Salvando..."

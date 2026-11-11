@@ -26,7 +26,7 @@ export default async function AparenciaPage() {
   const marca = await lerMarca();
 
   return (
-    <div className="mx-auto max-w-[1100px] p-5">
+    <div className="pagina">
       <Link href="/usuarios" className="text-sm text-texto-suave hover:underline">
         Configurações
       </Link>

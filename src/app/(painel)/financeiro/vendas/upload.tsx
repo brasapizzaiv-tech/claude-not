@@ -25,7 +25,7 @@ export function UploadFaturamento() {
 
   return (
     <div>
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-controle bg-texto px-4 py-2 text-sm font-medium text-fundo hover:opacity-90">
+      <label className="btn-principal min-h-11 cursor-pointer gap-2 px-4 text-sm">
         {processando ? "Importando..." : "Importar faturamento (planilha)"}
         <input
           type="file"

@@ -304,7 +304,7 @@ export function SefazPainel({
         <button
           onClick={buscar}
           disabled={buscando || !status.temCert || travado}
-          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           {buscando
             ? "Buscando na SEFAZ..."

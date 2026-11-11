@@ -51,7 +51,7 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
   const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="pagina">
       <Link href="/cozinha" className="text-sm font-semibold text-texto-marca hover:underline">← Tablet da cozinha</Link>
       <h1 className="mt-2 mb-3 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="pizza" tamanho={20} className="mr-2" /> Rodízio · relatório</h1>
 

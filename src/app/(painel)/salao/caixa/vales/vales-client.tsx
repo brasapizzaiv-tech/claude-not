@@ -78,7 +78,7 @@ export function ValesClient({ vales, formas, caixaAberto, buscaInicial }: { vale
           type="button"
           onClick={() => setVendendo(true)}
           disabled={!caixaAberto}
-          className="flex min-h-11 items-center gap-1.5 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo disabled:opacity-40"
+          className="btn-principal min-h-11 gap-1.5 px-4 text-sm"
         >
           <Icone nome="presente" tamanho={16} /> Vender vale-presente
         </button>

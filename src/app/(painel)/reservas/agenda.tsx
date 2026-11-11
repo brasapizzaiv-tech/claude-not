@@ -136,12 +136,12 @@ export function AgendaReservas({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Reservas</h1>
         <a
           href="/reservas/hoje"
-          className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           <Icone nome="celular" tamanho={15} className="mr-1.5" /> Ver no celular
         </a>
@@ -549,7 +549,7 @@ function FormReserva({
               status: d.status,
             })
           }
-          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           Salvar alterações
         </button>

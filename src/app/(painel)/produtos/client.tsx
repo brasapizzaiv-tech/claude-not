@@ -241,7 +241,7 @@ export function ProdutosClient({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
@@ -256,7 +256,7 @@ export function ProdutosClient({
             setEditando(null);
             setAberto(true);
           }}
-          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           + Adicionar
         </button>
@@ -309,7 +309,7 @@ export function ProdutosClient({
           <button
             onClick={vincularSelecionados}
             disabled={proc || !bulkForn}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             {proc ? "Vinculando..." : "Vincular ao fornecedor"}
           </button>
@@ -790,7 +790,7 @@ export function ProdutosClient({
               {mesclarErro && <p role="alert" className="mt-3 text-sm text-urgente-texto">{mesclarErro}</p>}
               <div className="mt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setMesclar(null)} className="rounded-controle px-4 py-2 text-sm text-texto-suave hover:bg-superficie-suave">Cancelar</button>
-                <button type="button" onClick={confirmarMesclar} disabled={proc} className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60">
+                <button type="button" onClick={confirmarMesclar} disabled={proc} className="btn-principal min-h-11 px-4 text-sm">
                   {proc ? "Mesclando…" : "Mesclar"}
                 </button>
               </div>
@@ -972,7 +972,7 @@ function FornecedoresModal({
           <button
             onClick={salvar}
             disabled={p}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             {p ? "Salvando..." : "Salvar"}
           </button>

@@ -44,7 +44,7 @@ export function ManifestarNota({ notaId }: { notaId: string }) {
       <button
         onClick={manifestar}
         disabled={processando}
-        className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+        className="btn-principal min-h-11 px-4 text-sm"
       >
         {processando ? "Manifestando e baixando..." : "Manifestar e baixar completa"}
       </button>

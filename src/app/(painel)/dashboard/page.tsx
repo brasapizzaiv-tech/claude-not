@@ -401,7 +401,7 @@ export default async function DashboardPage({
 
   return (
     <>
-      <div className="px-4 pt-4 md:px-[30px] md:pt-[26px] empty:hidden">
+      <div className="px-4 pt-5 sm:px-6 sm:pt-6 lg:px-[30px] lg:pt-[26px] empty:hidden">
         <AvisoSaude empresaId={await empresaAtualId()} />
       </div>
       <Inicio d={dados} />

@@ -49,7 +49,7 @@ export default async function KernDeliveryPage() {
   const historico = (hist ?? []) as Hist[];
 
   return (
-    <div className="w-full max-w-4xl p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="empresa" tamanho={19} /> Pedido automático da Kern</h1>
       <p className="mb-5 max-w-2xl text-sm text-texto-suave">

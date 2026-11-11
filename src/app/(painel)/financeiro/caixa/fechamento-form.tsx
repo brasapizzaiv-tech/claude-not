@@ -84,7 +84,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
   );
 
   return (
-    <div className="mx-auto max-w-3xl p-6 sm:p-8">
+    <div className="pagina">
       <Link href="/financeiro/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Fechamentos de caixa
       </Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">

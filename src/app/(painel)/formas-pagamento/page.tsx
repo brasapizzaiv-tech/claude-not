@@ -22,7 +22,7 @@ export default async function FormasPagamentoPage() {
   const formas = await todasFormas();
 
   return (
-    <div className="w-full p-4 sm:p-8">
+    <div className="pagina">
       <div className="mb-6">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Formas de pagamento</h1>
         <p className="mt-1 max-w-2xl text-texto-suave">

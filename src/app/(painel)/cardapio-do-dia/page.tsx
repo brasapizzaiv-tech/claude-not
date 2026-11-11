@@ -41,7 +41,7 @@ export default async function CardapioDoDiaPage({
   ]);
 
   return (
-    <>
+    <div className="pagina space-y-8">
       <EditorCardapio
         key={dia}
         dia={dia}
@@ -54,7 +54,7 @@ export default async function CardapioDoDiaPage({
       />
       <SaladasDoDia key={"sal-" + dia} dia={dia} dow={dowDia} base={base} marcadas={marcadas} padrao={padrao} />
 
-      <div className="mx-auto max-w-6xl px-8 pb-10">
+      <div>
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="cartao p-5">
             <h2 className="mb-1 text-lg font-bold text-texto"><Icone nome="marmita" tamanho={17} className="mr-1.5" /> Marmitas {kern?.nomeConvenio ?? "Kern"} · {dia.split("-").reverse().slice(0, 2).join("/")}</h2>
@@ -68,6 +68,6 @@ export default async function CardapioDoDiaPage({
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -111,7 +111,7 @@ export default async function ConferirPage({
   const dia = ped.dia_entrega ? String(ped.dia_entrega).slice(0, 10) : null;
   const mostrarEntrega = ped.cobrar_conf && !ped.conf_colab_em && (ped.status === "rascunho" || ped.status === "enviado");
   const entrega = mostrarEntrega && (
-    <div className={`mx-8 mt-6 rounded-cartao border p-4 text-sm ${ped.nao_veio_em && !ped.aviso_encerrado_em ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-borda bg-painel-cartao"}`}>
+    <div className={`mb-6 rounded-cartao border p-4 text-sm ${ped.nao_veio_em && !ped.aviso_encerrado_em ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-borda bg-painel-cartao"}`}>
       <p className="font-semibold text-texto">
         Entrega prevista: {dia ? dataBR(dia) : "—"}
         {ped.aviso_encerrado_em ? " · aviso encerrado" : ped.nao_veio_em ? " · a equipe avisou que NÃO VEIO" : dia && dia < hoje ? " · passou do dia e ninguém conferiu" : " · a equipe vai ser perguntada no dia"}
@@ -142,7 +142,7 @@ export default async function ConferirPage({
   );
 
   return (
-    <>
+    <div className="pagina">
     {entrega}
     <ConferirClient
       pedidoId={ped.id}
@@ -158,6 +158,6 @@ export default async function ConferirPage({
       sugeridas={sugeridas as NotaSugerida[]}
       divergencias={divergencias}
     />
-    </>
+    </div>
   );
 }

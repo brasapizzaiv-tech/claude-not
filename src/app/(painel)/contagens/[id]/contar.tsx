@@ -245,7 +245,7 @@ export function ContarClient({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link
         href="/contagens"
         className="text-sm text-texto-suave hover:text-orange-600"
@@ -299,7 +299,7 @@ export function ContarClient({
               <button
                 onClick={finalizar}
                 disabled={salvando}
-                className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+                className="btn-principal min-h-11 px-4 text-sm"
               >
                 Finalizar
               </button>
@@ -476,7 +476,7 @@ export function ContarClient({
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setAvisoSusp(null)}
-                className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+                className="btn-principal min-h-11 px-4 text-sm"
               >
                 Voltar e conferir
               </button>

@@ -55,7 +55,7 @@ export default async function SangriasPage({ searchParams }: { searchParams: Pro
   });
 
   return (
-    <div className="w-full px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo"><Link href="/salao/caixa" className="hover:text-texto">Caixa</Link></p>
       <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Sangrias</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">

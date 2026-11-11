@@ -33,7 +33,7 @@ export function CofreTela({ d, acoes, noApp = false }: { d: DadosCofre; acoes: A
   const feito = () => { setJanela(null); router.refresh(); };
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5 p-4">
+    <div className="pagina space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <span className="rotulo">Cofre</span>

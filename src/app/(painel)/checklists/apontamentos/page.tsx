@@ -30,7 +30,7 @@ export default async function ApontamentosPage() {
   const maisRepetidos = [...repete.values()].filter((r) => r.n > 1).sort((a, b) => b.n - a.n).slice(0, 8);
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="pagina">
       <Link href="/checklists/revisao" className="text-sm font-semibold text-texto-marca hover:underline">← Revisar checklists</Link>
       <div className="mt-2 mb-4">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="fixar" tamanho={20} className="mr-2" /> Apontamentos</h1>

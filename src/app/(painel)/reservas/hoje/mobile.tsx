@@ -56,7 +56,7 @@ export function ReservasHoje({
   const acao = (fn: () => Promise<unknown>) => start(async () => { await fn(); router.refresh(); });
 
   return (
-    <div className="mx-auto max-w-md px-3 pb-16">
+    <div className="pagina max-w-xl pb-16">
       {/* Cabeçalho fixo */}
       <div className="sticky top-0 z-10 -mx-3 border-b border-borda bg-white/95 px-3 py-3 backdrop-blur dark:bg-zinc-950/95">
         <h1 className="text-center text-lg font-bold text-texto">Reservas</h1>

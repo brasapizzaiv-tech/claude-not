@@ -253,7 +253,7 @@ export function EtiquetaForm({
       <button
         onClick={gerar}
         disabled={gerando || !pronto}
-        className="mt-4 min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+        className="mt-4 btn-principal min-h-11 px-4 text-sm"
       >
         {gerando ? "Gerando..." : copias > 1 ? `Gerar e imprimir ${copias}×` : "Gerar etiqueta"}
       </button>

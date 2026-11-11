@@ -80,7 +80,7 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
   }
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="pagina">
       <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa
       </Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">

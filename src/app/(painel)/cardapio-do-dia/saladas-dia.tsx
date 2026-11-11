@@ -78,7 +78,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
     }`;
 
   return (
-    <div className="mx-auto max-w-6xl px-8 pb-10">
+    <div>
       <div className="cartao p-5">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-bold text-texto"><Icone nome="salada" tamanho={17} className="mr-1.5" /> Saladas do dia</h2>
@@ -146,7 +146,7 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
           <button type="button" onClick={salvarPadrao} disabled={proc || !sujo} className="rounded-controle border border-green-600 px-3 py-2 text-sm font-semibold text-ok-texto disabled:opacity-40 dark:text-green-400">
             Gravar como padrão de {DIA_NOME[dow]}
           </button>
-          <button type="button" onClick={salvar} disabled={proc || !sujo} className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo disabled:opacity-40">
+          <button type="button" onClick={salvar} disabled={proc || !sujo} className="btn-principal min-h-11 px-4 text-sm">
             {proc ? "..." : "Salvar só para este dia"}
           </button>
         </div>

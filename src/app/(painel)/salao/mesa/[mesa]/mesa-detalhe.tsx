@@ -231,7 +231,7 @@ export function MesaDetalhe({
         >
           {proc ? "Cancelando..." : "✕ Cancelar produtos"}
         </button>
-        <Link href="/salao/caixa" className="rounded-controle bg-texto px-4 py-2.5 text-sm font-semibold text-fundo hover:opacity-90">
+        <Link href="/salao/caixa" className="btn-principal min-h-11 px-4 text-sm">
           Ir ao caixa
         </Link>
       </div>

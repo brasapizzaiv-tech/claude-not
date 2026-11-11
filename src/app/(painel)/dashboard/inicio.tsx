@@ -158,7 +158,7 @@ export function Inicio({ d }: { d: DadosInicio }) {
   const gruposVisiveis = grupo ? d.salao.grupos.filter((g) => g.nome === grupo) : d.salao.grupos;
 
   return (
-    <div className="mx-auto flex max-w-[1500px] flex-col gap-[18px] px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina flex flex-col gap-[18px]">
       {/* ---------- 1. Topo ---------- */}
       <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
         <div className="shrink-0">

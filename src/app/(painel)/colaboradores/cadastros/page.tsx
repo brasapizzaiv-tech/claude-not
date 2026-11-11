@@ -31,7 +31,7 @@ export default async function CadastrosPage() {
     (l ?? []).filter((x) => x.ativo).map((x) => ({ id: x.id, nome: x.nome, pessoas: n.get(x.id) ?? 0 }));
 
   return (
-    <div className="w-full max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo"><Link href="/colaboradores" className="hover:text-texto">Colaboradores</Link></p>
       <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Cadastros</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">As listas que aparecem na ficha de cada pessoa. Apagar um item que alguém usa só tira ele das listas; o histórico continua.</p>

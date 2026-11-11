@@ -91,7 +91,7 @@ export function NovoPedidoClient({
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="pagina">
       <Link href="/conferencia" className="text-sm font-semibold text-texto-marca hover:underline">← Conferência
       </Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
@@ -235,7 +235,7 @@ export function NovoPedidoClient({
                 ? "Este fornecedor não tem WhatsApp cadastrado"
                 : "Enviar o pedido no WhatsApp do fornecedor"
           }
-          className="rounded-controle bg-texto px-5 py-2.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-50"
+          className="btn-principal min-h-11 px-5 text-sm"
         >
           <Icone nome="zap" tamanho={15} className="mr-1.5" /> Enviar no WhatsApp
         </button>

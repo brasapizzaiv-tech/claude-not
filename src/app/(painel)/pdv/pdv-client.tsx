@@ -207,7 +207,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
           </div>
         )}
         <div className="mt-6 flex justify-center gap-3">
-          <button onClick={() => setFeito(null)} className="rounded-cartao bg-texto px-5 py-3 font-semibold text-fundo">Nova venda</button>
+          <button onClick={() => setFeito(null)} className="btn-principal px-5">Nova venda</button>
           {!feito.pago && <Link href="/salao/caixa" className="rounded-cartao border border-borda-forte px-5 py-3 font-semibold">Ir pro caixa →</Link>}
         </div>
       </div>

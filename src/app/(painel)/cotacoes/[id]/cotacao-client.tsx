@@ -168,7 +168,7 @@ export function CotacaoClient({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link
         href="/cotacoes"
         className="text-sm text-texto-suave hover:text-orange-600"
@@ -226,7 +226,7 @@ export function CotacaoClient({
           )}
           <Link
             href={`/cotacoes/${cotacao.id}/fornecedores`}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             Fornecedores →
           </Link>

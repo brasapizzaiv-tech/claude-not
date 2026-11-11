@@ -20,7 +20,7 @@ export function AbrirCaixaForm() {
 
   return (
     // Cartão de foco (VIS-04): a peça pronta, com o anel do teclado na cor do cartão.
-    <form action={abrirCaixa} className="cartao-foco mt-6 space-y-4 p-5" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
+    <form action={abrirCaixa} className="cartao-foco space-y-4 p-5" style={{ "--foco": "var(--painel-foco-texto)" } as React.CSSProperties}>
       <div>
         <label htmlFor="caixa-nome" className="mb-1 block text-xs text-painel-foco-rotulo">Nome / turno</label>
         <input

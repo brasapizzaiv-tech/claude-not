@@ -53,7 +53,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
           : <span className="font-semibold text-ok-texto">ganhou</span>;
 
   return (
-    <div className="w-full max-w-5xl p-4 sm:p-6">
+    <div className="pagina">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Prêmio assiduidade</h1>
@@ -63,15 +63,17 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <Link href={`/colaboradores/assiduidade?mes=${mesAnterior(mes, -1)}`} className="rounded-controle border border-borda-forte px-3 py-2">←</Link>
-          <span className="rounded-controle bg-orange-500 px-3 py-2 font-semibold text-marca-sobre-primaria">{rotuloMes(mes)}</span>
-          <Link href={`/colaboradores/assiduidade?mes=${mesAnterior(mes, 1)}`} className="rounded-controle border border-borda-forte px-3 py-2">→</Link>
+          <Link href={`/colaboradores/assiduidade?mes=${mesAnterior(mes, -1)}`} aria-label="Mês anterior" className="btn-secundario min-h-11 px-3 text-sm">←</Link>
+          <span className="flex min-h-11 items-center rounded-controle bg-destaque px-4 font-semibold text-texto-marca-pilula">{rotuloMes(mes)}</span>
+          <Link href={`/colaboradores/assiduidade?mes=${mesAnterior(mes, 1)}`} aria-label="Próximo mês" className="btn-secundario min-h-11 px-3 text-sm">→</Link>
         </div>
       </div>
 
       {!cfg.ativo && <p className="mb-4 rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950/30 dark:text-amber-200">O prêmio está desligado nas regras abaixo.</p>}
 
-      <section className="mb-6 overflow-x-auto rounded-cartao bg-painel-cartao">
+      {/* Mês e trimestre lado a lado em tela larga: tudo à vista sem rolar. */}
+      <div className="mb-6 grid items-start gap-6 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <section className="overflow-x-auto rounded-cartao bg-painel-cartao">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="rotulo text-left">
             <tr><th className="px-3 py-2">Pessoa</th><th className="px-3 py-2 text-right">Dias na escala</th><th className="px-3 py-2 text-right">Atraso somado</th><th className="px-3 py-2">Faltas · folgas · atestados</th><th className="px-3 py-2">Mês</th></tr>
@@ -110,7 +112,7 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
         <p className="px-3 pb-2 text-xs text-texto-fraco">Período {dm(doMes.de)} a {dm(doMes.ate)}{cfg.inicio ? ` · conta desde ${dm(cfg.inicio)}` : ""}. Falta só conta em dia que já passou.</p>
       </section>
 
-      <section className="mb-6 cartao p-4">
+      <section className="cartao p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-semibold">Trimestre {tri.replace("-T", " · T")} ({mesesTri.map(rotuloMes).join(", ")})</h2>
           {triAcabou ? <LancarTrimestre trimestre={tri} /> : <span className="text-xs text-texto-fraco">paga depois de {dm(fimTri)}</span>}
@@ -135,8 +137,9 @@ export default async function AssiduidadePage({ searchParams }: { searchParams: 
           </table>
         </div>
       </section>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <section className="cartao p-4">
           <h2 className="mb-2 font-semibold">Atestados</h2>
           <NovoAtestado pessoas={((todosCols ?? []) as { id: string; nome: string }[])} hoje={hoje} />

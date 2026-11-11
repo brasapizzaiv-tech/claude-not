@@ -48,7 +48,7 @@ export default async function DeliveryConfigPage() {
   const turnoAgora = t0 ? `${t0.turno} de ${t0.turno_data.slice(8, 10)}/${t0.turno_data.slice(5, 7)}` : null;
 
   return (
-    <div className="mx-auto max-w-2xl p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="ajustes" tamanho={19} /> Config do delivery</h1>
       <p className="mb-4 text-sm text-texto-suave">Taxa de entrega: por <Link href="/delivery/areas" className="font-semibold text-ok-texto">áreas desenhadas no mapa</Link> quando houver áreas cadastradas; senão, pela distância até o restaurante (abaixo).</p>

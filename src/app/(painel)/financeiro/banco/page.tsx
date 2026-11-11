@@ -234,7 +234,7 @@ export default async function BancoPage({ searchParams }: { searchParams: Promis
   // tela vazia enquanto a descrição do banco quebrava em três linhas. Aqui não
   // tem teto: acompanha o monitor.
   return (
-    <div className="w-full p-5">
+    <div className="pagina">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">

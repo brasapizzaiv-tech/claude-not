@@ -33,7 +33,7 @@ export default async function EspelhosPage({ searchParams }: { searchParams: Pro
   const fichaDe = new Map(((fichas ?? []) as { id: string; matricula: string | null; pis: string | null; funcao: string | null }[]).map((f) => [f.id, f]));
 
   return (
-    <div className="w-full max-w-5xl p-4 sm:p-6 print:max-w-none print:p-0">
+    <div className="pagina print:max-w-none print:p-0">
       <div className="mb-4 flex flex-wrap items-center gap-3 print:hidden">
         <Link href={`/colaboradores/ponto/relatorios?de=${de}&ate=${ate}`} className="text-sm font-semibold text-texto-marca hover:underline">← Relatórios do ponto</Link>
         <span className="text-sm text-texto-suave">{espelhos.length} espelhos · {dma(de)} a {dma(ate)} · um por folha</span>

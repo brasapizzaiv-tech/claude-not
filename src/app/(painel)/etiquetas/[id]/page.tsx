@@ -25,7 +25,7 @@ export default async function EtiquetaPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="pagina">
       <Link
         href="/etiquetas"
         className="text-sm text-texto-suave hover:text-orange-600 print:hidden"

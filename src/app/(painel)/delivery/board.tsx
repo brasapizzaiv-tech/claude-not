@@ -372,7 +372,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     .map((p) => ({ id: p.id, numero: p.numero, nome: p.nome, status: p.status, lat: Number(p.lat), lng: Number(p.lng), entregadorNome: p.entregadorNome, bairro: p.bairro }));
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina flex flex-col gap-4">
       {/* ---------- topo ---------- */}
       <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
         <div className="shrink-0">

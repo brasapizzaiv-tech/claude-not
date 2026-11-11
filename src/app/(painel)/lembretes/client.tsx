@@ -42,7 +42,7 @@ export function LembretesClient({ linhas, hoje, setores, pessoas }: {
     <div className="flex flex-col gap-6">
       {!formAberto ? (
         <div>
-          <button onClick={() => setAbrindo(true)} className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo hover:opacity-90">
+          <button onClick={() => setAbrindo(true)} className="btn-principal min-h-11 px-4 text-sm">
             <span className="inline-flex items-center gap-2"><Icone nome="novo" tamanho={16} /> Novo lembrete</span>
           </button>
         </div>

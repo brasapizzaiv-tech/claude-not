@@ -59,7 +59,7 @@ export function UploadOfx() {
           </option>
         ))}
       </select>
-      <label className="inline-flex cursor-pointer items-center gap-2 min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+      <label className="btn-principal min-h-11 cursor-pointer gap-2 px-4 text-sm">
         {processando ? "Importando..." : "+ Importar extrato (OFX)"}
         <input
           type="file"

@@ -456,7 +456,7 @@ export function ListaContasView({
               <button
                 onClick={pagarSelecionadas}
                 disabled={pagando}
-                className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+                className="btn-principal min-h-11 px-4 text-sm"
               >
                 {pagando ? "Baixando..." : `✓ Dar baixa em ${marcadas.size}`}
               </button>

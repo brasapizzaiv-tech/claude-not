@@ -50,7 +50,7 @@ export default async function UsuariosPage() {
   usuarios.sort((a, b) => (a.criado < b.criado ? -1 : 1));
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="pagina">
       <div className="mb-6">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
           Usuários

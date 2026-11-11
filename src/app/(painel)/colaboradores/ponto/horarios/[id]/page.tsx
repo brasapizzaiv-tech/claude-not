@@ -48,7 +48,7 @@ export default async function EditarHorarioPage({ params, searchParams }: { para
   }
 
   return (
-    <div className="w-full max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo">
         <Link href="/colaboradores/ponto" className="hover:text-texto">Relatórios de ponto</Link> ·{" "}
         <Link href="/colaboradores/ponto/horarios" className="hover:text-texto">Horários</Link>

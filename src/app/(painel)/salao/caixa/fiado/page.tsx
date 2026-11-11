@@ -35,7 +35,7 @@ export default async function FiadoPage() {
   const totalAberto = clientes.reduce((s, c) => s + Math.max(0, c.saldo), 0);
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="pagina">
       <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Caixa</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="equipe" tamanho={20} className="mr-2" /> Fiado de clientes</h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">

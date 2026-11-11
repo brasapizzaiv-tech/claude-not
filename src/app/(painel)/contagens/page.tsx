@@ -28,7 +28,7 @@ export default async function ContagensPage() {
     (colabs as { id: string; nome: string; whatsapp: string | null }[]) ?? [];
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">

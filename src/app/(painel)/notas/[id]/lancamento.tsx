@@ -459,7 +459,7 @@ export function LancamentoNota({
           <button
             onClick={lancar}
             disabled={proc || !fornecedorId || faltaCategoria}
-            className="rounded-controle bg-texto px-5 py-2.5 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
+            className="btn-principal min-h-11 px-5 text-sm"
             title={
               !fornecedorId
                 ? "Vincule o fornecedor primeiro"

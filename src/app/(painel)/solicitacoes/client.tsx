@@ -126,7 +126,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
   const inp = "rounded-cartao border border-borda-forte bg-white px-3 py-2 text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-900 dark:text-zinc-50";
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="pagina">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">

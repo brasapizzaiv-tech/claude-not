@@ -21,7 +21,7 @@ export default async function AreasPage() {
   const origem = c?.origem_lat != null && c?.origem_lng != null ? { lat: Number(c.origem_lat), lng: Number(c.origem_lng) } : null;
 
   return (
-    <div className="p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="mapa" tamanho={19} /> Áreas de entrega e promoções da tele</h1>
       <p className="mb-4 text-sm text-texto-suave">

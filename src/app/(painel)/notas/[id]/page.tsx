@@ -145,7 +145,7 @@ export default async function NotaDetalhePage({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link href="/notas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar para notas
       </Link>
 

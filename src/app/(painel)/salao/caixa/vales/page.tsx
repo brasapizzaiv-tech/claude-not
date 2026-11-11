@@ -51,7 +51,7 @@ export default async function ValesPage({ searchParams }: { searchParams: Promis
   const formas = formasCaixa.filter((f) => !naoEntraNoCaixa(f.tipo) && f.tipo !== "saldo" && f.tipo !== "equipe");
 
   return (
-    <div className="mx-auto max-w-5xl p-4 md:p-6">
+    <div className="pagina">
       <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Vales-presente</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">

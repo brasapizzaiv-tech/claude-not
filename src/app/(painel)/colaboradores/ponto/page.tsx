@@ -136,7 +136,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
   });
 
   return (
-    <div className="w-full max-w-6xl p-4 sm:p-6">
+    <div className="pagina">
       <div className="print:hidden"><BatidasSemColaborador lista={semDono} colaboradores={colsLista} /></div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div>
@@ -158,7 +158,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
         {pessoa && <input type="hidden" name="p" value={pessoa.id} />}
         <label className="flex flex-col text-xs text-texto-fraco">Início<input type="date" name="de" defaultValue={de} className="min-h-10 rounded-controle border border-borda-forte bg-transparent px-2 text-sm text-texto" /></label>
         <label className="flex flex-col text-xs text-texto-fraco">Fim<input type="date" name="ate" defaultValue={ate} className="min-h-10 rounded-controle border border-borda-forte bg-transparent px-2 text-sm text-texto" /></label>
-        <button className="min-h-10 rounded-controle bg-texto px-4 font-semibold text-fundo">Buscar</button>
+        <button className="btn-principal min-h-11 px-4 text-sm">Buscar</button>
         <Link href={q({ de: padrao.de, ate: padrao.ate })} className="min-h-10 content-center px-2 text-xs text-texto-suave hover:underline">ciclo da folha (21 a 20)</Link>
         <Link href={q({ de: fechadoAnterior.de, ate: fechadoAnterior.ate })} className="min-h-10 content-center px-2 text-xs text-texto-suave hover:underline">mês fechado ({dm(fechadoAnterior.de)} a {dm(fechadoAnterior.ate)})</Link>
       </form>

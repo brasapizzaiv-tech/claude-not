@@ -47,7 +47,7 @@ export default async function RevisaoPage({ searchParams }: { searchParams: Prom
   const apontamentos = (apRows as core.Apontamento[]) ?? [];
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link href="/checklists" className="text-sm font-semibold text-texto-marca hover:underline">← Checklists de hoje</Link>
       <RevisaoClient
         dia={dia}

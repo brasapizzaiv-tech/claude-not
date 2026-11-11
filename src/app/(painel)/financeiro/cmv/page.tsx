@@ -295,7 +295,7 @@ export default async function CmvPage({
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-6 sm:p-8">
+    <div className="pagina">
       {cabecalho}
 
       <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
@@ -332,7 +332,7 @@ export default async function CmvPage({
             className="w-20 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
           />
         </div>
-        <button className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90">
+        <button className="btn-principal min-h-11 px-4 text-sm">
           Ver
         </button>
       </form>

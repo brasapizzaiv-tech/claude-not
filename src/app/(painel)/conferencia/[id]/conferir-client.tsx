@@ -155,7 +155,7 @@ export function ConferirClient({
   const conferido = status === "conferido";
 
   return (
-    <div className="w-full p-8">
+    <div className="w-full">
       <Link
         href="/conferencia"
         className="text-sm text-texto-suave hover:text-orange-600"
@@ -185,7 +185,7 @@ export function ConferirClient({
           <button
             onClick={() => persistir(true)}
             disabled={salvando}
-            className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             {conferido ? "Atualizar conferência" : "Confirmar conferência"}
           </button>

@@ -67,7 +67,7 @@ export default async function HistoricoChecklistsPage({
   const card = "rounded-cartao border border-borda p-4 ";
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link href="/checklists" className="text-sm font-semibold text-texto-marca hover:underline">← Checklists de hoje</Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>

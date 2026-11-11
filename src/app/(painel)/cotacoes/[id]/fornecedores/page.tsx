@@ -122,7 +122,7 @@ export default async function CotacaoFornecedoresPage({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="pagina">
       <Link
         href={`/cotacoes/${cotacao.id}`}
         className="text-sm text-texto-suave hover:text-orange-600"

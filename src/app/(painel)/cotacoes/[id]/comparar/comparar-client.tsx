@@ -625,7 +625,7 @@ export function CompararClient({
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/cotacoes/${cotacaoId}/pedidos`}
-              className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90"
+              className="btn-principal min-h-11 px-4 text-sm"
             >
               Ver pedidos →
             </Link>
@@ -683,12 +683,12 @@ export function CompararClient({
             <button
               onClick={gerar}
               disabled={salvando || (itensEscolhidos === 0 && exclusivos.length === 0)}
-              className="min-h-11 w-full rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+              className="btn-principal min-h-11 w-full px-4 text-sm"
             >
               {salvando ? "Gerando..." : "Gerar pedidos →"}
             </button>
           ) : (
-            <Link href={`/cotacoes/${cotacaoId}/pedidos`} className="w-full rounded-controle bg-texto px-4 py-3 text-center text-sm font-semibold text-fundo">
+            <Link href={`/cotacoes/${cotacaoId}/pedidos`} className="btn-principal min-h-11 w-full px-4 text-sm">
               Ver pedidos →
             </Link>
           )}

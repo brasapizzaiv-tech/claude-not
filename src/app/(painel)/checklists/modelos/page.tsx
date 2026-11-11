@@ -17,7 +17,7 @@ export default async function ModelosChecklistPage() {
   const itens = await core.listarItens(db, modelos.map((m) => m.id));
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="pagina">
       <Link href="/checklists" className="text-sm font-semibold text-texto-marca hover:underline">← Checklists de hoje</Link>
       <div className="mt-2 mb-6">
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="editar" tamanho={20} className="mr-2" /> Modelos de checklist</h1>

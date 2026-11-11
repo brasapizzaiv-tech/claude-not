@@ -51,7 +51,7 @@ export default async function CashbackPage() {
   const ajuda = "mb-2 text-xs text-texto-suave";
 
   return (
-    <div className="w-full max-w-3xl p-4">
+    <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="presente" tamanho={19} /> Cashback</h1>
       <p className="mb-4 text-sm text-texto-suave">

@@ -42,7 +42,7 @@ export default async function DownloadsPage() {
   }
 
   return (
-    <div className="w-full p-4 sm:p-8">
+    <div className="pagina">
       <Link href="/impressao" className="text-sm text-texto-suave hover:text-texto-marca">← Central de Impressões</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Downloads</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">

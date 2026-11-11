@@ -78,7 +78,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
     : clientes;
 
   return (
-    <div className="w-full p-6">
+    <div className="pagina">
       <Link href="/dashboard" className="text-sm font-semibold text-texto-marca hover:underline">← Início</Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -90,7 +90,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
             setEditando(null);
             setAberto(true);
           }}
-          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           + Novo cliente
         </button>

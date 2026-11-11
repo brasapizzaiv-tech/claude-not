@@ -85,7 +85,7 @@ export function NovoModelo() {
         <span className="text-xs text-texto-suave">Rodapé (opcional, até 60 letras)</span>
         <input value={rodape} onChange={(e) => setRodape(e.target.value.slice(0, 60))} className={inp} />
       </label>
-      <button type="button" disabled={enviando || !nomeLimpo || !corpo.trim()} onClick={criar} className="rounded-controle bg-texto px-4 py-2 font-semibold text-fundo disabled:opacity-40">
+      <button type="button" disabled={enviando || !nomeLimpo || !corpo.trim()} onClick={criar} className="btn-principal min-h-11 px-4 text-sm">
         {enviando ? "Enviando pra Meta..." : "Enviar pra aprovação"}
       </button>
       {aviso && <p role="status" className={aviso.ok ? "text-ok-texto" : "text-urgente-texto"}>{aviso.texto}</p>}

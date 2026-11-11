@@ -78,7 +78,7 @@ export default async function SaudePage() {
   const resto = itens.filter((i) => i.estado !== "parado" && i.estado !== "atencao");
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-8">
+    <div className="pagina space-y-6">
       <header>
         <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Saúde do sistema</h1>
         <p className="mt-1 max-w-2xl text-sm text-texto-suave">

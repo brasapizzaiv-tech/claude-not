@@ -74,7 +74,7 @@ export default async function FechamentoRelatorio({
   const totalFinal = subSaldo - r.quebra;
 
   return (
-    <div className="w-full p-6 sm:p-8">
+    <div className="pagina">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link

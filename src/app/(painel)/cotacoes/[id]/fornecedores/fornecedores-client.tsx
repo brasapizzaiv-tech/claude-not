@@ -211,7 +211,7 @@ export function FornecedoresClient({
             <button
               onClick={convidarTodos}
               disabled={convidandoTodos}
-              className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+              className="btn-principal min-h-11 px-4 text-sm"
             >
               {convidandoTodos
                 ? "Convidando..."
@@ -277,7 +277,7 @@ export function FornecedoresClient({
               {proximo ? (
                 <button
                   onClick={() => abrirWhats(proximo)}
-                  className="rounded-controle bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90"
+                  className="btn-principal min-h-11 px-4 text-sm"
                 >
                   <Icone nome="zap" tamanho={15} className="mr-1.5" /> Abrir WhatsApp do próximo ({convidados.length - enviadosCount} faltam)
                 </button>

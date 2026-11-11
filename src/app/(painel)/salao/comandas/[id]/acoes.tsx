@@ -111,7 +111,7 @@ export function AcoesComanda({
         <button
           onClick={virarLivre}
           disabled={p}
-          className="min-h-11 rounded-controle bg-texto px-4 text-sm font-semibold text-fundo transition hover:opacity-90 disabled:opacity-60"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           <Icone nome="salao" tamanho={15} className="mr-1.5" /> Virar buffet livre
         </button>

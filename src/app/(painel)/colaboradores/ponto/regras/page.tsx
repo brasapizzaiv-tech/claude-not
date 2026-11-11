@@ -19,7 +19,7 @@ export default async function RegrasPontoPage() {
     supabase.from("justificativa_tipos").select("id, nome, efeito, tira_premio, ativo").order("nome"),
   ]);
   return (
-    <div className="w-full max-w-6xl px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo"><Link href="/colaboradores/ponto" className="hover:text-texto">Relatórios de ponto</Link></p>
       <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Justificativas e inconsistências</h1>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">

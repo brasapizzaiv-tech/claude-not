@@ -32,7 +32,7 @@ export default async function WhatsappPage() {
   const preco = (v: number | null | undefined) => (v != null ? String(v).replace(".", ",") : "");
 
   return (
-    <div className="w-full max-w-5xl p-4">
+    <div className="pagina">
       <Link href="/delivery/campanhas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pras campanhas</Link>
       <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="zap" tamanho={19} /> Modelos e limites do WhatsApp</h1>
       <p className="mb-5 text-sm text-texto-suave">

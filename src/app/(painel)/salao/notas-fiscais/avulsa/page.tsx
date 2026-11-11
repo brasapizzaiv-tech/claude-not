@@ -33,7 +33,7 @@ export default async function NotaAvulsaPage() {
     .map((f) => f.nome);
 
   return (
-    <div className="w-full px-4 py-5 md:px-[30px] md:py-[26px]">
+    <div className="pagina">
       <p className="rotulo">
         <Link href="/salao/notas-fiscais" className="hover:text-texto">Notas fiscais</Link>
       </p>

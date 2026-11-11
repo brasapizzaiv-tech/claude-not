@@ -148,7 +148,7 @@ export function NovoUsuario() {
         <button
           onClick={salvar}
           disabled={p}
-          className="rounded-cartao bg-texto px-4 py-2 text-sm font-semibold text-fundo hover:opacity-90 disabled:opacity-60"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           {p ? "Criando..." : "Criar usuário"}
         </button>

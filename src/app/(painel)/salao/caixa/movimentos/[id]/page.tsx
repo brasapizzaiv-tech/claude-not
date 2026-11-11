@@ -65,7 +65,7 @@ export default async function RecebimentoPage({ params }: { params: Promise<{ id
   const card = "rounded-cartao border border-borda p-4 ";
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className="pagina">
       <Link href="/salao/caixa/movimentos" className="text-sm font-semibold text-texto-marca hover:underline">← Movimentações</Link>
       <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Recebimento</h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">
