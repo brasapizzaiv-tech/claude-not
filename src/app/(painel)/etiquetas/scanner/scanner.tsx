@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { dataBR } from "@/lib/format";
+import { LeitorQr } from "@/components/leitor-qr";
 
 type Resultado = {
   ok: boolean;
@@ -16,14 +17,14 @@ type Resultado = {
 
 const UUID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 
+// Leitor de etiquetas do painel: cada QR lido já dá baixa (usada ou descartada).
+// A câmera é o leitor único do sistema (components/leitor-qr), que funciona no
+// iPhone também; antes era o BarcodeDetector, que só existe no Chrome/Android.
 export function Scanner() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const lidasRef = useRef<Set<string>>(new Set());
   const travadoRef = useRef(false);
 
   const [ligado, setLigado] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [modo, setModo] = useState<"usada" | "descartada">("usada");
   const [ultima, setUltima] = useState<Resultado | null>(null);
   const [contagem, setContagem] = useState(0);
@@ -51,7 +52,9 @@ export function Scanner() {
     }
   }
 
-  async function processar(id: string) {
+  async function processar(texto: string) {
+    const id = texto.match(UUID)?.[1];
+    if (!id) return;
     if (travadoRef.current) return;
     if (lidasRef.current.has(id)) return;
     travadoRef.current = true;
@@ -67,6 +70,7 @@ export function Scanner() {
     if (res.ok) {
       setContagem((c) => c + 1);
       beep(true);
+      if (navigator.vibrate) navigator.vibrate(90);
     } else {
       beep(false);
     }
@@ -75,168 +79,79 @@ export function Scanner() {
     }, 1500);
   }
 
-  async function ligar() {
-    setErro(null);
-    const BD = (window as unknown as { BarcodeDetector?: unknown })
-      .BarcodeDetector;
-    if (!BD) {
-      setErro(
-        "Este aparelho não suporta leitura de QR pela página. Use a câmera do aparelho para escanear a etiqueta e toque em 'Dar baixa' na tela que abrir.",
-      );
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setLigado(true);
+  const botoesModo = (escuro: boolean) => (
+    <div className="flex gap-2">
+      <button
+        onClick={() => setModo("usada")}
+        aria-pressed={modo === "usada"}
+        className={`min-h-11 flex-1 rounded-controle text-sm font-semibold ${
+          modo === "usada" ? (escuro ? "bg-emerald-600 text-white" : "bg-texto text-fundo") : escuro ? "bg-zinc-800 text-white" : "btn-secundario"
+        }`}
+      >
+        Dar baixa (usada)
+      </button>
+      <button
+        onClick={() => setModo("descartada")}
+        aria-pressed={modo === "descartada"}
+        className={`min-h-11 flex-1 rounded-controle text-sm font-semibold ${
+          modo === "descartada" ? "bg-red-600 text-white" : escuro ? "bg-zinc-800 text-white" : "btn-secundario"
+        }`}
+      >
+        Descartar
+      </button>
+    </div>
+  );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const detector = new (BD as any)({ formats: ["qr_code"] });
-      const loop = async () => {
-        if (!streamRef.current) return;
-        try {
-          if (videoRef.current && videoRef.current.readyState >= 2) {
-            const codes = await detector.detect(videoRef.current);
-            if (codes && codes.length) {
-              const raw = String(codes[0].rawValue || "");
-              const m = raw.match(UUID);
-              if (m) await processar(m[1]);
-            }
-          }
-        } catch {
-          /* ignora frame ruim */
-        }
-        if (streamRef.current) requestAnimationFrame(loop);
-      };
-      requestAnimationFrame(loop);
-    } catch {
-      setErro("Não foi possível acessar a câmera. Verifique a permissão.");
-    }
+  const textoUltima = !ultima
+    ? null
+    : ultima.ok
+      ? `✓ #${ultima.numero} ${ultima.produto ?? ""}`
+      : ultima.erro === "nao encontrada" ? "Etiqueta não encontrada" : "Não foi possível dar baixa";
+
+  if (ligado) {
+    return (
+      <LeitorQr
+        titulo="Leitor de etiquetas"
+        aoLer={processar}
+        fechar={() => setLigado(false)}
+        aviso={textoUltima}
+        mensagem="Aponte para o QR da etiqueta — a baixa é automática"
+        acima={botoesModo(true)}
+      >
+        <p className="py-2 text-center text-sm text-zinc-300">{contagem} baixa(s) nesta sessão</p>
+        {ultima?.ok && (
+          <div className="rounded-controle bg-zinc-900 p-3 text-sm">
+            <p className="font-semibold text-emerald-400">✓ Baixa registrada · #{ultima.numero}</p>
+            <p className="mt-1 text-base font-bold">{ultima.produto}</p>
+            <p className="text-zinc-400">
+              {ultima.status === "descartada" ? "Descartada" : "Usada"}
+              {ultima.validade ? ` · validade ${dataBR(ultima.validade)}` : ""}
+            </p>
+          </div>
+        )}
+      </LeitorQr>
+    );
   }
-
-  function desligar() {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    setLigado(false);
-  }
-
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-  }, []);
 
   return (
     <div className="pagina max-w-xl">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="titulo-pagina">
-          Leitor de etiquetas
-        </h1>
-        <Link href="/etiquetas" className="text-sm text-orange-600 hover:underline">
+        <h1 className="titulo-pagina">Leitor de etiquetas</h1>
+        <Link href="/etiquetas" className="text-sm text-texto-marca hover:underline">
           ← Voltar
         </Link>
       </div>
 
-      {/* Modo */}
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => setModo("usada")}
-          className={`flex-1 rounded-cartao py-2.5 text-sm font-semibold ${
-            modo === "usada"
-              ? "bg-texto text-fundo"
-              : "border border-borda-forte text-texto-suave  "
-          }`}
-        >
-          Dar baixa (usada)
-        </button>
-        <button
-          onClick={() => setModo("descartada")}
-          className={`flex-1 rounded-cartao py-2.5 text-sm font-semibold ${
-            modo === "descartada"
-              ? "bg-red-600 text-white"
-              : "border border-borda-forte text-texto-suave  "
-          }`}
-        >
-          Descartar
+      <div className="mb-4">{botoesModo(false)}</div>
+
+      <div className="cartao flex aspect-square items-center justify-center bg-black">
+        <button onClick={() => setLigado(true)} className="btn-principal min-h-11 px-5 text-sm">
+          Ligar câmera
         </button>
       </div>
 
-      {/* Câmera */}
-      <div className="relative overflow-hidden cartao bg-black">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className="aspect-square w-full object-cover"
-        />
-        {!ligado && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <button
-              onClick={ligar}
-              className="btn-principal min-h-11 px-5 text-sm"
-            >
-              Ligar câmera
-            </button>
-          </div>
-        )}
-        {ligado && (
-          <div className="pointer-events-none absolute inset-8 rounded-cartao border-2 border-white/70" />
-        )}
-      </div>
-
-      {erro && (
-        <p role="alert" className="mt-3 rounded-cartao bg-amber-50 p-3 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
-          {erro}
-        </p>
-      )}
-
-      {ligado && (
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-texto-suave">
-            {contagem} baixa(s) nesta sessão
-          </span>
-          <button onClick={desligar} className="text-sm text-texto-fraco hover:text-urgente-texto">
-            Desligar câmera
-          </button>
-        </div>
-      )}
-
-      {/* Última leitura */}
-      {ultima && (
-        <div
-          className={`mt-4 rounded-cartao p-4 ${
-            ultima.ok
-              ? "bg-green-50 dark:bg-green-950"
-              : "bg-red-50 dark:bg-red-950"
-          }`}
-        >
-          {ultima.ok ? (
-            <>
-              <p className="text-sm font-semibold text-ok-texto dark:text-green-300">
-                ✓ Baixa registrada · #{ultima.numero}
-              </p>
-              <p className="mt-1 text-lg font-bold text-texto">
-                {ultima.produto}
-              </p>
-              <p className="text-sm text-texto-suave">
-                {ultima.status === "descartada" ? "Descartada" : "Usada"}
-                {ultima.validade ? ` · validade ${dataBR(ultima.validade)}` : ""}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm font-semibold text-urgente-texto dark:text-red-300">
-              {ultima.erro === "nao encontrada"
-                ? "Etiqueta não encontrada."
-                : "Não foi possível dar baixa."}
-            </p>
-          )}
-        </div>
+      {contagem > 0 && (
+        <p className="mt-3 text-sm text-texto-suave">{contagem} baixa(s) nesta sessão</p>
       )}
 
       <p className="mt-4 text-center text-xs text-texto-fraco">

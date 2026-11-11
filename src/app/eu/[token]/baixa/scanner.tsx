@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { LeitorQr } from "@/components/leitor-qr";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
@@ -9,35 +10,20 @@ import { consultarEtiquetaColab, consultarEtiquetaPorNumeroColab, darBaixaLoteCo
 type Item = { id: string; produto: string; numero: number };
 type Consulta = { ok: true; id: string; numero: number; produto: string; status: string } | { ok: false; mensagem: string };
 
-// Prefere a câmera traseira principal (não a ultra-wide/tele) quando o aparelho tem várias.
-function escolherCamera(devs: MediaDeviceInfo[]) {
-  const tras = devs.filter((d) => /back|tras|rear|environment/i.test(d.label));
-  const principal = tras.find((d) => !/ultra|wide|tele|0[.,]5|macro/i.test(d.label));
-  return principal ?? tras[0] ?? devs[devs.length - 1] ?? null;
-}
-
+// Baixa em lote das etiquetas pelo app da equipe. A câmera é o leitor único do
+// sistema (components/leitor-qr); aqui ficam só a lista e a ação.
 export function BaixaScanner({ token }: { token: string }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [status, setStatus] = useState<"usada" | "descartada">("usada");
-  const [msg, setMsg] = useState("Aponte para o QR da etiqueta…");
   const [flash, setFlash] = useState<string | null>(null);
   const [lista, setLista] = useState<Item[]>([]);
   const [proc, start] = useTransition();
   const [feito, setFeito] = useState<string | null>(null);
-  const [devs, setDevs] = useState<MediaDeviceInfo[]>([]);
-  const [devId, setDevId] = useState<string | null>(null);
-  const [torchOk, setTorchOk] = useState(false);
-  const [torch, setTorch] = useState(false);
   const [numero, setNumero] = useState("");
   const [manual, setManual] = useState(false);
-  const [lendoFoto, setLendoFoto] = useState(false);
-  const fotoRef = useRef<HTMLInputElement | null>(null);
 
   const listaRef = useRef<Item[]>([]);
   useEffect(() => { listaRef.current = lista; }, [lista]);
   const ocupadoRef = useRef(false);
-  const ultimoRef = useRef<{ id: string; t: number } | null>(null);
-  const trackRef = useRef<MediaStreamTrack | null>(null);
 
   function aviso(txt: string) {
     setFlash(txt);
@@ -56,13 +42,11 @@ export function BaixaScanner({ token }: { token: string }) {
     }
   }, []);
 
+  // O leitor já segura o mesmo código por 3 s; aqui segura enquanto consulta.
   const aoLer = useCallback((valor: string) => {
     const id = valor.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
     if (!id) return;
-    const agora = new Date().getTime();
     if (ocupadoRef.current) return;
-    if (ultimoRef.current && ultimoRef.current.id === id && agora - ultimoRef.current.t < 3000) return;
-    ultimoRef.current = { id, t: agora };
     if (listaRef.current.some((x) => x.id === id)) { aviso("Já está na lista"); return; }
     ocupadoRef.current = true;
     (async () => {
@@ -71,104 +55,6 @@ export function BaixaScanner({ token }: { token: string }) {
     })();
   }, [token, tratar]);
 
-  useEffect(() => {
-    let cancelado = false;
-    let controls: { stop: () => void } | null = null;
-    (async () => {
-      let BrowserMultiFormatReader, BarcodeFormat, DecodeHintType;
-      try {
-        ({ BrowserMultiFormatReader } = await import("@zxing/browser"));
-        ({ BarcodeFormat, DecodeHintType } = await import("@zxing/library"));
-      } catch {
-        setMsg("Não foi possível carregar o leitor.");
-        return;
-      }
-      const video = videoRef.current;
-      if (!video || cancelado) return;
-      // Só QR e "tentar mais forte": lê QR pequeno (16 mm) com mais facilidade.
-      const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
-      hints.set(DecodeHintType.TRY_HARDER, true);
-      const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
-      // Resolução alta: no iPhone o padrão vem baixo e o QR fica borrado.
-      const constraints: MediaStreamConstraints = {
-        video: {
-          ...(devId ? { deviceId: { exact: devId } } : { facingMode: { ideal: "environment" } }),
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-      };
-      try {
-        controls = await reader.decodeFromConstraints(constraints, video, (result) => {
-          if (result) aoLer(String(result.getText()));
-        });
-      } catch {
-        setMsg("Não foi possível abrir a câmera. Autorize o acesso nas configurações do navegador.");
-        return;
-      }
-      if (cancelado) { controls.stop(); return; }
-      // Depois de abrir: lista as câmeras (os nomes só aparecem após a permissão),
-      // tenta foco contínuo e vê se tem lanterna.
-      try {
-        const lista = await BrowserMultiFormatReader.listVideoInputDevices();
-        setDevs(lista);
-        if (!devId) { const pref = escolherCamera(lista); if (pref && lista.length > 1) setDevId(pref.deviceId); }
-      } catch {}
-      const track = (video.srcObject as MediaStream | null)?.getVideoTracks()[0] ?? null;
-      trackRef.current = track;
-      if (track) {
-        try { await track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }); } catch {}
-        const caps = (track.getCapabilities?.() ?? {}) as Record<string, unknown>;
-        setTorchOk(!!caps.torch);
-      }
-    })();
-    return () => { cancelado = true; controls?.stop(); trackRef.current = null; };
-  }, [aoLer, devId]);
-
-  async function alternarTorch() {
-    const track = trackRef.current;
-    if (!track) return;
-    try {
-      await track.applyConstraints({ advanced: [{ torch: !torch } as MediaTrackConstraintSet] });
-      setTorch(!torch);
-    } catch { aviso("Lanterna não disponível"); }
-  }
-  function trocarCamera() {
-    if (devs.length < 2) return;
-    const i = devs.findIndex((d) => d.deviceId === devId);
-    setDevId(devs[(i + 1) % devs.length].deviceId);
-    setTorch(false);
-  }
-  // Plano B: foto pela câmera nativa (foca de perto, alta resolução) e lê o QR da imagem.
-  async function lerFoto(arquivo: File | undefined) {
-    if (!arquivo) return;
-    setLendoFoto(true);
-    const url = URL.createObjectURL(arquivo);
-    try {
-      const { BrowserMultiFormatReader } = await import("@zxing/browser");
-      const { BarcodeFormat, DecodeHintType } = await import("@zxing/library");
-      const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
-      hints.set(DecodeHintType.TRY_HARDER, true);
-      const reader = new BrowserMultiFormatReader(hints);
-      // Foto de celular é grande demais pro leitor: reduz pra ~1400px antes de decodificar.
-      const img = new Image();
-      await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error("imagem")); img.src = url; });
-      const esc = Math.min(1, 1400 / Math.max(img.width, img.height));
-      const cv = document.createElement("canvas");
-      cv.width = Math.round(img.width * esc); cv.height = Math.round(img.height * esc);
-      cv.getContext("2d")!.drawImage(img, 0, 0, cv.width, cv.height);
-      const r = await reader.decodeFromCanvas(cv);
-      ultimoRef.current = null;
-      aoLer(String(r.getText()));
-    } catch {
-      aviso("Não achei o QR na foto — tenta mais perto e com luz");
-    } finally {
-      setLendoFoto(false);
-      URL.revokeObjectURL(url);
-      if (fotoRef.current) fotoRef.current.value = "";
-    }
-  }
   function adicionarPorNumero() {
     const n = Number(numero.replace(/\D/g, ""));
     if (!n) return;
@@ -196,100 +82,69 @@ export function BaixaScanner({ token }: { token: string }) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-black text-white">
-      <div className="flex items-center justify-between p-3">
-        <Link href={`/eu/${token}`} className="text-sm text-zinc-300">← Voltar</Link>
-        <span className="text-sm font-semibold">Dar baixa em lote</span>
-      </div>
-
-      <div className="flex gap-2 px-3 pb-2">
-        <button onClick={() => setStatus("usada")} className={`flex-1 rounded-controle py-2 text-sm font-bold ${status === "usada" ? "bg-emerald-600" : "bg-zinc-800"}`}>Usada</button>
-        <button onClick={() => setStatus("descartada")} className={`flex-1 rounded-controle py-2 text-sm font-bold ${status === "descartada" ? "bg-red-600" : "bg-zinc-800"}`}>Descartada</button>
-      </div>
-
-      {/* Câmera */}
-      <div className="relative h-[42vh] min-h-56 shrink-0 overflow-hidden bg-zinc-900">
-        <video ref={videoRef} playsInline muted autoPlay className="h-full w-full object-cover" />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-44 w-44 rounded-cartao border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
-        </div>
-        <div className="absolute right-2 top-2 flex gap-1.5">
-          {torchOk && (
-            <button onClick={alternarTorch} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${torch ? "bg-amber-400 text-black" : "bg-black/60"}`}><Icone nome="lanterna" tamanho={14} titulo="Lanterna" /></button>
-          )}
-          {devs.length > 1 && (
-            <button onClick={trocarCamera} className="rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold"><span className="inline-flex items-center gap-1"><Icone nome="trocarcamera" tamanho={13} /> câmera</span></button>
-          )}
-        </div>
-        {flash && (
-          <div className="absolute inset-x-0 bottom-2 text-center">
-            <span className="rounded-full bg-black/70 px-3 py-1 text-sm font-semibold">{flash}</span>
+    <>
+      <LeitorQr
+        titulo="Dar baixa em lote"
+        aoLer={aoLer}
+        voltar={<Link href={`/eu/${token}`} className="flex min-h-11 items-center text-sm text-zinc-300">← Voltar</Link>}
+        aviso={flash}
+        mensagem={lista.length === 0 ? "Aponte para o QR da etiqueta…" : "Continue lendo as etiquetas…"}
+        acima={
+          <div className="flex gap-2">
+            <button onClick={() => setStatus("usada")} aria-pressed={status === "usada"} className={`min-h-11 flex-1 rounded-controle text-sm font-bold ${status === "usada" ? "bg-emerald-600" : "bg-zinc-800"}`}>Usada</button>
+            <button onClick={() => setStatus("descartada")} aria-pressed={status === "descartada"} className={`min-h-11 flex-1 rounded-controle text-sm font-bold ${status === "descartada" ? "bg-red-600" : "bg-zinc-800"}`}>Descartada</button>
+          </div>
+        }
+        acoes={
+          <button onClick={() => setManual((v) => !v)} aria-expanded={manual} className="min-h-11 flex-1 rounded-controle bg-zinc-800 text-sm font-semibold">
+            <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="teclado" tamanho={14} /> Digitar o nº</span>
+          </button>
+        }
+        rodape={
+          <button
+            onClick={darBaixa}
+            disabled={proc || lista.length === 0}
+            className={`w-full rounded-cartao py-3 text-base font-bold text-white disabled:opacity-40 ${status === "descartada" ? "bg-red-600" : "bg-emerald-600"}`}
+          >
+            {proc ? "Dando baixa..." : `✓ Dar baixa em ${lista.length} (${status})`}
+          </button>
+        }
+      >
+        {manual && (
+          <div className="flex gap-2 pb-2">
+            <input aria-label="Nº da etiqueta"
+              inputMode="numeric"
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") adicionarPorNumero(); }}
+              placeholder="Nº da etiqueta"
+              className="min-h-11 flex-1 rounded-controle border border-zinc-700 bg-zinc-900 px-3 text-sm text-white"
+            />
+            <button onClick={adicionarPorNumero} disabled={proc || !numero.trim()} className="min-h-11 rounded-controle bg-zinc-700 px-4 text-sm font-semibold disabled:opacity-50">Adicionar</button>
           </div>
         )}
-      </div>
-      <p className="py-1 text-center text-xs text-texto-fraco">
-        {lista.length === 0 ? msg : "Continue lendo as etiquetas…"} · segure a uns <b>15–20 cm</b>
-      </p>
-      <div className="flex gap-2 px-3 pb-2">
-        <button
-          onClick={() => fotoRef.current?.click()}
-          disabled={lendoFoto}
-          className="flex-1 rounded-controle bg-zinc-800 py-2 text-sm font-semibold disabled:opacity-50"
-        >
-          {lendoFoto ? "Lendo a foto…" : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="camera" tamanho={14} /> Tirar foto do QR</span>}
-        </button>
-        <button onClick={() => setManual((v) => !v)} className="flex-1 rounded-controle bg-zinc-800 py-2 text-sm font-semibold"><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="teclado" tamanho={14} /> Digitar o nº</span></button>
-        <input ref={fotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => lerFoto(e.target.files?.[0])} />
-      </div>
-      {manual && (
-        <div className="flex gap-2 px-3 pb-2">
-          <input aria-label="Nº da etiqueta"
-            inputMode="numeric"
-            value={numero}
-            onChange={(e) => setNumero(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") adicionarPorNumero(); }}
-            placeholder="Nº da etiqueta"
-            className="flex-1 rounded-controle border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white "
-          />
-          <button onClick={adicionarPorNumero} disabled={proc || !numero.trim()} className="rounded-controle bg-zinc-700 px-4 py-2 text-sm font-semibold disabled:opacity-50">Adicionar</button>
-        </div>
-      )}
-
-      {/* Lista acumulada */}
-      <div className="flex-1 overflow-y-auto px-3">
         {lista.length === 0 ? (
-          <p className="mt-6 text-center text-sm text-texto-suave">Nenhuma etiqueta lida ainda.</p>
+          <p className="mt-6 text-center text-sm text-zinc-400">Nenhuma etiqueta lida ainda.</p>
         ) : (
           <ul className="space-y-1.5 py-2">
             {lista.map((it) => (
               <li key={it.id} className="flex items-center justify-between gap-2 rounded-controle bg-zinc-900 px-3 py-2 text-sm">
-                <span className="min-w-0 truncate">{it.produto} <span className="text-texto-suave">· Nº {it.numero}</span></span>
-                <button aria-label="Fechar" onClick={() => remover(it.id)} className="shrink-0 text-texto-fraco">✕</button>
+                <span className="min-w-0 truncate">{it.produto} <span className="text-zinc-400">· Nº {it.numero}</span></span>
+                <button aria-label={`Tirar ${it.produto} da lista`} onClick={() => remover(it.id)} className="flex h-11 w-11 shrink-0 items-center justify-center text-zinc-400">✕</button>
               </li>
             ))}
           </ul>
         )}
-      </div>
-
-      {/* Rodapé: dar baixa */}
-      <div className="border-t border-zinc-800 p-3">
-        <button
-          onClick={darBaixa}
-          disabled={proc || lista.length === 0}
-          className={`w-full rounded-cartao py-3 text-base font-bold text-white disabled:opacity-40 ${status === "descartada" ? "bg-red-600" : "bg-emerald-600"}`}
-        >
-          {proc ? "Dando baixa..." : `✓ Dar baixa em ${lista.length} (${status})`}
-        </button>
-      </div>
+      </LeitorQr>
 
       {feito && (
-        <div role="status" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="rounded-cartao bg-zinc-800 px-8 py-6 text-center">
+        <div role="status" className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60">
+          <div className="rounded-cartao bg-zinc-800 px-8 py-6 text-center text-white">
             <div className="mb-2 flex justify-center"><Icone nome="certo" tamanho={42} className="text-emerald-500" /></div>
             <p className="font-semibold">{feito}</p>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
