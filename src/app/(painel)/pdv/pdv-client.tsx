@@ -10,7 +10,7 @@ import { buscarClientesPdv, cashbackClientePdv, finalizarVendaPdv } from "./acti
 import { PixQr } from "@/components/pix-qr";
 import { EmitirNotaCaixa } from "../salao/caixa/emitir-nota-caixa";
 import { NfceAutoToggle } from "@/components/nfce-auto-toggle";
-import { FORMAS_PADRAO, codigoDaForma, emiteNotaAuto, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { FORMAS_PADRAO, codigoDaForma, emiteNotaAuto, formaPelaBandeira, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import type { TefDados } from "@/lib/tef-client";
 import { CampoVale } from "@/components/campo-vale";
@@ -134,7 +134,8 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   async function finalizarComTef(tef: TefDados) {
     if (cartLista.length === 0 || finalizandoRef.current) return { ok: false, mensagem: "Venda já em andamento." };
     finalizandoRef.current = true;
-    const pagamento: Pagto = { forma, colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 };
+    // PAG-06: débito com bandeira de vale entra na forma de vale (NFC-e 11).
+    const pagamento: Pagto = { forma: formaPelaBandeira(forma, tef, formas), colaboradorId: colabId || null, clienteId: cliente?.id ?? null, usarCashback: cbUsado > 0 };
     try {
       const r = await finalizarVendaPdv(itensParaEnviar(), obs, { ...pagamento, tef, valorTef: cobrar, desconto, descontoFuncionario: funcionario }, local);
       if (!r.ok) return { ok: false, mensagem: ("mensagem" in r && r.mensagem) || "Não foi possível concluir." };

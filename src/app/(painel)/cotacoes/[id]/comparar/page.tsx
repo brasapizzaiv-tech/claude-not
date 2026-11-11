@@ -299,7 +299,7 @@ export default async function CompararPage({
               : row.preco_unit != null
                 ? Number(row.preco_unit)
                 : null,
-          data: quando ? new Date(quando).toLocaleDateString("pt-BR") : "",
+          data: quando ? new Date(quando).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "",
         };
       }
     }

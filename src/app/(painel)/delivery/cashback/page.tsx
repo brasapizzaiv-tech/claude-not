@@ -135,7 +135,7 @@ export default async function CashbackPage() {
             {movs.map((m) => {
               const cli = Array.isArray(m.clientes) ? m.clientes[0] : m.clientes;
               const desc = m.tipo === "credito"
-                ? `Ganhou${m.expira_em ? ` · vale até ${new Date(m.expira_em).toLocaleDateString("pt-BR")}` : ""}${m.estornado_em ? " · desfeito" : ""}`
+                ? `Ganhou${m.expira_em ? ` · vale até ${new Date(m.expira_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}${m.estornado_em ? " · desfeito" : ""}`
                 : `Usou num pedido${m.estornado_em ? " · devolvido (cancelado)" : ""}`;
               return (
                 <tr key={m.id} className={m.estornado_em ? "opacity-50" : ""}>

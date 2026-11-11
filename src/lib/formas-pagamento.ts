@@ -210,3 +210,17 @@ export function codigoDaForma(nome: string | null | undefined, formas?: FormaOpc
   const alvo = nome.trim().toLowerCase();
   return formas.find((f) => f.nome.trim().toLowerCase() === alvo)?.pedeCodigo?.trim() || null;
 }
+
+// PAG-06: cartão de vale passado como débito (ex.: LECARD VOUCHER) ia pra NFC-e
+// como "cartão de débito" (04) e não vale-refeição (11) — o código da nota vem
+// do nome da forma. Pela bandeira que o pinpad devolve, troca pra forma de vale
+// do cadastro. Banrisul e Cabal ficam de fora: aparecem em débito e em vale.
+const BANDEIRA_VALE = /VOUCHER|^VR\b|ALELO|SODEXO|PLUXEE|TICKET|VEROCARD|GOOD ?CARD|REFEI|ALIMENTA/i;
+export function ehBandeiraDeVale(b: string | null | undefined): boolean {
+  return !!b && BANDEIRA_VALE.test(b.trim());
+}
+/** A forma certa depois do pinpad: a de vale quando o débito aprovado é de bandeira de vale. */
+export function formaPelaBandeira(forma: string, tef: { tipo?: string | null; bandeira?: string | null } | null | undefined, formas: FormaOpcao[]): string {
+  if (!tef || tef.tipo !== "debito" || !ehBandeiraDeVale(tef.bandeira)) return forma;
+  return formas.find((f) => tipoDe(f.nome, formas) === "vale")?.nome ?? forma;
+}

@@ -66,6 +66,30 @@ export async function gerarPedidosKern(empresaId: string, dia: string): Promise<
     const c = cli as { id: string; nome: string; telefone: string | null; logradouro: string | null; numero: string | null; complemento: string | null; bairro: string | null; municipio: string | null; cep: string | null } | null;
     if (!c) { resultado.push({ filial, qtd, acao: "sem_cliente", detalhe: "o cliente escolhido não existe mais" }); continue; }
 
+    // MAR-03: reserva a linha do dia ANTES de criar o pedido. A tabela tem
+    // unique (empresa, data, filial): se a rotina e o botão rodarem juntos, só
+    // um consegue a reserva e o outro para aqui, sem criar pedido em dobro.
+    let reservaId: string | null = null;
+    if (existente) {
+      // Linha sem pedido: execução que caiu no meio ou pedido apagado. Só
+      // retoma se ninguém mexeu nela nos últimos 5 min.
+      const limite = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: retomada } = await admin.from("kern_delivery")
+        .update({ qtd, atualizado_em: new Date().toISOString() })
+        .eq("id", existente.id).is("pedido_id", null)
+        .or(`atualizado_em.is.null,atualizado_em.lt.${limite}`)
+        .lt("criado_em", limite)
+        .select("id");
+      reservaId = (retomada as { id: string }[] | null)?.[0]?.id ?? null;
+    } else {
+      const { data: nova, error: errRes } = await admin.from("kern_delivery")
+        .insert({ empresa_id: empresaId, data: dia, filial, pedido_id: null, qtd, atualizado_em: new Date().toISOString() })
+        .select("id").maybeSingle();
+      if (errRes && errRes.code !== "23505") { resultado.push({ filial, qtd, acao: "erro", detalhe: errRes.message }); continue; }
+      reservaId = (nova as { id: string } | null)?.id ?? null;
+    }
+    if (!reservaId) { resultado.push({ filial, qtd, acao: "igual", detalhe: "outra execução já está criando este pedido" }); continue; }
+
     const r = await criarPedidoDeliveryCore(
       admin,
       {
@@ -88,8 +112,14 @@ export async function gerarPedidosKern(empresaId: string, dia: string): Promise<
       },
       { status: "aceito", atendenteId: null, criadoPor: null, empresaId },
     );
-    if (!r.ok) { resultado.push({ filial, qtd, acao: "erro", detalhe: r.mensagem }); continue; }
-    const { error } = await admin.from("kern_delivery").insert({ empresa_id: empresaId, data: dia, filial, pedido_id: r.id, qtd });
+    if (!r.ok) {
+      // Não criou: solta a reserva pra próxima tentativa (sem esperar os 5 min).
+      if (!existente) await admin.from("kern_delivery").delete().eq("id", reservaId).is("pedido_id", null);
+      else await admin.from("kern_delivery").update({ atualizado_em: null }).eq("id", reservaId).is("pedido_id", null);
+      resultado.push({ filial, qtd, acao: "erro", detalhe: r.mensagem });
+      continue;
+    }
+    const { error } = await admin.from("kern_delivery").update({ pedido_id: r.id, qtd, atualizado_em: new Date().toISOString() }).eq("id", reservaId);
     resultado.push({ filial, qtd, acao: error ? "erro" : "criado", detalhe: error?.message, pedidoId: r.id });
   }
   return { ok: true, filiais: resultado };

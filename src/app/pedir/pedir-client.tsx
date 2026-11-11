@@ -13,6 +13,7 @@ import {
 import type { CupomVitrine, VitrineApp } from "@/lib/vitrine";
 import { registrarEventoVitrine, salvarCarrinhoPublico } from "./vitrine-actions";
 import { ChaveDeOuro, CupomGatilho, DestaquesTopo, SheetQuerAdicionar, textoCupom } from "./vitrine-ui";
+import { moedaBR } from "@/lib/format";
 
 const VITRINE_VAZIA: VitrineApp = { destaques: [], sugestoesProduto: {}, sugestoesCarrinho: [], gatilhos: { boasVindas: null, parado: null, abandonado: null } };
 const lerLS = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -151,7 +152,7 @@ export function PedirClient({
           validarCupomPublico(cod).then((r) => {
             if (r.ok) {
               setCupom({ codigo: r.codigo, tipo: r.tipo, valor: r.valor, minimo: r.minimo });
-              setCupomMsg(`Cupom ${r.codigo} aplicado: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `R$ ${r.valor.toFixed(2).replace(".", ",")} de desconto`}`);
+              setCupomMsg(`Cupom ${r.codigo} aplicado: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `${moedaBR(r.valor)} de desconto`}`);
             }
           }).catch(() => { /* sem rede */ });
         }
@@ -296,7 +297,7 @@ export function PedirClient({
     setCupomProc(false);
     if (r.ok) {
       setCupom({ codigo: r.codigo, tipo: r.tipo, valor: r.valor, minimo: r.minimo });
-      setCupomMsg(`Cupom ${r.codigo}: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `R$ ${r.valor.toFixed(2).replace(".", ",")} de desconto`}${r.minimo != null ? ` (pedido mínimo R$ ${r.minimo.toFixed(2).replace(".", ",")})` : ""}`);
+      setCupomMsg(`Cupom ${r.codigo}: ${r.tipo === "percent" ? `${r.valor}% de desconto` : `${moedaBR(r.valor)} de desconto`}${r.minimo != null ? ` (pedido mínimo ${moedaBR(r.minimo)})` : ""}`);
     } else {
       setCupom(null);
       setCupomMsg(r.mensagem);

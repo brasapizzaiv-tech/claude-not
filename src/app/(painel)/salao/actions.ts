@@ -23,6 +23,7 @@ import { contagemValida, valorDe, type Quantidades } from "@/lib/cofre";
 import { repartirDesconto } from "@/lib/fiscal/desconto-nota";
 import type { ItemCoberto } from "@/lib/fiscal/recebimento-nota";
 import { explicarErro } from "@/lib/erro-amigavel";
+import { moedaBR } from "@/lib/format";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -723,7 +724,7 @@ export async function excluirComanda(formData: FormData) {
     return {
       ok: false as const,
       mensagem:
-        `Esta comanda já foi recebida no caixa (R$ ${totalRecebido.toFixed(2).replace(".", ",")} em ${formas || "pagamento"}) e não pode ser excluída. ` +
+        `Esta comanda já foi recebida no caixa (${moedaBR(totalRecebido)} em ${formas || "pagamento"}) e não pode ser excluída. ` +
         "Se o cliente virou buffet livre, use o botão Buffet livre na comanda; se o recebimento foi errado, faça o estorno pelo caixa.",
     };
   }

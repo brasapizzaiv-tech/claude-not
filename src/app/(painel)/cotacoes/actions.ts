@@ -15,7 +15,7 @@ export async function criarCotacao(formData: FormData) {
 
   const descricao =
     (formData.get("descricao") as string)?.trim() ||
-    `Cotação ${new Date().toLocaleDateString("pt-BR")}`;
+    `Cotação ${new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`;
   const contagem_id = (formData.get("contagem_id") as string)?.trim() || null;
 
   const { data, error } = await supabase

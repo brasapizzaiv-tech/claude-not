@@ -6,7 +6,7 @@ import { avisar, perguntar } from "@/components/dialogo";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { definirStatusDelivery, definirEntregador, definirPagoDelivery, receberDelivery, reimprimirDelivery } from "../actions";
-import { codigoDaForma, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
+import { codigoDaForma, formaPelaBandeira, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import { emitirNfceComanda } from "../../salao/fiscal-actions";
 
@@ -261,7 +261,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
                     conta={`Pedido #${p.numero ?? "—"}`}
                     desabilitado={proc}
                     aoAprovar={async (tef) => {
-                      const r = await receberDelivery(p.id, { forma: formaSel, tef, valorTef: total });
+                      const r = await receberDelivery(p.id, { forma: formaPelaBandeira(formaSel, tef, formas), tef, valorTef: total });
                       return r.ok ? { ok: true, transacaoId: "tefTransacaoId" in r ? r.tefTransacaoId : null } : { ok: false, mensagem: r.mensagem };
                     }}
                     aoTerminar={() => router.refresh()}

@@ -28,7 +28,7 @@ export default async function EtiquetaPublicaPage({
   const validade = data.validade as string | null;
   const vencida = validade ? validade < hojeSP() : false;
   const manip = data.manipulado_em
-    ? new Date(data.manipulado_em).toLocaleString("pt-BR", {
+    ? new Date(data.manipulado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo",
         day: "2-digit",
         month: "2-digit",
         year: "numeric",

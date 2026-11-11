@@ -11,7 +11,7 @@ import { aguardarConfirmacoes, anotarAprovada, anotarCobranca, anotarRecusa, esq
 import { listarTefSemConta, resolverTefSemConta, type TefSemConta } from "@/app/(painel)/salao/actions";
 import { BotaoAcao } from "@/components/enviar";
 import { confirmar as perguntarSeOk } from "@/components/dialogo";
-import { atalhoDoTipo, codigoDaForma, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
+import { atalhoDoTipo, codigoDaForma, ehCartaoTipo, iconeDoTipo, naoEntraNoCaixa, formaPelaBandeira, tefDoTipo, tipoDe, type FormaOpcao, type TipoForma } from "@/lib/formas-pagamento";
 import { Icone } from "@/components/icone";
 import { CampoVale } from "@/components/campo-vale";
 import type { ValeConsulta } from "@/app/(painel)/salao/caixa/vales/actions";
@@ -340,9 +340,15 @@ export function PainelPagamentos({
         confirmado: false,
       };
       anotarAprovada(dados);
+      // PAG-06: cartão de vale passado como débito (ex.: LECARD VOUCHER) iria
+      // pra NFC-e como "cartão de débito" (04) e não vale-refeição (11). Pela
+      // bandeira que o pinpad devolve, lança na forma de vale do cadastro.
+      const trocou = formaPelaBandeira(forma, dados, formas);
+      const formaVale = trocou !== forma ? trocou : undefined;
+      if (formaVale) setAviso(`A bandeira é ${dados.bandeira}: entrou como ${formaVale}, não como débito.`);
       const aceito = onAdicionar({
         uid: novoUid(),
-        forma,
+        forma: formaVale ?? forma,
         valor: cent(aplica),
         bandeira: dados.bandeira || bandeira || null,
         observacao: obs.trim() || null,

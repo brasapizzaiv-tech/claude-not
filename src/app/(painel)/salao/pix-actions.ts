@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { cancelarCobrancaPix, criarCobrancaPix, consultarCobrancaPix, devolverPix, gerarTxid, pixBanco, pixConfigurado } from "@/lib/pix";
+import { moedaBR } from "@/lib/format";
 
 const ROTAS = ["/salao", "/pdv"];
 
@@ -164,7 +165,7 @@ export async function estornarPix(txid: string, valor: number, motivo: string) {
   }
   if (cob.status !== "pago") return { ok: false as const, erro: "Só dá pra estornar Pix que foi pago." };
   const resta = Math.round((Number(cob.valor) - Number(cob.valor_devolvido ?? 0)) * 100) / 100;
-  if (v > resta + 0.005) return { ok: false as const, erro: `Só dá pra devolver até R$ ${resta.toFixed(2).replace(".", ",")}.` };
+  if (v > resta + 0.005) return { ok: false as const, erro: `Só dá pra devolver até ${moedaBR(resta)}.` };
 
   // Identificador do Pix recebido (e2eid): vem da consulta ao banco.
   let e2eid = cob.e2eid;

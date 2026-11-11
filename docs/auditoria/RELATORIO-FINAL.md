@@ -311,7 +311,13 @@ Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a r
 
 | 8 | (este lote) | VIS-18: `.campo` no globals.css; 136 campos em 89 arquivos (constantes locais e classes repetidas) passam a usar a peça |
 
-**Onda 6 encerrada.** Testar no celular: garçom lendo cupom/cartão e entregador lendo cupom. Os cartões com borda que pintam estado (verde/vermelho/dashed) ficaram de propósito. Alinhamento visual não é pego pelo robô: conferir por print.
+**Onda 6 encerrada.**
+
+### Onda 7 — arrumação (em andamento)
+
+| Lote | Commit | O que corrigiu |
+|---|---|---|
+| 1 | (este lote) | TXT-05 (nome padrão da cotação, data do comparar, validade do cashback e manipulação da etiqueta no fuso de SP; 18 mensagens de dinheiro com `moedaBR` — "R$ 1.234,50" em vez de "R$ 1234,50"/"R$ 105712.00"), MAR-03 (pedido da Kern reserva a linha do dia antes de criar o pedido: rotina e botão juntos não duplicam), PAG-06 (débito com bandeira de vale — LECARD VOUCHER, VR, ALELO, SODEXO, TICKET — entra na forma de vale no caixa, PDV e delivery; NFC-e sai 11; `scripts/forma-pela-bandeira.test.mjs`) | Testar no celular: garçom lendo cupom/cartão e entregador lendo cupom. Os cartões com borda que pintam estado (verde/vermelho/dashed) ficaram de propósito. Alinhamento visual não é pego pelo robô: conferir por print.
 
 ## Como vai ser a correção
 

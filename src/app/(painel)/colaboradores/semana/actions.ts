@@ -32,6 +32,7 @@ import { descontoDezPadrao } from "@/lib/dez-caixa";
 import { aplicarRecebimentoFiado, planejarRecebimentoFiado, type PlanoFiado } from "@/lib/retiradas-quitar";
 import { after } from "next/server";
 import { avisarPagamentosSemana } from "@/lib/push-avisos";
+import { moedaBR } from "@/lib/format";
 
 export type Turno = "dia" | "noite";
 
@@ -222,7 +223,7 @@ export async function lancarPagamentosSemana(
       const emMaos = await emMaosDe(supabase, it);
       const env = valorDe(it.cofre!);
       const esperado = valorDoEnvelope(emMaos);
-      if (Math.abs(env - esperado) > 0.009) return { erro: `O envelope de ${it.nome} (R$ ${env.toFixed(2).replace(".", ",")}) não fecha com o valor em mãos arredondado (R$ ${esperado.toFixed(2).replace(".", ",")}). Atualize a tela e confira.` };
+      if (Math.abs(env - esperado) > 0.009) return { erro: `O envelope de ${it.nome} (${moedaBR(env)}) não fecha com o valor em mãos arredondado (${moedaBR(esperado)}). Atualize a tela e confira.` };
     }
     const saldo = await saldoAtual(ctxCofre);
     const total = somaEnvelopes(comCofre.map((i) => i.cofre!));
@@ -350,7 +351,7 @@ export async function registrarAdiantamento(colaboradorId: string, nome: string,
   if (cofre) {
     ctxCofre = await ctxDoCofre(supabase);
     if (!(await cofreIniciado(ctxCofre))) return { erro: "O cofre ainda não começou (falta a primeira contagem)." };
-    if (Math.abs(valorDe(cofre) - v) > 0.009) return { erro: `As notas (R$ ${valorDe(cofre).toFixed(2).replace(".", ",")}) não fecham o adiantamento (R$ ${v.toFixed(2).replace(".", ",")}).` };
+    if (Math.abs(valorDe(cofre) - v) > 0.009) return { erro: `As notas (${moedaBR(valorDe(cofre))}) não fecham o adiantamento (${moedaBR(v)}).` };
   }
   const { data: userData } = await supabase.auth.getUser();
   const { data: ad, error } = await supabase
@@ -415,7 +416,7 @@ export async function tirarDoCofrePagos(segunda: string, itens: { colaboradorId:
     if (ja?.length) return { erro: `O pagamento de ${it.nome} já saiu do cofre.` };
     const emMaos = Math.round(linhas.reduce((s, x) => s + Number(x.valor) - Number(x.desconto || 0), 0) * 100) / 100;
     const esperado = valorDoEnvelope(emMaos);
-    if (Math.abs(valorDe(it.cofre) - esperado) > 0.009) return { erro: `O envelope de ${it.nome} não fecha com o em mãos arredondado (R$ ${esperado.toFixed(2).replace(".", ",")}). Atualize a tela.` };
+    if (Math.abs(valorDe(it.cofre) - esperado) > 0.009) return { erro: `O envelope de ${it.nome} não fecha com o em mãos arredondado (${moedaBR(esperado)}). Atualize a tela.` };
     const primeiro = lancs.find((l) => l.id === ids[0]) ?? lancs[0];
     planos.push({ it, lancId: primeiro.id, valor: Number(primeiro.valor), descricao: primeiro.descricao ?? "", arred: Math.round((esperado - emMaos) * 100) / 100 });
   }

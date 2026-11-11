@@ -7,6 +7,7 @@ import { categoriasDeSangria } from "@/lib/sangria-financeiro";
 import { contagemDoCaixa, limpar, negar, valorDe, TIPOS, type DadosCofre, type MovimentoNovo, type Pendente, type Quantidades } from "@/lib/cofre";
 import type { createClient } from "@/lib/supabase/server";
 import { explicarErro } from "@/lib/erro-amigavel";
+import { moedaBR } from "@/lib/format";
 
 export type Db = Awaited<ReturnType<typeof createClient>>;
 export type Ctx = { db: Db; empresaId: string; quem: string | null };
@@ -99,7 +100,7 @@ export async function registrarMovimento(ctx: Ctx, d: MovimentoNovo) {
   if (t.sentido === -1) q = limpar(Object.fromEntries(Object.entries(q).map(([k, v]) => [k, -Math.abs(v)])));
   if (Object.keys(q).length === 0) return { ok: false as const, mensagem: "Coloque a quantidade de pelo menos uma nota ou moeda." };
   const valor = valorDe(q);
-  if (d.tipo === "troca" && Math.abs(valor) > 0.001) return { ok: false as const, mensagem: `Na troca, o que sai e o que entra têm que dar o mesmo valor (diferença de R$ ${valor.toFixed(2).replace(".", ",")}).` };
+  if (d.tipo === "troca" && Math.abs(valor) > 0.001) return { ok: false as const, mensagem: `Na troca, o que sai e o que entra têm que dar o mesmo valor (diferença de ${moedaBR(valor)}).` };
   const saldo = await saldoAtual(ctx);
   const falta = faltaNoCofre(saldo, q);
   if (falta.length) return { ok: false as const, mensagem: "Não tem essa quantidade no cofre. Confira as notas/moedas que saem (ou faça a conferência do cofre antes)." };
@@ -135,7 +136,7 @@ export async function pagarConta(ctx: Ctx, d: { quantidades: Quantidades; descri
     const conta = l as { id: string; valor: number; pago: boolean } | null;
     if (!conta) return { ok: false as const, mensagem: "Conta não encontrada no Contas a Pagar." };
     if (conta.pago) return { ok: false as const, mensagem: "Essa conta já está paga." };
-    if (Math.abs(Number(conta.valor) - valor) > 0.009) return { ok: false as const, mensagem: `A conta é de R$ ${Number(conta.valor).toFixed(2).replace(".", ",")} e saíram R$ ${valor.toFixed(2).replace(".", ",")} do cofre. Confira as notas.` };
+    if (Math.abs(Number(conta.valor) - valor) > 0.009) return { ok: false as const, mensagem: `A conta é de ${moedaBR(Number(conta.valor))} e saíram ${moedaBR(valor)} do cofre. Confira as notas.` };
     const { error } = await db.from("lancamentos").update({ pago: true, pago_em: dia, forma_pagamento: "Dinheiro" }).eq("id", conta.id).eq("empresa_id", empresaId).eq("pago", false);
     if (error) return { ok: false as const, mensagem: explicarErro(error) };
     lancamentoId = conta.id;

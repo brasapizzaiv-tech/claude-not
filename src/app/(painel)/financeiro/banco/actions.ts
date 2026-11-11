@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { lerOfx } from "@/lib/ofx";
 import { lancarNota } from "@/app/(painel)/notas/actions";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { moedaBR } from "@/lib/format";
 
 /** Grava no lançamento de onde veio o dinheiro e como ele andou, LENDO do
  *  extrato. Só preenche o que está vazio: se alguém já escreveu a forma de
@@ -140,7 +141,7 @@ export async function gerarLancamentoDaTransacao(
   if (linhas.length > 0) {
     const soma = Math.round(linhas.reduce((acc, x) => acc + Number(x.valor), 0) * 100) / 100;
     if (Math.abs(soma - total) > 0.005) {
-      return { ok: false, erro: `As partes somam R$ ${soma.toFixed(2)} e o pagamento é R$ ${total.toFixed(2)}.` };
+      return { ok: false, erro: `As partes somam ${moedaBR(soma)} e o pagamento é ${moedaBR(total)}.` };
     }
     const grupo = randomUUID();
     const { data: criados } = await supabase

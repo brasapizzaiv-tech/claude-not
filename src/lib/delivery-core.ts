@@ -7,6 +7,7 @@ import { areaDoPonto, aplicarPromoTele, promosPossiveisHoje, type AreaEntrega, t
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
 import { precoComEtapas, problemaDasEscolhas } from "@/lib/combo-preco";
+import { moedaBR } from "@/lib/format";
 
 // Aceita tanto o client do servidor (cookies/RLS) quanto o admin client.
 // Tipagem estrutural mínima pra os dois passarem.
@@ -301,7 +302,7 @@ export async function criarPedidoDeliveryCore(
   if (opts.pedidoMinimo && opts.pedidoMinimo > 0) {
     const sub = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
     if (sub < opts.pedidoMinimo) {
-      return { ok: false as const, mensagem: `O pedido mínimo é R$ ${opts.pedidoMinimo.toFixed(2).replace(".", ",")} (sem contar a entrega). Faltam R$ ${(opts.pedidoMinimo - sub).toFixed(2).replace(".", ",")}.` };
+      return { ok: false as const, mensagem: `O pedido mínimo é ${moedaBR(opts.pedidoMinimo)} (sem contar a entrega). Faltam ${moedaBR(opts.pedidoMinimo - sub)}.` };
     }
   }
 
@@ -313,7 +314,7 @@ export async function criarPedidoDeliveryCore(
   if (opts.cupom) {
     const subtotal = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
     if (opts.cupom.minimo != null && subtotal < Number(opts.cupom.minimo)) {
-      return { ok: false as const, mensagem: `O cupom ${opts.cupom.codigo} vale só pra pedidos a partir de R$ ${Number(opts.cupom.minimo).toFixed(2).replace(".", ",")}.` };
+      return { ok: false as const, mensagem: `O cupom ${opts.cupom.codigo} vale só pra pedidos a partir de ${moedaBR(Number(opts.cupom.minimo))}.` };
     }
     const valorCupom = opts.cupom.tipo === "percent"
       ? r2(subtotal * Number(opts.cupom.valor) / 100)
