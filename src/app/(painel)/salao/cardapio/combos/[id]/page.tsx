@@ -57,7 +57,7 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
           <input name="nome" defaultValue={item.nome} required maxLength={100} className="mt-1 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto" />
         </label>
         <label className="block text-xs text-texto-suave">Detalhes (aparece pro cliente)
-          <textarea name="descricao" defaultValue={item.descricao ?? ""} maxLength={400} rows={2} placeholder="Ex.: 1 pizza grande + 1 mini + guaraná 1L grátis" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm text-texto" />
+          <textarea name="descricao" defaultValue={item.descricao ?? ""} maxLength={400} rows={2} placeholder="Ex.: 1 pizza grande + 1 mini + guaraná 1L grátis" className="campo mt-1 w-full" />
         </label>
         <HorariosEditor inicial={item.horarios} />
         <div className="flex flex-wrap items-center gap-3">

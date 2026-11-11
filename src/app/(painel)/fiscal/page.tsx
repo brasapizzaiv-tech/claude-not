@@ -8,7 +8,7 @@ import { TesteNota } from "./teste-nota";
 export const metadata = { title: "Configuração fiscal (NF-e / NFC-e)" };
 
 const campo =
-  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  "campo w-full";
 
 function Campo({ nome, label, def, ph }: { nome: string; label: string; def: string; ph?: string }) {
   return (

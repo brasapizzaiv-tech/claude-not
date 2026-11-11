@@ -10,7 +10,7 @@ import { hojeSP } from "@/lib/etiqueta-vencimentos";
 export const metadata = { title: "Cupons · Delivery" };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const inputCls = "rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm ";
+const inputCls = "campo";
 
 export default async function CuponsPage() {
   const supabase = await createClient();

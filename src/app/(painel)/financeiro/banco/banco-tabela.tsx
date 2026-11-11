@@ -443,13 +443,13 @@ export function BancoTabela({
                                 value={catSel}
                                 onChange={setCatSel}
                                 placeholder="Buscar categoria..."
-                                className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+                                className="campo w-full"
                               />
                               <input
                                 value={obs}
                                 onChange={(e) => setObs(e.target.value)}
                                 placeholder={`Observação (opcional) — padrão: ${t.descricao ?? "descrição do banco"}`}
-                                className="mt-2 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+                                className="campo mt-2 w-full"
                               />
                               {/* Rateio: fatura do cartão tem gasto de várias categorias */}
                               {partes.length === 0 ? (
@@ -552,7 +552,7 @@ export function BancoTabela({
                                 value={lancSel}
                                 onChange={setLancSel}
                                 placeholder="Buscar lançamento..."
-                                className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+                                className="campo w-full"
                               />
                               <button
                                 disabled={proc || !lancSel}

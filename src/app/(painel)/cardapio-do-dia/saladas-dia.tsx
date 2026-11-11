@@ -130,12 +130,12 @@ export function SaladasDoDia({ dia, dow, base, marcadas, padrao }: { dia: string
               onChange={(e) => setNovo(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); adicionar(); } }}
               placeholder="Ex.: Mix de folhas"
-              className="w-56 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+              className="campo w-56"
             />
           </div>
           <div>
             <label className="mb-1 block text-xs text-texto-suave">Categoria</label>
-            <select value={cat} onChange={(e) => setCat(e.target.value as CategoriaSalada)} className="rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto">
+            <select value={cat} onChange={(e) => setCat(e.target.value as CategoriaSalada)} className="campo">
               {CATEGORIAS_SALADA.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>

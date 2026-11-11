@@ -392,7 +392,7 @@ export function ComboModal({ item, grupos, opcoesDe, onClose, onAdd, comObs }: {
         })}
       </div>
       {comObs && (
-        <input aria-label="Observação (ex.: sem cebola)" value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="mt-3 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
+        <input aria-label="Observação (ex.: sem cebola)" value={obs} onChange={(e) => setObs(e.target.value)} maxLength={200} placeholder="Observação (ex.: sem cebola)" className="campo mt-3 w-full" />
       )}
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-borda pt-3">
         <div>

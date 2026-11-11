@@ -121,7 +121,7 @@ export function LancarItens({
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Buscar produto pelo nome..."
-        className="mb-3 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+        className="campo mb-3 w-full"
       />
 
       {/* Abas */}
@@ -542,7 +542,7 @@ export function MontarPizza({
           <select
             value={bordaId}
             onChange={(e) => setBordaId(e.target.value)}
-            className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            className="campo w-full"
           >
             <option value="">Sem borda</option>
             {bordas

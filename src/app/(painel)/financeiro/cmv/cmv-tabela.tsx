@@ -328,7 +328,7 @@ export function CmvTabela({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto..."
-          className="w-full max-w-xs min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+          className="campo w-full max-w-xs"
         />
         {busca && (
           <button

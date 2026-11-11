@@ -85,7 +85,7 @@ export default async function FinanceiroPage({
   }
 
   const inputCls =
-    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+    "campo";
 
   return (
     <div className="pagina">

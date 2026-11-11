@@ -47,6 +47,8 @@ paleta inteira gira pro tom dela; com o laranja do Brasa sai exatamente:
 - **Botão principal** `.btn-principal`: laranja, letra grafite em negrito, 46px,
   brilho laranja embaixo. **Secundário** `.btn-secundario`: superfície com a
   sombra do cartão. Dentro do cartão de foco: `.btn-foco`.
+- **Título da tela** `.titulo-pagina` (Space Grotesk 28px). **Campo** `.campo`: input, select
+  e textarea (44px, contorno forte, fundo do cartão); largura fica com quem usa.
 - **Rótulo** `.rotulo`: maiúsculas, 11px, espaçamento 0.1em, texto fraco.
 - **Número grande** `.numero-grande` / `font-numero`: Space Grotesk 700, −0.03em.
 - **Etiqueta** `.pilula` (pêssego) · `pilula-urgente` · `pilula-ok` · `pilula-info`

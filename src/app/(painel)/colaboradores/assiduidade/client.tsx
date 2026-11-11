@@ -5,7 +5,7 @@ import { BotaoAcao, Enviar } from "@/components/enviar";
 import { confirmar } from "@/components/dialogo";
 import { apagarAtestado, lancarPremioTrimestre, salvarAtestado } from "./actions";
 
-const CAMPO = "min-h-10 rounded-controle border border-borda-forte bg-transparent px-2 text-sm";
+const CAMPO = "campo px-2";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function LancarTrimestre({ trimestre }: { trimestre: string }) {

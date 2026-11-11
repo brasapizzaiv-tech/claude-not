@@ -279,7 +279,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 <button onClick={() => setLocal("aqui")} className={`min-h-11 rounded-controle py-2 text-sm font-semibold ${local === "aqui" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto-suave"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="salao" tamanho={14} /> Comer aqui</span></button>
                 <button onClick={() => setLocal("viagem")} className={`min-h-11 rounded-controle py-2 text-sm font-semibold ${local === "viagem" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-fundo text-texto-suave"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="viagem" tamanho={14} /> Viagem</span></button>
               </div>
-              <input aria-label="Nome do cliente / obs (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="mb-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+              <input aria-label="Nome do cliente / obs (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Nome do cliente / obs (opcional)" className="campo mb-2 w-full" />
               <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
               {erro && <p role="alert" className="mb-2 text-sm text-urgente-texto">{erro}</p>}
               <button onClick={() => setFase("pagar")} disabled={cartLista.length === 0} className="btn-principal mb-2 w-full text-base"><span className="inline-flex items-center justify-center gap-2"><Icone nome="dinheiro" tamanho={18} /> Cobrar e finalizar</span></button>
@@ -344,7 +344,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             )}
             {tipoForma === "vale_presente" && (
               <div className="mb-3">
-                <CampoVale vale={vale} onVale={setVale} semCodigo={valeSemCodigo} onSemCodigo={setValeSemCodigo} campoCls="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
+                <CampoVale vale={vale} onVale={setVale} semCodigo={valeSemCodigo} onSemCodigo={setValeSemCodigo} campoCls="campo w-full" />
                 {vale && vale.saldo < cobrar - 0.005 && (
                   <p className="mt-2 text-xs font-medium text-aviso-texto dark:text-amber-300">O saldo não cobre a venda toda. Pra usar o vale e pagar o resto de outro jeito, lance pelo caixa do salão.</p>
                 )}
@@ -353,20 +353,20 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             {pedeCodigo && (
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">{pedeCodigo} (obrigatório)</label>
-                <input aria-label="digite o código" value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 200))} placeholder="digite o código" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
+                <input aria-label="digite o código" value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 200))} placeholder="digite o código" className="campo mt-1 w-full" />
               </div>
             )}
             {semDinheiro && !valeComCodigo && (
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">Motivo (obrigatório)</label>
-                <input value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 200))} placeholder={tipoForma === "cortesia" ? "ex.: aniversário, cortesia da casa" : "ex.: vale nº 123"} className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
+                <input value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 200))} placeholder={tipoForma === "cortesia" ? "ex.: aniversário, cortesia da casa" : "ex.: vale nº 123"} className="campo mt-1 w-full" />
                 <p className="mt-1 text-xs text-texto-fraco">Não entra no caixa nem no faturamento e não sai nota.</p>
               </div>
             )}
             {tipoForma === "equipe" && (
               <div className="mb-3">
                 <label className="text-sm text-texto-suave">Funcionário (vai pra Compras internas)</label>
-                <select value={colabId} onChange={(e) => setColabId(e.target.value)} className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm">
+                <select value={colabId} onChange={(e) => setColabId(e.target.value)} className="campo mt-1 w-full">
                   <option value="">— escolher —</option>
                   {colaboradores.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
@@ -379,7 +379,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                   <div className="mt-1 flex items-center justify-between rounded-controle border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm"><span className="font-semibold">{cliente.nome}</span><button type="button" onClick={() => escolherCliente(null)} className="text-xs text-texto-suave">trocar</button></div>
                 ) : (
                   <>
-                    <input aria-label="Nome ou CPF do cliente" value={buscaCli} onChange={(e) => { const v = e.target.value; setBuscaCli(v); if (v.trim().length >= 2) buscarClientesPdv(v).then(setCliResultados).catch(() => setCliResultados([])); else setCliResultados([]); }} placeholder="Nome ou CPF do cliente" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2.5 text-sm" />
+                    <input aria-label="Nome ou CPF do cliente" value={buscaCli} onChange={(e) => { const v = e.target.value; setBuscaCli(v); if (v.trim().length >= 2) buscarClientesPdv(v).then(setCliResultados).catch(() => setCliResultados([])); else setCliResultados([]); }} placeholder="Nome ou CPF do cliente" className="campo mt-1 w-full" />
                     {cliResultados.length > 0 && (
                       <div className="mt-1 max-h-40 overflow-y-auto rounded-controle border border-borda">
                         {cliResultados.map((c) => <button key={c.id} type="button" onClick={() => escolherCliente({ id: c.id, nome: c.nome })} className="block w-full px-3 py-2 text-left text-sm hover:bg-superficie-suave">{c.nome}{c.cpf_cnpj ? <span className="text-texto-fraco"> · {c.cpf_cnpj}</span> : null}</button>)}
@@ -405,7 +405,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                   </div>
                 ) : (
                   <>
-                    <input aria-label="Nome, telefone ou CPF (opcional)" value={buscaCli} onChange={(e) => { const v = e.target.value; setBuscaCli(v); if (v.trim().length >= 2) buscarClientesPdv(v).then(setCliResultados).catch(() => setCliResultados([])); else setCliResultados([]); }} placeholder="Nome, telefone ou CPF (opcional)" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                    <input aria-label="Nome, telefone ou CPF (opcional)" value={buscaCli} onChange={(e) => { const v = e.target.value; setBuscaCli(v); if (v.trim().length >= 2) buscarClientesPdv(v).then(setCliResultados).catch(() => setCliResultados([])); else setCliResultados([]); }} placeholder="Nome, telefone ou CPF (opcional)" className="campo mt-1 w-full" />
                     {cliResultados.length > 0 && (
                       <div className="mt-1 max-h-40 overflow-y-auto rounded-controle border border-borda">
                         {cliResultados.map((c) => <button key={c.id} type="button" onClick={() => escolherCliente({ id: c.id, nome: c.nome })} className="block w-full px-3 py-2 text-left text-sm hover:bg-superficie-suave">{c.nome}{c.telefone ? <span className="text-texto-fraco"> · {c.telefone}</span> : c.cpf_cnpj ? <span className="text-texto-fraco"> · {c.cpf_cnpj}</span> : null}</button>)}

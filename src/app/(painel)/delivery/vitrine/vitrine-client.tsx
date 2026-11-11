@@ -29,7 +29,7 @@ export type DadosVitrine = {
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dataHoraBR = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).replace(",", "");
 const paraInput = (iso: string | null) => (iso ? new Date(new Date(iso).getTime() - 3 * 3600000).toISOString().slice(0, 16) : "");
-const campo = "w-full min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto focus:border-primaria";
+const campo = "campo w-full";
 const descCupom = (c: { tipo: "percent" | "valor"; valor: number; minimo: number | null }) =>
   `${c.tipo === "percent" ? `${String(c.valor).replace(".", ",")}%` : brl(c.valor)} off${c.minimo != null ? ` acima de ${brl(c.minimo)}` : ""}`;
 
@@ -205,7 +205,7 @@ function Sugestoes({ d, itemDe, executar }: {
       <p className="text-xs text-texto-suave">Cruze o que aparece junto de cada produto e no carrinho.</p>
       <label className="mt-3 flex items-center gap-2 text-sm text-texto-suave">
         Mostrar também
-        <select value={quando} onChange={(e) => setQuando(e.target.value)} className="min-h-11 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-sm text-texto">
+        <select value={quando} onChange={(e) => setQuando(e.target.value)} className="campo flex-1 px-2">
           {d.categorias.map((c) => <option key={c.valor} value={c.valor}>{c.rotulo}</option>)}
         </select>
       </label>

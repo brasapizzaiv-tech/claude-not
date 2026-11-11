@@ -169,7 +169,7 @@ export function Dialogos() {
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmarAgora(); } }}
-                className="mt-3 min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+                className="campo mt-3 w-full"
               />
             )}
           </div>

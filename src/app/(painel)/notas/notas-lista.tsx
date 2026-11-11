@@ -60,7 +60,7 @@ export function NotasLista({ notas }: { notas: NotaLinha[] }) {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por fornecedor ou número da nota..."
-          className="w-full max-w-md min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+          className="campo w-full max-w-md"
         />
         {busca && (
           <button

@@ -5,7 +5,7 @@ import type { ModeloWpp } from "@/lib/whatsapp";
 import { VARIAVEIS, type Variavel } from "@/lib/whatsapp-catalogo";
 import { enviarTeste, subirImagemCampanha } from "./actions";
 
-const inp = "rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm";
+const inp = "campo";
 const EXEMPLO: Record<Variavel, string> = {
   nome: "Rafael", link: "brasarestaurante.com.br/pedir", cupom: "BRASA10",
   cashback_saldo: "R$ 12,50", cashback_valor: "R$ 12,50", cashback_vence: "15/10/2026", dias_sem: "35", restaurante: "Brasa",

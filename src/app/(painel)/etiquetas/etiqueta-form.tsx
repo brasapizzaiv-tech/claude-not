@@ -10,7 +10,7 @@ import {
 import type { EtiquetaConfig, EtiquetaDados, TipoEtiqueta } from "@/lib/etiqueta-tipos";
 
 const input =
-  "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  "campo w-full";
 
 export type Imp = { id: string; nome: string; etiqueta_config: EtiquetaConfig | null };
 

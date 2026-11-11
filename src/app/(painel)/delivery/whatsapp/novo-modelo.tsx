@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { GATILHOS } from "@/lib/whatsapp-catalogo";
 import { criarModelo } from "../campanhas/actions";
 
-const inp = "w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm";
+const inp = "campo w-full";
 const RODAPE_PADRAO = "Responda SAIR para não receber promoções";
 
 // Cria um modelo de texto na Meta. Cada {{n}} no texto pede um exemplo (a Meta

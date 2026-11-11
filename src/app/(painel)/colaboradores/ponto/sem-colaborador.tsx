@@ -39,7 +39,7 @@ export function BatidasSemColaborador({ lista, colaboradores }: { lista: CpfSemD
               value={escolha[x.cpf] ?? ""}
               onChange={(e) => setEscolha((s) => ({ ...s, [x.cpf]: e.target.value }))}
               aria-label="De quem é esse CPF"
-              className="min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-sm text-texto"
+              className="campo px-2"
             >
               <option value="">— de quem é? —</option>
               <optgroup label="Sem CPF no cadastro">

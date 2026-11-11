@@ -10,7 +10,7 @@ import { buscarProdutosCombo, salvarEtapasCombo, type EtapaCombo } from "../acti
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const lerValor = (t: string) => { const v = Number(String(t).trim().replace(/\./g, "").replace(",", ".")); return Number.isFinite(v) ? v : 0; };
 const txt = (n: number) => (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
-const inp = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto";
+const inp = "campo";
 let seq = 0;
 const novaChave = () => `n${++seq}`;
 

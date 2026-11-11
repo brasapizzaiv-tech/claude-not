@@ -307,7 +307,11 @@ Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a r
 | extra | `c1ee681` · `0a5ab6e` · `bd7615b` | Moldura única `.pagina` (pedido do Rafael, 10/11): 114 telas com largura toda e a mesma margem (30 px/26 px); Frente de Caixa, Assiduidade, Checklists e Nota avulsa em colunas; 52 botões grafite → `.btn-principal`. Conferido por print em 1873 px: as 99 telas abertas começam a 30 px |
 | 6 | (este lote) | VIS-17 (`.titulo-pagina` em 112 títulos; cabeçalhos do ponto em `.rotulo`), VIS-18 (43 botões laranja à mão → `.btn-principal`), VIS-10 (14 etiquetas → `.pilula-*`, cartões neutros de folgas/retiradas em `.cartao`), TEL-007 (Editar/Remover/Ocultar de Produtos e Cardápio com 44 px) |
 
-Fica da Onda 6 (baixo): VIS-15 (leitor de câmera único — mexe no garçom, no /eu e no entregador; lote separado) e a classe `.campo` do VIS-18 (46 constantes de campo). Os cartões com borda que pintam estado (verde/vermelho/dashed) ficaram de propósito. Alinhamento visual não é pego pelo robô: conferir por print.
+| 7 | `6900d11` · `72093e7` | VIS-15: um leitor de câmera só (`components/leitor-qr.tsx`, ZXing) no leitor de etiquetas do painel (antes BarcodeDetector, não abria no iPhone), na baixa em lote do /eu, no garçom (QR + código de barras) e no entregador (aviso da Play mantido); jsQR fora do projeto. Etapa 1 testada pelo Rafael no celular; no ar conferido com câmera de teste (abre, desliga ao voltar, sem erro) |
+
+| 8 | (este lote) | VIS-18: `.campo` no globals.css; 136 campos em 89 arquivos (constantes locais e classes repetidas) passam a usar a peça |
+
+**Onda 6 encerrada.** Testar no celular: garçom lendo cupom/cartão e entregador lendo cupom. Os cartões com borda que pintam estado (verde/vermelho/dashed) ficaram de propósito. Alinhamento visual não é pego pelo robô: conferir por print.
 
 ## Como vai ser a correção
 

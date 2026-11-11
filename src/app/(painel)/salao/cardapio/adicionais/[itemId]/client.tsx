@@ -35,7 +35,7 @@ export function AdicionaisClient({ itemId, grupos }: { itemId: string; grupos: G
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar adicional..."
-          className="min-w-56 flex-1 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+          className="campo min-w-56 flex-1"
         />
         <label className="flex items-center gap-2 text-sm text-texto-suave">
           <input

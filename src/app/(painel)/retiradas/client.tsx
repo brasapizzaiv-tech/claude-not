@@ -171,7 +171,7 @@ export function RetiradasClient({
   );
 }
 
-const inputCls = "w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto   ";
+const inputCls = "campo w-full";
 
 // Histórico de quitação (pedido do Rafael, 02/10/2026): "quando o fulano
 // acertou e quanto". Não existe tabela de acertos — cada compra paga guarda a

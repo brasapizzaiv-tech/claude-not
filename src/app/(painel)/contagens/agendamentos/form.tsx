@@ -14,7 +14,7 @@ import {
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 const inputCls =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  "campo";
 
 type Item = { id: string; nome: string };
 export type Ag = {

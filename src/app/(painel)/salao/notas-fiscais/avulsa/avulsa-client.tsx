@@ -20,7 +20,7 @@ export type ItemCardapio = { id: string; nome: string; preco: number; categoria:
 export type PerfilOpcao = { id: string; nome: string; cfop: string; csosn: string; ncm: string | null };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const campo = "w-full min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto focus:border-primaria";
+const campo = "campo w-full";
 const rotuloCampo = "text-xs text-texto-suave";
 const num = (s: string) => Number(String(s).replace(/\./g, "").replace(",", ".")) || 0;
 const dig = (s: string | null | undefined) => (s ?? "").replace(/\D/g, "");
@@ -353,7 +353,7 @@ export function AvulsaClient({ itens, perfis, producao, podeTeste, formasCaixa }
           </label>
           {modelo === "nfe" && (
             <label className={`${rotuloCampo} sm:col-span-2`}>Observação na nota (informações complementares)
-              <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} className="mt-1 w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto" />
+              <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} className="campo mt-1 w-full" />
             </label>
           )}
         </div>

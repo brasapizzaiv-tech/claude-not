@@ -238,17 +238,17 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
             ) : (
               <div className="space-y-2">
                 <div className="text-xs text-texto-suave">Cliente disse: <b>{p.formaPagamento ?? "não informado"}</b>{tipoDe(p.formaPagamento, formas) === "dinheiro" && p.trocoPara ? ` · troco para ${brl(p.trocoPara)}` : ""}</div>
-                <select value={formaSel} onChange={(e) => { setFormaSel(e.target.value); setColabId(""); }} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm">
+                <select value={formaSel} onChange={(e) => { setFormaSel(e.target.value); setColabId(""); }} className="campo w-full">
                   {formas.map((f) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
                 </select>
                 {tipoSel === "equipe" && (
-                  <select value={colabId} onChange={(e) => setColabId(e.target.value)} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm">
+                  <select value={colabId} onChange={(e) => setColabId(e.target.value)} className="campo w-full">
                     <option value="">— funcionário (vai pra Compras internas) —</option>
                     {colaboradores.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                 )}
                 {pedeCodigo && (
-                  <input value={codigo} onChange={(e) => setCodigo(e.target.value.slice(0, 120))} placeholder={`${pedeCodigo} (obrigatório)`} aria-label={pedeCodigo} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                  <input value={codigo} onChange={(e) => setCodigo(e.target.value.slice(0, 120))} placeholder={`${pedeCodigo} (obrigatório)`} aria-label={pedeCodigo} className="campo w-full" />
                 )}
                 {tipoSel === "saldo" && !p.clienteId && (
                   <p className="text-xs text-aviso-texto">Este pedido não está ligado a um cliente cadastrado. Receba no caixa do salão, vinculando o cliente.</p>

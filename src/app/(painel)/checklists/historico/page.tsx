@@ -7,7 +7,7 @@ export const metadata = { title: "Histórico de checklists" };
 export const dynamic = "force-dynamic";
 
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
-const inputCls = "rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto   ";
+const inputCls = "campo";
 
 export default async function HistoricoChecklistsPage({
   searchParams,

@@ -12,7 +12,7 @@ import { desfazerSangria, lancarSangrias } from "./actions";
 export type LinhaSangria = { id: string; descricao: string; valor: number; dia: string; categoria: string | null; parecido: string | null };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const campo = "min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto";
+const campo = "campo";
 const semAcento = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 export function SangriasClient({ linhas, categorias, de }: { linhas: LinhaSangria[]; categorias: CategoriaSangria[]; de: string }) {

@@ -70,7 +70,7 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
   const fornecedores = [...porForn.values()].sort((a, b) => b.valorAMais - a.valorAMais || b.divergencias - a.divergencias);
 
   const card = "rounded-cartao border border-borda p-4 ";
-  const inputCls = "rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm text-texto   ";
+  const inputCls = "campo";
 
   return (
     <div className="pagina">

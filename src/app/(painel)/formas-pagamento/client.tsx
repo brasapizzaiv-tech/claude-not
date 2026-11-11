@@ -179,7 +179,7 @@ function Formulario({
   const [d, setD] = useState<DadosForma>(inicial);
   const [erro, setErro] = useState<string | null>(null);
   const explica = TIPOS_FORMA.find((t) => t.id === d.tipo)?.explica;
-  const inputCls = "min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  const inputCls = "campo w-full";
 
   return (
     <form

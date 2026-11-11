@@ -14,7 +14,7 @@ import { desligarColaborador } from "../actions";
 export type Opcao = { id: string; nome: string };
 export type Documento = { id: string; nome: string; tipo: string | null; validade: string | null; pedir_assinatura: boolean; assinado_em: string | null; criado_em: string; dias: number | null };
 
-const CAMPO = "min-h-11 w-full rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto";
+const CAMPO = "campo w-full";
 const dmy = (d: string | null | undefined) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "");
 const quando = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 

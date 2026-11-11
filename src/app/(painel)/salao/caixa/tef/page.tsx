@@ -85,7 +85,7 @@ export default async function TefPage({ searchParams }: { searchParams: Promise<
     return `/salao/caixa/tef?${u.toString()}`;
   };
   const dataBR = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
-  const campo = "min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto";
+  const campo = "campo";
 
   return (
     <div className="pagina">

@@ -67,7 +67,7 @@ export default async function DeliveryConfigPage() {
       <form action={salvarConfigDelivery} className="space-y-4">
         <div>
           <label className="text-sm font-semibold">Endereço do restaurante</label>
-          <input aria-label="Rua, número, bairro, Ivoti - RS" name="origem_endereco" defaultValue={c.origem_endereco ?? ""} placeholder="Rua, número, bairro, Ivoti - RS" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+          <input aria-label="Rua, número, bairro, Ivoti - RS" name="origem_endereco" defaultValue={c.origem_endereco ?? ""} placeholder="Rua, número, bairro, Ivoti - RS" className="campo mt-1 w-full" />
           <p className="mt-1 text-xs text-texto-suave">
             {geocodificado ? "Localizado no mapa — confira abaixo se o pino está no lugar certo." : "Ao salvar, o sistema localiza o endereço no mapa (ponto de partida das entregas)."}
           </p>
@@ -96,29 +96,29 @@ export default async function DeliveryConfigPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-semibold">Taxa base (R$)</label>
-            <input name="taxa_base" defaultValue={c.taxa_base ?? 0} inputMode="decimal" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input name="taxa_base" defaultValue={c.taxa_base ?? 0} inputMode="decimal" className="campo mt-1 w-full" />
             <p className="mt-1 text-xs text-texto-suave">Valor fixo somado a toda entrega.</p>
           </div>
           <div>
             <label className="text-sm font-semibold">Valor por km (R$)</label>
-            <input name="preco_km" defaultValue={c.preco_km ?? 0} inputMode="decimal" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input name="preco_km" defaultValue={c.preco_km ?? 0} inputMode="decimal" className="campo mt-1 w-full" />
             <p className="mt-1 text-xs text-texto-suave">Multiplicado pela distância.</p>
           </div>
           <div>
             <label className="text-sm font-semibold">Raio máximo (km)</label>
-            <input name="raio_max_km" defaultValue={c.raio_max_km ?? 0} inputMode="decimal" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input name="raio_max_km" defaultValue={c.raio_max_km ?? 0} inputMode="decimal" className="campo mt-1 w-full" />
             <p className="mt-1 text-xs text-texto-suave">0 = sem limite. Avisa se o endereço passar disso.</p>
           </div>
           <div>
             <label className="text-sm font-semibold">Tempo de preparo (min)</label>
-            <input name="tempo_preparo_min" defaultValue={c.tempo_preparo_min ?? 40} inputMode="numeric" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input name="tempo_preparo_min" defaultValue={c.tempo_preparo_min ?? 40} inputMode="numeric" className="campo mt-1 w-full" />
             <p className="mt-1 text-xs text-texto-suave">Usado pra calcular a previsão de entrega.</p>
           </div>
         </div>
 
         <div>
           <label className="text-sm font-semibold">Aviso no app do cliente (opcional)</label>
-          <input name="aviso" defaultValue={c.aviso ?? ""} placeholder="Ex.: Sexta e sábado têm rodízio por aqui! 🔥" className="mt-1 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+          <input name="aviso" defaultValue={c.aviso ?? ""} placeholder="Ex.: Sexta e sábado têm rodízio por aqui! 🔥" className="campo mt-1 w-full" />
           <p className="mt-1 text-xs text-texto-suave">Aparece como faixa no topo do /pedir. Deixe vazio pra não mostrar.</p>
         </div>
 

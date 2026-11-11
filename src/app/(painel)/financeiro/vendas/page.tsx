@@ -50,7 +50,7 @@ export default async function VendasPage({
   const dias = [...porDia.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
 
   const inputCls =
-    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+    "campo";
 
   return (
     <div className="pagina">

@@ -15,7 +15,7 @@ import {
 } from "../actions";
 import { Janela } from "@/components/janela";
 
-const inputCls = "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+const inputCls = "campo";
 const btnSec = "rounded-controle border border-borda-forte px-3 py-1.5 text-xs font-medium text-texto-suave hover:bg-superficie-suave dark:border-borda-forte  ";
 // Valor literal porque <input type="color"> não aceita variável de CSS.
 // Etapa 3: passa a vir da cor da empresa.

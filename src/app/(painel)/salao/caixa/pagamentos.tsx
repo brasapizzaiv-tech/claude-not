@@ -444,7 +444,7 @@ export function PainelPagamentos({
   }
 
   const btn = "rounded-cartao border px-3 py-2 text-sm font-semibold transition";
-  const campo = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  const campo = "campo w-full";
 
   return (
     <div className="space-y-3">

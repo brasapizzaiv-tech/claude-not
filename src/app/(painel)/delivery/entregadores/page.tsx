@@ -63,7 +63,7 @@ export default async function EntregadoresPage() {
       <div className="mb-6 grid gap-3 md:grid-cols-2">
         <form action={criarEntregadorDoColaborador} className="cartao flex flex-col gap-2 p-4">
           <div className="rotulo">Fixo · puxar de Colaboradores</div>
-          <select name="colaborador_id" required defaultValue="" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm">
+          <select name="colaborador_id" required defaultValue="" className="campo">
             <option value="" disabled>Escolha o colaborador…</option>
             {livres.map((c) => <option key={c.id} value={c.id}>{c.nome_social || c.nome}</option>)}
           </select>
@@ -73,8 +73,8 @@ export default async function EntregadoresPage() {
         </form>
         <form action={criarEntregador} className="cartao flex flex-col gap-2 p-4">
           <div className="rotulo">Eventual · só no delivery</div>
-          <input aria-label="Nome" name="nome" required placeholder="Nome" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
-          <input aria-label="Telefone (opcional)" name="telefone" placeholder="Telefone (opcional)" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm" />
+          <input aria-label="Nome" name="nome" required placeholder="Nome" className="campo" />
+          <input aria-label="Telefone (opcional)" name="telefone" placeholder="Telefone (opcional)" className="campo" />
           <Turnos />
           <Enviar className="btn-secundario">Adicionar eventual</Enviar>
         </form>

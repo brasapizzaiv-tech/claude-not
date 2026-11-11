@@ -215,7 +215,7 @@ function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIs
                   value={motivoNeg}
                   onChange={(e) => setMotivoNeg(e.target.value)}
                   placeholder="Motivo da negativa — a pessoa vai ler isso"
-                  className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm "
+                  className="campo min-w-[200px] flex-1"
                 />
                 <button
                   disabled={proc}
@@ -366,7 +366,7 @@ function FormLancar({ equipe, pedidos, byId, limites, ajustes, proc, run, onDone
       <h2 className="font-bold">Lançar folga direto</h2>
       <p className="text-sm text-texto-suave">Para quando a pessoa pede pessoalmente ou no WhatsApp. Entra já aprovada.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <select value={pid} onChange={(e) => { setPid(e.target.value); setTurno(""); }} className="rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm">
+        <select value={pid} onChange={(e) => { setPid(e.target.value); setTurno(""); }} className="campo">
           <option value="">Escolha a pessoa</option>
           {GRUPO_KEYS.map((g) => (
             <optgroup key={g} label={GRUPOS[g].nome}>
@@ -388,7 +388,7 @@ function FormLancar({ equipe, pedidos, byId, limites, ajustes, proc, run, onDone
           ))}
         </div>
       )}
-      <input aria-label="Motivo ou observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo ou observação" className="mt-2 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+      <input aria-label="Motivo ou observação" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo ou observação" className="campo mt-2 w-full" />
       {info && <p className="mt-2 text-xs text-texto-suave">{info}</p>}
       <div className="mt-3 flex gap-2">
         <button disabled={proc || !pid || !data} onClick={salvar} className="rounded-controle bg-zinc-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">Lançar folga aprovada</button>
@@ -523,7 +523,7 @@ function AbaCalendario({ pedidos, byId, limites, ajustes, bloqueios, hojeIso, pr
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <input aria-label="Motivo da trava (ex.: Kerb, evento)" value={motivoTrava} onChange={(e) => setMotivoTrava(e.target.value)} placeholder="Motivo da trava (ex.: Kerb, evento)" className="min-w-[200px] flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                <input aria-label="Motivo da trava (ex.: Kerb, evento)" value={motivoTrava} onChange={(e) => setMotivoTrava(e.target.value)} placeholder="Motivo da trava (ex.: Kerb, evento)" className="campo min-w-[200px] flex-1" />
                 <button disabled={proc} onClick={() => run(() => travarData(sel, motivoTrava))} className="rounded-controle bg-zinc-900 px-3 py-2 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">Travar data</button>
               </div>
             )}

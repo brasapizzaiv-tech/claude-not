@@ -33,7 +33,7 @@ export function TurnosNumeracao({ inicial, agora }: { inicial: TurnoLinha[]; ago
   const mudou = JSON.stringify(lista) !== JSON.stringify(inicial);
   const { sobra, sobrepoe } = cobertura(lista);
   const set = (i: number, k: keyof TurnoLinha, v: string) => setLista((l) => l.map((t, j) => (j === i ? { ...t, [k]: v } : t)));
-  const campo = "min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto";
+  const campo = "campo";
 
   async function salvar() {
     setMsg(null);

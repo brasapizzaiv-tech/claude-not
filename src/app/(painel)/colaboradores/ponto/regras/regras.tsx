@@ -9,7 +9,7 @@ import type { TipoJustificativa } from "@/lib/ponto-dados";
 import type { RegraInconsistencia } from "@/lib/ponto-relatorio-core";
 import { salvarInconsistencias, salvarTipoJustificativa } from "../actions";
 
-const CAMPO = "min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-sm text-texto";
+const CAMPO = "campo px-2";
 const EFEITOS: Record<string, string> = {
   dia: "Abona o dia inteiro",
   horas: "Abona horas de falta",

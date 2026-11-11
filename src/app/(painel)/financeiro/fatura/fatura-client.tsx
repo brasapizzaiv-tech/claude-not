@@ -38,7 +38,7 @@ export function FaturaClient({
   const [ignoradas, setIgnoradas] = useState(0);
 
   const input =
-    "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+    "campo";
 
   function enviar(formData: FormData) {
     setErro(null);

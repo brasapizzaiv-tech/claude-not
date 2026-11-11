@@ -108,13 +108,13 @@ export function FiadoClient({ clientes, formas }: { clientes: ClienteFiado[]; fo
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-texto">Dar baixa sem entrar no caixa</span>
                         <input value={baixaValor} onChange={(e) => setBaixaValor(e.target.value)} inputMode="decimal" aria-label="Valor da baixa"
-                          placeholder={c.saldo.toFixed(2).replace(".", ",")} className="min-h-11 w-28 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-right text-sm" />
-                        <select value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo da baixa" className="min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-sm">
+                          placeholder={c.saldo.toFixed(2).replace(".", ",")} className="campo w-28 px-2 text-right" />
+                        <select value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo da baixa" className="campo px-2">
                           {MOTIVOS_BAIXA.map((m) => <option key={m}>{m}</option>)}
                         </select>
                         {motivo === "Outro" && (
                           <input value={motivoTxt} onChange={(e) => setMotivoTxt(e.target.value)} placeholder="Qual o motivo?" aria-label="Motivo escrito"
-                            className="min-h-11 min-w-48 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-sm" />
+                            className="campo min-w-48 flex-1 px-2" />
                         )}
                         <BotaoAcao aoClicar={() => baixarSemCaixa(c)} className="btn-secundario !min-h-11 text-sm">Dar baixa</BotaoAcao>
                       </div>

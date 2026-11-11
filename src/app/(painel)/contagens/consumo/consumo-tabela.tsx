@@ -103,13 +103,13 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar produto…"
             aria-label="Buscar produto"
-            className="min-h-11 w-full rounded-controle border border-borda-forte bg-painel-cartao py-2 pl-3 pr-11 text-sm text-texto"
+            className="campo w-full pl-3 pr-11"
           />
           {busca && (
             <button type="button" onClick={() => setBusca("")} aria-label="Limpar a busca" className="absolute right-0 top-0 flex h-full w-11 items-center justify-center text-texto-fraco">✕</button>
           )}
         </div>
-        <select value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Categoria" className="min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto">
+        <select value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Categoria" className="campo">
           <option value="">Todas as categorias</option>
           {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>

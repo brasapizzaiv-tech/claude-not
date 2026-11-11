@@ -94,7 +94,7 @@ export function PrazoCotacao({
                 type="datetime-local"
                 value={quando}
                 onChange={(e) => setQuando(e.target.value)}
-                className="mt-1 block min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto"
+                className="campo mt-1 block"
               />
             </label>
             <BotaoAcao
@@ -123,7 +123,7 @@ export function PrazoCotacao({
               if (!r.ok) void avisar("Não consegui salvar o prazo padrão.");
               else router.refresh();
             }}
-            className="min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-3 text-sm text-texto"
+            className="campo"
           >
             {PADROES.map((p) => <option key={p.h} value={p.h}>{p.t}</option>)}
             {!PADROES.some((p) => String(p.h) === padrao) && <option value={padrao}>{padrao} horas</option>}

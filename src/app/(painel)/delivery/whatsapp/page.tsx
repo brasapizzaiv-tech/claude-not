@@ -28,7 +28,7 @@ export default async function WhatsappPage() {
   ]);
   const c = (cfg ?? {}) as { limite_dia?: number; intervalo_auto_dias?: number; auto_hora_ini?: string; auto_hora_fim?: string; preco_marketing?: number | null; preco_utilidade?: number | null };
   const modelos = mods.ok ? [...mods.modelos].sort((a, b) => a.nome.localeCompare(b.nome)) : [];
-  const inp = "rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm";
+  const inp = "campo";
   const preco = (v: number | null | undefined) => (v != null ? String(v).replace(".", ",") : "");
 
   return (

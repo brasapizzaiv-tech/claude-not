@@ -26,7 +26,7 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 const num = (s: string) => Number(String(s).replace(/\./g, "").replace(",", ".")) || 0;
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const quando = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
-const campo = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+const campo = "campo w-full";
 const btnLinha = "flex min-h-11 items-center justify-center gap-1.5 rounded-controle border border-borda-forte px-3 text-sm font-medium text-texto-suave transition hover:bg-superficie-suave";
 
 export function ValesClient({ vales, formas, caixaAberto, buscaInicial }: { vales: ValeLinha[]; formas: FormaOpcao[]; caixaAberto: boolean; buscaInicial: string }) {

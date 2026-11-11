@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 const DOW = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
-const CAMPO = "min-h-10 rounded-controle border border-borda-forte bg-transparent px-2 text-sm";
+const CAMPO = "campo px-2";
 
 function mesAnterior(mes: string, n: number) {
   const [a, m] = mes.split("-").map(Number);

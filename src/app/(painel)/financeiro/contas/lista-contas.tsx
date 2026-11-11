@@ -419,7 +419,7 @@ export function ListaContasView({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por descrição, fornecedor, categoria, forma de pagamento ou valor..."
-          className="min-h-11 w-full max-w-md rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+          className="campo w-full max-w-md"
         />
         {busca && (
           <button

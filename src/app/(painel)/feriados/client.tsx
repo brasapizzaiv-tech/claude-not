@@ -77,7 +77,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               name="data"
               type="date"
               required
-              className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+              className="campo"
             />
           </div>
           {/* Férias coletivas, emenda de fim de ano: deixe em branco pra um
@@ -91,7 +91,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               id="f-fim"
               name="data_fim"
               type="date"
-              className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+              className="campo"
             />
           </div>
           <div className="min-w-56 flex-1">
@@ -101,7 +101,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               name="nome"
               required
               placeholder="Ex.: Aniversário de Ivoti"
-              className="min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+              className="campo w-full"
             />
           </div>
           <div>
@@ -110,7 +110,7 @@ export function FeriadosClient({ feriados, hoje }: { feriados: Feriado[]; hoje: 
               id="f-sit"
               name="situacao"
               defaultValue="indefinido"
-              className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+              className="campo"
             >
               <option value="indefinido">{SITUACAO.indefinido.longo}</option>
               {ESCOLHAS.map((s) => (

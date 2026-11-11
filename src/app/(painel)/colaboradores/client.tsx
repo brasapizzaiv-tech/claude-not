@@ -255,7 +255,7 @@ function DesligarModal({ c, onClose, motivos = [] }: { c: Row; onClose: () => vo
   const [data, setData] = useState(() => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10));
   const [msg, setMsg] = useState<string | null>(null);
   const [proc, start] = useTransition();
-  const inputCls = "w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  const inputCls = "campo w-full";
   return (
     <Janela>
       <div className="w-full max-w-md rounded-cartao bg-painel-cartao p-5">
@@ -338,7 +338,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar…"
-            className="w-36 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm"
+            className="campo w-36"
           />
           <GarcomAvulso />
           <button

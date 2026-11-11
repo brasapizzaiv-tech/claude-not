@@ -73,7 +73,7 @@ export default async function PontoDiarioPage({ searchParams }: { searchParams: 
         <form className="flex items-end gap-2">
           {sp.dep && <input type="hidden" name="dep" value={sp.dep} />}
           {sp.inc === "1" && <input type="hidden" name="inc" value="1" />}
-          <input type="date" name="data" defaultValue={dia} aria-label="Dia" className="min-h-11 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-sm text-texto" />
+          <input type="date" name="data" defaultValue={dia} aria-label="Dia" className="campo px-2" />
           <button className="btn-secundario !min-h-11">Ver</button>
         </form>
         <Link href={q({ data: somar(dia, 1) })} aria-label="Próximo dia" className="btn-secundario !min-h-11 !px-4">›</Link>

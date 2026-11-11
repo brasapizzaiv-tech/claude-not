@@ -136,7 +136,7 @@ export function CentralImpressao({
           <div key={im.id} className={`rounded-cartao border p-3 dark:border-borda ${im.ativo ? "border-borda" : "border-borda opacity-60"}`}>
             {editId === im.id ? (
               <div className="flex flex-wrap items-center gap-2">
-                <input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+                <input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="campo flex-1" />
                 <button disabled={proc} onClick={() => { run(() => renomearImpressora(im.id, editNome)); setEditId(null); }} className="btn-principal min-h-11 px-3 text-sm">Salvar</button>
                 <button onClick={() => setEditId(null)} className="rounded-controle px-3 py-2 text-sm text-texto-suave">Cancelar</button>
               </div>
@@ -185,7 +185,7 @@ export function CentralImpressao({
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao p-3">
-        <input aria-label="Nome da nova impressora (ex.: Cozinha, Bar)" value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
+        <input aria-label="Nome da nova impressora (ex.: Cozinha, Bar)" value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="campo flex-1" />
         <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="btn-principal min-h-11 px-4 text-sm">
           + Adicionar impressora
         </button>

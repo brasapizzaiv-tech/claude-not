@@ -15,7 +15,7 @@ export type LinhaLembrete = {
   futuro: boolean;
 };
 
-const CAMPO = "min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+const CAMPO = "campo w-full";
 const ROTULO = "mb-1 block text-xs text-texto-suave";
 const CHIP = "inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-600 has-[:checked]:text-white border-borda-forte text-texto-suave";
 const ORDEM_SEMANA = [1, 2, 3, 4, 5, 6, 0];

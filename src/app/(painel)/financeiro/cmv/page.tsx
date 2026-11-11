@@ -320,7 +320,7 @@ export default async function CmvPage({
             type="date"
             name="di"
             defaultValue={di}
-            className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            className="campo"
           />
         </div>
         <div>
@@ -329,7 +329,7 @@ export default async function CmvPage({
             name="meta"
             defaultValue={String(meta * 100)}
             inputMode="decimal"
-            className="w-20 min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            className="campo w-20"
           />
         </div>
         <button className="btn-principal min-h-11 px-4 text-sm">

@@ -10,7 +10,7 @@ export const metadata = { title: "Cashback · Delivery" };
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dataHora = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-const inputCls = "rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm";
+const inputCls = "campo";
 
 type Config = {
   ativo: boolean; percentual: number; max_resgate: number | null; validade_dias: number;

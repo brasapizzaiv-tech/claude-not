@@ -389,7 +389,7 @@ export function ConferirClient({
             value={addProd}
             onChange={setAddProd}
             placeholder="Buscar produto..."
-            className="w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            className="campo w-full"
           />
         </div>
         <div>
@@ -417,7 +417,7 @@ export function ConferirClient({
           rows={2}
           value={obsGeral}
           onChange={(e) => setObsGeral(e.target.value)}
-          className="mt-1 w-full min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+          className="campo mt-1 w-full"
         />
       </label>
     </div>

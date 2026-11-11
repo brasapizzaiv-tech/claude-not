@@ -12,7 +12,7 @@ import { apagarHorario, definirHorarioPessoa, salvarHorario } from "../actions";
 
 type Linha = { e1: string; s1: string; e2: string; s2: string; almoco_livre: boolean; compensado: boolean; neutro: boolean };
 const NOMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-const CAMPO = "min-h-11 w-full rounded-controle border border-borda-forte bg-painel-cartao px-2 text-sm text-texto";
+const CAMPO = "campo w-full px-2";
 const dm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
 
 function paraLinhas(h: HorarioPonto): Record<number, Linha> {

@@ -13,7 +13,7 @@ import type { CategoriaSangria } from "@/lib/sangria-financeiro";
 import { Janela } from "@/components/janela";
 
 const inputCls =
-  "min-h-11 rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  "campo";
 
 const OPCOES_DESTINO = [
   { valor: "cofre", titulo: "Vai para o cofre", detalhe: "retirada para guardar" },

@@ -134,7 +134,7 @@ export function NovoPedido({
         <div className="flex items-center gap-2 border-b border-borda p-3">
           <Link href="/delivery" className="font-semibold text-texto-marca hover:underline">← Voltar</Link>
           <h1 className="text-lg font-bold">Novo pedido</h1>
-          <input aria-label="Buscar produto" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="ml-auto w-64 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+          <input aria-label="Buscar produto" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="campo ml-auto w-64" />
         </div>
         {!busca && (
           <div className="flex flex-wrap gap-1.5 border-b border-borda p-2">
@@ -163,7 +163,7 @@ export function NovoPedido({
           {/* Cliente */}
           <div className="relative">
             <label className="text-xs font-semibold text-texto-suave">Telefone</label>
-            <input aria-label="(51) 9." value={telefone} onChange={(e) => buscarCliente(e.target.value)} placeholder="(51) 9...." className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input aria-label="(51) 9." value={telefone} onChange={(e) => buscarCliente(e.target.value)} placeholder="(51) 9...." className="campo w-full" />
             {sugestoes.length > 0 && (
               <div className="absolute z-10 mt-1 w-full rounded-controle border border-borda bg-painel-cartao dark:border-borda-forte">
                 {sugestoes.map((s) => (
@@ -177,7 +177,7 @@ export function NovoPedido({
           </div>
           <div>
             <label className="text-xs font-semibold text-texto-suave">Nome</label>
-            <input aria-label="Nome do cliente" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do cliente" className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input aria-label="Nome do cliente" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do cliente" className="campo w-full" />
           </div>
 
           {/* Tipo */}
@@ -242,19 +242,19 @@ export function NovoPedido({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-semibold text-texto-suave">Forma</label>
-              <select value={forma} onChange={(e) => setForma(e.target.value)} className="w-full rounded-controle border border-borda-forte bg-transparent px-2 py-2 text-sm">
+              <select value={forma} onChange={(e) => setForma(e.target.value)} className="campo w-full px-2">
                 {formas.map((f) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-texto-suave">Origem</label>
-              <select value={origem} onChange={(e) => setOrigem(e.target.value)} className="w-full rounded-controle border border-borda-forte bg-transparent px-2 py-2 text-sm">
+              <select value={origem} onChange={(e) => setOrigem(e.target.value)} className="campo w-full px-2">
                 {ORIGENS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
           </div>
           {forma === "Dinheiro" && (
-            <input aria-label="Troco para quanto? (opcional)" value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input aria-label="Troco para quanto? (opcional)" value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="campo w-full" />
           )}
           <div>
             <label className="flex items-center gap-1.5 text-xs font-semibold text-texto-suave"><Icone nome="agenda" tamanho={13} /> Agendar pra (opcional — vazio = pra agora)</label>
@@ -267,18 +267,18 @@ export function NovoPedido({
                   <label className="text-xs font-semibold text-texto-suave">Taxa entrega</label>
                   <button type="button" onClick={calcularTaxa} disabled={calculando} className="text-xs font-semibold text-ok-texto disabled:opacity-50">{calculando ? "..." : <span className="inline-flex items-center gap-1"><Icone nome="local" tamanho={12} /> calcular</span>}</button>
                 </div>
-                <input value={taxa} onChange={(e) => setTaxa(e.target.value)} inputMode="decimal" placeholder="0,00" className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+                <input value={taxa} onChange={(e) => setTaxa(e.target.value)} inputMode="decimal" placeholder="0,00" className="campo w-full" />
               </div>
             )}
             <div>
               <label className="text-xs font-semibold text-texto-suave">Desconto</label>
-              <input value={desconto} onChange={(e) => setDesconto(e.target.value)} inputMode="decimal" placeholder="0,00" className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+              <input value={desconto} onChange={(e) => setDesconto(e.target.value)} inputMode="decimal" placeholder="0,00" className="campo w-full" />
             </div>
           </div>
           {descN > 0 && (
-            <input aria-label="Motivo do desconto" value={descMotivo} onChange={(e) => setDescMotivo(e.target.value)} placeholder="Motivo do desconto" className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            <input aria-label="Motivo do desconto" value={descMotivo} onChange={(e) => setDescMotivo(e.target.value)} placeholder="Motivo do desconto" className="campo w-full" />
           )}
-          <textarea aria-label="Observação (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (opcional)" rows={2} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+          <textarea aria-label="Observação (opcional)" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (opcional)" rows={2} className="campo w-full" />
         </div>
 
         {/* Rodapé */}

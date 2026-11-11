@@ -9,7 +9,7 @@ import { SeletorModelo, type EscolhaModelo } from "../campanhas/seletor-modelo";
 
 export type GatilhoSalvo = { ativo: boolean; modelo: string | null; idioma: string; variaveis: string[]; dias: number | null; cupom: string | null; imagem_url: string | null };
 
-const inp = "rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm";
+const inp = "campo";
 
 export function CartoesGatilhos({ modelos, salvos, cupons, enviados30 }: {
   modelos: ModeloWpp[]; salvos: Record<string, GatilhoSalvo>; cupons: string[]; enviados30: Record<string, number>;

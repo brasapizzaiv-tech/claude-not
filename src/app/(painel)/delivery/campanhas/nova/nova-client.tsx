@@ -8,7 +8,7 @@ import { PUBLICOS, type TipoPublico } from "@/lib/whatsapp-catalogo";
 import { contarPublico, criarCampanha } from "../actions";
 import { SeletorModelo, type EscolhaModelo } from "../seletor-modelo";
 
-const inp = "rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm";
+const inp = "campo";
 const DIAS = [[1, "S"], [2, "T"], [3, "Q"], [4, "Q"], [5, "S"], [6, "S"], [0, "D"]] as const;
 const NOME_DIA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

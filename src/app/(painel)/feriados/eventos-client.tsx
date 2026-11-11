@@ -10,7 +10,7 @@ import { excluirEvento, salvarEvento, statusDoEvento } from "./eventos-actions";
 
 const LUGARES = ["Salão", "Deck", "Área kids", "Casa toda"];
 const CAMPO =
-  "min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria";
+  "campo w-full";
 const ROTULO = "mb-1 block text-xs text-texto-suave";
 
 export function EventosClient({ eventos, hoje }: { eventos: Evento[]; hoje: string }) {

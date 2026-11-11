@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const ST: Record<string, string> = { pendente: "Pendente", aceito: "Aceito", em_preparo: "Em preparo", pronto: "Pronto", saiu: "Saiu", entregue: "Entregue", cancelado: "Cancelado" };
-const CAMPO = "min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm";
+const CAMPO = "campo w-full";
 
 function diasAtras(dia: string, n: number) {
   const [a, m, d] = dia.split("-").map(Number);

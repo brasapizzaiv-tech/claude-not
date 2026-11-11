@@ -166,7 +166,7 @@ export function MesaDetalhe({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto ou nº da comanda..."
-          className="min-w-48 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-3 py-2 text-sm"
+          className="campo min-w-48 flex-1"
         />
         <div className="flex rounded-controle border border-borda-forte p-0.5">
           {(["produtos", "comandas"] as const).map((a) => (

@@ -599,6 +599,20 @@ optgroup {
     font-weight: 600; color: var(--texto-fraco);
   }
   /* Etiqueta em pílula. Variações: pêssego (normal), urgente, ok, info, sólido. */
+  /* Campo de formulário (VIS-18): input, select e textarea com uma cara só —
+     44px de altura (toque), contorno forte, fundo do cartão. Largura e
+     alinhamento ficam com quem usa (w-full, w-20, text-right…). */
+  .campo {
+    min-height: 44px; padding: 0 12px;
+    border-radius: var(--raio-controle);
+    border: 1px solid var(--borda-forte);
+    background: var(--painel-cartao); color: var(--texto);
+    font-size: 14px; line-height: 1.3;
+  }
+  textarea.campo { padding-top: 10px; padding-bottom: 10px; }
+  .campo::placeholder { color: var(--texto-fraco); }
+  .campo:focus { border-color: var(--marca-primaria); }
+  .campo:disabled { opacity: 0.55; cursor: not-allowed; }
   /* Título da tela (VIS-17): um tamanho só no painel inteiro. */
   .titulo-pagina {
     font-family: var(--fonte-numero); font-size: 28px; font-weight: 700;

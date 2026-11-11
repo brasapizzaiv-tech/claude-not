@@ -119,7 +119,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
             name="nome"
             required
             placeholder="Ex.: Lavanderia"
-            className="min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            className="campo w-full"
           />
         </div>
         <div className="min-w-48">
@@ -129,7 +129,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
             name="tipo"
             required
             defaultValue="despesa_fixa"
-            className="min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            className="campo w-full"
           >
             {LUGARES.map((l) => (
               <option key={l.tipo} value={l.tipo}>
@@ -147,7 +147,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
             required
             list="grupos-dre"
             placeholder="Ex.: Administrativas"
-            className="min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+            className="campo w-full"
           />
           <datalist id="grupos-dre">
             {gruposExistentes.map((g) => <option key={g} value={g} />)}
@@ -170,7 +170,7 @@ export function CategoriasDreClient({ linhas }: { linhas: CategoriaDre[] }) {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar categoria ou grupo..."
-          className="min-h-11 w-full max-w-md rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"
+          className="campo w-full max-w-md"
         />
         {inativas > 0 && (
           <label className="flex items-center gap-2 text-sm text-texto-suave">

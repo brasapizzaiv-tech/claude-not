@@ -43,7 +43,7 @@ export function EscolhaComBusca({
       value={valor}
       onChange={setValor}
       placeholder={rotuloVazio}
-      className={className || "min-h-11 w-full rounded-controle border border-borda-forte bg-transparent px-3 text-sm text-texto focus:border-primaria"}
+      className={className || "campo w-full"}
       required={obrigatorio}
     />
   );
