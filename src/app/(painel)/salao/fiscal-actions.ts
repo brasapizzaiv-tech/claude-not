@@ -12,7 +12,7 @@ import { repartirDesconto, totalComDesconto } from "@/lib/fiscal/desconto-nota";
 import { pagamentosDaNota, type PagamentoVenda } from "@/lib/fiscal/pagamentos-nota";
 import { desfazerLancamentosNota } from "./notas-fiscais/avulsa/actions";
 import { atualizarPelaFocus, type LinhaNota } from "@/lib/fiscal/conferir-notas";
-import { linhasDaNota, unidadeDaLinha, type ItemCoberto } from "@/lib/fiscal/recebimento-nota";
+import { buffetNaNota, linhasDaNota, unidadeDaLinha, type ItemCoberto } from "@/lib/fiscal/recebimento-nota";
 import { explicarErro } from "@/lib/erro-amigavel";
 import { docValido, MSG_DOC_INVALIDO } from "@/lib/fiscal/cnpj";
 
@@ -212,9 +212,9 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
 
   const { data: comsData } = await supabase
     .from("pdv_comandas")
-    .select("id, numero, valor_buffet, forma_pagamento, cliente_id, desconto_nota, empresa_id")
+    .select("id, numero, valor_buffet, forma_pagamento, cliente_id, desconto_nota, empresa_id, peso, livre")
     .in("id", ids);
-  const coms = (comsData ?? []) as { id: string; numero: number; valor_buffet: number | null; forma_pagamento: string | null; cliente_id: string | null; desconto_nota: number | null; empresa_id: string | null }[];
+  const coms = (comsData ?? []) as { id: string; numero: number; valor_buffet: number | null; forma_pagamento: string | null; cliente_id: string | null; desconto_nota: number | null; empresa_id: string | null; peso: number | null; livre: boolean | null }[];
   if (coms.length === 0) return { ok: false, mensagem: "Comanda não encontrada." };
 
   const cfg = await cfgFiscal(coms[0].empresa_id);
@@ -276,11 +276,18 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   const items: FocusItem[] = [];
   let total = 0;
   let n = 0;
+  // FIS-06: por quilo sai o peso real (KG); livre sai 1 UN. `qtd` da linha do
+  // recebimento é a fração paga do buffet (1 = inteiro).
+  const comDe = new Map(coms.map((c) => [c.id, c]));
+  const naNota = (comandaId: string | undefined, fracao: number, bruto: number) => {
+    const c = comandaId ? comDe.get(comandaId) : coms.length === 1 ? coms[0] : undefined;
+    return buffetNaNota(fracao, bruto, Number(c?.peso ?? 0), c ? !!c.livre : true);
+  };
   const buffets = linhasRec
-    ? linhasRec.filter((l) => l.tipo === "buffet").map((l) => ({ descricao: l.descricao, qtd: l.qtd, preco: l.preco_unit, bruto: l.bruto }))
+    ? linhasRec.filter((l) => l.tipo === "buffet").map((l) => ({ descricao: l.descricao, ...naNota(l.comanda_id, l.qtd, l.bruto) }))
     : coms.filter((c) => Number(c.valor_buffet || 0) > 0).map((c) => {
       const v = Number(c.valor_buffet || 0);
-      return { descricao: coms.length > 1 ? `Buffet (comanda ${c.numero})` : "Buffet", qtd: 1, preco: v, bruto: v };
+      return { descricao: coms.length > 1 ? `Buffet (comanda ${c.numero})` : "Buffet", ...naNota(c.id, 1, v) };
     });
   for (const b of buffets) {
     n++;
@@ -290,9 +297,9 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
       codigo_produto: "BUFFET",
       descricao: b.descricao,
       cfop: CFOP,
-      unidade_comercial: "KG",
+      unidade_comercial: b.unidade,
       quantidade_comercial: b.qtd.toFixed(4),
-      valor_unitario_comercial: b.preco.toFixed(2),
+      valor_unitario_comercial: b.preco_unit.toFixed(4),
       valor_bruto: b.bruto.toFixed(2),
       codigo_ncm: NCM,
       icms_origem: "0",

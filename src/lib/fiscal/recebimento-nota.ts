@@ -17,6 +17,8 @@ export type ItemCoberto =
 
 export type LinhaNota = {
   tipo: "buffet" | "item";
+  /** Só no buffet: de que comanda é (pro peso real na nota, FIS-06). */
+  comanda_id?: string;
   item_id: string | null;
   descricao: string;
   /** Quantidade na nota (4 casas): a fração da linha que este recebimento pagou. */
@@ -46,6 +48,7 @@ export function linhasDaNota(cobertos: ItemCoberto[], variasComandas: boolean): 
       if (!(qtd > 0)) continue;
       out.push({
         tipo: "buffet",
+        comanda_id: c.comanda_id,
         item_id: null,
         descricao: variasComandas && c.numero != null ? `Buffet (comanda ${c.numero})` : "Buffet",
         qtd,
@@ -76,4 +79,19 @@ export function linhasDaNota(cobertos: ItemCoberto[], variasComandas: boolean): 
 export function unidadeDaLinha(l: LinhaNota, porKg: boolean, unidadePerfil: string | null | undefined) {
   if (l.tipo === "buffet" || porKg) return "KG";
   return unidadePerfil || "UN";
+}
+
+/**
+ * FIS-06: como o buffet sai na nota. Por quilo: o PESO real em KG (a fração
+ * paga do peso) e o preço do quilo que fecha o valor — antes saía "1 KG" com o
+ * total. Livre (ou sem peso): 1 UN com o preço do livre.
+ * `fracao` = quanto da linha este recebimento pagou (1 = inteira).
+ * O valor unitário vai com 4 casas pra quantidade × preço bater com o valor.
+ */
+export function buffetNaNota(fracao: number, bruto: number, peso: number, livre: boolean) {
+  const kg = r4(peso * fracao);
+  if (livre || !(peso > 0) || !(kg > 0)) {
+    return { unidade: "UN", qtd: r4(fracao), preco_unit: r4(fracao > 0 ? bruto / fracao : bruto), bruto: r2(bruto) };
+  }
+  return { unidade: "KG", qtd: kg, preco_unit: r4(bruto / kg), bruto: r2(bruto) };
 }
