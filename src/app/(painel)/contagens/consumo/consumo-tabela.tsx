@@ -182,7 +182,10 @@ export function ConsumoTabela({ linhas, semanas }: { linhas: LinhaConsumo[]; sem
                           </p>
                         ))}
                         {l.erradas > 0 && (
-                          <p className="mt-2 text-xs text-texto-suave">{l.erradas} contagem(ns) deram consumo negativo e ficaram fora da conta (provável erro de contagem).</p>
+                          <p className="mt-2 text-xs text-texto-suave">
+                            {l.erradas === 1 ? "1 contagem deu" : `${l.erradas} contagens deram`} consumo negativo e {l.erradas === 1 ? "ficou" : "ficaram"} fora da conta: o estoque subiu sem nota nem pedido.
+                            Pode ser produção da casa, compra no mercado sem nota ou contagem em outra unidade.
+                          </p>
                         )}
                       </td>
                     </tr>

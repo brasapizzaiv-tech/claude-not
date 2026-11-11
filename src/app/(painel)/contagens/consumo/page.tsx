@@ -85,8 +85,9 @@ export default async function ConsumoPage() {
       <h1 className="mt-2 titulo-pagina">Consumo do estoque</h1>
       <p className="mt-1 max-w-3xl text-sm text-texto-suave">
         Quanto sai de cada produto por semana, pelas contagens: <b className="text-texto">tinha + chegou − tem agora</b>.
-        A média é das últimas 8 semanas; o gráfico mostra as últimas {SEMANAS}. Contagem que deu consumo negativo
-        (contou errado) e entrada fora de proporção (nota em peças, contagem em caixa) ficam fora da conta.
+        A compra conta no dia em que chegou (o &quot;Chegou&quot; da equipe ou a conferência). A média é das últimas 8 semanas;
+        o gráfico mostra as últimas {SEMANAS}. Contagem que deu consumo negativo (estoque subiu sem nota nem pedido) e
+        entrada fora de proporção (nota em peças, contagem em caixa) ficam fora da conta.
       </p>
       <ConsumoTabela linhas={linhas} semanas={semanas} />
     </div>
