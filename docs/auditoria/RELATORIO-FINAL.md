@@ -305,11 +305,11 @@ Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a r
 | 5 | `2eba016` | VIS-16 (.filtro/.filtro-ativo/.filtro-contador, 11 filtros), VIS-12 (emoji → Icone), VIS-08 (cozinha/TV só tv-cores.ts), Financeiro e fatura alinhados pelo topo (pedido do Rafael; conferido: os 9 rótulos na mesma altura), EscolhaComBusca com estilo de campo, atalhos em .btn-secundario |
 
 | extra | `c1ee681` · `0a5ab6e` · `bd7615b` | Moldura única `.pagina` (pedido do Rafael, 10/11): 114 telas com largura toda e a mesma margem (30 px/26 px); Frente de Caixa, Assiduidade, Checklists e Nota avulsa em colunas; 52 botões grafite → `.btn-principal`. Conferido por print em 1873 px: as 99 telas abertas começam a 30 px |
-| 6 | (este lote) | VIS-17 (`.titulo-pagina` em 112 títulos; cabeçalhos do ponto em `.rotulo`), VIS-18 (43 botões laranja à mão → `.btn-principal`), VIS-10 (14 etiquetas → `.pilula-*`, cartões neutros de folgas/retiradas em `.cartao`), TEL-007 (Editar/Remover/Ocultar de Produtos e Cardápio com 44 px) |
+| 6 | `9743bf0` | VIS-17 (`.titulo-pagina` em 112 títulos; cabeçalhos do ponto em `.rotulo`), VIS-18 (43 botões laranja à mão → `.btn-principal`), VIS-10 (14 etiquetas → `.pilula-*`, cartões neutros de folgas/retiradas em `.cartao`), TEL-007 (Editar/Remover/Ocultar de Produtos e Cardápio com 44 px) |
 
 | 7 | `6900d11` · `72093e7` | VIS-15: um leitor de câmera só (`components/leitor-qr.tsx`, ZXing) no leitor de etiquetas do painel (antes BarcodeDetector, não abria no iPhone), na baixa em lote do /eu, no garçom (QR + código de barras) e no entregador (aviso da Play mantido); jsQR fora do projeto. Etapa 1 testada pelo Rafael no celular; no ar conferido com câmera de teste (abre, desliga ao voltar, sem erro) |
 
-| 8 | (este lote) | VIS-18: `.campo` no globals.css; 136 campos em 89 arquivos (constantes locais e classes repetidas) passam a usar a peça |
+| 8 | `6d6fc48` | VIS-18: `.campo` no globals.css; 136 campos em 89 arquivos (constantes locais e classes repetidas) passam a usar a peça |
 
 **Onda 6 encerrada.**
 
@@ -318,7 +318,7 @@ Onda 4 concluída. Fica só DES-004 reescrita (opcional: o índice já levou a r
 | Lote | Commit | O que corrigiu |
 |---|---|---|
 | 1 | `66751e4` | TXT-05 (nome padrão da cotação, data do comparar, validade do cashback e manipulação da etiqueta no fuso de SP; 18 mensagens de dinheiro com `moedaBR` — "R$ 1.234,50" em vez de "R$ 1234,50"/"R$ 105712.00"), MAR-03 (pedido da Kern reserva a linha do dia antes de criar o pedido: rotina e botão juntos não duplicam), PAG-06 (débito com bandeira de vale — LECARD VOUCHER, VR, ALELO, SODEXO, TICKET — entra na forma de vale no caixa, PDV e delivery; NFC-e sai 11; `scripts/forma-pela-bandeira.test.mjs`) |
-| 2 | (este lote) | COD-006 (saldo do fiado numa função só, `src/lib/fiado-saldo.ts`, buscando em páginas — tela do Fiado, busca de cliente no caixa, limite de crédito 2× e nota avulsa), COD-008 (testes do delivery acertados pra noite só sexta/sábado; `npm test` roda os 206 — todos passam), COD-010 (`@zxing/library` declarada), NFE-04 (recusa da SEFAZ com cStat vira erro com o motivo; 136/573 também marcam a nota como manifestada), CRN-07 (app das marmitas: sem conexão mostra "Tentar de novo" em vez de "abrem às undefined"; erro 500 genérico e registrado na Saúde), CRN-04 (horário da contagem agendada de 15 em 15 min, até 23:45, arredondado no servidor) | Testar no celular: garçom lendo cupom/cartão e entregador lendo cupom. Os cartões com borda que pintam estado (verde/vermelho/dashed) ficaram de propósito. Alinhamento visual não é pego pelo robô: conferir por print.
+| 2 | `37f5ba4` | COD-006 (saldo do fiado numa função só, `src/lib/fiado-saldo.ts`, buscando em páginas — tela do Fiado, busca de cliente no caixa, limite de crédito 2× e nota avulsa), COD-008 (testes do delivery acertados pra noite só sexta/sábado; `npm test` roda os 206 — todos passam), COD-010 (`@zxing/library` declarada), NFE-04 (recusa da SEFAZ com cStat vira erro com o motivo; 136/573 também marcam a nota como manifestada), CRN-07 (app das marmitas: sem conexão mostra "Tentar de novo" em vez de "abrem às undefined"; erro 500 genérico e registrado na Saúde), CRN-04 (horário da contagem agendada de 15 em 15 min, até 23:45, arredondado no servidor) | Testar no celular: garçom lendo cupom/cartão e entregador lendo cupom. Os cartões com borda que pintam estado (verde/vermelho/dashed) ficaram de propósito. Alinhamento visual não é pego pelo robô: conferir por print.
 
 ## Como vai ser a correção
 
