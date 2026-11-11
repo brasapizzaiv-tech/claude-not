@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 import { listarFormas } from "@/lib/formas-pagamento-server";
 import { FiadoClient, type ClienteFiado } from "./fiado-client";
 
@@ -8,11 +9,15 @@ export const metadata = { title: "Fiado de clientes · Caixa" };
 
 export default async function FiadoPage() {
   const supabase = await createClient();
-  const { data: rows } = await supabase
-    .from("cliente_fiado")
-    .select("id, cliente_id, tipo, valor, descricao, forma_pagamento, criado_em, clientes(nome, telefone)")
-    .order("criado_em", { ascending: false })
-    .limit(3000);
+  // COD-006: o banco corta em 1000 linhas; o saldo soma TUDO, então busca em páginas.
+  const rows = await buscarTodas<unknown>((de, ate) =>
+    supabase
+      .from("cliente_fiado")
+      .select("id, cliente_id, tipo, valor, descricao, forma_pagamento, criado_em, clientes(nome, telefone)")
+      .order("criado_em", { ascending: false })
+      .order("id")
+      .range(de, ate),
+  );
 
   type Row = { id: string; cliente_id: string; tipo: string; valor: number; descricao: string | null; forma_pagamento: string | null; criado_em: string; clientes: { nome: string; telefone: string | null } | { nome: string; telefone: string | null }[] | null };
   const porCliente = new Map<string, ClienteFiado>();

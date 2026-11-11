@@ -24,6 +24,7 @@ import { repartirDesconto } from "@/lib/fiscal/desconto-nota";
 import type { ItemCoberto } from "@/lib/fiscal/recebimento-nota";
 import { explicarErro } from "@/lib/erro-amigavel";
 import { moedaBR } from "@/lib/format";
+import { saldosFiado } from "@/lib/fiado-saldo";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
 // do garçom ainda estava aberta).
@@ -1227,15 +1228,7 @@ export async function buscarClientesCaixa(termo: string) {
   const achados = (data as { id: string; nome: string; cpf_cnpj: string | null; limite_credito: number | null }[]) ?? [];
   if (achados.length === 0) return [];
   // Saldo em aberto só dos que apareceram (pra avisar do limite no pagamento).
-  const { data: mov } = await supabase
-    .from("cliente_fiado")
-    .select("cliente_id, tipo, valor")
-    .in("cliente_id", achados.map((c) => c.id));
-  const saldo = new Map<string, number>();
-  for (const r of ((mov as { cliente_id: string; tipo: string; valor: number }[]) ?? [])) {
-    const v = Number(r.valor) * (r.tipo === "debito" ? 1 : -1);
-    saldo.set(r.cliente_id, Math.round(((saldo.get(r.cliente_id) ?? 0) + v) * 100) / 100);
-  }
+  const saldo = await saldosFiado(supabase, achados.map((c) => c.id));
   return achados.map((c) => ({
     id: c.id,
     nome: c.nome,

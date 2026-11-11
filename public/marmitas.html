@@ -424,8 +424,17 @@ function fmtDiaBR(iso){
   return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')} · ${dias[dt.getUTCDay()]}`;
 }
 async function iniciarColaborador(){
-  try{ PUBLICO=await (await fetch('/api/marmitas/publico',{cache:'no-store'})).json(); }
-  catch(e){ toast('Falha ao carregar',true); return; }
+  // CRN-07: sem internet ou com erro no servidor, a tela ficava muda ou mostrava
+  // "abrem às undefined". Agora diz o que houve e deixa tentar de novo.
+  let novo=null;
+  try{ const r=await fetch('/api/marmitas/publico',{cache:'no-store'}); if(r.ok) novo=await r.json(); }catch(e){}
+  if(!novo||!novo.data){
+    $('#colStep1').classList.add('hidden'); $('#colStep2').classList.add('hidden'); $('#colAviso').classList.add('hidden');
+    $('#colFechado').classList.remove('hidden');
+    $('#colFechadoMsg').innerHTML=`Não consegui carregar os pedidos agora (sem internet?).<br><button type="button" class="block" style="margin-top:12px" onclick="iniciarColaborador()">Tentar de novo</button>`;
+    return;
+  }
+  PUBLICO=novo;
   PUBLICO_EM=Date.now();
   $('#colSub').textContent='Convênio '+(PUBLICO.nomeConvenio||'Kern');
   const bq=arr(PUBLICO.proximosBloqueios).map(b=>`🚫 <b>${fmtDiaBR(b.data)}</b> sem marmita${b.motivo?' ('+escapeHtml(b.motivo)+')':''}`).join('<br>');
@@ -444,7 +453,8 @@ document.addEventListener('visibilitychange',async()=>{
   if(document.visibilityState!=='visible'||location.hash==='#admin'||!PUBLICO) return;
   if(Date.now()-PUBLICO_EM<60000) return;
   try{
-    const novo=await (await fetch('/api/marmitas/publico',{cache:'no-store'})).json();
+    const r=await fetch('/api/marmitas/publico',{cache:'no-store'}); if(!r.ok) return;
+    const novo=await r.json();
     const chave=p=>JSON.stringify([p.data,p.aberto,p.semCardapio,p.cardapioHoje]);
     if(chave(novo)!==chave(PUBLICO)){ toast('O cardápio foi atualizado — confira seu pedido.',false,5000); iniciarColaborador(); }
     else PUBLICO_EM=Date.now();

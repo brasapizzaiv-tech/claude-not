@@ -148,6 +148,8 @@ export async function manifestarCiencia(o: {
     cStat,
     xMotivo,
     ok,
-    erro: cStat ? undefined : `SEFAZ respondeu: ${trecho || "(vazio)"}`,
+    // NFE-04: recusa com cStat (ex.: 596, 650) também é erro — antes voltava
+    // ok:false sem erro e a tela mostrava "✓ Manifestada".
+    erro: ok ? undefined : cStat ? `A SEFAZ recusou a manifestação (${cStat}): ${xMotivo || "sem motivo"}` : `SEFAZ respondeu: ${trecho || "(vazio)"}`,
   };
 }

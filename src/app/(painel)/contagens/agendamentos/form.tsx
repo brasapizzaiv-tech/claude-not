@@ -223,7 +223,9 @@ function AgendamentoForm({
         )}
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Horário</label>
-          <input type="time" name="horario" defaultValue={horario} className={inputCls} />
+          {/* CRN-04: a rotina roda de 15 em 15 min; depois das 23:45 não tem mais rodada no dia. */}
+          <input type="time" name="horario" defaultValue={horario} step={900} max="23:45" aria-describedby="ag-horario-ajuda" className={inputCls} />
+          <p id="ag-horario-ajuda" className="mt-1 text-xs text-texto-fraco">Sai de 15 em 15 min (ex.: 21:00, 21:15). Até 23:45.</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-texto-suave">Divisão</label>

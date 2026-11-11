@@ -17,6 +17,7 @@ import {
   type DestNota, type LinhaNota, type ModeloNota, type PadroesFiscais, type PerfilNota,
 } from "@/lib/fiscal/avulsa";
 import { explicarErro } from "@/lib/erro-amigavel";
+import { saldoFiado } from "@/lib/fiado-saldo";
 
 const ACESSO = ["/salao", "/financeiro"];
 type Db = Awaited<ReturnType<typeof createClient>>;
@@ -125,8 +126,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const FORA_DO_CAIXA = new Set(["saldo", "equipe", "cortesia", "vale_presente"]);
 
 async function saldoDe(db: Db, clienteId: string) {
-  const { data } = await db.from("cliente_fiado").select("tipo, valor").eq("cliente_id", clienteId).limit(5000);
-  return r2(((data as { tipo: string; valor: number }[]) ?? []).reduce((s, m) => s + Number(m.valor) * (m.tipo === "debito" ? 1 : -1), 0));
+  return saldoFiado(db, clienteId);
 }
 
 async function caixaAbertoId(db: Db) {

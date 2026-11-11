@@ -5,6 +5,7 @@ import { buscarTodas } from "@/lib/supabase/todas";
 import { diasFechados } from "@/lib/feriados-fechados";
 import { empresaAtualId } from "@/lib/empresa";
 import { hashSenha, senhaBate, senhaEmTexto, impressao, SENHA_MIN } from "@/lib/marmitas-senha";
+import { registrarErro } from "@/lib/saude";
 
 // Login unificado: quem está logado no ERP como "dono" é admin das marmitas.
 async function erpDono(): Promise<boolean> {
@@ -648,7 +649,9 @@ async function run(req: NextRequest, ctx: Ctx) {
     const { rota } = await ctx.params;
     return await handle(req, rota || []);
   } catch (e) {
-    return erro("Erro interno: " + (e instanceof Error ? e.message : String(e)), 500);
+    // CRN-07: o erro do banco vai pra Saúde do sistema, não pra tela de quem pede marmita.
+    await registrarErro("marmitas:api", e).catch(() => {});
+    return erro("Não deu pra concluir agora. Tente de novo em instantes.", 500);
   }
 }
 

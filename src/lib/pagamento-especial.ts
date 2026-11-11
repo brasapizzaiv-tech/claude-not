@@ -8,6 +8,7 @@ import type { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
 import { tipoDe, type FormaOpcao } from "./formas-pagamento";
+import { saldoFiado } from "@/lib/fiado-saldo";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
 
@@ -39,8 +40,7 @@ export async function conferirFormasEspeciais(
     const { data: cliLim } = await supabase.from("clientes").select("nome, limite_credito").eq("id", opts.clienteId).maybeSingle();
     const limite = cliLim?.limite_credito == null ? null : Number(cliLim.limite_credito);
     if (limite != null && limite >= 0) {
-      const { data: mov } = await supabase.from("cliente_fiado").select("tipo, valor").eq("cliente_id", opts.clienteId);
-      const saldo = ((mov as { tipo: string; valor: number }[]) ?? []).reduce((a, r) => a + (r.tipo === "debito" ? Number(r.valor) : -Number(r.valor)), 0);
+      const saldo = await saldoFiado(supabase, opts.clienteId);
       if (saldo + fiado > limite + 0.005) {
         const brlS = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
         return { ok: false, mensagem: `${cliLim?.nome ?? "O cliente"} passaria do limite de crédito (${brlS(limite)}). Receba de outra forma ou aumente o limite no cadastro do cliente.` };
@@ -108,9 +108,7 @@ export async function lancarFormasEspeciais(
     const { data: cliLim } = await supabase.from("clientes").select("nome, limite_credito").eq("id", clienteId).maybeSingle();
     const limite = cliLim?.limite_credito == null ? null : Number(cliLim.limite_credito);
     if (limite != null && limite >= 0) {
-      const { data: mov } = await supabase.from("cliente_fiado").select("tipo, valor").eq("cliente_id", clienteId);
-      const saldo = ((mov as { tipo: string; valor: number }[]) ?? []).reduce(
-        (a, r) => a + (r.tipo === "debito" ? Number(r.valor) : -Number(r.valor)), 0);
+      const saldo = await saldoFiado(supabase, clienteId);
       const novo = r2(saldo + fiado);
       if (novo > limite + 0.005) {
         const brlS = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

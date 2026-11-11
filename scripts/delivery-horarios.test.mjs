@@ -6,7 +6,7 @@ import { HORARIOS_PADRAO, estadoDelivery, slotsAgendamento, lerConfigHorarios, h
 
 const sp = (iso, hhmm) => Date.parse(`${iso}T${hhmm}:00-03:00`);
 const cfg = HORARIOS_PADRAO;
-// 2026-09-14 = segunda · 15 terça · 16 quarta · 19 sábado · 20 domingo
+// 2026-09-14 = segunda · 15 terça · 16 quarta · 18 sexta · 19 sábado · 20 domingo
 
 test("segunda 12:00 → almoço livre, fecha 13:20", () => {
   const e = estadoDelivery(cfg, sp("2026-09-14", "12:00"));
@@ -23,8 +23,8 @@ test("segunda 19:00 → sem noite na segunda; próxima abertura amanhã às 11:1
   const e = estadoDelivery(cfg, sp("2026-09-14", "19:00"));
   assert.equal(e.livre, false); assert.equal(e.proximaAbertura.texto, "amanhã às 11:15");
 });
-test("quarta 19:00 → noite livre", () => {
-  const e = estadoDelivery(cfg, sp("2026-09-16", "19:00"));
+test("sexta 19:00 → noite livre (a noite é só sexta e sábado)", () => {
+  const e = estadoDelivery(cfg, sp("2026-09-18", "19:00"));
   assert.equal(e.livre, true); assert.equal(e.turnoLivre.id, "noite"); assert.equal(e.fechaEm, "22:00");
 });
 test("quarta 22:00 → fechou (22:00 não entra); próxima amanhã às 11:15", () => {
@@ -48,8 +48,8 @@ test("slots: respeita a antecedência de 30 min (segunda 12:00 → a partir de 1
   const s = slotsAgendamento(cfg, sp("2026-09-14", "12:00"));
   assert.deepEqual(s.map((x) => x.label), ["12:30", "12:45", "13:00", "13:15"]);
 });
-test("slots: quarta 16:00 → só a noite (almoço já passou), 18:30..22:00", () => {
-  const s = slotsAgendamento(cfg, sp("2026-09-16", "16:00"));
+test("slots: sexta 16:00 → só a noite (almoço já passou), 18:30..22:00", () => {
+  const s = slotsAgendamento(cfg, sp("2026-09-18", "16:00"));
   assert.equal(s[0].label, "18:30"); assert.equal(s[s.length - 1].label, "22:00"); assert.equal(s.length, 15);
 });
 test("slots: quarta 14:00 → noite ainda não abriu o agendamento (15:00) → vazio", () => {

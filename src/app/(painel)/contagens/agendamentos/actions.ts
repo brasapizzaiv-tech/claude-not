@@ -14,7 +14,11 @@ export async function salvarAgendamento(formData: FormData) {
   const frequencia = (formData.get("frequencia") as string) || "semanal";
   const modo = (formData.get("modo") as string) || "repetir_ultima";
   const horario = (formData.get("horario") as string) || "08:00";
-  const [h, m] = horario.split(":").map(Number);
+  // CRN-04: a rotina roda de 15 em 15 min — arredonda pra rodada mais perto, no máximo 23:45.
+  const [h0, m0] = horario.split(":").map(Number);
+  const total = Math.min(23 * 60 + 45, Math.round(((Number.isFinite(h0) ? h0 : 8) * 60 + (Number.isFinite(m0) ? m0 : 0)) / 15) * 15);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
   const diaRaw = formData.get("dia_semana") as string;
   const dia_semana =
     frequencia === "diario" ? null : diaRaw ? Number(diaRaw) : 1;
