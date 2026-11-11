@@ -10,6 +10,7 @@ import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTur
 import { EnvelopeCofre } from "./envelope-cofre";
 import { descreverQuantidades, montarEnvelope, montarEnvelopes, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
 import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, tirarDoCofrePagos, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
+import { repartirDez } from "@/lib/dez-repartir";
 
 export type Pessoa = {
   id: string;
@@ -275,7 +276,9 @@ export function SemanaClient({
       const pesoTotal = presentes.reduce((s, p) => s + p.peso, 0);
       const unit = pesoTotal > 0 ? pool / pesoTotal : 0;
       const pesoDe = new Map(presentes.map((p) => [p.id, p.peso]));
-      return { data: e.data, pagar_em: e.pagar_em, arrecadado, custo, pct: Number(e.desconto_pct) || 0, pool, presentes: presentes.length, pesoTotal, unit, pesoDe, nestaSemana: e.pagar_em === segunda };
+      // EQP-04: a parte de cada um em centavos, somando exatamente o pool.
+      const parteDe = repartirDez(pool, presentes);
+      return { data: e.data, pagar_em: e.pagar_em, arrecadado, custo, pct: Number(e.desconto_pct) || 0, pool, presentes: presentes.length, pesoTotal, unit, pesoDe, parteDe, nestaSemana: e.pagar_em === segunda };
     });
     const noitesPagas = porNoite.filter((n) => n.nestaSemana);
     const porPessoa = naGrade.map((p) => {
@@ -286,10 +289,8 @@ export function SemanaClient({
         if (marcadas.has(chave(p.id, d, "noite"))) { nNoites++; if (foraDaEscala(p, "noite", dow)) freeNoite++; }
       }
       // Cada noite já sabe quem estava na divisão e com que peso (congelado ou de hoje).
-      for (const n of noitesPagas) {
-        const peso = n.pesoDe.get(p.id);
-        if (peso) dez10 += n.unit * peso;
-      }
+      for (const n of noitesPagas) dez10 += n.parteDe.get(p.id) ?? 0;
+      dez10 = Math.round(dez10 * 100) / 100;
       // Carteira assinada = salário à parte (não entra diária); pode ser CLT de dia e free de noite.
       const cltDia = vinculoDoTurno(p, "dia") === "clt";
       const cltNoite = vinculoDoTurno(p, "noite") === "clt";

@@ -305,11 +305,17 @@ export async function lancarPagamentosSemana(
       .select("id")
       .single();
     if (error) return { erro: explicarErro(error), n };
-    const { data: sp } = await supabase
+    const { data: sp, error: errSp } = await supabase
       .from("semana_pagamentos")
       .insert({ segunda, colaborador_id: it.colaboradorId, valor: it.valor, lancamento_id: l.id, desconto })
       .select("id")
       .single();
+    // EST-06: sem o registro do acerto, o próximo clique lançaria a pessoa de
+    // novo. Desfaz a conta recém-criada e para aqui.
+    if (errSp) {
+      await supabase.from("lancamentos").delete().eq("id", l.id);
+      return { erro: `Não consegui registrar o acerto de ${it.nome}; a conta dela foi desfeita. ${explicarErro(errSp)}`, n };
+    }
     if (idsAdiant.length) {
       await supabase
         .from("adiantamentos")
@@ -480,7 +486,11 @@ export async function lancarComplementoSemana(
     .select("id")
     .single();
   if (error) return { erro: explicarErro(error) };
-  await supabase.from("semana_pagamentos").insert({ segunda, colaborador_id: colaboradorId, valor: v, lancamento_id: l.id, desconto: 0 });
+  const { error: errSp } = await supabase.from("semana_pagamentos").insert({ segunda, colaborador_id: colaboradorId, valor: v, lancamento_id: l.id, desconto: 0 });
+  if (errSp) {
+    await supabase.from("lancamentos").delete().eq("id", l.id);
+    return { erro: `Não consegui registrar o complemento; a conta foi desfeita. ${explicarErro(errSp)}` };
+  }
   revalidatePath("/colaboradores/semana");
   revalidatePath("/financeiro/contas");
   revalidatePath("/financeiro");
