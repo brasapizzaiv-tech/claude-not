@@ -116,6 +116,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: "Restaurante não identificado." }, { status: 400 });
   }
 
+  // SEC-19: freio contra reserva falsa em massa (lotaria o turno). Do mesmo
+  // telefone, no máximo 3 pelo site em 24 h; no total, 40 pelo site por hora.
+  const { data: recentes } = await supabase
+    .from("reservas")
+    .select("telefone, criado_em")
+    .eq("empresa_id", empresaId)
+    .eq("origem", "site")
+    .gte("criado_em", new Date(Date.now() - 86400_000).toISOString())
+    .limit(1000);
+  const rec = (recentes as { telefone: string | null; criado_em: string }[]) ?? [];
+  const digitos = (t: string | null) => String(t ?? "").replace(/\D/g, "").slice(-9);
+  const meuTel = digitos(telefone);
+  const umaHora = Date.now() - 3600_000;
+  if ((meuTel && rec.filter((r) => digitos(r.telefone) === meuTel).length >= 3) || rec.filter((r) => new Date(r.criado_em).getTime() >= umaHora).length >= 40)
+    return NextResponse.json(
+      { erro: "Já recebemos reservas deste telefone. Pra fazer outra ou mudar alguma, nos chame no WhatsApp." },
+      { status: 429 },
+    );
+
   // Dia (ou turno) fechado pela equipe.
   const { data: bloq } = await supabase
     .from("reservas_bloqueios")

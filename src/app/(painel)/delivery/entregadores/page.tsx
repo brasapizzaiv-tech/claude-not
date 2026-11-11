@@ -4,9 +4,10 @@ import { Icone } from "@/components/icone";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
-import { criarEntregador, criarEntregadorDoColaborador, alternarEntregador, salvarValoresEntregador, novoCodigoEntregador } from "../actions";
+import { criarEntregador, criarEntregadorDoColaborador, alternarEntregador, salvarValoresEntregador, novoCodigoEntregador, trocarLinkEntregador } from "../actions";
+import { FormConfirmado } from "@/components/form-confirmado";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { empresaAtualId } from "@/lib/empresa";
+import { empresaAtual, empresaAtualId } from "@/lib/empresa";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
 export const metadata = { title: "Entregadores · Delivery" };
@@ -35,13 +36,14 @@ export default async function EntregadoresPage() {
   const supabase = await createClient();
   const h = await headers();
   const origem = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "www.brasarestaurante.com.br"}`;
-  const [{ data }, { data: cols }] = await Promise.all([
+  const [{ data }, { data: cols }, empresa] = await Promise.all([
     // token/código só pelo servidor (SEC-04), com a permissão do delivery.
     createAdminClient().from("entregadores")
       .select("id, nome, telefone, ativo, token, codigo, codigo_ate, colaborador_id, valor_fixo_dia, valor_fixo_noite, valor_tele, gratis_incluidas_dia, valor_gratis_extra_dia, trabalha_dia, trabalha_noite, troco_inicial, ultima_lat, ultima_lng, ultima_pos_em")
       .eq("empresa_id", (await empresaAtualId()) ?? "")
       .order("nome"),
     supabase.from("colaboradores").select("id, nome, nome_social").eq("ativo", true).order("nome"),
+    empresaAtual(),
   ]);
   const lista = (data ?? []) as { id: string; nome: string; telefone: string | null; ativo: boolean; token: string | null; codigo: string | null; codigo_ate: string | null; colaborador_id: string | null; valor_fixo_dia: number | null; valor_fixo_noite: number | null; valor_tele: number | null; gratis_incluidas_dia: number | null; valor_gratis_extra_dia: number | null; trabalha_dia: boolean; trabalha_noite: boolean; troco_inicial: number; ultima_lat: number | null; ultima_lng: number | null; ultima_pos_em: string | null }[];
   const ligados = new Set(lista.map((e) => e.colaborador_id).filter(Boolean));
@@ -119,7 +121,7 @@ export default async function EntregadoresPage() {
                       <input type="hidden" name="id" value={e.id} />
                       <Enviar className="rounded-controle border border-borda-forte px-2 py-1">{cod ? "Trocar código" : "Gerar código"}</Enviar>
                     </form>
-                    <a href={`https://web.whatsapp.com/send?phone=${e.telefone ? (d => d.length > 11 ? d : "55" + d)(e.telefone.replace(/\D/g, "")) : ""}&text=${encodeURIComponent(`Seu acesso ao app de entregas da Brasa.
+                    <a href={`https://web.whatsapp.com/send?phone=${e.telefone ? (d => d.length > 11 ? d : "55" + d)(e.telefone.replace(/\D/g, "")) : ""}&text=${encodeURIComponent(`Seu acesso ao app de entregas${empresa?.nome ? ` do ${empresa.nome}` : ""}.
 No app Motelli Entregador, digite o código: ${cod ? codigoFmt(cod) : ""}
 Ou abra este link: ${link}
 O código é seu, não passe pra ninguém.`)}`} target="_blank" rel="noreferrer" className="ml-auto rounded-controle bg-texto px-2 py-1 font-semibold text-fundo">Mandar no WhatsApp</a>
@@ -131,6 +133,10 @@ O código é seu, não passe pra ninguém.`)}`} target="_blank" rel="noreferrer"
                       <div className="min-w-0 flex-1 space-y-1">
                         <p className="text-texto-suave">No app, toque em <b>Ler QR code</b> e aponte pra esta tela.</p>
                         <code className="block select-all break-all text-texto-suave">{link}</code>
+                        <FormConfirmado action={trocarLinkEntregador} pergunta={`Trocar o link de ${e.nome}?`} detalhe="O link e o QR de agora param de abrir na hora. O app no celular pede o código de novo; o código novo aparece aqui pra mandar." okTexto="Trocar o link">
+                          <input type="hidden" name="id" value={e.id} />
+                          <Enviar className="btn-secundario mt-1 !min-h-11 px-3 text-xs">Trocar o link (celular perdido ou link vazou)</Enviar>
+                        </FormConfirmado>
                       </div>
                     </div>
                   </details>

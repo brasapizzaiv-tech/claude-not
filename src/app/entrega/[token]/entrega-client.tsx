@@ -499,6 +499,13 @@ function ModalEntregue({ p, proc, onFechar, onOk }: { p: EntregaBoy; proc: boole
             <button key={f} onClick={() => setForma(f)} className={`rounded-cartao border py-3 font-semibold ${forma === f ? "border-emerald-500 bg-emerald-600 text-white" : "border-borda-forte text-texto-suave"}`}>{f}</button>
           ))}
         </div>
+        {/* SEC-19: "Já pago" num pedido que o sistema não tem como pago fecha com R$ 0 na mão dele;
+            o caixa dos motoboys mostra "confira" no fechamento. Aqui só avisa antes. */}
+        {forma === "Já pago" && !p.pago && (
+          <p role="alert" className="mb-3 rounded-controle bg-aviso-fundo px-3 py-2 text-sm font-semibold text-aviso-texto">
+            O sistema não tem este pedido como pago. Só marque &quot;Já pago&quot; se o cliente pagou antes (Pix pelo app, fiado, convênio). O caixa vai conferir.
+          </p>
+        )}
         {forma !== "Já pago" && (
           <div className="mb-3">
             <label className="text-xs text-texto-fraco">Valor recebido (R$)</label>

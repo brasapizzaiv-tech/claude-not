@@ -372,7 +372,12 @@ export function CotarPreencher({
       return;
     setRemovidos((s) => new Set(s).add(produtoId));
     try {
-      await removerItemPublico(token, produtoId);
+      const r = await removerItemPublico(token, produtoId);
+      // SEC-19: com o prazo vencido o servidor recusa; o item volta pra tela.
+      if (r && r.ok === false && r.erro) {
+        setRemovidos((s) => { const n = new Set(s); n.delete(produtoId); return n; });
+        setErro(r.erro);
+      }
     } catch {
       /* rede/atualização — a remoção some da tela; recarregar reflete o servidor */
     }

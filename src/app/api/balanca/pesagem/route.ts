@@ -40,7 +40,11 @@ export async function POST(req: Request) {
   for (const r of (cfgRows as { chave: string; valor: string }[]) ?? []) cfg[r.chave] = r.valor;
 
   // Preço do dia (fuso de Brasília) — usa o dia da PESAGEM (ts), não o do sync.
-  const quando = body.ts && !isNaN(new Date(body.ts).getTime()) ? new Date(body.ts) : new Date();
+  // SEC-19: horário fora do razoável (relógio do PC errado ou envio forjado)
+  // vale "agora" — pesagem da fila offline tem no máximo alguns dias.
+  const tsMs = body.ts ? new Date(body.ts).getTime() : NaN;
+  const agoraMs = Date.now();
+  const quando = Number.isFinite(tsMs) && tsMs <= agoraMs + 5 * 60_000 && tsMs >= agoraMs - 7 * 86400_000 ? new Date(tsMs) : new Date(agoraMs);
   const dow = new Date(quando.getTime() - 3 * 3600 * 1000).getUTCDay();
   const kgDia = cfg[`preco_kg_${dow}`];
   const livreDia = cfg[`buffet_livre_${dow}`];
@@ -59,6 +63,9 @@ export async function POST(req: Request) {
   } else {
     peso = Number(body.peso) || 0;
     if (!(peso > 0)) return Response.json({ ok: false, erro: "peso inválido" }, { status: 422 });
+    // SEC-19: nenhum prato passa de 30 kg. Recusada vai
+    // pra fila-erros do agente e aparece no painel; não vira comanda calada.
+    if (peso > 30) return Response.json({ ok: false, erro: `peso acima de 30 kg (${peso} kg)` }, { status: 422 });
     const taraBalanca = Number(body.tara_balanca) || 0;
     soKg = !!body.so_kg;
     // O peso já vem LÍQUIDO resolvido pelo quiosque (marmita = leitura + tara da

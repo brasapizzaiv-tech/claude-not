@@ -163,6 +163,24 @@ export async function criarEntregadorDoColaborador(formData: FormData) {
   revalidatePath("/delivery/entregadores");
 }
 
+// SEC-19: troca o LINK pessoal (/entrega/{token}) — vazou, ou o celular foi
+// perdido/trocado. O link antigo para de abrir na hora e o app pede um código
+// novo (já sai gerado aqui, pra mandar pro entregador).
+export async function trocarLinkEntregador(formData: FormData) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const { data: codigo } = await supabase.rpc("gerar_codigo_entregador");
+  // token/código não são da sessão (SEC-04): grava pelo servidor, preso à empresa.
+  await createAdminClient().from("entregadores").update({
+    token,
+    ...(typeof codigo === "string" ? { codigo, codigo_ate: new Date(Date.now() + 7 * 86400000).toISOString() } : { codigo: null, codigo_ate: null }),
+  }).eq("id", id).eq("empresa_id", (await empresaAtualId()) ?? "");
+  revalidatePath("/delivery/entregadores");
+}
+
 // Troca o código de entrada no app (vazou, ou o entregador saiu). Quem já
 // entrou continua entrando: o app guarda o link, não o código.
 export async function novoCodigoEntregador(formData: FormData) {

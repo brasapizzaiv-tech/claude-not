@@ -59,14 +59,14 @@ export async function salvarPrecosPublico(token: string, dados: DadosCotacao) {
 }
 
 // "Não trabalho com este item": remove o vínculo (some das próximas cotações).
-export async function removerItemPublico(token: string, produtoId: string) {
+export async function removerItemPublico(token: string, produtoId: string): Promise<{ ok: boolean; erro?: string }> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("cotar_fornecedor_remover_item", {
     p_token: token,
     p_produto_id: produtoId,
   });
   if (error) return { ok: false };
-  return data as { ok: boolean };
+  return data as { ok: boolean; erro?: string };
 }
 
 // Foto do produto/promoção (auditoria SEC-07). Antes o celular do fornecedor
