@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requisicaoVenda, requisicaoPix, requisicaoConfirmar, requisicaoDesfazer, requisicaoCancelar, requisicaoAdm, interpretar } from "./intpos.mjs";
 
-const VERSAO = "0.9.15"; // 0.9.15: a porta local só aceita pedido da página do sistema, corpo grande é recusado sem travar o pinpad e saiu o /raw (mostrava o último comprovante); // 0.9.14: debito pre-datado (011-000=21) e parcelado pela loja (22) - Banricompras; 0.9.13: a ativacao do Hub manda sobre o terminal do config.json (o config antigo de homologacao derrubou a ativacao de producao em 07/10); 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
+const VERSAO = "0.9.16"; // 0.9.16: só aceita a resposta do pinpad com o mesmo id do pedido (PAG-08; a atrasada é descartada e anotada no log); // 0.9.15: a porta local só aceita pedido da página do sistema, corpo grande é recusado sem travar o pinpad e saiu o /raw (mostrava o último comprovante); // 0.9.14: debito pre-datado (011-000=21) e parcelado pela loja (22) - Banricompras; 0.9.13: a ativacao do Hub manda sobre o terminal do config.json (o config antigo de homologacao derrubou a ativacao de producao em 07/10); 0.9.12: credito a vista manda 011-000=10 e debito 20 (o Hub parava de perguntar "a vista ou parcelado?"); 0.9.11: sinal de vida a cada 60 s (era 30 s); // 0.9.10: terminal lido da ativação do Hub; 0.9.9: Pix espera a contagem inteira do QR (~18 min); 0.9.7: data do cancelamento dd/MM/yyyy; 0.9.6: NSU em 012-000; 0.9.5: CNC/ADM esperam 10 min
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.ProgramData ? path.join(process.env.ProgramData, "AgenteTEF") : dir;
 try { mkdirSync(dataDir, { recursive: true }); } catch { /* já existe */ }
@@ -195,15 +195,36 @@ async function executar(conteudoReq, { esperaResp = true, timeoutMs = timeoutVen
     return null;
   }
   etapa = "no_pinpad";
-  const resp = await esperarArquivo(arqResp, timeoutMs);
-  if (!resp) {
-    apagar(arqReq);
-    etapa = "livre";
-    throw new Error("Tempo esgotado esperando o cartão.");
+  // PAG-08: uma resposta atrasada (de uma operação que já deu "tempo esgotado")
+  // podia ser lida como desta. Só aceita a resposta com o MESMO id do pedido;
+  // a outra é descartada e anotada, e a espera continua no tempo que sobra.
+  const idPedido = idDoPedido(conteudoReq);
+  const fim = Date.now() + timeoutMs;
+  for (;;) {
+    const resp = await esperarArquivo(arqResp, Math.max(0, fim - Date.now()));
+    if (!resp) {
+      apagar(arqReq);
+      etapa = "livre";
+      throw new Error("Tempo esgotado esperando o cartão.");
+    }
+    apagar(arqResp);
+    try { writeFileSync(ultimaRespFile, resp, "latin1"); } catch { /* ok */ }
+    const r = interpretar(resp);
+    if (idPedido && r.id && mesmoId(r.id) !== idPedido) {
+      log(`ATENÇÃO: chegou a resposta da operação #${r.id} durante a #${idPedido} — descartada (${r.aprovada ? "APROVADA" : "não aprovada"} · NSU ${r.nsu ?? "-"} · R$ ${r.valor ?? "-"}). Confira no gerenciador se ela ficou cobrada.`);
+      estado.descartadas = [...(estado.descartadas ?? []).slice(-19), { id: r.id, nsu: r.nsu, valor: r.valor, aprovada: r.aprovada, em: Date.now() }];
+      salvarEstado();
+      continue;
+    }
+    return r;
   }
-  apagar(arqResp);
-  try { writeFileSync(ultimaRespFile, resp, "latin1"); } catch { /* ok */ }
-  return interpretar(resp);
+}
+
+// Id (001-000) de um IntPos montado, sem zeros à esquerda; null se não achar.
+const mesmoId = (v) => String(Number(String(v).replace(/\D/g, "")) || "");
+function idDoPedido(conteudo) {
+  const m = /^001-000\s*=\s*(\S+)/m.exec(String(conteudo ?? ""));
+  return m ? mesmoId(m[1]) : null;
 }
 
 // Venda: devolve a resposta interpretada e deixa a transação PENDENTE de

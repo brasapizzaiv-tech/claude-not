@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { gerarCupomEscPos, gerarTesteEscPos } from "./escpos.mjs";
 
-const VERSAO = "1.2.5"; // 1.2.5: a porta local só aceita pedido da página do sistema (antes qualquer site aberto no PC podia imprimir cupom ou trocar a impressora); // 1.2.4: token recusado (401/403) ou sistema ocupado (408/429) NÃO tira a pesagem da fila (tenta de novo); as recusadas dos últimos 3 dias vão no sinal de vida e aparecem no painel; // 1.2.3: sinal de vida a cada 60 s (era 15 s; a Vercel cobra por chamada); // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
+const VERSAO = "1.2.6"; // 1.2.6: pesagem do caminho antigo leva id (reenvio não duplica) e o código OFF chega na comanda (AGT-09); // 1.2.5: a porta local só aceita pedido da página do sistema (antes qualquer site aberto no PC podia imprimir cupom ou trocar a impressora); // 1.2.4: token recusado (401/403) ou sistema ocupado (408/429) NÃO tira a pesagem da fila (tenta de novo); as recusadas dos últimos 3 dias vão no sinal de vida e aparecem no painel; // 1.2.3: sinal de vida a cada 60 s (era 15 s; a Vercel cobra por chamada); // 1.2.1: logo no ESC/POS (silhueta); 1.2.2: informa a PARADA da balança (prato fora) pro quiosque liberar o próximo cliente sem esperar o zero
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cfgFile = path.join(dir, "config.json");
 const cfg = JSON.parse(readFileSync(cfgFile, "utf8").replace(/^﻿/, ""));
@@ -512,6 +512,10 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      // AGT-09: id já aqui também — se a 1ª tentativa chegar no sistema mas a
+      // resposta se perder, o reenvio da fila acha a mesma comanda em vez de
+      // criar outra.
+      p.id = p.id || randomUUID();
       try {
         // Fluxo antigo (quiosque sem o valor): tenta na hora (online).
         const r = await criarComandaNoSistema(p);

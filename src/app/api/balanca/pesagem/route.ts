@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   if (!empresaId) return new Response("nao autorizado", { status: 401 });
 
   // id/numero: gerados pelo AGENTE (ele imprime o cupom antes de sincronizar).
-  let body: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean; ts?: string; id?: string; numero?: number };
+  let body: { peso?: number; tara_balanca?: number; so_kg?: boolean; livre_direto?: boolean; ts?: string; id?: string; numero?: number; codigo_local?: string };
   try {
     body = await req.json();
   } catch {
@@ -83,7 +83,9 @@ export async function POST(req: Request) {
       tara,
       valor_buffet: valor,
       livre,
-      mesa: "Balança",
+      // AGT-09: pesagem feita sem internet tem o código do cupom de papel
+      // (OFF-123456): fica na comanda pra o caixa achar.
+      mesa: /^OFF-\d{6}$/.test(String(body.codigo_local ?? "")) ? `Balança ${body.codigo_local}` : "Balança",
       so_kg: soKg,
       aberta_em: quando.toISOString(),
     })

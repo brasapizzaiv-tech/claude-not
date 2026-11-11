@@ -4,7 +4,7 @@
 #define AppName "Agente TEF"
 ; A versão vem do build.ps1 (/DAppVer=...), lida do VERSAO do agente.mjs.
 #ifndef AppVer
-#define AppVer "0.9.15"
+#define AppVer "0.9.16"
 #endif
 #define AppPublisher "Brasa Sistemas"
 
