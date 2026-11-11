@@ -7,6 +7,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { COOKIE_GARCOM, valorCookieGarcom } from "@/lib/garcom-auth";
+import { semCuringa } from "@/lib/format";
 
 export async function conviteValido(token: string) {
   if (!/^[0-9a-f]{20}$/.test(token)) return null;
@@ -33,7 +34,8 @@ export async function entrarGarcomAvulso(token: string, nomeDigitado: string) {
     .from("colaboradores")
     .select("id, token, pin")
     .eq("empresa_id", conv.empresa_id)
-    .ilike("nome", nome)
+    // SEC-19: sem escapar, "%" no nome casava com qualquer avulso e assumia o cadastro dele.
+    .ilike("nome", semCuringa(nome))
     .not("garcom_ate", "is", null)
     .limit(1)
     .maybeSingle();

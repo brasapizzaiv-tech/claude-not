@@ -2,6 +2,7 @@
 // destaques do topo, sugestões e os cupons dos gatilhos. Lido no servidor com
 // a chave administrativa e SEMPRE filtrado pela empresa do endereço.
 import type { createAdminClient } from "@/lib/supabase/admin";
+import { semCuringa } from "@/lib/format";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -30,7 +31,7 @@ const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America
 async function cupomValido(admin: Admin, empresaId: string, codigo: string | null): Promise<CupomVitrine | null> {
   const cod = (codigo || "").trim().toUpperCase();
   if (!cod) return null;
-  const { data } = await admin.from("cupons").select("codigo, tipo, valor, minimo, validade, max_usos, usos, ativo").eq("empresa_id", empresaId).ilike("codigo", cod).maybeSingle();
+  const { data } = await admin.from("cupons").select("codigo, tipo, valor, minimo, validade, max_usos, usos, ativo").eq("empresa_id", empresaId).ilike("codigo", semCuringa(cod)).maybeSingle();
   const c = data as { codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; validade: string | null; max_usos: number | null; usos: number; ativo: boolean } | null;
   if (!c || !c.ativo) return null;
   if (c.validade && c.validade < hojeSP()) return null;

@@ -102,11 +102,13 @@ export async function recadosTv(): Promise<{ id: string; texto: string }[]> {
 // Temperatura em Ivoti (Open-Meteo, grátis e sem chave). O relógio de parede
 // que a TV substituiu mostrava a temperatura; sem sensor, vale a da previsão.
 // Guardada 10 min; se a consulta falhar, a TV simplesmente não mostra.
+// CRN-03: com uma temperatura já guardada, espera no máximo 1,5 s (senão fica
+// a antiga) — o Open-Meteo lento travava a atualização completa da TV.
 let climaCache: { temp: number | null; em: number } = { temp: null, em: 0 };
 export async function temperaturaIvoti(): Promise<number | null> {
   if (Date.now() - climaCache.em < 10 * 60 * 1000) return climaCache.temp;
   try {
-    const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-29.5906&longitude=-51.1606&current=temperature_2m&timezone=America%2FSao_Paulo", { signal: AbortSignal.timeout(4000), cache: "no-store" });
+    const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-29.5906&longitude=-51.1606&current=temperature_2m&timezone=America%2FSao_Paulo", { signal: AbortSignal.timeout(climaCache.temp == null ? 4000 : 1500), cache: "no-store" });
     const j = (await r.json()) as { current?: { temperature_2m?: number } };
     const t = j.current?.temperature_2m;
     climaCache = { temp: typeof t === "number" ? t : null, em: Date.now() };

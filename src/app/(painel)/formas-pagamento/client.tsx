@@ -34,10 +34,28 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
     router.refresh();
   }
 
+  // PAG-07: "Cartão" (sem dizer qual) não passa no pinpad. Ligado no mesmo canal
+  // que as formas com pinpad, o atendente pode escolher ele sem querer e a venda
+  // fica sem TEF (aconteceu 1×, R$ 32, semana de 02/11).
+  const comTef = (t: TipoFormaCadastro) => t === "credito" || t === "debito" || t === "vale" || t === "pix_maquina";
+  const avisoCartao = formas
+    .filter((f) => f.ativo && f.tipo === "cartao")
+    .map((f) => ({
+      nome: f.nome,
+      canais: CANAIS.filter((c) => f[c.campo] && formas.some((o) => o.ativo && comTef(o.tipo) && o[c.campo])).map((c) => c.label),
+    }))
+    .filter((a) => a.canais.length > 0);
+
   return (
     <div className="space-y-4">
+      {avisoCartao.map((a) => (
+        <p key={a.nome} className="rounded-controle bg-aviso-fundo px-3 py-2 text-sm text-aviso-texto">
+          <b>{a.nome}</b> não passa no pinpad e está ligada em {a.canais.join(", ")}, junto das formas que passam. Se o
+          atendente escolher ela, a venda fica sem TEF. Desligue nesses canais se não for de propósito.
+        </p>
+      ))}
       {erro && (
-        <p role="alert" className="rounded-controle bg-amber-50 px-3 py-2 text-sm text-aviso-texto dark:bg-amber-950 dark:text-amber-300">{erro}</p>
+        <p role="alert" className="rounded-controle bg-aviso-fundo px-3 py-2 text-sm text-aviso-texto">{erro}</p>
       )}
 
       {/* Lista */}

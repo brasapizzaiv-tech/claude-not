@@ -53,7 +53,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
       if (buscando.current) return;
       buscando.current = true;
       try {
-        const r = await fetch(`/api/tv/fila?chave=${encodeURIComponent(chave)}${completo ? "" : "&modo=leve"}`, { cache: "no-store", signal: AbortSignal.timeout(4000) });
+        const r = await fetch(`/api/tv/fila?chave=${encodeURIComponent(chave)}${completo ? "" : "&modo=leve"}`, { cache: "no-store", signal: AbortSignal.timeout(completo ? 8000 : 4000) });
         const j = await r.json();
         if (!vivo) return;
         if (j.ok) {

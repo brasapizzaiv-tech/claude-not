@@ -434,6 +434,11 @@ async function handle(req: NextRequest, rota: string[]) {
 
   if (path === "/api/config" && method === "POST") {
     if (!pode(user, "ajustes")) return erro("Sem permissao (ajustes).", 403);
+    // CRN-08: o pedido de delivery da Kern é montado às 08:35 (vercel.json). Um
+    // limite depois disso deixaria marmita pedida fora do delivery do dia.
+    if (body?.horaLimite != null && (!/^\d{2}:\d{2}$/.test(String(body.horaLimite)) || String(body.horaLimite) > "08:30")) {
+      return erro("A hora limite vai até 08:30: às 08:35 o sistema monta o pedido de delivery da Kern com o que foi pedido.", 400);
+    }
     if (body?.nomeConvenio != null) await setCfg(db, "nomeConvenio", body.nomeConvenio);
     if (body?.horaLimite != null) await setCfg(db, "horaLimite", body.horaLimite);
     if (body?.horaAbertura != null) await setCfg(db, "horaAbertura", body.horaAbertura);

@@ -758,11 +758,16 @@ footer{padding:54px 0 70px}
       '<p>O cardápio de hoje ainda não foi publicado. Chame a gente no WhatsApp que a gente conta o que tem hoje.</p>'+
       '<a class="btn btn-cheio" href="https://wa.me/'+ZAP+'?text='+
       encodeURIComponent("Olá! Qual é o cardápio de hoje no Brasa?")+'" target="_blank" rel="noopener">Perguntar no WhatsApp</a></div>';
+    /* CRN-09: sem internet ou servidor fora não é "não publicado". */
+    var naoCarregou='<div class="sem-cardapio">'+
+      '<p>Não consegui carregar o cardápio agora. Confira sua conexão ou chame a gente no WhatsApp.</p>'+
+      '<a class="btn btn-cheio" href="https://wa.me/'+ZAP+'?text='+
+      encodeURIComponent("Olá! Qual é o cardápio de hoje no Brasa?")+'" target="_blank" rel="noopener">Perguntar no WhatsApp</a></div>';
 
     /* Busca ao abrir, de novo a cada 60 s e quando a aba volta a aparecer:
        a cozinha publica pelo app e o site já mostra, sem recarregar. */
     function carregar(){
-    fetch("/api/cardapio").then(function(r){return r.json();}).then(function(c){
+    fetch("/api/cardapio").then(function(r){ if(!r.ok) throw new Error("servidor"); return r.json(); }).then(function(c){
       if(!c.tem||!c.hoje){ alvo.innerHTML=semCardapio; return; }
       sub.textContent=SEMANA[new Date(c.data+"T12:00:00").getDay()]+" · buffet do almoço";
       var grupos=bloco("Proteínas",c.proteinas)+bloco("Carboidratos",c.carboidratos)+
@@ -775,7 +780,7 @@ footer{padding:54px 0 70px}
         "</div>";
       }
       alvo.innerHTML='<div class="quadro-cardapio"><div class="grupos">'+grupos+"</div>"+precos+"</div>";
-    }).catch(function(){ if(!alvo.innerHTML) alvo.innerHTML=semCardapio; });
+    }).catch(function(){ if(!alvo.innerHTML) alvo.innerHTML=naoCarregou; });
     }
     carregar();
     setInterval(carregar,60000);
@@ -961,8 +966,12 @@ footer{padding:54px 0 70px}
     }
 
     aviso.textContent="Enviando sua reserva...";
+    /* CRN-09: sem resposta em 10 s, segue pelo WhatsApp (antes ficava "Enviando..." pra sempre). */
+    var ctl=("AbortController" in window)?new AbortController():null;
+    if(ctl) setTimeout(function(){ ctl.abort(); },10000);
     fetch(API,{
       method:"POST",
+      signal:ctl?ctl.signal:undefined,
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         nome:nome, telefone:fone, data:dia, turno:turno,

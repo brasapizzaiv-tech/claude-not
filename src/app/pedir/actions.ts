@@ -12,6 +12,7 @@ import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } fro
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { avisarPedido } from "@/lib/whatsapp";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { semCuringa } from "@/lib/format";
 
 export type { LinhaPedido } from "@/lib/delivery-core";
 
@@ -129,7 +130,7 @@ type CupomRow = { id: string; codigo: string; tipo: "percent" | "valor"; valor: 
 async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, codigo: string, empresaId: string) {
   const cod = (codigo || "").trim().toUpperCase();
   if (!cod) return { ok: false as const, mensagem: "Digite o código do cupom." };
-  const { data } = await admin.from("cupons").select("*").eq("empresa_id", empresaId).ilike("codigo", cod).maybeSingle();
+  const { data } = await admin.from("cupons").select("*").eq("empresa_id", empresaId).ilike("codigo", semCuringa(cod)).maybeSingle();
   const c = data as CupomRow | null;
   if (!c || !c.ativo) return { ok: false as const, mensagem: "Cupom não encontrado ou desativado." };
   if (c.validade && c.validade < hojeSP()) return { ok: false as const, mensagem: "Esse cupom venceu." };

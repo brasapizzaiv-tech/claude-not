@@ -294,7 +294,7 @@
       <div class="card">
         <h2>Dados do convênio</h2>
         <label>Nome do convênio</label><input type="text" id="cNome">
-        <div class="row"><div><label>Abre pedido às (véspera)</label><input type="time" id="cAbertura"></div><div><label>Hora limite (dia da entrega)</label><input type="time" id="cLimite"></div></div>
+        <div class="row"><div><label>Abre pedido às (véspera)</label><input type="time" id="cAbertura"></div><div><label>Hora limite (dia da entrega, até 08:30)</label><input type="time" id="cLimite" max="08:30"></div></div>
         <div class="row"><div><label>Hora de entrega</label><input type="time" id="cEntrega"></div><div></div></div>
         <p class="miudo" style="margin-top:6px">Ex.: abre <b>14:00</b> do dia anterior e fecha <b>08:30</b> do dia da entrega.</p>
         <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="cBloquear" style="width:auto"> Bloquear novos pedidos fora da janela (abertura → limite)</label>

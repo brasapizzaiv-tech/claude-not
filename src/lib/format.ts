@@ -30,3 +30,10 @@ export function numeroBR(entrada: string | number | null | undefined): number {
   const n = Number(limpo.replace(/[^0-9.-]/g, ""));
   return Number.isFinite(n) ? n : 0;
 }
+
+// Texto pra comparar com .ilike() como valor EXATO (sem diferença de
+// maiúscula): escapa os curingas % e _ — sem isso, "%" digitado como cupom ou
+// nome casava com qualquer um (SEC-19 / DEL-04).
+export function semCuringa(texto: string): string {
+  return texto.replace(/[\\%_]/g, (c) => "\\" + c);
+}

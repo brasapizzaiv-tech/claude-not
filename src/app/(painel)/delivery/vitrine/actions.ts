@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { semCuringa } from "@/lib/format";
 
 const ok = () => { revalidatePath("/delivery/vitrine"); revalidatePath("/pedir"); return { ok: true as const }; };
 const erro = (mensagem: string) => ({ ok: false as const, mensagem });
@@ -80,7 +81,7 @@ export async function salvarGatilho(chave: "boas_vindas" | "parado" | "abandonad
   // Regra da vitrine: cupom só sai se estiver cadastrado.
   if (d.ativo && !cupom) return erro("Escolha o cupom antes de ligar.");
   if (cupom) {
-    const { data: c } = await supabase.from("cupons").select("ativo").ilike("codigo", cupom).maybeSingle();
+    const { data: c } = await supabase.from("cupons").select("ativo").ilike("codigo", semCuringa(cupom)).maybeSingle();
     if (!c) return erro(`O cupom ${cupom} não está cadastrado em Cupons.`);
     if (d.ativo && !(c as { ativo: boolean }).ativo) return erro(`O cupom ${cupom} está desativado em Cupons.`);
   }

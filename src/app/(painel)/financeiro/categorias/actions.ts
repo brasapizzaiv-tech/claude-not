@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { empresaAtualId } from "@/lib/empresa";
+import { semCuringa } from "@/lib/format";
 
 // Categorias do DRE: onde cada despesa e cada receita cai no relatório.
 //
@@ -52,7 +53,7 @@ export async function criarCategoriaDre(formData: FormData) {
     .from("dre_categorias")
     .select("id, ativo")
     .eq("tipo", tipo)
-    .ilike("nome", nome)
+    .ilike("nome", semCuringa(nome))
     .maybeSingle();
   if (igual) {
     return {
