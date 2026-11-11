@@ -7,7 +7,7 @@ import { Icone, type NomeIcone } from "@/components/icone";
 // leitor de QR do cupom pra "pegar" o pedido, "saí com essas", "entreguei"
 // com o que recebeu, meus ganhos por forma, histórico por dia, localização.
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import jsQR from "jsqr";
+import { LeitorQr } from "@/components/leitor-qr";
 import { historicoEntregas, marcarEntregue, meusGanhos, minhasEntregas, pegarEntrega, registrarPosicao, sairComEntregas, type Boy, type EntregaBoy } from "./entrega-actions";
 import { SairDoAparelho } from "@/components/sair-do-aparelho";
 
@@ -512,79 +512,50 @@ function ModalEntregue({ p, proc, onFechar, onOk }: { p: EntregaBoy; proc: boole
   );
 }
 
-// Leitor de QR com a câmera: abre a câmera traseira e decodifica os quadros
-// com jsQR (funciona em Android e iPhone). Sem câmera/permissão, digita o nº.
+// Leitor de QR do cupom: a câmera é o leitor único do sistema (components/leitor-qr).
+// Sem câmera/permissão, digita o nº do pedido.
 function ModalScan({ onFechar, onLido, refManual, setRefManual }: { onFechar: () => void; onLido: (ref: string) => void; refManual: string; setRefManual: (v: string) => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [erro, setErro] = useState<string | null>(null);
-  const [lendo, setLendo] = useState(false);
   const lidoRef = useRef(false);
-  // onLido muda a cada render do pai; guardar em ref evita reabrir a câmera toda hora.
-  const onLidoRef = useRef(onLido);
-  useEffect(() => { onLidoRef.current = onLido; }, [onLido]);
   // Aviso da câmera antes da permissão do sistema (mesma regra da Play do GPS):
   // enquanto a câmera nunca abriu neste aparelho, o modal começa explicando e
   // só pede a câmera no toque em "Abrir câmera".
   const [liberado, setLiberado] = useState(() => { try { return localStorage.getItem("entrega_camera_ok") === "1"; } catch { return false; } });
-  useEffect(() => {
-    if (!liberado) return;
-    let stream: MediaStream | null = null; let vivo = true; let timer: ReturnType<typeof setInterval> | null = null;
-    (async () => {
-      if (!navigator.mediaDevices?.getUserMedia) { setErro("Este navegador não abre a câmera — digite o número do pedido."); return; }
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-        try { localStorage.setItem("entrega_camera_ok", "1"); } catch { /* sem storage */ }
-        if (!vivo || !videoRef.current) return;
-        const v = videoRef.current;
-        v.srcObject = stream; v.setAttribute("playsinline", "true"); v.muted = true;
-        await v.play();
-        setLendo(true);
-        const canvas = canvasRef.current ?? document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        timer = setInterval(() => {
-          if (!vivo || !ctx || lidoRef.current || v.readyState < 2 || !v.videoWidth) return;
-          // reduz o quadro pra decodificar rápido
-          const esc = Math.min(1, 640 / v.videoWidth);
-          canvas.width = Math.round(v.videoWidth * esc); canvas.height = Math.round(v.videoHeight * esc);
-          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-          const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-          if (code?.data) { lidoRef.current = true; if (navigator.vibrate) navigator.vibrate(80); onLidoRef.current(code.data); }
-        }, 250);
-      } catch (e) {
-        const nome = e instanceof Error ? e.name : "";
-        if (nome === "NotAllowedError") { try { localStorage.removeItem("entrega_camera_ok"); } catch { /* sem storage */ } }
-        setErro(nome === "NotAllowedError" ? "Permissão da câmera negada — libere nas configurações do navegador (cadeado ao lado do endereço) ou digite o número."
-          : nome === "NotFoundError" ? "Nenhuma câmera encontrada — digite o número do pedido."
-          : "Não consegui abrir a câmera — digite o número do pedido.");
-      }
-    })();
-    return () => { vivo = false; if (timer) clearInterval(timer); stream?.getTracks().forEach((t) => t.stop()); };
-  }, [liberado]);
+  const digitar = (
+    <div className="flex gap-2">
+      <input aria-label="Nº do pedido (ex.: 412)" value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="min-h-11 flex-1 rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-lg text-white" />
+      <button onClick={() => onLido(refManual)} className="btn-principal">Pegar</button>
+    </div>
+  );
+  if (liberado) {
+    return (
+      <LeitorQr
+        titulo="Ler o QR do cupom"
+        mensagem="Aponte pro QR do cupom…"
+        fechar={onFechar}
+        aoAbrirCamera={() => { try { localStorage.setItem("entrega_camera_ok", "1"); } catch { /* sem storage */ } }}
+        aoFalharCamera={(nome) => { if (nome === "NotAllowedError") { try { localStorage.removeItem("entrega_camera_ok"); } catch { /* sem storage */ } } }}
+        aoLer={(v) => {
+          if (lidoRef.current) return;
+          lidoRef.current = true;
+          if (navigator.vibrate) navigator.vibrate(80);
+          onLido(v);
+        }}
+        rodape={digitar}
+      />
+    );
+  }
   return (
     <div className="fixed inset-0 z-20 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-      <div className="flex items-center justify-between p-3 text-white"><span className="font-bold">{!liberado ? "Ler o QR do cupom" : lendo ? "Aponte pro QR do cupom" : "Abrindo a câmera…"}</span><button onClick={onFechar} className="rounded-controle bg-superficie-suave px-3 py-1.5">Fechar</button></div>
-      <div className="relative flex-1 overflow-hidden">
-        {!liberado && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
-            <div className="max-w-sm rounded-cartao bg-painel-cartao p-5 text-texto">
-              <div className="mb-2 flex items-center gap-2 text-lg font-bold"><Icone nome="camera" tamanho={18} /> Câmera</div>
-              <p className="text-sm">O app usa a <b>câmera</b> só para ler o QR code do cupom do pedido. Nenhuma foto ou vídeo é guardado ou enviado.</p>
-              <p className="mt-2 text-sm text-texto-suave">Na próxima tela, permita o acesso à câmera. Se preferir, digite o número do pedido aqui embaixo.</p>
-              <button onClick={() => setLiberado(true)} className="btn-principal mt-4 w-full">Abrir câmera</button>
-            </div>
-          </div>
-        )}
-        <video ref={videoRef} className="h-full w-full object-cover" muted playsInline autoPlay />
-        <canvas ref={canvasRef} className="hidden" />
-        {lendo && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="h-56 w-56 rounded-cartao border-4 border-white/70" /></div>}
+      <div className="flex items-center justify-between p-3 text-white"><span className="font-bold">Ler o QR do cupom</span><button onClick={onFechar} className="min-h-11 rounded-controle bg-superficie-suave px-3">Fechar</button></div>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="max-w-sm rounded-cartao bg-painel-cartao p-5 text-texto">
+          <div className="mb-2 flex items-center gap-2 text-lg font-bold"><Icone nome="camera" tamanho={18} /> Câmera</div>
+          <p className="text-sm">O app usa a <b>câmera</b> só para ler o QR code do cupom do pedido. Nenhuma foto ou vídeo é guardado ou enviado.</p>
+          <p className="mt-2 text-sm text-texto-suave">Na próxima tela, permita o acesso à câmera. Se preferir, digite o número do pedido aqui embaixo.</p>
+          <button onClick={() => setLiberado(true)} className="btn-principal mt-4 w-full">Abrir câmera</button>
+        </div>
       </div>
-      {erro && <p role="alert" className="px-4 py-2 text-sm text-rose-400">{erro}</p>}
-      <div className="flex gap-2 p-3">
-        <input aria-label="Nº do pedido (ex.: 412)" value={refManual} onChange={(e) => setRefManual(e.target.value)} inputMode="numeric" placeholder="Nº do pedido (ex.: 412)" className="flex-1 rounded-cartao border border-borda-forte bg-painel-cartao px-3 py-3 text-lg text-white" />
-        <button onClick={() => onLido(refManual)} className="btn-principal">Pegar</button>
-      </div>
+      <div className="p-3">{digitar}</div>
     </div>
   );
 }

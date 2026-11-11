@@ -1,7 +1,8 @@
 "use client";
 import { Icone } from "@/components/icone";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
+import { LeitorQr } from "@/components/leitor-qr";
 import { useRouter } from "next/navigation";
 import { acharComanda, abrirComanda } from "./actions";
 
@@ -117,67 +118,24 @@ export function BuscaComanda({ mesas }: { mesas: string[] }) {
   );
 }
 
+// A câmera é o leitor único do sistema (components/leitor-qr), lendo QR e
+// código de barras do cartão. Fecha na primeira leitura (o pai fecha ao ler).
 function Scanner({ onClose, onLido }: { onClose: () => void; onLido: (v: string) => void }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [msg, setMsg] = useState("Aponte para o QR do cupom ou o código do cartão…");
-
-  useEffect(() => {
-    let cancelado = false;
-    let jaLeu = false;
-    // controls do ZXing (para parar a câmera ao sair)
-    let controls: { stop: () => void } | null = null;
-
-    (async () => {
-      // ZXing: leitor de QR + código de barras que roda em qualquer navegador
-      // (Android, iPhone/Safari). Carregado só quando abre a câmera.
-      let BrowserMultiFormatReader;
-      try {
-        ({ BrowserMultiFormatReader } = await import("@zxing/browser"));
-      } catch {
-        setMsg("Não foi possível carregar o leitor. Digite o número.");
-        return;
-      }
-      const video = videoRef.current;
-      if (!video || cancelado) return;
-      const reader = new BrowserMultiFormatReader();
-      try {
-        controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: "environment" } } },
-          video,
-          (result) => {
-            if (result && !jaLeu) {
-              jaLeu = true;
-              controls?.stop();
-              onLido(String(result.getText()));
-            }
-          },
-        );
-      } catch {
-        setMsg("Não foi possível abrir a câmera. Autorize o acesso ou digite o número.");
-        return;
-      }
-      if (cancelado) controls.stop();
-    })();
-
-    return () => {
-      cancelado = true;
-      controls?.stop();
-    };
-  }, [onLido]);
-
+  const jaLeu = useRef(false);
   return (
-    <div className="area-segura fixed inset-0 z-[70] flex flex-col bg-black">
-      <div className="flex items-center justify-between p-3 text-texto">
-        <span className="font-bold">Ler comanda</span>
-        <button aria-label="Fechar" onClick={onClose} className="text-2xl leading-none text-texto-suave">✕</button>
-      </div>
-      <div className="relative flex-1 overflow-hidden">
-        <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-56 w-56 rounded-cartao border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
-        </div>
-      </div>
-      <p className="p-3 text-center text-sm text-texto-suave">{msg}</p>
-    </div>
+    <LeitorQr
+      titulo="Ler comanda"
+      formatos="todos"
+      mensagem="Aponte para o QR do cupom ou o código do cartão…"
+      fechar={onClose}
+      aoLer={(v) => {
+        if (jaLeu.current) return;
+        jaLeu.current = true;
+        if (navigator.vibrate) navigator.vibrate(80);
+        onLido(v);
+      }}
+    >
+      <p className="pt-2 text-center text-sm text-zinc-400">Sem câmera? Feche e digite o número da comanda.</p>
+    </LeitorQr>
   );
 }

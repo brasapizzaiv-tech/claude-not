@@ -38,6 +38,8 @@ export function LeitorQr({
   acima,
   acoes,
   rodape,
+  aoAbrirCamera,
+  aoFalharCamera,
   children,
 }: {
   titulo: string;
@@ -55,6 +57,10 @@ export function LeitorQr({
   acima?: React.ReactNode;
   acoes?: React.ReactNode;
   rodape?: React.ReactNode;
+  /** A câmera abriu (ex.: lembrar que a permissão foi dada). */
+  aoAbrirCamera?: () => void;
+  /** A câmera não abriu; recebe o nome do erro (NotAllowedError = permissão negada). */
+  aoFalharCamera?: (nomeErro: string) => void;
   children?: React.ReactNode;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -71,6 +77,8 @@ export function LeitorQr({
   // aoLer pode mudar a cada render de quem usa: guardar em ref evita reabrir a câmera.
   const aoLerRef = useRef(aoLer);
   useEffect(() => { aoLerRef.current = aoLer; }, [aoLer]);
+  const avisosRef = useRef({ aoAbrirCamera, aoFalharCamera });
+  useEffect(() => { avisosRef.current = { aoAbrirCamera, aoFalharCamera }; }, [aoAbrirCamera, aoFalharCamera]);
 
   const lido = useCallback((texto: string) => {
     const agora = Date.now();
@@ -104,11 +112,16 @@ export function LeitorQr({
         controls = await leitor.reader.decodeFromConstraints(constraints, video, (result) => {
           if (result) lido(String(result.getText()));
         });
-      } catch {
-        setErro("Não foi possível abrir a câmera. Autorize o acesso nas configurações do navegador.");
+      } catch (e) {
+        const nome = e instanceof Error ? e.name : "";
+        avisosRef.current.aoFalharCamera?.(nome);
+        setErro(nome === "NotAllowedError" ? "Permissão da câmera negada. Libere nas configurações do navegador."
+          : nome === "NotFoundError" ? "Nenhuma câmera encontrada neste aparelho."
+          : "Não foi possível abrir a câmera. Autorize o acesso nas configurações do navegador.");
         return;
       }
       if (cancelado) { controls.stop(); return; }
+      avisosRef.current.aoAbrirCamera?.();
       // Depois de abrir: lista as câmeras (os nomes só aparecem após a permissão),
       // tenta foco contínuo e vê se tem lanterna.
       try {
