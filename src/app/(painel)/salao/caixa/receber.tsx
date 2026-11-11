@@ -722,7 +722,7 @@ export function ReceberComandas({
           <p className="text-xs font-semibold text-texto-fraco">Comandas</p>
           <div className="relative">
             {clienteSel ? (
-              <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/20 dark:text-blue-200">
+              <span className="pilula pilula-info flex items-center gap-1">
                 <Icone nome="pessoa" tamanho={14} /> {clienteSel.nome}
                 {clienteSel.cpfCnpj ? ` · ${clienteSel.cpfCnpj}` : ""}
                 <button aria-label="Fechar" onClick={() => setClienteSel(null)} className="ml-1 text-info-texto hover:text-urgente-texto">
@@ -775,7 +775,7 @@ export function ReceberComandas({
           {selComandas.map((c) => (
             <span
               key={c.id}
-              className="flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
+              className="pilula pilula-ok flex items-center gap-1"
             >
               Comanda {c.numero}
               {c.mesa ? ` · ${c.mesa}` : ""}

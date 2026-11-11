@@ -56,7 +56,7 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
       <p className="rotulo"><Link href="/colaboradores" className="hover:text-texto">Colaboradores</Link></p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">{col.nome}</h1>
+          <h1 className="titulo-pagina">{col.nome}</h1>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-texto-suave">
             {col.ativo ? <span className="pilula pilula-ok">ativo</span> : <span className="pilula pilula-neutra">desligado em {dmy(col.desligado_em)}</span>}
             {[cargoNome, depNome, col.matricula ? `matrícula ${col.matricula}` : null, col.admissao ? `admissão ${dmy(col.admissao)}` : null].filter(Boolean).join(" · ")}

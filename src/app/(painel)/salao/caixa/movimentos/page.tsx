@@ -85,7 +85,7 @@ export default async function MovimentosCaixaPage({ searchParams }: { searchPara
       </Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Movimentações do caixa</h1>
+          <h1 className="titulo-pagina">Movimentações do caixa</h1>
           <p className="text-sm text-texto-suave">
             Caixa <b>{caixa.nome}</b> de {diaBR(caixa.aberto_em)}, aberto às {abertoHora}
             {caixa.fechado_em ? <> e <b>fechado</b> às {hora(caixa.fechado_em)}</> : null} · {movs.length} lançamento(s)

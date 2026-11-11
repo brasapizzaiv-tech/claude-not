@@ -143,7 +143,7 @@ export function BalancaLeitor({ taraPadrao }: { taraPadrao: number }) {
         ) : (
           <button
             onClick={conectar}
-            className="rounded-controle bg-primaria px-4 py-1.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             Conectar balança
           </button>

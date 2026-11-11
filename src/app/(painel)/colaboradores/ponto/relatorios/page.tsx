@@ -31,7 +31,7 @@ const pct = (n: number) => `${(n * 100).toLocaleString("pt-BR", { maximumFractio
 const quando = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 const horaLocal = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 const um = <T,>(x: T | T[] | null | undefined) => (Array.isArray(x) ? x[0] : x) ?? null;
-const CAB = "px-2 py-2 text-left text-xs font-medium text-texto-fraco whitespace-nowrap";
+const CAB = "rotulo px-2 py-2 text-left whitespace-nowrap";
 const CABN = `${CAB} text-right`;
 const CEL = "px-2 py-1.5 text-right whitespace-nowrap";
 
@@ -52,7 +52,7 @@ export default async function RelatoriosPontoPage({ searchParams }: { searchPara
   return (
     <div className="pagina">
       <Link href="/colaboradores/ponto" className="text-sm font-semibold text-texto-marca hover:underline print:hidden">← Relatórios de ponto</Link>
-      <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto print:text-xl">
+      <h1 className="mt-2 flex items-center gap-2 titulo-pagina print:text-xl">
         <Icone nome="documento" tamanho={22} /> <span className="print:hidden">Relatórios do ponto</span><span className="hidden print:inline">{titulo}</span>
       </h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">De {dma(de)} a {dma(ate)} · quem bate ponto no relógio.</p>

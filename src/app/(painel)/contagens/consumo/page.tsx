@@ -82,7 +82,7 @@ export default async function ConsumoPage() {
   return (
     <div className="pagina">
       <Link href="/contagens" className="text-sm font-semibold text-texto-marca hover:underline">← Contagem de estoque</Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Consumo do estoque</h1>
+      <h1 className="mt-2 titulo-pagina">Consumo do estoque</h1>
       <p className="mt-1 max-w-3xl text-sm text-texto-suave">
         Quanto sai de cada produto por semana, pelas contagens: <b className="text-texto">tinha + chegou − tem agora</b>.
         A média é das últimas 8 semanas; o gráfico mostra as últimas {SEMANAS}. Contagem que deu consumo negativo

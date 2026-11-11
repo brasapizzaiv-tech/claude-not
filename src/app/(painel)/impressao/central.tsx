@@ -54,7 +54,7 @@ export function CentralImpressao({
 
   return (
     <div className="pagina">
-      <h1 className="mb-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="imprimir" tamanho={24} className="mr-1.5 inline" />Central de Impressões</h1>
+      <h1 className="mb-1 titulo-pagina"><Icone nome="imprimir" tamanho={24} className="mr-1.5 inline" />Central de Impressões</h1>
       <p className="mb-5 text-sm text-texto-suave">
         Aqui ficam <b>todas as impressoras</b> (etiquetas hoje; comandas e cupons no futuro). As impressões saem por um
         <b> PC central</b> com o <b>Agente</b> instalado.
@@ -137,7 +137,7 @@ export function CentralImpressao({
             {editId === im.id ? (
               <div className="flex flex-wrap items-center gap-2">
                 <input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
-                <button disabled={proc} onClick={() => { run(() => renomearImpressora(im.id, editNome)); setEditId(null); }} className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-medium text-marca-sobre-primaria">Salvar</button>
+                <button disabled={proc} onClick={() => { run(() => renomearImpressora(im.id, editNome)); setEditId(null); }} className="btn-principal min-h-11 px-3 text-sm">Salvar</button>
                 <button onClick={() => setEditId(null)} className="rounded-controle px-3 py-2 text-sm text-texto-suave">Cancelar</button>
               </div>
             ) : (
@@ -186,7 +186,7 @@ export function CentralImpressao({
 
       <div className="mt-5 flex flex-wrap items-center gap-2 rounded-cartao bg-painel-cartao p-3">
         <input aria-label="Nome da nova impressora (ex.: Cozinha, Bar)" value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome da nova impressora (ex.: Cozinha, Bar)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm" />
-        <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-marca-sobre-primaria disabled:opacity-50">
+        <button disabled={proc || !novo.trim()} onClick={() => { run(() => criarImpressora(novo)); setNovo(""); }} className="btn-principal min-h-11 px-4 text-sm">
           + Adicionar impressora
         </button>
       </div>

@@ -489,11 +489,11 @@ export function CmvTabela({
                           {r.nivel <= 0 ? (
                             <span className="text-xs text-zinc-300 dark:text-zinc-600">—</span>
                           ) : comprar ? (
-                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-mini font-bold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                            <span className="pilula">
                               COMPRAR
                             </span>
                           ) : (
-                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-mini font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
+                            <span className="pilula pilula-ok">
                               ok
                             </span>
                           )}

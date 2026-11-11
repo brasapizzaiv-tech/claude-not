@@ -599,6 +599,11 @@ optgroup {
     font-weight: 600; color: var(--texto-fraco);
   }
   /* Etiqueta em pílula. Variações: pêssego (normal), urgente, ok, info, sólido. */
+  /* Título da tela (VIS-17): um tamanho só no painel inteiro. */
+  .titulo-pagina {
+    font-family: var(--fonte-numero); font-size: 28px; font-weight: 700;
+    line-height: 1.1; letter-spacing: var(--letra-apertada); color: var(--texto);
+  }
   .pilula {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 10px; border-radius: 999px;

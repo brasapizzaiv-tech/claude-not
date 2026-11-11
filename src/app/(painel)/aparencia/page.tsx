@@ -30,7 +30,7 @@ export default async function AparenciaPage() {
       <Link href="/usuarios" className="text-sm text-texto-suave hover:underline">
         Configurações
       </Link>
-      <h1 className="mt-1 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="mt-1 titulo-pagina">
         Aparência da empresa
       </h1>
       <p className="mt-0.5 mb-4 text-sm text-texto-suave">

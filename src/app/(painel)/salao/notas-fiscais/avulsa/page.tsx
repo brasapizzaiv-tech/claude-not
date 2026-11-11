@@ -37,7 +37,7 @@ export default async function NotaAvulsaPage() {
       <p className="rotulo">
         <Link href="/salao/notas-fiscais" className="hover:text-texto">Notas fiscais</Link>
       </p>
-      <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Nota avulsa</h1>
+      <h1 className="mt-1 titulo-pagina">Nota avulsa</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">
         NF-e pra empresa (Kern e outras) ou NFC-e pra consumidor, fora do caixa. Puxe o que o cliente comprou no período ou digite os itens.
       </p>

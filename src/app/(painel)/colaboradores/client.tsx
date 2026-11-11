@@ -321,7 +321,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
     <div className="pagina">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Colaboradores</h1>
+          <h1 className="titulo-pagina">Colaboradores</h1>
           <p className="mt-1 text-texto-suave">
             A equipe. {ativos.length} ativo{ativos.length === 1 ? "" : "s"}
             {desligados.length > 0 && (

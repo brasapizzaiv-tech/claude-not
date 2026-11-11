@@ -47,7 +47,7 @@ export function FornecedoresClient({
     <div className="pagina">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Fornecedores
           </h1>
           <p className="mt-1 text-texto-suave">
@@ -106,7 +106,7 @@ export function FornecedoresClient({
                       {(f.categoria_ids ?? []).length > 0 && (
                         <span className="mt-0.5 flex flex-wrap gap-1">
                           {(f.categoria_ids ?? []).map((c) => (
-                            <span key={c} className="rounded-full bg-orange-100 px-2 py-0.5 text-mini font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                            <span key={c} className="pilula">
                               {nomeCatProd(c) || "?"}
                             </span>
                           ))}

@@ -130,7 +130,7 @@ export default async function FechamentosPage({ searchParams }: { searchParams: 
       <p className="rotulo"><Link href="/salao/caixa" className="hover:text-texto">Caixa</Link></p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Fechamentos de caixa</h1>
+          <h1 className="titulo-pagina">Fechamentos de caixa</h1>
           <p className="mt-1 text-sm text-texto-suave">Cada dia em almoço e noite (pelo horário em que o caixa abriu).</p>
         </div>
         <form className="flex flex-wrap items-end gap-2">

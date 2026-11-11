@@ -55,7 +55,7 @@ export default async function CaixaPage({
       <div className="pagina">
         <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão
         </Link>
-        <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Frente de Caixa</h1>
+        <h1 className="mt-2 titulo-pagina">Frente de Caixa</h1>
         <p className="mt-1 text-texto-suave">Nenhum caixa aberto. Abra um para começar a receber.</p>
 
         {/* Abrir à esquerda, consultas à direita: a tela inteira à vista, sem rolar. */}
@@ -291,7 +291,7 @@ export default async function CaixaPage({
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="rotulo"><Link href="/salao" className="hover:text-texto">Salão</Link> · caixa {caixa.nome}</p>
-          <h1 className="mt-1 flex flex-wrap items-center gap-3 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">
+          <h1 className="mt-1 flex flex-wrap items-center gap-3 titulo-pagina">
             Frente de caixa <span className="pilula pilula-ok">aberto às {abertoHora.replace(":", "h")}</span>
           </h1>
         </div>

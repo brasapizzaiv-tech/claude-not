@@ -334,7 +334,7 @@ export default async function CompararPage({
       >
         ← Voltar para a cotação
       </Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="mt-2 titulo-pagina">
         Comparar preços
       </h1>
       <p className="mt-1 text-texto-suave">

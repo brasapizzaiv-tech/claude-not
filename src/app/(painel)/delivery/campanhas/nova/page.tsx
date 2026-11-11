@@ -18,7 +18,7 @@ export default async function NovaCampanhaPage() {
   return (
     <div className="pagina">
       <Link href="/delivery/campanhas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pras campanhas</Link>
-      <h1 className="mb-4 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="megafone" tamanho={19} /> Nova campanha</h1>
+      <h1 className="mb-4 mt-2 flex items-center gap-2 titulo-pagina"><Icone nome="megafone" tamanho={19} /> Nova campanha</h1>
       {!mods.ok && <p className="mb-3 rounded-controle bg-red-500/10 px-3 py-2 text-sm text-urgente-texto">Não consegui ler os modelos na Meta: {mods.erro}</p>}
       <NovaCampanha
         modelos={mods.ok ? mods.modelos : []}

@@ -55,7 +55,7 @@ export default async function EntregadoresPage() {
     <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="entrega" tamanho={19} /> Entregadores</h1>
+        <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="entrega" tamanho={19} /> Entregadores</h1>
         <Link href="/delivery/entregadores/caixa" className="ml-auto btn-principal px-3 text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="carteira" tamanho={14} /> Caixa dos motoboys</span></Link>
         <Link href="/delivery/entregadores/acerto" className=" rounded-controle bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-white dark:bg-zinc-700"><span className="inline-flex items-center gap-1.5"><Icone nome="dinheiro" tamanho={14} /> Acerto do dia</span></Link>
       </div>

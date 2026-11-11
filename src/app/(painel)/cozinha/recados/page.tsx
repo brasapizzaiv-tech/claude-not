@@ -13,7 +13,7 @@ export default async function RecadosTvPage() {
   return (
     <div className="pagina">
       <Link href="/cozinha" className="text-sm font-semibold text-texto-marca hover:underline">← Tablet da cozinha</Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="tv" tamanho={20} className="mr-2" /> Recados da TV</h1>
+      <h1 className="mt-2 titulo-pagina"><Icone nome="tv" tamanho={20} className="mr-2" /> Recados da TV</h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">
         Quando não tem pedido do rodízio, a TV da cozinha mostra o relógio, a data e estes recados (até 5 ativos). Um recado com data “até” some sozinho depois dela.
       </p>

@@ -29,7 +29,7 @@ export type Retirada = {
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const fmtData = (s: string) => { const [a, m, d] = s.split("-"); return `${d}/${m}/${a}`; };
-const card = "rounded-cartao border border-borda bg-painel-cartao p-4  ";
+const card = "cartao p-4 ";
 
 export function RetiradasClient({
   pessoas, produtos, retiradas, hojeIso,
@@ -70,8 +70,8 @@ export function RetiradasClient({
   return (
     <div className="pagina">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="compras" tamanho={19} /> Compras internas</h1>
-        <button onClick={() => setNovo(true)} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-marca-sobre-primaria hover:brightness-105">
+        <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="compras" tamanho={19} /> Compras internas</h1>
+        <button onClick={() => setNovo(true)} className="btn-principal min-h-11 px-4 text-sm">
           + Nova compra
         </button>
       </div>
@@ -305,7 +305,7 @@ function NovaCompra({
                 item, valor: Number(String(valor).replace(",", ".")) || 0,
                 peso: peso ? Number(String(peso).replace(",", ".")) : null, data, observacao: obs,
               })}
-              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-marca-sobre-primaria disabled:opacity-50"
+              className="btn-principal min-h-11 px-4 text-sm"
             >
               Lançar
             </button>
@@ -460,7 +460,7 @@ function ProdutosTab({ produtos, proc, run }: {
     <div className={card}>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-bold">Produtos e preços</h2>
-        <button onClick={() => setEdit("novo")} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">+ Produto</button>
+        <button onClick={() => setEdit("novo")} className="btn-principal min-h-11 px-3 text-sm">+ Produto</button>
       </div>
       <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full text-sm">
@@ -512,7 +512,7 @@ function ProdutoModal({ alvo, proc, run, onClose }: {
             <button
               disabled={proc || !nome.trim()}
               onClick={() => { run(() => salvarProduto({ id: novo ? null : (p as Produto).id, nome, categoria, preco: Number(String(preco).replace(",", ".")) || 0, ativo })); onClose(); }}
-              className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-bold text-marca-sobre-primaria disabled:opacity-50"
+              className="btn-principal min-h-11 px-4 text-sm"
             >
               Salvar
             </button>

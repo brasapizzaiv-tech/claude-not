@@ -637,7 +637,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
       )}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Semana e 10%</h1>
+          <h1 className="titulo-pagina">Semana e 10%</h1>
           <p className="mt-1 text-sm text-texto-suave">
             Marque quem trabalhou em cada dia (dia ou noite). O 10% de cada noite é dividido por quem trabalhou naquela noite e entra no acerto da semana seguinte.
             {" "}<Link href="/colaboradores" className="text-orange-600 hover:underline">Cadastro da equipe</Link>
@@ -645,7 +645,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/colaboradores/semana?s=${somarDias(segunda, -7)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">← anterior</Link>
-          <span className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria">{rotuloSemana(segunda)}</span>
+          <span className="flex min-h-11 items-center rounded-controle bg-destaque px-3 text-sm font-semibold text-texto-marca-pilula">{rotuloSemana(segunda)}</span>
           <Link href={`/colaboradores/semana?s=${somarDias(segunda, 7)}`} className="rounded-controle border border-borda-forte px-3 py-2 text-sm">próxima →</Link>
         </div>
       </div>
@@ -716,7 +716,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             <input aria-label="R$ valor" value={adiantValor} onChange={(e) => setAdiantValor(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="R$ valor" inputMode="decimal" className={`${inputCls} w-28`} />
             <input type="date" value={adiantData} onChange={(e) => setAdiantData(e.target.value)} className={inputCls} />
             <input aria-label="motivo (opcional)" value={adiantMotivo} onChange={(e) => setAdiantMotivo(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="motivo (opcional)" className={`${inputCls} w-48`} />
-            <button onClick={registrarAdiant} disabled={pending} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-40">
+            <button onClick={registrarAdiant} disabled={pending} className="btn-principal min-h-11 px-3 text-sm">
               Registrar adiantamento
             </button>
           </div>
@@ -806,7 +806,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                   router.refresh();
                 })
               }
-              className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105"
+              className="btn-principal min-h-11 px-3 text-sm"
             >
               Cadastrar e trazer
             </button>
@@ -1367,7 +1367,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             <button
               onClick={lancar}
               disabled={pending || aLancar.length === 0}
-              className="rounded-controle bg-orange-500 px-4 py-2 font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-40"
+              className="btn-principal min-h-11 px-4 text-sm"
             >
               <Icone nome="dinheiro" tamanho={16} className="mr-1.5" /> Lançar {aLancar.length} pagamento{aLancar.length === 1 ? "" : "s"} · {brl(totalALancar)} no Contas a pagar
             </button>

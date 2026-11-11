@@ -34,7 +34,7 @@ export default async function NotasFiscaisPage({
     <div className="pagina">
       <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão</Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Notas fiscais</h1>
+        <h1 className="titulo-pagina">Notas fiscais</h1>
         <Link href="/salao/notas-fiscais/avulsa" className="btn-principal text-sm">+ Nota avulsa (NF-e / NFC-e)</Link>
       </div>
       <p className="mt-1 text-sm text-texto-suave">

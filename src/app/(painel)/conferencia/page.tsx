@@ -57,7 +57,7 @@ export default async function ConferenciaPage() {
     <div className="pagina">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Conferência
           </h1>
           <p className="mt-1 text-texto-suave">

@@ -129,7 +129,7 @@ export function SolicitacoesClient({ lista, pessoas }: { lista: Solic[]; pessoas
     <div className="pagina">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="flex items-center gap-2 titulo-pagina">
             <Icone nome="ferramenta" tamanho={22} className="text-orange-600 dark:text-orange-400" /> Pedidos da equipe
           </h1>
           <p className="text-sm text-texto-suave">Compras pra repor e manutenções que o pessoal pediu pelo app. Marque comprado/feito ou rejeite.</p>
@@ -304,7 +304,7 @@ function NovoPedido({ pessoas, onFeito }: { pessoas: Pessoa[]; onFeito: () => vo
         <label className="flex items-center gap-1.5 text-sm text-texto-suave">
           <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="accent-orange-500" /> <Icone nome="fogo" tamanho={14} className="text-urgente-texto dark:text-red-400" /> urgente
         </label>
-        <button onClick={salvar} disabled={proc || item.trim().length < 2} className="rounded-cartao bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50">
+        <button onClick={salvar} disabled={proc || item.trim().length < 2} className="btn-principal min-h-11 px-4 text-sm">
           {proc ? "Salvando…" : "Salvar"}
         </button>
       </div>

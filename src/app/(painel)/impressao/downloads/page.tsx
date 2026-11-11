@@ -44,7 +44,7 @@ export default async function DownloadsPage() {
   return (
     <div className="pagina">
       <Link href="/impressao" className="text-sm text-texto-suave hover:text-texto-marca">← Central de Impressões</Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Downloads</h1>
+      <h1 className="mt-2 titulo-pagina">Downloads</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">
         Abra esta página no PC onde vai instalar e clique em Baixar. Pra atualizar, é só instalar por cima: o
         instalador pede o token, que está na Central de Impressões em &quot;ver dados do agente&quot;.

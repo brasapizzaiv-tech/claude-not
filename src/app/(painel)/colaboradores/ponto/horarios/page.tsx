@@ -34,7 +34,7 @@ export default async function HorariosPage({ searchParams }: { searchParams: Pro
       <p className="rotulo"><Link href="/colaboradores/ponto" className="hover:text-texto">Relatórios de ponto</Link></p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Horários</h1>
+          <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="relogio" tamanho={22} /> Horários</h1>
           <p className="mt-1 max-w-2xl text-sm text-texto-suave">
             O horário de cada um decide o que é falta, atraso e extra no espelho. Cada pessoa fica num horário a partir de uma data; trocar não muda os meses que já passaram.
           </p>

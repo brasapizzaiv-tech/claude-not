@@ -189,7 +189,7 @@ export function EditorCardapio({
 
   return (
     <div>
-      <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="titulo-pagina">
         Cardápio do dia
       </h1>
       <p className="mt-1 text-texto-suave">
@@ -221,12 +221,12 @@ export function EditorCardapio({
               {dia === hoje ? " · hoje" : ""}
             </span>
             {status === "publicado" && (
-              <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-mini font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
+              <span className="pilula pilula-ok">
                 no ar{atual?.publicado_por ? ` · ${atual.publicado_por} ${quando(atual.publicado_em)}` : ""}
               </span>
             )}
             {status === "alterado" && (
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-mini font-medium text-aviso-texto dark:bg-amber-950 dark:text-amber-200">
+              <span className="pilula pilula-aviso">
                 no ar · com alterações não publicadas ({atual?.alterado_por ?? "?"} {quando(atual?.alterado_em ?? null)})
               </span>
             )}

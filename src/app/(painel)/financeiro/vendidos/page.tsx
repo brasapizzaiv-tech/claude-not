@@ -198,7 +198,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
   return (
     <div className="pagina">
       <Link href="/financeiro" className="text-sm font-semibold text-texto-marca hover:underline">← Financeiro</Link>
-      <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="compras" tamanho={20} /> Produtos vendidos</h1>
+      <h1 className="mt-2 flex items-center gap-2 titulo-pagina"><Icone nome="compras" tamanho={20} /> Produtos vendidos</h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">Tudo que saiu no salão, balcão, balança e delivery, pelo que foi lançado nas comandas. Noite começa às {VIRADA_NOITE}h.</p>
 
       {/* Período e filtros (links: sem JS) */}
@@ -214,7 +214,7 @@ export default async function VendidosPage({ searchParams }: { searchParams: Pro
           <label className="mb-1 block text-xs text-texto-suave">Até</label>
           <input type="date" name="ate" defaultValue={ate} className="rounded-controle border border-borda-forte bg-painel-cartao px-2 py-1.5 text-sm" />
         </div>
-        <button className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">Aplicar</button>
+        <button className="btn-principal min-h-11 px-3 text-sm">Aplicar</button>
         <div className="ml-1 flex flex-wrap gap-1">
           {atalhos.map((a) => (
             <Link key={a.r} href={link({ de: a.de, ate: a.ate })} className={`rounded-controle px-2.5 py-1.5 text-xs ${de === a.de && ate === a.ate ? "bg-orange-500 text-marca-sobre-primaria" : "border border-borda-forte text-texto-suave  "}`}>{a.r}</Link>

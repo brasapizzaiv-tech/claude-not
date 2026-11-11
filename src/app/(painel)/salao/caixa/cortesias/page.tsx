@@ -39,7 +39,7 @@ export default async function CortesiasPage({ searchParams }: { searchParams: Pr
   return (
     <div className="pagina">
       <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa</Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Cortesias e vales-presente</h1>
+      <h1 className="mt-2 titulo-pagina">Cortesias e vales-presente</h1>
       <p className="mt-1 text-sm text-texto-suave">
         Contas fechadas sem entrar dinheiro. Não contam no caixa nem no faturamento — o motivo é o que o caixa escreveu.
       </p>

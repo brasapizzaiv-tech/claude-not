@@ -105,7 +105,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
     return `/colaboradores/ponto?${u.toString()}`;
   };
   const horario = (l: LinhaEspelho) => l.horario;
-  const CAB = "px-2 py-2 text-left text-xs font-medium text-texto-fraco";
+  const CAB = "rotulo px-2 py-2 text-left";
 
   // Batidas com CPF fora do cadastro (não viram presença até alguém dizer de quem são).
   // (de 1000 em 1000: o Supabase corta cada consulta em 1000 linhas)
@@ -140,7 +140,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
       <div className="print:hidden"><BatidasSemColaborador lista={semDono} colaboradores={colsLista} /></div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div>
-          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="relogio" tamanho={22} /> Relatórios de ponto</h1>
+          <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="relogio" tamanho={22} /> Relatórios de ponto</h1>
           <p className="mt-1 max-w-2xl text-sm text-texto-suave">
             Batidas do relógio de quem bate ponto. O previsto vem do <Link href="/colaboradores/ponto/horarios" className="font-semibold text-texto-marca hover:underline">horário de cada pessoa</Link>. Cada um confere e assina o mês fechado no app da equipe (Meu ponto).
           </p>

@@ -63,7 +63,7 @@ export function CategoriasClient({
     <div className="pagina">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Categorias
           </h1>
           <p className="mt-1 text-texto-suave">

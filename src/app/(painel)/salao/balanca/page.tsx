@@ -34,14 +34,14 @@ export default async function BalancaPage() {
       </Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="balanca" tamanho={20} /> Balança / Buffet</h1>
+          <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="balanca" tamanho={20} /> Balança / Buffet</h1>
           <p className="mt-1 text-texto-suave">
             Buffet: {precoKg > 0 ? `${moeda(precoKg)}/kg` : "preço não definido no Cardápio"}.
           </p>
         </div>
         <Link
           href="/salao/balanca/quiosque"
-          className="rounded-cartao bg-orange-500 px-5 py-3 text-sm font-bold text-marca-sobre-primaria hover:brightness-110"
+          className="btn-principal min-h-11 px-5 text-sm"
         >
           <Icone nome="tela" tamanho={15} className="mr-1.5" /> Modo quiosque (autoatendimento)
         </Link>
@@ -115,7 +115,7 @@ export default async function BalancaPage() {
             className="w-28 rounded-controle border border-borda-forte bg-white px-3 py-2 text-lg text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
           />
         </div>
-        <Enviar className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:bg-orange-600">
+        <Enviar className="btn-principal min-h-11 px-5 text-sm">
           Gerar comanda
         </Enviar>
       </form>

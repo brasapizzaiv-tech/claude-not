@@ -76,7 +76,7 @@ export function RevisaoClient({
     <div>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="buscar" tamanho={20} /> Revisar checklists</h1>
+          <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="buscar" tamanho={20} /> Revisar checklists</h1>
           <p className="mt-1 text-texto-suave">
             {dia === addDiasIso(hoje, -1) ? "Ontem" : dia === hoje ? "Hoje" : ""} {dataCurta(dia)} · veja o que ficou e aponte as correções.
           </p>
@@ -189,7 +189,7 @@ export function RevisaoClient({
             <button
               onClick={() => agir(() => publicarNaTv(naoPublicados.map((a) => a.id), prazoEscolhido()), `Publicado na TV até ${dataCurta(prazoEscolhido())}.`)}
               disabled={proc}
-              className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-bold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50"
+              className="btn-principal min-h-11 px-5 text-sm"
             >
               <Icone nome="tv" tamanho={15} className="mr-1.5" /> Publicar na TV ({naoPublicados.length}) até {dataCurta(prazoEscolhido())}
             </button>
@@ -325,7 +325,7 @@ function ApontarModal({
               pessoa_nome: pessoa, na_tv: naTv, ate: naTv ? ate : null, mostrar_nome: mostrarNome,
             })}
             disabled={proc || texto.trim().length < 3}
-            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             {naTv ? "Apontar e publicar" : "Apontar"}
           </button>

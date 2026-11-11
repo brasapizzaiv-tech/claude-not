@@ -52,7 +52,7 @@ export default async function UsuariosPage() {
   return (
     <div className="pagina">
       <div className="mb-6">
-        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+        <h1 className="titulo-pagina">
           Usuários
         </h1>
         <p className="mt-1 text-texto-suave">

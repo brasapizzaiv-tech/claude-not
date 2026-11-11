@@ -59,14 +59,14 @@ export default async function PontoDiarioPage({ searchParams }: { searchParams: 
     for (const [k, v] of Object.entries(o)) { if (v == null) u.delete(k); else u.set(k, v); }
     return `/colaboradores/ponto/diario?${u.toString()}`;
   };
-  const CAB = "px-2 py-2 text-left text-xs font-medium text-texto-fraco";
+  const CAB = "rotulo px-2 py-2 text-left";
   const [a, m, d] = dia.split("-").map(Number);
   const dow = new Date(Date.UTC(a, m - 1, d)).getUTCDay();
 
   return (
     <div className="pagina">
       <p className="rotulo"><Link href="/colaboradores/ponto" className="hover:text-texto">Relatórios de ponto</Link></p>
-      <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Ponto diário</h1>
+      <h1 className="mt-1 titulo-pagina">Ponto diário</h1>
 
       <div className="mt-4 flex flex-wrap items-end gap-2 text-sm">
         <Link href={q({ data: somar(dia, -1) })} aria-label="Dia anterior" className="btn-secundario !min-h-11 !px-4">‹</Link>

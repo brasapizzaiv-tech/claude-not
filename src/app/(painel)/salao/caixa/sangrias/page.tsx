@@ -57,7 +57,7 @@ export default async function SangriasPage({ searchParams }: { searchParams: Pro
   return (
     <div className="pagina">
       <p className="rotulo"><Link href="/salao/caixa" className="hover:text-texto">Caixa</Link></p>
-      <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Sangrias</h1>
+      <h1 className="mt-1 titulo-pagina">Sangrias</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">
         O que saiu do caixa em dinheiro. Com categoria, vira despesa paga no financeiro (DRE); sem categoria é só retirada (cofre, troco). Marque várias e lance de uma vez.
       </p>

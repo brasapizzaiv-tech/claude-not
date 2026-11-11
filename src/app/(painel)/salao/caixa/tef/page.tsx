@@ -92,7 +92,7 @@ export default async function TefPage({ searchParams }: { searchParams: Promise<
       <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar ao caixa
       </Link>
       <div className="mt-2 mb-4">
-        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="cartao" tamanho={20} className="mr-2" /> Cartões (TEF)</h1>
+        <h1 className="titulo-pagina"><Icone nome="cartao" tamanho={20} className="mr-2" /> Cartões (TEF)</h1>
         <p className="text-sm text-texto-suave">
           Tudo o que passou no pinpad, por período, inclusive as recusas, com a mensagem para mostrar à assistência. Aqui você reimprime a via do cliente, cancela uma venda (o pinpad pede o cartão de novo) e abre o menu administrativo da Elgin.
         </p>

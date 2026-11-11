@@ -30,7 +30,7 @@ export default async function CotacoesPage() {
     <div className="pagina">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Cotações
           </h1>
           <p className="mt-1 text-texto-suave">
@@ -96,7 +96,7 @@ export default async function CotacoesPage() {
                           Fechada
                         </span>
                       ) : (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
+                        <span className="pilula pilula-ok">
                           Aberta
                         </span>
                       )}

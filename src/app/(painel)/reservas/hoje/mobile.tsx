@@ -109,7 +109,7 @@ export function ReservasHoje({
                   {r.chegou_em ? (
                     <span className="rounded-full bg-texto px-2 py-0.5 text-mini font-bold text-fundo">✓ chegou</span>
                   ) : (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-mini font-medium text-aviso-texto dark:bg-amber-950 dark:text-amber-300">aguardando</span>
+                    <span className="pilula pilula-aviso">aguardando</span>
                   )}
                 </div>
               </div>

@@ -305,7 +305,7 @@ function ModeloModal({
           <button
             onClick={() => onSalvar({ id: modelo?.id, nome, setor_id: setorId, momento, dias, servicos })}
             disabled={proc || nome.trim().length < 2 || !setorId}
-            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             Salvar
           </button>
@@ -353,7 +353,7 @@ function ItemModal({
           <button
             onClick={() => onSalvar({ id: item?.id, texto, instrucao: instrucao || null, secao: secao || null, tipo, exige_foto: foto, obrigatorio: obrig })}
             disabled={proc || texto.trim().length < 2}
-            className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             Salvar
           </button>

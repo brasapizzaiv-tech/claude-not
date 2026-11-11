@@ -55,7 +55,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
     <div className="pagina">
       <Link href="/delivery/entregadores" className="text-sm font-semibold text-texto-marca hover:underline">← Entregadores</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="dinheiro" tamanho={19} /> Acerto dos entregadores</h1>
+        <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="dinheiro" tamanho={19} /> Acerto dos entregadores</h1>
         <form className="ml-auto flex items-center gap-2">
           <Link href={`?data=${addDias(data, -1)}`} className="rounded-controle border border-borda-forte px-2 py-1 text-sm">‹</Link>
           <input type="date" name="data" defaultValue={data} className="rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
@@ -96,7 +96,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
             </details>
             <div className="mt-3">
               {feito ? (
-                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-sm font-semibold text-ok-texto">✓ Acertado: {brl(Number(feito.total))} ({feito.teles_qtd} teles + fixo {brl(Number(feito.fixo))})</span>
+                <span className="pilula pilula-ok">✓ Acertado: {brl(Number(feito.total))} ({feito.teles_qtd} teles + fixo {brl(Number(feito.fixo))})</span>
               ) : (
                 <form action={registrarAcertoEntregador} className="flex flex-wrap items-center gap-2">
                   <input type="hidden" name="entregador_id" value={b.id} />

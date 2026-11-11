@@ -59,7 +59,7 @@ export function VitrineClient({ d }: { d: DadosVitrine }) {
           <p className="rotulo">
             <Link href="/delivery" className="hover:text-texto">Delivery</Link>
           </p>
-          <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Vitrine do app</h1>
+          <h1 className="mt-1 titulo-pagina">Vitrine do app</h1>
         </div>
         <div className="flex flex-wrap gap-2.5">
           <a href="/pedir" target="_blank" rel="noopener" className="btn-secundario text-sm">Pré-visualizar no celular</a>

@@ -37,7 +37,7 @@ export default async function FiadoPage() {
   return (
     <div className="pagina">
       <Link href="/salao/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Caixa</Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="equipe" tamanho={20} className="mr-2" /> Fiado de clientes</h1>
+      <h1 className="mt-2 titulo-pagina"><Icone nome="equipe" tamanho={20} className="mr-2" /> Fiado de clientes</h1>
       <p className="mb-4 mt-1 text-sm text-texto-suave">
         Contas recebidas como &quot;Saldo cliente&quot; no caixa. Quando o cliente pagar, clique em Receber: entra no caixa do dia com a forma usada.
         Em aberto: <b className="text-zinc-800 dark:text-zinc-100">{totalAberto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</b>

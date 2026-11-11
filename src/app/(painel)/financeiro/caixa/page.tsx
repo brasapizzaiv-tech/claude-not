@@ -36,7 +36,7 @@ export default async function CaixaListaPage() {
     <div className="pagina">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Fechamento de caixa <span className="pilula pilula-neutra ml-1 align-middle text-xs">sistema antigo</span>
           </h1>
           <p className="mt-1 text-texto-suave">

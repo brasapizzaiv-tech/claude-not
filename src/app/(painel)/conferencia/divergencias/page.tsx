@@ -77,7 +77,7 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
       <Link href="/conferencia" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar para conferência</Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="alerta" tamanho={20} className="mr-2 text-aviso-texto" /> Divergências da conferência</h1>
+          <h1 className="titulo-pagina"><Icone nome="alerta" tamanho={20} className="mr-2 text-aviso-texto" /> Divergências da conferência</h1>
           <p className="mt-1 text-sm text-texto-suave">O que veio diferente do pedido: quantidade, item faltando, preço acima do cotado, cobrado sem receber.</p>
         </div>
         <form className="flex flex-wrap items-end gap-2">

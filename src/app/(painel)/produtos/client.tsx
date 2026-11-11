@@ -244,7 +244,7 @@ export function ProdutosClient({
     <div className="pagina">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Produtos
           </h1>
           <p className="mt-1 text-texto-suave">
@@ -465,14 +465,14 @@ export function ProdutosClient({
                         setEditando(p);
                         setAberto(true);
                       }}
-                      className="mr-3 text-orange-600 hover:underline"
+                      className="mr-1 inline-flex min-h-11 items-center px-2 text-texto-marca hover:underline"
                     >
                       Editar
                     </button>
                     <form action={excluirProduto} className="inline">
                       <input type="hidden" name="id" value={p.id} />
                       <Enviar
-                        className="text-texto-fraco hover:text-urgente-texto"
+                        className="inline-flex min-h-11 items-center px-2 text-texto-fraco hover:text-urgente-texto"
                       >
                         Remover
                       </Enviar>

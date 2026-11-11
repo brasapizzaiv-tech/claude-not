@@ -33,7 +33,7 @@ export default async function ApontamentosPage() {
     <div className="pagina">
       <Link href="/checklists/revisao" className="text-sm font-semibold text-texto-marca hover:underline">← Revisar checklists</Link>
       <div className="mt-2 mb-4">
-        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="fixar" tamanho={20} className="mr-2" /> Apontamentos</h1>
+        <h1 className="titulo-pagina"><Icone nome="fixar" tamanho={20} className="mr-2" /> Apontamentos</h1>
         <p className="mt-1 text-texto-suave">O que está na TV, o que já foi resolvido e o que ficou pelo caminho.</p>
       </div>
       <ApontamentosClient apontamentos={todos} hoje={hoje} maisRepetidos={maisRepetidos} />

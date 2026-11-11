@@ -158,7 +158,7 @@ export function FormasClient({ formas }: { formas: FormaPagamento[] }) {
         <button
           type="button"
           onClick={() => { setErro(null); setEditando({ ...VAZIA }); }}
-          className="rounded-controle bg-primaria px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:opacity-90"
+          className="btn-principal min-h-11 px-4 text-sm"
         >
           + Nova forma
         </button>
@@ -226,7 +226,7 @@ function Formulario({
       </div>
       {erro && <p role="alert" className="mt-3 text-sm text-erro">{erro}</p>}
       <div className="mt-4 flex items-center gap-2">
-        <Enviar className="rounded-controle bg-primaria px-4 py-2 text-sm font-semibold text-marca-sobre-primaria hover:opacity-90">
+        <Enviar className="btn-principal min-h-11 px-4 text-sm">
           {d.id ? "Salvar" : "Criar forma"}
         </Enviar>
         <button type="button" onClick={aoFechar} className="rounded-controle px-3 py-2 text-sm text-texto-suave hover:text-texto">

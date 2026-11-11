@@ -86,7 +86,7 @@ function ValorConta({ l }: { l: LinhaConta }) {
         className="w-24 rounded-controle border border-borda-forte bg-white px-2 py-1 text-right text-sm text-texto focus:border-orange-500 dark:border-borda-forte dark:bg-zinc-950"
       />
       <Enviar
-        className="rounded-controle bg-orange-500 px-2 py-1 text-xs font-medium text-marca-sobre-primaria hover:brightness-105"
+        className="btn-principal min-h-9 px-3 text-xs"
         title="Salvar o valor do boleto"
       >
         ✓
@@ -498,7 +498,7 @@ export function ListaContasView({
                   <h2 className="text-sm font-semibold text-texto">
                     Semana {curto(sem.inicio)} a {curto(sem.fim)}
                     {rot && (
-                      <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-mini font-medium text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                      <span className="pilula ml-2">
                         {rot}
                       </span>
                     )}

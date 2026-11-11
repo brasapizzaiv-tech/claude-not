@@ -84,7 +84,7 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
     <div className="mt-3">
       {/* Cabeçalho + status */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Pedido #{p.numero ?? "—"}</h1>
+        <h1 className="titulo-pagina">Pedido #{p.numero ?? "—"}</h1>
         <span className="text-sm text-texto-suave">{ORIGEM[p.origem] ?? p.origem} · {new Date(p.carimbos.criado_em).toLocaleString("pt-BR")}</span>
         <div className="ml-auto flex gap-2">
           {PROX[p.status] && !cancelado && (

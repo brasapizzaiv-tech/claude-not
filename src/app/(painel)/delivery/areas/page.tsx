@@ -23,7 +23,7 @@ export default async function AreasPage() {
   return (
     <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
-      <h1 className="mb-1 mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="mapa" tamanho={19} /> Áreas de entrega e promoções da tele</h1>
+      <h1 className="mb-1 mt-2 flex items-center gap-2 titulo-pagina"><Icone nome="mapa" tamanho={19} /> Áreas de entrega e promoções da tele</h1>
       <p className="mb-4 text-sm text-texto-suave">
         Desenhe cada área no mapa e defina o valor da entrega. O cliente cai na área onde o endereço dele está; fora de todas = não entregamos.
         Sem nenhuma área ativa, vale o cálculo por km da Config.

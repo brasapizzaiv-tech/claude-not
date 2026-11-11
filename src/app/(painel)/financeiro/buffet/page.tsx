@@ -65,7 +65,7 @@ export default async function BuffetPage({ searchParams }: { searchParams: Promi
   return (
     <div className="pagina">
       <Link href="/financeiro" className="text-sm font-semibold text-texto-marca hover:underline">← Financeiro</Link>
-      <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="balanca" tamanho={20} /> Buffet: livre × quilo</h1>
+      <h1 className="mt-2 flex items-center gap-2 titulo-pagina"><Icone nome="balanca" tamanho={20} /> Buffet: livre × quilo</h1>
       <p className="mb-4 mt-1 max-w-3xl text-sm text-texto-suave">
         Almoço, pelas pesagens da balança. Mostra quanto o livre rende, quanto as mesmas pessoas pagariam no quilo
         e o efeito de subir o livre. Quem aperta “Livre” sem pesar entra com a média de quem pesou no dia.

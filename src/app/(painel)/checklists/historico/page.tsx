@@ -71,7 +71,7 @@ export default async function HistoricoChecklistsPage({
       <Link href="/checklists" className="text-sm font-semibold text-texto-marca hover:underline">← Checklists de hoje</Link>
       <div className="mt-2 mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="caderno" tamanho={20} className="mr-2" /> Histórico de checklists</h1>
+          <h1 className="titulo-pagina"><Icone nome="caderno" tamanho={20} className="mr-2" /> Histórico de checklists</h1>
           <p className="mt-1 text-texto-suave">Quem fez, quando, e o que mais fica pendente.</p>
         </div>
         <form className="flex flex-wrap items-end gap-2">

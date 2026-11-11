@@ -74,7 +74,7 @@ export function GestaoFolgas({
   return (
     <div className="pagina">
       <div className="mb-4">
-        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="folga" tamanho={19} /> Folgas</h1>
+        <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="folga" tamanho={19} /> Folgas</h1>
         <p className="text-xs text-texto-suave">Cadastro da equipe e escala agora em <b>Cadastros → Colaboradores</b>.</p>
       </div>
 
@@ -116,7 +116,7 @@ type Ctx = {
   setAviso: (a: { ok: boolean; txt: string } | null) => void;
 };
 
-const card = "rounded-cartao border border-borda bg-painel-cartao p-4  ";
+const card = "cartao p-4 ";
 
 // ======================= ABA PEDIDOS =======================
 function AbaPedidos({ equipe, pedidos, byId, limites, ajustes, bloqueios, hojeIso, proc, run }: Ctx) {

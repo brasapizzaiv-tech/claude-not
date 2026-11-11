@@ -84,7 +84,7 @@ export default async function SalaoPage() {
   return (
     <div className="pagina">
       <p className="rotulo">Operação</p>
-      <h1 className="mb-4 mt-1 flex flex-wrap items-center gap-3 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">
+      <h1 className="mb-4 mt-1 flex flex-wrap items-center gap-3 titulo-pagina">
         Salão
         <span className="pilula">{nOcupadas} {nOcupadas === 1 ? "ocupada" : "ocupadas"}</span>
         {nConta > 0 && <span className="pilula pilula-urgente">{nConta} pediu a conta</span>}

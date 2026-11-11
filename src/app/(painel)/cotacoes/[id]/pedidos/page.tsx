@@ -52,7 +52,7 @@ export default async function PedidosPage({
       >
         ← Voltar para a comparação
       </Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="mt-2 titulo-pagina">
         Pedidos
       </h1>
       <p className="mt-1 text-texto-suave">

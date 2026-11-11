@@ -183,7 +183,7 @@ export default async function ComandaPage({
       <p className="rotulo">
         <Link href="/salao" className="hover:text-texto">Salão</Link> · comanda{comanda.mesa ? ` · ${comanda.mesa}` : ""}
       </p>
-      <h1 className="mt-1 flex flex-wrap items-center gap-3 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">
+      <h1 className="mt-1 flex flex-wrap items-center gap-3 titulo-pagina">
         #{comanda.numero}
         {fechada ? <span className="pilula pilula-neutra">fechada</span> : comanda.conta_pedida_em ? <span className="pilula pilula-urgente">pediu a conta</span> : <span className="pilula">aberta</span>}
         {comanda.livre && <span className="pilula pilula-grafite">buffet livre</span>}

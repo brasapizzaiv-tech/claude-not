@@ -138,7 +138,7 @@ export function AgendaReservas({
   return (
     <div className="pagina">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Reservas</h1>
+        <h1 className="titulo-pagina">Reservas</h1>
         <a
           href="/reservas/hoje"
           className="btn-principal min-h-11 px-4 text-sm"
@@ -679,7 +679,7 @@ function NovaReserva({
             if (r.ok) setD({ ...vazio, data: d.data });
           });
         }}
-        className="mt-3 w-full rounded-controle bg-orange-500 px-4 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+        className="mt-3 w-full btn-principal min-h-11 px-4 text-sm"
       >
         {proc ? "Salvando..." : "Salvar reserva"}
       </button>

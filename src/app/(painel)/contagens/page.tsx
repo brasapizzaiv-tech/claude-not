@@ -31,7 +31,7 @@ export default async function ContagensPage() {
     <div className="pagina">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Contagem de estoque
           </h1>
           <p className="mt-1 text-texto-suave">
@@ -95,11 +95,11 @@ export default async function ContagensPage() {
                     </td>
                     <td className="px-4 py-3">
                       {c.status === "finalizada" ? (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-ok-texto dark:bg-green-950 dark:text-green-300">
+                        <span className="pilula pilula-ok">
                           Finalizada
                         </span>
                       ) : (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-aviso-texto dark:bg-amber-950 dark:text-amber-300">
+                        <span className="pilula pilula-aviso">
                           Rascunho
                         </span>
                       )}

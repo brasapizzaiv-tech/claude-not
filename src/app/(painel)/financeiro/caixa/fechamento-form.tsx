@@ -87,7 +87,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
     <div className="pagina">
       <Link href="/financeiro/caixa" className="text-sm font-semibold text-texto-marca hover:underline">← Fechamentos de caixa
       </Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="mt-2 titulo-pagina">
         {inicial.id ? "Editar fechamento" : "Novo fechamento de caixa"}
       </h1>
 
@@ -204,7 +204,7 @@ export function FechamentoForm({ inicial }: { inicial: EntradaFechamento }) {
         <button
           onClick={() => start(async () => { await salvarFechamento(f); })}
           disabled={proc || !f.data}
-          className="rounded-controle bg-orange-500 px-5 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+          className="btn-principal min-h-11 px-5 text-sm"
         >
           {proc ? "Salvando..." : "Salvar fechamento"}
         </button>

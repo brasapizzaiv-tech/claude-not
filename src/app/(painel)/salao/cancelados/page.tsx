@@ -68,7 +68,7 @@ export default async function CanceladosPage() {
   return (
     <div className="pagina">
       <Link href="/salao" className="text-sm font-semibold text-texto-marca hover:underline">← Salão</Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Cancelados / excluídos</h1>
+      <h1 className="mt-2 titulo-pagina">Cancelados / excluídos</h1>
       <p className="mt-1 text-sm text-texto-suave">Auditoria: comandas excluídas e itens cancelados, com o motivo, quem fez e quando.</p>
 
       <div className="mt-4 overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">

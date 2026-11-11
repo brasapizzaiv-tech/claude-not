@@ -149,7 +149,7 @@ export default async function NotaDetalhePage({
       <Link href="/notas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar para notas
       </Link>
 
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="mt-2 titulo-pagina">
         {nota.emit_nome}
       </h1>
       <p className="mt-1 text-sm text-texto-suave">

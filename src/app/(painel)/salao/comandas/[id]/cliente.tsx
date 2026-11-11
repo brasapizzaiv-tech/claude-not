@@ -361,7 +361,7 @@ function MontarCombo({
           <button
             onClick={confirmar}
             disabled={p || faltaMin}
-            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50"
+            className="btn-principal min-h-11 px-5 text-sm"
           >
             {faltaMin ? "Escolha as opções" : "Adicionar"}
           </button>
@@ -561,7 +561,7 @@ export function MontarPizza({
           <button
             onClick={add}
             disabled={p || !tamId || sel.length === 0}
-            className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+            className="btn-principal min-h-11 px-5 text-sm"
           >
             Adicionar pizza
           </button>

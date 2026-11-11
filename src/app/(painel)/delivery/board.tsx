@@ -377,7 +377,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
       <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
         <div className="shrink-0">
           <p className="rotulo">Delivery · {turnoTexto}</p>
-          <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Pedidos</h1>
+          <h1 className="mt-1 titulo-pagina">Pedidos</h1>
         </div>
         <label className="flex h-[46px] w-full max-w-[420px] flex-1 items-center gap-2.5 rounded-controle bg-painel-cartao px-4 shadow-controle">
           <Icone nome="buscar" tamanho={18} className="shrink-0 text-texto-fraco" />

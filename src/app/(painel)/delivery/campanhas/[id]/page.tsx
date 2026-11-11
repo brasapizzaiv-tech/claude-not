@@ -62,7 +62,7 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
       <Link href="/delivery/campanhas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pras campanhas</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-start gap-3">
         <div className="min-w-0">
-          <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="megafone" tamanho={19} /> {camp.nome}</h1>
+          <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="megafone" tamanho={19} /> {camp.nome}</h1>
           <p className={`text-sm font-medium ${st.cor}`}>{st.rotulo}</p>
         </div>
         <div className="ml-auto"><AcoesCampanha id={camp.id} status={camp.status} /></div>

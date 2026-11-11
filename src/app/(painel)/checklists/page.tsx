@@ -43,7 +43,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
     <div className="pagina">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>
+          <h1 className="titulo-pagina"><Icone nome="checklist" tamanho={20} className="mr-2" /> Checklists de hoje</h1>
           <p className="mt-1 text-texto-suave">
             {dia === hoje ? "Hoje" : core.dataCurta(dia)} · o que cada setor já fez.
           </p>
@@ -53,7 +53,7 @@ export default async function ChecklistsHojePage({ searchParams }: { searchParam
           {dia !== hoje && <Link href="/checklists" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">hoje</Link>}
           <Link href="/checklists/revisao" className="rounded-controle border border-amber-500 px-3 py-2 text-sm font-semibold text-aviso-texto hover:bg-amber-50 dark:text-amber-300"><Icone nome="buscar" tamanho={14} className="mr-1.5" /> Revisar e apontar</Link>
           <Link href="/checklists/historico" className="rounded-controle border border-borda-forte px-3 py-2 text-sm">Histórico</Link>
-          <Link href="/checklists/modelos" className="rounded-controle bg-orange-500 px-3 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105">Modelos</Link>
+          <Link href="/checklists/modelos" className="btn-principal min-h-11 px-3 text-sm">Modelos</Link>
         </div>
       </div>
 

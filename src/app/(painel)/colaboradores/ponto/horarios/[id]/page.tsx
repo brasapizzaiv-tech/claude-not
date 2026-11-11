@@ -53,7 +53,7 @@ export default async function EditarHorarioPage({ params, searchParams }: { para
         <Link href="/colaboradores/ponto" className="hover:text-texto">Relatórios de ponto</Link> ·{" "}
         <Link href="/colaboradores/ponto/horarios" className="hover:text-texto">Horários</Link>
       </p>
-      <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">
+      <h1 className="mt-1 titulo-pagina">
         {horario?.id ? horario.nome : "Novo horário"}
       </h1>
       <EditorHorario inicial={horario ?? { ...NOVO, id: "" }} />

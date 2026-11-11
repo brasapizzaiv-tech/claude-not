@@ -85,7 +85,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
     <div className="pagina">
       <Link href="/delivery" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pro painel</Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="grafico" tamanho={19} /> Relatórios do delivery</h1>
+        <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="grafico" tamanho={19} /> Relatórios do delivery</h1>
         <div className="ml-auto flex gap-1">
           {[[1, "Hoje"], [7, "7 dias"], [30, "30 dias"]].map(([d, lbl]) => (
             <Link key={d} href={`/delivery/relatorios?dias=${d}`} className={`filtro ${nDias === d ? "filtro-ativo" : ""}`} aria-current={nDias === d ? "page" : undefined}>{lbl}</Link>

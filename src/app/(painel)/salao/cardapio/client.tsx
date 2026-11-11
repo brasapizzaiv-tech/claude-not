@@ -650,27 +650,27 @@ function ItensTabela({
                     <form action={toggleItem} className="inline">
                       <input type="hidden" name="id" value={i.id} />
                       <input type="hidden" name="ativo" value={i.ativo ? "0" : "1"} />
-                      <Enviar className="mr-3 text-texto-fraco hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
+                      <Enviar className="mr-1 inline-flex min-h-11 items-center px-2 text-texto-fraco hover:text-orange-600" title={i.ativo ? "Ocultar" : "Mostrar"}>
                         {i.ativo ? "Ocultar" : "Mostrar"}
                       </Enviar>
                     </form>
                     {i.combo && (
-                      <Link href={`/salao/cardapio/combos/${i.id}`} className="mr-3 font-semibold text-texto-marca hover:underline">
+                      <Link href={`/salao/cardapio/combos/${i.id}`} className="mr-1 inline-flex min-h-11 items-center px-2 font-semibold text-texto-marca hover:underline">
                         Etapas do combo
                       </Link>
                     )}
                     {!i.combo && comAdicionais.has(i.id) && (
-                      <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-3 text-ok-texto hover:underline">
+                      <Link href={`/salao/cardapio/adicionais/${i.id}`} className="mr-1 inline-flex min-h-11 items-center px-2 text-ok-texto hover:underline">
                         Adicionais
                       </Link>
                     )}
-                    <button onClick={() => onEditar(i)} className="mr-3 text-orange-600 hover:underline">Editar</button>
+                    <button onClick={() => onEditar(i)} className="mr-1 inline-flex min-h-11 items-center px-2 text-orange-600 hover:underline">Editar</button>
                     <BotaoAcao
                       aoClicar={async () => {
                         if (!(await confirmar(`Remover "${i.nome}"?`, { perigo: true, okTexto: "Remover" }))) return;
                         await excluirItem(comId(i.id));
                       }}
-                      className="text-texto-fraco hover:text-urgente-texto"
+                      className="inline-flex min-h-11 items-center px-2 text-texto-fraco hover:text-urgente-texto"
                     >
                       Remover
                     </BotaoAcao>

@@ -70,7 +70,7 @@ export default async function LembretesPage() {
 
   return (
     <div className="pagina">
-      <h1 className="flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="sino" tamanho={19} /> Lembretes pra equipe</h1>
+      <h1 className="flex items-center gap-2 titulo-pagina"><Icone nome="sino" tamanho={19} /> Lembretes pra equipe</h1>
       <p className="mb-5 text-sm text-texto-suave">
         Aparece no app de cada pessoa no dia marcado, com um botão de Visto ou Feito. Aqui você vê quem ainda não confirmou.
       </p>

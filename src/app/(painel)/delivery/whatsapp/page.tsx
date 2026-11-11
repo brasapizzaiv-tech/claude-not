@@ -34,7 +34,7 @@ export default async function WhatsappPage() {
   return (
     <div className="pagina">
       <Link href="/delivery/campanhas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar pras campanhas</Link>
-      <h1 className="mt-2 flex items-center gap-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto"><Icone nome="zap" tamanho={19} /> Modelos e limites do WhatsApp</h1>
+      <h1 className="mt-2 flex items-center gap-2 titulo-pagina"><Icone nome="zap" tamanho={19} /> Modelos e limites do WhatsApp</h1>
       <p className="mb-5 text-sm text-texto-suave">
         Fora de uma conversa aberta pelo cliente, o WhatsApp oficial só deixa mandar mensagens de modelos aprovados pela Meta.
         Crie o modelo aqui, espere aprovar (costuma levar minutos) e use nas campanhas e gatilhos.

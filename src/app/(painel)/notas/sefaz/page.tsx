@@ -34,7 +34,7 @@ export default async function SefazPage() {
     <div className="pagina">
       <Link href="/notas" className="text-sm font-semibold text-texto-marca hover:underline">← Voltar para notas
       </Link>
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="mt-2 titulo-pagina">
         SEFAZ automático
       </h1>
       <p className="mt-1 mb-6 text-texto-suave">

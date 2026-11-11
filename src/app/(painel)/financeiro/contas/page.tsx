@@ -68,7 +68,7 @@ export default async function ContasPagarPage({
     <div className="pagina">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+          <h1 className="titulo-pagina">
             Contas a pagar
           </h1>
           <p className="mt-0.5 text-sm text-texto-suave">

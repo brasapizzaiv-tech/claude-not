@@ -69,7 +69,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold">1. Perfis fiscais</h2>
-          <button onClick={() => setEditando({ ...VAZIO })} className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-medium text-marca-sobre-primaria">+ Novo perfil</button>
+          <button onClick={() => setEditando({ ...VAZIO })} className="btn-principal min-h-11 px-3 text-sm">+ Novo perfil</button>
         </div>
         <div className="overflow-x-auto rounded-cartao bg-painel-cartao" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
           <table className="w-full min-w-[760px] text-sm">
@@ -99,7 +99,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
                   <td className="px-3 py-2 font-mono text-xs">{p.csosn}</td>
                   <td className="px-3 py-2 font-mono text-xs">{p.origem}</td>
                   <td className="px-3 py-2 font-mono text-xs">{p.unidade}</td>
-                  <td className="px-3 py-2 text-xs">{p.homologado ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-ok-texto dark:bg-emerald-950 dark:text-emerald-300">✓ contador</span> : <span className="text-aviso-texto">pendente</span>}</td>
+                  <td className="px-3 py-2 text-xs">{p.homologado ? <span className="pilula pilula-ok">✓ contador</span> : <span className="text-aviso-texto">pendente</span>}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button onClick={() => setEditando({ id: p.id, nome: p.nome, ncm: p.ncm ?? "", cest: p.cest ?? "", cfop: p.cfop, csosn: p.csosn, origem: p.origem, unidade: p.unidade, pis_cst: p.pis_cst, cofins_cst: p.cofins_cst, homologado: p.homologado, obs: p.obs ?? "", is_cst: p.is_cst, is_classificacao: p.is_classificacao, is_aliquota: p.is_aliquota, ibs_cbs_cst: p.ibs_cbs_cst, ibs_cbs_classificacao: p.ibs_cbs_classificacao, ibs_uf_aliquota: p.ibs_uf_aliquota, ibs_mun_aliquota: p.ibs_mun_aliquota, cbs_aliquota: p.cbs_aliquota })} className="mr-3 text-orange-600 hover:underline">Editar</button>
                     <button disabled={pend}
@@ -305,7 +305,7 @@ export function PerfisClient({ perfis, categorias, itens, padrao }: { perfis: Pe
             </label>
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setEditando(null)} className="rounded-controle px-4 py-2 text-sm text-texto-suave">Cancelar</button>
-              <button type="submit" disabled={pend} className="rounded-controle bg-orange-500 px-4 py-2 text-sm font-medium text-marca-sobre-primaria disabled:opacity-50">Salvar</button>
+              <button type="submit" disabled={pend} className="btn-principal min-h-11 px-4 text-sm">Salvar</button>
             </div>
           </form>
         </Janela>

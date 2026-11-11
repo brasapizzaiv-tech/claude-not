@@ -396,7 +396,7 @@ export function BancoTabela({
                                   run(() => lancarNotaEConciliar(t.id, t.notaSugeridaId!))
                                 }
                                 title={t.notaSugeridaLabel ?? ""}
-                                className="rounded-controle bg-orange-500 px-3 py-1.5 text-xs font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+                                className="btn-principal min-h-9 px-3 text-xs"
                               >
                                 Lançar nota e conciliar
                               </button>
@@ -535,7 +535,7 @@ export function BancoTabela({
                                     ),
                                   )
                                 }
-                                className="mt-2 rounded-controle bg-orange-500 px-3 py-2 text-xs font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+                                className="mt-2 btn-principal min-h-9 px-3 text-xs"
                               >
                                 {partes.length > 0
                                   ? `Gerar ${partes.length} lançamentos e conciliar`

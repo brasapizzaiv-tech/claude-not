@@ -86,7 +86,7 @@ export function AtribuirClient({
         ← Voltar para a contagem
       </Link>
 
-      <h1 className="mt-2 font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+      <h1 className="mt-2 titulo-pagina">
         Dividir contagem por categoria
       </h1>
       <p className="mt-1 text-texto-suave">
@@ -125,7 +125,7 @@ export function AtribuirClient({
           <BotaoAcao
             aoClicar={darTudo}
             disabled={!todosPara}
-            className="rounded-controle bg-orange-500 px-4 py-1.5 text-sm font-medium text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+            className="btn-principal min-h-11 px-4 text-sm"
           >
             Atribuir tudo
           </BotaoAcao>

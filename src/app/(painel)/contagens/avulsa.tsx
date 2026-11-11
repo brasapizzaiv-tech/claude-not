@@ -118,7 +118,7 @@ export function AvulsaForm({
             <button
               onClick={criar}
               disabled={p || !colab || cats.length === 0}
-              className="w-full rounded-controle bg-orange-500 px-4 py-2.5 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-60"
+              className="w-full btn-principal min-h-11 px-4 text-sm"
             >
               {p ? "Criando..." : "Criar e gerar link"}
             </button>

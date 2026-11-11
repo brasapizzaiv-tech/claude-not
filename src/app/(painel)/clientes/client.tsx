@@ -82,7 +82,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
       <Link href="/dashboard" className="text-sm font-semibold text-texto-marca hover:underline">← Início</Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Clientes</h1>
+          <h1 className="titulo-pagina">Clientes</h1>
           <p className="mt-1 text-sm text-texto-suave">Para emitir NF-e com o cliente (CNPJ/CPF).</p>
         </div>
         <button
@@ -219,7 +219,7 @@ export function ClientesClient({ clientes, buscaInicial = "" }: { clientes: Clie
               <button type="button" onClick={() => setAberto(false)} className="rounded-controle border border-borda-forte px-4 py-2 text-sm">
                 Cancelar
               </button>
-              <Enviar disabled={salvando} className="rounded-controle bg-orange-500 px-5 py-2 text-sm font-semibold text-marca-sobre-primaria hover:brightness-105 disabled:opacity-50">
+              <Enviar disabled={salvando} className="btn-principal min-h-11 px-5 text-sm">
                 {salvando ? "Salvando..." : "Salvar"}
               </Enviar>
             </div>

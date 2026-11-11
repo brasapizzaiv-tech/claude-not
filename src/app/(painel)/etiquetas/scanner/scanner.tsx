@@ -135,7 +135,7 @@ export function Scanner() {
   return (
     <div className="pagina max-w-xl">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">
+        <h1 className="titulo-pagina">
           Leitor de etiquetas
         </h1>
         <Link href="/etiquetas" className="text-sm text-orange-600 hover:underline">
@@ -179,7 +179,7 @@ export function Scanner() {
           <div className="absolute inset-0 flex items-center justify-center">
             <button
               onClick={ligar}
-              className="rounded-cartao bg-orange-500 px-6 py-3 font-semibold text-marca-sobre-primaria hover:brightness-105"
+              className="btn-principal min-h-11 px-5 text-sm"
             >
               Ligar câmera
             </button>

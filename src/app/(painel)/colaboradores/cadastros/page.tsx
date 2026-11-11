@@ -33,7 +33,7 @@ export default async function CadastrosPage() {
   return (
     <div className="pagina">
       <p className="rotulo"><Link href="/colaboradores" className="hover:text-texto">Colaboradores</Link></p>
-      <h1 className="mt-1 font-numero text-[30px] font-bold leading-[1.05] tracking-apertada text-texto">Cadastros</h1>
+      <h1 className="mt-1 titulo-pagina">Cadastros</h1>
       <p className="mt-1 max-w-2xl text-sm text-texto-suave">As listas que aparecem na ficha de cada pessoa. Apagar um item que alguém usa só tira ele das listas; o histórico continua.</p>
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
         <ListaCadastro tabela="departamentos" titulo="Departamentos" contagem="pessoas ativas" itens={montar(deps, contar("departamento_id", true))} />

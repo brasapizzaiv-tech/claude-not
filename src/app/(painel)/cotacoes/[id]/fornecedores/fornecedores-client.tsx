@@ -318,7 +318,7 @@ export function FornecedoresClient({
                 <button
                   onClick={copiarLinkUnico}
                   disabled={selUnico.size < 2}
-                  className="rounded-controle bg-orange-500 px-3 py-1.5 text-sm font-semibold text-marca-sobre-primaria disabled:opacity-50"
+                  className="btn-principal min-h-11 px-3 text-sm"
                 >
                   {copiadoUnico ? "✓ Link copiado!" : `Copiar link único (${selUnico.size} empresas)`}
                 </button>

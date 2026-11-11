@@ -80,7 +80,7 @@ export default async function SaudePage() {
   return (
     <div className="pagina space-y-6">
       <header>
-        <h1 className="font-numero text-[28px] font-bold leading-[1.1] tracking-apertada text-texto">Saúde do sistema</h1>
+        <h1 className="titulo-pagina">Saúde do sistema</h1>
         <p className="mt-1 max-w-2xl text-sm text-texto-suave">
           O último sinal de cada peça que roda fora daqui: os programas dos PCs do restaurante, a balança, os pinpads,
           o relógio de ponto, a SEFAZ, as rotinas automáticas e o WhatsApp. Atualizado em {quando(s.agora)}.

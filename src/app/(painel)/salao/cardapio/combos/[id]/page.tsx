@@ -45,7 +45,7 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
         <Foto url={item.foto_url} tam="h-14 w-14" />
         <div className="min-w-0 flex-1">
           <div className="rotulo">Combo</div>
-          <h1 className="font-numero text-[26px] font-bold leading-[1.1] tracking-apertada text-texto">{item.nome}</h1>
+          <h1 className="titulo-pagina">{item.nome}</h1>
         </div>
         <UploadFoto tipo="item" id={item.id} temFoto={!!item.foto_url} />
       </div>
