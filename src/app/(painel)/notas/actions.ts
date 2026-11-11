@@ -419,7 +419,7 @@ export async function lancarNota(
         const fatia = ultima
           ? Math.round((valorConta - acumulado) * 100) / 100
           : Math.round((valorConta * (Number(p.valor) / totalNota)) * 100) / 100;
-        acumulado += fatia;
+        acumulado = Math.round((acumulado + fatia) * 100) / 100;
         if (fatia <= 0) return;
         novos.push({
           data: dataLanc,
@@ -441,7 +441,8 @@ export async function lancarNota(
       novos.push({
         data: dataLanc,
         categoria_id: contaId,
-        valor,
+        // FIN-05: a soma dos itens por conta vinha com resíduo (647,3199999999999).
+        valor: Math.round(valor * 100) / 100,
         descricao,
         fornecedor_id: nota.fornecedor_id,
         origem: "nota",

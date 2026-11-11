@@ -132,7 +132,8 @@ export function BancoTabela({
       .map((t) => ({ transacaoId: t.id, lancamentoId: t.sugestaoId! }));
     if (pares.length === 0) return;
     start(async () => {
-      await conciliarVarias(pares);
+      const r = await conciliarVarias(pares);
+      if (r.erro) void avisar(r.erro);
       setSel(new Set());
       router.refresh();
     });

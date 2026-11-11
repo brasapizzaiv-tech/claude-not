@@ -14,6 +14,7 @@ import { desfazerLancamentosNota } from "./notas-fiscais/avulsa/actions";
 import { atualizarPelaFocus, type LinhaNota } from "@/lib/fiscal/conferir-notas";
 import { linhasDaNota, unidadeDaLinha, type ItemCoberto } from "@/lib/fiscal/recebimento-nota";
 import { explicarErro } from "@/lib/erro-amigavel";
+import { docValido, MSG_DOC_INVALIDO } from "@/lib/fiscal/cnpj";
 
 // Mapa das nossas formas de pagamento -> código da NFC-e (Focus/SEFAZ).
 const FORMA_FOCUS: Record<string, string> = {
@@ -229,13 +230,14 @@ async function emitirNfceCore(supabase: ClienteSupabase, comandaIds: string[], d
   if (!docLimpo && com.cliente_id) {
     const { data: cli } = await supabase.from("clientes").select("nome, cpf_cnpj").eq("id", com.cliente_id as string).maybeSingle();
     const d = String((cli as { cpf_cnpj?: string | null } | null)?.cpf_cnpj ?? "").replace(/\D/g, "");
-    if (d.length === 11 || d.length === 14) {
+    // Documento do cadastro com dígito errado fica de fora (a SEFAZ recusaria a nota toda).
+    if (docValido(d)) {
       docLimpo = d;
       nomeDest = ((cli as { nome?: string } | null)?.nome ?? "").trim().slice(0, 60) || undefined;
     }
   }
-  if (docLimpo && docLimpo.length !== 11 && docLimpo.length !== 14) {
-    return { ok: false, mensagem: "CPF tem 11 dígitos e CNPJ 14. Confira o número." };
+  if (docLimpo && !docValido(docLimpo)) {
+    return { ok: false, mensagem: MSG_DOC_INVALIDO };
   }
 
   // Recebimento: as linhas são o que ele cobriu; comanda: todos os itens.

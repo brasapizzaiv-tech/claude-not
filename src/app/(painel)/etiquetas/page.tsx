@@ -5,6 +5,7 @@ import { contarFaixas, ehData, faixaDe, faixaDias, faixaValida, hojeSP } from "@
 import { PainelVencimentos, FaixaDias, type ItemEtq, type CatEtq } from "@/components/etiqueta-ui";
 import { EtiquetaForm, type Imp } from "./etiqueta-form";
 import { ListaEtiquetas, type EtLinha } from "./lista";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Etiquetas" };
 
@@ -40,7 +41,7 @@ export default async function EtiquetasPage({
       historico
         ? supabase.from("etiquetas").select(COLS).in("status", ["usada", "descartada"]).order("baixa_em", { ascending: false }).limit(300)
         : supabase.from("etiquetas").select(COLS).eq("status", "ativa").order("validade", { ascending: true, nullsFirst: false }).limit(1000),
-      supabase.from("etiquetas").select("validade").eq("status", "ativa").limit(5000),
+      buscarTodas<Record<string, unknown>>((de, ate) => supabase.from("etiquetas").select("validade").eq("status", "ativa").order("id").range(de, ate)).then((data) => ({ data })),
       supabase.from("etiquetas").select("id", { count: "exact", head: true }).in("status", ["usada", "descartada"]),
     ]);
 

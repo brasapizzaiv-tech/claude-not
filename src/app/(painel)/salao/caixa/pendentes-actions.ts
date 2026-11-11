@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
 import { explicarErro } from "@/lib/erro-amigavel";
+import { docValido, MSG_DOC_INVALIDO } from "@/lib/fiscal/cnpj";
 
 const soDoc = (s: string) => (s || "").replace(/\D/g, "");
 
@@ -12,9 +13,7 @@ const soDoc = (s: string) => (s || "").replace(/\D/g, "");
 export async function salvarCpfPendente(id: string, documento: string) {
   await exigirAcesso("/salao");
   const doc = soDoc(documento);
-  if (doc && doc.length !== 11 && doc.length !== 14) {
-    return { ok: false as const, mensagem: "CPF tem 11 números e CNPJ tem 14." };
-  }
+  if (doc && !docValido(doc)) return { ok: false as const, mensagem: MSG_DOC_INVALIDO };
   const supabase = await createClient();
   const { error } = await supabase
     .from("nfce_pendentes")
@@ -31,9 +30,7 @@ export async function emitirNotaPendenteAgora(id: string, documento?: string) {
   await exigirAcesso("/salao");
   const supabase = await createClient();
   const doc = soDoc(documento ?? "");
-  if (doc && doc.length !== 11 && doc.length !== 14) {
-    return { ok: false as const, mensagem: "CPF tem 11 números e CNPJ tem 14." };
-  }
+  if (doc && !docValido(doc)) return { ok: false as const, mensagem: MSG_DOC_INVALIDO };
 
   // Só emite quem conseguir tirar a linha de "aguardando" — evita duas notas
   // se a rotina automática pegar a mesma conta no mesmo instante.

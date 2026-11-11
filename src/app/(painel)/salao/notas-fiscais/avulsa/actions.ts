@@ -12,6 +12,7 @@ import { tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { buscarCnpj, soDigitos } from "@/lib/fiscal/cnpj";
 import { consultarNfe, emitirNfce, emitirNfe, type FocusAmbiente, type FocusResposta } from "@/lib/fiscal/focus";
+import { buscarTodas } from "@/lib/supabase/todas";
 import {
   agruparItens, conferirNota, montarNfceAvulsa, montarNfe, totalLinhas,
   type DestNota, type LinhaNota, type ModeloNota, type PadroesFiscais, type PerfilNota,
@@ -98,7 +99,7 @@ export async function comprasDoCliente(clienteId: string, de: string, ate: strin
   if (comandas.length === 0) return { ok: true as const, linhas: [] as LinhaNota[], comandaIds: [] as string[], jaFaturadas: 0, total: 0 };
   const ids = comandas.map((c) => c.id);
   const [{ data: itens }, { data: notas }] = await Promise.all([
-    db.from("pdv_comanda_itens").select("item_id, descricao, qtd, preco_unit").in("comanda_id", ids).limit(5000),
+    buscarTodas<Record<string, unknown>>((de, ate) => db.from("pdv_comanda_itens").select("item_id, descricao, qtd, preco_unit").in("comanda_id", ids).order("id").range(de, ate)).then((data) => ({ data })),
     db.from("nfce_emitidas").select("comanda_ids").eq("avulsa", true).eq("status", "autorizado").overlaps("comanda_ids", ids),
   ]);
   const ja = new Set(((notas as { comanda_ids: string[] | null }[]) ?? []).flatMap((n) => n.comanda_ids ?? []));

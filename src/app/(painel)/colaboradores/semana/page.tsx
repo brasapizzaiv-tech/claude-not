@@ -5,6 +5,7 @@ import { SemanaClient, type Pessoa } from "./semana";
 import { descontoDezPadrao, sincronizarDezDoCaixa } from "@/lib/dez-caixa";
 import { cofreIniciado, saldoAtual } from "@/lib/cofre-core";
 import { empresaAtualId } from "@/lib/empresa";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       .order("data"),
     supabase.from("semana_pagamentos").select("colaborador_id, valor, lancamento_id, desconto").eq("segunda", segunda),
     // Fiado em aberto (compras internas) — pra poder descontar no acerto.
-    supabase.from("retiradas").select("colaborador_id, valor").eq("status", "aberto").limit(5000),
+    buscarTodas<Record<string, unknown>>((de, ate) => supabase.from("retiradas").select("colaborador_id, valor").eq("status", "aberto").order("id").range(de, ate)).then((data) => ({ data })),
     supabase.from("semana_extras").select("colaborador_id, valor, motivo, turno, desconto, desconto_motivo").eq("segunda", segunda),
     // Adiantamentos ainda não descontados — saem no próximo acerto lançado.
     supabase.from("adiantamentos").select("id, colaborador_id, nome, valor, data, motivo").eq("status", "aberto").order("data"),
@@ -91,13 +92,12 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
 
   // Relógio de ponto (migration 0221): horários de cada um na semana + batidas
   // de quem ainda não está ligado a um colaborador (CPF não cadastrado).
-  const { data: batRows } = await supabase
+  const { data: batRows } = await buscarTodas<Record<string, unknown>>((de, ate) => supabase
     .from("ponto_batidas")
     .select("colaborador_id, data, turno, data_hora, cpf, nome")
     .gte("data", segunda)
     .lte("data", fim)
-    .order("data_hora")
-    .limit(5000);
+    .order("data_hora").order("id").range(de, ate)).then((data) => ({ data }));
   const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
   type Bat = { colaborador_id: string | null; data: string; turno: "dia" | "noite"; data_hora: string; cpf: string; nome: string | null };
   const batidas = (batRows ?? []) as Bat[];

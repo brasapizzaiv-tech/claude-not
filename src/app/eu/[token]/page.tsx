@@ -17,6 +17,7 @@ import { RenovarAcesso } from "./renovar-acesso";
 import { AvisosCelular } from "./avisos-celular";
 import { EntregaObrigatoria } from "./entrega-obrigatoria";
 import { pontoAResponder } from "@/lib/ponto-espelho";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
 
@@ -151,7 +152,7 @@ export default async function AppColaboradorPage({
   let contasAbertas = 0;
   let contasVencidas = 0;
   if (fazContas) {
-    const { data: abertas } = await admin.from("lancamentos").select("vencimento, dre_categorias(tipo)").eq("empresa_id", colab?.empresa_id as string).eq("pago", false).limit(3000);
+    const { data: abertas } = await buscarTodas<Record<string, unknown>>((de, ate) => admin.from("lancamentos").select("vencimento, dre_categorias(tipo)").eq("empresa_id", colab?.empresa_id as string).eq("pago", false).order("id").range(de, ate)).then((data) => ({ data }));
     const hojeC = new Date(new Date().getTime() - 3 * 3600 * 1000).toISOString().slice(0, 10);
     for (const l of (abertas as { vencimento: string | null; dre_categorias: { tipo?: string } | { tipo?: string }[] | null }[]) ?? []) {
       const cat = Array.isArray(l.dre_categorias) ? l.dre_categorias[0] : l.dre_categorias;
@@ -164,7 +165,7 @@ export default async function AppColaboradorPage({
   // Painel de vencimentos das etiquetas (só pra quem mexe com etiquetas).
   let contagemEtq = null as ReturnType<typeof contarFaixas> | null;
   if (fazEtiquetas) {
-    const { data: ativas } = await admin.from("etiquetas").select("validade").eq("empresa_id", colab?.empresa_id as string).eq("status", "ativa").limit(2000);
+    const { data: ativas } = await buscarTodas<Record<string, unknown>>((de, ate) => admin.from("etiquetas").select("validade").eq("empresa_id", colab?.empresa_id as string).eq("status", "ativa").order("id").range(de, ate)).then((data) => ({ data }));
     contagemEtq = contarFaixas((ativas as { validade: string | null }[]) ?? [], hojeSP());
   }
 

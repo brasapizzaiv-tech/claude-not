@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { agruparContas, type LinhaConta } from "@/app/(painel)/financeiro/contas/consulta";
 import { colabContas } from "./contas-actions";
 import { ContasColab, type ContaApp } from "./lista";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Contas a pagar · Brasa" };
 
@@ -21,12 +22,12 @@ export default async function ContasColabPage({ params }: { params: Promise<{ to
   }
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data } = await buscarTodas<Record<string, unknown>>((de, ate) => admin
     .from("lancamentos")
     .select("id, nota_id, data, lancamento_em, descricao, valor, vencimento, pago, pago_em, banco, forma_pagamento, origem, ajuste, categoria_id, dre_categorias(nome, tipo), fornecedores(nome)")
+    .eq("empresa_id", colab.empresaId)
     .eq("pago", false)
-    .order("vencimento", { ascending: true, nullsFirst: false })
-    .limit(2000);
+    .order("vencimento", { ascending: true, nullsFirst: false }).order("id").range(de, ate)).then((data) => ({ data }));
 
   // Mesmo agrupamento da tela do painel: uma nota (vários lançamentos) = um boleto.
   const linhas = agruparContas(

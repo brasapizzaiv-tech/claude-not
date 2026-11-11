@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Rodízio · relatório" };
 export const dynamic = "force-dynamic";
@@ -22,13 +23,12 @@ export default async function RelatorioRodizioPage({ searchParams }: { searchPar
   const ate = /^\d{4}-\d{2}-\d{2}$/.test(sp.ate ?? "") ? sp.ate! : hoje;
 
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data } = await buscarTodas<Record<string, unknown>>((de, ate) => supabase
     .from("pedidos_rodizio")
     .select("mesa, sabor, tipo, fracao, quantidade, status, criado_em, pronto_em, garcom")
     .gte("criado_em", `${de}T00:00:00-03:00`)
     .lte("criado_em", `${ate}T23:59:59-03:00`)
-    .order("criado_em")
-    .limit(5000);
+    .order("criado_em").order("id").range(de, ate)).then((data) => ({ data }));
   const linhas = (data as Linha[]) ?? [];
   const validas = linhas.filter((l) => l.status !== "cancelado");
 

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { DreTipo } from "@/lib/types";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { faturamentoPorDia, somarFaturamento } from "@/lib/faturamento";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 function somarDiasISO(dia: string, n: number) {
   const [a, m, d] = dia.split("-").map(Number);
@@ -66,12 +67,11 @@ export default async function DrePage({
 
   const supabase = await createClient();
   const [{ data }, fatDias] = await Promise.all([
-    supabase
+    buscarTodas<Record<string, unknown>>((de, ate) => supabase
       .from("lancamentos")
       .select("valor, data, origem, dre_categorias(nome, tipo, grupo, ordem)")
       .gte("data", ini)
-      .lt("data", fim)
-      .limit(5000),
+      .lt("data", fim).order("id").range(de, ate)).then((data) => ({ data })),
     // Receita REAL, dia a dia: a planilha nos dias importados, o caixa do
     // sistema nos outros (src/lib/faturamento.ts). Antes só a planilha: desde
     // set/2026 o DRE ficava sem receita.

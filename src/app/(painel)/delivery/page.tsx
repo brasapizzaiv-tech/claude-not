@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 import { empresaAtualId } from "@/lib/empresa";
 import { AvisoSaude } from "@/components/aviso-saude";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Delivery" };
 
@@ -40,12 +41,11 @@ export default async function DeliveryPage() {
   const comandaIds = [...new Set(linhas.map((l) => l.comanda_id).filter(Boolean))] as string[];
   const itensDe = new Map<string, PedidoBoard["itens"]>();
   for (let i = 0; i < comandaIds.length; i += 200) {
-    const { data: itens } = await supabase
+    const { data: itens } = await buscarTodas<Record<string, unknown>>((de, ate) => supabase
       .from("pdv_comanda_itens")
       .select("comanda_id, descricao, qtd, preco_unit")
       .in("comanda_id", comandaIds.slice(i, i + 200))
-      .order("criado_em")
-      .limit(5000);
+      .order("criado_em").order("id").range(de, ate)).then((data) => ({ data }));
     for (const it of itens ?? []) {
       const lista = itensDe.get(it.comanda_id as string) ?? [];
       lista.push({ descricao: it.descricao as string, qtd: Number(it.qtd), preco: Number(it.preco_unit || 0) });

@@ -5,6 +5,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { listarFormas } from "@/lib/formas-pagamento-server";
 import { AvulsaClient, type ItemCardapio, type PerfilOpcao } from "./avulsa-client";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Nota avulsa · Notas fiscais" };
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export default async function NotaAvulsaPage() {
   // Só o ambiente e SE existe token de homologação (o valor nunca vai pra tela).
   const empresaId = await empresaAtualId();
   const [{ data: itens }, { data: perfis }, { data: cfgRows }] = await Promise.all([
-    db.from("pdv_itens").select("id, nome, preco, categoria").eq("ativo", true).order("nome").limit(2000),
+    buscarTodas<Record<string, unknown>>((de, ate) => db.from("pdv_itens").select("id, nome, preco, categoria").eq("ativo", true).order("nome").order("id").range(de, ate)).then((data) => ({ data })),
     db.from("perfis_fiscais").select("id, nome, cfop, csosn, ncm").eq("ativo", true).order("nome"),
     empresaId
       ? createAdminClient().from("config_fiscal").select("chave, valor").eq("empresa_id", empresaId).in("chave", ["emissor_ambiente", "emissor_token_homologacao"])

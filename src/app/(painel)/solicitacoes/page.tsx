@@ -1,16 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { SolicitacoesClient, type Pessoa, type Solic } from "./client";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Pedidos da equipe" };
 
 export default async function SolicitacoesPage() {
   const supabase = await createClient();
   const [{ data: lista }, { data: colabs }] = await Promise.all([
-    supabase
+    buscarTodas<Record<string, unknown>>((de, ate) => supabase
       .from("solicitacoes_compra")
       .select("id, colaborador_id, nome, tipo, item, quantidade, motivo, urgente, status, resposta, respondido_em, criado_em")
-      .order("criado_em", { ascending: false })
-      .limit(2000),
+      .order("criado_em", { ascending: false }).order("id").range(de, ate)).then((data) => ({ data })),
     supabase.from("colaboradores").select("id, nome").eq("ativo", true).order("nome"),
   ]);
 

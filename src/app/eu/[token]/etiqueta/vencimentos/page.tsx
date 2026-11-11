@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contarFaixas, faixaDe, faixaValida, hojeSP } from "@/lib/etiqueta-vencimentos";
 import { PainelVencimentos } from "@/components/etiqueta-ui";
 import { ListaVencimentos, type EtqVenc } from "./lista";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Vencimentos · Brasa" };
 
@@ -20,7 +21,7 @@ export default async function VencimentosColabPage({
   const admin = createAdminClient();
   const { data: colab } = await admin
     .from("colaboradores")
-    .select("nome, ativo, faz_etiquetas")
+    .select("nome, ativo, faz_etiquetas, empresa_id")
     .eq("token", token)
     .maybeSingle();
 
@@ -33,12 +34,12 @@ export default async function VencimentosColabPage({
     );
   }
 
-  const { data: ativas } = await admin
+  const { data: ativas } = await buscarTodas<Record<string, unknown>>((de, ate) => admin
     .from("etiquetas")
     .select("id, numero, produto_nome, categoria_nome, validade, conservacao, quantidade, unidade, colaborador_nome")
+    .eq("empresa_id", colab.empresa_id as string)
     .eq("status", "ativa")
-    .order("validade", { ascending: true, nullsFirst: false })
-    .limit(2000);
+    .order("validade", { ascending: true, nullsFirst: false }).order("id").range(de, ate)).then((data) => ({ data }));
   const hoje = hojeSP();
   const todas = (ativas as EtqVenc[]) ?? [];
   const contagem = contarFaixas(todas, hoje);

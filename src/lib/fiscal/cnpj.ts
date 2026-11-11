@@ -38,6 +38,27 @@ export function cnpjValido(cnpj: string): boolean {
   return dv(c.slice(0, 12)) === Number(c[12]) && dv(c.slice(0, 13)) === Number(c[13]);
 }
 
+/** Confere os dois dígitos verificadores do CPF. */
+export function cpfValido(cpf: string): boolean {
+  const c = soDigitos(cpf);
+  if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+  const dv = (n: number) => {
+    let s = 0;
+    for (let i = 0; i < n; i++) s += Number(c[i]) * (n + 1 - i);
+    const r = (s * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return dv(9) === Number(c[9]) && dv(10) === Number(c[10]);
+}
+
+/** FIS-05: CPF (11) ou CNPJ (14) com os dígitos certos. A SEFAZ recusa a nota
+ *  inteira ("destinatário inválido") quando o dígito não bate. */
+export function docValido(doc: string): boolean {
+  const d = soDigitos(doc);
+  return d.length === 11 ? cpfValido(d) : d.length === 14 ? cnpjValido(d) : false;
+}
+export const MSG_DOC_INVALIDO = "CPF ou CNPJ com número errado. Confira os dígitos (CPF tem 11 números e CNPJ 14).";
+
 // Inscrição estadual ativa no estado (CNPJ.ws, consulta pública). Sem resposta = null.
 async function inscricaoEstadual(cnpj: string, uf: string): Promise<string | null> {
   try {

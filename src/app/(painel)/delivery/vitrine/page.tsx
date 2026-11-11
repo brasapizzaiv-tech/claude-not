@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { VitrineClient, type DadosVitrine } from "./vitrine-client";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 export const metadata = { title: "Vitrine do app · Delivery" };
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function VitrinePage() {
   const ids = peds.map((p) => p.comanda_id).filter(Boolean) as string[];
   const somaComanda = new Map<string, number>();
   for (let i = 0; i < ids.length; i += 200) {
-    const { data: its } = await supabase.from("pdv_comanda_itens").select("comanda_id, qtd, preco_unit").in("comanda_id", ids.slice(i, i + 200)).limit(5000);
+    const { data: its } = await buscarTodas<Record<string, unknown>>((de, ate) => supabase.from("pdv_comanda_itens").select("comanda_id, qtd, preco_unit").in("comanda_id", ids.slice(i, i + 200)).order("id").range(de, ate)).then((data) => ({ data }));
     for (const it of its ?? []) somaComanda.set(it.comanda_id as string, (somaComanda.get(it.comanda_id as string) ?? 0) + Number(it.qtd) * Number(it.preco_unit || 0));
   }
   const totais = peds.map((p) => (somaComanda.get(p.comanda_id ?? "") ?? 0) + Number(p.taxa_entrega || 0) - Number(p.desconto || 0));

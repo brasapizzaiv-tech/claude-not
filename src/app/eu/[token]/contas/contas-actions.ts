@@ -10,14 +10,14 @@ export async function colabContas(token: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("colaboradores")
-    .select("id, nome, ativo, faz_contas, pin")
+    .select("id, nome, ativo, faz_contas, pin, empresa_id")
     .eq("token", token)
     .maybeSingle();
   if (!data || !data.ativo || !data.faz_contas) return null;
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
   if (!data.pin || !(await pinConfere(token, pin))) return null;
-  return { id: data.id as string, nome: data.nome as string };
+  return { id: data.id as string, nome: data.nome as string, empresaId: data.empresa_id as string };
 }
 
 // Dá baixa em várias contas pelo app (mesma regra do painel: só as ainda abertas).
@@ -33,6 +33,7 @@ export async function pagarContasColab(token: string, ids: string[], dataPago: s
     .from("lancamentos")
     .update({ pago: true, pago_em: data })
     .in("id", lista)
+    .eq("empresa_id", colab.empresaId)
     .eq("pago", false)
     .select("id");
   if (error) return { ok: false as const, mensagem: explicarErro(error) };

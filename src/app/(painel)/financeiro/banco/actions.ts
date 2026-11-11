@@ -214,7 +214,23 @@ export async function conciliar(transacaoId: string, lancamentoId: string) {
   await carimbarOrigem(supabase, [lancamentoId], t ?? {});
   revalidatePath("/financeiro/banco");
   revalidatePath("/financeiro/contas");
-  return { ok: true };
+  const aviso = await avisoDaSoma(supabase, lancamentoId);
+  return aviso ? { ok: true, erro: aviso } : { ok: true };
+}
+
+// FIN-08: vários movimentos do banco na MESMA conta (pagamento em partes) —
+// se a soma não bate com o valor da conta, avisa (não desfaz: pode ser certo).
+async function avisoDaSoma(supabase: Awaited<ReturnType<typeof createClient>>, lancamentoId: string): Promise<string | null> {
+  const [{ data: movs }, { data: lanc }] = await Promise.all([
+    supabase.from("transacoes_banco").select("valor").eq("lancamento_id", lancamentoId),
+    supabase.from("lancamentos").select("valor").eq("id", lancamentoId).maybeSingle(),
+  ]);
+  const lista = (movs as { valor: number }[] | null) ?? [];
+  if (lista.length < 2 || !lanc) return null;
+  const soma = Math.round(lista.reduce((s, m) => s + Math.abs(Number(m.valor)), 0) * 100) / 100;
+  const conta = Math.round(Math.abs(Number((lanc as { valor: number }).valor)) * 100) / 100;
+  if (Math.abs(soma - conta) < 0.01) return null;
+  return `Conciliado, mas confira: os ${lista.length} movimentos do banco ligados a esta conta somam ${moedaBR(soma)} e a conta é de ${moedaBR(conta)}.`;
 }
 
 // Lança uma nota pendente e já concilia com a transação do banco (marcando paga).
@@ -275,7 +291,8 @@ export async function conciliarVarias(
   }
   revalidatePath("/financeiro/banco");
   revalidatePath("/financeiro/contas");
-  return { ok: true };
+  const avisos = (await Promise.all([...new Set(pares.map((p) => p.lancamentoId).filter(Boolean))].map((id) => avisoDaSoma(supabase, id)))).filter(Boolean);
+  return avisos.length ? { ok: true, erro: avisos.join(" ") } : { ok: true };
 }
 
 // O lançamento ligado foi criado A PARTIR deste extrato ("Gerar lançamento")?

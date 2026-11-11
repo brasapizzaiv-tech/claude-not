@@ -96,7 +96,10 @@ function avancar(dataStr: string, i: number, frequencia: string, dias: number) {
   const [a, m, d] = dataStr.split("-").map(Number);
   let dt: Date;
   if (frequencia === "mensal") {
-    dt = new Date(a, m - 1 + i, d);
+    // FIN-06: dia 29–31 em mês mais curto fica no último dia (31/01 → 28/02, e
+    // não 03/03 pulando fevereiro).
+    const ultimoDia = new Date(a, m + i, 0).getDate();
+    dt = new Date(a, m - 1 + i, Math.min(d, ultimoDia));
   } else {
     const passo =
       frequencia === "semanal" ? 7 : frequencia === "quinzenal" ? 15 : dias;

@@ -3,7 +3,7 @@
 // pura — conferir os dados e montar o pedido pro Focus — pra dar pra testar
 // sem emitir nada. Quem emite é a action da tela.
 import type { FocusItem, FocusItemNfe, FocusNfcePayload, FocusNfePayload } from "@/lib/fiscal/focus";
-import { soDigitos } from "@/lib/fiscal/cnpj";
+import { docValido, MSG_DOC_INVALIDO, soDigitos } from "@/lib/fiscal/cnpj";
 
 export type ModeloNota = "nfe" | "nfce";
 
@@ -64,6 +64,7 @@ export function conferirNota(modelo: ModeloNota, dest: DestNota, linhas: LinhaNo
   if (validas.length !== linhas.length) erros.push("Tem item sem descrição, quantidade ou valor.");
   if (modelo === "nfe") {
     if (doc.length !== 14 && doc.length !== 11) erros.push("NF-e precisa do CNPJ (14 números) ou CPF (11) de quem compra.");
+    else if (!docValido(doc)) erros.push(MSG_DOC_INVALIDO);
     if (dest.nome.trim().length < 2) erros.push("Falta o nome / razão social.");
     if (!dest.logradouro.trim()) erros.push("Falta a rua do endereço.");
     if (!dest.numero.trim()) erros.push("Falta o número do endereço (use S/N se não tiver).");
@@ -72,8 +73,8 @@ export function conferirNota(modelo: ModeloNota, dest: DestNota, linhas: LinhaNo
     if (!/^[A-Z]{2}$/.test(dest.uf.trim().toUpperCase())) erros.push("Falta a UF (ex.: RS).");
     if (soDigitos(dest.cep).length !== 8) erros.push("O CEP tem 8 números.");
     if (dest.indicadorIe === "1" && !soDigitos(dest.ie)) erros.push("Marcou que tem inscrição estadual: falta o número.");
-  } else if (doc && doc.length !== 11 && doc.length !== 14) {
-    erros.push("CPF tem 11 números e CNPJ 14.");
+  } else if (doc && !docValido(doc)) {
+    erros.push(MSG_DOC_INVALIDO);
   }
   return erros;
 }

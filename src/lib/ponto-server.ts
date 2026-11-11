@@ -1,10 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { acharPorNome, lerAfd, soDigitos, turnoDaBatida } from "@/lib/ponto-core";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 /** Remove as batidas do RHiD (origem afd) repetidas de uma batida do relógio da MESMA pessoa (até 90 s). */
 export async function apagarAfdRepetidas(empresaId: string, colaboradorId: string): Promise<number> {
   const admin = createAdminClient();
-  const { data } = await admin.from("ponto_batidas").select("id, origem, data_hora").eq("empresa_id", empresaId).eq("colaborador_id", colaboradorId).limit(20000);
+  const { data } = await buscarTodas<Record<string, unknown>>((de, ate) => admin.from("ponto_batidas").select("id, origem, data_hora").eq("empresa_id", empresaId).eq("colaborador_id", colaboradorId).order("id").range(de, ate)).then((data) => ({ data }));
   const lista = (data ?? []) as { id: string; origem: string; data_hora: string }[];
   // O RHiD arredonda o minuto diferente do relógio: até 90 s de diferença é a mesma batida.
   const doRelogio = lista.filter((b) => b.origem === "relogio").map((b) => new Date(b.data_hora).getTime());
@@ -63,8 +64,8 @@ export async function receberAfd(
   // A mesma batida pode chegar por dois caminhos (relógio pelo agente e AFD
   // importado do RHiD, com NSR diferente): pessoa + hora igual = repetida.
   const horas = batidas.map((b) => new Date(b.dataHora).getTime());
-  const { data: jaTem } = await admin.from("ponto_batidas").select("cpf, colaborador_id, data_hora").eq("empresa_id", empresaId)
-    .gte("data_hora", new Date(Math.min(...horas)).toISOString()).lte("data_hora", new Date(Math.max(...horas)).toISOString()).limit(50000);
+  const { data: jaTem } = await buscarTodas<Record<string, unknown>>((de, ate) => admin.from("ponto_batidas").select("cpf, colaborador_id, data_hora").eq("empresa_id", empresaId)
+    .gte("data_hora", new Date(Math.min(...horas)).toISOString()).lte("data_hora", new Date(Math.max(...horas)).toISOString()).order("id").range(de, ate), 50000).then((data) => ({ data }));
   const existe = new Set<string>();
   for (const x of (jaTem ?? []) as { cpf: string; colaborador_id: string | null; data_hora: string }[]) {
     const t = new Date(x.data_hora).getTime();

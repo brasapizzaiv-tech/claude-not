@@ -3,6 +3,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { buscarTodas } from "@/lib/supabase/todas";
 
 function dados(formData: FormData) {
   const get = (k: string) => {
@@ -38,14 +39,14 @@ async function sincronizarCategoriasFornecedor(
   const add = novas.filter((c) => !antigas.includes(c));
   const rem = antigas.filter((c) => !novas.includes(c));
   if (add.length) {
-    const { data: prods } = await supabase.from("produtos").select("id").in("categoria_id", add).eq("ativo", true).limit(5000);
+    const { data: prods } = await buscarTodas<Record<string, unknown>>((de, ate) => supabase.from("produtos").select("id").in("categoria_id", add).eq("ativo", true).order("id").range(de, ate)).then((data) => ({ data }));
     const linhas = ((prods as { id: string }[]) ?? []).map((p) => ({ fornecedor_id: fornecedorId, produto_id: p.id }));
     for (let i = 0; i < linhas.length; i += 500) {
       await supabase.from("fornecedor_produto").upsert(linhas.slice(i, i + 500), { onConflict: "fornecedor_id,produto_id", ignoreDuplicates: true });
     }
   }
   if (rem.length) {
-    const { data: prods } = await supabase.from("produtos").select("id").in("categoria_id", rem).limit(5000);
+    const { data: prods } = await buscarTodas<Record<string, unknown>>((de, ate) => supabase.from("produtos").select("id").in("categoria_id", rem).order("id").range(de, ate)).then((data) => ({ data }));
     const ids = ((prods as { id: string }[]) ?? []).map((p) => p.id);
     for (let i = 0; i < ids.length; i += 500) {
       await supabase.from("fornecedor_produto").delete().eq("fornecedor_id", fornecedorId).in("produto_id", ids.slice(i, i + 500));
