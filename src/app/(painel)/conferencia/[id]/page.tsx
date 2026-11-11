@@ -6,6 +6,8 @@ import { dataBR } from "@/lib/format";
 import { Enviar } from "@/components/enviar";
 import { remarcarEntrega, encerrarAvisoEntrega } from "../actions";
 import { ConferirClient, type ItemLinha, type NotaLigada, type NotaSugerida } from "./conferir-client";
+import { CobrarFornecedor } from "@/components/cobrar-fornecedor";
+import { empresaAtual } from "@/lib/empresa";
 
 export default async function ConferirPage({
   params,
@@ -18,7 +20,7 @@ export default async function ConferirPage({
   const { data } = await supabase
     .from("pedidos")
     .select(
-      "id, data, status, observacoes, fornecedor_id, conf_colab_em, conf_colab_por, cobrar_conf, aviso_encerrado_em, nao_veio_em, nao_veio_por, nao_veio_obs, dia_entrega:pedido_dia_entrega, fornecedores(nome), cotacoes(descricao), pedido_itens(id, produto_id, qtd, preco_unit, qtd_recebida, preco_recebido, qtd_conf_colab, obs, produtos(nome, unidade))",
+      "id, data, status, observacoes, fornecedor_id, conf_colab_em, conf_colab_por, cobrar_conf, aviso_encerrado_em, nao_veio_em, nao_veio_por, nao_veio_obs, dia_entrega:pedido_dia_entrega, fornecedores(nome, whatsapp), cotacoes(descricao), pedido_itens(id, produto_id, qtd, preco_unit, qtd_recebida, preco_recebido, qtd_conf_colab, obs, produtos(nome, unidade))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -39,7 +41,7 @@ export default async function ConferirPage({
     nao_veio_por: string | null;
     nao_veio_obs: string | null;
     dia_entrega: string | null;
-    fornecedores: { nome?: string } | null;
+    fornecedores: { nome?: string; whatsapp?: string | null } | null;
     cotacoes: { descricao?: string } | null;
     pedido_itens: {
       id: string;
@@ -56,7 +58,7 @@ export default async function ConferirPage({
   const ped = data as unknown as Row;
   const db = supabase as unknown as DbConf;
 
-  const [{ data: prodData }, { data: notaRow }, sugeridas, divergencias] = await Promise.all([
+  const [{ data: prodData }, { data: notaRow }, sugeridas, divergencias, empresa] = await Promise.all([
     supabase.from("produtos").select("id, nome").eq("ativo", true).order("nome"),
     supabase
       .from("notas_fiscais")
@@ -66,6 +68,7 @@ export default async function ConferirPage({
       .maybeSingle(),
     notasSugeridas(db, ped.fornecedor_id, ped.data),
     calcularDivergencias(db, id),
+    empresaAtual(),
   ]);
   const produtos = (prodData as { id: string; nome: string }[]) ?? [];
 
@@ -157,6 +160,15 @@ export default async function ConferirPage({
       nota={notaLigada}
       sugeridas={sugeridas as NotaSugerida[]}
       divergencias={divergencias}
+      cobrar={
+        <CobrarFornecedor
+          empresa={empresa?.nome ?? "Restaurante"}
+          fornecedor={ped.fornecedores?.nome ?? "Fornecedor"}
+          whatsapp={ped.fornecedores?.whatsapp ?? null}
+          pedidos={[{ id: ped.id, data: ped.data, temNota: divergencias.tem_nota, notaNumero: nota?.numero ?? null, itens: divergencias.itens }]}
+          unidades={Object.fromEntries((ped.pedido_itens ?? []).filter((i) => i.produto_id).map((i) => [i.produto_id as string, i.produtos?.unidade ?? ""]))}
+        />
+      }
     />
     </div>
   );

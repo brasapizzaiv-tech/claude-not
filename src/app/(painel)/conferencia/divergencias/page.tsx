@@ -3,6 +3,8 @@ import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { ROTULO_DIVERGENCIA, type ResumoDivergencias, type TipoDivergencia } from "@/lib/conferencia-core";
+import { CobrarFornecedor } from "@/components/cobrar-fornecedor";
+import { empresaAtual } from "@/lib/empresa";
 
 // Relatório de divergências da conferência: o que veio diferente do pedido
 // (quantidade, item faltando, preço acima do cotado, cobrado sem receber),
@@ -69,6 +71,29 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
   precoAcima = [...porForn.values()].reduce((s, f) => s + f.precoAcima, 0);
   const fornecedores = [...porForn.values()].sort((a, b) => b.valorAMais - a.valorAMais || b.divergencias - a.divergencias);
 
+  // Um fornecedor filtrado: dá pra mandar a cobrança do período no WhatsApp.
+  let cobrar: React.ReactNode = null;
+  if (sp.forn && pedidos.length > 0) {
+    const ids = pedidos.map((p) => p.id);
+    const prodIds = [...new Set(pedidos.flatMap((p) => (p.divergencias?.itens ?? []).map((d) => d.produto_id)).filter((x): x is string => !!x))];
+    const [{ data: forn }, { data: notas }, { data: prods }, empresa] = await Promise.all([
+      supabase.from("fornecedores").select("nome, whatsapp").eq("id", sp.forn).maybeSingle(),
+      supabase.from("notas_fiscais").select("pedido_id, numero").in("pedido_id", ids),
+      prodIds.length ? supabase.from("produtos").select("id, unidade").in("id", prodIds) : Promise.resolve({ data: [] }),
+      empresaAtual(),
+    ]);
+    const notaDe = new Map(((notas as { pedido_id: string; numero: string | null }[]) ?? []).map((n) => [n.pedido_id, n.numero]));
+    cobrar = (
+      <CobrarFornecedor
+        empresa={empresa?.nome ?? "Restaurante"}
+        fornecedor={(forn?.nome as string) ?? "Fornecedor"}
+        whatsapp={(forn?.whatsapp as string | null) ?? null}
+        pedidos={[...pedidos].reverse().map((p) => ({ id: p.id, data: p.data, temNota: !!p.divergencias?.tem_nota, notaNumero: notaDe.get(p.id) ?? null, itens: p.divergencias?.itens ?? [] }))}
+        unidades={Object.fromEntries(((prods as { id: string; unidade: string | null }[]) ?? []).map((p) => [p.id, p.unidade ?? ""]))}
+      />
+    );
+  }
+
   const card = "rounded-cartao border border-borda p-4 ";
   const inputCls = "campo";
 
@@ -94,6 +119,14 @@ export default async function DivergenciasPage({ searchParams }: { searchParams:
           {sp.forn && <Link href={`/conferencia/divergencias?de=${de}&ate=${ate}`} className="text-xs text-texto-suave underline">todos os fornecedores</Link>}
         </form>
       </div>
+      {cobrar ? (
+        <div className="cartao mb-6 flex flex-wrap items-center justify-between gap-3 p-4">
+          <p className="text-sm text-texto-suave">Mandar pro vendedor o que faltou e o que veio diferente nestes pedidos: você escolhe os itens e abre no WhatsApp.</p>
+          {cobrar}
+        </div>
+      ) : !sp.forn && pedidos.length > 0 ? (
+        <p className="mb-4 text-sm text-texto-suave">Pra cobrar um fornecedor no WhatsApp, clique no nome dele na tabela.</p>
+      ) : null}
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <div className={card}><p className="text-xs text-texto-suave">Pedidos no período</p><p className="text-2xl font-bold text-texto">{totalPedidos}</p><p className="text-xs text-texto-fraco">{pedidos.length} com divergência{totalPedidos > 0 ? ` (${Math.round((pedidos.length / totalPedidos) * 100)}%)` : ""}</p></div>

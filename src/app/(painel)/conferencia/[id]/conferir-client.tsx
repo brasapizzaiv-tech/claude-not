@@ -61,6 +61,7 @@ export function ConferirClient({
   nota,
   sugeridas,
   divergencias,
+  cobrar,
 }: {
   pedidoId: string;
   fornecedor: string;
@@ -74,6 +75,7 @@ export function ConferirClient({
   nota: NotaLigada | null;
   sugeridas: NotaSugerida[];
   divergencias: ResumoDivergencias;
+  cobrar?: React.ReactNode; // botão "Cobrar o fornecedor" (montado na página)
 }) {
   const router = useRouter();
   const [salvando, startSave] = useTransition();
@@ -241,10 +243,13 @@ export function ConferirClient({
       {/* Divergências calculadas (pedido × equipe/painel × nota) */}
       {divergencias.n > 0 && (
         <div className={`mb-4 rounded-cartao border p-4 ${divergencias.gravidade === "grave" ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"}`}>
-          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-            <Icone nome="alerta" tamanho={14} className="mr-1.5" /> {divergencias.n} divergência{divergencias.n === 1 ? "" : "s"}
-            {divergencias.valor_a_mais > 0 && <span className="ml-2 text-urgente-texto dark:text-red-300">· {moeda(divergencias.valor_a_mais)} cobrados a mais</span>}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              <Icone nome="alerta" tamanho={14} className="mr-1.5" /> {divergencias.n} divergência{divergencias.n === 1 ? "" : "s"}
+              {divergencias.valor_a_mais > 0 && <span className="ml-2 text-urgente-texto dark:text-red-300">· {moeda(divergencias.valor_a_mais)} cobrados a mais</span>}
+            </p>
+            {cobrar}
+          </div>
           <ul className="mt-2 space-y-1 text-sm text-texto-suave">
             {divergencias.itens.map((d, i) => (
               <li key={i}>
